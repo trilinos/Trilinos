@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-#@HEADER
+# @HEADER
 # ************************************************************************
 # 
 #            NOX: An Object-Oriented Nonlinear Solver Package
@@ -41,9 +41,17 @@
 # (rppawlo@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
-#@HEADER
+# @HEADER
 
-SOURCES = $(example_SOURCES)
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
+
+SOURCES = $(libnoxtsf_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -51,7 +59,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../../..
+top_builddir = ..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -66,9 +74,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1)
-subdir = src-loca/example-epetra/1Dfem
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = src-tsf
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
@@ -80,20 +88,23 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@am__EXEEXT_1 = example$(EXEEXT)
-PROGRAMS = $(noinst_PROGRAMS)
-am_example_OBJECTS = example-Example.$(OBJEXT) \
-	example-FiniteElementProblem.$(OBJEXT) example-Basis.$(OBJEXT) \
-	example-Problem_Interface.$(OBJEXT)
-example_OBJECTS = $(am_example_OBJECTS)
+AR = ar
+ARFLAGS = cru
+am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
+libnoxtsf_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__objects_1 = libnoxtsf_a-NOX_TSF_Vector.$(OBJEXT) \
+	libnoxtsf_a-NOX_TSF_Group.$(OBJEXT)
+am__objects_2 =
+am_libnoxtsf_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+libnoxtsf_a_OBJECTS = $(am_libnoxtsf_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -103,8 +114,12 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(example_SOURCES)
-DIST_SOURCES = $(example_SOURCES)
+SOURCES = $(libnoxtsf_a_SOURCES)
+DIST_SOURCES = $(libnoxtsf_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/NOX_TSF.H \
+	$(srcdir)/NOX_TSF_Vector.H $(srcdir)/NOX_TSF_Group.H
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -271,30 +286,57 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLE = example
-example_SOURCES = $(srcdir)/Example.C \
-	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
-	$(srcdir)/Basis.C $(srcdir)/Basis.H \
-	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+NOX_TSF_H = \
+	$(srcdir)/NOX_TSF.H \
+	$(srcdir)/NOX_TSF_Vector.H \
+	$(srcdir)/NOX_TSF_Group.H 
 
-example_DEPENDENCIES = \
-        $(top_builddir)/src/libnox.a \
-        $(top_builddir)/src-epetra/libnoxepetra.a \
-	$(top_builddir)/src-loca/src/libloca.a \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
+NOX_TSF = \
+	$(srcdir)/NOX_TSF_Vector.C \
+	$(srcdir)/NOX_TSF_Group.C 
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
-		   -I$(top_srcdir)/src \
-                   -I$(top_srcdir)/src-epetra \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-epetra
 
-example_LDADD = -L$(top_builddir)/src \
-                -L$(top_builddir)/src-epetra \
-                -L$(top_builddir)/src-loca/src \
-                -L$(top_builddir)/src-loca/src-epetra \
-		-llocaepetra -lnoxepetra -lloca -lnox $(LIBS)
+# ------------------------------------------------------------------------
+# Noxblas library specifications
+# ------------------------------------------------------------------------
+libnoxtsf_a_SOURCES = $(NOX_TSF) $(NOX_TSF_H) 
+libnoxtsf_a_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/../TSF/src/Vectors \
+        $(TRILINOS_CXXFLAGS) 
 
+
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+# List of all libraries to install in $(libexecdir)
+@BUILD_LIBNOXTSF_TRUE@lib_LIBRARIES = libnoxtsf.a
+
+# List of all headers to install in $(includedir)
+@BUILD_LIBNOXTSF_TRUE@include_HEADERS = $(NOX_TSF_H) 
+@USE_ALTERNATE_AR_FALSE@libnoxtsf_a_AR = $(AR) cru
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libnoxtsf_a_AR = $(ALTERNATE_AR)
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libnoxtsf_a_LIBADD = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
 all: all-am
 
 .SUFFIXES:
@@ -308,9 +350,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src-loca/example-epetra/1Dfem/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src-tsf/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src-loca/example-epetra/1Dfem/Makefile
+	  $(AUTOMAKE) --foreign  src-tsf/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -328,12 +370,39 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
+	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
 
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
-	@rm -f example$(EXEEXT)
-	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libnoxtsf.a: $(libnoxtsf_a_OBJECTS) $(libnoxtsf_a_DEPENDENCIES) 
+	-rm -f libnoxtsf.a
+	$(libnoxtsf_a_AR) libnoxtsf.a $(libnoxtsf_a_OBJECTS) $(libnoxtsf_a_LIBADD)
+	$(RANLIB) libnoxtsf.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -341,10 +410,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -362,70 +429,55 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-example-Example.o: $(srcdir)/Example.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Example.o -MD -MP -MF "$(DEPDIR)/example-Example.Tpo" -c -o example-Example.o `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Example.Tpo" "$(DEPDIR)/example-Example.Po"; else rm -f "$(DEPDIR)/example-Example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='example-Example.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
+libnoxtsf_a-NOX_TSF_Vector.o: $(srcdir)/NOX_TSF_Vector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtsf_a-NOX_TSF_Vector.o -MD -MP -MF "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Tpo" -c -o libnoxtsf_a-NOX_TSF_Vector.o `test -f '$(srcdir)/NOX_TSF_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TSF_Vector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Tpo" "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Po"; else rm -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TSF_Vector.C' object='libnoxtsf_a-NOX_TSF_Vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.o `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtsf_a-NOX_TSF_Vector.o `test -f '$(srcdir)/NOX_TSF_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TSF_Vector.C
 
-example-Example.obj: $(srcdir)/Example.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Example.obj -MD -MP -MF "$(DEPDIR)/example-Example.Tpo" -c -o example-Example.obj `if test -f '$(srcdir)/Example.C'; then $(CYGPATH_W) '$(srcdir)/Example.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Example.Tpo" "$(DEPDIR)/example-Example.Po"; else rm -f "$(DEPDIR)/example-Example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='example-Example.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
+libnoxtsf_a-NOX_TSF_Vector.obj: $(srcdir)/NOX_TSF_Vector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtsf_a-NOX_TSF_Vector.obj -MD -MP -MF "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Tpo" -c -o libnoxtsf_a-NOX_TSF_Vector.obj `if test -f '$(srcdir)/NOX_TSF_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TSF_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TSF_Vector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Tpo" "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Po"; else rm -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TSF_Vector.C' object='libnoxtsf_a-NOX_TSF_Vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.obj `if test -f '$(srcdir)/Example.C'; then $(CYGPATH_W) '$(srcdir)/Example.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtsf_a-NOX_TSF_Vector.obj `if test -f '$(srcdir)/NOX_TSF_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TSF_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TSF_Vector.C'; fi`
 
-example-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/example-FiniteElementProblem.Tpo" -c -o example-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-FiniteElementProblem.Tpo" "$(DEPDIR)/example-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/example-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+libnoxtsf_a-NOX_TSF_Group.o: $(srcdir)/NOX_TSF_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtsf_a-NOX_TSF_Group.o -MD -MP -MF "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Tpo" -c -o libnoxtsf_a-NOX_TSF_Group.o `test -f '$(srcdir)/NOX_TSF_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TSF_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Tpo" "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Po"; else rm -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TSF_Group.C' object='libnoxtsf_a-NOX_TSF_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Po' tmpdepfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtsf_a-NOX_TSF_Group.o `test -f '$(srcdir)/NOX_TSF_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TSF_Group.C
 
-example-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/example-FiniteElementProblem.Tpo" -c -o example-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-FiniteElementProblem.Tpo" "$(DEPDIR)/example-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/example-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+libnoxtsf_a-NOX_TSF_Group.obj: $(srcdir)/NOX_TSF_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtsf_a-NOX_TSF_Group.obj -MD -MP -MF "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Tpo" -c -o libnoxtsf_a-NOX_TSF_Group.obj `if test -f '$(srcdir)/NOX_TSF_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TSF_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TSF_Group.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Tpo" "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Po"; else rm -f "$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TSF_Group.C' object='libnoxtsf_a-NOX_TSF_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.Po' tmpdepfile='$(DEPDIR)/libnoxtsf_a-NOX_TSF_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
-
-example-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Basis.o -MD -MP -MF "$(DEPDIR)/example-Basis.Tpo" -c -o example-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Basis.Tpo" "$(DEPDIR)/example-Basis.Po"; else rm -f "$(DEPDIR)/example-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='example-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-example-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Basis.obj -MD -MP -MF "$(DEPDIR)/example-Basis.Tpo" -c -o example-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Basis.Tpo" "$(DEPDIR)/example-Basis.Po"; else rm -f "$(DEPDIR)/example-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='example-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
-
-example-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/example-Problem_Interface.Tpo" -c -o example-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Problem_Interface.Tpo" "$(DEPDIR)/example-Problem_Interface.Po"; else rm -f "$(DEPDIR)/example-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-example-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/example-Problem_Interface.Tpo" -c -o example-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Problem_Interface.Tpo" "$(DEPDIR)/example-Problem_Interface.Po"; else rm -f "$(DEPDIR)/example-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtsf_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtsf_a-NOX_TSF_Group.obj `if test -f '$(srcdir)/NOX_TSF_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TSF_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TSF_Group.C'; fi`
 uninstall-info-am:
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -502,8 +554,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
+	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -528,9 +581,10 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -548,9 +602,9 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-includeHEADERS
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES
 
 install-info: install-info-am
 
@@ -575,18 +629,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	clean-libLIBRARIES ctags distclean distclean-compile \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

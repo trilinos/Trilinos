@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_CXXFLAGS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_CXXFLAGS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -886,6 +886,9 @@ Optional Features:
   --enable-nox-petsc      compile petsc interace libraries
   --enable-nox-petsc-examples
                           compile petsc interface examples
+  --enable-nox-tsf        compile tsf interace libraries
+  --enable-nox-tsf-examples
+                          compile tsf interface examples
   --enable-nox-belos      compile belos interace libraries
   --enable-nox-belos-examples
                           compile belos interface examples
@@ -4070,7 +4073,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4073:" \
+echo "$as_me:4076:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6041,6 +6044,67 @@ fi
 
 
 # ------------------------------------------------------------------------
+# NOX-TSF library?
+# ------------------------------------------------------------------------
+
+
+  # Check whether --enable-nox-tsf or --disable-nox-tsf was given.
+if test "${enable_nox_tsf+set}" = set; then
+  enableval="$enable_nox_tsf"
+  ADDON_tsf=$enableval
+else
+  ADDON_tsf=no
+
+fi;
+
+  # Check whether --enable-nox-tsf-examples or --disable-nox-tsf-examples was given.
+if test "${enable_nox_tsf_examples+set}" = set; then
+  enableval="$enable_nox_tsf_examples"
+  ADDON_tsf_EXAMPLES=${enableval}
+else
+  ADDON_tsf_EXAMPLES=no
+
+fi;
+
+  # Cannot build the examples if we don't build the library
+  if test ${ADDON_tsf_EXAMPLES} = yes; then
+     BUILD_ANY_EXAMPLES=yes
+     ADDON_tsf=yes;
+  fi
+
+  echo "$as_me:$LINENO: checking whether we should build the tsf interface libraries" >&5
+echo $ECHO_N "checking whether we should build the tsf interface libraries... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${ADDON_tsf}" >&5
+echo "${ECHO_T}${ADDON_tsf}" >&6
+
+  echo "$as_me:$LINENO: checking whether we should build the tsf interface examples" >&5
+echo $ECHO_N "checking whether we should build the tsf interface examples... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${ADDON_tsf_EXAMPLES}" >&5
+echo "${ECHO_T}${ADDON_tsf_EXAMPLES}" >&6
+
+
+
+
+if test X${ADDON_tsf} = Xyes; then
+  BUILD_LIBNOXTSF_TRUE=
+  BUILD_LIBNOXTSF_FALSE='#'
+else
+  BUILD_LIBNOXTSF_TRUE='#'
+  BUILD_LIBNOXTSF_FALSE=
+fi
+
+
+
+if test X${ADDON_tsf_EXAMPLES} = Xyes; then
+  BUILD_TSF_EXAMPLES_TRUE=
+  BUILD_TSF_EXAMPLES_FALSE='#'
+else
+  BUILD_TSF_EXAMPLES_TRUE='#'
+  BUILD_TSF_EXAMPLES_FALSE=
+fi
+
+
+# ------------------------------------------------------------------------
 # NOX-Belos library?
 # ------------------------------------------------------------------------
 
@@ -6972,7 +7036,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6975: \"$ac_link\") >&5
+(eval echo $as_me:7039: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7050,7 +7114,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7053: \"$ac_link\") >&5
+(eval echo $as_me:7117: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -18397,7 +18461,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Suite/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_NewTest/Makefile test/lapack/LOCA_Group/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_NewTest/Makefile test/epetra/LOCA_Group/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/petsc/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-tsf/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Suite/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_NewTest/Makefile test/lapack/LOCA_Group/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_NewTest/Makefile test/epetra/LOCA_Group/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/petsc/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -18586,6 +18650,20 @@ if test -z "${BUILD_PETSC_EXAMPLES_TRUE}" && test -z "${BUILD_PETSC_EXAMPLES_FAL
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_PETSC_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_PETSC_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_LIBNOXTSF_TRUE}" && test -z "${BUILD_LIBNOXTSF_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LIBNOXTSF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_LIBNOXTSF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TSF_EXAMPLES_TRUE}" && test -z "${BUILD_TSF_EXAMPLES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSF_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TSF_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -19179,6 +19257,7 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-lapack/Makefile" ;;
   "example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-lapack/Makefile" ;;
+  "src-tsf/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-tsf/Makefile" ;;
   "src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-epetra/Makefile" ;;
   "example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/Makefile" ;;
   "example-epetra/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/DS6.5.1/Makefile" ;;
@@ -19404,6 +19483,10 @@ s,@BUILD_LIBNOXPETSC_TRUE@,$BUILD_LIBNOXPETSC_TRUE,;t t
 s,@BUILD_LIBNOXPETSC_FALSE@,$BUILD_LIBNOXPETSC_FALSE,;t t
 s,@BUILD_PETSC_EXAMPLES_TRUE@,$BUILD_PETSC_EXAMPLES_TRUE,;t t
 s,@BUILD_PETSC_EXAMPLES_FALSE@,$BUILD_PETSC_EXAMPLES_FALSE,;t t
+s,@BUILD_LIBNOXTSF_TRUE@,$BUILD_LIBNOXTSF_TRUE,;t t
+s,@BUILD_LIBNOXTSF_FALSE@,$BUILD_LIBNOXTSF_FALSE,;t t
+s,@BUILD_TSF_EXAMPLES_TRUE@,$BUILD_TSF_EXAMPLES_TRUE,;t t
+s,@BUILD_TSF_EXAMPLES_FALSE@,$BUILD_TSF_EXAMPLES_FALSE,;t t
 s,@BUILD_LIBNOXBELOS_TRUE@,$BUILD_LIBNOXBELOS_TRUE,;t t
 s,@BUILD_LIBNOXBELOS_FALSE@,$BUILD_LIBNOXBELOS_FALSE,;t t
 s,@BUILD_BELOS_EXAMPLES_TRUE@,$BUILD_BELOS_EXAMPLES_TRUE,;t t

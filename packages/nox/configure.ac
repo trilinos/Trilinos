@@ -699,6 +699,14 @@ AM_CONDITIONAL(BUILD_LIBNOXPETSC, test X${ADDON_petsc} = Xyes)
 AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${ADDON_petsc_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
+# NOX-TSF library?
+# ------------------------------------------------------------------------
+
+NOX_INTERFACE(tsf)
+AM_CONDITIONAL(BUILD_LIBNOXTSF, test X${ADDON_tsf} = Xyes)
+AM_CONDITIONAL(BUILD_TSF_EXAMPLES, test X${ADDON_tsf_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
 # NOX-Belos library?
 # ------------------------------------------------------------------------
 
@@ -1538,6 +1546,7 @@ AC_CONFIG_FILES([
 		src/Makefile
                 src-lapack/Makefile
 		example-lapack/Makefile
+		src-tsf/Makefile
 		src-epetra/Makefile 
 		example-epetra/Makefile 
 		example-epetra/DS6.5.1/Makefile
