@@ -44,7 +44,8 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
 void Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix& A);
 
 //! Analyzes the basic properties of the input matrix A; see \ref ifp_analyze.
-int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap = false);
+int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap = false,
+                   const int NumPDEEqns = 1);
 
 //! Analyzes the distribution of values of the input matrix A.
 /*!
@@ -71,9 +72,22 @@ int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
 int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
                                  const bool abs = false, 
                                  const int steps = 10);
-int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, char* title,
-                       char* FileName,
-                       int NumPDEEqns = 1);
+
+//! Plots the sparsity pattern of an Epetra_RowMatrix into a PS file.
+/*!
+ \param A (In) - Epetra_RowMatrix whose sparsity pattern will be plotted.
+
+ \param FileName (In) - char string containing the filename.
+                        If 0, then the matrix label is used as file name,
+                        after appending .ps.
+
+ \param NumPDEEqns (In) - number of PDE equations. The function will plot
+               the block structure of the matrix if NumPDEEqns > 1
+
+ \name Largely inspired from Yousef Saad's SPARSKIT plot function. 
+ */
+int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* FileName = 0, 
+                         const int NumPDEEqns = 1);
 
 //==============================================================================
 class Ifpack_Element {

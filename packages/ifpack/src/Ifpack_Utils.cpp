@@ -341,7 +341,8 @@ static void print(char* str, T one, T two, T three, bool equal = true)
 #include "float.h"
 #include "Epetra_FECrsMatrix.h"
 
-int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap)
+int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap,
+                   const int NumPDEEqns)
 {
 
   int NumMyRows = A.NumMyRows();
@@ -377,8 +378,13 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap)
   int NumMyEmptyRows = 0, NumGlobalEmptyRows;
   int NumMyDirichletRows = 0, NumGlobalDirichletRows;
 
-  vector<int> colInd(1000 + A.MaxNumEntries()); // FIXME
-  vector<double> colVal(1000 + A.MaxNumEntries()); // FIXME
+  vector<int> colInd(A.MaxNumEntries());
+  vector<double> colVal(A.MaxNumEntries());
+
+  Epetra_Vector Diag(A.RowMatrixRowMap());
+  Epetra_Vector RowSum(A.RowMatrixRowMap());
+  Diag.PutScalar(0.0);
+  RowSum.PutScalar(0.0);
 
   for (int i = 0 ; i < NumMyRows ; ++i) {
 
@@ -393,9 +399,6 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap)
     if (Nnz == 1)
       NumMyDirichletRows++;
 
-    double ExtraSum = 0.0;
-    double Diag = 0.0;
-
     for (int j = 0 ; j < Nnz ; ++j) {
 
       double v = colVal[j];
@@ -406,9 +409,9 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap)
       int GCID = A.RowMatrixColMap().GID(colInd[j]);
 
       if (GCID != GRID)
-        ExtraSum += v;
+        RowSum[i] += v;
       else
-        Diag = v;
+        Diag[i] = v;
 
       if (GCID < GRID) 
         MyLowerNonzeros++;
@@ -420,11 +423,13 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap)
         MyBandwidth = b;
     }
 
-    if (Diag > ExtraSum)
+    if (Diag[i] > RowSum[i])
       MyDiagonallyDominant++;
 
-    if (Diag >= ExtraSum)
+    if (Diag[i] >= RowSum[i])
       MyWeaklyDiagonallyDominant++;
+
+    RowSum[i] += Diag[i];
   }
 
   // ======================== //
@@ -595,34 +600,118 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap)
 
   if (verbose) {
     print<double>("|A(i,j)|", GlobalMin, GlobalAvg, GlobalMax);
-    print();
   }
 
   // ================= //
   // diagonal elements //
   // ================= //
 
-  Epetra_Vector Diagonal(A.RowMatrixRowMap());
-  A.ExtractDiagonalCopy(Diagonal);
-  Diagonal.MinValue(&GlobalMin);
-  Diagonal.MaxValue(&GlobalMax);
-  Diagonal.MeanValue(&GlobalAvg);
+  Diag.MinValue(&GlobalMin);
+  Diag.MaxValue(&GlobalMax);
+  Diag.MeanValue(&GlobalAvg);
 
   if (verbose) {
     print();
     print<double>(" A(k,k)", GlobalMin, GlobalAvg, GlobalMax);
   }
 
-  Diagonal.Abs(Diagonal);
-  Diagonal.MinValue(&GlobalMin);
-  Diagonal.MaxValue(&GlobalMax);
-  Diagonal.MeanValue(&GlobalAvg);
-  if (verbose)
+  Diag.Abs(Diag);
+  Diag.MinValue(&GlobalMin);
+  Diag.MaxValue(&GlobalMax);
+  Diag.MeanValue(&GlobalAvg);
+  if (verbose) {
     print<double>("|A(k,k)|", GlobalMin, GlobalAvg, GlobalMax);
+  }
+  
+  // ============================================== //
+  // cycle over all equations for diagonal elements //
+  // ============================================== //
+
+  if (NumPDEEqns > 1 ) {
+
+    if (verbose) print();
+
+    for (int ie = 0 ; ie < NumPDEEqns ; ie++) {
+
+      MyMin = DBL_MAX;
+      MyMax = -DBL_MAX;
+      MyAvg = 0.0;
+
+      for (int i = ie ; i < Diag.MyLength() ; i += NumPDEEqns) {
+        double d = Diag[i];
+        MyAvg += d;
+        if (d < MyMin)
+          MyMin = d;
+        if (d > MyMax)
+          MyMax = d;
+      }
+      A.Comm().MinAll(&MyMin, &GlobalMin, 1);
+      A.Comm().MaxAll(&MyMax, &GlobalMax, 1);
+      A.Comm().SumAll(&MyAvg, &GlobalAvg, 1);
+      // does not really work fine if the number of global
+      // elements is not a multiple of NumPDEEqns
+      GlobalAvg /= (Diag.GlobalLength() / NumPDEEqns);
+
+      if (verbose) {
+        char str[80];
+        sprintf(str, " A(k,k), eq %d", ie);
+        print<double>(str, GlobalMin, GlobalAvg, GlobalMax);
+      }
+    }
+  }
+
+  // ======== //
+  // row sums //
+  // ======== //
+  
+  RowSum.MinValue(&GlobalMin);
+  RowSum.MaxValue(&GlobalMax);
+  RowSum.MeanValue(&GlobalAvg);
 
   if (verbose) {
-    cout << "================================================================================" << endl;
+    print();
+    print<double>(" sum_j A(k,j)", GlobalMin, GlobalAvg, GlobalMax);
   }
+
+  // ===================================== //
+  // cycle over all equations for row sums //
+  // ===================================== //
+
+  if (NumPDEEqns > 1 ) {
+
+    if (verbose) print();
+
+    for (int ie = 0 ; ie < NumPDEEqns ; ie++) {
+
+      MyMin = DBL_MAX;
+      MyMax = -DBL_MAX;
+      MyAvg = 0.0;
+
+      for (int i = ie ; i < Diag.MyLength() ; i += NumPDEEqns) {
+        double d = RowSum[i];
+        MyAvg += d;
+        if (d < MyMin)
+          MyMin = d;
+        if (d > MyMax)
+          MyMax = d;
+      }
+      A.Comm().MinAll(&MyMin, &GlobalMin, 1);
+      A.Comm().MaxAll(&MyMax, &GlobalMax, 1);
+      A.Comm().SumAll(&MyAvg, &GlobalAvg, 1);
+      // does not really work fine if the number of global
+      // elements is not a multiple of NumPDEEqns
+      GlobalAvg /= (Diag.GlobalLength() / NumPDEEqns);
+
+      if (verbose) {
+        char str[80];
+        sprintf(str, " sum_j A(k,j), eq %d", ie);
+        print<double>(str, GlobalMin, GlobalAvg, GlobalMax);
+      }
+    }
+  }
+
+  if (verbose)
+    Ifpack_PrintLine();
 
   return(0);
 }
@@ -757,13 +846,12 @@ int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
 }
 
 // ====================================================================== 
-int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, char* title,
-                         char* FileName,
-                         int NumPDEEqns)
+int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName, 
+                         const int NumPDEEqns)
 {
 
   int m,nc,nr,maxdim,ltit;
-  double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz;
+  double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz = 0.0;
   double xl,xr, yb,yt, scfct,u2dot,frlw,delt,paperx;
   bool square = false;
   /*change square to .true. if you prefer a square frame around
@@ -779,10 +867,22 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, char* title,
   int NumGlobalCols;
   int MyPID;
   int NumProc;
+  char FileName[80];
+  char title[80];
   
   const Epetra_Comm& Comm = A.Comm();
 
   /* --------------------- execution begins ---------------------- */
+
+  if (strlen(A.Label()) != 0)
+    strcpy(title, A.Label());
+  else
+    sprintf(title, "matrix");
+
+  if (InputFileName == 0)
+    sprintf(FileName, "%s.ps", title);
+  else
+    strcpy(FileName, InputFileName);
 
   MyPID = Comm.MyPID();
   NumProc = Comm.NumProc();
