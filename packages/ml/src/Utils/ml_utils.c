@@ -2567,7 +2567,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
        if( MyPID == 0 ) {
 	     fprintf( fid, "%%N_global_rows = %d\n", NglobalRows );
          fprintf(fid,"%% To load this data into Matlab:\n");
-         fprintf(fid,"%%    load(filename); A = spconvert(filename);");
+         fprintf(fid,"%%    load(filename); A = spconvert(filename);\n");
        }
        
        fprintf( fid,
