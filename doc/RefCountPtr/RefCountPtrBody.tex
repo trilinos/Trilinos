@@ -364,12 +364,22 @@ the number of clients that really own \texttt{RefCountPtr<>} objects to
 the reference-counted object.
 
 %
+\subsection{Associating extra data with a \texttt{RefCountPtr<>} object}
+%
+
+ToDo: Discuss why one would want to associate extra data with a \texttt{RefCountPtr<>}
+object.
+
+ToDo: Discuss how multiple clients can add extra data for a \texttt{RefCountPtr<>}
+and they can not interfer with each other.
+
+%
 \subsection{Customized Deallocation through templated \texttt{Dealloc} Policy Objects}
 %
 
-ToDo: Discuss this topic and (create and) discuss a default
-implementation where a RefCountPtr object is embeadded in the Dealloc
-object.
+ToDo: Discuss an example of a specialized deallocataion (i.e. from an
+object database).
+
 
 %
 \section{The proper use of \texttt{RefCountPtr<>} and other C++ data types}

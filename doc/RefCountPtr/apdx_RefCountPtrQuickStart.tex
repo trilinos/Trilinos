@@ -125,5 +125,34 @@ RefCountPtr<B2>    c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
 %
 \end{enumerate}
 
+\item {\bf Managing extra data}
+%
+\begin{enumerate}
+%
+\item {\bf Adding extra data}
+%
+{\small\begin{verbatim}
+ctx = set_extra_data(a_ptr,rcp(new B1));  // Must save returned context ctx
+\end{verbatim}}
+%
+\item {\bf Retrieving extra data}
+%
+{\small\begin{verbatim}
+get_extra_data<RefCountPtr<B1> >(a_ptr,ctx)->f(); // Must pass in ctx!
+\end{verbatim}}
+%
+\item {\bf Resetting extra data}
+%
+{\small\begin{verbatim}
+get_extra_data<RefCountPtr<B1> >(a_ptr,ctx) = rcp(new C); // Same access type!
+get_extra_data<RefCountPtr<B1> >(a_ptr,ctx)->f();
+\end{verbatim}}
+or
+{\small\begin{verbatim}
+set_extra_data( a_ptr, rcp(new C), ctx );                 // New access type!
+get_extra_data<RefCountPtr<C> >(a_ptr,ctx)->f();
+\end{verbatim}}
+%
+\end{enumerate}
 
 \end{enumerate}
