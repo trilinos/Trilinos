@@ -175,7 +175,7 @@ therm_LDADD = \
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libtherm_a_LIBADD = $(CXXREPOS)
+libtherm_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------
