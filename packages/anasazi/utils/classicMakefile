@@ -1,0 +1,61 @@
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
+          -DIFPACK
+
+INCLUDES = -I../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)  
+  
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+CCFLAGS=$(CXXFLAGS)
+LDFLAGS=$(ARCH_LDFLAGS)
+
+
+LIB_PATHS= $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
+
+#=======================================================================
+# Anasazi utility source files
+#=======================================================================
+
+UTILS_CXX = read_hb_matrix.cpp distrib_msr_matrix.cpp AnasaziBLAS.cpp \
+	AnasaziLAPACK.cpp
+UTILS_C =
+UTILS_F =
+
+#=======================================================================
+# UTIL include files
+#=======================================================================
+
+UTILS_INC = Util.h AnasaziLAPACK.hpp AnasaziLAPACKwrappers.hpp AnasaziBLAS.hpp \
+	AnasaziBLASwrappers.hpp
+
+#=======================================================================
+
+ANASAZI_UTILS_OBJ        = $(UTILS_CXX:.cpp=.$(OBJ_EXT)) $(UTILS_C:.c=.$(OBJ_EXT)) \
+                  $(UTILS_F:.f=.$(OBJ_EXT))
+#=======================================================================
+#Do not see a need to build different serial and mpi libraries at this
+#time
+LIB_MPI = libanasaziutils.$(LIB_EXT)
+LIB_SERIAL = libanasaziutils.$(LIB_EXT)
+
+LIBANASAZIUTILS = $(LIB_$(TRILINOS_COMM))
+#=======================================================================
+
+LIBANASAZIUTILS: $(ANASAZI_UTILS_OBJ)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS) $(LIBANASAZIUTILS) $(ANASAZI_UTILS_OBJ)
+
+#=======================================================================
+# dependencies for 'f' files (none at this time)
+
+#include ../../build/depends.petra
+
+#=======================================================================
+clean:
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT) *.$(LIB_EXT)  *~ $(LIB_MPI) $(LIB_SERIAL) 
+
+#=======================================================================
