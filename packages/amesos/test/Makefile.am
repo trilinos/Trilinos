@@ -21,6 +21,8 @@ noinst_PROGRAMS = amesos_test AmesosShellScript
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 
 AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
+	cp  $(srcdir)/AmesosDscpack  AmesosDscpack$(EXEEXT)
+	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
 	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
 	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)
 	cp  $(srcdir)/AmesosDistScript  AmesosDistScript$(EXEEXT)
