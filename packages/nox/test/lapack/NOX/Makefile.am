@@ -30,7 +30,10 @@
 noinst_PROGRAMS = rosenbrock broyden
 
 rosenbrock_SOURCES = \
-                   $(srcdir)/Rosenbrock.C 
+	$(srcdir)/Rosenbrock.C \
+	$(srcdir)/Utils.C \
+	$(srcdir)/Utils.H \
+	$(srcdir)/Common.H
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a \
                           $(top_builddir)/src-lapack/libnoxlapack.a \

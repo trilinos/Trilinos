@@ -88,18 +88,24 @@ am__DEPENDENCIES_2 = $(top_builddir)/src-lapack/libnoxlapack.a \
 	$(top_builddir)/src/libnox.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(am__DEPENDENCIES_1)
-am_rosenbrock_OBJECTS = rosenbrock-Rosenbrock.$(OBJEXT)
+am_rosenbrock_OBJECTS = rosenbrock-Rosenbrock.$(OBJEXT) \
+	rosenbrock-Utils.$(OBJEXT)
 rosenbrock_OBJECTS = $(am_rosenbrock_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/broyden-Broyden.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rosenbrock-Rosenbrock.Po
+@AMDEP_TRUE@	./$(DEPDIR)/rosenbrock-Rosenbrock.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/rosenbrock-Utils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(broyden_SOURCES) $(rosenbrock_SOURCES)
 DIST_SOURCES = $(broyden_SOURCES) $(rosenbrock_SOURCES)
 ETAGS = etags
@@ -205,6 +211,7 @@ MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 MPI_F77_EXISTS = @MPI_F77_EXISTS@
+MPI_TEMP_CXX = @MPI_TEMP_CXX@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -269,7 +276,10 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 rosenbrock_SOURCES = \
-                   $(srcdir)/Rosenbrock.C 
+	$(srcdir)/Rosenbrock.C \
+	$(srcdir)/Utils.C \
+	$(srcdir)/Utils.H \
+	$(srcdir)/Common.H
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a \
                           $(top_builddir)/src-lapack/libnoxlapack.a \
@@ -340,6 +350,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/broyden-Broyden.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rosenbrock-Rosenbrock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rosenbrock-Utils.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -388,6 +399,22 @@ rosenbrock-Rosenbrock.obj: $(srcdir)/Rosenbrock.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/rosenbrock-Rosenbrock.Po' tmpdepfile='$(DEPDIR)/rosenbrock-Rosenbrock.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Rosenbrock.obj `if test -f '$(srcdir)/Rosenbrock.C'; then $(CYGPATH_W) '$(srcdir)/Rosenbrock.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rosenbrock.C'; fi`
+
+rosenbrock-Utils.o: $(srcdir)/Utils.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -MT rosenbrock-Utils.o -MD -MP -MF "$(DEPDIR)/rosenbrock-Utils.Tpo" -c -o rosenbrock-Utils.o `test -f '$(srcdir)/Utils.C' || echo '$(srcdir)/'`$(srcdir)/Utils.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rosenbrock-Utils.Tpo" "$(DEPDIR)/rosenbrock-Utils.Po"; else rm -f "$(DEPDIR)/rosenbrock-Utils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils.C' object='rosenbrock-Utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/rosenbrock-Utils.Po' tmpdepfile='$(DEPDIR)/rosenbrock-Utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Utils.o `test -f '$(srcdir)/Utils.C' || echo '$(srcdir)/'`$(srcdir)/Utils.C
+
+rosenbrock-Utils.obj: $(srcdir)/Utils.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -MT rosenbrock-Utils.obj -MD -MP -MF "$(DEPDIR)/rosenbrock-Utils.Tpo" -c -o rosenbrock-Utils.obj `if test -f '$(srcdir)/Utils.C'; then $(CYGPATH_W) '$(srcdir)/Utils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rosenbrock-Utils.Tpo" "$(DEPDIR)/rosenbrock-Utils.Po"; else rm -f "$(DEPDIR)/rosenbrock-Utils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils.C' object='rosenbrock-Utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/rosenbrock-Utils.Po' tmpdepfile='$(DEPDIR)/rosenbrock-Utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Utils.obj `if test -f '$(srcdir)/Utils.C'; then $(CYGPATH_W) '$(srcdir)/Utils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

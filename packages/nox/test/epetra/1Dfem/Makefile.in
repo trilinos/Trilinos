@@ -110,6 +110,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(testNonlinear_SOURCES) $(testNonlinear_EpetraNew_SOURCES) \
 	$(testNonlinear_trans_SOURCES)
 DIST_SOURCES = $(testNonlinear_SOURCES) \
@@ -218,6 +222,7 @@ MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 MPI_F77_EXISTS = @MPI_F77_EXISTS@
+MPI_TEMP_CXX = @MPI_TEMP_CXX@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -281,7 +286,9 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-INTERFACE = $(srcdir)/Interface.C
+INTERFACE = $(srcdir)/Interface.C \
+	$(srcdir)/Interface.H
+
 testNonlinear_SOURCES = \
                         $(INTERFACE) \
                         $(srcdir)/testNonlinear.C
@@ -301,7 +308,9 @@ testNonlinear_LDADD = \
                       -L$(top_builddir)/src -lnox $(LIBS) \
 	              $(BLAS_LIBS) $(FLIBS)
 
-INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C
+INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C \
+	              $(srcdir)/Interface_EpetraNew.H
+
 testNonlinear_EpetraNew_SOURCES = \
                         $(INTERFACE_EPETRANEW) \
                         $(srcdir)/testNonlinear_EpetraNew.C

@@ -29,7 +29,8 @@
 
 EXEEXT = .exe
 
-INTERFACE = $(srcdir)/Interface.C
+INTERFACE = $(srcdir)/Interface.C \
+	$(srcdir)/Interface.H
 
 noinst_PROGRAMS = testNonlinear testNonlinear_EpetraNew \
 			testNonlinear_trans
@@ -53,7 +54,8 @@ testNonlinear_LDADD = \
                       -L$(top_builddir)/src -lnox $(LIBS) \
 	              $(BLAS_LIBS) $(FLIBS)
 
-INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C
+INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C \
+	              $(srcdir)/Interface_EpetraNew.H
 
 testNonlinear_EpetraNew_SOURCES = \
                         $(INTERFACE_EPETRANEW) \

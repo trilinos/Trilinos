@@ -184,19 +184,26 @@ AC_ARG_ENABLE(mpi,
 
 AC_ARG_WITH(mpi-compilers,
 [AC_HELP_STRING([--with-mpi-compilers=PATH],
-[use MPI compilers mpicc, mpif77, and mpicxx (or mpiCC) in the specified path or in the default path if no path is specified. Enables MPI])],
+[use MPI compilers mpicc, mpif77, and mpicxx, mpic++ or mpiCC in the specified path or in the default path if no path is specified. Enables MPI])],
 [
   if test X${withval} != Xno; then
     HAVE_PKG_MPI=yes
     if test X${withval} = Xyes; then
-      # Check for mpicxx, if it does not exist, use mpiCC instead.
-      AC_CHECK_PROG(MPI_CXX, mpicxx, mpicxx, mpiCC)
+      # Check for mpicxx, if it does not exist, check for mpic++, if it does
+      # not exist, use mpiCC instead.
+      AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
+      if test X${MPI_TEMP_CXX} = Xno; then
+        AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
+      else
+        MPI_CXX=${MPI_TEMP_CXX}
+      fi
       MPI_CC=mpicc
       MPI_F77=mpif77
     else
-      MPI_TEMP_CXX=${withval}/mpicxx
-      if test -f ${MPI_TEMP_CXX}; then
-        MPI_CXX=${MPI_TEMP_CXX}
+      if test -f ${withval}/mpicxx; then
+        MPI_CXX=${withval}/mpicxx
+      elif test -f ${withval}/mpic++; then
+        MPI_CXX=${withval}/mpi++
       else
         MPI_CXX=${withval}/mpiCC
       fi
