@@ -336,9 +336,9 @@ ostream& Entry::leftshift(ostream& stream) const
   }
 
   if (isSetByGet)
-    cout << "   [default]";
+    stream << "   [default]";
   else if (!isGotten)
-    cout << "   [unused]";
+    stream << "   [unused]";
   
 
   return stream;
