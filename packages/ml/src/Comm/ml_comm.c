@@ -64,7 +64,9 @@ int ML_Comm_Destroy( ML_Comm ** com )
          return -1;
       }
       (*com)->ML_id = -1;
+#ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
       ML_Comm_ErrorHandlerDestroy(&((*com)->USR_errhandler));
+#endif
       ML_memory_free( (void **) com );
    }
    return 0;
