@@ -323,6 +323,9 @@ protected:
   //! Pointer to the group for computeF() calls.
   NOX::Abstract::Group* groupPtr;
 
+  //! Flag to specify if the matrix graph was created locally or was passed in.
+  bool graphCreatedLocally;
+
 };
 }  // namespace Epetra
 }  // namespace NOX

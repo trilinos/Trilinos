@@ -66,7 +66,8 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix
   jacobian = createGraphAndJacobian(i, x);
@@ -93,7 +94,8 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix
   jacobian = createGraphAndJacobian(i, x);
@@ -121,7 +123,8 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix
   jacobian = createGraphAndJacobian(i, x);
@@ -148,7 +151,8 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix
   jacobian = createGraphAndJacobian(i, x);
@@ -177,7 +181,8 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
@@ -207,7 +212,8 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
@@ -238,7 +244,8 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
@@ -268,7 +275,8 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   diffType(Forward),
   label("NOX::FiniteDifference Jacobian"),
   useGroupForComputeF(false),
-  groupPtr(0)
+  groupPtr(0),
+  graphCreatedLocally(false)
 {
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
@@ -281,7 +289,7 @@ FiniteDifference::~FiniteDifference()
   delete groupPtr;
   delete fmPtr;
   delete jacobian;
-  delete graph;
+  if( graphCreatedLocally ) delete graph;
 }
 
 const char* FiniteDifference::Label () const
@@ -589,6 +597,7 @@ createGraphAndJacobian(Interface::Required& i,
 
   // Create the graph
   graph = new Epetra_CrsGraph(Copy,map,10);
+  graphCreatedLocally = true;
 
   // Compute the RHS at the initial solution
   computeF(x, fo, NOX::EpetraNew::Interface::Required::FD_Res);
