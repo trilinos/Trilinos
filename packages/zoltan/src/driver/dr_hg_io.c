@@ -167,8 +167,6 @@ int read_hypergraph_file(
         Gen_Error(0, "fatal: Error returned from chaco_input_graph");
         return 0;
       }
-      
-      fclose(fp);
     }
 
 
@@ -183,10 +181,7 @@ int read_hypergraph_file(
         Gen_Error(0, "fatal: Error returned from chaco_input_geom");
         return 0;
       }
-
-      fclose(fp);
     }
-
   }
   
   MPI_Bcast(&base, 1, MPI_INT, 0, MPI_COMM_WORLD);
