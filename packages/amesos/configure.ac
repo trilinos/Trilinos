@@ -227,6 +227,16 @@ AC_CXX_STD_SPRINTF
 #TAC_ARG_WITH_PACKAGE(superlu, [Enable SuperLU interface support], SUPERLU, no)
 
 # ------------------------------------------------------------------------
+# Checks if tests and examples should be built
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -325,7 +335,7 @@ esac
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that supermatrix.h is in the SuperLU distributed include directory
-#    Make sure that SuperLU_timer is in the SuperLU distributed library
+#    Make sure that pdgssvx is in the SuperLU distributed library
 #
 amesos_libs=" " 
 # AC_LANG_PUSH
@@ -365,7 +375,7 @@ if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
 
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_superludistlib} ${MPI_LIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(SuperLU_timer_,,
+     AC_TRY_LINK_FUNC(pdgssvx,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
   amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
@@ -382,7 +392,7 @@ fi
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that supermatrix.h is in the SuperLU distributed include directory
-#    Make sure that SuperLU_timer is in the SuperLU distributed library
+#    Make sure that pdgssvx is in the SuperLU distributed library
 #
 
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
@@ -418,7 +428,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
 
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_sludlib} ${MPI_LIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(SuperLU_timer_,,
+     AC_TRY_LINK_FUNC(pdgssvx,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
   amesos_libs="${amesos_libs} ${tac_with_amesos_sludlib}"
@@ -815,7 +825,7 @@ AC_SUBST(AMESOS_LIBS,${amesos_libs})
 ### In the future we need to be able to disable dependence on Kundert lib
 
 ## if test "X$ADDON_SLUD" != "Xno"; then
-##   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
+##   AC_SEARCH_LIBS(pdgssvx,[superludist],,
 ##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
 ## fi
 
