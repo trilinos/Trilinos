@@ -271,10 +271,14 @@ int main(int argc, char *argv[])
     }
 
   /* Get solution back into original ordering */
-  if (!has_global_indices)
+  if (!has_global_indices) {
       AZ_invorder_vec(xsolve, data_org, update_index, rpntr, x);
-  else
+      free ((void *) xsolve);
+  }
+  else {
+    free ((void *) x);
     x = xsolve;
+  }
 
 
   if (xexact != NULL)
@@ -287,6 +291,7 @@ int main(int argc, char *argv[])
       for (i=0; i<N_local; i++) largest = max(largest,fabs(xexact[i]));
  printf("Processor %d:  Difference divided by max abs value of exact   = %12.4g\n",
 	     proc_config[AZ_node],sum/largest);
+      free((void *) xexact);
     }
 
 				       

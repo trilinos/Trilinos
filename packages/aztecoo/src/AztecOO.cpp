@@ -139,7 +139,10 @@ void AztecOO::DeleteMemory() {
     AZ_precond_destroy(&Prec_); 
     Prec_ = 0;
   }
-
+  if (Pmat_ != 0) {
+    AZ_matrix_destroy(&Pmat_);
+    Pmat_ = 0;
+  }
   if (Amat_ != 0) {
     AZ_matrix_destroy(&Amat_);
     Amat_ = 0;

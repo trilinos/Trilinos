@@ -4,8 +4,8 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
-#include "Epetra_MpiComm.h"
 #ifdef EPETRA_MPI
+#include "Epetra_MpiComm.h"
 #include "mpi.h"
 #endif
 #include "Trilinos_Util.h"

@@ -165,7 +165,7 @@ int Epetra_BasicDirectory::Generate()
 
   bool det_flag = true;
 
-  int num_recvs;
+  int num_recvs=0;
     
   Epetra_Distributor * Distor = Map_->Comm().CreateDistributor();
 
@@ -188,16 +188,20 @@ int Epetra_BasicDirectory::Generate()
   }
 
   if (num_recvs>0) import_elements = new int[ 3 * num_recvs ];
+  //for (i=0; i< 3*num_recvs; i++) import_elements[i] = 0;
 
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char *> (export_elements), 
 		  3 * sizeof( int ),
 		  reinterpret_cast<char *> (import_elements) ));
 
   
+  //bool MYPID = (Map_->Comm().MyPID()==0);
   int curr_LID;
+  //if (MYPID) cout << "Processor " << Map_->Comm().MyPID()<< "  num_recvs = "<< num_recvs << endl << flush;
   for( i = 0; i < num_recvs; i++ )
   {
     curr_LID = DirectoryMap_->LID(import_elements[3*i]); // Convert incoming GID to Directory LID
+    //if (MYPID) cout << " Receive ID = " << i << "  GID = " << import_elements[3*i] << "  LID = " << curr_LID << endl << flush;
     assert(curr_LID !=-1); // Internal error
     ProcList_[ curr_LID ] = import_elements[3*i+1];
     LocalIndexList_[ curr_LID ] = import_elements[3*i+2];

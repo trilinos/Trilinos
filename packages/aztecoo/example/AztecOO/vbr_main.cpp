@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
   int ierr=A.TransformToLocal();    
   if (ierr!=0) perror1("Error in Epetra_VbrMatrix TransformToLocal",ierr);
   
-  cout << A<< endl;
+  //cout << A<< endl;
   double * xexactt = xexact;
   Epetra_Vector xx(Copy, map, xexactt);
 
@@ -161,12 +161,12 @@ int main(int argc, char *argv[])
   // Set Problem Difficulty Level
   //problem->SetPDL(easy);
 
-  solver.SetAztecOption(AZ_precond, AZ_none);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+  //solver.SetAztecOption(AZ_precond, AZ_none);
+  //solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
   //solver.SetAztecOption(AZ_precond, AZ_ls);
   //solver.SetAztecOption(AZ_scaling, 8);
-  //solver.SetAztecOption(AZ_subdomain_solve, AZ_bilu_ifp); 
+  solver.SetAztecOption(AZ_subdomain_solve, AZ_bilu_ifp); 
   //solver.SetAztecOption(AZ_output, 0);
   //solver.SetAztecOption(AZ_graph_fill, 2);
   //solver.SetAztecOption(AZ_overlap, 1);

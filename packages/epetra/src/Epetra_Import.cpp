@@ -91,7 +91,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
   
   // Define remote and permutation lists
   
-  int * RemoteGIDs;
+  int * RemoteGIDs=0;
   if (NumRemoteIDs_>0) {
     RemoteLIDs_ = new int[NumRemoteIDs_];
     RemoteGIDs = new int[NumRemoteIDs_];
