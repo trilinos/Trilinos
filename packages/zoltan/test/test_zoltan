@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/csh 
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
@@ -23,8 +23,8 @@
 #
 
 # Chaco problems to run
-set ch_name = (simple nograph vwgt ewgt bug grid20x19 film hammond)
-set ch_nproc = (4 4 3 4 3 5 6 8) # no. of procs
+set ch_name = (simple nograph vwgt vwgt2 ewgt bug grid20x19 film hammond)
+set ch_nproc = (4 4 3 2 4 3 5 6 8) # no. of procs
 
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
@@ -357,22 +357,22 @@ if (! $no_chaco ) then
     # Save generic input file 
     if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
+    # Special case for multiweight problems
+    if (${ch_name[1]} == "vwgt2") then
+       if ($pmversion > 2) then
+          set methods = ( partkway-v$pmversion partgeomkway-v$pmversion adaptive-v$pmversion )
+       else
+          set methods = ( )
+       endif
+    else
+       set methods = ( $ch_methods )
+    endif
+
     # Loop over all methods
-    foreach mtd ( $ch_methods )
+    foreach mtd ( $methods )
       # Clear fail flag
       @ fail = 0
-      @ skip = 0
-
-      # EBEB 11/2002: Removed those answer files. Hack below not necessary.
-      # Temporary hack: We know ParMetis2 bombs on nograph, so skip these cases!
-      # if ( (${ch_name[1]} == nograph) && ($pmversion == 2) ) then
-      #    if (($mtd == partkway)  \
-      #        || ($mtd == partkway-cyclic) \
-      #        || ($mtd == partkway-oneproc) \
-      #        || ($mtd == diffusion)) then
-      #       @ skip = 1
-      #    endif
-      # endif
+      @ skip = 0  # Was used to skip certain methods in previous versions.
 
       if (! $skip ) then
 
