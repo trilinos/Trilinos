@@ -711,7 +711,7 @@ int main(int argc, char *argv[])
     
   n *= m;
 
-  Laplace3D A(Comm, n, n, n, m, m, m);
+  Laplace3D A(Comm, n, n, n, m, m, m, true);
   Epetra_Vector LHS(A.OperatorDomainMap());
   Epetra_Vector RHS(A.OperatorDomainMap());
 
@@ -754,8 +754,8 @@ int main(int argc, char *argv[])
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  solver.SetAztecOption(AZ_output, 8);
-  solver.Iterate(500, 1e-7);
+  solver.SetAztecOption(AZ_output, 1);
+  solver.Iterate(500, 1e-10);
 
   delete MLPrec;
   
