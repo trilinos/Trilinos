@@ -1166,8 +1166,8 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	// Sort the eigenvalues, this also sorts the _order vector so we know
 	// which ones we want. 
 	//
-//	cout<<"Before sorting (Hj):"<<endl;
-//	Hj->print();
+	//cout<<"Before sorting (Hj):"<<endl;
+	//Hj->print();
 
 	Sort( true );
 	//
@@ -1182,18 +1182,25 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	int _nevtemp, _nevtemp2, _nevtemp3, _nevtemp4;
 	int extprs, numimag=0;
 	if (_jstart < _nevblock) {
-		_nevtemp = n; _nevtemp2 = n; _nevtemp4 = n;
-	} else {
-		// Count the number of eigenvalues with imaginary parts.
-		for (i=0; i<_nev; i++) { if (_evali[i]!=zero) { numimag++; }; }
-
-		// Use this information to determine how many pairs we have (conjprs)
-		// and if there is a pair off the end of the _nev eigenvalues (extprs).
-		extprs = numimag % 2;
-		_nevtemp = _nevblock*_block; _nevtemp2 = _nev; _nevtemp4 = _nevtemp + extprs;
-	}		
+                _nevtemp = n; _nevtemp2 = n; _nevtemp4 = n;
+        } else {
+                _nevtemp = _nevblock*_block; _nevtemp2 = _nev;
+                        
+                // Count the number of eigenvalues with imaginary parts.
+                for (i=0; i<_nevtemp; i++) { if (_evali[i]!=zero) { numimag++; }; }
+                        
+                // Use this information to determine how many pairs we have (conjprs)
+                // and if there is a pair off the end of the _nev eigenvalues (extprs).
+                extprs = numimag % 2;
+                        
+                // So how many eigenvalues do we need to pay attention to, including all     
+                // the conjugate pairs?
+                _nevtemp4 = _nevtemp + extprs;
+        }
 	
 	char * compq = "V";
+	TYPE tempimagprt = 0;
+	int tempimagindx = 0;
 	int *offset = new int[ _nevtemp4 ]; assert(offset);
 	int *_order2 = new int[ _nevtemp4 ]; assert(_order2);
 	i = 0; _nevtemp3 = 0;
@@ -1219,10 +1226,10 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		lapack.TREXC( *compq, n, ptr_hj, ldhj, ptr_q, ldq, _order2[i]+1+offset[i], 
 				1, work, &info );
 		assert(info==0);
-//		cout<<"Moving "<<_order2[i]+offset[i]<<" to "<<1<<endl;
+	//	cout<<"Moving "<<_order2[i]+offset[i]<<" to "<<1<<endl;
 	}
-//	cout<<"After sorting and reordering (Hj):"<<endl;
-//	Hj->print();
+	//cout<<"After sorting and reordering (Hj):"<<endl;
+	//Hj->print();
 	//
 	// Check the residual error for the Krylov-Schur decomposition.
 	// The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
@@ -1248,12 +1255,17 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	blas.GEMM( *trans, *trans, _block, _nevtemp, _block, one, ptr_sbh, ld_sbh, 
 		ptr_sbq, ld_sbq, zero, ptr_sbb, _block );
 	AnasaziDenseMatrix<TYPE> sub_block_b2(sub_block_b, 0, 0, _block, _nevtemp2);
-	AnasaziDenseMatrix<TYPE> sub_block_h(*_hessmatrix,0,0, _nevtemp, _nevtemp );
-	//
-	//  Compute approximate ritzresiduals for each eigenvalue
-	//		
-	TYPE _scalefactor = sub_block_h.getfronorm();
-	_schurerror = sub_block_b2.getfronorm()/_scalefactor;
+        //
+        //  Compute approximate ritzresiduals for each eigenvalue using an approximate
+        //  2-norm to scale.
+        //
+        TYPE temp, _scalefactor = lapack.LAPY2(_evalr[0],_evali[0]);
+        for (i=1; i<_nevtemp; i++) {
+                temp = lapack.LAPY2(_evalr[i],_evali[i]);
+                if (temp > _scalefactor) _scalefactor = temp;
+        }
+        _scalefactor = sqrt(_scalefactor);
+        _schurerror = sub_block_b2.getfronorm()/_scalefactor;
 	//
 	// ------------>  NOT SURE IF RITZRESIDUALS CAN BE UPDATED AFTER DEFLATION!
 	//
@@ -1433,30 +1445,40 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 			// a conjugate pair.
 			//
 			if (indexi[conjprs-1]==_nev) {
-			    // Set conjugate part of imaginary eigenvectors first.
-			    evecstempi = evecstemp->CloneView( indexi, conjprs-1 );
-			    eveci1 = _eveci->CloneView( indexi, conjprs-1 );
-			    eveci1->MvAddMv( -one, *evecstempi, zero, *evecstempi );
+                            // Set conjugate part of imaginary eigenvectors first.
+                            for (i=0; i<conjprs-1; i++) {
+				evecstempi = evecstemp->CloneView( indexi+i, 1 );
+				eveci1 = _eveci->CloneView( indexi+i, 1 );
+				eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
+				    *evecstempi, zero, *evecstempi );
 
-	    		    // Now set non-conjugate part of imaginary eigenvectors.
-			    evecstempi = evecstemp->CloneView( indexi, conjprs );    
+				// Change index and set non-conjugate part of imaginary eigenvalue
+				indexi[i]--;
+				eveci1 = _eveci->CloneView( indexi+i, 1 );
+				eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
+				    *evecstempi, zero, *evecstempi );			
+			    }
 
-			    // Change indexi to obtain previous eigenvectors imaginary part.
-			    for (i=0; i<conjprs; i++) { indexi[i]--; }
-
-			    eveci1 = _eveci->CloneView( indexi, conjprs );
-			    eveci1->MvAddMv( one, *evecstempi, zero, *evecstempi );
+			    // Set imaginary part of last eigenvector now.
+                            indexi[0] = indexi[conjprs-1]-1;
+                            evecstempi = evecstemp->CloneView( indexi+(conjprs-1), 1 );
+                            eveci1 = _eveci->CloneView( indexi, 1 );
+                            eveci1->MvAddMv( abs(_evali[indexi[0]])/_evali[indexi[0]],
+                                                *evecstempi, zero, *evecstempi );
+			    
 			} else {
-			    // Set conjugate part of imaginary eigenvectors first.
-			    evecstempi = evecstemp->CloneView( indexi, conjprs );
-			    eveci1 = _eveci->CloneView( indexi, conjprs );
-			    eveci1->MvAddMv( -one, *evecstempi, zero, *evecstempi );
-
-			    // Change indexi to obtain previous eigenvectors imaginary part.
-			    for (i=0; i<conjprs; i++) { indexi[i]--; }
-
-			    eveci1 = _eveci->CloneView( indexi, conjprs );
-			    eveci1->MvAddMv( one, *evecstempi, zero, *evecstempi );
+                            for (i=0; i<conjprs; i++) {
+                                evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
+                                eveci1 = _eveci->CloneView( indexi+i, 1 );
+                                eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
+                                                *evecstempi, zero, *evecstempi );
+                                // Change index and set non-conjugate part of imag eigenvector.
+                                indexi[i]--;
+                                eveci1 = _eveci->CloneView( indexi+i, 1 );
+                                eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
+                                                *evecstempi, zero, *evecstempi );
+                            }
+			    
 			}				    
 	
 			// Clean up.
