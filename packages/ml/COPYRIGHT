@@ -1,11 +1,12 @@
-#@HEADER
 # ************************************************************************
 #
 #               ML: A Multilevel Preconditioner Package
-#                 Copyright (2002) Sandia Corporation
+#                 Copyright (2001) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
+# Export of this program may require a license from the United States
+# Government.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,11 +22,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro 
-# (rstumin@sandia.gov).
+# Questions? Contact Jonathan Hu or Ray Tuminaro ({jhu|rstumin}@sandia.gov).
 #
 # ************************************************************************
-#@HEADER
+
+###############################################################################
+# CVS File Information
+#    Current revision: $Revision$
+#    Branch:           $Branch$
+#    Last modified:    $Date$
+#    Modified by:      $Author$
+###############################################################################
 
 NOTICE
 
@@ -35,6 +42,23 @@ the University of California, Lawrence Livermore National Laboratory
 U.S. Department of Energy.  The rights of the Federal Government 
 are reserved subject to the restrictions agreed upon by the DOE 
 and the labs as allowed under DOE Acquisition Letter 97-1.
+
+NOTICE:  The United States Government is granted for itself and others
+acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and
+perform publicly and display publicly.  Beginning five (5) years from
+October 30, 2001, the United States Government is granted for itself and
+others acting on its behalf a paid-up, nonexclusive, irrevocable
+worldwide license in this data to reproduce, prepare derivative works,
+distribute copies to the public, perform publicly and display
+publicly, and to permit others to do so.
+
+NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 
 
 DISCLAIMER
@@ -54,7 +78,6 @@ authors expressed herein do not necessarily state or reflect those of
 the United States Government or the laboratories, and shall not be used 
 for advertising or product endorsement purposes.
 
-
 NOTIFICATION OF COMMERCIAL USE
 
 Commercialization of this product is prohibited without notifying the
@@ -66,15 +89,15 @@ DEVELOPERS
 
 Ray Tuminaro 
 Sandia National Laboratory
-MS 9217, P.O. Box 969 
-7001 East Avenue, Livermore CA 94550
+P.O. Box 969, MS 9519
+7001 East Avenue, Livermore CA 94551-0969
 Tel : (925) 294-2564
 Email : tuminaro@ca.sandia.gov
 
 Jonathan Hu 
 Sandia National Laboratory
-MS 9217, P.O. Box 969 
-7001 East Avenue, Livermore CA 94550
+P.O. Box 969, MS 9519
+7001 East Avenue, Livermore CA 94551-0969
 Tel : (925) 294-2931
 Email : jhu@sandia.gov
 
