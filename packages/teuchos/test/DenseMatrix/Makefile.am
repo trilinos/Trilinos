@@ -46,6 +46,8 @@ DenseMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-DenseMatrix_test_LDADD = $(top_builddir)/src/libteuchos.a $(BLAS_LIBS) $(LIBS) $(FLIBS)
+DenseMatrix_test_LDADD = \
+	$(top_builddir)/src/libteuchos.a \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 

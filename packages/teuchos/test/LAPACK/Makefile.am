@@ -36,6 +36,7 @@ LAPACK_test_DEPENDENCIES =
 
 LAPACK_test_CXXFLAGS = -I$(top_srcdir)/src
 
-LAPACK_test_LDADD = $(BLAS_LIBS) $(LIBS) $(FLIBS)
+LAPACK_test_LDADD = \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 
