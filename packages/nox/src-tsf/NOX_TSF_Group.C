@@ -38,17 +38,14 @@ NOX::TSF::Group::Group(const TSFExtended::Vector<double>& initcond,
                        const TSFExtended::NonlinearOperator<double>& nonlinOp,
                        const TSFExtended::LinearSolver<double>& linsolver) 
   :
-  xVector(initcond,DeepCopy),
-  fVector(xVector,ShapeCopy),
-  newtonVector(xVector,ShapeCopy),
-  gradientVector(xVector,ShapeCopy),
+  precision(3),  // 3 digits of accuracy is default
+  xVector(initcond, precision, DeepCopy),
+  fVector(xVector, precision, ShapeCopy),
+  newtonVector(xVector, precision, ShapeCopy),
+  gradientVector(xVector, precision, ShapeCopy),
   solver(linsolver),
   jacobian(),
   nonlinearOp(nonlinOp),
-  isValidF(false),
-  isValidJacobian(false),
-  isValidGradient(false),
-  isValidNewton(false),
   normF(0.0)
 {  
   nonlinearOp.setEvalPt(xVector.getTSFVector());
@@ -58,17 +55,51 @@ NOX::TSF::Group::Group(const TSFExtended::Vector<double>& initcond,
 NOX::TSF::Group::Group(const TSFExtended::NonlinearOperator<double>& nonlinOp,
                        const TSFExtended::LinearSolver<double>& linsolver) 
   :
-  xVector(nonlinOp.getInitialGuess(),DeepCopy),
-  fVector(xVector,ShapeCopy),
-  newtonVector(xVector,ShapeCopy),
-  gradientVector(xVector,ShapeCopy),
+  precision(3), // 3 digits of accuracy is default
+  xVector(nonlinOp.getInitialGuess(), precision, DeepCopy),
+  fVector(xVector, precision, ShapeCopy),
+  newtonVector(xVector, precision, ShapeCopy),
+  gradientVector(xVector, precision, ShapeCopy),
   solver(linsolver),
   jacobian(),
   nonlinearOp(nonlinOp),
-  isValidF(false),
-  isValidJacobian(false),
-  isValidGradient(false),
-  isValidNewton(false),
+  normF(0.0)
+{  
+  nonlinearOp.setEvalPt(xVector.getTSFVector());
+  resetIsValid();
+}
+
+NOX::TSF::Group::Group(const TSFExtended::Vector<double>& initcond, 
+                       const TSFExtended::NonlinearOperator<double>& nonlinOp,
+                       const TSFExtended::LinearSolver<double>& linsolver,
+                       int numdigits) 
+  :
+  precision(numdigits),
+  xVector(initcond, precision, DeepCopy),
+  fVector(xVector, precision, ShapeCopy),
+  newtonVector(xVector, precision, ShapeCopy),
+  gradientVector(xVector, precision, ShapeCopy),
+  solver(linsolver),
+  jacobian(),
+  nonlinearOp(nonlinOp),
+  normF(0.0)
+{  
+  nonlinearOp.setEvalPt(xVector.getTSFVector());
+  resetIsValid();
+}
+
+NOX::TSF::Group::Group(const TSFExtended::NonlinearOperator<double>& nonlinOp,
+                       const TSFExtended::LinearSolver<double>& linsolver,
+                       int numdigits) 
+  :
+  precision(numdigits),
+  xVector(nonlinOp.getInitialGuess(), precision, DeepCopy),
+  fVector(xVector, precision, ShapeCopy),
+  newtonVector(xVector, precision, ShapeCopy),
+  gradientVector(xVector, precision, ShapeCopy),
+  solver(linsolver),
+  jacobian(),
+  nonlinearOp(nonlinOp),
   normF(0.0)
 {  
   nonlinearOp.setEvalPt(xVector.getTSFVector());
@@ -76,12 +107,12 @@ NOX::TSF::Group::Group(const TSFExtended::NonlinearOperator<double>& nonlinOp,
 }
 
 
-
 NOX::TSF::Group::Group(const NOX::TSF::Group& source, NOX::CopyType type) :
-  xVector(source.xVector, type), 
-  fVector(source.fVector, type),  
-  newtonVector(source.newtonVector, type),
-  gradientVector(source.gradientVector, type),
+  precision(source.precision),
+  xVector(source.xVector, precision, type), 
+  fVector(source.fVector, precision, type),  
+  newtonVector(source.newtonVector, precision, type),
+  gradientVector(source.gradientVector, precision, type),
   solver(source.solver),
   jacobian(source.jacobian),
   nonlinearOp(source.nonlinearOp),
@@ -147,6 +178,7 @@ NOX::Abstract::Group& NOX::TSF::Group::operator=(const NOX::TSF::Group& source)
     nonlinearOp = source.nonlinearOp;
     solver = source.solver;
     jacobian = source.jacobian;
+    precision = source.precision;
 
     // Update the isValidVectors
     isValidF = source.isValidF;

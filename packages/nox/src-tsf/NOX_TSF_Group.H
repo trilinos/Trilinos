@@ -63,8 +63,8 @@ namespace NOX {
 
       /*! \brief Constructor.
        *
-       * Construct a group given an initial condition and the nonlinear operator that 
-       * describes the problem to be solved.
+       * Construct a group given an initial condition, the nonlinear operator that 
+       * describes the problem to be solved, and the linear solver
        */
       Group(const TSFExtended::Vector<double>& initcond, 
             const TSFExtended::NonlinearOperator<double>& nonlinOp,
@@ -72,11 +72,32 @@ namespace NOX {
 
       /*! \brief Constructor.
        *
-       * Construct a group given an initial condition, the nonlinear operator that 
-       * describes the problem to be solved, and the jacobian object to be shared among all groups.
+       * Construct a group given an initial condition and the nonlinear operator that 
+       * describes the problem to be solved.
        */
       Group(const TSFExtended::NonlinearOperator<double>& nonlinOp,
             const TSFExtended::LinearSolver<double>& solver);
+
+      /*! \brief Constructor.
+       *
+       * Construct a group given an initial condition, the nonlinear operator that 
+       * describes the problem to be solved, the linear solver, and user-specified precision.
+       */
+      Group(const TSFExtended::Vector<double>& initcond, 
+            const TSFExtended::NonlinearOperator<double>& nonlinOp,
+            const TSFExtended::LinearSolver<double>& solver,
+            int numdigits);
+
+      /*! \brief Constructor.
+       *
+       * Construct a group given an initial condition, the nonlinear operator that 
+       * describes the problem to be solved, and user-specified precision.
+       */
+      Group(const TSFExtended::NonlinearOperator<double>& nonlinOp,
+            const TSFExtended::LinearSolver<double>& solver,
+            int numdigits);
+
+
 
 
       /*! \brief Copy constructor
@@ -200,6 +221,9 @@ namespace NOX {
 
     protected:
 
+      //! user-specified precision
+      int precision; 
+      
       /** @name Vectors */
       //@{
       //! Solution vector.
@@ -235,7 +259,6 @@ namespace NOX {
   
       //! Norm of F
       double normF;
-
 
     };
 

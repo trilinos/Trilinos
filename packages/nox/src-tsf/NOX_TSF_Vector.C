@@ -38,11 +38,12 @@
 
 
 NOX::TSF::Vector::Vector(const NOX::TSF::Vector& source, 
-			    NOX::CopyType type)
+			 NOX::CopyType type)
+  :
+  precision(3) // 3 digits of accuracy is default
 {
  switch (type) 
  {
-    
   case NOX::DeepCopy:
     x = source.x.copy();
     break;
@@ -58,7 +59,9 @@ NOX::TSF::Vector::Vector(const NOX::TSF::Vector& source,
 }
 
 NOX::TSF::Vector::Vector(const TSFExtended::Vector<double>& source, 
-			    NOX::CopyType type)
+			 NOX::CopyType type)
+  :
+  precision(3) // 3 digits of accuracy is default
 {
   switch (type) 
  {
@@ -78,6 +81,54 @@ NOX::TSF::Vector::Vector(const TSFExtended::Vector<double>& source,
 }
 
 
+NOX::TSF::Vector::Vector(const NOX::TSF::Vector& source, 
+                         int numdigits,
+			 NOX::CopyType type)
+  :
+  precision(numdigits)
+{
+ switch (type) 
+ {
+    
+  case NOX::DeepCopy:
+    x = source.x.copy();
+    break;
+
+  case NOX::ShapeCopy:
+    x = ((source.x).space()).createMember();
+    break;
+
+  default:
+    cerr << "NOX:TSF::Vector - invalid CopyType for copy constructor." << endl;
+    throw "NOX TSF Error";
+  }
+}
+
+NOX::TSF::Vector::Vector(const TSFExtended::Vector<double>& source, 
+                         int numdigits,
+			 NOX::CopyType type)
+  :
+  precision(numdigits)
+{
+  switch (type) 
+ {
+    
+  case NOX::DeepCopy:
+    x = source.copy();
+    break;
+
+  case NOX::ShapeCopy:
+    x = ((source).space()).createMember();
+    break;
+
+  default:
+    cerr << "NOX:TSF::Vector - invalid CopyType for copy constructor." << endl;
+    throw "NOX TSF Error";
+  }
+}
+
+
+
 TSFExtended::Vector<double>& NOX::TSF::Vector::getTSFVector()
 {
   return x;
@@ -88,6 +139,10 @@ const TSFExtended::Vector<double>& NOX::TSF::Vector::getTSFVector() const
   return x;
 }
 
+int NOX::TSF::Vector::getPrecision() const
+{
+  return precision;
+}
 
 NOX::Abstract::Vector& NOX::TSF::Vector::operator=(
 					   const NOX::Abstract::Vector& source)
@@ -103,21 +158,7 @@ NOX::Abstract::Vector& NOX::TSF::Vector::operator=(
   x = source.getTSFVector().copy();
   return *this;
 }
-
-// void NOX::TSF::Vector::setElement(int i, const double& value)
-// {
-//   return x.setElement(i,value);
-// }
-
-// const double& NOX::TSF::Vector::getElement(int i) const
-// {
-//   return x.getElement(i);
-// }   
-
-//const double& NOX::TSF::Vector::operator() (int i) const
-//{
-//  return x.getElement(i);
-//}  
+  
 
 NOX::Abstract::Vector& NOX::TSF::Vector::init(double value)
 {
@@ -255,7 +296,6 @@ double NOX::TSF::Vector::norm(const NOX::TSF::Vector& weights) const
     throw "NOX::TSF Error";
   }
   return x.norm2(weights.getTSFVector());
-  // change here when TSFExtended gets a weighted 2 norm
 }
 
 double NOX::TSF::Vector::dot(const NOX::Abstract::Vector& y) const
@@ -281,9 +321,12 @@ int NOX::TSF::Vector::length() const
 
 ostream& NOX::TSF::Vector::leftshift(ostream& stream) const
 {
+  int numdigits = this->getPrecision();
+  //if (numdigits==0)
+  //  numdigits=3;
   stream << "[ ";
   for (int i = 0; i < this->length(); i ++) 
-    stream << NOX::Utils::sciformat(x.getElement(i),8)<< " ";
+    stream << NOX::Utils::sciformat(x.getElement(i),numdigits)<< " ";
   stream << "]";
   return stream;
 }

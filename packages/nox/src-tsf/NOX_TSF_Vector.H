@@ -59,10 +59,22 @@ namespace NOX
     public:	
 
       //! Copy constructor 
-      Vector(const NOX::TSF::Vector& source, NOX::CopyType type = DeepCopy);
+      Vector(const NOX::TSF::Vector& source, 
+             NOX::CopyType type = DeepCopy);
 
       //! Copy constructor
-      Vector(const TSFExtended::Vector<double>& source, NOX::CopyType type = DeepCopy);
+      Vector(const TSFExtended::Vector<double>& source, 
+             NOX::CopyType type = DeepCopy);
+
+      //! Copy constructor when user requests specific precision  
+      Vector(const NOX::TSF::Vector& source, 
+             int numdigits, 
+             NOX::CopyType type = DeepCopy);
+
+      //! Copy constructor when user requests specific precision 
+      Vector(const TSFExtended::Vector<double>& source, 
+             int numdigits,
+             NOX::CopyType type = DeepCopy);
 
       /* There's no need to write an explicit dtor for this class, because
        * the TSFExtended vector cleans up its own memory. I've commented out 
@@ -76,6 +88,9 @@ namespace NOX
 
       /** Access to a read-only reference to the underlying TSF vector*/
       const TSFExtended::Vector<double>& NOX::TSF::Vector::getTSFVector() const;
+      /** Access to the vector precision expected by user*/
+      int NOX::TSF::Vector::getPrecision() const;
+
       //@{ \name Initialization methods.
 
       /** Initialize all elements to a constant */
@@ -174,6 +189,10 @@ namespace NOX
       void print() const;
 
     private:
+
+      /** user-specified precision for printing vectors */
+      int precision;
+
       /** The TSF vector owned by this object. */
       TSFExtended::Vector<double> x;
     };
