@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_VBRMATRIX_H_
-#define _EPETRA_VBRMATRIX_H_
+#ifndef EPETRA_VBRMATRIX_H
+#define EPETRA_VBRMATRIX_H
 
 #include <Epetra_DistObject.h> 
 #include <Epetra_CompObject.h> 
@@ -304,13 +304,13 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     int ReplaceDiagonalValues(const Epetra_Vector & Diagonal);
 
     //! Signal that data entry is complete, perform transformations to local index space.
-    /* This version of TransformToLocal assumes that the domain and range distributions are
+    /* This version of FillComplete assumes that the domain and range distributions are
        identical to the matrix row distributions.
     */
-    int TransformToLocal();
+    int FillComplete();
 
     //! Signal that data entry is complete, perform transformations to local index space.
-    /* This version of TransformToLocal requires the explicit specification of the domain
+    /* This version of FillComplete requires the explicit specification of the domain
        and range distribution maps.  These maps are used for importing and exporting vector
        and multi-vector elements that are needed for distributed matrix computations.  For
        example, to compute y = Ax in parallel, we would specify the DomainMap as the distribution
@@ -322,7 +322,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
            RangeMap - Map that describes the distribution of vector and multi-vectors in the
 	               matrix range.
     */
-    int TransformToLocal(const Epetra_BlockMap *DomainMap, const Epetra_BlockMap *RangeMap);
+    int FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
     bool Filled() const {return(Graph_->Filled());};
@@ -1032,9 +1032,15 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
 
-    //! Use BlockColMap() instead. 
+		//! Use BlockColMap() instead. 
     const Epetra_BlockMap & BlockImportMap() const {return(Graph_->ImportMap());};
-  //@}
+
+		//! Use FillComplete() instead.
+		int TransformToLocal();
+		
+		//! Use FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) instead.
+		int TransformToLocal(const Epetra_BlockMap* DomainMap, const Epetra_BlockMap* RangeMap);
+		//@}
 
  protected:
     bool Allocated() const {return(Allocated_);};
@@ -1192,4 +1198,4 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
 };
 
-#endif /* _EPETRA_VBRMATRIX_H_ */
+#endif /* EPETRA_VBRMATRIX_H */

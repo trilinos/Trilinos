@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_DATA_H_
-#define _EPETRA_DATA_H_
+#ifndef EPETRA_DATA_H
+#define EPETRA_DATA_H
 
 //! Epetra_Data:  The Epetra Base Data Class.
 /*! The Epetra_Data class is a base class for all Epetra Data Classes.
@@ -74,7 +74,7 @@ class Epetra_Data {
 	void DecrementReferenceCount();
 
 	//! Get reference count
-	int ReferenceCount();
+	int ReferenceCount() const;
 
 	//@}
 
@@ -82,4 +82,4 @@ class Epetra_Data {
   
 };
 
-#endif /* _EPETRA_DATA_H_ */
+#endif /* EPETRA_DATA_H */

@@ -166,6 +166,7 @@ DIST = \
 COMP_H = \
 	$(srcdir)/Epetra_CompObject.h \
 	$(srcdir)/Epetra_CrsGraph.h \
+	$(srcdir)/Epetra_CrsGraphData.h \
 	$(srcdir)/Epetra_CrsMatrix.h \
 	$(srcdir)/Epetra_LinearProblem.h \
 	$(srcdir)/Epetra_MultiVector.h \
@@ -180,6 +181,7 @@ COMP_H = \
 COMP = \
 	$(srcdir)/Epetra_CompObject.cpp \
 	$(srcdir)/Epetra_CrsGraph.cpp \
+	$(srcdir)/Epetra_CrsGraphData.cpp \
 	$(srcdir)/Epetra_CrsMatrix.cpp \
 	$(srcdir)/Epetra_LinearProblem.cpp \
 	$(srcdir)/Epetra_MultiVector.cpp \

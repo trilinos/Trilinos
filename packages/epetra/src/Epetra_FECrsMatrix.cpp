@@ -184,7 +184,7 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FECrsMatrix::GlobalAssemble(bool callTransformToLocal)
+int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
 {
   if (Map().Comm().NumProc() < 2) {
     return(0);
@@ -210,8 +210,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callTransformToLocal)
   //If sourceMap has global size 0, then no nonlocal data exists and we can
   //skip most of this function.
   if (sourceMap.NumGlobalElements() < 1) {
-    if (callTransformToLocal) {
-      EPETRA_CHK_ERR( TransformToLocal() );
+    if (callFillComplete) {
+      EPETRA_CHK_ERR( FillComplete() );
     }
     return(0);
   }
@@ -262,17 +262,17 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callTransformToLocal)
 					       nonlocalCols_[i]) );
   }
 
-  //Now we need to call TransformToLocal on our temp matrix. We need to
+  //Now we need to call FillComplete on our temp matrix. We need to
   //pass a DomainMap and RangeMap, which are not the same as the RowMap
   //and ColMap that we constructed the matrix with.
-  EPETRA_CHK_ERR( tempMat.TransformToLocal(&(RowMap()), &sourceMap ) );
+  EPETRA_CHK_ERR(tempMat.FillComplete(RowMap(), sourceMap));
 
   Epetra_Export exporter(sourceMap, RowMap());
 
-  EPETRA_CHK_ERR( Export(tempMat, exporter, Add) );
+  EPETRA_CHK_ERR(Export(tempMat, exporter, Add));
 
-  if (callTransformToLocal) {
-    EPETRA_CHK_ERR( TransformToLocal() );
+  if(callFillComplete) {
+    EPETRA_CHK_ERR(FillComplete());
   }
 
   //now reset the values in our nonlocal data

@@ -259,6 +259,7 @@ DIST = \
 COMP_H = \
 	$(srcdir)/Epetra_CompObject.h \
 	$(srcdir)/Epetra_CrsGraph.h \
+	$(srcdir)/Epetra_CrsGraphData.h \
 	$(srcdir)/Epetra_CrsMatrix.h \
 	$(srcdir)/Epetra_LinearProblem.h \
 	$(srcdir)/Epetra_MultiVector.h \
@@ -274,6 +275,7 @@ COMP_H = \
 COMP = \
 	$(srcdir)/Epetra_CompObject.cpp \
 	$(srcdir)/Epetra_CrsGraph.cpp \
+	$(srcdir)/Epetra_CrsGraphData.cpp \
 	$(srcdir)/Epetra_CrsMatrix.cpp \
 	$(srcdir)/Epetra_LinearProblem.cpp \
 	$(srcdir)/Epetra_MultiVector.cpp \
@@ -401,9 +403,10 @@ am__objects_5 = Epetra_BasicDirectory.$(OBJEXT) \
 	Epetra_Import.$(OBJEXT) Epetra_LocalMap.$(OBJEXT) \
 	Epetra_Map.$(OBJEXT) Epetra_MapColoring.$(OBJEXT)
 am__objects_6 = Epetra_CompObject.$(OBJEXT) Epetra_CrsGraph.$(OBJEXT) \
-	Epetra_CrsMatrix.$(OBJEXT) Epetra_LinearProblem.$(OBJEXT) \
-	Epetra_MultiVector.$(OBJEXT) Epetra_VbrMatrix.$(OBJEXT) \
-	Epetra_Vector.$(OBJEXT) Epetra_CrsSingletonFilter.$(OBJEXT) \
+	Epetra_CrsGraphData.$(OBJEXT) Epetra_CrsMatrix.$(OBJEXT) \
+	Epetra_LinearProblem.$(OBJEXT) Epetra_MultiVector.$(OBJEXT) \
+	Epetra_VbrMatrix.$(OBJEXT) Epetra_Vector.$(OBJEXT) \
+	Epetra_CrsSingletonFilter.$(OBJEXT) \
 	Epetra_FECrsMatrix.$(OBJEXT) Epetra_FEVbrMatrix.$(OBJEXT) \
 	Epetra_FEVector.$(OBJEXT) Epetra_IntVector.$(OBJEXT)
 am__objects_7 = Epetra_MpiComm.$(OBJEXT) Epetra_MpiCommData.$(OBJEXT) \
@@ -432,6 +435,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_BlockMapData.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_CompObject.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_CrsGraph.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Epetra_CrsGraphData.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_CrsMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_CrsSingletonFilter.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_Data.Po \
@@ -585,6 +589,7 @@ Epetra_Map.$(OBJEXT): $(srcdir)/Epetra_Map.cpp
 Epetra_MapColoring.$(OBJEXT): $(srcdir)/Epetra_MapColoring.cpp
 Epetra_CompObject.$(OBJEXT): $(srcdir)/Epetra_CompObject.cpp
 Epetra_CrsGraph.$(OBJEXT): $(srcdir)/Epetra_CrsGraph.cpp
+Epetra_CrsGraphData.$(OBJEXT): $(srcdir)/Epetra_CrsGraphData.cpp
 Epetra_CrsMatrix.$(OBJEXT): $(srcdir)/Epetra_CrsMatrix.cpp
 Epetra_LinearProblem.$(OBJEXT): $(srcdir)/Epetra_LinearProblem.cpp
 Epetra_MultiVector.$(OBJEXT): $(srcdir)/Epetra_MultiVector.cpp
@@ -618,6 +623,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_BlockMapData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CompObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CrsGraph.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CrsGraphData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CrsSingletonFilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_Data.Po@am__quote@
@@ -1019,6 +1025,18 @@ Epetra_CrsGraph.obj: $(srcdir)/Epetra_CrsGraph.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CrsGraph.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsGraph.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsGraph.obj `cygpath -w $(srcdir)/Epetra_CrsGraph.cpp`
+
+Epetra_CrsGraphData.o: $(srcdir)/Epetra_CrsGraphData.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsGraphData.cpp' object='Epetra_CrsGraphData.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CrsGraphData.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsGraphData.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsGraphData.o `test -f '$(srcdir)/Epetra_CrsGraphData.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_CrsGraphData.cpp
+
+Epetra_CrsGraphData.obj: $(srcdir)/Epetra_CrsGraphData.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsGraphData.cpp' object='Epetra_CrsGraphData.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CrsGraphData.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsGraphData.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsGraphData.obj `cygpath -w $(srcdir)/Epetra_CrsGraphData.cpp`
 
 Epetra_CrsMatrix.o: $(srcdir)/Epetra_CrsMatrix.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsMatrix.cpp' object='Epetra_CrsMatrix.o' libtool=no @AMDEPBACKSLASH@

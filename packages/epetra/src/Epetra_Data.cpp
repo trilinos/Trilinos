@@ -46,6 +46,6 @@ void Epetra_Data::DecrementReferenceCount() {
 }
 
 //=============================================================================
-int Epetra_Data::ReferenceCount() {
+int Epetra_Data::ReferenceCount() const {
 		return(ReferenceCount_);
 }

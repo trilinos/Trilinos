@@ -534,18 +534,18 @@ int Epetra_VbrMatrix::EndInsertValues() {
   int * ValidBlockIndices = new int[CurNumBlockEntries_];
   for( j=0; j < CurNumBlockEntries_; ++j ) ValidBlockIndices[j] = j;
     
-  if( Graph_->ColMap_ ) { //test and discard indices not in ColMap
+  if( Graph_->HaveColMap() ) { //test and discard indices not in ColMap
     NumValidBlockIndices = 0;
     if( CurIndicesAreLocal_ ) {
       for( j = 0; j < CurNumBlockEntries_; ++j ) {
-        if( Graph_->ColMap_->MyLID( CurBlockIndices_[j] ) )
+        if( Graph_->ColMap().MyLID( CurBlockIndices_[j] ) )
           ValidBlockIndices[ NumValidBlockIndices++ ] = j;
         else ierr=2; // Discarding a Block not found in ColMap
       }
     }
     else {
       for( j = 0; j < CurNumBlockEntries_; ++j ) {
-        if( Graph_->ColMap_->MyGID( CurBlockIndices_[j] ) )
+        if( Graph_->ColMap().MyGID( CurBlockIndices_[j] ) )
           ValidBlockIndices[ NumValidBlockIndices++ ] = j;
         else ierr=2; // Discarding a Block not found in ColMap
       }
@@ -619,22 +619,33 @@ int Epetra_VbrMatrix::CopyMat(double * A, int LDA, int NumRows, int NumCols,
   return(0);
 }
 //==========================================================================
-int Epetra_VbrMatrix::TransformToLocal() {
-  EPETRA_CHK_ERR(TransformToLocal((Epetra_BlockMap *) (&RowMap()), (Epetra_BlockMap *) (&RowMap())));
+int Epetra_VbrMatrix::FillComplete() {
+  EPETRA_CHK_ERR(FillComplete(RowMap(), RowMap()));
   return(0);
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::TransformToLocal(const Epetra_BlockMap *DomainMap, const Epetra_BlockMap *RangeMap) {
-  
-  if (!StaticGraph()) EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(*DomainMap, *RangeMap));
+int Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) { 
+  if(!StaticGraph()) 
+		EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(DomainMap, RangeMap));
   SortEntries();  // Sort column entries from smallest to largest
   MergeRedundantEntries(); // Get rid of any redundant index values
-  if (!StaticGraph()) EPETRA_CHK_ERR(Graph_->TransformToLocal(DomainMap, RangeMap));
+  if(!StaticGraph()) 
+		EPETRA_CHK_ERR(Graph_->FillComplete(DomainMap, RangeMap));
 
   // NumMyCols_ = Graph_->NumMyCols(); // Redefine based on local number of cols
 
   return(0);
+}
+
+//==========================================================================
+int Epetra_VbrMatrix::TransformToLocal() {
+	return(FillComplete());
+}
+
+//==========================================================================
+int Epetra_VbrMatrix::TransformToLocal(const Epetra_BlockMap* DomainMap, const Epetra_BlockMap* RangeMap) {
+	return(FillComplete(*DomainMap, *RangeMap));
 }
 
 //==========================================================================

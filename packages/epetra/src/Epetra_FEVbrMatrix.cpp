@@ -125,11 +125,11 @@ int Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FEVbrMatrix::GlobalAssemble(bool callTransformToLocal) 
+int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete) 
 {
-  if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
-    if (callTransformToLocal) {
-      EPETRA_CHK_ERR( TransformToLocal() );
+  if(Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
+    if(callFillComplete) {
+      EPETRA_CHK_ERR(FillComplete());
     }
 
     return(0);
@@ -163,9 +163,9 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callTransformToLocal)
 
   //If sourceMap has global size 0, then no nonlocal data exists and we can
   //skip most of this function.
-  if (sourceMap.NumGlobalElements() < 1) {
-    if (callTransformToLocal) {
-      EPETRA_CHK_ERR( TransformToLocal() );
+  if(sourceMap.NumGlobalElements() < 1) {
+    if(callFillComplete) {
+      EPETRA_CHK_ERR(FillComplete());
     }
     return(0);
   }
@@ -237,10 +237,10 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callTransformToLocal)
     EPETRA_CHK_ERR( tempMat.EndSubmitEntries() );
   }
 
-  //Now we need to call TransformToLocal on our temp matrix. We need to
+  //Now we need to call FillComplete on our temp matrix. We need to
   //pass a DomainMap and RangeMap, which are not the same as the RowMap
   //and ColMap that we constructed the matrix with.
-  EPETRA_CHK_ERR( tempMat.TransformToLocal(&(RowMap()), &sourceMap ) );
+  EPETRA_CHK_ERR(tempMat.FillComplete(RowMap(), sourceMap));
 
   //Finally, we're ready to create the exporter and export non-local data to
   //the appropriate owning processors.
@@ -249,8 +249,8 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callTransformToLocal)
 
   EPETRA_CHK_ERR( Export(tempMat, exporter, Add) );
 
-  if (callTransformToLocal) {
-    EPETRA_CHK_ERR( TransformToLocal() );
+  if(callFillComplete) {
+    EPETRA_CHK_ERR(FillComplete());
   }
 
   destroyNonlocalData();

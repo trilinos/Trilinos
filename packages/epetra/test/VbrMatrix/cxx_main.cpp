@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
   
   // Finish up
   EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
-  EPETRA_TEST_ERR(!(A.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(A.FillComplete()==0),ierr);
   EPETRA_TEST_ERR(!(A.IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR(A.StorageOptimized(),ierr);
   // A.OptimizeStorage();
@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
       }
     EPETRA_TEST_ERR(forierr,ierr);
     // Finish up
-    EPETRA_TEST_ERR(!(A1.TransformToLocal()==0),ierr);
+    EPETRA_TEST_ERR(!(A1.FillComplete()==0),ierr);
     
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;
@@ -845,7 +845,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   }
 
   //we're going to insert each row twice, with coef values of 0.5. So after
-  //TransformToLocal, which internally calls MergeRedundantEntries, the
+  //FillComplete, which internally calls MergeRedundantEntries, the
   //matrix should contain 1.0 in each entry.
 
   for(i=myFirstRow; i<=myLastRow; ++i) {
@@ -859,7 +859,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
     EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
   }
 
-  EPETRA_TEST_ERR( A.TransformToLocal(), ierr);
+  EPETRA_TEST_ERR( A.FillComplete(), ierr);
 
   delete [] coef;
 
@@ -908,7 +908,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
     EPETRA_TEST_ERR( Aview.EndSubmitEntries(), ierr);
   }
 
-  EPETRA_TEST_ERR( Aview.TransformToLocal(), ierr);
+  EPETRA_TEST_ERR( Aview.FillComplete(), ierr);
 
   //So the test appears to have passed for the original matrix A. Now check the
   //values of our second "view" of the matrix, 'Aview'.
@@ -998,7 +998,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
     EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
   }
 
-  EPETRA_TEST_ERR( A.TransformToLocal(), ierr);
+  EPETRA_TEST_ERR( A.FillComplete(), ierr);
 
   delete [] coef;
   delete [] myCols;

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_FEVBRMATRIX_H_
-#define _EPETRA_FEVBRMATRIX_H_
+#ifndef EPETRA_FEVBRMATRIX_H
+#define EPETRA_FEVBRMATRIX_H
 
 #include <Epetra_VbrMatrix.h>
 #include <Epetra_SerialDenseMatrix.h>
@@ -165,7 +165,7 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 
     int EndSubmitEntries();
 
-    int GlobalAssemble(bool callTransformToLocal=true);
+    int GlobalAssemble(bool callFillComplete=true);
 
  private:
     int SetupForNonlocalSubmits(int BlockRow,
@@ -204,4 +204,4 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
     int curMode_;
 };
 
-#endif /* _EPETRA_FEVBRMATRIX_H_ */
+#endif /* EPETRA_FEVBRMATRIX_H */

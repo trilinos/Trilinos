@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_FECRSMATRIX_H_
-#define _EPETRA_FECRSMATRIX_H_
+#ifndef EPETRA_FECRSMATRIX_H
+#define EPETRA_FECRSMATRIX_H
 
 #include <Epetra_CrsMatrix.h>
 class Epetra_Map;
@@ -44,7 +44,7 @@ class Epetra_Map;
     onto the owning processors as determined by the map provided at
     construction. Users should note that the GlobalAssemble() method has an
     optional argument which determines whether GlobalAssemble() in turn calls
-    TransformToLocal() after the data-exchange has occurred. If not explicitly
+		FillComplete() after the data-exchange has occurred. If not explicitly
     supplied, this argument defaults to true.
     </ul>
 
@@ -244,13 +244,13 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
       This is a collective method -- every processor must enter it before any
       will complete it.
 
-      @param callTransformToLocal option argument, defaults to true.
+      @param callFillComplete option argument, defaults to true.
         Determines whether GlobalAssemble() internally calls the
-        TransformToLocal() method on this matrix.
+        FillComplete() method on this matrix.
 
       @return error-code 0 if successful, non-zero if some error occurs
    */
-   int GlobalAssemble(bool callTransformToLocal=true);
+   int GlobalAssemble(bool callFillComplete=true);
 
    /** Set whether or not non-local data values should be ignored.
     */
@@ -297,4 +297,4 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    bool ignoreNonLocalEntries_;
 };//class Epetra_FECrsMatrix
 
-#endif //_EPETRA_FECRSMATRIX_H_
+#endif /* EPETRA_FECRSMATRIX_H */
