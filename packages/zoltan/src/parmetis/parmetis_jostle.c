@@ -532,7 +532,10 @@ static int LB_ParMetis_Jostle(
     if (num_border > num_obj) num_border = num_obj;
      
     /* Assume that the edges are approx. evenly distributed among the objs. */
-    max_proc_list_len = num_edges * num_border / num_obj + 1;
+    if (num_obj>0)
+       max_proc_list_len = num_edges * num_border / num_obj;
+    else
+       max_proc_list_len = 0;
     
     /* Allocate edge list data */
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
@@ -542,7 +545,7 @@ static int LB_ParMetis_Jostle(
     plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
-        (!proc_list) || (!plist)){
+        (max_proc_list_len && !proc_list) || (!plist)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -1113,8 +1116,8 @@ char *val)                      /* value of variable */
           }
         }
       }
-      else if (strcmp(name, "SCALED_WEIGHT_MAX") != 0){
-        /* All parameters but SCALED_WEIGHT_MAX must be non-negative */
+      else {
+        /* All integer parameters should be non-negative */
         if (result.ival < 0)
           status = 2; 
       }
