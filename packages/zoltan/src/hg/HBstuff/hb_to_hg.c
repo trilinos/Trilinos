@@ -49,7 +49,9 @@ main (int argc, char *argv[])
        if  ((colstart[column+1] - colstart[column]) < 2)
           {
           single++;
+#ifdef REMOVE_ONE_NODE_HYPEREDGES
           continue;  /* surpress self edges */
+#endif /* REMOVE_ONE_NODE_HYPEREDGES */
           }
        nEdge++;
 
