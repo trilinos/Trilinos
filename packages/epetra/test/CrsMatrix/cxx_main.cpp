@@ -682,7 +682,10 @@ delete [] Indices2;
 
 /* end main
 */
-return ierr ;
+if (ierr >= 0)
+  return 0; //Test Harness requires a return code of 0 to indicate "pass".
+else 
+  return ierr;
 }
 
 int power_method(bool TransA, Epetra_CrsMatrix& A, Epetra_Vector& q, Epetra_Vector& z, 
