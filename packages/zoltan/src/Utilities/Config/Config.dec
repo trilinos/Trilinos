@@ -46,5 +46,5 @@ PARMETIS_INCPATH 	= -I../../ParMETIS2
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/project/seacas/current/lib
-NEMESIS_INCPATH		= -I/project/seacas/current/inc
+NEMESIS_LIBPATH		= -L/projects/seacas/current/lib
+NEMESIS_INCPATH		= -I/projects/seacas/current/inc
