@@ -319,6 +319,7 @@ static int rcb_fn(
   double weighthi[RB_MAX_WGTS];     /* weight of upper side of cut */
   double weightlo_best[RB_MAX_WGTS];     /* temp weightlo */
   double weighthi_best[RB_MAX_WGTS];     /* temp weighthi */
+  double wgtscale[RB_MAX_WGTS];     /* weight scaling factors */
   double fraclo[RB_MAX_WGTS];       /* desired weight in lower half */
   int *dotlist = NULL;              /* list of dots used only in find_median;
                                        allocated above find_median for 
@@ -504,15 +505,26 @@ static int rcb_fn(
     wgtflag = 1;
     for (i = 0; i < dotnum; i++) dotpt[i].Weight[0] = 1.0;
     weightlo[0] = (double) dotnum;
+    wgtscale[0]= 1.0;
   }
   else {
+    /* put sum of weights in weightlo */
     for (j=0; j<wgtflag; j++) weightlo[j] = 0.0;
     for (i=0; i < dotnum; i++){
       for (j=0; j<wgtflag; j++)
         weightlo[j] += dotpt[i].Weight[j];
     }
   }
+  /* Let weight be the global sum of all weights. */
   MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+
+  /* Set weight scaling factors. */
+  for (j=0; j<wgtdim; j++){
+    if (obj_wgt_comp || (weight[j]==0.0))
+      wgtscale[j] = 1.0;
+    else
+      wgtscale[j] = 1.0/weight[j]; /* normalize to make sum 1.0 */
+  }
 
   if (check_geom) {
     ierr = Zoltan_RB_check_geom_input(zz, dotpt, dotnum);
@@ -645,6 +657,7 @@ static int rcb_fn(
 
     /* try all cut directions and pick best one. */
     breakflag= 0;
+    dim_best = -1;
     norm_best = -1.;
     one_cut_dir = (wgtflag<=1) || lock_direction || preset_dir;
     if (!one_cut_dir){
@@ -681,7 +694,8 @@ static int rcb_fn(
       for (i = 0; i < dotnum; i++) {
         coord[i] = dotpt[i].X[dim];
         for (j=0; j<wgtflag; j++){
-          wgts[i*wgtflag+j] = dotpt[i].Weight[j];
+          /* use the scaled weights. */
+          wgts[i*wgtflag+j] = wgtscale[j]*dotpt[i].Weight[j];
         }
       }
   
@@ -726,6 +740,9 @@ static int rcb_fn(
         }
 
         /* test for better balance */
+        printf("[%1d] Debug: dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f\n", 
+          proc, dim, norm_max, dim_best, norm_best);
+
         if ((!one_cut_dir) && 
             ((norm_max < norm_best) || (norm_best<0.))){
           norm_best = norm_max; 
@@ -752,7 +769,7 @@ static int rcb_fn(
       for (j=0; j<dotnum; j++)
         dotmark[j] = dotmark_best[j];
       valuehalf = valuehalf_best;
-      /* free temp data (EBEB: reuse for serial_rcb?) */
+      /* free temp arrays */
       ZOLTAN_FREE(&dotmark0);
       ZOLTAN_FREE(&dotmark_best);
     }
@@ -984,7 +1001,7 @@ static int rcb_fn(
     treept[0].dim = -1;
   }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  /* if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) */
     print_rcb_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);

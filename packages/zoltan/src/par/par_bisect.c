@@ -420,9 +420,13 @@ int Zoltan_RB_find_bisector(
     weight[j] = wtsum[j];
   }
 
-  /* Scaling. If weights aren't comparable, set scale vectors
+  /*********************************************************************************
+     EBEB 2004/06/07: 
+     This scaling should only be done once in RCB, not inside the bisection routine!
+
+     Scaling. If weights aren't comparable, set scale vectors
      such as to normalize the sum of weights to one.
-     Note that we don't scale the weights, only the inner products. */
+     Note that we don't scale the weights, only the inner products. 
   if (!obj_wgt_comparable){
     for (j=0; j<nwgts; j++){
       if (wtsum[j]>0) 
@@ -431,6 +435,7 @@ int Zoltan_RB_find_bisector(
         scalehi[j] /= wtsum[j];
     }
   }
+  **************************************************************************************/
 
   /* weightlo/hi = total weight in non-active parts of partition */
   for (j=0; j<nwgts; j++)
