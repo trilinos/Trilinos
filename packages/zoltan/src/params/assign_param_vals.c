@@ -32,7 +32,6 @@ PARAM_VARS * params)		/* structure describing parameters */
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter */
     int       found;		/* is name found? */
-    int       i;		/* loop counter */
     PARAM_VARS *param_ptr;       /* pointer to current param */
 
     while (change_list != NULL) {
@@ -51,7 +50,8 @@ PARAM_VARS * params)		/* structure describing parameters */
 
 	if (found) {		/* name found */
 	    /* Figure out what type it is and read value. */
-	    if (!strcmp(param_ptr->type, "INT") || !strcmp(param_ptr->type, "INTEGER")) {
+	    if (!strcmp(param_ptr->type, "INT") || 
+                !strcmp(param_ptr->type, "INTEGER")) {
 		/* First special case if True or False */
 		if (*val == 'T')
 		    *((int *) param_ptr->ptr) = 1;
