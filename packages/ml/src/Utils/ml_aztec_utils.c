@@ -1197,7 +1197,7 @@ void AZ_mlcomm2data_org(ML_CommInfoOP *comm_info, int *data_org[])
       length = ML_CommInfoOP_Get_Nrcvlist(comm_info,neighbors[i]);
       if (itemp != NULL) {
           if (start_rcv == NULL) {
-             start_rcv = ML_allocate((N_neighbors+1)*sizeof(int));
+             start_rcv = (int *) ML_allocate((N_neighbors+1)*sizeof(int));
              if (start_rcv==NULL) pr_error("No space in AZ_mlcomm2data_org\n");
              for (j = 0; j < N_neighbors; j++) start_rcv[j] = -1;
           }
