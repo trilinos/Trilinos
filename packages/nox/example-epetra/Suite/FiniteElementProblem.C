@@ -1,10 +1,14 @@
 #include "NOX_Common.H"
+#include "NOX_Epetra.H"
+
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+
+#include <fstream>
 
 #include "FiniteElementProblem.H"
 
@@ -109,6 +113,9 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
   A->TransformToLocal();
+
+  // Create the solver parameter list
+  createSolverParameters();
 }
 
 // Destructor
@@ -282,6 +289,16 @@ Epetra_CrsMatrix& FiniteElementProblem::getJacobian()
   return *A;
 }
 
+NOX::Parameter::List& FiniteElementProblem::getParameters()
+{
+  return nlParams;
+}
+
+NOX::Parameter::List& FiniteElementProblem::getlsParameters()
+{
+  return lsParams;
+}
+
 Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
 {
   
@@ -316,3 +333,112 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
   AA.RemoveRedundantIndices();
   return AA;
 }
+
+void FiniteElementProblem::createSolverParameters()
+{
+
+  // Create the top level parameter list
+
+  // Set the nonlinear solver method
+  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
+
+  // Set the printing parameters in the "Printing" sublist
+  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
+  printParams.setParameter("MyPID", MyPID); 
+  printParams.setParameter("Output Precision", 3);
+  printParams.setParameter("Output Processor", 0);
+  printParams.setParameter("Output Information", 
+			NOX::Utils::OuterIteration + 
+			NOX::Utils::OuterIterationStatusTest + 
+			NOX::Utils::InnerIteration +
+			NOX::Utils::Parameters + 
+			NOX::Utils::Details + 
+			NOX::Utils::Warning);
+
+  // Sublist for line search 
+  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
+  //searchParams.setParameter("Method", "Full Step");
+  //searchParams.setParameter("Method", "Interval Halving");
+  searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "NonlinearCG");
+  //searchParams.setParameter("Method", "Quadratic");
+  //searchParams.setParameter("Method", "More'-Thuente");
+
+  // Sublist for direction
+  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+  //dirParams.setParameter("Method", "Newton");
+  //NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+    //newtonParams.setParameter("Forcing Term Method", "Constant");
+    //newtonParams.setParameter("Forcing Term Method", "Type 1");
+    //newtonParams.setParameter("Forcing Term Method", "Type 2");
+    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
+    //NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+  dirParams.setParameter("Method", "Steepest Descent");
+  NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
+    NOX::Parameter::List& lsParams = sdParams.sublist("Linear Solver");
+    //sdParams.setParameter("Scaling Type", "None");
+    //sdParams.setParameter("Scaling Type", "2-Norm");
+    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
+  //dirParams.setParameter("Method", "NonlinearCG");
+  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
+    //nlcgParams.setParameter("Restart Frequency", 2000);
+    //nlcgParams.setParameter("Precondition", "On");
+    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
+    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
+
+  // Sublist for linear solver
+  //lsParams.setParameter("Aztec Solver", "GMRES");  
+  //lsParams.setParameter("Max Iterations", 800);  
+  //lsParams.setParameter("Tolerance", 1e-4);
+  //lsParams.setParameter("Output Frequency", 50);    
+  //lsParams.setParameter("Scaling", "None");             
+  //lsParams.setParameter("Scaling", "Row Sum");          
+  //lsParams.setParameter("Preconditioning", "None");   
+  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
+  //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
+  //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
+  //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
+  //lsParams.setParameter("Overlap", 2);  
+  //lsParams.setParameter("Graph Fill", 2); 
+  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
+  //lsParams.setParameter("Overlap", 2);   
+  //lsParams.setParameter("Fill Factor", 2);   
+  //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
+  //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
+  //lsParams.setParameter("Polynomial Order", 6); 
+}
+
+
+void FiniteElementProblem::outputResults(NOX::Solver::Manager& solver, 
+                   NOX::Parameter::List& printParams)
+{
+  // Output the parameter list
+  NOX::Utils utils(printParams);
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    cout << endl << "Final Parameters" << endl
+	 << "****************" << endl;
+    solver.getParameterList().print(cout);
+    cout << endl;
+  }
+
+  // Get the Epetra_Vector with the final solution from the solver
+  const NOX::Epetra::Group& finalGroup = 
+      dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const Epetra_Vector& finalSolution = 
+      (dynamic_cast<const NOX::Epetra::Vector&>
+        (finalGroup.getX())).getEpetraVector();
+
+  // Print solution
+  char file_name[25];
+  FILE *ifp;
+  int NumMyElements = finalSolution.Map().NumMyElements();
+  (void) sprintf(file_name, "output.%d",finalSolution.Map().Comm().MyPID());
+  ifp = fopen(file_name, "w");
+  for (int i=0; i<NumMyElements; i++)
+    fprintf(ifp,"%d  %E\n",finalSolution.Map().MinMyGID()+i,finalSolution[i]);
+  fclose(ifp);
+
+}
+
