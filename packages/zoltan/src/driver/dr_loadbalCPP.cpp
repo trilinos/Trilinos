@@ -443,14 +443,14 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (Debug_Driver > 0) {
       if (Proc == 0) cout << "\nBEFORE load balancing" << endl;
       driver_eval(mesh);
-      int i = zz.LB_Eval(1, NULL, NULL, NULL, NULL, NULL, NULL);
+      int i = zz.LB_Eval(1, 0, NULL, 0, NULL, 0, 0);
       if (i) cout << "Warning: Zoltan_Object::LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
       /* Write output files. */
-      strcpy(fname, pio_info->pexo_fname);
-      strcat(fname, ".before");
-      zz.Generate_Files(fname, 1, 1, 1, 0);
+      string beforeName(pio_info->pexo_fname);
+      beforeName.append(".before");
+      zz.Generate_Files(beforeName, 1, 1, 1, 0);
     }
   
     /*
@@ -464,11 +464,11 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
 
     double stime = MPI_Wtime();
 
-    if (zz.LB_Partition(&new_decomp, &num_gid_entries, &num_lid_entries,
-                 &num_imported, &import_gids,
-                 &import_lids, &import_procs, &import_to_part,
-                 &num_exported, &export_gids,
-                 &export_lids, &export_procs, &export_to_part) == ZOLTAN_FATAL){
+    if (zz.LB_Partition(new_decomp, num_gid_entries, num_lid_entries,
+                 num_imported, import_gids,
+                 import_lids, import_procs, import_to_part,
+                 num_exported, export_gids,
+                 export_lids, export_procs, export_to_part) == ZOLTAN_FATAL){
       Gen_Error(0, "fatal:  error returned from Zoltan_Object::LB_Partition()\n");
       return 0;
     }
@@ -537,14 +537,14 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (Debug_Driver > 0) {
       if (Proc == 0) cout << "\nAFTER load balancing\n" << endl;
       driver_eval(mesh);
-      int i = zz.LB_Eval(1, NULL, NULL, NULL, NULL, NULL, NULL);
+      int i = zz.LB_Eval(1, 0, NULL, 0, NULL, 0, 0);
       if (i) cout << "Warning: Zoltan_Object::LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
       /* Write output files. */
-      strcpy(fname, pio_info->pexo_fname);
-      strcat(fname, ".after");
-      zz.Generate_Files(fname, 1, 1, 1, 0);
+      string afterName(pio_info->pexo_fname);
+      afterName.append(".after");
+      zz.Generate_Files(afterName, 1, 1, 1, 0);
     }
   
     if (Test.Drops)
@@ -554,8 +554,8 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       double xmin, ymin, zmin;
       double xmax, ymax, zmax;
       int ndim;
-      int ierr = zz.RCB_Box(Proc, &ndim, &xmin, &ymin, &zmin,
-                            &xmax, &ymax, &zmax);
+      int ierr = zz.RCB_Box(Proc, ndim, xmin, ymin, zmin,
+                            xmax, ymax, zmax);
       if (!ierr) {
         cout << "DRIVER " << Proc << " DIM: " << ndim;
         cout << " BOX: (" << xmin << "," << ymin << "," << zmin << ") -- ";
@@ -564,10 +564,8 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     }
 
     /* Clean up */
-    zz.LB_Free_Part(&import_gids, &import_lids,
-                        &import_procs, &import_to_part);
-    zz.LB_Free_Part(&export_gids, &export_lids,
-                        &export_procs, &export_to_part);
+    zz.LB_Free_Part(import_gids, import_lids, import_procs, import_to_part);
+    zz.LB_Free_Part(export_gids, export_lids, export_procs, export_to_part);
   }
 
   if (Driver_Action & 2){
@@ -583,7 +581,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       /* Not yet impl. */
     }
 
-    if (zz.Order(&num_gid_entries, &num_lid_entries,
+    if (zz.Order(num_gid_entries, num_lid_entries,
         mesh->num_elems, order_gids, order_lids,
         order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Object::Order()\n");
@@ -1553,7 +1551,7 @@ int one_part, one_proc;
 int i;
 
   if (test_both) {
-    status = zz.LB_Point_Assign(x, &one_proc);
+    status = zz.LB_Point_Assign(x, one_proc);
     if (status != ZOLTAN_OK) 
       fprintf(fp, "error returned from Zoltan_Object::LB_Point_Assign()\n");
     else  {
@@ -1570,7 +1568,7 @@ int i;
   }
   else fprintf(fp, "%d Zoltan_Object::LB_Point_Assign not tested.\n", Proc);
 
-  status = zz.LB_Point_PP_Assign(x, &one_proc, &one_part);
+  status = zz.LB_Point_PP_Assign(x, one_proc, one_part);
   if (status != ZOLTAN_OK) 
     fprintf(fp, "error returned from Zoltan_Object::LB_Point_PP_Assign()\n");
   else {
@@ -1619,7 +1617,7 @@ int i;
   if (test_both) {
     status = zz.LB_Box_Assign(xlo[0], xlo[1], xlo[2], 
                                       xhi[0], xhi[1], xhi[2], 
-                                      procs, &proccnt);
+                                      procs, proccnt);
     if (status != ZOLTAN_OK) 
       fprintf(fp, "error returned from Zoltan_Object::LB_Box_Assign()\n");
     else {
@@ -1645,8 +1643,8 @@ int i;
 
   status = zz.LB_Box_PP_Assign(xlo[0], xlo[1], xlo[2], 
                                        xhi[0], xhi[1], xhi[2], 
-                                       procs, &proccnt, 
-                                       parts, &partcnt);
+                                       procs, proccnt, 
+                                       parts, partcnt);
   if (status != ZOLTAN_OK) 
     fprintf(fp, "error returned from Zoltan_Object::LB_Box_PP_Assign()\n");
   else {
