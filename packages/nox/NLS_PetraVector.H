@@ -13,33 +13,36 @@
 
 
 #include "NLS_Vector.H"	// Base Class
-#include "Petra_RDP_Vector.h"
+#include "Epetra_Vector.h"
 
-//! Implementation of NLS_Vector pure virtual class for Petra_RDP_Vectors.
+//! Implementation of NLS_Vector pure virtual class for Epetra_Vectors.
 
 class NLS_PetraVector : public NLS_Vector {
 
  public:			
 
   //! Construct an NLS_PetraVector by copying map and/or elements of
-  //! a Petra_RDP_Vector.  Creates a deep copy of the vector.
+  //! a Epetra_Vector.  Creates a deep copy of the vector.
   /*! The input vector is used to specify the map.  The contents are
     only copied if doCopyEntries is true.  If false, the vector is 
     initialized to all zeros.  */
-  NLS_PetraVector(const Petra_RDP_Vector& copyFrom, 
+  NLS_PetraVector(const Epetra_Vector& copyFrom, 
 		  bool doCopyEntries = false);
 
-  //! Construct an NLS_PetraVector by pointing to an external Petra_RDP_Vector.
+  //! Construct an NLS_PetraVector by pointing to an external Epetra_Vector.
   //! Creates a shallow copy (view) of the original vector.
   /*! The vector may be modified, but it should not be deleted when
     this is deleted.  The difference between this constructor and the
-    other constuctor is the CONSTness of the Petra_RDP_Vector.  */
-  NLS_PetraVector(Petra_RDP_Vector& pointTo);
+    other constuctor is the CONSTness of the Epetra_Vector.  */
+  NLS_PetraVector(Epetra_Vector& pointTo);
 
   //! Deconstruct NLS_PetraVector
-  /*! The memory for the actual Petra_RDP_Vector should only be
+  /*! The memory for the actual Epetra_Vector should only be
       deleted if this object created that memory itself. */
   ~NLS_PetraVector();
+
+  //! Deep copy operator. Copies both the vector and its map.
+  NLS_Vector& operator=(const NLS_Vector& copyFrom);
 
   //! Deep copy operator. Copies both the vector and its map.
   NLS_PetraVector& operator=(const NLS_PetraVector& copyFrom);
@@ -47,13 +50,13 @@ class NLS_PetraVector : public NLS_Vector {
  
   NLS_Vector& init(double value);
 
-  virtual NLS_Vector& abs(const NLS_Vector& y) = 0;
+  virtual NLS_Vector& abs(const NLS_Vector& y);
 
-  virtual NLS_Vector& abs(const NLS_PetraVector& y) = 0;
+  virtual NLS_Vector& abs(const NLS_PetraVector& y);
 
-  virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0) = 0;
+  virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0);
 
-  virtual NLS_Vector& copy(const NLS_PetraVector& y, double scale = 1.0) = 0;
+  virtual NLS_Vector& copy(const NLS_PetraVector& y, double scale = 1.0);
 
   NLS_Vector& update(double alpha, const NLS_Vector& y, double beta);
 
@@ -62,7 +65,7 @@ class NLS_PetraVector : public NLS_Vector {
 
   NLS_Vector&  scale(double alpha);
 
-  virtual NLS_Vector* newcopy() = 0;
+  virtual NLS_Vector* newcopy();
 
   double infnorm() const;
 
@@ -80,10 +83,13 @@ class NLS_PetraVector : public NLS_Vector {
   //! See above for definition.
   double dot(const NLS_PetraVector& y) const;
 
+  //! Print Function
+  void print() const;
+
  private:
   
   //! Pointer to petra vector owned by this object
-  Petra_RDP_Vector* petraVec;		
+  Epetra_Vector* petraVec;		
 
   //! True if we should delete x when this object is deconstructed.
   bool doDeletePetraVec; 

@@ -95,12 +95,12 @@ NLS_Vector& NLS_PetraGroup::computeNewton(string& name, NLS_Parameter& parameter
     cout << "ERROR: computeNewton() - Jacobian is out of date wrt X!" << endl;
     throw;
   }
-  Petra_RDP_LinearProblem Problem(interface.Jacobian,
+  Epetra_LinearProblem Problem(interface.Jacobian,
 				  xVector.petraVec,
 				  RHSVector.petraVec);
   // For now, set problem level to hard, moderate, or easy
   Problem.SetPDL(hard);
-  Aztec_OO aztec(Problem);
+  AztecOO aztec(Problem);
   aztec.Iterate(nlParamsPtr->getMaxLinearStep(), eta_k);
   return NewtonVector;
 }

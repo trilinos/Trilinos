@@ -8,23 +8,24 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
+#include <iostream>
 #include "NLS_PetraVector.H"
 
-NLS_PetraVector::NLS_PetraVector(const Petra_RDP_Vector& copyFrom, bool doCopyEntries)
+NLS_PetraVector::NLS_PetraVector(const Epetra_Vector& copyFrom, bool doCopyEntries)
 {
   if (doCopyEntries) {
     // deep copy
-    petraVec = new Petra_RDP_Vector(copyFrom); 
+    petraVec = new Epetra_Vector(copyFrom); 
   }
   else {
     // copy map and fill with zeros
-    petraVec = new Petra_RDP_Vector(copyFrom.Map()); 
+    petraVec = new Epetra_Vector(copyFrom.Map()); 
   }
 
   doDeletePetraVec = true;
 }
 
-NLS_PetraVector::NLS_PetraVector(Petra_RDP_Vector& pointTo)
+NLS_PetraVector::NLS_PetraVector(Epetra_Vector& pointTo)
 {
   petraVec = &pointTo;		// copy pointer only
   doDeletePetraVec = false;	// do not delete when this is deleted
@@ -37,11 +38,16 @@ NLS_PetraVector::~NLS_PetraVector()
   petraVec = NULL;
 }
 
+NLS_Vector& NLS_PetraVector::operator=(const NLS_Vector& copyFrom)
+{
+  throw;
+}
+
 NLS_PetraVector& NLS_PetraVector::operator=(const NLS_PetraVector& copyFrom)
 {
   if (petraVec == NULL) {
     // If petraVec is empty, fill it...
-    petraVec = new Petra_RDP_Vector(*(copyFrom.petraVec)); // deep copy
+    petraVec = new Epetra_Vector(*(copyFrom.petraVec)); // deep copy
     doDeletePetraVec = true;
   }
 
@@ -49,7 +55,7 @@ NLS_PetraVector& NLS_PetraVector::operator=(const NLS_PetraVector& copyFrom)
     // Otherwise, copy into existing petraVec
     int errcode = petraVec->Update(1.0, *(copyFrom.petraVec), 0.0);
     if (errcode != 0) 
-      cerr << "Error in NLS_Petra_Vec::operator=!" << endl;
+      cerr << "Error in NLS_Epetra_Vec::operator=!" << endl;
   }
   
   return *this;
@@ -106,8 +112,9 @@ NLS_Vector& NLS_PetraVector::scale(double alpha)
 
 NLS_Vector* NLS_PetraVector::newcopy() 
 {
-  // Not finished yet!
   NLS_PetraVector *newVec;
+  newVec = new NLS_PetraVector(*this->petraVec,true);
+  newVec->doDeletePetraVec = true;
   return newVec;
 }
 
@@ -156,5 +163,8 @@ double NLS_PetraVector::dot(const NLS_PetraVector& y) const
   return dot;
 }
 
-
+void NLS_PetraVector::print() const
+{
+  cout << petraVec << endl;
+}
 
