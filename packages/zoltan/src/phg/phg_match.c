@@ -35,6 +35,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         HGPartParams hp;
 
         strcpy(hp.redm_str, hgp->redm_str+2);
+        strcpy(hp.redmo_str, hgp->redmo_str);
         if (!Zoltan_HG_Set_Matching_Fn(&hp)) {
             exist = 0;
             hgp->matching = NULL;
@@ -45,7 +46,8 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
                                             Actually, we'll pick the best local, but
                                             code structure doesn't allow us to use a
                                             function */
-            hgp->locmatching = hp.matching; 
+            hgp->locmatching = hp.matching;
+            hgp->matching_opt = hp.matching_opt;
         }
     } else if (!strcasecmp(hgp->redm_str, "c-ipm"))  hgp->matching = matching_col_ipm;    
     else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
@@ -85,29 +87,29 @@ char  *yo = "Zoltan_PHG_Matching";
   }
 
   /* Do the matching */
-  if (hgp->locmatching) { 
+  if (hgp->locmatching) {  /* run local matching */
       int limit=hg->nVtx;
       PHGComm *hgc=hg->comm;
-      int matchcnt;
-      int rank;
+      int root_matchcnt, root_rank;
       
       if (hgp->matching)
           err = hgp->locmatching (zz, hg, match, &limit);
-      
-      /* find the index of the proc in column group with the best match; it 
-         will be our root proc */
-      /* use number of matches as our quality metric; an alternative is
-         to simply use the number of pins. */
-      Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
-                           &matchcnt, &rank);
-      
-      MPI_Bcast(match, hg->nVtx, MPI_INT, rank, hgc->col_comm);
 
-    
-  } else if (hgp->matching)
+      /* Optimization */
+      if (hgp->matching_opt) 
+          err = hgp->matching_opt (zz, hg, match, &limit);
+
+      /* find the index of the proc in column group with the best match
+         (max #matches); it will be our root proc */
+      Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
+                           &root_matchcnt, &root_rank);
+
+      MPI_Bcast(match, hg->nVtx, MPI_INT, root_rank, hgc->col_comm);
+
+  } else if (hgp->matching) /* run global or column/row matching algorithms */
      err = hgp->matching (zz, hg, match);
 
-End:
+End: 
 
   /* Restore the old edge weights */
   if (hg->ewgt && hgp->ews)
@@ -217,6 +219,8 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &gips, &adj);
     return ZOLTAN_OK;
 }
+
+
 
 /****************************************************************************
  * inner product matching

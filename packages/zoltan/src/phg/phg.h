@@ -107,9 +107,13 @@ struct PHGPartParamsStruct {
                                     for all requested partitions. */
   int kway;                      /* 1 -> direct kway, 0->recursive bisection */
   int redl;                      /* Reduction limit (constant). */
-  char redm_str[MAX_PARAM_STRING_LEN]; /* Reduction method string. */
+  char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
+  char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/
+    
   ZOLTAN_PHG_MATCHING_FN *matching;    /* Pointers to Matching function */
-  ZOLTAN_HG_MATCHING_FN  *locmatching; /* Pointer to local Matching function */
+  ZOLTAN_HG_MATCHING_FN  *locmatching;   /* Pointer to local Matching function */
+  ZOLTAN_HG_MATCHING_FN  *matching_opt;  /* Pointers to Matching optimization  */
+    
   int ews;                             /* type of hyperedge weight scaling */
   int LocalCoarsePartition;            /* 1 -> apply coarse partitioner locally;
                                           0 -> gather entire HG to each proc

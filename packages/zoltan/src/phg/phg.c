@@ -33,19 +33,20 @@ extern "C" {
 /*  Parameters structure for parallel HG method.  */
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
-  {"PHG_REDUCTION_LIMIT",        NULL, "INT",    0},
-  {"PHG_EDGE_WEIGHT_SCALING",    NULL, "INT",    0},
-  {"PHG_REDUCTION_METHOD",       NULL, "STRING", 0},
-  {"PHG_COARSE_PARTITIONING",    NULL, "STRING", 0},
-  {"PHG_REFINEMENT",             NULL, "STRING", 0},
-  {"PHG_NPROC_X",                NULL, "INT",    0},
-  {"PHG_NPROC_Y",                NULL, "INT",    0},
-  {"PCHECK_GRAPH",               NULL, "INT",    0},
-  {"PHG_OUTPUT_LEVEL",           NULL, "INT",    0},
-  {"PHG_DIRECT_KWAY",            NULL, "INT",    0},
-  {"PHG_FM_LOOP_LIMIT",          NULL, "INT",    0},
-  {"PHG_FM_MAX_NEG_MOVE",        NULL, "INT",    0},    
-  {NULL,                         NULL,  NULL,    0} 
+  {"PHG_REDUCTION_LIMIT",             NULL,  "INT",    0},
+  {"PHG_EDGE_WEIGHT_SCALING",         NULL,  "INT",    0},
+  {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
+  {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL,  "STRING", 0},
+  {"PHG_COARSE_PARTITIONING",         NULL,  "STRING", 0},
+  {"PHG_REFINEMENT",                  NULL,  "STRING", 0},
+  {"PHG_NPROC_X",                     NULL,  "INT",    0},
+  {"PHG_NPROC_Y",                     NULL,  "INT",    0},
+  {"PCHECK_GRAPH",                    NULL,  "INT",    0},
+  {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
+  {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
+  {"PHG_FM_LOOP_LIMIT",               NULL,  "INT",    0},
+  {"PHG_FM_MAX_NEG_MOVE",             NULL,  "INT",    0},    
+  {NULL,                              NULL,  NULL,     0}     
 };
 
 /* prototypes for static functions: */
@@ -217,23 +218,24 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",            &(hgp->comm.nProc_y));
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",              &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD",          hgp->redm_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", hgp->redmo_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_SCALING",           &hgp->ews);
   Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",              &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",          hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY",                  &hgp->kway);
   Zoltan_Bind_Param(PHG_params, "PHG_FM_LOOP_LIMIT",       &hgp->fm_loop_limit);
   Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE",   &hgp->fm_max_neg_move);  
-  Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING",
-   hgp->coarsepartition_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", hgp->coarsepartition_str);
 
   /* Zoltan_Bind_Param(PHG_params, "PHG_COARSE_TRIES",
                     (void*) &hgp->num_coarse_tries);   */
 
   /* Set default values */
   /* ipm should be made default matching method when it's ready */
-  strncpy(hgp->redm_str,          "l-rrm", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->coarsepartition_str, "gr0", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->refinement_str,      "fm2", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_str,            "l-rrm", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redmo_str,           "aug2",  MAX_PARAM_STRING_LEN);  
+  strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
+  strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   
   hgp->LocalCoarsePartition = 0;
   hgp->locmatching = NULL;

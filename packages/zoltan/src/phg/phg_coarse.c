@@ -49,7 +49,7 @@ int Zoltan_PHG_Coarsening
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   
   /* (over) estimate number of external matches that we to send data to */
-  count = 0;
+  count = 1;
   for (i = 0; i < hg->nVtx; i++)
     if (match[i] < 0)
       ++count;

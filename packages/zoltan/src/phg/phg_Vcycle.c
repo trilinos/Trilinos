@@ -141,15 +141,15 @@ int Zoltan_PHG_Partition (
   }
           
   /****** Coarsening ******/    
-  while ((hg->dist_x[hg->comm->nProc_x] > hg->redl) && hg->nEdge 
-   && hgp->matching && (hg->dist_x[hg->comm->nProc_x] < 0.9 * prevVcnt)) {
+  while ((hg->dist_x[hgc->nProc_x] > hg->redl) && hg->nEdge 
+   && hgp->matching && (hg->dist_x[hgc->nProc_x] < 0.9 * prevVcnt)) {
       int *match = NULL;
       VCycle *coarser=NULL;
         
-      prevVcnt=hg->dist_x[hg->comm->nProc_x];
+      prevVcnt=hg->dist_x[hgc->nProc_x];
         
       if (hgp->output_level >= PHG_DEBUG_LIST) {
-        uprintf(hg->comm,"START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
+        uprintf(hgc,"START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d...\n",
         hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
         hgp->coarsepartition_str, hgp->refinement_str, p);
           if (hgp->output_level > PHG_DEBUG_LIST) {
@@ -198,7 +198,7 @@ int Zoltan_PHG_Partition (
   }
 
   if (hgp->output_level >= PHG_DEBUG_LIST) {
-    uprintf(hg->comm, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
+    uprintf(hgc, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d...\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
      hgp->coarsepartition_str, hgp->refinement_str, p);
     if (hgp->output_level > PHG_DEBUG_LIST) {
@@ -225,7 +225,7 @@ int Zoltan_PHG_Partition (
     err = Zoltan_PHG_Refinement (zz, hg, p, vcycle->part, hgp);
         
     if (hgp->output_level >= PHG_DEBUG_LIST)     
-      uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
+      uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
        hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
        hgp->coarsepartition_str, hgp->refinement_str, p,
          Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->part),

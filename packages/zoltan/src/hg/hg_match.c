@@ -874,8 +874,12 @@ int   i, j, k, *stack, free_p=0, edge, vertex, best_2;
 double gain, gain_2;
 char  *yo = "matching_aug2";
 
+ /* UVCUVC: the code works without ewgt too; with this 'if'
+    we cannot improve ipm or mxm; so I'm commenting it out
+   
   if (!(hg->ewgt))
      return matching_mxm (zz, hg, match, limit);
+ */
 
   if (!(stack = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
