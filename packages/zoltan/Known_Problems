@@ -10,6 +10,19 @@ and may hang in a communication (waiting for a message that is not sent
 due to the error condition).  The parallel error-handling capabilities of
 Zoltan will be improved in future releases.
 -------------------------------------------------------------------------------
+RCB/RIB ON ASCI RED
+On ASCI Red, the number of context IDs (e.g., MPI Communicators) is limited
+to 8192.  The environment variable MPI_REUSE_CONTEXT_IDS must be set to 
+reuse the IDs; setting this variable, however, slows performance.
+An alternative is to set Zoltan_Parameter TFLOPS_SPECIAL to "1".  With 
+TFLOPS_SPECIAL set, communicators in RCB/RIB are not split and, thus, the
+application is less likely to run out of context IDs.  However, ASCI Red
+also has a bug that is exposed by TFLOPS_SPECIAL; when messages that use
+MPI_Send/MPI_Recv within RCB/RIB exceed the MPI_SHORT_MSG_SIZE, MPI_Recv 
+hangs.  We do not expect these conditions to exist on future platforms and,
+indeed, plan to make TFLOPS_SPECIAL obsolete in future versions of Zoltan
+rather than re-work it with MPI_Irecv.  -- KDD 10/5/2004
+-------------------------------------------------------------------------------
 ERROR CONDITIONS IN OCTREE, PARMETIS AND JOSTLE
 On failure, OCTREE, ParMETIS and Jostle methods abort rather than return 
 error codes.  

@@ -101,7 +101,14 @@ parameter. The number of partitions it generates is specified by the <i><a href=
 or
 <i><a href="ug_alg.html#NUM_LOCAL_PARTITIONS">NUM_LOCAL_PARTITIONS</a></i>
 parameters. Results of the partitioning are returned in lists of objects
-to be imported and exported. These arrays are allocated in Zoltan; applications
+to be imported into and exported from partitions on this processor. 
+Objects are included in these lists if <i>either</i> their partition
+assignment or their processor assignment is changed by the new decomposition.
+If an application requests multiple partitions on a single processor, these 
+lists may include objects whose partition assignment is changing, but whose
+processor assignment is unchanged.
+<p>
+Returned arrays are allocated in Zoltan; applications
 should not allocate these arrays before calling <b>Zoltan_LB_Partition</b>.
 The arrays are later freed through calls to <b><a href="#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
 <br>&nbsp;
@@ -145,9 +152,11 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
 
-<td>Upon return, the number of objects that are now assigned to this processor
-that were assigned to other processors in the old decomposition (i.e.,
-the number of objects to be imported to this processor). If the value returned
+<td>Upon return, the number of objects 
+that are newly assigned to this processor or to partitions on this processor
+(i.e., the number of objects being imported from different partitions to
+partitions on this processor).
+If the value returned
 is -1, no import information has been returned and all import arrays below
 are NULL (see the
 <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter
@@ -158,7 +167,7 @@ for more information).</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
 <td>Upon return, an array of <i>num_import</i> global IDs of objects to
-be imported to this processor.
+be imported to partitions on this processor.
 <br>(size = <i>num_import</i> * <i>num_gid_entries</i>)</td>
 </tr>
 
@@ -166,7 +175,7 @@ be imported to this processor.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
 <td>Upon return, an array of&nbsp; <i>num_import</i> local IDs of objects
-to be imported to this processor.
+to be imported to partitions on this processor.
 <br>(size = <i>num_import</i> * <i>num_lid_entries</i>)</td>
 </tr>
 
@@ -188,21 +197,23 @@ to which the imported objects are being imported.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
 
-<td>Upon return, the number of objects that were assigned to this processor
-in
-the previous decomposition that are now assigned to other processors (i.e.,
-the number of objects that must be exported from this processor to other
-processors). If the value returned is -1, no export information has been
-returned and all export arrays below are NULL (see the
-<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>
-parameter for more information).</td>
+<td>Upon return, the number of objects on this processor
+that are newly assigned to other processors or to other partitions 
+on this processor
+(i.e., the number of objects being exported to different partitions 
+on this or some other processor).
+If the value returned
+is -1, no export information has been returned and all export arrays below
+are NULL (see the
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter
+for more information).</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
 <td>Upon return, an array of <i>num_export</i> global IDs of objects to
-be exported from this processor.&nbsp;
+be exported from partitions on this processor.&nbsp;
 <br>(size = <i>num_export</i> * <i>num_gid_entries</i>)</td>
 </tr>
 
@@ -210,7 +221,7 @@ be exported from this processor.&nbsp;
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
 <td>Upon return, an array of <i>num_export</i> local IDs of objects to
-be exported from this processor.
+be exported from partitions on this processor.
 <br>(size = <i>num_export</i> * <i>num_lid_entries</i>)</td>
 </tr>
 
@@ -218,7 +229,7 @@ be exported from this processor.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
 
 <td>Upon return, an array of size <i>num_export </i>listing the processor
-IDs of processors that will own the exported objects in the new decomposition
+IDs of processors to which the exported objects are being exported
 (i.e., the destination processors).</td>
 </tr>
 

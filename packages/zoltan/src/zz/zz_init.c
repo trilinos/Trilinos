@@ -56,7 +56,7 @@ int mpi_flag;
    * the libarary is being used without having to get the source
    * code.
    */
-  *ver = ZOLTAN_VER;
+  *ver = ZOLTAN_VERSION_NUMBER;
 
   return (ZOLTAN_OK);
 }

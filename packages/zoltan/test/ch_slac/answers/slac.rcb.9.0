@@ -1,0 +1,13 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= num_global_partitions=16
+Zoltan Parameters	= keep_cuts=1
+Zoltan Parameters	= remap=0
+File Type		= Chaco
+File Name		= slac
+Parallel Disk Info	= number=0
+zdrive debug level = 4
+gnuplot output = 1
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+12	0	-1	-1
+30	0	-1	-1

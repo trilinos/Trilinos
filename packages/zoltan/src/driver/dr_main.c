@@ -55,7 +55,7 @@ struct Output_Flags Output;
 double Total_Partition_Time = 0.0;  /* Total over Number_Iterations */
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
-static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob);
+static void print_input_info(FILE *, int, PROB_INFO_PTR, float);
 static void initialize_mesh(MESH_INFO_PTR);
 
 #include <unistd.h>
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
       error = 1;
     }
 
-    print_input_info(stdout, Num_Proc, &prob);
+    print_input_info(stdout, Num_Proc, &prob, version);
   }
 
   MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
@@ -380,11 +380,13 @@ static int read_mesh(
 
 /*****************************************************************************/
 /*****************************************************************************/
-static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob)
+static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob, 
+float zoltan_version)
 {
 int i;
 
   fprintf(fp, "Input values:\n");
+  fprintf(fp, "  Zoltan version %g\n",zoltan_version);
   fprintf(fp, "  %s version %s\n", DRIVER_NAME, VER_STR);
   fprintf(fp, "  Total number of Processors = %d\n\n", Num_Proc);
 
@@ -410,6 +412,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
                   = mesh->num_side_sets
                   = mesh->necmap
                   = mesh->elem_array_len
+                  = mesh->gnhedges
                   = mesh->nhedges
                   = mesh->vwgt_dim
                   = mesh->ewgt_dim

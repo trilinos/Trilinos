@@ -21,6 +21,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
+#include "zoltan_mem.h"
 #include "par_median_const.h"
 #include "par_tflops_special_const.h"
 #include "par_average_const.h"
@@ -36,9 +37,6 @@ struct median {          /* median cut info */
   int       countlo, counthi;   /* # of dots at that position */
   int       proclo, prochi;     /* unique proc who owns a nearest dot */
 };
-
-static void Zoltan_RB_reduce_median(int, int, int, struct median*, 
-            struct median*, int *, MPI_Datatype, MPI_Comm);
 
 
 /************ R O U T I N E S   I N   T H I S   F I L E  **********************
@@ -264,8 +262,9 @@ int Zoltan_RB_find_median(
       if (counter != NULL) (*counter)++;
       if (Tflops_Special) {
          i = 1;
-         Zoltan_RB_reduce_median(num_procs, rank, proc, &medme, &med, &i, 
-                                 med_type, local_comm);
+         Zoltan_RB_reduce(num_procs, rank, proc, (void *) &medme, (void *) &med,
+                          sizeof(medme), &i, med_type, local_comm, 
+                          Zoltan_RB_median_merge);
       }
       else {
         
@@ -510,24 +509,28 @@ void Zoltan_RB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
   }
 }
 
-static void Zoltan_RB_reduce_median(
+void Zoltan_RB_reduce(
    int nproc,             /* number of processors in partition */
    int rank,              /* rank within partition */
    int proc,              /* global processor number */
-   struct median *in,     /* input median */
-   struct median *inout,  /* output median */
-   int *len,              /* length to pass to Zoltan_RB_median_merge */
-   MPI_Datatype datatype, /* MPI datatype for median */
-   MPI_Comm comm          /* MPI communicator */
+   void *in,              /* input data */
+   void *inout,           /* output median */
+   int size,              /* Number of bytes to store each elt of in */
+   int *len,              /* length to pass to fn */
+   MPI_Datatype datatype, /* MPI datatype for operation */
+   MPI_Comm comm,         /* MPI communicator */
+   MPI_User_function *fn  /* Function to be applied in reduction */    
 )
 {
-   struct median tmp;     /* temporary to recieve information */
+   void *tmp = NULL;      /* temporary to receive information */
    int to;                /* communication partner */
    int tag = 32109;       /* message tag */
    int nprocs_small;      /* largest power of 2 contained in nproc */
    int hbit;              /* 2^hbit = nproc_small */
    int mask;              /* mask to determine communication partner */
    MPI_Status status;
+
+   tmp = (void *) ZOLTAN_MALLOC(size);
 
    /* find largest power of two that is less than or equal to number of
       processors */
@@ -547,18 +550,18 @@ static void Zoltan_RB_reduce_median(
    else
       if (rank + nprocs_small < nproc) {
          MPI_Recv(inout, 1, datatype, to, tag, comm, &status);
-         Zoltan_RB_median_merge(in, inout, len, &datatype);
+         (*fn)(in, inout, len, &datatype);
       }
       else
-         *inout = *in;
+         memcpy(inout, in, size);
 
    if (!(rank & nprocs_small))    /* binary exchange on nprocs_small procs */
       for (mask = nprocs_small >> 1; mask; mask >>= 1) {
          tag++;
          to = proc - rank + (rank ^ mask);
          MPI_Send(inout, 1, datatype, to, tag, comm);
-         MPI_Recv(&tmp, 1, datatype, to, tag, comm, &status);
-         Zoltan_RB_median_merge(&tmp, inout, len, &datatype);
+         MPI_Recv(tmp, 1, datatype, to, tag, comm, &status);
+         (*fn)(tmp, inout, len, &datatype);
       }
    else
       tag += hbit;
@@ -572,6 +575,8 @@ static void Zoltan_RB_reduce_median(
    else
       if (rank + nprocs_small < nproc)
          MPI_Send(inout, 1, datatype, to, tag, comm);
+
+   ZOLTAN_FREE(&tmp);
 }
 
 #ifdef __cplusplus

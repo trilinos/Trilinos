@@ -679,8 +679,14 @@ static int rib_fn(
   if (gen_tree) {
     int *displ, *recvcount;
     int sendcount;
+    struct rib_tree *treetmp = NULL; /* temporary tree of cuts; used to keep
+					valgrind from reporting overlapped
+					memory in MPI_Allgatherv */
 
-    if (!(displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int)))) {
+    treetmp = (struct rib_tree *)
+	       ZOLTAN_MALLOC(zz->LB.Num_Global_Parts* sizeof(struct rib_tree));
+    displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int));
+    if (!displ || !treetmp) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
       goto End;
@@ -689,8 +695,14 @@ static int rib_fn(
 
     ierr = Zoltan_RB_Tree_Gatherv(zz, sizeof(struct rib_tree), &sendcount,
                                   recvcount, displ);
+    /* 
+     * Create copy of treept so that MPI_Allgatherv doesn't use same
+     * memory for sending and receiving; removes valgrind warning.
+     */
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++)
+      treetmp[i] = treept[i];
 
-    MPI_Allgatherv(&treept[fp], sendcount, MPI_BYTE, treept, recvcount, displ,
+    MPI_Allgatherv(&treetmp[fp], sendcount, MPI_BYTE, treept, recvcount, displ,
                    MPI_BYTE, zz->Communicator);
     for (i = 1; i < zz->LB.Num_Global_Parts; i++)
       if (treept[i].parent > 0)
@@ -698,6 +710,7 @@ static int rib_fn(
       else if (treept[i].parent < 0)
         treept[-treept[i].parent - 1].right_leaf = i;
     ZOLTAN_FREE(&displ);
+    ZOLTAN_FREE(&treetmp);
   }
   else {
     treept[0].right_leaf = -1;

@@ -72,8 +72,10 @@ ELEM_INFO_PTR current_elem;
   }
 
   printf("\nElement connect table, partition, weights and coordinates:\n");
-  for (i = 0; i < mesh->num_elems; i++) {
+  for (i = 0; i < mesh->elem_array_len; i++) {
     current_elem = &(mesh->elements[i]);
+    if (current_elem->globalID == -1) continue;
+
     printf("%d in part %d (%f):\n", current_elem->globalID, 
            current_elem->my_part, current_elem->cpu_wgt[0]);
     for (j = 0; j < mesh->eb_nnodes[current_elem->elem_blk]; j++) {
@@ -88,8 +90,10 @@ ELEM_INFO_PTR current_elem;
   /* now print the adjacencies */
   printf("\nElement adjacencies:\n");
   printf("elem\tnadj(adj_len)\tadj,proc\n");
-  for (i = 0; i < mesh->num_elems; i++) {
+  for (i = 0; i < mesh->elem_array_len; i++) {
     current_elem = &(mesh->elements[i]);
+    if (current_elem->globalID == -1) continue;
+
     printf("%d\t", current_elem->globalID);
     printf("%d(%d)\t", current_elem->nadj, current_elem->adj_len);
     for (j = 0; j < current_elem->adj_len; j++) {

@@ -104,7 +104,7 @@ CPPC			= mpiCC -Wall
 
 DBG_FLAGS		= -g 
 OPT_FLAGS		= -O 
-CFLAGS 			= $(DBG_FLAGS)
+CFLAGS 			= $(OPT_FLAGS)
 
 LOCAL_F90		= $(F90)
 

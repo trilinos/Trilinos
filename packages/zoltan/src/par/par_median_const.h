@@ -28,6 +28,12 @@ extern int Zoltan_RB_find_median(int, double *, double *, int *,
   int, int, int, double, double, double,
   double *, double *, int *, int, int);
 
+/* Prototype for function used with TFLOPS_SPECIAL */
+extern void Zoltan_RB_reduce(int, int, int, void*, void*,
+                             int, int*, MPI_Datatype, MPI_Comm, 
+                             MPI_User_function);
+
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

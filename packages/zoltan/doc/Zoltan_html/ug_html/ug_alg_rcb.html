@@ -163,6 +163,19 @@ cut.&nbsp; <br>
 0 = move dots individually; 1 = move dots in groups.<br>
       </td>
     </tr>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_RECOMPUTE_BOX</i></td>
+
+<td>Flag indicating whether the bounding box of set of partitions is
+recomputed at each level of recursion.  By default, the longest direction
+of the bounding box is cut during bisection.  Recomputing the bounding
+box at each level of recursion can produce more effective cut directions
+for unusually shaped geometries; the computation does, however, take
+additional time and communication, and may cause cut directions to
+vary from one invocation of RCB to the next.
+<br>0 = don't recompute the bounding box; 1 = recompute the box.</td>
+</tr>
+
     <tr>
       <td valign="top"><i>&nbsp;&nbsp; OBJ_WEIGHTS_COMPARABLE</i><br>
       </td>
@@ -242,6 +255,10 @@ the largest and smallest side of a subdomain. Must be &gt; 1. <br>
       </td>
       <td><i>RCB_RECTILINEAR_BLOCKS</i> = 0</td>
     </tr>
+<tr>
+<td></td>
+<td><i>RCB_RECOMPUTE_BOX</i> = 0</td>
+</tr>
     <tr>
       <td valign="top"><br>
       </td>

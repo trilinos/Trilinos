@@ -26,6 +26,9 @@
 extern "C" {
 #endif
 
+#define ZOLTAN_VERSION_NUMBER   1.55
+#define BETA_VERSION_2
+
 /*****************************************************************************
  *  Data types and functions describing the interface between the
  *  application and Zoltan.

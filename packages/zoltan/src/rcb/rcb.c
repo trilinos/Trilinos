@@ -65,7 +65,7 @@ extern "C" {
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-  double, int, int, int, int, int, int, int, int, int, int, double, int, 
+  double, int, int, int, int, int, int, int, int, int, int, double, int, int,
   float *);
 static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
 static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *, 
@@ -73,8 +73,11 @@ static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *,
 static int set_preset_dir(int, int, int, struct rcb_box *, int **);
 static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
-  int, int, int, int, int, int, int, int, int *, struct rcb_tree *, int *, int,
+  int, int, int, int, int, int, int, int, MPI_Op, MPI_Datatype,
+  int, int *, struct rcb_tree *, int *, int,
   double *, double *, float *, double *, int, double);
+static void compute_RCB_box(struct rcb_box *, int, struct Dot_Struct *, int *,
+  MPI_Op, MPI_Datatype, MPI_Comm, int, int, int, int);
 
 /*****************************************************************************/
 /*  Parameters structure for RCB method.  Used in  */
@@ -92,6 +95,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
                   { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
                   { "AVERAGE_CUTS", NULL, "INT", 0 },
+                  { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -165,6 +169,8 @@ int Zoltan_RCB(
                                  have same units (comparable), 0 otherwise. */
     int mcnorm;               /* norm (1,2,3) to use in multicriteria alg. */
     double max_aspect_ratio;  /* maximum allowed ratio of box dimensions */
+    int recompute_box;        /* (0) do (1) don't recompute bounding box for
+                                  partition sets at each level of recursion */
     int average_cuts;         /* Flag forcing median line to be drawn halfway
                                  between two closest objects. */
     int ierr;
@@ -185,6 +191,8 @@ int Zoltan_RCB(
                               (void *) &mcnorm);
     Zoltan_Bind_Param(RCB_params, "RCB_MAX_ASPECT_RATIO",
                               (void *) &max_aspect_ratio);
+    Zoltan_Bind_Param(RCB_params, "RCB_RECOMPUTE_BOX",
+                              (void *) &recompute_box);
     Zoltan_Bind_Param(RCB_params, "AVERAGE_CUTS",
                               (void *) &average_cuts);
 
@@ -201,6 +209,7 @@ int Zoltan_RCB(
     obj_wgt_comp = 0;     
     mcnorm = 1; 
     max_aspect_ratio = 10.;
+    recompute_box = 0;
     average_cuts = 0;
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
@@ -214,7 +223,7 @@ int Zoltan_RCB(
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
                  rectilinear_blocks, obj_wgt_comp, mcnorm, 
-                 max_aspect_ratio, average_cuts, part_sizes);
+                 max_aspect_ratio, recompute_box, average_cuts, part_sizes);
 
     return(ierr);
 }
@@ -256,17 +265,19 @@ static int rcb_fn(
                                    (1) obj wgts have same units, no scaling */
   int mcnorm,                   /* norm (1-3) for multicriteria bisection */
   double max_aspect_ratio,      /* max allowed ratio of box dimensions */
+  int recompute_box,            /* (0) do (1) don't recompute bounding box for
+                                   partition sets at each level of recursion */
   int average_cuts,             /* Flag forcing median line to be drawn halfway
                                    between two closest objects. */
-  float *part_sizes             /* Input:  Array of size zz->LB.Num_Global_Parts
-                                   * wgtflag containing the percentage of work 
+  float *part_sizes             /* Input: Array of size 
+                                   zz->LB.Num_Global_Parts * wgtflag 
+                                   containing the percentage of work 
                                    to be assigned to each partition.    */
 )
 {
   char    yo[] = "rcb_fn";
   int     proc,nprocs;              /* my proc id, total # of procs */
   struct Dot_Struct *dotpt;         /* temporary pointer to rcb->Dots. */
-  struct rcb_box boxtmp;            /* tmp rcb box */
   int     pdotnum;                  /* # of dots - decomposition changes it */
   int    *dotmark = NULL;           /* which side of median for each dot */
   int     dotnum;                   /* number of dots */
@@ -534,7 +545,8 @@ static int rcb_fn(
     }
   }
   /* Let weight be the global sum of all weights. */
-  MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, 
+                zz->Communicator);
 
   /* Set weight scaling factors. */
   wgtscale[0]= 1.0;
@@ -558,23 +570,11 @@ static int rcb_fn(
     }
   }
 
+
   /* initialize sub-domain bounding box to entire domain */
-
-  rcbbox->lo[0] = rcbbox->lo[1] = rcbbox->lo[2] = DBL_MAX;
-  rcbbox->hi[0] = rcbbox->hi[1] = rcbbox->hi[2] = -DBL_MAX;
-  boxtmp.lo[0] = boxtmp.lo[1] = boxtmp.lo[2] = DBL_MAX;
-  boxtmp.hi[0] = boxtmp.hi[1] = boxtmp.hi[2] = -DBL_MAX;
-  
-  for (i = 0; i < dotnum; i++) {
-    for (j = 0; j < 3; j++) {
-      if (dotpt[i].X[j] < boxtmp.lo[j])
-	boxtmp.lo[j] = dotpt[i].X[j];
-      if (dotpt[i].X[j] > boxtmp.hi[j])
-	boxtmp.hi[j] = dotpt[i].X[j];
-    }
-  }
-
-  MPI_Allreduce(&boxtmp,rcbbox,1,box_type,box_op,zz->Communicator);
+  compute_RCB_box(rcbbox, dotnum, dotpt, NULL, box_op, box_type, 
+                  zz->Communicator, zz->Num_Proc, zz->Proc, zz->Proc, 
+                  zz->Tflops_Special);
 
   /* if preset_dir is turned on, assign cut order according to order of 
      directions */
@@ -672,6 +672,13 @@ static int rcb_fn(
         ierr = ZOLTAN_MEMERR;
         goto End;
       }
+    }
+
+    if (recompute_box) {
+      /* Compute bounding box for partition set */
+      compute_RCB_box(rcbbox, dotnum, dotpt, NULL, box_op, box_type,
+                      local_comm, old_nprocs, proc - proclower, proc, 
+                      zz->Tflops_Special);
     }
 
     /* Compute max box length. */
@@ -953,7 +960,9 @@ static int rcb_fn(
                &(dindx[0]), &(tmpdindx[0]), partlower, 
                proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                preset_dir, 
-               rectilinear_blocks, obj_wgt_comp, mcnorm, average_cuts,
+               rectilinear_blocks, obj_wgt_comp, mcnorm, 
+               recompute_box,
+               box_op, box_type, average_cuts, 
                counters, treept, dim_spec, level,
                coord, wgts, part_sizes, wgtscale, rcb->Num_Dim,
                max_aspect_ratio);
@@ -1028,8 +1037,13 @@ static int rcb_fn(
   if (gen_tree) {
     int *displ, *recvcount;
     int sendcount;
+    struct rcb_tree *treetmp = NULL;  /* temporary tree of RCB cuts for use in
+                                         MPI_Allgatherv */
 
-    if (!(displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int)))) {
+    treetmp = (struct rcb_tree *)
+	      ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(struct rcb_tree));
+    displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int));
+    if (!displ || !treetmp) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
       goto End;
@@ -1039,7 +1053,14 @@ static int rcb_fn(
     ierr = Zoltan_RB_Tree_Gatherv(zz, sizeof(struct rcb_tree), &sendcount,
                                   recvcount, displ);
 
-    MPI_Allgatherv(&treept[fp], sendcount, MPI_BYTE, treept, recvcount, displ,
+    /* 
+     * Create copy of treept so that MPI_Allgatherv doesn't use same
+     * memory for sending and receiving; removes valgrind warning.
+     */
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++)
+      treetmp[i] = treept[i];
+
+    MPI_Allgatherv(&treetmp[fp], sendcount, MPI_BYTE, treept, recvcount, displ,
                    MPI_BYTE, zz->Communicator);
     treept[0].dim = 0;
     for (i = 1; i < zz->LB.Num_Global_Parts; i++)
@@ -1048,6 +1069,7 @@ static int rcb_fn(
       else if (treept[i].parent < 0)
         treept[-treept[i].parent - 1].right_leaf = i;
     ZOLTAN_FREE(&displ);
+    ZOLTAN_FREE(&treetmp);
   }
   else {
     treept[0].dim = -1;
@@ -1325,6 +1347,10 @@ static int serial_rcb(
   int rectilinear_blocks,    /* (0) do (1) don't break ties in find_median*/
   int obj_wgt_comp,          /* (1) obj wgts have same units, no scaling */
   int mcnorm,                /* norm for multicriteria bisection */
+  int recompute_box,         /* (0) do (1) don't recompute bounding box for
+                                partition sets at each level of recursion */
+  MPI_Op box_op,             /* Operator needed if recompute_box */
+  MPI_Datatype box_type,     /* Data type needed if recompute_box */
   int average_cuts,          /* Flag forcing median line to be drawn halfway
                                 between two closest objects. */
   int counters[],            /* diagnostic counts */
@@ -1395,12 +1421,18 @@ static int serial_rcb(
         dotmark0[j] = dotmark[j];
     }
 
+    if (recompute_box) {
+      /* Compute bounding box for partition set */
+      compute_RCB_box(rcbbox, dotnum, dotpt, dindx, 
+                      box_op, box_type, MPI_COMM_SELF, 1, 0, proc, 0);
+    }
+
     for (dim=0; dim<ndim; dim++){
 
       /* One cut direction only */
       if (one_cut_dir){
         dim = cut_dimension(lock_direction, treept, partmid, 
-                        preset_dir, dim_spec, &level, rcbbox);
+                            preset_dir, dim_spec, &level, rcbbox);
         breakflag= 1;
       }
       else {
@@ -1555,7 +1587,9 @@ static int serial_rcb(
                         &(dindx[0]), &(tmpdindx[0]), partlower, 
                         proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                         preset_dir, 
-                        rectilinear_blocks, obj_wgt_comp, mcnorm, average_cuts,
+                        rectilinear_blocks, obj_wgt_comp, mcnorm, 
+                        recompute_box,
+                        box_op, box_type, average_cuts, 
                         counters, treept, dim_spec, level,
                         coord, wgts, part_sizes, wgtscale, ndim,
                         max_aspect_ratio);
@@ -1575,7 +1609,9 @@ static int serial_rcb(
                         &(dindx[set1]), &(tmpdindx[set1]), partmid, 
                         proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                         preset_dir, rectilinear_blocks, obj_wgt_comp, mcnorm,
-                        average_cuts, counters, treept, dim_spec, level,
+                        recompute_box,
+                        box_op, box_type, average_cuts,
+                        counters, treept, dim_spec, level,
                         coord, wgts, part_sizes, wgtscale, ndim,
                         max_aspect_ratio);
       if (ierr < 0) {
@@ -1588,6 +1624,50 @@ End:
   return ierr;
 }
 
+/*****************************************************************************/
+static void compute_RCB_box(
+  struct rcb_box *rcbbox,    /* bounding box of RCB sub-domain */
+  int dotnum,                /* # of dots on this processor */
+  struct Dot_Struct *dotpt,  /* temporary pointer to rcb->Dots. */
+  int *dindx,                /* Index into dotpt used by serial RCB; 
+                                NULL for parallel rcb. */
+  MPI_Op box_op,    
+  MPI_Datatype box_type,
+  MPI_Comm comm,
+  int nproc,                 /* number of processors in partition */
+  int rank,                  /* rank within partition */
+  int proc,                  /* global processor number */
+  int Tflops_Special
+)
+{
+/* Compute sub-domain bounding box to entire domain within communicator */
+int i, j, k;
+struct rcb_box boxtmp;
+
+  rcbbox->lo[0] = rcbbox->lo[1] = rcbbox->lo[2] = DBL_MAX;
+  rcbbox->hi[0] = rcbbox->hi[1] = rcbbox->hi[2] = -DBL_MAX;
+  boxtmp.lo[0] = boxtmp.lo[1] = boxtmp.lo[2] = DBL_MAX;
+  boxtmp.hi[0] = boxtmp.hi[1] = boxtmp.hi[2] = -DBL_MAX;
+  
+  for (i = 0; i < dotnum; i++) {
+    k = (dindx ? dindx[i] : i);
+    for (j = 0; j < 3; j++) {
+      if (dotpt[k].X[j] < boxtmp.lo[j])
+	boxtmp.lo[j] = dotpt[k].X[j];
+      if (dotpt[k].X[j] > boxtmp.hi[j])
+	boxtmp.hi[j] = dotpt[k].X[j];
+    }
+  }
+
+  if (!Tflops_Special)
+    MPI_Allreduce(&boxtmp,rcbbox,1,box_type,box_op,comm);
+  else {
+    i = 1;
+    Zoltan_RB_reduce(nproc, rank, proc, (void *) &boxtmp, (void *) rcbbox,
+                     sizeof(struct rcb_box), &i, box_type, comm,
+                     Zoltan_RCB_box_merge);
+  }
+}
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

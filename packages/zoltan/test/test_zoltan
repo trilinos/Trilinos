@@ -373,8 +373,8 @@ else
     set ch_name = ($ch_name vwgt2 hammond2)
     set ch_nproc = ($ch_nproc 1 1) # no. of procs
   else
-    set ch_name = ($ch_name drake vwgt2 hammond2 brack2_3)
-    set ch_nproc = ($ch_nproc 3 2 6 5) # no. of procs
+    set ch_name = ($ch_name drake slac vwgt2 hammond2 brack2_3)
+    set ch_nproc = ($ch_nproc 3 9 2 6 5) # no. of procs
   endif
 
   if (! $no_rcb) then
@@ -386,6 +386,7 @@ else
       set ch_methods = ( $ch_methods rcb-set1 rcb-set2 )
       set ch_methods = ( $ch_methods rcb-set3 rcb-set4 )
       set ch_methods = ( $ch_methods rcb-set5 rcb-set6 )
+      set ch_methods = ( $ch_methods rcb-rcbox rcb-rcbox-ts )
       set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
       set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
       set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
