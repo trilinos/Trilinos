@@ -532,12 +532,12 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
 
 int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 {
-   int iter, i, j, length, allocated_space, *cols, col;
+   int iter, i, j, nnz, length, allocated_space, *cols, col;
    double dtemp, diag_term, *vals, omega;
    ML_Operator *Amat;
    ML_Comm *comm;
    ML_CommInfoOP *getrow_comm;
-   int Nrows;
+   int Nrows, *rptr;
    double *x2;
 #ifdef ML_SMOOTHER_DEBUG
    double *res2, res_norm, init_norm;
@@ -732,7 +732,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 #endif
 
    /* ----------------------------------------------------------------- */
-   /* clean up
+   /* clean up                                                          */
    /* ----------------------------------------------------------------- */
 
 #ifdef ML_SMOOTHER_DEBUG
