@@ -2129,7 +2129,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
                ML_Aggregate *ag, int R_is_Ptranspose, int ReturnPerm)
 {
   ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
-  ML_Operator **permvec;
+  ML_Operator **permvec=NULL;
   int status, offset1, offset2, i,j, flag = 0;
   double *new_null;
   int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
