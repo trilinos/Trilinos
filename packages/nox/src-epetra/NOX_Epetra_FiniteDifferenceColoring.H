@@ -77,12 +77,14 @@ class FiniteDifferenceColoring : public FiniteDifference {
       
  public:
 
-  //! Constructors
+  //! Constructor
 
   FiniteDifferenceColoring(Interface& i, const Epetra_Vector& initialGuess, 
                            Epetra_MapColoring& colorMap,
                            vector<Epetra_IntVector>& columns,
                            double beta = 1.0e-6, double alpha = 1.0e-4);
+
+  //! Constructor
 
   FiniteDifferenceColoring(Interface& i, const Epetra_Vector& initialGuess, 
                            Epetra_CrsGraph& rawGraph,

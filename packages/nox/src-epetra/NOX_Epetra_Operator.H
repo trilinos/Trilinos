@@ -59,8 +59,7 @@ class Operator : public Epetra_Operator {
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
     affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
     does not support transpose use, this method should return a value of -1.      
-    \param In
-    UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+    \param  UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
     
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
@@ -68,10 +67,8 @@ class Operator : public Epetra_Operator {
 
   //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
   /*! 
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Y - A Epetra_MultiVector of dimension NumVectors containing result.
     
     \return Integer error code, set to 0 if successful.
   */
@@ -79,10 +76,8 @@ class Operator : public Epetra_Operator {
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! 
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to solve for.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Y -A Epetra_MultiVector of dimension NumVectors containing result.
     
     \return Integer error code, set to 0 if successful.
     

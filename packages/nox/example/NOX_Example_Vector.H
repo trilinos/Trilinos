@@ -110,7 +110,7 @@ class Vector : public Abstract::Vector {
   
   //@{ \name Norms.
   
-  double norm(NormType type = TwoNorm) const;
+  double norm(Abstract::Vector::NormType type = TwoNorm) const;
   
   double norm(const Vector& weights) const;
 

@@ -115,7 +115,7 @@ class Vector : public Abstract::Vector {
 
   //@{ \name Norms.
 
-  virtual double norm(NormType type = TwoNorm) const;
+  virtual double norm(Abstract::Vector::NormType type = TwoNorm) const;
 
   virtual double norm(const Vector& weights) const;
   //! See above.

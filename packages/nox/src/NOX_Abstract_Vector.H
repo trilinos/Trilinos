@@ -131,7 +131,7 @@ public:
     <li>\c INF : infinity- or max-norm \f[ \max_{i} |x_i| \f]
     </uL>
   */
-  virtual double norm(NormType type = TwoNorm) const = 0;
+  virtual double norm(Abstract::Vector::NormType type = TwoNorm) const = 0;
 
   //! Weighted 2-Norm.
   /*! Defined as 
