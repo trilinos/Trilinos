@@ -22,7 +22,9 @@ extern "C" {
 static ZOLTAN_HG_GLOBAL_PART_FN global_ran;
 static ZOLTAN_HG_GLOBAL_PART_FN global_lin;
 static ZOLTAN_HG_GLOBAL_PART_FN global_bfs;
-static ZOLTAN_HG_GLOBAL_PART_FN global_bfsr;
+static ZOLTAN_HG_GLOBAL_PART_FN global_bfsh;
+static ZOLTAN_HG_GLOBAL_PART_FN global_rbfs;
+static ZOLTAN_HG_GLOBAL_PART_FN global_rbfsh;
 
 /****************************************************************************/
 
@@ -31,7 +33,9 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
   if      (!strcasecmp(str, "ran")) return global_ran;
   else if (!strcasecmp(str, "lin")) return global_lin;
   else if (!strcasecmp(str, "bfs")) return global_bfs;
-  else if (!strcasecmp(str, "bfsr")) return global_bfsr;
+  else if (!strcasecmp(str, "rbfs")) return global_rbfs;
+  else if (!strcasecmp(str, "bfsh")) return global_bfsh;
+  else if (!strcasecmp(str, "rbfsh")) return global_rbfsh;
   else                              return NULL;
 }
 
@@ -160,12 +164,13 @@ static int bfs_order (
   HGraph *hg,		/* Hypergraph. */
   int *order,		/* Order array. On exit, order[i] is the i'th vertex. */
   int start_vtx,	/* Start the BFS from this vertex. */
+  int visit_mode,	/* Visit random (0) or heavy (1) hyperedges first? */
   int p,		/* Optional (input):  Number of partitions. */
   Partition part	/* Optional (output): Partition array. */
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank; 
-  int first, last, num_edges, *randperm;
+  int first, last, num_edges, *edges;
   int ierr=ZOLTAN_OK;
   float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
   char msg[128], *mark_edge;
@@ -199,14 +204,14 @@ static int bfs_order (
   for (i=0; i<hg->nVtx; i++)
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
    
-  /* array randperm only needs to be of size maximum #edges for any vtx */
+  /* array edges only needs to be of size maximum #edges for any vtx */
   num_edges = 0;
   for (i=0; i<hg->nVtx; i++)
     if (hg->vindex[i+1] - hg->vindex[i] > num_edges)
       num_edges = hg->vindex[i+1] - hg->vindex[i];
   
   if (!(mark_edge  = (char *)  ZOLTAN_CALLOC (hg->nEdge, sizeof (char))) ||
-      !(randperm   = (int *)   ZOLTAN_CALLOC (num_edges, sizeof (int)))) {
+      !(edges      = (int *)   ZOLTAN_CALLOC (num_edges, sizeof (int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr =  ZOLTAN_MEMERR;
     goto error;
@@ -288,36 +293,41 @@ static int bfs_order (
                pnumber, cutoff);
 
       /* Clean out queue to restart bfs. */
+      last = first;
       for (i=0; i<hg->nVtx; i++)
         if (rank[i] == -2) rank[i] = -1;
       for (i=0; i<hg->nEdge; i++)
         mark_edge[i] = 0;
-      last = first+1;          /* Only keep one vertex in queue. */
-      rank[order[first]] = -2;
     }
      
     /* Add nbors to queue. */
-    /* Pick edges in random order. */
-    /* Possible variation: pick heaviest edge first. */
+    /* Pick edges in random order, or heaviest first. */
     num_edges = hg->vindex[vtx+1] - hg->vindex[vtx];
     for (i=0; i<num_edges; i++)
-      randperm[i] = i;
-    Zoltan_HG_Rand_Perm_Int(randperm, num_edges);
+      edges[i] = hg->vedge[hg->vindex[vtx]+i];
+    if (visit_mode==0)
+      /* Randomly permute the edges. */
+      Zoltan_HG_Rand_Perm_Int(edges, num_edges);
+    else if (visit_mode==1)
+      /* Sort edges by weight */
+      quicksort_pointer_dec_float(edges, hg->ewgt, 0, num_edges-1);
 
     for (j=0; j<num_edges; j++){
-      edge = hg->vedge[hg->vindex[vtx]+randperm[j]];
+      edge = edges[j];
       if (!mark_edge[edge]){
         mark_edge[edge] = 1;
         for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
           nbor = hg->hvertex[i];
           if (rank[nbor] == -1){
-            order[last++] = nbor;
-            if (last > hg->nVtx) {
+            if (last >= hg->nVtx) {
               ZOLTAN_PRINT_ERROR(-1, yo, "Queue is full");
               ierr = ZOLTAN_FATAL;
               goto error;
             }
-            rank[nbor] = -2; /* nbor is now in queue */
+            else{
+              order[last++] = nbor;
+              rank[nbor] = -2; /* nbor is now in queue */
+            }
           }
         }
       }
@@ -334,14 +344,15 @@ static int bfs_order (
 error:
   ZOLTAN_FREE ((void **) &rank);
   ZOLTAN_FREE ((void **) &mark_edge);
-  ZOLTAN_FREE ((void **) &randperm);
+  ZOLTAN_FREE ((void **) &edges);
   return ierr;
 }
 
 /****************************************************************************/
 
 /* BFS partitioning. Sequence partitioning with vertices 
-   in breadth-first search order. */
+   in breadth-first search order. 
+   Random visit order for hyperedges. */
 
 static int global_bfs (
   ZZ *zz, 
@@ -362,15 +373,58 @@ static int global_bfs (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, NULL);
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto error;
     start = order[hg->nVtx -1];
   }
 
+  /* Compute BFS order */
+  ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    goto error;
+
+  /* Call sequence partitioning with BFS order array. */
+  ierr = seq_part( zz, hg, order, p, part);
+
+error:
+  ZOLTAN_FREE ((void **) &order);
+  return (ierr);
+}
+ 
+/****************************************************************************/
+
+/* BFS partitioning. Sequence partitioning with vertices 
+   in breadth-first search order.
+   Heavy-first visit order for hyperedges. */
+
+static int global_bfsh (
+  ZZ *zz, 
+  HGraph *hg,
+  int p,
+  Partition part
+)
+{ 
+  int i, ierr, start, *order=NULL;
+  char *yo = "global_bfsh" ;
+
+  if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+  { ZOLTAN_FREE ((void **) &order) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
+
+  /* Find pseudo-peripheral start vertex */
+  start = Zoltan_HG_Rand()%(hg->nVtx);
+  for (i=0; i<2; i++){
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      goto error;
+    start = order[hg->nVtx -1];
+  }
 
   /* Compute BFS order */
-  ierr = bfs_order(zz, hg, order, start, 0, NULL);
+  ierr = bfs_order(zz, hg, order, start, 1, 0, NULL);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 
@@ -386,9 +440,10 @@ error:
 
 /* BFS partitioning with restart. Sequence partitioning with vertices 
    in breadth-first search order, breaking of pieces as we go; 
-   that is, the BFS is restarted for each partition. */
+   that is, the BFS is restarted for each partition. 
+   Random visit order for hyperedges. */
 
-static int global_bfsr (
+static int global_rbfs (
   ZZ *zz, 
   HGraph *hg,
   int p,
@@ -397,7 +452,7 @@ static int global_bfsr (
 { 
   int i, start, *order;
   int ierr = ZOLTAN_OK;
-  char *yo = "global_bfsr" ;
+  char *yo = "global_rbfs" ;
 
   if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -408,14 +463,58 @@ static int global_bfsr (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, NULL);
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto error;
     start = order[hg->nVtx -1];
   }
 
   /* Call BFS and partition with restart. */
-  ierr = bfs_order(zz, hg, order, start, p, part);
+  ierr = bfs_order(zz, hg, order, start, 0, p, part);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    goto error;
+
+error:
+  /* Free data and return. */
+  ZOLTAN_FREE ((void **) &order) ;
+  return ierr;
+}
+
+/****************************************************************************/
+
+/* BFS partitioning with restart. Sequence partitioning with vertices 
+   in breadth-first search order, breaking of pieces as we go; 
+   that is, the BFS is restarted for each partition. 
+   Heavy-first visit order for hyperedges. */
+
+static int global_rbfsh (
+  ZZ *zz, 
+  HGraph *hg,
+  int p,
+  Partition part
+)
+{ 
+  int i, start, *order;
+  int ierr = ZOLTAN_OK;
+  char *yo = "global_rbfsh" ;
+
+  if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ierr = ZOLTAN_MEMERR;
+    goto error;
+  }
+
+  /* Find pseudo-peripheral start vertex */
+  start = Zoltan_HG_Rand()%(hg->nVtx);
+  for (i=0; i<2; i++){
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      goto error;
+    start = order[hg->nVtx -1];
+  }
+
+  /* Call BFS and partition with restart. */
+  ierr = bfs_order(zz, hg, order, start, 1, p, part);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 

@@ -49,13 +49,14 @@ int main (int argc, char **argv)
   HGPartParams hgp;
   ZZ     zz;
   int    base;   /* minimum vertex number in input file; usually 0 or 1. */
+  extern int hg_readfile();
 
   hgp.bal_tol = 1.1;
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
   strcpy(hgp.redmo_str, "aug3");
   hgp.ews = 1;
-  strcpy(hgp.global_str, "lin");
+  strcpy(hgp.global_str, "rbfsh");
   strcpy(hgp.local_str, "fm");
   hgp.check_graph = 1;
 
@@ -78,7 +79,7 @@ int main (int argc, char **argv)
     puts("                           mxg,reg,rrg,rhg,(grg)}");
     puts("-reda   reduction augment:{no,aug1,aug2,(aug3)}");
     puts("-reds   reduction scaling:(1)");
-    puts("-g      global method:    {ran,(lin),bfs,bfsr}");
+    puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,(rbfsh)}");
     puts("-l      local method:     no,(fm)");
     puts("-d      debug level:      (1)");
     puts("default values are in brackets ():");
