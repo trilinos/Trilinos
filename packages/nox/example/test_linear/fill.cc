@@ -16,24 +16,24 @@ void Fill::registerFillObjects(
 }
 
 // Matrix and Residual Fills
-void Fill::fillMatrix(Epetra_Vector *tmp_soln, Epetra_Vector *tmp_rhs, 
+void Fill::fillMatrix(const Epetra_Vector *tmp_soln, Epetra_Vector *tmp_rhs, 
 		      Epetra_RowMatrix *tmp_matrix) 
 {
 
   // Decide what kind of fill call this will be
   if (tmp_matrix==NULL) {
     flag = RHS_ONLY;
-    soln = tmp_soln;
+    soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
     //if (Comm->MyPID()==0) printf("Starting RESIDUAL ONLY Fill....");
   } else if (tmp_rhs==NULL) {
     flag = MATRIX_ONLY;
-    soln = tmp_soln;
+    soln = const_cast <Epetra_Vector*> (tmp_soln);
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
     //if (Comm->MyPID()==0) printf("Starting MATRIX ONLY Fill....");
   } else { 
     flag = ALL;
-    soln = tmp_soln;
+    soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
     //if (Comm->MyPID()==0) printf("Starting Matrix and RESIDUAL Fill....");
