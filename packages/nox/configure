@@ -882,6 +882,7 @@ Optional Features:
   --enable-nox-epetra     compile epetra interace libraries
   --enable-nox-epetra-examples
                           compile epetra interface examples
+  --enable-nox-epetraext  compile epetraext support into libnoxepetra
   --enable-nox-petsc      compile petsc interace libraries
   --enable-nox-petsc-examples
                           compile petsc interface examples
@@ -913,12 +914,14 @@ Optional Packages:
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-trilinos         building inside Trilinos directory structure
   --with-epetra-incdir    specify location of all epetra header files
+  --with-epetraext-incdir specify location of epetraext header files
   --with-aztecoo-incdir   specify location of all aztecoo header files
   --with-ifpack-incdir    specify location of all ifpack header files
   --with-anasazi-incdir   specify location of all anasazi header files
   --with-anasaziutils-incdir
                           specify location of all anasazi header files
   --with-epetra-libdir    specify location of epetra library
+  --with-epetraext-libdir specify location of epetraext library
   --with-aztecoo-libdir   specify location of aztecoo library
   --with-ifpack-libdir    specify location of ifpack library
   --with-anasazi-libdir   specify location of anasazi library
@@ -3196,7 +3199,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3199:" \
+echo "$as_me:3202:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4806,6 +4809,23 @@ else
 fi
 
 # ------------------------------------------------------------------------
+# NOX-EpetraExt support
+# ------------------------------------------------------------------------
+
+# Check whether --enable-nox-epetraext or --disable-nox-epetraext was given.
+if test "${enable_nox_epetraext+set}" = set; then
+  enableval="$enable_nox_epetraext"
+  BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}
+else
+  BUILD_NOX_EPETRAEXT_SUPPORT=no
+
+fi;
+echo "$as_me:$LINENO: checking whether we should build epetraext support into noxepetra library" >&5
+echo $ECHO_N "checking whether we should build epetraext support into noxepetra library... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_NOX_EPETRAEXT_SUPPORT}" >&5
+echo "${ECHO_T}${BUILD_NOX_EPETRAEXT_SUPPORT}" >&6
+
+# ------------------------------------------------------------------------
 # NOX-PETSC library?
 # ------------------------------------------------------------------------
 
@@ -5393,7 +5413,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5396: \"$ac_link\") >&5
+(eval echo $as_me:5416: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5473,7 +5493,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5476: \"$ac_link\") >&5
+(eval echo $as_me:5496: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8336,6 +8356,13 @@ if test "${with_epetra_incdir+set}" = set; then
 fi;
 
 
+# Check whether --with-epetraext-incdir or --without-epetraext-incdir was given.
+if test "${with_epetraext_incdir+set}" = set; then
+  withval="$with_epetraext_incdir"
+  epetraext_INCDIR=$withval
+fi;
+
+
 # Check whether --with-aztecoo-incdir or --without-aztecoo-incdir was given.
 if test "${with_aztecoo_incdir+set}" = set; then
   withval="$with_aztecoo_incdir"
@@ -8353,14 +8380,14 @@ fi;
 # Check whether --with-anasazi-incdir or --without-anasazi-incdir was given.
 if test "${with_anasazi_incdir+set}" = set; then
   withval="$with_anasazi_incdir"
-  ifpack_INCDIR=$withval
+  anasazi_INCDIR=$withval
 fi;
 
 
 # Check whether --with-anasaziutils-incdir or --without-anasaziutils-incdir was given.
 if test "${with_anasaziutils_incdir+set}" = set; then
   withval="$with_anasaziutils_incdir"
-  ifpack_INCDIR=$withval
+  anasaziutils_INCDIR=$withval
 fi;
 
 
@@ -8368,6 +8395,13 @@ fi;
 if test "${with_epetra_libdir+set}" = set; then
   withval="$with_epetra_libdir"
   epetra_LIBDIR=$withval
+fi;
+
+
+# Check whether --with-epetraext-libdir or --without-epetraext-libdir was given.
+if test "${with_epetraext_libdir+set}" = set; then
+  withval="$with_epetraext_libdir"
+  epetraext_LIBDIR=$withval
 fi;
 
 
@@ -8388,14 +8422,14 @@ fi;
 # Check whether --with-anasazi-libdir or --without-anasazi-libdir was given.
 if test "${with_anasazi_libdir+set}" = set; then
   withval="$with_anasazi_libdir"
-  ifpack_LIBDIR=$withval
+  anasazi_LIBDIR=$withval
 fi;
 
 
 # Check whether --with-anasaziutils-libdir or --without-anasaziutils-libdir was given.
 if test "${with_anasaziutils_libdir+set}" = set; then
   withval="$with_anasaziutils_libdir"
-  ifpack_LIBDIR=$withval
+  anasaziutils_LIBDIR=$withval
 fi;
 
 
@@ -10391,6 +10425,445 @@ echo "$as_me: error: Cannot find anasazi include directory containing AnasaziBLA
 
   fi
 
+  if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "EpetraExt_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir (if any)
+  if test $done = no && test -n "${epetraext_INCDIR}"; then
+    CPPFLAGS="-I${epetraext_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "EpetraExt_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I${epetraext_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${epetraext_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../epetraext/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "EpetraExt_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../epetraext/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../epetraext/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../epetraext/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "EpetraExt_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../epetraext/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../epetraext/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file EpetraExt_config.h, part of the epetraext package."
+    echo "Try --with-epetraext-incdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find epetraext include directory containing EpetraExt_config.h" >&5
+echo "$as_me: error: Cannot find epetraext include directory containing EpetraExt_config.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Epetra_Transform.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir (if any)
+  if test $done = no && test -n "${epetraext_INCDIR}"; then
+    CPPFLAGS="-I${epetraext_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Epetra_Transform.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I${epetraext_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${epetraext_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../epetraext/src/transform $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Epetra_Transform.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../epetraext/src/transform ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../epetraext/src/transform ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../epetraext/src/transform $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Epetra_Transform.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../epetraext/src/transform ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../epetraext/src/transform ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Epetra_Transform.h, part of the epetraext package."
+    echo "Try --with-epetraext-incdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find epetraext include directory containing Epetra_Transform.h" >&5
+echo "$as_me: error: Cannot find epetraext include directory containing Epetra_Transform.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  fi
+
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 
 fi
@@ -11553,6 +12026,197 @@ echo "$as_me: error: Cannot find anasaziutils library." >&2;}
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LOCA_ANASAZI 1
+_ACEOF
+
+  fi
+
+  if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
+
+  LIBS="-lepetraext_trans ${LIBS}"
+  save_LDFLAGS=$LDFLAGS
+  done=no
+
+  # First, see if we're inside Trilinos.
+  # If so, just assume the libraries will be built later.
+  if test X$INSIDE_TRILINOS = Xyes; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../epetraext/src/transform $save_LDFLAGS"
+    done=auto
+  fi
+
+  # Next, see if we can link without doing anything
+  if test $done = no; then
+    ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+    LDFLAGS=$save_LDFLAGS
+  fi
+
+  # Next try the specified libdir (if any)
+   if test $done = no && test -n "${epetraext_trans_LIBDIR}"; then
+     LDFLAGS="-L${epetraext_trans_LIBDIR} $save_LDFLAGS"
+     cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  # Next try the Trilinos build dir
+   if test $done = no; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../epetraext/src/transform $save_LDFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  echo "$as_me:$LINENO: checking for epetraext_trans library" >&5
+echo $ECHO_N "checking for epetraext_trans library... $ECHO_C" >&6
+
+  if test $done = auto; then
+    echo "$as_me:$LINENO: result: no check - assuming library will be built by Trilinos" >&5
+echo "${ECHO_T}no check - assuming library will be built by Trilinos" >&6
+  elif test $done = yes; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    echo "------"
+    echo "Cannot find the library epetraext_trans."
+    echo "Try --with-epetraext_trans-libdir=<dir> to specify a single directory or"
+    echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find epetraext_trans library." >&5
+echo "$as_me: error: Cannot find epetraext_trans library." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NOX_EPETRAEXT 1
 _ACEOF
 
   fi

@@ -619,6 +619,18 @@ AM_CONDITIONAL(BUILD_LIBNOXEPETRA, test X${ADDON_epetra} = Xyes)
 AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${ADDON_epetra_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
+# NOX-EpetraExt support
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(nox-epetraext,
+[AC_HELP_STRING([--enable-nox-epetraext],[compile epetraext support into libnoxepetra])],
+[BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}],
+[BUILD_NOX_EPETRAEXT_SUPPORT=no]
+)
+AC_MSG_CHECKING(whether we should build epetraext support into noxepetra library)
+AC_MSG_RESULT([${BUILD_NOX_EPETRAEXT_SUPPORT}])
+
+# ------------------------------------------------------------------------
 # NOX-PETSC library?
 # ------------------------------------------------------------------------
 
@@ -779,6 +791,10 @@ AC_ARG_WITH(epetra-incdir,
 [AC_HELP_STRING([--with-epetra-incdir],[specify location of all epetra header files])],
 [epetra_INCDIR=$withval])
 
+AC_ARG_WITH(epetraext-incdir,
+[AC_HELP_STRING([--with-epetraext-incdir],[specify location of epetraext header files])],
+[epetraext_INCDIR=$withval])
+
 AC_ARG_WITH(aztecoo-incdir,
 [AC_HELP_STRING([--with-aztecoo-incdir],[specify location of all aztecoo header files])],
 [aztecoo_INCDIR=$withval])
@@ -789,15 +805,19 @@ AC_ARG_WITH(ifpack-incdir,
 
 AC_ARG_WITH(anasazi-incdir,
 [AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
-[ifpack_INCDIR=$withval])
+[anasazi_INCDIR=$withval])
 
 AC_ARG_WITH(anasaziutils-incdir,
 [AC_HELP_STRING([--with-anasaziutils-incdir],[specify location of all anasazi header files])],
-[ifpack_INCDIR=$withval])
+[anasaziutils_INCDIR=$withval])
 
 AC_ARG_WITH(epetra-libdir,
 [AC_HELP_STRING([--with-epetra-libdir],[specify location of epetra library])],
 [epetra_LIBDIR=$withval])
+
+AC_ARG_WITH(epetraext-libdir,
+[AC_HELP_STRING([--with-epetraext-libdir],[specify location of epetraext library])],
+[epetraext_LIBDIR=$withval])
 
 AC_ARG_WITH(aztecoo-libdir,
 [AC_HELP_STRING([--with-aztecoo-libdir],[specify location of aztecoo library])],
@@ -809,11 +829,11 @@ AC_ARG_WITH(ifpack-libdir,
 
 AC_ARG_WITH(anasazi-libdir,
 [AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasazi library])],
-[ifpack_LIBDIR=$withval])
+[anasazi_LIBDIR=$withval])
 
 AC_ARG_WITH(anasaziutils-libdir,
 [AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasaziutils library])],
-[ifpack_LIBDIR=$withval])
+[anasaziutils_LIBDIR=$withval])
 
 AC_ARG_WITH(y12m-libdir,
 [AC_HELP_STRING([--with-y12m-libdir],[specify location of y12m library])],
@@ -938,6 +958,11 @@ if test X${ADDON_epetra} = Xyes; then
     TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
     TRILINOS_HEADER(anasazi,AnasaziCommon.hpp,src)
     TRILINOS_HEADER(anasazi,AnasaziBLAS.hpp,utils)
+  fi
+
+  if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
+    TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
+    TRILINOS_HEADER(epetraext,Epetra_Transform.h,src/transform)
   fi
 
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
@@ -1098,6 +1123,11 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
     TRILINOS_LIB_CHECK(anasazi,anasazi,src)
     TRILINOS_LIB_CHECK(anasaziutils,anasazi,utils)
     AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
+  fi
+
+  if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
+    TRILINOS_LIB_CHECK(epetraext_trans,epetraext,src/transform)
+    AC_DEFINE(HAVE_NOX_EPETRAEXT,1,[define that epetraext is activated in nox])
   fi
 
 fi
