@@ -1,0 +1,50 @@
+#############################################################
+#
+#                    ML Installation Settings
+#
+#############################################################
+#
+ARCHITECTURE                     PCLINUX
+#                                [CPLANT, DEC, HP, PCLINUX, 
+#                                SGI, SMOS, SOLARIS, SP2,
+#                                SUN, TFLOP]
+#
+#                                To support other machines, create
+#                                an etc/makefile.ARCHITECTURE
+#
+#############################################################
+#                 General Libraries: mpi, blas, lapack, ...
+#############################################################
+USE MPI                          no  # [yes, no]
+USE LAPACK                       no  # [yes, no]
+USE BLAS                         no  # [yes, no]
+LIBRARY INCLUDE PATH
+LIBRARY INCLUDE PATH
+LIBRARY DIRECTORY LOCATION
+LIBRARY DIRECTORY LOCATION
+#*** NOTE: LIBRARIES MUST BE GIVEN IN CORRECT ORDER!!!!******
+LIBRARY NAME
+LIBRARY NAME
+#
+#
+#############################################################
+#                    AZTEC
+#############################################################
+AZTEC INCLUDE DIRECTORY          default   # [default, ...]
+NEED TO BUILD AZTEC              yes       # [yes, no]
+AZTEC INTERNAL DEVELOPER         no        # [yes, no]
+#
+#############################################################
+#                    SUPERLU
+#############################################################
+SERIAL SUPERLU DIRECTORY          /home/tuminaro/codes/Aztec/ml/lib/DSuperLU         # [default, ...]
+DISTRIBUTED SUPERLU DIRECTORY     default  $ [default, ...]
+NEED TO BUILD SUPERLU             yes      # [yes, no]
+#
+#############################################################
+#                    PARASAILS/METIS
+#############################################################
+PARASAILS DIRECTORY               default   # [default, ...]
+METIS DIRECTORY                   default   # [default, ...]
+
+
