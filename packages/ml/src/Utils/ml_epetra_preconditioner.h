@@ -22,24 +22,21 @@ namespace ML_Epetra
 {
 
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
-  int SetDefaults(string ProblemType, Teuchos::ParameterList & List, char * Prefix = "",
-		  int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
+  int SetDefaults(string ProblemType, Teuchos::ParameterList & List, char * Prefix = "");
   
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
-  int SetDefaultsDD(Teuchos::ParameterList & List, char * Prefix = "",
-		    int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
+  int SetDefaultsDD(Teuchos::ParameterList & List, char * Prefix = "");
+  
+  int ML_Epetra::SetDefaultsDD_LU(Teuchos::ParameterList & List, char * Prefix = "");
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
-  int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, char * Prefix = "",
-			    int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
+  int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, char * Prefix = "");
   
   //! Sets default parameters for Maxwell's equations.
-  int SetDefaultsMaxwell(Teuchos::ParameterList & List, char * Prefix = "" ,
-			 int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
+  int SetDefaultsMaxwell(Teuchos::ParameterList & List, char * Prefix = "");
   
   //! Sets classical smoothed aggregation.
-  int SetDefaultsSA(Teuchos::ParameterList & List, char * Prefix = ""  ,
-		    int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
+  int SetDefaultsSA(Teuchos::ParameterList & List, char * Prefix = "");
 
   
 class MultiLevelPreconditioner : public virtual Epetra_RowMatrix {
@@ -351,6 +348,7 @@ private:
   int   SmootherOptions_[AZ_OPTIONS_SIZE];
   double SmootherParams_[AZ_PARAMS_SIZE];
   double SmootherStatus_[AZ_STATUS_SIZE];
+
   Teuchos::ParameterList List_;             // all input parameters are here
   Teuchos::ParameterList OutputList_;       // various informations
 
