@@ -74,8 +74,7 @@ main(int argc, char *argv[])
 	    }
 	} else { /* Last arg is considered a filename */
 	    if ( !(fp = fopen(*cpp, "r")) ) {
-                fprintf(stderr, "File does not exist.");
-                exit(-1);
+                ABORT("File does not exist");
             }
 	    break;
 	}

@@ -164,7 +164,7 @@ dreadhb(int iam, FILE *fp, int_t *nrow, int_t *ncol, int_t *nonz,
     if ( numer_lines ) {
         dReadValues(fp, *nonz, *nzval, valnum, valsize);
 #if ( DEBUGlevel>=1 )
-	if ( !iam ) printf("read nzval[%d] = %d\n", *nonz-1, (*nzval)[*nonz-1]);
+	if ( !iam ) printf("read nzval[%d] = %e\n", *nonz-1, (*nzval)[*nonz-1]);
 #endif
     }
 

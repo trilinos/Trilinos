@@ -1,7 +1,7 @@
-		SuperLU_Dist Examples
+		SuperLU_DIST  EXAMPLES
 
 This directory contains sample programs to illustrate how to use
-various functions provded in SuperLU_Dist. You can modify these
+various functions provded in SuperLU_DIST. You can modify these
 examples to suit your applications.
 
 The command line options "-r <process rows>" and "-c <process columns>"

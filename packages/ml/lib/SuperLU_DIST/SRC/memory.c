@@ -536,10 +536,6 @@ int_t QuerySpace(int_t n, int_t lsub_size, Glu_freeable_t *Glu_freeable,
     register int_t iword = sizeof(int_t);
     extern int_t no_expand;
 
-#if ( PRNTlevel>=1 )
-    printf(".. QuerySpace(): int %d, short %d, float %d, double %d\n", 
-	   iword, sizeof(short), sizeof(float), sizeof(double));
-#endif
     /* For the adjacency graphs of L and U. */
     /*mem_usage->for_lu = (float)( (4*n + 3) * iword +
 				Glu_freeable->xlsub[n]*iword );*/

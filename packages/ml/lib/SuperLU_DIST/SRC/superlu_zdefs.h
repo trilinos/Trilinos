@@ -237,7 +237,7 @@ typedef struct {
 } Glu_persist_t;
 
 /*
- *-- The structures are determined by SYMBFACT and used by DDISTRIBUTE.
+ *-- The structures are determined by SYMBFACT and used by ZDISTRIBUTE.
  * 
  * (xlsub,lsub): lsub[*] contains the compressed subscript of
  *	rectangular supernodes; xlsub[j] points to the starting
@@ -333,14 +333,18 @@ typedef struct {
  * column format, the blocks in U are stored in compressed block row format.
  */
 typedef struct {
-    int_t   **Lrowind_bc_ptr; /* size ceil(NSUPERS/Pc)                 */
+    int_t   **Lrowind_bc_ptr;       /* size ceil(NSUPERS/Pc)           */
     doublecomplex  **Lnzval_bc_ptr; /* size ceil(NSUPERS/Pc)           */
-    int_t   **Ufstnz_br_ptr;  /* size ceil(NSUPERS/Pr)                 */
+    int_t   **Ufstnz_br_ptr;        /* size ceil(NSUPERS/Pr)           */
     doublecomplex  **Unzval_br_ptr; /* size ceil(NSUPERS/Pr)           */
-    int_t   *Lsub_buf;        /* Buffer for the remote subscripts of L */
-    doublecomplex  *Lval_buf; /* Buffer for the remote nonzeros of L   */
-    int_t   *Usub_buf;        /* Buffer for the remote subscripts of U */
-    doublecomplex  *Uval_buf; /* Buffer for the remote nonzeros of U   */
+#if 0
+    int_t   *Lsub_buf;            /* Buffer for the remote subscripts of L */
+    doublecomplex  *Lval_buf;     /* Buffer for the remote nonzeros of L   */
+#endif
+    int_t   *Lsub_buf_2[2];       /* Buffer for the remote subscripts of L */
+    doublecomplex *Lval_buf_2[2]; /* Buffer for the remote nonzeros of L   */
+    int_t   *Usub_buf;            /* Buffer for the remote subscripts of U */
+    doublecomplex  *Uval_buf;     /* Buffer for the remote nonzeros of U   */
     doublecomplex  *ujrow;    /* used in panel factorization.          */
     int_t   bufmax[NBUFFERS]; /* Buffer size; 5 entries
 			       *     0 : size of Lsub_buf[]
@@ -576,7 +580,7 @@ extern int_t symbfact_SubInit(fact_t, void *, int_t, int_t, int_t, int_t,
 extern int_t symbfact_SubXpand(int_t, int_t, int_t, MemType, int_t *,
 			       Glu_freeable_t *);
 extern int_t symbfact_SubFree(Glu_freeable_t *);
-extern void  ddistribute(fact_t, int_t, SuperMatrix *, Glu_freeable_t *, 
+extern int_t zdistribute(fact_t, int_t, SuperMatrix *, Glu_freeable_t *, 
 			 LUstruct_t *, gridinfo_t *);
 extern void  pzgssvx_ABglobal(superlu_options_t *, SuperMatrix *, 
 			      ScalePermstruct_t *, doublecomplex *,
@@ -592,10 +596,11 @@ extern void  pzgstrs_Bglobal(int_t, LUstruct_t *, gridinfo_t *, doublecomplex*,
 extern void zlsum_fmod(doublecomplex *, doublecomplex *, doublecomplex *,
 		       doublecomplex *, int, int, int_t , int_t *, int_t,
 		       int_t, int_t, int_t *, gridinfo_t *, LocalLU_t *,
-		       SuperLUStat_t *);
+		       MPI_Request [], SuperLUStat_t *);
 extern void zlsum_bmod(doublecomplex *, doublecomplex *, doublecomplex *, int,
 		       int_t, int_t *, int_t *Urbs, Ucb_indptr_t **, int_t **,
-		       int_t *, gridinfo_t *, LocalLU_t *, SuperLUStat_t *);
+		       int_t *, gridinfo_t *, LocalLU_t *,
+		       MPI_Request [], SuperLUStat_t *);
 extern void  pzgsrfs_ABXglobal(int_t, SuperMatrix *, double, LUstruct_t *,
 			       gridinfo_t *, doublecomplex [], int_t,
 			       doublecomplex [], int_t, int, double *,

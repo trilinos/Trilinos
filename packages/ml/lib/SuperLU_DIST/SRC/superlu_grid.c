@@ -36,6 +36,9 @@ void superlu_gridinit(MPI_Comm Bcomm, /* The base communicator upon which
 	ABORT("Number of processes is smaller than NPROW * NPCOL");
 
     superlu_gridmap(Bcomm, nprow, npcol, usermap, nprow, grid);
+
+    grid->ngrids = 1;
+    grid->mygrid = 0;
     
     SUPERLU_FREE(usermap);
 }

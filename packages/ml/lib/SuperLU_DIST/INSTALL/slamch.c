@@ -1,5 +1,4 @@
-#include        <stdio.h>
-
+#include <stdio.h>
 #define TRUE_ (1)
 #define FALSE_ (0)
 #define min(a,b) ((a) <= (b) ? (a) : (b))
@@ -412,6 +411,7 @@ L30:
    ===================================================================== 
 */
     /* Table of constant values */
+    static int c__1 = 1;
     
     /* Initialized data */
     static int first = TRUE_;
@@ -719,6 +719,7 @@ double slamc3_(float *a, float *b)
    ===================================================================== 
 */
     /* System generated locals */
+    int i__1;
     float r__1;
     /* Local variables */
     static float zero, a;
@@ -751,6 +752,7 @@ L10:
 	r__1 = b1 * *base;
 	c1 = slamc3_(&r__1, &zero);
 	d1 = zero;
+	i__1 = *base;
 	for (i = 1; i <= *base; ++i) {
 	    d1 += b1;
 /* L20: */
@@ -760,6 +762,7 @@ L10:
 	r__1 = b2 / rbase;
 	c2 = slamc3_(&r__1, &zero);
 	d2 = zero;
+	i__1 = *base;
 	for (i = 1; i <= *base; ++i) {
 	    d2 += b2;
 /* L30: */
@@ -830,6 +833,7 @@ L10:
     static float c_b5 = 0.f;
     
     /* System generated locals */
+    int i__1;
     float r__1;
     /* Local variables */
     static int lexp;
@@ -918,6 +922,7 @@ it
     recbas = 1.f / *beta;
     z = *beta - 1.f;
     y = 0.f;
+    i__1 = *p;
     for (i = 1; i <= *p; ++i) {
 	z *= recbas;
 	if (y < 1.f) {
@@ -932,6 +937,7 @@ it
 
 /*     Now multiply by BETA**EMAX to get RMAX. */
 
+    i__1 = *emax;
     for (i = 1; i <= *emax; ++i) {
 	r__1 = y * *beta;
 	y = slamc3_(&r__1, &c_b5);

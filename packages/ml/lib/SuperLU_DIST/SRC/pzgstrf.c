@@ -149,7 +149,7 @@ void pzgstrf
  *
  *         o Llu (input/output) LocalLU_t*
  *           The distributed data structures to store L and U factors.
- *           See superlu_ddefs.h for the definition of 'LocalLU_t'.
+ *           See superlu_zdefs.h for the definition of 'LocalLU_t'.
  *
  * grid   (input) gridinfo_t*
  *        The 2D process mesh. It contains the MPI communicator, the number
@@ -157,7 +157,7 @@ void pzgstrf
  *        and my process rank. It is an input argument to all the
  *        parallel routines.
  *        Grid can be initialized by subroutine SUPERLU_GRIDINIT.
- *        See superlu_ddefs.h for the definition of 'gridinfo_t'.
+ *        See superlu_zdefs.h for the definition of 'gridinfo_t'.
  *
  * stat   (output) SuperLUStat_t*
  *        Record the statistics on runtime and floating-point operation count.
@@ -224,6 +224,8 @@ void pzgstrf
 #endif
 #if ( PROFlevel>=1 )
     double t1, t2;
+    float msg_vol = 0, msg_cnt = 0;
+    int_t iword = sizeof(int_t), zword = sizeof(doublecomplex);
 #endif
 
     /* Test the input parameters. */
@@ -259,10 +261,12 @@ void pzgstrf
 	ABORT("Malloc fails for Lsub_buf[].");
     if ( !(Llu->Lval_buf = doublecomplexMalloc(Llu->bufmax[1])) )
 	ABORT("Malloc fails for Lval_buf[].");
-    if ( !(Llu->Usub_buf = intMalloc(Llu->bufmax[2])) )
-	ABORT("Malloc fails for Usub_buf[].");
-    if ( !(Llu->Uval_buf = doublecomplexMalloc(Llu->bufmax[3])) )
-	ABORT("Malloc fails for Uval_buf[].");
+    if ( Llu->bufmax[2] != 0 )
+	if ( !(Llu->Usub_buf = intMalloc(Llu->bufmax[2])) )
+	    ABORT("Malloc fails for Usub_buf[].");
+    if ( Llu->bufmax[3] != 0 )
+	if ( !(Llu->Uval_buf = doublecomplexMalloc(Llu->bufmax[3])) )
+	    ABORT("Malloc fails for Uval_buf[].");
     if ( !(Llu->ujrow = doublecomplexMalloc(sp_ienv(3))) )
 	ABORT("Malloc fails for ujrow[].");
 
@@ -331,6 +335,8 @@ void pzgstrf
 #if ( PROFlevel>=1 )
 		TOC(t2, t1);
 		stat->utime[COMM] += t2;
+		msg_cnt += 2;
+		msg_vol += msgcnt[0]*iword + msgcnt[1]*zword;
 #endif
 	    }
 	} /* for pj ... */
@@ -417,6 +423,8 @@ void pzgstrf
 #if ( PROFlevel>=1 )
 			TOC(t2, t1);
 			stat->utime[COMM] += t2;
+			msg_cnt += 2;
+			msg_vol += msgcnt[2]*iword + msgcnt[3]*zword;
 #endif
 #if ( DEBUGlevel>=2 )
 			printf("(%d) Send U(%4d,:) to Pr %2d\n", iam, k, pi);
@@ -557,7 +565,7 @@ void pzgstrf
 			   &lusup[luptr+(knsupc-ldu)*nsupr], &nsupr, 
 			   tempu, &ldu, &beta, tempv, &ldt);
 #endif
-		    stat->ops[FACT] += 2 * nbrow * ldu * ncols;
+		    stat->ops[FACT] += 8 * nbrow * ldu * ncols;
 
 		    /* Now gather the result into the destination block. */
 		    if ( ib < jb ) { /* A(i,j) is in U. */
@@ -674,6 +682,8 @@ void pzgstrf
 #if ( PROFlevel>=1 )
 		    TOC(t2, t1);
 		    stat->utime[COMM] += t2;
+		    msg_cnt += 2;
+		    msg_vol += msgcnt[0]*iword + msgcnt[1]*zword;
 #endif
 #if ( DEBUGlevel>=2 )
 		    printf("(%d) Send L(:,%4d): lsub %4d, lusup %4d to Pc %2d\n",
@@ -751,7 +761,7 @@ void pzgstrf
 			   &lusup[luptr+(knsupc-ldu)*nsupr], &nsupr, 
 			   tempu, &ldu, &beta, tempv, &ldt);
 #endif
-		    stat->ops[FACT] += 2 * nbrow * ldu * ncols;
+		    stat->ops[FACT] += 8 * nbrow * ldu * ncols;
 
 		    /* Now gather the result into the destination block. */
 		    if ( ib < jb ) { /* A(i,j) is in U. */
@@ -833,8 +843,8 @@ void pzgstrf
 
     SUPERLU_FREE(Llu->Lsub_buf);
     SUPERLU_FREE(Llu->Lval_buf);
-    SUPERLU_FREE(Llu->Usub_buf);
-    SUPERLU_FREE(Llu->Uval_buf);
+    if ( Llu->bufmax[2] != 0 ) SUPERLU_FREE(Llu->Usub_buf);
+    if ( Llu->bufmax[3] != 0 ) SUPERLU_FREE(Llu->Uval_buf);
     SUPERLU_FREE(Llu->ujrow);
 
     SUPERLU_FREE(tempv2d);
@@ -851,6 +861,25 @@ void pzgstrf
 #if ( PROFlevel>=1 )
     TOC(t2, t1);
     stat->utime[COMM] += t2;
+    {
+	float msg_vol_max, msg_vol_sum, msg_cnt_max, msg_cnt_sum;
+	
+	MPI_Reduce( &msg_cnt, &msg_cnt_sum,
+		   1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
+	MPI_Reduce( &msg_cnt, &msg_cnt_max,
+		   1, MPI_FLOAT, MPI_MAX, 0, grid->comm );
+	MPI_Reduce( &msg_vol, &msg_vol_sum,
+		   1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
+	MPI_Reduce( &msg_vol, &msg_vol_max,
+		   1, MPI_FLOAT, MPI_MAX, 0, grid->comm );
+	if ( !iam ) {
+	    printf("\tPZGSTRF comm stat:"
+		   "\tAvg\tMax\t\tAvg\tMax\n"
+		   "\t\t\tCount:\t%.0f\t%.0f\tVol(MB)\t%.2f\t%.2f\n",
+		   msg_cnt_sum/Pr/Pc, msg_cnt_max,
+		   msg_vol_sum/Pr/Pc*1e-6, msg_vol_max*1e-6);
+	}
+    }
 #endif
     if ( iinfo == n + 1 ) *info = 0;
     else *info = iinfo;
@@ -1016,11 +1045,11 @@ if ( k == 3329 && j == 2 ) {
 	    if ( iam == pkk ) {
 		for (i = luptr+1; i < luptr-j+nsupr; ++i)
 		    zz_mult(&lusup[i], &lusup[i], &temp);
-		stat->ops[FACT] += nsupr-j-1;
+		stat->ops[FACT] += 6*(nsupr-j-1) + 10;
 	    } else {
 		for (i = luptr; i < luptr+nsupr; ++i)
 		    zz_mult(&lusup[i], &lusup[i], &temp);
-		stat->ops[FACT] += nsupr;
+		stat->ops[FACT] += 6*nsupr + 10;
 	    }
 	}
 	    
@@ -1035,7 +1064,7 @@ if ( k == 3329 && j == 2 ) {
 		zgeru_(&l, &c, &alpha, &lusup[luptr+1], &incx,
 		      &ujrow[1], &incy, &lusup[luptr+nsupr+1], &nsupr);
 #endif
-		stat->ops[FACT] += 2 * l * c;
+		stat->ops[FACT] += 8 * l * c;
 	    } else {
 #ifdef _CRAY
 		CGERU(&nsupr, &c, &alpha, &lusup[luptr], &incx, 
@@ -1044,7 +1073,7 @@ if ( k == 3329 && j == 2 ) {
 		zgeru_(&nsupr, &c, &alpha, &lusup[luptr], &incx, 
 		      &ujrow[1], &incy, &lusup[luptr+nsupr], &nsupr);
 #endif
-		stat->ops[FACT] += 2 * nsupr * c;
+		stat->ops[FACT] += 8 * nsupr * c;
 	    }
 	}
 	
@@ -1155,7 +1184,8 @@ static void pzgstrs2
 		ztrsv_("L", "N", "U", &segsize, &lusup[luptr], &nsupr, 
 		       &uval[rukp], &incx);
 #endif
-		stat->ops[FACT] += segsize * (segsize + 1);
+		stat->ops[FACT] += 4 * segsize * (segsize + 1)
+		    + 10 * segsize; /* compelx division */
 		rukp += segsize;
 	    }
 	}

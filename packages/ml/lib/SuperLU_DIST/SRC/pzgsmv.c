@@ -124,9 +124,9 @@ void pzgsmv_setup
     /* Create an MSR matrix in val/bindx to be used by pdgsmv(). */
     zcreate_msr_matrix(A, *update, N_update, val, bindx);
 
-#if ( DEBUGlevel>=1 )
+#if ( DEBUGlevel>=2 )
     PrintInt10("mv_sup_to_proc", nsupers, mv_sup_to_proc);
-    PrintMSRmatrix(N_update, *val, *bindx, grid);
+    zPrintMSRmatrix(N_update, *val, *bindx, grid);
 #endif
 
     *m = N_update;

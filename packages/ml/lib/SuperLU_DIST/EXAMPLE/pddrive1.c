@@ -69,8 +69,7 @@ main(int argc, char *argv[])
 	    }
 	} else { /* Last arg is considered a filename */
 	    if ( !(fp = fopen(*cpp, "r")) ) {
-                fprintf(stderr, "File does not exist.");
-                exit(-1);
+                ABORT("File does not exist");
             }
 	    break;
 	}
@@ -155,16 +154,6 @@ main(int argc, char *argv[])
     /* Set the default input options. */
     set_default_options(&options);
 
-
-
-    options.Equil = NO;
-/*
-    options.ColPerm = NATURAL;
-*/
-    options.ColPerm = MMD_AT_PLUS_A;
-    options.RowPerm = NOROWPERM;
-
-
     /* Initialize ScalePermstruct and LUstruct. */
     ScalePermstructInit(m, n, &ScalePermstruct);
     LUstructInit(m, n, &LUstruct);
@@ -191,6 +180,7 @@ main(int argc, char *argv[])
        ------------------------------------------------------------*/
     options.Fact = FACTORED; /* Indicate the factored form of A is supplied. */
     PStatInit(&stat); /* Initialize the statistics variables. */
+
     pdgssvx_ABglobal(&options, &A, &ScalePermstruct, b1, ldb, nrhs, &grid,
 		     &LUstruct, berr, &stat, &info);
 

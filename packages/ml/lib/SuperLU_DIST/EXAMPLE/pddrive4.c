@@ -68,8 +68,7 @@ main(int argc, char *argv[])
 	    }
 	} else { /* Last arg is considered a filename */
 	    if ( !(fp = fopen(*cpp, "r")) ) {
-                fprintf(stderr, "File does not exist.");
-                exit(-1);
+                ABORT("File does not exist");
             }
 	    break;
 	}
@@ -96,6 +95,10 @@ main(int argc, char *argv[])
 	for (j = 0; j < npcol; ++j) usermap[i+j*ldumap] = p++;
     superlu_gridmap(MPI_COMM_WORLD, nprow, npcol, usermap, ldumap, &grid1);
 
+    grid1.ngrids = 2;
+    grid1.mygrid = 0;
+
+
     /* ------------------------------------------------------------
        INITIALIZE THE SUPERLU PROCESS GRID 2. 
        ------------------------------------------------------------*/
@@ -106,6 +109,9 @@ main(int argc, char *argv[])
     for (i = 0; i < nprow; ++i)
 	for (j = 0; j < npcol; ++j) usermap[i+j*ldumap] = p++;
     superlu_gridmap(MPI_COMM_WORLD, nprow, npcol, usermap, ldumap, &grid2);
+
+    grid2.ngrids = 2;
+    grid2.mygrid = 1;
 
     /* Bail out if I do not belong in any of the 2 grids. */
     MPI_Comm_rank( MPI_COMM_WORLD, &iam );

@@ -74,6 +74,9 @@ int_t zQuerySpace(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
     mem_usage->total +=
 	(float)(( Llu->bufmax[0] + Llu->bufmax[2] ) * iword +
 		( Llu->bufmax[1] + Llu->bufmax[3] + maxsup ) * dword );
+    /**** another buffer to use mpi_irecv in pdgstrf_irecv.c ****/
+    mem_usage->total +=
+	(float)( Llu->bufmax[0] * iword +  Llu->bufmax[1] * dword );
     mem_usage->total += (float)( maxsup * maxsup + maxsup) * iword;
     k = CEILING( nsupers, grid->nprow );
     mem_usage->total += (float)(2 * k * iword);

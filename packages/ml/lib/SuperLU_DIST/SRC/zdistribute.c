@@ -1,6 +1,6 @@
 #include "superlu_zdefs.h"
 
-void
+int_t
 zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	    LUstruct_t *LUstruct, gridinfo_t *grid)
 /*
@@ -35,6 +35,10 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
  *
  * grid   (input) gridinfo_t*
  *        The 2D process mesh.
+ *
+ * Return value
+ * ============
+ *   > 0, working storage required (in bytes).
  *
  */
 {
@@ -94,6 +98,7 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
     doublecomplex *dense, *dense_col; /* SPA */
     doublecomplex zero = {0.0, 0.0};
     int_t  ldaspa;     /* LDA of SPA */
+    int_t mem_use = 0, iword, zword;
 #if ( PRNTlevel>=1 )
     int_t nLblocks = 0, nUblocks = 0;
 #endif
@@ -109,6 +114,10 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
     asub     = Astore->rowind;
     xa_begin = Astore->colbeg;
     xa_end   = Astore->colend;
+#if ( PRNTlevel>=1 )
+    iword = sizeof(int_t);
+    zword = sizeof(doublecomplex);
+#endif
 
 #if ( DEBUGlevel>=1 )
     CHECK_MALLOC(iam, "Enter zdistribute()");
@@ -132,7 +141,9 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	Lnzval_bc_ptr = Llu->Lnzval_bc_ptr;
 	Ufstnz_br_ptr = Llu->Ufstnz_br_ptr;
 	Unzval_br_ptr = Llu->Unzval_br_ptr;
-
+#if ( PRNTlevel>=1 )
+	mem_use += 2*nrbu*iword + ldaspa*sp_ienv(3)*zword;
+#endif
 	for (jb = 0; jb < nsupers; ++jb) { /* Loop through each block column */
 	    pc = PCOL( jb, grid );
 	    if ( mycol == pc ) { /* Block column jb in my process column */
@@ -171,7 +182,7 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			    dense_col += ldaspa;
 			}
 			Urb_indptr[lb] += UB_DESCRIPTOR + nsupc;
-		    }
+		    } /* if index != NULL */
 		} /* for lb ... */
 
 		/* Gather the values of A from SPA into Lnzval[]. */
@@ -226,8 +237,11 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	j = k * grid->npcol;
 	if ( !(index = intMalloc(j)) )
 	    ABORT("Malloc fails for index[].");
+#if ( PRNTlevel>=1 )
+	mem_use = k*sizeof(int_t*) + (j + nsupers)*iword;
+#endif
 	for (i = 0; i < j; ++i) index[i] = EMPTY;
-	for (i = 0, j = 0; i < k; ++i, j += grid->npcol) ToSendR[i] = &index[j];
+	for (i = 0,j = 0; i < k; ++i, j += grid->npcol) ToSendR[i] = &index[j];
 
 	k = CEILING( nsupers, grid->nprow ); /* Number of local block rows */
 
@@ -241,7 +255,7 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	if ( !(ToSendD = intCalloc(k)) )
 	    ABORT("Malloc fails for ToSendD[].");
 	if ( !(ilsum = intMalloc(k+1)) )
-        ABORT("Malloc fails for ilsum[].");
+	    ABORT("Malloc fails for ilsum[].");
 
 	/* Auxiliary arrays used to set up U block data structures.
 	   They are freed on return. */
@@ -255,7 +269,9 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	    ABORT("Calloc fails for Urb_fstnz[].");
 	if ( !(Ucbs = intCalloc(k)) )
 	    ABORT("Calloc fails for Ucbs[].");
-	
+#if ( PRNTlevel>=1 )	
+	mem_use = 2*k*sizeof(int_t*) + (7*k+1)*iword;
+#endif
 	/* Compute ldaspa and ilsum[]. */
 	ldaspa = 0;
 	ilsum[0] = 0;
@@ -340,7 +356,9 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 
 	SUPERLU_FREE(Urb_fstnz);
 	SUPERLU_FREE(Ucbs);
-
+#if ( PRNTlevel>=1 )
+        mem_use -= 2*k * iword;
+#endif
 	/* Auxiliary arrays used to set up L block data structures.
 	   They are freed on return.
 	   k is the number of local row blocks.   */
@@ -360,7 +378,9 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	    ABORT("Calloc fails for fmod[].");
 	if ( !(bmod = intCalloc(k)) )
 	    ABORT("Calloc fails for bmod[].");
-	
+#if ( PRNTlevel>=1 )	
+	mem_use += 6*k*iword + ldaspa*sp_ienv(3)*zword;
+#endif
 	k = CEILING( nsupers, grid->npcol );/* Number of local block columns */
 
 	/* Pointers to the beginning of each block column of L. */
@@ -387,7 +407,9 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	for (i = 0; i < len; ++i) index[i] = EMPTY;
 	for (i = 0, j = 0; i < k; ++i, j += grid->nprow)
 	    bsendx_plist[i] = &index[j];
-
+#if ( PRNTlevel>=1 )
+	mem_use += 4*k*sizeof(int_t*) + 2*len*iword;
+#endif
 
 	/*------------------------------------------------------------
 	  PROPAGATE ROW SUBSCRIPTS AND VALUES OF A INTO L AND U BLOCKS.
@@ -620,5 +642,6 @@ zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
     CHECK_MALLOC(iam, "Exit zdistribute()");
 #endif
 
+    return (mem_use);
 } /* ZDISTRIBUTE */
 

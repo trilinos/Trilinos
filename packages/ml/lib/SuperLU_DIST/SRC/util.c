@@ -370,10 +370,8 @@ PStatPrint(SuperLUStat_t *stat, gridinfo_t *grid)
 	}
 	MPI_Reduce(&ops[FACT], &maxflop, 1, MPI_FLOAT, MPI_MAX, 0, grid->comm);
 	if ( !iam ) {
-            if( maxflop > 0 ){
-	      b = maxflop/factflop;
-	      printf("\tFACT load balance: %.2f\n", b);
-            } 
+	    b = factflop/P/maxflop;
+	    printf("\tFACT load balance: %.2f\n", b);
 	}
 	if ( !iam ) printf("\n.. SOLVE ops distribution:\n");
 	for (i = 0; i < P; ++i) {
@@ -382,7 +380,7 @@ PStatPrint(SuperLUStat_t *stat, gridinfo_t *grid)
 	}
 	MPI_Reduce(&ops[SOLVE], &maxflop, 1, MPI_FLOAT, MPI_MAX, 0,grid->comm);
 	if ( !iam ) {
-	    b = maxflop/solveflop;
+	    b = solveflop/P/maxflop;
 	    printf("\tSOLVE load balance: %.2f\n", b);
 	}
     }

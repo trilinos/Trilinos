@@ -1,0 +1,318 @@
+
+++++++++ af23560.rua ++++++++
+.. CPP definitions:
+....
+	Dimension	23560x23560	 # nonzeros 484256
+	Process grid	1 X 1
+.. equilibrated? *equed = N
+.. LDPERM job 5	 time: 0.89
+.. anorm 1.365130e+01
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L        5886062
+	Nonzeros in U        5898854
+	nonzeros in L+U-I   11761356
+	No of supers    10669
+	Size of G(L)   650479
+	Size of G(U)   632432
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 5.60	total MB 6.45	expansions 0
+.. # L blocks 110638	# U blocks 101058
+.. thresh = s_eps 5.960464e-08 * anorm 1.365130e+01 = 8.136806e-07
+.. Buffer size: Lsub 867	Lval 19975	Usub 1085	Uval 19400	LDA 799
+	NUMfact space for all PEs:	L\U MB 104.54	total MB 104.95
+	Number of tiny pivots:          0
+.. number of diag processes = 1
+diag_procs:
+	[ 0- 9]     0
+  diag_len:
+	[ 0- 9] 23560
+( 0) .. Step  0: berr[j] = 1.514594e-11
+( 0) .. Step  1: berr[j] = 3.506481e-16
+( 0) .. Step  2: berr[j] = 3.239564e-16
+.. DiagScale = 3
+.. ||X - Xtrue||/||X|| = 7.627232e-14
+	EQUIL time             0.07
+	COLPERM time           2.64
+	ROWPERM time           0.89
+	SYMBFACT time          1.39
+	DISTRIBUTE time       13.41
+	FACTOR time           42.38
+	Factor flops	5.407295e+09	Mflops 	  127.58
+	SOLVE time             1.21
+	Solve flops	7.037820e+07	Mflops 	   58.31
+	REFINEMENT time        2.88	Steps       2
+
+
+++++++++ bramley1.rua ++++++++
+.. CPP definitions:
+....
+This is not an assembled matrix!
+	Dimension	17933x17933	 # nonzeros 1021849
+	Process grid	1 X 1
+.. equilibrated? *equed = B
+.. LDPERM job 5	 time: 0.88
+.. anorm 4.619877e+01
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L        2745090
+	Nonzeros in U        2744864
+	nonzeros in L+U-I    5472021
+	No of supers     2757
+	Size of G(L)   248915
+	Size of G(U)   231109
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 2.28	total MB 2.92	expansions 0
+.. # L blocks 27145	# U blocks 24379
+.. thresh = s_eps 5.960464e-08 * anorm 4.619877e+01 = 2.753661e-06
+.. Buffer size: Lsub 524	Lval 11700	Usub 649	Uval 11075	LDA 468
+	NUMfact space for all PEs:	L\U MB 46.97	total MB 47.18
+	Number of tiny pivots:          0
+.. number of diag processes = 1
+diag_procs:
+	[ 0- 9]     0
+  diag_len:
+	[ 0- 9] 17933
+( 0) .. Step  0: berr[j] = 1.303175e-14
+( 0) .. Step  1: berr[j] = 5.242578e-16
+( 0) .. Step  2: berr[j] = 5.952892e-16
+.. DiagScale = 3
+.. ||X - Xtrue||/||X|| = 3.311993e-09
+	EQUIL time             0.20
+	COLPERM time           1.85
+	ROWPERM time           0.88
+	SYMBFACT time          0.71
+	DISTRIBUTE time        3.66
+	FACTOR time           11.17
+	Factor flops	1.309765e+09	Mflops 	  117.29
+	SOLVE time             0.50
+	Solve flops	3.352526e+07	Mflops 	   67.61
+	REFINEMENT time        1.76	Steps       2
+
+
+++++++++ fidapm11.rua ++++++++
+.. CPP definitions:
+....
+This is not an assembled matrix!
+	Dimension	22294x22294	 # nonzeros 623554
+	Process grid	1 X 1
+.. equilibrated? *equed = B
+.. LDPERM job 5	 time: 8.90
+.. anorm 2.210325e+01
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L       12722488
+	Nonzeros in U       12707419
+	nonzeros in L+U-I   25407613
+	No of supers     4108
+	Size of G(L)  1012781
+	Size of G(U)   997584
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 8.49	total MB 9.29	expansions 0
+Malloc fails for Lnzval_bc_ptr[*][] at line 553 in file ddistribute.c
+
+++++++++ ex11.rua ++++++++
+.. CPP definitions:
+....
+	Dimension	16614x16614	 # nonzeros 1096948
+	Process grid	1 X 1
+.. equilibrated? *equed = B
+.. LDPERM job 5	 time: 0.92
+.. anorm 3.150975e+01
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L        5750210
+	Nonzeros in U        5750210
+	nonzeros in L+U-I   11483806
+	No of supers     2224
+	Size of G(L)   407316
+	Size of G(U)   390702
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 3.52	total MB 4.12	expansions 0
+Malloc fails for Lnzval_bc_ptr[*][] at line 553 in file ddistribute.c
+
+++++++++ goodwin.rua ++++++++
+.. CPP definitions:
+....
+	Dimension	7320x7320	 # nonzeros 324784
+	Process grid	1 X 1
+.. equilibrated? *equed = B
+.. LDPERM job 5	 time: 1.26
+.. anorm 1.844467e+01
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L         614943
+	Nonzeros in U         584738
+	nonzeros in L+U-I    1192361
+	No of supers     1483
+	Size of G(L)    76832
+	Size of G(U)    62859
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 0.71	total MB 0.97	expansions 0
+.. # L blocks 11294	# U blocks 8338
+.. thresh = s_eps 5.960464e-08 * anorm 1.844467e+01 = 1.099388e-06
+.. Buffer size: Lsub 275	Lval 6125	Usub 309	Uval 5225	LDA 245
+	NUMfact space for all PEs:	L\U MB 10.53	total MB 10.64
+	Number of tiny pivots:          2
+.. number of diag processes = 1
+diag_procs:
+	[ 0- 9]     0
+  diag_len:
+	[ 0- 9]  7320
+( 0) .. Step  0: berr[j] = 7.000308e-04
+( 0) .. Step  1: berr[j] = 2.233156e-07
+( 0) .. Step  2: berr[j] = 1.834664e-10
+( 0) .. Step  3: berr[j] = 9.450770e-14
+( 0) .. Step  4: berr[j] = 2.278776e-15
+( 0) .. Step  5: berr[j] = 2.210461e-15
+.. DiagScale = 3
+.. ||X - Xtrue||/||X|| = 1.258719e-09
+	EQUIL time             0.06
+	COLPERM time           0.60
+	ROWPERM time           1.26
+	SYMBFACT time          0.20
+	DISTRIBUTE time        0.87
+	FACTOR time            1.53
+	Factor flops	1.446818e+08	Mflops 	   94.67
+	SOLVE time             0.13
+	Solve flops	1.472540e+07	Mflops 	  112.64
+	REFINEMENT time        1.08	Steps       5
+
+
+++++++++ memplus.rua ++++++++
+.. CPP definitions:
+....
+	Dimension	17758x17758	 # nonzeros 126150
+	Process grid	1 X 1
+.. equilibrated? *equed = R
+.. LDPERM job 5	 time: 0.14
+.. anorm 3.495697e+01
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L          80678
+	Nonzeros in U          80678
+	nonzeros in L+U-I     143598
+	No of supers     8998
+	Size of G(L)    42922
+	Size of G(U)    25164
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 0.63	total MB 1.27	expansions 0
+.. # L blocks 26677	# U blocks 17679
+.. thresh = s_eps 5.960464e-08 * anorm 3.495697e+01 = 2.083598e-06
+.. Buffer size: Lsub 107	Lval 2425	Usub 138	Uval 1800	LDA 97
+	NUMfact space for all PEs:	L\U MB 2.60	total MB 2.71
+	Number of tiny pivots:          0
+.. number of diag processes = 1
+diag_procs:
+	[ 0- 9]     0
+  diag_len:
+	[ 0- 9] 17758
+( 0) .. Step  0: berr[j] = 1.005272e-15
+( 0) .. Step  1: berr[j] = 4.579670e-16
+( 0) .. Step  2: berr[j] = 5.005490e-16
+.. DiagScale = 3
+.. ||X - Xtrue||/||X|| = 2.792655e-12
+	EQUIL time             0.04
+	COLPERM time           0.73
+	ROWPERM time           0.14
+	SYMBFACT time          0.09
+	DISTRIBUTE time        5.47
+	FACTOR time            0.28
+	Factor flops	1.653788e+06	Mflops 	    5.81
+	SOLVE time             0.15
+	Solve flops	9.370800e+05	Mflops 	    6.37
+	REFINEMENT time        0.47	Steps       2
+
+
+++++++++ onetone1.rua ++++++++
+.. CPP definitions:
+....
+	Dimension	36057x36057	 # nonzeros 341088
+	Process grid	1 X 1
+.. equilibrated? *equed = B
+.. LDPERM job 5	 time: 0.44
+.. anorm 1.125815e+01
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L        1428195
+	Nonzeros in U        1759523
+	nonzeros in L+U-I    3151661
+	No of supers    18498
+	Size of G(L)   293114
+	Size of G(U)   371276
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 3.38	total MB 4.68	expansions 0
+.. # L blocks 100199	# U blocks 105560
+.. thresh = s_eps 5.960464e-08 * anorm 1.125815e+01 = 6.710380e-07
+.. Buffer size: Lsub 948	Lval 19975	Usub 1268	Uval 20898	LDA 812
+	NUMfact space for all PEs:	L\U MB 32.25	total MB 32.74
+	Number of tiny pivots:         28
+.. number of diag processes = 1
+diag_procs:
+	[ 0- 9]     0
+  diag_len:
+	[ 0- 9] 36057
+( 0) .. Step  0: berr[j] = 2.809252e-07
+( 0) .. Step  1: berr[j] = 7.308495e-10
+( 0) .. Step  2: berr[j] = 4.541022e-12
+( 0) .. Step  3: berr[j] = 5.505001e-14
+( 0) .. Step  4: berr[j] = 4.879922e-16
+( 0) .. Step  5: berr[j] = 4.223935e-16
+.. DiagScale = 3
+.. ||X - Xtrue||/||X|| = 2.758915e-11
+	EQUIL time             0.12
+	COLPERM time           7.56
+	ROWPERM time           0.44
+	SYMBFACT time          0.75
+	DISTRIBUTE time       24.74
+	FACTOR time           19.28
+	Factor flops	1.350945e+09	Mflops 	   70.07
+	SOLVE time             0.74
+	Solve flops	3.906490e+07	Mflops 	   53.15
+	REFINEMENT time        4.43	Steps       5
+
+
+++++++++ wang4.rua ++++++++
+.. CPP definitions:
+....
+	Dimension	26068x26068	 # nonzeros 177196
+	Process grid	1 X 1
+.. equilibrated? *equed = B
+.. LDPERM job 5	 time: 0.21
+.. anorm 2.644374e+00
+.. Use minimum degree ordering on A'+A.
+.. symbfact(): relax    4, maxsuper   25, fill    5
+	Nonzeros in L        5252912
+	Nonzeros in U        5252912
+	nonzeros in L+U-I   10479756
+	No of supers    15755
+	Size of G(L)   486164
+	Size of G(U)   460096
+.. QuerySpace(): int 4, short 4, float 4, double 8
+	SYMBfact:	L\U MB 4.31	total MB 5.24	expansions 1
+.. # L blocks 122660	# U blocks 106905
+.. thresh = s_eps 5.960464e-08 * anorm 2.644374e+00 = 1.576170e-07
+.. Buffer size: Lsub 1699	Lval 39275	Usub 1916	Uval 38650	LDA 1571
+	NUMfact space for all PEs:	L\U MB 94.47	total MB 95.24
+	Number of tiny pivots:          0
+.. number of diag processes = 1
+diag_procs:
+	[ 0- 9]     0
+  diag_len:
+	[ 0- 9] 26068
+( 0) .. Step  0: berr[j] = 1.019428e-14
+( 0) .. Step  1: berr[j] = 2.589104e-16
+( 0) .. Step  2: berr[j] = 2.585983e-16
+.. DiagScale = 3
+.. ||X - Xtrue||/||X|| = 1.154117e-10
+	EQUIL time             0.05
+	COLPERM time           2.03
+	ROWPERM time           0.21
+	SYMBFACT time          1.46
+	DISTRIBUTE time       21.35
+	FACTOR time           65.25
+	Factor flops	8.771138e+09	Mflops 	  134.43
+	SOLVE time             1.20
+	Solve flops	6.290550e+07	Mflops 	   52.46
+	REFINEMENT time        2.68	Steps       2
+

@@ -65,6 +65,7 @@
 #define c_bridge_dgssv_ C_BRIDGE_DGSSV
 #define mc64id_         MC64ID
 #define mc64ad_         MC64AD
+#define dlamch_         DLAMCH
 #endif
 
 #if (F77_CALL_C == NOCHANGE)
@@ -139,6 +140,7 @@
 #define c_bridge_dgssv_ c_bridge_dgssv
 #define mc64id_         mc64id
 #define mc64ad_         mc64ad
+#define dlamch_         dlamch
 #endif
 
 #endif /* __SUPERLU_CNAMES */

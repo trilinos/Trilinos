@@ -34,8 +34,8 @@
 
 #define CHECK_MALLOC(pnum, where) {                 \
     extern int_t superlu_malloc_total;        \
-    printf("(%2d) %s: malloc_total %.0f MB\n",     \
-	   pnum, where, superlu_malloc_total*1e-6); \
+    printf("(%2d) %s: malloc_total %d Bytes\n",     \
+	   pnum, where, superlu_malloc_total); \
 }
 
 #define MAX(x, y) 	( (x) > (y) ? (x) : (y) )

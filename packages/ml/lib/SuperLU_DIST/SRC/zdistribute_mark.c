@@ -1,7 +1,21 @@
-#include "superlu_ddefs.h"
+#include "superlu_zdefs.h"
 
+/*
+ * NOTE zdistribute_mark.c
+ * ====
+ * This version is faster for Mark Baertschy's matrices, remains to be
+ * tested for the other matrices.
+ *
+ * Main difference: there is no dense SPA involved when distributing A into
+ * the U structure. That is, the entries in upper triangle of A are loaded
+ * directly into U.
+ * 
+ * The locations of modifications have XSL comments.
+ *
+ * Date: Apr 23 09:54:15 PDT 2001
+ */
 int_t
-ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
+zdistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	    LUstruct_t *LUstruct, gridinfo_t *grid)
 /*
  * -- Distributed SuperLU routine (version 1.0) --
@@ -28,17 +42,13 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
  * A      (input) SuperMatrix*
  *	  The original matrix A, permuted by columns, of dimension
  *        (A->nrow, A->ncol). The type of A can be:
- *        Stype = NCP; Dtype = _D; Mtype = GE.
+ *        Stype = NCP; Dtype = _Z; Mtype = GE.
  *
  * LUstruct (input) LUstruct_t*
  *        Data structures for L and U factors.
  *
  * grid   (input) gridinfo_t*
  *        The 2D process mesh.
- *
- * Return value
- * ============
- *   > 0, working storage required (in bytes).
  *
  */
 {
@@ -53,7 +63,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
     int iam, jbrow, kcol, mycol, myrow, pc, pr;
     int_t mybufmax[NBUFFERS];
     NCPformat *Astore;
-    double *a;
+    doublecomplex *a;
     int_t *asub;
     int_t *xa_begin, *xa_end;
     int_t *xsup = Glu_persist->xsup;    /* supernode and column mapping */
@@ -63,10 +73,10 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
     int_t next_lind;      /* next available position in index[*] */
     int_t next_lval;      /* next available position in nzval[*] */
     int_t *index;         /* indices consist of headers and row subscripts */
-    double *lusup, *uval; /* nonzero values in L and U */
-    double **Lnzval_bc_ptr;  /* size ceil(NSUPERS/Pc) */
+    doublecomplex *lusup, *uval; /* nonzero values in L and U */
+    doublecomplex **Lnzval_bc_ptr;  /* size ceil(NSUPERS/Pc) */
     int_t  **Lrowind_bc_ptr; /* size ceil(NSUPERS/Pc) */
-    double **Unzval_br_ptr;  /* size ceil(NSUPERS/Pr) */
+    doublecomplex **Unzval_br_ptr;  /* size ceil(NSUPERS/Pr) */
     int_t  **Ufstnz_br_ptr;  /* size ceil(NSUPERS/Pr) */
 
     /*-- Counts to be used in factorization. --*/
@@ -95,16 +105,12 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
     int_t *Lrb_number; /* global block number; size ceil(NSUPERS/Pr)        */
     int_t *Lrb_indptr; /* pointers to L index[]; size ceil(NSUPERS/Pr)      */
     int_t *Lrb_valptr; /* pointers to L nzval[]; size ceil(NSUPERS/Pr)      */
-    double *dense, *dense_col; /* SPA */
+    doublecomplex *dense, *dense_col; /* SPA */
+    doublecomplex zero = {0.0, 0.0};
     int_t  ldaspa;     /* LDA of SPA */
-    int_t mem_use = 0, iword, dword;
-
+    int_t mem_use = 0, iword, zword;
 #if ( PRNTlevel>=1 )
     int_t nLblocks = 0, nUblocks = 0;
-#endif
-#if ( PROFlevel>=1 ) 
-    double t, t_u, t_l;
-    int_t u_blks;
 #endif
 
     /* Initialization. */
@@ -120,22 +126,19 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
     xa_end   = Astore->colend;
 #if ( PRNTlevel>=1 )
     iword = sizeof(int_t);
-    dword = sizeof(double);
+    zword = sizeof(doublecomplex);
 #endif
 
 #if ( DEBUGlevel>=1 )
-    CHECK_MALLOC(iam, "Enter ddistribute()");
+    CHECK_MALLOC(iam, "Enter zdistribute()");
 #endif
 
     if ( fact == SamePattern_SameRowPerm ) {
-#if ( PROFlevel>=1 )
-	t_l = t_u = 0; u_blks = 0;
-#endif
 	/* We can propagate the new values of A into the existing
 	   L and U data structures.            */
 	ilsum = Llu->ilsum;
 	ldaspa = Llu->ldalsum;
-	if ( !(dense = doubleCalloc(ldaspa * sp_ienv(3))) )
+	if ( !(dense = doublecomplexCalloc(ldaspa * sp_ienv(3))) )
 	    ABORT("Calloc fails for SPA dense[].");
 	nrbu = CEILING( nsupers, grid->nprow ); /* Number of local block rows */
 	if ( !(Urb_length = intCalloc(nrbu)) )
@@ -149,7 +152,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	Ufstnz_br_ptr = Llu->Ufstnz_br_ptr;
 	Unzval_br_ptr = Llu->Unzval_br_ptr;
 #if ( PRNTlevel>=1 )
-	mem_use += 2*nrbu*iword + ldaspa*sp_ienv(3)*dword;
+	mem_use += 2*nrbu*iword + ldaspa*sp_ienv(3)*zword;
 #endif
 	for (jb = 0; jb < nsupers; ++jb) { /* Loop through each block column */
 	    pc = PCOL( jb, grid );
@@ -170,10 +173,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 		    }
 		    dense_col += ldaspa;
 		}
-
-#if ( PROFlevel>=1 )
-		t = SuperLU_timer_();
-#endif
+		
 		/* Gather the values of A from SPA into Unzval[]. */
 		for (lb = 0; lb < nrbu; ++lb) {
 		    index = Ufstnz_br_ptr[lb];
@@ -187,17 +187,14 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			    j = index[len+jj];
 			    for (i = j; i < k; ++i) {
 				uval[Urb_length[lb]++] = dense_col[irow+i];
-				dense_col[irow+i] = 0.0;
+				dense_col[irow+i] = zero;
 			    }
 			    dense_col += ldaspa;
 			}
 			Urb_indptr[lb] += UB_DESCRIPTOR + nsupc;
-		    } /* if index != NULL */
+		    }
 		} /* for lb ... */
-#if ( PROFlevel>=1 )
-		t_u += SuperLU_timer_() - t;
-		t = SuperLU_timer_();
-#endif
+
 		/* Gather the values of A from SPA into Lnzval[]. */
 		ljb = LBj( jb, grid ); /* Local block number */
 		index = Lrowind_bc_ptr[ljb];
@@ -217,32 +214,22 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			    k = next_lval++;
 			    for (j = 0, dense_col = dense; j < nsupc; ++j) {
 				lusup[k] = dense_col[irow];
-				dense_col[irow] = 0.0;
+				dense_col[irow] = zero;
 				k += len;
 				dense_col += ldaspa;
 			    }
 			} /* for bnnz ... */
 		    } /* for jj ... */
 		} /* if index ... */
-#if ( PROFlevel>=1 )
-		t_l += SuperLU_timer_() - t;
-#endif
+
 	    } /* if mycol == pc */
 	} /* for jb ... */
 
 	SUPERLU_FREE(dense);
 	SUPERLU_FREE(Urb_length);
 	SUPERLU_FREE(Urb_indptr);
-#if ( PROFlevel>=1 )
-	if ( !iam ) printf(".. 2nd distribute time: L %.2f\tU %.2f\tu_blks %d\tnrbu %d\n",
-			   t_l, t_u, u_blks, nrbu);
-#endif
 
-    } else { /* First time creating the L and U data structure. */
-
-#if ( PROFlevel>=1 )
-	t_l = t_u = 0; u_blks = 0;
-#endif
+    } else {
 	/* No L and U data structures are available yet.
 	   We need to set up the L and U data structures and propagate
 	   the values of A into them.          */
@@ -264,11 +251,13 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	mem_use = k*sizeof(int_t*) + (j + nsupers)*iword;
 #endif
 	for (i = 0; i < j; ++i) index[i] = EMPTY;
-	for (i = 0,j = 0; i < k; ++i, j += grid->npcol) ToSendR[i] = &index[j];
+	for (i = 0, j = 0; i < k; ++i, j += grid->npcol) ToSendR[i] = &index[j];
+
 	k = CEILING( nsupers, grid->nprow ); /* Number of local block rows */
 
 	/* Pointers to the beginning of each block row of U. */
-	if ( !(Unzval_br_ptr = (double**)SUPERLU_MALLOC(k * sizeof(double*))) )
+	if ( !(Unzval_br_ptr =
+	       (doublecomplex**)SUPERLU_MALLOC(k * sizeof(doublecomplex*))) )
 	    ABORT("Malloc fails for Unzval_br_ptr[].");
 	if ( !(Ufstnz_br_ptr = (int_t**)SUPERLU_MALLOC(k * sizeof(int_t*))) )
 	    ABORT("Malloc fails for Ufstnz_br_ptr[].");
@@ -276,7 +265,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	if ( !(ToSendD = intCalloc(k)) )
 	    ABORT("Malloc fails for ToSendD[].");
 	if ( !(ilsum = intMalloc(k+1)) )
-	    ABORT("Malloc fails for ilsum[].");
+        ABORT("Malloc fails for ilsum[].");
 
 	/* Auxiliary arrays used to set up U block data structures.
 	   They are freed on return. */
@@ -359,8 +348,9 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 		if ( !(index = intMalloc(len1+1)) )
 		    ABORT("Malloc fails for Uindex[].");
 		Ufstnz_br_ptr[lb] = index;
-		if ( !(Unzval_br_ptr[lb] = doubleMalloc(len)) )
-		    ABORT("Malloc fails for Unzval_br_ptr[*][].");
+		/* XSL 4-23-01 */
+		if ( !(Unzval_br_ptr[lb] = doublecomplexCalloc(len)) )
+		    ABORT("Calloc fails for Unzval_br_ptr[*][].");
 		mybufmax[2] = MAX( mybufmax[2], len1 );
 		mybufmax[3] = MAX( mybufmax[3], len );
 		index[0] = Ucbs[lb]; /* Number of column blocks */
@@ -391,7 +381,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	    ABORT("Malloc fails for Lrb_indptr[].");
 	if ( !(Lrb_valptr = intMalloc(k)) )
 	    ABORT("Malloc fails for Lrb_valptr[].");
-	if ( !(dense = doubleCalloc(ldaspa * sp_ienv(3))) )
+	if ( !(dense = doublecomplexCalloc(ldaspa * sp_ienv(3))) )
 	    ABORT("Calloc fails for SPA dense[].");
 
 	/* These counts will be used for triangular solves. */
@@ -400,12 +390,13 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	if ( !(bmod = intCalloc(k)) )
 	    ABORT("Calloc fails for bmod[].");
 #if ( PRNTlevel>=1 )	
-	mem_use += 6*k*iword + ldaspa*sp_ienv(3)*dword;
+	mem_use += 6*k*iword + ldaspa*sp_ienv(3)*zword;
 #endif
 	k = CEILING( nsupers, grid->npcol );/* Number of local block columns */
 
 	/* Pointers to the beginning of each block column of L. */
-	if ( !(Lnzval_bc_ptr = (double**)SUPERLU_MALLOC(k * sizeof(double*))) )
+	if ( !(Lnzval_bc_ptr =
+	       (doublecomplex**)SUPERLU_MALLOC(k * sizeof(doublecomplex*))) )
 	    ABORT("Malloc fails for Lnzval_bc_ptr[].");
 	if ( !(Lrowind_bc_ptr = (int_t**)SUPERLU_MALLOC(k * sizeof(int_t*))) )
 	    ABORT("Malloc fails for Lrowind_bc_ptr[].");
@@ -430,6 +421,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 #if ( PRNTlevel>=1 )
 	mem_use += 4*k*sizeof(int_t*) + 2*len*iword;
 #endif
+
 	/*------------------------------------------------------------
 	  PROPAGATE ROW SUBSCRIPTS AND VALUES OF A INTO L AND U BLOCKS.
 	  THIS ACCOUNTS FOR ONE-PASS PROCESSING OF A, L AND U.
@@ -446,6 +438,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 		for (j = fsupc, dense_col = dense; j < FstBlockC( jb+1 ); ++j){
 		    for (i = xa_begin[j]; i < xa_end[j]; ++i) {
 			irow = asub[i];
+			if ( irow < fsupc ) continue; /* Skip U. XSL 4-23-01 */
 			gb = BlockNum( irow );
 			if ( myrow == PROW( gb, grid ) ) {
 			    lb = LBi( gb, grid );
@@ -458,12 +451,10 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 
 		jbrow = PROW( jb, grid );
 
-#if ( PROFlevel>=1 )
-		t = SuperLU_timer_();
-#endif
 		/*------------------------------------------------
 		 * SET UP U BLOCKS.
 		 *------------------------------------------------*/
+
 		kseen = 0;
 		/* Loop through each column in the block column. */
 		for (j = fsupc; j < FstBlockC( jb+1 ); ++j) {
@@ -480,6 +471,8 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			    if (rb_marker[lb] <= jb) {/* First see the block */
 				rb_marker[lb] = jb + 1;
 				index[Urb_indptr[lb]] = jb; /* Descriptor */
+				/* Initialize block length to 0. XSL 4-23-01 */
+				index[Urb_indptr[lb]+1] = 0;
 				Urb_indptr[lb] += UB_DESCRIPTOR;
 				len = Urb_indptr[lb];
 				for (k = 0; k < nsupc; ++k)
@@ -498,7 +491,39 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			} /* if myrow == pr ... */
 		    } /* for i ... */
 		} /* for j ... */
-
+#if 1
+		/* XSL 4-23-01 */
+		for (j = fsupc; j < FstBlockC( jb+1 ); ++j) {
+		    /* Gather the initial values of A directly into Uval.
+		       (No SPA is involved.)    */
+		    for (i = xa_begin[j]; i < xa_end[j]; ++i) {
+			irow = asub[i]; 
+			if ( irow >= fsupc ) continue; /* Skip L */
+			gb = BlockNum( irow );
+			if ( myrow == PROW( gb, grid ) ) {
+			    lb = LBi( gb, grid );
+			    index = Ufstnz_br_ptr[lb];
+			    uval = Unzval_br_ptr[lb];
+			    len = Urb_indptr[lb];
+			    jj = index[len]; /* First nonzero in segment */
+			    uval[Urb_length[lb] + irow - jj] = a[i];
+			}
+		    }
+		    /* Now increment the index pointer for each row block */
+		    for (lb = 0; lb < nrbu; ++lb) {
+			if ( rb_marker[lb] == jb+1 ) { /* Not an empty block */
+			    gb = lb*grid->nprow + myrow; /* Global block # */
+			    index = Ufstnz_br_ptr[lb];
+			    jj = index[Urb_indptr[lb]];
+			    k = FstBlockC( gb+1 ) - jj;
+			    Urb_length[lb] += k;
+			    /* Increment the block length */
+			    index[Urb_indptr[lb]+fsupc-j-1] += k;
+			    Urb_indptr[lb] += 1;
+			}
+		    }
+		} /* for j = fsupc ... */
+#else
 		/* Figure out how many nonzeros in each block, and gather
 		   the initial values of A from SPA into Uval. */
 		for (lb = 0; lb < nrbu; ++lb) {
@@ -514,7 +539,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			    bnnz += k - j;
 			    for (i = j; i < k; ++i) {
 				uval[Urb_length[lb]++] = dense_col[irow + i];
-				dense_col[irow + i] = 0.0;
+				dense_col[irow + i] = zero;
 			    }
 			    dense_col += ldaspa;
 			}
@@ -522,10 +547,8 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			Urb_indptr[lb] += nsupc;
 		    }
 		} /* for lb ... */
-#if ( PROFlevel>=1 )
-		t_u += SuperLU_timer_() - t;
-		t = SuperLU_timer_();
-#endif		
+#endif
+
 		/*------------------------------------------------
 		 * SET UP L BLOCKS.
 		 *------------------------------------------------*/
@@ -571,7 +594,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 		    if ( !(index = intMalloc(len1)) ) 
 			ABORT("Malloc fails for index[]");
 		    Lrowind_bc_ptr[ljb] = index;
-		    if ( !(Lnzval_bc_ptr[ljb] = doubleMalloc(len*nsupc)) ) {
+		    if ( !(Lnzval_bc_ptr[ljb]=doublecomplexMalloc(len*nsupc)) ) {
 			fprintf(stderr, "col block %d ", jb);
 			ABORT("Malloc fails for Lnzval_bc_ptr[*][]");
 		    }
@@ -609,7 +632,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 			    irow = ilsum[lb] + irow - FstBlockC( gb );
 			    for (j = 0, dense_col = dense; j < nsupc; ++j) {
 				lusup[k] = dense_col[irow];
-				dense_col[irow] = 0.0;
+				dense_col[irow] = zero;
 				k += len;
 				dense_col += ldaspa;
 			    }
@@ -619,9 +642,7 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 		    Lrowind_bc_ptr[ljb] = NULL;
 		    Lnzval_bc_ptr[ljb] = NULL;
 		} /* if nrbl ... */
-#if ( PROFlevel>=1 )
-		t_l += SuperLU_timer_() - t;
-#endif
+
 	    } /* if mycol == pc */
 
 	} /* for jb ... */
@@ -659,19 +680,15 @@ ddistribute(fact_t fact, int_t n, SuperMatrix *A, Glu_freeable_t *Glu_freeable,
 	/* Find the maximum buffer size. */
 	MPI_Allreduce(mybufmax, Llu->bufmax, NBUFFERS, mpi_int_t, 
 		      MPI_MAX, grid->comm);
-#if ( PROFlevel>=1 )
-	if ( !iam ) printf(".. 1st distribute time: L %.2f\tU %.2f\tu_blks %d\tnrbu %d\n",
-			   t_l, t_u, u_blks, nrbu);
-#endif
 
     } /* if fact == SamePattern_SameRowPerm */
 
 #if ( DEBUGlevel>=1 )
     /* Memory allocated but not freed:
        ilsum, fmod, fsendx_plist, bmod, bsendx_plist  */
-    CHECK_MALLOC(iam, "Exit ddistribute()");
+    CHECK_MALLOC(iam, "Exit zdistribute()");
 #endif
 
     return (mem_use);
-} /* DDISTRIBUTE */
+} /* ZDISTRIBUTE */
 

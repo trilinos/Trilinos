@@ -71,8 +71,7 @@ main(int argc, char *argv[])
 	    }
 	} else { /* Last arg is considered a filename */
 	    if ( !(fp = fopen(*cpp, "r")) ) {
-                fprintf(stderr, "File does not exist.");
-                exit(-1);
+                ABORT("File does not exist");
             }
 	    break;
 	}
@@ -158,10 +157,10 @@ main(int argc, char *argv[])
     /* Set the default input options. */
     set_default_options(&options);
 #if 0
+    options.RowPerm = NATURAL;
+    options.ReplaceTinyPivot = NO;
+    options.ColPerm = COLAMD;
     options.Equil = NO;
-    options.ColPerm = NATURAL;
-    options.ColPerm = MMD_AT_PLUS_A;
-    options.RowPerm = NOROWPERM;
 #endif
 
     /* Initialize ScalePermstruct and LUstruct. */

@@ -3,27 +3,20 @@
  * Lawrence Berkeley National Lab, Univ. of California Berkeley.
  * September 1, 1999
  *
+ * Modified:
+ *     Feburary 7, 2001    use MPI_Isend/MPI_Irecv
  */
 
 #include <math.h>
 #include "superlu_ddefs.h"
-#if ( VAMPIR>=1 )
-#include <VT.h>
-#endif
 
 /*
  * Internal prototypes
  */
 static void pdgstrf2(superlu_options_t *, int_t, double, Glu_persist_t *,
 		     gridinfo_t *, LocalLU_t *, SuperLUStat_t *, int *);
-#ifdef _CRAY
-static void pdgstrs2(int_t, int_t, Glu_persist_t *, gridinfo_t *,
-		     LocalLU_t *, SuperLUStat_t *, _fcd, _fcd, _fcd);
-#else
 static void pdgstrs2(int_t, int_t, Glu_persist_t *, gridinfo_t *,
 		     LocalLU_t *, SuperLUStat_t *);
-#endif
-
 /* 
  * Sketch of the algorithm
  * =======================
@@ -175,20 +168,17 @@ void pdgstrf
  *
  */
 {
-#ifdef _CRAY
-    _fcd ftcs = _cptofcd("N", strlen("N"));
-    _fcd ftcs1 = _cptofcd("L", strlen("L"));
-    _fcd ftcs2 = _cptofcd("N", strlen("N"));
-    _fcd ftcs3 = _cptofcd("U", strlen("U"));
-#endif
     double alpha = 1.0, beta = 0.0;
     int_t *xsup;
-    int_t *lsub, *lsub1, *usub, *Lsub_buf, *Usub_buf;
+    int_t *lsub, *lsub1, *usub, *Usub_buf,
+          *Lsub_buf_2[2];  /* Need 2 buffers to implement Irecv. */
+    double *lusup, *lusup1, *uval, *Uval_buf,
+           *Lval_buf_2[2]; /* Need 2 buffers to implement Irecv. */
     int_t fnz, i, ib, ijb, ilst, it, iukp, jb, jj, klst, knsupc,
           lb, lib, ldv, ljb, lptr, lptr0, lptrj, luptr, luptr0, luptrj,
           nlb, nub, nsupc, rel, rukp;
     int_t Pc, Pr;
-    int   iam, kcol, krow, mycol, myrow, pi, pj;
+    int   myid, iam, kcol, krow, mycol, myrow, pi, pj;
     int   j, k, lk, nsupers;
     int   nsupr, nbrow, segsize;
     int   msgcnt[4]; /* Count the size of the message xfer'd in each buffer:
@@ -198,7 +188,6 @@ void pdgstrf
 		      *     3 : transferred in Uval_buf[]
 		      */
     int_t  msg0, msg2;
-    double *lusup, *lusup1, *uval, *Lval_buf, *Uval_buf;
     int_t  **Ufstnz_br_ptr, **Lrowind_bc_ptr;
     double **Unzval_br_ptr, **Lnzval_bc_ptr;
     int_t  *index;
@@ -212,21 +201,17 @@ void pdgstrf
     Glu_persist_t *Glu_persist = LUstruct->Glu_persist;
     LocalLU_t *Llu = LUstruct->Llu;
     superlu_scope_t *scp;
-    MPI_Status status;
     double s_eps, thresh;
     double *tempU2d, *tempu;
     int    full, ldt, ldu, lead_zero, ncols;
-#if ( DEBUGlevel>=1 ) 
+    MPI_Request recv_req[4], *send_req;
+    MPI_Status status;
+#if ( DEBUGlevel>=2 ) 
     int_t num_copy=0, num_update=0;
 #endif
     extern double slamch_(char *);
 #if ( PRNTlevel==3 )
     int_t  zero_msg = 0, total_msg = 0;
-#endif
-#if ( PROFlevel>=1 )
-    double t1, t2;
-    float msg_vol = 0, msg_cnt = 0;
-    int_t iword = sizeof(int_t), dword = sizeof(double);
 #endif
 
     /* Test the input parameters. */
@@ -244,6 +229,7 @@ void pdgstrf
     /*
      * Initialization.
      */
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     iam = grid->iam;
     Pc = grid->npcol;
     Pr = grid->nprow;
@@ -258,16 +244,25 @@ void pdgstrf
     CHECK_MALLOC(iam, "Enter pdgstrf()");
 #endif
 
-    if ( !(Llu->Lsub_buf = intMalloc(Llu->bufmax[0])) )
-	ABORT("Malloc fails for Lsub_buf[].");
-    if ( !(Llu->Lval_buf = doubleMalloc(Llu->bufmax[1])) )
-	ABORT("Malloc fails for Lval_buf[].");
-    if ( Llu->bufmax[2] != 0 )
-	if ( !(Llu->Usub_buf = intMalloc(Llu->bufmax[2])) )
-	    ABORT("Malloc fails for Usub_buf[].");
-    if ( Llu->bufmax[3] != 0 )
-	if ( !(Llu->Uval_buf = doubleMalloc(Llu->bufmax[3])) )
-	    ABORT("Malloc fails for Uval_buf[].");
+    if ( Pr*Pc > 1 ) {
+	i = Llu->bufmax[0];
+	if ( !(Llu->Lsub_buf_2[0] = intMalloc(2 * i)) )
+	    ABORT("Malloc fails for Lsub_buf.");
+	Llu->Lsub_buf_2[1] = Llu->Lsub_buf_2[0] + i;
+	i = Llu->bufmax[1];
+	if ( !(Llu->Lval_buf_2[0] = doubleMalloc(2 * i)) )
+	    ABORT("Malloc fails for Lval_buf[].");
+	Llu->Lval_buf_2[1] = Llu->Lval_buf_2[0] + i;
+	if ( Llu->bufmax[2] != 0 ) 
+	    if ( !(Llu->Usub_buf = intMalloc(Llu->bufmax[2])) )
+		ABORT("Malloc fails for Usub_buf[].");
+	if ( Llu->bufmax[3] != 0 ) 
+	    if ( !(Llu->Uval_buf = doubleMalloc(Llu->bufmax[3])) )
+		ABORT("Malloc fails for Uval_buf[].");
+	if ( !(send_req =
+	       (MPI_Request *) SUPERLU_MALLOC(2*Pc*sizeof(MPI_Request))))
+	    ABORT("Malloc fails for send_req[].");
+    }
     if ( !(Llu->ujrow = doubleMalloc(sp_ienv(3))) )
 	ABORT("Malloc fails for ujrow[].");
 
@@ -280,10 +275,12 @@ void pdgstrf
     }
 #endif
 
-    Lval_buf = Llu->Lval_buf;
-    Lsub_buf = Llu->Lsub_buf;
-    Uval_buf = Llu->Uval_buf;
+    Lsub_buf_2[0] = Llu->Lsub_buf_2[0];
+    Lsub_buf_2[1] = Llu->Lsub_buf_2[1];
+    Lval_buf_2[0] = Llu->Lval_buf_2[0];
+    Lval_buf_2[1] = Llu->Lval_buf_2[1];
     Usub_buf = Llu->Usub_buf;
+    Uval_buf = Llu->Uval_buf;
     Lrowind_bc_ptr = Llu->Lrowind_bc_ptr;
     Lnzval_bc_ptr = Llu->Lnzval_bc_ptr;
     Ufstnz_br_ptr = Llu->Ufstnz_br_ptr;
@@ -304,26 +301,11 @@ void pdgstrf
     if ( !(ruip = intMalloc(k)) )
 	ABORT("Malloc fails for ruip[].");
 
-#if ( VAMPIR>=1 )
-    VT_symdef(1, "Send-L", "Comm");
-    VT_symdef(2, "Recv-L", "Comm");
-    VT_symdef(3, "Send-U", "Comm");
-    VT_symdef(4, "Recv-U", "Comm");
-    VT_symdef(5, "TRF2", "Factor");
-    VT_symdef(100, "Factor", "Factor");
-    VT_traceon();
-    VT_begin(100);
-#endif
-
-    /* Handle the first block column separately. */
+    /* ---------------------------------------------------------------
+       Handle the first block column separately to start the pipeline.
+       --------------------------------------------------------------- */
     if ( mycol == 0 ) {
-#if ( VAMPIR>=1 )
-	VT_begin(5);
-#endif
 	pdgstrf2(options, 0, thresh, Glu_persist, grid, Llu, stat, info);
-#if ( VAMPIR>=1 )
-	VT_end(5);
-#endif
 
 	scp = &grid->rscp; /* The scope of process row. */
 
@@ -340,34 +322,32 @@ void pdgstrf
 	
 	for (pj = 0; pj < Pc; ++pj) {
 	    if ( ToSendR[0][pj] != EMPTY ) {
-#if ( PROFlevel>=1 )
-		TIC(t1);
-#endif
-#if ( VAMPIR>=1 )
-		VT_begin(1);
-#endif
-		MPI_Send( lsub, msgcnt[0], mpi_int_t, pj, 0, scp->comm );
-		MPI_Send( lusup, msgcnt[1], MPI_DOUBLE, pj, 1, scp->comm );
+		MPI_Isend( lsub, msgcnt[0], mpi_int_t, pj, 0, scp->comm,
+			  &send_req[pj] );
+		MPI_Isend( lusup, msgcnt[1], MPI_DOUBLE, pj, 1, scp->comm,
+			  &send_req[pj+Pc] );
 #if ( DEBUGlevel>=2 )
-		printf("(%d) Send L(:,%4d): lsub %4d, lusup %4d to Pc %2d\n",
-		       iam, 0, msgcnt[0], msgcnt[1], pj);
-#endif
-#if ( VAMPIR>=1 )
-		VT_end(1);
-#endif
-#if ( PROFlevel>=1 )
-		TOC(t2, t1);
-		stat->utime[COMM] += t2;
-		msg_cnt += 2;
-		msg_vol += msgcnt[0]*iword + msgcnt[1]*dword;
+		printf("(%d %d) Send L(:,%4d): lsub %4d, lusup %4d to Pc %2d\n",
+		       myid,iam, 0, msgcnt[0], msgcnt[1], pj);
 #endif
 	    }
 	} /* for pj ... */
+    } else { /* Post immediate receives. */
+	if ( ToRecv[0] >= 1 ) { /* Recv block column L(:,0). */
+	    scp = &grid->rscp; /* The scope of process row. */
+	    MPI_Irecv( Lsub_buf_2[0], Llu->bufmax[0], mpi_int_t, 0,
+		      0, scp->comm, &recv_req[0] );
+	    MPI_Irecv( Lval_buf_2[0], Llu->bufmax[1], MPI_DOUBLE, 0,
+		      1, scp->comm, &recv_req[1] );
+#if ( DEBUGlevel>=2 )
+	    printf("(%d %d) Post Irecv L(:,%4d)\n", myid, iam, 0);
+#endif
+	}
     } /* if mycol == 0 */
 
-    /*
-     * Loop through all block columns.
-     */
+    /* ------------------------------------------
+       MAIN LOOP: Loop through all block columns.
+       ------------------------------------------ */
     for (k = 0; k < nsupers; ++k) {
 
 	knsupc = SuperSize( k );
@@ -376,40 +356,30 @@ void pdgstrf
 
 	if ( mycol == kcol ) {
 	    lk = LBj( k, grid ); /* Local block number. */
+
+	    for (pj = 0; pj < Pc; ++pj) {
+                /* Wait for Isend to complete before using lsub/lusup. */
+		if ( ToSendR[lk][pj] != EMPTY ) {
+		    MPI_Wait( &send_req[pj], &status );
+		    MPI_Wait( &send_req[pj+Pc], &status );
+		}
+	    }
 	    lsub = Lrowind_bc_ptr[lk];
 	    lusup = Lnzval_bc_ptr[lk];
 	} else {
 	    if ( ToRecv[k] >= 1 ) { /* Recv block column L(:,k). */
 		scp = &grid->rscp; /* The scope of process row. */
-#if ( PROFlevel>=1 )
-		TIC(t1);
-#endif
-#if ( VAMPIR>=1 )
-		VT_begin(2);
-#endif
-		/*probe_recv(iam, kcol, (4*k)%NTAGS, mpi_int_t, scp->comm, 
-		  Llu->bufmax[0]);*/
-		MPI_Recv( Lsub_buf, Llu->bufmax[0], mpi_int_t, kcol, 
-			 (4*k)%NTAGS, scp->comm, &status );
+		MPI_Wait( &recv_req[0], &status );
 		MPI_Get_count( &status, mpi_int_t, &msgcnt[0] );
-		/*probe_recv(iam, kcol, (4*k+1)%NTAGS, MPI_DOUBLE, scp->comm, 
-		  Llu->bufmax[1]);*/
-		MPI_Recv( Lval_buf, Llu->bufmax[1], MPI_DOUBLE, kcol, 
-			 (4*k+1)%NTAGS, scp->comm, &status );
+		MPI_Wait( &recv_req[1], &status );
 		MPI_Get_count( &status, MPI_DOUBLE, &msgcnt[1] );
-#if ( VAMPIR>=1 )
-		VT_end(2);
-#endif
-#if ( PROFlevel>=1 )
-		TOC(t2, t1);
-		stat->utime[COMM] += t2;
-#endif
 #if ( DEBUGlevel>=2 )
-		printf("(%d) Recv L(:,%4d): lsub %4d, lusup %4d from Pc %2d\n",
-		       iam, k, msgcnt[0], msgcnt[1], kcol);
+		printf("(%d %d) Recv L(:,%4d): lsub %4d, lusup %4d from Pc %2d\n",
+		       myid, iam, k, msgcnt[0], msgcnt[1], kcol);
+		fflush(stdout);
 #endif
-		lsub = Lsub_buf;
-		lusup = Lval_buf;
+		lsub = Lsub_buf_2[k%2];
+		lusup = Lval_buf_2[k%2];
 #if ( PRNTlevel==3 )
 		++total_msg;
 		if ( !msgcnt[0] ) ++zero_msg;
@@ -422,11 +392,7 @@ void pdgstrf
 	if ( myrow == krow ) {
 	    /* Parallel triangular solve across process row *krow* --
 	       U(k,j) = L(k,k) \ A(k,j).  */
-#ifdef _CRAY
-	    pdgstrs2(n, k, Glu_persist, grid, Llu, stat, ftcs1, ftcs2, ftcs3);
-#else
 	    pdgstrs2(n, k, Glu_persist, grid, Llu, stat);
-#endif
 
 	    /* Multicasts U(k,:) to process columns. */
 	    lk = LBi( k, grid );
@@ -442,60 +408,28 @@ void pdgstrf
 	    if ( ToSendD[lk] == YES ) {
 		for (pi = 0; pi < Pr; ++pi) {
 		    if ( pi != myrow ) {
-#if ( PROFlevel>=1 )
-			TIC(t1);
-#endif
-#if ( VAMPIR>=1 )
-			VT_begin(3);
-#endif
 			MPI_Send( usub, msgcnt[2], mpi_int_t, pi,
 				 (4*k+2)%NTAGS, scp->comm);
 			MPI_Send( uval, msgcnt[3], MPI_DOUBLE, pi,
 				 (4*k+3)%NTAGS, scp->comm);
-#if ( VAMPIR>=1 )
-			VT_end(3);
-#endif
-#if ( PROFlevel>=1 )
-			TOC(t2, t1);
-			stat->utime[COMM] += t2;
-			msg_cnt += 2;
-			msg_vol += msgcnt[2]*iword + msgcnt[3]*dword;
-#endif
 #if ( DEBUGlevel>=2 )
-			printf("(%d) Send U(%4d,:) to Pr %2d\n", iam, k, pi);
+			printf("(%d %d) Send U(%4d,:) to Pr %2d\n", myid, iam, k, pi);
 #endif
 		    } /* if pi ... */
 		} /* for pi ... */
 	    } /* if ToSendD ... */
 	} else { /* myrow != krow */
 	    if ( ToRecv[k] == 2 ) { /* Recv block row U(k,:). */
-#if ( PROFlevel>=1 )
-		TIC(t1);
-#endif
-#if ( VAMPIR>=1 )
-		VT_begin(4);
-#endif
-		/*probe_recv(iam, krow, (4*k+2)%NTAGS, mpi_int_t, scp->comm, 
-		  Llu->bufmax[2]);*/
 		MPI_Recv( Usub_buf, Llu->bufmax[2], mpi_int_t, krow,
 			 (4*k+2)%NTAGS, scp->comm, &status );
 		MPI_Get_count( &status, mpi_int_t, &msgcnt[2] );
-		/*probe_recv(iam, krow, (4*k+3)%NTAGS, MPI_DOUBLE, scp->comm, 
-		  Llu->bufmax[3]);*/
 		MPI_Recv( Uval_buf, Llu->bufmax[3], MPI_DOUBLE, krow, 
 			 (4*k+3)%NTAGS, scp->comm, &status );
 		MPI_Get_count( &status, MPI_DOUBLE, &msgcnt[3] );
-#if ( VAMPIR>=1 )
-		VT_end(4);
-#endif
-#if ( PROFlevel>=1 )
-		TOC(t2, t1);
-		stat->utime[COMM] += t2;
-#endif
 		usub = Usub_buf;
 		uval = Uval_buf;
 #if ( DEBUGlevel>=2 )
-		printf("(%d) Recv U(%4d,:) from Pr %2d\n", iam, k, krow);
+		printf("(%d %d) Recv U(%4d,:) from Pr %2d\n", myid, iam, k, krow);
 #endif
 #if ( PRNTlevel==3 )
 		++total_msg;
@@ -564,15 +498,15 @@ void pdgstrf
 		        if ( segsize > ldu ) ldu = segsize;
 		    }
 		}
-#if ( DEBUGlevel>=1 )
+#if ( DEBUGlevel>=3 )
 		++num_update;
 #endif
 		if ( full ) {
 		    tempu = &uval[rukp];
 		} else { /* Copy block U(k,j) into tempU2d. */
-#if ( DEBUGlevel>=1 )
-		  printf("(%d) full=%d,k=%d,jb=%d,ldu=%d,ncols=%d,nsupc=%d\n",
-			 iam, full, k, jb, ldu, ncols, nsupc);
+#if ( DEBUGlevel>=3 )
+		  printf("(%d %d) full=%d,k=%d,jb=%d,ldu=%d,ncols=%d,nsupc=%d\n",
+			 myid, iam, full, k, jb, ldu, ncols, nsupc);
 		  ++num_copy;
 #endif
 		    tempu = tempU2d;
@@ -597,15 +531,9 @@ void pdgstrf
 		    nbrow = lsub[lptr+1];  /* Number of full rows. */
 		    lptr += LB_DESCRIPTOR; /* Skip descriptor. */
 		    tempv = tempv2d;
-#ifdef _CRAY
-		    SGEMM(ftcs, ftcs, &nbrow, &ncols, &ldu, &alpha, 
-			  &lusup[luptr+(knsupc-ldu)*nsupr], &nsupr, 
-			  tempu, &ldu, &beta, tempv, &ldt);
-#else
 		    dgemm_("N", "N", &nbrow, &ncols, &ldu, &alpha, 
 			   &lusup[luptr+(knsupc-ldu)*nsupr], &nsupr, 
 			   tempu, &ldu, &beta, tempv, &ldt);
-#endif
 		    stat->ops[FACT] += 2 * nbrow * ldu * ncols;
 
 		    /* Now gather the result into the destination block. */
@@ -681,18 +609,14 @@ void pdgstrf
 	} /* if L(:,k) and U(k,:) not empty */
 
 
-	if ( k+1 < nsupers && mycol == PCOL( k+1, grid ) ) {
-#if ( VAMPIR>=1 )
-	VT_begin(5);
-#endif
+	if ( k+1 < nsupers ) {
+	  kcol = PCOL( k+1, grid );
+	  if ( mycol == kcol ) {
 	    /* Factor diagonal and subdiagonal blocks and test for exact
 	       singularity.  */
 	    pdgstrf2(options, k+1, thresh, Glu_persist, grid, Llu, stat, info);
-#if ( VAMPIR>=1 )
-	VT_end(5);
-#endif
 
-	    /* Process column *kcol* multicasts numeric values of L(:,k) 
+	    /* Process column *kcol+1* multicasts numeric values of L(:,k+1) 
 	       to process rows. */
 	    lk = LBj( k+1, grid ); /* Local block number. */
 	    lsub1 = Lrowind_bc_ptr[lk];
@@ -707,40 +631,29 @@ void pdgstrf
 	    for (pj = 0; pj < Pc; ++pj) {
 		if ( ToSendR[lk][pj] != EMPTY ) {
 		    lusup1 = Lnzval_bc_ptr[lk];
-#if ( PROFlevel>=1 )
-		    TIC(t1);
-#endif
-#if ( VAMPIR>=1 )
-		    VT_begin(1);
-#endif
-#if 1
-		    MPI_Send( lsub1, msgcnt[0], mpi_int_t, pj,
-			     (4*(k+1))%NTAGS, scp->comm );
-		    MPI_Send( lusup1, msgcnt[1], MPI_DOUBLE, pj,
-			     (4*(k+1)+1)%NTAGS, scp->comm );
-#else
-/* This is worse than blocking send. */
 		    MPI_Isend( lsub1, msgcnt[0], mpi_int_t, pj,
-			      (4*(k+1))%NTAGS, scp->comm, &request[0] );
+			      (4*(k+1))%NTAGS, scp->comm, &send_req[pj] );
 		    MPI_Isend( lusup1, msgcnt[1], MPI_DOUBLE, pj,
-			     (4*(k+1)+1)%NTAGS, scp->comm, &request[1] );
-#endif
-#if ( VAMPIR>=1 )
-		    VT_end(1);
-#endif
-#if ( PROFlevel>=1 )
-		    TOC(t2, t1);
-		    stat->utime[COMM] += t2;
-		    msg_cnt += 2;
-		    msg_vol += msgcnt[0]*iword + msgcnt[1]*dword;
-#endif
+			     (4*(k+1)+1)%NTAGS, scp->comm, &send_req[pj+Pc] );
 #if ( DEBUGlevel>=2 )
-		    printf("(%d) Send L(:,%4d): lsub %4d, lusup %4d to Pc %2d\n",
-			   iam, k+1, msgcnt[0], msgcnt[1], pj);
+		    printf("(%d %d) Send L(:,%4d): lsub %4d, lusup %4d to Pc %2d\n",
+			   myid, iam, k+1, msgcnt[0], msgcnt[1], pj);
 #endif
 		}
 	    } /* for pj ... */
-	} /* if mycol == Pc(k+1) */
+	  } else { /* Post Recv of block column L(:,k+1). */
+	    if ( ToRecv[k+1] >= 1 ) {
+		scp = &grid->rscp; /* The scope of process row. */
+		MPI_Irecv(Lsub_buf_2[(k+1)%2], Llu->bufmax[0], mpi_int_t, kcol,
+			  (4*(k+1))%NTAGS, scp->comm, &recv_req[0]);
+		MPI_Irecv(Lval_buf_2[(k+1)%2], Llu->bufmax[1], MPI_DOUBLE, kcol, 
+			  (4*(k+1)+1)%NTAGS, scp->comm, &recv_req[1]);
+#if ( DEBUGlevel>=2 )
+		printf("(%d %d) Post Irecv L(:,%4d)\n", myid, iam, k+1);
+#endif
+	    }
+	  } /* if mycol == Pc(k+1) */
+        } /* if k+1 < nsupers */
 
 	if ( msg0 && msg2 ) { /* L(:,k) and U(k,:) are not empty. */
 	    /* 
@@ -768,15 +681,15 @@ void pdgstrf
 		        if ( segsize > ldu ) ldu = segsize;
 		    }
 		}
-#if ( DEBUGlevel>=2 )
-		printf("(%d) full=%d,k=%d,jb=%d,ldu=%d,ncols=%d,nsupc=%d\n",
-		       iam, full, k, jb, ldu, ncols, nsupc);
+#if ( DEBUGlevel>=3 )
+		printf("(%d %d) full=%d,k=%d,jb=%d,ldu=%d,ncols=%d,nsupc=%d\n",
+		       myid, iam, full, k, jb, ldu, ncols, nsupc);
 		++num_update;
 #endif
 		if ( full ) {
 		    tempu = &uval[rukp];
 		} else { /* Copy block U(k,j) into tempU2d. */
-#if ( DEBUGlevel>=1 ) 		  
+#if ( DEBUGlevel>=3 )
 		    ++num_copy;
 #endif
 		    tempu = tempU2d;
@@ -801,15 +714,9 @@ void pdgstrf
 		    nbrow = lsub[lptr+1];  /* Number of full rows. */
 		    lptr += LB_DESCRIPTOR; /* Skip descriptor. */
 		    tempv = tempv2d;
-#ifdef _CRAY
-		    SGEMM(ftcs, ftcs, &nbrow, &ncols, &ldu, &alpha, 
-			  &lusup[luptr+(knsupc-ldu)*nsupr], &nsupr, 
-			  tempu, &ldu, &beta, tempv, &ldt);
-#else
 		    dgemm_("N", "N", &nbrow, &ncols, &ldu, &alpha, 
 			   &lusup[luptr+(knsupc-ldu)*nsupr], &nsupr, 
 			   tempu, &ldu, &beta, tempv, &ldt);
-#endif
 		    stat->ops[FACT] += 2 * nbrow * ldu * ncols;
 
 		    /* Now gather the result into the destination block. */
@@ -884,19 +791,21 @@ void pdgstrf
 	    } /* for j ... */
 	} /* if  k L(:,k) and U(k,:) are not empty */
 
-    } /* for k ... */
+    } 
+    /* ------------------------------------------
+       END MAIN LOOP: for k = ...
+       ------------------------------------------ */
 
-#if ( VAMPIR>=1 )
-    VT_end(100);
-    VT_traceoff();
-#endif
 
-    SUPERLU_FREE(Llu->Lsub_buf);
-    SUPERLU_FREE(Llu->Lval_buf);
-    if ( Llu->bufmax[2] != 0 ) SUPERLU_FREE(Llu->Usub_buf);
-    if ( Llu->bufmax[3] != 0 ) SUPERLU_FREE(Llu->Uval_buf);
+    if ( Pr*Pc > 1 ) {
+	SUPERLU_FREE(Lsub_buf_2[0]); /* also free Lsub_buf_2[1] */
+	SUPERLU_FREE(Lval_buf_2[0]); /* also free Lval_buf_2[1] */
+	if ( Llu->bufmax[2] != 0 ) SUPERLU_FREE(Usub_buf);
+	if ( Llu->bufmax[3] != 0 ) SUPERLU_FREE(Uval_buf);
+	SUPERLU_FREE(send_req);
+    }
+
     SUPERLU_FREE(Llu->ujrow);
-
     SUPERLU_FREE(tempv2d);
     SUPERLU_FREE(indirect);
     SUPERLU_FREE(iuip);
@@ -904,33 +813,7 @@ void pdgstrf
 
     /* Prepare error message. */
     if ( *info == 0 ) *info = n + 1;
-#if ( PROFlevel>=1 )
-    TIC(t1);
-#endif
     MPI_Allreduce( info, &iinfo, 1, mpi_int_t, MPI_MIN, grid->comm );
-#if ( PROFlevel>=1 )
-    TOC(t2, t1);
-    stat->utime[COMM] += t2;
-    {
-	float msg_vol_max, msg_vol_sum, msg_cnt_max, msg_cnt_sum;
-	
-	MPI_Reduce( &msg_cnt, &msg_cnt_sum,
-		   1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
-	MPI_Reduce( &msg_cnt, &msg_cnt_max,
-		   1, MPI_FLOAT, MPI_MAX, 0, grid->comm );
-	MPI_Reduce( &msg_vol, &msg_vol_sum,
-		   1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
-	MPI_Reduce( &msg_vol, &msg_vol_max,
-		   1, MPI_FLOAT, MPI_MAX, 0, grid->comm );
-	if ( !iam ) {
-	    printf("\tPDGSTRF comm stat:"
-		   "\tAvg\tMax\t\tAvg\tMax\n"
-		   "\t\t\tCount:\t%.0f\t%.0f\tVol(MB)\t%.2f\t%.2f\n",
-		   msg_cnt_sum/Pr/Pc, msg_cnt_max,
-		   msg_vol_sum/Pr/Pc*1e-6, msg_vol_max*1e-6);
-	}
-    }
-#endif
     if ( iinfo == n + 1 ) *info = 0;
     else *info = iinfo;
 
@@ -954,11 +837,12 @@ void pdgstrf
     }
 #endif
 
-#if ( DEBUGlevel>=1 )
+#if ( DEBUGlevel>=3 )
     printf("(%d) num_copy=%d, num_update=%d\n", iam, num_copy, num_update);
+#endif
+#if ( DEBUGlevel>=1 )
     CHECK_MALLOC(iam, "Exit pdgstrf()");
 #endif
-
 } /* PDGSTRF */
 
 
@@ -1062,19 +946,15 @@ static void pdgstrf2
 #if 0
 	dbcast_col(ujrow, c, pkk, UjROW, grid, &c);
 #else
-	/*bcast_tree(ujrow, c, MPI_DOUBLE, krow, (24*k+j)%NTAGS,
-		   grid, COMM_COLUMN, &c);*/
 	MPI_Bcast(ujrow, c, MPI_DOUBLE, krow, (grid->cscp).comm);
 #endif
 
-#if ( DEBUGlevel>=2 )
-if ( k == 3329 && j == 2 ) {
+#if ( DEBUGlevel>=4 )
 	if ( iam == pkk ) {
 	    printf("..(%d) k %d, j %d: Send ujrow[0] %e\n",iam,k,j,ujrow[0]);
 	} else {
 	    printf("..(%d) k %d, j %d: Recv ujrow[0] %e\n",iam,k,j,ujrow[0]);
 	}
-}
 #endif
 
 	if ( !lusup ) { /* Empty block column. */
@@ -1102,22 +982,12 @@ if ( k == 3329 && j == 2 ) {
 	if ( --c ) {
 	    if ( iam == pkk ) {
 		l = nsupr - j - 1;
-#ifdef _CRAY
-		SGER(&l, &c, &alpha, &lusup[luptr+1], &incx,
-		     &ujrow[1], &incy, &lusup[luptr+nsupr+1], &nsupr);
-#else
 		dger_(&l, &c, &alpha, &lusup[luptr+1], &incx,
 		      &ujrow[1], &incy, &lusup[luptr+nsupr+1], &nsupr);
-#endif
 		stat->ops[FACT] += 2 * l * c;
 	    } else {
-#ifdef _CRAY
-		SGER(&nsupr, &c, &alpha, &lusup[luptr], &incx, 
-		     &ujrow[1], &incy, &lusup[luptr+nsupr], &nsupr);
-#else
 		dger_(&nsupr, &c, &alpha, &lusup[luptr], &incx, 
 		      &ujrow[1], &incy, &lusup[luptr+nsupr], &nsupr);
-#endif
 		stat->ops[FACT] += 2 * nsupr * c;
 	    }
 	}
@@ -1134,17 +1004,10 @@ if ( k == 3329 && j == 2 ) {
 /************************************************************************/
 static void pdgstrs2
 /************************************************************************/
-#ifdef _CRAY
-(
- int_t m, int_t k, Glu_persist_t *Glu_persist, gridinfo_t *grid,
- LocalLU_t *Llu, SuperLUStat_t *stat, _fcd ftcs1, _fcd ftcs2, _fcd ftcs3
- )
-#else
 (
  int_t m, int_t k, Glu_persist_t *Glu_persist, gridinfo_t *grid,
  LocalLU_t *Llu, SuperLUStat_t *stat
  )
-#endif
 /* 
  * Purpose
  * =======
@@ -1177,7 +1040,7 @@ static void pdgstrs2
  *
  */
 {
-    int    iam, pkk;
+    int    myid, iam, pkk;
     int    incx = 1;
     int    nsupr; /* number of rows in the block L(:,k) (LDA) */
     int    segsize;
@@ -1194,6 +1057,7 @@ static void pdgstrs2
     if ( !Llu->Unzval_br_ptr[lk] ) return;
 
     /* Initialization. */
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     iam  = grid->iam;
     pkk  = PNUM( PROW(k, grid), PCOL(k, grid), grid );
     klst = FstBlockC( k+1 );
@@ -1208,8 +1072,8 @@ static void pdgstrs2
 	nsupr = Llu->Lrowind_bc_ptr[lk][1]; /* LDA of lusup[] */
 	lusup = Llu->Lnzval_bc_ptr[lk];
     } else {
-	nsupr = Llu->Lsub_buf[1]; /* LDA of lusup[] */
-	lusup = Llu->Lval_buf;
+	nsupr = Llu->Lsub_buf_2[k%2][1]; /* LDA of lusup[] */
+	lusup = Llu->Lval_buf_2[k%2];
     }
 
     /* Loop through all the row blocks. */
@@ -1223,23 +1087,15 @@ static void pdgstrs2
 	    segsize = klst - usub[iukp++]; 
 	    if ( segsize ) { /* Nonzero segment. */
 		luptr = (knsupc - segsize) * (nsupr + 1);
-#ifdef _CRAY
-		STRSV(ftcs1, ftcs2, ftcs3, &segsize, &lusup[luptr], &nsupr, 
-		      &uval[rukp], &incx);
-#else
                 ldamin = segsize;
                 if( ldamin < 1 ) ldamin = 1;
                 if( nsupr < ldamin) {
-/*
- * (nsupr, segsize) observed at
- * 4,8; 4,12; 16,24; 28,32; 12,40;
- */
-                   printf("pdgstrs2:Error:lda %d  < ldamin %d\n",nsupr,ldamin);
+                   printf("(%d %d) Error:pdgstrs2:dtrsv:lda %d  < ldamin %d\n",myid, iam, nsupr,ldamin);
                    nsupr = ldamin;
-                }
-		dtrsv_("L", "N", "U", &segsize, &lusup[luptr], &nsupr, 
+                } else {
+		   dtrsv_("L", "N", "U", &segsize, &lusup[luptr], &nsupr, 
 		       &uval[rukp], &incx);
-#endif
+                }
 		stat->ops[FACT] += segsize * (segsize + 1);
 		rukp += segsize;
 	    }
@@ -1247,20 +1103,3 @@ static void pdgstrs2
     } /* for b ... */
 
 } /* PDGSTRS2 */
-
-int
-probe_recv(int iam, int source, int tag, MPI_Datatype datatype, MPI_Comm comm,
-	   int buf_size)
-{
-    MPI_Status status;
-    int count; 
-
-    MPI_Probe( source, tag, comm, &status );
-    MPI_Get_count( &status, datatype, &count );
-    if ( count > buf_size ) {
-        printf("(%d) Recv'ed count %d > buffer size $d\n",
-	       iam, count, buf_size);
-	exit(-1);
-    }
-    return 0;
-}

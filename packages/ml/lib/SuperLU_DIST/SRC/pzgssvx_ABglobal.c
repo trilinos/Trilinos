@@ -393,7 +393,7 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
  * nrhs    (input) int (global)
  *         The number of right-hand sides.
  *         If nrhs = 0, only LU decomposition is performed, the forward
- *         and back substitution are skipped.
+ *         and back substitutions are skipped.
  *
  * grid    (input) gridinfo_t*
  *         The 2D process mesh. It contains the MPI communicator, the number
@@ -475,14 +475,14 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
     int_t    *etree;  /* elimination tree */
     int_t    *colptr, *rowind;
     int_t    colequ, Equil, factored, job, notran, rowequ;
-    int_t    i, iinfo, j, irow, m, n, nnz, permc_spec;
+    int_t    i, iinfo, j, irow, m, n, nnz, permc_spec, dist_mem_use;
     int      iam;
     int      ldx;  /* LDA for matrix X (global). */
     char     equed[1], norm[1];
     double   *C, *R, *C1, *R1, amax, anorm, colcnd, rowcnd;
     doublecomplex *X, *b_col, *b_work, *x_col;
     double   t;
-    mem_usage_t num_mem_usage, symb_mem_usage;
+    static mem_usage_t num_mem_usage, symb_mem_usage;
 #if ( PRNTlevel>= 2 )
     double   dmin, dsum, dprod;
 #endif
@@ -505,9 +505,9 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
          A->Stype != NC || A->Dtype != _Z || A->Mtype != GE )
 	*info = -2;
     else if ( ldb < A->nrow )
-	*info = -4;
-    else if ( nrhs <= 0 )
 	*info = -5;
+    else if ( nrhs < 0 )
+	*info = -6;
     if ( *info ) {
 	i = -(*info);
 	pxerbla("pzgssvx_ABglobal", grid, -*info);
@@ -772,7 +772,7 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	    } else if ( job == 4 ) {
 		if ( !iam ) printf("\tsum of diagonal %e\n", dsum);
 	    } else if ( job == 5 ) {
-		if ( !iam ) eprintf("\t product of diagonal %e\n", dprod);
+		if ( !iam ) printf("\t product of diagonal %e\n", dprod);
 	    }
 #endif
 	    
@@ -841,19 +841,24 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
 	    stat->utime[SYMBFAC] = SuperLU_timer_() - t;
 
-	    if ( !iam ) {
-		if ( iinfo < 0 ) {
+	    if ( iinfo < 0 ) {
+		QuerySpace(n, -iinfo, Glu_freeable, &symb_mem_usage);
+		if ( !iam ) {
 #if ( PRNTlevel>=1 )
 		    printf("\tNo of supers %8d\n", Glu_persist->supno[n-1]+1);
 		    printf("\tSize of G(L) %8d\n", Glu_freeable->xlsub[n]);
 		    printf("\tSize of G(U) %8d\n", Glu_freeable->xusub[n]);
+		    printf("\tint %d, short %d, float %d, double %d\n", 
+			   sizeof(int_t), sizeof(short), sizeof(float),
+			   sizeof(double));
 #endif
-		    QuerySpace(n, -iinfo, Glu_freeable, &symb_mem_usage);
 		    printf("\tSYMBfact:\tL\\U MB %.2f\ttotal MB %.2f\texpansions %d\n",
 			   symb_mem_usage.for_lu*1e-6, 
 			   symb_mem_usage.total*1e-6,
 			   symb_mem_usage.expansions);
-		} else {
+		}
+	    } else {
+		if ( !iam ) {
 		    fprintf(stderr, "symbfact() error returns %d\n", iinfo);
 		    exit(-1);
 		}
@@ -862,7 +867,7 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
 	/* Distribute the L and U factors onto the process grid. */
 	t = SuperLU_timer_();
-	zdistribute(Fact, n, &AC, Glu_freeable, LUstruct, grid);
+	dist_mem_use = zdistribute(Fact, n, &AC, Glu_freeable, LUstruct, grid);
 	stat->utime[DIST] = SuperLU_timer_() - t;
 
 	/* Deallocate storage used in symbolic factor. */
@@ -878,21 +883,31 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
 #if ( PRNTlevel>=1 )
 	{
-	    float for_lu, total;
 	    int_t TinyPivots;
+	    float for_lu, total, max, avg, temp;
 	    zQuerySpace(n, LUstruct, grid, &num_mem_usage);
 	    MPI_Reduce( &num_mem_usage.for_lu, &for_lu,
 		       1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
 	    MPI_Reduce( &num_mem_usage.total, &total,
 		       1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
+	    temp = MAX(symb_mem_usage.total,
+		       symb_mem_usage.for_lu +
+		       (float)dist_mem_use + num_mem_usage.for_lu);
+	    temp = MAX(temp, num_mem_usage.total);
+	    MPI_Reduce( &temp, &max,
+		       1, MPI_FLOAT, MPI_MAX, 0, grid->comm );
+	    MPI_Reduce( &temp, &avg,
+		       1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
 	    MPI_Allreduce( &stat->TinyPivots, &TinyPivots, 1, mpi_int_t,
 			  MPI_SUM, grid->comm );
 	    stat->TinyPivots = TinyPivots;
 	    if ( !iam ) {
-		printf("\tNUMfact space for all PEs:"
-		       "\tL\\U MB %.2f\ttotal MB %.2f\n"
-		       "\tNumber of tiny pivots: %8d\n",
-		       for_lu*1e-6, total*1e-6, stat->TinyPivots);
+		printf("\tNUMfact (MB) all PEs:\tL\\U\t%.2f\tall\t%.2f\n",
+		       for_lu*1e-6, total*1e-6);
+		printf("\tAll space (MB):"
+		       "\t\ttotal\t%.2f\tAvg\t%.2f\tMax\t%.2f\n",
+		       avg*1e-6, avg/grid->nprow/grid->npcol*1e-6, max*1e-6);
+		printf("\tNumber of tiny pivots: %10d\n", stat->TinyPivots);
 	    }
 	}
 #endif
@@ -1022,7 +1037,7 @@ pzgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	SUPERLU_FREE(b_work);
 	SUPERLU_FREE(X);
 
-    } /* if nrhs != 0 */
+    } /* end if nrhs != 0 */
 
 #if ( PRNTlevel>=1 )
     if ( !iam ) printf(".. DiagScale = %d\n", ScalePermstruct->DiagScale);

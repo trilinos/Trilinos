@@ -1,7 +1,14 @@
 #! /bin/csh
 
 set ofile = install.out			# output file
-yod -sz 1 testtimer 
-yod -sz 1 testslamch 
-yod -sz 1 testdlamch 
+
+echo '---- SINGLE PRECISION' >! $ofile
+./testslamch >> $ofile
+echo '' >> $ofile
+echo ---- DOUBLE PRECISION >> $ofile
+./testdlamch >> $ofile
+echo '' >> $ofile
+echo ---- TIMER >> $ofile
+./testtimer >> $ofile
+
 

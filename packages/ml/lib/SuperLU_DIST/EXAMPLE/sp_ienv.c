@@ -50,10 +50,10 @@ sp_ienv(int_t ispec)
 
     switch (ispec) {
 #if ( MACH==CRAY_T3E )
-	case 2: return (4);
+	case 2: return (6);
 	case 3: return (30);
 #elif ( MACH==IBM )
-	case 2: return (4);
+	case 2: return (2);
 	case 3: return (50);
 #else
 	case 2: return (4);

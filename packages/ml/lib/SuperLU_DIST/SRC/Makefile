@@ -30,30 +30,30 @@ include ../make.inc
 # Precision independent routines
 #
 ALLAUX 	= symbfact.o sp_ienv.o zfdperm.o \
-	  sp_coletree.o sp_colorder.o get_perm_c.o \
+	  etree.o sp_colorder.o get_perm_c.o \
 	  mmd.o colamd.o comm.o memory.o util.o superlu_grid.o \
 	  lsame.o xerbla.o pxerbla.o superlu_timer.o
 
 #
 # Routines to permute large entries to diagonal
 #
-DLDPERM = dldperm.o mc64ad.o fd05.o mc21.o
+DLDPERM = dldperm.o mc64ad.o mc21.o #fd05.o
 
 #
 # Routines literally taken from SuperLU
 #
-DSLUSRC	= slamch.o dlangs.o dgsequ.o dlaqgs.o dutil.o \
-	  dmemory.o dsp_blas2.o dsp_blas3.o dreadhb.o dmyblas2.o
+DSLUSRC	= dlamch.o slamch.o dlangs.o dgsequ.o dlaqgs.o dutil.o \
+	  dmemory.o dsp_blas2.o dsp_blas3.o dreadhb.o
 ZSLUSRC	= dcomplex.o dlamch.o slamch.o zlangs.o zgsequ.o zlaqgs.o \
 	  zmemory.o zsp_blas2.o zsp_blas3.o zreadhb.o zutil.o
 
 #
 # Routines for double precision parallel SuperLU
-DPLUSRC = ddistribute.o pdgstrf.o pdgstrs_Bglobal.o \
+DPLUSRC = ddistribute.o pdgstrf_irecv.o pdgstrs_Bglobal.o \
 	  pdgstrs1.o pdgssvx_ABglobal.o pdgsrfs_ABXglobal.o pdgsmv.o
 #
 # Routines for double complex parallel SuperLU
-ZPLUSRC = zldperm.o zdistribute.o pzgssvx_ABglobal.o pzgstrf.o \
+ZPLUSRC = zldperm.o zdistribute.o pzgssvx_ABglobal.o pzgstrf_irecv.o \
 	  pzgstrs1.o pzgstrs_Bglobal.o pzgsrfs_ABXglobal.o pzgsmv.o
 
 
@@ -72,8 +72,8 @@ complex16: $(ZSLUSRC) $(ZPLUSRC) $(ALLAUX)
 ##################################
 # Do not optimize these routines #
 ##################################
-#slamch.o: slamch.c ; $(CC) -c $(NOOPTS) $<
-#dlamch.o: dlamch.c ; $(CC) -c $(NOOPTS) $<
+slamch.o: slamch.c ; $(CC) $(NOOPTS) $(CDEFS) -c $<
+dlamch.o: dlamch.c ; $(CC) $(NOOPTS) $(CDEFS) -c $<
 superlu_timer.o: superlu_timer.c ; $(CC) -c $(NOOPTS) $<
 
 

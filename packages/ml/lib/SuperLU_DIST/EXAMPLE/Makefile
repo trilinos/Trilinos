@@ -29,8 +29,8 @@
 include ../make.inc
 INCLUDEDIR = -I../SRC
 
-DEXM	= pddrive.o
-DEXM1	= pddrive1.o
+DEXM	= pddrive.o sp_ienv.o
+DEXM1	= pddrive1.o sp_ienv.o
 DEXM2	= pddrive2.o
 DEXM3	= pddrive3.o
 DEXM4	= pddrive4.o
@@ -40,10 +40,10 @@ ZEXM2	= pzdrive2.o
 ZEXM3	= pzdrive3.o
 ZEXM4	= pzdrive4.o
 
-all: pddrive pddrive1
-#all: double complex16
-#double: 	pddrive pddrive1 pddrive2 pddrive3 pddrive4
-#complex16: 	pzdrive pzdrive1 pzdrive2 pzdrive3 pzdrive4
+all: double complex16
+double: 	pddrive pddrive1 pddrive2 pddrive3 pddrive4
+
+complex16: 	pzdrive pzdrive1 pzdrive2 pzdrive3 pzdrive4
 
 pddrive: $(DEXM) $(DSUPERLULIB)
 	$(LOADER) $(LOADOPTS) $(DEXM) $(LIBS) -lm -o $@
@@ -58,7 +58,7 @@ pddrive3: $(DEXM3) $(DSUPERLULIB)
 	$(LOADER) $(LOADOPTS) $(DEXM3) $(LIBS) -lm -o $@
 
 pddrive4: $(DEXM4) $(DSUPERLULIB)
-	$(LOADER) $(LOADOPTS) $(DEXM3) $(LIBS) -lm -o $@
+	$(LOADER) $(LOADOPTS) $(DEXM4) $(LIBS) -lm -o $@
 
 pzdrive: $(ZEXM) $(DSUPERLULIB)
 	$(LOADER) $(LOADOPTS) $(ZEXM) $(LIBS) -lm -o $@

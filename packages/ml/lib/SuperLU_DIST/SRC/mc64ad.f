@@ -276,13 +276,16 @@ C Local variables and parameters
       DOUBLE PRECISION FACT,ZERO,RINF
       PARAMETER (ZERO=0.0D+00)
 C External routines and functions
-      EXTERNAL FD05AD,MC21AD,MC64BD,MC64RD,MC64SD,MC64WD
-      DOUBLE PRECISION FD05AD
+c     EXTERNAL FD05AD
+c     DOUBLE PRECISION FD05AD
+      EXTERNAL MC21AD,MC64BD,MC64RD,MC64SD,MC64WD, DLAMCH
+      DOUBLE PRECISION DLAMCH
 C Intrinsic functions
       INTRINSIC ABS,LOG
 
 C Set RINF to largest positive real number (infinity)
-      RINF = FD05AD(5)
+c XSL    RINF = FD05AD(5)
+      RINF = DLAMCH('Overflow')
 
 C Check value of JOB
       IF (JOB.LT.1 .OR. JOB.GT.5) THEN
@@ -559,12 +562,14 @@ C Local parameters
 C Intrinsic functions
       INTRINSIC ABS,MIN
 C External subroutines and/or functions
-      EXTERNAL FD05AD,MC64DD,MC64ED,MC64FD
-      DOUBLE PRECISION FD05AD
-
+c      EXTERNAL FD05AD,MC64DD,MC64ED,MC64FD, DLAMCH
+c      DOUBLE PRECISION FD05AD, DLAMCH
+      EXTERNAL MC64DD,MC64ED,MC64FD, DLAMCH
+      DOUBLE PRECISION DLAMCH
 
 C Set RINF to largest positive real number
-      RINF = FD05AD(5)
+c XSL  RINF = FD05AD(5)
+      RINF = DLAMCH('Overflow')
 
 C Initialization
       NUM = 0
@@ -1228,8 +1233,10 @@ C IW4 is integer work array of length 4N used by MC64U/UD.
 
       INTEGER NUM,NVAL,WLEN,II,I,J,K,L,CNT,MOD,IDUM1,IDUM2,IDUM3
       DOUBLE PRECISION BVAL,BMIN,BMAX,RINF
-      EXTERNAL FD05AD,MC64QD,MC64UD
-      DOUBLE PRECISION FD05AD
+c      EXTERNAL FD05AD,MC64QD,MC64UD
+c      DOUBLE PRECISION FD05AD
+      EXTERNAL MC64QD,MC64UD, DLAMCH
+      DOUBLE PRECISION DLAMCH
 
 C BMIN and BMAX are such that a maximum matching exists for the input
 C   matrix in which all entries smaller than BMIN are dropped. 
@@ -1239,7 +1246,8 @@ C CNT is the number of calls made to MC64U/UD so far.
 C NUM is the cardinality of last matching found.
 
 C Set RINF to largest positive real number
-      RINF = FD05AD(5)
+c XSL      RINF = FD05AD(5)
+      RINF = DLAMCH('Overflow')
 
 C Compute a first maximum matching from scratch on whole matrix.
       DO 20 J = 1,N
@@ -1692,12 +1700,15 @@ C Local parameters
       DOUBLE PRECISION RINF,ZERO
       PARAMETER (ZERO=0.0D+0)
 C External subroutines and/or functions
-      EXTERNAL FD05AD,MC64DD,MC64ED,MC64FD
-      DOUBLE PRECISION FD05AD
+c      EXTERNAL FD05AD,MC64DD,MC64ED,MC64FD
+c      DOUBLE PRECISION FD05AD
+      EXTERNAL MC64DD,MC64ED,MC64FD, DLAMCH
+      DOUBLE PRECISION DLAMCH
 
 
 C Set RINF to largest positive real number
-      RINF = FD05AD(5)
+c XSL      RINF = FD05AD(5)
+      RINF = DLAMCH('Overflow')
 
 C Initialization
       NUM = 0

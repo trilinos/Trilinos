@@ -194,7 +194,6 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
  *      In this case all the other options mentioned above are ignored
  *      (options->Equil, options->RowPerm, options->ColPerm, 
  *       options->ReplaceTinyPivot)
- *       options->Iterefine is not ignored.
  *
  *      The user must also supply 
  *
@@ -264,10 +263,10 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
  *                 Inputs:  all of ScalePermstruct
  *                          all of LUstruct
  *
- *         o Equil (equi_t)
+ *         o Equil (yes_no_t)
  *           Specifies whether to equilibrate the system.
- *           = NEQU:  no equilibration.
- *           = EQUI: scaling factors are computed to equilibrate the system:
+ *           = NO:  no equilibration.
+ *           = YES: scaling factors are computed to equilibrate the system:
  *                      diag(R)*A*diag(C)*inv(diag(C))*X = diag(R)*B.
  *                  Whether or not the system will be equilibrated depends
  *                  on the scaling of the matrix A, but if equilibration is
@@ -286,12 +285,12 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
  *         o ColPerm (colperm_t)
  *           Specifies what type of column permutation to use to reduce fill.
  *           = NATURAL:       natural ordering.
- *           = MMD_ATA:       minimum degree ordering on structure of A'*A.
  *           = MMD_AT_PLUS_A: minimum degree ordering on structure of A'+A.
+ *           = MMD_ATA:       minimum degree ordering on structure of A'*A.
  *           = COLAMD:        approximate minimum degree column ordering.
  *           = MY_PERMC:      the ordering given in ScalePermstruct->perm_c.
  *         
- *         o ReplaceTinyPivot (place_t)
+ *         o ReplaceTinyPivot (yes_no_t)
  *           = NO:  do not modify pivots
  *           = YES: replace tiny pivots by sqrt(epsilon)*norm(A) during 
  *                  LU factorization.
@@ -394,7 +393,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
  * nrhs    (input) int (global)
  *         The number of right-hand sides.
  *         If nrhs = 0, only LU decomposition is performed, the forward
- *         and back substitution are skipped.
+ *         and back substitutions are skipped.
  *
  * grid    (input) gridinfo_t*
  *         The 2D process mesh. It contains the MPI communicator, the number
@@ -476,45 +475,39 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
     int_t    *etree;  /* elimination tree */
     int_t    *colptr, *rowind;
     int_t    colequ, Equil, factored, job, notran, rowequ;
-    int_t    i, iinfo, j, irow, m, n, nnz, permc_spec;
+    int_t    i, iinfo, j, irow, m, n, nnz, permc_spec, dist_mem_use;
     int      iam;
     int      ldx;  /* LDA for matrix X (global). */
     char     equed[1], norm[1];
     double   *C, *R, *C1, *R1, amax, anorm, colcnd, rowcnd;
     double   *X, *b_col, *b_work, *x_col;
     double   t;
-    mem_usage_t             symb_mem_usage;
-#if ( PRNTlevel>=1 )
-    mem_usage_t             num_mem_usage;
-#endif
+    static mem_usage_t num_mem_usage, symb_mem_usage;
 #if ( PRNTlevel>= 2 )
-    double                  dmin, dsum, dprod;
+    double   dmin, dsum, dprod;
 #endif
-
-    perm_r = ScalePermstruct->perm_r;
-    perm_c = ScalePermstruct->perm_c;
 
     /* Test input parameters. */
     *info = 0;
     Fact = options->Fact;
     if ( Fact < 0 || Fact > FACTORED )
-	*info = -10;
-    else if ( options->RowPerm < 0 || options->RowPerm > MY_PERMR )
-	*info = -11;
+	*info = -1;
+    else if ( options->RowPerm < 0 || options->RowPerm > MY_PERMC )
+	*info = -1;
     else if ( options->ColPerm < 0 || options->ColPerm > MY_PERMC )
-	*info = -12;
+	*info = -1;
     else if ( options->IterRefine < 0 || options->IterRefine > EXTRA )
-	*info = -13;
+	*info = -1;
     else if ( options->IterRefine == EXTRA ) {
-	*info = -14;
-	fprintf(stderr, "Extra precise iterative refinement: yet to support.");
+	*info = -1;
+	fprintf(stderr, "Extra precise iterative refinement yet to support.");
     } else if ( A->nrow != A->ncol || A->nrow < 0 ||
          A->Stype != NC || A->Dtype != _D || A->Mtype != GE )
 	*info = -2;
     else if ( ldb < A->nrow )
-	*info = -4;
-    else if ( nrhs <= 0 )
 	*info = -5;
+    else if ( nrhs < 0 )
+	*info = -6;
     if ( *info ) {
 	i = -(*info);
 	pxerbla("pdgssvx_ABglobal", grid, -*info);
@@ -529,9 +522,9 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
     job = 5;
     m = A->nrow;
     n = A->ncol;
-    Astore = (NCformat *) A->Store;
+    Astore = A->Store;
     nnz = Astore->nnz;
-    a      = (double *) Astore->nzval;
+    a = Astore->nzval;
     colptr = Astore->colptr;
     rowind = Astore->rowind;
     if ( factored || (Fact == SamePattern_SameRowPerm && Equil) ) {
@@ -540,9 +533,11 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	colequ = (ScalePermstruct->DiagScale == COL) ||
 	         (ScalePermstruct->DiagScale == BOTH);
     } else rowequ = colequ = FALSE;
+
 #if ( DEBUGlevel>=1 )
     CHECK_MALLOC(iam, "Enter pdgssvx_ABglobal()");
 #endif
+
     perm_r = ScalePermstruct->perm_r;
     perm_c = ScalePermstruct->perm_c;
     etree = LUstruct->etree;
@@ -646,11 +641,9 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	    /* Equilibrate matrix A. */
 	    dlaqgs(A, R, C, rowcnd, colcnd, amax, equed);
 	    if ( lsame_(equed, "R") ) {
-		ScalePermstruct->DiagScale = ROW;
-		rowequ = ROW;
+		ScalePermstruct->DiagScale = rowequ = ROW;
 	    } else if ( lsame_(equed, "C") ) {
-		ScalePermstruct->DiagScale = COL;
-		colequ = COL;
+		ScalePermstruct->DiagScale = colequ = COL;
 	    } else if ( lsame_(equed, "B") ) {
 		ScalePermstruct->DiagScale = BOTH;
 		rowequ = ROW;
@@ -674,16 +667,17 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
     /* ------------------------------------------------------------
        Permute rows of A. 
        ------------------------------------------------------------*/
-    if ( options->RowPerm != NOROWPERM ) {
+    if ( options->RowPerm != NO ) {
 	t = SuperLU_timer_();
 
 	if ( Fact == SamePattern_SameRowPerm /* Reuse perm_r. */
 	    || options->RowPerm == MY_PERMR ) { /* Use my perm_r. */
-            if ( !factored ) {
-	       for (i = 0; i < colptr[n]; ++i) {
+/*	    for (j = 0; j < n; ++j) {
+		for (i = colptr[j]; i < colptr[j+1]; ++i) {*/
+	    for (i = 0; i < colptr[n]; ++i) {
 		    irow = rowind[i]; 
 		    rowind[i] = perm_r[irow];
-	       }
+/*		}*/
 	    }
 	} else if ( !factored ) {
 	    if ( job == 5 ) {
@@ -743,10 +737,13 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 		    ScalePermstruct->DiagScale = BOTH;
 		    rowequ = colequ = 1;
 		} else { /* No equilibration. */
+/*		    for (j = 0; j < n; ++j) {
+			for (i = colptr[j]; i < colptr[j+1]; ++i) {*/
 		    for (i = colptr[0]; i < colptr[n]; ++i) {
 			    irow = rowind[i];
 			    rowind[i] = perm_r[irow];
-		    }
+			}
+/*		    }*/
 		}
 		SUPERLU_FREE (R1);
 		SUPERLU_FREE (C1);
@@ -794,6 +791,9 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	if ( notran ) *(unsigned char *)norm = '1';
 	else *(unsigned char *)norm = 'I';
 	anorm = dlangs(norm, A);
+#if ( PRNTlevel>=1 )
+	if ( !iam ) printf(".. anorm %e\n", anorm);
+#endif
     }
 
     /* ------------------------------------------------------------
@@ -804,8 +804,8 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	/*
 	 * Get column permutation vector perm_c[], according to permc_spec:
 	 *   permc_spec = NATURAL:  natural ordering 
-	 *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
 	 *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
+	 *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
 	 *   permc_spec = COLAMD:   approximate minimum degree column ordering
 	 *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
 	 */
@@ -814,15 +814,14 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	    /* Use an ordering provided by SuperLU */
 	    get_perm_c(iam, permc_spec, A, perm_c);
 
-        /* Compute the elimination tree of Pc*(A'+A)*Pc' or Pc*A'*A*Pc'
-         * (a.k.a. column etree), depending on the choice of ColPerm.
-         * Adjust perm_c[] to be consistent with a postorder of etree.
-         * Permute columns of A to form A*Pc'.
-         */
-        sp_colorder(options, A, perm_c, etree, &AC);
+	/* Compute the elimination tree of Pc*(A'+A)*Pc' or Pc*A'*A*Pc'
+	   (a.k.a. column etree), depending on the choice of ColPerm.
+	   Adjust perm_c[] to be consistent with a postorder of etree.
+	   Permute columns of A to form A*Pc'. */
+	sp_colorder(options, A, perm_c, etree, &AC);
 
 	/* Form Pc*A*Pc' to preserve the diagonal of the matrix Pr*A. */
-        ACstore = (NCPformat *) AC.Store;
+	ACstore = AC.Store;
 	for (j = 0; j < n; ++j) 
 	    for (i = ACstore->colbeg[j]; i < ACstore->colend[j]; ++i) {
 		irow = ACstore->rowind[i];
@@ -848,19 +847,24 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
 	    stat->utime[SYMBFAC] = SuperLU_timer_() - t;
 
-	    if ( !iam ) {
-		if ( iinfo < 0 ) {
+	    if ( iinfo < 0 ) {
+		QuerySpace(n, -iinfo, Glu_freeable, &symb_mem_usage);
+		if ( !iam ) {
 #if ( PRNTlevel>=1 )
 		    printf("\tNo of supers %8d\n", Glu_persist->supno[n-1]+1);
 		    printf("\tSize of G(L) %8d\n", Glu_freeable->xlsub[n]);
 		    printf("\tSize of G(U) %8d\n", Glu_freeable->xusub[n]);
+		    printf("\tint %d, short %d, float %d, double %d\n", 
+			   sizeof(int_t), sizeof(short), sizeof(float),
+			   sizeof(double));
 #endif
-                    QuerySpace(n, -iinfo, Glu_freeable, &symb_mem_usage);
-		    printf("\tSYMBfact:\tL\\U MB %.2f\ttotal MB %.2f\texpansions %d\n",
+		    printf("\tSYMBfact (MB):\tL\\U %.2f\ttotal %.2f\texpansions %d\n",
 			   symb_mem_usage.for_lu*1e-6, 
 			   symb_mem_usage.total*1e-6,
 			   symb_mem_usage.expansions);
-		} else {
+		}
+	    } else {
+		if ( !iam ) {
 		    fprintf(stderr, "symbfact() error returns %d\n", iinfo);
 		    exit(-1);
 		}
@@ -869,7 +873,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
 	/* Distribute the L and U factors onto the process grid. */
 	t = SuperLU_timer_();
-	ddistribute(Fact, n, &AC, Glu_freeable, LUstruct, grid);
+	dist_mem_use = ddistribute(Fact, n, &AC, Glu_freeable, LUstruct, grid);
 	stat->utime[DIST] = SuperLU_timer_() - t;
 
 	/* Deallocate storage used in symbolic factor. */
@@ -885,34 +889,44 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
 #if ( PRNTlevel>=1 )
 	{
-          int_t TinyPivots;
-          float for_lu, total;
-          dQuerySpace(n, LUstruct, grid, &num_mem_usage);
-          MPI_Reduce( &num_mem_usage.for_lu, &for_lu,
-                     1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
-          MPI_Reduce( &num_mem_usage.total, &total,
-                     1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
-          MPI_Allreduce( &stat->TinyPivots, &TinyPivots, 1, mpi_int_t,
-                        MPI_SUM, grid->comm );
-          stat->TinyPivots = TinyPivots;
-          if ( !iam ) {
-              printf("\tNUMfact space for all PEs:"
-                     "\tL\\U MB %.2f\ttotal MB %.2f\n"
-                     "\tNumber of tiny pivots: %10d\n",
-                     for_lu*1e-6, total*1e-6, stat->TinyPivots);
-          }
-        }
+	    int_t TinyPivots;
+	    float for_lu, total, max, avg, temp;
+	    dQuerySpace(n, LUstruct, grid, &num_mem_usage);
+	    MPI_Reduce( &num_mem_usage.for_lu, &for_lu,
+		       1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
+	    MPI_Reduce( &num_mem_usage.total, &total,
+		       1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
+	    temp = MAX(symb_mem_usage.total,
+		       symb_mem_usage.for_lu +
+		       (float)dist_mem_use + num_mem_usage.for_lu);
+	    temp = MAX(temp, num_mem_usage.total);
+	    MPI_Reduce( &temp, &max,
+		       1, MPI_FLOAT, MPI_MAX, 0, grid->comm );
+	    MPI_Reduce( &temp, &avg,
+		       1, MPI_FLOAT, MPI_SUM, 0, grid->comm );
+	    MPI_Allreduce( &stat->TinyPivots, &TinyPivots, 1, mpi_int_t,
+			  MPI_SUM, grid->comm );
+	    stat->TinyPivots = TinyPivots;
+	    if ( !iam ) {
+		printf("\tNUMfact (MB) all PEs:\tL\\U\t%.2f\tall\t%.2f\n",
+		       for_lu*1e-6, total*1e-6);
+		printf("\tAll space (MB):"
+		       "\t\ttotal\t%.2f\tAvg\t%.2f\tMax\t%.2f\n",
+		       avg*1e-6, avg/grid->nprow/grid->npcol*1e-6, max*1e-6);
+		printf("\tNumber of tiny pivots: %10d\n", stat->TinyPivots);
+	    }
+	}
 #endif
     
 #if ( PRNTlevel>=2 )
 	if ( !iam ) printf(".. pdgstrf INFO = %d\n", *info);
 #endif
- 
+
     } else if ( options->IterRefine ) { /* options->Fact==FACTORED */
-        /* Permute columns of A to form A*Pc' using the existing perm_c.
-         * NOTE: rows of A were previously permuted to Pc*A.
-         */
-        sp_colorder(options, A, perm_c, NULL, &AC);
+	/* Permute columns of A to form A*Pc' using the existing perm_c.
+	 * NOTE: rows of A were previously permuted to Pc*A.
+	 */
+	sp_colorder(options, A, perm_c, NULL, &AC);
     } /* if !factored ... */
 	
     /* ------------------------------------------------------------
@@ -945,7 +959,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	/* ------------------------------------------------------------
 	   Permute the right-hand side to form Pr*B.
 	   ------------------------------------------------------------*/
-	if ( options->RowPerm != NOROWPERM ) {
+	if ( options->RowPerm != NO ) {
 	    if ( notran ) {
 		b_col = B;
 		for (j = 0; j < nrhs; ++j) {
@@ -1025,7 +1039,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	SUPERLU_FREE(b_work);
 	SUPERLU_FREE(X);
 
-    } /* if nrhs != 0 */
+    } /* end if nrhs != 0 */
 
 #if ( PRNTlevel>=1 )
     if ( !iam ) printf(".. DiagScale = %d\n", ScalePermstruct->DiagScale);
@@ -1053,3 +1067,4 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
     CHECK_MALLOC(iam, "Exit pdgssvx_ABglobal()");
 #endif
 }
+

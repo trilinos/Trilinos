@@ -147,7 +147,7 @@ sp_colorder(superlu_options_t *options,  SuperMatrix *A, int_t *perm_c,
 	    sp_symetree(c_colbeg, c_colend, b_rowind, n, etree);
 
 	    SUPERLU_FREE(b_colptr);
-	    SUPERLU_FREE(b_rowind);
+	    if ( bnz ) SUPERLU_FREE(b_rowind);
 	    SUPERLU_FREE(c_colbeg);
 	    SUPERLU_FREE(c_colend);
 	}

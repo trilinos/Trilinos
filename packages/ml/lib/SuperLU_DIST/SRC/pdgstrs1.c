@@ -3,9 +3,14 @@
  * Lawrence Berkeley National Lab, Univ. of California Berkeley.
  * September 1, 1999
  *
+ * Modified:
+ *     Feburary 7, 2001    use MPI_Isend/MPI_Irecv
+ *     October 2, 2001     use MPI_Isend/MPI_Irecv with MPI_Test
  */
 
 #include "superlu_ddefs.h"
+
+#define ISEND_IRECV
 
 /*
  * Function prototypes
@@ -91,7 +96,10 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
     int_t  **Lrowind_bc_ptr;
     double **Lnzval_bc_ptr;
     MPI_Status status;
-    MPI_Request request;
+#ifdef ISEND_IRECV
+    MPI_Request *send_req, recv_req;
+    int test_flag;
+#endif
 
     /*-- Counts used for L-solve --*/
     int_t  *fmod;         /* Modification count for L-solve. */
@@ -152,6 +160,12 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 	ABORT("Malloc fails for frecv[].");
     Llu->frecv = frecv;
 
+#ifdef ISEND_IRECV
+    if ( !(send_req = (MPI_Request*) SUPERLU_MALLOC(Pr*sizeof(MPI_Request))) )
+	ABORT("Malloc fails for send_req[].");
+    for (i = 0; i < Pr; ++i) send_req[i] = MPI_REQUEST_NULL;
+#endif
+
 #ifdef _CRAY
     ftcs1 = _cptofcd("L", strlen("L"));
     ftcs2 = _cptofcd("N", strlen("N"));
@@ -167,13 +181,12 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
     knsupc = sp_ienv(3);
     if ( !(lsum = doubleCalloc(ldalsum * nrhs + nlb * LSUM_H)) )
 	ABORT("Calloc fails for lsum[].");
-    k = knsupc * nrhs + MAX( XK_H, LSUM_H );
-    if ( !(recvbuf = doubleMalloc(k)) )
+    maxrecvsz = knsupc * nrhs + MAX(XK_H, LSUM_H);
+    if ( !(recvbuf = doubleMalloc(maxrecvsz)) )
 	ABORT("Malloc fails for recvbuf[].");
-    if ( !(rtemp = doubleMalloc(k)) )
+    if ( !(rtemp = doubleMalloc(maxrecvsz)) )
 	ABORT("Malloc fails for rtemp[].");
 
-    maxrecvsz = knsupc * nrhs + MAX(XK_H, LSUM_H);
 
     
     /*---------------------------------------------------
@@ -221,9 +234,9 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 	}
     }
 
-    /*
-     * Solve the leaf nodes first by all the diagonal processes.
-     */
+    /* ---------------------------------------------------------
+       Solve the leaf nodes first by all the diagonal processes.
+       --------------------------------------------------------- */
 #if ( DEBUGlevel>=2 )
     printf("(%2d) nleaf %4d\n", iam, nleaf);
 #endif
@@ -247,7 +260,7 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		dtrsm_("L", "L", "N", "U", &knsupc, &nrhs, &alpha, 
 		       lusup, &nsupr, &x[ii], &knsupc);
 #endif
-		stat->ops[SOLVE] += knsupc * (knsupc - 1) * nrhs;
+		/*stat->ops[SOLVE] += knsupc * (knsupc - 1) * nrhs;*/
 		--nleaf;
 #if ( DEBUGlevel>=2 )
 		printf("(%2d) Solve X[%2d]\n", iam, k);
@@ -259,13 +272,18 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		for (p = 0; p < Pr; ++p)
 		    if ( fsendx_plist[lk][p] != EMPTY ) {
 			pi = PNUM( p, kcol, grid );
-#if 0
+#ifdef ISEND_IRECV
+#if 1
+			MPI_Test( &send_req[p], &test_flag, &status );
+#else
+			if ( send_req[p] != MPI_REQUEST_NULL ) 
+			    MPI_Wait( &send_req[p], &status );
+#endif
+			MPI_Isend( &x[ii - XK_H], knsupc * nrhs + XK_H,
+				  MPI_DOUBLE, pi, Xk, grid->comm, &send_req[p]);
+#else
 			MPI_Ssend( &x[ii - XK_H], knsupc * nrhs + XK_H,
 				 MPI_DOUBLE, pi, Xk, grid->comm );
-#else
-			MPI_Isend( &x[ii - XK_H], knsupc * nrhs + XK_H,
-				  MPI_DOUBLE, pi, Xk, grid->comm, &request );
-			/*MPI_Wait( &request, &status );*/
 #endif
 #if ( DEBUGlevel>=2 )
 			printf("(%2d) Sent X[%2.0f] to P %2d\n",
@@ -280,8 +298,17 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		lptr = BC_HEADER + LB_DESCRIPTOR + knsupc;
 		luptr = knsupc; /* Skip diagonal block L(k,k). */
 		
-		dlsum_fmod(lsum, x, &x[ii], rtemp, nrhs,	knsupc, k,
-			   fmod, nb, lptr, luptr, xsup, grid, Llu, stat);
+		dlsum_fmod(lsum, x, &x[ii], rtemp, nrhs, knsupc, k,
+			   fmod, nb, lptr, luptr, xsup, grid, Llu,
+			   send_req, stat);
+#ifdef ISEND_IRECV
+		/* Wait for previous Isends to complete. */
+		for (p = 0; p < Pr; ++p) {
+		    if ( fsendx_plist[lk][p] != EMPTY )
+			/*MPI_Wait( &send_req[p], &status );*/
+			MPI_Test( &send_req[p], &test_flag, &status );
+		}
+#endif
 	    }
 	} /* if diagonal process ... */
     } /* for k ... */
@@ -297,14 +324,14 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
     while ( nfrecvx || nfrecvmod ) { /* While not finished. */
 
 	/* Receive a message. */
-#if 1
-	MPI_Recv( recvbuf, maxrecvsz, MPI_DOUBLE, MPI_ANY_SOURCE,
-		 MPI_ANY_TAG, grid->comm, &status );
-#else
+#ifdef ISEND_IRECV
 	/* -MPI- FATAL: Remote protocol queue full */
 	MPI_Irecv( recvbuf, maxrecvsz, MPI_DOUBLE, MPI_ANY_SOURCE,
-		 MPI_ANY_TAG, grid->comm, &request );
-	MPI_Wait( &request, &status );
+		 MPI_ANY_TAG, grid->comm, &recv_req );
+	MPI_Wait( &recv_req, &status );
+#else
+	MPI_Recv( recvbuf, maxrecvsz, MPI_DOUBLE, MPI_ANY_SOURCE,
+		 MPI_ANY_TAG, grid->comm, &status );
 #endif
 
 	k = *recvbuf;
@@ -329,7 +356,8 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		   * Perform local block modifications: lsum[i] -= L_i,k * X[k]
 		   */
 		  dlsum_fmod(lsum, x, &recvbuf[XK_H], rtemp, nrhs, knsupc, k,
-			     fmod, nb, lptr, luptr, xsup, grid, Llu, stat);
+			     fmod, nb, lptr, luptr, xsup, grid, Llu,
+			     send_req, stat);
 	      } /* if lsub */
 
 	      break;
@@ -344,7 +372,7 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		  for (i = 0; i < knsupc; ++i)
 		      x[i + ii + j*knsupc] += tempv[i + j*knsupc];
 
-	      if ( !(--frecv[lk]) && !fmod[lk] ) {
+	      if ( (--frecv[lk])==0 && fmod[lk]==0 ) {
 		  fmod[lk] = -1; /* Do not solve X[k] in the future. */
 		  lk = LBj( k, grid ); /* Local block number, column-wise. */
 		  lsub = Lrowind_bc_ptr[lk];
@@ -357,7 +385,7 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		  dtrsm_("L", "L", "N", "U", &knsupc, &nrhs, &alpha, 
 			 lusup, &nsupr, &x[ii], &knsupc);
 #endif
-		  stat->ops[SOLVE] += knsupc * (knsupc - 1) * nrhs;
+		  /*stat->ops[SOLVE] += knsupc * (knsupc - 1) * nrhs;*/
 #if ( DEBUGlevel>=2 )
 		  printf("(%2d) Solve X[%2d]\n", iam, k);
 #endif
@@ -369,8 +397,20 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		  for (p = 0; p < Pr; ++p)
 		      if ( fsendx_plist[lk][p] != EMPTY ) {
 			  pi = PNUM( p, kcol, grid );
+#ifdef ISEND_IRECV
+#if 1
+			  MPI_Test( &send_req[p], &test_flag, &status );
+#else
+			  if ( send_req[p] != MPI_REQUEST_NULL ) 
+			      MPI_Wait( &send_req[p], &status );
+#endif
+			  MPI_Isend( &x[ii - XK_H], knsupc * nrhs + XK_H,
+				    MPI_DOUBLE, pi, Xk, grid->comm,
+				    &send_req[p] );
+#else
 			  MPI_Send( &x[ii - XK_H], knsupc * nrhs + XK_H,
 				   MPI_DOUBLE, pi, Xk, grid->comm );
+#endif
 #if ( DEBUGlevel>=2 )
 			  printf("(%2d) Sent X[%2.0f] to P %2d\n",
 				 iam, x[ii-XK_H], pi);
@@ -385,7 +425,16 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		  luptr = knsupc; /* Skip diagonal block L(k,k). */
 
 		  dlsum_fmod(lsum, x, &x[ii], rtemp, nrhs, knsupc, k,
-			     fmod, nb, lptr, luptr, xsup, grid, Llu, stat);
+			     fmod, nb, lptr, luptr, xsup, grid, Llu,
+			     send_req, stat);
+#ifdef ISEND_IRECV
+		  /* Wait for previous Isends to complete. */
+		  for (p = 0; p < Pr; ++p) {
+		      if ( fsendx_plist[lk][p] != EMPTY )
+			  /*MPI_Wait( &send_req[p], &status );*/
+			  MPI_Test( &send_req[p], &test_flag, &status );
+		  }
+#endif
 	      } /* if */
 
 	      break;
@@ -611,7 +660,7 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		dtrsm_("L", "U", "N", "N", &knsupc, &nrhs, &alpha, 
 		       lusup, &nsupr, &x[ii], &knsupc);
 #endif
-		stat->ops[SOLVE] += knsupc * (knsupc + 1) * nrhs;
+		/*stat->ops[SOLVE] += knsupc * (knsupc + 1) * nrhs;*/
 		--nroot;
 #if ( DEBUGlevel>=2 )
 		printf("(%2d) Solve X[%2d]\n", iam, k);
@@ -622,8 +671,20 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		for (p = 0; p < Pr; ++p)
 		    if ( bsendx_plist[lk][p] != EMPTY ) {
 			pi = PNUM( p, kcol, grid );
+#ifdef ISEND_IRECV
+#if 1
+			MPI_Test( &send_req[p], &test_flag, &status );
+#else
+			if ( send_req[p] != MPI_REQUEST_NULL ) 
+			    MPI_Wait( &send_req[p], &status );
+#endif
+			MPI_Isend( &x[ii - XK_H], knsupc * nrhs + XK_H,
+				  MPI_DOUBLE, pi, Xk, grid->comm,
+				  &send_req[p] );
+#else
 			MPI_Send( &x[ii - XK_H], knsupc * nrhs + XK_H,
 				 MPI_DOUBLE, pi, Xk, grid->comm );
+#endif
 #if ( DEBUGlevel>=2 )
 			printf("(%2d) Sent X[%2.0f] to P %2d\n",
 			       iam, x[ii-XK_H], pi);
@@ -635,7 +696,16 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		 */
 		if ( Urbs[lk] ) 
 		    dlsum_bmod(lsum, x, &x[ii], nrhs, k, bmod, Urbs,
-			       Ucb_indptr, Ucb_valptr, xsup, grid, Llu, stat);
+			       Ucb_indptr, Ucb_valptr, xsup, grid, Llu,
+			       send_req, stat);
+#ifdef ISEND_IRECV
+		/* Wait for the previous Isends to complete. */
+		for (p = 0; p < Pr; ++p) {
+		    if ( bsendx_plist[lk][p] != EMPTY )
+			/*MPI_Wait( &send_req[p], &status );*/
+			MPI_Test( &send_req[p], &test_flag, &status );
+		}
+#endif
 	    } /* if root ... */
 	} /* if diagonal process ... */
     } /* for k ... */
@@ -664,7 +734,8 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		 *         lsum[i] -= U_i,k * X[k]
 		 */
 		dlsum_bmod(lsum, x, &recvbuf[XK_H], nrhs, k, bmod, Urbs,
-			   Ucb_indptr, Ucb_valptr, xsup, grid, Llu, stat);
+			   Ucb_indptr, Ucb_valptr, xsup, grid, Llu,
+			   send_req, stat);
 
 	        break;
 
@@ -691,7 +762,7 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		    dtrsm_("L", "U", "N", "N", &knsupc, &nrhs, &alpha, 
 			   lusup, &nsupr, &x[ii], &knsupc);
 #endif
-		    stat->ops[SOLVE] += knsupc * (knsupc + 1) * nrhs;
+		    /*stat->ops[SOLVE] += knsupc * (knsupc + 1) * nrhs;*/
 #if ( DEBUGlevel>=2 )
 		    printf("(%2d) Solve X[%2d]\n", iam, k);
 #endif
@@ -702,8 +773,20 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		    for (p = 0; p < Pr; ++p)
 			if ( bsendx_plist[lk][p] != EMPTY ) {
 			    pi = PNUM( p, kcol, grid );
+#ifdef ISEND_IRECV
+#if 1
+			    MPI_Test( &send_req[p], &test_flag, &status );
+#else
+			    if ( send_req[p] != MPI_REQUEST_NULL ) 
+				MPI_Wait( &send_req[p], &status );
+#endif
+			    MPI_Isend( &x[ii - XK_H], knsupc * nrhs + XK_H,
+				      MPI_DOUBLE, pi, Xk, grid->comm,
+				      &send_req[p] );
+#else
 			    MPI_Send( &x[ii - XK_H], knsupc * nrhs + XK_H,
 				     MPI_DOUBLE, pi, Xk, grid->comm );
+#endif
 #if ( DEBUGlevel>=2 )
 			    printf("(%2d) Sent X[%2.0f] to P %2d\n",
 				   iam, x[ii - XK_H], pi);
@@ -717,8 +800,15 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
 		    if ( Urbs[lk] )
 			dlsum_bmod(lsum, x, &x[ii], nrhs, k, bmod, Urbs,
 				   Ucb_indptr, Ucb_valptr, xsup, grid, Llu,
-				   stat);
-		} /* if */
+				   send_req, stat);
+#ifdef ISEND_IRECV
+		    /* Wait for the previous Isends to complete. */
+		    for (p = 0; p < Pr; ++p) {
+			if ( bsendx_plist[lk][p] != EMPTY )
+			    MPI_Test( &send_req[p], &test_flag, &status );
+		    }
+#endif
+		} /* if becomes solvable */
 		
 		break;
 
@@ -753,7 +843,14 @@ void pdgstrs1(int_t n, LUstruct_t *LUstruct, gridinfo_t *grid,
     SUPERLU_FREE(Urbs);
     SUPERLU_FREE(bmod);
     SUPERLU_FREE(brecv);
-
+#ifdef ISEND_IRECV
+    for (p = 0; p < Pr; ++p) {
+        if ( send_req[p] != MPI_REQUEST_NULL )
+	    MPI_Wait( &send_req[p], &status );
+    }
+    SUPERLU_FREE(send_req);
+#endif
+    
 #if ( DEBUGlevel>=1 )
     CHECK_MALLOC(iam, "Exit pdgstrs1()");
 #endif

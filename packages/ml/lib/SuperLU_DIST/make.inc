@@ -19,13 +19,12 @@ PLAT		= _tflops
 #
 #  The name of the libraries to be created/linked to
 #
-DSuperLUroot 	= .. 
+DSuperLUroot 	= /scratch/tmp_9/dmday/SuperLU_DIST
 DSUPERLULIB   	= $(DSuperLUroot)/superlu$(PLAT).a
 BLASDEF	     	= -DUSE_VENDOR_BLAS
-BLASLIB		= -lkmath -lcmplx
+BLASLIB		= -lcsmath -lcmplx
 MPILIB		= -lmpi
-FIX		= -L/Net/projects/salinas/lib/fixcougar
-LIBS	     	= $(DSUPERLULIB) $(BLASLIB) $(MPILIB) $(FIX)
+LIBS	     	= $(DSUPERLULIB) $(BLASLIB) $(MPILIB) -lf
 #
 #  The archiver and the flag(s) to use when building archive (library)
 #  If your system has no ranlib, set RANLIB = echo.
@@ -34,17 +33,14 @@ ARCH         	= ar
 ARCHFLAGS    	= cr
 RANLIB       	= ranlib
 
-CC           	= cicc
-CFLAGS       	= -fast -Minline=levels:10 -DPRNTlevel=0 -DDEBUGlevel=0 \
-                  -DPROFlevel=0 -DCOUGAR -DMPI -DAppend_
-#CFLAGS       	= -g -DPRNTlevel=1 -DDEBUGlevel=1 -DPROFlevel=1 -DCOUGAR -DMPI -DAppend_
-PTROPT	     	= -h restrict=a
+CC           	= cicc 
+CFLAGS       	= -fast -DMPI -DCOUGAR -I/usr/include \
+                  -DPRNTlevel=0 -DDEBUGlevel=0 -DPROFlevel=0 -DAppend_
 NOOPTS		=
 FORTRAN		= cif77
-FFLAGS		= -O3
+FFLAGS		= -fast
 LOADER       	= ${CC}
 LOADOPTS	= -O -cougar
-#LOADOPTS	= -g -cougar
 #
 #  C preprocessor defs for compilation (-DNoChange, -DAdd_, or -DUpCase)
 #

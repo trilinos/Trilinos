@@ -223,6 +223,8 @@ typedef struct {
     int iam;              /* my process number in this scope */
     int_t nprow;          /* number of process rows */
     int_t npcol;          /* number of process columns */
+    int ngrids;           /* number of concurrent grids */
+    int mygrid;           /* local grid number < ngrids */
 } gridinfo_t;
 
 
@@ -359,8 +361,12 @@ typedef struct {
     double  **Lnzval_bc_ptr;  /* size ceil(NSUPERS/Pc)                 */
     int_t   **Ufstnz_br_ptr;  /* size ceil(NSUPERS/Pr)                 */
     double  **Unzval_br_ptr;  /* size ceil(NSUPERS/Pr)                 */
+#if 0
     int_t   *Lsub_buf;        /* Buffer for the remote subscripts of L */
     double  *Lval_buf;        /* Buffer for the remote nonzeros of L   */
+#endif
+    int_t   *Lsub_buf_2[2];   /* Buffers for the remote subscripts of L*/
+    double  *Lval_buf_2[2];   /* Buffers for the remote nonzeros of L  */
     int_t   *Usub_buf;        /* Buffer for the remote subscripts of U */
     double  *Uval_buf;        /* Buffer for the remote nonzeros of U   */
     double  *ujrow;           /* used in panel factorization.          */
@@ -597,7 +603,7 @@ extern int_t symbfact_SubInit(fact_t, void *, int_t, int_t, int_t, int_t,
 extern int_t symbfact_SubXpand(int_t, int_t, int_t, MemType, int_t *,
 			       Glu_freeable_t *);
 extern int_t symbfact_SubFree(Glu_freeable_t *);
-extern void  ddistribute(fact_t, int_t, SuperMatrix *, Glu_freeable_t *, 
+extern int_t ddistribute(fact_t, int_t, SuperMatrix *, Glu_freeable_t *, 
 			 LUstruct_t *, gridinfo_t *);
 extern void  pdgssvx_ABglobal(superlu_options_t *, SuperMatrix *, 
 			      ScalePermstruct_t *, double *,
@@ -612,10 +618,12 @@ extern void  pdgstrs_Bglobal(int_t, LUstruct_t *, gridinfo_t *,
 			     double *, int_t, int, SuperLUStat_t *, int *);
 extern void dlsum_fmod(double *, double *, double *, double *,
 		       int, int, int_t , int_t *, int_t, int_t, int_t,
-		       int_t *, gridinfo_t *, LocalLU_t *, SuperLUStat_t *);
+		       int_t *, gridinfo_t *, LocalLU_t *, 
+		       MPI_Request [], SuperLUStat_t *);
 extern void dlsum_bmod(double *, double *, double *, int, int_t, int_t *,
 		       int_t *Urbs, Ucb_indptr_t **, int_t **, int_t *,
-		       gridinfo_t *, LocalLU_t *, SuperLUStat_t *);
+		       gridinfo_t *, LocalLU_t *,
+		       MPI_Request [], SuperLUStat_t *);
 extern void  pdgsrfs_ABXglobal(int_t, SuperMatrix *, double, LUstruct_t *,
 			       gridinfo_t *, double [], int_t, double [],
 			       int_t, int, double *, SuperLUStat_t *, int *);

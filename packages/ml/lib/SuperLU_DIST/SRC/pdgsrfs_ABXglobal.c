@@ -12,7 +12,7 @@
 void
 pdgsrfs_ABXglobal(int_t n, SuperMatrix *A, double anorm, LUstruct_t *LUstruct,
 		  gridinfo_t *grid, double *B, int_t ldb, double *X, int_t ldx,
-		  int nrhs, double* berr, SuperLUStat_t *stat, int *info)
+		  int nrhs, double *berr, SuperLUStat_t *stat, int *info)
 {
 /* 
  * Purpose
@@ -80,7 +80,7 @@ pdgsrfs_ABXglobal(int_t n, SuperMatrix *A, double anorm, LUstruct_t *LUstruct,
  * nrhs   (input) int
  *        Number of right-hand sides.
  *
- * berr   (output) double
+ * berr   (output) double*, dimension (nrhs)
  *         The componentwise relative backward error of each solution   
  *         vector X(j) (i.e., the smallest relative change in   
  *         any element of A or B that makes X(j) an exact solution).
@@ -119,10 +119,10 @@ pdgsrfs_ABXglobal(int_t n, SuperMatrix *A, double anorm, LUstruct_t *LUstruct,
            *x_trs, *dx_trs;
     int_t count, ii, j, jj, k, knsupc, lk, lwork,
           nprow, nsupers, nz, p;
-    int   i, iam, pkk, one = 1;
+    int   i, iam, pkk;
     int_t *ilsum, *xsup;
     double eps, lstres;
-    double s, safmin, safe1, safe2, *sptr, two = 2., *recvptr, recv;
+    double s, safmin, safe1, safe2;
 
     /* NEW STUFF */
     int_t num_diag_procs, *diag_procs; /* Record diagonal process numbers. */
@@ -158,14 +158,8 @@ pdgsrfs_ABXglobal(int_t n, SuperMatrix *A, double anorm, LUstruct_t *LUstruct,
     if ( n == 0 || nrhs == 0 ) {
 	return;
     }
-    if ( nrhs != 1 ){
-      printf("Error: Multiple right hand sides do not work\n");
-      exit(-1);
-    }
 
     /* Initialization. */
-    sptr = &s;
-    recvptr = &recv;
     iam = grid->iam;
     nprow = grid->nprow;
     nsupers = Glu_persist->supno[n-1] + 1;
@@ -237,12 +231,14 @@ pdgsrfs_ABXglobal(int_t n, SuperMatrix *A, double anorm, LUstruct_t *LUstruct,
 		       eps, anorm, safe1, safe2);
 #endif
 
+    /* Do for each right-hand side ... */
+    for (j = 0; j < nrhs; ++j) {
 	count = 0;
 	lstres = 3.;
 
 	/* Copy X into x on the diagonal processes. */
-	B_col = B;
-	X_col = X;
+	B_col = &B[j*ldb];
+	X_col = &X[j*ldx];
 	for (p = 0; p < num_diag_procs; ++p) {
 	    pkk = diag_procs[p];
 	    if ( iam == pkk ) {
@@ -282,14 +278,13 @@ pdgsrfs_ABXglobal(int_t n, SuperMatrix *A, double anorm, LUstruct_t *LUstruct,
 		else
 		    s = MAX(s, (fabs(R[i]) + safe1) / (temp[i] + safe1) );
 	    }
-MPI_Allreduce( (void*) sptr, (void*) recvptr, one, MPI_DOUBLE, MPI_MAX, grid->comm ); 
-*berr = recv;
-
+	    MPI_Allreduce( &s, &berr[j], 1, MPI_DOUBLE, MPI_MAX, grid->comm );
+		
 #if ( PRNTlevel>= 1 )
 	    if ( !iam )
-		printf("(%2d) .. Step %2d: berr = %e\n", iam, count, *berr);
+		printf("(%2d) .. Step %2d: berr[j] = %e\n", iam, count, berr[j]);
 #endif
-	    if ( *berr>eps && two* *berr<=lstres && count<ITMAX ) {
+	    if ( berr[j] > eps && berr[j] * 2 <= lstres && count < ITMAX ) {
 		/* Compute new dx. */
 		redist_all_to_diag(n, R, Glu_persist, Llu, grid,
 				   mv_sup_to_proc, dx_trs);
@@ -305,7 +300,7 @@ MPI_Allreduce( (void*) sptr, (void*) recvptr, one, MPI_DOUBLE, MPI_MAX, grid->co
 			    for (i = 0; i < knsupc; ++i)
 				x_trs[i + ii] += dx_trs[i + ii];
 			}
-		lstres = *berr;
+		lstres = berr[j];
 		++count;
 		/* Transfer x_trs (on diagonal processes) into X
 		   (on all processes). */
@@ -316,6 +311,11 @@ MPI_Allreduce( (void*) sptr, (void*) recvptr, one, MPI_DOUBLE, MPI_MAX, grid->co
 		break;
 	    }
 	} /* end while */
+
+	stat->RefineSteps = count;
+
+    } /* for j ... */
+
 
     /* Deallocate storage used by matrix-vector multiplication. */
     SUPERLU_FREE(diag_procs);

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "Cnames.h"
 #define TRUE_ (1)
 #define FALSE_ (0)
 #define abs(x) ((x) >= 0 ? (x) : -(x))

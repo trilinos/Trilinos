@@ -23,9 +23,7 @@ DSuperLUroot 	= $(HOME)/SuperLU_DIST
 DSUPERLULIB   	= $(DSuperLUroot)/superlu$(PLAT).a
 #
 BLASDEF	     	= -DUSE_VENDOR_BLAS
-# BLASLIB      	= $(DSuperLUroot)/blas$(PLAT).a
 #
-#PERFLIB	= -l pat pat.cld
 PERFLIB	     	= -lapp
 LIBS	     	= $(DSUPERLULIB) $(BLASLIB) #$(PERFLIB)
 
