@@ -47,13 +47,13 @@ class SteepestDescent : public Generic {
 public:
 
   //! Constructor
-  SteepestDescent(const Parameter::List& params);
+  SteepestDescent(Parameter::List& params);
 
   //! Destructor
   ~SteepestDescent();
 
   // derived
-  bool reset(const Parameter::List& params);
+  bool reset(Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 

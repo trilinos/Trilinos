@@ -70,7 +70,7 @@ public:
   virtual ~Generic() {};
 
   //! Reset parameters
-  virtual bool reset(const Parameter::List& params) = 0;
+  virtual bool reset(Parameter::List& params) = 0;
   
   /*!
     \brief Compute the direction vector for a specific method given

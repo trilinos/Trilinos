@@ -59,13 +59,13 @@ class Manager : public Generic {
 public:
 
   //! Constructor
-  Manager(const Parameter::List& params);
+  Manager(Parameter::List& params);
 
   //! Destructor
   ~Manager();
 
   // derived
-  bool reset(const Parameter::List& params);
+  bool reset(Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 

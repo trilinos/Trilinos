@@ -43,7 +43,7 @@
 using namespace NOX;
 using namespace NOX::Direction;
 
-Manager::Manager(const Parameter::List& params) :
+Manager::Manager(Parameter::List& params) :
   method(""),
   ptr(NULL)
 {
@@ -55,7 +55,7 @@ Manager::~Manager()
   delete ptr;
 }
 
-bool Manager::reset(const Parameter::List& params)
+bool Manager::reset(Parameter::List& params)
 {
    string newmethod = params.getParameter("Method", "Newton");
 

@@ -62,13 +62,13 @@ class Newton : public Generic {
 public:
 
   //! Constructor
-  Newton(const Parameter::List& params);
+  Newton(Parameter::List& params);
 
   //! Destructor
   virtual ~Newton();
 
   // derived
-  virtual bool reset(const Parameter::List& params);
+  virtual bool reset(Parameter::List& params);
 
   // derived
   virtual bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
@@ -83,7 +83,7 @@ protected:
 
 private:
 
-  Parameter::List params;
+  Parameter::List* paramsptr;
   Abstract::Vector* predrhs;
   Abstract::Vector* stepdir;
 

@@ -38,7 +38,7 @@
 using namespace NOX;
 using namespace NOX::Direction;
 
-SteepestDescent::SteepestDescent(const Parameter::List& params) 
+SteepestDescent::SteepestDescent(Parameter::List& params) 
 {
   reset(params);
 }
@@ -48,7 +48,7 @@ SteepestDescent::~SteepestDescent()
   
 }
 
-bool SteepestDescent::reset(const Parameter::List& params)
+bool SteepestDescent::reset(Parameter::List& params)
 {
   return true;
 }
