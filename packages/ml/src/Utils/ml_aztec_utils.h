@@ -130,6 +130,23 @@ extern int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[
                      int requested_rows[], int allocated_space);
 extern void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,
                      int proc_config[]);
+extern void AZ_transform_norowreordering(int proc_config[], int *external[],
+    int bindx[], double val[], int update[], int *update_index[],
+	int *extern_index[], int *data_org[], int N_update, int indx[], int bnptr[],
+	int rnptr[], int *cnptr[], int mat_type);
+extern void AZ_input_msr_matrix_nodiag(char datafile[], int update[],
+	double **val, int **bindx, 
+	int N_update, int proc_config[]);
+extern void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current,
+	double **val, int **bindx, char *input, FILE *dfp, int *msr_len,
+	int *column0);
+extern void ML_find_local_indices(int N_update, int bindx[], int update[],
+	int *sorted_ext, int N_external, int map[], int start, int end);
+
+extern void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordered_node_externs,
+			    int Tmat_bindx[], double Tmat_val[], int rowptr[], int Nlocal_nodes,
+				 int global_node_inds[], ML_Comm *comm, int Nlocal_edges,
+				 ML_Operator **Tmat);
 
 #endif
 
