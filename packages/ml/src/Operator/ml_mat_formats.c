@@ -82,6 +82,16 @@ void ML_CSR_MSRdata_Destroy(void *data)
       ML_free(temp);
    }
 }
+
+void ML_CSR_MSRdata_Destroy_StructOnly(void *data)
+{
+   struct ML_CSR_MSRdata *temp;
+
+   temp = (struct ML_CSR_MSRdata *) data;
+   if (temp != NULL) {
+      ML_free(temp);
+   }
+}
 /*********************************************************************/
 /* Scale the rows of the generalized CSR matrix using scale_factors. */
 /*********************************************************************/
