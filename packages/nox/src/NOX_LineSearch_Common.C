@@ -153,6 +153,13 @@ double Common::computeSlopeWithOutJac(const Abstract::Vector& dir, const Abstrac
   return(vecPtr->dot(grp.getF()));
 }
 
+bool NOX::LineSearch::Common::isIncreaseAllowed(double newf, double oldf, int nOuterIters) const
+{
+  double increase = newf / oldf;
+
+  return ( (increase <= relIncrease) && (nOuterIters <= numAllowed) );
+}
+
 bool Common::setCommonDataValues() 
 {
   NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
