@@ -840,6 +840,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
     /* ********************************************************************** */
 
     ML_Create(&ml_,MaxCreationLevels);
+    ml_->output_level = OutputLevel;
 
     int NumMyRows;
     
