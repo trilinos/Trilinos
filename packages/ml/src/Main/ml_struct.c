@@ -1875,6 +1875,10 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
    char             str[80];
    int                (*fun)(void *, int, double *, int, double *);
    int iii, jjj, degree;
+   ML_Krylov   *kdata;
+#ifdef SYMMETRIZE
+   ML_Operator *t3;
+#endif
 
 #ifdef ML_TIMING
    double         t0;
@@ -1894,14 +1898,15 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
    fun = ML_Smoother_MLS_Apply;
    iii = 0;
    degree = 1;
-#ifdef newstuff
+
+#ifdef NEWMLS
    if (ml->comm->ML_mypid == 0) {
      printf("Enter -k to do a kth degree MLS or k (where k > 0)\n");
      printf("to do kth degree Cheby over high frequencies\n");
      scanf("%d",&iii);
    }
    ML_gsum_vec_int(&jjj, &iii, 1, ml->comm);
-   if (iii > 0) {
+   if (iii >= 0) {
      fun = ML_Cheby;
      degree = iii;
    }
@@ -1914,6 +1919,21 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
      t0 = GetClock();
 #endif
      Amat = &(ml->Amat[i]);
+   if ((Amat->lambda_max < -666.) && (Amat->lambda_max > -667)) {
+     kdata = ML_Krylov_Create( Amat->comm );
+     ML_Krylov_Set_PrintFreq( kdata, 0 );
+     ML_Krylov_Set_ComputeEigenvalues( kdata );
+#ifdef SYMMETRIZE
+     ML_Krylov_Set_Amatrix(kdata, t3);
+#else
+     ML_Krylov_Set_Amatrix(kdata, Amat);
+#endif
+     ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+     Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
+     Amat->lambda_min = kdata->ML_eigen_min; 
+     ML_Krylov_Destroy( &kdata );
+   }
+
 
      /* To avoid division by zero problem. */
      if (Amat->diagonal != NULL)
@@ -1923,9 +1943,9 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
            if (tdiag[j] == 0) tdiag[j] = 1.0;
      }
 
-     if (Amat->matvec->ML_id != ML_EMPTY) {
 
-	 widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
+     if (Amat->matvec->ML_id != ML_EMPTY) {
+         widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
 
 	 widget->mlsDeg   = degree;
 	 widget->mlsBoost = 1.0; 
