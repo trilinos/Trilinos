@@ -1906,6 +1906,8 @@ int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
 <a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_local_id</i>, 
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
 int&nbsp;*<i>vertices</i>,
@@ -1918,12 +1920,15 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>FUNCTION <b><i>Get_Next_Coarse_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+next_global_id, next_local_id,
 assigned, num_vert, vertices, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: next_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: next_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex,
 ierr&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
@@ -1977,13 +1982,25 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the previous object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the previous object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_global_id</i></td>
 
 <td>Upon return, the global ID of the next object in the coarse grid.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_local_id</i></td>
 
 <td>Upon return, the local ID of the next object in the coarse grid.</td>
 </tr>
