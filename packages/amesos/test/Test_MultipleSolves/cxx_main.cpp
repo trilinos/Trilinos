@@ -7,7 +7,8 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Vector.h"
+#include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
 #include "Amesos.h"
@@ -15,13 +16,19 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 bool TestAmesos(char ProblemType[],
-		Epetra_RowMatrix& A)
+		Epetra_RowMatrix& A,
+		int NumVectors)
 {
 
-  const Epetra_Map& Map = A.OperatorDomainMap();
+  const Epetra_BlockMap& Map = A.OperatorDomainMap();
 
-  Epetra_Vector x2(Map), x1(Map), x(Map), b(Map), residual(Map), temp(Map);
-
+  Epetra_MultiVector x2(Map,NumVectors);
+  Epetra_MultiVector x1(Map,NumVectors);
+  Epetra_MultiVector x(Map,NumVectors);
+  Epetra_MultiVector b(Map,NumVectors);
+  Epetra_MultiVector residual(Map,NumVectors);
+  Epetra_MultiVector temp(Map,NumVectors);
+  
   Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
@@ -93,9 +100,7 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  // =========================================== //
-  // non-symmetric case (for all except DSCPACK) //
-  // =========================================== //
+  int NumVectors = 2;
 
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", 10000);
@@ -119,7 +124,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
     if (Factory.Query((char*)Solver.c_str())) {
-      if(TestAmesos((char*)Solver.c_str(), *A) == false)
+      if(TestAmesos((char*)Solver.c_str(), *A, NumVectors) == false)
 	TestPassed = false;
     } else
       if (Comm.MyPID() == 0) {
