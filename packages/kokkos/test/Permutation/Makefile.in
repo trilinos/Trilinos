@@ -91,8 +91,7 @@ mkinstalldirs = $(mkdir_p)
 CONFIG_HEADER = $(top_builddir)/src/Kokkos_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_Permutation_test_OBJECTS =  \
-	Permutation_test-cxx_main.$(OBJEXT)
+am_Permutation_test_OBJECTS = Permutation_test-cxx_main.$(OBJEXT)
 Permutation_test_OBJECTS = $(am_Permutation_test_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
