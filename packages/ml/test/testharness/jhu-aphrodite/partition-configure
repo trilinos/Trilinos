@@ -4,6 +4,7 @@
 --enable-triutils
 --enable-teuchos
 --enable-amesos
+--enable-anasazi
 --enable-ml
 --disable-tests
 --disable-examples

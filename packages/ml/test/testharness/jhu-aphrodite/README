@@ -28,4 +28,5 @@ teuchos-configure basic plus
                  teuchos, amesos
 
 partition-configure: teuchos plus
+                 anasazi
                  zoltan, metis, & parmetis-3.x interfaces enabled
