@@ -1,0 +1,12 @@
+Decomposition Info	= method=parmetis
+Zoltan Parameters	= parmetis_method=partgeom
+File Type		= Chaco
+File Name		= nograph
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+1
+5
+6
+10
+21
+25

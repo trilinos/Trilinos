@@ -1,0 +1,13 @@
+Decomposition Info	= method=rcb
+Zoltan Parameters	= 
+File Type		= Chaco, initial procs = 1
+File Name		= nograph
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+1
+2
+6
+7
+11
+12
+13
