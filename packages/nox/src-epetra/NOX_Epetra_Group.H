@@ -70,8 +70,8 @@ A linear solve using this class requires at a minimum that the user supply a Jac
   <li> A NOX::Epetra::MatrixFree object - Estimates the action of the Jacobian on a vector via a directional derivative.  This requires minimal memory since no Jacobian is stored.  The Jacobian is stored in an Epetra_CrsMatirx.  This is not optimied and can be very time consuming since a ::Epetra::NOXInterface::computeF() call is made for each unknown. This was meant primarily as a validation tool to ensure Jacobian fills are correct.For this object, the user is not required to implement any additional methods in the NOX::Epetra::Interface.
   </ul>
 
-<B>"Linear %Solver" sublist parameters</B><br>
-A NOX::ParameterList is supplied in the constructor and during calls to the NOX::Epetra::Group::computeNewton() and NOX::Epetra::Group::applyJacobianInverse().  This parameter list is the "Linear %Solver" sublist.  The following parameters can be set in the linear Solver sublist for NOX::Epetra::Groups
+<B>"%Linear %Solver" sublist parameters</B><br>
+A NOX::ParameterList is supplied in the constructor and during calls to the NOX::Epetra::Group::computeNewton() and NOX::Epetra::Group::applyJacobianInverse().  This parameter list is the "%Linear %Solver" sublist.  The following parameters can be set in the linear Solver sublist for NOX::Epetra::Groups
 <ul>
 
 <li> "Aztec %Solver" - The following options are valid:<br>
@@ -132,7 +132,7 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
   <li> "User Supplied %Preconditioner" - The user supplies an Epetra_Operator derived class or a NOX::Epetra::Operator derived class.  A vector is preconditioned through calls to the ApplyInverse() function of the Epetra_Operator class.  If an Epetra_Operator is passed in, the user must implement the function computePreconditioner() in the NOX::Epetra::Interface derived class.  If a NOX::Epetra::Operator object is passed in, the user does not need to implement the NOX::Epetra::Interface::computePreconditioner() function since it is implemented as part of the NOX::Epetra::Preconditioner class. 
   </ul><br>
 
-<li> "Aztec %Preconditioner" - If an AztecOO preconditioner is used, the type of preconditioner can be set with the flag "Aztec Preconditioner" in the "Linear %Solver" sublist (defaults to ilu). Currently supported preconditioners and their corresponding parameters that can be set in the "Linear %Solver" sublist are shown below (See the Aztec 2.1 manual for more information):<br>
+<li> "Aztec %Preconditioner" - If an AztecOO preconditioner is used, the type of preconditioner can be set with the flag "Aztec Preconditioner" in the "%Linear %Solver" sublist (defaults to ilu). Currently supported preconditioners and their corresponding parameters that can be set in the "%Linear %Solver" sublist are shown below (See the Aztec 2.1 manual for more information):<br>
   <ul><br>
   <li> "ilu" with additional parameters:
   <ul>
@@ -179,9 +179,9 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
 <B>"Output" sublist</B><br>
 The parameter list passed into the group during a computeNewton() or ApplyJacobianInverse() will have an "Output" sublist created that contains the following parameters:
 <ul>
-<li> "Number of Linear Iterations" - Number of iterations used by the linear solver <br>
-<li> "True Unscaled Residual" - Actual unscaled linear solve residual<br>
-<li> "Scaled Residual" - Actual residual achieved by the linear solver computed via the method requested for comparison against the desired "Tolerance".<br>
+<li> "Acheived Tolerance" - Actual tolerance achieved by the linear solver computed via the convergence test requested.<br>
+<li> "Number of %Linear Iterations" - Number of iterations used by the linear solver in the last call to applyJacobianInverse<br>
+<li> "Total Number of %Linear Iterations" - Total number of linear solve iterations performed by groups that have used this input list<br>
 </ul><br>
 
  */
