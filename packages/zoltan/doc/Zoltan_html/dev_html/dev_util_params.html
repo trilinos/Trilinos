@@ -283,7 +283,7 @@ calls to <b>LB_Assign_Param_Vals.</b></td>
 struct <b>LB_PARAM</b> * <i>change_list</i>, struct <b>PARAM_VARS</b> *
 <i>params,
 </i>int<i>
-debug_level,</i> int <i>proc</i>);
+debug_level,</i> int <i>my_proc,</i> int <i>debug_proc</i>);
 <br>
 <hr>This routine changes parameter values as specified by the list of names
 and new values which is associated with a load-balancing structure. To
@@ -328,9 +328,21 @@ of three NULL fields.&nbsp;</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp; <i>proc</i></td>
+<td>&nbsp;&nbsp; <i>my_proc</i></td>
 
 <td>Processor number. (Normally this is lb->Proc.)</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>debug_proc</i></td>
+
+<td>Processor number for debugging. (Normally this is lb->Debug_Proc.)</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td></td>
 </tr>
 
 <tr>
@@ -349,9 +361,9 @@ of three NULL fields.&nbsp;</td>
 <td></td>
 </tr>
 </table>
-The last two input parameters may seem strange. They are present to support
+The last three input parameters may seem strange. They are present to support
 Zoltan's debugging features. If the parameter utility code is used outside
-of Zoltan, these two parameters may be removed or simply set both input
+of Zoltan, these&nbsp; parameters may be removed or simply set these input
 values to zero in the function call.
 <p>
 <hr WIDTH="100%">
