@@ -2128,7 +2128,8 @@ fi
 
 
 if test "X$ac_cv_use_triutils" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno"; then
+	test "X$ac_cv_use_belos" != "Xno" ||
+	test "X$ac_cv_use_amesos" != "Xno"; then
   BUILD_TRIUTILS_TRUE=
   BUILD_TRIUTILS_FALSE='#'
 else
@@ -2351,7 +2352,8 @@ subdirs="$subdirs packages/epetra"
 fi
 
 if test "X$ac_cv_use_triutils" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno"; then
+	test "X$ac_cv_use_belos" != "Xno" ||
+	test "X$ac_cv_use_amesos" != "Xno"; then
 
 
 subdirs="$subdirs packages/triutils"
