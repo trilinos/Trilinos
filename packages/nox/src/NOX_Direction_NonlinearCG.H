@@ -140,7 +140,7 @@ private:
   Abstract::Vector* diffVecPtr;  
 
   //! Input parameters.
-  Parameter::List& iparams;	
+  Parameter::List* paramsPtr;	
 
   //! Orthogonalization parameter \f$ \beta \f$.
   double beta;			

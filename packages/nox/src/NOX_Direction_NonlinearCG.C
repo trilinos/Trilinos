@@ -63,15 +63,16 @@ NonlinearCG::NonlinearCG(Parameter::List& params) :
   oldDirPtr(NULL),			// reference to xgrp
   oldDescentDirPtr(NULL),		// reference to xgrp
   diffVecPtr(NULL),			// reference to xgrp
-  iparams(params),			// copy p
-  restartFrequency(params.getParameter("Restart Frequency", 10))
+  paramsPtr(NULL)
 {
-  reset(iparams);
+  reset(params);
 }
 
 
 bool NonlinearCG::reset(Parameter::List& params) 
 {
+  paramsPtr = &params;
+  restartFrequency = paramsPtr->getParameter("Restart Frequency", 10);
   return true;
 }
 
@@ -117,7 +118,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   soln.computeF();
   dir = soln.getF();  
-  if(iparams.isParameterEqual("Precondition", "On")) {
+  if(paramsPtr->isParameterEqual("Precondition", "On")) {
     if(!soln.isJacobian())
       soln.computeJacobian();
     tmpVec = dir;
@@ -135,7 +136,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
 // Two choices (for now) for orthogonalizing descent direction with previous:
 
-    if(iparams.isParameterEqual("Orthogonalize", "Polak-Ribiere"))
+    if(paramsPtr->isParameterEqual("Orthogonalize", "Polak-Ribiere"))
     {
 //                     Polak-Ribiere beta
 
