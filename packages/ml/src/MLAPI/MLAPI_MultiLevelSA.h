@@ -3,6 +3,7 @@
 
 #include "ml_include.h"
 #include "ml_agg_genP.h"
+#include "MLAPI_Error.h"
 #include "MLAPI_CompObject.h"
 #include "MLAPI_TimeObject.h"
 #include "MLAPI_Operator.h"

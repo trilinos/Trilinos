@@ -5,6 +5,7 @@
 #ifdef HAVE_ML_MLAPI
 
 #include "ml_include.h"
+#include "MLAPI_Error.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_MultiVector.h"
 

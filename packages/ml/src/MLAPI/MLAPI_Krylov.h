@@ -5,6 +5,7 @@
 #ifdef HAVE_ML_MLAPI
 
 #include "ml_config.h"
+#include "MLAPI_Error.h"
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_BaseOperator.h"
 #include "MLAPI_EpetraBaseOperator.h"

@@ -9,6 +9,7 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "MLAPI_Error.h"
 
 //! MLAPI: Default namespace for all MLAPI objects and functions.
 namespace MLAPI {

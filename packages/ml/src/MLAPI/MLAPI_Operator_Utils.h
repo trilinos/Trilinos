@@ -16,6 +16,7 @@
 #endif
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "MLAPI_Error.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_Operator.h"

@@ -1,6 +1,7 @@
 #ifndef MLAPI_TIMEOBJECT_H
 #define MLAPI_TIMEOBJECT_H
 
+#include "MLAPI_Error.h"
 #include "MLAPI_Workspace.h"
 #include "Epetra_Time.h"
 

@@ -3,6 +3,7 @@
 
 #include "ml_include.h"
 #include "ml_comm.h"
+#include "MLAPI_Error.h"
 #include "MLAPI_Workspace.h"
 #include "MLAPI_BaseObject.h"
 #include "Teuchos_RefCountPtr.hpp"

@@ -14,11 +14,13 @@
 #include "Ifpack_ILUT.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
+#include "MLAPI_Error.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_BaseOperator.h"
 #include "MLAPI_CompObject.h"
 #include "MLAPI_TimeObject.h"
 #include "MLAPI_MultiVector.h"
+#include "MLAPI_MultiVector_Utils.h"
 #include "MLAPI_Workspace.h"
 
 using namespace std;

@@ -1,6 +1,7 @@
 #ifndef MLAPI_DEFAULTS_H
 #define MLAPI_DEFAULTS_H
 
+#include "MLAPI_Error.h"
 #include "Teuchos_ParameterList.hpp"
 
 namespace MLAPI 

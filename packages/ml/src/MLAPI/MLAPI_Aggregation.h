@@ -8,6 +8,7 @@
 #include <iostream>
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "MLAPI_Error.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_Workspace.h"
@@ -77,7 +78,7 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
   ML_memory_alloc((void **)&(agg_object->nullspace_vect), 
                   sizeof(double) * size, "ns");
   for (int i = 0 ; i < size ; ++i)
-    agg_object->nullspace_vect[i] = 1.0 ; //////ThisNS.Values()[i];
+    agg_object->nullspace_vect[i] = ThisNS.GetValues()[i];
 
   agg_object->nullspace_dim = ThisNS.GetNumVectors();
   agg_object->num_PDE_eqns = NumPDEEquations;

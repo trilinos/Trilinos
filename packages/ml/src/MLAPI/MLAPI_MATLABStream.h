@@ -4,6 +4,7 @@
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 
+#include "MLAPI_Error.h"
 #include "MLAPI_Operator.h"
 
 namespace MLAPI {

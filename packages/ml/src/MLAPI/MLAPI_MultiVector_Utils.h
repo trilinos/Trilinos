@@ -1,9 +1,7 @@
 #ifndef MLAPI_DOUBLEVECTOR_UTILS_H
 #define MLAPI_DOUBLEVECTOR_UTILS_H
 
-#include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
-
+#include "MLAPI_Error.h"
 #include "MLAPI_MultiVector.h"
 
 namespace MLAPI {
@@ -41,7 +39,5 @@ MultiVector Duplicate(const MultiVector& y, const int v)
 }
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif

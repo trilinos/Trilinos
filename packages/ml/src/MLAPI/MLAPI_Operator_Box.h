@@ -2,6 +2,7 @@
 #define MLAPI_OPERATOR_BOX_H
 
 #include "ml_include.h"
+#include "MLAPI_Error.h"
 
 namespace MLAPI {
 

@@ -2,6 +2,7 @@
 #define ML_VECTOR_H
 
 #include "ml_lapack.h"
+#include "MLAPI_Error.h"
 #include "MLAPI_BaseObject.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_CompObject.h"

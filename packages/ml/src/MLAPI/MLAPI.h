@@ -1,12 +1,4 @@
-#ifndef ML_THROW
-#define ML_THROW(str,val) { \
-  std::cerr << "ERROR: In function/method " << __func__ << "()" << endl; \
-  std::cerr << "ERROR: File " << __FILE__ << ", line " << __LINE__ << endl; \
-  std::cerr << "ERROR: " << str << endl; \
-  throw(val); \
-  }
-#endif
-
+#include "MLAPI_Error.h"
 #include "MLAPI_Workspace.h"
 #include "MLAPI_BaseObject.h"
 #include "MLAPI_Space.h"

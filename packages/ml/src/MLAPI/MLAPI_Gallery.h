@@ -6,6 +6,7 @@
 
 #include "ml_include.h"
 #include <iostream>
+#include "MLAPI_Error.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_Workspace.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
