@@ -229,9 +229,12 @@ namespace Teuchos
   template<class Key, class Value> inline
     const Value& Hashtable<Key, Value>::get(const Key& key) const
     {
-      if (!containsKey(key)) Error::raise(Teuchos::toString(key)
-                                          + "key not found in Hashtable"
-                                          + toString());
+      TEST_FOR_EXCEPTION(!containsKey(key),
+                         runtime_error,
+                         "Hashtable<Key, Value>::get: key " 
+                         << Teuchos::toString(key) 
+                         << " not found in Hashtable"
+                         << toString());
       
       const Array<HashPair<Key, Value> >& candidates
         = data_[hashCode(key) % capacity_];
@@ -251,8 +254,12 @@ namespace Teuchos
   template<class Key, class Value> inline
     void Hashtable<Key, Value>::remove(const Key& key)
     {
-      if (!containsKey(key)) Error::raise(toString(key)
-                                             + " not found in Hashtable" );
+      TEST_FOR_EXCEPTION(!containsKey(key),
+                         runtime_error,
+                         "Hashtable<Key, Value>::remove: key " 
+                         << Teuchos::toString(key) 
+                         << " not found in Hashtable"
+                         << toString());
 
       count_--;
       int h = hashCode(key) % capacity_;

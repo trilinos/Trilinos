@@ -278,31 +278,40 @@ void MPIComm::allReduce(void* input, void* result, int inputCount,
 
 MPI_Datatype MPIComm::getDataType(int type)
 {
+  TEST_FOR_EXCEPTION( !(type == MPI_INT || type==MPI_FLOAT 
+                        || type==MPI_DOUBLE || type==MPI_CHAR),
+                      range_error,
+                      "invalid type " << type << " in MPIComm::getDataType");
+
   if(type == INT) return MPI_INT;
-  else if(type == FLOAT) return MPI_FLOAT;
-  else if(type == DOUBLE) return MPI_DOUBLE;
-  else if(type == CHAR) return MPI_CHAR;
-  else Error::raise("getDataType unrecognized type");
+  if(type == FLOAT) return MPI_FLOAT;
+  if(type == DOUBLE) return MPI_DOUBLE;
   
-  return MPI_INT;
+  return MPI_CHAR;
 }
 
 
 void MPIComm::errCheck(int errCode, const string& methodName)
 {
-	if (errCode != 0)
-		Error::raise("method MPI_" + methodName + " returned errorCode");
+  TEST_FOR_EXCEPTION(errCode != 0, runtime_error,
+                     "MPI function MPI_" << methodName 
+                     << " returned error code=" << errCode);
 }
 
 MPI_Op MPIComm::getOp(int op)
 {
+
+  TEST_FOR_EXCEPTION( !(op == MPI_SUM || op==MPI_MAX 
+                        || op==MPI_MIN || op==MPI_PROD),
+                      range_error,
+                      "invalid operator " 
+                      << op << " in MPIComm::getOp");
+
   if( op == SUM) return MPI_SUM;
   else if( op == MAX) return MPI_MAX;
   else if( op == MIN) return MPI_MIN;
-  else if( op == PROD) return MPI_PROD;
-  else Error::raise("getOp unrecognized operation");
   
-  return MPI_SUM; // -Wall
+  return MPI_PROD;
 }
 
 #endif

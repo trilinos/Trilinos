@@ -1,5 +1,5 @@
-// ////////////////////////////////////////////////////
-// ref_count_ptr.cpp
+// ////////////////////////////////////////////////////////////////
+// TestForException.cpp
 //
 // Copyright (C) 2001 Roscoe Ainsworth Bartlett
 //
@@ -13,13 +13,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // above mentioned "Artistic License" for more details.
 
-#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_TestForException.hpp"
 
-void Teuchos::PrivateUtilityPack::assert_not_null(const void *ptr)
+void TestForException_break()
 {
-	TEST_FOR_EXCEPTION(
-		!ptr, std::logic_error
-		,"ref_count_ptr<...>::assert_not_null() : You can not "
-		" call operator->() or operator*() if get() == 0" );
+	int junk;
+	junk = 0;
 }

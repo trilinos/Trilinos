@@ -1,6 +1,6 @@
 #include "Teuchos_Out.hpp"
 #include "Teuchos_DefaultWriter.hpp"
-#include "Teuchos_Error.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_MPISession.hpp"
 
 using namespace Teuchos;
@@ -79,8 +79,9 @@ void Out::printf(const char* format, ...)
 					bufSize *= 2;
 				}
 		}
-	
-	Error::raise("buffer overflow in Out::printf()");
+
+  TEST_FOR_EXCEPTION(true, std::length_error, 
+                     "buffer overflow in Out::printf()");
 }
 
 void Out::vprintf(const char* format, va_list args)
@@ -109,8 +110,9 @@ void Out::vprintf(const char* format, va_list args)
 					bufSize *= 2;
 				}
 		}
-	
-	Error::raise("buffer overflow in Out::printf()");
+
+	TEST_FOR_EXCEPTION(true, std::length_error, 
+                     "buffer overflow in Out::vprintf()");
 }
 
 int Out::hack_vsnprintf(char* str, size_t size, const char* format, va_list args)

@@ -7,15 +7,11 @@ using namespace Teuchos;
 
 XMLObject::XMLObject(const string& tag)
 	: ptr_(rcp(new XMLObjectImplem(tag)))
-{
-	if (ptr_.get()==0) Error::raise("XMLObject ctor");
-}
+{}
 
 XMLObject::XMLObject(XMLObjectImplem* ptr)
 	: ptr_(rcp(ptr))
-{
-	if (ptr_.get()==0) Error::raise("XMLObject ctor");
-}
+{}
 
 XMLObject XMLObject::deepCopy() const
 {
@@ -24,16 +20,10 @@ XMLObject XMLObject::deepCopy() const
 
 const string& XMLObject::getRequired(const string& name) const 
 {
-	if (hasAttribute(name))
-		{
-			return getAttribute(name);
-		}
-	else
-		{
-			Error::raise("XMLObject::getRequired: key " 
-													 + name + " not found");
-			return getAttribute("-Wall"); // -Wall
-		}
+	TEST_FOR_EXCEPTION(!hasAttribute(name), runtime_error,
+                     "XMLObject::getRequired: key " 
+                     << name << " not found");
+  return getAttribute(name);
 }
 
 string XMLObject::getWithDefault(const string& name, 
@@ -58,8 +48,9 @@ bool XMLObject::getRequiredBool(const string& name) const
 				}
 			else
 				{
-					Error::raise("XMLObject::getRequiredBool value [" + val 
-											 + "] should have been {TRUE|FALSE|YES|NO}");
+					TEST_FOR_EXCEPTION(true, runtime_error, 
+                             "XMLObject::getRequiredBool value [" << val 
+                             << "] should have been {TRUE|FALSE|YES|NO}");
 				}
 		}
 	return false; // -Wall
@@ -68,11 +59,10 @@ bool XMLObject::getRequiredBool(const string& name) const
 
 void XMLObject::checkTag(const string& expected) const 
 {
-	if (getTag() != expected)
-		{
-			Error::raise("XMLObject::checkTag error: expected <"
-													 + expected + ">, found <" + getTag() + ">");
-		}
+	TEST_FOR_EXCEPTION(getTag() != expected, std::runtime_error,
+                     "XMLObject::checkTag error: expected <"
+                     << expected << ">, found <" 
+                     << getTag() << ">");
 }
 
 

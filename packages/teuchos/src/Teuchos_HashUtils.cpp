@@ -1,4 +1,5 @@
 #include "Teuchos_HashUtils.hpp"
+#include "Teuchos_TestForException.hpp"
 
 using namespace Teuchos;
 
@@ -14,8 +15,9 @@ const int HashUtils::primes_[]
 
 int HashUtils::nextPrime(int newCapacity) 
 {
-	if (newCapacity > primes_[primeCount_-1]) 
-		Error::raise("IntHashtable::nextPrime() overflow");
+	TEST_FOR_EXCEPTION(newCapacity > primes_[primeCount_-1],
+                     length_error,
+                     "HashUtils::nextPrime() overflow");
 
 	for (int i=0; i<primeCount_; i++)
 		{
@@ -24,7 +26,9 @@ int HashUtils::nextPrime(int newCapacity)
 					return primes_[i];
 				}
 		}
-	// we shouldn't get here.
-	Error::raise("HashUtils::nextPrime() logic error");
+
+  TEST_FOR_EXCEPTION(true,
+                     logic_error,
+                     "unexpected case in HashUtils::nextPrime()");
 	return 0;
 }

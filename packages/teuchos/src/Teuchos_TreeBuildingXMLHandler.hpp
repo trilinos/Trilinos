@@ -3,7 +3,8 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_XMLObject.hpp"
-#include "Teuchos_Stack.hpp"
+#include <list>
+#include <stack>
 
 
 namespace Teuchos
@@ -36,7 +37,7 @@ namespace Teuchos
     private:
       XMLObject root_;
       XMLObject current_;
-      Stack<XMLObject> path_;
+      std::stack<XMLObject> path_;
     };
 }
 

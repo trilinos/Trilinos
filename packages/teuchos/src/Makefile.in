@@ -168,7 +168,7 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_StrUtils.hpp \
 	$(srcdir)/Teuchos_SystemRand.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp\
-	$(srcdir)/Teuchos_ThrowException.hpp\
+	$(srcdir)/Teuchos_TestForException.hpp\
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
 	$(srcdir)/Teuchos_Utils.hpp\
 	$(srcdir)/Teuchos_WriterBase.hpp\
@@ -199,7 +199,7 @@ EXTRA_EXPERIMENTAL = \
 	$(srcdir)/Teuchos_StringInputStream.cpp \
 	$(srcdir)/Teuchos_SystemRand.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
-	$(srcdir)/Teuchos_ThrowException.cpp \
+	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_XMLInputSource.cpp \
@@ -390,7 +390,7 @@ am__objects_4 = Teuchos_CommandLine.$(OBJEXT) \
 	Teuchos_StringInputSource.$(OBJEXT) \
 	Teuchos_StringInputStream.$(OBJEXT) \
 	Teuchos_SystemRand.$(OBJEXT) Teuchos_TimeMonitor.$(OBJEXT) \
-	Teuchos_ThrowException.$(OBJEXT) \
+	Teuchos_TestForException.$(OBJEXT) \
 	Teuchos_TreeBuildingXMLHandler.$(OBJEXT) \
 	Teuchos_Utils.$(OBJEXT) Teuchos_XMLInputSource.$(OBJEXT) \
 	Teuchos_XMLInputStream.$(OBJEXT) Teuchos_XMLObject.$(OBJEXT) \
@@ -431,7 +431,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StringInputSource.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StringInputStream.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_SystemRand.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ThrowException.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_TestForException.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Time.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_TimeMonitor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_TreeBuildingXMLHandler.Po \
@@ -542,7 +542,8 @@ Teuchos_StringInputStream.$(OBJEXT): \
 	$(srcdir)/Teuchos_StringInputStream.cpp
 Teuchos_SystemRand.$(OBJEXT): $(srcdir)/Teuchos_SystemRand.cpp
 Teuchos_TimeMonitor.$(OBJEXT): $(srcdir)/Teuchos_TimeMonitor.cpp
-Teuchos_ThrowException.$(OBJEXT): $(srcdir)/Teuchos_ThrowException.cpp
+Teuchos_TestForException.$(OBJEXT): \
+	$(srcdir)/Teuchos_TestForException.cpp
 Teuchos_TreeBuildingXMLHandler.$(OBJEXT): \
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp
 Teuchos_Utils.$(OBJEXT): $(srcdir)/Teuchos_Utils.cpp
@@ -583,7 +584,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StringInputSource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StringInputStream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_SystemRand.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ThrowException.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TestForException.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TimeMonitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TreeBuildingXMLHandler.Po@am__quote@
@@ -896,17 +897,17 @@ Teuchos_TimeMonitor.obj: $(srcdir)/Teuchos_TimeMonitor.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_TimeMonitor.obj `cygpath -w $(srcdir)/Teuchos_TimeMonitor.cpp`
 
-Teuchos_ThrowException.o: $(srcdir)/Teuchos_ThrowException.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_ThrowException.cpp' object='Teuchos_ThrowException.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_ThrowException.Po' tmpdepfile='$(DEPDIR)/Teuchos_ThrowException.TPo' @AMDEPBACKSLASH@
+Teuchos_TestForException.o: $(srcdir)/Teuchos_TestForException.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_TestForException.cpp' object='Teuchos_TestForException.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_TestForException.Po' tmpdepfile='$(DEPDIR)/Teuchos_TestForException.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ThrowException.o `test -f '$(srcdir)/Teuchos_ThrowException.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ThrowException.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_TestForException.o `test -f '$(srcdir)/Teuchos_TestForException.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_TestForException.cpp
 
-Teuchos_ThrowException.obj: $(srcdir)/Teuchos_ThrowException.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_ThrowException.cpp' object='Teuchos_ThrowException.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_ThrowException.Po' tmpdepfile='$(DEPDIR)/Teuchos_ThrowException.TPo' @AMDEPBACKSLASH@
+Teuchos_TestForException.obj: $(srcdir)/Teuchos_TestForException.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_TestForException.cpp' object='Teuchos_TestForException.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_TestForException.Po' tmpdepfile='$(DEPDIR)/Teuchos_TestForException.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ThrowException.obj `cygpath -w $(srcdir)/Teuchos_ThrowException.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_TestForException.obj `cygpath -w $(srcdir)/Teuchos_TestForException.cpp`
 
 Teuchos_TreeBuildingXMLHandler.o: $(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp' object='Teuchos_TreeBuildingXMLHandler.o' libtool=no @AMDEPBACKSLASH@

@@ -189,7 +189,12 @@ namespace Teuchos
   template<class Key> inline
     void HashSet<Key>::remove(const Key& key)
     {
-      if (!containsKey(key)) Error::raise("key not found in hash set");
+      TEST_FOR_EXCEPTION(!containsKey(key),
+                         runtime_error,
+                         "HashSet<Key>::remove: key " 
+                         << Teuchos::toString(key) 
+                         << " not found in HashSet"
+                         << toString());
 
       count_--;
       int h = hashCode(key) % capacity_;

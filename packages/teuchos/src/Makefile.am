@@ -73,7 +73,7 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_StrUtils.hpp \
 	$(srcdir)/Teuchos_SystemRand.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp\
-	$(srcdir)/Teuchos_ThrowException.hpp\
+	$(srcdir)/Teuchos_TestForException.hpp\
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
 	$(srcdir)/Teuchos_Utils.hpp\
 	$(srcdir)/Teuchos_WriterBase.hpp\
@@ -103,7 +103,7 @@ EXTRA_EXPERIMENTAL = \
 	$(srcdir)/Teuchos_StringInputStream.cpp \
 	$(srcdir)/Teuchos_SystemRand.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
-	$(srcdir)/Teuchos_ThrowException.cpp \
+	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_XMLInputSource.cpp \

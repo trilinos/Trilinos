@@ -107,25 +107,18 @@ namespace Teuchos
   template <class T>
   inline void ContainerComm<T>::bcast(Array<T>& x, int src, const MPIComm& comm)
   {
-    try
-      {
-        int len = x.length();
-        ContainerComm<int>::bcast(len, src, comm);
+    int len = x.length();
+    ContainerComm<int>::bcast(len, src, comm);
 
-        if (comm.getRank() != src)
-          {
-            x.resize(len);
-          }
-        if (len==0) return;
-
-        /* then broadcast the contents */
-        comm.bcast((void*) &(x[0]), (int) len,
-                   MPITraits<T>::type(), src);
-      }
-    catch(std::exception& e)
+    if (comm.getRank() != src)
       {
-        Error::trace(e, "in ArrayComm::bcast(Array<T>)");
+        x.resize(len);
       }
+    if (len==0) return;
+
+    /* then broadcast the contents */
+    comm.bcast((void*) &(x[0]), (int) len,
+               MPITraits<T>::type(), src);
   }
 
 
@@ -136,27 +129,20 @@ namespace Teuchos
   template <class T>
   inline void ContainerComm<T>::bcast(Array<Array<T> >& x, int src, const MPIComm& comm)
   {
-    try
+    Array<T> bigArray;
+    Array<int> offsets;
+
+    if (src==comm.getRank())
       {
-        Array<T> bigArray;
-        Array<int> offsets;
-
-        if (src==comm.getRank())
-          {
-            getBigArray(x, bigArray, offsets);
-          }
-
-        bcast(bigArray, src, comm);
-        ContainerComm<int>::bcast(offsets, src, comm);
-
-        if (src != comm.getRank())
-          {
-            getSmallArrays(bigArray, offsets, x);
-          }
+        getBigArray(x, bigArray, offsets);
       }
-    catch(std::exception& e)
+
+    bcast(bigArray, src, comm);
+    ContainerComm<int>::bcast(offsets, src, comm);
+
+    if (src != comm.getRank())
       {
-        Error::trace(e, "in ArrayComm::bcast(Array<T>)");
+        getSmallArrays(bigArray, offsets, x);
       }
   }
 
@@ -167,155 +153,141 @@ namespace Teuchos
                                   Array<Array<T> >& incoming,
                                   const MPIComm& comm)
   {
-    try
+    int numProcs = comm.getNProc();
+
+    // catch degenerate case
+    if (numProcs==1)
       {
-        int numProcs = comm.getNProc();
-
-        // catch degenerate case
-        if (numProcs==1)
-          {
-            incoming.resize(1);
-            incoming[0] = outgoing;
-            return;
-          }
-
-        T* sendBuf = new T[numProcs * outgoing.length()];
-        if (sendBuf==0)
-          Error::raise("Comm::allToAll failed to allocate sendBuf");
-        T* recvBuf = new T[numProcs * outgoing.length()];
-        if (recvBuf==0)
-          Error::raise("Comm::allToAll failed to allocate recvBuf");
-
-        int i;
-        for (i=0; i<numProcs; i++)
-          {
-            for (int j=0; j<outgoing.length(); j++)
-              {
-                sendBuf[i*outgoing.length() + j] = outgoing[j];
-              }
-          }
-
-        comm.allToAll(sendBuf, outgoing.length(), MPITraits<T>::type(),
-                      recvBuf, outgoing.length(), MPITraits<T>::type());
-
-        incoming.resize(numProcs);
-
-        for (i=0; i<numProcs; i++)
-          {
-            incoming[i].resize(outgoing.length());
-            for (int j=0; j<outgoing.length(); j++)
-              {
-                incoming[i][j] = recvBuf[i*outgoing.length() + j];
-              }
-          }
-
-        delete [] sendBuf;
-        delete [] recvBuf;
+        incoming.resize(1);
+        incoming[0] = outgoing;
+        return;
       }
-    catch(std::exception& e)
+
+    T* sendBuf = new T[numProcs * outgoing.length()];
+    TEST_FOR_EXCEPTION(sendBuf==0, std::runtime_error,
+                       "Comm::allToAll failed to allocate sendBuf");
+    T* recvBuf = new T[numProcs * outgoing.length()];
+    TEST_FOR_EXCEPTION(recvBuf==0, std::runtime_error,
+                       "Comm::allToAll failed to allocate recvBuf");
+
+    int i;
+    for (i=0; i<numProcs; i++)
       {
-        Error::trace(e, "in Comm::allToAll(const Array<int>& outgoing, ...)");
+        for (int j=0; j<outgoing.length(); j++)
+          {
+            sendBuf[i*outgoing.length() + j] = outgoing[j];
+          }
       }
+
+    comm.allToAll(sendBuf, outgoing.length(), MPITraits<T>::type(),
+                  recvBuf, outgoing.length(), MPITraits<T>::type());
+
+    incoming.resize(numProcs);
+
+    for (i=0; i<numProcs; i++)
+      {
+        incoming[i].resize(outgoing.length());
+        for (int j=0; j<outgoing.length(); j++)
+          {
+            incoming[i][j] = recvBuf[i*outgoing.length() + j];
+          }
+      }
+
+    delete [] sendBuf;
+    delete [] recvBuf;
   }
 
   template <class T> inline
   void ContainerComm<T>::allToAll(const Array<Array<T> >& outgoing,
                                   Array<Array<T> >& incoming, const MPIComm& comm)
   {
-    try
+    int numProcs = comm.getNProc();
+
+    // catch degenerate case
+    if (numProcs==1)
       {
-        int numProcs = comm.getNProc();
-
-        // catch degenerate case
-        if (numProcs==1)
-          {
-            incoming = outgoing;
-            return;
-          }
-
-        int* sendMesgLength = new int[numProcs];
-        if (sendMesgLength==0)
-          Error::raise("failed to allocate sendMesgLength");
-        int* recvMesgLength = new int[numProcs];
-        if (recvMesgLength==0)
-          Error::raise("failed to allocate recvMesgLength");
-
-        int p = 0;
-        for (p=0; p<numProcs; p++)
-          {
-            sendMesgLength[p] = outgoing[p].length();
-          }
-
-        comm.allToAll(sendMesgLength, 1, MPIComm::INT,
-                      recvMesgLength, 1, MPIComm::INT);
-
-
-        int totalSendLength = 0;
-        int totalRecvLength = 0;
-        for (p=0; p<numProcs; p++)
-          {
-            totalSendLength += sendMesgLength[p];
-            totalRecvLength += recvMesgLength[p];
-          }
-
-        T* sendBuf = new T[totalSendLength];
-        if (sendBuf==0)
-          Error::raise("failed to allocate sendBuf");
-        T* recvBuf = new T[totalRecvLength];
-        if (recvBuf==0)
-          Error::raise("failed to allocate recvBuf");
-
-        int* sendDisp = new int[numProcs];
-        if (sendDisp==0)
-          Error::raise("failed to allocate sendDisp");
-        int* recvDisp = new int[numProcs];
-        if (recvDisp==0)
-          Error::raise("failed to allocate recvDisp");
-
-        int count = 0;
-        sendDisp[0] = 0;
-        recvDisp[0] = 0;
-
-        for (p=0; p<numProcs; p++)
-          {
-            for (int i=0; i<outgoing[p].length(); i++)
-              {
-                sendBuf[count] = outgoing[p][i];
-                count++;
-              }
-            if (p>0)
-              {
-                sendDisp[p] = sendDisp[p-1] + sendMesgLength[p-1];
-                recvDisp[p] = recvDisp[p-1] + recvMesgLength[p-1];
-              }
-          }
-
-        comm.allToAllv(sendBuf, sendMesgLength,
-                       sendDisp, MPITraits<T>::type(),
-                       recvBuf, recvMesgLength,
-                       recvDisp, MPITraits<T>::type());
-
-        incoming.resize(numProcs);
-        for (p=0; p<numProcs; p++)
-          {
-            incoming[p].resize(recvMesgLength[p]);
-            for (int i=0; i<recvMesgLength[p]; i++)
-              {
-                incoming[p][i] = recvBuf[recvDisp[p] + i];
-              }
-          }
-
-        delete [] sendBuf;
-        delete [] sendMesgLength;
-        delete [] sendDisp;
-        delete [] recvBuf;
-        delete [] recvMesgLength;
-        delete [] recvDisp;
+        incoming = outgoing;
+        return;
       }
-    catch(std::exception& e)
+
+    int* sendMesgLength = new int[numProcs];
+    TEST_FOR_EXCEPTION(sendMesgLength==0, std::runtime_error,
+                       "failed to allocate sendMesgLength");
+    int* recvMesgLength = new int[numProcs];
+    TEST_FOR_EXCEPTION (recvMesgLength==0, std::runtime_error,
+                        "failed to allocate recvMesgLength");
+
+    int p = 0;
+    for (p=0; p<numProcs; p++)
       {
-        Error::trace(e, "in ArrayComm::allToAll(const Array<Array<T> >& outgoing...)");
+        sendMesgLength[p] = outgoing[p].length();
       }
+
+    comm.allToAll(sendMesgLength, 1, MPIComm::INT,
+                  recvMesgLength, 1, MPIComm::INT);
+
+
+    int totalSendLength = 0;
+    int totalRecvLength = 0;
+    for (p=0; p<numProcs; p++)
+      {
+        totalSendLength += sendMesgLength[p];
+        totalRecvLength += recvMesgLength[p];
+      }
+
+    T* sendBuf = new T[totalSendLength];
+    TEST_FOR_EXCEPTION(sendBuf==0,
+                       std::runtime_error, "failed to allocate sendBuf");
+    T* recvBuf = new T[totalRecvLength];
+    TEST_FOR_EXCEPTION(recvBuf==0,
+                       std::runtime_error, "failed to allocate recvBuf");
+
+    int* sendDisp = new int[numProcs];
+    TEST_FOR_EXCEPTION(sendDisp==0,
+                       std::runtime_error, "failed to allocate sendDisp");
+    int* recvDisp = new int[numProcs];
+    TEST_FOR_EXCEPTION(recvDisp==0,
+                       std::runtime_error, "failed to allocate recvDisp");
+
+    int count = 0;
+    sendDisp[0] = 0;
+    recvDisp[0] = 0;
+
+    for (p=0; p<numProcs; p++)
+      {
+        for (int i=0; i<outgoing[p].length(); i++)
+          {
+            sendBuf[count] = outgoing[p][i];
+            count++;
+          }
+        if (p>0)
+          {
+            sendDisp[p] = sendDisp[p-1] + sendMesgLength[p-1];
+            recvDisp[p] = recvDisp[p-1] + recvMesgLength[p-1];
+          }
+      }
+
+    comm.allToAllv(sendBuf, sendMesgLength,
+                   sendDisp, MPITraits<T>::type(),
+                   recvBuf, recvMesgLength,
+                   recvDisp, MPITraits<T>::type());
+
+    incoming.resize(numProcs);
+    for (p=0; p<numProcs; p++)
+      {
+        incoming[p].resize(recvMesgLength[p]);
+        for (int i=0; i<recvMesgLength[p]; i++)
+          {
+            incoming[p][i] = recvBuf[recvDisp[p] + i];
+          }
+      }
+
+    delete [] sendBuf;
+    delete [] sendMesgLength;
+    delete [] sendDisp;
+    delete [] recvBuf;
+    delete [] recvMesgLength;
+    delete [] recvDisp;
   }
 
   template <class T> inline
@@ -413,51 +385,37 @@ namespace Teuchos
   inline void ContainerComm<string>::bcast(Array<string>& x, int src,
                                            const MPIComm& comm)
   {
-    try
+    /* begin by packing all the data into a big char array. This will
+     * take a little time, but will be cheaper than multiple MPI calls */
+    Array<char> bigArray;
+    Array<int> offsets;
+    if (comm.getRank()==src)
       {
-        /* begin by packing all the data into a big char array. This will
-         * take a little time, but will be cheaper than multiple MPI calls */
-        Array<char> bigArray;
-        Array<int> offsets;
-        if (comm.getRank()==src)
-          {
-            getBigArray(x, bigArray, offsets);
-          }
-
-        /* now broadcast the big array and the offsets */
-        ContainerComm<char>::bcast(bigArray, src, comm);
-        ContainerComm<int>::bcast(offsets, src, comm);
-
-        /* finally, reassemble the array of strings */
-        if (comm.getRank() != src)
-          {
-            getStrings(bigArray, offsets, x);
-          }
-
+        getBigArray(x, bigArray, offsets);
       }
-    catch(std::exception& e)
+
+    /* now broadcast the big array and the offsets */
+    ContainerComm<char>::bcast(bigArray, src, comm);
+    ContainerComm<int>::bcast(offsets, src, comm);
+
+    /* finally, reassemble the array of strings */
+    if (comm.getRank() != src)
       {
-        Error::trace(e, "in bcast(Array<string>)");
+        getStrings(bigArray, offsets, x);
       }
+
   }
 
   inline void ContainerComm<string>::bcast(Array<Array<string> >& x,
                                            int src, const MPIComm& comm)
   {
-    try
-      {
-        int len = x.length();
-        ContainerComm<int>::bcast(len, src, comm);
+    int len = x.length();
+    ContainerComm<int>::bcast(len, src, comm);
 
-        x.resize(len);
-        for (int i=0; i<len; i++)
-          {
-            ContainerComm<string>::bcast(x[i], src, comm);
-          }
-      }
-    catch(std::exception& e)
+    x.resize(len);
+    for (int i=0; i<len; i++)
       {
-        Error::trace(e, "in ContainerComm<string>::bcast(Array<Array<string>>)");
+        ContainerComm<string>::bcast(x[i], src, comm);
       }
   }
 

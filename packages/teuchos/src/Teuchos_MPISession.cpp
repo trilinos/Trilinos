@@ -1,5 +1,5 @@
 #include "Teuchos_MPISession.hpp"
-#include "Teuchos_Error.hpp"
+#include "Teuchos_TestForException.hpp"
 
 using namespace Teuchos;
 
@@ -16,25 +16,23 @@ void MPISession::init(int* argc, void*** argv)
 	if (!mpiHasBeenStarted)
 		{
 			mpierr = ::MPI_Init (argc, (char ***) argv);
-			if (mpierr != 0)
-				{
-					Error::raise("Error detected in MPI_Init()");
-				}
+      TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+                         "Error code=" << mpierr 
+                         << " detected in MPI_Init()");
 		}
 	
 	/* find rank */
 	mpierr = ::MPI_Comm_rank (MPI_COMM_WORLD, &rank_);
-	if (mpierr != 0)
-		{
-			Error::raise("Error detected in MPI_Comm_rank()");
-		}
+	TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+                     "Error code=" << mpierr 
+                     << " detected in MPI_Comm_rank()");
 
 	/* find number of procs */
 	mpierr = ::MPI_Comm_size (MPI_COMM_WORLD, &nProc_);
-	if (mpierr != 0)
-		{
-			Error::raise("Error detected in MPI_Comm_size()");
-		}
+
+	TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+                     "Error code=" << mpierr 
+                     << " detected in MPI_Comm_size()");
 #endif
 }
 
@@ -42,9 +40,8 @@ void MPISession::finalize()
 {
 #ifdef HAVE_MPI
 	int mpierr = ::MPI_Finalize();
-	if (mpierr != 0)
-		{
-			Error::raise("Error detected in MPI_Finalize()");
-		}
+
+	TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+                     "Error code=" << mpierr << " detected in MPI_Finalize()");
 #endif
 }

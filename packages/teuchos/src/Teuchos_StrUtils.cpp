@@ -1,4 +1,5 @@
 #include "Teuchos_StrUtils.hpp"
+#include "Teuchos_TestForException.hpp"
 
 
 using namespace Teuchos;
@@ -194,9 +195,10 @@ string StrUtils::varTableSubstitute(const string& rawLine,
 				    const Array<string>& varNames,
 				    const Array<string>& varValues)
 {
-  if (varNames.length() != varValues.length())
-    Error::raise("mismatched variable tables in varTableSubstitute");
-
+  TEST_FOR_EXCEPTION(varNames.length() != varValues.length(),
+                     runtime_error,
+                     "mismatched variable tables in varTableSubstitute");
+                     
   string line = rawLine;
   for (int i=0; i<varNames.length(); i++)
     {
@@ -235,7 +237,9 @@ string StrUtils::before(const string& str, char sub)
 
 string StrUtils::before(const string& str, const string& sub)
 {
-  if (sub.c_str()==0) Error::raise("String::before: arg is null pointer");
+  TEST_FOR_EXCEPTION(sub.c_str()==0,
+                     runtime_error, "String::before: arg is null pointer");
+
   char* p = strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return str;
   int subLen = p-str.c_str();
@@ -245,7 +249,9 @@ string StrUtils::before(const string& str, const string& sub)
 
 string StrUtils::after(const string& str, const string& sub)
 {
-  if (sub.c_str()==0) Error::raise("String::after: arg is null pointer");
+  TEST_FOR_EXCEPTION(sub.c_str()==0,
+                     runtime_error, "String::after: arg is null pointer");
+
   // find beginning of substring
   char* p = strstr((char*) str.c_str(), (char*) sub.c_str()) ;
   // if substring not found, return empty string
@@ -311,7 +317,9 @@ return string(str.c_str()+begin, end-begin);
 
 string StrUtils::readFromStream(istream& is)
 {
-	Error::raise("StrUtils::readFromStream isn't implemented yet");
+  TEST_FOR_EXCEPTION(true, logic_error, 
+                     "StrUtils::readFromStream isn't implemented yet");
+
 	return "";
 }
 

@@ -40,7 +40,8 @@ XMLObject XMLInputSource::getObject() const
 		}
 	catch(exception& e)
 		{
-			Error::trace(e, "in SAX parsing");
+			TEST_FOR_EXCEPTION(true, runtime_error, 
+                         "exception detected in SAX parsing: " << e.what());
 		}
 	return handler.getObject();
 #endif
@@ -77,8 +78,8 @@ XMLObject XMLInputSource::getObject() const
 	return handler->getObject();
 
 #else
-	Error::raise("XMLInputSource::getObject() - no XML parser installed");
-	return XMLObject(); // -Wall
+  TEST_FOR_EXCEPTION(true, logic_error, "XMLInputSource::getObject() - no XML parser installed");
+  return XMLObject(); // -Wall
 #endif
 
 }

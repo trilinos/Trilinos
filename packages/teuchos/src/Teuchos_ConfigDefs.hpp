@@ -133,7 +133,7 @@
 
 #if HAVE_STDEXCEPT
 #include <stdexcept>
-#elif HAVE_IOSTREAM_H
+#elif HAVE_STDEXCEPT_H
 #include <stdexcept.h>
 #else
 #error "Found neither stdexcept nor stdexcept.h"

@@ -1,6 +1,5 @@
 #include "Teuchos_CommandLine.hpp"
-
-#include "Teuchos_Error.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_Out.hpp"
 
 #ifdef HAVE_MPI
@@ -97,7 +96,9 @@ void CommandLine::init(int argc, void** argv)
 
 void CommandLine::checkInitialization()
 {
-	if (!frozen_) Error::raise("CommandLine::init(argc, argv) was not called?");
+  TEST_FOR_EXCEPTION(!frozen_, std::runtime_error,
+                     "CommandLine::checkInitialization() failed... "
+                     "perhaps CommandLine::init(argc, argv) was not called?");
 }
 
 // check for presence of string on command line

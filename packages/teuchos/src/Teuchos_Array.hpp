@@ -2,18 +2,18 @@
 #define TEUCHOS_ARRAY_H
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_Error.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_Utils.hpp"
 
 namespace Teuchos
 {
 
   /**
-   * Array is a templated container class similar to the STL vector, but with
-   * a more lightweight implementation and API as well as optional bounds-checking. 
+   * Array is a templated array class derived from the STL vector, but with
+   * index boundschecking and an extended interface.
    */
   template<class T>
-  class Array
+  class Array : public std::vector<T>
   {
   public:
     /** Empty ctor */
@@ -25,46 +25,25 @@ namespace Teuchos
     /** Allocate n elements, and fill with value */
     Array(int n, const T& t);
 
-    /** dtor deletes the contents */
-    ~Array();
-
-    /** copy ctor makes a deep copy of all elements */
-    Array(const Array<T>& other);
-
-    /** assignment operator makes a deep copy of all elements */
-    const Array<T>& operator=(const Array<T>& other);
-
-    /**
-     * return number of elements.
-     */
-    int length() const ;
-
-    /** change size */
-    void resize(int newN);
-    /** preallocate space */
-    void reserve(int n);
-    /** get preallocated space */
-    int  capacity() const ;
-
     /** Stick a new entry at the end of the array. Resize to allow
      * space for the new entry
      */
-    Array<T>& append(const T& entry);
+    inline Array<T>& append(const T& entry) {push_back(entry); return *this;}
 
     /**
-     * Read/Write access to a the i-th element.
+     * Return number of elements in the array. Equivalent to size(), but
+     * included for backwards compatibiity.
      */
-    T& operator[](int i);
-    /**
-     * Read-only access to a the i-th element.
-     */
-    const T& operator[](int i) const;
+    int length() const {return size();}
 
     /**
-     * Remove the i-th element. Subsequent elements are bumped back
-     * to fill in the hole.
+     * Read/Write access to a the i-th element, with optional bounsdchecking.
      */
-    void remove(int i);
+    inline T& operator[](int i);
+    /**
+     * Read-only access to a the i-th element, with optional boundschecking.
+     */
+    inline const T& operator[](int i) const;
 
     /** Write as a string */
     std::string toString() const ;
@@ -75,12 +54,6 @@ namespace Teuchos
     static bool hasBoundsChecking();
 
   private:
-    /** C array of contents */
-    T* data_;
-    /** number of active elements */
-    int len_;
-    /** number of elements that have been allocated */
-    int capacity_;
 
     /** check for a bounds violation if HAVE_ARRAY_BOUNDSCHECK has been
      * defined as 1. */
@@ -88,7 +61,8 @@ namespace Teuchos
   };
 
   /** \relates Array */
-  template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& array);
+  template<class T> std::ostream& operator<<(std::ostream& os, 
+                                             const Array<T>& array);
 
   /** \relates Array */
   template<class T> int hashCode(const Array<T>& array);
@@ -96,160 +70,25 @@ namespace Teuchos
   /** \relates Array */
   template<class T> std::string toString(const Array<T>& array);
 
+
   template<class T> inline Array<T>::Array()
-    : data_(0),
-      len_(0),
-      capacity_(0)
-  {
-  }
-
-
+    : std::vector<T>()
+  {}
 
   template<class T> inline Array<T>::Array(int n)
-    : data_(0),
-      len_(n),
-      capacity_(n)
-  {
-    if (len_ < 0)
-      Error::raise("Negative length passed to Array<T>::Array(int n)");
-    if (len_ > 0)
-      {
-        data_ = new T [len_];
-        if (!data_)
-          Error::raise("Array constructor out of memory");
-      }
-  }
-
+    : std::vector<T>(n)
+  {}
 
   template<class T> inline Array<T>::Array(int n, const T& t)
-    : data_(0),
-      len_(n),
-      capacity_(n)
-  {
-    if (len_ < 0)
-      Error::raise("Negative length passed to Array<T>::Array(int n)");
-    if (len_ > 0)
-      {
-        data_ = new T [len_];
-        if (!data_)
-          Error::raise("Array constructor out of memory");
-      }
-    for (int i = 0; i < len_; ++ i)
-      data_[i] = t;
-  }
-
-
-  template<class T> inline  Array<T>::Array(const Array<T>& arr)
-    : data_(0),
-      len_(arr.len_),
-      capacity_(arr.len_)
-  {
-    if (len_ > 0)
-      {
-        data_ = new T [capacity_];
-        if (!data_)
-          Error::raise("Array constructor out of memory");
-        for (int i = 0; i < len_; ++i)
-          data_[i] = arr.data_[i];
-      }
-  }
-
-  template<class T> inline Array<T>::~Array()
-  {
-    delete [] data_;
-  }
-
-  template<class T> inline
-  const Array<T>& Array<T>::operator=(const Array<T>& arr)
-  {
-    if (this != &arr)
-      { // don't bother to assign if they're already identical
-        if (capacity_ < arr.len_)
-          { //If the reserved space is too small to hold arr
-            delete [] data_;
-            data_ = 0;
-            capacity_ = arr.len_;
-            if (capacity_ > 0) {
-              data_ = new T[capacity_];
-              if (!data_)
-                Error::raise("Array constructor out of memory");
-            }
-          }
-        len_ = arr.len_;
-        for (int i = 0; i < len_; ++i)
-          data_[i] = arr[i];
-      }
-    return *this;
-  }
-
-
-  /* bump up array size by factors of two until the desired size is reached */
-  inline int bump(int start, int finish)
-  {
-    if (start == 0)
-      start = 1;
-    while (start < finish)
-      start *= 2;
-    return start;
-  }
-
-
-  template<class T> inline
-  void Array<T>::resize(int newN) {
-    if (len_ != newN) { // do not do anything if new size is not different
-      if (newN < 0)
-        Error::raise("Negative length passed to Array<T>::resize(int newN)");
-      if(newN > capacity_)
-        reserve(bump(capacity_, newN));
-      len_ = newN;
-    }
-  }
-
-
-
-
-  template<class T> inline
-  void Array<T>::reserve(int N){
-    if(capacity_ != N){
-      if(N < 0){
-        Error::raise("Negative length passed to Array<T>::reserve(int N)");
-      }
-      if(N < len_){ len_ = N;}
-      capacity_ = N;
-      T* oldData = data_;
-      data_ = 0;
-      data_ = new T [capacity_];
-      if (!data_)
-        Error::raise("Array<T>::reserve(int N) out of memory");
-      for (int i = 0; i < len_; i++)
-        data_[i] = oldData[i];
-      delete [] oldData;
-    }
-  }
-
-  template<class T> inline
-  int Array<T>::capacity() const{
-    return capacity_;
-  }
-
-
-
-  template<class T> inline
-  Array<T>& Array<T>::append(const T& rhs)
-  {
-    resize(len_+1);
-    data_[len_-1] = rhs;
-    return *this;
-  }
-
-
+    : std::vector<T>(n, t)
+  {}
 
   template<class T> inline
   T& Array<T>::operator[](int i) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     indexCheckCrash(i);
 #endif
-    return data_[i];
+    return std::vector<T>::operator[](i);
   }
 
   template<class T> inline
@@ -257,26 +96,7 @@ namespace Teuchos
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     indexCheckCrash(i);
 #endif
-    return data_[i];
-  }
-
-  template<class T> inline
-  void Array<T>::remove(int i)
-  {
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    indexCheckCrash(i);
-#endif
-    for (int j=i+1; j<length(); j++)
-      {
-        data_[j-1] = data_[j];
-      }
-    data_[len_-1] = T();
-    len_--;
-  }
-
-  template<class T> inline
-  int Array<T>::length() const {
-    return len_;
+    return std::vector<T>::operator[](i);
   }
 
   template<class T> inline
@@ -292,22 +112,11 @@ namespace Teuchos
   template<class T> inline
   void Array<T>::indexCheckCrash(int i) const
   {
-    if (i<0 || i>=len_)
-      Error::boundsError("Array accessor", i, 0, len_);
+    TEST_FOR_EXCEPTION(i<0 || i>=size(), std::range_error,
+                       "Array<T>::indexCheckCrash: "
+                       "index " << i << "out of range [0, "<< size() << ")");
+      
   }
-
-  template<class T>
-  Array<T> sliceArray(const Array<Array<T> >& array, int index)
-  {
-    Array<T> rtn(array.length());
-
-    for (int i=0; i<array.length(); i++)
-      {
-        rtn[i] = array[i][index];
-      }
-    return rtn;
-  }
-
 
   // print in form (), (1), or (1,2)
   template<class T> inline ostream& operator<<(ostream& os, const Array<T>& array)
@@ -331,7 +140,7 @@ namespace Teuchos
 
     for (int i=0; i<length(); i++)
       {
-        rtn += Teuchos::toString(data_[i]);
+        rtn += Teuchos::toString(operator[](i));
         if (i<length()-1) rtn += ", ";
       }
     rtn += "}";
