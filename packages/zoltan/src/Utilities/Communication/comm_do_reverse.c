@@ -25,8 +25,9 @@ extern "C" {
 #include "comm.h"
 
 
+/******************************************************************************/
 
-int       Zoltan_Comm_Do_Reverse(
+int Zoltan_Comm_Do_Reverse(
 ZOLTAN_COMM_OBJ *plan,		/* communication data structure */
 int       tag,			    /* message tag for communicating */
 char     *send_data,		/* array of data I currently own */
@@ -44,8 +45,15 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
     return status;
 }    
     
+/******************************************************************************/
 static ZOLTAN_COMM_OBJ *plan_reverse;	/* communication data structure */
 
+/* 
+ * KDDKDD This static variable will not work when multiple posts are issued
+ * KDDKDD using different plans before the corresponding waits are issued. 
+ */
+
+/******************************************************************************/
 /* Perform a reverse communication operation.  Communication object describes */
 /* an action, and this routine does the opposite.  Can be used to return */
 /* updated data to originating processor. */
@@ -149,7 +157,8 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 
 
     
-    int       Zoltan_Comm_Do_Reverse_Wait(
+/******************************************************************************/
+int Zoltan_Comm_Do_Reverse_Wait(
 ZOLTAN_COMM_OBJ *plan,		/* communication data structure */
 int       tag,			/* message tag for communicating */
 char     *send_data,		/* array of data I currently own */

@@ -46,6 +46,7 @@ extern "C" {
 	Otherwise need to receive in buffer and copy.
 */
 
+/*****************************************************************************/
 
 int       Zoltan_Comm_Do(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
@@ -62,8 +63,14 @@ char *recv_data)		/* array of data I'll own after comm */
    return status;
 }
 
+/*****************************************************************************/
 static char  *recv_buff;	/* place to receive messages */
+/* 
+ * KDDKDD This static variable will not work when multiple posts are issued
+ * KDDKDD using different plans before the corresponding waits are issued. 
+ */
 
+/*****************************************************************************/
 
 int       Zoltan_Comm_Do_Post(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
@@ -308,6 +315,7 @@ char *recv_data)		/* array of data I'll own after comm */
 }
 
 
+/*****************************************************************************/
 
 int       Zoltan_Comm_Do_Wait(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
