@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include "comm_const.h"
-#include "all_allo_const.h"
+#include "mem_const.h"
 
 
 /* From the mapping of where to send things, construct the communication */
@@ -74,7 +74,7 @@ int      *pnrecv)		/* returned # vals I own after communication */
         if ((proc<0) || (proc>= nprocs)){
            fprintf(stderr, "Zoltan error in %s: %d is an invalid processor number.\n", yo, proc);
            LB_FREE(starts);
-           return LB_FATAL;
+           return LB_COMM_FATAL;
         }
 	if (no_send_buff && proc != prev_proc) { /* Checks if blocked by proc */
 	    if (proc >= 0 && (starts[proc] || prev_proc < 0)) {
@@ -174,7 +174,7 @@ int      *pnrecv)		/* returned # vals I own after communication */
 	       &lengths_from, &procs_from, &nrecvs, my_proc, nprocs, tag,
                deterministic, comm);
     
-    if (lb_flag != LB_OK && lb_flag != LB_WARN) {
+    if (lb_flag != LB_COMM_OK) {
         fprintf(stderr, "Zoltan error in %s: Could not invert map.\n", yo);
 	LB_FREE((void **) &indices_to);
 	LB_FREE((void **) &procs_to);

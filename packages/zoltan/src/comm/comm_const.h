@@ -16,6 +16,18 @@
 
 #include <mpi.h>
 
+#ifndef TRUE
+#define FALSE (0)
+#define TRUE  (1)
+#endif /* !TRUE */
+
+/* Error Codes for Comm Package */
+#define LB_COMM_OK       0
+#define LB_COMM_WARN    11
+#define LB_COMM_FATAL  -11
+#define LB_COMM_MEMERR -12
+
+
 /* Data structures for communication object. */
 
 struct Comm_Obj {		/* data for mapping between decompositions */

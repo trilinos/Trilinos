@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include "comm_const.h"
-#include "all_allo_const.h"
+#include "mem_const.h"
 
 
 int       LB_Comm_Destroy(
@@ -33,5 +33,5 @@ struct Comm_Obj **plan)		/* communication data structure pointer */
     /* Free the communication object itself */
     LB_FREE((void **) plan);
 
-    return(LB_OK);
+    return(LB_COMM_OK);
 }

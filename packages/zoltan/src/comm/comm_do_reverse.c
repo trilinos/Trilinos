@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include "mpi.h"
 #include "comm_const.h"
-#include "all_allo_const.h"
+#include "mem_const.h"
 
 
 /* Perform a reverse communication operation.  Communication object describes */
@@ -41,7 +41,7 @@ char     *recv_data)		/* array of data I'll own after comm */
     if (!plan){
       fprintf(stderr, "Zoltan error in %s: Communication plan = NULL\n", 
         yo);
-      return LB_FATAL;
+      return LB_COMM_FATAL;
     }
 
     MPI_Comm_rank(plan->comm, &my_proc);

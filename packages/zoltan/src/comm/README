@@ -31,5 +31,5 @@ comm_do_reverse.c -- This routine performs the inverse communication of the
 comm_destroy.c -- Free the space allocated for a communication object.
 
 invert_map.c   -- Given a set of messages to send, determine the
-		  corresponding set recieves for each processor
+		  corresponding set of receives for each processor
 		  (or vice versa).

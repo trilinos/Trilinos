@@ -13,8 +13,8 @@
 
 #include <stdio.h>
 #include "mpi.h"
-#include "lbi_const.h"
-#include "all_allo_const.h"
+#include "comm_const.h"
+#include "mem_const.h"
 
 /* Knowing who I send to, determine how many messages I'll receive, */
 /* and their lengths.  Upon entry, the arrays "lengths_to" and "procs_to" */
@@ -123,7 +123,7 @@ MPI_Comm  comm)			/* communicator */
     *pprocs_from = procs_from;
     *pnrecvs = nrecvs - self_msg;    /* Only return number of true messages */
 
-    return(LB_OK);
+    return(LB_COMM_OK);
 }
 
 /*****************************************************************************/

@@ -15,7 +15,7 @@
 #include <memory.h>
 #include "mpi.h"
 #include "comm_const.h"
-#include "all_allo_const.h"
+#include "mem_const.h"
 
 
 /* Given the communication object, perform a communication operation as
@@ -44,7 +44,7 @@ char *recv_data)		/* array of data I'll own after comm */
     if (!plan){
       fprintf(stderr, "Zoltan error in %s: Communication plan = NULL\n", 
         yo);
-      return LB_FATAL;
+      return LB_COMM_FATAL;
     }
 
     MPI_Comm_rank(plan->comm, &my_proc);
@@ -52,17 +52,17 @@ char *recv_data)		/* array of data I'll own after comm */
     if ((plan->nsends + plan->self_msg) && !send_data){
       fprintf(stderr, "Zoltan error in %s: Proc %d has nsends = %d, but send_data = NULL\n", 
         yo, my_proc, plan->nsends);
-      return LB_FATAL;
+      return LB_COMM_FATAL;
     }
     if ((plan->nrecvs + plan->self_msg) && !recv_data){
       fprintf(stderr, "Zoltan error in %s: Proc %d has nrecvs = %d, but recv_data = NULL\n", 
         yo, my_proc, plan->nrecvs);
-      return LB_FATAL;
+      return LB_COMM_FATAL;
     }
     if (nsize<0){
       fprintf(stderr, "Zoltan error in %s: Proc %d has nsize = %d\n", 
         yo, my_proc, nsize);
-      return LB_FATAL;
+      return LB_COMM_FATAL;
     }
 
     /* Post irecvs */
@@ -162,5 +162,5 @@ char *recv_data)		/* array of data I'll own after comm */
 	LB_FREE((void **) &recv_array);
     }
 
-    return(LB_OK);
+    return(LB_COMM_OK);
 }
