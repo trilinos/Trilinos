@@ -100,6 +100,13 @@ main(int argc, char **argv)
   int MyPID = Comm.MyPID();
   int NumMpiProcs = Comm.NumProc(); 
 
+#if 0
+  if (MyPID == 0 ) {
+    char junk;
+    cin >> junk ;   // Wait for character input to give time to attach debuuger
+  }
+#endif
+
   const int MAX_TOLERANCE_RATIO = 1000 ;
   int exit_value = 0 ; 
   const int MAXNAMELENGTH = 800;

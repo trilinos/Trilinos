@@ -287,6 +287,8 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       Amesos_Superludist superludist( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
     
+      EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( superludist.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( superludist.Solve( ) ); 
 #endif
 #ifdef TEST_SPOOLESSERIAL 
