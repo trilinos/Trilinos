@@ -168,39 +168,41 @@ Abstract::Group& Group::operator=(const Group& source)
   return *this;
 }
 
-bool Group::setX(const Abstract::Vector& y)
+void Group::setX(const Abstract::Vector& y)
 {
-  return setX(dynamic_cast<const Vector&> (y));
+  setX(dynamic_cast<const Vector&> (y));
+  return;
 }
 
-bool Group::setX(const Vector& y)
+void Group::setX(const Vector& y)
 {
   resetIsValid();
   xVector = y;
-  return true;
+  return;
 }
 
-bool Group::computeX(const Abstract::Group& grp, 
+void Group::computeX(const Abstract::Group& grp, 
 					const Abstract::Vector& d, 
 					double step) 
 {
   // Cast to appropriate type, then call the "native" computeX
   const Group& petscgrp = dynamic_cast<const Group&> (grp);
   const Vector& petscd = dynamic_cast<const Vector&> (d);
-  return computeX(petscgrp, petscd, step); 
+  computeX(petscgrp, petscd, step); 
+  return;
 }
 
-bool Group::computeX(const Group& grp, const Vector& d, double step) 
+void Group::computeX(const Group& grp, const Vector& d, double step) 
 {
   resetIsValid();
   xVector.update(1.0, grp.xVector, step, d);
-  return true;
+  return;
 }
 
-bool Group::computeF() 
+Abstract::Group::ReturnType Group::computeF() 
 {
   if (isF())
-    return true;
+    return Abstract::Group::Ok;
 
   bool status = false;
 
@@ -216,14 +218,14 @@ bool Group::computeF()
 
   isValidRHS = true;
 
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::computeJacobian() 
+Abstract::Group::ReturnType Group::computeJacobian() 
 {
   // Skip if the Jacobian is already valid
   if (isJacobian())
-    return true;
+    return Abstract::Group::Ok;
 
   // Take ownership of the Jacobian and get a reference
   Mat& Jacobian = sharedJacobian.getJacobian(this);
@@ -250,13 +252,13 @@ bool Group::computeJacobian()
   // Update status
   isValidJacobian = true;
 
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::computeGradient() 
+Abstract::Group::ReturnType Group::computeGradient() 
 {
   if (isGradient())
-    return true;
+    return Abstract::Group::Ok;
   
   if (!isF()) {
     cerr << "ERROR: NOX::Petsc::Group::computeGradient() - RHS is out of date wrt X!" << endl;
@@ -279,13 +281,13 @@ bool Group::computeGradient()
   isValidGrad = true;
 
   // Return result
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::computeNewton(NOX::Parameter::List& p) 
+Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p) 
 {
   if (isNewton())
-    return true;
+    return Abstract::Group::Ok;
 
   if (!isF()) {
     cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid RHS" << endl;
@@ -345,29 +347,30 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   // Update state
   isValidNewton = true;
 
-  // Return true for now
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::computePreconditioner()
+Abstract::Group::ReturnType Group::computePreconditioner()
 {
   cout << "NOX::Petsc::Group::computePreconditioner() - Not yet implemented!" << endl;
   exit(0);
-  return false;
+  return Abstract::Group::NotDefined;
 }
 
-bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
+Abstract::Group::ReturnType 
+Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
   Vector& petscresult = dynamic_cast<Vector&> (result);
   return applyJacobian(petscinput, petscresult);
 }
 
-bool Group::applyJacobian(const Vector& input, Vector& result) const
+Abstract::Group::ReturnType 
+Group::applyJacobian(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return false;
+    return Abstract::Group::BadDependency;
 
   // Get a reference to the Jacobian (it's validity was check above)
   const Mat& Jacobian = sharedJacobian.getJacobian();
@@ -375,79 +378,23 @@ bool Group::applyJacobian(const Vector& input, Vector& result) const
   // Apply the Jacobian
   MatMult(Jacobian, input.getPetscVector(), result.getPetscVector());
 
-  return true;
-}
-
-bool Group::applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const
-{
-  const Vector& petscinput = dynamic_cast<const Vector&> (input);
-  Vector& petscresult = dynamic_cast<Vector&> (result);
-  return applyJacobianDiagonalInverse(petscinput, petscresult);
-}
-
-bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
-{
-  // This is a temporary fix to allow more general preconditioning within
-  // Petsc. This makes inaccessible the code that follows the call to
-  // applyPreconditionerInverse.  
-  return(applyPreconditionerInverse(input, result));
-
-  //  ------------------  Dead code for now !! RHooper -----------------
-  if (!isJacobian()) 
-    return false;
-
-  // Get a reference to the Jacobian 
-  const Mat& Jacobian = sharedJacobian.getJacobian();
-
-  // Get petsc reference to the result vector
-  Vec& r = result.getPetscVector();
-
-  // Allocate the extra tmpVectorPtr if necessary
-  if (tmpVectorPtr == NULL)
-    tmpVectorPtr = new Vec;
-    VecDuplicate(r, tmpVectorPtr);
-
-  // Get the reference to the temporary vector
-  Vec& tmpVector = *tmpVectorPtr;
-
-  // Put a copy of the diagonal of the Jacobian into tmpVector
-  int ierr = MatGetDiagonal(Jacobian, tmpVector); // chk error
-  
-/*
-  // Take element-wise absolute value of diagonal vector
-  ierr = VecAbs(tmpVector);  // Check that this works, RH
-  
-  // Check minimum absolute value of diagonal vector
-  int minLocation = 0;
-  double minAbsValue = 0;
-  ierr = VecMin(tmpVector, &minLocation, &minAbsValue);
-
-  if(minAbsValue <= 1.e-6) // This minimum threshold can be adjusted
-  {
-    cout << "Poor scaling on Jacobian diagonal (min abs value: " <<
-             minAbsValue << " ) --> NO nonlinear Preconditioning !!" << endl;
-    return false; 
-  }
-*/
-  
-  // Calculate r = input ./ tmpVector (./ is element-by-element divide)
-  ierr = VecPointwiseDivide(input.getPetscVector(), tmpVector, r);
-
-  return true;
+  return Abstract::Group::Ok;
 }
 
 
-bool Group::applyPreconditionerInverse(const Abstract::Vector& input, Abstract::Vector& result) const
+Abstract::Group::ReturnType 
+Group::applyPreconditionerInverse(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
   Vector& petscresult = dynamic_cast<Vector&> (result);
   return applyPreconditionerInverse(petscinput, petscresult);
 }
 
-bool Group::applyPreconditionerInverse(const Vector& input, Vector& result) const
+Abstract::Group::ReturnType 
+Group::applyPreconditionerInverse(const Vector& input, Vector& result) const
 {
   if (!isJacobian()) 
-    return false;
+    return Abstract::Group::BadDependency;
 
   // Get a reference to the Jacobian 
   const Mat& Jacobian = sharedJacobian.getJacobian();
@@ -484,22 +431,24 @@ bool Group::applyPreconditionerInverse(const Vector& input, Vector& result) cons
   // Cleanup
   ierr = PCDestroy(pc);CHKERRQ(ierr);
 
-  return true;
+  return Abstract::Group::Ok;
 }
 
 
-bool Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
+Abstract::Group::ReturnType 
+Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
   Vector& petscresult = dynamic_cast<Vector&> (result);
   return applyJacobianTranspose(petscinput, petscresult);
 }
 
-bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
+Abstract::Group::ReturnType 
+Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return false;
+    return Abstract::Group::BadDependency;
 
   // Get a reference to the Jacobian (it's validity was check above)
   const Mat& Jacobian = sharedJacobian.getJacobian();
@@ -507,7 +456,7 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   // Apply the Jacobian
   int ierr = MatMultTranspose(Jacobian, input.getPetscVector(), result.getPetscVector());
 
-  return true;
+  return Abstract::Group::Ok;
 }
 
 
