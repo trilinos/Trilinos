@@ -32,7 +32,7 @@
  *          Ray   S. Tuminaro,   SNL
  */
 #ifndef __AZTECH__
-#ifdef ML_MPI
+#if defined(ML_MPI) && !defined(AZTEC_MPI) 
 #define AZTEC_MPI
 #endif
 
