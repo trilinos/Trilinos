@@ -40,6 +40,7 @@
 #include "ml_operator_blockmat.h"
 #include "ml_agg_reitzinger.h"
 #include "ml_aztec_utils.h"
+#include "ml_memory.h"
 
 #endif
 
