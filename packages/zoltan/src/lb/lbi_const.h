@@ -873,31 +873,26 @@ extern int LB_Box_Assign(struct LB_Struct *lb, double xmin, double ymin,
 /*****************************************************************************/
 /* 
  * Routine to compute statistics about the current balance/partitioning.
- * 
+ *
  * Input:
  *   lb          - pointer to lb object
- *   mode        - 0: do nothing at all
- *                 1: quiet mode, return data in obj_wgt and graph_stats
- *                 2: print stats, do not return any data 
- *                 3: print stats, also return data in obj_wgt and graph_stats
+ *   print_stats - if >0, compute and print max and sum of the metrics
  *   vwgt_dim    - dimension of vertex weights (0 if none)
- *   ewgt_dim    - dimension of edge weights (0 if none)
+ *   ewgt_dim    - dimension of edge weights (0 or 1)
  *
  * Output:
- *   Note that obj_wgt and graph_stats are only accessed if mode is odd
- *   obj_wgt     - obj_wgt[0:vwgt_dim-1] contain max of object weights
- *               - obj_wgt[vwgt_dim:2*vwgt_dim-1] contain sum of object wgts
- *   graph_stats - graph_stats[0,4] are max and sum of # of objects
- *               - graph_stats[1,5] are max and sum of cut weight
- *               - graph_stats[2,6] are max and sum of # of boundary objects
- *               - graph_stats[3,7] are max and sum of # of adjacent procs
- *   ierr        - error code
+ *   nobj      - number of objects (for each proc)
+ *   obj_wgt   - obj_wgt[0:vwgt_dim-1] are the object weights (on each proc)
+ *   cut_wgt   - cut size/weight (for each proc)
+ *   nboundary - number of boundary objects (for each proc)
+ *   nadj      - the number of adjacent procs (for each proc)
+ *   ierr      - error code
  */
 
-extern void LB_Eval(struct LB_Struct *lb, int mode,
-     int vwgt_dim, int ewgt_dim, float *obj_wgt,
-     int *graph_stats, int *ierr);
+extern void LB_Eval (struct LB_Struct *lb, int print_stats, 
+     int vwgt_dim, int ewgt_dim, 
+     int *nobj, float *obj_wgt, 
+     int *cut_wgt, int *nboundary,
+     int *nadj, int *ierr);
 
-/*****************************************************************************/
-
-#endif
+#endif /* !__LBI_CONST_H */
