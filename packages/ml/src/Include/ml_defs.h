@@ -25,6 +25,14 @@
 #define ML_SAAMG          15
 #define ML_MGW            16
 #define ML_PAMGV          17
+/*MS*/
+/* those are to mimic one-level and two-level DD methods.
+   They are a bit experimental now */
+#define ML_ONE_LEVEL_DD            -30
+#define ML_TWO_LEVEL_DD_ADD        -31
+#define ML_TWO_LEVEL_DD_HYBRID     -32
+#define ML_TWO_LEVEL_DD_HYBRID_2   -33
+/*ms*/
 
 #define ML_GRID_DIMENSION   21
 #define ML_GRID_NVERTICES   22
