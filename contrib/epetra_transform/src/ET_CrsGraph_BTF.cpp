@@ -4,7 +4,7 @@
 #include <ET_CrsGraph_BTF.h>
 
 #include <Epetra_CrsGraph.h>
-#include <Epetra_BlockMap.h>
+#include <Epetra_Map.h>
 
 extern "C" {
 extern void mattrans_( int*, int*, int*, int*, int*, int* );
@@ -22,8 +22,8 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_BTF::operator()( const Epetra_CrsGraph &
   if( original.IndicesAreGlobal() )
   { cout << "FAIL for Global Indices!\n"; exit(0); }
 
-  int n = original.NumGlobalRows();
-  int nnz = original.NumGlobalNonzeros();
+  int n = original.NumMyRows();
+  int nnz = original.NumMyNonzeros();
 
   //create std CRS format
   vector<int> ia(n+1,0);
@@ -140,7 +140,55 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_BTF::operator()( const Epetra_CrsGraph &
   { cout << "FAILED! hrz cmp's:" << hrzcmp << " vrtcmp: " << vrtcmp << endl;
     exit(0); }
 
-  return std::auto_ptr<Epetra_CrsGraph>(0);
+  //convert rowperm to OLD->NEW
+  //reverse ordering of permutation to get upper triangular
+  vector<int> rowperm_t( n );
+  vector<int> colperm_t( n );
+  for( int i = 0; i < n; ++i )
+  {
+//    rowperm_t[ rowperm[i] ] = n-i;
+//    colperm[i] = n-colperm[i];
+    rowperm_t[i] = rowperm[(n-1)-i];
+    colperm_t[i] = colperm[(n-1)-i];
+  }
+
+  //Generate New Domain and Range Maps
+  //for now, assume they start out as identical
+  const Epetra_BlockMap & OldMap = original.RowMap();
+  vector<int> myElements( n );
+  OldMap.MyGlobalElements( &myElements[0] );
+
+  vector<int> newDomainElements( n );
+  vector<int> newRangeElements( n );
+  for( int i = 0; i < n; ++i )
+  {
+    newDomainElements[ i ] = myElements[ rowperm_t[i] ];
+    newRangeElements[ i ] = myElements[ colperm_t[i] ];
+cout << i << "\t" << rowperm_t[i] << "\t" << colperm[i] << "\t" << myElements[i] << endl;
+  }
+
+  Epetra_Map * DomainMap = new Epetra_Map( n, n, &newDomainElements[0], OldMap.IndexBase(), OldMap.Comm() );
+  Epetra_Map * RangeMap = new Epetra_Map( n, n, &newRangeElements[0], OldMap.IndexBase(), OldMap.Comm() );
+
+#ifdef BTF_VERBOSE
+  cout << "New Domain Map\n";
+  cout << *DomainMap << endl;
+  cout << "New Range Map\n";
+  cout << *RangeMap << endl;
+#endif
+
+  //Generate New Graph
+  std::auto_ptr<Epetra_CrsGraph> NewGraph( new Epetra_CrsGraph( Copy, *DomainMap, 0 ) );
+  Epetra_Import Importer( *DomainMap, OldMap );
+  NewGraph->Import( original, Importer, Insert );
+  NewGraph->TransformToLocal( DomainMap, RangeMap );
+
+#ifdef BTF_VERBOSE
+  cout << "New CrsGraph\n";
+  cout << *NewGraph << endl;
+#endif
+
+  return NewGraph;
 }
 
 } //namespace Epetra_Transform

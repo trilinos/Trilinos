@@ -1,11 +1,11 @@
 
-#include <Epetra_Transform.h>
+#include <Epetra_DistTransform.h>
 
 class Epetra_CrsGraph;
 
 namespace Epetra_Transform {
 
-class CrsGraph_BTF : public SameTypeTransform<Epetra_CrsGraph> {
+class CrsGraph_BTF : public SameTypeDistTransform<Epetra_CrsGraph> {
 
  public:
 
