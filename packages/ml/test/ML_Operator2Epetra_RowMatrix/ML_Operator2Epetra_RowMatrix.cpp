@@ -24,8 +24,10 @@
 
 #include <iostream>
 #include <math.h>
-#include "az_aztec.h"
 #include "ml_include.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
+#include "az_aztec.h"
+
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -260,3 +262,27 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition)
 
   return(Kn_mat);
 }
+
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+
+  // still need to deal with MPI, some architecture don't like
+  // an exit(0) without MPI_Finalize()
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  puts("Please configure ML with --enable-epetra --enable-aztecoo");
+
+#ifdef ML_MPI
+     MPI_Finalize();
+#endif
+return(0);
+}
+ 
+#endif 

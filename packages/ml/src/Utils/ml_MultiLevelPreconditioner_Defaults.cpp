@@ -444,7 +444,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
   List.set(Prefix+"smoother: pre or post","both");
   
   // simplest solver on coarse problem
-  List.set(Prefix+"coarse: type","SuperLU");
+  List.set(Prefix+"coarse: type","Amesos-Klu");
 //  Tim Davis' simple serial LU package.  It's part of Amesos
 //  itself.
 //  List.set(Prefix,"Amesos-KLU");

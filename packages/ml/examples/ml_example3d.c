@@ -1236,8 +1236,8 @@ nz = (row/(NP*m*m));
 int main(int argc, char *argv[])
 {
 
-  // still need to deal with MPI, some architecture don't like
-  // an exit(0) without MPI_Finalize()
+  /* still need to deal with MPI, some architecture don't like */
+  /* an exit(0) without MPI_Finalize() */
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
 #endif

@@ -941,7 +941,9 @@ int ML_MaxAllocatableSize()
 
     
 #include "ml_utils.h" 
+#ifdef ML_MALLINFO
 #include "malloc.h"
+#endif
 /* returns the maximum allocatable memory, in Mbytes, using mallinfo() */
 int ML_MaxMemorySize()
 { 

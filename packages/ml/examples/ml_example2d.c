@@ -1709,8 +1709,8 @@ int ml_find_global_row(int i, int proc, int global_nrows, int **whole_glob_map)
 int main(int argc, char *argv[])
 {
 
-  // still need to deal with MPI, some architecture don't like
-  // an exit(0) without MPI_Finalize()
+  /* still need to deal with MPI, some architecture don't like
+     an exit(0) without MPI_Finalize() */
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
 #endif
