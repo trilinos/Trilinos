@@ -38,7 +38,6 @@
 #endif
 
 static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
-					 int N_nonzeros,
 					 int N_parts,
 					 int graph_decomposition[],
 					 char bdry_nodes[],
@@ -472,7 +471,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
     
   }
   
-  if( Nparts < 3 ) return; /* do nothing if 2 nodes only... */
+  if( Nparts < 3 ) return Nparts; /* do nothing if 2 nodes only... */
   
   /* ********************************************************************** */
   /* In order to compute the fill-in reducin ordering, I need to form the   */
@@ -632,8 +631,6 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 #ifdef HAVE_ML_METIS
   METIS_EstimateMemory( &Nrows, xadj, adjncy, &j,
 			&i, &nbytes );
-#endif
-  nbytes /= 1024;
   
   nbytes_max = ML_gmax_int( nbytes, comm );
   nbytes = ML_gsum_int( nbytes, comm);
@@ -647,6 +644,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 	   level,
 	   nbytes_max );
   }
+#endif
   
   /* ********************************************************************** */
   /* the METIS manual conseils to use NodeNS and not EdgeND. I have tested  */
@@ -731,7 +729,6 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 /* ************************************************************************* */
 
 static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
-					 int N_nonzeros,
 					 int N_parts,
 					 int graph_decomposition[],
 					 char bdry_nodes[],
@@ -742,7 +739,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 {
 
   int i, j,jj,  count, col;
-  int Nrows;
+  int Nrows, N_nonzeros;
   int nnz, *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
   idxtype *part=NULL;
@@ -770,15 +767,19 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   Nrows = Amatrix->getrow->Nrows;
 
   /* for some Epetra_matrices, N_nonzeros is set to -1.
-     In this case, get all rows to allocate memory for adjncy */
+     In this case, get all rows to allocate memory for adjncy.
+     Also, define the set of boundary nodes. NOTE: the computation of
+     nonzero elements is not really needed (ML_Operator usually have
+     this number already compuuted. However, I still need to
+     define the boundary nodes, and to handle epetra matrices. */
      
-  if( N_nonzeros == -1 ) {
-    N_nonzeros = 0;
-    for (i = 0; i < Nrows; i++) {  
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-	 	        &rowi_N, 0);
-      N_nonzeros += rowi_N;
-    }  
+  N_nonzeros = 0;
+  for (i = 0; i < Nrows; i++) {  
+    ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+  	              &rowi_N, 0);
+    if( rowi_N <= 1 ) bdry_nodes[i] = 'T';
+    else              bdry_nodes[i] = 'F';
+    N_nonzeros += rowi_N;
   }
      
   /* construct the CSR graph information of the LOCAL matrix
@@ -810,18 +811,21 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   xadj[0] = 0;
   for (i = 0; i < Nrows; i++) {
 
-    xadj[i+1] = 0; /* nonzeros in row i-1 */
+    xadj[i+1] = xadj[i]; /* nonzeros in row i-1 */
     
-    ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-		      &rowi_N, 0);
+    if( bdry_nodes[i] == 'F' ) {    
 
-    if( rowi_N == 1 ) bdry_nodes[i] = 'T';
-    else {
-      bdry_nodes[i] = 'F';
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+		        &rowi_N, 0);
+
+      /* need to avoid boundary nodes in METIS vectors. Skip them */
+      /* (I am not pretty sure that rows with zero elements are   */
+      /* well eated by METIS.)                                    */    
+
       for( j=0 ; j<rowi_N ; j++ ) {
 	jj = rowi_col[j];
-	if( jj<Nrows ) {
-	  adjncy[count++] = rowi_col[j];
+	if( jj<Nrows && bdry_nodes[jj] == 'F' ) {
+	  adjncy[count++] = jj;
 	  xadj[i+1]++;
 	}
       }
@@ -833,64 +837,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 	     "Warning: on proc %d, count > N_nonzeros (%d>%d)\n"
 	     "a buffer overflow has probably occurred...\n",
 	     comm->ML_mypid, count, N_nonzeros );
-  }
-  
-  /* ********************************************************************** */
-  /* Before calling METIS, need to change xadj and adjncy.                  */
-  /* I need to eliminate the -1 from adjncy. freeptr is the position of the */
-  /* first occurence of a -1 in adjncy, while nextptr is the position of the*/
-  /* next non -1 in adjncy. The length of adjncy is count                   */
-  /* ********************************************************************** */  
-  
-  start = 0;
-  for( i=0 ; i<Nrows ; i++ ) {
-    end = start + xadj[i+1];
-    for( j=start ; j<start+xadj[i+1] ; j++ ) {
-      jj = adjncy[j];
-      if( bdry_nodes[jj] == 'T' ) {
-	adjncy[j] = -1;
-	xadj[i+1]--;
-      }
-    }
-    start = end;
-  }
-
-  xadj[0] = 0;
-  for( i=1 ; i<Nrows+1 ; i++ )  xadj[i] += xadj[i-1];
-
-  freeptr = 0;
-  while( freeptr < count && adjncy[freeptr] != -1 ) freeptr++;
-
-  if( freeptr < count-1 ) {
-    
-    nextptr = freeptr+1; 
-    while( nextptr < count ) {
-      if( adjncy[nextptr] < 0 ) nextptr++;
-      else break;
-    }
-
-    if( nextptr > freeptr ) {
-
-      printf("(for Marzio) THIS PART OF THE CODE (file %s, line %d)\n"
-	     "(for Marzio) HAS NEVER BEEN TESTED... GOOD LUCK!!!\n",
-	     __FILE__,
-	     __LINE__ );
-      
-      do {
-      
-	adjncy[freeptr] = adjncy[nextptr];
-	adjncy[nextptr] = -1;
-	
-	freeptr++;
-	
-	while( adjncy[freeptr] != -1 && freeptr < count-1 ) freeptr++;
-	nextptr = freeptr+1; 
-	while( adjncy[nextptr] < 0 && nextptr < count ) nextptr++;
-	
-      } while( nextptr != count );
-      
-    }
-    
   }
 
   /* idxtype is by default int, but on some architectures can be
@@ -969,7 +915,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 	if( Amatrix->comm->ML_mypid == 0 ) {
 	  fprintf( stderr,
 		   "*ML*WRN* This function has been compiled without the configure\n"
-		   "*ML*WRN* option --with-ml_parmetis2x or --with-ml_parmetis3x\n"
+		   "*ML*WRN* option --with-ml_metis or --with-ml_metis\n"
 		   "*ML*WRN* I will put all the nodes in the same aggreagate, this time...\n"
 		   "*ML*WRN* (file %s, line %d)\n",
 		   __FILE__,
@@ -1195,7 +1141,6 @@ int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   total_nz = 0;
    int                   count2;
    ML_agg_indx_comm      agg_indx_comm;
-   int Nnonzeros = 0;
 
    int reorder_flag;
    /*   int kk, old_upper, nnzs, count2, newptr; */
@@ -1424,10 +1369,9 @@ int agg_offset, vertex_offset;
    /* matrix, so with dropped elements)                                      */
    /* ********************************************************************** */
 
-   Nnonzeros = Amatrix->N_nonzeros;
    unamalg_bdry = (char *) ML_allocate( sizeof(char) * Nrows );
    
-   aggr_count = ML_DecomposeGraph_with_METIS( Amatrix,Nnonzeros,aggr_count,
+   aggr_count = ML_DecomposeGraph_with_METIS( Amatrix,aggr_count,
 					      aggr_index, unamalg_bdry,
 					      ML_LOCAL_INDICES, NULL,
 					      reorder_flag, ml_ag->cur_level );
@@ -1458,8 +1402,7 @@ int agg_offset, vertex_offset;
 
    if( ml_ag->aggr_viz_and_stats != NULL ) {
 
-     ML_memory_alloc((void*)&graph_decomposition,
-		     sizeof(int)*Nrows,"graph decomposition");
+     graph_decomposition = (int *)ML_allocate(sizeof(int)*Nrows);
      if( graph_decomposition == NULL ) {
        fprintf( stderr,
 		"*ML*ERR* Not enough memory for %d bytes\n"
