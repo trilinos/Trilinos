@@ -18,4 +18,4 @@ using namespace std;
   }\
 }
 
-#endif /*_EPETRA_TEST_ERR_H_ */
+#endif /* EPETRA_TEST_ERR_H */

@@ -298,4 +298,4 @@ const int DefaultTracebackMode = 1;
                       return(a); \
                    }
 
-#endif /*_EPETRA_CONFIGDEFS_H_*/
+#endif /* EPETRA_CONFIGDEFS_H */
