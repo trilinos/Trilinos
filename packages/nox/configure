@@ -1748,7 +1748,7 @@ else
 echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
 fi
 
-if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
+if mkdir -p -- . 2>/dev/null; then
   # Keeping the `.' argument allows $(mkdir_p) to be used without
   # argument.  Indeed, we sometimes output rules like
   #   $(mkdir_p) $(somedir)
@@ -1761,7 +1761,7 @@ else
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-p ./--version;
+  for d in ./-p ./--;
   do
     test -d $d && rmdir $d
   done
@@ -3278,9 +3278,7 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
-      # Solaris 8's {/usr,}/bin/sh.
-      touch sub/conftst$i.h
+      : > sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3737,9 +3735,7 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
-      # Solaris 8's {/usr,}/bin/sh.
-      touch sub/conftst$i.h
+      : > sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -4122,7 +4118,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4125:" \
+echo "$as_me:4121:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6846,239 +6842,7 @@ fi
 
 if test X${ADDON_lapack} = Xyes || test X${BUILD_ANY_EXAMPLES} = Xyes || test X${BUILD_LIBLOCA} = Xyes; then
 
-  echo "$as_me:$LINENO: checking for library containing pow" >&5
-echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
-if test "${ac_cv_search_pow+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-ac_cv_search_pow=no
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char pow ();
-int
-main ()
-{
-pow ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_pow="none required"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_pow" = no; then
-  for ac_lib in m; do
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char pow ();
-int
-main ()
-{
-pow ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_pow="-l$ac_lib"
-break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-  done
-fi
-LIBS=$ac_func_search_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_search_pow" >&5
-echo "${ECHO_T}$ac_cv_search_pow" >&6
-if test "$ac_cv_search_pow" != no; then
-  test "$ac_cv_search_pow" = "none required" || LIBS="$ac_cv_search_pow $LIBS"
-
-else
-  { echo "$as_me:$LINENO: WARNING: Cannot find math library" >&5
-echo "$as_me: WARNING: Cannot find math library" >&2;}
-fi
-
-
-
-for ac_func in pow sqrt
-do
-as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $ac_func" >&5
-echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6
-if eval "test \"\${$as_ac_var+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $ac_func innocuous_$ac_func
-
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $ac_func (); below.
-    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-    <limits.h> exists even on freestanding compilers.  */
-
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-
-#undef $ac_func
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char $ac_func ();
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
-choke me
-#else
-char (*f) () = $ac_func;
-#endif
-#ifdef __cplusplus
-}
-#endif
-
-int
-main ()
-{
-return f != $ac_func;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  eval "$as_ac_var=yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-eval "$as_ac_var=no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_var'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_var'}'`" >&6
-if test `eval echo '${'$as_ac_var'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-done
-
-
+  # Define F77_FUNC - used for correctly munging Fortran function calls
 
 ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -7131,7 +6895,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7134: \"$ac_link\") >&5
+(eval echo $as_me:6898: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7209,7 +6973,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7212: \"$ac_link\") >&5
+(eval echo $as_me:6976: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7381,9 +7145,6 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  LIBS=" ${FLIBS} ${LIBS}"
-
-  # Define F77_FUNC - used for correctly munging Fortran function calls
 
 ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -7899,6 +7660,570 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+
+fi
+
+if test X${BUILD_ANY_EXAMPLES} = Xyes; then
+
+  echo "$as_me:$LINENO: checking for library containing pow" >&5
+echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
+if test "${ac_cv_search_pow+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_pow=no
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char pow ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+pow ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_pow="none required"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_pow" = no; then
+  for ac_lib in m; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char pow ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+pow ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_pow="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_pow" >&5
+echo "${ECHO_T}$ac_cv_search_pow" >&6
+if test "$ac_cv_search_pow" != no; then
+  test "$ac_cv_search_pow" = "none required" || LIBS="$ac_cv_search_pow $LIBS"
+
+else
+  { echo "$as_me:$LINENO: WARNING: Cannot find math library" >&5
+echo "$as_me: WARNING: Cannot find math library" >&2;}
+fi
+
+
+
+for ac_func in pow sqrt
+do
+as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ac_func" >&5
+echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6
+if eval "test \"\${$as_ac_var+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $ac_func innocuous_$ac_func
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $ac_func
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char $ac_func ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+char (*f) () = $ac_func;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+return f != $ac_func;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  eval "$as_ac_var=yes"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+eval "$as_ac_var=no"
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_var'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_var'}'`" >&6
+if test `eval echo '${'$as_ac_var'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+    ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+echo "$as_me:$LINENO: checking how to get verbose linking output from $F77" >&5
+echo $ECHO_N "checking how to get verbose linking output from $F77... $ECHO_C" >&6
+if test "${ac_cv_prog_f77_v+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_f77_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_prog_f77_v=
+# Try some options frequently used verbose output
+for ac_verb in -v -verbose --verbose -V -\#\#\#; do
+  cat >conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+
+# Compile and link our simple test program by passing a flag (argument
+# 1 to this macro) to the Fortran compiler in order to get
+# "verbose" output that we can then parse for the Fortran linker
+# flags.
+ac_save_FFLAGS=$FFLAGS
+FFLAGS="$FFLAGS $ac_verb"
+(eval echo $as_me:7976: \"$ac_link\") >&5
+ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
+echo "$ac_f77_v_output" >&5
+FFLAGS=$ac_save_FFLAGS
+
+rm -f conftest*
+
+# On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
+# /foo, /bar, and /baz are search directories for the Fortran linker.
+# Here, we change these into -L/foo -L/bar -L/baz (and put it first):
+ac_f77_v_output="`echo $ac_f77_v_output |
+	grep 'LPATH is:' |
+	sed 's,.*LPATH is\(: *[^ ]*\).*,\1,;s,: */, -L/,g'` $ac_f77_v_output"
+
+case $ac_f77_v_output in
+  # If we are using xlf then replace all the commas with spaces.
+  *xlfentry*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/,/ /g'` ;;
+
+  # With Intel ifc, ignore the quoted -mGLOB_options_string stuff (quoted
+  # $LIBS confuse us, and the libraries appear later in the output anyway).
+  *mGLOB_options_string*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/\"-mGLOB[^\"]*\"/ /g'` ;;
+
+  # If we are using Cray Fortran then delete quotes.
+  # Use "\"" instead of '"' for font-lock-mode.
+  # FIXME: a more general fix for quoted arguments with spaces?
+  *cft90*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed "s/\"//g"` ;;
+esac
+
+
+  # look for -l* and *.a constructs in the output
+  for ac_arg in $ac_f77_v_output; do
+     case $ac_arg in
+        [\\/]*.a | ?:[\\/]*.a | -[lLRu]*)
+          ac_cv_prog_f77_v=$ac_verb
+          break 2 ;;
+     esac
+  done
+done
+if test -z "$ac_cv_prog_f77_v"; then
+   { echo "$as_me:$LINENO: WARNING: cannot determine how to obtain linking information from $F77" >&5
+echo "$as_me: WARNING: cannot determine how to obtain linking information from $F77" >&2;}
+fi
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+{ echo "$as_me:$LINENO: WARNING: compilation failed" >&5
+echo "$as_me: WARNING: compilation failed" >&2;}
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_prog_f77_v" >&5
+echo "${ECHO_T}$ac_cv_prog_f77_v" >&6
+echo "$as_me:$LINENO: checking for Fortran libraries of $F77" >&5
+echo $ECHO_N "checking for Fortran libraries of $F77... $ECHO_C" >&6
+if test "${ac_cv_f77_libs+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test "x$FLIBS" != "x"; then
+  ac_cv_f77_libs="$FLIBS" # Let the user override the test.
+else
+
+cat >conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+
+# Compile and link our simple test program by passing a flag (argument
+# 1 to this macro) to the Fortran compiler in order to get
+# "verbose" output that we can then parse for the Fortran linker
+# flags.
+ac_save_FFLAGS=$FFLAGS
+FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
+(eval echo $as_me:8054: \"$ac_link\") >&5
+ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
+echo "$ac_f77_v_output" >&5
+FFLAGS=$ac_save_FFLAGS
+
+rm -f conftest*
+
+# On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
+# /foo, /bar, and /baz are search directories for the Fortran linker.
+# Here, we change these into -L/foo -L/bar -L/baz (and put it first):
+ac_f77_v_output="`echo $ac_f77_v_output |
+	grep 'LPATH is:' |
+	sed 's,.*LPATH is\(: *[^ ]*\).*,\1,;s,: */, -L/,g'` $ac_f77_v_output"
+
+case $ac_f77_v_output in
+  # If we are using xlf then replace all the commas with spaces.
+  *xlfentry*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/,/ /g'` ;;
+
+  # With Intel ifc, ignore the quoted -mGLOB_options_string stuff (quoted
+  # $LIBS confuse us, and the libraries appear later in the output anyway).
+  *mGLOB_options_string*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/\"-mGLOB[^\"]*\"/ /g'` ;;
+
+  # If we are using Cray Fortran then delete quotes.
+  # Use "\"" instead of '"' for font-lock-mode.
+  # FIXME: a more general fix for quoted arguments with spaces?
+  *cft90*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed "s/\"//g"` ;;
+esac
+
+
+
+ac_cv_f77_libs=
+
+# Save positional arguments (if any)
+ac_save_positional="$@"
+
+set X $ac_f77_v_output
+while test $# != 1; do
+  shift
+  ac_arg=$1
+  case $ac_arg in
+        [\\/]*.a | ?:[\\/]*.a)
+            ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+fi
+
+          ;;
+        -bI:*)
+            ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  if test "$ac_compiler_gnu" = yes; then
+  for ac_link_opt in $ac_arg; do
+    ac_cv_f77_libs="$ac_cv_f77_libs -Xlinker $ac_link_opt"
+  done
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+fi
+fi
+
+          ;;
+          # Ignore these flags.
+        -lang* | -lcrt[01].o | -lcrtbegin.o | -lc | -lgcc | -libmil | -LANG:=*)
+          ;;
+        -lkernel32)
+          test x"$CYGWIN" != xyes && ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+          ;;
+        -[LRuY])
+          # These flags, when seen by themselves, take an argument.
+          # We remove the space between option and argument and re-iterate
+          # unless we find an empty arg or a new option (starting with -)
+	  case $2 in
+	     "" | -*);;
+	     *)
+		ac_arg="$ac_arg$2"
+		shift; shift
+		set X $ac_arg "$@"
+		;;
+	  esac
+          ;;
+        -YP,*)
+          for ac_j in `echo $ac_arg | sed -e 's/-YP,/-L/;s/:/ -L/g'`; do
+              ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_j" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_arg="$ac_arg $ac_j"
+                               ac_cv_f77_libs="$ac_cv_f77_libs $ac_j"
+fi
+
+          done
+          ;;
+        -[lLR]*)
+            ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+fi
+
+          ;;
+          # Ignore everything else.
+  esac
+done
+# restore positional arguments
+set X $ac_save_positional; shift
+
+# We only consider "LD_RUN_PATH" on Solaris systems.  If this is seen,
+# then we insist that the "run path" must be an absolute path (i.e. it
+# must begin with a "/").
+case `(uname -sr) 2>/dev/null` in
+   "SunOS 5"*)
+      ac_ld_run_path=`echo $ac_f77_v_output |
+                        sed -n 's,^.*LD_RUN_PATH *= *\(/[^ ]*\).*$,-R\1,p'`
+      test "x$ac_ld_run_path" != x &&
+        if test "$ac_compiler_gnu" = yes; then
+  for ac_link_opt in $ac_ld_run_path; do
+    ac_cv_f77_libs="$ac_cv_f77_libs -Xlinker $ac_link_opt"
+  done
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_ld_run_path"
+fi
+      ;;
+esac
+fi # test "x$[]_AC_LANG_PREFIX[]LIBS" = "x"
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_f77_libs" >&5
+echo "${ECHO_T}$ac_cv_f77_libs" >&6
+FLIBS="$ac_cv_f77_libs"
+
+
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  LIBS=" ${FLIBS} ${LIBS}"
 
   # Find valid BLAS
 
@@ -20273,14 +20598,14 @@ echo X"$mf" |
   grep '^DEP_FILES *= *[^ #]' < "$mf" > /dev/null || continue
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
-  DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
+  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
   test -z "$DEPDIR" && continue
   # When using ansi2knr, U may be empty or an underscore; expand it
-  U=`sed -n 's/^U = //p' < "$mf"`
+  U=`sed -n -e '/^U = / s///p' < "$mf"`
   test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
   # We invoke sed twice because it is the simplest approach to
   # changing $(DEPDIR) to its actual value in the expansion.
-  for file in `sed -n '
+  for file in `sed -n -e '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop

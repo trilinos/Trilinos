@@ -664,7 +664,7 @@ AC_MSG_RESULT(${INSIDE_TRILINOS})
 
 BUILD_ANY_EXAMPLES=no
 
-AC_DEFUN(NOX_INTERFACE,
+AC_DEFUN([NOX_INTERFACE],
 [
   AC_ARG_ENABLE(nox-$1,
   [AC_HELP_STRING([--enable-nox-$1],[compile $1 interace libraries])],
@@ -867,7 +867,7 @@ fi
 # Checks for Regression Testing
 # ------------------------------------------------------------------------
 
-  AC_DEFUN(NOX_TESTING,
+  AC_DEFUN([NOX_TESTING],
   [
     AC_MSG_CHECKING(whether we should build the nox $1 regression tests)
     if test X${ADDON_TESTS} = Xyes && test X${ADDON_$1} = Xyes; then
@@ -1001,15 +1001,19 @@ fi
 
 if test X${ADDON_lapack} = Xyes || test X${BUILD_ANY_EXAMPLES} = Xyes || test X${BUILD_LIBLOCA} = Xyes; then
 
+  # Define F77_FUNC - used for correctly munging Fortran function calls
+  AC_F77_WRAPPERS
+
+fi
+
+if test X${BUILD_ANY_EXAMPLES} = Xyes; then
+
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_WARN(Cannot find math library))
   AC_CHECK_FUNCS([pow sqrt])
 
   dnl Checks for libraries.
   AC_F77_LIBRARY_LDFLAGS
   LIBS=" ${FLIBS} ${LIBS}"
-
-  # Define F77_FUNC - used for correctly munging Fortran function calls
-  AC_F77_WRAPPERS
 
   # Find valid BLAS
   ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
@@ -1127,7 +1131,7 @@ ABS_TRILINOS_CPPFLAGS=
 # TRILINOS_HEADER(<library name>,<file name>,<subdirectory>)
 # This is needed for multiple libraries being supplied by the 
 # same trilinos package (anasazi).
-AC_DEFUN(TRILINOS_HEADER,
+AC_DEFUN([TRILINOS_HEADER],
 [
   save_CPPFLAGS=$CPPFLAGS
   done=no
@@ -1289,7 +1293,7 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # TRILINOS_LIB_CHECK(<library name>,<package name>,<subdirectory>)
 # This is needed for multiple libraries being supplied by the 
 # same trilinos package (anasazi).
-AC_DEFUN(TRILINOS_LIB_CHECK,
+AC_DEFUN([TRILINOS_LIB_CHECK],
 [
   LIBS="-l$1 ${LIBS}"
   save_LDFLAGS=$LDFLAGS
@@ -1389,7 +1393,7 @@ AC_ARG_WITH(petsc-incdir,
 [petsc_INC=$withval])
 
 
-AC_DEFUN(PETSC_INCLUDE_CHECK,
+AC_DEFUN([PETSC_INCLUDE_CHECK],
 [
   AC_MSG_CHECKING(for $1 include directory)
   if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
@@ -1435,7 +1439,7 @@ fi
 # Checks for Petsc libraries
 # ------------------------------------------------------------------------
 
-AC_DEFUN(PETSC_LIB_CHECK,
+AC_DEFUN([PETSC_LIB_CHECK],
 [
   AC_ARG_WITH($1-libdir,
   [AC_HELP_STRING([--with-$1-libdir],[specify location of $1 library])],
