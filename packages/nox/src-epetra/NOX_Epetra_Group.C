@@ -806,14 +806,25 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   return true;
 }
 
-bool Group::applyRightPreconditioning(Parameter::List& params, const Vector& input, Vector& result) const
+bool Group::applyRightPreconditioning(Parameter::List& params,
+				      const Abstract::Vector& input, 
+				      Abstract::Vector& result) const
 {
+  const Vector& epetraInput = dynamic_cast<const Vector&>(input);
+  Vector& epetraResult = dynamic_cast<Vector&>(result);
+  
+  return applyRightPreconditioning(params, epetraInput, epetraResult);
+}
 
+bool Group::applyRightPreconditioning(Parameter::List& params,
+				      const Vector& input, 
+				      Vector& result) const
+{
   // Check validity of the Jacobian
   if (!isJacobian()) 
     return false;
 
-  int errorCode =1;
+  int errorCode = 1;
 
   // Do preconditioning based on the "preconditioner" member
   if (preconditioner == "None") {
@@ -839,7 +850,7 @@ bool Group::applyRightPreconditioning(Parameter::List& params, const Vector& inp
       throw "NOX Error";
     }
     
-    // Create the temporary vector 
+    // Create the temporary vector if necessary 
     if (tmpVectorPtr == 0) {
       tmpVectorPtr = new Epetra_Vector(RHSVector.getEpetraVector());
     }
@@ -851,14 +862,16 @@ bool Group::applyRightPreconditioning(Parameter::List& params, const Vector& inp
     // Create the solver
     AztecOO solver(problem);
     
+    // Set the preconditioning options
+    setAztecOptions(params, solver);
+
     // Get the number of iterations in the preconditioner
-    int numIters = params.getParameter("Preconditioner Iterations", 20);
+    int numIters = params.getParameter("Preconditioner Iterations", 1);
     
     AztecOO_Operator prec(&solver, numIters);
     
     errorCode = prec.ApplyInverse(input.getEpetraVector(), 
 				  result.getEpetraVector());
-  
   }
   else if (preconditioner == "User Supplied Preconditioner") {
     Epetra_Operator& prec = sharedPreconditionerPtr->getOperator(this);
