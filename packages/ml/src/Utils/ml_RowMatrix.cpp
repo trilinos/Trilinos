@@ -18,7 +18,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   NumGlobalRows_(-1),
   NumMyCols_(-1),
   NumGlobalCols_(-1),
-  RowMap_(0),
+  RangeMap_(0),
   ColMap_(0),
   MaxNumEntries_(0),
   Allocated_(128),
@@ -55,20 +55,18 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   Comm().SumAll(&NumMyRows_,&NumGlobalRows_,1);
   Comm().SumAll(&NumMyCols_,&NumGlobalCols_,1);
 
-  // right now only square matrices
-  if (NumMyRows_ != NumMyCols_)
-    ML_CHK_ERRV(-1); // FIXME
-
-  if (NumGlobalRows_ != NumGlobalCols_)
-    ML_CHK_ERRV(-2); // FIXME
-
   // create a row map based on linear distribution
   // I need this map because often codes use the RowMatrixRowMap.
   // Also, I need to check that the map of the input vector
   // and of the output vector are consistent with what I have here
-  RowMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm());
+  RangeMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm());
 
-  if (NumGlobalRows_ != RowMap_->NumGlobalElements())
+  if (NumGlobalRows_ != RangeMap_->NumGlobalElements())
+    ML_CHK_ERRV(-3); // something went wrong
+
+  DomainMap_ = new Epetra_Map(-1,NumMyCols_,0,Comm());
+
+  if (NumGlobalCols_ != DomainMap_->NumGlobalElements())
     ML_CHK_ERRV(-3); // something went wrong
 
   // need to perform a getrow() on all lines to setup some
@@ -106,6 +104,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
       MaxMyNumEntries = ncnt;
     
     // extract diagonal element and compute NormInf
+    // NOTE: the diagonal value is set to zero if not present
     Diagonal_[i] = 0.0;
     double RowNormInf = 0.0;
     for (int j = 0 ; j < ncnt ; ++j) {
@@ -179,8 +178,11 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 //==============================================================================
 ML_Epetra::RowMatrix::~RowMatrix()
 {
-  if (RowMap_) 
-    delete RowMap_;
+  if (RangeMap_) 
+    delete RangeMap_;
+
+  if (DomainMap_) 
+    delete DomainMap_;
 
   if (ColMap_)
     delete ColMap_;
@@ -243,7 +245,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 //==============================================================================
 int ML_Epetra::RowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  if (Diagonal.Map().SameAs(*RowMap_) != true)
+  if (Diagonal.Map().SameAs(*RangeMap_) != true)
     ML_CHK_ERR(-1); // incompatible maps
 
   for (int i = 0 ; i < NumMyRows() ; ++i)
@@ -263,10 +265,10 @@ int ML_Epetra::RowMatrix::Multiply(bool TransA,
   if (TransA == true)
     ML_CHK_ERR(-1); // not supported right now, easy fix
 
-  if (X.Map().SameAs(*RowMap_) != true)
+  if (X.Map().SameAs(*DomainMap_) != true)
     ML_CHK_ERR(-2); // incompatible maps
   
-  if (Y.Map().SameAs(*RowMap_) != true)
+  if (Y.Map().SameAs(*RangeMap_) != true)
     ML_CHK_ERR(-3); // incompatible maps
 
   int ierr;
@@ -284,8 +286,6 @@ int ML_Epetra::RowMatrix::Multiply(bool TransA,
 //==============================================================================
 double ML_Epetra::RowMatrix::NormInf() const
 {
-
- 
   return(NormInf_);
 }
 
@@ -358,7 +358,7 @@ bool ML_Epetra::RowMatrix::UpperTriangular() const
 //==============================================================================
 const Epetra_Map& ML_Epetra::RowMatrix::RowMatrixRowMap() const
 {
-  return(*RowMap_);
+  return(*RangeMap_);
 }
 
 //==============================================================================

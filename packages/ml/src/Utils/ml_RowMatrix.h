@@ -15,6 +15,8 @@
 #include "Epetra_Operator.h"
 class Epetra_MultiVector;
 #include "Epetra_RowMatrix.h"
+#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 
 class Epetra_Vector;
 class Epetra_Importer;
@@ -269,10 +271,10 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   const Epetra_Comm & Comm() const{return(*Comm_);};
   
   //! Returns the Epetra_Map object associated with the domain of this operator.
-  const Epetra_Map & OperatorDomainMap() const {return(*RowMap_);};
+  const Epetra_Map & OperatorDomainMap() const {return(*DomainMap_);};
   
   //! Returns the Epetra_Map object associated with the range of this operator.
-  const Epetra_Map & OperatorRangeMap() const {return(*RowMap_);};
+  const Epetra_Map & OperatorRangeMap() const {return(*RangeMap_);};
   //@}
 
   const char* Label() const{
@@ -282,7 +284,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   //!  Returns a reference to RowMatrix->Map().
   const Epetra_BlockMap & Map() const
   {
-    return *RowMap_;
+    return(*DomainMap_);
   }
 
 private:
@@ -295,7 +297,8 @@ private:
   int NumGlobalRows_;        // number of global rows
   int NumMyCols_;            // number of local cols
   int NumGlobalCols_;        // number of global cols
-  Epetra_Map* RowMap_;       // map for row distribution
+  Epetra_Map* DomainMap_;    // map for row distribution
+  Epetra_Map* RangeMap_;     // map for row distribution
   Epetra_Map* ColMap_;       // map for col distribution
   int MaxNumEntries_;        // maximum number of elements in a row
 
