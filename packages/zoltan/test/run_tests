@@ -1,0 +1,120 @@
+#!/bin/csh -x
+#
+# This C-shell script runs all the test examples 
+# and compares the results against pre-computed results.
+#
+# Usage: run_tests <arch-type>
+#
+# where arch-type is one of (sun, sunos, smos, tflop, cplant)
+#
+# Initial version by Erik Boman, SNL 9226, 99/09/15.
+#
+
+# Chaco problems to run, ordered by increasing size/difficulty
+set ch_name = (simple nograph vwgt grid20 film hammond)
+set ch_nproc = (4 3 3 5 6 7)
+
+# Nemesis problems to run 
+set nem_name = (box_064-m5-r ti_300 ti_4k ti_20k)
+set nem_nproc = (5 6 9 36)
+
+# Set default options
+@ no_chaco = 0
+@ no_nemesis = 0
+@ no_parmetis = 0
+set outfile = tests.out
+set answers = answers
+
+# Check for environment variables.
+if ($?NO_NEMESIS) then
+   set no_nemesis = $NO_NEMESIS
+endif
+if ($?NO_PARMETIS) then
+   set no_parmetis = $NO_PARMETIS
+endif
+
+# Parse command-line options. These will override environment variables.
+# Not yet implemented, except for machine type.
+
+# Determine what command to use to launch a parallel program
+if ( $#argv < 1 ) then
+  echo "Error: No machine-type argument"
+  goto usage
+endif
+
+switch ( $1 )
+case sun:
+case sunos:
+case solaris:
+  set run = "mpirun -np"
+  breaksw
+case smos:
+case tflop:
+case cplant:
+  set run = "yod -sz"
+  breaksw
+default:
+  echo "Unknown arch-type. You have to edit this script to make it work on your platform."
+  exit 2
+  breaksw
+endsw
+
+# Set up output file
+if ( -e $outfile ) mv $outfile ${outfile}.old
+echo "Tests run on `date`" > $outfile
+echo " " >> $outfile
+
+
+# Loop over Chaco problems
+if (! $no_chaco ) then
+  @ nprob = $#ch_name
+  @ nfailed = 0
+  while ( $#ch_name )
+    cd ch_${ch_name[1]}
+    @ fail = 0
+    @ np = $ch_nproc[1]
+    # Run the driver
+    $run $np ../zdrive.$1
+    # Compare output files 
+    @ i = 0
+    while ( $i < $np )
+      diff -c ${ch_name[1]}.out.$np.$i ${answers}/${ch_name[1]}.out.$np.$i >> $outfile
+      if ( $status ) then 
+        @ fail = 1
+      endif
+      @ i = $i + 1
+    end
+    # Add problem to failure list if it failed
+    if ( $fail ) then
+      @ nfailed = $nfailed + 1
+      echo "Test problem $ch_name failed."
+    endif
+    # Shift arguments and return to original directory
+    shift ch_name
+    shift ch_nproc
+    cd ..
+  end
+  
+  # Print failure summary
+  echo " "
+  if ( $nfailed == 0 ) then
+    echo "Success: all $nprob Chaco problems passed!"
+  else
+    echo "Failure: $nfailed out of $nprob Chaco problems failed."
+  endif
+  echo " "
+
+endif # do_chaco
+
+# Loop over Nemesis problems
+
+
+# Exit successfully
+exit 0
+
+# Print usage and exit with error
+usage:
+  echo "Usage: $0 <arch-type>"
+  echo "where arch-type is one of (sun, sunos, smos, tflop, cplant)"
+  exit -1
+
