@@ -287,11 +287,17 @@ AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_SPRINTF
 
 AC_MSG_CHECKING([whether $CC recognizes __PRETTY_FUNCTION__])
-AC_TRY_COMPILE(, [int main() { char *s = __PRETTY_FUNCTION__; }],
+AC_TRY_COMPILE(, [const char *s = __PRETTY_FUNCTION__; ],
    AC_DEFINE(HAVE_CFUNC,, 
    [Define if the C complier supports __PRETTY_FUNCTION__]) ac_cv_c_var_func=yes,
    ac_cv_c_var_func=no)
 AM_CONDITIONAL(ML_CFUNC, test "X$ac_cv_c_var_func" != "Xno")
+
+if test "X$ac_cv_c_var_func" != "Xno"; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
 
 # ------------------------------------------------------------------------
 # Checks for special package flags
