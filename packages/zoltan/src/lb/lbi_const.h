@@ -58,6 +58,7 @@ enum LB_Fn_Type {
   LB_NUM_CHILD_FN_TYPE,
   LB_CHILD_LIST_FN_TYPE,
   LB_CHILD_WEIGHT_FN_TYPE,
+  LB_GET_PROCESSOR_NAME_FN_TYPE,
   LB_MAX_FN_TYPES               /*  This entry should always be last.        */
 };
 
@@ -551,6 +552,22 @@ typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
 
 typedef void LB_UNPACK_OBJ_FORT_FN(void *data, LB_GID *global_id, int *size,
                                    char *buf, int *ierr);
+
+/*****************************************************************************/
+/*  Function to get the name of the physical processor on which
+ *  the current process is running. 
+ *
+ *  Input:  
+ *    void *data                -- pointer to user defined data structure
+ *
+ *  Output:
+ *    char *name                -- name of the processor 
+ *    int  *length              -- length of the name
+ *    int  *ierr                -- error code
+ */
+
+typedef void LB_GET_PROCESSOR_NAME_FN(void *data, char *name, int *length, int *ierr);
+
 
 /*****************************************************************************/
 /*

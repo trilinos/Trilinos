@@ -156,10 +156,48 @@ struct LB_Migrate_Struct {
 
 typedef struct LB_Migrate_Struct LB_MIGRATE;
 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
 
+/*****************************************************************************/
+/*****************************************************************************/
+ 
+/**************************************************************/
+/* The data structures below for HA are not being used yet!   */
+/* They are merely Erik's suggestions.                        */
+/**************************************************************/
+
+/* Data structure for topology */
+struct Topology_Type {
+  int topo_id;
+  int cart_dim[3];
+  int wrap[3];
+  int *xadj, *adjncy;  /* EB: Need a more general graph structure that allows for edge weights */
+};
+
+typedef struct Topology_Type TopologyType;
+
+/* Data structure for machine */
+struct Machine_Type {
+  int nnodes;
+  int cpu_power;
+  int memory_size;
+  TopologyType *network;
+  struct Machine_Type **node_desc; /* Pointers to an array of nnodes descriptors */
+};
+
+typedef struct Machine_Type MachineType;
+
+/* Machine type constants */
+#define TOPO_FLAT    0
+#define TOPO_SMP     0
+#define TOPO_1D      1
+#define TOPO_2D      2
+#define TOPO_3D      3
+#define TOPO_HCUBE   4
+#define TOPO_GENERIC 5
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 
 /*
  *  Define a load balancing object.  It will contain pointers to the
@@ -176,6 +214,7 @@ struct LB_Struct {
   int Debug;                      /*  Debug level for this instance of
                                       load balancing.                        */
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
+  MachineType *Machine_Desc;      /*  Machine description for hetero. arch. */
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
@@ -314,8 +353,9 @@ struct LB_Struct {
   void *Migrate_Data;                          /* Ptr to user defined data
                                                   to be passed to
                                                   Migrate()                  */
+  LB_GET_PROCESSOR_NAME_FN *Get_Processor_Name; /* Fn ptr to get proc name   */
+  void *Get_Processor_Name_Data;               /* Ptr to user defined data   */
 };
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
