@@ -35,7 +35,7 @@ tools in Teuchos are mentioned in this section.
 For more details on all of the capabilities provided by Teuchos, please 
 refer to the online documentation (\verb!http://software.sandia.gov/trilinos/packages/teuchos!).
 
-Teuchos classes have been divided between a``standard'' build and an
+Teuchos classes have been divided between a ``standard'' build and an
 ``extended'' build. The ``standard'' build contains the general purpose
 templated tools like BLAS/LAPACK wrappers, parameter lists, a command-line parser,
 serial dense matrices, timers, flop counters, and a reference-counted pointer class.  
@@ -62,7 +62,7 @@ In this Chapter, we will present the following ``standard'' build classes:
 
 \item \verb!Teuchos::BLAS! class (Section~\ref{sec:teuchos:BLAS}):
   The BLAS class provides templated wrappers
-  for the native BLAS library and can be extended to provide arbitrary precision
+  for the native BLAS library and can be extended to support arbitrary precision
   computations.  
 
 \item \verb!Teuchos::LAPACK! class (Section~\ref{sec:teuchos:LAPACK}):
@@ -428,7 +428,7 @@ are configured through a \verb!Teuchos::ParameterList!.
 
 \begin{remark}
 The parameter list stores a copy of the input object if it passed by reference.  
-If the list is passed a pointer to an object. only the pointer is copied and
+If the list is passed a pointer to an object, only the pointer is copied and
 not the object that it points to. 
 \end{remark}
 
@@ -678,29 +678,45 @@ deallocations in the object's destructor.
 \subsection{Teuchos::TimeMonitor}
 \label{sec:teuchos:TimeMonitor}
 
-Class \verb!Teuchos::TimeMonitor! defines a timer that starts when
-constructed and stops when its destructor is called. This class can be
-used to keep trace of timing for various phases of the code. Example
-\TriExe{teuchos/ex1.cpp} shows the use of this class. The example
-declared (for the sake of simplicity) two global (smart) pointers,
+The \verb!Teuchos::TimeMonitor! class is a container that manages a
+group of timers.  In this way, it can be used to keep track of timings
+for various phases of the code.  Internally, this class holds an array 
+of \verb!Teuchos::Time! objects.  The 
+\verb!Teuchos::Time! class defines a basic wall-clock timer that can 
+\verb!start()!, \verb!stop()!, and return the \verb!totalElapsedTime()!.
+
+To use the \verb!Teuchos::TimeMonitor! class, include the header:
+{\small 
 \begin{verbatim}
-RefCountPtr<Time> SetupTime;
-RefCountPtr<Time> CompTime;
-\end{verbatim}
-and initialized them in the \verb!main! function,
+#include "Teuchos_TimeMonitor.hpp"
+\end{verbatim}}
+To create a timer for the TimeMonitor to manage, call:
+{\small 
 \begin{verbatim}
-SetupTime = TimeMonitor::getNewTimer("setup time");
-CompTime  = TimeMonitor::getNewTimer("comp time");
-\end{verbatim}
-Then, each time we want to track timing, we can create an Time object as
+RefCountPtr<Time> SetupTime = TimeMonitor::getNewTimer("Setup Time");
+\end{verbatim}}
+\noindent The {\tt getNewTimer} method creates a new reference-counted
+{\tt Teuchos::Time} object and adds it to the internal array.  To avoid
+passing this timer into each method that needs timing, consider putting it in the
+global scope (declare it outside of {\tt main(argc, argv[])}).  Now, when 
+we want to time a part of the code, the appropriate timer should be used to 
+construct a local TimeMonitor:
+{\small
 \begin{verbatim}
-TimeMonitor LocalTimer(*SetupTime);
-\end{verbatim}
-which will stop when its destructor is called. Timing are summarized
-using
+Teuchos::TimeMonitor LocalTimer(*SetupTime);
+\end{verbatim}}
+\noindent This timer will be started during the construction of {\tt LocalTimer}
+and stopped when the destructor is called on {\tt LocalTimer}.
+
+To obtain a summary from all the timers in the global TimeMonitor, use:
+{\small
 \begin{verbatim}
 TimeMonitor::summarize();
-\end{verbatim}
+\end{verbatim}}
+\noindent Information from each timer can also be obtained using 
+the methods from {\tt Teuchos::Time}.  This section presents examples of all the 
+methods in the {\tt Teuchos::TimeMonitor} class and can be found in
+\TriExe{teuchos/ex6.cpp}.  
 
 %%%
 %%%
