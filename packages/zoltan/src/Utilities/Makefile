@@ -228,20 +228,16 @@ zdrive_comm comm:
 #         LINT TARGETS
 ############################################################################
 #
+# Note:  The path for MPI include files must be explicitly specified for
+#        lint targets; using ZOLTAN_ARCH=gcc with the gmake command 
+#        automatically defines these MPI paths.  For example,
+#           gmake ZOLTAN_ARCH=gcc lint_comm
 
-llib-l$(MEM_LIB).ln: $(MEM_CSRC)
-	@echo "Generating lint file for library " $(MEM_LIB)
-	$(LINT) $(LINT_FLAGS)  $? -o $(MEM_LIB)
-
-llib-l$(COMM_LIB).ln: $(COMM_CSRC)
-	@echo "Generating lint file for library " $(COMM_LIB)
-	$(LINT) $(LINT_FLAGS)  $? -o $(COMM_LIB)
-
-lint_mem: $(MEM_DRIVER_CSRC) llib-l$(MEM_LIB).ln
+lint_mem: $(MEM_CSRC) $(MEM_DRIVER_CSRC) 
 	@echo "running lint..."
 	$(LINT) $(LINT_FLAGS) $?
 
-lint_comm: $(COMM_DRIVER_CSRC) llib-l$(COMM_LIB).ln llib-l$(MEM_LIB).ln
+lint_comm: $(MEM_CSRC) $(COMM_CSRC) $(COMM_DRIVER_CSRC) 
 	@echo "running lint..."
 	$(LINT) $(LINT_FLAGS) $?
 
