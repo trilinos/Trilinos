@@ -203,6 +203,7 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
 
   // Next, compute how many times we should call the Multiply method, assuming a rate of 100 MFLOPS and a desired time of 1 second total.
   int niters = (int) (100000000.0/((double) 2*nnz));
+  if (smallProblem) niters = 1;
 
   Epetra_Flops counter;
   Epetra_Vector bcomp_e(*map);
