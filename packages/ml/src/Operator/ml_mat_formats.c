@@ -532,6 +532,9 @@ int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
    ML_Operator       *Amat;
    ML_Comm           *comm;
    int *bindx_ptr;
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
 
    Amat  = (ML_Operator *) Amat_in;
    comm  = Amat->comm;
@@ -543,7 +546,6 @@ int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
    temp  = (struct ML_CSR_MSRdata *) Amat->data;
    val   = temp->values;
    bindx = temp->columns;
-
    getrow_comm= Amat->getrow->pre_comm;
    if (getrow_comm != NULL) {
       p2 = (double *) ML_allocate((Nrows+getrow_comm->minimum_vec_size+1)*
@@ -556,7 +558,9 @@ int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
    }
    else p2 = p;
 
-
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   t0 = GetClock();
+#endif
   j = bindx[0];
   bindx_ptr = &bindx[j];
   for (i = 0; i < Nrows; i++) {
@@ -580,6 +584,9 @@ int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
     }
     ap[i] = sum;
   }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Op->apply_without_comm_time += (GetClock() - t0);
+#endif
 
 
   if (getrow_comm != NULL) {
@@ -610,6 +617,9 @@ int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
    ML_Operator       *Amat;
    int               *row_ptr, Nstored;
    ML_Comm           *comm;
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
@@ -643,6 +653,10 @@ int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
    }
    else ap2 = ap;
 
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   /* time only the real apply */
+   t0 = GetClock();
+#endif
    for (i = 0; i < Nstored; i++) {
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
@@ -652,6 +666,9 @@ int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
 
      ap2[i] = sum;
    }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Op->apply_without_comm_time += (GetClock() - t0);
+#endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
 
@@ -682,6 +699,9 @@ int sCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
    ML_Operator       *Amat;
    int               *row_ptr, Nstored;
    ML_Comm           *comm;
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
@@ -720,12 +740,19 @@ int sCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
      for (i = 0; i < olen; i++) ap2[i] = 0.;
    }
 
+
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   t0 = GetClock();
+#endif
    for (i = 0; i < ilen; i++) {
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
      {
         ap2[bindx[k]] += ((double) val[k]) * p2[i];
      }
    }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Op->apply_without_comm_time += (GetClock() - t0);
+#endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
 
@@ -757,6 +784,9 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
    int               *row_ptr, Nstored;
    ML_Comm           *comm;
    double            sgn[3] = {0.,1.,-1};
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
@@ -794,6 +824,10 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
      ap2 = ap;
      for (i = 0; i < olen; i++) ap2[i] = 0.;
    }
+
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   t0 = GetClock();
+#endif
    if (row_ptr != NULL) {
      for (i = 0; i < ilen; i++) {
        for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
@@ -810,6 +844,9 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
 	 }
      }
    }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Op->apply_without_comm_time += (GetClock() - t0);
+#endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
 
@@ -840,6 +877,9 @@ int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
    ML_Operator       *Amat;
    int               *row_ptr, Nstored;
    ML_Comm           *comm;
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
@@ -875,6 +915,9 @@ int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
    }
    else ap2 = ap;
 
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   t0 = GetClock();
+#endif
    for (i = 0; i < Nstored; i++) {
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
@@ -884,6 +927,9 @@ int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
 
      ap2[i] = sum;
    }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Op->apply_without_comm_time += (GetClock() - t0);
+#endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
 
@@ -916,6 +962,9 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
    int               *row_ptr, Nstored;
    ML_Comm           *comm;
    double            sgn[3] = {0.,1.,-1.};
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
@@ -951,6 +1000,9 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
    }
    else ap2 = ap;
 
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   t0 = GetClock();
+#endif
    if (row_ptr != NULL) {
      for (i = 0; i < Nstored; i++) {
        sum = 0;
@@ -973,6 +1025,9 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
        ap2[i] = sum;
      }
    }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Op->apply_without_comm_time += (GetClock() - t0);
+#endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
 
@@ -1004,6 +1059,9 @@ int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
            ML_Operator       *Amat;
            int               *row_ptr, Nstored;
            ML_Comm           *comm;
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+           double t0;
+#endif
 
            Amat    = (ML_Operator *) Amat_in;
            comm    = Amat->comm;
@@ -1046,6 +1104,9 @@ int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
            /* It is enough to get the first length */
            k2    = row_ptr[1];
            
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+           t0 = GetClock();
+#endif
            for (i = 0; i < Nstored; i++) {
              p2 = oldp2;
              sum = 0.;
@@ -1060,6 +1121,9 @@ int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
              
              *ap2++ = sum; 
            }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+           Op->apply_without_comm_time += (GetClock() - t0);
+#endif
            
            if (Amat->getrow->pre_comm != NULL) ML_free(oldp2);
          
@@ -1092,6 +1156,9 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
    int               *row_ptr, Nstored;
    ML_Comm           *comm;
    double            *val_ptr;
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
@@ -1127,6 +1194,9 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
    }
    else ap2 = ap;
 
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   t0 = GetClock();
+#endif
    for (i = 0; i < Nstored; i++) {
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
@@ -1137,6 +1207,9 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
 
      ap2[i] = sum;
    }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Op->apply_without_comm_time += (GetClock() - t0);
+#endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
 
