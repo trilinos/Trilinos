@@ -891,7 +891,13 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #elif defined(USESGSSequential)
       ML_Smoother_SGSSequential(sm, inlen, x, outlen, rhs);
 #else
+
+#define SPECIAL
+#ifdef SPECIAL
+      ML_Smoother_MSR_SGSdamping(sm, inlen, x, outlen, rhs);
+#else
       ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+#endif
 #endif
  
       /* Reset ntimes and omega for Hiptmair smoother. */
@@ -944,8 +950,16 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ML_Smoother_SGSSequential(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                                 TtATmat->outvec_leng, rhs_nodal);
 #else
+#ifdef SPECIAL
+#undef SPECIAL
+#endif
+#ifdef SPECIAL
+      ML_Smoother_MSR_SGSdamping(dataptr->sm_nodal, TtATmat->invec_leng,
+                      x_nodal, TtATmat->outvec_leng, rhs_nodal);
+#else
       ML_Smoother_SGS(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                       TtATmat->outvec_leng, rhs_nodal);
+#endif
 #endif
 
 #ifdef ML_DEBUG_SMOOTHER
@@ -985,6 +999,9 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #endif
    return 0;
 }
+#ifdef SPECIAL
+#undef SPECIAL
+#endif
 #endif /* ifdef MatrixProductHiptmair */
 
 /* ************************************************************************* */
@@ -2710,6 +2727,7 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->edge_update = NULL;
    ml_data->max_eig = 0.0;
    ml_data->omega = 1.0;
+   ml_data->print = 0;
    return(0);
 }
  
@@ -3013,7 +3031,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans,
                                  ML_Operator *Tmat_bc, int BClength,
-                                 int *BCindices, double omega)
+                                 int *BCindices, double omega,int print)
 {
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Operator *tmpmat, *tmpmat2;
@@ -3031,6 +3049,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    dataptr = *data;
    dataptr->Tmat_trans = Tmat_trans;
    dataptr->Tmat = Tmat;
+   dataptr->print = print;
 
    /* Get maximum eigenvalue for damping parameter. */
 
@@ -3045,7 +3064,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
       dataptr->omega = 1.0 / dataptr->max_eig;
       ML_Krylov_Destroy(&kdata);
-      if (Amat->comm->ML_mypid == 0)
+      if (Amat->comm->ML_mypid == 0 && dataptr->print == 1)
       {
          printf("E:Calculated max eigenvalue of %f.\n",dataptr->max_eig);
          printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
@@ -3054,7 +3073,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    }
    else
    {
-      if (Amat->comm->ML_mypid == 0)
+      if (Amat->comm->ML_mypid == 0 && dataptr->print == 1)
          printf("Using user-provided Hiptmair damping factor of %f.\n",omega);
       dataptr->max_eig = 1.0;
       dataptr->omega = omega;
@@ -4666,7 +4685,113 @@ if ( info != 0 && info != (nrows+1) )
 /*****************************************************************************/
 
 /*****************************************************************************/
-/* Symmetric MSR Gauss-Seidel smoother                                       */
+/* Symmetric MSR Gauss-Seidel smoother with damping.                         */
+/* ------------------------------------------------------------------------- */
+
+int ML_Smoother_MSR_SGSdamping(void *sm,int inlen,double x[],int outlen,
+				 double rhs[])
+{
+   int iter, i, j;
+   ML_Operator *Amat;
+   ML_Comm *comm;
+   ML_CommInfoOP *getrow_comm;
+   int Nrows;
+   double *x2;
+   ML_Smoother  *smooth_ptr;
+   register int    *bindx_ptr;
+   register double sum, *ptr_val;
+   int             bindx_row, *bindx;
+   double          *ptr_b, *val = NULL/*, omega2*/;
+   struct ML_CSR_MSRdata *ptr = NULL;
+   double omega, one_minus_omega;
+
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Amat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Amat->getrow->Nrows;
+
+   if (Amat->getrow->external == MSR_getrows){
+      ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+      val   = ptr->values;
+      bindx = ptr->columns;
+   }
+#ifdef AZTEC
+   else AZ_get_MSR_arrays(Amat, &bindx, &val);
+#endif
+   if (val == NULL) {
+     ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+     return 0;
+   }
+
+   if (Amat->getrow->post_comm != NULL)
+      pr_error("Post communication not implemented for SGS smoother\n");
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
+                                   *sizeof(double));
+      if (x2 == NULL) {
+         printf("Not enough space in Gauss-Seidel\n"); exit(1);
+      }
+      for (i = 0; i < inlen; i++) x2[i] = x[i];
+      if (smooth_ptr->init_guess != ML_NONZERO)
+      {
+         for (i = inlen; i < inlen+getrow_comm->total_rcv_length+1; i++)
+            x2[i] = 0.;
+      }
+   }
+   else x2 = x;
+   omega = smooth_ptr->omega;
+   one_minus_omega = 1.0 - omega;
+
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++)
+   {
+
+      if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
+          || (iter != 0) )
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
+
+
+      bindx_row = bindx[0];
+      bindx_ptr = &bindx[bindx_row];
+      ptr_val   = &val[bindx_row];
+      ptr_b     = rhs;
+
+      for (i = 0; i < Nrows; i++)
+      {
+         sum    = *ptr_b++;
+	  
+	     for (j = bindx[i]; j < bindx[i+1]; j++)
+            sum -= *ptr_val++ * x2[*bindx_ptr++];
+         x2[i] = omega * sum/val[i] + one_minus_omega * x2[i];
+      }
+
+      bindx_ptr--;
+      ptr_val--;
+      ptr_b--;
+
+      for (i = Nrows - 1; i >= 0; i--)
+      {
+         sum    = *ptr_b--;
+
+         for (j = bindx[i]; j < bindx[i+1]; j++)
+            sum -= *ptr_val-- * x2[*bindx_ptr--];
+         x2[i] = omega * sum/val[i] + one_minus_omega * x2[i];
+      }
+
+   }
+
+   if (getrow_comm != NULL) {
+      for (i = 0; i < inlen; i++) x[i] = x2[i];
+      ML_free(x2);
+   }
+
+   return 0;
+}
+
+/*****************************************************************************/
+/* Symmetric MSR Gauss-Seidel smoother with no damping.                      */
 /* ------------------------------------------------------------------------- */
 
 int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
@@ -4682,7 +4807,7 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
    register int    *bindx_ptr;
    register double sum, *ptr_val;
    int             bindx_row, *bindx;
-   double          *ptr_b, *val = NULL/*, omega2*/;
+   double          *ptr_b, *val = NULL;
    struct ML_CSR_MSRdata *ptr = NULL;
 
    smooth_ptr = (ML_Smoother *) sm;
@@ -4716,12 +4841,15 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
       }
       for (i = 0; i < inlen; i++) x2[i] = x[i];
       if (smooth_ptr->init_guess != ML_NONZERO)
+      {
          for (i = inlen; i < inlen+getrow_comm->total_rcv_length+1; i++)
             x2[i] = 0.;
+      }
    }
    else x2 = x;
 
-   for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++)
+   {
 
       if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
           || (iter != 0) )
@@ -4733,26 +4861,26 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
       ptr_val   = &val[bindx_row];
       ptr_b     = rhs;
 
-      for (i = 0; i < Nrows; i++) {
-	  sum    = *ptr_b++;
+      for (i = 0; i < Nrows; i++)
+      {
+         sum    = *ptr_b++;
 	  
-	  for (j = bindx[i]; j < bindx[i+1]; j++) {
+	     for (j = bindx[i]; j < bindx[i+1]; j++)
             sum -= *ptr_val++ * x2[*bindx_ptr++];
-	  }
-	  x2[i] = sum/val[i];
+         x2[i] = sum/val[i];
       }
 
       bindx_ptr--;
       ptr_val--;
       ptr_b--;
 
-      for (i = Nrows - 1; i >= 0; i--) {
+      for (i = Nrows - 1; i >= 0; i--)
+      {
          sum    = *ptr_b--;
 
-         for (j = bindx[i]; j < bindx[i+1]; j++) {
+         for (j = bindx[i]; j < bindx[i+1]; j++)
             sum -= *ptr_val-- * x2[*bindx_ptr--];
-         }
-	 x2[i] = sum/val[i];
+         x2[i] = sum/val[i];
       }
 
    }
