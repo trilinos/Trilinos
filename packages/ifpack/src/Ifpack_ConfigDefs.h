@@ -28,7 +28,7 @@
 /*#include <Ifpack_config.h>
 #ifdef HAVE_MPI
 #define EPETRA_MPI
-#endif
 #endif*/
+#endif
 
 #endif /*_IFPACK_CONFIGDEFS_H_*/
