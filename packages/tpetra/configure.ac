@@ -181,14 +181,6 @@ AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
@@ -207,21 +199,27 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
-AC_F77_WRAPPERS
-
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# To add any libraries that you want to check for, replace pow below 
+# with the name of an entry point in that library.
+# checks for libraries now
 dnl Replace `main' with a function in -lm:
+# These lines can be removed if the math lib is not needed.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-dnl Check for user-specified names for BLAS lib
-TAC_ARG_WITH_BLASLIB
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
+AC_F77_WRAPPERS
 
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+### Include Blas/Lapack example here. ###  For now, developers should see
+### The configure.ac file for epetra (Trilinos/packages/epetra) if blas and
+### or Lapack are needed.
+
+ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 
 # ------------------------------------------------------------------------
