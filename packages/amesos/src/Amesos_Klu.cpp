@@ -127,7 +127,6 @@ int Amesos_Klu::ConvertToSerial() {
   Time_->ResetStartTime();
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ;
 
   iam = Comm().MyPID() ;
 
@@ -156,22 +155,28 @@ int Amesos_Klu::ConvertToSerial() {
   //
   //  Convert Original Matrix to Serial (if it is not already)
   //
-  if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; }
-  if ( SerialCrsMatrixA_ ) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; }
-  if ( IsLocal_==1 ) {
+  if (SerialMap_) { 
+    delete SerialMap_ ; SerialMap_ = 0 ;
+  }
+  if (SerialCrsMatrixA_) { 
+    delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0;
+  }
+  if (IsLocal_ == 1) {
      SerialMatrix_ = RowMatrixA ;
   } else {
     if ( SerialMap_ ) delete SerialMap_ ;
     SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
 
     // FIXME: can I be ImportToSerial??
-    Epetra_Export export_to_serial( OriginalMap, *SerialMap_);
+    Epetra_Export export_to_serial(OriginalMap, *SerialMap_);
 
-    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ;
+    if (SerialCrsMatrixA_) 
+      delete SerialCrsMatrixA_ ;
     SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-    SerialCrsMatrixA_->Export( *RowMatrixA, export_to_serial, Add );
+    AMESOS_CHK_ERR(SerialCrsMatrixA_->Export(*RowMatrixA, 
+					     export_to_serial, Add));
 
-    SerialCrsMatrixA_->TransformToLocal() ;
+    AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
     SerialMatrix_ = SerialCrsMatrixA_ ;
   }
 
