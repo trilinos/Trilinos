@@ -259,7 +259,6 @@ static int rcb_fn(
   double *coord = NULL;             /* temp array for median_find */
   double *wgts = NULL;              /* temp array for median_find */
   double  valuehalf;                /* median cut position */
-  double  fractionlo;               /* desired wt in lower half */
   int     first_guess;              /* flag if first guess for median search */
   int     allocflag;                /* have to re-allocate space */
   double  time1,time2,time3,time4;  /* timers */
@@ -301,6 +300,7 @@ static int rcb_fn(
   double weight[RB_MAX_WGTS];       /* weight for current set */
   double weightlo[RB_MAX_WGTS];     /* weight of lower side of cut */
   double weighthi[RB_MAX_WGTS];     /* weight of upper side of cut */
+  double fraclo[RB_MAX_WGTS];       /* desired wt in lower half */
   int *dotlist = NULL;              /* list of dots used only in find_median;
                                        allocated above find_median for 
                                        better efficiency (don't necessarily
@@ -572,10 +572,11 @@ static int rcb_fn(
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time1 = Zoltan_Time(zz->Timer);
 
-    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, &set, 
+    ierr = Zoltan_Divide_Machine(zz, zz->Obj_Weight_Dim, part_sizes, 
+                                 proc, local_comm, &set, 
                                  &proclower, &procmid, &num_procs, 
                                  &partlower, &partmid, &num_parts, 
-                                 &fractionlo);
+                                 fraclo);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error in Zoltan_Divide_Machine.");
       goto End;
@@ -632,7 +633,7 @@ static int rcb_fn(
     if (wgtflag <= 1){
       if (!Zoltan_RB_find_median(
              zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
-             fractionlo, local_comm, &valuehalf, first_guess, &(counters[0]),
+             fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
              nprocs, old_nprocs, proclower, old_nparts, 
              wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
              weight[0], weightlo, weighthi,
@@ -642,10 +643,10 @@ static int rcb_fn(
         goto End;
       }
     }
-    else {
+    else { 
       if (Zoltan_RB_find_bisector(
              zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
-             wgtflag, 1, &fractionlo, zz->LB.Imbalance_Tol, local_comm, 
+             wgtflag, 1, fraclo, zz->LB.Imbalance_Tol, local_comm, 
              &valuehalf, first_guess, counters,
              nprocs, old_nprocs, proclower, old_nparts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
@@ -1184,7 +1185,7 @@ struct rcb_box tmpbox;
       dotpt[dindx[i]].Part = partlower;
   }
   else {
-    ierr = Zoltan_Divide_Parts(zz, part_sizes, num_parts,
+    ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
                                &partlower, &partmid, &fractionlo);
 
     dim = cut_dimension(lock_direction, treept, partmid, 

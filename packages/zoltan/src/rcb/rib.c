@@ -397,7 +397,8 @@ static int rib_fn(
   while ((num_parts > 1 && num_procs > 1) || 
          (zz->Tflops_Special && tfs[0] > 1 && tfs[1] > 1)) {
 
-    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, &set, 
+    ierr = Zoltan_Divide_Machine(zz, zz->Obj_Weight_Dim, part_sizes, 
+                                 proc, local_comm, &set, 
                                  &proclower, &procmid, &num_procs, 
                                  &partlower, &partmid, &num_parts, 
                                  &fractionlo);
@@ -950,7 +951,7 @@ int i;
       dotpt[dindx[i]].Part = partlower;
   }
   else {
-    ierr = Zoltan_Divide_Parts(zz, part_sizes, num_parts,
+    ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
                                &partlower, &partmid, &fractionlo);
 
     for (i = 0; i < dotnum; i++) {
