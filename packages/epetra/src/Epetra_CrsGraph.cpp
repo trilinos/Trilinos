@@ -713,12 +713,12 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   if (!IndicesAreGlobal()) EPETRA_CHK_ERR(-1); // Return error: Indices must be global
   
   // Scan all column indices and sort into two groups: 
-  // Local:  those whose GID matches a GID of some row on this processor and
+  // Local:  those whose GID matches a GID of the domain map on this processor and
   // Remote: All others.
 
-  Epetra_HashTable LocalGIDs(RowMap().NumMyElements());
-  Epetra_HashTable RemoteGIDs(RowMap().NumMyElements());
-  Epetra_HashTable RemoteGIDList(RowMap().NumMyElements());
+  Epetra_HashTable LocalGIDs(DomainMap.NumMyElements());
+  Epetra_HashTable RemoteGIDs(DomainMap.NumMyElements());
+  Epetra_HashTable RemoteGIDList(DomainMap.NumMyElements());
 
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;
@@ -727,7 +727,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
     for (j=0; j<NumIndices; j++) {
       int GID = Indices_[i][j];
       // Check if GID matches a row GID
-      if (RowMap().MyGID(GID)) {
+      if (DomainMap.MyGID(GID)) {
 	if (LocalGIDs.Get(GID)==-1) // This means its a new local GID
 	  LocalGIDs.Add(GID, NumLocalColGIDs++);
       }
@@ -755,7 +755,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   int *PIDList = 0;
   int *SizeList = 0;
   int *RemoteSizeList = 0;
-  bool DoSizes = !RowMap().ConstantElementSize(); // If not constant element size, then we must exchange
+  bool DoSizes = !DomainMap.ConstantElementSize(); // If not constant element size, then we must exchange
       
   if (NumRemoteColGIDs>0) PIDList = new int[NumRemoteColGIDs];
 
@@ -777,20 +777,20 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   if (PIDList!=0) delete [] PIDList;
 
   // Now fill front end. Two cases:
-  // (1) If the number of Local column GIDs is the same as the number of Local Row GIDs, we
-  //     can simply read the row GIDs into the front part of ColIndices, otherwise 
-  // (2) We step through the GIDs of the RowMap, checking to see if each row GID is a column GID.
-  //     we want to do this to maintain a consistent ordering of GIDs between the columns and the rows.
+  // (1) If the number of Local column GIDs is the same as the number of Local domain GIDs, we
+  //     can simply read the domain GIDs into the front part of ColIndices, otherwise 
+  // (2) We step through the GIDs of the DomainMap, checking to see if each domain GID is a column GID.
+  //     we want to do this to maintain a consistent ordering of GIDs between the columns and the domain.
 
-  if (NumLocalColGIDs==RowMap().NumMyElements()) {
-    RowMap().MyGlobalElements(ColIndices); // Load Global Indices into first NumMyBlockCols elements column GID list
-    if (DoSizes) RowMap().ElementSizeList(SizeList); // Load ElementSizeList too
+  if (NumLocalColGIDs==DomainMap.NumMyElements()) {
+    DomainMap.MyGlobalElements(ColIndices); // Load Global Indices into first NumMyBlockCols elements column GID list
+    if (DoSizes) DomainMap.ElementSizeList(SizeList); // Load ElementSizeList too
   }
   else {
-    int NumMyElements = RowMap().NumMyElements();
-    int * MyGlobalElements = RowMap().MyGlobalElements();
+    int NumMyElements = DomainMap.NumMyElements();
+    int * MyGlobalElements = DomainMap.MyGlobalElements();
     int * ElementSizeList = 0;
-    if (DoSizes) ElementSizeList = RowMap().ElementSizeList();
+    if (DoSizes) ElementSizeList = DomainMap.ElementSizeList();
     int NumLocalAgain = 0;
     for (i=0; i<NumMyElements; i++) {
       int GID = MyGlobalElements[i];
@@ -805,17 +805,17 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
 
   // Make Column map with same element sizes as Domain map
 
-  if (RowMap().MaxElementSize()==1) // Simple map
+  if (DomainMap.MaxElementSize()==1) // Simple map
     ColMap_ = new Epetra_Map(-1, NumMyBlockCols, ColIndices,
-				  RowMap().IndexBase(), RowMap().Comm());
-  else if (RowMap().ConstantElementSize()) // Constant Block size map
-    ColMap_ = new Epetra_BlockMap(-1, NumMyBlockCols, ColIndices, RowMap().MaxElementSize(),
-				  RowMap().IndexBase(), RowMap().Comm());
+				  DomainMap.IndexBase(), DomainMap.Comm());
+  else if (DomainMap.ConstantElementSize()) // Constant Block size map
+    ColMap_ = new Epetra_BlockMap(-1, NumMyBlockCols, ColIndices, DomainMap.MaxElementSize(),
+				  DomainMap.IndexBase(), DomainMap.Comm());
 
   // Most general case where block size is variable.
   else
     ColMap_ = new Epetra_BlockMap(-1, NumMyBlockCols, ColIndices, SizeList,
-				  RowMap().IndexBase(), RowMap().Comm());
+				  DomainMap.IndexBase(), DomainMap.Comm());
 
   if (NumMyBlockCols>0) delete [] ColIndices; // Delete workspace
   if (SizeList!=0) delete [] SizeList;

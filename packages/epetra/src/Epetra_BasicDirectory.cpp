@@ -251,22 +251,33 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
   // Uniprocessor and local map cases
 
   if (!Map_->DistributedGlobal()) {
+    int ElementSize = 0;
+    int * ElementSizeList = 0;
+    bool ConstantElementSize = Map_->ConstantElementSize();
+    if (ConstantElementSize)
+      ElementSize = Map_->MaxElementSize();
+    else
+      ElementSizeList = Map_->ElementSizeList();
     for (i=0; i<NumEntries; i++) {
-      if (LocalEntries!=0) LocalEntries[i] = Map_->LID(GlobalEntries[i]);
-
-      // If GID is not valid, return -1 for both the proc and local entry info
-      if (LocalEntries!=0)  if (LocalEntries[i]==-1) Procs[i] = -1; 
+      int LID = Map_->LID(GlobalEntries[i]); // Get LID
+      // Procs[i] will be MyPID, or -1 if the GID is not owned by this map
+      if (LID==-1) {
+	Procs[i] = -1; 
+	ierr = 1; // Send warning error back that one of the GIDs is not part of this map
+      }
       else Procs[i] = MyPID;
 
-    }
-    if (EntrySizes!=0) {
-      if (Map_->ConstantElementSize()) {
-	int ElementSize = Map_->MaxElementSize();
-	for (i=0; i<NumEntries; i++) EntrySizes[i] = ElementSize;
-      }
-      else {
-	int * ElementSizeList = Map_->ElementSizeList();
-	for (i=0; i<NumEntries; i++) if (LocalEntries[i]>-1) EntrySizes[i] = ElementSizeList[LocalEntries[i]];
+      // Put LID in return array if needed
+      if (LocalEntries!=0) LocalEntries[i] = LID;
+      
+      // Fill EntrySizes if needed
+      if (EntrySizes!=0) {
+	if (ConstantElementSize)
+	  EntrySizes[i] = ElementSize;
+	else if (LID>-1) 
+	  EntrySizes[i] = ElementSizeList[LID];
+	else
+	  EntrySizes[i] = 0;
       }
     }
     EPETRA_CHK_ERR(ierr);

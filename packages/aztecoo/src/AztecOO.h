@@ -290,6 +290,11 @@ class AztecOO {
 
     See the Aztec 2.1 User Guide for a complete list of these options.
 
+    \warning In AztecOO, the default value of options[AZ_poly_ord] is set to 1.
+    This is different than Aztec 2.1, but the preferred value since Jacobi preconditioning
+    is used much more often than polynomial preconditioning and one step of Jacobi is
+    far more effective than 3 steps.
+
   */
   int SetAztecDefaults();
 

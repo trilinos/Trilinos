@@ -196,6 +196,9 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
   
   //@{ \name Atribute access functions
 
+    //! Returns a pointer to the Aztec Msr matrix used to create this object.
+    AZ_MATRIX *  Amat() const {return(Amat_);};
+
     //! Returns the infinity norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
        \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].

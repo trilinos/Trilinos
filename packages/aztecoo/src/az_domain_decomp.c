@@ -273,11 +273,11 @@ int *garbage;
 */
         AZ_factor_subdomain(context, N, N_nz, &nz_used);
 
-       if ((options[AZ_output] != AZ_none ) && (options[AZ_output] != AZ_warnings)){
+       if (options[AZ_output] > 0) {
           printf("\n*********************************************************************\n");
 	  condest = AZ_condest(N, context);
-          printf("*****  Condition number estimate for preconditioner = %.4e\n",
-               condest);
+          printf("*****  Condition number estimate for subdomain preconditioner on PE %d = %.4e\n",
+               proc_config[AZ_node], condest);
           printf("*********************************************************************\n");
         }
 

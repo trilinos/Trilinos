@@ -56,7 +56,8 @@
           Epetra_BlockMap * & map,
           Epetra_RowMatrix * &A,
           Epetra_Vector * & x,
-          Epetra_Vector * & b)
+          Epetra_Vector * & b,
+	  int ** global_indices)
 
 \brief Converts from an Aztec linear problem to a Petra linear problem.
 
@@ -76,7 +77,9 @@
        Note:  This object may actually be a Epetra_Map object, but Epetra_BlockMap is a base 
        clase for Epetra_Map.
 \param A (Out)
-       A pointer to a Epetra_RowMatrix object containing a \bf deep copy of the matrix in Amat.  
+       A pointer to a Epetra_RowMatrix object containing a \bf deep copy of the matrix in Amat, if
+       the user matrix is an Msr matrix.  It is a \bf shallow copy of the matrix if the user matrix
+       is in Vbr format.
        Must be deleted by the caller of this function.  Note:  This pointer will actually point to a 
        Epetra_CrsMatrix or a Epetra_VbrMatrix.  We cast the pointer to a Epetra_RowMatrix
        because it is the abstract base class used by AztecOO.
@@ -86,6 +89,13 @@
 \param b (Out)
        A pointer to a Epetra_Vector object containing a \bf shallow copy (view) of az_b.  
        Must be deleted by the caller of this function.
+\param global_indices (Out)
+       A pointer to an internally created integer array.  If the user matrix is in Vbr format,
+       this array contains a copy of the column index values in global mode.  By using this
+       array, we can avoid a deep copy of the user matrix in this case. SPECIAL NOTE:  This array
+       must be delete using the special Aztec function as follows:
+       if (global_indices!=0) AZ_free((void *) global_indices);
+
 */
 int Aztec2Petra(int * proc_config,
           AZ_MATRIX * Amat, double * az_x,double * az_b,
@@ -93,6 +103,7 @@ int Aztec2Petra(int * proc_config,
           Epetra_BlockMap * & map,
           Epetra_RowMatrix * &A,
           Epetra_Vector * & x,
-          Epetra_Vector * & b);
+          Epetra_Vector * & b,
+	  int ** global_indices);
 
 #endif /* _AZTEC2PETRA_H_ */

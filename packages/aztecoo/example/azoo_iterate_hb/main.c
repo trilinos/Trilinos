@@ -92,11 +92,12 @@ int main(int argc, char *argv[])
   xexact = NULL;
 
 #ifdef AZTEC_MPI
-  if (rank==0) {
+/* Uncomment this code to debug in parallel */
+/*  if (rank==0) {
     printf("Hit any key to continue...\n");
     i = getchar();
   }
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD); */
 #endif
 
   /* Read matrix file and distribute among processors.  

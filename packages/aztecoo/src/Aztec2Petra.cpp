@@ -30,7 +30,8 @@ int Aztec2Petra(int * proc_config,
 		Epetra_BlockMap * & map,
 		Epetra_RowMatrix * &A,
 		Epetra_Vector * & x,
-		Epetra_Vector * & b) {
+		Epetra_Vector * & b,
+		int ** global_indices) {
 
   // Build Epetra_Comm object
 
@@ -41,7 +42,7 @@ int Aztec2Petra(int * proc_config,
     comm = (Epetra_Comm *) new Epetra_SerialComm();
 #endif  
 
-  int * MyGlobalElements, * global_bindx, *update;
+  int * MyGlobalElements, *global_bindx, *update;
   
   if (!Amat->has_global_indices) {
     //create a global bindx
@@ -89,7 +90,7 @@ int Aztec2Petra(int * proc_config,
 
     delete [] ElementSizeList;
  
-    Epetra_VbrMatrix * AA = new Epetra_VbrMatrix(Copy, *map, 0);
+    Epetra_VbrMatrix * AA = new Epetra_VbrMatrix(View, *map, 0);
   
     if (AA==0) EPETRA_CHK_ERR(-3); // Ran out of memory
 
@@ -128,7 +129,7 @@ int Aztec2Petra(int * proc_config,
       cerr <<"Error in Epetra_VbrMatrix TransformToLocal" << ierr << endl;
       EPETRA_CHK_ERR(ierr);
     }
-
+    
     A = dynamic_cast<Epetra_RowMatrix *> (AA); // cast VBR pointer to RowMatrix pointer
   }
   else if  (Amat->data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
@@ -187,9 +188,13 @@ int Aztec2Petra(int * proc_config,
   //b = new Epetra_Vector (View, A->OperatorRangeMap(), az_b);
   b = new Epetra_Vector (View, *map, az_b);
 
+  global_indices = 0; // Assume return array will be empty
   if (!Amat->has_global_indices) {
-    AZ_free((void *) global_bindx);
-    AZ_free((void *) update);
-  }
+   AZ_free((void *) update);
+   if (Amat->data_org[AZ_matrix_type] != AZ_VBR_MATRIX)
+     AZ_free((void *) global_bindx);
+   else
+     global_indices = &global_bindx;
+   }
   return 0;
 }

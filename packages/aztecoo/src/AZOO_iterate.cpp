@@ -38,8 +38,9 @@ void AZOO_iterate(double * xsolve, double * b,
   Epetra_RowMatrix * A;
   Epetra_Vector * px;
   Epetra_Vector * pb;
+  int * global_indices;
 
-  int ierr = Aztec2Petra(proc_config, Amat, xsolve, b, comm, map, A, px, pb);
+  int ierr = Aztec2Petra(proc_config, Amat, xsolve, b, comm, map, A, px, pb, &global_indices);
   if (ierr!=0) {
     cerr << "Error detected in Aztec2Petra. Value = " << ierr << endl;
     exit(1);
@@ -134,6 +135,7 @@ void AZOO_iterate(double * xsolve, double * b,
   delete A;
   delete map;
   delete comm;
-  
+  if (global_indices!=0) AZ_free((void *) global_indices); // Note: we used a special version of free here
+
   return;
 }

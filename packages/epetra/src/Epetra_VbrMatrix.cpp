@@ -585,7 +585,7 @@ int Epetra_VbrMatrix::EndInsertValues() {
     }
   }
     
-  Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_); // Update graph
+  EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_)); // Update graph
   
   EPETRA_CHK_ERR(ierr);
   return(0);

@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   bool verbose = false;
 
   // Check if we should print results to standard out
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+  // if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
 
 
@@ -121,15 +121,25 @@ int main(int argc, char *argv[])
   double *Values = new double[3];
   int *Indices = new int[3];
   int NumEntries;
+  /*
   Values[0] = 0.25;
   Values[1] = 0.5;
+  Values[2] = 0.25;
+  */
+  Values[0] = 0.5;
+  Values[1] = 0.25;
   Values[2] = 0.25;
   forierr = 0;
   for (i=0; i<NumMyEquations; i++)
     {
+  /*
       Indices[0] = 2*MyGlobalElements[i];
       Indices[1] = 2*MyGlobalElements[i]+1;
       Indices[2] = 2*MyGlobalElements[i]+2;
+   */
+      Indices[0] = 2*MyGlobalElements[i]+1;
+      Indices[1] = 2*MyGlobalElements[i]+2;
+      Indices[2] = 2*MyGlobalElements[i];
       NumEntries = 3;
       forierr += !(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
       for (j=0; j<3; j++)

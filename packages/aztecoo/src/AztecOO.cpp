@@ -39,10 +39,11 @@
 AztecOO::AztecOO(Epetra_Operator * A, 
                    Epetra_MultiVector * X,
                    Epetra_MultiVector * B) {
+
+  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
   SetAztecDefaults();
 
-  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
 
   Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(A); // Try to cast operator to matrix 
   if (UserMatrix!=0) 
@@ -59,10 +60,11 @@ AztecOO::AztecOO(Epetra_Operator * A,
 AztecOO::AztecOO(Epetra_RowMatrix * A, 
 		 Epetra_MultiVector * X,
 		 Epetra_MultiVector * B) {
+
+  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
   SetAztecDefaults();
 
-  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   SetUserMatrix(A);
   
   SetLHS(X);
@@ -72,10 +74,11 @@ AztecOO::AztecOO(Epetra_RowMatrix * A,
 
 //=============================================================================
 AztecOO::AztecOO(const Epetra_LinearProblem& prob) {
+
+  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
   SetAztecDefaults();
 
-  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   // Try to cast operator to matrix 
   Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(prob.GetOperator());
   if (UserMatrix!=0) 
@@ -92,16 +95,19 @@ AztecOO::AztecOO(const Epetra_LinearProblem& prob) {
 
 //=============================================================================
 AztecOO::AztecOO() {
+  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
   SetAztecDefaults();
+  inConstructor_ = false;
 }
 
 //=============================================================================
 AztecOO::AztecOO(const AztecOO& source) {
+
+  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
   SetAztecDefaults();
 
-  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   SetUserMatrix(source.GetUserMatrix());
   SetUserOperator(source.GetUserOperator());
   SetPrecMatrix(source.GetPrecMatrix());   // Assume user want to base preconditioner on this matrix
@@ -134,63 +140,59 @@ int AztecOO::AllocAzArrays()
 }
 //=============================================================================
 void AztecOO::DeleteMemory() {
-  if (Prec_!=0) {
-    AZ_precond_destroy(&Prec_); 
-    Prec_ = 0;
-  }
-  if (Pmat_ != 0) {
-    AZ_matrix_destroy(&Pmat_);
-    Pmat_ = 0;
-  }
-  if (Amat_ != 0) {
-    AZ_matrix_destroy(&Amat_);
-    Amat_ = 0;
-  }
+  if (Prec_!=0) {AZ_precond_destroy(&Prec_); Prec_ = 0;}
+  if (Pmat_ != 0) {AZ_matrix_destroy(&Pmat_); Pmat_ = 0;}
+  if (Amat_ != 0) {AZ_matrix_destroy(&Amat_); Amat_ = 0;}
 
-	if (UserOperatorData_!=0) {delete UserOperatorData_; UserOperatorData_ = 0;}
-	if (UserMatrixData_!=0) {delete UserMatrixData_; UserMatrixData_ = 0;}
-	if (PrecOperatorData_!=0) {delete PrecOperatorData_; PrecOperatorData_ = 0;}
-	if (PrecMatrixData_!=0) {delete PrecMatrixData_; PrecMatrixData_ = 0;}
-	if (ResidualVector_!=0) {delete ResidualVector_; ResidualVector_ = 0;}
-	if (conv_info_!=0) {AZ_converge_destroy(&conv_info_); conv_info_ = 0;}
+  if (UserOperatorData_!=0) {delete UserOperatorData_; UserOperatorData_ = 0;}
+  if (UserMatrixData_!=0) {delete UserMatrixData_; UserMatrixData_ = 0;}
+  if (PrecOperatorData_!=0) {delete PrecOperatorData_; PrecOperatorData_ = 0;}
+  if (PrecMatrixData_!=0) {delete PrecMatrixData_; PrecMatrixData_ = 0;}
+  if (ResidualVector_!=0) {delete ResidualVector_; ResidualVector_ = 0;}
+  if (conv_info_!=0) {AZ_converge_destroy(&conv_info_); conv_info_ = 0;}
 }
 
 //=============================================================================
 int AztecOO::SetAztecDefaults() {
 
- AZ_defaults(options_, params_);
- UserOperatorData_ = 0;
- UserMatrixData_ = 0;
- PrecOperatorData_ = 0;
- PrecMatrixData_ = 0;
- X_ = 0;
- B_ = 0;
- ResidualVector_ = 0;
- 
- N_local_ = 0;
- x_LDA_ = 0;
- x_ = 0;
- b_LDA_ = 0;
- b_ = 0;
- Amat_ = 0;
- Pmat_ = 0;
- Prec_ = 0;
- Scaling_ = 0;
- StatusTest_ = 0;
- conv_info_ = 0;
- 
- condest_ = (-1.0); 
- useAdaptiveDefaults_ = true;
- NumTrials_ = 0;
- maxFill_ = 0;
- maxKspace_ = 0;
- athresholds_ = 0;
- rthresholds_ = 0;
- condestThreshold_ = 0.0;
- procConfigSet_ = false;
-
- return(0);
-
+  // If not in constructor, then we need to make sure any allocated memory is
+  // deleted before we zero out pointers.
+  if (!inConstructor_) DeleteMemory();
+  
+  AZ_defaults(options_, params_);
+  options_[AZ_poly_ord] = 1; // Redefine default value to be 1 (instead of 3).
+  UserOperatorData_ = 0;
+  UserMatrixData_ = 0;
+  PrecOperatorData_ = 0;
+  PrecMatrixData_ = 0;
+  X_ = 0;
+  B_ = 0;
+  ResidualVector_ = 0;
+  
+  N_local_ = 0;
+  x_LDA_ = 0;
+  x_ = 0;
+  b_LDA_ = 0;
+  b_ = 0;
+  Amat_ = 0;
+  Pmat_ = 0;
+  Prec_ = 0;
+  Scaling_ = 0;
+  StatusTest_ = 0;
+  conv_info_ = 0;
+  
+  condest_ = (-1.0); 
+  useAdaptiveDefaults_ = true;
+  NumTrials_ = 0;
+  maxFill_ = 0;
+  maxKspace_ = 0;
+  athresholds_ = 0;
+  rthresholds_ = 0;
+  condestThreshold_ = 0.0;
+  procConfigSet_ = false;
+  
+  return(0);
+  
 }
 
 //=============================================================================
