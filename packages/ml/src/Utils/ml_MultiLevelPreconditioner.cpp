@@ -866,14 +866,18 @@ int MultiLevelPreconditioner::ComputeFilteringPreconditioner()
   ComputePreconditioner();
 
   return 0;
-  
+
 }
-  
+
 // ================================================ ====== ==== ==== == =
 
 int MultiLevelPreconditioner::ComputePreconditioner()
 {
 
+  BreakForDebugger();
+
+  // now start ComputePreconditioner business
+  
   Epetra_Time Time(Comm());
   
   {
@@ -2626,6 +2630,154 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
     
 }
  
+// ============================================================================
+
+int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int ny, 
+							int NodeID,
+							const int EquationID)
+{
+
+  // FIXME: I don't work with parallel, but I can be fixed
+  if( nx <= 0 ) EPETRA_CHK_ERR(-1);
+  if( ny <= 0 ) EPETRA_CHK_ERR(-1);
+
+  if( RowMatrix_ == 0 ) EPETRA_CHK_ERR(-2);
+  if( IsPreconditionerComputed() == false ) EPETRA_CHK_ERR(-3);
+
+  int MaxPerRow = RowMatrix_->MaxNumEntries();
+  int NumEntriesRow;   // local entries on each row
+  vector<double> Values;  Values.resize(MaxPerRow);
+  vector<int>    Indices; Indices.resize(MaxPerRow);
+  
+  // automatically compute NodeID, somewhere in the middle of the grid
+  if( NodeID == -1 ) {
+    if( ny == 1 ) NodeID = nx/2;
+    else NodeID = ny*nx/2 + nx/2;
+  }
+  
+  // need to convert from NodeID (BlockRowID) to PointRowID
+  int LocalRowID = NodeID * NumPDEEqns_;
+
+  bool DoAgain = true;
+
+  do {
+    int ierr = RowMatrix_->ExtractMyRowCopy(LocalRowID, MaxPerRow, NumEntriesRow,
+					    &Values[0], &Indices[0]);
+  
+    if( ierr ) EPETRA_CHK_ERR(-4);
+    if( NumEntriesRow == 1 ) ++NodeID;
+    else                     DoAgain = false;
+  } while( DoAgain );
+  
+  // cycle over nonzero elements, look for elements in positions that we
+  // can understand
+  
+  Epetra_IntSerialDenseMatrix StencilInd(3,3);
+  Epetra_SerialDenseMatrix StencilVal(3,3);
+  for( int i=0 ; i<3 ; ++i ) 
+    for( int j=0 ; j<3 ; ++j ) {
+      StencilVal(i,j) = 0.0;
+    }
+  
+  // look for the following positions
+  StencilInd(0,0) = NodeID-1-nx;
+  StencilInd(1,0) = NodeID-nx;
+  StencilInd(2,0) = NodeID+1-nx;
+  StencilInd(0,1) = NodeID-1;
+  StencilInd(1,1) = NodeID;
+  StencilInd(2,1) = NodeID+1;
+  StencilInd(0,2) = NodeID-1+nx;
+  StencilInd(1,2) = NodeID+nx;
+  StencilInd(2,2) = NodeID+1+nx;
+
+  for( int i=0 ; i<NumEntriesRow ; ++i ) {
+    // get only the required equation
+    if( Indices[i]%NumPDEEqns_ ) continue;
+    // convert into block row
+    int LocalColID = Indices[i]/NumPDEEqns_;
+    // look for known positions
+    for( int ix=0 ; ix<3 ; ++ix ) {
+      for( int iy=0 ; iy<3 ; ++iy ) {
+	if( StencilInd(ix,iy) == LocalColID ) {
+	  StencilVal(ix,iy) = Values[i];
+	}
+      }
+    }
+  }
+  
+  cout << "2D computational stencil for equation " << EquationID << " at node " << NodeID;
+  cout << endl << endl;
+  for( int iy=0 ; iy<3 ; ++iy ) {
+    cout << "\t";
+    for( int ix=0 ; ix<3 ; ++ix ) {
+      cout << " " << std::setw(15) << StencilVal(ix,iy);
+    }
+    cout << endl;
+  }
+  cout << endl;
+  
+  return 0;
+}
+
+int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
+{
+  // print out some junk for debugging (copied from code in
+  // Utils/ml_utils.c, suggested by Jonathan)
+  // LAM/MPI has some difficulties related to environmental variables.
+  // The problem is that LAM/MPI uses ssh to log in, and on some
+  // machine "export ML_BREAK_FOR_DEBUGGER" does not work. So, we
+  // allow two options:
+  // 1.) export ML_BREAK_FOR_DEBUGGER=1
+  // 2.) create a file in the executable directory, called ML_debug_now
+
+  char * str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
+  int i = 0, j = 0;
+  char buf[80];
+  char go = ' ';
+  char hostname[80];
+  if (str != NULL) i++;
+
+  FILE * ML_capture_flag;
+  ML_capture_flag = fopen("ML_debug_now","r");
+  if(ML_capture_flag) {
+    i++;
+    fclose(ML_capture_flag);
+  }
+
+  Comm().SumAll(&i, &j, 1);
+
+  if (j != 0)
+  {
+    if (Comm().MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
+    for (i = 0; i <Comm().NumProc() ; i++) {
+      if (i == Comm().MyPID() ) {
+#ifdef COUGAR
+	sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
+#else
+	gethostname(hostname, sizeof(hostname));
+	sprintf(buf, "Host: %s\tComm().MyPID(): %d\tPID: %d", 
+		hostname, Comm().MyPID(), getpid());
+#endif
+	printf("%s\n",buf);
+	fflush(stdout);
+	sleep(1);
+      }
+    }
+    if(Comm().MyPID() == 0) {
+      printf("\n");
+      printf("** Pausing because environment variable ML_BREAK_FOR_DEBUGGER has been set,\n");
+      puts("** or file ML_debug_now has been created");
+      printf("**\n");
+      printf("** You may now attach debugger to the processes listed above.\n");
+      printf( "**\n");
+      printf( "** Enter a character to continue > "); fflush(stdout);
+      scanf("%c",&go);
+    }
+  }
+
+  return 0;
+}
+
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
 
 

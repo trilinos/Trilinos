@@ -47,6 +47,8 @@
 
 #include "ml_ggb.h"
 
+#include <vector>
+
 using namespace Teuchos;
 using namespace ML_Epetra;
 
@@ -135,17 +137,18 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix)
   
   List.set(Prefix+"smoother: type","Aztec");
 
-  int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
-  double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
+  // STL should take care of deallocating those objects
+  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
+  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
   
-  AZ_defaults(SmootherOptionsList,SmootherParamsList);
+  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
   SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
   SmootherOptionsList[AZ_scaling] = AZ_none;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
   
-  List.set(Prefix+"smoother: Aztec options",SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options",&SmootherOptionsList[0]);
     
-  List.set(Prefix+"smoother: Aztec params",SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params",&SmootherParamsList[0]);
     
   List.set(Prefix+"smoother: Aztec as solver",false);
 
@@ -196,17 +199,17 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix)
   
   List.set(Prefix+"smoother: type","Aztec");
 
-  int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
-  double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
+  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
+  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
   
-  AZ_defaults(SmootherOptionsList,SmootherParamsList);
+  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
   SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
   SmootherOptionsList[AZ_scaling] = AZ_none;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_lu;
   
-  List.set(Prefix+"smoother: Aztec options",SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options",&SmootherOptionsList[0]);
     
-  List.set(Prefix+"smoother: Aztec params",SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params",&SmootherParamsList[0]);
     
   List.set(Prefix+"smoother: Aztec as solver",false);
 
@@ -261,17 +264,17 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix)
   
   List.set(Prefix+"smoother: type","Aztec");
   
-  int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
-  double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
+  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
+  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
 
-  AZ_defaults(SmootherOptionsList,SmootherParamsList);
+  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
   SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
   SmootherOptionsList[AZ_overlap] = 0;
 
-  List.set(Prefix+"smoother: Aztec options (level 0)",SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options (level 0)",&SmootherOptionsList[0]);
     
-  List.set(Prefix+"smoother: Aztec params (level 0)",SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params (level 0)",&SmootherParamsList[0]);
     
   List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
   
@@ -326,17 +329,18 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
   
   List.set(Prefix+"smoother: type","Aztec");
   
-  int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
-  double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
+  // STL should take care of deallocating those objects
+  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
+  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
 
-  AZ_defaults(SmootherOptionsList,SmootherParamsList);
+  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
   SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_lu;
   SmootherOptionsList[AZ_overlap] = 0;
 
-  List.set(Prefix+"smoother: Aztec options (level 0)",SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options (level 0)",&SmootherOptionsList[0]);
     
-  List.set(Prefix+"smoother: Aztec params (level 0)",SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params (level 0)",&SmootherParamsList[0]);
     
   List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
   

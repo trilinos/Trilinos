@@ -370,6 +370,15 @@ public:
   }
   //@}
 
+  //@{ \name debugging and other utilities
+
+  int BreakForDebugger();
+
+  int PrintStencil2D(const int nx, const int ny, 
+		     int NodeID,
+		     const int EquationID);
+  //@}
+
 private:
 
   //! Copy constructor, should not be used
