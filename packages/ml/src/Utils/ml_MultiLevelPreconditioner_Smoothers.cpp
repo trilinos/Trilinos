@@ -308,7 +308,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ====== //
 
 #ifdef HAVE_ML_IFPACK
-      string IfpackType = List_.get("smoother: ifpack type","Amesos");
+      string IfpackType = List_.get("smoother: ifpack type", "Amesos");
       int IfpackOverlap = List_.get("smoother: ifpack overlap",0);
       
       if( verbose_ ) {
@@ -327,8 +327,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       IfpackList.set("partitioner: local parts", NumAggr);
       IfpackList.set("partitioner: map", AggrMap);
       double Omega = IfpackList.get("relaxation: damping factor", 1.0);
-      if (Omega == -1.0)
-        IfpackList.set("relaxation: damping factor", 1.0);
 
       ML_Gen_Smoother_Ifpack(ml, IfpackType.c_str(),
                              IfpackOverlap, LevelID_[level], pre_or_post,
@@ -336,8 +334,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       
       // omega = -1.0 means compute it through Anasazi, using
       // 10 iterations and 1e-5 as tolerance
+#ifdef HAVE_ML_ANASAZIzzz
       if (Omega == -1.0) {
-#ifdef HAVE_ML_ANASAZI
+        // the following is broken
+        //
+        if (Omega == -1.0)
+          IfpackList.set("relaxation: damping factor", 1.0);
         double LambdaMax;
         ML_Anasazi_Get_SpectralNorm_Anasazi(&(ml->Amat[LevelID_[level]]),
                                             &(ml->post_smoother[LevelID_[level]]),

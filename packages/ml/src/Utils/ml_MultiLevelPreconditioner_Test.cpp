@@ -47,13 +47,13 @@ static void MLP_print(int count, char * str, double status[AZ_STATUS_SIZE], doub
   else if( count < 100 ) cout << "....";
   else cout << "...";
 
-  cout.width(30); cout.setf(ios::left); cout.fill('.');
+  cout.width(30); cout.setf(ios::left);
   cout << str;
-  cout.width(10); cout.setf(ios::left); cout.fill('.');
+  cout.width(10); cout.setf(ios::left);
   cout << (int)status[AZ_its];
-  cout.width(15); cout.setf(ios::left); cout.fill('.');
+  cout.width(15); cout.setf(ios::left);
   cout << status[AZ_scaled_r];
-  cout.width(15); cout.setf(ios::left); cout.fill('.');
+  cout.width(15); cout.setf(ios::left);
   cout << time;
   
   if( status[AZ_why] == AZ_normal         ) cout << "N";
@@ -70,7 +70,7 @@ int ML_Epetra::MultiLevelPreconditioner::
 TestSmoothers(Teuchos::ParameterList& InputList,
 	      const bool IsSymmetric)
 {
- 
+
   // sanity checks
 
   if (RowMatrix_ == 0) 
@@ -120,28 +120,26 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   if( Comm().MyPID() == 0 ) {
     cout << endl;
     ML_print_line("-",78);
-    cout << "*** ************************************* ***" << endl;
-    cout << "*** Analysis of ML parameters (smoothers) ***" << endl;
-    cout << "*** ************************************* ***" << endl;
+    cout << "*** Analysis of ML parameters (smoothers)" << endl;
     cout << endl;;
-    cout << "*** maximum iterations = " << MaxIters << endl;
-    cout << "*** tolerance          = " << Tol << endl << endl;
-    cout << "*** All options as in the input parameter list, except that" << endl;
-    cout << "*** all levels have the same smoother" << endl << endl;
-    cout << "*** M: maximum iterations exceeded without convergence" << endl;
-    cout << "*** N: normal exit status (convergence achieved)" << endl;
-    cout << "*** B: breakdown occurred" << endl;
-    cout << "*** I: matrix is ill-conditioned" << endl;
-    cout << "*** L: numerical loss of precision occurred" << endl;
+    cout << "maximum iterations = " << MaxIters << endl;
+    cout << "tolerance          = " << Tol << endl << endl;
+    cout << "All options as in the input parameter list, except that" << endl;
+    cout << "all levels have the same smoother" << endl << endl;
+    cout << "M: maximum iterations exceeded without convergence" << endl;
+    cout << "N: normal exit status (convergence achieved)" << endl;
+    cout << "B: breakdown occurred" << endl;
+    cout << "I: matrix is ill-conditioned" << endl;
+    cout << "L: numerical loss of precision occurred" << endl;
     cout << endl;
     cout << "count  ";
-    cout.width(30); cout.setf(ios::left); cout.fill('.');
+    cout.width(30); cout.setf(ios::left); 
     cout << "smoother type";
-    cout.width(10); cout.setf(ios::left); cout.fill('.');
+    cout.width(10); cout.setf(ios::left);
     cout << "its";
-    cout.width(15); cout.setf(ios::left); cout.fill('.');
+    cout.width(15); cout.setf(ios::left);
     cout << "||r||/||r_0||";
-    cout.width(15); cout.setf(ios::left); cout.fill('.');
+    cout.width(15); cout.setf(ios::left);
     cout << "time (s)" << endl;
   }
 
@@ -249,8 +247,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
     if( Comm().MyPID() == 0 ) cout << endl << "- Gauss-Seidel (sym)" << endl;
 
-    for( double omega=0.25 ; omega<1.5 ; omega+=0.25)
-    {
+    for( double omega=0.25 ; omega<1.5 ; omega+=0.25) {
 
       Time.ResetStartTime();
 
@@ -486,11 +483,118 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   // IFPACK //
   // ====== //
 
-  // FIXME: IFPACK is broken...
-#ifdef HAVE_ML_IFPACKzzz
+#ifdef HAVE_ML_IFPACK
   if (InputList.get("test: IFPACK",true) == true) {
     
     if( Comm().MyPID() == 0 ) cout << endl << "- IFPACK" << endl;
+
+    // test IFPACK with block symmetric Gauss-Seidel, block
+    // defined by the aggregates, and dense.
+
+    for (double omega = 0.25 ; omega < 1.5 ; omega += 0.25) {
+
+      Time.ResetStartTime();
+
+      Teuchos::ParameterList NewList(InputList);
+      NewList.set("output", 0);
+
+      for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
+        sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
+        NewList.set(parameter, "IFPACK");
+      }
+
+      NewList.set("smoother: ifpack type", "block relaxation stand-alone");
+      NewList.set("smoother: ifpack overlap", 0);
+
+      Teuchos::ParameterList& IFPACKList = NewList.sublist("smoother: ifpack list");
+      IFPACKList.set("partitioner: type", "user");
+      IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
+      IFPACKList.set("relaxation: damping factor", omega);
+      IFPACKList.set("relaxation: sweeps", 1);
+      IFPACKList.set("relaxation: zero starting solution", false);
+
+      yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
+      assert( yo != 0 );
+
+      solver.SetPrecOperator(yo);
+
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
+
+      solver.Iterate(MaxIters,Tol);
+      solver.GetAllAztecStatus(status);
+      sprintf(smoother,"BSGS-a, omega=%5.2e", omega);
+      ReqTime = Time.ElapsedTime();
+      if (ReqTime < BestTime) {
+        BestTime = ReqTime;
+        BestTimeCount = count;
+      }
+      if ((int) status[AZ_its] < BestIters) {
+        BestIters = (int)status[AZ_its];
+        BestItersCount = count;
+      }
+      if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
+
+      delete yo;
+    }
+
+    for (double omega = 0.25 ; omega < 1.5 ; omega += 0.25) {
+
+      // now test block w/ equation partitioner
+
+      Time.ResetStartTime();
+
+      Teuchos::ParameterList NewList(InputList);
+      NewList.set("output", 0);
+
+      for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
+        sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
+        NewList.set(parameter, "IFPACK");
+      }
+
+      NewList.set("smoother: ifpack type", "block relaxation stand-alone (Amesos)");
+      NewList.set("smoother: ifpack overlap", 0);
+
+      Teuchos::ParameterList& IFPACKList = NewList.sublist("smoother: ifpack list");
+      IFPACKList.set("partitioner: type", "equation");
+      IFPACKList.set("partitioner: local parts", NumPDEEqns_);
+      IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
+      IFPACKList.set("relaxation: damping factor", omega);
+      IFPACKList.set("relaxation: sweeps", 1);
+      IFPACKList.set("relaxation: zero starting solution", false);
+
+      yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
+      assert( yo != 0 );
+
+      solver.SetPrecOperator(yo);
+
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
+
+      solver.Iterate(MaxIters,Tol);
+      solver.GetAllAztecStatus(status);
+      sprintf(smoother,"BSGS-e, omega=%5.2e", omega);
+      ReqTime = Time.ElapsedTime();
+      if (ReqTime < BestTime) {
+        BestTime = ReqTime;
+        BestTimeCount = count;
+      }
+      if ((int) status[AZ_its] < BestIters) {
+        BestIters = (int)status[AZ_its];
+        BestItersCount = count;
+      }
+      if (Comm().MyPID() == 0) MLP_print(count++,smoother,status,ReqTime);
+
+      delete yo;
+    }
+ }
+#endif
+
+  // ================ //
+  // ML self smoother //
+  // ================ //
+
+  if (InputList.get("test: ML self smoother",true) == true) {
+
+    if( Comm().MyPID() == 0 ) cout << endl << "- ML as local smoother" << endl;
 
     Time.ResetStartTime();
 
@@ -499,18 +603,23 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
     for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
       sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
-      NewList.set(parameter, "IFPACK");
+      NewList.set(parameter, "self");
     }
+
+    Teuchos::ParameterList& SelfList = NewList.sublist("smoother: self list");
+    SetDefaults("DD-ML", SelfList);
+    SelfList.set("output", 0);
+
     yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-     
+    assert (yo != 0);
+
     solver.SetPrecOperator(yo);
 
     SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
     solver.Iterate(MaxIters,Tol);
     solver.GetAllAztecStatus(status);
-    sprintf(smoother,"default");
+    sprintf(smoother,"ML self, DD-ML");
     ReqTime = Time.ElapsedTime();
     if (ReqTime < BestTime) {
       BestTime = ReqTime;
@@ -520,13 +629,13 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       BestIters = (int)status[AZ_its];
       BestItersCount = count;
     }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
+    if (Comm().MyPID() == 0) MLP_print(count++,smoother,status,ReqTime);
 
     delete yo;
-  }
-#endif
 
-  if( Comm().MyPID() == 0 ) {
+  }
+
+  if (Comm().MyPID() == 0) {
     cout << endl;
     cout << "*** The best iteration count was obtain in test " << BestItersCount << endl;
     cout << "*** The best CPU-time was obtain in test " << BestTimeCount << endl;

@@ -15,6 +15,7 @@
 #include "ml_operator.h"
 #include "ml_op_utils.h"
 #include "ml_utils.h"
+#include "ml_RowMatrix.h"
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -28,6 +29,9 @@
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include <iomanip>
+#ifdef HAVE_ML_IFPACK
+#include "Ifpack_Utils.h"
+#endif
 
 // ============================================================================
 // vector must hold space for external nodes too
@@ -127,7 +131,10 @@ void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector,
 }
 
 // ============================================================================
-int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixCheap()
+int ML_Epetra::MultiLevelPreconditioner::
+AnalyzeHierarchy(const bool AnalyzeMatrices, 
+                 const int PreCycles, const int PostCycles,
+                 const int MLCycles)
 {
 
   // sanity checks
@@ -143,25 +150,65 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixCheap()
 
   time = GetClock();
 
-  if( Comm().MyPID() == 0 ) {
+  if (Comm().MyPID() == 0) {
     cout << endl;
-    ML_print_line("-",78);
+    ML_print_line("-",80);
   }
 
-  // Analyze the Amat for each level.
-  // I do not use on Epetra matrices because I would like to analyze all
-  // the levels, and not only the finest one.
   for (int i = 0 ; i < NumLevels_ ; ++i) {
     char name[80];
     sprintf(name,"A matrix level %d", LevelID_[i]);
+#ifdef HAVE_ML_IFPACK
+    RowMatrix wrapper(&(ml_->Amat[LevelID_[i]]), &(Comm()));
+    if (verbose_) cout << endl;
+    wrapper.SetLabel(name);
+    Ifpack_Analyze(wrapper);
+    if (verbose_) cout << endl;
+#else
     ML_Operator_Analyze(&(ml_->Amat[LevelID_[i]]), name);
+#endif
   }
+
+  if (Comm().MyPID() == 0) {
+    cout << endl;
+    cout << "Solving Ae = 0, with a random initial guess" << endl;
+    cout << "- number of pre-smoother cycle(s)  = " << PreCycles << endl;
+    cout << "- number of post-smoother cycle(s) = " << PostCycles << endl;
+    cout << "- number of ML cycle(s)            = " << MLCycles << endl;
+    cout << "- all reported data are scaled with their values" << endl
+         << "  before the application of the solver" << endl;
+    cout << "  (0 == perfect solution, 1 == no effect)" << endl;
+    cout << endl;
+    cout.width(40); cout.setf(ios::left); 
+    cout << "Solver";
+    cout.width(10); cout.setf(ios::left); 
+    cout << "  Linf";
+    cout.width(10); cout.setf(ios::left); 
+    cout << "   L2";
+    cout << endl;
+    cout.width(40); cout.setf(ios::left); 
+    cout << "------";
+    cout.width(10); cout.setf(ios::left); 
+    cout << "  ----";
+    cout.width(10); cout.setf(ios::left); 
+    cout << "   --";
+    cout << endl;
+    cout << endl;
+  }
+
+  if (PreCycles > 0 || PostCycles > 0)
+    AnalyzeSmoothersSparse(PreCycles, PostCycles);
+
+  AnalyzeCoarseSparse();
+
+  if (MLCycles > 0)
+    AnalyzeCycle(MLCycles);
 
   if (Comm().MyPID() == 0) {
     cout << endl;
     cout << "*** Total time for analysis = " 
          << GetClock() - time << " (s)" << endl;
-    ML_print_line("-",78);
+    ML_print_line("-",80);
     cout << endl;
   }
 
@@ -673,74 +720,41 @@ MultiLevelPreconditioner::AnalyzeSmoothersSparse(const int NumPreCycles,
     ML_CHK_ERR(-2); // Does not work with Maxwell
   }
 
-  // execution begins
-
-  double* before_Linf = new double[NumPDEEqns_];
-  double* before_L2   = new double[NumPDEEqns_];
-  double* after_Linf  = new double[NumPDEEqns_];
-  double* after_L2    = new double[NumPDEEqns_];
-  double* before_SF   = new double[NumPDEEqns_];
-  double* after_SF    = new double[NumPDEEqns_];
-
-  int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - NumMyRows();
-  if (Nghost < 0) Nghost = 0; 
-
-  double * tmp_rhs = new double[NumMyRows()]; 
-  double * tmp_sol = new double[NumMyRows() + Nghost]; 
-  
-  ML_Smoother* ptr;
-
-  if (Comm().MyPID() == 0) {
-    cout << endl;
-    cout << "Solving Ae = 0, with a random initial guess" << endl;
-    cout << "- number of pre-smoother cycle(s) = " << NumPreCycles << endl;
-    cout << "- number of post-smoother cycle(s) = " << NumPostCycles << endl;
-    cout << "- all reported data are scaled with their values" << endl
-         << "  before the application of the solver" << endl;
-    cout << "  (0 == perfect solution, 1 == no effect)" << endl;
-    cout << "- SF is the smoothness factor" << endl;
-    cout << endl;
-    cout.width(40); cout.setf(ios::left); 
-    cout << "Solver";
-    cout.width(10); cout.setf(ios::left); 
-    cout << "Linf";
-    cout.width(10); cout.setf(ios::left); 
-    cout << " L2";
-    cout.width(10); cout.setf(ios::left); 
-    cout << "  SF" << endl;
-  }
-
   // =============================================================== //
   // Cycle over all levels.                                          //
   // =============================================================== //
 
-  for (int ilevel=0 ; ilevel<NumLevels_ - 1 ; ++ilevel) {
+  for (int ilevel = 0 ; ilevel<NumLevels_ -1 ; ++ilevel) {
 
     // ============ //
     // pre-smoother //
     // ============ //
 
-    ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).pre_smoother);
+    ML_Smoother* ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).pre_smoother);
+
+    vector<double> before_Linf(NumPDEEqns_);
+    vector<double> before_L2(NumPDEEqns_);
+    vector<double> after_Linf(NumPDEEqns_);
+    vector<double> after_L2(NumPDEEqns_);
+
+    int n = ml_->Amat[LevelID_[ilevel]].outvec_leng;
+    vector<double> tmp_rhs(n);
+    vector<double> tmp_sol(n);
 
     if (ptr != NULL) {
 
-      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[ilevel]].outvec_leng);
-      VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
-      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, before_SF);
+      RandomAndZero(&tmp_sol[0], &tmp_rhs[0],
+                    ml_->Amat[LevelID_[ilevel]].outvec_leng);
+      VectorNorms(&tmp_sol[0], n, &before_Linf[0], &before_L2[0]);
 
       // increase the number of applications of the smoother
       // and run the smoother
       int old_ntimes = ptr->ntimes;
       ptr->ntimes = NumPreCycles;
-      ML_Smoother_Apply(ptr, 
-			ml_->Amat[LevelID_[ilevel]].outvec_leng,
-			tmp_sol,
-			ml_->Amat[LevelID_[ilevel]].outvec_leng,
-			tmp_rhs, ML_NONZERO);
+      ML_Smoother_Apply(ptr, n, &tmp_sol[0], n, &tmp_rhs[0], ML_NONZERO);
       ptr->ntimes = old_ntimes;
 
-      VectorNorms(tmp_sol, NumMyRows(), after_Linf, after_L2);
-      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, after_SF);
+      VectorNorms(&tmp_sol[0], n, &after_Linf[0], &after_L2[0]);
 
       if (Comm().MyPID() == 0) {
 	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
@@ -750,11 +764,9 @@ MultiLevelPreconditioner::AnalyzeSmoothersSparse(const int NumPreCycles,
 	  cout << after_Linf[eq] / before_Linf[eq];
 	  cout << ' ';
 	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_L2[eq] / before_L2[eq];
-	  cout << ' ';
-	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_SF[eq] / before_SF[eq] << endl;
+	  cout << after_L2[eq] / before_L2[eq] << endl;
 	}
+        cout << endl;
       }
     }
 
@@ -766,24 +778,18 @@ MultiLevelPreconditioner::AnalyzeSmoothersSparse(const int NumPreCycles,
     if (ptr != NULL) {
 
       // random solution and 0 rhs
-      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[ilevel]].outvec_leng);
+      RandomAndZero(&tmp_sol[0], &tmp_rhs[0], n);
 
-      VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
-      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, before_SF);
+      VectorNorms(&tmp_sol[0], n, &before_Linf[0], &before_L2[0]);
 
       // increase the number of applications of the smoother
       // and run the smoother
       int old_ntimes = ptr->ntimes;
       ptr->ntimes = NumPostCycles;
-      ML_Smoother_Apply(ptr, 
-			ml_->Amat[LevelID_[ilevel]].outvec_leng,
-			tmp_sol,
-			ml_->Amat[LevelID_[ilevel]].outvec_leng,
-			tmp_rhs, ML_ZERO);
+      ML_Smoother_Apply(ptr, n, &tmp_sol[0], n, &tmp_rhs[0], ML_ZERO);
       ptr->ntimes = old_ntimes;
 
-      VectorNorms(tmp_sol, NumMyRows(), after_Linf, after_L2);
-      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, after_SF);
+      VectorNorms(&tmp_sol[0], n, &after_Linf[0], &after_L2[0]);
 
       if (Comm().MyPID() == 0) {
 	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
@@ -793,27 +799,75 @@ MultiLevelPreconditioner::AnalyzeSmoothersSparse(const int NumPreCycles,
 	  cout << after_Linf[eq] / before_Linf[eq];
 	  cout << ' ';
 	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_L2[eq] / before_L2[eq];
-	  cout << ' ';
-	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_SF[eq] / before_SF[eq] << endl;
+	  cout << after_L2[eq] / before_L2[eq] << endl;;
 	}
+        cout << endl;
       }
     } 
   } // for( ilevel )
 
-  if (Comm().MyPID() == 0) 
-    cout << endl;
+  if (Comm().MyPID() == 0) cout << endl;
 
-  delete [] before_Linf;
-  delete [] after_Linf;
-  delete [] before_L2;
-  delete [] after_L2;
-  delete [] before_SF;
-  delete [] after_SF;
+  return(0);
 
-  delete [] tmp_sol;
-  delete [] tmp_rhs;
+}
+
+// ============================================================================
+// NOTE: requires Amesos
+int ML_Epetra::
+MultiLevelPreconditioner::AnalyzeCoarseSparse()
+{
+
+  // sanity checks
+
+  if (IsPreconditionerComputed() == false) 
+    ML_CHK_ERR(-1); // need preconditioner to do this job
+
+  if( ml_ == 0 ) {
+    ML_CHK_ERR(-2); // Does not work with Maxwell
+  }
+
+  // execution begins
+
+  vector<double> before_Linf(NumPDEEqns_);
+  vector<double> before_L2(NumPDEEqns_);
+  vector<double> after_Linf(NumPDEEqns_);
+  vector<double> after_L2(NumPDEEqns_);
+
+  int level = ml_->ML_coarsest_level;
+
+  int n = ml_->Amat[level].outvec_leng;
+
+  vector<double> tmp_rhs(n);
+  vector<double> tmp_sol(n);
+
+  ML_Smoother* ptr;
+
+  ptr = ((ml_->SingleLevel[level]).post_smoother);
+
+  if (ptr != NULL) {
+
+    RandomAndZero(&tmp_sol[0], &tmp_rhs[0], ml_->Amat[level].outvec_leng);
+    VectorNorms(&tmp_sol[0], n, &before_Linf[0], &before_L2[0]);
+
+    ML_Smoother_Apply(ptr, n, &tmp_sol[0], n, &tmp_rhs[0], ML_NONZERO);
+
+    VectorNorms(&tmp_sol[0], n, &after_Linf[0], &after_L2[0]);
+
+    if (Comm().MyPID() == 0) {
+      for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
+        cout << "Coarse Solver (level " << level
+          << ", eq " << eq << ")\t\t";
+        cout.width(10); cout.setf(ios::left); 
+        cout << after_Linf[eq] / before_Linf[eq];
+        cout << ' ';
+        cout.width(10); cout.setf(ios::left); 
+        cout << after_L2[eq] / before_L2[eq] << endl;
+      }
+    }
+  }
+
+  if (Comm().MyPID() == 0) cout << endl;
 
   return(0);
 
@@ -840,8 +894,6 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
   double* before_L2   = new double[NumPDEEqns_];
   double* after_Linf  = new double[NumPDEEqns_];
   double* after_L2    = new double[NumPDEEqns_];
-  double* before_SF   = new double[NumPDEEqns_];
-  double* after_SF    = new double[NumPDEEqns_];
 
   assert(NumMyRows() == ml_->Amat[LevelID_[0]].outvec_leng);
   int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - NumMyRows();
@@ -854,7 +906,6 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
   RandomAndZero(tmp_sol, tmp_rhs,NumMyRows());
 
   VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
-  SmoothnessFactor(&(ml_->Amat[LevelID_[0]]), tmp_sol, before_SF);
 
   // run the cycle
   for (int i=0 ; i < NumCycles ; ++i) 
@@ -863,20 +914,15 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
 		ML_NONZERO, ml_->comm, ML_NO_RES_NORM, ml_);
 
   VectorNorms(tmp_sol, NumMyRows(), after_Linf, after_L2);
-  SmoothnessFactor(&(ml_->Amat[LevelID_[0]]), tmp_sol, after_SF);
 
   if (Comm().MyPID() == 0) {
-    cout << endl;
-    cout << PrintMsg_ << "Solving Ae = 0, with a random initial guess" << endl;
-    cout << PrintMsg_ << "using " << NumCycles << " ML cycle(s)." << endl;
-    for (int i = 0 ; i < NumPDEEqns_ ; ++i) {
-      cout << "- (eq " << i << ") scaled Linf norm after application(s) = " 
-	<< after_Linf[i] / before_Linf[i] << endl;
-      cout << "- (eq " << i << ") scaled L2 norm after application(s)   = " 
-	<< after_L2[i] / before_L2[i] << endl;
-      cout << "- (eq " << i << ") scaled smoothness factor              = "
-	<< after_SF[i] / before_SF[i] << endl;
-      cout << endl;
+    for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
+      cout << "complete ML cycle (eq" << eq << ")\t\t\t";
+      cout.width(10); cout.setf(ios::left); 
+      cout << after_Linf[eq] / before_Linf[eq];
+      cout << ' ';
+      cout.width(10); cout.setf(ios::left); 
+      cout << after_L2[eq] / before_L2[eq] << endl;
     }
   }
 
@@ -884,8 +930,6 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
   delete [] after_Linf;
   delete [] before_L2;
   delete [] after_L2;
-  delete [] before_SF;
-  delete [] after_SF;
 
   delete [] tmp_sol;
   delete [] tmp_rhs;

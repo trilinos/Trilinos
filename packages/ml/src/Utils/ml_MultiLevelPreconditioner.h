@@ -464,7 +464,9 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
 			    const int MaxSize = 1024);
 
   //! Cheap analysis of each level matrix.
-  int AnalyzeMatrixCheap();
+  int AnalyzeHierarchy(const bool AnalyzeMatrices, 
+                       const int PreCycles, const int PostCycles,
+                       const int MLCycles);
 
   //! Compute the lowest and largest magniture eigenvalues of fine-level matrix.
   int AnalyzeMatrixEigenvaluesSparse(const char* MatVec, const bool IsSymmetric = false);
@@ -474,6 +476,9 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
 
   //! Analyze the effect of the ML cycle on a random vector.
   int AnalyzeCycle(const int NumCycles = 1);
+
+  //! Analyze the effect of the coarse solver on a random vector.
+  int AnalyzeCoarseSparse();
 
   //! Test several smoothers on fine-level matrix.
   int TestSmoothers(Teuchos::ParameterList& InputList,
