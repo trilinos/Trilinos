@@ -1,8 +1,8 @@
+#define SALINAS_MPI
 #include <stdio.h>
 #include <iostream>
 #include <assert.h>
 #include <mpi.h>
-#define SALINAS_MPI
 #include "CLOP_interface.H"
 #include "SCLOP_solver.hpp"
 

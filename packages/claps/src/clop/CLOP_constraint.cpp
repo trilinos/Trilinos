@@ -25,12 +25,12 @@ CLOP_constraint::CLOP_constraint(const Epetra_CrsMatrix* A_,
   mycols = new int[maxcol];
   nnzcol = new int[maxcol]; myzero(nnzcol, maxcol);
   dimcol = new int[maxcol];
+  con_flag = new bool[maxcol]; for (i=0; i<maxcol; i++) con_flag[i] = false;
   ivec = new int[nrow];
   dvec = new double[nrow];
   imap = new int[nrow]; memset(imap, -1, nrow*sizeof(int));
   row_degree = new int[nrow];
   row_flag = new bool[nrow]; for (i=0; i<nrow; i++) row_flag[i] = false;
-  con_flag = new bool[ncol]; for (i=0; i<ncol; i++) con_flag[i] = false;
   dimsfac = 20; dimcon_me = 20;
   cola = new int[dimsfac];
   sfaca = new double[dimsfac];
@@ -121,7 +121,7 @@ int CLOP_constraint::factor()
   //
   // free memory
   //
-  delete [] dimcol; delete [] dvec; delete [] imap; delete [] max_abs_con;
+  delete [] dimcol; delete [] dvec; delete [] imap;
   delete [] row_degree; delete [] cola; delete [] sfaca;
   if (print_flag > 0) *fout << "CLOP_constraint::factor completed" << endl;
   return 0;
@@ -136,39 +136,7 @@ void CLOP_constraint::determine_if_all_simple(int & simple_flag)
   svals_min = new double[blocksize];
   svals_max = new double[blocksize];
   //
-  // first determine absolute value of largest entry in each constraint
-  //  max_abs_con[j] = absolute value of largest entry in local constraint j
-  //
-  max_abs_con = new double[ncol];
-  for (i=0; i<nrow; i++) {
-    A->ExtractMyRowView(i, NumEntries, Values, Indices);
-    for (j=0; j<NumEntries; j++)
-      if (fabs(Values[j]) > svals[Indices[j]])
-	svals[Indices[j]] = fabs(Values[j]);
-  }
-  nmpi = ncol_global/blocksize;
-  nremain = ncol_global - nmpi*blocksize;
-  if (nremain > 0) nmpi++;
-  for (i=0; i<nmpi; i++) {
-    int ibeg = i*blocksize;
-    nsend = blocksize;
-    if ((i == (nmpi-1)) && (nremain > 0)) nsend = nremain;
-    for (j=0; j<ncol; j++) {
-      jpos = mycols[j] - ibeg;
-      if ((jpos >= 0) && (jpos < nsend)) svals_global[jpos] = svals[j];
-    }
-    Comm.MaxAll(svals_global, svals_max, nsend);
-    for (j=0; j<ncol; j++) {
-      jpos = mycols[j] - ibeg;
-      if ((jpos >= 0) && (jpos < nsend)) {
-	max_abs_con[j] = svals_max[jpos];
-	if (svals_max[jpos] == 0) con_flag[j] = true;
-      }
-    }
-  }
-  myzero(svals, ncol); myzero(svals_global, blocksize);
-  //
-  // next determine whether or not all constraints are of type simple
+  // determine whether or not all constraints are of type simple
   //
   row_con = new int[ncol];
   ncon_me = 0;
@@ -601,8 +569,9 @@ void CLOP_constraint::get_best_row(int col, int icol, int & iproc)
   }
   Comm.MaxAll(&max_value, &max_value_g, 1);
   Comm.MaxAll(&max_iproc, &max_iproc_g, 1);
-  if (icol != -1)
-    if (max_value_g < max_abs_con[icol]*tol_con) red_flag = 1;
+  if (icol != -1) {
+    if (max_value_g < tol_con) red_flag = 1;
+  }
   Comm.MaxAll(&red_flag, &red_flag_g, 1);
   if (red_flag_g == 1) {
     //
@@ -844,6 +813,7 @@ void CLOP_constraint::add_new_column(int icol1, double sf, int col2)
   if (nnew > maxcol) {
     maxcol = 2*nnew; if (maxcol > ncol_global) maxcol = ncol_global;
     int *int_temp = new int[ncol];
+    bool *bool_temp = new bool[ncol];
     int **pint_temp = new int*[ncol];
     double **pdouble_temp = new double*[ncol];
     expand(int_temp, dimcol, maxcol);
@@ -851,13 +821,16 @@ void CLOP_constraint::add_new_column(int icol1, double sf, int col2)
     expand(int_temp, mycols, maxcol);
     expand(pint_temp, colrows, maxcol);
     expand(pdouble_temp, colvals, maxcol);
+    expand(bool_temp, con_flag, maxcol);
     delete [] int_temp;
     delete [] pint_temp;
     delete [] pdouble_temp;
+    delete [] bool_temp;
   }
   mycols[ncol] = col2;
   nnzcol[ncol] = nnzcol[icol1];
   dimcol[ncol] = 2*nnzcol[icol1]; if (dimcol[ncol] > nrow) dimcol[ncol] = nrow;
+  con_flag[ncol] = false;
   colvals[ncol] = new double[dimcol[ncol]];
   colrows[ncol] = new int[dimcol[ncol]];
   for (i=0; i<nnzcol[icol1]; i++) {
@@ -874,6 +847,15 @@ void CLOP_constraint::expand(int* int_temp, int* & a, int n)
   delete [] a; 
   a = new int[n];
   for (i=0; i<ncol; i++) a[i] = int_temp[i];
+}
+
+void CLOP_constraint::expand(bool* bool_temp, bool* & a, int n)
+{
+  int i;
+  for (i=0; i<ncol; i++) bool_temp[i] = a[i];
+  delete [] a; 
+  a = new bool[n];
+  for (i=0; i<ncol; i++) a[i] = bool_temp[i];
 }
 
 void CLOP_constraint::expand(int** pint_temp, int** & a, int n)

@@ -109,4 +109,77 @@ void Graph_class::DFS(const int v, const int comp_num)
   }
 }
 
+void scale_columns(Epetra_CrsMatrix* A, 
+		   const int norm_opt, 
+		   const int blocksize)
+{
+  //
+  // scales columns of matrix A according to
+  //  norm_opt = 1 (max absolute value of all entries in column is 1)
+  //
+  int i, j, NumEntries, *Indices;
+  double *Values;
+  int nrow = A->NumMyRows();
+  int ncol = A->NumMyCols();
+  double *col_norm = new double[ncol];
+  get_column_norm(A, norm_opt, blocksize, col_norm);
+  for (i=0; i<nrow; i++) {
+    A->ExtractMyRowView(i, NumEntries, Values, Indices);
+    for (j=0; j<NumEntries; j++) {
+      int col = Indices[j];
+      if (col_norm[col] > 0) Values[j] /= col_norm[col];
+    }
+  }
+  delete [] col_norm;
+}
+
+void get_column_norm(Epetra_CrsMatrix* A,
+		     const int norm_opt,
+		     const int blocksize,
+		     double *col_norm)
+{
+  int i, j, NumEntries, *Indices, jpos;
+  double *Values;
+  int nrow = A->NumMyRows();
+  int ncol = A->NumMyCols();
+  int ncol_global = A->NumGlobalCols();
+  double *vals_block_all = new double[blocksize];
+  double *vals_block_loc = new double[blocksize];
+  double *vals_col = new double[ncol]; myzero(vals_col, ncol);
+  myzero(vals_block_loc, blocksize);
+  myzero(vals_block_all, blocksize);
+  for (i=0; i<nrow; i++) {
+    A->ExtractMyRowView(i, NumEntries, Values, Indices);
+    for (j=0; j<NumEntries; j++) {
+      if (norm_opt == 1) {
+	if (fabs(Values[j]) > vals_col[Indices[j]])
+	  vals_col[Indices[j]] = fabs(Values[j]);
+      }
+    }
+  }
+  int nmpi = ncol_global/blocksize;
+  int nremain = ncol_global - nmpi*blocksize;
+  if (nremain > 0) nmpi++;
+  for (i=0; i<nmpi; i++) {
+    int ibeg = i*blocksize;
+    int nsend = blocksize;
+    if ((i == (nmpi-1)) && (nremain > 0)) nsend = nremain;
+    for (j=0; j<ncol; j++) {
+      jpos = A->GCID(j) - ibeg;
+      if ((jpos >= 0) && (jpos < nsend)) vals_block_loc[jpos] = vals_col[j];
+    }
+    if (norm_opt == 1) {
+      A->Comm().MaxAll(vals_block_loc, vals_block_all, nsend);
+    }
+    for (j=0; j<ncol; j++) {
+      jpos = A->GCID(j) - ibeg;
+      if ((jpos >= 0) && (jpos < nsend)) {
+	col_norm[j] = vals_block_all[jpos];
+      }
+    }
+  }
+  delete [] vals_block_all; delete [] vals_block_loc; delete [] vals_col;
+}
+
+
 } // end of namespace CRD_utils

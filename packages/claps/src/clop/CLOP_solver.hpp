@@ -36,11 +36,11 @@ class CLOP_solver
   void solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	     int & num_iter, int & solver_status);
   void mpcforces(Epetra_Vector* uLocal, Epetra_Import* ImporterStLam2Loc);
+  void construct_transpose(Epetra_CrsMatrix* & A, Epetra_CrsMatrix* & AT);
  private: // functions
   void zero_pointers();
   void process_constraints();
   int transform_constraints();
-  void construct_transpose(Epetra_CrsMatrix* & A, Epetra_CrsMatrix* & AT);
   void construct_Overlap();
   void construct_subdomains();
   int initialize_subdomains();

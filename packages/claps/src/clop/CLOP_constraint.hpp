@@ -41,6 +41,7 @@ class CLOP_constraint {
   void adjust_col_info(int icol1, int icol2);
   void add_new_column(int icol1, double sf, int col2);
   void expand(int* int_temp, int* & a, int n);
+  void expand(bool* bool_temp, bool* & a, int n);
   void expand(int** pint_temp, int** & a, int n);
   void expand(double** pdouble_temp, double** & a, int n);
 

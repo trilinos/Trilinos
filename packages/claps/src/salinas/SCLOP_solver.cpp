@@ -1,3 +1,4 @@
+#define SALINAS_MPI
 #include <stdio.h>
 #include <iostream>
 #include <assert.h>
@@ -155,6 +156,15 @@ void SCLOP_solver::determine_ownership()
   //
   // constraints
   //
+  //
+  // first determine number of null constraint equations
+  //
+  int ncon_zero(0);
+  for (i=0; i<NumberMpc; i++) 
+    if (MpcVector[i].NumEntriesGlobal() == 0) ncon_zero++;
+  if ((MyPID == 0) && (ncon_zero > 0)) {
+    cout << "Warning: number of null constraints = " << ncon_zero;
+  }
   int *count1 = new int[ndof]; myzero(count1, ndof);
   nmpc_loc = 0;
   for (i=0; i<NumberMpc; i++) {
@@ -174,28 +184,30 @@ void SCLOP_solver::determine_ownership()
   for (i=0; i<ndof; i++) con2[i+1] = con2[i] + count1[i];
   myzero(count1, ndof);
   int *con1 = new int[con2[ndof]];
-  double *coef = new double[con2[ndof]];
+  double *coef = new double[con2[ndof]]; myzero(coef, con2[ndof]);
   int *mpc_loc = new int[nmpc_loc]; 
   locvec = new double[nmpc_loc]; nmpc_loc = 0;
+  int NumberMpc_keep(0);
   for (i=0; i<NumberMpc; i++) {
-    if (MpcVector[i].NumEntries() > 0) {
-      mpc_loc[nmpc_loc] = i;
-      nmpc_loc++;
-    }
     for (j=0; j<MpcVector[i].NumEntries(); j++) {
       node = MpcVector[i].LocalId(j);
       dof  = MpcVector[i].NodalDof(j);
       for (k=nodebeg[node]; k<nodebeg[node+1]; k++) {
 	if (nodedof[k] == dof) {
-	  con1[con2[k] + count1[k]] = i;
+	  con1[con2[k] + count1[k]] = NumberMpc_keep;
 	  coef[con2[k] + count1[k]] = MpcVector[i].Coef(j);
 	  count1[k]++;
 	  break;
 	}
       }
     }
+    if (MpcVector[i].NumEntries() > 0) {
+      mpc_loc[nmpc_loc] = NumberMpc_keep;
+      nmpc_loc++;
+    }
+    if (MpcVector[i].NumEntriesGlobal() > 0) NumberMpc_keep++;
   }
-  Epetra_Map RowMapCon(NumberMpc, 0, *Comm);
+  Epetra_Map RowMapCon(NumberMpc_keep, 0, *Comm);
   MpcLocalMap = new Epetra_Map(-1, nmpc_loc, mpc_loc, 0, *Comm);
   Epetra_CrsMatrix ConSubdomain(View, *SubMap, count1);
   for (i=0; i<nnode; i++) {
@@ -291,7 +303,7 @@ void SCLOP_solver::determine_ownership()
 
   StandardMap = new Epetra_Map(-1, ndof_mine, sub_gdof, 0, *Comm);
   ConStandard = new Epetra_CrsMatrix(Copy, *StandardMap, 0);
-  ierr = ConSubdomain.FillComplete(RowMapCon, *StandardMap);
+  ierr = ConSubdomain.FillComplete(RowMapCon, *StandardMap);  
   assert (ierr == 0);
   Epetra_Export Exporter(*SubMap, *StandardMap);
   ierr = ConStandard->Export(ConSubdomain, Exporter, Add);
@@ -299,6 +311,7 @@ void SCLOP_solver::determine_ownership()
   //  ConStandard->Export(ConSubdomain, Exporter, Insert);
   ierr = ConStandard->FillComplete(RowMapCon, *StandardMap);
   assert (ierr == 0);
+  CRD_utils::scale_columns(ConStandard, 1, 1000);
   //  cout << *ConStandard << endl;
 
   delete [] count1; delete [] con1; delete [] con2; delete [] coef;

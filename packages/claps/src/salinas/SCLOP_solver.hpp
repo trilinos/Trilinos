@@ -1,3 +1,4 @@
+#define SALINAS_MPI
 #include <mpi.h>
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_MpiComm.h"

@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <algorithm>
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_MpiComm.h"
+#include "myzero.hpp"
 
 namespace CRD_utils {
   int find_index(int a[], int n, int gdof);
@@ -12,6 +14,13 @@ namespace CRD_utils {
   void Epetra_datfile(int* A, int N, char fname[]);
   void spmat_datfile(int nrow, int rowbegp [], int colidxp [],
 		     double val[], char fname[]);
+  void scale_columns(Epetra_CrsMatrix* A, 
+		     const int norm_opt, 
+		     const int blocksize);
+  void get_column_norm(Epetra_CrsMatrix* A,
+		       const int norm_opt,
+		       const int blocksize,
+		       double *col_norm);
   class Graph_class 
   {
   public:
