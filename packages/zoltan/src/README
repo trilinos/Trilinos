@@ -51,6 +51,31 @@ this information, or the accuracy and validity of this information.
 
 ##############################################################################
 
+QUICK INSTALLATION
+
+In order to build Zoltan, you must do the following steps:
+
+1) Go to Utilities/Config and find a configuration file Config.<platform>
+   that is similar to your platform, for example, gcc, solaris, dec, or tflop.
+   Edit the paths as appropriate for your system. Use Config.generic if you 
+   can't find anything better. 
+
+2) Go back to the Zoltan root directory and type
+
+      gmake ZOLTAN_ARCH=<platform> zoltan
+
+   where <platform> is your platform. You may simply type "gmake zoltan" 
+   if you are using the generic platform.
+
+3) The Zoltan library is now located in Zoltan/Obj_<platform> as libzoltan.a.
+   You will also need the libraries libzoltan_comm.a and libzoltan_mem.a.
+
+It is strongly recommended that you read the more detailed installation 
+instructions in the Zoltan User's Guide, which can be found at
+Zoltan/docs/Zoltan_html/ug_html/ug.html (HTML) or at
+Zoltan/docs/Zoltan_pdf/ug.pdf (pdf).
+
+##############################################################################
 
 Top-Level Zoltan Library Directory
 
@@ -59,11 +84,12 @@ DOCUMENTATION
 -------------
 docs                               -- Documentation for the Zoltan library.
 docs/Zoltan_html/Zoltan.html       -- Zoltan Home Page.
-docs/Zoltan_html/ug_html/ug.html   -- Zoltan User's Guide.
-docs/Zoltan_html/dev_html/dev.html -- Zoltan User's Guide.
+docs/Zoltan_html/ug_html/ug.html   -- Zoltan User's Guide (in HTML).
+docs/Zoltan_html/dev_html/dev.html -- Zoltan Developer's Guide (in HTML).
+docs/Zoltan_pdf/ug.pdf             -- Zoltan User's Guide (in pdf).
+docs/Zoltan_pdf/dev.pdf            -- Zoltan Developer's Guide (in pdf).
 docs/octree                        -- Documentation for RPI's 
-                                      octree/SFC partitioner.  (Luis' final 
-                                      report).
+                                      octree/SFC partitioner. 
 
 ZOLTAN LIBRARY FILES
 --------------------
@@ -98,11 +124,11 @@ rcb             -- Recursive Coordinate Bisection and Recursive Inertial
 
 reftree         -- Refinement Tree grid partitioning algorithm.
 
-Utils		-- Zoltan utilities, including the memory management and
+timer		-- Timer routines.
+
+Utilities 	-- Zoltan utilities, including the memory management and
 		   unstructured communication packages.  Also includes
 		   shared configuration files for Zoltan compilation.
-
-timer		-- Timer routines.
 
 
 
@@ -111,9 +137,7 @@ OTHER CODE (not compiled into the Zoltan library)
 
 driver          -- Driver program zdrive that reads exodus/nemesis files, runs
                    Zoltan and then writes out the new assignment vectors.
-                   This program is compiled by making the <platform>-dr
-                   target, where <platform> is, currently, sun, tflop
-                   or smos.
+                   This program is compiled by making the zdrive target.
 
 ch              -- Routines developed by Hendrickson and Leland to read Chaco
                    input files and build graphs in the zdrive program.
@@ -129,5 +153,6 @@ test		-- test problems in both Nemesis/Exodus and Chaco formats.
 
 util		-- utility scripts.
 
-docs/Zoltan_ps	-- script to convert HTML to PS.
+docs/Zoltan_ps	-- script to convert HTML to PS. (This is very crude; you should rather
+                   print the Zoltan PDF files.)
 
