@@ -10,8 +10,8 @@
 
 // Constructor - creates the Epetra objects (maps and vectors) 
 DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
-  NumGlobalElements(numGlobalElements),
-  Comm(&comm)
+  Comm(&comm),
+  NumGlobalElements(numGlobalElements)
 {
 
   // Commonly used variables
@@ -42,7 +42,6 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   else {
 
     int OverlapNumMyElements = 2;
-    int OverlapMinMyGID;     
     int OverlapMyGlobalElements[2];
     
     for (i = 0; i < OverlapNumMyElements; i ++) 
@@ -112,8 +111,7 @@ bool DennisSchnabel::evaluate(FillType f,
   u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int i,j,ierr;
-  int OverlapNumMyElements = OverlapMap->NumMyElements();
+  int i,ierr;
   int OverlapMinMyGID;
   if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
@@ -139,7 +137,6 @@ bool DennisSchnabel::evaluate(FillType f,
   }
 
   
-  int row; 
   int* column = new int[2];
   double* jac = new double[2];
 

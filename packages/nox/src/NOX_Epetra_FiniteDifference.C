@@ -38,8 +38,8 @@ using namespace NOX;
 using namespace NOX::Epetra;
 
 FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x) :
-  interface(i),
   map(x.Map()),
+  interface(i),
   x_perturb(x),
   fo(x),
   fp(x),

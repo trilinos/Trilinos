@@ -11,8 +11,8 @@
 
 // Constructor - creates the Epetra objects (maps and vectors) 
 FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& comm) :
-  NumGlobalElements(numGlobalElements),
-  Comm(&comm)
+  Comm(&comm),
+  NumGlobalElements(numGlobalElements)
 {
 
   // Commonly used variables
@@ -105,7 +105,7 @@ bool FiniteElementProblem::evaluate(FillType f,
   Epetra_Vector x(*OverlapMap);
 
   // Export Solution to Overlap vector
-  u.Import(*soln, *Importer, Insert)==0;
+  u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
   int i,j,ierr;
@@ -213,7 +213,7 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
 {
   
   // Declare required variables
-  int i,j,ierr;
+  int i,j;
   int row, column;
   int OverlapNumMyElements = OverlapMap->NumMyElements();
   int OverlapMinMyGID;

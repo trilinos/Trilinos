@@ -30,8 +30,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j;
-  bool debug = false;
+  int ierr = 0, i;
 
   // Initialize MPI
 #ifdef EPETRA_MPI
@@ -130,6 +129,10 @@ int main(int argc, char *argv[])
   // Create the method
   NOX::Solver::Manager solver(grp, combo, nlParams);
   NOX::Status::StatusType status = solver.solve();
+
+  if (status != NOX::Status::Converged)
+    if (MyPID==0) 
+      cout << "Nonlinear solver failed to converge!" << endl;
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());

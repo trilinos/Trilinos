@@ -35,12 +35,12 @@ using namespace NOX;
 using namespace NOX::Epetra;
 
 MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x) :
+  importer(x.Map(),x.Map()),
   interface(i),
   currentX(x),
   perturbX(x),
   fo(x),
-  fp(x),
-  importer(x.Map(),x.Map())
+  fp(x)
 {
   // Zero out Vectors
   perturbX.PutScalar(0.0);
