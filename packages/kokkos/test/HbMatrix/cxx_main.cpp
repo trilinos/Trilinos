@@ -42,6 +42,7 @@ int PrintTestResults(string, TYPE, TYPE, bool);
 
 int ReturnCodeCheck(string, int, int, bool);
 
+/*
 template<typename OrdinalType, typename ScalarType>
 void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
@@ -61,7 +62,7 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *& b,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
-
+*/
 typedef MultiVector<OTYPE, STYPE> DMultiVector;
 typedef Vector<OTYPE, STYPE> DVector;
 typedef CisMatrix<OTYPE, STYPE> DHbMatrix;

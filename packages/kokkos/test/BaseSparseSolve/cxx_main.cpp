@@ -35,7 +35,6 @@
 #include "Kokkos_Time.hpp"
 #include "Kokkos_Flops.hpp"
 #include "GenerateHbProblem.hpp"
-#include <cmath>
 
 using namespace std;
 using namespace Kokkos;
@@ -51,7 +50,7 @@ typedef CisMatrix<OTYPE, STYPE> DHbMatrix;
 
 template<typename TYPE>
 int PrintTestResults(string, TYPE, TYPE, bool);
-
+/*
 template<typename OrdinalType, typename ScalarType>
 void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
@@ -71,7 +70,7 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool ha
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *& b,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
-
+*/
 void runChecks (bool verbose, bool generateClassicHbMatrix, bool isRowOriented, 
 		int numEquations, int numEntries, int nrhs,
 		bool isLowerTriangular, bool isUpperTriangular, bool hasImplicitUnitDiagonal,
@@ -308,7 +307,7 @@ int compareMultiVecs(const DMultiVector & v1, const DMultiVector & v2, bool verb
   }
   
   if (verbose) cout << "Difference between exact and computed multivectors = " << sum << endl;
-  if (!(fabs(sum)<1.0E-4)) {
+  if (!((sum*sum)<1.0E-4)) {
     if (verbose) cout << "********** Difference too large **********" << endl;
     return(1); 
   }
@@ -323,7 +322,7 @@ int compareVecs(const DVector & v1, const DVector & v2, bool verbose) {
   for (OTYPE i=0; i < v1.getLength(); i++) sum += v1v[i] - v2v[i];
 
   if (verbose) cout << "Difference between exact and computed vectors = " << sum << endl;  
-  if (!(fabs(sum)<1.0E-4)) {
+  if (!((sum*sum)<1.0E-4)) {
     if (verbose) cout << "********** Difference too large **********" << endl;
     return(1); 
   }

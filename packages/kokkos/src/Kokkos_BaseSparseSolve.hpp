@@ -404,7 +404,7 @@ namespace Kokkos {
     if (haveStructure_) return(-1); // Can only call this one time!
 
     matrixForStructure_ = const_cast<CisMatrix<OrdinalType, ScalarType> *> (&A);
-    OrdinalType i, j;
+    OrdinalType i;
     willKeepStructure_ = willKeepStructure;
     isRowOriented_ = A.getIsRowOriented();
     numRows_ = A.getNumRows();
