@@ -399,15 +399,22 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   /* some general variables                                                 */
   /* ********************************************************************** */
   
-  printf("... %d %d %d\n",
-         old_x, old_y, old_z);
-
   if (old_z)
     MLZ_dim = 3;
   else if (old_y)
     MLZ_dim = 2;
-  else
+  else if (old_x) 
     MLZ_dim = 1;
+  else 
+    MLZ_dim = 0;
+
+  MLZ_dim = ML_Comm_GmaxInt(Amatrix->comm, MLZ_dim);
+
+  if (MLZ_dim == 0) {
+    if (Amatrix->comm->ML_mypid == 0) 
+      printf("ML_DecomposeGraph_with_Zoltan: No coordinates given\n");
+    return(-1);
+  }
 
   /* junk */
   MLZ_x = old_x;
@@ -453,7 +460,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   /*  Initialize Zoltan. It will start MPI if we haven't already. */
   /*  Do this only once. */
 
-  if ((error = Zoltan_Initialize(NULL, NULL, &version)) != ZOLTAN_OK) {
+  if ((error = Zoltan_Initialize((int) NULL, NULL, &version)) != ZOLTAN_OK) {
     printf("fatal(10) Zoltan_Initialize returned error code, %d", error);
     goto End;
   }
