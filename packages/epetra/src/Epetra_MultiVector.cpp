@@ -417,10 +417,11 @@ int Epetra_MultiVector::AllocateForCopy(void)
   Vectors_ = new Epetra_Vector *[NumVectors_];
   for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
   
+  int randval = rand(); // Use POSIX standard random function
   if (DistributedGlobal_)
-    Seed_ = 2*Comm_->MyPID() + 1;
+    Seed_ = 2*Comm_->MyPID() + randval;
   else
-    Seed_ = 1; // Replicated Local MultiVectors get the same seed on all PEs
+    Seed_ = randval; // Replicated Local MultiVectors get the same seed on all PEs
 
   Allocated_ = true;
   UserAllocated_ = false;
@@ -464,10 +465,11 @@ int Epetra_MultiVector::AllocateForView(void)
   Vectors_ = new Epetra_Vector *[NumVectors_];
   for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
   
+  int randval = rand(); // Use POSIX standard random function
   if (DistributedGlobal_)
-    Seed_ = 2*Comm_->MyPID() + 1;
+    Seed_ = 2*Comm_->MyPID() + randval;
   else
-    Seed_ = 1; // Replicated Local MultiVectors get the same seed on all PEs
+    Seed_ = randval; // Replicated Local MultiVectors get the same seed on all PEs
 
   Allocated_ = true;
   UserAllocated_ = true;
