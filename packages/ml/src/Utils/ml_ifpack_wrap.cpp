@@ -49,6 +49,9 @@ int ML_Ifpack_Gen(ML *ml, int curr_level, int * options,
   Ifpack Factory;
   Ifpack_Preconditioner* Prec;
 
+  // set these values in the List
+  Teuchos::ParameterList List;
+
   string Type;
   string AmesosType;
 
@@ -58,31 +61,31 @@ int ML_Ifpack_Gen(ML *ml, int curr_level, int * options,
     Type = "Amesos";
     break;
   case ML_IFPACK_JACOBI:
-    Type = "Jacobi";
+    Type = "point relaxation";
+    List.set("point: type","Jacobi");
     break;
   case ML_IFPACK_GS:
-    Type = "Gauss-Seidel";
+    Type = "point relaxation";
+    List.set("point: type","Gauss-Seidel");
     break;
   case ML_IFPACK_SGS:
-    Type = "symmetric Gauss-Seidel";
+    Type = "point relaxation";
+    List.set("point: type","symmetric Gauss-Seidel");
     break;
   case ML_IFPACK_BLOCK_JACOBI:
-    Type = "block Jacobi";
+  case ML_IFPACK_BLOCK_JACOBI_AMESOS:
+    Type = "block relaxation";
+    List.set("block: type","Jacobi");
     break;
   case ML_IFPACK_BLOCK_GS:
-    Type = "block Gauss-Seidel";
+  case ML_IFPACK_BLOCK_GS_AMESOS:
+    Type = "block relaxation";
+    List.set("block: type","Gauss-Seidel");
     break;
   case ML_IFPACK_BLOCK_SGS:
-    Type = "block symmetric Gauss-Seidel";
-    break;
-  case ML_IFPACK_BLOCK_JACOBI_AMESOS:
-    Type = "block Jacobi";
-    break;
-  case ML_IFPACK_BLOCK_GS_AMESOS:
-    Type = "block Gauss-Seidel";
-    break;
   case ML_IFPACK_BLOCK_SGS_AMESOS:
-    Type = "block symmetric Gauss-Seidel";
+    Type = "block relaxation";
+    List.set("block: type","symmetric Gauss-Seidel");
     break;
   case ML_IFPACK_ICT:
     Type = "ICT";
@@ -112,9 +115,6 @@ int ML_Ifpack_Gen(ML *ml, int curr_level, int * options,
 
   // damping factor
   double DampingFactor = params[ML_IFPACK_DAMPING_FACTOR];
-
-  // set these values in the List
-  Teuchos::ParameterList List;
 
   List.set("partitioner: local parts", LocalParts);
   List.set("partitioner: overlap", BlockOverlap);
