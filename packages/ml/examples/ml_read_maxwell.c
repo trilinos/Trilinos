@@ -12,12 +12,14 @@
 /* ml/util/az_capt2read.c (see comments for ways using matlab to create      */
 /* matrices).                                                                */ 
 /*****************************************************************************/
-/* Here is a sample input file:
+
+/*******************************************************************************
+Here is a sample input file:
 #
 #  Test input file ML 
 #       
 # Notes: 
-#   1) Captilization should not matter
+#   1) Capitalization should not matter
 #   2) Lines starting with # are comments
 #   3) Parallel Partitioning File is not used
 #      when only 1 processor is present.
@@ -74,7 +76,7 @@ Smoothed aggregation damping = 1.5
 Spectral norm calculation    = Anorm
 #                              [Anorm, Calc]
 # end of sample inputfile
-*/
+*******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,31 +97,36 @@ double parasails_loadbal    = 0.;
 int my_proc_id;
 
 
-int    *Ke_data_org = NULL, *Kn_data_org = NULL, *global_edge_inds = NULL, *global_node_inds = NULL,
-       *global_edge_externs = NULL, *global_node_externs = NULL;
-int    *reordered_glob_edges = NULL, *reordered_edge_externs = NULL;
+int *Ke_data_org = NULL, *Kn_data_org = NULL, *global_edge_inds = NULL,
+	*global_node_inds = NULL, *global_edge_externs = NULL,
+	*global_node_externs = NULL;
+			int    *reordered_glob_edges = NULL, *reordered_edge_externs = NULL;
 int    *reordered_glob_nodes = NULL, *reordered_node_externs = NULL;
 int    *cpntr = NULL, *Ke_bindx = NULL, *Kn_bindx = NULL, Nlocal_edges, iii, *Tmat_bindx;
 int    *update, *update_index;
-extern void AZ_transform_norowreordering(int proc_config[], int *external[], int bindx[], double val[],
-                  int update[], int *update_index[], int *extern_index[],
-                  int *data_org[], int N_update, int indx[], int bnptr[],
-					 int rnptr[], int *cnptr[], int mat_type);
-extern void AZ_input_msr_matrix_nodiag(char datafile[], int update[], double **val, int **bindx, 
-				       int N_update, int proc_config[]);
-extern void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
-                    int **bindx, char *input, FILE *dfp, int *msr_len,
-				  int *column0);
+int *external, *extern_index;
+extern void AZ_transform_norowreordering(int proc_config[], int *external[],
+    int bindx[], double val[], int update[], int *update_index[],
+	int *extern_index[], int *data_org[], int N_update, int indx[], int bnptr[],
+	int rnptr[], int *cnptr[], int mat_type);
+extern void AZ_input_msr_matrix_nodiag(char datafile[], int update[],
+	double **val, int **bindx, 
+	int N_update, int proc_config[]);
+extern void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current,
+	double **val, int **bindx, char *input, FILE *dfp, int *msr_len,
+	int *column0);
 extern void ML_find_local_indices(int N_update, int bindx[], int update[],
-				  int *sorted_ext, int N_external, int map[]);
-
+	int *sorted_ext, int N_external, int map[]);
 extern int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
-		       int allocated_space, int columns[], double values[], int row_lengths[]);
+	int allocated_space, int columns[], double values[], int row_lengths[]);
 
-extern int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]);
+extern int eye_matvec(void *Amat_in, int ilen, double p[], int olen,
+                      double ap[]);
 struct reader_context *context;
-extern int  ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans);
+extern int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans);
 extern int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans);
+
+/******************************************************************************/
 
 int main(int argc, char *argv[])
 {
@@ -136,9 +143,11 @@ int main(int argc, char *argv[])
 
   /* data structure for matrix corresponding to the fine grid */
 
-  double *Ke_val = NULL, *Kn_val, *Tmat_val = NULL, *xxx, *rhs, solve_time, setup_time, start_time;
+  double *Ke_val = NULL, *Kn_val, *Tmat_val = NULL, *xxx, *rhs, solve_time,
+		setup_time, start_time, *yyy, *fido, *cvec, *nodalvec;
   AZ_MATRIX *Ke_mat, *Kn_mat;
-  ML_Operator *Tmat, *Tmat_trans, *Kn_coarse, *Tcoarse, *Tcoarse_trans, *Pn_coarse, *Rn_coarse, *Pe;
+  ML_Operator *Tmat, *Tmat_trans, *Kn_coarse, *Tcoarse, *Tcoarse_trans,
+              *Pn_coarse, *Rn_coarse, *Pe;
   ML_Operator *Ttrans_byrow;
   AZ_PRECOND *Pmat = NULL;
   ML *ml_edges, *ml_nodes;
@@ -147,7 +156,7 @@ int main(int argc, char *argv[])
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
   double *mode, *rigid, alpha, *newval;
-  char filename[80];
+  char filename[80],vecname[128];
   int    one = 1;
   int allocated = 0, *newbindx, offset, current, *block_list = NULL,  k, block;
   int Tmat_cols;
@@ -160,10 +169,11 @@ int main(int argc, char *argv[])
   double *val = NULL;
   int counter, row_length, itemp, row_start;
   int *Tcoarse_bindx, *Tcoarse_rowptr, agg1, agg2;
-  double *Tcoarse_val, dtemp;
+  double *Tcoarse_val, dtemp, *node2proc;
   int Nexterns, *sorted_ext, *map;
   int Nnz;
   char str[80];
+  int Nghost;
 
 #ifdef ML_partition
    FILE *fp2;
@@ -408,9 +418,10 @@ int main(int argc, char *argv[])
   AZ_ML_Set_Amat(ml_nodes, N_levels-1, Nlocal_nodes, Nlocal_nodes, Kn_mat, 
 		 proc_config);
 
-  ML_CommInfoOP_Clone(&(Tmat->getrow->pre_comm), ml_nodes->Amat[N_levels-1].getrow->pre_comm);
-  sprintf(str,"P%d",proc_config[AZ_node]);
+  ML_CommInfoOP_Clone(&(Tmat->getrow->pre_comm),
+                      ml_nodes->Amat[N_levels-1].getrow->pre_comm);
   /*
+  sprintf(str,"P%d",proc_config[AZ_node]);
   ML_CommInfoOP_Print(Tmat->getrow->pre_comm, str);
   */
 
@@ -419,9 +430,6 @@ int main(int argc, char *argv[])
   /*------------------------------------------------------------------*/
 
   Tmat_trans = ML_Operator_Create(ml_edges->comm);
-  /*
-  ML_Operator_Transpose(Tmat, Tmat_trans);
-  */
   ML_Operator_Transpose_byrow(Tmat, Tmat_trans);
 
 #ifdef ML_partition
@@ -662,12 +670,7 @@ int main(int argc, char *argv[])
   coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, N_levels-1, 
                                             ML_DECREASING, ag);
 
-#ifdef out
-  /*
-  printf("ready to built T on the coarse grids\n");
-  exit(1);
-  */
-
+  printf("ready to build T on the coarse grids\n");
 
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
@@ -678,26 +681,58 @@ int main(int argc, char *argv[])
   /*------------------------------------------------------------------*/
 
   counter = 0;
+
+  /* node2proc = nodal to processor lookup table */
   
   Kn_coarse = &(ml_nodes->Amat[N_levels-2]);
+  Rn_coarse = &(ml_nodes->Rmat[N_levels-1]);
 
-  Tcoarse_bindx = (int    *) ML_allocate(Kn_coarse->N_nonzeros*sizeof(int));
-  Tcoarse_val   = (double *) ML_allocate(Kn_coarse->N_nonzeros*sizeof(double));
-  Tcoarse_rowptr= (int    *) ML_allocate(Kn_coarse->N_nonzeros*sizeof(int));
+  if (Kn_coarse->getrow->pre_comm != NULL)
+   Nghost = Kn_coarse->getrow->pre_comm->total_rcv_length;
+  else Nghost = 0;
+
+   node2proc = (double *) ML_allocate(sizeof(double)*(Nghost+
+						  Kn_coarse->invec_leng+1));
+   for (i = 0; i < Kn_coarse->invec_leng+Nghost; i++)
+      node2proc[i] = (double) Kn_coarse->comm->ML_mypid;
+
+   if (Kn_coarse->getrow->pre_comm != NULL)
+   ML_exchange_bdry(node2proc, Kn_coarse->getrow->pre_comm,
+                    Kn_coarse->outvec_leng, Kn_coarse->comm, ML_OVERWRITE);
+
+  Tcoarse_bindx = (int    *) ML_allocate(Kn_coarse->N_nonzeros*10*sizeof(int));
+  Tcoarse_val = (double *) ML_allocate(Kn_coarse->N_nonzeros*10*sizeof(double));
+  Tcoarse_rowptr= (int    *) ML_allocate(Kn_coarse->outvec_leng*10*sizeof(int));
   Tcoarse_rowptr[0] = 0;
   nz_ptr = 0;
-  for (i = 0; i < Kn_coarse->outvec_leng; i++) {
+  for (i = 0; i < Kn_coarse->outvec_leng; i++)
+  {
      ML_get_matrix_row(Kn_coarse,1, &i,&allocated,&bindx,&val,&row_length, 0);
      ML_az_sort(bindx, row_length, NULL, NULL);
-     for (j = 0; j < row_length; j++) {
-       if (bindx[j] > i) {
-         Tcoarse_bindx[nz_ptr]  =  bindx[j];
-         Tcoarse_val[nz_ptr++]  =  1.;
-         Tcoarse_bindx[nz_ptr]  =  i;
-         Tcoarse_val[nz_ptr++]  = -1.;
-         Tcoarse_rowptr[counter+1] = nz_ptr;
-         counter++;
-       }
+
+     for (j = 0; j < row_length; j++)
+	 {
+       if (node2proc[i] == node2proc[bindx[j]])
+	   {
+          if (bindx[j] > i)
+		  {
+             Tcoarse_bindx[nz_ptr]  =  bindx[j];
+             Tcoarse_val[nz_ptr++]  =  1.;
+             Tcoarse_bindx[nz_ptr]  =  i;
+             Tcoarse_val[nz_ptr++]  = -1.;
+             Tcoarse_rowptr[counter+1] = nz_ptr;
+             counter++;
+          }
+	   }
+       else if (node2proc[i] < node2proc[bindx[j]])
+	      {
+             Tcoarse_bindx[nz_ptr]  =  bindx[j];
+             Tcoarse_val[nz_ptr++]  =  1.;
+             Tcoarse_bindx[nz_ptr]  =  i;
+             Tcoarse_val[nz_ptr++]  = -1.;
+             Tcoarse_rowptr[counter+1] = nz_ptr;
+             counter++;
+	      }
      }
   }
 
@@ -713,6 +748,18 @@ int main(int argc, char *argv[])
   ML_Operator_Set_Getrow(Tcoarse, ML_EXTERNAL, counter, CSR_getrows);
   ML_Operator_Set_ApplyFunc(Tcoarse, ML_INTERNAL, CSR_matvec);
 
+  ML_CommInfoOP_Clone(&(Tcoarse->getrow->pre_comm),
+                      ml_nodes->Amat[N_levels-2].getrow->pre_comm);
+
+  printf("T built on coarse grid\n");
+  fflush(stdout);
+	
+  xxx = (double *) malloc( Nlocal_edges*sizeof(double));
+
+  for (iii = 0; iii < Nlocal_edges; iii++) xxx[iii] = 0.0; 
+
+  Pn_coarse = &(ml_nodes->Pmat[N_levels-2]);
+  Rn_coarse = &(ml_nodes->Rmat[N_levels-1]);
 
   /********************************************************************/
   /* Fix P and R so that they are not normalized. This is so that we  */
@@ -726,14 +773,16 @@ int main(int argc, char *argv[])
 
   Pn_coarse = &(ml_nodes->Pmat[N_levels-2]);
   csr_data = (struct ML_CSR_MSRdata *) Pn_coarse->data;
-  for (i = 0; i < Pn_coarse->outvec_leng; i++) {
+  for (i = 0; i < csr_data->rowptr[Pn_coarse->outvec_leng]; i++)
+  {
     if (csr_data->values[i] < 0) csr_data->values[i] = -1.;
     else if (csr_data->values[i] > 0) csr_data->values[i] = 1.;
   }
 
   Rn_coarse = &(ml_nodes->Rmat[N_levels-1]);
   csr_data = (struct ML_CSR_MSRdata *) Rn_coarse->data;
-  for (i = 0; i < csr_data->rowptr[Rn_coarse->outvec_leng]; i++) {
+  for (i = 0; i < csr_data->rowptr[Rn_coarse->outvec_leng]; i++)
+  {
     if (csr_data->values[i] < 0.) csr_data->values[i] = -1.;
     else if (csr_data->values[i] > 0) csr_data->values[i] = 1.;
   }
@@ -743,7 +792,7 @@ int main(int argc, char *argv[])
   /*------------------------------------------------------------------*/
 
   Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
-  ML_Operator_Transpose(Tcoarse, Tcoarse_trans);
+  ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
 
   /********************************************************************/
   /* Here is some code that might work someday to generate Pe without */
@@ -770,8 +819,8 @@ int main(int argc, char *argv[])
                min_agg = min(agg1,agg2), 
                max_agg = max(agg1,agg2);
         The column that we are looking for is given by 
-          stored_counter[min_agg] + number of nonzeros in row min_agg of Kn_coarse
-                                    that are greater than min_agg and less than max_agg.
+          stored_counter[min_agg] + number of nonzeros in row min_agg of
+		  Kn_coarse that are greater than min_agg and less than max_agg.
 
 
         'something' is either +1 or -1. To get the sign look at
@@ -804,6 +853,95 @@ int main(int argc, char *argv[])
   /* MG grid hierarchy.                                               */
   /*------------------------------------------------------------------*/
 
+#ifdef prepostcheck
+  free(yyy); yyy = (double *) malloc( Pe->outvec_leng*sizeof(double));
+  printf("Coarse level local edge numbering\n");
+   for (i=0; i < Pe->outvec_leng; i++)
+   {
+      printf("proc %d:	(%d) %e\n",Pe->comm->ML_mypid,i,xxx[i]);
+   }
+  fflush(stdout);
+
+      dtemp = ML_gdot(Pe->outvec_leng, xxx, xxx, Pe->comm);
+	  printf("vec = %e\n",dtemp);
+
+      ML_Operator_Apply(Pe, Pe->outvec_leng, xxx,
+                        Pe->outvec_leng,yyy);
+      dtemp = ML_gdot(Pe->outvec_leng, yyy, yyy, Pe->comm);
+	  printf("mat vec = %e\n",dtemp);
+
+   for (i=0; i < Pe->outvec_leng; i++)
+   {
+      printf("proc %d:	(%d) %e\n",Pe->comm->ML_mypid,i,yyy[i]);
+   }
+  fflush(stdout);
+  exit(1);
+
+   printf("Checking product Pe * e_i before post-processing\n");
+   free(yyy); yyy = (double *) malloc( Pe->outvec_leng*sizeof(double));
+   free(fido); fido = (double *) malloc( Pe->invec_leng*sizeof(double));
+/*
+   printf("%d: Pe->invec_leng = %d\n",Pe->comm->ML_mypid,Pe->invec_leng);
+   printf("%d: Tcoarse->outvec_leng = %d\n",Tcoarse->comm->ML_mypid,
+          Tcoarse->outvec_leng);
+   exit(1);
+*/
+
+   printf("Pe->invec_leng = %d\n",Pe->invec_leng);
+   for (i=0; i< 137; i++)
+   {
+      for (j=0; j< Pe->invec_leng; j++) fido[j] = 0.;
+	  if (Pe->comm->ML_nprocs == 1)
+	     fido[i] = 1;
+	  else
+	  {
+	     if ((Pe->comm->ML_mypid == 0) && (i < 120))
+		    fido[i] = 1;
+		 else if (Pe->comm->ML_mypid == 1 && i >= 120)
+		    fido[i-120] = 1;
+      }
+	  /*
+	  if (i==119)
+      {
+	     printf("e_119\n");
+         for (j=0; j<Pe->invec_leng; j++)
+		    printf("%d: e_119(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
+	  }
+	  if (i==120)
+	  {
+	     printf("e_120\n");
+         for (j=0; j<Pe->invec_leng; j++)
+		    printf("%d: e_120(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
+      }
+	  */
+
+      ML_Operator_Apply(Pe, Pe->outvec_leng, fido,
+                        Pe->outvec_leng,yyy);
+      dtemp = ML_gdot(Pe->outvec_leng, yyy, yyy, Pe->comm);
+      printf("%d: ||P_e * e_%d||^2 = %e\n",Pe->comm->ML_mypid,i,dtemp); 
+	  /*
+	  if (i==50)
+	  {
+         for (j=0; j<Pe->invec_leng; j++)
+		    printf("%d: yyy(%d) = %e\n", Pe->comm->ML_mypid,j,yyy[j]);
+      }
+      */
+
+/*
+      printf("%d: (%d) %e\n",ml_edges->comm->ML_mypid,i,dtemp);
+*/
+
+/*
+      dtemp = sqrt(ML_gdot(Tcoarse->invec_leng, fido, fido, ml_edges->comm));
+      printf("(%d): %e\n",i,dtemp); 
+*/
+
+   }
+
+   exit(1);
+
+#endif /* prepostcheck */
+
   for (j = 0; j < csr_data->rowptr[Pe->outvec_leng] ; j++) {
     if (csr_data->values[j] == 2) csr_data->values[j] = -1;
     else if (csr_data->values[j] == -2) csr_data->values[j] = 1;
@@ -811,11 +949,11 @@ int main(int argc, char *argv[])
     else if (csr_data->values[j] ==  1) csr_data->values[j] = 0;
     else if (csr_data->values[j] != 0.0) printf("huh\n");
   }
-
+ 
   /*******************************************************************/
   /* weed out zeros in Pe.                                           */
   /*-----------------------------------------------------------------*/
-
+ 
   lower = csr_data->rowptr[0];
   nz_ptr = 0;
   for (i = 0; i < Pe->outvec_leng; i++) {
@@ -833,17 +971,93 @@ int main(int argc, char *argv[])
       nz_ptr++;
     }
   }
-
+ 
   Pe->getrow->external = CSR_getrows;
   Pe->getrow->internal = NULL;
   Pe->getrow->ML_id    = ML_EXTERNAL;
   Pe->matvec->internal = CSR_matvec;
   Pe->matvec->external = NULL;
   Pe->matvec->ML_id = ML_INTERNAL;
+
+
+/****************** Check the construction of Pe ***********************/
+
+#ifdef postprocessscheck
+  printf("Coarse level local edge numbering\n");
+   for (i=0; i < Tcoarse->outvec_leng; i++)
+   {
+      printf("proc %d:	(%d) %e\n",Tcoarse->comm->ML_mypid,i,yyy[i]);
+   }
+  fflush(stdout);
+
+   printf("Checking product Pe * e_i\n");
+   free(yyy); yyy = (double *) malloc( Pe->outvec_leng*sizeof(double));
+   free(fido); fido = (double *) malloc( Pe->invec_leng*sizeof(double));
+/*
+   printf("%d: Pe->invec_leng = %d\n",Pe->comm->ML_mypid,Pe->invec_leng);
+   printf("%d: Tcoarse->outvec_leng = %d\n",Tcoarse->comm->ML_mypid,
+          Tcoarse->outvec_leng);
+   exit(1);
+*/
+
+   printf("Pe->invec_leng = %d\n",Pe->invec_leng);
+   for (i=0; i< 137; i++)
+   {
+      for (j=0; j< Pe->invec_leng; j++) fido[j] = 0.;
+	  if (Pe->comm->ML_nprocs == 1)
+	     fido[i] = 1;
+	  else
+	  {
+	     if ((Pe->comm->ML_mypid == 0) && (i < 120))
+		    fido[i] = 1;
+		 else if (Pe->comm->ML_mypid == 1 && i >= 120)
+		    fido[i-120] = 1;
+      }
+	  /*
+	  if (i==119)
+      {
+	     printf("e_119\n");
+         for (j=0; j<Pe->invec_leng; j++)
+		    printf("%d: e_119(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
+	  }
+	  if (i==120)
+	  {
+	     printf("e_120\n");
+         for (j=0; j<Pe->invec_leng; j++)
+		    printf("%d: e_120(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
+      }
+	  */
+
+      ML_Operator_Apply(Pe, Pe->invec_leng, fido,
+                        Pe->outvec_leng,yyy);
+      dtemp = ML_gdot(Pe->outvec_leng, yyy, yyy, Pe->comm);
+      printf("%d: ||e_%d||^2 = %e\n",Pe->comm->ML_mypid,i,dtemp); 
+	  /*
+	  if (i==50)
+	  {
+         for (j=0; j<Pe->invec_leng; j++)
+		    printf("%d: yyy(%d) = %e\n", Pe->comm->ML_mypid,j,yyy[j]);
+      }
+      */
+
+/*
+      printf("%d: (%d) %e\n",ml_edges->comm->ML_mypid,i,dtemp);
+*/
+
+/*
+      dtemp = sqrt(ML_gdot(Tcoarse->invec_leng, fido, fido, ml_edges->comm));
+      printf("(%d): %e\n",i,dtemp); 
+*/
+
+   }
+
+   fflush(stdout);
+  exit(1);
+#endif /*postprocesscheck*/
+
   ML_Operator_Set_1Levels(&(ml_edges->Pmat[N_levels-2]),
 			  &(ml_edges->SingleLevel[N_levels-2]), 
 			  &(ml_edges->SingleLevel[N_levels-1]));
-
   ML_Gen_Restrictor_TransP(ml_edges, N_levels-1, N_levels-2);
   ML_Gen_AmatrixRAP(ml_edges, N_levels-1, N_levels-2);
 
@@ -851,10 +1065,11 @@ int main(int argc, char *argv[])
   if ( proc_config[AZ_node] == 0 )
 	printf("Coarse level = %d \n", coarsest_level);
 	
-  /* set up smoothers */
   blocks = (int *) ML_allocate(sizeof(int)*Nlocal_edges);
 	
-  for (level = N_levels-1; level > coarsest_level; level--) {
+  /* set up smoothers for all levels but the coarsest */
+  for (level = N_levels-1; level > coarsest_level; level--)
+  {
 
       num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
       if (proc_config[AZ_node]==0) printf("block size = %d\n",num_PDE_eqns);
@@ -862,36 +1077,43 @@ int main(int argc, char *argv[])
      /*  Sparse approximate inverse smoother that acutally does both */
      /*  pre and post smoothing.                                     */
 
-     if (ML_strcmp(context->smoother,"Parasails") == 0) {
+     if (ML_strcmp(context->smoother,"Parasails") == 0)
+	 {
         ML_Gen_Smoother_ParaSails(ml_edges , level, ML_PRESMOOTHER, nsmooth, 
                                 parasails_sym, parasails_thresh, 
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
      }
 
-     else if (ML_strcmp(context->smoother,"Hiptmair") == 0) {
-       printf("only doing pre smoothing\n");
-         ML_Gen_Smoother_Hiptmair(ml_edges , level, ML_PRESMOOTHER, nsmooth,1.,Tmat_trans);
+     else if (ML_strcmp(context->smoother,"Hiptmair") == 0)
+	 {
+       printf("a: only doing pre smoothing\n");
+         ML_Gen_Smoother_Hiptmair(ml_edges , level, ML_PRESMOOTHER, nsmooth,
+		                          1.,Tmat_trans);
      }
      /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
      /* In parallel, it is not a true Gauss-Seidel in that each processor */
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
 
-     else if (ML_strcmp(context->smoother,"GaussSeidel") == 0) {
+     else if (ML_strcmp(context->smoother,"GaussSeidel") == 0)
+	 {
        ML_Gen_Smoother_GaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.);
      }
-     else if (ML_strcmp(context->smoother,"SymGaussSeidel") == 0) {
+     else if (ML_strcmp(context->smoother,"SymGaussSeidel") == 0)
+	 {
        ML_Gen_Smoother_SymGaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.);
      }
-     else if (ML_strcmp(context->smoother,"BlockGaussSeidel") == 0) {
+     else if (ML_strcmp(context->smoother,"BlockGaussSeidel") == 0)
+	 {
        ML_Gen_Smoother_BlockGaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.,
 					 num_PDE_eqns);
      }
-     else if (ML_strcmp(context->smoother,"Aggregate") == 0) {
+     else if (ML_strcmp(context->smoother,"Aggregate") == 0)
+	 {
          ML_Gen_Blocks_Aggregates(ag, level, &nblocks, &blocks);
-         ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.,
-                                        nblocks, blocks);
+         ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , level, ML_BOTH,
+		                        nsmooth,1., nblocks, blocks);
      }
 
      /* This is a true Gauss Seidel in parallel. This seems to work for  */
@@ -900,15 +1122,16 @@ int main(int argc, char *argv[])
      /*
       nblocks = ml_edges->Amat[level].invec_leng;
       for (i =0; i < nblocks; i++) blocks[i] = i;
-      ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml_edges , level, ML_PRESMOOTHER,
-                                                  nsmooth, 1., nblocks, blocks);
-      ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml_edges, level, ML_POSTSMOOTHER,
-                                                  nsmooth, 1., nblocks, blocks);
+      ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml_edges , level,
+	                    ML_PRESMOOTHER, nsmooth, 1., nblocks, blocks);
+      ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml_edges, level,
+	                    ML_POSTSMOOTHER, nsmooth, 1., nblocks, blocks);
      */
 
      /* Jacobi Smoothing                                                 */
 
-     else if (ML_strcmp(context->smoother,"Jacobi") == 0) {
+     else if (ML_strcmp(context->smoother,"Jacobi") == 0)
+	 {
         ML_Gen_Smoother_Jacobi(ml_edges , level, ML_PRESMOOTHER, nsmooth,.4);
         ML_Gen_Smoother_Jacobi(ml_edges , level, ML_POSTSMOOTHER, nsmooth,.4);
      }
@@ -917,13 +1140,15 @@ int main(int argc, char *argv[])
      /*  where each processor has 'nblocks' blocks.                      */
      /* */
 
-     else if (ML_strcmp(context->smoother,"Metis") == 0) {
+     else if (ML_strcmp(context->smoother,"Metis") == 0)
+	 {
          nblocks = 250;
          ML_Gen_Blocks_Metis(ml_edges, level, &nblocks, &blocks);
-         ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.,
-                                        nblocks, blocks);
+         ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , level, ML_BOTH,
+		                 nsmooth,1., nblocks, blocks);
      }
-     else {
+     else
+	 {
          printf("unknown smoother %s\n",context->smoother);
          exit(1);
      }
@@ -932,15 +1157,17 @@ int main(int argc, char *argv[])
    /*  Sparse approximate inverse smoother that acutally does both */
    /*  pre and post smoothing.                                     */
 
-   if (ML_strcmp(context->coarse_solve,"Parasails") == 0) {
-        ML_Gen_Smoother_ParaSails(ml_edges , coarsest_level, ML_PRESMOOTHER, nsmooth, 
-                                parasails_sym, parasails_thresh, 
+   if (ML_strcmp(context->coarse_solve,"Parasails") == 0)
+   {
+        ML_Gen_Smoother_ParaSails(ml_edges , coarsest_level, ML_PRESMOOTHER,
+		                        nsmooth, parasails_sym, parasails_thresh, 
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
    }
 
-   else if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0) {
-       printf("only doing pre smoothing\n");
+   else if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
+   {
+       printf("b: only doing pre smoothing\n");
        ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_PRESMOOTHER, nsmooth,1.,Tmat_trans);
    }
    else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
@@ -976,7 +1203,7 @@ int main(int argc, char *argv[])
          printf("unknown coarse grid solver %s\n",context->coarse_solve);
          exit(1);
    }
-#endif		
+		
    ML_Gen_Solver(ml_edges, ML_MGV, N_levels-1, coarsest_level); 
    AZ_defaults(options, params);
 	
@@ -1008,40 +1235,42 @@ int main(int argc, char *argv[])
    AZ_set_ML_preconditioner(&Pmat, Ke_mat, ml_edges, options); 
    setup_time = AZ_second() - start_time;
 	
-   xxx = (double *) malloc( Nlocal_edges*sizeof(double));
-
    for (iii = 0; iii < Nlocal_edges; iii++) xxx[iii] = 0.0; 
-	
 
    /* Set xxx */
 
-   /*
+   printf("putting in an edge based xxx\n");
    fp = fopen("initguessfile","r");
    if (fp != NULL) {
       fclose(fp);
       if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
-      AZ_input_msr_matrix("initguessfile", global_edge_inds, &xxx, &garbage, Nlocal_edges, 
-                          proc_config);
+      AZ_input_msr_matrix("initguessfile", global_edge_inds, &xxx, &garbage,
+	                      Nlocal_edges, proc_config);
       options[AZ_conv] = AZ_expected_values;
+	  printf("done reading initial guess\n");
    }
    else if (proc_config[AZ_node]== 0) printf("taking 0 initial guess \n");
 
    AZ_reorder_vec(xxx, Ke_data_org, reordered_glob_edges, NULL);
-   */
+
+/*
    printf("putting in an node based xxxx\n");
    fp = fopen("initguessfile","r");
    if (fp != NULL) {
       fclose(fp);
       if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
-      AZ_input_msr_matrix("initguessfile", global_edge_inds, &xxx, &garbage, Nlocal_edges, 
+      AZ_input_msr_matrix("initguessfile", global_node_inds, &xxx, &garbage, Nlocal_nodes, 
                           proc_config);
       options[AZ_conv] = AZ_expected_values;
    }
    else if (proc_config[AZ_node]== 0) printf("taking 0 initial guess \n");
 
+   dtemp = sqrt(ML_gdot(Nlocal_nodes, xxx, xxx, ml_edges->comm));
+   printf("length of initial guess = %d\n",Nlocal_nodes);
+   printf("||xxx|| = %e\n",dtemp);
+
    AZ_reorder_vec(xxx, Kn_data_org, reordered_glob_nodes, NULL);
-
-
+*/
 
    fp = fopen("AZ_no_multilevel.dat","r");
    scaling = AZ_scaling_create();
@@ -1071,51 +1300,14 @@ int main(int argc, char *argv[])
       options[AZ_keep_info] = 1;
       options[AZ_conv] = AZ_noscaled;
       options[AZ_output] = 1;
-      dtemp = sqrt(ML_gdot(Nlocal_nodes, xxx, xxx, ml_edges->comm));
-      printf("norm of x_0 = %e\n",dtemp);
 
-      /*
-      ML_Operator_Apply(Tmat, Tmat->invec_leng, xxx, Tmat->outvec_leng,rhs);
-      dtemp = sqrt(ML_gdot(Nlocal_edges, rhs, rhs, ml_edges->comm));
-      printf("norm of T x_0 = %e\n",dtemp);
-      */
-      /*
-      for (i = 0; i < Nlocal_edges; i++) 
-	printf("x(%d)=%10.5e;\n",global_node_inds[i]+1,xxx[reordered_glob_nodes[i]]);
-      */
-      /*
-      ML_Operator_Apply(&(ml_edges->Amat[N_levels-1]),
-			ml_edges->Amat[N_levels-1].invec_leng,xxx,
-			ml_edges->Amat[N_levels-1].outvec_leng,rhs);
-      */
-
-      ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng, xxx,
-			Tmat_trans->outvec_leng,rhs);
-      dtemp = sqrt(ML_gdot(Tmat_trans->outvec_leng, rhs, rhs, ml_edges->comm));
-      printf("norm of T^t x_0 = %e\n",dtemp);
-
-      /*
-      for (i = 0; i < Tmat_trans->invec_leng; i++) 
-	printf("x(%d)=%10.5e; local ind = %d, %d\n",global_edge_inds[i]+1,rhs[reordered_glob_edges[i]],i,proc_config[AZ_node]);
-      */
-      /*
-      for (i = 0; i < Tmat_trans->outvec_leng; i++) 
-	printf("Av(%d)=%10.5e; %d\n",global_node_inds[i]+1,xxx[reordered_glob_nodes[i]],i);
-      */
-      fflush(stdout);
-
-
-      exit(1);
       /*
       options[AZ_precond] = AZ_none;
      
             Ke_mat->matvec(xxx, rhs, Ke_mat, proc_config);
       for (i = 0; i < Nlocal_edges; i++) printf("%7d     %7d %20.15e %20.15e\n",i+1,i+1,xxx[i],rhs[i]);
       printf("huhhhh %e\n",Ke_mat->val[0]);
-     
-      printf("the norm is %e\n",sqrt(AZ_gdot(Nlocal_edges, xxx, xxx, proc_config)));
       */
-
 
       AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
       options[AZ_pre_calc] = AZ_reuse;
@@ -1148,6 +1340,7 @@ int main(int argc, char *argv[])
    if (Ke_mat  != NULL) AZ_matrix_destroy(&Ke_mat);
    if (Pmat  != NULL) AZ_precond_destroy(&Pmat);
    free(xxx);
+   free(yyy);
    free(rhs);
 
 
@@ -1158,6 +1351,8 @@ int main(int argc, char *argv[])
   return 0;
 	
 }
+
+/********************************** end of main *******************************/
 
 /************************************************************************/
 /* Convert the data in csr_data from an MSR matrix to a CSR matrix.     */
@@ -1207,10 +1402,11 @@ int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows, int *Ncolumns)
 /*****************************************************************************/
 /*****************************************************************************/
 
-void AZ_transform_norowreordering(int proc_config[], int *external[], int bindx[], double val[],
-                  int update[], int *update_index[], int *extern_index[],
-                  int *data_org[], int N_update, int indx[], int bnptr[],
-                  int rnptr[], int *cnptr[], int mat_type)
+void AZ_transform_norowreordering(int proc_config[], int *external[],
+			int bindx[], double val[],
+            int update[], int *update_index[], int *extern_index[],
+            int *data_org[], int N_update, int indx[], int bnptr[],
+            int rnptr[], int *cnptr[], int mat_type)
 
 /*******************************************************************************
 
@@ -1978,43 +2174,54 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
 /* by row.                                                              */
 /*----------------------------------------------------------------------*/
 
-
-int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans) {
-
-
+int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
+{ 
+ 
   ML_Operator *eye1, *eye2;
-
+ 
   eye1 = ML_Operator_Create(A->comm);
   eye2 = ML_Operator_Create(A->comm);
-
+ 
   ML_Operator_Set_ApplyFuncData(eye1, A->invec_leng, A->invec_leng,
-			ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
+            ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
   ML_Operator_Set_Getrow(eye1, ML_EXTERNAL, A->invec_leng, eye_getrows);
-
+ 
   ML_Operator_Set_ApplyFuncData(eye2, A->invec_leng, A->invec_leng,
-			ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
+            ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
   ML_Operator_Set_Getrow(eye2, ML_EXTERNAL, A->invec_leng, eye_getrows);
   ML_2matmult(A, eye1, Atrans);
+ 
+  return 1;
+}  
 
-  /*
-  if (A->getrow->use_loc_glob_map == ML_YES) 
-     pr_error("ML_Operator_ColPartition2RowPartition: Matrix already has local column indices mapped to global indices\n");
-  if (A->getrow->pre_comm != NULL) 
-     pr_error("ML_Operator_ColPartition2RowPartiion: Matrix has a pre-communication structure?\n");
 
+#ifdef new2row
+int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
+{
+  int         max_per_proc;
+  ML_Operator *Acomm, *tptr;
+ 
+  if (A->getrow->use_loc_glob_map == ML_YES)
+     pr_error("ML_Operator_ColPartition2RowPartition: Matrix already has local"
+              "column indices mapped to global indices\n");
+  if (A->getrow->pre_comm != NULL)
+     pr_error("ML_Operator_ColPartition2RowPartiion: Matrix has a"
+              "pre-communication structure?\n");
+ 
   ML_create_unique_col_id(A->invec_leng, &(A->getrow->loc_glob_map),
                            NULL, &max_per_proc, A->comm);
-
+ 
+  A->getrow->use_loc_glob_map = ML_YES;
+ 
   if (A->getrow->post_comm != NULL)
       ML_exchange_rows( A, &Acomm, A->getrow->post_comm);
   else Acomm = A;
-
+ 
   ML_back_to_csrlocal(Acomm, Atrans, max_per_proc);
-
+ 
   ML_free(A->getrow->loc_glob_map); A->getrow->loc_glob_map = NULL;
-
   A->getrow->use_loc_glob_map = ML_NO;
-
+ 
   if (A->getrow->post_comm != NULL) {
       tptr = Acomm;
       while ( (tptr!= NULL) && (tptr->sub_matrix != A))
@@ -2023,17 +2230,19 @@ int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans) {
       ML_RECUR_CSR_MSRdata_Destroy(Acomm);
       ML_Operator_Destroy(Acomm);
    }
-  */
-
+ 
   return 1;
-}
+} 
+#endif
+
 
 /************************************************************************/
 /* Getrow function for the identity matrix.                             */
 /*----------------------------------------------------------------------*/
 
 int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
-   int allocated_space, int columns[], double values[], int row_lengths[])
+                int allocated_space, int columns[], double values[],
+				int row_lengths[])
 {
    double *temp;
    int    i;
@@ -2068,7 +2277,8 @@ int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 /* so that it is partitioned by rows.                                   */
 /*----------------------------------------------------------------------*/
 
-int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans) {
+int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans)
+{
   ML_Operator *temp;
 
   temp = ML_Operator_Create(A->comm);
