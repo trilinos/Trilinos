@@ -374,7 +374,7 @@ LOCA::EpetraNew::Group::applyShiftedMatrixInverse(
 
     shiftsys.setJacobianOperatorForSolve(dynamic_cast<Epetra_Operator&>(A));
 
-    shiftsys.applyJacobianInverse(solveList,epetraInput,epetraResult);
+    shiftsys.applyJacobianInverse(params,epetraInput,epetraResult);
 
   }
 
