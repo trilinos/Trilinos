@@ -633,8 +633,11 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersSparse(int NumPreCycles
   double* before_SF   = new double[NumPDEEqns_];
   double* after_SF    = new double[NumPDEEqns_];
 
+  int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - NumMyRows();
+  if (Nghost < 0) Nghost = 0; 
+
   double * tmp_rhs = new double[NumMyRows()]; 
-  double * tmp_sol = new double[NumMyRows()]; 
+  double * tmp_sol = new double[NumMyRows() + Nghost]; 
   
   ML_Smoother* ptr;
 
@@ -791,11 +794,15 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
   double* before_SF   = new double[NumPDEEqns_];
   double* after_SF    = new double[NumPDEEqns_];
 
+  assert(NumMyRows() == ml_->Amat[LevelID_[0]].outvec_leng);
+  int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - NumMyRows();
+  if (Nghost < 0) Nghost = 0; 
+
   double * tmp_rhs = new double[NumMyRows()]; 
-  double * tmp_sol = new double[NumMyRows()]; 
+  double * tmp_sol = new double[NumMyRows() + Nghost]; 
 
   // random solution and zero rhs
-  RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[0]].outvec_leng);
+  RandomAndZero(tmp_sol, tmp_rhs,NumMyRows());
 
   VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
   SmoothnessFactor(&(ml_->Amat[LevelID_[0]]), tmp_sol, before_SF);
