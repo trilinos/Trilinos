@@ -77,7 +77,7 @@ static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
   number = 0; /* Assign next vertex to partition no. number */
   cutoff = weight_avg; /* Cutoff for current partition */
   for (i=0; i<hg->nVtx; i++)
-  {
+  { 
     /* If order==NULL, then use linear order. */
     j = order ? order[i] : i;
     part[j] = number;

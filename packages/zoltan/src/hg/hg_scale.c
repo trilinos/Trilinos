@@ -48,8 +48,8 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 /****************************************************************************/
 
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt)
-{ int   i, j;
-  float weight, scale, sum;
+{ int    i, j;
+  double weight, sum, scale;
 
   if (!hg->vwgt)
     return ZOLTAN_FATAL;
@@ -58,21 +58,22 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt)
   { scale = sum = 0.0;
     if (hg->vwgt)
     { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
-        sum += hg->vwgt[hg->hvertex[j]];
+        sum += (double)(hg->vwgt[hg->hvertex[j]]);
       for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
-      { weight = hg->vwgt[hg->hvertex[j]];
+      { weight = (double)(hg->vwgt[hg->hvertex[j]]);
         scale += weight*(sum-weight);
       }
       scale /= 2.0;
     }
     else
-      scale = (float)(hg->hindex[i+1]-hg->hindex[i]);
+      scale = (double)(hg->hindex[i+1]-hg->hindex[i]);
 
     if (scale == 0.0)
       new_ewgt[i] = FLT_MAX;
     else
       new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/scale;
   }
+
   return ZOLTAN_OK;
 }
 

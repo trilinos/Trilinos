@@ -44,7 +44,7 @@ int main (int argc, char **argv)
   ZZ     zz;
   int    base;   /* minimum vertex number in input file; usually 0 or 1. */
 
-  hgp.bal_tol = 10.0;
+  hgp.bal_tol = 1.1;
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
   strcpy(hgp.redmo_str, "aug3");
@@ -65,7 +65,7 @@ int main (int argc, char **argv)
   { puts("hg_test [-flag value] [] [] ...");
     puts("-f      graphfile:        (grid5x5.hg)");
     puts("-p      # of parts:       (2)");
-    puts("-bal    balance tolerance:(10.0)");
+    puts("-bal    balance tolerance:(1.1)");
     puts("-redl   reduction limit:  (0)");
     puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");

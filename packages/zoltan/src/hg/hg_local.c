@@ -79,7 +79,7 @@ static int local_hc (
   }
   else
     total_weight = (float)(hg->nVtx);
-  max_weight = (total_weight/(float)p)*(1.0+bal_tol/100.0);
+  max_weight = (total_weight/(float)p)*bal_tol;
 /*
   printf("total_weight:%f max_weight:%f \n",total_weight, max_weight);
 */
