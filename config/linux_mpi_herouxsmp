@@ -1,0 +1,2 @@
+../configure --enable-mpi CC=mpicc CXX=mpiCC F77=mpif77
+
