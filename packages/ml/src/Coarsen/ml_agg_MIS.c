@@ -112,8 +112,12 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   *send_leng = NULL, *recv_leng = NULL;
    int                   send_count = 0, recv_count = 0, total_nz = 0;
    int                   total_aggs, phase_one_aggregated;
+   int kk, old_upper, nnzs, count2, newptr;
+#ifdef DDEBUG
+   int curagg,myagg,*good,*bad;
+#endif
 
-#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR)
+#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
 extern int *update_index, *update, *extern_index, *external;
 FILE *fp;
 char fname[80];
@@ -121,7 +125,6 @@ static int level_count = 0;
 double *d2temp;
 int agg_offset, vertex_offset;
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
-int level_count = 0;
 FILE *fp;
 #endif
 
@@ -561,25 +564,14 @@ FILE *fp;
    free(rowi_val);
    free(recv_list);
 
-#ifdef ML_AGGR_INAGGR
+#ifdef ML_AGGR_MARKINAGGR
 
-   /*  When reading Mark's output this needs to be moved up */
-   /*  just before the double for loop above.               */
    for (i = 0; i < exp_Nrows; i++) aggr_index[i] = -1;
    sprintf(fname,"agg_%d",level_count); level_count++;
    fp = fopen(fname,"r");
    aggr_count = 0;
-printf("changing this to be compatable with Ray not Mark\n");
    for (i = 0; i <nvertices; i++) {
-      /* changed this to be compatable with Mark's output */
-/* Mark
-*/
       fscanf(fp,"%d%d",&k,&j);
-/* original */
-/*
-      fscanf(fp,"%d%d",&j,&k);
-*/
-/* */
       aggr_index[j] = k;
       if (k >= aggr_count) aggr_count = k+1;
    }
@@ -601,6 +593,19 @@ printf("changing this to be compatable with Ray not Mark\n");
    getrow_obj  = Amatrix->getrow;
    N_neighbors = getrow_obj->pre_comm->N_neighbors;
 
+#ifdef ML_AGGR_INAGGR
+
+   for (i = 0; i < exp_Nrows; i++) aggr_index[i] = -1;
+   sprintf(fname,"agg_%d",level_count); level_count++;
+   fp = fopen(fname,"r");
+   aggr_count = 0;
+   for (i = 0; i <nvertices; i++) {
+      fscanf(fp,"%d%d",&j,&k);
+      aggr_index[j] = k;
+      if (k >= aggr_count) aggr_count = k+1;
+   }
+   fclose(fp);
+#endif
 
    /* I'm not sure if I need most of this 'if' code. I just took it from */
    /* Charles ... but I guess that the majority of it is not needed.     */
@@ -1144,13 +1149,14 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    /* ------------------------------------------------------------- */
 
    for (i = 0; i <= Nrows; i++) new_ia[i] = i * nullspace_dim;
-/* trying this when a Dirichlet row is taken out */
-j = 0;
-new_ia[0] = j;
-for (i = 0; i < Nrows; i++) {
-   if (aggr_index[i] != -1) j += nullspace_dim;
-   new_ia[i+1] = j;
-}
+
+   /* trying this when a Dirichlet row is taken out */
+   j = 0;
+   new_ia[0] = 0;
+   for (i = 0; i < Nrows; i++) {
+      if (aggr_index[i] != -1) j += nullspace_dim;
+      new_ia[i+1] = j;
+   }
 
    /* ------------------------------------------------------------- */
    /* generate an array to store which aggregate has which rows.Then*/
@@ -1395,6 +1401,108 @@ for (i = 0; i < Nrows; i++) {
    /* check P (row sum = 1)                                         */
    /* ------------------------------------------------------------- */
 
+   /* Clean out any rows that correspond to a Dirichlet point. This */
+   /* includes rows that are part of blocks in which only some DOFs */
+   /* are Dirichlet points.                                         */
+
+   nnzs = new_ia[Nrows];
+
+   count = 0; allocated = 0; rowi_col = NULL; rowi_val = NULL;
+   for (i = 0; i < Nrows; i++) {
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      count2 = 0;
+      for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
+      if (count2 <= 1) {
+         count++;
+
+         for (kk = new_ia[i]; kk < new_ia[i+1]; kk++) {
+             new_ja[kk] = -1; 
+             new_val[kk] = 0.;
+         }
+      }
+   }
+   free(rowi_col); free(rowi_val);
+
+   if (Nrows > 0) old_upper = new_ia[0];
+   for (i = 0; i < Nrows; i++) {
+      count2 = 0;
+      for (j = old_upper; j < new_ia[i+1]; j++) {
+         if ( new_ja[j] != -1) count2++;
+      }
+      old_upper = new_ia[i+1];
+      new_ia[i+1] = new_ia[i] + count2;
+   }
+
+   newptr = 0;
+   for (i = 0; i < nnzs; i++) {
+      if ( new_ja[i] != -1) {
+         new_ja[newptr] = new_ja[i];
+         new_val[newptr++] = new_val[i];
+      }
+   }
+
+#ifdef DDEBUG
+   /* count up the number of connections/edges that leave aggregate */
+   /* versus those that are within the aggregate.                   */
+   good = (int *) malloc(Nrows*sizeof(int));
+   bad  = (int *) malloc(Nrows*sizeof(int));
+   for (i = 0; i < Nrows; i++) { good[i] = 0; bad[i] = 0; }
+   count = 0; allocated = 0; rowi_col = NULL; rowi_val = NULL;
+   for (i = 0; i < Nrows; i++) {
+      /* figure out my aggregate */
+      myagg = -1;
+      for (kk = new_ia[i]; kk < new_ia[i+1]; kk++) {
+         if (myagg != new_ja[kk]/6) {
+            if (myagg == -1) myagg = new_ja[kk]/6;
+            else {
+               printf("something is wrong %d %d in row %d\n",
+                       myagg, new_ja[kk]/6, i);
+               exit(1);
+            } 
+          }
+      }
+
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      count2 = 0;
+      for (j = 0; j < rowi_N; j++) {
+         if (rowi_col[j]/num_PDE_eqns != -500 - i/num_PDE_eqns) {
+            /* for each column figure out what aggregate it corresponds */
+	    /* to. If it is the same as myagg, add 1 to good, otherwise */
+	    /* add 1 to bad */
+            curagg = -1;
+	    for (kk = new_ia[rowi_col[j]]; kk < new_ia[rowi_col[j]+1]; kk++) {
+	      if (curagg != new_ja[kk]/6) {
+		if (curagg == -1) curagg = new_ja[kk]/6;
+		else {
+		  printf("Something is wrong %d %d in row %d\n",
+			 curagg, new_ja[kk]/6, rowi_col[j]);
+		  exit(1);
+		} 
+	      }
+	    }
+            if ((curagg != -1) && (myagg != -1)) {
+               if (curagg == myagg) good[myagg]++;
+               else bad[myagg]++;
+            }
+            
+         }
+      }
+   }
+   myagg = 0;
+   sprintf(fname,"goodbad%d",level_count);
+   fp = fopen(fname,"w");
+   for (i = 0; i < Nrows; i++) { 
+      if ((good[i] != 0) || (bad[i] != 0)) {
+         myagg += good[i]; 
+         myagg += bad[i]; 
+         fprintf(fp,"%d (%d,%d)\n",i,good[i],bad[i]);
+      }
+   }
+   fclose(fp);
+   printf("total number of connections counted is %d\n",myagg);
+#endif
    /* ------------------------------------------------------------- */
    /* set up the csr_data data structure                            */
    /* ------------------------------------------------------------- */
