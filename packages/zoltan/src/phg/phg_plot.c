@@ -53,7 +53,7 @@ int egno, vgno;
   if (zz->Proc == 0) {
     sprintf(filename, "phg%02d.gnuload", cnt);
     fp = fopen(filename, "w");
-    fprintf(fp, "set data style points\n");
+    fprintf(fp, "set data style dots\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set xlabel \"vertices\"\n");
     fprintf(fp, "set ylabel \"-hyperedges\"\n");
@@ -67,6 +67,39 @@ int egno, vgno;
     }
     fclose(fp);
   }
+
+  /* Sanity check to ensure Mirror is working correctly */
+  /* Don't need to generate both sets of files, but they should differ only 
+   * in the order of the points */
+  sprintf(filename, "phgmirror%02d.%02d", cnt, zz->Proc);
+  fp = fopen(filename, "w");
+
+  for (i = 0; i < phg->nVtx; i++) {
+    vgno = VTX_LNO_TO_GNO(phg, i);
+    for (j = phg->vindex[i]; j < phg->vindex[i+1]; j++) {
+      egno = EDGE_LNO_TO_GNO(phg, phg->vedge[j]);
+      fprintf(fp, "%d  %d\n", vgno, -egno);
+    }
+  }
+  fclose(fp);
+  if (zz->Proc == 0) {
+    sprintf(filename, "phgmirror%02d.gnuload", cnt);
+    fp = fopen(filename, "w");
+    fprintf(fp, "set data style dots\n");
+    fprintf(fp, "set nokey\n");
+    fprintf(fp, "set xlabel \"vertices\"\n");
+    fprintf(fp, "set ylabel \"-hyperedges\"\n");
+    fprintf(fp, "plot ");
+    for (i = 0; i < zz->Num_Proc; i++) {
+      fprintf(fp, "\"phgmirror%02d.%02d\"", cnt, i);
+      if (i != zz->Num_Proc-1)
+        fprintf(fp, ", ");
+      else
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+  }
+
   cnt++;
 }
 
@@ -134,7 +167,7 @@ int *vtx = NULL;
   if (proc == 0) {
     sprintf(filename, "hgplot%02d.gnuload", cnt);
     fp = fopen(filename, "w");
-    fprintf(fp, "set data style points\n");
+    fprintf(fp, "set data style dots\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set title \"%s\"\n", str);
     fprintf(fp, "set xlabel \"hyperedges\"\n");

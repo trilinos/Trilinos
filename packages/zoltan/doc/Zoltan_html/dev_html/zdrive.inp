@@ -98,6 +98,10 @@ Zoltan Parameters	= RCB_REUSE=0
 #       file    -- reads an initial distribution from the input file
 #                  <filename>.assign, where File Name is specified by
 #                  the "File Name" command line below.
+#       owner   -- for vertices, same as "linear."  For hyperedge, send a 
+#                  copy of a hyperedge to each processor owning one of its
+#                  vertices.  (Multiple processors may then store each
+#                  hyperedge.)
 # If an initial distribution is not specified, the default is linear.
 #
 # A second Chaco option is to distribute the objects over a subset

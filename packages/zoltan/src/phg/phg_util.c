@@ -387,13 +387,16 @@ int Zoltan_PHG_Check (
       err = ZOLTAN_WARN;
     }
 
-  for (i = 0; i < hg->nEdge; i++)
-    if ((hg->hindex[i+1] - hg->hindex[i]) < 2) {
-      sprintf (str, "Found hedge with less than two vertices: "
-       "edge %d has %d vtxs\n", i, (hg->hindex[i+1] - hg->hindex[i]));
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, str);
-      err = ZOLTAN_WARN;
-    }
+  if (hg->nProc_x == 1) { 
+    /* In 2D distribution, check makes sense only if proc has entire hedge */
+    for (i = 0; i < hg->nEdge; i++)
+      if ((hg->hindex[i+1] - hg->hindex[i]) < 2) {
+        sprintf (str, "Found hedge with less than two vertices: "
+         "edge %d has %d vtxs\n", i, (hg->hindex[i+1] - hg->hindex[i]));
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, str);
+        err = ZOLTAN_WARN;
+      }
+  }
 
   for (i = 0; i < hg->nEdge; i++)
     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)

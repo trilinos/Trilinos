@@ -100,6 +100,7 @@ int read_cmd_file (
             else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
             else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;
             else if (!strcmp(value, "file"))    i = INITIAL_FILE;
+            else if (!strcmp(value, "owner"))   i = INITIAL_OWNER;
             else  {
               Gen_Error(0, "fatal: bad initial distribution argument");
               return 0;
@@ -122,6 +123,36 @@ int read_cmd_file (
         pio_info->file_type       = HYPERGRAPH_FILE;
         pio_info->init_dist_type  = INITIAL_LINEAR;
         pio_info->init_dist_procs = -1;
+        pline = line;
+
+        while (pline+n < pmax)  {
+          i = sscanf(pline += n, SKIPW "initial" NEXTARG LASTARG "%n", string,
+           value, &n);
+          if (i != 2)
+            break;
+
+          if (!strcmp(string, "distribution")) {
+            if      (!strcmp(value, "linear"))  i = INITIAL_LINEAR;
+            else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
+            else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;
+            else if (!strcmp(value, "owner"))   i = INITIAL_OWNER;
+            else  {
+              Gen_Error(0, "fatal: bad initial distribution argument");
+              return 0;
+            }
+            pio_info->init_dist_type = i;
+          }
+          else if (!strcmp(string, "procs"))  {
+            if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &nv) != 1) {
+              Gen_Error(0, "fatal: initial procs value must be integal");
+              return 0;
+            }
+          }
+          else {
+            Gen_Error(0, "fatal: unrecognizable file type arguments");
+            return 0;
+          }
+        }
       }
       else if (strcmp(value, "nemesisi") == 0)  {
         pio_info->file_type      = NEMESIS_FILE;

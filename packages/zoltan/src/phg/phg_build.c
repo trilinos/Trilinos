@@ -219,7 +219,7 @@ int numwgts = 0;
 int ierr = ZOLTAN_OK;
 int nProc = zz->Num_Proc;
 int nRequests;
-ZOLTAN_ID_PTR pin_requests;
+ZOLTAN_ID_PTR pin_requests = NULL;
 int *request_gno = NULL;
 int edge_gno, edge_Proc_y;
 int vtx_gno, vtx_Proc_x;
@@ -475,7 +475,7 @@ float frac_x, frac_y;
     } 
   }
 
-  Zoltan_Multifree(__FILE__, __LINE__, 10, &app.pins, 
+  Zoltan_Multifree(__FILE__, __LINE__, 9,  &app.pins, 
                                            &app.edge_sizes, 
                                            &app.pin_procs, 
                                            &app.pin_gno, 

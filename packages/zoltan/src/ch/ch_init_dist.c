@@ -32,7 +32,9 @@ extern "C" {
  *  Methods currently implemented:
  *    INITIAL_LINEAR:  assigns the first n/p vertices to proc 0, the
  *                     next n/p vertices to proc 1, etc.
- *    INITIAL_CYCLIC:    deals out the vertices like cards; i.e., proc 0
+ *    INITIAL_OWNER:   same as INITIAL_LINEAR; takes on different meaning 
+ *                     only for hyperedges.
+ *    INITIAL_CYCLIC:  deals out the vertices like cards; i.e., proc 0
  *                     gets the first vertex, proc 1 gets the second vertex,
  *                     ..., proc p-1 gets the pth vertex, proc 0 gets the
  *                     (p+1)th vertex, proc 1 gets the (p+2)th vertex, etc.
@@ -107,6 +109,7 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info,
     break;
   }
   case INITIAL_LINEAR:
+  case INITIAL_OWNER:
     /* create the vtxdist array. */
     create_Vtxdist();
     break;
@@ -146,6 +149,7 @@ int num;
     break;
   }
   case INITIAL_LINEAR:
+  case INITIAL_OWNER:
     num = Vtxdist[target_proc+1] - Vtxdist[target_proc];
     break;
   case INITIAL_CYCLIC:
@@ -211,6 +215,7 @@ int i;
         vtx_list[(*nvtx)++] = i;
     break;
   case INITIAL_LINEAR:
+  case INITIAL_OWNER:
     for (i = Vtxdist[target_proc]; i < Vtxdist[target_proc+1]; i++)
       vtx_list[(*nvtx)++] = i;
     break;
@@ -248,6 +253,7 @@ int p;
     p = assignments[v-base];
     break;
   case INITIAL_LINEAR:
+  case INITIAL_OWNER:
     for (p = 0; p < Num_Proc_Dist; p++)
       /* Since v is "base"-based and Vtxdist is 0-based, add base to 
        * Vtxdist[p+1]. */

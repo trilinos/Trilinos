@@ -314,6 +314,7 @@ int hecnt, hvcnt;
 float *old_hewgts = NULL;
 float *send_hewgts = NULL;
 MPI_Status status;
+int num_dist_procs;
 
 
   /* Determine number of processors and my rank. */
@@ -321,6 +322,12 @@ MPI_Status status;
   MPI_Comm_rank (comm, &myproc );
 
   DEBUG_TRACE_START(myproc, yo);
+
+  if (pio_info->init_dist_procs > 0 && pio_info->init_dist_procs <= nprocs)
+    num_dist_procs = pio_info->init_dist_procs;
+  else
+    /* Reset num_dist_procs if not set validly by input */
+    num_dist_procs = nprocs;
 
   chaco_init_local_ids(&local_ids, &vtx_list, &min_vtx, &max_vtx, &num_vtx,
                        gnvtxs, assignments, base);
@@ -354,8 +361,13 @@ MPI_Status status;
     /* Determine to which processors hyperedges should be sent */
     for (h = 0; h < *gnhedges; h++) {
       for (i = old_hindex[h]; i < old_hindex[h+1]; i++) {
-        p = ch_dist_proc(old_hvertex[i], assignments, base);
-        old_hvertex_proc[i] = p;
+        if (pio_info->init_dist_type == INITIAL_CYCLIC)  
+          p = h % num_dist_procs;
+        else if (pio_info->init_dist_type == INITIAL_LINEAR) 
+          p = (int) ((float) (h * num_dist_procs) / (float)(*gnhedges));
+        else if (pio_info->init_dist_type == INITIAL_OWNER) 
+          p = ch_dist_proc(old_hvertex[i], assignments, base);
+        old_hvertex_proc[i] = ch_dist_proc(old_hvertex[i], assignments, base);
         if (send[p][h] == 0) {
           size[p] += (old_hindex[h+1] - old_hindex[h]);
           num_send[p]++;
