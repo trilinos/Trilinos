@@ -169,10 +169,10 @@ int main(int argc, char *argv[])
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
 #ifndef HAVE_NOX_EPETRAEXT
   bool verbose = false;
-  std::auto_ptr<Epetra_MapColoring> colorMap = Epetra_Transform::
+  Epetra_MapColoring* colorMap = Epetra_Transform::
         CrsGraph_MapColoring( verbose )( Problem.getGraph());
   Epetra_Transform::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  std::auto_ptr<vector<Epetra_IntVector> > columns = 
+  vector<Epetra_IntVector>* columns = 
                                      colorMapIndex(Problem.getGraph());
 #else
   bool verbose = false;
