@@ -169,7 +169,7 @@ bool NOX::LineSearch::PolynomialNew::compute(Abstract::Group& newGrp,
     isFailed = true;
   }
   else 
-    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nIter, nNonlinearIters);
+    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nIters, nNonlinearIters);
 
   // Increment the number of newton steps requiring a line search
   if ((useCounter) && (!isConverged))
