@@ -41,10 +41,9 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
    com_ptr->USR_comm       = MPI_COMM_WORLD;
 #ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
-   ML_Comm_ErrorHandlerSet(com_ptr->USR_comm, MPI_ERRORS_RETURN);
    /* register the error handling function */
    ML_Comm_ErrorHandlerCreate((USR_ERRHANDLER_FUNCTION *) ML_Comm_ErrorHandler,
-                              &(com_ptr->USR_errhandler));
+                              com_ptr->USR_errhandler);
    /* associate the error handling function with the communicator */
    ML_Comm_ErrorHandlerSet(com_ptr->USR_comm, com_ptr->USR_errhandler);
 #endif
@@ -940,6 +939,8 @@ int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
    return err;
 }
 
+#if defined(ML_MPI) && defined(ML_CATCH_MPI_ERRORS_IN_DEBUGGER)
+
 /*------------------------------------------------------------------------------
  
  Briefly, this function associates *errhandler with the communicator comm.
@@ -985,8 +986,8 @@ int ML_Comm_ErrorHandlerSet(USR_COMM comm, USR_ERRHANDLER *errhandler)
  Wrapper for registration of MPI error-handling function.
 ------------------------------------------------------------------------------*/
 
-/*int ML_Comm_ErrorHandlerCreate(void (*fcn)(USR_COMM*,int*),*/
-int ML_Comm_ErrorHandlerCreate(USR_ERRHANDLER_FUNCTION *fcn,
+int ML_Comm_ErrorHandlerCreate(void (*fcn)(USR_COMM*,int*),
+/*int ML_Comm_ErrorHandlerCreate(USR_ERRHANDLER_FUNCTION *fcn,*/
                                USR_ERRHANDLER *errhandler)
 {
    int err = 0;
@@ -1027,3 +1028,5 @@ void ML_Comm_ErrorHandler(USR_COMM *comm, int *error_code)
    /* we call abort so we can trap the error with a debugger */
    abort();
 }
+
+#endif /* if defined(ML_MPI) && defined(ML_CATCH_MPI_ERRORS_IN_DEBUGGER) */

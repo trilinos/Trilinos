@@ -25,26 +25,36 @@
 #include <mpi.h>
 #define USR_COMM MPI_Comm
 #define USR_REQ  MPI_Request
+
 #define USR_ERRHANDLER MPI_Errhandler
 
-#if defined(COUGAR) || defined(XTFLOP)
-/* 12/18/02 this has been deprecated, but is necessary for the
-   tflops architecture */
-#define USR_ERRHANDLER_FUNCTION MPI_Handler_function
-#define USR_ERRHANDLER_SET      MPI_Errhandler_set
-#define USR_ERRHANDLER_CREATE   MPI_Errhandler_create
-#else
+#ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
+
+/* the following might be necessary to avoid compiler warnings, since
+   in newer versions of MPI (e.g., recent lam implementations), certain
+   error handling functions may be deprecated. */
+/*
 #define USR_ERRHANDLER_FUNCTION MPI_Comm_errhandler_fn
 #define USR_ERRHANDLER_SET      MPI_Comm_set_errhandler
 #define USR_ERRHANDLER_CREATE   MPI_Comm_create_errhandler
-#endif /* ifdef COUGAR */
+*/
+#define USR_ERRHANDLER_FUNCTION MPI_Handler_function
+#define USR_ERRHANDLER_SET      MPI_Errhandler_set
+#define USR_ERRHANDLER_CREATE   MPI_Errhandler_create
+
+#endif /* ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER */
 
 #else
+
 #define USR_COMM int
 #define USR_REQ  int
+
+#ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
 #define USR_ERRHANDLER int
 #define USR_ERRHANDLER_FUNCTION void
-#endif
+#endif /* ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER */
+
+#endif /* ifdef ML_MPI */
 
 /* ******************************************************************** */
 /* components of the ML communicator                                    */
@@ -97,12 +107,19 @@ extern int    ML_Comm_Irecv(void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Wait (void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Send (void*,unsigned int,int,  int,  USR_COMM );
 
+#ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
 extern int    ML_Comm_ErrorHandlerSet(USR_COMM, USR_ERRHANDLER*);
-/*extern int    ML_Comm_ErrorHandlerCreate( void * (*HandlerFcn)(USR_COMM*,int*),*/
-extern int    ML_Comm_ErrorHandlerCreate( USR_ERRHANDLER_FUNCTION (*HandlerFcn),
+/*
+extern int    ML_Comm_ErrorHandlerCreate(
+                 void *(*HandlerFcn)(USR_COMM*,int*),
+                 USR_ERRHANDLER*);
+*/
+extern int    ML_Comm_ErrorHandlerCreate(
+                 USR_ERRHANDLER_FUNCTION (*HandlerFcn),
                  USR_ERRHANDLER*);
 extern int    ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER**);
 extern void   ML_Comm_ErrorHandler(USR_COMM*, int*);
+#endif
 
 #ifdef __cplusplus
 }
