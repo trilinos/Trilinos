@@ -419,14 +419,39 @@ If \verb!UseSparse! is true, the matrix is created in sparse format
 
 \medskip
 
-%An Epetra\_VrbMatrix pointer is returned by calling
-%\verb!GetVbrMatrix()!.  This matrix is formed starting from the
-%Epetra\_CsrMatrix, and it is formally equivalent to the CrsMatrix
-%returned by \verb!GetMatrix()!, the difference being that each node of
-%the CrsMatrix is replicated num\_PDE\_eqns times (this value is passed in
-%input, or set via Set("num pde eqns",IntValue)). 
-%A pointer to the linear problem defined by the Vbr matrix is returned by
-%method \verb!GetVbrLinearProblem()!.
+Class Trilinos\_Util\_VrbMatrixGallery, derived from
+Trilinos\_Util\_MatrixGallery, can be used to generate VBR matrices.
+The class creates an Epetra\_CrsMatrix (following user's defined
+parameters, as previously specified), then ``expands'' this matrix into
+a VBR matrix. This VBR  matrix is based on an Epetra\_BlockMap, based on
+the Epetra\_Map used to define the Epetra\_CrsMatrix. The number of PDE
+equations per node is set with parameter \verb!num_pde_eqns!. The
+Epetra\_CrsMatrix is expanded into a VBR matrix by replicating the
+matrix \verb!num_pde_eqns! times for each equation.
+
+Trilinos\_Util\_VrbMatrixGallery defines the following methods:
+
+\vskip .1 in
+
+\choicebox{\tt GetVrbMatrix()}{Returns a pointer to the internally
+  stored Vbr matrix.}
+
+\choicebox{\tt GetVrbExactSolution()}{Returns a pointer to the internally
+  stored exact solution vector (as an Epetra\_Vector).}
+
+\choicebox{\tt GetVrbStartingSolution()}{Returns a pointer to the
+  internally stored starting solution vector (as an Epetra\_Vector).}
+
+\choicebox{\tt GetVrbRhs()}{Returns a pointer to the internally
+  stored right-hand side (as an Epetra\_Vector).}
+
+\choicebox{\tt GetVrbLinearProblem()}{Returns a pointer to the internally
+  stored  Epetra\_LinearProblem for the Vbr matrix).}
+
+\choicebox{\tt GetBlock()}{Returns a pointer to the internally
+  stored Epetra\_BlockMap.}
+\medskip
+
 
 \medskip
 
