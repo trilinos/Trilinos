@@ -2754,6 +2754,51 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
      ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout,
 		 din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
 
+    /*
+      
+     {
+       int      lengc, lengf;
+       double  *rhs2, *sol2, *temp2, *res; 
+       ML_Operator *Rmat, *Qtilde;
+       
+       Rmat   = &(ml_ggb->Rmat[1]);
+       Qtilde = (ML_Operator *) ml_ggb->void_options;
+       
+       lengc = Rmat->outvec_leng;
+       lengf = leng;
+       
+       rhs2  = (double *) ML_allocate(lengc*sizeof(double));
+       sol2  = (double *) ML_allocate(lengc*sizeof(double));
+       temp2 = (double *) ML_allocate(lengc*sizeof(double));
+       res   = (double *) ML_allocate(lengf*sizeof(double));
+       
+       
+       ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, din_temp, lengc, rhs2);
+       ML_Operator_Apply(Qtilde, lengf, dout, lengc, temp2);
+     
+       for ( i = 0; i < lengc; i++ ) {
+	 rhs2[i] = rhs2[i] - temp2[i];
+	 sol2[i] = 0.0;
+       }
+       
+       ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,ml_ggb->comm, 
+		  ML_NO_RES_NORM, ml);
+       
+       ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,sol2,lengf,
+					res);
+     
+       for ( i = 0; i < lengf; i++ ) dout[i] += res[i];
+       
+       
+       ML_free(sol2);
+       ML_free(rhs2);
+       ML_free(temp2);
+       ML_free(res);
+     }
+     */
+
+
+
      ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
 		 ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
 
@@ -5434,6 +5479,121 @@ int ML_build_ggb(ML *ml, void *data)
   return 1;
 }
 
+
+
+void ML_build_ggb_cheap(ML *ml, void *data)
+{
+  ML *ml_ggb;
+  int Nrows, Ncols, Nnz, Nnz_per_row, i;
+  ML_Operator *Pmat, *Qtilde;
+  struct ML_CSR_MSRdata *csr_data, *mydata;
+
+  mydata   = (struct ML_CSR_MSRdata *) data;
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata)); 
+  
+
+  Ncols = mydata->Ncols;
+  Nrows = mydata->Nrows;
+  Nnz   = mydata->Nnz;
+
+  csr_data->rowptr  = (int    *) ML_allocate(sizeof(int)*(Nrows+1));
+  csr_data->columns = (int    *) ML_allocate(sizeof(int)*(Nnz+1));
+  csr_data->values  = (double *) ML_allocate(sizeof(double)*(Nnz+1));
+
+  
+  /* Imported information about Prolongator */
+  csr_data->rowptr  =  mydata->rowptr;
+  csr_data->columns =  mydata->columns;
+  csr_data->values  =  mydata->values;
+
+
+  ML_Create( &ml_ggb, 2);  /* Haim: make the '2' N_levels */
+
+  Pmat = &(ml_ggb->Pmat[0]);
+
+  ML_Operator_halfClone_Init( &(ml_ggb->Amat[1]), /* make 1 N_levels-1 */
+			      &(ml->Amat[ml->ML_finest_level]));
+  
+  ML_Operator_Set_1Levels(Pmat, &(ml_ggb->SingleLevel[0]), 
+			  &(ml_ggb->SingleLevel[1]));
+  ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
+				Nrows, NULL, 0);
+  ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_denseserialmatvec);
+
+  /* ML_Operator_Print(Pmat, "Pmat"); */
+ 
+  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
+ 
+  Qtilde = ML_Operator_Create(Pmat->comm);
+  ML_2matmult(&(ml_ggb->Rmat[1]), &(ml_ggb->Amat[1]),
+	      Qtilde, ML_CSR_MATRIX );
+  ML_2matmult(Qtilde, &(ml_ggb->Pmat[0]), &(ml_ggb->Amat[0]),
+	      ML_MSR_MATRIX );
+
+  ML_Operator_Set_ApplyFunc (Qtilde, ML_INTERNAL,CSR_matvec);
+
+
+  ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+  ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
+  
+  ml_ggb->void_options = (void *) Qtilde;
+  ml->void_options     = (void *) ml_ggb;
+
+ }
+
+
+
+
+void ML_build_ggb_fat(ML *ml, void *data)
+{
+  ML *ml_ggb;
+  ML_Aggregate *ag;
+  int  Nrows, Ncols, Nnz, Nnz_per_row, i, N_levels, num_PDE_eqns ;
+  int  coarsest_level;
+
+  
+  ML_Operator *Amat;
+
+  struct ML_CSR_MSRdata *csr_data, *mydata;
+  mydata   = (struct ML_CSR_MSRdata *) data;
+  
+  Amat = &(ml->Amat[ml->ML_finest_level]);
+  
+  /* coarsest_level = 1; */
+  N_levels       = 2;
+  num_PDE_eqns   = Amat->num_PDEs;  
+  Ncols = mydata->Ncols;
+  Nrows = mydata->Nrows;
+
+  /*  for (i = 0; i < Nrows; i++) printf("eig[%d]=%f \n",i,mydata->values[i]); */
+  /*  for (i = 0; i < Nrows; i++) printf("Nrows = %d, Ncols = %d \n",Nrows,Ncols); */
+
+  
+  printf("\n ========>       Fattening of Prolongation       <========\n\n");
+  
+
+  ML_Create( &ml_ggb, N_levels );  /* Haim: make the '2' N_levels */
+
+  ML_Operator_halfClone_Init( &(ml_ggb->Amat[N_levels-1]), /* make 1 N_levels-1 */
+			      &(ml->Amat[ml->ML_finest_level]));
+			      
+  ML_Aggregate_Create( &ag );
+  ML_Aggregate_Set_DampingFactor(ag,0.0);
+  ML_Aggregate_Set_Threshold(ag, 0.0);
+  ML_Aggregate_Set_MaxCoarseSize( ag, 300);
+  ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Ncols, mydata->values, Nrows);
+  coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml_ggb, N_levels-1,ML_DECREASING, ag);
+
+    ML_Operator_Print(&(ml_ggb->Pmat[0]), "Pmat"); 
+
+  ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+  ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
+   
+  ml->void_options = (void *) ml_ggb;
+
+ 
+}
 
 
 
