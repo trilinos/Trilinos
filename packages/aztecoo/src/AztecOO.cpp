@@ -904,7 +904,8 @@ void Epetra_Aztec_matvec(double x[], double y[], AZ_MATRIX *Amat, int proc_confi
 		Y->ResetView(y);
 	}
 
-  A->Apply(*X, *Y);
+  int ierr = A->Apply(*X, *Y);
+  if (ierr!=0) throw X->ReportError("Error in call to Epetra_Operator for preconditioner", ierr);
 
 }
 
@@ -929,7 +930,8 @@ void Epetra_Aztec_operatorvec(double x[], double y[], AZ_MATRIX *Amat, int proc_
 		Y->ResetView(y);
 	}
 
-  A->Apply(*X, *Y);
+  int ierr = A->Apply(*X, *Y);
+  if (ierr!=0) throw X->ReportError("Error in call to Epetra_Operator for preconditioner", ierr);
 
 }
 
@@ -956,7 +958,8 @@ void Epetra_Aztec_precond(double x[], int input_options[],
 		Y->ResetView(x);
 	}
 
-  A->ApplyInverse(*X, *Y);
+  int ierr = A->ApplyInverse(*X, *Y);
+  if (ierr!=0) throw X->ReportError("Error in call to Epetra_Operator for preconditioner", ierr);
 
 }
 
