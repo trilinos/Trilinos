@@ -28,28 +28,31 @@
 
 <H2>
 <A NAME="new_implementation"></A>Load-Balancing Function Implementation</H2>
-The new load-balancing algorithm should be implemented as an <B>LB_FN</B>.
-The type definition for an <B>LB_FN</B> is in <I>lb/lb_const.h</I> and
+The new load-balancing algorithm should be implemented as an <B>ZOLTAN_LB_FN</B>.
+The type definition for an <B>ZOLTAN_LB_FN</B> is in <I>lb/lb_const.h</I> and
 is described below. When the new algorithm is selected,
-the <I>LB_Fn</I> field of the <B>Zoltan_Struct</B> is set to point to the <B>LB_FN</B>
+the <I>LB_Fn</I> field of the <B>Zoltan_Struct</B> is set to point to the <B>ZOLTAN_LB_FN</B>
 function for the new algorithm. This pointer is then used in invoking load
 balancing in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>.
 <BR>&nbsp;
 
 <P>
 <hr>
-<HR>typedef int <B>LB_FN</B>
+<HR>typedef int <B>ZOLTAN_LB_FN</B>
 (struct&nbsp;<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>&nbsp;*<I>zz</I>,
+float&nbsp;*<I>part_sizes</I>,
 int&nbsp;*<I>num_import</I>,
 <B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>import_global_ids</I>,
 <B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>import_local_ids</I>,
 int&nbsp;**<I>import_procs</I>,
+int&nbsp;**<I>import_to_parts</I>,
 int&nbsp;*<I>num_export</I>,
 <B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>export_global_ids</I>,
 <B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>export_local_ids</I>,
-int&nbsp;**<I>export_procs</I>);&nbsp;
+int&nbsp;**<I>export_procs</I>,&nbsp;
+int&nbsp;**<I>export_to_parts</I>);&nbsp;
 <HR>
-<BR>The <B>LB_FN</B> function type describes the arguments passed to a
+<BR>The <B>ZOLTAN_LB_FN</B> function type describes the arguments passed to a
 load-balancing function. The input to the function is a <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
 containing pointers to application-registered functions to be used in the
 load-balancing algorithm. The remaining arguments are output parameters
@@ -80,6 +83,24 @@ interface will then build the lists requested by
 
 <TD>A pointer to the <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
 to be used in the load-balancing algorithm.</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; part_sizes</I></TD>
+
+<TD>Input:  an array of partition sizes for each weight component.
+Entry 
+<i>part_sizes[i*obj_weight_dim+j]</i>
+contains the user-requested 
+partition size for partition <i>i</i> with respect to object weight <i>j</i> for
+<i>i</i>=0,1,...,number of partitions-1, and 
+<i>j</i>=0,1,...,<i>obj_weight_dim</i>-1.
+If the application sets parameter 
+<i><a href="../ug_html/ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a></i>,
+<i>obj_weight_dim</i> is the set value of 
+<i><a href="../ug_html/ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a></i>;
+otherwise, <i>obj_weight_dim</i> is one.
+</TD>
 </TR>
 
 <TR VALIGN=TOP>
@@ -122,6 +143,16 @@ If this array is non-null, it must be allocated by
 </TR>
 
 <TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>import_to_parts</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> containing the partition
+IDs of partitions to which objects will be imported
+ <i>in the NEW decomposition</i>.
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+<TR VALIGN=TOP>
 <TD>&nbsp;&nbsp;&nbsp; <I>num_export</I></TD>
 
 <TD>Upon return, the number of objects to be exported from the processor
@@ -155,6 +186,16 @@ If this array is non-null, it must be allocated by
 <TD>Upon return, an array of size <I>num_export</I> containing the
 processor IDs of processors owning (in the old decomposition) the objects
 to be exported for the new decomposition.&nbsp;
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+<TR VALIGN=TOP>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_to_parts</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> containing the
+partition IDs of partitions to which the objects will be 
+exported for the new decomposition.&nbsp;
 If this array is non-null, it must be allocated by 
 <b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 </td>
