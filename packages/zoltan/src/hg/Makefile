@@ -2,7 +2,7 @@
 #C_pre          = purify -best-effort -cache-dir=/tmp
 
 #Compiler
-C_comp		= cc -DHTEST 
+C_comp		= /Net/local/bin/cc -DHTEST -DZOLTAN_NO_MPI
 
 # Assume that environment OSTYPE is set to 'solaris' or 'linux'!
 # OSTYPE        = solaris
@@ -14,12 +14,15 @@ C_flag_linux    = -O -Wall
 DTIME		= -DWITHTIME
 
 
-C		= $(C_pre) $(C_comp) $(C_flag_$(OSTYPE)) $(DTIME)
+VPATH		= ../Utilities/Memory
+I		= -I../Utilities/Memory/ -I../include
+C		= $(C_pre) $(C_comp) $(C_flag_$(OSTYPE)) $(DTIME) $(I)
 L		= -L. -lhg -lm
 
 src.c		= hg_test.c hg_readfile.c hg_util.c \
 		  hg_part.c hg_match.c hg_pack.c hg_group.c hg_scale.c \
-		  hg_coarse.c hg_global.c hg_local.c hg_sort.c rp_mem.c
+		  hg_coarse.c hg_global.c hg_local.c hg_sort.c \
+		  mem.c
 
 all:            	./hg_test
 ./hg_test:		./libhg.a hg_test.o

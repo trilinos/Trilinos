@@ -26,7 +26,7 @@ extern "C" {
 #include <string.h>
 
 #ifdef HTEST
-#include "rp_mem.h"
+#include "zoltan_mem.h"
 typedef struct
   {
   int Debug_Level;
