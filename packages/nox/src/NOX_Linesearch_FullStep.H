@@ -67,7 +67,7 @@ public:
 private:
 
   //! Full step length
-  double defaultstep;
+  double fullstep;
 
 };
 } // namespace Linesearch
