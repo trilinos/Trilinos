@@ -64,12 +64,7 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  // Get the number of local equations from the command line
-  if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
-    exit(1);
-  }
-  int NumGlobalElements = atoi(argv[1]);
+  int NumGlobalElements = 2; // Hardcoded for D&S Example problem
   int IndexBase = 0;
 
   if (NumGlobalElements < NumProc) {
@@ -136,7 +131,6 @@ int main(int argc, char *argv[])
   printf("\nInitial solution :\n");
   cout << soln;
   Comm.Barrier();
-  if(MyPID==0) getchar();
   
   // Begin Nonlinear Solver ************************************
 
