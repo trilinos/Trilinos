@@ -54,33 +54,29 @@
   \endverbatim
   * This macro adds the following data member to the class declaration:
   \verbatim
-
 	private:
-		My_Class my_attribute_;
+		MyClass my_attribute_;
   \endverbatim
   * and the following methods to your class declaration:
   \verbatim
-
 	public:
-
-        void my_attribute( const My_Class & my_attribute )
-	{ my_attribute_ = my_attribute; }
-	const My_Class& my_attribute() const
-	{ return my_attribute_; }
+  void my_attribute( const My_Class & my_attribute )
+    { my_attribute_ = my_attribute; }
+  const My_Class& my_attribute() const
+    { return my_attribute_; }
   \endverbatim
   * The advantage of using this type of declaration is that it saves
   * you a lot of typing and space.  Later if you need to override these
   * operations you can just implement the member functions by hand.
   */
 //@{
-#define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME )			\
-public:																\
-	void NAME (const TYPE & NAME )									\
-	{	NAME ## _ = NAME ; }										\
-	const TYPE& NAME() const										\
-	{	return NAME ## _; }											\
-private:															\
-	TYPE NAME ## _;													\
+#define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME ) \
+	void NAME (const TYPE & NAME ) \
+	{	NAME ## _ = NAME ; } \
+	const TYPE& NAME() const \
+	{	return NAME ## _; } \
+private: \
+	TYPE NAME ## _; \
 public:
 
 //@} // end defgroup
