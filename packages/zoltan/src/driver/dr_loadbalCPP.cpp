@@ -24,7 +24,8 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #define STOP_CALLBACK_TIMER 
 #endif /* TIMER_CALLBACKS */
 
-#include <mpi.h>
+#include <mpi.h>   // must appear before stdio or iostream
+
 #include <iostream>
 
 #include "dr_const.h"
@@ -38,7 +39,6 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 
 using namespace std;
 
-static int Num_GID = 1, Num_LID = 1;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR, Zoltan_Object &);
 
 /*--------------------------------------------------------------------------*/
@@ -116,10 +116,6 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       delete [] partid;
       return 0;
     }
-    if (strcasecmp(prob->params[i].Name, "NUM_GID_ENTRIES") == 0) 
-      Num_GID = atoi(prob->params[i].Val);
-    else if (strcasecmp(prob->params[i].Name, "NUM_LID_ENTRIES") == 0) 
-      Num_LID = atoi(prob->params[i].Val);
   }
 
   /* Set the load-balance method */
@@ -428,8 +424,6 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
                                     has changed                              */
   int num_gid_entries;           /* Number of array entries in a global ID.  */
   int num_lid_entries;           /* Number of array entries in a local ID.   */
-
-  char fname[128];
 
 /***************************** BEGIN EXECUTION ******************************/
 
