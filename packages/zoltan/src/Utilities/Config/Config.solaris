@@ -24,6 +24,8 @@ RANLIB			= ranlib
 AR			= ar r
 
 CC			= /Net/local/bin/cc
+CPPC			= /Net/local/bin/CC
+
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
 			  -I/Net/proj/zoltan/arch/solaris/include \

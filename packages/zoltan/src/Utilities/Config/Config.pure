@@ -26,6 +26,7 @@ AR			= ar r
 
 # use CFLAGS = $(DBG_FLAGS) with purify.
 CC			= /Net/local/bin/cc
+CPPC			= /Net/local/bin/CC
 PURE_CC			= purify -best-effort -follow-child-processes=yes \
 			  -cache-dir=/Net/local/proj/zoltan/tmp/purify \
 			  -chain-length=12
