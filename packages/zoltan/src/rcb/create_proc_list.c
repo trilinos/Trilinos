@@ -116,7 +116,7 @@ int LB_Create_Proc_List(
            s += send[i] = a - rem[i];
      while (s < sum_send)
         for (i = 0; i < nprocs && s < sum_send; i++)
-           if (sets[i] != set && send[i]) {
+           if (sets[i] != set && (send[i] || !s)) {
               send[i]++;
               s++;
            }
