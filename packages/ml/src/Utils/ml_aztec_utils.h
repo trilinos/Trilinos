@@ -148,6 +148,8 @@ extern void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *r
 				 int global_node_inds[], ML_Comm *comm, int Nlocal_edges,
 				 ML_Operator **Tmat);
 
+extern void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], 
+				    int proc_config[] );
 #endif
 
 #ifdef __cplusplus

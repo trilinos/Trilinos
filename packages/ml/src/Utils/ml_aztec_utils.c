@@ -2030,6 +2030,59 @@ ML_free(sorted_ext);
 
 }
 
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], int proc_config[] )
+{
+  int i,j,k,N_nz,N,col;
+  int *data_org, *bindx;
+  double *val, sol_value;
+
+  /* Eliminate columns corresponding to Dirichlet rows by */
+  /* zeroing out the elements (leaving the diagonal entry */
+  /* corresponding to Dirichlet BC) and modifying the rhs */
+  /* appropriately. Note: dirichlet points are determined */ 
+  /* by looking for rows with only a diagonal nonzero entry.*/
+
+  data_org = Amat->data_org;
+  bindx = Amat->bindx;
+  val = Amat->val;
+
+  if (data_org[AZ_matrix_type] != AZ_MSR_MATRIX) {
+      printf("AZ_zeroDirichletcolumns: Not an MSR matrix\n");
+      exit(1);
+  }
+
+  if (proc_config[AZ_N_procs] != 1) {
+    printf("AZ_zeroDirichletcolumns: Only works in serial\n");
+    exit(1);
+  }
+
+
+  N = data_org[AZ_N_internal] + data_org[AZ_N_border];
+
+  for (i = 0 ; i < N; i++) {
+    N_nz = 0;
+    for (j = bindx[i]; j < bindx[i+1]; j++) {
+      if (val[j] != 0.0) { N_nz++; break; }
+    }
+    if (N_nz == 0) {
+      sol_value = rhs[i]/val[i];
+      for (j = bindx[i]; j < bindx[i+1]; j++) {
+	col = bindx[j];
+      
+	/* Zero out the (col,i) entry */
+	for (k = bindx[col]; k < bindx[col+1] ; k++) {
+	  if (bindx[k] == i) {
+	    rhs[col] -= val[k]*sol_value;
+	    val[k] = 0.0;
+	  }
+	}
+      }
+    }
+  }
+}
 
 #else
 
