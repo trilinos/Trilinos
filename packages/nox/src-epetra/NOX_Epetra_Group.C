@@ -696,9 +696,6 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
     Problem.LeftScale(*tmpVectorPtr);
   }
 
-  if (aztecStatus != 0) 
-    return false;
-  
   // Set the output parameters
   NOX::Parameter::List& outputList = p.sublist("Output");
   int linearIters = outputList.getParameter("Number of Linear Iterations", 0);
@@ -706,6 +703,9 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
 		 (linearIters + aztec.NumIters()));
   outputList.setParameter("True Unscaled Residual", aztec.TrueResidual());
 
+  if (aztecStatus != 0) 
+    return false;
+  
   return true;
 }
 
