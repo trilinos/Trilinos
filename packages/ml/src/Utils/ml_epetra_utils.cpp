@@ -248,7 +248,7 @@ int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
   ML_Operator_Set_Getrow(newMatrix, ML_INTERNAL, newMatrix->outvec_leng,
                        Epetra_ML_getrow);
 
-  ML_Operator_Set_ApplyFunc (newMatrix, ML_EXTERNAL, Epetra_ML_matvec);
+  ML_Operator_Set_ApplyFunc (newMatrix, ML_INTERNAL, Epetra_ML_matvec);
 
   return 0;
 }
@@ -268,7 +268,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   MLnew_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
             Epetra_ML_comm_wrapper, isize+N_ghost);
 
-  ML_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
+  MLnew_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
 
   return 1;
 }
@@ -876,9 +876,10 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
 #ifdef WKC
 int Epetra_ML_matvec_WKC (void *data, int in, double *p, int out, double *ap)
 {
-  /* ML matvec wrapper for Epetra matrices. */
+  ML_Operator *mat_in;
 
-  Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
+  mat_in = (ML_Operator *) data;
+  Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
   Epetra_MultiVector &X(*(Epetra_MultiVector *)p);
   Epetra_MultiVector &Y(*(Epetra_MultiVector *)ap);
 
