@@ -1,7 +1,8 @@
 Decomposition Method 	= rcb
 Zoltan Parameters	= tflops_special=1
-Zoltan Parameters	= obj_weight_dim=2
-Zoltan Parameters	= keep_cuts=1
+Zoltan Parameters       = obj_weight_dim=2
+Zoltan Parameters	= 
 File Type		= Chaco
 File Name		= hammond2
 Parallel Disk Info	= number=0
+test local partitions	= 1
