@@ -1,0 +1,27 @@
+This directory contains the "elements" for the Trilinos test harness suite.
+The perl executable, $TRILINOS/testharness/test-harness.plx, must be executed
+from the $TRILINOS/testharness subdirectory. Results will be placed in
+$TRILINOS/testharness/results.
+
+Each machine should have its `elements-machine' file (for example, linux-csmr02).
+
+Each set of configure options should have its `element-trilinos' file
+(for example, `basic') and the corresponding input file for test-harness.plx
+(for example, `script-basic'). By convention, the test file has the name of the
+element-trilinos file, with the prefix "script-".
+
+Currently available list of configure options:
+- standalone		ML alone, no other Trilinos package is compiled)
+- basic 		ML with Epetra, AztecOO and triutils only (no Teuchos)
+			This is essentially ML with AztecOO support only
+- trilinos		This is the basic usage of ML, using Epetra, AztecOO, triutils,
+			Amesos, Anasazi and Teuchos
+- trilinos-parmetis	as `trilinos', but with metis and parmetis
+
+Some more comments can be found in `test.sh'.
+
+Still to do:
+- MPI support
+- more machines
+- send results to developers
+- support for automatic CVS update
