@@ -35,3 +35,17 @@ This also makes const usage consistent with functions and function return types.
 10. Prefer member initialization to member assignment in constructor body.
 
 11. If a class has non-trivial data members, always declare a default constructor, a copy constructor, a destructor, and an assignment operator. You don't need to define them, but always declare them. This will prevent the compiler from adding in those functions, which it will usually write poorly. This way, if someone tries to use one of those functions, it will be a compile-time error instead of working but potentially producing the Wrong behavior. Always document these declarations as such.
+
+12. The opening curly bracket of a function should be on the same line as the arguments, except if the arguments take up more than one line. Then the opening curly bracket should be on its own line. 
+
+13. If the arguments for a function take up more than one line, then they should be formatted so that the first argument is on the same line as the name of the function, and each subsequent argument should be on its own line.
+
+14. Member initializations in a constructor should be formatted one per line, with the semicolon or comma preceding the initialization. This allows us to add, remove, and comment out individual lines without having to change the surrounding code. Example:
+	SomeClass()
+		: classMember1_()
+		, classMember2_()
+		, classMember3_()
+	{
+		// constructor body
+
+15. Indents should be 2 characters wide.

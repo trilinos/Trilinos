@@ -484,8 +484,7 @@ public:
 	void print(ostream& os) const {
 		OrdinalType const myImageID = vectorSpace().comm().getMyImageID();
 		OrdinalType const numImages = vectorSpace().comm().getNumImages();
-		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-        OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		
 		for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
 			if (myImageID == imageCtr) {
