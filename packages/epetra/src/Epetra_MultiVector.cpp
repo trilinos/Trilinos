@@ -1525,6 +1525,8 @@ void Epetra_MultiVector::Print(ostream& os) const {
       int NumMyElements1 =Map(). NumMyElements();
       int MaxElementSize1 = Map().MaxElementSize();
       int * MyGlobalElements1 = Map().MyGlobalElements();
+      int * FirstPointInElementList1;
+      if (MaxElementSize1!=1) FirstPointInElementList1 = Map().FirstPointInElementList();
       double ** A_Pointers = Pointers();
 
       if (MyPID==0) {
@@ -1542,20 +1544,24 @@ void Epetra_MultiVector::Print(ostream& os) const {
 	  }
 	os << endl;
       }
-      
       for (int i=0; i < NumMyElements1; i++) {
 	for (int ii=0; ii< Map().ElementSize(ii); ii++) {
+       int iii;
 	  os.width(10);
 	  os <<  MyPID; os << "    ";
 	  os.width(10);
-	  if (MaxElementSize1==1)
+	  if (MaxElementSize1==1) {
 	    os << MyGlobalElements1[i] << "    ";
-	  else
+       iii = i;
+       }
+	  else {
 	    os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+         iii = FirstPointInElementList1[i]+ii;
+       }
 	  for (int j = 0; j < NumVectors1 ; j++)
 	    {   
 	      os.width(20);
-	      os <<  A_Pointers[j][ii];
+	      os <<  A_Pointers[j][iii];
 	    }
 	  os << endl;
 	}
