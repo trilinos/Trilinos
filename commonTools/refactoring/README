@@ -103,7 +103,7 @@ string-replace-list.pl string_file old_file new_file
   This script has the same behavior as 'string-replace.pl' except it
   operates on a list of strings.
 
-string-replace-r string_file
+string-replace-list-r string_file
 
   Replaces all occurrences of a list strings from the file 'string_file' in
   all the files starting with the current directory and then extending into
