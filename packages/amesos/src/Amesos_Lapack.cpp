@@ -343,7 +343,7 @@ int Amesos_Lapack::SerialToDense()
     AMESOS_CHK_ERR(ierr);
 
     for (int k = 0 ; k < NumEntries ; ++k) {
-      if ( abs(Values[k]) >= Threshold_)
+      if ( fabs(Values[k]) >= Threshold_)
 	if (UseTranspose())
 	  DenseMatrix_(Indices[k],j) = Values[k];
 	else
@@ -407,7 +407,7 @@ int Amesos_Lapack::DistributedToDense()
 
     for (int k = 0 ; k < NumEntries ; ++k) {
       int col = Indices[k];
-      if ( abs(Values[k]) >= Threshold_) {
+      if ( fabs(Values[k]) >= Threshold_) {
 	if (UseTranspose())
 	  DenseMatrix_(col,j) = Values[k];
 	else
