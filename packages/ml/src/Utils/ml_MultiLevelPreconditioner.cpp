@@ -1481,6 +1481,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
        else if( CoarsenScheme == "ParMETIS" ) 
          ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS(level,NumLevels_,agg_);
+       else if(  CoarsenScheme == "Zoltan" ) 
+         ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan(level,NumLevels_,agg_);
        else if( CoarsenScheme == "MIS" ) 
          ML_Aggregate_Set_CoarsenSchemeLevel_MIS(level,NumLevels_,agg_);
        else if(  CoarsenScheme == "Uncoupled" ) 
@@ -1491,12 +1493,24 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          if( Comm().MyPID() == 0 ) {
 	   cout << ErrorMsg_ << "specified options ("
 		<< CoarsenScheme << ") not valid. Should be:" << endl;
-	   cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <MIS> / <Uncoupled> / <Coupled> / <Uncoupled-MIS>" << endl;
+	   cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled>" << endl;
 	 }
 	 exit( EXIT_FAILURE );
        } 
    
-       if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ) {
+       if( CoarsenScheme == "Zoltan" ) {
+         // FIXME: am I still ok?
+	 double * coord = List_.get(Prefix_ + "aggregation: zoltan coordinates",
+				    (double *)0);
+	 int NumDimensions = List_.get(Prefix_ + "aggregation: zoltan dimensions",
+				    0);
+
+	 ML_Aggregate_Set_NodalCoordinates(ml_, agg_, coord);
+	 ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
+       }
+
+       if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ||
+	   CoarsenScheme == "Zoltan" ) {
          
          bool isSet = false;
 
