@@ -59,7 +59,6 @@ GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm,
   Importer(0),
   xptr(0),
   initialSolution(0),
-//  auxSolution(0),
   AA(0),  
   A(0) 
 {
@@ -142,8 +141,6 @@ GenericEpetraProblem::~GenericEpetraProblem()
   delete A; A = 0;
   delete AA; AA = 0;
   delete initialSolution; initialSolution = 0;
-  //  Need to fix this !!!  RHooper
-//  delete auxSolution; auxSolution = 0;
   delete Importer; Importer = 0;
   delete OverlapMap; OverlapMap = 0;
   delete StandardMap; StandardMap = 0;
@@ -225,20 +222,20 @@ void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
   *initialSolution = data;
 }
 
-void GenericEpetraProblem::createAuxillaryVectors()
+void GenericEpetraProblem::createDependentVectors()
 {
-  // Create the auxillary vectors needed to receive data from other problems
+  // Create the dependent vectors needed to receive data from other problems
   if( !initialSolution ) {
-    cout << "ERROR: Cannot create auxillary data without an existing solution "
+    cout << "ERROR: Cannot create dependent data without an existing solution "
          << "vector for this problem !!" << endl;
     throw "GenericEpetraProblem ERROR";
   }
-  for( int i = 0; i<auxProblems.size(); i++ ) {
+  for( int i = 0; i<depProblems.size(); i++ ) {
 #ifdef DEBUG
-    cout << "For problem : " << myId << "  Creating AuxVec for problem : "
-         << auxProblems[i] << endl;
+    cout << "For problem : " << myId << "  Creating DepVec for problem : "
+         << depProblems[i] << endl;
 #endif
-    auxSolutions.insert( pair<int, Epetra_Vector*>(auxProblems[i],
+    depSolutions.insert( pair<int, Epetra_Vector*>(depProblems[i],
 			    new Epetra_Vector(*initialSolution)) );
   }
 }
@@ -247,7 +244,11 @@ void GenericEpetraProblem::addProblemDependence(
 		const GenericEpetraProblem& problemB)
 {
   // Add a problem to the list of those this one depends on
-  auxProblems.push_back(problemB.getId());
+  depProblems.push_back(problemB.getId());
+
+  // Add to the Name-to-My-Index lookup map
+  nameToMyIndex.insert( pair<string, int>(problemB.getName(),
+                          depProblems.size() - 1) );
 }
 
 void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
@@ -260,9 +261,9 @@ void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
 void GenericEpetraProblem::doTransfer()
 {
   // Do transfers from each dependent problem to this one
-  for( int i = 0; i<auxProblems.size(); i++) {
-    int auxId = auxProblems[i];
-    XferOp* xfer = xferOperators.find(auxId)->second;
+  for( int i = 0; i<depProblems.size(); i++) {
+    int depId = depProblems[i];
+    XferOp* xfer = xferOperators.find(depId)->second;
 
     if( !xfer ) {
       cout << "ERROR: doTransfer: No valid transfer operator !!" << endl;
@@ -273,8 +274,8 @@ void GenericEpetraProblem::doTransfer()
       // NOTE that we are transferring (by default) to/from each problem's
       // solution vector which may not be the same as in each respective
       // group.
-      Epetra_Vector& fromVec = myManager->getProblem(auxId).getSolution();
-      Epetra_Vector& toVec = *(auxSolutions.find(auxId)->second);
+      Epetra_Vector& fromVec = myManager->getProblem(depId).getSolution();
+      Epetra_Vector& toVec = *(depSolutions.find(depId)->second);
       xfer->transferField(toVec, fromVec); 
     }  
   }

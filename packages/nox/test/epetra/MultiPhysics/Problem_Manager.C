@@ -60,8 +60,8 @@
 #include "Epetra_Time.h"
 
 // Hard-wired switch to turn on/off use of FD Coloring
-//#define USE_FD
-#undef USE_FD
+#define USE_FD
+//#undef USE_FD
 
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
                                  bool doOffBlocks_,
@@ -166,10 +166,25 @@ GenericEpetraProblem& Problem_Manager::getProblem(int id_)
   if( !problem ) {
     cout << "ERROR: Problem with id --> " << id_ << " not registered with "
          << "Problem_Manager !!" << endl;
+    outputStatus();
     throw "Problem_Manager ERROR";
   }
   else
     return *problem;
+}
+
+GenericEpetraProblem& Problem_Manager::getProblem(string name)
+{
+  // Get a problem given its name
+  map<string, int>::iterator iter = NameLookup.find(name);
+  if( iter == NameLookup.end() ) {
+    cout << "ERROR: Could not find lookup id for Problem --> " << name 
+         << endl;
+    outputStatus();
+    throw "Problem_Manager ERROR";
+  }
+  else
+    return getProblem( iter->second );
 }
 
 NOX::EpetraNew::Group& Problem_Manager::getGroup(int id_)
@@ -280,8 +295,8 @@ void Problem_Manager::registerComplete()
     GenericEpetraProblem& problem = *(*iter).second;
     int probId = problem.getId();
 
-    // Create auxillary vectors for this problem
-    problem.createAuxillaryVectors();
+    // Create dependent vectors for this problem
+    problem.createDependentVectors();
 
     // Create index mapping for this problem into the composite problem
     ProblemToCompositeIndices.insert( pair<int, Epetra_IntVector*>
@@ -437,24 +452,6 @@ bool Problem_Manager::setGroupX(int probId)
   }
 
   grp->setX(problem->getSolution());
-
-  // We must also sync the solutions for each group used in FDC
-  /*
-  if( doOffBlocks ) {
-
-    for( int k = 0; k<problem->auxProblems.size(); k++) {
-
-      vector<NOX::EpetraNew::Group*> &offGroupsVec =
-        Off_Groups.find(probId)->second;
-
-      // The container can be empty if evaluate() is called before
-      // createGraph
-      if( !offGroupsVec.empty() )
-        offGroupsVec[k]->setX(*compositeSoln);
-
-    }
-  }
-  */
 }
 
 bool Problem_Manager::setAllGroupX()
@@ -816,7 +813,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     if( doOffBlocks ) {
 #ifdef HAVE_NOX_EPETRAEXT
       // Loop over each problem on which this one depends
-      for( int k = 0; k<problem.auxProblems.size(); k++) {
+      for( int k = 0; k<problem.depProblems.size(); k++) {
 
         // Copy the off-block jacobian matrices for this 
         // problem-problem coupling
@@ -829,7 +826,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
 	if( !offMatrixPtr ) {
           cout << "ERROR: Unable to get FDColoring underlying matrix for "
                << "dependence of problem " << probId << " on problem "
-               << problem.auxProblems[k] << " !!" << endl;
+               << problem.depProblems[k] << " !!" << endl;
           throw "Problem_Manager ERROR";
         }
         Epetra_CrsMatrix &offMatrix = *offMatrixPtr;
@@ -1106,17 +1103,6 @@ bool Problem_Manager::evaluate(
   // Note that incoming matrix is no longer used.  Instead, the problem
   // should own the matrix to be filled into.
 
-  // Also, if the incoming vector is from FDC for off-diagonal block 
-  // contributions to the Jacobian, an Import operation is generally 
-  // needed since the solumn space is typically smaller than the row
-  // space of the off-block, i.e. not every row has a column entry
-
-  // This import object could be created and stored for each FDC off-block
-  // column map
-//  Epetra_Import myImporter(compositeSoln->Map(), solnVector->Map());
-//  Epetra_Vector mySolnVector(*compositeSoln);
-//  mySolnVector.Import(*solnVector, myImporter, Insert);
-//  copyCompositeToProblems(mySolnVector, SOLUTION);
   copyCompositeToProblems(*solnVector, SOLUTION);
 
   // If used, give each off-block FDC manager a copy of the current total
@@ -1126,14 +1112,7 @@ bool Problem_Manager::evaluate(
     setAllOffBlockGroupX(*solnVector);
 #endif
 
-  // This is needed for FDC since each FDC group needs the whole compositeSoln
-//  cout << "\n\n\tmySolnVector : " << mySolnVector
-//       << "\n\n\tand solnVector : " << *solnVector << endl << endl;
-//  cout << "\n\t\tHERE\n" << endl;
-//  *compositeSoln = *solnVector;
-  //  Need a new interface for each off-diagonal block --> RHooper
-
-  // Do transfers from problem solution vectors into problem auxillary vectors
+  // Do transfers from problem solution vectors into problem dependent vectors
   syncAllProblems();
 
   // Set each problem group Xvec with its problem solution vector
@@ -1243,7 +1222,7 @@ void Problem_Manager::generateGraph()
       int problemRow, compositeRow, numCols, numDepCols;
   
       // Loop over each problem on which this one depends
-      for( int k = 0; k<problem.auxProblems.size(); k++) {
+      for( int k = 0; k<problem.depProblems.size(); k++) {
 
         // Create the off-block graph to be constructed for this 
         // problem-problem coupling
@@ -1258,7 +1237,7 @@ void Problem_Manager::generateGraph()
 
         // Get the needed objects for the depend problem
         GenericEpetraProblem &dependProblem = 
-          *(Problems.find(problem.auxProblems[k])->second);
+          *(Problems.find(problem.depProblems[k])->second);
         int dependId = dependProblem.getId();
         XferOp *xferOpPtr = problem.xferOperators.find(dependId)->second;
 	if( !xferOpPtr ) {
@@ -1387,10 +1366,11 @@ void Problem_Manager::outputStatus()
   for( ; problemIter != problemLast; problemIter++) {
 
     GenericEpetraProblem& problem = *(*problemIter).second;
-    cout << "\tProblem \"" << problem.getName() << "\" \t Depends on:" << endl;
+    cout << "\tProblem \"" << problem.getName() << "\" (" << problemIter->first
+         << ")\t Depends on:" << endl;
     
-    for( int j = 0; j<problem.auxProblems.size(); j++ ) {
-      dependIter = Problems.find( problem.auxProblems[j] );
+    for( int j = 0; j<problem.depProblems.size(); j++ ) {
+      dependIter = Problems.find( problem.depProblems[j] );
       cout << "\t\t-------------> \t\t\"" << dependIter->second->getName() 
            << "\"" << endl;
     }

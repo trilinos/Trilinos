@@ -35,6 +35,7 @@ noinst_PROGRAMS = $(EXAMPLE)
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Equation_A.C $(srcdir)/Equation_A.H \
 	$(srcdir)/Equation_B.C $(srcdir)/Equation_B.H \
+	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \

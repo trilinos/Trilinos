@@ -44,7 +44,7 @@ class Basis {
 
   // Calculates the values of u and x at the specified gauss point
   void getBasis(int gp, double *x, double *u, double *uold, 
-                vector<double*>& aux);
+                vector<double*>& dep);
 
  public:
   int NumSpecies;
@@ -53,7 +53,7 @@ class Basis {
   double xx, eta, wt;
   double uu, duu;
   double uuold, duuold;
-  vector<double> aaux;
+  vector<double> ddep;
   double dx;
 };
 

@@ -120,9 +120,9 @@ public:
   // Set the solution vector (initialSolution)
   virtual void setSolution(const Epetra_Vector&); 
 
-  // Create storage for auxillary data received from other problems via
+  // Create storage for dependent data received from other problems via
   // transfer operations
-  virtual void createAuxillaryVectors(); 
+  virtual void createDependentVectors(); 
 
   // Create Standard and Overlap (ghost) maps
   virtual void createMaps(); 
@@ -162,15 +162,15 @@ protected:
   int myId;                     // Unique integer id for this Problem
   string myName;		// String identifier for convenience
   Problem_Manager* myManager;   // Problem Manager with which this problem interacts
-  //Epetra_Map *StandardMap;
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;
   Epetra_Vector *xptr;		// Spatial locations of mesh points
   Epetra_Vector *initialSolution;
   Epetra_CrsGraph *AA;
   Epetra_CrsMatrix *A;
-  vector<int> auxProblems;      // List of problems that this one depends on
-  map<int, Epetra_Vector*> auxSolutions; // Auxillary data; solutions from 
+  vector<int> depProblems;      // List of problems that this one depends on
+  map<string, int> nameToMyIndex;
+  map<int, Epetra_Vector*> depSolutions; // Dependent data; solutions from 
                                   // other Problems needed by this Problem
   map<int, XferOp*> xferOperators;   // Container of transfer operators
 

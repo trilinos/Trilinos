@@ -96,6 +96,8 @@
 #include "Equation_A.H"              
 #include "Equation_B.H"              
 
+#include "HMX_PDE.H"              
+
 // Added to allow timings
 #include "Epetra_Time.h"
 
@@ -217,38 +219,6 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
   //lsParams.setParameter("Polynomial Order", 6); 
 
-  // Create each part of the Brusselator problem class.  
-  Equation_A ProblemA(Comm, NumGlobalNodes, "Temperature");
-//  Equation_A ProblemA2(Comm, 11);
-//  Equation_A ProblemA3(Comm, 501);
-//  Equation_B ProblemB(Comm, 4, "Species");
-  Equation_B ProblemB(Comm, NumGlobalNodes, "Species");
-//  Equation_B ProblemB2(Comm, 11);
-//  Equation_B ProblemB3(Comm, 501);
-
-  // Create the Problem Manager
-  Problem_Manager problemManager(Comm, true);
-
-  // An interesting note: the order of solving each problem is based on the
-  // order of adding.  For this decoupled problem, problem B is linear
-  // with respect to its variables, whereas problem A is nonlinear wrt to its
-  // variables.  The order of solution appears to strongly affect the rate
-  // of convergence of the decoupled Brusselator.  Solving problem A first
-  // dramatically reduces the number of total iterations.
-  problemManager.addProblem(ProblemA);
-//  problemManager.addProblem(ProblemA2);
-//  problemManager.addProblem(ProblemA3);
-  problemManager.addProblem(ProblemB);
-//  problemManager.addProblem(ProblemB2);
-//  problemManager.addProblem(ProblemB3);
-
-//  problemManager.createDependency("Temperature", "Species");
-  problemManager.createDependency(ProblemA, ProblemB);
-//  problemManager.createDependency(ProblemA2, ProblemB3);
-  problemManager.createDependency(ProblemB, ProblemA);
-//  problemManager.createDependency(ProblemB2, ProblemA);
-//  problemManager.createDependency(ProblemB3, ProblemA2);
-
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 
   // convergence test(s) for now, but each could have its own.
@@ -262,61 +232,284 @@ int main(int argc, char *argv[])
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);
 
+  // Create the Problem Manager
+  Problem_Manager problemManager(Comm, true);
+
   // Note that each problem could contain its own nlParams list as well as
   // its own convergence test(s). 
   problemManager.registerParameters(nlParams);
   problemManager.registerStatusTest(combo);
-  problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
 
-  problemManager.outputStatus();
+  bool doBrusselator = false; // Hard-coded for now
 
-  // Initialize time integration parameters
-  int maxTimeSteps = 1;
-  int timeStep = 0;
-  double time = 0.;
-  double dt = ProblemA.getdt();
-  if( dt != ProblemB.getdt() )
-    cout << "WARNING: Time steps differ between problems !!" << endl;
+  // Allow one of two supported tests
+  if( doBrusselator ) {
+    // Create each part of the Brusselator problem class.  
+    Equation_A ProblemA(Comm, NumGlobalNodes, "Temperature");
+  //  Equation_A ProblemA2(Comm, 11);
+  //  Equation_A ProblemA3(Comm, 501);
+  //  Equation_B ProblemB(Comm, 4, "Species");
+    Equation_B ProblemB(Comm, NumGlobalNodes, "Species");
+  //  Equation_B ProblemB2(Comm, 11);
+  //  Equation_B ProblemB3(Comm, 501);
   
-  // Print initial solution
-  char file_name[25];
-  FILE *ifp;
-  Epetra_Vector& xMesh = ProblemA.getMesh();
-  int NumMyNodes = xMesh.Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
-  ifp = fopen(file_name, "w");
-  for (int i=0; i<NumMyNodes; i++)
-    fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-                                 xMesh[i], ProblemA.getSolution()[i], 
-                                 ProblemB.getSolution()[i]);
-  fclose(ifp);
+    // An interesting note: the order of solving each problem is based on the
+    // order of adding.  For this decoupled problem, problem B is linear
+    // with respect to its variables, whereas problem A is nonlinear wrt to its
+    // variables.  The order of solution appears to strongly affect the rate
+    // of convergence of the decoupled Brusselator.  Solving problem A first
+    // dramatically reduces the number of total iterations.
+    problemManager.addProblem(ProblemA);
+  //  problemManager.addProblem(ProblemA2);
+  //  problemManager.addProblem(ProblemA3);
+    problemManager.addProblem(ProblemB);
+  //  problemManager.addProblem(ProblemB2);
+  //  problemManager.addProblem(ProblemB3);
   
-  // Time integration loop
-  while(timeStep < maxTimeSteps) {
-
-    timeStep++;
-    time += dt;
+  //  problemManager.createDependency("Temperature", "Species");
+    problemManager.createDependency(ProblemA, ProblemB);
+  //  problemManager.createDependency(ProblemA2, ProblemB3);
+    problemManager.createDependency(ProblemB, ProblemA);
+  //  problemManager.createDependency(ProblemB2, ProblemA);
+  //  problemManager.createDependency(ProblemB3, ProblemA2);
   
-    cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
   
-    // Solve decoupled
-//    problemManager.solve(); // Need a status test check here ....
-    // .... OR solve using matrix-free
-    problemManager.solveMF(); // Need a status test check here ....
+    problemManager.outputStatus();
   
-    problemManager.outputSolutions(timeStep);
+    // Initialize time integration parameters
+    int maxTimeSteps = 1;
+    int timeStep = 0;
+    double time = 0.;
+    double dt = ProblemA.getdt();
+    if( dt != ProblemB.getdt() )
+      cout << "WARNING: Time steps differ between problems !!" << endl;
+    
+    // Print initial solution
+    char file_name[25];
+    FILE *ifp;
+    Epetra_Vector& xMesh = ProblemA.getMesh();
+    int NumMyNodes = xMesh.Map().NumMyElements();
+    (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
+    ifp = fopen(file_name, "w");
+    for (int i=0; i<NumMyNodes; i++)
+      fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
+                                   xMesh[i], ProblemA.getSolution()[i], 
+                                   ProblemB.getSolution()[i]);
+    fclose(ifp);
+    
+    // Time integration loop
+    while(timeStep < maxTimeSteps) {
+  
+      timeStep++;
+      time += dt;
+    
+      cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    
+      // Solve decoupled
+  //    problemManager.solve(); // Need a status test check here ....
+      // .... OR solve using matrix-free
+      problemManager.solveMF(); // Need a status test check here ....
+    
+      problemManager.outputSolutions(timeStep);
+  
+      // Reset problems by copying solution into old solution
+      problemManager.resetProblems();
+  
+    } // end time step while loop
+  
+    // Output timing info
+    if(MyPID==0)
+      cout << "\nTimings :\n\tWallTime --> " << 
+  	    myTimer.WallTime() - startWallTime << " sec."
+           << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
+           << " sec." << endl << endl;
 
-    // Reset problems by copying solution into old solution
-    problemManager.resetProblems();
+  }
+  else { // HMX Cook-off problem
 
-  } // end time step while loop
+    string nameT 		= "Temperature";
+    double Const_R		= 1.9872 ;
+    double Specific_H		= 0.42 ;
+    double Density		= 1.90 ;
+    double Thermal_K		= 0.8658e-3 ;
+    double diffCoef_T		= Thermal_K / (Density * Specific_H);
 
-  // Output timing info
-  if(MyPID==0)
-    cout << "\nTimings :\n\tWallTime --> " << 
-	    myTimer.WallTime() - startWallTime << " sec."
-         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
-         << " sec." << endl << endl;
+    double StericCoef_T		= 0.0;
+    double PreExp_T 		= 0.0;
+    double ActEnergy_T	= 0.0 ;
+    map<string, double> SrcTermExponent_T; // Leave empty if no volume source
+    map<string, double> SrcTermWeight_T; 
+      SrcTermWeight_T.insert( pair<string, double> ("SpeciesA", -190.0) );
+      SrcTermWeight_T.insert( pair<string, double> ("SpeciesB",  570.0) );
+      SrcTermWeight_T.insert( pair<string, double> ("SpeciesC", 2280.0) );
+
+    // Create each part of the HMX cook-off problem
+    HMX_PDE HMX_TempEq (Comm, 
+                    diffCoef_T,
+                    Const_R,
+		    StericCoef_T, // Dummy for Temp Eq.
+		    PreExp_T, // Dummy for Temp Eq.
+		    ActEnergy_T, // Dummy for Temp Eq.
+		    SrcTermExponent_T,
+		    SrcTermWeight_T,
+		    5*NumGlobalNodes, nameT);
+
+    HMX_TempEq.setTempFieldName(HMX_TempEq.getName());
+
+    // Override default initialization with values we want
+    HMX_TempEq.initializeSolution(500.0);
+
+    problemManager.addProblem(HMX_TempEq);
+
+
+    string nameA 		= "SpeciesA";
+    double diffCoef_A 		= 0.0 ;
+    double stericCoef_A		= 0.0 ;
+    double preExp_A 		= exp(48.7) ;
+    double actEnergy_A 		= 52700.0 ;
+    map<string, double> SrcTermExponent_A; 
+      SrcTermExponent_A.insert( pair<string, double> (nameA, 1.0) );
+    map<string, double> SrcTermWeight_A; 
+      SrcTermWeight_A.insert( pair<string, double> (nameA, -1.0) );
+
+    HMX_PDE HMX_RxnA(Comm, 
+                  diffCoef_A,
+                  Const_R,
+                  stericCoef_A,
+                  preExp_A,
+                  actEnergy_A,
+                  SrcTermExponent_A,
+                  SrcTermWeight_A,
+                  3*NumGlobalNodes, nameA);
+
+    HMX_RxnA.setTempFieldName(HMX_TempEq.getName());
+
+    // Override default initialization with values we want
+    HMX_RxnA.initializeSolution(2.0);
+
+    problemManager.addProblem(HMX_RxnA);
+
+
+    string nameB 		= "SpeciesB";
+    double diffCoef_B 		= 0.0 ;
+    double stericCoef_B		= 0.0 ;
+    double preExp_B 		= exp(37.5) ;
+    double actEnergy_B 		= 44100.0 ;
+    map<string, double> SrcTermExponent_B; 
+      SrcTermExponent_B.insert( pair<string, double> (nameB, 1.0) );
+    map<string, double> SrcTermWeight_B; 
+      SrcTermWeight_B.insert( pair<string, double> (nameA, 1.0) );
+      SrcTermWeight_B.insert( pair<string, double> (nameB, -1.0) );
+
+    HMX_PDE HMX_RxnB(Comm, 
+                  diffCoef_B,
+                  Const_R,
+                  stericCoef_B,
+                  preExp_B,
+                  actEnergy_B,
+                  SrcTermExponent_B,
+                  SrcTermWeight_B,
+                  NumGlobalNodes, nameB);
+
+    HMX_RxnB.setTempFieldName(HMX_TempEq.getName());
+
+    // Override default initialization with values we want
+    HMX_RxnB.initializeSolution(1.0);
+
+    problemManager.addProblem(HMX_RxnB);
+  
+
+    string nameC 		= "SpeciesC";
+    double diffCoef_C 		= 0.0 ;
+    double stericCoef_C		= 0.0 ;
+    double preExp_C 		= exp(28.1) ;
+    double actEnergy_C 		= 34100.0 ;
+    map<string, double> SrcTermExponent_C; 
+      SrcTermExponent_C.insert( pair<string, double> (nameC, 2.0) );
+    map<string, double> SrcTermWeight_C; 
+      SrcTermWeight_C.insert( pair<string, double> (nameB, 2.0) );
+      SrcTermWeight_C.insert( pair<string, double> (nameC, -2.0) );
+
+    HMX_PDE HMX_RxnC(Comm, 
+                  diffCoef_C,
+                  Const_R,
+                  stericCoef_C,
+                  preExp_C,
+                  actEnergy_C,
+                  SrcTermExponent_C,
+                  SrcTermWeight_C,
+                  2*NumGlobalNodes, nameC);
+
+    HMX_RxnC.setTempFieldName(HMX_TempEq.getName());
+
+    // Override default initialization with values we want
+//    HMX_RxnC.initializeSolution(0.0);
+
+    problemManager.addProblem(HMX_RxnC);
+  
+    problemManager.createDependency(HMX_TempEq, HMX_RxnA);
+    problemManager.createDependency(HMX_TempEq, HMX_RxnB);
+    problemManager.createDependency(HMX_TempEq, HMX_RxnC);
+
+    problemManager.createDependency(HMX_RxnA, HMX_TempEq);
+
+    problemManager.createDependency(HMX_RxnB, HMX_TempEq);
+    problemManager.createDependency(HMX_RxnB, HMX_RxnA);
+
+    problemManager.createDependency(HMX_RxnC, HMX_TempEq);
+    problemManager.createDependency(HMX_RxnC, HMX_RxnB);
+  
+    problemManager.registerComplete();
+  
+    problemManager.outputStatus();
+  
+    // Initialize time integration parameters
+    int maxTimeSteps = 5;
+    int timeStep = 0;
+    double time = 0.;
+    double dt = HMX_TempEq.getdt();
+    
+    // Print initial solution
+    char file_name[25];
+    FILE *ifp;
+    Epetra_Vector& xMesh = HMX_TempEq.getMesh();
+    int NumMyNodes = xMesh.Map().NumMyElements();
+    (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
+    ifp = fopen(file_name, "w");
+    for (int i=0; i<NumMyNodes; i++)
+      fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
+                                   xMesh[i], HMX_TempEq.getSolution()[i], 
+                                   HMX_RxnA.getSolution()[i]);
+    fclose(ifp);
+    
+    // Time integration loop
+    while(timeStep < maxTimeSteps) {
+  
+      timeStep++;
+      time += dt;
+    
+      cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    
+      // Solve decoupled
+//      problemManager.solve(); // Need a status test check here ....
+      // .... OR solve using matrix-free
+      problemManager.solveMF(); // Need a status test check here ....
+    
+      problemManager.outputSolutions(timeStep);
+  
+      // Reset problems by copying solution into old solution
+      problemManager.resetProblems();
+  
+    } // end time step while loop
+  
+    // Output timing info
+    if(MyPID==0)
+      cout << "\nTimings :\n\tWallTime --> " << 
+  	    myTimer.WallTime() - startWallTime << " sec."
+           << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
+           << " sec." << endl << endl;
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

@@ -84,7 +84,8 @@ am__EXEEXT_1 = example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_example_OBJECTS = example-Example.$(OBJEXT) \
 	example-Equation_A.$(OBJEXT) example-Equation_B.$(OBJEXT) \
-	example-Basis.$(OBJEXT) example-GenericEpetraProblem.$(OBJEXT) \
+	example-HMX_PDE.$(OBJEXT) example-Basis.$(OBJEXT) \
+	example-GenericEpetraProblem.$(OBJEXT) \
 	example-Problem_Interface.$(OBJEXT) \
 	example-Problem_Manager.$(OBJEXT) \
 	example-OffBlock_Manager.$(OBJEXT) \
@@ -99,6 +100,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/example-Equation_B.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-GenericEpetraProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/example-HMX_PDE.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-OffBlock_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Manager.Po \
@@ -274,6 +276,7 @@ EXAMPLE = example
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Equation_A.C $(srcdir)/Equation_A.H \
 	$(srcdir)/Equation_B.C $(srcdir)/Equation_B.H \
+	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
@@ -343,6 +346,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Equation_B.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-GenericEpetraProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-HMX_PDE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-OffBlock_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Manager.Po@am__quote@
@@ -411,6 +415,22 @@ example-Equation_B.obj: $(srcdir)/Equation_B.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Equation_B.Po' tmpdepfile='$(DEPDIR)/example-Equation_B.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Equation_B.obj `if test -f '$(srcdir)/Equation_B.C'; then $(CYGPATH_W) '$(srcdir)/Equation_B.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Equation_B.C'; fi`
+
+example-HMX_PDE.o: $(srcdir)/HMX_PDE.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-HMX_PDE.o -MD -MP -MF "$(DEPDIR)/example-HMX_PDE.Tpo" -c -o example-HMX_PDE.o `test -f '$(srcdir)/HMX_PDE.C' || echo '$(srcdir)/'`$(srcdir)/HMX_PDE.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-HMX_PDE.Tpo" "$(DEPDIR)/example-HMX_PDE.Po"; else rm -f "$(DEPDIR)/example-HMX_PDE.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HMX_PDE.C' object='example-HMX_PDE.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-HMX_PDE.Po' tmpdepfile='$(DEPDIR)/example-HMX_PDE.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-HMX_PDE.o `test -f '$(srcdir)/HMX_PDE.C' || echo '$(srcdir)/'`$(srcdir)/HMX_PDE.C
+
+example-HMX_PDE.obj: $(srcdir)/HMX_PDE.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-HMX_PDE.obj -MD -MP -MF "$(DEPDIR)/example-HMX_PDE.Tpo" -c -o example-HMX_PDE.obj `if test -f '$(srcdir)/HMX_PDE.C'; then $(CYGPATH_W) '$(srcdir)/HMX_PDE.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HMX_PDE.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-HMX_PDE.Tpo" "$(DEPDIR)/example-HMX_PDE.Po"; else rm -f "$(DEPDIR)/example-HMX_PDE.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HMX_PDE.C' object='example-HMX_PDE.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-HMX_PDE.Po' tmpdepfile='$(DEPDIR)/example-HMX_PDE.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-HMX_PDE.obj `if test -f '$(srcdir)/HMX_PDE.C'; then $(CYGPATH_W) '$(srcdir)/HMX_PDE.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HMX_PDE.C'; fi`
 
 example-Basis.o: $(srcdir)/Basis.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Basis.o -MD -MP -MF "$(DEPDIR)/example-Basis.Tpo" -c -o example-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \

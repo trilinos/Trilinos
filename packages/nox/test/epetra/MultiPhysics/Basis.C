@@ -46,7 +46,7 @@ Basis::~Basis() {
 
 // Calculates a linear 1D basis
 void Basis::getBasis(int gp, double *x, double *u, double *uold, 
-                vector<double*>& aux)
+                vector<double*>& dep)
 {
   int N = 2;
   if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}
@@ -62,16 +62,16 @@ void Basis::getBasis(int gp, double *x, double *u, double *uold,
   dx=0.5*(x[1]-x[0]);
   xx=0.0;
   uu = duu = uuold = duuold = 0.0;
-  aaux.clear();
-  aaux.assign(aux.size(), 0.0); 
+  ddep.clear();
+  ddep.assign(dep.size(), 0.0); 
   for (int i=0; i < N; i++) {
     xx += x[i] * phi[i];
     uu += u[i] * phi[i];
     duu += u[i] * dphide[i];
     uuold += uold[i] * phi[i];
     duuold += uold[i] * dphide[i];
-    for( int j = 0; j<aux.size(); j++)
-      aaux[j] += aux[j][i] * phi[i];
+    for( int j = 0; j<dep.size(); j++)
+      ddep[j] += dep[j][i] * phi[i];
   }
 
   return;

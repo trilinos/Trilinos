@@ -62,9 +62,6 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
   // Create extra vector needed for this transient problem
   oldSolution = new Epetra_Vector(*StandardMap);
 
-  // Create extra vector needed as data from other problem (B)
-//  auxSolutions.insert(pair<int, Epetra_Vector*>(1, new Epetra_Vector(*StandardMap)));
-
   // Next we create and initialize the solution vector
   initialSolution = new Epetra_Vector(*StandardMap);
   initializeSolution();
@@ -95,8 +92,6 @@ Equation_A::~Equation_A()
   delete AA; AA = 0;
   delete xptr; xptr = 0;
   delete oldSolution; oldSolution = 0;
-  //  Need to fix this !!!!!  RHooper
-//  delete auxSolution; auxSolution = 0;
   delete initialSolution; initialSolution = 0;
   delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }
@@ -130,22 +125,6 @@ void Equation_A::initializeSolution()
     soln[i] = 0.6 + 1.e-1*sin(1.0*pi*x[i]);
   
   *oldSolution = soln;
-
-/*
-  // Fill Equation_B solution from file (obtained from Brusselator)
-  char file_name[] = "EqB_soln.dat";
-  int idum;
-  float ddum1, ddum2, value;
-  FILE *ifp;
-  ifp = fopen(file_name, "r");
-  for (int i=0; i<x.MyLength(); i++) {
-    fscanf(ifp, "%d %f %f %f", &idum, &ddum1, &ddum2, &value);
-    (*auxSolution)[i] = value;
-  }
-  fclose(ifp);
-
-//  cout << *auxSolution << endl;
-*/
 } 
 
 // Matrix and Residual Fills
@@ -182,18 +161,12 @@ bool Equation_A::evaluate(
     // Do nothing for now
   }
 
-  int numAux = auxProblems.size();
-
-  // Create a String to local vector lookup map
-  map<string, int> findVector;
-  for( int i = 0; i<numAux; i++)
-    findVector.insert( 
-        pair<string, int>( myManager->getName(auxProblems[i]), i) );
+  int numDep = depProblems.size();
 
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector> aux(numAux, Epetra_Vector(*OverlapMap));
+  vector<Epetra_Vector> dep(numDep, Epetra_Vector(*OverlapMap));
   Epetra_Vector xvec(*OverlapMap);
 
   // Export Solution to Overlap vector
@@ -204,8 +177,8 @@ bool Equation_A::evaluate(
   // treatment for the current soution vector arises from use of
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
-  for( int i = 0; i<numAux; i++ )
-    aux[i].Import(*(auxSolutions.find(auxProblems[i])->second), 
+  for( int i = 0; i<numDep; i++ )
+    dep[i].Import(*(depSolutions.find(depProblems[i])->second), 
                    *Importer, Insert);
   xvec.Import(*xptr, *Importer, Insert);
   if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
@@ -232,19 +205,19 @@ bool Equation_A::evaluate(
   double xx[2];
   double uu[2]; 
   double uuold[2];
-  vector<double*> aaux(numAux, new double[2]);
+  vector<double*> ddep(numDep, new double[2]);
   Basis basis;
 
-  int id_spec; // Index for needed auxillary Species vector
+  int id_spec; // Index for needed dependent Species vector
 
-  map<string, int>::iterator id_ptr = findVector.find("Species");
-  if( id_ptr == findVector.end() ) {
+  map<string, int>::iterator id_ptr = nameToMyIndex.find("Species");
+  if( id_ptr == nameToMyIndex.end() ) {
     cout << "WARNING: Equation_A (\"" << myName << "\") could not get "
          << "vector for problem \"Species\" !!" << endl;
-    cout << "Using auxillary vectors in order of dependence registration."
+    cout << "Using dependent vectors in order of dependence registration."
          << endl;
     //myManager->outputStatus();
-    id_spec = 0; // First auxillary field
+    id_spec = 0; // First dependent field
   }
   else
     id_spec = id_ptr->second;
@@ -265,12 +238,12 @@ bool Equation_A::evaluate(
       uu[1] = u[ne+1];
       uuold[0] = uold[ne];
       uuold[1] = uold[ne+1];
-      for( int i = 0; i<numAux; i++ ) {
-        aaux[i][0] = aux[i][ne];
-        aaux[i][1] = aux[i][ne+1];
+      for( int i = 0; i<numDep; i++ ) {
+        ddep[i][0] = dep[i][ne];
+        ddep[i][1] = dep[i][ne+1];
       }
       // Calculate the basis function at the gauss point
-      basis.getBasis(gp, xx, uu, uuold, aaux);
+      basis.getBasis(gp, xx, uu, uuold, ddep);
 
       // Loop over Nodes in Element
       for (int i=0; i< 2; i++) {
@@ -282,7 +255,7 @@ bool Equation_A::evaluate(
 	      *((basis.uu - basis.uuold)/dt * basis.phi[i] 
               +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
               + basis.phi[i] * ( -alpha + (beta+1.0)*basis.uu
-                - basis.uu*basis.uu*basis.aaux[id_spec]) );
+                - basis.uu*basis.uu*basis.ddep[id_spec]) );
 	  }
 	}
 	// Loop over Trial Functions
@@ -295,7 +268,7 @@ bool Equation_A::evaluate(
                       +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.dphide[j]*
                                                         basis.dphide[i]
                       + basis.phi[i] * ( (beta+1.0)*basis.phi[j]
-                      - 2.0*basis.uu*basis.phi[j]*basis.aaux[id_spec]) );  
+                      - 2.0*basis.uu*basis.phi[j]*basis.ddep[id_spec]) );  
 	      ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
 	    }
 	  }

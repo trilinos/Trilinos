@@ -63,81 +63,6 @@ public:
   // Destructor
   virtual ~OffBlock_Manager();
 
-  // Add a problem to the Manager
-//  void addProblem(GenericEpetraProblem& problem);
-
-  // Get a problem given its unique id
-//  GenericEpetraProblem& getProblem(int id);
-
-  // Create a dependence of Problem A equations on Problem B variables
-//  void createDependency(string nameA, string nameB);
-
-  // Create a dependence of Problem A equations on Problem B variables
-//  void createDependency(GenericEpetraProblem& problemA,
-//                        GenericEpetraProblem& problemB);
-
-  // Register NLSolver parameter list
-//  void registerParameters(NOX::Parameter::List& List);
-
-  // Register Convergence Test(s)
-//  void registerStatusTest(NOX::StatusTest::Combo& comboTest);
-
-  // Signal completion of problem, parameter, and convergence test
-  // regitrations and trigger the problem setup
-//  void registerComplete();
-
-  // Have each problem receive auxillary data from every other problem 
-  // on which it depends
-//  bool syncAllProblems();
-
-  // Set the solver group solution using the current solution contained 
-  // in the problem
-//  bool setGroupX(int id);
-
-  // Set all groups with the current solution contained in each problem
-//  bool setAllGroupX();
-
-  // Reset all problems by copying the current solution into the old solution
-  // Needed for time-dependent problems
-//  void resetProblems();
-
-  // Compute residual (F) in solution groups for all registered problems
-//  bool computeAllF();
-
-  // Compute Jacobian in solution groups for all registered problems
-//  bool computeAllJacobian();
-
-  // Compute sum of norms of each problem residual
-//  double getNormSum();
-
-  // Copy final solution from NOX solver into the problem's solution vector
-//  void updateWithFinalSolution(int id);
-
-  // Copy final solution from NOX solvers into each problem's solution vector
-//  void updateAllWithFinalSolution();
-
-  // Copy a composite problem vector to each problem's vector
-//  void copyCompositeToProblems(const Epetra_Vector& compositeVec, VectorType);
-
-  // Copy vectors from each problem into a composite problem vector
-//  void copyProblemsToComposite(Epetra_Vector& compositeVec, VectorType);
-
-  // Copy problem Jacobians as block diagonal contributions to 
-  // composite Jacobian
-//  void copyProblemJacobiansToComposite();
-
-  // Solve problem using fixed-point iteration
-//  bool solve();
-
-  // Solve problems using matrix-free coupling
-//  bool solveMF();
-
-  // Solve problems using matrix-free coupling
-//  void outputSolutions(int timeStep = 0);
-
-  // Print status of Problem Manager, problems and dependencies
-//  void outputStatus();
-
   // Return the underlying Group 
   NOX::EpetraNew::Group& getGroup();
 
@@ -153,17 +78,6 @@ public:
 
 private:
 
-  // Copy part of a composite problem vector to a problem's vector
-//  void copyCompositeToVector(const Epetra_Vector& compositeVec, int id,
-//                             Epetra_Vector& problemVec);
-
-  // Copy a vector from a problem into part of a composite problem vector
-//  void copyVectorToComposite(Epetra_Vector& compositeVec, int id,
-//                             const Epetra_Vector& problemVec);
-
-  // Creates a composite graph from existing graphs of registered problems
-//  void generateGraph();
-
   // Creates the extra objects needed to fill off-diagoanl blocks using FDC
   void createFDCobjects();
 
@@ -174,14 +88,8 @@ private:
 
   Problem_Manager &myManager;  //Reference to the overall problem manager
 
-  //map<int, Epetra_IntVector*> ProblemToCompositeIndices;
-    // Essentially a mapping from a problems indices to the composite indices
-
   Problem_Interface *offBlockInterface; // A problem interface to 
   // this off-block problem manager.  
-
-//  NOX::Parameter::List* nlParams;           // NLSolver parameter list
-//  NOX::StatusTest::Combo* statusTest;       // Convergence criterion (ia)
 
   // These allow off-diagonal block contributions representing
   // inter-problem coupling computed via FDC
@@ -190,7 +98,6 @@ private:
   EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex;
   vector<Epetra_IntVector>* columnSet;
   NOX::EpetraNew::FiniteDifferenceColoring *matrixOperator;
-//  Epetra_Operator* matrixOperator;
   NOX::EpetraNew::LinearSystemAztecOO* linearSystem;
   NOX::EpetraNew::Group* group;    
 };

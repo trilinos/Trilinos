@@ -63,6 +63,9 @@ public:
   // Get a problem given its unique id
   GenericEpetraProblem& getProblem(int id);
 
+  // Get a problem given its name
+  GenericEpetraProblem& getProblem(string name);
+
   // Get a group given its unique id
   NOX::EpetraNew::Group& getGroup(int id);
 
@@ -86,7 +89,7 @@ public:
   // regitrations and trigger the problem setup
   void registerComplete();
 
-  // Have each problem receive auxillary data from every other problem 
+  // Have each problem receive dependent data from every other problem 
   // on which it depends
   bool syncAllProblems();
 
