@@ -1,0 +1,29 @@
+#!/bin/csh -f
+unsetenv LD_LIBRARY_PATH
+../configure --enable-mpi \
+--enable-epetraext-matlab \
+# general Trilinos package configuration \
+--enable-triutils \
+--disable-ifpack  \
+--disable-new_package \
+--disable-nox \
+--disable-loca \
+--disable-aztecoo \
+--disable-ml \
+# configure lapack, jeter doesn't have suitable lapack so you will have to build one \
+--with-lapack="/home/u/jacross/progs/lib/lapack_SUN4SOL2.a" \
+# general lib includes \
+--with-ldflags="-I/usr/lib/" \
+# mpi lib includes \
+--with-mpi-libs="-lmpich -lnsl -lsocket -lrt" \
+--with-mpi-incdir="/Net/local/pkg/mpich/mpich-1.2.5.3/include" \
+--with-mpi-libdir="/Net/local/pkg/mpich/mpich-1.2.5.3/lib" \
+# matlab includes and Trilinos includes \
+--with-incdirs="-I/Net/local/share/pkg/matlab/current/extern/include" \
+# matlab lib includes and Trilinos lib includes \
+--with-libdirs="-L/Net/local/share/pkg/matlab/current/extern/lib/sol2" \
+# CC compiler command \
+CC=gcc \
+# install location \
+#--prefix="${TRILINOS_HOME}/${TRILINOS_ARCH}" \
+--prefix="/export/home/jacross/Trilinos/SOLARIS_MPI"
