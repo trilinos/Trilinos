@@ -50,7 +50,7 @@
 
 static void RCB_check(LB *, struct Dot_Struct *, int, int, struct rcb_box *);
 static void RCB_stats(LB *, double, struct Dot_Struct *,int, double *, 
- 		      int *, struct rcb_box *, int, int);
+ 		      int *, int *, struct rcb_box *, int, int);
 
 static int rcb_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
                  int, int, int, int, int);
@@ -227,6 +227,8 @@ static int rcb_fn(
 				      4 = most dot memory this proc ever allocs
 				      5 = # of times a previous cut is re-used
 				      6 = # of reallocs of dot array */
+  int     reuse_count[7];           /* counter (as above) for reuse to record
+                                       the number of dots premoved */
   int     i,j,k;                 /* local variables */
 
   RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
@@ -293,6 +295,8 @@ static int rcb_fn(
   counters[4] = dotmax;
   counters[5] = 0;
   counters[6] = 0;
+  for (i = 0; i < 7; i++) reuse_count[i] = 0;
+
 
   /* create mark and list arrays for dots */
 
@@ -353,7 +357,7 @@ static int rcb_fn(
         /* move dots */
         ierr = LB_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
                                outgoing, &dotnum, &dotmax, proc, &allocflag,
-                               overalloc, stats, counters, lb->Communicator);
+                               overalloc, stats, reuse_count, lb->Communicator);
         if (ierr) {
            LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
            LB_FREE(&proc_list);
@@ -363,6 +367,11 @@ static int rcb_fn(
            LB_TRACE_EXIT(lb, yo);
            return (ierr);
         }
+
+        /* update counters */
+        if (dotnum > counters[3]) counters[3] = dotnum;
+        if (dotmax > counters[4]) counters[4] = dotmax;
+        counters[6] += reuse_count[6];
 
         if (outgoing) LB_FREE(&proc_list);
      }
@@ -599,7 +608,7 @@ static int rcb_fn(
   if (check) RCB_check(lb, dotpt,dotnum,pdotnum,rcbbox);
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
     RCB_stats(lb, timestop-timestart,dotpt,dotnum,
-              timers,counters,rcbbox,reuse, stats);
+              timers,counters,reuse_count,rcbbox,reuse, stats);
 
   /* update calling routine parameters */
   
@@ -771,7 +780,7 @@ static void RCB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig,
 /* RCB statistics */
 
 static void RCB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
-	       int dotnum, double *timers, int *counters,
+	       int dotnum, double *timers, int *counters, int *reuse_count,
 	       struct rcb_box *rcbbox, int reuse, int stats)
 
 {
@@ -846,6 +855,28 @@ static void RCB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
     MPI_Barrier(lb->Communicator);
     if (stats > 1) 
       printf("    Proc %d recv count = %d\n",proc,counters[2]);
+  
+    if (reuse) {
+      MPI_Allreduce(&reuse_count[1],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+      MPI_Allreduce(&reuse_count[1],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+      MPI_Allreduce(&reuse_count[1],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+      ave = ((double) sum)/nprocs;
+      if (proc == print_proc) 
+        printf(" Presend count: ave = %g, min = %d, max = %d\n",ave,min,max);
+      MPI_Barrier(lb->Communicator);
+      if (stats > 1) 
+        printf("    Proc %d presend count = %d\n",proc,reuse_count[1]);
+    
+      MPI_Allreduce(&reuse_count[2],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+      MPI_Allreduce(&reuse_count[2],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+      MPI_Allreduce(&reuse_count[2],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+      ave = ((double) sum)/nprocs;
+      if (proc == print_proc) 
+        printf(" Prerecv count: ave = %g, min = %d, max = %d\n",ave,min,max);
+      MPI_Barrier(lb->Communicator);
+      if (stats > 1) 
+        printf("    Proc %d prerecv count = %d\n",proc,reuse_count[2]);
+    }
   
     MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
     MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
