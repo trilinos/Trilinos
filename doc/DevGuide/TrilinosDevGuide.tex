@@ -107,26 +107,32 @@ Tuminaro, Jim Willenbring, and Alan Williams.
     \addcontentsline{toc}{section}{Nomenclature}
     \begin{itemize}
 	\item[Package]
-	    A collection of software focused on one primary class of numerical methods
+	    A collection of software focused on one primary class of numerical
+          methods.
 	\item[Trilinos]
-	    A Greek term that loosely translated means ``a string of pearls,'' meant
-         to evoke an image that each Trilinos package is a pearl in its own right,
-         but is even more valuable when combined with other packages.
+	    A Greek term that loosely translated means ``a string of pearls,'' 
+          meant to evoke an image that each Trilinos package is a pearl in its 
+          own right, but is even more valuable when combined with other 
+          packages.
 	\item[Petra]
-	    A Greek term meaning ``foundation.''  Trilinos has three Petra libraries: Epetra, 
-	    Tpetra and Jpetra (discussed in Section~\ref{subsect:PetraObjectModel}) that
-	    provide basic classes for constructing and manipulating matrix, graph and vector 
-	    objects.
-        \item[AztecOO] Linear solver package based on preconditioned Krylov methods.  A
-	  follow-on to the Aztec solver package.  Supports all Aztec interfaces and
-	  functionality, but also provides significant new functionality.
+	    A Greek term meaning ``foundation.''  Trilinos has three Petra 
+          libraries: Epetra, Tpetra and Jpetra (discussed in 
+          Section~\ref{subsect:PetraObjectModel}) that provide basic classes 
+          for constructing and manipulating matrix, graph and vector objects.
+        \item[AztecOO] 
+            Linear solver package based on preconditioned Krylov methods.  A 
+          follow-on to the Aztec solver package.  Supports all Aztec 
+          interfaces and functionality, but also provides significant new 
+          functionality.
 	\item[TSF]
 	\item[NOX]
 	\item[ML]
-	\item[Komplex] Complex linear equation solver using equivalent real formulations,
-	  built on top of Aztec.
-	\item[Ifpack] Object-oriented algebraic preconditioner, compatible with Epetra and
-	  AztecOO.
+	\item[Komplex] 
+           Complex linear equation solver using equivalent real formulations,
+	 built on top of Aztec.
+	\item[Ifpack] 
+           Object-oriented algebraic preconditioner, compatible with Epetra and
+	 AztecOO.
     \end{itemize}
 
 
@@ -731,17 +737,24 @@ that is in use unless there is equivalent interface and functionality support
 from a new package.
 
 	\section{Services Available to Trilinos Packages}
-	A number of services exist for Trilinos packages.
+	A number of services exist for Trilinos packages.  Many of these 
+services relate directly to some of the requirements and suggested practices 
+for Trilinos packages.  For example the CVS repository is discussed below, and 
+Trilinos packages must make use of this repository.  Also, Bonsai, Bugzilla 
+and Mailman are all tools that relate to suggested practices.  (It should be 
+noted that these services are not simply meant to satisfy SQE requirements.  
+Rather, Bonsai, Bugzilla and Mailman have proved to be very useful tools.  
+Using these tools together, along with the CVS repository, has led to a more 
+time and cost effective code development process.)  For more information about 
+any of the below services, please contact the Trilinos Project Leader.
+
 	\subsection{Configuration Management}
-%	**(See Overview Doc pg 12)**
-Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and
-Libtool~\cite{Libtool} provide a robust, full-featured set of tools for
-building software across a broad set of platforms (see also the ``Goat
-Book''~\cite{GoatBook}).  Although these
-tools are not official standards, they are commonly used in many
-packages.  Many existing
-Trilinos packages use Autoconf and Automake (and will use
-Libtool in the future).  However, use of these tools is not required.
+Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and Libtool~\cite{Libtool} 
+provide a robust, full-featured set of tools for building software across a 
+broad set of platforms (see also the ``Goat Book''~\cite{GoatBook}).  Although 
+these tools are not official standards, they are commonly used in many 
+packages.  Many existing Trilinos packages use Autoconf and Automake (and will 
+use Libtool in the future).  However, use of these tools is not required.
 
 Package developers who are not currently using autotools, but would like
 to, can get a jump start by using a Trilinos package called 
@@ -834,7 +847,7 @@ downloaded, and from that time on, all CVS updates will update the
 directories that were downloaded.  It is good practice to include this 
 option for every CVS update.
 
-... Decide if this subsection is worth it, or if people should read the doc.  If eexpanded, add info about when to check in, and which branch...
+%... Decide if this subsection is worth it, or if people should read the doc.  If expanded, add info about when to check in, and which branch...
 
 \subsection{Bonsai}
 A lot of useful information related to CVS history is accessible via a
@@ -861,8 +874,6 @@ that outlines the problem and explains how the problem was fixed.  A bug
 report should be filled out with as much detail as possible.  Likewise, after 
 a bug has been resolved, the developer should also provide a detailed 
 description of the solution that was used.
-
-%**explain how this is truly useful, and not just busy work.**
 
 NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
 existing code, but also to a desired enhancement.  For example, a bug report 
@@ -959,7 +970,7 @@ other packages.
 
 	\section{Integrating a Package into Trilinos}
 %	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
-
+	
 	\section{Interoperability Status for Existing Trilinos Packages}
 
 	\section{Platform Portablility}
