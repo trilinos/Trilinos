@@ -414,6 +414,11 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    }
    start = end;
    }
+   if (Bvals != NULL) ML_free(Bvals);
+   if (Bcols != NULL) ML_free(Bcols);
+   if (Bptr != NULL) ML_free(Bptr);
+   if (accum_index != NULL) ML_free(accum_index);
+   if (col_inds != NULL) ML_free(col_inds);
    ML_free(accum_col);
    ML_free(accum_val);
    ML_free(A_i_vals);
