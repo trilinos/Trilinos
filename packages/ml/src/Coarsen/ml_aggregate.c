@@ -151,7 +151,7 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
       if ((*ag)->field_of_values != NULL) 
 	ML_free((*ag)->field_of_values);
       if ((*ag)->nodal_coord != NULL) {
-        /* MS // start from 1 because we do not
+        /* MS start from 1 because we do not
          * free the finest-level coordinates (given by the
          * user). Recall that in nodal_coord the finest level is 
          * always in position 0. */
