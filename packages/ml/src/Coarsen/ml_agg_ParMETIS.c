@@ -59,6 +59,7 @@ static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 					USR_COMM Comm);
 extern ML_Operator * ML_BuildQ( int StartingNumElements,
 				int ReorderedNumElements,
+				int num_PDE_eqns,
 				int reordered_decomposition[],
 				double StartingNullSpace[],
 				double ReorderedNullSpace[],
@@ -425,7 +426,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	     j );
     }
   }
-  
+
   /* ********************************************************************** */
   /* no need to call parmetis if only one aggregate is required.            */
   /* ********************************************************************** */
@@ -436,7 +437,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     }
     return 1;
   }
-  
+
   /* for ParMETIS I need the global column number. Here I make use
      of the fact that ML required the ML_Operator rows to be
      decomposed linearly */
@@ -477,13 +478,12 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	
 	ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
 			  &rowi_N, 0);
-
 	N_nonzeros += rowi_N;
-	
       }
+      
     }
   }
-    
+
   if( Nrows > 0 ) {
     
     /* construct the CSR graph information of the LOCAL matrix
@@ -906,7 +906,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = sizeof(double)*(exp_Nrows + 1);
    starting_unamalg_bdry = (double *) ML_allocate(nbytes);
    for (i = Nrows ; i < exp_Nrows; i++) starting_unamalg_bdry[i] = 0.0;
-
+#ifdef NEIN
    for (i = 0; i < Nrows; i++) {
       starting_unamalg_bdry[i] = 1.0;
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
@@ -918,7 +918,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    ML_exchange_bdry(starting_unamalg_bdry,Amatrix->getrow->pre_comm,
 		    nvertices,comm, ML_OVERWRITE,NULL);
-
+#else
+   for (i = 0; i < exp_Nrows; i++) {
+     starting_unamalg_bdry[i] = 0.0;
+   }
+#endif
    /* ********************************************************************** */
    /* allocate memory for aggr_index and call METIS to decompose the local   */
    /* graph into the number of parts specified by the user with a call       */
@@ -1119,7 +1123,8 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    reordered_unamalg_bdry = (double *) ML_allocate(sizeof(double)*(new_Nrows+1));
 
 #ifdef ML_WITH_EPETRA
-   QQ = ML_BuildQ( Nrows, new_Nrows, reordered_decomposition,
+   QQ = ML_BuildQ( Nrows, new_Nrows, num_PDE_eqns,
+		   reordered_decomposition,
 		   nullspace_vect, new_nullspace_vect, i,
 		   starting_unamalg_bdry, reordered_unamalg_bdry,
 		   Amatrix->comm->USR_comm,
