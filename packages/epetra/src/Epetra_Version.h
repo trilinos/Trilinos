@@ -1,5 +1,5 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 // 
 //               Epetra: Linear Algebra Services Package 
 //                 Copyright (2001) Sandia Corporation
@@ -23,41 +23,12 @@
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
-// ************************************************************************
-//@HEADER
+// ***********************************************************************
+// @HEADER
 
-#include "Epetra_SerialComm.h"
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Version.h"
+#include "Epetra_ConfigDefs.h"
 
-int main(int argc, char *argv[])
-{
-
-  cout << Epetra_Version() << endl << endl;
-
-  Epetra_SerialComm Comm;
-
-  int NumElements = 1000;
-
-  // Construct a Map with NumElements and index base of 0
-  Epetra_Map Map(NumElements, 0, Comm);
-
-
-  // Create x and b vectors
-  Epetra_Vector x(Map);
-  Epetra_Vector b(Map);
-
-  b.Random();
-  x.Update(2.0, b, 0.0); // x = 2*b
-
-  double bnorm, xnorm;
-  x.Norm2(&xnorm);
-  b.Norm2(&bnorm);
-
-  cout << "2 norm of x = " << xnorm << endl
-       << "2 norm of b = " << bnorm << endl;
-
-  return 0;
-}
+	string Epetra_Version() { 
+		return("Epetra Version 3.3d - 05/13/2004"); 
+	};
 

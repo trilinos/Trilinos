@@ -46,6 +46,7 @@
 #endif
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
+#include "Epetra_Version.h"
 
 // prototype
 int power_method(Epetra_CrsMatrix& A, double & lambda, int niters, double tolerance,
@@ -75,14 +76,15 @@ int main(int argc, char *argv[])
 
 #endif
 
-
-
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
+  bool verbose = (MyPID==0);
+
+  if (verbose)
+    cout << Epetra_Version() << endl << endl;
+
   cout << Comm << endl;
 
-  bool verbose = (MyPID==0);
-  
   // Get the number of local equations from the command line
   if (argc!=2)
    {

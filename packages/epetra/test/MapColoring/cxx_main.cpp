@@ -40,6 +40,7 @@
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
+#include "Epetra_Version.h"
 
 int main(int argc, char *argv[]) {
 
@@ -64,6 +65,8 @@ int main(int argc, char *argv[]) {
   // Check if we should print lots of results to standard out
   if (argc>2) if (argv[2][0]=='-' && argv[2][1]=='v') veryVerbose = true;
 
+  if (verbose && Comm.MyPID()==0)
+    cout << Epetra_Version() << endl << endl;
 
   if (!verbose) Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
 

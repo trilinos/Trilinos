@@ -44,7 +44,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "../epetra_test_err.h"
-
+#include "Epetra_Version.h"
+                                            
 // prototypes
 
 void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
@@ -110,6 +111,9 @@ int main(int argc, char *argv[])
   //  comm.Barrier();
 
   comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+  if (verbose && comm.MyPID()==0)
+    cout << Epetra_Version() << endl << endl;
+
   if (verbose) cout << comm <<endl;
 
   //  bool verbose1 = verbose;

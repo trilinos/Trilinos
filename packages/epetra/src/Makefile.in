@@ -89,8 +89,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_option.m4 \
-	$(top_srcdir)/config/tac_arg_enable_package_sub_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -259,7 +259,7 @@ am__include_HEADERS_DIST = $(srcdir)/Epetra_BLAS.h \
 	$(srcdir)/Epetra_Util.h $(srcdir)/Epetra_DataAccess.h \
 	$(srcdir)/Epetra_HashTable.h \
 	$(srcdir)/Epetra_RowMatrixTransposer.h $(srcdir)/Epetra_Data.h \
-	$(srcdir)/Epetra_CombineMode.h \
+	$(srcdir)/Epetra_Version.h $(srcdir)/Epetra_CombineMode.h \
 	$(srcdir)/Epetra_SerialDenseOperator.h \
 	$(srcdir)/Epetra_SerialDenseMatrix.h \
 	$(srcdir)/Epetra_SerialSpdDenseSolver.h \
@@ -434,7 +434,8 @@ UTIL_H = \
 	$(srcdir)/Epetra_DataAccess.h \
 	$(srcdir)/Epetra_HashTable.h \
 	$(srcdir)/Epetra_RowMatrixTransposer.h \
-	$(srcdir)/Epetra_Data.h
+	$(srcdir)/Epetra_Data.h \
+	$(srcdir)/Epetra_Version.h
 
 UTIL = \
 	$(srcdir)/Epetra_Flops.cpp \

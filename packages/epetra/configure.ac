@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(epetra, 3.2d, maherou@sandia.gov)
+AC_INIT(epetra, 3.3d, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"

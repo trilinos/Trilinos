@@ -48,7 +48,7 @@ CORE = \
 	$(srcdir)/Epetra_BLAS.cpp \
 	$(srcdir)/Epetra_LAPACK.cpp \
 	$(srcdir)/Epetra_Object.cpp
-
+	
 UTIL_H = \
 	$(srcdir)/Epetra_Flops.h \
 	$(srcdir)/Epetra_Time.h \
@@ -56,7 +56,8 @@ UTIL_H = \
 	$(srcdir)/Epetra_DataAccess.h \
 	$(srcdir)/Epetra_HashTable.h \
 	$(srcdir)/Epetra_RowMatrixTransposer.h \
-	$(srcdir)/Epetra_Data.h
+	$(srcdir)/Epetra_Data.h \
+	$(srcdir)/Epetra_Version.h
 
 UTIL = \
 	$(srcdir)/Epetra_Flops.cpp \

@@ -38,6 +38,7 @@
 #endif
 #include "checkmap.h"
 #include "../epetra_test_err.h"
+#include "Epetra_Version.h"
 
 int checkMapDataClass(Epetra_Comm& Comm, int verbose);
 int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose);
@@ -76,6 +77,10 @@ int main(int argc, char *argv[]) {
   }
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
+
+  if (verbose && MyPID==0)
+    cout << Epetra_Version() << endl << endl;
+
   if (verbose) cout << Comm << endl;
 
   bool verbose1 = verbose;

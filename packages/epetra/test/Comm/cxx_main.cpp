@@ -32,6 +32,7 @@
 #include "Epetra_Util.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_Version.h"
 #ifdef EPETRA_MPI
 #include <mpi.h>
 #include "Epetra_MpiComm.h"
@@ -53,6 +54,9 @@ int main(int argc, char* argv[]) {
 	int returnierr = 0;
 	int size = 1;
 	int rank = 0;
+
+  if (verbose1)
+    cout << Epetra_Version() << endl << endl;
 
 	// Test Epetra_SerialComm
 	if(verbose1) cout << "Testing Epetra_SerialComm..." << endl;

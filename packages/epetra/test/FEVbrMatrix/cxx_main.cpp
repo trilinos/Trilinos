@@ -40,6 +40,7 @@
 #endif
 
 #include "../epetra_test_err.h"
+#include "Epetra_Version.h"
 
 int main(int argc, char *argv[]) {
 
@@ -70,6 +71,10 @@ int main(int argc, char *argv[]) {
 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc(); 
+
+  if (verbose && MyPID==0)
+    cout << Epetra_Version() << endl << endl;
+
   if (verbose) cout << Comm <<endl;
 
   int NumVectors = 1;

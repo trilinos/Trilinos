@@ -37,6 +37,8 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_Version.h"
+                                            
 // prototype
 int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI
@@ -45,6 +47,10 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
+
+  if (Comm.MyPID()==0)
+    cout << Epetra_Version() << endl << endl;
+
   cout << Comm << endl; // Print out process information
   // Get the number of global equations from the command line
   if (argc!=2) { 

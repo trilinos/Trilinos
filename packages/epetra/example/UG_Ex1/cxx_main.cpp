@@ -12,6 +12,8 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Version.h"
+                                            
 // prototype
 double power_method(const Epetra_CrsMatrix& A);
 int main(int argc, char *argv[]) {
@@ -21,6 +23,10 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
+
+  if (Comm.MyPID()==0)
+    cout << Epetra_Version() << endl << endl;
+
   cout << Comm << endl; // Print out process information
   // Get the number of global equations from the command line
   if (argc!=2) { 

@@ -33,6 +33,7 @@
 #include "../epetra_test_err.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_DataAccess.h"
+#include "Epetra_Version.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -91,6 +92,9 @@ if(argc > 1) {
   int rank = 0;
 	Epetra_SerialComm Comm;
 #endif
+
+  if (verbose && Comm.MyPID()==0)
+    cout << Epetra_Version() << endl << endl;
 	
 //============================
 // other initial setup

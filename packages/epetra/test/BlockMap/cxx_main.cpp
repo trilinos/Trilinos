@@ -37,6 +37,7 @@
 #include "Epetra_SerialComm.h"
 #include "checkmap.h"
 #include "../epetra_test_err.h"
+#include "Epetra_Version.h"
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
@@ -80,6 +81,9 @@ int main(int argc, char *argv[]) {
   int verbose_int = verbose ? 1 : 0;
   Comm.Broadcast(&verbose_int, 1, 0);
   verbose = verbose_int==1 ? true : false;
+
+  if (verbose && MyPID==0)
+    cout << Epetra_Version() << endl << endl;
 
   if (verbose) cout << Comm << endl << flush;
   Comm.Barrier();

@@ -40,6 +40,7 @@
 #include "BuildTestProblems.h"
 #include "ExecuteTestProblems.h"
 #include "../epetra_test_err.h"
+#include "Epetra_Version.h"
 
 int main(int argc, char *argv[]) {
 
@@ -78,6 +79,10 @@ int main(int argc, char *argv[]) {
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc(); 
+
+  if (verbose && MyPID==0)
+    cout << Epetra_Version() << endl << endl;
+
   if (verbose) cout << Comm <<endl;
 
   bool verbose1 = verbose;

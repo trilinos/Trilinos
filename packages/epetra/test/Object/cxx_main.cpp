@@ -37,6 +37,8 @@
 #endif
 
 #include "../epetra_test_err.h"
+#include "Epetra_Version.h"
+                                            
 int main(int argc, char *argv[]) {
 
   int ierr = 0;
@@ -66,6 +68,8 @@ int main(int argc, char *argv[]) {
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
+  if (verbose && comm.MyPID()==0)
+    cout << Epetra_Version() << endl << endl;
 
   // I'm alive !!!
   if (verbose) cout << comm <<endl;

@@ -35,6 +35,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "../epetra_test_err.h"
+#include "Epetra_Version.h"
 
 // Prototype
 int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
@@ -86,6 +87,10 @@ int main(int argc, char *argv[]) {
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
+
+  if(verbose && MyPID==0)
+    cout << Epetra_Version() << endl << endl;
+
   if(verbose) cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive." << endl;
 
   bool verbose1 = verbose;

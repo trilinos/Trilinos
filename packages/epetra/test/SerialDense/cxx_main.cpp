@@ -37,7 +37,7 @@
 #endif
 #include "Epetra_SerialComm.h"
 #include "../epetra_test_err.h"
-
+#include "Epetra_Version.h"
 
 // prototypes
 
@@ -89,14 +89,14 @@ int main(int argc, char *argv[])
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-
-
 #ifdef EPETRA_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
   Epetra_SerialComm Comm;
 #endif
 
+  if (verbose && Comm.MyPID()==0)
+    cout << Epetra_Version() << endl << endl;
 
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;

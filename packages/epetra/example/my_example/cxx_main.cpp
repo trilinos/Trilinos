@@ -48,6 +48,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "../../test/epetra_test_err.h"
+#include "Epetra_Version.h"
 
 // Prototype
 int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
@@ -90,6 +91,9 @@ int main(int argc, char *argv[]) {
       verbose = true;
     }
   }
+
+  if(verbose && rank == 0)
+	cout << Epetra_Version() << endl << endl;
 
   //char tmp;
   //if (rank==0) cout << "Press any key to continue..."<< endl;
