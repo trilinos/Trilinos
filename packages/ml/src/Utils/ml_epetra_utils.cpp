@@ -16,6 +16,12 @@
 
 #ifdef ML_WITH_EPETRA
 #include "ml_epetra_utils.h"
+#include "Epetra_FECrsMatrix.h"
+#ifdef ML_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 
 
 /******************************************************************************/
@@ -25,8 +31,10 @@ int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap)
   /* ML matvec wrapper for Epetra matrices. */
 
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
-  Epetra_Vector X(View, A->RowMatrixColMap(), p);
-  Epetra_Vector Y(View, A->RowMatrixRowMap(), ap);
+/*MS*/
+  Epetra_Vector X(View, A->OperatorDomainMap(), p);
+  Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
+/*ms*/
   
   A->Multiply(false, X, Y);
   
@@ -127,11 +135,19 @@ int Epetra_ML_comm_wrapper(double vec[], void *data)
 
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
 
-  Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(), vec); //ghosted
-  Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(), vec); //loc only
+//  Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(), vec); //ghosted
+//  Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(), vec); //loc only
 
-  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
-
+  if( A->RowMatrixImporter() != 0 ) {
+    Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(),
+			   vec); //ghosted
+    Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
+			   vec); //loc only
+  
+//  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
+    X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
+  }
+  
   return(1);
 }
 /******************************************************************************/
@@ -295,6 +311,147 @@ int ML_Epetra_CRSinsert(ML_Operator *A, int row, int *cols, double *vals, int le
   return 0;
 }
 
+extern "C" {
+
+Epetra_CrsMatrix * Q  = NULL;
+Epetra_FECrsMatrix *  Qt = NULL; 
+  
+ML_Operator * ML_BuildQ( int StartingNumElements,
+			 int ReorderedNumElements,
+			 int reordered_decomposition[],
+			 double StartingNullSpace[],
+			 double ReorderedNullSpace[],
+			 int ComputeNewNullSpace,
+			 double StartingBdry[], double ReorderedBdry[],
+			 MPI_Comm mpi_communicator,
+			 ML_Comm *ml_communicator ) 
+{
+  
+  ML_Operator * ML_Q2;
+  
+#ifndef ML_MPI
+  /* ********************************************************************** */
+  /* ONe should not call this function with one processor only (as he has   */
+  /* nothing to redistributed. I simply return (this is also checked later) */
+  /* ********************************************************************** */
+
+  return NULL;
+#endif
+
+  Epetra_MpiComm Comm( mpi_communicator );
+
+  int MyPID = Comm.MyPID();
+  int NumProc = Comm.NumProc();
+
+  Epetra_Map StartingMap(-1,StartingNumElements,0,Comm);
+  Epetra_Map ReorderedMap(-1,ReorderedNumElements,0,Comm);
+
+  Q = new Epetra_CrsMatrix(Copy,StartingMap,1);
+
+  int * MyGlobalElements = StartingMap.MyGlobalElements();
+
+  // fill Q
+  for( int i=0 ; i<StartingNumElements ; ++i ) {
+    double one = 1.0;
+    int indices = reordered_decomposition[i];
+    Q->InsertGlobalValues(MyGlobalElements[i], 1, &one, &indices );
+  }
+
+  assert(Q->FillComplete(ReorderedMap,StartingMap)==0);
+
+  ML_Q2 = ML_Operator_Create( ml_communicator );
+
+  if( ComputeNewNullSpace == 1 ) {
+    Epetra_Vector xxx(View, StartingMap, StartingNullSpace);
+    Epetra_Vector yyy(View, ReorderedMap, ReorderedNullSpace);
+    Q->Multiply(true,xxx,yyy);
+  }
+
+  Epetra_Vector xxx2(View, StartingMap, StartingBdry);
+  Epetra_Vector yyy2(View, ReorderedMap, ReorderedBdry);
+  Q->Multiply(true,xxx2,yyy2);
+
+  Epetra2MLMatrix( Q, ML_Q2);
+
+  return ML_Q2;
+  
+}
+
+void ML_DestroyQ(void) 
+{
+
+  delete Q;
+  Q = NULL;
+
+  return;
+  
+} /* ML_DestroyQ */
+
+ML_Operator * ML_BuildQt( int StartingNumElements,
+			  int ReorderedNumElements,
+			  int reordered_decomposition[],
+			  MPI_Comm mpi_communicator,
+			  ML_Comm *ml_communicator ) 
+{
+  
+  ML_Operator * ML_Qt2;
+  
+#ifndef ML_MPI
+  /* ********************************************************************** */
+  /* ONe should not call this function with one processor only (as he has   */
+  /* nothing to redistributed. I simply return (this is also checked later) */
+  /* ********************************************************************** */
+
+  return NULL;
+#endif
+
+  Epetra_MpiComm Comm( mpi_communicator );
+
+  int MyPID = Comm.MyPID();
+  int NumProc = Comm.NumProc();
+
+  if( NumProc == 1 ) return NULL;
+
+  Epetra_Map StartingMap(-1,StartingNumElements,0,Comm);
+  Epetra_Map ReorderedMap(-1,ReorderedNumElements,0,Comm);
+
+  Qt = new Epetra_FECrsMatrix(Copy,ReorderedMap,1);
+
+  int * MyGlobalElements = StartingMap.MyGlobalElements();
+
+  // fill Q
+  for( int i=0 ; i<StartingNumElements ; ++i ) {
+    int row = reordered_decomposition[i];
+    double one = 1.0;
+    int indices = MyGlobalElements[i];
+    Qt->SumIntoGlobalValues(1, &row, 1, &indices, &one );
+  }
+
+  Qt->GlobalAssemble(false);
+
+  // Q will be applied to vectors defined on StartingMap,
+  // and the output vector will be defined on ReorderdMap
+  assert(Qt->FillComplete(ReorderedMap,StartingMap)==0);
+
+  ML_Qt2 = ML_Operator_Create( ml_communicator );
+
+  Epetra2MLMatrix( Qt, ML_Qt2);
+
+  return ML_Qt2;
+  
+} /* ML_BuildQt */
+
+void ML_DestroyQt( void ) 
+{
+
+  delete Qt;
+  Qt = NULL;
+
+  return;
+  
+} /* ML_DestroyQt */
+
+} /* extern "C" */
 
 #ifdef WKC
 int Epetra_ML_matvec_WKC (void *data, int in, double *p, int out, double *ap)
