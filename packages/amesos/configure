@@ -6786,8 +6786,20 @@ else
 fi
 
 
-if test "$target" = "alpha*-dec-osf*" ; then
-   CXXFLAGS = "-ptr ../src/cxx_repository ${CXXFLAGS}"
+#
+#  Adding -tweak to the cxx compile flags causes
+#  all template instatiations to be placed in the library
+#  and instructs the linker to ignore the multiple definitions
+#  that result.
+#
+#  Ken Stanley added this in June 2003 as the lesser of the
+#  known evil ways of dealing with stl template instantiation
+#
+case "$target" in
+    if test $CXX = cxx; then
+      alpha*-dec-osf*)  CXXFLAGS="-tweak ${CXXFLAGS}"
+    fi
+  ;;
 fi
 
 
@@ -9290,7 +9302,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9293: \"$ac_link\") >&5
+(eval echo $as_me:9305: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9370,7 +9382,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9373: \"$ac_link\") >&5
+(eval echo $as_me:9385: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

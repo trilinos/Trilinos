@@ -277,8 +277,20 @@ if test "X$ac_cv_use_amesos_slud" = "Xno"; then
 fi
 AM_CONDITIONAL(NEED_PARAMETER_LIST, false ) 
 
-if test "$target" = "alpha*-dec-osf*" ; then
-   CXXFLAGS = "-ptr ../src/cxx_repository ${CXXFLAGS}"
+#
+#  Adding -tweak to the cxx compile flags causes 
+#  all template instatiations to be placed in the library
+#  and instructs the linker to ignore the multiple definitions
+#  that result.  
+#  
+#  Ken Stanley added this in June 2003 as the lesser of the 
+#  known evil ways of dealing with stl template instantiation
+#
+case "$target" in
+    if test $CXX = cxx; then
+      alpha*-dec-osf*)  CXXFLAGS="-tweak ${CXXFLAGS}"
+    fi
+  ;;
 fi
 
 
