@@ -434,6 +434,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 	 else if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
      {
        Pmatrix = ML_Operator_halfClone( &(ml->Pmat[clevel]) );
+       /* ml->Pmat[clevel] is destroyed first.  Half cloning assumes that
+          everything associated with matrix->getrow is destroyed with the
+          original operator.  In this case, the getrow object should be
+          destroyed with the clone.  Hence, we lie and say Pmatrix is not
+          the result of a clone....*/
+       Pmatrix->halfclone = ML_FALSE;
 
        Pmatrix->data_destroy = ml->Pmat[clevel].data_destroy;
        ml->Pmat[clevel].data_destroy = NULL;
@@ -442,10 +448,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
        ML_memory_free( (void**)&(Pmatrix->matvec) );
        Pmatrix->matvec = ml->Pmat[clevel].matvec;
        ml->Pmat[clevel].matvec = NULL;
+
        ML_memory_free( (void**)&(Pmatrix->getrow) );
        Pmatrix->getrow = ml->Pmat[clevel].getrow;
        ml->Pmat[clevel].getrow = NULL;
-       ml->Pmat[clevel].label = NULL;
 
        ML_Operator_Clean(&(ml->Pmat[clevel]));
        ML_memory_alloc((void**)&(ml->Pmat[clevel].getrow),
@@ -453,6 +459,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 
        ml->Pmat[clevel].matvec = Pmatrix->matvec;
        Pmatrix->matvec = NULL;
+       Pmatrix->label = NULL;
        Ncoarse = Pmatrix->invec_leng;
      }
      else {
