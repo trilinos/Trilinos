@@ -77,9 +77,9 @@ namespace TSFExtended
 
       /* compute the residual */
       f = range()->createMember();
-      f.setElement(0,  xIn + e_ * ::sin(xIn) - m_);
+      f.setElement(0,  xIn - e_ * ::sin(xIn) - m_);
       /* compute the derivative of the residual */
-      double jVal = 1 + e_*::cos(xIn);
+      double jVal = 1 - e_*::cos(xIn);
 
       /* insert the derivative into the (0,0) element of the matrix */
       Array<int> colIndices = tuple(0);
@@ -129,8 +129,8 @@ int main(int argc, void *argv[])
 
       /* eccentricity */
       double e = 0.1;
-
       Kepler* kepler = new Kepler(e, pi/4.0, type);
+      // Kepler* kepler = new Kepler(e, pi/4.0, type);
       NonlinearOperator<double> F  = kepler;
       
       
@@ -141,7 +141,7 @@ int main(int argc, void *argv[])
 
       linSolverParams.set(LinearSolverBase<double>::verbosityParam(), 2);
       linSolverParams.set(IterativeSolver<double>::maxitersParam(), 100);
-      linSolverParams.set(IterativeSolver<double>::tolParam(), 1.0e-14);
+      linSolverParams.set(IterativeSolver<double>::tolParam(), 1.0e-10);
 
       LinearSolver<double> linSolver 
         = new BICGSTABSolver<double>(linSolverParams);
@@ -152,7 +152,7 @@ int main(int argc, void *argv[])
 
       // Set up the status tests
       NOX::StatusTest::NormF statusTestA(grp, 1.0e-10);
-      NOX::StatusTest::MaxIters statusTestB(20);
+      NOX::StatusTest::MaxIters statusTestB(50);
       NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
       // Create the list of solver parameters
@@ -166,6 +166,20 @@ int main(int argc, void *argv[])
 
       // Set the line search method
       lineSearchParameters.setParameter("Method","More'-Thuente");
+
+      // Create the linear solver parameters sublist
+      NOX::Parameter::List& linearSolverParameters = solverParameters.sublist("Linear Solver");
+
+      // Set the line search method
+      linearSolverParameters.setParameter("Tolerance","1.0e-14");
+
+      // Create the printing parameter sublist
+      NOX::Parameter::List& printingParameters = solverParameters.sublist("Printing");
+
+      // Set the output precision
+      printingParameters.setParameter("Output Precision",8);
+
+
 
       // Create the solver
       NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
