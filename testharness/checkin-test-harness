@@ -20,7 +20,7 @@
 # located in the same directory as this file for further setup instructions.
 
 # Required files:
-# checkin-test-harness is the main driver program.  It calls existing test 
+# checkin-test-harness is the main driver program.  It calls existing test
 # scripts associated with various Trilinos packages.  checkin-test-harness is
 # based on Paul Lin's salsa-check, which was adapted from Gary Hennigan's
 # Salsa-Check.sh
@@ -29,11 +29,14 @@
 # "subdir-list".  This file should list buid directories that are to be 
 # used in the testing process.  These directories must be direct subdirectories
 # of  Trilinos/ and contain "invoke-configure" scripts.  These scripts, as
-# the name implies, pass arguments to the "configure" script.  By specifying
-# multiple build directories, multiple builds can be tested.  Minimally, 
-# developers should list at least one serial and one mpi build directory in the
-# subdir-list file.  This will help ensure that the general serial and mpi
-# builds of Trilinos are not broken by a commit.
+# the name implies, pass arguments to the "configure" script.  When writing
+# these "invoke-configure" scripts keep in mind that scripts for mpi builds
+# MUST contain "--enable-mpi" on the first line.  The test harness keys on this
+# string when deciding which test scripts to look for.  By specifying multiple
+# build directories in the subdir-list file, multiple builds can be tested.
+# Minimally, developers should list at least one serial and one mpi build
+# directory in the subdir-list file.  This will help ensure that the general
+# serial and mpi builds of Trilinos are not broken by a commit.
 
 # Output
 
