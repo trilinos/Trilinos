@@ -28,13 +28,13 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = CrsMatrix_test
+noinst_PROGRAMS = CrsRectMatrix_test
 
-CrsMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
+CrsRectMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-CrsMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+CrsRectMatrix_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-CrsMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
+CrsRectMatrix_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-CrsMatrix_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+CrsRectMatrix_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+

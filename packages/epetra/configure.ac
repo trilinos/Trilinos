@@ -343,10 +343,18 @@ AC_CONFIG_FILES([
 		Makefile.export
 		src/Makefile
 		test/Makefile
+		test/BasicPerfTest/Makefile
+		test/BasicPerfTest/Makefile.include
 		test/BlockMap/Makefile
+		test/BlockMap/Makefile.include
+		test/Comm/Makefile
+		test/Comm/Makefile.include
 		test/CrsGraph/Makefile
+		test/CrsGraph/Makefile.include
 		test/CrsMatrix/Makefile
+		test/CrsMatrix/Makefile.include
 		test/CrsRectMatrix/Makefile
+		test/CrsRectMatrix/Makefile.include
 		test/FECrsGraph/Makefile
 		test/FECrsMatrix/Makefile
 		test/FEVbrMatrix/Makefile
@@ -362,8 +370,6 @@ AC_CONFIG_FILES([
 		test/SerialSpdDense/Makefile
 		test/VbrMatrix/Makefile
 		test/Vector/Makefile
-		test/Comm/Makefile
-		test/BasicPerfTest/Makefile
 		example/Makefile 
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile

@@ -32,11 +32,10 @@ noinst_PROGRAMS = CrsGraph_test
 
 CrsGraph_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-CrsGraph_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+CrsGraph_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-CrsGraph_test_CXXFLAGS = -I$(top_srcdir)/src
+CrsGraph_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-CrsGraph_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+CrsGraph_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 

@@ -10420,7 +10420,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile test/Makefile test/BlockMap/Makefile test/CrsGraph/Makefile test/CrsMatrix/Makefile test/CrsRectMatrix/Makefile test/FECrsGraph/Makefile test/FECrsMatrix/Makefile test/FEVbrMatrix/Makefile test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/IntSerialDense/Makefile test/Map/Makefile test/MapColoring/Makefile test/MultiVector/Makefile test/Object/Makefile test/SerialDense/Makefile test/SerialSpdDense/Makefile test/VbrMatrix/Makefile test/Vector/Makefile test/Comm/Makefile test/BasicPerfTest/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/FECrsGraph/Makefile test/FECrsMatrix/Makefile test/FEVbrMatrix/Makefile test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/IntSerialDense/Makefile test/Map/Makefile test/MapColoring/Makefile test/MultiVector/Makefile test/Object/Makefile test/SerialDense/Makefile test/SerialSpdDense/Makefile test/VbrMatrix/Makefile test/Vector/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11032,10 +11032,18 @@ do
   "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+  "test/BasicPerfTest/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BasicPerfTest/Makefile" ;;
+  "test/BasicPerfTest/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/BasicPerfTest/Makefile.include" ;;
   "test/BlockMap/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockMap/Makefile" ;;
+  "test/BlockMap/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/BlockMap/Makefile.include" ;;
+  "test/Comm/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Comm/Makefile" ;;
+  "test/Comm/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/Comm/Makefile.include" ;;
   "test/CrsGraph/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsGraph/Makefile" ;;
+  "test/CrsGraph/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsGraph/Makefile.include" ;;
   "test/CrsMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsMatrix/Makefile" ;;
+  "test/CrsMatrix/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsMatrix/Makefile.include" ;;
   "test/CrsRectMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsRectMatrix/Makefile" ;;
+  "test/CrsRectMatrix/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsRectMatrix/Makefile.include" ;;
   "test/FECrsGraph/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/FECrsGraph/Makefile" ;;
   "test/FECrsMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/FECrsMatrix/Makefile" ;;
   "test/FEVbrMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/FEVbrMatrix/Makefile" ;;
@@ -11051,8 +11059,6 @@ do
   "test/SerialSpdDense/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SerialSpdDense/Makefile" ;;
   "test/VbrMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/VbrMatrix/Makefile" ;;
   "test/Vector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Vector/Makefile" ;;
-  "test/Comm/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Comm/Makefile" ;;
-  "test/BasicPerfTest/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BasicPerfTest/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/petra_power_method/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/petra_power_method/Makefile" ;;
   "example/verySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/verySimple/Makefile" ;;

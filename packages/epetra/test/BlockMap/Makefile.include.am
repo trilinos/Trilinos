@@ -33,11 +33,10 @@ noinst_PROGRAMS = BlockMap_test
 
 BlockMap_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/checkmap.cpp $(srcdir)/checkmap.h $(top_srcdir)/test/epetra_test_err.h
 
-BlockMap_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+BlockMap_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-BlockMap_test_CXXFLAGS = -I$(top_srcdir)/src
+BlockMap_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-BlockMap_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+BlockMap_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 
