@@ -8,9 +8,6 @@
 # might someday be needed by some other code outside AztecOO. The first is
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
-# For now, these are just guesses as to where the files belong.
-# Files that prove to be troublesome have been commented out and 
-# placed at the bottom of the appropriate section
 
 #WITH_CPP category is not incorporated into the make structure yet.  Must
 #make an option to use it or not with default being yes.  Must also 
@@ -25,7 +22,6 @@
 
 #	$(srcdir)/az_comm_ncube.c 
 #	$(srcdir)/az_comm_intel.c 
-
 
 CORE_H = \
 	$(srcdir)/az_aztec_defs.h \
@@ -252,7 +248,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libaztecoo_a_LIBADD = $(XTRALDADD)
+libaztecoo_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
