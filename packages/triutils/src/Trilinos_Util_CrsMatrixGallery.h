@@ -50,117 +50,11 @@ public:
   //! Triutils_Gallery Constructor.
   /*! Creates a Triutils_Gallery instance.
 
-  \param In
-  name - identity the problem to be generated. At this time, one can
+  The first parameter is the name of the matrix. We refer to the Trilinos
+  Tutorial for a detailed description of available matrices.
 
-  - \c eye: Creates an identity matrix. The dimension of the problem is set
-  using Set("problem size", IntValue), or, alternatively, by Set("nx",
-  IntValue).
-
-  - \c diag: Creates a diagonal matrix. The elements on the diagonal can
-  set using Set("a",value), where value is either a double, or an
-  Epetra_Vector. Problem size set as for "eye."
-
-  - \c tridiag: Creates a tridiagonal matrix. The diagonal element is set
-  using Set("a", DiagValue), the subdiagonal using
-  Set("b",SubDiagValue), and the superdiagonal using
-  Set("c",SupDiagValue).  DiagValue, SubDiagValue, and SupDiagValue can
-  be scalar or Epetra vectors.  In the latter case, all vectors must
-  have the same number of elements. Elements i will be use to define row
-  i. Problem size specified as for "eye."
-
-  - \c laplace_1d: Create the classical tridiagonal matrix with stencil
-  [-1, 2, -1].  Problem size specified as for "eye."
-
-  - \c laplace_2d: Creates a matrix corresponding to the stencil of a 2D
-  Laplacian operator on a structured cartesian grid. Problem size is
-  specified using Set("problem size", IntValue). In this case, IntValue
-  must be a square number. Alternatively, one can set the number of
-  nodes along the x-axis and y-axis, using Set("nx",IntValue) and
-  Set("ny",IntValue).
-
-  - \c cross_stencil_2d: Creates a matrix with the same stencil of "laplace
-  2d", but with arbitrary values. The stencil is
-  \[
-  A = \begin{tabular}{ccc}
-    & e &  \\
-  b & a & c \\
-    & d &   \\
-  \end{tabular}
-  \]
-  and each value can be either a double, or and Epetra_Vector. Problem
-  size specified as in "laplace 2d."
-
-  - \c laplace_3d: Creates a matrix corresponding to the stencil of a 3D
-  Laplacian operator on a structured cartesian grid. Problem size
-  specified using Set("problme size",IntValue). In this case, IntValue
-  must be a cube. Alternatively, one can specify the number of nodes
-  along the axis, using Set("nx",IntValue), Set("ny",IntValue), and
-  Set("nz",IntValue).
-
-  - \c cross_stencil_3d: Similar to the 2D case. The matrix stencil
-  correspond to that of a 3D Laplace operator on a structured grid. On a
-  given x-y plane, the stencil is a in "laplace 2d". The value on the
-  plane below is set using Set("f",F), and in the plane above with
-  Set("g",G"). Problem size specifed as in "laplace3d."
-
-  - \c hb: The matrix is read from file. File name is specified by
-  Set("file name", FileName). FileName is a C++ string. Problem size is
-  automatically read from file.
-
-  - \c lehmer: Returns a symmetric positive definite matrix, such that
-  A(i,j) = (i+1)/(j+1) (for j>=i), and (j+1)/(i+1) (for j<j). This
-  matrix has three properties:
-     - is totally nonnegative;
-     - the inverse is tridiagonal and esplicitly known;
-     - The condition number is bounded as n <= cond(A) <= 4*n (n is the problem size).
-
-  - \c minij: Returns the symmetric positive definite matrix defined sd
-  A(i,j) = min(i+1,j+1). More information can be found in the help of
-  MATLAB's gallery function.
-
-  - \c ris: Returns a symmetric Hankel matrix with elements A(i,j) =
-  0.5/(n-(i+1)-(j+1)+1.5),
-  with n equals problem size. (i and j start from 0.)
-  The eigenvalues of A cluster around -pi/2 and pi/2.
-
-  - \c hilbert: This is a famous example of a badly conditioned matrix. The
-  elements are defined as 1/((i+1)+(j+1)-1). (i and j start from 0.)
-
-  - \c jordblock: Creates a Jordan block with eigenvalue set via Set("a",DoubleVal).
-
-  - \c cauchy: Creates a particular instance of a Cauchy matrix with
-  elements A(i,j) = 1/(i+j) (where i and j range from 1 to
-  NumGlobalElements).  Explicit formulas are known for the inverse and
-  determinand of a Cauchy matrix. For this particular Cauchy matrix, the
-  determinant is nonzero and the matrix is totally positive.
-
-  - \c fiedler: Creates a matrix whose element are A(i,j) = | i - j |.
-  The matrix is symmetric, and has a dominant positive eigenvalue, and
-  all the other eigenvalues are negative.
-
-  - \c hanowa: Creates a matrix whoe eigenvalues lie on a vertical line
-  in the complex plane. The matrix has the 2x2 block structure
-  A = [ a * eye(n/2) ; -diag(1:m) ;
-        diag(1:m);     a * eye(n/2) ];
-  The complex eigenvalues are of the form a +- k*i, for 1 <= k <= n/2.
-  The default value for a_ is -1;
-
-  - \c kms: Create the n-by-n Kac-Murdock-Szego Toepliz matrix such that
-  A(i,j) = rho^(abs(i-j)) (for real rho only). Default value for rho is
-  0.5.  The inverse of this matrix is tridiagonal, and it is positive
-  definite if and only if 0 < abs(rho) < 1.
-  
-  - \c parter: Creates a matrix A(i,j) = 1/(i-j+0.5). A is a Cauchy and
-  a Toeplliz matrix. Most of the singular values of A are very close to
-  pi.
-
-  - \c pei: Creates the matrix alpha * eye(n) + ones(n). This matrix is
-  singular for alpha == 0 or -n.
-
-  - \c vander: Create the Vandermonde matrix whose second last column is
-  the vector c. The j-th column is given by A(:,j) = C^(n-j).
-
+  \note The matrix name can be empty (""), and set later using, for example,
+  Set("matrix_name","laplace_2d");
   
   An example of program using this class is reported below.
 
@@ -175,17 +69,22 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  CrsMatrixGallery Gallery("hb", Comm);
+  // create an Epetra matrix reading an H/B matrix
+  Trilinos_Util_CrsMatrixGallery Gallery("hb", Comm);
 
+  // set the name of the matrix
   Gallery.Set("matrix name", "bcsstk14.rsa");
   
   Epetra_CrsMatrix * A;
   Epetra_Vector * ExactSolution;
   Epetra_Vector * RHS;
   Epetra_Vector * StartingSolution;
-  
+
+  // at this point the matrix is read from file
   A = Gallery.GetMatrix();
   ExactSolution = Gallery.GetExactSolution();
+
+  // at this point the RHS is allocated and filled
   RHS = Gallery.GetRHS();
   StartingSolution = Gallery.GetStartingSolution();
   
@@ -456,6 +355,8 @@ protected:
   void ZeroOutData();
 
   void SetupCartesianGrid2D();
+
+  void SetupCartesianGrid3D();
 
   void ExactSolQuadXY(double x, double y, double & u);
   

@@ -546,7 +546,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       else {
 	cerr << ErrorMsg << "Problem size not correct (" << NumGlobalElements_
 	     << ")" << endl;
-	cerr << ErrorMsg << "It should be a square number" << endl;
+	cerr << ErrorMsg << "It should be a perfect square" << endl;
 	exit( EXIT_FAILURE );
       }
     }
@@ -602,7 +602,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
 	mx_ = (int)sqrt((double)(comm_->NumProc()));
 	my_ = mx_;
 	if( mx_ * my_ != comm_->NumProc() ) {
-	  cerr << ErrorMsg << "number of processes must be square number\n"
+	  cerr << ErrorMsg << "number of processes must be perfect square\n"
 	       << ErrorMsg << "otherwise set mx and my\n";
 	  exit( EXIT_FAILURE );
 	}
@@ -638,7 +638,67 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       
       map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
       
-      // I delete this guy to that this case is not different from the
+      // I delete this guy so that this case is not different from the
+      // others, and I don't have to clean up this mess while
+      // destroying the object.
+      
+      delete [] MyGlobalElements;
+      
+    } else if( MapType_ == "cube" ) {
+
+      if( mx_ == -1 || my_ == -1 || mz_ == -1 ) {
+	mx_ = (int)pow((double)(comm_->NumProc()),0.333334);
+	my_ = mx_;
+	mz_ = mx_;
+	
+	if( mx_ * my_ * mz_ != comm_->NumProc() ) {
+	  cerr << ErrorMsg << "number of processes must be perfect cube\n"
+	       << ErrorMsg << "otherwise set mx, my, and mz\n";
+	  exit( EXIT_FAILURE );
+	}
+      }
+
+      SetupCartesianGrid3D();
+      
+      // how to divide the axis
+
+      int modx = (nx_+(nx_%mx_))/mx_;
+      int mody = (ny_+(ny_%my_))/my_;
+      int modz = (nz_+(nz_%mz_))/mz_;
+      
+      int MyPID = comm_->MyPID(), startx, starty, startz, endx, endy, endz;
+      int mxy  = mx_*my_;
+      int zpid = MyPID/mxy;
+      int xpid = (MyPID%mxy)/mx_;
+      int ypid = (MyPID%mxy)%my_;
+
+      cout << "Mypid = " << MyPID << "  " << xpid << "  " << ypid << "  " << zpid << endl;
+      
+      startx = xpid*modx;
+      if( (xpid+1)*modx < nx_ ) endx = (xpid+1)*modx;
+      else endx = nx_;
+      starty = ypid*mody;
+      if( (ypid+1)*mody < ny_ ) endy = (ypid+1)*mody;
+      else endy = ny_;
+      startz = zpid*modz;
+      if( (zpid+1)*modz < nz_ ) endz = (zpid+1)*modz;
+      else endz = nz_;
+      
+      int NumMyElements = (endx-startx)*(endy-starty)*(endz-startz);
+      int * MyGlobalElements = new int[NumMyElements];
+      int count = 0;
+      
+      for( int i=startx ; i<endx ; ++i ) {
+	for( int j=starty ; j<endy ; ++j ) {
+	  for( int k=startz ; k<endz ; ++k ) {
+	    MyGlobalElements[count++] = i+j*nx_+k*(nx_*ny_);
+	  }
+	}
+      }
+      
+      map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
+
+      // I delete this guy so that this case is not different from the
       // others, and I don't have to clean up this mess while
       // destroying the object.
       
@@ -1789,7 +1849,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace3d(void)
   f_ = -1.0;
   g_ = -1.0;
 
-  CreateMatrixCrossStencil3dVector();
+  CreateMatrixCrossStencil3d();
 
   return;
 }
@@ -1816,18 +1876,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
   }
   
   // problem size
-  
-  if( nx_ == -1 || ny_ == -1 || nz_ == -1 ) {
-    nx_ = (int)pow(1.0*NumGlobalElements_,0.333334);
-    ny_ = nx_;
-    nz_ = nx_;
-      
-    if( nx_ * ny_ *nz_ != NumGlobalElements_ ) {
-      cerr << ErrorMsg << "The number of global elements must be a perfect cube\n"
-	   << ErrorMsg << "(now is " << NumGlobalElements_ << ")." << endl;
-      exit( EXIT_FAILURE );
-    }
-  }
+
+  SetupCartesianGrid3D();
     
   int left, right, lower, upper, below, above;
     
@@ -3019,8 +3069,26 @@ void Trilinos_Util::CrsMatrixGallery::SetupCartesianGrid2D()
     nx_ = (int)sqrt((double)NumGlobalElements_);
     ny_ = nx_;
     if( nx_ * ny_ != NumGlobalElements_ ) {
-      cerr << ErrorMsg << "The number of global elements must be a square number\n"
+      cerr << ErrorMsg << "The number of global elements must be a perfect square\n"
 	   << ErrorMsg << "otherwise set nx and ny. " << endl
+	   << ErrorMsg << "(now NumGlobalElements = " << NumGlobalElements_ << ")" << endl;
+      exit( EXIT_FAILURE );
+    }
+  }
+}
+
+// ================================================ ====== ==== ==== == =
+void Trilinos_Util::CrsMatrixGallery::SetupCartesianGrid3D() 
+{
+  // needs a cube number of nodes or
+  // nx, ny and nz set
+  if( nx_ == -1 || ny_ == -1 || nz_ == -1 ) {
+    nx_ = (int)pow((double)NumGlobalElements_,0.333334);
+    ny_ = nx_;
+    nz_ = nx_;
+    if( nx_ * ny_ * nz_ != NumGlobalElements_ ) {
+      cerr << ErrorMsg << "The number of global elements must be a perfect cube\n"
+	   << ErrorMsg << "otherwise set nx, ny, and nz. " << endl
 	   << ErrorMsg << "(now NumGlobalElements = " << NumGlobalElements_ << ")" << endl;
       exit( EXIT_FAILURE );
     }
