@@ -173,7 +173,13 @@ ML_Operator *ML_Operator_halfClone( ML_Operator *original)
    ML_Operator *mat;
 
    mat = ML_Operator_Create(original->comm);
+   ML_Operator_halfClone_Init(mat, original);
+   return mat;
+}
 
+int ML_Operator_halfClone_Init(ML_Operator *mat,
+					     ML_Operator *original)
+{
    mat->ML_id = ML_ID_OP;
    mat->matvec->ML_id    = original->matvec->ML_id;
    mat->matvec->Nrows    = original->matvec->Nrows;
@@ -208,15 +214,16 @@ ML_Operator *ML_Operator_halfClone( ML_Operator *original)
    mat->num_PDEs            = original->num_PDEs;
    mat->num_rigid           = original->num_rigid;
    mat->N_total_cols_est    = -1;
-   return mat;
+   return 1;
 }
 
 /* ******************************************************************** */
 /* destructor corresponding to halfClone                                */
 /* ******************************************************************** */
 
-int ML_Operator_halfDestroy( ML_Operator *mat)
+int ML_Operator_halfClone_Clean( ML_Operator *mat)
 {
+  if (mat == NULL) return 0;
    mat->sub_matrix = NULL;
    mat->diagonal   = NULL;
    mat->getrow->row_map = NULL;
@@ -224,7 +231,15 @@ int ML_Operator_halfDestroy( ML_Operator *mat)
    mat->getrow->pre_comm = NULL;
    mat->getrow->post_comm = NULL;
    mat->label = NULL;
-   return(ML_Operator_Destroy(mat));
+   return(ML_Operator_Clean(mat));
+}
+int ML_Operator_halfClone_Destroy( ML_Operator *mat)
+{
+   if (mat != NULL) {
+     ML_Operator_halfClone_Clean(mat);
+     ML_free(mat);
+   }
+   return 0;
 }
 
 /* ******************************************************************** */

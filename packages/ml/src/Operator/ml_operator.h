@@ -123,7 +123,12 @@ extern ML_Operator *ML_Operator_Create(ML_Comm *comm);
 extern int ML_Operator_Destroy(ML_Operator *);
 
 extern ML_Operator *ML_Operator_halfClone( ML_Operator *original);
-extern int ML_Operator_halfDestroy( ML_Operator *mat);
+extern int ML_Operator_halfClone_Init(ML_Operator *mat,
+					   ML_Operator *original);
+
+extern int ML_Operator_halfClone_Clean( ML_Operator *mat);
+extern int ML_Operator_halfClone_Destroy( ML_Operator *mat);
+
 
 extern int ML_Operator_Init(ML_Operator *, ML_Comm *comm);
 extern int ML_Operator_Clean(ML_Operator *);
