@@ -1501,6 +1501,7 @@ int ParseIfmt(char* fmt, int* perline, int* width)
     tmp = strchr(fmt,'(');
     tmp = substr(fmt,tmp - fmt + 1, strchr(fmt,'I') - tmp - 1);
     *perline = atoi(tmp);
+    if (*perline == 0 ) *perline = 1 ; 
     if (tmp!=NULL) free ((void *) tmp);
     tmp = strchr(fmt,'I');
     tmp = substr(fmt,tmp - fmt + 1, strchr(fmt,')') - tmp - 1);
@@ -1567,6 +1568,7 @@ int ParseRfmt(char* fmt, int* perline, int* width, int* prec, int* flag)
     tmp = strchr(fmt,'(');
     tmp = substr(fmt,tmp - fmt + 1, strchr(fmt,*flag) - tmp - 1);
     *perline = atoi(tmp);
+    if (*perline == 0 ) *perline = 1 ; 
     if (tmp!=NULL) free ((void *) tmp);
     tmp = strchr(fmt,*flag);
     if ( strchr(fmt,'.') ) {
