@@ -110,7 +110,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_LAPACK_EXAMPLES_TRUE@EXAMPLES = rosenbrock linear $(PRERELEASE_EXAMPLES)
+@BUILD_LAPACK_EXAMPLES_TRUE@EXAMPLES = rosenbrock $(PRERELEASE_EXAMPLES)
 
 noinst_PROGRAMS = $(EXAMPLES)
 
@@ -128,15 +128,15 @@ rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
                    $(top_builddir)/src/libnox.a
 
 
-linear_SOURCES = $(srcdir)/Linear.C
+@BUILD_PRERELEASE_TRUE@PRERELEASE_EXAMPLES = broyden linear
+
+nodist_linear_SOURCES = $(srcdir)/Linear.C
 
 linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 
 linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
 
 linear_LDADD = $(rosenbrock_LDADD)
-
-@BUILD_PRERELEASE_TRUE@PRERELEASE_EXAMPLES = broyden
 
 nodist_broyden_SOURCES = $(srcdir)/Broyden.C
 
@@ -168,18 +168,17 @@ CONFIG_CLEAN_FILES =
 @BUILD_LAPACK_EXAMPLES_FALSE@@BUILD_PRERELEASE_FALSE@noinst_PROGRAMS =
 @BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@noinst_PROGRAMS = \
 @BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	rosenbrock$(EXEEXT) \
-@BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	linear$(EXEEXT) \
-@BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	broyden$(EXEEXT)
+@BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	broyden$(EXEEXT) \
+@BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	linear$(EXEEXT)
 @BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_FALSE@noinst_PROGRAMS = \
-@BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_FALSE@	rosenbrock$(EXEEXT) \
-@BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_FALSE@	linear$(EXEEXT)
+@BUILD_LAPACK_EXAMPLES_TRUE@@BUILD_PRERELEASE_FALSE@	rosenbrock$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 nodist_broyden_OBJECTS = broyden-Broyden.$(OBJEXT)
 broyden_OBJECTS = $(nodist_broyden_OBJECTS)
 broyden_LDFLAGS =
-am_linear_OBJECTS = linear-Linear.$(OBJEXT)
-linear_OBJECTS = $(am_linear_OBJECTS)
+nodist_linear_OBJECTS = linear-Linear.$(OBJEXT)
+linear_OBJECTS = $(nodist_linear_OBJECTS)
 linear_LDFLAGS =
 am_rosenbrock_OBJECTS = rosenbrock-Rosenbrock.$(OBJEXT)
 rosenbrock_OBJECTS = $(am_rosenbrock_OBJECTS)
@@ -200,9 +199,9 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-DIST_SOURCES = $(linear_SOURCES) $(rosenbrock_SOURCES)
+DIST_SOURCES = $(rosenbrock_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(nodist_broyden_SOURCES) $(linear_SOURCES) $(rosenbrock_SOURCES)
+SOURCES = $(nodist_broyden_SOURCES) $(nodist_linear_SOURCES) $(rosenbrock_SOURCES)
 
 all: all-am
 

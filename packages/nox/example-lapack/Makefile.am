@@ -31,7 +31,7 @@
 
 if BUILD_LAPACK_EXAMPLES
 
-EXAMPLES = rosenbrock linear $(PRERELEASE_EXAMPLES)
+EXAMPLES = rosenbrock $(PRERELEASE_EXAMPLES)
 
 endif
 
@@ -48,19 +48,19 @@ rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
 rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
                    $(top_builddir)/src/libnox.a
 
-linear_SOURCES = $(srcdir)/Linear.C
+if BUILD_PRERELEASE
+
+PRERELEASE_EXAMPLES = broyden linear
+
+endif
+
+nodist_linear_SOURCES = $(srcdir)/Linear.C
 
 linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 
 linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
 
 linear_LDADD = $(rosenbrock_LDADD)
-
-if BUILD_PRERELEASE
-
-PRERELEASE_EXAMPLES = broyden
-
-endif
 
 nodist_broyden_SOURCES = $(srcdir)/Broyden.C
 

@@ -1,3 +1,5 @@
+#ifdef WITH_PRERELEASE
+
 // $Id$ 
 // $Source$ 
 
@@ -242,3 +244,7 @@ void NOX::Direction::QuasiNewton::throwError(const string& functionName, const s
       cerr << "NOX::Direction::QuasiNewton::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }
+
+
+#endif
+

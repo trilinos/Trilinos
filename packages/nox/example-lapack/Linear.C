@@ -1,6 +1,8 @@
 // $Id$ 
 // $Source$ 
 
+#ifdef WITH_PRERELEASE
+
 //@HEADER
 // ************************************************************************
 // 
@@ -44,6 +46,9 @@
    \f[
    F(x) = Ax -b 
    \f]
+
+   If the program is called with the first argument being a 0 (zero),
+   then the following problem is used:
 
    \f[
    A = 
@@ -90,6 +95,11 @@
    \end{array}
    \right]
    \f]
+
+   Otherwise, if the program is called with an n > 0, a matrix of size
+   n is constructed and each element is filledwith a random elements
+   in the interval [-1,1).
+
 */
 
 
@@ -105,41 +115,54 @@ class Linear : public NOX::LAPACK::Interface {
 public:
  
   //! Constructor
-  Linear() : 
-    initialGuess(4),
-    solution(4),
-    A(4, 4),
-    b(4)
+  Linear(int n, bool useDefaultProblem) : 
+    initialGuess(n),
+    solution(n),
+    A(n, n),
+    b(n)
   {
-    initialGuess.init(4);
+    if (useDefaultProblem)
+    {
+      if (n != 4)
+	throw "Linear::Linear - Problem size mismatch";
 
-    b.init(1);
+      initialGuess.init(4);
+      
+      b.init(1);
+      
+      A(0,0) = 7; 
+      A(0,1) = 1;
+      A(0,2) = 2;
+      A(0,3) = 1;
+      A(1,0) = 1; 
+      A(1,1) = 8;
+      A(1,2) = 3;
+      A(1,3) = 1;
+      A(2,0) = 1; 
+      A(2,1) = 3;
+      A(2,2) = 9;
+      A(2,3) = 1;
+      A(3,0) = 1; 
+      A(3,1) = 1;
+      A(3,2) = 1;
+      A(3,3) = 10;
 
-    A(0,0) = 7; 
-    A(0,1) = 1;
-    A(0,2) = 2;
-    A(0,3) = 1;
-    A(1,0) = 1; 
-    A(1,1) = 8;
-    A(1,2) = 3;
-    A(1,3) = 1;
-    A(2,0) = 1; 
-    A(2,1) = 3;
-    A(2,2) = 9;
-    A(2,3) = 1;
-    A(3,0) = 1; 
-    A(3,1) = 1;
-    A(3,2) = 1;
-    A(3,3) = 10;
+    }
+    else
+    {
+      initialGuess.init(1);
+      b.init(1);
 
-    int n = solution.length();
+      for (int i = 0; i < n; i ++)
+	for (int j = 0; j < n; j ++)
+	  A(i,j) = 2.0 * drand48() - 1.0;
+    }
+
     int info;
     NOX::LAPACK::Matrix Acopy(A);
     vector<int> ipiv(n,0);
-    
     solution = b;
     DGESV_F77(&n, &NOX::LAPACK::i_one, &Acopy(0,0), &n, &ipiv[0], &solution(0), &n, &info);
-    
   };
   
   //! Destructor
@@ -170,7 +193,7 @@ public:
     return true;
   };
   
-  bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector & x)
+  bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector& x)
   {
     J = A;
     return true;
@@ -192,10 +215,26 @@ private:
 };
 
 //! Main subroutine in example Linear.C
-int main()
+int main(int argc, char* argv[])
 {
+  if (argc < 2)
+  {
+    cout << "Usage: " << argv[0] << " <linear problem size> [memory size]" << endl;
+    exit(1);
+  }
+
+  // Set problem size and type
+  int n = atoi(argv[1]);
+  bool useDefaultProblem = false;
+  if (n <= 0)
+  {
+    n = 4;
+    useDefaultProblem = true;
+  }
+
+
   // Set up the problem interface
-  Linear linear;;
+  Linear linear;
   
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
@@ -225,6 +264,14 @@ int main()
   
   // Set direction
   directionParameters.setParameter("Method", "Quasi-Newton");
+
+  // Set memory size
+  int m = 5;
+  if (argc == 3) 
+    m = atoi(argv[1]);
+  if (m <= 0)
+    m = 5;
+  directionParameters.sublist("Quasi-Newton").setParameter("Memory", m);
 
   // Create the line search parameters sublist
   NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
@@ -264,3 +311,5 @@ int main()
   cout << "\n" << "-- Expected Solution --" << "\n";
   grp.print();
 }
+
+#endif

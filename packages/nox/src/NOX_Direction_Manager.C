@@ -91,9 +91,9 @@ bool Manager::reset(Parameter::List& params)
       ptr = new Tensor(params);
     else if (method == "Modified-Newton")
       ptr = new ModifiedNewton(params);
-#endif
     else if (method == "Quasi-Newton")
       ptr = new QuasiNewton(utils, params);
+#endif
     else {
       ptr = NULL;
       if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {

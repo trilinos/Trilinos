@@ -1,6 +1,8 @@
 // $Id$ 
 // $Source$ 
 
+#ifdef WITH_PRERELEASE
+
 //@HEADER
 // ************************************************************************
 // 
@@ -307,4 +309,5 @@ private:
 } // namespace Direction
 } // namespace NOX
 
+#endif
 #endif
