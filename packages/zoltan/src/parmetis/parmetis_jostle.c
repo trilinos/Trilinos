@@ -908,8 +908,14 @@ static int LB_ParMetis_Jostle(
     if (obj_wgt_dim){
       vwgt = (idxtype *)LB_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
-      scale_round_weights(float_vwgt, vwgt, num_obj, obj_wgt_dim, 1,
-                          (int) MAX_WGT_SUM, lb->Debug_Level, lb->Communicator);
+      ierr = scale_round_weights(float_vwgt, vwgt, num_obj, obj_wgt_dim, 1,
+                                 (int) MAX_WGT_SUM, lb->Debug_Level, lb->Communicator);
+      if (ierr != LB_OK && ierr != LB_WARN){
+        /* Return error code */
+        FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
+        return ierr;
+      }
 
       if (lb->Debug_Level >= LB_DEBUG_ALL)
         printf("[%1d] Debug: First object weights are (after scaling) = %d, %d, %d\n",
@@ -926,8 +932,14 @@ static int LB_ParMetis_Jostle(
         printf("\n");
       }
       /* Scale and round edge weights to integers */
-      scale_round_weights(ewgt, adjwgt, num_edges, comm_wgt_dim, 1,
-                          (int) MAX_WGT_SUM, lb->Debug_Level, lb->Communicator);
+      ierr = scale_round_weights(ewgt, adjwgt, num_edges, comm_wgt_dim, 1,
+                                 (int) MAX_WGT_SUM, lb->Debug_Level, lb->Communicator);
+      if (ierr != LB_OK && ierr != LB_WARN){
+        /* Return error code */
+        FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
+        return ierr;
+      }
 
       if (lb->Debug_Level >= LB_DEBUG_ALL){
         printf("[%1d] Debug: Edge weights are (after scaling) = \n", lb->Proc);
