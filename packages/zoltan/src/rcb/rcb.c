@@ -27,6 +27,7 @@ extern "C" {
 #include "timer_const.h"
 #include "ha_const.h"
 #include "par_median_const.h"
+#include "par_bisect_const.h"
 
 /* Recursive coordinate bisectioning (RCB) routine
    operates on "dots" as defined in shared_const.h
@@ -647,7 +648,7 @@ static int rcb_fn(
              wgtflag, 1, &fractionlo, zz->LB.Imbalance_Tol, local_comm, 
              &valuehalf, first_guess, counters,
              nprocs, old_nprocs, proclower, old_nparts, 
-             wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+             rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi,
              dotlist, rectilinear_blocks) != ZOLTAN_OK) {
         ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");

@@ -24,7 +24,7 @@ extern "C" {
 #include <mpi.h>
 
 extern int Zoltan_RB_find_bisector(int, double *, double *, int *,
-  int, int, int, int, double *, double *, MPI_Comm,
+  int, int, int, int, double *, float *, MPI_Comm,
   double *, int, int *, 
   int, int, int, int, double, double, 
   double *, double *, double *, int *, int);

@@ -88,7 +88,7 @@ int Zoltan_RB_find_bisector(
   int nwgts,            /* number of weights (per dot)                       */
   int norm,             /* norm to be used for multiweights: 1,2, or 3       */
   double *fraclo,       /* fraction of weight that should be in bottom half  */
-  double *imbal_tol,    /* imbalance tolerance for load balance              */
+  float *imbal_tol,     /* imbalance tolerance for load balance              */
   MPI_Comm local_comm,  /* MPI communicator on which to find bisector        */
   double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
