@@ -465,6 +465,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     }
   }
   xadj[nLocalNd] = ii;
+  ML_free(val);
+  ML_free(bindx);
 
   /* get local partition */
 
