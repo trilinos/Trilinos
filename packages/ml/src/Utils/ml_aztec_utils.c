@@ -17,7 +17,9 @@
 #include "ml_aztec_utils.h"
 #include "ml_memory.h"
 #ifdef ML_WITH_EPETRA
+#ifndef  HAVE_ML_AZTEC2_1 /*MS*/
 #include "az_blas_wrappers.h"
+#endif /*ms*/
 #endif
 
 #ifdef ML_CPP
@@ -2903,21 +2905,72 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 		   AZ_MATRIX *Amat, struct AZ_SCALING *scaling )
 {
 
-  int          i, Nlevels, N_update,N_update_blk,num_PDE_eqns;
+  int          i, N_update,N_update_blk,num_PDE_eqns;
   int          MaxMgLevels;
   ML           *ml;
   ML_Aggregate *ag;
   AZ_PRECOND   *ML_Prec = NULL;
+
+  int          solver_options[AZ_OPTIONS_SIZE];
+  double       solver_params[AZ_PARAMS_SIZE];
+  
+  /* ------------------------ execution begins ---------------------------- */
+
+  /* copy input options and params. ML needs to redifine some of them.      */
+
+  for( i=0 ; i<AZ_OPTIONS_SIZE ; i++ )  solver_options[i] = options[i];
+  for( i=0 ; i<AZ_PARAMS_SIZE ; i++ )   solver_params[i] = params[i];
+
+  N_update = Amat->data_org[AZ_N_border] + Amat->data_org[AZ_N_internal];
+  
+  N_update_blk = Amat->data_org[AZ_N_bord_blk] + Amat->data_org[AZ_N_int_blk];
+
+  if( N_update%N_update_blk  != 0 ) {
+    fprintf( stderr,
+             "Error : N_update%%N_update_blk == %d (!=0)\n",
+             N_update%N_update_blk );
+  }
+
+  num_PDE_eqns = N_update / N_update_blk;
+
+  /* Create an empty multigrid hierarchy and set the zero                   */
+  /* level discretization within this hierarchy to Amatrix                  */
+
+  MaxMgLevels = Settings.max_levels;
+
+  ML_Create(&ml, MaxMgLevels);  
+
+  ML_Aggregate_Create( &ag );
+
+  AZ_ML_Set_Amat(ml, 0, N_update, N_update, Amat, proc_config);
+  
+  MLAZ_Setup_MLandAggregate( N_update, num_PDE_eqns, proc_config, ml, ag);
+
+  AZ_set_ML_preconditioner(&ML_Prec, Amat, ml, solver_options);
+  
+  /* solve with Aztec-2.1 */
+  
+  AZ_iterate(delta_x, resid_vector, solver_options, solver_params,
+             status, proc_config, Amat, ML_Prec, scaling);
+
+  ML_Aggregate_Destroy(&ag);
+  ML_Destroy(&ml);
+  if( ML_Prec != NULL ) AZ_precond_destroy(&ML_Prec);
+
+} /* MLAZ_Iterate */
+
+int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
+			       int proc_config[AZ_PROC_SIZE],
+			       ML *ml, ML_Aggregate *ag)
+{
+  
+  int          i, Nlevels;
+  int          MaxMgLevels;
   int          pre_or_post_smoother;
   int          num_smoother_steps;
   
   double       omega;
-  int          solver_options[AZ_OPTIONS_SIZE];
-  double       solver_params[AZ_PARAMS_SIZE];
-  double       smoother_status[AZ_STATUS_SIZE];
   double       t0, t1, t2, t3, t4, t5;
-  
-  /* ------------------------ execution begins ---------------------------- */
 
   /* check out whether Settings has been initialized or not.
      If now, fill with default values */
@@ -2930,37 +2983,12 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
   
   MaxMgLevels = Settings.max_levels;
 
-  /* copy input options and params. ML needs to redifine some of them.     */
-
-  for( i=0 ; i<AZ_OPTIONS_SIZE ; i++ )  solver_options[i] = options[i];
-  for( i=0 ; i<AZ_PARAMS_SIZE ; i++ )   solver_params[i] = params[i];
-  
-  ML_Set_PrintLevel(Settings.output);  
-
-  /* Create an empty multigrid hierarchy and set the zero                   */
-  /* level discretization within this hierarchy to Amatrix                  */
-
-  ML_Create(&ml, MaxMgLevels);
-
-  N_update = Amat->data_org[AZ_N_border] + Amat->data_org[AZ_N_internal];
-  AZ_ML_Set_Amat(ml, 0, N_update, N_update, Amat, proc_config);
-
-  N_update_blk = Amat->data_org[AZ_N_bord_blk] + Amat->data_org[AZ_N_int_blk];
-
-  if( N_update%N_update_blk  != 0 ) {
-    fprintf( stderr,
-             "Error : N_update%%N_update_blk == %d (!=0)\n",
-             N_update%N_update_blk );
-  }
-
-  num_PDE_eqns = N_update / N_update_blk;
-
-  ML_Aggregate_Create( &ag );
+  ML_Set_PrintLevel(Settings.output);
 
   /* ********************************************************************** */
-  /* set coarse space                                                       */
+  /* set null space                                                         */
   /* ********************************************************************** */
-  
+
   ML_Aggregate_Set_NullSpace( ag, num_PDE_eqns, num_PDE_eqns, NULL, N_update);
 
   /* ********************************************************************** */
@@ -2968,51 +2996,51 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
   /* lines, as we have to set the number of aggregates                      */
   /* ********************************************************************** */
 
-  switch( Settings.Level[0].coarsen_scheme ) {
+  for( i=0 ; i<MaxMgLevels-1 ; i++ ) {  
 
-  case MLAZ_METIS:
-    ML_Aggregate_Set_CoarsenScheme_METIS(ag);
-    break;
-
-  case MLAZ_ParMETIS:
-    ML_Aggregate_Set_CoarsenScheme_ParMETIS(ag);
-    break;
-
-  case MLAZ_MIS:
-    ML_Aggregate_Set_CoarsenScheme_MIS(ag);
-    break;
-
-  case MLAZ_Uncoupled:
-    ML_Aggregate_Set_CoarsenScheme_Uncoupled(ag);
-    break;
-
-  default:
-    fprintf( stderr,
-	     "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     Settings.Level[0].coarsen_scheme,
-	     __FILE__,
-	     __LINE__ );
-    exit( EXIT_FAILURE );
-
-  } /* switch */
-  
-  if( Settings.Level[0].coarsen_scheme == MLAZ_METIS ||
-      Settings.Level[0].coarsen_scheme == MLAZ_ParMETIS ) {
-
-    for( i=0 ; i<MaxMgLevels-1 ; i++ ) {
+    switch( Settings.Level[i].coarsen_scheme ) {
     
+    case MLAZ_METIS:
+      ML_Aggregate_Set_CoarsenSchemeLevel_METIS(i,MaxMgLevels,ag);
+      break;
+
+    case MLAZ_ParMETIS:
+      ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS(i,MaxMgLevels,ag);
+      break;
+
+    case MLAZ_MIS:
+      ML_Aggregate_Set_CoarsenSchemeLevel_MIS(i,MaxMgLevels,ag);
+      break;
+
+    case MLAZ_Uncoupled:
+      ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled(i,MaxMgLevels,ag);
+      break;
+
+    default:
+      fprintf( stderr,
+	       "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+	       "*ML*ERR* (file %s, line %d)\n",
+	       Settings.Level[i].coarsen_scheme,
+	       __FILE__,
+	       __LINE__ );
+      exit( EXIT_FAILURE );
+
+    } /* switch */
+  
+    if( Settings.Level[i].coarsen_scheme == MLAZ_METIS ||
+	Settings.Level[i].coarsen_scheme == MLAZ_ParMETIS ) {
+
       switch( Settings.Level[i].metis_aggregation_property ) {
       
       case MLAZ_NumLocalAggregates:     
 	ML_Aggregate_Set_LocalNumber( ml, ag, i,
 				      Settings.Level[i].metis_aggregation_value );
-      break;
+	break;
       
       case MLAZ_NumGlobalAggregates:
 	ML_Aggregate_Set_GlobalNumber( ml, ag, i,
 				       Settings.Level[i].metis_aggregation_value );
-      break;
+	break;
       
       case MLAZ_NumNodesPerAggregate:
 	ML_Aggregate_Set_NodesPerAggr( ml, ag, i,
@@ -3029,17 +3057,19 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 	exit( EXIT_FAILURE );
 	
       } /* switch */
-    } /* for */
-  } /* if */
+    } /* if */
+  } /* for */
 
   /* ********************************************************************** */
   /* minor settings                                                         */
   /* ********************************************************************** */
 
+  /* some problems with this
+  ML_Aggregate_Set_DampingFactor( ag, Settings.damping_factor );
+  */
   ML_Aggregate_Set_MaxCoarseSize(ag, Settings.max_coarse_size );
   ML_Aggregate_Set_Threshold( ag, Settings.threshold );
-  ML_Aggregate_Set_DampingFactor( ag, Settings.damping_factor );
-  
+
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
   /*----------------------------------------------------------------------*/
@@ -3047,7 +3077,7 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
   t1 = AZ_second();
   
   Nlevels = ML_Gen_MGHierarchy_UsingAggregation(ml, 0, ML_INCREASING, ag);
-
+  
   /* ********************************************************************** */
   /* choice of the smoother (all but the coarsest level)                    */
   /* ********************************************************************** */
@@ -3150,27 +3180,17 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
   
   ML_Gen_Solver(ml, ML_MGV, 0, Nlevels-1);
 
-  AZ_set_ML_preconditioner(&ML_Prec, Amat, ml, solver_options);
-
   t4 = AZ_second();
-  
-  AZ_iterate(delta_x, resid_vector, solver_options, solver_params,
-             status, proc_config, Amat, ML_Prec, scaling);
-
-  ML_Aggregate_Destroy(&ag);
-  ML_Destroy(&ml);
-  if( ML_Prec != NULL ) AZ_precond_destroy(&ML_Prec);
-
-  t5 = AZ_second();
 
   if( Settings.output > 0 && proc_config[AZ_node] == 0 ) {
     printf("*ML* time for settings           : %e (s)\n", t1-t0  + t3-t2 );
     printf("*ML* time to build AMG levels    : %e (s)\n", t2-t1);
     printf("*ML* time to build AMG hierarchy : %e (s)\n", t4-t3 );
-    printf("*ML* time to solve with Aztec    : %e (s)\n", t5-t4 );
   }
   
-} /* MLAZ_Iterate */
+  return 0;
+  
+}
 
 void MLAZ_Defaults( void )
 {

@@ -253,7 +253,10 @@ extern void MLAZ_Set_Param( int,double);
 extern void MLAZ_Set_LevelOption( int level,int option, int value);
 extern void MLAZ_Set_LevelParam( int level, int option, double value);
 extern void MLAZ_Set_LevelAztecSmoother( int level, int options[], double value[]);
-
+extern int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
+			       int proc_config[AZ_PROC_SIZE],
+				      ML *ml, ML_Aggregate *ag);
+  
 #endif
 
 #ifndef ML_CPP
