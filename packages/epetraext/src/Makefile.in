@@ -41,13 +41,6 @@
 # 
 # ************************************************************************
 # @HEADER
-
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside EpetraExt. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
 SHELL = @SHELL@
 
 srcdir = @srcdir@
@@ -125,7 +118,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-SUBDIRS = transform
+SUBDIRS = transform inout
 subdir = src
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = EpetraExt_config.h
@@ -138,147 +131,10 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = EpetraExt_config.h.in Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-
-EPETRAEXT_H = \
-        $(srcdir)/EpetraExt_MatrixMatrix.h
-
-
-EPETRAEXT = \
-	$(srcdir)/EpetraExt_MatrixMatrix.cpp
-
-
-@HAVE_MPI_TRUE@MPI_H = \
-@HAVE_MPI_TRUE@        $(EXTRA_MPI_H)
-
-@HAVE_MPI_FALSE@MPI_H = 
-@HAVE_MPI_TRUE@MPI = \
-@HAVE_MPI_TRUE@        $(EXTRA_MPI)
-
-@HAVE_MPI_FALSE@MPI = 
-
-
-# ------------------------------------------------------------------------
-# EpetraExt library specifications
-# ------------------------------------------------------------------------
-libepetraext_a_SOURCES = \
-	$(EPETRAEXT) 
-
-
-# libraries to be installed in $(libexecdir)
-EPETRAEXT_LIB = libepetraext.a
-
-
-#We need the following to support separate build directories
-AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src 
-
-
-
-# ------------------------------------------------------------------------
-# For using a special archiver
-# ------------------------------------------------------------------------
-
-# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
-# fails to define <lib>_AR if USE_ALTERNATE_AR is false, so we have to
-# define it manually.
-@USE_ALTERNATE_AR_TRUE@libepetraext_a_AR = $(ALTERNATE_AR)
-@USE_ALTERNATE_AR_FALSE@libepetraext_a_AR = $(AR) cru
-
-
-# ------------------------------------------------------------------------
-# Some C++ compilers create extra .o-files for templates. We need to
-# be sure to include these, and this is the hack to do it.
-# On alpha-dec machines, the extra .o's are needed for Epetra only.
-# ------------------------------------------------------------------------
-libepetraext_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
-
-
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-lib_LIBRARIES = $(EPETRAEXT_LIB)
-
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(includedir)
-# ------------------------------------------------------------------------
-include_HEADERS = $(EPETRAEXT_H) 
-
-
-# ------------------------------------------------------------------------
-# Special stuff to install in our special $(execincludedir)
-# ------------------------------------------------------------------------
-
-# SPECIAL NOTE: Epetra_config.h is a machine-dependent file, so we need
-# to install it in the machine-dependent directory. However, that is
-# not a default installation directory, so we had to create it
-# special.
-execincludedir = $(exec_prefix)/include
-nodist_execinclude_HEADERS = EpetraExt_config.h
-
-
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make maintainer-clean'
-# ------------------------------------------------------------------------
-MAINTAINERCLEANFILES = Makefile.in 
-
-
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make clean'
-# ------------------------------------------------------------------------
-MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
-SUBDIRS = transform
-subdir = src
-mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
-CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
-CONFIG_CLEAN_FILES =
-LIBRARIES = $(lib_LIBRARIES)
-
-libepetraext_a_DEPENDENCIES =
-am__objects_1 = EpetraExt_MatrixMatrix.$(OBJEXT)
-am_libepetraext_a_OBJECTS = $(am__objects_1)
-libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
-
-DEFS = @DEFS@
-DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
-CPPFLAGS = @CPPFLAGS@
-LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/EpetraExt_MatrixMatrix.Po
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-CXXFLAGS = @CXXFLAGS@
-F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
-F77LD = $(F77)
-F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-FFLAGS = @FFLAGS@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libepetraext_a_SOURCES) \
-	$(EXTRA_libepetraext_a_SOURCES)
-HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
-
-DIST_COMMON = $(include_HEADERS) Makefile.am Makefile.in
-SOURCES = $(libepetraext_a_SOURCES) $(EXTRA_libepetraext_a_SOURCES)
-
-RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
-	uninstall-info-recursive all-recursive install-data-recursive \
-	install-exec-recursive installdirs-recursive install-recursive \
-	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = EpetraExt_config.h.in Makefile.am Makefile.in
-DIST_SUBDIRS = $(SUBDIRS)
-
-all: EpetraExt_config.h all-am all-recursive
+all: EpetraExt_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .cpp .f .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  src/Makefile
@@ -299,54 +155,9 @@ $(srcdir)/EpetraExt_config.h.in: @MAINTAINER_MODE_TRUE@ $(top_srcdir)/configure.
 	cd $(top_srcdir) && $(AUTOHEADER)
 	touch $(srcdir)/EpetraExt_config.h.in
 
-AR = ar
-libLIBRARIES_INSTALL = $(INSTALL_DATA)
-install-libLIBRARIES: $(lib_LIBRARIES)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f="`echo $$p | sed -e 's|^.*/||'`"; \
-	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
-	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
-	  else :; fi; \
-	done
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    p="`echo $$p | sed -e 's|^.*/||'`"; \
-	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
-	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
-	  else :; fi; \
-	done
-
-uninstall-libLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  p="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
-	  rm -f $(DESTDIR)$(libdir)/$$p; \
-	done
-
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-EpetraExt_MatrixMatrix.$(OBJEXT): $(srcdir)/EpetraExt_MatrixMatrix.cpp
-libepetraext.a: $(libepetraext_a_OBJECTS) $(libepetraext_a_DEPENDENCIES) 
-	-rm -f libepetraext.a
-	$(libepetraext_a_AR) libepetraext.a $(libepetraext_a_OBJECTS) $(libepetraext_a_LIBADD)
-	$(RANLIB) libepetraext.a
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT) core *.core
-
-distclean-compile:
-	-rm -f *.tab.c
-
 distclean-hdr:
 	-rm -f EpetraExt_config.h stamp-h1
-
-distclean-depend:
-	-rm -rf ./$(DEPDIR)
+uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -403,69 +214,6 @@ tags-recursive:
 	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
 	done
 
-.cpp.o:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
-
-.cpp.obj:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
-
-EpetraExt_MatrixMatrix.o: $(srcdir)/EpetraExt_MatrixMatrix.cpp
-@AMDEP_TRUE@    source='$(srcdir)/EpetraExt_MatrixMatrix.cpp' object='EpetraExt_MatrixMatrix.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_MatrixMatrix.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MatrixMatrix.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MatrixMatrix.o `test -f '$(srcdir)/EpetraExt_MatrixMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_MatrixMatrix.cpp
-
-EpetraExt_MatrixMatrix.obj: $(srcdir)/EpetraExt_MatrixMatrix.cpp
-@AMDEP_TRUE@    source='$(srcdir)/EpetraExt_MatrixMatrix.cpp' object='EpetraExt_MatrixMatrix.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@    depfile='$(DEPDIR)/EpetraExt_MatrixMatrix.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MatrixMatrix.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@    $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MatrixMatrix.obj `cygpath -w $(srcdir)/EpetraExt_MatrixMatrix.cpp`
-CXXDEPMODE = @CXXDEPMODE@
-
-uninstall-info-am:
-includeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-includeHEADERS: $(include_HEADERS)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(includedir)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
-	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
-	done
-
-uninstall-includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
-	  rm -f $(DESTDIR)$(includedir)/$$f; \
-	done
-nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-nodist_execincludeHEADERS: $(nodist_execinclude_HEADERS)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(execincludedir)
-	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f"; \
-	  $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f; \
-	done
-
-uninstall-nodist_execincludeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(execincludedir)/$$f"; \
-	  rm -f $(DESTDIR)$(execincludedir)/$$f; \
-	done
-
 ETAGS = etags
 ETAGSFLAGS =
 
@@ -480,11 +228,16 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	       END { for (i in files) print i; }'`; \
 	mkid -fID $$unique
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS: tags-recursive $(HEADERS) $(SOURCES) EpetraExt_config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
+	list='$(SOURCES) $(HEADERS) EpetraExt_config.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -503,11 +256,10 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
-top_distdir = ../..
+top_distdir = ..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
-	$(mkinstalldirs) $(distdir)/$(srcdir)
 	@list='$(DISTFILES)'; for file in $$list; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
@@ -528,29 +280,40 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d $(distdir)/$$subdir \
+	    || mkdir $(distdir)/$$subdir \
+	    || exit 1; \
+	    (cd $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$(top_distdir)" \
+	        distdir=../$(distdir)/$$subdir \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
-check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS)
+check: check-recursive
+all-am: Makefile EpetraExt_config.h
+installdirs: installdirs-recursive
+installdirs-am:
 
-installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir)
-
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  INSTALL_STRIP_FLAG=-s \
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
-	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -560,57 +323,58 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
-clean: clean-am
+clean: clean-recursive
 
-clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+clean-am: clean-generic mostlyclean-am
 
-distclean: distclean-am
+distclean: distclean-recursive
 
-distclean-am: clean-am distclean-compile distclean-depend \
-	distclean-generic distclean-tags
+distclean-am: clean-am distclean-generic distclean-hdr distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-info: info-am
+info: info-recursive
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am:
 
-install-exec-am: install-libLIBRARIES install-nodist_execincludeHEADERS
+install-exec-am:
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-generic
 
-uninstall-am: uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
+uninstall-am: uninstall-info-am
 
-.PHONY: GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES distclean distclean-compile distclean-depend \
-	distclean-generic distclean-tags distdir dvi dvi-am info \
-	info-am install install-am install-data install-data-am \
-	install-exec install-exec-am install-includeHEADERS \
-	install-info install-info-am install-libLIBRARIES install-man \
-	install-nodist_execincludeHEADERS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic tags uninstall uninstall-am \
-	uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
+uninstall-info: uninstall-info-recursive
+
+.PHONY: $(RECURSIVE_TARGETS) GTAGS all all-am check check-am clean \
+	clean-generic clean-recursive distclean distclean-generic \
+	distclean-hdr distclean-recursive distclean-tags distdir dvi \
+	dvi-am dvi-recursive info info-am info-recursive install \
+	install-am install-data install-data-am install-data-recursive \
+	install-exec install-exec-am install-exec-recursive \
+	install-info install-info-am install-info-recursive install-man \
+	install-recursive install-strip installcheck installcheck-am \
+	installdirs installdirs-am installdirs-recursive \
+	maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-generic \
+	mostlyclean-recursive tags tags-recursive uninstall \
+	uninstall-am uninstall-info-am uninstall-info-recursive \
+	uninstall-recursive
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
