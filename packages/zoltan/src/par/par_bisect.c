@@ -61,8 +61,7 @@ struct bisector {          /* bisector cut info */
 
 /* prototypes */
 #if (RB_MAX_WGTS > 1)
-static void Zoltan_reduce(int, int, int, int, struct bisector*, struct bisector*, int *,
-               MPI_Datatype *, MPI_Comm);
+static void Zoltan_reduce_bisector(int, int, int, int, struct bisector*, struct bisector*, int *, MPI_Datatype *, MPI_Comm);
 static void Zoltan_bisector_copy(struct bisector*, struct bisector*);
 static double Zoltan_norm(int mcnorm, int n, double *x, double *scal);
 static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
@@ -552,8 +551,8 @@ int Zoltan_RB_find_bisector(
       if (counter != NULL) (*counter)++;
       if (Tflops_Special) {
          i = 1;
-         Zoltan_reduce(num_procs, rank, proc, 1, medme, med, &i, &med_type,
-                   local_comm);
+         Zoltan_reduce_bisector(num_procs, rank, proc, 1, medme, med, &i, 
+                &med_type, local_comm);
       }
       else
          MPI_Allreduce(medme, med, 1, med_type, med_op, local_comm);
@@ -719,8 +718,12 @@ int Zoltan_RB_find_bisector(
             /* copy wtsum into wtupto, then sum across procs */
             for (k=0; k<nwgts; k++)
               wtupto[k] = wtsum[k];
-            /* EBEB Need Tflops_Special here? */
-            MPI_Allreduce(wtupto, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
+            if (Tflops_Special)
+              Zoltan_RB_sum_double(wtsum, nwgts, proclower, rank, num_procs, 
+                local_comm);
+            else
+              MPI_Allreduce(wtupto, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, 
+                local_comm);
             Zoltan_daxpy(nwgts, 1., wtsum, weightlo, weightlo);
             break;
           }        
@@ -873,11 +876,15 @@ int Zoltan_RB_find_bisector(
 #endif
           if (breakflag){                  /* done if moved enough */
             /* update weighthi; add weights on cut that we moved */
-            /* EBEB Need Tflops_Special here? */
             /* copy wtsum into wtupto, then sum across procs */
             for (k=0; k<nwgts; k++)
               wtupto[k] = wtsum[k];
-            MPI_Allreduce(wtupto, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
+            if (Tflops_Special)
+              Zoltan_RB_sum_double(wtsum, nwgts, proclower, rank, num_procs, 
+                local_comm);
+            else
+              MPI_Allreduce(wtupto, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, 
+                local_comm);
             Zoltan_daxpy(nwgts, 1., wtsum, weighthi, weighthi);
             break;
           }        
@@ -1023,9 +1030,9 @@ void Zoltan_bisector_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 }
 
-static void Zoltan_reduce(int nproc, int rank, int proc, int n, struct bisector *in,
-               struct bisector *inout, int *len, MPI_Datatype *datatype,
-               MPI_Comm comm)
+static void Zoltan_reduce_bisector(int nproc, int rank, int proc, int n, 
+               struct bisector *in, struct bisector *inout, int *len, 
+               MPI_Datatype *datatype, MPI_Comm comm)
 {
    struct bisector *tmp = NULL;
    int m, to, tag = 32109;
@@ -1051,12 +1058,14 @@ static void Zoltan_reduce(int nproc, int rank, int proc, int n, struct bisector 
          tmp = (struct bisector *) ZOLTAN_MALLOC(sizeof(struct bisector) + 4*(in->nwgts)*sizeof(double));
          Zoltan_bisector_copy(inout, tmp);
          if (m < nproc)
-            Zoltan_reduce(nproc, rank, proc, m, tmp, inout, len, datatype, comm);
+            Zoltan_reduce_bisector(nproc, rank, proc, m, tmp, inout, 
+              len, datatype, comm);
          MPI_Send(inout, 1, *datatype, to, tag, comm);
          ZOLTAN_FREE(&tmp);
       }
       else
-         Zoltan_reduce(nproc, rank, proc, m, in, inout, len, datatype, comm);
+         Zoltan_reduce_bisector(nproc, rank, proc, m, in, inout, len, 
+           datatype, comm);
 }
 
 static void Zoltan_bisector_copy(struct bisector *from, struct bisector *to)
