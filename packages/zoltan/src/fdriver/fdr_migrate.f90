@@ -40,7 +40,7 @@ module dr_migrate
 
 use mpi_h
 use zoltan
-use lb_user_const
+use zoltan_user_data
 use dr_chaco_io
 use dr_const
 
@@ -53,7 +53,7 @@ public :: migrate_elements, search_by_global_id
 !/*
 ! *  Static global variables to help with migration.
 ! */
-integer(LB_INT), allocatable, save :: New_Elem_Index(:)
+integer(Zoltan_INT), allocatable, save :: New_Elem_Index(:)
 !                                      /* Array containing globalIDs of 
 !                                         elements in the new decomposition,
 !                                         ordered in the same order as the
@@ -63,7 +63,7 @@ integer(LB_INT), allocatable, save :: New_Elem_Index(:)
 !                                         element adjacencies; used in 
 !                                         migrate_unpack_elem to store 
 !                                         imported elements.                  */
-integer(LB_INT), save :: New_Elem_Index_Size = 0 !/* Number of integers
+integer(Zoltan_INT), save :: New_Elem_Index_Size = 0 !/* Number of integers
 !                                         allocated in New_Elem_Index.
 logical, save :: Use_Edge_Wgts = .false.  !/* Flag indicating whether elements
 !                                         store edge weights.                 */
@@ -73,25 +73,25 @@ contains
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-logical function migrate_elements(Proc, lb_obj, &
+logical function migrate_elements(Proc, zz_obj, &
                                   num_gid_entries, num_lid_entries, &
                                   num_imp, imp_gids, &
                                   imp_lids, imp_procs, num_exp, exp_gids, &
                                   exp_lids, exp_procs)
-  integer(LB_INT) :: Proc
-  type(LB_Struct) :: lb_obj
-  integer(LB_INT) :: num_gid_entries, num_lid_entries
-  integer(LB_INT) :: num_imp
-  integer(LB_INT),pointer :: imp_gids(:)
-  integer(LB_INT),pointer :: imp_lids(:)
-  integer(LB_INT), pointer :: imp_procs(:)
-  integer(LB_INT) :: num_exp
-  integer(LB_INT),pointer :: exp_gids(:)
-  integer(LB_INT),pointer :: exp_lids(:)
-  integer(LB_INT), pointer :: exp_procs(:)
+  integer(Zoltan_INT) :: Proc
+  type(Zoltan_Struct) :: zz_obj
+  integer(Zoltan_INT) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT) :: num_imp
+  integer(Zoltan_INT),pointer :: imp_gids(:)
+  integer(Zoltan_INT),pointer :: imp_lids(:)
+  integer(Zoltan_INT), pointer :: imp_procs(:)
+  integer(Zoltan_INT) :: num_exp
+  integer(Zoltan_INT),pointer :: exp_gids(:)
+  integer(Zoltan_INT),pointer :: exp_lids(:)
+  integer(Zoltan_INT), pointer :: exp_procs(:)
 
 !/* Local declarations. */
-type(LB_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
+type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -101,50 +101,50 @@ type(LB_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 !  /*
 !   * register migration functions
 !   */
-! if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, migrate_pre_process, &
-!               mesh_wrapper) == LB_FATAL) then
-  if (LB_Set_Pre_Migrate_Fn(lb_obj, migrate_pre_process, &
-                mesh_wrapper) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Set_Fn()"
+! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PRE_MIGRATE_FN_TYPE, migrate_pre_process, &
+!               mesh_wrapper) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Pre_Migrate_Fn(zz_obj, migrate_pre_process, &
+                mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-! if (LB_Set_Fn(lb_obj, LB_POST_MIGRATE_FN_TYPE, migrate_post_process, &
-!               mesh_wrapper) == LB_FATAL) then
-  if (LB_Set_Post_Migrate_Fn(lb_obj, migrate_post_process, &
-                mesh_wrapper) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Set_Fn()"
+! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_POST_MIGRATE_FN_TYPE, migrate_post_process, &
+!               mesh_wrapper) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Post_Migrate_Fn(zz_obj, migrate_post_process, &
+                mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-! if (LB_Set_Fn(lb_obj, LB_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
-!              mesh_wrapper) == LB_FATAL) then
-  if (LB_Set_Obj_Size_Fn(lb_obj, migrate_elem_size, &
-               mesh_wrapper) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Set_Fn()"
+! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
+!              mesh_wrapper) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
+               mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-! if (LB_Set_Fn(lb_obj, LB_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
-!               mesh_wrapper) == LB_FATAL) then
-  if (LB_Set_Pack_Obj_Fn(lb_obj, migrate_pack_elem, & 
-                mesh_wrapper) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Set_Fn()"
+! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
+!               mesh_wrapper) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Pack_Obj_Fn(zz_obj, migrate_pack_elem, & 
+                mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-! if (LB_Set_Fn(lb_obj, LB_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
-!               mesh_wrapper) == LB_FATAL) then
-  if (LB_Set_Unpack_Obj_Fn(lb_obj, migrate_unpack_elem, &
-                mesh_wrapper) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Set_Fn()"
+! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
+!               mesh_wrapper) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Unpack_Obj_Fn(zz_obj, migrate_unpack_elem, &
+                mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-  if (LB_Help_Migrate(lb_obj, &
+  if (Zoltan_Help_Migrate(zz_obj, &
                       num_imp, imp_gids, imp_lids, imp_procs, &
-                      num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Help_Migrate()"
+                      num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Help_Migrate()"
     migrate_elements = .false.; return
   endif
 
@@ -159,27 +159,27 @@ subroutine migrate_pre_process(data, num_gid_entries, num_lid_entries, &
                                import_local_ids, import_procs, num_export, &
                                export_global_ids, export_local_ids, &
                                export_procs, ierr)
-type(LB_User_Data_2), intent(in) :: data
-integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-integer(LB_INT), intent(in) :: num_import, num_export
-integer(LB_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(in) :: num_import, num_export
+integer(Zoltan_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
                     export_global_ids(*), export_local_ids(*)
-integer(LB_INT), intent(in) :: import_procs(*), export_procs(*)
-integer(LB_INT), intent(out) :: ierr
+integer(Zoltan_INT), intent(in) :: import_procs(*), export_procs(*)
+integer(Zoltan_INT), intent(out) :: ierr
 
-integer(LB_INT) :: i, j, k, idx, maxlen, proc, offset, mpierr, allocstat
-integer(LB_INT), allocatable :: proc_ids(:) !/* Temp array of processor assignments for elements.*/
+integer(Zoltan_INT) :: i, j, k, idx, maxlen, proc, offset, mpierr, allocstat
+integer(Zoltan_INT), allocatable :: proc_ids(:) !/* Temp array of processor assignments for elements.*/
 logical, allocatable :: change(:) !/* Temp array indicating whether local element's adj 
                            ! list must be updated due to a nbor's migration.  */
-integer(LB_INT) :: new_proc  !/* New processor assignment for nbor element.
-integer(LB_INT) :: exp_elem  !/* index of an element being exported */
-integer(LB_INT) :: bor_elem  !/* index of an element along the processor border
-integer(LB_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
+integer(Zoltan_INT) :: new_proc  !/* New processor assignment for nbor element.
+integer(Zoltan_INT) :: exp_elem  !/* index of an element being exported */
+integer(Zoltan_INT) :: bor_elem  !/* index of an element along the processor border
+integer(Zoltan_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
 type(ELEM_INFO), pointer :: elements(:), tmp(:), exp_elem_ptr
 type(MESH_INFO), pointer :: mesh_data
 logical :: flag
-integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
-integer(LB_INT) :: lid
+integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
+integer(Zoltan_INT) :: lid
 
   gid = num_gid_entries;
   lid = num_lid_entries;
@@ -187,7 +187,7 @@ integer(LB_INT) :: lid
   mesh_data => data%ptr
   elements => mesh_data%elements
 
-  ierr = LB_OK
+  ierr = ZOLTAN_OK
 
 !  /*
 !   *  Set some flags.  Assume if true for one element, true for all elements.
@@ -225,7 +225,7 @@ integer(LB_INT) :: lid
            change(0:Mesh%num_elems-1), stat=allocstat)
   if (allocstat /= 0) then
     print *, "fatal: insufficient memory"
-    ierr = LB_MEMERR
+    ierr = ZOLTAN_MEMERR
     return
   endif
 
@@ -322,7 +322,7 @@ integer(LB_INT) :: lid
   allocate(send_vec(0:maxlen-1), stat=allocstat)
   if (allocstat /= 0) then
     print *, "fatal: insufficient memory"
-    ierr = LB_MEMERR
+    ierr = ZOLTAN_MEMERR
     return
   endif
 
@@ -336,13 +336,13 @@ integer(LB_INT) :: lid
   allocate(recv_vec(0:maxlen-1), stat=allocstat)
   if (allocstat /= 0) then
     print *, "fatal: insufficient memory"
-    ierr = LB_MEMERR
+    ierr = ZOLTAN_MEMERR
     return
   endif
 
 !  /*  Perform boundary exchange */
 
-  call boundary_exchange(1_LB_INT, send_vec, recv_vec)
+  call boundary_exchange(1_Zoltan_INT, send_vec, recv_vec)
   
 !  /* Unload receive vector */
 
@@ -372,7 +372,7 @@ integer(LB_INT) :: lid
                           New_Elem_Index)
             if (idx == -1) then
               print *, "fatal: unable to locate element in New_Elem_Index"
-              ierr = LB_FATAL
+              ierr = ZOLTAN_FATAL
               return
             endif
             elements(bor_elem)%adj(k) = idx
@@ -391,7 +391,7 @@ if (allocated(send_vec)) deallocate(send_vec)
     allocate(tmp(0:New_Elem_Index_Size-1),stat=allocstat)
     if (allocstat /= 0) then
       print *, "fatal: insufficient memory"
-      ierr = LB_MEMERR
+      ierr = ZOLTAN_MEMERR
       return
     endif
     tmp(0:Mesh%num_elems-1) = Mesh%elements(0:Mesh%num_elems-1)
@@ -415,18 +415,18 @@ subroutine migrate_post_process(data, num_gid_entries, num_lid_entries, &
                                 import_local_ids, import_procs, num_export, &
                                 export_global_ids, export_local_ids, &
                                 export_procs, ierr)
-type(LB_User_Data_2), intent(in) :: data
-integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-integer(LB_INT), intent(in) :: num_import, num_export
-integer(LB_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(in) :: num_import, num_export
+integer(Zoltan_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
                                import_procs(*), export_global_ids(*), &
                                export_local_ids(*), export_procs(*)
-integer(LB_INT), intent(out) :: ierr
+integer(Zoltan_INT), intent(out) :: ierr
 
 type(ELEM_INFO), pointer :: element(:)
-integer(LB_INT) :: proc, num_proc
-integer(LB_INT) :: i, j, k, last, mpierr
-integer(LB_INT) :: adj_elem
+integer(Zoltan_INT) :: proc, num_proc
+integer(Zoltan_INT) :: i, j, k, last, mpierr
+integer(Zoltan_INT) :: adj_elem
 type(MESH_INFO), pointer :: mesh_data
 
   mesh_data => data%ptr
@@ -508,29 +508,29 @@ end subroutine migrate_post_process
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-integer(LB_INT) function migrate_elem_size(data, num_gid_entries, num_lid_entries, elem_gid, elem_lid, ierr)
-type(LB_User_Data_2), intent(in) :: data
-integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-integer(LB_INT), intent(in) :: elem_gid(*), elem_lid(*)
-integer(LB_INT), intent(out) :: ierr
+integer(Zoltan_INT) function migrate_elem_size(data, num_gid_entries, num_lid_entries, elem_gid, elem_lid, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
+integer(Zoltan_INT), intent(out) :: ierr
 !/*
 ! * Function to return size of element information for a single element.
 ! */
 
-integer(LB_INT) :: size
+integer(Zoltan_INT) :: size
 type(ELEM_INFO), pointer :: elements(:), current_elem
 integer, parameter :: SIZE_OF_INT = 4, SIZE_OF_FLOAT = 4
 type(MESH_INFO), pointer :: mesh_data
-integer(LB_INT) :: idx, num_nodes
-integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
-integer(LB_INT) :: lid
+integer(Zoltan_INT) :: idx, num_nodes
+integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
+integer(Zoltan_INT) :: lid
 
   gid = num_gid_entries;
   lid = num_lid_entries;
 
   mesh_data => data%ptr
   elements => mesh_data%elements
-  ierr = LB_OK
+  ierr = ZOLTAN_OK
   if (num_lid_entries.gt.0) then
     current_elem => elements(elem_lid(lid))
   else
@@ -569,27 +569,27 @@ end function migrate_elem_size
 subroutine migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
                              elem_gid, elem_lid,  mig_proc, &
                              elem_data_size, buf, ierr)
-type(LB_User_Data_2), intent(in) :: data
-integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-integer(LB_INT), intent(in) :: elem_gid(*), elem_lid(*)
-integer(LB_INT), intent(in) :: mig_proc, elem_data_size
-integer(LB_INT), intent(out) :: buf(*)
-integer(LB_INT), intent(out) :: ierr
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
+integer(Zoltan_INT), intent(in) :: mig_proc, elem_data_size
+integer(Zoltan_INT), intent(out) :: buf(*)
+integer(Zoltan_INT), intent(out) :: ierr
 
 ! NOTE: this assumes that a float is no bigger than an int
 !       (see the use of the transfer function)
 
   type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
-  integer(LB_INT) :: size
-  integer(LB_INT) :: i, j
-  integer(LB_INT) :: idx
-  integer(LB_INT) :: proc
-  integer(LB_INT) :: num_nodes
-  integer(LB_INT) :: mpierr
+  integer(Zoltan_INT) :: size
+  integer(Zoltan_INT) :: i, j
+  integer(Zoltan_INT) :: idx
+  integer(Zoltan_INT) :: proc
+  integer(Zoltan_INT) :: num_nodes
+  integer(Zoltan_INT) :: mpierr
   type(MESH_INFO), pointer :: mesh_data
-  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
-  integer(LB_INT) :: lid
+  integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(Zoltan_INT) :: lid
 
   gid = num_gid_entries;
   lid = num_lid_entries;
@@ -613,8 +613,8 @@ integer(LB_INT), intent(out) :: ierr
   buf(1) = current_elem%border
   buf(2) = current_elem%globalID
   buf(3) = current_elem%elem_blk
-  buf(4) = transfer(current_elem%cpu_wgt,1_LB_INT)
-  buf(5) = transfer(current_elem%mem_wgt,1_LB_INT)
+  buf(4) = transfer(current_elem%cpu_wgt,1_Zoltan_INT)
+  buf(5) = transfer(current_elem%mem_wgt,1_Zoltan_INT)
   buf(6) = current_elem%nadj
   buf(7) = current_elem%adj_len
 
@@ -651,7 +651,7 @@ integer(LB_INT), intent(out) :: ierr
 !  /* copy the edge_wgt data */
   if (Use_Edge_Wgts) then
     do i = 0, current_elem%adj_len-1
-      buf(size+i+1) = transfer(current_elem%edge_wgt(i),1_LB_INT)
+      buf(size+i+1) = transfer(current_elem%edge_wgt(i),1_Zoltan_INT)
     end do
     size = size + current_elem%adj_len
   endif
@@ -659,7 +659,7 @@ integer(LB_INT), intent(out) :: ierr
 !  /* copy coordinate data */
   do i = 0, Mesh%num_dims-1
     do j = 0, num_nodes-1
-      buf(size+i*num_nodes+j+1) = transfer(current_elem%coord(i,j),1_LB_INT)
+      buf(size+i*num_nodes+j+1) = transfer(current_elem%coord(i,j),1_Zoltan_INT)
     end do
   end do
   size = size + num_nodes * Mesh%num_dims
@@ -684,9 +684,9 @@ integer(LB_INT), intent(out) :: ierr
 !   * completed.
 !   */
   if (size > elem_data_size) then
-    ierr = LB_WARN
+    ierr = ZOLTAN_WARN
   else
-    ierr = LB_OK
+    ierr = ZOLTAN_OK
   endif
 end subroutine migrate_pack_elem
 
@@ -695,20 +695,20 @@ end subroutine migrate_pack_elem
 !/*****************************************************************************/
 subroutine migrate_unpack_elem(data, num_gid_entries, &
                                elem_gid, elem_data_size, buf, ierr)
-type(LB_User_Data_2), intent(in) :: data
-integer(LB_INT), intent(in) :: num_gid_entries
-integer(LB_INT), intent(in) :: elem_gid(*)
-integer(LB_INT), intent(in) :: elem_data_size
-integer(LB_INT), intent(out) :: buf(*)
-integer(LB_INT), intent(out) :: ierr
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries
+integer(Zoltan_INT), intent(in) :: elem_gid(*)
+integer(Zoltan_INT), intent(in) :: elem_data_size
+integer(Zoltan_INT), intent(out) :: buf(*)
+integer(Zoltan_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
-  integer(LB_INT) :: size, num_nodes
-  integer(LB_INT) :: i, j, idx, mpierr, allocstat
-  integer(LB_INT) :: proc
+  integer(Zoltan_INT) :: size, num_nodes
+  integer(Zoltan_INT) :: i, j, idx, mpierr, allocstat
+  integer(Zoltan_INT) :: proc
   type(MESH_INFO), pointer :: mesh_data
-  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
 
   gid = num_gid_entries;
 
@@ -725,7 +725,7 @@ integer(LB_INT), intent(out) :: ierr
   idx = in_list(elem_gid(gid), New_Elem_Index_Size, New_Elem_Index)
   if (idx == -1) then
     print *, "fatal: Unable to locate position for element"
-    ierr = LB_FATAL
+    ierr = ZOLTAN_FATAL
     return
   endif
 
@@ -734,8 +734,8 @@ integer(LB_INT), intent(out) :: ierr
   current_elem%border = buf(1)
   current_elem%globalID = buf(2)
   current_elem%elem_blk = buf(3)
-  current_elem%cpu_wgt = transfer(buf(4),1.0_LB_FLOAT)
-  current_elem%mem_wgt = transfer(buf(5),1.0_LB_FLOAT)
+  current_elem%cpu_wgt = transfer(buf(4),1.0_Zoltan_FLOAT)
+  current_elem%mem_wgt = transfer(buf(5),1.0_Zoltan_FLOAT)
   current_elem%nadj = buf(6)
   current_elem%adj_len = buf(7)
   num_nodes = Mesh%eb_nnodes(current_elem%elem_blk)
@@ -751,7 +751,7 @@ integer(LB_INT), intent(out) :: ierr
     allocate(current_elem%connect(0:num_nodes-1),stat=allocstat)
     if (allocstat /= 0) then
       print *, "fatal: insufficient memory"
-      ierr = LB_MEMERR
+      ierr = ZOLTAN_MEMERR
       return
     endif
     do i = 0, num_nodes-1
@@ -766,7 +766,7 @@ integer(LB_INT), intent(out) :: ierr
            current_elem%adj_proc(0:current_elem%adj_len-1), stat=allocstat)
   if (allocstat /= 0) then
     print *, "fatal: insufficient memory"
-    ierr = LB_MEMERR
+    ierr = ZOLTAN_MEMERR
     return
   endif
   do i =  0, current_elem%adj_len-1
@@ -788,11 +788,11 @@ integer(LB_INT), intent(out) :: ierr
     allocate(current_elem%edge_wgt(0:current_elem%adj_len-1),stat=allocstat)
     if (allocstat /= 0) then
       print *, "fatal: insufficient memory"
-      ierr = LB_MEMERR
+      ierr = ZOLTAN_MEMERR
       return
     endif
     do i = 0, current_elem%adj_len-1
-      current_elem%edge_wgt(i) = transfer(buf(size+i+1),1.0_LB_FLOAT)
+      current_elem%edge_wgt(i) = transfer(buf(size+i+1),1.0_Zoltan_FLOAT)
     end do
     size = size + current_elem%adj_len
   endif
@@ -802,12 +802,12 @@ integer(LB_INT), intent(out) :: ierr
     allocate(current_elem%coord(0:Mesh%num_dims-1,0:num_nodes-1),stat=allocstat)
     if (allocstat /= 0) then
       print *, "fatal: insufficient memory"
-      ierr = LB_MEMERR
+      ierr = ZOLTAN_MEMERR
       return
     endif
     do i = 0, Mesh%num_dims-1
       do j = 0, num_nodes-1
-        current_elem%coord(i,j) = transfer(buf(size+i*num_nodes+j+1),1.0_LB_FLOAT)
+        current_elem%coord(i,j) = transfer(buf(size+i*num_nodes+j+1),1.0_Zoltan_FLOAT)
       end do
     end do
     size = size + num_nodes * Mesh%num_dims
@@ -818,9 +818,9 @@ integer(LB_INT), intent(out) :: ierr
   Mesh%eb_cnts(current_elem%elem_blk) = Mesh%eb_cnts(current_elem%elem_blk) + 1
 
   if (size > elem_data_size) then
-    ierr = LB_WARN
+    ierr = ZOLTAN_WARN
   else
-    ierr = LB_OK
+    ierr = ZOLTAN_OK
   endif
 end subroutine migrate_unpack_elem
 
@@ -829,12 +829,12 @@ end subroutine migrate_unpack_elem
 !/*****************************************************************************/
 
 subroutine boundary_exchange(vec_len,send_vec,recv_vec)
-  integer(LB_INT) :: vec_len           ! /* Length of vector for each element
-  integer(LB_INT) :: send_vec(0:)       ! /* Vector of values to be sent.
-  integer(LB_INT) :: recv_vec(0:)       ! /* Vector of values to be received.
+  integer(Zoltan_INT) :: vec_len           ! /* Length of vector for each element
+  integer(Zoltan_INT) :: send_vec(0:)       ! /* Vector of values to be sent.
+  integer(Zoltan_INT) :: recv_vec(0:)       ! /* Vector of values to be received.
 
-integer(LB_INT) :: i, ierr, offset
-integer(LB_INT) :: msg_type = 111
+integer(Zoltan_INT) :: i, ierr, offset
+integer(Zoltan_INT) :: msg_type = 111
 
 integer, allocatable :: status(:,:), req(:)
 
@@ -878,9 +878,9 @@ end subroutine boundary_exchange
 function search_by_global_id(mesh, global_id, idx)
 type(ELEM_INFO), pointer :: search_by_global_id
 type(MESH_INFO),pointer :: mesh
-integer(LB_INT) :: global_id
-integer(LB_INT) :: idx
-integer(LB_INT) :: i
+integer(Zoltan_INT) :: global_id
+integer(Zoltan_INT) :: idx
+integer(Zoltan_INT) :: i
 type(ELEM_INFO),pointer :: elem(:), found_elem
 
 

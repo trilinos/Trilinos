@@ -32,7 +32,7 @@
 program fdriver
 use zoltan
 use mpi_h
-use lb_user_const
+use zoltan_user_data
 use dr_const
 use dr_input
 use dr_chaco_io
@@ -42,19 +42,19 @@ implicit none
 !/* Local declarations. */
   character(len=64)  :: cmd_file
 
-  real(LB_FLOAT) :: version
+  real(Zoltan_FLOAT) :: version
 
-  integer(LB_INT) :: Proc, Num_Proc
-  integer(LB_INT) :: error, i, j
+  integer(Zoltan_INT) :: Proc, Num_Proc
+  integer(Zoltan_INT) :: error, i, j
 
   type(PARIO_INFO) :: pio_info
   type(PROB_INFO) :: prob
 
   integer, parameter :: MAX_PROCNAME_LEN = 64
   character(len=MAX_PROCNAME_LEN) :: procname
-  integer(LB_INT) :: int_procname(MAX_PROCNAME_LEN)
-  integer(LB_INT) :: namelen
-  integer(LB_INT) :: alloc_stat
+  integer(Zoltan_INT) :: int_procname(MAX_PROCNAME_LEN)
+  integer(Zoltan_INT) :: namelen
+  integer(Zoltan_INT) :: alloc_stat
 
 ! interface blocks for external procedures
 
@@ -62,10 +62,10 @@ interface
 
    logical function read_mesh(Proc, Num_Proc, prob, pio_info, elements)
    use zoltan
-   use lb_user_const
+   use zoltan_user_data
    use dr_const
    use dr_input
-   integer(LB_INT) :: Proc, Num_Proc
+   integer(Zoltan_INT) :: Proc, Num_Proc
    type(PROB_INFO) :: prob
    type(PARIO_INFO) :: pio_info
    type(ELEM_INFO), pointer :: elements(:)
@@ -74,8 +74,8 @@ interface
    subroutine print_input_info(fp, Num_Proc, prob)
    use zoltan
    use dr_const
-   integer(LB_INT) :: fp
-   integer(LB_INT) :: Num_Proc
+   integer(Zoltan_INT) :: fp
+   integer(Zoltan_INT) :: Num_Proc
    type(PROB_INFO) :: prob
    end subroutine print_input_info
 
@@ -84,9 +84,9 @@ interface
    use zoltan
    use dr_const
    use dr_input
-   use lb_user_const
+   use zoltan_user_data
    character(len=*) :: cmd_file
-   integer(LB_INT) :: Proc, Num_Proc
+   integer(Zoltan_INT) :: Proc, Num_Proc
    type(PROB_INFO) :: prob
    type(PARIO_INFO) :: pio_info
    type(ELEM_INFO), pointer :: elements(:)
@@ -119,9 +119,9 @@ end interface
   cmd_file = "zdrive.inp"
 
 !  /* initialize Zoltan */
-  error = LB_Initialize(version)
-  if (error /= LB_OK) then
-    print *, "fatal: LB_Initialize returned error code, ", error
+  error = Zoltan_Initialize(version)
+  if (error /= ZOLTAN_OK) then
+    print *, "fatal: Zoltan_Initialize returned error code, ", error
     stop
   endif
 
@@ -207,7 +207,7 @@ end interface
   endif
   if (associated(Mesh)) deallocate(Mesh)
   if (associated(prob%params)) deallocate(prob%params)
-  call LB_Memory_Stats()
+  call Zoltan_Memory_Stats()
   call MPI_Finalize(error)
 
 end program fdriver
@@ -222,13 +222,13 @@ end program fdriver
 ! *---------------------------------------------------------------------------*/
 logical function read_mesh(Proc, Num_Proc, prob, pio_info, elements)
 use zoltan
-use lb_user_const
+use zoltan_user_data
 use dr_const
 use dr_input
 use dr_chaco_io
 implicit none
-  integer(LB_INT) :: Proc
-  integer(LB_INT) :: Num_Proc
+  integer(Zoltan_INT) :: Proc
+  integer(Zoltan_INT) :: Num_Proc
   type(PROB_INFO) :: prob
   type(PARIO_INFO) :: pio_info
   type(ELEM_INFO), pointer :: elements(:)
@@ -263,8 +263,8 @@ subroutine print_input_info(fp, Num_Proc, prob)
 use zoltan
 use dr_const
 implicit none
-integer(LB_INT) :: fp
-integer(LB_INT) :: Num_Proc
+integer(Zoltan_INT) :: fp
+integer(Zoltan_INT) :: Num_Proc
 type(PROB_INFO) :: prob
 
 integer :: i
@@ -291,9 +291,9 @@ logical function output_results(cmd_file, Proc, Num_Proc, prob, pio_info, &
 use zoltan
 use dr_const
 use dr_input
-use lb_user_const
+use zoltan_user_data
 character(len=*) :: cmd_file
-integer(LB_INT) :: Proc, Num_Proc
+integer(Zoltan_INT) :: Proc, Num_Proc
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 type(ELEM_INFO), pointer :: elements(:)
@@ -307,8 +307,8 @@ type(ELEM_INFO), pointer :: elements(:)
 !  /* Local declarations. */
   character(len=FILENAME_MAX+1) :: par_out_fname, ctemp
 
-  integer(LB_INT), allocatable :: global_ids(:)
-  integer(LB_INT) ::    i, j, alloc_stat
+  integer(Zoltan_INT), allocatable :: global_ids(:)
+  integer(Zoltan_INT) ::    i, j, alloc_stat
 
   integer ::  fp=21
 
@@ -320,8 +320,8 @@ type(ELEM_INFO), pointer :: elements(:)
 
    subroutine sort_int(n, ra)
    use zoltan
-   integer(LB_INT) :: n
-   integer(LB_INT) :: ra(0:)
+   integer(Zoltan_INT) :: n
+   integer(Zoltan_INT) :: ra(0:)
    end subroutine sort_int
   end interface
 
@@ -367,8 +367,8 @@ end function output_results
 !/*****************************************************************************/
 subroutine sort_int(n, ra)
 use zoltan
-integer(LB_INT) :: n
-integer(LB_INT) :: ra(0:)
+integer(Zoltan_INT) :: n
+integer(Zoltan_INT) :: ra(0:)
 
 !/*
 !*       Numerical Recipies in C source code
@@ -379,8 +379,8 @@ integer(LB_INT) :: ra(0:)
 !*
 !*/
 
-  integer(LB_INT) :: l, j, ir, i
-  integer(LB_INT) :: rra
+  integer(Zoltan_INT) :: l, j, ir, i
+  integer(Zoltan_INT) :: rra
 !  /*
 !   *  No need to sort if one or fewer items.
 !   */

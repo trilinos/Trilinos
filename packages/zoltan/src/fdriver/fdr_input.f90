@@ -35,30 +35,30 @@ public :: read_cmd_file, check_inp, brdcst_cmd_info, gen_par_filename, &
 !/*--------------------------------------------------------------------------*/
 
 
-integer(LB_INT), parameter :: NEMESIS_FILE = 0, &
+integer(Zoltan_INT), parameter :: NEMESIS_FILE = 0, &
                              CHACO_FILE   = 1
 
-integer(LB_INT), parameter :: MAX_INPUT_STR_LN = 4096 ! maximum string length
+integer(Zoltan_INT), parameter :: MAX_INPUT_STR_LN = 4096 ! maximum string length
                                                      ! for read_string()
 
 !/* Structure used to store the information necessary for parallel I/O. */
 
 type PARIO_INFO
    
-  integer(LB_INT) :: dsk_list_cnt
-  integer(LB_INT), pointer :: dsk_list(:)
-  integer(LB_INT) :: rdisk
-  integer(LB_INT) :: num_dsk_ctrlrs   !/* The number of disk controllers.     */
-  integer(LB_INT) :: pdsk_add_fact    !/* The offset from zero used by the    */
+  integer(Zoltan_INT) :: dsk_list_cnt
+  integer(Zoltan_INT), pointer :: dsk_list(:)
+  integer(Zoltan_INT) :: rdisk
+  integer(Zoltan_INT) :: num_dsk_ctrlrs   !/* The number of disk controllers.     */
+  integer(Zoltan_INT) :: pdsk_add_fact    !/* The offset from zero used by the    */
                                      !/* the target machine.                 */
-  integer(LB_INT) :: zeros
+  integer(Zoltan_INT) :: zeros
                        !/* 1 - if the target machine uses leading zeros when */
                        !/*     designating the disk number (eg - the paragon */
                        !/*     uses /pfs/io_01)                              */
                        !/* 0 - if it does not (eg - the tflop uses           */
                        !/*     /pfs/tmp_1)                                   */
 
-  integer(LB_INT) :: file_type        !/* input file type */
+  integer(Zoltan_INT) :: file_type        !/* input file type */
 
   !/* The root location of the parallel disks */
   character(len=FILENAME_MAX+1) :: pdsk_root
@@ -236,9 +236,9 @@ type(PARIO_INFO) :: pio_info
 !  /* default file type is nemesis */
 !  if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
 !
-!#ifdef LB_NO_NEMESIS
+!#ifndef ZOLTAN_NEMESIS
 !  /* 
-!   * if compiling with the LB_NO_NEMESIS flag (i.e., not linking with 
+!   * if compiling without the ZOLTAN_NEMESIS flag (i.e., not linking with 
 !   * Nemesis library), can't use NEMESIS_FILE file type.
 !   */
 !
@@ -247,7 +247,7 @@ type(PARIO_INFO) :: pio_info
 !                 "file types");
 !    return 0;
 !  }
-!#endif /* LB_NO_NEMESIS */
+!#endif /* !ZOLTAN_NEMESIS */
 
 !/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 !/*                 Check the parallel IO specifications                      */
@@ -303,14 +303,14 @@ end function check_inp
 !/*****************************************************************************/
 !/*****************************************************************************/
 subroutine brdcst_cmd_info(Proc, prob, pio_info)
-integer(LB_INT) :: Proc
+integer(Zoltan_INT) :: Proc
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 
 !/* local declarations */
-  integer(LB_INT) :: ctrl_id
-  integer(LB_INT) :: size
-  integer(LB_INT) :: ierr, i
+  integer(Zoltan_INT) :: ctrl_id
+  integer(Zoltan_INT) :: size
+  integer(Zoltan_INT) :: ierr, i
 !/***************************** BEGIN EXECUTION ******************************/
 
   call MPI_Bcast(pio_info%dsk_list_cnt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
@@ -370,7 +370,7 @@ end subroutine brdcst_cmd_info
 subroutine gen_par_filename(scalar_fname, par_fname, pio_info, proc_for, nprocs)
 character(len=*) :: scalar_fname, par_fname
 type(PARIO_INFO) :: pio_info
-integer(LB_INT) :: proc_for, nprocs
+integer(Zoltan_INT) :: proc_for, nprocs
 
 !/*----------------------------------------------------------------------------
 ! *
@@ -407,8 +407,8 @@ integer(LB_INT) :: proc_for, nprocs
 
 !  /*      Local variables      */
 
-  integer(LB_INT) :: iTemp1
-  integer(LB_INT) :: iMaxDigit=0, iMyDigit=0
+  integer(Zoltan_INT) :: iTemp1
+  integer(Zoltan_INT) :: iMaxDigit=0, iMyDigit=0
   character(len=FILENAME_MAX) :: cTemp
   character(len=6) :: frmat
   character(len=32) :: nproc_str, myproc_str

@@ -12,7 +12,7 @@
 
 module dr_chaco_io
 use zoltan
-use lb_user_const
+use zoltan_user_data
 use mpi_h
 use dr_const
 use dr_input
@@ -34,7 +34,7 @@ public :: read_chaco_mesh, free_element_arrays, in_list, build_elem_comm_maps, i
 
 
 logical, parameter :: CHECK_INPUT = .true.
-integer(LB_INT), parameter :: MAP_ALLOC = 10
+integer(Zoltan_INT), parameter :: MAP_ALLOC = 10
 
 
 contains
@@ -44,7 +44,7 @@ contains
 !/****************************************************************************/
 
 logical function read_chaco_mesh(Proc, Num_Proc, prob, pio_info, elements)
-integer(LB_INT) :: Proc, Num_Proc
+integer(Zoltan_INT) :: Proc, Num_Proc
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 type(ELEM_INFO), pointer :: elements(:)
@@ -52,13 +52,13 @@ type(ELEM_INFO), pointer :: elements(:)
 !  /* Local declarations. */
   character(len=FILENAME_MAX+8) :: chaco_fname
 
-  integer(LB_INT) :: i, nvtxs, iostat, allocstat
-  integer(LB_INT) :: ndim = 0
-  integer(LB_INT), pointer, dimension(:) :: start, adj, vtxdist
+  integer(Zoltan_INT) :: i, nvtxs, iostat, allocstat
+  integer(Zoltan_INT) :: ndim = 0
+  integer(Zoltan_INT), pointer, dimension(:) :: start, adj, vtxdist
 
-  real(LB_FLOAT), pointer, dimension(:) :: vwgts, ewgts, x, y, z
+  real(Zoltan_FLOAT), pointer, dimension(:) :: vwgts, ewgts, x, y, z
 
-  integer(LB_INT), parameter :: fp=12
+  integer(Zoltan_INT), parameter :: fp=12
 !/***************************** BEGIN EXECUTION ******************************/
 
   nullify(start, adj, vwgts, vtxdist, ewgts, x, y, z)
@@ -189,23 +189,23 @@ end function read_chaco_mesh
 
 logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
                                start, adj, vwgts, ewgts, ndim, x, y, z)
-  integer(LB_INT) ::  Proc
-  integer(LB_INT) ::  Num_Proc
+  integer(Zoltan_INT) ::  Proc
+  integer(Zoltan_INT) ::  Num_Proc
   type(PROB_INFO) :: prob                ! problem description
   type(ELEM_INFO), pointer :: elem(:)    ! array of element information
-  integer(LB_INT) ::  nvtxs               ! number of vertices in graph
-  integer(LB_INT), pointer ::  vtxdist(:) ! vertex distribution data
-  integer(LB_INT), pointer ::  start(:)   ! start of edge list for each vertex
-  integer(LB_INT), pointer ::  adj(:)     ! edge list data
-  real(LB_FLOAT), pointer  ::  vwgts(:)   ! vertex weight list data
-  real(LB_FLOAT), pointer  ::  ewgts(:)   ! edge weight list data
-  integer(LB_INT) ::  ndim                ! dimension of the geometry
-  real(LB_FLOAT), pointer  ::  x(:)       ! x-coordinates of the vertices
-  real(LB_FLOAT), pointer  ::  y(:)       ! y-coordinates of the vertices
-  real(LB_FLOAT), pointer  ::  z(:)       ! z-coordinates of the vertices
+  integer(Zoltan_INT) ::  nvtxs               ! number of vertices in graph
+  integer(Zoltan_INT), pointer ::  vtxdist(:) ! vertex distribution data
+  integer(Zoltan_INT), pointer ::  start(:)   ! start of edge list for each vertex
+  integer(Zoltan_INT), pointer ::  adj(:)     ! edge list data
+  real(Zoltan_FLOAT), pointer  ::  vwgts(:)   ! vertex weight list data
+  real(Zoltan_FLOAT), pointer  ::  ewgts(:)   ! edge weight list data
+  integer(Zoltan_INT) ::  ndim                ! dimension of the geometry
+  real(Zoltan_FLOAT), pointer  ::  x(:)       ! x-coordinates of the vertices
+  real(Zoltan_FLOAT), pointer  ::  y(:)       ! y-coordinates of the vertices
+  real(Zoltan_FLOAT), pointer  ::  z(:)       ! z-coordinates of the vertices
 
 !  /* Local declarations. */
-  integer(LB_INT) :: i, j, k, start_id, elem_id, local_id, allocstat
+  integer(Zoltan_INT) :: i, j, k, start_id, elem_id, local_id, allocstat
 !/***************************** BEGIN EXECUTION ******************************/
 
   start_id = vtxdist(Proc)+1  !/* global ids start at 1 */
@@ -307,42 +307,42 @@ end function fill_elements
 !/**********************************************************/
 
 logical function chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
-integer(LB_INT) :: fin		         !/* input file */
+integer(Zoltan_INT) :: fin		         !/* input file */
 character(len=*) :: inname	         !/* name of input file */
-integer(LB_INT), pointer :: start(:)     !/* start of edge list for each vertex
-integer(LB_INT), pointer :: adjacency(:) !/* edge list data */
-integer(LB_INT) :: nvtxs	         !/* number of vertices in graph */
-real(LB_FLOAT), pointer :: vweights(:)	 !/* vertex weight list data */
-real(LB_FLOAT), pointer :: eweights(:)   !/* edge weight list data */
+integer(Zoltan_INT), pointer :: start(:)     !/* start of edge list for each vertex
+integer(Zoltan_INT), pointer :: adjacency(:) !/* edge list data */
+integer(Zoltan_INT) :: nvtxs	         !/* number of vertices in graph */
+real(Zoltan_FLOAT), pointer :: vweights(:)	 !/* vertex weight list data */
+real(Zoltan_FLOAT), pointer :: eweights(:)   !/* edge weight list data */
  
-integer(LB_INT) :: adjptr                !/* loops through adjacency data */
-integer(LB_INT) :: ewptr                 !/* loops through edge weight data */
-integer(LB_INT) :: narcs		!/* number of edges expected in graph */
-integer(LB_INT) :: nedges	!/* twice number of edges really in graph */
-integer(LB_INT) :: nedge	!/* loops through edges for each vertex */
+integer(Zoltan_INT) :: adjptr                !/* loops through adjacency data */
+integer(Zoltan_INT) :: ewptr                 !/* loops through edge weight data */
+integer(Zoltan_INT) :: narcs		!/* number of edges expected in graph */
+integer(Zoltan_INT) :: nedges	!/* twice number of edges really in graph */
+integer(Zoltan_INT) :: nedge	!/* loops through edges for each vertex */
 logical :: found_flag	!/* is vertex found in adjacency list? */
 logical :: skip_flag	!/* should this edge be ignored? */
-integer(LB_INT) :: vtx		!/* vertex in graph */
-integer(LB_INT) :: sum_edges	!/* total number of edges read so far */
-integer(LB_INT) :: option		!/* input option */
+integer(Zoltan_INT) :: vtx		!/* vertex in graph */
+integer(Zoltan_INT) :: sum_edges	!/* total number of edges read so far */
+integer(Zoltan_INT) :: option		!/* input option */
 logical :: using_ewgts	!/* are edge weights in input file? */
 logical :: using_vwgts	!/* are vertex weights in input file? */
 logical :: vtxnums		!/* are vertex numbers in input file? */
-integer(LB_INT) :: vertex		!/* current vertex being read */
+integer(Zoltan_INT) :: vertex		!/* current vertex being read */
 logical :: new_vertex	!/* new vertex being read */
-real(LB_FLOAT) :: weight	!/* weight being read */
-real(LB_FLOAT) :: eweight	!/* edge weight being read */
-integer(LB_INT) :: neighbor		!/* neighbor of current vertex */
-integer(LB_INT) :: self_edge	!/* is a self edge encountered? */
+real(Zoltan_FLOAT) :: weight	!/* weight being read */
+real(Zoltan_FLOAT) :: eweight	!/* edge weight being read */
+integer(Zoltan_INT) :: neighbor		!/* neighbor of current vertex */
+integer(Zoltan_INT) :: self_edge	!/* is a self edge encountered? */
 logical :: ignore_me	!/* is this edge being ignored? */
-integer(LB_INT) :: ignored		!/* how many edges are ignored? */
+integer(Zoltan_INT) :: ignored		!/* how many edges are ignored? */
 logical :: error_flag	!/* error reading input? */
-integer(LB_INT) :: j		!/* loop counters */
-integer(LB_INT) :: i ! current data index on input line
-integer(LB_INT) :: ints_read(32) ! array of integers from one input line
-integer(LB_INT) :: nints_read    ! number of integers on last input line read
-real(LB_FLOAT)  :: vals_read(32) ! array of values from one input line
-integer(LB_INT) :: nvals_read    ! number of values on last input line read
+integer(Zoltan_INT) :: j		!/* loop counters */
+integer(Zoltan_INT) :: i ! current data index on input line
+integer(Zoltan_INT) :: ints_read(32) ! array of integers from one input line
+integer(Zoltan_INT) :: nints_read    ! number of integers on last input line read
+real(Zoltan_FLOAT)  :: vals_read(32) ! array of values from one input line
+integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
 
     nullify(start, adjacency, vweights, eweights)
     error_flag = .false.
@@ -647,18 +647,18 @@ end function chaco_input_graph
 ! * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 logical function chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
-integer(LB_INT) ::     fingeom	!/* geometry input file */
+integer(Zoltan_INT) ::     fingeom	!/* geometry input file */
 character(len=FILENAME_MAX) :: geomname !/* name of geometry file */
-integer(LB_INT) :: nvtxs        !/* number of coordinates to read */
-integer(LB_INT) :: igeom        !/* dimensionality of geometry */
-real(LB_FLOAT), pointer :: x(:), y(:), z(:) !/* coordiates of vertices */
+integer(Zoltan_INT) :: nvtxs        !/* number of coordinates to read */
+integer(Zoltan_INT) :: igeom        !/* dimensionality of geometry */
+real(Zoltan_FLOAT), pointer :: x(:), y(:), z(:) !/* coordiates of vertices */
 
-    real(LB_FLOAT) :: xc, yc, zc !/* first x, y, z coordinate */
-    integer(LB_INT) :: nread     !/* number of lines of coordinates read */
-    integer(LB_INT) :: ndims     !/* number of values in an input line */
-    integer(LB_INT) :: i         !/* loop counter */
-    real(LB_FLOAT) :: floats_read(32) ! array of floats from one input line
-    integer(LB_INT) :: num_read  ! number of entries in floats_read
+    real(Zoltan_FLOAT) :: xc, yc, zc !/* first x, y, z coordinate */
+    integer(Zoltan_INT) :: nread     !/* number of lines of coordinates read */
+    integer(Zoltan_INT) :: ndims     !/* number of values in an input line */
+    integer(Zoltan_INT) :: i         !/* loop counter */
+    real(Zoltan_FLOAT) :: floats_read(32) ! array of floats from one input line
+    integer(Zoltan_INT) :: num_read  ! number of entries in floats_read
     integer :: iostat            ! read status
 
     nullify(x,y,z)
@@ -738,17 +738,17 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
                                   adjncy, vwgts, ewgts, ndim, x, y, z)
 
   integer :: comm                        !/* MPI Communicator */
-  integer(LB_INT) :: host_proc	!/* processor where all the data is initially */
-  integer(LB_INT) :: nvtxs               !/* number of vertices in graph */
-  integer(LB_INT), pointer :: vtxdist(:) !/* vertex distribution data */
-  integer(LB_INT), pointer :: xadj(:)    !/* start of edge list for each vertex
-  integer(LB_INT), pointer :: adjncy(:)  !/* edge list data */
-  real(LB_FLOAT), pointer :: vwgts(:)   !/* vertex weight list data */
-  real(LB_FLOAT), pointer :: ewgts(:)    !/* edge weight list data */
-  integer(LB_INT) :: ndim                !/* dimension of the geometry */
-  real(LB_FLOAT), pointer :: x(:)        !/* x-coordinates of the vertices */
-  real(LB_FLOAT), pointer :: y(:)        !/* y-coordinates of the vertices */
-  real(LB_FLOAT), pointer :: z(:)        !/* z-coordinates of the vertices */
+  integer(Zoltan_INT) :: host_proc	!/* processor where all the data is initially */
+  integer(Zoltan_INT) :: nvtxs               !/* number of vertices in graph */
+  integer(Zoltan_INT), pointer :: vtxdist(:) !/* vertex distribution data */
+  integer(Zoltan_INT), pointer :: xadj(:)    !/* start of edge list for each vertex
+  integer(Zoltan_INT), pointer :: adjncy(:)  !/* edge list data */
+  real(Zoltan_FLOAT), pointer :: vwgts(:)   !/* vertex weight list data */
+  real(Zoltan_FLOAT), pointer :: ewgts(:)    !/* edge weight list data */
+  integer(Zoltan_INT) :: ndim                !/* dimension of the geometry */
+  real(Zoltan_FLOAT), pointer :: x(:)        !/* x-coordinates of the vertices */
+  real(Zoltan_FLOAT), pointer :: y(:)        !/* y-coordinates of the vertices */
+  real(Zoltan_FLOAT), pointer :: z(:)        !/* z-coordinates of the vertices */
 
 !/*
 ! * Distribute a graph from one processor to all processors.
@@ -757,12 +757,12 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
 ! * and fresh memory is allocated for the distr. graph.
 ! */
 
-  integer(LB_INT) :: nprocs, myproc, i, n, p, nedges, nsend, rest
-  integer(LB_INT) :: ierr, allocstat
-  integer(LB_INT) :: offset, use_vwgts, use_ewgts, use_graph
-  integer(LB_INT), pointer, dimension(:) :: old_xadj, old_adjncy,  &
+  integer(Zoltan_INT) :: nprocs, myproc, i, n, p, nedges, nsend, rest
+  integer(Zoltan_INT) :: ierr, allocstat
+  integer(Zoltan_INT) :: offset, use_vwgts, use_ewgts, use_graph
+  integer(Zoltan_INT), pointer, dimension(:) :: old_xadj, old_adjncy,  &
                                             size
-  real(LB_FLOAT), pointer, dimension(:) :: old_x, old_y, old_z, old_vwgts, &
+  real(Zoltan_FLOAT), pointer, dimension(:) :: old_x, old_y, old_z, old_vwgts, &
                                            old_ewgts
   integer :: status(MPI_STATUS_SIZE)
 
@@ -1014,7 +1014,7 @@ end function chaco_dist_graph
 !/**************************************************************/
 
 subroutine read_graph_line(fp,ints,num)
-integer(LB_INT) :: fp,ints(:),num
+integer(Zoltan_INT) :: fp,ints(:),num
 
 ! Finds and reads the next noncomment line of a chaco graph file and
 ! returns all the integers in array ints and the number of ints in num.
@@ -1059,8 +1059,8 @@ end subroutine read_graph_line
 !/**************************************************************/
 
 subroutine read_real_line(fp,floats,num)
-integer(LB_INT) :: fp,num
-real(LB_FLOAT) :: floats(:)
+integer(Zoltan_INT) :: fp,num
+real(Zoltan_FLOAT) :: floats(:)
 
 ! Finds and reads the next noncomment line of a chaco geometry file and
 ! returns all the floats in array floats and the number of floats in num.
@@ -1147,7 +1147,7 @@ end subroutine free_element_arrays
 !/*****************************************************************************/
 
 logical function build_elem_comm_maps(proc, elements)
-integer(LB_INT) :: proc
+integer(Zoltan_INT) :: proc
 type(ELEM_INFO), target :: elements(0:)
 
 !/*
@@ -1167,24 +1167,24 @@ type(ELEM_INFO), target :: elements(0:)
 ! * must communicate with more than one neighbor.
 ! */
 
-integer(LB_INT) :: i, j
+integer(Zoltan_INT) :: i, j
 type(ELEM_INFO), pointer :: elem
-integer(LB_INT) :: iadj_elem
-integer(LB_INT) :: iadj_proc
-integer(LB_INT) :: indx
-integer(LB_INT) :: num_alloc_maps
-integer(LB_INT) :: max_adj = 0
-integer(LB_INT) :: max_adj_per_map
-integer(LB_INT) :: cnt, offset
-integer(LB_INT), allocatable :: sindex(:)
-integer(LB_INT) :: tmp
+integer(Zoltan_INT) :: iadj_elem
+integer(Zoltan_INT) :: iadj_proc
+integer(Zoltan_INT) :: indx
+integer(Zoltan_INT) :: num_alloc_maps
+integer(Zoltan_INT) :: max_adj = 0
+integer(Zoltan_INT) :: max_adj_per_map
+integer(Zoltan_INT) :: cnt, offset
+integer(Zoltan_INT), allocatable :: sindex(:)
+integer(Zoltan_INT) :: tmp
 integer :: astat, astat1, astat2, astat3, astat4
 type map_list_head
-  integer(LB_INT) :: map_alloc_size
-  integer(LB_INT), pointer :: glob_id(:)
-  integer(LB_INT), pointer :: elem_id(:)
-  integer(LB_INT), pointer :: side_id(:)
-  integer(LB_INT), pointer :: neigh_id(:)
+  integer(Zoltan_INT) :: map_alloc_size
+  integer(Zoltan_INT), pointer :: glob_id(:)
+  integer(Zoltan_INT), pointer :: elem_id(:)
+  integer(Zoltan_INT), pointer :: side_id(:)
+  integer(Zoltan_INT), pointer :: neigh_id(:)
 end type map_list_head
 
 type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
@@ -1368,9 +1368,9 @@ end function build_elem_comm_maps
 ! * found in the vector then it's index in that vector is returned, otherwise
 ! * the function returns -1;
 ! *****************************************************************************/
-integer(LB_INT) function in_list(value, count, vector)
-integer(LB_INT), intent(in) :: value, count
-integer(LB_INT) :: vector(0:)
+integer(Zoltan_INT) function in_list(value, count, vector)
+integer(Zoltan_INT), intent(in) :: value, count
+integer(Zoltan_INT) :: vector(0:)
 
   integer i
 
@@ -1391,7 +1391,7 @@ end function in_list
 !/*****************************************************************************/
 
 subroutine sort2_index(n, ra, sa, indx)
-integer(LB_INT) :: n, ra(0:), sa(0:), indx(0:)
+integer(Zoltan_INT) :: n, ra(0:), sa(0:), indx(0:)
 
 !/*
 !*       Numerical Recipies in C source code
@@ -1405,9 +1405,9 @@ integer(LB_INT) :: n, ra(0:), sa(0:), indx(0:)
 !*
 !*/
 
-  integer(LB_INT) ::   l, j, ir, i
-  integer(LB_INT) ::   rra, irra
-  integer(LB_INT) ::   ssa
+  integer(Zoltan_INT) ::   l, j, ir, i
+  integer(Zoltan_INT) ::   rra, irra
+  integer(Zoltan_INT) ::   ssa
 
 !  /*
 !   *  No need to sort if one or fewer items.
@@ -1457,11 +1457,11 @@ end subroutine sort2_index
 !******************************************************************
 
 subroutine realloc(array,n,stat)
-integer(LB_INT), pointer :: array(:)
-integer(LB_INT) :: n, stat
+integer(Zoltan_INT), pointer :: array(:)
+integer(Zoltan_INT) :: n, stat
 
-integer(LB_INT), pointer :: tmp(:)
-integer(LB_INT) :: lb,ub
+integer(Zoltan_INT), pointer :: tmp(:)
+integer(Zoltan_INT) :: lb,ub
 
 lb = lbound(array,dim=1)
 ub = ubound(array,dim=1)
