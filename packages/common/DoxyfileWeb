@@ -42,9 +42,10 @@
 # - To use this Doxyfile locally to generate your documentation and 
 #   iteratively develop it:
 #
+#     (document your source)
 #     cd Trilinos/packages/YOUR_PACKAGE/doc
-#     (modify this Doxyfile accordingly)
-#     doxygen
+#     (modify this Doxyfile as needed)
+#     doxygen DoxyfileWeb 
 #     (open Trilinos/packages/YOUR_PACKAGE/doc/html/index.html)
 #     rinse, repeat.
 #
