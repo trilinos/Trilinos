@@ -35,22 +35,30 @@
 
 #include "LOCA_Continuation_AbstractGroup.H"    // base class
 
+// forward declarations
+#ifdef HAVE_LOCA_ANASAZI
+namespace Anasazi {
+  namespace LOCA {
+    class MultiVec;
+  }
+}
+#endif
+
 namespace LOCA { 
 
   namespace Continuation { 
 
     /*! 
-     * \brief %LOCA abstract interface for continuation, derived from the 
-     * NOX::Abstract::Group.  This abstract class provides 
-     * the interface necessary to perform continuation, i.e., compute 
-     * families of solutions to \f$ F(x,p) = 0 \f$.
-    */
+     * \brief %LOCA eigenvalue driver using Anasazi
+     */
     /*! 
-     * Concrete implemenations of this interface must provide implementations 
-     * of all of the methods in the NOX::Abstract::Group interface as well as 
-     * the additional interface defined here.
-    */
-
+     * This class provides a concrete implementation of the 
+     * computeEigenvalues() method of the LOCA::Continuation::AbstractGroup
+     * using Anasazi, the generic Trilinos eigensolver.  Eigenvalues of the
+     * Jacobian and generalized eigenvalues of the Jacobian/mass matrix
+     * are supported using shift-invert, as well as generalized Cayley
+     * transformations.
+     */
     class AnasaziGroup : public virtual LOCA::Continuation::AbstractGroup {
 
     public:
@@ -79,13 +87,28 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(NOX::Parameter::List& params);
 
-      //! Routine called back to by Anasazi to perform one application
-      //! of the operator. Contains logic for shift-and-invert and
-      //! the generalized Cayley transformation.
-      NOX::Abstract::Group::ReturnType  
-      applyAnasaziOperator (NOX::Parameter::List &params, 
-                            const NOX::Abstract::Vector &input, 
-                            NOX::Abstract::Vector &result) const;
+//       //! Routine called back to by Anasazi to perform one application
+//       //! of the operator. Contains logic for shift-and-invert and
+//       //! the generalized Cayley transformation.
+//       NOX::Abstract::Group::ReturnType  
+//       applyAnasaziOperator (NOX::Parameter::List &params, 
+//                             const NOX::Abstract::Vector &input, 
+//                             NOX::Abstract::Vector &result) const;
+
+#ifdef HAVE_LOCA_ANASAZI
+      //! Save eigenvectors and eigenvalues for later processing
+      /*!
+       * A derived group is free to define this method as 
+       * appropriate.  Typically they are saved by the application code
+       * in an output file for later processing/restarting.
+       *
+       * The default implementation here does nothing.
+       */
+      virtual void
+      saveEigenVectors(int nev, double *ev_r, double *ev_i, 
+		       const Anasazi::LOCA::MultiVec& evec_r,
+		       const Anasazi::LOCA::MultiVec& evec_i) const;
+#endif
 
     protected:
 
@@ -95,20 +118,20 @@ namespace LOCA {
        */
       int eigenvalCounter;
 
-      //! Flag whether the system has a mass matrix, otherwise the identity matrix is used.
-      bool hasMassMatrix;
+//       //! Flag whether the system has a mass matrix, otherwise the identity matrix is used.
+//       bool hasMassMatrix;
 
-      //! Flag whether the Cayley transformation is used, otherwise Shift-and-Invert is used.
-      bool cayley;
+//       //! Flag whether the Cayley transformation is used, otherwise Shift-and-Invert is used.
+//       bool cayley;
 
-      //! The shift (pole) parameter in the Cayley transformation.
-      double sigma;
+//       //! The shift (pole) parameter in the Cayley transformation.
+//       double sigma;
 
-      //! The 'zero' parameter in the Cayley transformation.
-      double mu;
+//       //! The 'zero' parameter in the Cayley transformation.
+//       double mu;
 
-      //! The shift (pole) parameter in the shift-and-Invert transformation.
-      double shift_;
+//       //! The shift (pole) parameter in the shift-and-Invert transformation.
+//       double shift_;
     };
   } // namespace Continuation
 } // namespace LOCA

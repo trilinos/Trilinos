@@ -296,8 +296,8 @@ Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA)
   delete [] index;
   
   AA.TransformToLocal();
-  AA.SortIndices();
-  AA.RemoveRedundantIndices();
+//   AA.SortIndices();
+//   AA.RemoveRedundantIndices();
   return AA;
 }
 

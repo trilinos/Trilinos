@@ -358,8 +358,8 @@ void Equation_B::generateGraph()
     }
   }
   AA->TransformToLocal();
-  AA->SortIndices();
-  AA->RemoveRedundantIndices();
+//   AA->SortIndices();
+//   AA->RemoveRedundantIndices();
   
   return;
 }

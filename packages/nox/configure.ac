@@ -951,6 +951,7 @@ AC_ARG_WITH(loca-anasazi,
 )
 AC_MSG_CHECKING(whether we should build anasazi support into loca library)
 AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
+AM_CONDITIONAL(BUILD_LOCAANASAZI, test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes)
 
 # ------------------------------------------------------------------------
 # LOCA-MF support

@@ -192,28 +192,19 @@ namespace LOCA {
       virtual LOCA::TimeDependent::AbstractGroup& 
       operator=(const LOCA::TimeDependent::AbstractGroup& source);
 
-      //! Compute the mass matrix of the system
+      /*! 
+       * \brief Apply the inverse of the shifted matrix by a vector, as 
+       * needed by the shift-and-invert and generalized Cayley transformations.
+       */
       /*!
        * Implementation here prints an error message and returns 
        * NOX::Abstract::Group::NotDefined.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeMassMatrix();
-
-      //! Multiply the mass matrix by a vector
-      /*!
-       * Implementation here prints an error message and returns 
-       * NOX::Abstract::Group::NotDefined.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      applyMassMatrix(const NOX::Abstract::Vector& input,
-		      NOX::Abstract::Vector& result) const;
-
-      //! Is mass matrix valid
-      /*!
-       * Implementation here returns false.
-       */
-      virtual bool isMassMatrix() const;
+      applyShiftedMatrixInverse(NOX::Parameter::List& params, 
+				const NOX::Abstract::Vector& input,
+                                NOX::Abstract::Vector& result,
+                                double shift);
 
       //@}
 

@@ -640,8 +640,8 @@ void Problem_Manager::generateGraph()
   delete [] indices; indices = 0;
 
   AA->TransformToLocal();
-  AA->SortIndices();
-  AA->RemoveRedundantIndices();
+//   AA->SortIndices();
+//   AA->RemoveRedundantIndices();
 
   //AA->Print(cout);
 

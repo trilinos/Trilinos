@@ -273,58 +273,56 @@ namespace LOCA {
       //@}
 
       /*! 
+       * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*! 
        * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
        * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
        */
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue);
 
-      //! Return the userInterface.
-      virtual NOX::EpetraNew::Interface::Required& getUserInterface();
-
-      //! Call the user interface print() routine, any vector
-      virtual void printSolution(const NOX::Epetra::Vector& x,
-                                 const double conParam) const;
-
-      //! Sets the scale vector.  
-      void setScaleVector(const NOX::Abstract::Vector& s);
+      //@}
 
       /*! 
-       * @name Methods involving Mass and Shifted Matrices for Eigensolver
+       * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
        */
       //@{
+
       //! Compute the mass matrix for the system.
       //! (Currently only has matrix-free implementation.)
-      virtual NOX::Abstract::Group::ReturnType computeMassMatrix();
+      virtual NOX::Abstract::Group::ReturnType 
+      computeMassMatrix();
 
       //! Multiply the mass matrix by a vector.
       //! (Currently only has matrix-free implementation.)
-      virtual NOX::Abstract::Group::ReturnType applyMassMatrix(const NOX::Abstract::Vector& input,
-                                                               NOX::Abstract::Vector& result) const;
+      virtual NOX::Abstract::Group::ReturnType 
+      applyMassMatrix(const NOX::Abstract::Vector& input,
+		      NOX::Abstract::Vector& result) const;
 
       virtual bool isMassMatrix();
 
-      //! Create a shifted matrix, used as part of the spectral transformation for
-      //! linear stability analysis.
-      //! (Currently only has matrix-free implementation.)
-      virtual NOX::Abstract::Group::ReturnType computeShiftedMatrix(const double& shift);
-
       //! Multiply the shifted matrix by a vector.
       //! (Currently only has matrix-free implementation.)
-      virtual NOX::Abstract::Group::ReturnType applyShiftedMatrix(const NOX::Abstract::Vector& input,
-                                                                  NOX::Abstract::Vector& result,
-                                                                  const double& shift, bool massMatrix) const;
+      virtual NOX::Abstract::Group::ReturnType 
+      applyShiftedMatrix(const NOX::Abstract::Vector& input,
+			 NOX::Abstract::Vector& result,
+			 double shift) const;
 
-      virtual NOX::Abstract::Group::ReturnType applyShiftedMatrix(const NOX::Epetra::Vector& input,
-                                                                  NOX::Epetra::Vector& result,
-                                                                  const double& shift, bool massMatrix) const;
+      virtual NOX::Abstract::Group::ReturnType 
+      applyShiftedMatrix(const NOX::Epetra::Vector& input,
+			 NOX::Epetra::Vector& result,
+			 double shift) const;
 
       //! Solve the linear system with the shifted matrix, using the same
       //! solver and settings as for the Jacobian matrix.
-      virtual NOX::Abstract::Group::ReturnType applyShiftedMatrixInverse(const NOX::Abstract::Vector& input,
-                                                                         NOX::Abstract::Vector& result,
-                                                                         const double& shift, bool massMatrix,
-                                                                         NOX::Parameter::List& params) const;
+      virtual NOX::Abstract::Group::ReturnType 
+      applyShiftedMatrixInverse(NOX::Parameter::List& params,
+				const NOX::Abstract::Vector& input,
+				NOX::Abstract::Vector& result,
+				double shift) const;
       //@}
 
       /*! 
@@ -376,6 +374,16 @@ namespace LOCA {
       scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
+
+      //! Return the userInterface.
+      virtual NOX::EpetraNew::Interface::Required& getUserInterface();
+
+      //! Call the user interface print() routine, any vector
+      virtual void printSolution(const NOX::Epetra::Vector& x,
+                                 const double conParam) const;
+
+      //! Sets the scale vector.  
+      void setScaleVector(const NOX::Abstract::Vector& s);
 
     protected:
 

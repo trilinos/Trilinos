@@ -95,12 +95,165 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libloca_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
+	$(srcdir)/LOCA_Extended_Vector.H \
+	$(srcdir)/LOCA_Extended_MultiVector.H \
+	$(srcdir)/LOCA_Extended_AbstractGroup.H \
+	$(srcdir)/LOCA_BorderedSystem_Generic.H \
+	$(srcdir)/LOCA_BorderedSystem_Manager.H \
+	$(srcdir)/LOCA_BorderedSystem_Bordering.H \
+	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
+	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
+	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Continuation_AnasaziGroup.H \
+	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
+	$(srcdir)/LOCA_Continuation_Manager.H \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_Continuation_HouseholderGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.H \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_Manager.H \
+	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
+	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
+	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
+	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
+	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
+	$(srcdir)/Anasazi_LOCA_MultiVec.H \
+	$(srcdir)/Anasazi_LOCA_Matrix.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Manager.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Default.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_Manager.H \
+	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
+	$(srcdir)/LOCA_Homotopy_Group.H $(srcdir)/LOCA_DerivUtils.H \
+	$(srcdir)/LOCA_Utils.H $(srcdir)/LOCA_ErrorCheck.H \
+	$(srcdir)/LOCA_Parameter_Vector.H \
+	$(srcdir)/LOCA_Parameter_Library.H \
+	$(srcdir)/LOCA_Parameter_LibraryT.H \
+	$(srcdir)/LOCA_Parameter_Entry.H \
+	$(srcdir)/LOCA_Predictor_Generic.H \
+	$(srcdir)/LOCA_Predictor_Manager.H \
+	$(srcdir)/LOCA_Predictor_Constant.H \
+	$(srcdir)/LOCA_Predictor_Tangent.H \
+	$(srcdir)/LOCA_Predictor_Secant.H \
+	$(srcdir)/LOCA_Predictor_Random.H \
+	$(srcdir)/LOCA_StepSize_Generic.H \
+	$(srcdir)/LOCA_StepSize_Manager.H \
+	$(srcdir)/LOCA_StepSize_Constant.H \
+	$(srcdir)/LOCA_StepSize_Adaptive.H $(srcdir)/LOCA_Stepper.H \
+	$(srcdir)/LOCA_NewStepper.H $(srcdir)/LOCA_Abstract_Group.H \
+	$(srcdir)/LOCA_Abstract_Iterator.H \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H \
+	$(srcdir)/LOCA_Extended_Vector.C \
+	$(srcdir)/LOCA_Extended_MultiVector.C \
+	$(srcdir)/LOCA_Extended_AbstractGroup.C \
+	$(srcdir)/LOCA_BorderedSystem_Manager.C \
+	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
+	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
+	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
+	$(srcdir)/LOCA_Continuation_AnasaziGroup.C \
+	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Continuation_ExtendedGroup.C \
+	$(srcdir)/LOCA_Continuation_Manager.C \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_Continuation_HouseholderGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.C \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_Manager.C \
+	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
+	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
+	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
+	$(srcdir)/LOCA_AnasaziOperator_Manager.C \
+	$(srcdir)/Anasazi_LOCA_MultiVec.C \
+	$(srcdir)/Anasazi_LOCA_Matrix.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Manager.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Default.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_TimeDependent_AbstractGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_Manager.C \
+	$(srcdir)/LOCA_Homotopy_Group.C $(srcdir)/LOCA_DerivUtils.C \
+	$(srcdir)/LOCA_Utils.C $(srcdir)/LOCA_ErrorCheck.C \
+	$(srcdir)/LOCA_Parameter_Vector.C \
+	$(srcdir)/LOCA_Parameter_Library.C \
+	$(srcdir)/LOCA_Predictor_Generic.C \
+	$(srcdir)/LOCA_Predictor_Manager.C \
+	$(srcdir)/LOCA_Predictor_Constant.C \
+	$(srcdir)/LOCA_Predictor_Tangent.C \
+	$(srcdir)/LOCA_Predictor_Secant.C \
+	$(srcdir)/LOCA_Predictor_Random.C \
+	$(srcdir)/LOCA_StepSize_Manager.C \
+	$(srcdir)/LOCA_StepSize_Constant.C \
+	$(srcdir)/LOCA_StepSize_Adaptive.C $(srcdir)/LOCA_Stepper.C \
+	$(srcdir)/LOCA_NewStepper.C $(srcdir)/LOCA_Abstract_Group.C \
+	$(srcdir)/LOCA_Abstract_Iterator.C \
+	$(srcdir)/LOCA_Solver_Wrapper.C \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
 am__objects_1 =
 am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_1) $(am__objects_1)
+	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
+	$(am__objects_1)
 am__objects_3 = libloca_a-LOCA_Extended_Vector.$(OBJEXT) \
 	libloca_a-LOCA_Extended_MultiVector.$(OBJEXT) \
 	libloca_a-LOCA_Extended_AbstractGroup.$(OBJEXT)
@@ -124,13 +277,19 @@ am__objects_6 =  \
 	libloca_a-LOCA_MultiContinuation_ArcLengthGroup.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_NaturalGroup.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_Manager.$(OBJEXT)
-am__objects_7 =  \
+@BUILD_LOCAANASAZI_TRUE@am__objects_7 = libloca_a-LOCA_AnasaziOperator_JacobianInverse.$(OBJEXT) \
+@BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_ShiftInvert.$(OBJEXT) \
+@BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_Cayley.$(OBJEXT) \
+@BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_Manager.$(OBJEXT) \
+@BUILD_LOCAANASAZI_TRUE@	libloca_a-Anasazi_LOCA_MultiVec.$(OBJEXT) \
+@BUILD_LOCAANASAZI_TRUE@	libloca_a-Anasazi_LOCA_Matrix.$(OBJEXT)
+am__objects_8 =  \
 	libloca_a-LOCA_SingularJacobianSolve_Manager.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_Default.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_Nic.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_NicDay.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_ItRef.$(OBJEXT)
-am__objects_8 =  \
+am__objects_9 =  \
 	libloca_a-LOCA_Bifurcation_TPBord_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBord_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.$(OBJEXT) \
@@ -140,31 +299,32 @@ am__objects_8 =  \
 	libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.$(OBJEXT) \
+	libloca_a-LOCA_TimeDependent_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_Manager.$(OBJEXT)
-am__objects_9 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
-am__objects_10 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
-am__objects_11 = libloca_a-LOCA_Utils.$(OBJEXT) \
+am__objects_10 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
+am__objects_11 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
+am__objects_12 = libloca_a-LOCA_Utils.$(OBJEXT) \
 	libloca_a-LOCA_ErrorCheck.$(OBJEXT)
-am__objects_12 = libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
+am__objects_13 = libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
 	libloca_a-LOCA_Parameter_Library.$(OBJEXT)
-am__objects_13 = libloca_a-LOCA_Predictor_Generic.$(OBJEXT) \
+am__objects_14 = libloca_a-LOCA_Predictor_Generic.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Manager.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Constant.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Tangent.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Secant.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Random.$(OBJEXT)
-am__objects_14 = libloca_a-LOCA_StepSize_Manager.$(OBJEXT) \
+am__objects_15 = libloca_a-LOCA_StepSize_Manager.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Constant.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Adaptive.$(OBJEXT)
-am__objects_15 = libloca_a-LOCA_Stepper.$(OBJEXT) \
+am__objects_16 = libloca_a-LOCA_Stepper.$(OBJEXT) \
 	libloca_a-LOCA_NewStepper.$(OBJEXT)
-am__objects_16 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
+am__objects_17 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Iterator.$(OBJEXT)
-am__objects_17 = libloca_a-LOCA_Solver_Wrapper.$(OBJEXT) \
+am__objects_18 = libloca_a-LOCA_Solver_Wrapper.$(OBJEXT) \
 	libloca_a-LOCA_StatusTest_Wrapper.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.$(OBJEXT) \
@@ -173,18 +333,25 @@ am__objects_17 = libloca_a-LOCA_Solver_Wrapper.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.$(OBJEXT)
-am__objects_18 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
+am__objects_19 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
 	$(am__objects_12) $(am__objects_13) $(am__objects_14) \
-	$(am__objects_15) $(am__objects_16) $(am__objects_17)
-am_libloca_a_OBJECTS = $(am__objects_2) $(am__objects_18)
+	$(am__objects_15) $(am__objects_16) $(am__objects_17) \
+	$(am__objects_18)
+am_libloca_a_OBJECTS = $(am__objects_2) $(am__objects_19)
 libloca_a_OBJECTS = $(am_libloca_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_AbstractGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.Po \
@@ -251,6 +418,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Stepper.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Utils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -262,7 +430,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libloca_a_SOURCES)
-DIST_SOURCES = $(libloca_a_SOURCES)
+DIST_SOURCES = $(am__libloca_a_SOURCES_DIST)
 am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Extended_Vector.H \
 	$(srcdir)/LOCA_Extended_MultiVector.H \
@@ -287,6 +455,13 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_Manager.H \
+	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
+	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
+	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
+	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
+	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
+	$(srcdir)/Anasazi_LOCA_MultiVec.H \
+	$(srcdir)/Anasazi_LOCA_Matrix.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Manager.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Default.H \
@@ -379,6 +554,8 @@ BUILD_LIBNOXPETSC_FALSE = @BUILD_LIBNOXPETSC_FALSE@
 BUILD_LIBNOXPETSC_TRUE = @BUILD_LIBNOXPETSC_TRUE@
 BUILD_LIBNOXTSF_FALSE = @BUILD_LIBNOXTSF_FALSE@
 BUILD_LIBNOXTSF_TRUE = @BUILD_LIBNOXTSF_TRUE@
+BUILD_LOCAANASAZI_FALSE = @BUILD_LOCAANASAZI_FALSE@
+BUILD_LOCAANASAZI_TRUE = @BUILD_LOCAANASAZI_TRUE@
 BUILD_LOCA_EPETRA_EXAMPLES_FALSE = @BUILD_LOCA_EPETRA_EXAMPLES_FALSE@
 BUILD_LOCA_EPETRA_EXAMPLES_TRUE = @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@
 BUILD_LOCA_EPETRA_TESTS_FALSE = @BUILD_LOCA_EPETRA_TESTS_FALSE@
@@ -621,6 +798,7 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_TimeDependent_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
@@ -715,12 +893,32 @@ LOCA_STATUSTEST = \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
 
+@BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI_H = 
+@BUILD_LOCAANASAZI_TRUE@LOCA_ANASAZI_H = \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_MultiVec.H \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Matrix.H 
+
+@BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI = 
+@BUILD_LOCAANASAZI_TRUE@LOCA_ANASAZI = \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Manager.C \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_MultiVec.C \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Matrix.C 
+
 LOCA_H = \
         $(srcdir)/LOCA.H \
 	$(LOCA_EXTENDED_H) \
 	$(LOCA_BORDERED_SYSTEM_H) \
 	$(LOCA_CONTINUATION_H) \
 	$(LOCA_MULTICONTINUATION_H) \
+	$(LOCA_ANASAZI_H) \
 	$(LOCA_SINGULARSOLVE_H) \
 	$(LOCA_BIFURCATION_H) \
 	$(LOCA_HOMOTOPY_H) \
@@ -738,6 +936,7 @@ LOCA = \
 	$(LOCA_BORDERED_SYSTEM) \
 	$(LOCA_CONTINUATION) \
 	$(LOCA_MULTICONTINUATION) \
+	$(LOCA_ANASAZI) \
 	$(LOCA_SINGULARSOLVE) \
 	$(LOCA_BIFURCATION) \
 	$(LOCA_HOMOTOPY) \
@@ -755,8 +954,9 @@ LOCA = \
 # Loca library specifications
 # ------------------------------------------------------------------------
 libloca_a_SOURCES = $(LOCA_H) $(LOCA)
-libloca_a_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src-lapack \
-                      $(TRILINOS_CXXFLAGS) 
+libloca_a_CXXFLAGS = -I$(top_srcdir)/src \
+		     -I$(top_srcdir)/src-lapack \
+		     $(TRILINOS_CXXFLAGS) 
 
 
 # ------------------------------------------------------------------------
@@ -867,8 +1067,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_AbstractGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.Po@am__quote@
@@ -935,6 +1141,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Stepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Utils.Po@am__quote@
 
 .C.o:
@@ -1305,6 +1512,102 @@ libloca_a-LOCA_MultiContinuation_Manager.obj: $(srcdir)/LOCA_MultiContinuation_M
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_MultiContinuation_Manager.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_Manager.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_Manager.C'; fi`
 
+libloca_a-LOCA_AnasaziOperator_JacobianInverse.o: $(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_JacobianInverse.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_JacobianInverse.o `test -f '$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C' object='libloca_a-LOCA_AnasaziOperator_JacobianInverse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_JacobianInverse.o `test -f '$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C
+
+libloca_a-LOCA_AnasaziOperator_JacobianInverse.obj: $(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_JacobianInverse.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_JacobianInverse.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C' object='libloca_a-LOCA_AnasaziOperator_JacobianInverse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_JacobianInverse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_JacobianInverse.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C'; fi`
+
+libloca_a-LOCA_AnasaziOperator_ShiftInvert.o: $(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_ShiftInvert.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_ShiftInvert.o `test -f '$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C' object='libloca_a-LOCA_AnasaziOperator_ShiftInvert.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_ShiftInvert.o `test -f '$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C
+
+libloca_a-LOCA_AnasaziOperator_ShiftInvert.obj: $(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_ShiftInvert.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_ShiftInvert.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C' object='libloca_a-LOCA_AnasaziOperator_ShiftInvert.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_ShiftInvert.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_ShiftInvert.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C'; fi`
+
+libloca_a-LOCA_AnasaziOperator_Cayley.o: $(srcdir)/LOCA_AnasaziOperator_Cayley.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_Cayley.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_Cayley.o `test -f '$(srcdir)/LOCA_AnasaziOperator_Cayley.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_Cayley.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_Cayley.C' object='libloca_a-LOCA_AnasaziOperator_Cayley.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_Cayley.o `test -f '$(srcdir)/LOCA_AnasaziOperator_Cayley.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_Cayley.C
+
+libloca_a-LOCA_AnasaziOperator_Cayley.obj: $(srcdir)/LOCA_AnasaziOperator_Cayley.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_Cayley.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_Cayley.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_Cayley.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_Cayley.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_Cayley.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_Cayley.C' object='libloca_a-LOCA_AnasaziOperator_Cayley.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Cayley.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_Cayley.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_Cayley.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_Cayley.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_Cayley.C'; fi`
+
+libloca_a-LOCA_AnasaziOperator_Manager.o: $(srcdir)/LOCA_AnasaziOperator_Manager.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_Manager.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_Manager.o `test -f '$(srcdir)/LOCA_AnasaziOperator_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_Manager.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_Manager.C' object='libloca_a-LOCA_AnasaziOperator_Manager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_Manager.o `test -f '$(srcdir)/LOCA_AnasaziOperator_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_Manager.C
+
+libloca_a-LOCA_AnasaziOperator_Manager.obj: $(srcdir)/LOCA_AnasaziOperator_Manager.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_AnasaziOperator_Manager.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Tpo" -c -o libloca_a-LOCA_AnasaziOperator_Manager.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_Manager.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_Manager.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Tpo" "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_AnasaziOperator_Manager.C' object='libloca_a-LOCA_AnasaziOperator_Manager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_AnasaziOperator_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_AnasaziOperator_Manager.obj `if test -f '$(srcdir)/LOCA_AnasaziOperator_Manager.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_AnasaziOperator_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_AnasaziOperator_Manager.C'; fi`
+
+libloca_a-Anasazi_LOCA_MultiVec.o: $(srcdir)/Anasazi_LOCA_MultiVec.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-Anasazi_LOCA_MultiVec.o -MD -MP -MF "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Tpo" -c -o libloca_a-Anasazi_LOCA_MultiVec.o `test -f '$(srcdir)/Anasazi_LOCA_MultiVec.C' || echo '$(srcdir)/'`$(srcdir)/Anasazi_LOCA_MultiVec.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Tpo" "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Po"; else rm -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Anasazi_LOCA_MultiVec.C' object='libloca_a-Anasazi_LOCA_MultiVec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Po' tmpdepfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-Anasazi_LOCA_MultiVec.o `test -f '$(srcdir)/Anasazi_LOCA_MultiVec.C' || echo '$(srcdir)/'`$(srcdir)/Anasazi_LOCA_MultiVec.C
+
+libloca_a-Anasazi_LOCA_MultiVec.obj: $(srcdir)/Anasazi_LOCA_MultiVec.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-Anasazi_LOCA_MultiVec.obj -MD -MP -MF "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Tpo" -c -o libloca_a-Anasazi_LOCA_MultiVec.obj `if test -f '$(srcdir)/Anasazi_LOCA_MultiVec.C'; then $(CYGPATH_W) '$(srcdir)/Anasazi_LOCA_MultiVec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Anasazi_LOCA_MultiVec.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Tpo" "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Po"; else rm -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Anasazi_LOCA_MultiVec.C' object='libloca_a-Anasazi_LOCA_MultiVec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.Po' tmpdepfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_MultiVec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-Anasazi_LOCA_MultiVec.obj `if test -f '$(srcdir)/Anasazi_LOCA_MultiVec.C'; then $(CYGPATH_W) '$(srcdir)/Anasazi_LOCA_MultiVec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Anasazi_LOCA_MultiVec.C'; fi`
+
+libloca_a-Anasazi_LOCA_Matrix.o: $(srcdir)/Anasazi_LOCA_Matrix.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-Anasazi_LOCA_Matrix.o -MD -MP -MF "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Tpo" -c -o libloca_a-Anasazi_LOCA_Matrix.o `test -f '$(srcdir)/Anasazi_LOCA_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/Anasazi_LOCA_Matrix.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Tpo" "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Po"; else rm -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Anasazi_LOCA_Matrix.C' object='libloca_a-Anasazi_LOCA_Matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Po' tmpdepfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-Anasazi_LOCA_Matrix.o `test -f '$(srcdir)/Anasazi_LOCA_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/Anasazi_LOCA_Matrix.C
+
+libloca_a-Anasazi_LOCA_Matrix.obj: $(srcdir)/Anasazi_LOCA_Matrix.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-Anasazi_LOCA_Matrix.obj -MD -MP -MF "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Tpo" -c -o libloca_a-Anasazi_LOCA_Matrix.obj `if test -f '$(srcdir)/Anasazi_LOCA_Matrix.C'; then $(CYGPATH_W) '$(srcdir)/Anasazi_LOCA_Matrix.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Anasazi_LOCA_Matrix.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Tpo" "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Po"; else rm -f "$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Anasazi_LOCA_Matrix.C' object='libloca_a-Anasazi_LOCA_Matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.Po' tmpdepfile='$(DEPDIR)/libloca_a-Anasazi_LOCA_Matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-Anasazi_LOCA_Matrix.obj `if test -f '$(srcdir)/Anasazi_LOCA_Matrix.C'; then $(CYGPATH_W) '$(srcdir)/Anasazi_LOCA_Matrix.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Anasazi_LOCA_Matrix.C'; fi`
+
 libloca_a-LOCA_SingularJacobianSolve_Manager.o: $(srcdir)/LOCA_SingularJacobianSolve_Manager.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_SingularJacobianSolve_Manager.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Tpo" -c -o libloca_a-LOCA_SingularJacobianSolve_Manager.o `test -f '$(srcdir)/LOCA_SingularJacobianSolve_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_SingularJacobianSolve_Manager.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Tpo" "$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Tpo"; exit 1; fi
@@ -1528,6 +1831,22 @@ libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.obj: $(srcdir)/LOCA_Bifur
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C'; fi`
+
+libloca_a-LOCA_TimeDependent_AbstractGroup.o: $(srcdir)/LOCA_TimeDependent_AbstractGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TimeDependent_AbstractGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.o `test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TimeDependent_AbstractGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' object='libloca_a-LOCA_TimeDependent_AbstractGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.o `test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TimeDependent_AbstractGroup.C
+
+libloca_a-LOCA_TimeDependent_AbstractGroup.obj: $(srcdir)/LOCA_TimeDependent_AbstractGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TimeDependent_AbstractGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.obj `if test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' object='libloca_a-LOCA_TimeDependent_AbstractGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.obj `if test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; fi`
 
 libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.o: $(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.Tpo" -c -o libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.o `test -f '$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C; \

@@ -867,7 +867,8 @@ void
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution(const double conParam) const 
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution\n";
+    cout << endl
+	 << "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution\n";
     cout << "\tSlack variable sigma = " 
 	 << LOCA::Utils::sci(pfXVec.getSlackVar()) << endl;
     cout << "\tPrinting Solution Vector for conParam = " 

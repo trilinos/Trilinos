@@ -66,7 +66,7 @@ LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, Epetra_Mul
     Epetra_Vector yvec(View,Y,j);
     const NOX::Epetra::Vector Xvec(xvec); 
     NOX::Epetra::Vector Yvec(yvec);
-    locagrp.applyShiftedMatrix(Xvec,Yvec,shift,applyMass);
+    locagrp.applyShiftedMatrix(Xvec,Yvec,shift);
     Epetra_Vector& result = Yvec.getEpetraVector();
     Y.Update(1.0,result,0.0);
   }

@@ -290,7 +290,7 @@ LOCA::EpetraNew::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
        dynamic_cast<const NOX::Epetra::Vector&>(input);
      NOX::Epetra::Vector& epetraResult =
        dynamic_cast<NOX::Epetra::Vector&>(result);
-     dynamic_cast<LOCA::EpetraNew::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,epetraResult);
+     return dynamic_cast<LOCA::EpetraNew::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,epetraResult);
   }
   else
     return NOX::Abstract::Group::BadDependency;
@@ -302,33 +302,27 @@ LOCA::EpetraNew::Group::isMassMatrix()
   return true;
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::EpetraNew::Group::computeShiftedMatrix(const double& shift)
-{
-  // Hardwired for matrix-free mode, so this routine does nothing
-  return NOX::Abstract::Group::Ok;
-}
-
 
 NOX::Abstract::Group::ReturnType
 LOCA::EpetraNew::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
                                            NOX::Abstract::Vector& result,
-                                           const double& shift, bool massMatrix) const
+                                           double shift) const
 {
-  applyShiftedMatrix(dynamic_cast<const NOX::Epetra::Vector&>(input), dynamic_cast<NOX::Epetra::Vector&>(result), shift, massMatrix);
+  return applyShiftedMatrix(dynamic_cast<const NOX::Epetra::Vector&>(input), dynamic_cast<NOX::Epetra::Vector&>(result), shift);
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::EpetraNew::Group::applyShiftedMatrix(const NOX::Epetra::Vector& epetraInput,
-                                           NOX::Epetra::Vector& epetraResult,
-                                           const double& shift, bool massMatrix) const
+LOCA::EpetraNew::Group::applyShiftedMatrix(
+				       const NOX::Epetra::Vector& epetraInput,
+				       NOX::Epetra::Vector& epetraResult,
+				       double shift) const
 {
   // Hardwired for matrix-free mode, so no shifted matrix is available
   // Create action of shifted matrix in 2 steps
 
   applyJacobian(epetraInput,epetraResult);
 
-  if(massMatrix) {
+  if(interfaceTime) {
 
    // If there is a mass matrix, shifted matrix is J + shift*M
 
@@ -350,10 +344,11 @@ LOCA::EpetraNew::Group::applyShiftedMatrix(const NOX::Epetra::Vector& epetraInpu
 
 
 NOX::Abstract::Group::ReturnType
-LOCA::EpetraNew::Group::applyShiftedMatrixInverse(const NOX::Abstract::Vector& input,
-                                           NOX::Abstract::Vector& result,
-                                           const double& shift, bool massMatrix,
-					   NOX::Parameter::List& params) const
+LOCA::EpetraNew::Group::applyShiftedMatrixInverse(
+					    NOX::Parameter::List& params,
+					    const NOX::Abstract::Vector& input,
+					    NOX::Abstract::Vector& result,
+					    double shift) const
                                            
 {
   const NOX::Epetra::Vector& epetraInput = dynamic_cast<const NOX::Epetra::Vector&>(input);
@@ -368,7 +363,7 @@ LOCA::EpetraNew::Group::applyShiftedMatrixInverse(const NOX::Abstract::Vector& i
 
     // Otherwise, construct a shift and invert operator, and use AztecOO to solve linear system
 
-    LOCA::Epetra::ShiftInvertOperator A(*this,sharedLinearSystem.getObject(this).getJacobianOperator(),shift,massMatrix);
+    LOCA::Epetra::ShiftInvertOperator A(*this,sharedLinearSystem.getObject(this).getJacobianOperator(),shift,interfaceTime);
 
     NOX::Epetra::Vector dummy(epetraResult,NOX::ShapeCopy);
     Epetra_Vector& epetra_dummy = dummy.getEpetraVector();    
@@ -413,7 +408,6 @@ LOCA::EpetraNew::Group::applyHouseholderJacobianInverse(
     dynamic_cast<NOX::Epetra::Vector&>(result_x);
   
   // Get underlying epetra vectors
-  Epetra_Vector& epetra_f = nox_epetra_f.getEpetraVector();
   Epetra_Vector& epetra_dfdp = nox_epetra_dfdp.getEpetraVector();
   Epetra_Vector& epetra_ux = nox_epetra_ux.getEpetraVector();
   Epetra_Vector& epetra_result_x = nox_epetra_result_x.getEpetraVector();

@@ -302,7 +302,13 @@ LOCA::Stepper::start() {
   if (solverStatus != NOX::StatusTest::Converged)
     return LOCA::Abstract::Iterator::Failed;
 
+  // Save initial solution
   curGroupPtr->printSolution();
+
+  // Compute eigenvalues/eigenvectors if requested
+  if (calcEigenvalues) {
+    curGroupPtr->getBaseLevelUnderlyingGroup().computeEigenvalues(*paramListPtr);
+  }
 
   // Initialize predictor direction
   curPredictorPtr = 
@@ -489,11 +495,6 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful)
     return stepStatus;
 
-  // Compute eigenvalues/eigenvectors
-  if (calcEigenvalues) {
-    curGroupPtr->getBaseLevelUnderlyingGroup().computeEigenvalues(*paramListPtr);
-  }
-
   *prevPredictorPtr = *curPredictorPtr;
 
   NOX::Abstract::Group::ReturnType predictorStatus = 
@@ -523,6 +524,11 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Print (save) solution
   curGroupPtr->printSolution();
+
+  // Compute eigenvalues/eigenvectors
+  if (calcEigenvalues) {
+    curGroupPtr->getBaseLevelUnderlyingGroup().computeEigenvalues(*paramListPtr);
+  }
 
   return stepStatus;
 }

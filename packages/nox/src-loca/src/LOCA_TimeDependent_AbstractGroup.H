@@ -45,9 +45,11 @@ namespace LOCA {
     /*!
      * This abstract class provides an interface for time dependent problems,
      * i.e., problems with a mass matrix (typically used in eignvalue or
-     * Hopf calculations).  It provides two pure virtual methods, one to
-     * compute the mass matrix and the second to apply the mass matrix to 
-     * a vector.
+     * Hopf calculations).  It provides pure virtual methods for manipulating
+     * the mass matrix and adding the mass and Jacobian matrices.
+     *
+     * Where possible, default implementations are provided assuming the
+     * mass matrix is the identity.
      */
     class AbstractGroup : 
       public virtual LOCA::Continuation::AbstractGroup {
@@ -70,44 +72,70 @@ namespace LOCA {
       virtual AbstractGroup& 
       operator=(const AbstractGroup& source) = 0;
       
-      //! Compute the mass matrix of the system
+      /*! 
+       * \brief Apply the inverse of the shifted matrix by a vector, as 
+       * needed by the shift-and-invert and generalized Cayley transformations.
+       */
+      /*!
+       * Note that because of the variety of ways this method can be 
+       * implemented, the interface for this method is different than 
+       * other applyInverse() methods.  Namely, the method is not const,
+       * and there are no computeShiftMatrix(), isShiftedMatrix() methods.
+       * Rather, it is assumed the group will compute the shifted matrix
+       * if necessary, and then apply the solve.  It is up to the 
+       * implementing group to determine if the shifted matrix needs to be
+       * recomputed.
+       */
       virtual NOX::Abstract::Group::ReturnType
-      computeMassMatrix() = 0;
+      applyShiftedMatrixInverse(NOX::Parameter::List& params, 
+				const NOX::Abstract::Vector& input,
+                                NOX::Abstract::Vector& result,
+                                double shift) = 0;
 
-      //! Multiply the mass matrix by a vector.
+
+      //@}
+
+      /*! 
+       * @name Virtual methods with default implementations 
+       * These methods should be overloaded in a concrete implementation
+       * if more appropriate/efficient approaches are available.
+       */
+      //@{
+
+      //! Compute the mass matrix of the system
+      /*!
+       * The default assumes the mass matrix is the identity, and 
+       * therefore merely returns NOX::Abstract::Group::Ok.
+       */
       virtual NOX::Abstract::Group::ReturnType
-      applyMassMatrix(const NOX::Abstract::Vector& input,
-		      NOX::Abstract::Vector& result) const = 0;
+      computeMassMatrix();
 
       //! Is mass matrix valid
-      virtual bool isMassMatrix() const = 0;
+      /*!
+       * The default assumes the mass matrix is the identity, and 
+       * therefore merely returns true.
+       */
+      virtual bool isMassMatrix() const;
 
-      //! Compute the shifted matrix, used by spectral transformations
-      //! in linear stability analysis capability.
+      //! Multiply the mass matrix by a vector.
+      /*!
+       * The default assumes the mass matrix is the identity, and 
+       * therefore merely sets \em result = \em input.
+       */
       virtual NOX::Abstract::Group::ReturnType
-      computeShiftedMatrix(const double& shift)
-      {  cout << "Error:  No implementation of computeShiftedMatrix in LOCA::TimeDependent::AbstractGroup" << endl;
-         return NOX::Abstract::Group::BadDependency;};
+      applyMassMatrix(const NOX::Abstract::Vector& input,
+		      NOX::Abstract::Vector& result) const;
 
       //! Multiply the shifted matrix by a vector
+      /*!
+       * The default assumes the mass matrix is the identity, and 
+       * therefore merely sets 
+       * \em result = \em J * \em input + \em shift * \em input.
+       */
       virtual NOX::Abstract::Group::ReturnType
       applyShiftedMatrix(const NOX::Abstract::Vector& input,
                          NOX::Abstract::Vector& result,
-                         const double& shift, bool massMatrix) const
-      { cout << "Error:  No implementation of applyShiftedMatrix in LOCA::TimeDependent::AbstractGroup" << endl;
-        return NOX::Abstract::Group::BadDependency;};
-
-      //! Apply the inverse of the shifted matrix by a vector, as needed by
-      //! the shift-and-invert and generaized Cayley transformations for
-      //! using the eigensolver as a linear stability analysis capability.
-      virtual NOX::Abstract::Group::ReturnType
-      applyShiftedMatrixInverse(const NOX::Abstract::Vector& input,
-                                NOX::Abstract::Vector& result,
-                                const double& shift, bool massMatrix,
-                                NOX::Parameter::List& params) const
-      { cout << "Error:  No implementation of applyShiftedMatrixInverse in LOCA::TimeDependent::AbstractGroup" << endl;
-        return NOX::Abstract::Group::BadDependency;};
-
+                         double shift) const;
 
       //@}
 

@@ -291,7 +291,7 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)
     }
   }
   AAA.TransformToLocal();
-  AAA.SortIndices();
-  AAA.RemoveRedundantIndices();
+//   AAA.SortIndices();
+//   AAA.RemoveRedundantIndices();
   return AAA;
 }

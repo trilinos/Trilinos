@@ -152,19 +152,15 @@ LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::computeMassMatrix()
+LOCA::Abstract::Group::applyShiftedMatrixInverse(
+					   NOX::Parameter::List& params, 
+					   const NOX::Abstract::Vector& input,
+					   NOX::Abstract::Vector& result,
+					   double shift)
 {
-  LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::computeMassMatrix",
-			       "No mass matrix defined for group");
-  return NOX::Abstract::Group::NotDefined;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
-				       NOX::Abstract::Vector& result) const
-{
-  LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::applyMassMatrix",
-			       "No mass matrix defined for group");
+  LOCA::ErrorCheck::throwError(
+			   "LOCA::Abstract::Group::applyShiftedMatrixInverse",
+			   "Not implemented for group");
   return NOX::Abstract::Group::NotDefined;
 }
 
@@ -180,12 +176,6 @@ LOCA::Abstract::Group::applyComplexInverse(
   LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::applyComplexInverse",
 			       "No mass matrix defined for group");
   return NOX::Abstract::Group::NotDefined;
-}
-
-bool
-LOCA::Abstract::Group::isMassMatrix() const
-{
-  return false;
 }
 
 NOX::Abstract::Group::ReturnType

@@ -90,14 +90,6 @@ namespace LOCA {
 	virtual AbstractGroup& 
 	operator=(const AbstractGroup& source) = 0;
 
-	//! Compute \f$(J+i\omega B)(y+iz)\f$
-	virtual NOX::Abstract::Group::ReturnType
-	applyComplex(const NOX::Abstract::Vector& input_real,
-		     const NOX::Abstract::Vector& input_imag,
-		     double frequency,
-		     NOX::Abstract::Vector& result_real,
-		     NOX::Abstract::Vector& result_imag) const;
-
 	//! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
 	/*!
 	 * The argument \b frequency stores \f$\omega\f$.
@@ -180,6 +172,18 @@ namespace LOCA {
 	 * if more appropriate/efficient approaches are available.
 	 */
 	//@{
+
+	//! Compute \f$(J+i\omega B)(y+iz)\f$
+	/*! 
+	 * The default implementation computes the complex product using
+	 * the Jacobian and Mass matrix apply methods.
+	 */
+	virtual NOX::Abstract::Group::ReturnType
+	applyComplex(const NOX::Abstract::Vector& input_real,
+		     const NOX::Abstract::Vector& input_imag,
+		     double frequency,
+		     NOX::Abstract::Vector& result_real,
+		     NOX::Abstract::Vector& result_imag) const;
 
 	//! Solve Complex system for multiple RHS
 	/*!

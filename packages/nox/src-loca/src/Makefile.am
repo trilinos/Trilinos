@@ -148,6 +148,7 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_TimeDependent_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
@@ -242,12 +243,39 @@ LOCA_STATUSTEST = \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
 
+if BUILD_LOCAANASAZI
+
+LOCA_ANASAZI_H = \
+	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
+	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
+	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
+	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
+	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
+	$(srcdir)/Anasazi_LOCA_MultiVec.H \
+	$(srcdir)/Anasazi_LOCA_Matrix.H 
+
+LOCA_ANASAZI = \
+	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
+	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
+	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
+	$(srcdir)/LOCA_AnasaziOperator_Manager.C \
+	$(srcdir)/Anasazi_LOCA_MultiVec.C \
+	$(srcdir)/Anasazi_LOCA_Matrix.C 
+
+else
+
+LOCA_ANASAZI_H =
+LOCA_ANASAZI = 
+
+endif
+
 LOCA_H = \
         $(srcdir)/LOCA.H \
 	$(LOCA_EXTENDED_H) \
 	$(LOCA_BORDERED_SYSTEM_H) \
 	$(LOCA_CONTINUATION_H) \
 	$(LOCA_MULTICONTINUATION_H) \
+	$(LOCA_ANASAZI_H) \
 	$(LOCA_SINGULARSOLVE_H) \
 	$(LOCA_BIFURCATION_H) \
 	$(LOCA_HOMOTOPY_H) \
@@ -265,6 +293,7 @@ LOCA = \
 	$(LOCA_BORDERED_SYSTEM) \
 	$(LOCA_CONTINUATION) \
 	$(LOCA_MULTICONTINUATION) \
+	$(LOCA_ANASAZI) \
 	$(LOCA_SINGULARSOLVE) \
 	$(LOCA_BIFURCATION) \
 	$(LOCA_HOMOTOPY) \
@@ -283,8 +312,9 @@ LOCA = \
 
 libloca_a_SOURCES = $(LOCA_H) $(LOCA)
 
-libloca_a_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src-lapack \
-                      $(TRILINOS_CXXFLAGS) 
+libloca_a_CXXFLAGS = -I$(top_srcdir)/src \
+		     -I$(top_srcdir)/src-lapack \
+		     $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
 # When to turn it on
