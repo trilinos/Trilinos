@@ -2195,7 +2195,7 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
 {
 
   int i, j, divided_aggre;
-  int check[Naggregates];
+  int* check = (int *)malloc( sizeof(int) * Naggregates );
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -2247,7 +2247,8 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
     printf("agg[%d] = %d\n",
 	   i, check[i] );
 #endif
-  
+
+  free( check ); check=NULL;  
   return 0;
   
 } /* ML_Aggregates_CheckAggregates */

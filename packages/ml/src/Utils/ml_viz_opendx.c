@@ -25,7 +25,7 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
 
   int i;
   int N_procs = comm->ML_nprocs;
-  int offsets[N_procs+1];
+  int *offsets = (int*)malloc(sizeof(int)*(N_procs+1));
   int choice = 1;
   int max_N_parts;
   int mypid = comm->ML_mypid;
@@ -35,6 +35,8 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] += offsets[comm->ML_mypid];
   
+  free( offsets ); offsets=NULL;
+
   return 0;
   
 } /* ML_DecomposeGraph_LocalToGlobal */
@@ -46,12 +48,15 @@ int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
 
   int i;
   int N_procs = comm->ML_nprocs;
-  int offsets[N_procs+1];
+  int *offsets = (int*)malloc(sizeof(int)*(N_procs+1));
   
   ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs);
 
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] -= offsets[comm->ML_mypid];
+
+  free( offsets ); offsets=NULL;
+
   return 0;
   
 } /* ML_DecomposeGraph_LocalToGlobal */
@@ -120,7 +125,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   int mypid = comm->ML_mypid;
   int nprocs = comm->ML_nprocs;
   int Nrows = Amatrix->getrow->Nrows;
-  int Nnz_row[Nrows];
+  int *Nnz_row = (int*)malloc(sizeof( int ) * Nrows);
   int N_edges = 0;
   char filename[FILENAME_MAX];
   FILE *fp;
@@ -309,7 +314,8 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 
   /* ------------------- that's all folks --------------------------------- */
 
-  free( values );
+  free( values ); values=NULL;
+  free( Nnz_row ); Nnz_row=NULL;
   ML_free(rowi_col); ML_free(rowi_val);
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 

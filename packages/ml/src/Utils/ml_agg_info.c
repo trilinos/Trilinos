@@ -206,12 +206,12 @@ void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,
   double *x = finer_level.x;
   double *y = finer_level.y;
   double *z = finer_level.z;
-  double xmin[Naggregates];
-  double xmax[Naggregates];
-  double ymin[Naggregates];
-  double ymax[Naggregates];
-  double zmin[Naggregates];
-  double zmax[Naggregates];
+  double* xmin = (double*)malloc(sizeof(double)*Naggregates);
+  double* xmax = (double*)malloc(sizeof(double)*Naggregates);
+  double* ymin = (double*)malloc(sizeof(double)*Naggregates);
+  double* ymax = (double*)malloc(sizeof(double)*Naggregates);
+  double* zmin = (double*)malloc(sizeof(double)*Naggregates);
+  double* zmax = (double*)malloc(sizeof(double)*Naggregates);
   double Hi;
   
   /* ------------------- execution begins --------------------------------- */
@@ -262,6 +262,13 @@ void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,
 	     __LINE__ );
   }
     
+  free ( xmin ); xmin = NULL;
+  free ( xmax ); xmax = NULL;
+  free ( ymin ); ymin = NULL;
+  free ( ymax ); ymax = NULL;
+  free ( zmin ); zmin = NULL;
+  free ( zmax ); zmax = NULL;
+
   return;
   
 } /* ML_Aggregate_ComputeBox */
@@ -296,7 +303,7 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
   double *xm = coarser_level.x;
   double *ym = coarser_level.y;
   double *zm = coarser_level.z;
-  int count[N_coarser];
+  int *count = (int*)malloc(sizeof(int)*N_coarser);
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -338,6 +345,8 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
 	     __FILE__,
 	     __LINE__ );
   }
+
+  free( count ); count=NULL;
 
   return;
   
@@ -1120,7 +1129,7 @@ int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
   int i, j, radius, Ncenter;
   int max_dep;
   int * center;
-  int orig_dep[Nrows];
+  int * orig_dep = (int*)malloc(sizeof(int)*Nrows);
 
   for( i=0 ; i<Nrows ; i++ )
     orig_dep[i] = dep[i];
@@ -1166,6 +1175,7 @@ int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
   *pNcenter = Ncenter;
   
   free( (void *) center );
+  free( orig_dep ); orig_dep = NULL;
 
   return 0;
   

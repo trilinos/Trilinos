@@ -13,8 +13,16 @@
 #ifndef __MLUTILH__
 #define __MLUTILH__
 
+#ifdef ICL
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
+
+#ifndef ICL
 #include <unistd.h>
+#endif
+
 /*#include "ml_struct.h"*/
 #include "ml_common.h"
 #include "ml_defs.h"
