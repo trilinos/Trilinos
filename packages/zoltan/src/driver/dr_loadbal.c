@@ -342,6 +342,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* Not yet impl. */
     }
 
+    /* Copy ordering permutation into mesh structure */
+    for (i = 0; i < mesh->num_elems; i++){
+      mesh->elements[i].perm_value = order[i];
+      mesh->elements[i].invperm_value = order[(mesh->num_elems)+i];
+    }
+
     /* Free order data */
     free(order);
     free(order_gids);
