@@ -30,6 +30,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Version.hpp"
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
 using namespace Teuchos;
 
 void print_break() { cout << "---------------------------------------------------" << endl; }
@@ -40,11 +44,24 @@ int main(int argc, char *argv[])
   bool verbose = false;
   int FailedTests = 0;
 
+#ifdef HAVE_MPI
+  MPI_Init( &argc, &argv );
+  int procRank = -1;
+  MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+
+  if (procRank == 0) {
+#endif
+
   // Read options from the command line. 
   CommandLineProcessor  clp(false); // Don't throw exceptions
   clp.setOption( "v", "q", &verbose, "Set if output is printed or not." );
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return parse_return;
+  }
 
   if (verbose)
     cout << Teuchos::Teuchos_Version() << endl << endl;
@@ -355,8 +372,15 @@ int main(int argc, char *argv[])
   // Return -1 if there are any failed tests, 
   // else 0 will be returned indicating a clean finish!  
   //-----------------------------------------------------------
-  if ( FailedTests > 0 ) { return(-1); }
 
+#ifdef HAVE_MPI
+} // end if ( procRank ==0 )
+  MPI_Finalize();
+  if ( FailedTests > 0 && procRank == 0 ) return(-1);
+  if ( procRank == 0 ) return 0;
+#else
+  if ( FailedTests > 0 ) { return (-1); }
   return 0;
+#endif
 }
 

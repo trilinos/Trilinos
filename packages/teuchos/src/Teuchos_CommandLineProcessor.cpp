@@ -144,6 +144,9 @@ CommandLineProcessor::parse(
 		bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
 		if( !gov_return ) {
 			if(recogniseAllOptions()) {
+#ifdef HAVE_MPI
+			if (procRank == 0) 
+#endif
 				print_bad_opt(i,argv,errout);
 				return PARSE_UNRECOGNIZED_OPTION;
 			}
@@ -157,7 +160,7 @@ CommandLineProcessor::parse(
 		}
 		if( opt_name == pause_opt ) {
 #ifdef HAVE_MPI
-			if(procRank==0) {
+			if(procRank == 0) {
 #endif
 				std::cerr << "\nType 0 and press enter to continue : ";
 				int dummy_int = 0;
@@ -171,6 +174,9 @@ CommandLineProcessor::parse(
 		// Lookup the option (we had better find it!)
 		options_list_t::const_iterator  itr = options_list_.find(opt_name);
 		if( itr == options_list_.end() ) {
+#ifdef HAVE_MPI
+			if(procRank == 0)
+#endif
  			print_bad_opt(i,argv,errout);
 			if( recogniseAllOptions() )
 				return PARSE_UNRECOGNIZED_OPTION;
@@ -209,6 +215,11 @@ CommandLineProcessor::parse(
 
 void CommandLineProcessor::printHelpMessage( const char program_name[], std::ostream &out ) const
 {
+#ifdef HAVE_MPI
+	int procRank = -1;
+	MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+	if (procRank == 0) {
+#endif
 	using std::setw;
 	using std::endl;
 
@@ -327,6 +338,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
 	}
 	if(throwExceptions_)
 		TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
+#ifdef HAVE_MPI
+	}
+#endif
 }
 
 // private

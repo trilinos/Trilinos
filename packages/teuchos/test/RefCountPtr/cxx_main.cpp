@@ -30,6 +30,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Version.hpp"
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
 // Return constants from class functions
 const int
 A_g_return  = 1,
@@ -158,6 +162,15 @@ public:
 
 int main( int argc, char* argv[] ) {
 
+#ifdef HAVE_MPI
+	// Initialize MPI if we are running in parallel.
+	MPI_Init( &argc, &argv ); 
+	int procRank = -1;
+	MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+
+    if (procRank == 0) {
+#endif
+
 	using Teuchos::RefCountPtr;
 	using Teuchos::DeallocDelete;
 	using Teuchos::rcp;
@@ -178,8 +191,12 @@ int main( int argc, char* argv[] ) {
 		CommandLineProcessor  clp(false); // Don't throw exceptions
 		clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
-
+		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+#ifdef HAVE_MPI
+			MPI_Finalize();
+#endif
+			return parse_return;
+		}
 	if (verbose)
 		cout << Teuchos::Teuchos_Version() << endl << endl;
 
@@ -420,14 +437,26 @@ int main( int argc, char* argv[] ) {
 	catch( const std::exception &excpt ) {
 		if(verbose)
 			std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-		return 1;
+#ifdef HAVE_MPI
+		MPI_Finalize();
+#endif
+		return -1;
 	}
 	catch( ... ) {
 		if(verbose)
 			std::cerr << "*** Caught an unknown exception\n";
-		return 1;
+#ifdef HAVE_MPI
+		MPI_Finalize();
+#endif
+		return -1;
 	}
 
+#ifdef HAVE_MPI
+    } // end if( procRank == 0 )
+	// Finalize the MPI session if we are running in parallel.
+	MPI_Finalize();
+	if (procRank == 0) return 0;	
+#else
 	return 0;
-
+#endif
 }

@@ -18,8 +18,7 @@ int main(int argc, char* argv[])
 
   cout << Teuchos::Teuchos_Version() << endl << endl;
 
-  /* Create some reference-counted pointers.
-   */
+  // Create some reference-counted pointers.
   // Create a reference-counted NULL pointer of type A.
   RefCountPtr<A>	           a_null_ptr;
   // Create a reference-counted pointer of non-const type A.

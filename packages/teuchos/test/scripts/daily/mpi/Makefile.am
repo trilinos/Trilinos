@@ -25,10 +25,21 @@
 # 
 # ************************************************************************
 #@HEADER
-if HAVE_MPI
-MPI_SUBDIR = mpi
-else
-SERIAL_SUBDIR = serial
-endif
 
-SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
+EXEEXT = .pl.exe
+
+# Nothing should be done for a serial build
+if HAVE_MPI
+
+noinst_PROGRAMS = run-teuchos-tests
+
+run_teuchos_tests_SOURCES = $(srcdir)/run-teuchos-tests-mpi
+
+run-teuchos-tests$(EXEEXT) : $(srcdir)/run-teuchos-tests-mpi
+	cp $(srcdir)/run-teuchos-tests-mpi run-teuchos-tests-mpi$(EXEEXT)
+
+else
+
+EXTRA_DIST=run-teuchos-tests-mpi
+
+endif

@@ -513,6 +513,7 @@ AC_CONFIG_FILES([
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
+		test/scripts/daily/mpi/Makefile
 		example/Makefile
 		example/BLAS/Makefile
 		example/CommandLineProcessor/Makefile

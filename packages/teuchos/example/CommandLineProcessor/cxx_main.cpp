@@ -1,12 +1,25 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Version.hpp"
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
 // Enum for the speed option
 enum ESpeed { SPEED_SLOW=-1, SPEED_MEDIUM=0, SPEED_FAST=+1 };
 
 int main(int argc, char* argv[])
 {
+#ifdef HAVE_MPI
+  /* initialize MPI if we are running in parallel */
+  MPI_Init(&argc, &argv);
+  int procRank = -1;
+  MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+  if ( procRank == 0 )
+    cout << Teuchos::Teuchos_Version() << endl << endl;
+#else
   cout << Teuchos::Teuchos_Version() << endl << endl;
+#endif
 
   // Creating an empty command line processor looks like:
   Teuchos::CommandLineProcessor My_CLP;
@@ -45,7 +58,7 @@ int main(int argc, char* argv[])
 		 allow an unrecognized a command line option to be ignored (and
 		 only have a warning printed), use:
   */
-  My_CLP.recogniseAllOptions(false);
+  My_CLP.recogniseAllOptions(true);
   
   /* Second, by default, if the parser finds a command line option it
 		 doesn't recognize or finds the --help option, it will throw an
@@ -63,21 +76,41 @@ int main(int argc, char* argv[])
 	*/
   Teuchos::CommandLineProcessor::EParseCommandLineReturn
 		parseReturn= My_CLP.parse( argc, argv );
-	if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) return 0;
-	if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) return 1; // Error!
-
+	if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
+#ifdef HAVE_MPI
+		MPI_Finalize();
+#endif
+		return 0;
+	}
+	if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
+#ifdef HAVE_MPI	
+		MPI_Finalize();
+#endif	
+		return 1; // Error!
+	}
 	// Here is where you would use these command line arguments but for this example program
 	// we will just print the help message with the new values of the command-line arguments.
+#ifdef HAVE_MPI
+	if (procRank == 0)
+#endif
 	std::cout << "\nPrinting help message with new values of command-line arguments ...\n\n";
 	My_CLP.printHelpMessage(argv[0],std::cout);
 
 	// Now we will print the option values
+#ifdef HAVE_MPI
+	if (procRank == 0) {
+#endif
 	std::cout << "\nPrinting user options after parsing ...\n\n";
 	std::cout << "NumIters     = " << NumIters << std::endl;
 	std::cout << "Tolerance    = " << Tolerance << std::endl;
 	std::cout << "Solver       = \"" << Solver << "\"\n";
 	std::cout << "Precondition = " << Precondition << std::endl;
 	std::cout << "Speed        = " << Speed << std::endl;
-	
+#ifdef HAVE_MPI
+	}
+  /* finalize MPI if we are running in parallel */
+  MPI_Finalize();
+#endif
+
   return 0;
 }
