@@ -170,6 +170,7 @@ int Amesos_Superludist::ReadParameterList() {
     else if( FactOption == "FACTORED" ) FactOption_ = FACTORED;
     
     MaxProcesses_ = SuperludistParams.getParameter("MaxProcesses",MaxProcesses_);
+    if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
     nprow_ = SuperludistParams.getParameter("nprow",MaxProcesses_);
     npcol_ = SuperludistParams.getParameter("npcol",MaxProcesses_);
     Equil_ = SuperludistParams.getParameter("Equil",true);
@@ -180,7 +181,7 @@ int Amesos_Superludist::ReadParameterList() {
     IterRefine_ = SuperludistParams.getParameter("IterRefine","DOUBLE");
     ReplaceTinyPivot_ = SuperludistParams.getParameter("ReplaceTinyPivot",true);
 
-    PrintStat_ = SuperludistParams.getParameter("PrintStat",true);
+    PrintStat_ = SuperludistParams.getParameter("PrintStat",false);
 
   } 
 
@@ -332,7 +333,7 @@ int Amesos_Superludist::Factor( ) {
     RedistributeA() ; 
     SuperluMat_ = UniformMatrix_ ;
 
-  } else if( !( nprow_ && npcol_ ) ) {
+  } else {
     // compute unless the used specified them in parameter list
 
     //  Revision 1.7 Oct 29, 2003 has a detailed check for cannonical distribution
@@ -504,7 +505,7 @@ int Amesos_Superludist::Factor( ) {
     int nrhs = 0 ;   //  Prevents forward and back solves
     int ldx = NumRows_;     //  Should be untouched
 
-    assert( options_.PrintStat != YES ) ; 
+    // assert( options_.PrintStat != YES ) ; 
     pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
 	    &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
 
