@@ -897,15 +897,9 @@ Optional Features:
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
-  --enable-default-packages
-                          Build all default packages unless explicitly
-                          disabled. When this option is disabled, only
-                          packages explicitly enabled and packages needed to
-                          satisfy the dependencies of enabled packages will be
-                          built (default is yes)
   --enable-triutils       Enable TRIUTILS support. Triutils, a Trilinos
-                          package, is used if some Amesos examples to
-                          construct the linear system (default is no)
+                          package, is used by some Amesos examples to
+                          construct the linear system
   --enable-amesos-lapack  Enable Amesos interface support for LAPACK (default
                           is yes)
   --enable-amesos-superludist
@@ -3857,7 +3851,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3860:" \
+echo "$as_me:3854:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7380,7 +7374,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7383: \"$ac_link\") >&5
+(eval echo $as_me:7377: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7458,7 +7452,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7461: \"$ac_link\") >&5
+(eval echo $as_me:7455: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8151,32 +8145,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 
 
-# Check whether --enable-default-packages or --disable-default-packages was given.
-if test "${enable_default_packages+set}" = set; then
-  enableval="$enable_default_packages"
-  ac_cv_use_default_packages=$enableval
-else
-  ac_cv_use_default_packages=yes
-fi;
-
-echo "$as_me:$LINENO: checking whether to use default-packages" >&5
-echo $ECHO_N "checking whether to use default-packages... $ECHO_C" >&6
-
-if test "X$ac_cv_use_default_packages" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_DEFAULT_PACKAGES
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
 # Check whether --enable-triutils or --disable-triutils was given.
 if test "${enable_triutils+set}" = set; then
   enableval="$enable_triutils"
@@ -8185,8 +8153,8 @@ else
   ac_cv_use_triutils=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use triutils" >&5
-echo $ECHO_N "checking whether to use triutils... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional triutils dependent code" >&5
+echo $ECHO_N "checking whether to build optional triutils dependent code... $ECHO_C" >&6
 
 if test "X$ac_cv_use_triutils" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -12732,7 +12700,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12735: \"$ac_link\") >&5
+(eval echo $as_me:12703: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12810,7 +12778,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12813: \"$ac_link\") >&5
+(eval echo $as_me:12781: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
