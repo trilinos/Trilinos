@@ -26,7 +26,8 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Test_Epetra_RowMatrix Test_Epetra_CrsMatrix \
+SUBDIRS = scripts \
+	  Test_Epetra_RowMatrix Test_Epetra_CrsMatrix \
 	  Test_Epetra_VbrMatrix Test_MultipleSolves \
 	  Test_Detailed \
 	  Test_LAPACK \

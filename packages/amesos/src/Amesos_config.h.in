@@ -23,23 +23,14 @@
 /* Define if want to build amesos-klu */
 #undef HAVE_AMESOS_KLU
 
-/* Define if want to build amesos-kundert */
-#undef HAVE_AMESOS_KUNDERT
-
 /* Define if want to build amesos-lapack */
 #undef HAVE_AMESOS_LAPACK
-
-/* Define if want to build amesos-merikos */
-#undef HAVE_AMESOS_MERIKOS
 
 /* Define if want to build amesos-mumps_mpi_c2f */
 #undef HAVE_AMESOS_MPI_C2F
 
 /* Define if want to build amesos-mumps */
 #undef HAVE_AMESOS_MUMPS
-
-/* Define if want to build amesos-scalapack */
-#undef HAVE_AMESOS_SCALAPACK
 
 /* Define if want to build amesos-smumps */
 #undef HAVE_AMESOS_SMUMPS
