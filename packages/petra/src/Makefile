@@ -4,7 +4,7 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
 DEFINES= -D$(TRILINOS_ARCH) $(PETRA_ARCH_DEFINES) -D$(PETRA_COMM)
 
-INCLUDES = $(ARCH_INCLUDES) $(PETRA_INCLUDES)
+INCLUDES = $(ARCH_INCLUDES) $(PETRA_INCLUDES) $(AZTECOO_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) 
@@ -15,7 +15,8 @@ CCFLAGS=$(CXXFLAGS)
 #=======================================================================
 
 
-PETRA_CC = Petra_Object.cc Petra_Comm.cc Petra_Time.cc \
+PETRA_CC = Aztec_OO.cc \
+           Petra_Object.cc Petra_Comm.cc Petra_Time.cc \
            Petra_BlockMap.cc \
            Petra_Map.cc Petra_LocalMap.cc \
            Petra_RDP_MultiVector.cc  \

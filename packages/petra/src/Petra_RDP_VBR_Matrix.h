@@ -869,11 +869,18 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
     //! Returns the Petra_BlockMap object associated with the rows of this matrix.
     const Petra_BlockMap & RowMap() const {return((Petra_BlockMap &)Graph_->RowMap());};
 
+
+    //! Returns the Petra_BlockMap object associated with the rows of this matrix for RowMatrix interface.
+    const Petra_BlockMap & BlockRowMap() const {return((Petra_BlockMap &)Graph_->RowMap());};
+
     //! Returns the Petra_BlockMap object associated with columns of this matrix.
     const Petra_BlockMap & ColMap() const {return((Petra_BlockMap &)Graph_->RowMap());};
 
     //! Returns the Petra_BlockMap object that describes the import vector for distributed operations.
     const Petra_BlockMap & ImportMap() const {return((Petra_BlockMap &) Graph_->ImportMap());};
+
+    //! Returns the import vector map for distributed operations for the RowMatrix interface.
+    const Petra_BlockMap & BlockImportMap() const {return((Petra_BlockMap &) Graph_->ImportMap());};
 
     //! Returns the Petra_Import object that contains the import operations for distributed operations.
     const Petra_Import * Importer() const {return(Graph_->Importer());};

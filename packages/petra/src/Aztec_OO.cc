@@ -571,8 +571,8 @@ int Aztec_OO::AdaptiveIterate(int MaxIters, double Tolerance) {
 void Petra_Aztec_matvec(double *x, double *y, AZ_MATRIX *Amat, int proc_config[]) {
 
   Petra_RDP_RowMatrix * A = (Petra_RDP_RowMatrix *) AZ_get_matvec_data(Amat);
-  Petra_RDP_Vector X(View, A->RowMap(), x);
-  Petra_RDP_Vector Y(View, A->RowMap(), y);
+  Petra_RDP_Vector X(View, A->BlockRowMap(), x);
+  Petra_RDP_Vector Y(View, A->BlockRowMap(), y);
 
   //cout << X << endl;
   //cout << Y << endl;
@@ -668,8 +668,8 @@ int Petra_Aztec_comm_wrapper(double vec[], AZ_MATRIX *Amat) {
 
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode
 
-  //Petra_RDP_Vector & X = *new Petra_RDP_Vector(View, A->ImportMap(), vec);
-  Petra_RDP_Vector X(View, A->ImportMap(), vec);
+  //Petra_RDP_Vector & X = *new Petra_RDP_Vector(View, A->BlockImportMap(), vec);
+  Petra_RDP_Vector X(View, A->BlockImportMap(), vec);
 
   assert(X.Import(X, *(A->Importer()),Insert)==0);
 
@@ -699,8 +699,8 @@ int Aztec_OO::PetraMatrix2MLMatrix(ML *ml_handle, int level,
 int Petra_ML_matvec(void *data, int in, double *p, int out, double *ap) {
 
   Petra_RDP_RowMatrix * A = (Petra_RDP_RowMatrix *) data;
-  Petra_RDP_Vector X(View, A->RowMap(), p);
-  Petra_RDP_Vector Y(View, A->RowMap(), ap);
+  Petra_RDP_Vector X(View, A->BlockRowMap(), p);
+  Petra_RDP_Vector Y(View, A->BlockRowMap(), ap);
   
   A->Multiply(false, X, Y);
   
@@ -779,7 +779,7 @@ int Petra_ML_comm_wrapper(double vec[], void *data) {
 
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode
 
-  Petra_RDP_Vector X(View, A->ImportMap(), vec);
+  Petra_RDP_Vector X(View, A->BlockImportMap(), vec);
 
   assert(X.Import(X, *(A->Importer()),Insert)==0);
 

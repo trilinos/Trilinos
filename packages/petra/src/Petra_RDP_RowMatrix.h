@@ -180,10 +180,10 @@ class Petra_RDP_RowMatrix {
   virtual const Petra_Comm & Comm() const = 0;
 
   //! Returns the Petra_Map object associated with the rows of this matrix.
-  virtual const Petra_BlockMap & RowMap() const = 0;
+  virtual const Petra_BlockMap & BlockRowMap() const = 0;
 
   //! Returns the Petra_Map object that describes the import vector for distributed operations.
-  virtual const Petra_BlockMap & ImportMap() const = 0;
+  virtual const Petra_BlockMap & BlockImportMap() const = 0;
 
   //! Returns the Petra_Import object that contains the import operations for distributed operations.
   virtual const Petra_Import * Importer() const = 0;

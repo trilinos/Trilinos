@@ -621,11 +621,17 @@ class Petra_RDP_CRS_Matrix: public Petra_Flops, public Petra_BLAS, public virtua
     //! Returns the Petra_Map object associated with the rows of this matrix.
     const Petra_Map & RowMap() const {return((Petra_Map &)Graph_->RowMap());};
 
+    //! Returns the Petra_Map object associated with the rows of this matrix as a BlockMap for RowMatrix interface.
+    const Petra_BlockMap & BlockRowMap() const {return((Petra_BlockMap &)Graph_->RowMap());};
+
     //! Returns the Petra_Map object associated with columns of this matrix.
     const Petra_Map & ColMap() const {return((Petra_Map &)Graph_->RowMap());};
 
     //! Returns the Petra_Map object that describes the import vector for distributed operations.
     const Petra_Map & ImportMap() const {return((Petra_Map &) Graph_->ImportMap());};
+
+    //! Returns the import vector map for distributed operations as a BlockMap for the RowMatrix interface.
+    const Petra_BlockMap & BlockImportMap() const {return((Petra_BlockMap &) Graph_->ImportMap());};
 
     //! Returns the Petra_Import object that contains the import operations for distributed operations.
     const Petra_Import * Importer() const {return(Graph_->Importer());};
