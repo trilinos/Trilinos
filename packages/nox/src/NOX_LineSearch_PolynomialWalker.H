@@ -80,11 +80,7 @@ namespace LineSearch {
     \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2 
   \f]
 
-  - "Norm-F"
-
-  \f[ 
-    \phi(\lambda) \equiv ||F (x_{\rm old} + \lambda s)|| 
-  \f]
+  - User defined object derived from the NOX::Parameter::MeritFunction class.
 
   We compute \f$ \lambda \f$ based on polynomial fits to information
   on \f$ \phi \f$ and its derivative \f$ \phi' \f$ at the old solution and
@@ -110,7 +106,7 @@ namespace LineSearch {
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
 
-  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ if using "Norm-F Squared" as the merit function  and \f$ \phi'(0) = \frac{s^T \left(J_{\rm old}^T F_{\rm old} \right)} {\|F_{\rm old} \| } \f$ if using "Norm-F" merit function.
+  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ if using "Norm-F Squared" as the merit function  or it is defined by the user.
 
   If we are using a \b cubic \b model, the \f$k\f$-th step (\f$ k>1
   \f$) approximation is calculated as
@@ -184,9 +180,11 @@ namespace LineSearch {
     -# "Ared/Pred" 
     -# "None"
 
-  - "Merit Function" - choice of the merit function to use in the 
-    interpolation of a new step length.  This line search has a  
-    predefined merit function ("Norm-F Squared") or the user can supply 
+  - "User Defined Norm" - The user can redefine the norm that is used in the Ared/Pred sufficient decrease condition by supplying a NOX::Parameter::UserNorm derived object in the parameter list with this key.
+
+  - "Merit Function" - choice of the merit function to use.  This line search 
+    has a predefined merit function ("Norm-F Squared" = 
+    \f$ 0.5 * \|F\|_2^2 \f$) or the user can supply 
     their own merit function object to the parameter list:
     
     -# "Norm-F Squared"
