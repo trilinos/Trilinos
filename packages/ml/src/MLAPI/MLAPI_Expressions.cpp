@@ -22,7 +22,7 @@ MultiVector operator+(const MultiVector& x, const MultiVector& y)
              GetString(x.GetNumVectors()) + " vs. " +
              GetString(y.GetNumVectors()), -1);
 
-  MultiVector res(x.GetVectorSpace());
+  MultiVector res(x.GetVectorSpace(), x.GetNumVectors());
   res.Update(1.0, x, 1.0, y);
   return(res);
 }
@@ -38,7 +38,7 @@ MultiVector operator-(const MultiVector& x, const MultiVector& y)
              GetString(x.GetNumVectors()) + " vs. " +
              GetString(y.GetNumVectors()), -1);
 
-  MultiVector res(x.GetVectorSpace());
+  MultiVector res(x.GetVectorSpace(), x.GetNumVectors());
   res.Update(1.0, x, -1.0, y);
   return(res);
 }
@@ -46,7 +46,7 @@ MultiVector operator-(const MultiVector& x, const MultiVector& y)
 // ====================================================================== 
 MultiVector operator+(const MultiVector& x, const double alpha)
 {
-  MultiVector res(x.GetVectorSpace());
+  MultiVector res(x.GetVectorSpace(), x.GetNumVectors());
   res = alpha;
   res.Update(1.0, x, 1.0);
   return(res);
@@ -55,7 +55,7 @@ MultiVector operator+(const MultiVector& x, const double alpha)
 // ====================================================================== 
 MultiVector operator-(const MultiVector& x, const double alpha)
 {
-  MultiVector res(x.GetVectorSpace());
+  MultiVector res(x.GetVectorSpace(), x.GetNumVectors());
   res = -alpha;
   res.Update(1.0, x, 1.0);
   return(res);
