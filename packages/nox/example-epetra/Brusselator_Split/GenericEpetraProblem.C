@@ -47,16 +47,16 @@
 
 GenericEpetraProblem::GenericEpetraProblem(Epetra_Comm& comm, 
                                            int numGlobalNodes) :
-  Comm(&comm),
-  NumGlobalNodes(numGlobalNodes),
-  StandardMap(0),
   OverlapMap(0),
   Importer(0),
   xptr(0),
   initialSolution(0),
-  auxSolution(0),
   AA(0),  
-  A(0) 
+  A(0),
+  Comm(&comm),
+  auxSolution(0),
+  StandardMap(0),
+  NumGlobalNodes(numGlobalNodes)
 {
 
   // Commonly used variables

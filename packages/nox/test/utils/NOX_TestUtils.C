@@ -106,7 +106,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
 
   string field;			// name of parameter
 
-  bool tmpbool;			// for reading in a boolean
+  //bool tmpbool;			// for reading in a boolean
   int tmpint;			// for reading in an int
   double tmpdouble;		// for reading in a double
   string tmpstring;		// for reading in a string

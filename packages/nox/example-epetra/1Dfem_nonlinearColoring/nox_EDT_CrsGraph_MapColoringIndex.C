@@ -43,8 +43,6 @@ namespace Epetra_Transform {
 
 vector<Epetra_IntVector>* CrsGraph_MapColoringIndex::operator()( const Epetra_CrsGraph & original )
 {
-  int err;
-
   const Epetra_BlockMap & RowMap = original.RowMap();
   int nRows = RowMap.NumMyElements();
 

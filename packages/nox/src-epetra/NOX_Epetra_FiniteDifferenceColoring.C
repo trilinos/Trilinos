@@ -137,8 +137,8 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if ( diffType == Backward )
     scaleFactor = -1.0;
 
-  int min = map.MinAllGID();  // Minimum Global ID value
-  int max = map.MaxAllGID();  // Maximum Global ID value
+  //int min = map.MinAllGID();  // Minimum Global ID value
+  //int max = map.MaxAllGID();  // Maximum Global ID value
   int myMin = map.MinMyGID(); // Minimum Local ID value
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 

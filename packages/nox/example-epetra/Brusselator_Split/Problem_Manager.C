@@ -320,14 +320,14 @@ bool Problem_Manager::solveMF()
   // This is set up for more than 2 problems, but for now, we deal explicitly
   // with just 2.
 
-  GenericEpetraProblem &problemA = *Problems[0],
-                       &problemB = *Problems[1];
+  GenericEpetraProblem &problemA = *Problems[0];
+  GenericEpetraProblem &problemB = *Problems[1];
 
-  NOX::Epetra::Group   &grpA = *Groups[0],
-                       &grpB = *Groups[1];
+  NOX::Epetra::Group   &grpA = *Groups[0];
+  NOX::Epetra::Group   &grpB = *Groups[1];
 
-  NOX::Solver::Manager &solverA = *Solvers[0],
-                       &solverB = *Solvers[1];
+  //NOX::Solver::Manager &solverA = *Solvers[0];
+  //NOX::Solver::Manager &solverB = *Solvers[1];
 
   // Sync the two problems and get initial convergence state
   problemA.setAuxillarySolution(problemB.getSolution());
@@ -570,7 +570,8 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
       //for (int j=0; j<numValues; j++)
       //  cout << "\t[" << indices[j] << "]  " << values[j];
       //cout << endl;
-      int ierr = Matrix->ReplaceGlobalValues(row, numValues, values, indices);
+      //int ierr = Matrix->ReplaceGlobalValues(row, numValues, values, indices);
+      Matrix->ReplaceGlobalValues(row, numValues, values, indices);
       //printf("\nAfter insertion, ierr --> %d\n\n",ierr);
     }
     delete [] values; values = 0;

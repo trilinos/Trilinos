@@ -170,68 +170,66 @@ private:
   double norm(int n, double* x) const;
 
   //!  Compute Givens sin and cos values
-  void NOX::Direction::Tensor::computeGivens(double a, double b,
-					     double& c, double& s) const;
+  void computeGivens(double a, double b,
+		     double& c, double& s) const;
 
   //!  Apply Givens rotations to vector [a; b]
-  void NOX::Direction::Tensor::applyGivens(double c, double s,
-					   double& a, double& b) const;
+  void applyGivens(double c, double s,
+		   double& a, double& b) const;
 
   //!  Compute Householder vector
-  void NOX::Direction::Tensor::computeHouseholder(double** a, int j, 
-						  int i1, int i2,
-						  double* z) const;
+  void computeHouseholder(double** a, int j, 
+			  int i1, int i2,
+			  double* z) const;
 
   //!  Apply Householder rotations to a column vector in a matrix
-  void NOX::Direction::Tensor::applyHouseholder(const double* z, double** a,
-						int j, int i1, int i2) const;
+  void applyHouseholder(const double* z, double** a,
+			int j, int i1, int i2) const;
 
   //!  Apply Householder rotations to a vector
-  void NOX::Direction::Tensor::applyHouseholder(const double* z, double* a,
-						int i1, int i2) const;
+  void applyHouseholder(const double* z, double* a,
+			int i1, int i2) const;
 
   //!  Find the smallest magnitude minimizer of quartic equation
-  double NOX::Direction::Tensor::minQuartic(double q1, double q2, double q3,
-					    double q4, double q5,
-					    bool chooseGlobal, double& qval) const;
+  double minQuartic(double q1, double q2, double q3,
+		    double q4, double q5,
+		    bool chooseGlobal, double& qval) const;
   
   //!  Calculate beta by minimizing quartic equation
-  double NOX::Direction::Tensor::calculateBeta(double* vecg, double* vecq,
-					       double h1, int kk0, int kk,
-					       int pp, double normS, double& qval);
+  double calculateBeta(double* vecg, double* vecq,
+		       double h1, int kk0, int kk,
+		       int pp, double normS, double& qval);
 
   //!  Calculate beta by solving the quadratic equation
-  double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
-					       double& qval, double& lambdaBar,
-					       double normS = 1) const;
+  double calculateBeta(double qa, double qb, double qc,
+		       double& qval, double& lambdaBar,
+		       double normS = 1) const;
 
   //!  Calculate norm of local model residual
-  double NOX::Direction::Tensor::getNormModelResidual(
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Abstract::Group& soln,
-				       const NOX::Solver::Generic& solver,
-				       bool isTensorModel) const;
+  double getNormModelResidual(const NOX::Abstract::Vector& dir,
+			      const NOX::Abstract::Group& soln,
+			      const NOX::Solver::Generic& solver,
+			      bool isTensorModel) const;
 
   //!  Calculate directional derivative
-  double NOX::Direction::Tensor::getDirectionalDerivative(
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Abstract::Group& soln) const;
+  double getDirectionalDerivative(const NOX::Abstract::Vector& dir,
+				  const NOX::Abstract::Group& soln) const;
 
   //!  Compute residuals and print out information
-  void NOX::Direction::Tensor::printDirectionInfo(char* dirName,
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Abstract::Group& soln,
-				       const NOX::Solver::Generic& solver,
-				       bool isTensorModel=false) const;
+  void printDirectionInfo(char* dirName,
+			  const NOX::Abstract::Vector& dir,
+			  const NOX::Abstract::Group& soln,
+			  const NOX::Solver::Generic& solver,
+			  bool isTensorModel=false) const;
   
   //!  Apply the preconditioner to a vector
-  NOX::Abstract::Group::ReturnType
-  NOX::Direction::Tensor::applyPreconditioner(bool useTranspose,
-				      const NOX::Abstract::Group& soln,
-				      NOX::Parameter::List& params,
-				      const NOX::Abstract::Vector& input,
-				      NOX::Abstract::Vector& result,
-				      char* errLocation) const;
+  NOX::Abstract::Group::ReturnType 
+  applyPreconditioner(bool useTranspose,
+		      const NOX::Abstract::Group& soln,
+		      NOX::Parameter::List& params,
+		      const NOX::Abstract::Vector& input,
+		      NOX::Abstract::Vector& result,
+		      char* errLocation) const;
     
   
   //!  Backsolve an upper triangular system Ux=b.

@@ -242,7 +242,6 @@ int main(int argc, char *argv[])
 
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
     EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
-  bool verbose = false; 
   bool colorParallel = true; 
   int reordering = 0; 
   int verbosityLevel = 0; 

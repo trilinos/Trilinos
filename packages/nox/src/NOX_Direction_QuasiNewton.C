@@ -125,7 +125,7 @@ void NOX::Direction::QuasiNewton::Memory::add(const NOX::Abstract::Vector& newX,
 {
   int m = index.size();
   
-  if (m < memory.size())
+  if (m < (int) memory.size())
   {
     index.push_back(m);
   }

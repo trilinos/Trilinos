@@ -389,6 +389,10 @@ int main(int argc, char* argv[])
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver.solve();
 
+  // Warn user if solve failed
+  if (status != NOX::StatusTest::Failed)
+    cout << "Error: Solve failed to converge!" << endl;
+
   // ** Output solution **
 
   // Print the final parameter list from the solver

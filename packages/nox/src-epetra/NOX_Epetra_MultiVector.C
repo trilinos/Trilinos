@@ -245,7 +245,7 @@ NOX::Epetra::MultiVector::augment(const NOX::Epetra::MultiVector& source) {
 NOX::Abstract::Vector&
 NOX::Epetra::MultiVector::operator [] (int i)
 {
-  if ( i < 0 || i > noxEpetraVectors.size() ) {
+  if ( i < 0 || i > (int) noxEpetraVectors.size() ) {
     cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
 	 << i << endl;
     throw "NOX::Epetra Error";
@@ -261,7 +261,7 @@ NOX::Epetra::MultiVector::operator [] (int i)
 const NOX::Abstract::Vector&
 NOX::Epetra::MultiVector::operator [] (int i) const
 {
-  if ( i < 0 || i > noxEpetraVectors.size() ) {
+  if ( i < 0 || i > (int) noxEpetraVectors.size() ) {
     cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
 	 << i << endl;
     throw "NOX::Epetra Error";

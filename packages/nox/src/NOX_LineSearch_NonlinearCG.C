@@ -56,7 +56,7 @@ NonlinearCG::~NonlinearCG()
 
 bool NonlinearCG::reset(Parameter::List& params)
 { 
-  NOX::Parameter::List& p = params.sublist("NonlinearCG");
+  //NOX::Parameter::List& p = params.sublist("NonlinearCG");
   return true;
 }
 

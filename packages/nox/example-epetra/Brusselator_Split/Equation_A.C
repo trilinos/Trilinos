@@ -198,7 +198,6 @@ bool Equation_A::evaluate(FillType f,
   else OverlapMinMyNodeGID = StandardMap->MinMyGID()-1;
 
   int row, column;
-  double factor=1000.0;
   double Dcoeff = 0.025;
   double alpha = 0.6;
   double beta = 2.0;

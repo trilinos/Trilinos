@@ -196,8 +196,8 @@ int main(int argc, char *argv[])
   directionParameters.setParameter("Method","Tensor");
 
   // Sublist for local solver parameters
-  NOX::Parameter::List& localSolverParameters = 
-    directionParameters.sublist("Tensor").sublist("Linear Solver");
+  //NOX::Parameter::List& localSolverParameters = 
+  //directionParameters.sublist("Tensor").sublist("Linear Solver");
   //localSolverParameters.setParameter("Tolerance", 1e-4);
   //localSolverParameters.setParameter("Reorthogonalize","Always");
   //localSolverParameters.setParameter("Output Frequency",1);
@@ -267,6 +267,10 @@ int main(int argc, char *argv[])
 
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver.solve();
+
+  // Warn user if solve failed
+  if (status != NOX::StatusTest::Failed)
+    cout << "Error: Solve failed to converge!" << endl;
 
   // Get the answer
   grp = solver.getSolutionGroup();

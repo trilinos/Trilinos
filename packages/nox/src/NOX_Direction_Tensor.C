@@ -1613,9 +1613,6 @@ NOX::Direction::Tensor::computeTensorStep(const NOX::Abstract::Group& soln,
 					  const NOX::Solver::Generic& solver,
 					  double lambda)  const
 {
-  // Local variables
-  NOX::Abstract::Group::ReturnType status;
-  
   // Set the row number of quadratic equation
   int indxq = 0;
   if (requestedStep == TensorStep3)
@@ -1722,7 +1719,6 @@ NOX::Direction::Tensor::computeCurvilinearStep2(NOX::Abstract::Vector& dir,
 				    double lambda) const
 {
   bool ok = true;
-  NOX::Abstract::Group::ReturnType status;
 
   // If the tensor step has not been computed, then return the Newton
   // step because other necessary vectors have not been computed.

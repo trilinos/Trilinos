@@ -183,6 +183,10 @@ int main()
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver.solve();
 
+  // Warn user if solve failed
+  if (status != NOX::StatusTest::Failed)
+    cout << "Error: Solve failed to converge!" << endl;
+
   // Print the answer
   cout << "\n" << "-- Parameter List From Solver --" << "\n";
   solver.getParameterList().print(cout);

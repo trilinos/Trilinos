@@ -41,8 +41,6 @@ namespace Epetra_Transform {
 
 Epetra_CrsGraph* CrsGraph_Transpose::operator()( const Epetra_CrsGraph & original )
 {
-  int err;
-
   int nRows = original.NumMyRows();
   int nCols = original.NumMyCols();
 
