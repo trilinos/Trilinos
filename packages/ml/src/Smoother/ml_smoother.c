@@ -174,19 +174,32 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       ml_sm->smoother->data = NULL;
    }
    ml_sm->data_destroy = NULL;
+   /* ********************************************************* */
+   /* ********************************************************* */
+   /* These have already been freed with the data destroy above */
+   /* for VBlockSGS and VBlockJacobi!!!!!!!!!!!!!!!!!!!!!!!!!!  */
+   /* Charles, we should probably talk about this --------------*/
+   /* NOTE: the code below will not work if the pre and post    */
+   /* smoother are sharing the same data pointer.               */
+   /* ********************************************************* */
+   /* ********************************************************* */
+   /* ********************************************************* 
    if ( ml_sm->smoother->internal == ML_Smoother_VBlockSGS ||
         ml_sm->smoother->internal == ML_Smoother_VBlockJacobi )
    {
       ml_data = ml_sm->smoother->data;
       if ( ml_data != NULL )
       {
-         ML_Smoother_Destroy_BGS_Data(&(ml_data));
+         ML_Smoother_Destroy_BGS_Data((ml_data));
          ml_sm->smoother->data = NULL;
       }
    }
+   */
    if ( ml_sm->smoother->internal == ML_Smoother_OverlappedILUT &&
         ml_sm->smoother->data != NULL )
    {
+     printf("This should be switched to using the data_destroy field\n");
+     printf("Charles ... can we talk about fixing this -RST\n");
       ilut_data = ml_sm->smoother->data;
       ML_Smoother_Destroy_ILUT_Data(ilut_data);
       ml_sm->smoother->data = NULL;
@@ -194,6 +207,8 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    if ( ml_sm->smoother->internal == ML_Smoother_SGS &&
         ml_sm->smoother->data != NULL )
    {
+     printf("This should be switched to using the data_destroy field\n");
+     printf("Charles ... can we talk about fixing this -RST\n");
 #ifdef ML_FAST
       ilut_data = ml_sm->smoother->data;
       ML_Smoother_Destroy_ILUT_Data(ilut_data);
@@ -204,6 +219,8 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
         (ml_sm->smoother->internal == ML_Smoother_VBlockMultiplicativeSchwarz)) &&
         ml_sm->smoother->data != NULL )
    {
+     printf("This should be switched to using the data_destroy field\n");
+     printf("Charles ... can we talk about fixing this -RST\n");
       schwarz_data = ml_sm->smoother->data;
       ML_Smoother_Destroy_Schwarz_Data(&(schwarz_data));
       ml_sm->smoother->data = NULL;
@@ -773,6 +790,11 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Sm_Hiptmair_Data *dataptr;
    ML_CommInfoOP *getrow_comm;
    int totalsize;
+   struct ML_CSR_MSRdata *temp_csrdata;
+   int *Tmat_trans_rowptr, *Tmat_trans_bindx;
+   double *Tmat_trans_val;
+   int *ATmat_trans_rowptr, *ATmat_trans_bindx;
+   double *ATmat_trans_val;
 #ifdef ML_SMOOTHER_DEBUG
    double *res2, res_norm, dtemp;
 #endif
@@ -788,6 +810,17 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
    ATmat_trans = (ML_Operator *) dataptr->ATmat_trans;
    TtAT_diag = (double *) dataptr->TtAT_diag;
+#define SPECIAL
+#ifdef SPECIAL
+temp_csrdata = (struct ML_CSR_MSRdata *) Tmat_trans->data;
+Tmat_trans_rowptr = temp_csrdata->rowptr;
+Tmat_trans_bindx = temp_csrdata->columns;
+Tmat_trans_val = temp_csrdata->values;
+temp_csrdata = (struct ML_CSR_MSRdata *) ATmat_trans->data;
+ATmat_trans_rowptr = temp_csrdata->rowptr;
+ATmat_trans_bindx = temp_csrdata->columns;
+ATmat_trans_val = temp_csrdata->values;
+#endif
 
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
@@ -807,7 +840,11 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    /*
          fun = ML_Smoother_MSR_SGS;
 	 */
+#ifdef SPECIAL
+     ML_Smoother_MSR_SGSnodamping(sm, inlen, x, outlen, rhs);
+#else
    ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+#endif
 
 #ifdef ML_SMOOTHER_DEBUG
    printf("\t%d:After SGS on edges, norm of x = %15.10e\n",
@@ -881,8 +918,14 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    for (i = 0; i < ATmat_trans->outvec_leng; i++)
    {
 	  /* Grab row i of Tmat_trans. */
+#ifdef SPECIAL
+length = Tmat_trans_rowptr[i+1]- Tmat_trans_rowptr[i];
+cols = &(Tmat_trans_bindx[Tmat_trans_rowptr[i]]);
+vals = &(Tmat_trans_val[Tmat_trans_rowptr[i]]);
+#else
       ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
                         &length, 0);
+#endif
 
 	  /* Explicit dot product Tmat_trans(i,:)*res  */
 	  numer = 0.;
@@ -943,8 +986,14 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       }
 	     
       /* Get a row of transpose of matrix product AT (column of AT). */
+#ifdef SPECIAL
+length = ATmat_trans_rowptr[i+1]- ATmat_trans_rowptr[i];
+cols = &(ATmat_trans_bindx[ATmat_trans_rowptr[i]]);
+vals = &(ATmat_trans_val[ATmat_trans_rowptr[i]]);
+#else
       ML_get_matrix_row(ATmat_trans, 1, &i , &allocated_space , &cols, &vals,
                         &length, 0);
+#endif
 
 	  /* Update edge-based local residual. */
       for (j=0; j < length; j++) res[cols[j]] -= alpha * vals[j];
@@ -995,8 +1044,14 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    {
 
 	  /* Grab row i of Tmat_trans. */
+#ifdef SPECIAL
+length = Tmat_trans_rowptr[i+1]- Tmat_trans_rowptr[i];
+cols = &(Tmat_trans_bindx[Tmat_trans_rowptr[i]]);
+vals = &(Tmat_trans_val[Tmat_trans_rowptr[i]]);
+#else
       ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
                         &length, 0);
+#endif
 
 	  numer = 0.;
 	  for (kk = 0; kk < length; kk++)
@@ -1015,8 +1070,14 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 	     local_x[cols[j]] += alpha * vals[j];
 
       /* Get a row of transpose of matrix product AT. */
+#ifdef SPECIAL
+length = ATmat_trans_rowptr[i+1]- ATmat_trans_rowptr[i];
+cols = &(ATmat_trans_bindx[ATmat_trans_rowptr[i]]);
+vals = &(ATmat_trans_val[ATmat_trans_rowptr[i]]);
+#else
       ML_get_matrix_row(ATmat_trans, 1, &i , &allocated_space , &cols, &vals,
                         &length, 0);
+#endif
 
 	  /* Update edge-based residual. */
       for (kk=0; kk < length; kk++)
@@ -1044,8 +1105,10 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 
    } /* for iter = 1... */
 
+#ifndef SPECIAL
    ML_free(cols);
    ML_free(vals);
+#endif
 
    return 0;
 }
@@ -2976,6 +3039,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    /* We access AT by column.  So calculate the transpose of AT
       and access it by row. This assumes that A is symmetric. */
 
+
    if (Tmat_trans->invec_leng != Amat->outvec_leng)
    {
       printf("In ML_Smoother_Gen_Hiptmair_Data: Tmat_trans and Amat\n"
@@ -2984,7 +3048,6 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 			 Tmat_trans->invec_leng, Amat->outvec_leng);
       exit(1);
    }
-
    ML_2matmult(Tmat_trans,Amat,dataptr->ATmat_trans);
 
 
@@ -3052,6 +3115,22 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 	  else dataptr->TtAT_diag[i] = tmpdiag[i];
 
    ML_Operator_Destroy(tmpmat);
+
+   /* Force the diagonal to not be zero */
+
+   vals = NULL;
+   if (Amat->getrow->external == MSR_getrows){
+      Amat_data   = (struct ML_CSR_MSRdata *) Amat->data;
+      vals  = Amat_data->values;
+      cols = Amat_data->columns;
+   }
+#ifdef AZTEC
+   else AZ_get_MSR_arrays(Amat, &cols, &vals);
+#endif
+   if (vals != NULL) {
+      for (i = 0; i < Amat->invec_leng; i++) 
+         if (vals[i] == 0.0) vals[i] = 1.;
+   }
 
    return 0;
 }
@@ -3136,6 +3215,7 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    int            *block_sizes, *block_offset, block_num;
    double         *vals, **blockfacts;
    ML_Sm_BGS_Data *dataptr;
+   int Nnz;
 
    Nrows   = Amat->getrow->Nrows;
    dataptr = (*data);
@@ -3177,23 +3257,20 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
       {
          if ( blockIndices[i] != -1 )
          {
-            printf("ML_Gen_VBGSFacts : block index not valid %d. \n",
-                                       blockIndices[i]);
+            printf("ML_Gen_VBGSFacts : block index not valid %d. %d\n",
+                                       blockIndices[i],i);
             exit(1);
          }
       } else
          block_sizes[blockIndices[i]]++;
    }
    
-   block_offset = (int *) malloc(Nrows*sizeof(int ));
-   cols = (int    *) malloc(allocated_space*sizeof(int    ));
-   vals = (double *) malloc(allocated_space*sizeof(double ));
-   
    /* ----------------------------------------------------------- */
    /* allocate memory for each block                              */
    /* ----------------------------------------------------------- */
 
    dataptr->blockfacts = (double **) malloc(Nblocks*sizeof(double *));
+
    dataptr->perms = (int **)malloc(Nblocks*sizeof(int *));
    blockfacts = dataptr->blockfacts;
    perms = dataptr->perms;
@@ -3229,18 +3306,26 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
       {
          row_in_block = block_offset[i];
          ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,&length,0);
+	 Nnz = 0;
          for (j = 0; j < length; j++) {
             col = cols[j];
             if ( col < Nrows )
             {
                if ( blockIndices[col] == block_num )
                {
-                  col_in_block = block_offset[col];
-                  index = col_in_block * block_sizes[block_num] + row_in_block;
-                  blockfacts[block_num][index] = vals[j];
+		 if (vals[j] != 0.) Nnz++;
+		 col_in_block = block_offset[col];
+		 index = col_in_block * block_sizes[block_num] + row_in_block;
+		 blockfacts[block_num][index] = vals[j];
                }
             }
          }
+	 /* Handle the case of a zero row. */
+	 /* By just putting a 1 on the diagonal. */
+	 if (Nnz == 0) {
+	   index = row_in_block * block_sizes[block_num] + row_in_block;
+	   blockfacts[block_num][index] = 1.;
+	 }
       }
    }
 
@@ -4420,6 +4505,106 @@ if ( info != 0 && info != (nrows+1) )
 /*****************************************************************************/
 /* AZTEC related smoothers                                                   */
 /*****************************************************************************/
+
+/*****************************************************************************/
+/* Symmetric MSR Gauss-Seidel smoother                                       */
+/* ------------------------------------------------------------------------- */
+
+int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
+				 double rhs[])
+{
+   int iter, i, j;
+   ML_Operator *Amat;
+   ML_Comm *comm;
+   ML_CommInfoOP *getrow_comm;
+   int Nrows;
+   double *x2;
+   ML_Smoother  *smooth_ptr;
+   register int    *bindx_ptr;
+   register double sum, *ptr_val;
+   int             bindx_row, *bindx;
+   double          *ptr_b, *val = NULL/*, omega2*/;
+   struct ML_CSR_MSRdata *ptr = NULL;
+
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Amat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Amat->getrow->Nrows;
+
+   if (Amat->getrow->external == MSR_getrows){
+      ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+      val   = ptr->values;
+      bindx = ptr->columns;
+   }
+#ifdef AZTEC
+   else AZ_get_MSR_arrays(Amat, &bindx, &val);
+#endif
+   if (val == NULL) {
+     ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+     return 0;
+   }
+
+   if (Amat->getrow->post_comm != NULL)
+      pr_error("Post communication not implemented for SGS smoother\n");
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
+                                   *sizeof(double));
+      if (x2 == NULL) {
+         printf("Not enough space in Gauss-Seidel\n"); exit(1);
+      }
+      for (i = 0; i < inlen; i++) x2[i] = x[i];
+      if (smooth_ptr->init_guess != ML_NONZERO)
+         for (i = inlen; i < inlen+getrow_comm->total_rcv_length+1; i++)
+            x2[i] = 0.;
+   }
+   else x2 = x;
+
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
+
+      if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
+          || (iter != 0) )
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+
+
+      bindx_row = bindx[0];
+      bindx_ptr = &bindx[bindx_row];
+      ptr_val   = &val[bindx_row];
+      ptr_b     = rhs;
+
+      for (i = 0; i < Nrows; i++) {
+	  sum    = *ptr_b++;
+	  
+	  for (j = bindx[i]; j < bindx[i+1]; j++) {
+            sum -= *ptr_val++ * x2[*bindx_ptr++];
+	  }
+	  x2[i] = sum/val[i];
+      }
+
+      bindx_ptr--;
+      ptr_val--;
+      ptr_b--;
+
+      for (i = Nrows - 1; i >= 0; i--) {
+         sum    = *ptr_b--;
+
+         for (j = bindx[i]; j < bindx[i+1]; j++) {
+            sum -= *ptr_val-- * x2[*bindx_ptr--];
+         }
+	 x2[i] = sum/val[i];
+      }
+
+   }
+
+   if (getrow_comm != NULL) {
+      for (i = 0; i < inlen; i++) x[i] = x2[i];
+      ML_free(x2);
+   }
+
+   return 0;
+}
 
 /*****************************************************************************/
 /* Symmetric MSR Gauss-Seidel smoother                                       */
