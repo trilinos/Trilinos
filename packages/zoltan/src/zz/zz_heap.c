@@ -22,6 +22,8 @@ extern "C" {
  *           Not in arranged order.
  */
 
+static void heapify (HEAP*, int);
+
 int heap_init (ZZ *zz, HEAP *h, int space)
 { char *yo = "heap_init";
 
@@ -84,7 +86,7 @@ void heap_make (HEAP *h)
     heapify(h, i);
 }
 
-void heapify (HEAP *h, int root)
+static void heapify (HEAP *h, int root)
 { int	left=root*2+1, right=root*2+2, largest=root; 
 
   if ((left <h->n) && (h->value[h->ele[left ]]>h->value[h->ele[largest]]))

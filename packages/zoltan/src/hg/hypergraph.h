@@ -195,7 +195,7 @@ float hcut_size_links (ZZ *, HGraph *, int, Partition);
 
 /* Scale Edge Weight */
 int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *, int);
-int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *);
+int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *, int);
 
 /* Matching functions */
 int Zoltan_HG_Matching (ZZ *, HGraph *, Graph *, Matching, HGPartParams *, int*);
@@ -247,7 +247,6 @@ extern void heap_free         (HEAP*);
 extern int  heap_check        (HEAP*);
 extern int  heap_input        (HEAP*, int, float);
 extern void heap_make         (HEAP*);
-extern void heapify           (HEAP*, int);
 extern void heap_change_value (HEAP*, int, float);
 extern int  heap_extract_max  (HEAP*);
 

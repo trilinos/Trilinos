@@ -66,7 +66,7 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
-    Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt);
+    Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
     old_ewgt = hg->ewgt;
     hg->ewgt = new_ewgt;
   }

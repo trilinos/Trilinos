@@ -22,58 +22,128 @@ extern "C" {
 
 int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 { int   i, j;
-  float vwgt_i, vwgt_j;
+  float vwgt_j;
 
   if (!g->vwgt)
     return ZOLTAN_FATAL;
 
-  for (i=0; i<g->nVtx; i++)
-  { vwgt_i = g->vwgt[i];
-    for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
-    { vwgt_j = g->vwgt[g->neigh[j]];
-      if (vwgt_i<=0.0 || vwgt_j<=0.0)
-        new_ewgt[j] = FLT_MAX;
-      else if (scale == 1)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(vwgt_i*vwgt_j);
-      else if (scale == 2)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(vwgt_i+vwgt_j);
-      else if (scale == 3)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MAX(vwgt_i,vwgt_j);
-      else if (scale == 4)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MIN(vwgt_i,vwgt_j);
-  } }
+  if (scale == 1)
+  { for (i=0; i<g->nVtx; i++)
+      for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+        if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
+          new_ewgt[j] = FLT_MAX;
+        else
+          new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]*vwgt_j);
+  }
+  else if (scale == 2)
+  { for (i=0; i<g->nVtx; i++)
+      for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+        if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
+          new_ewgt[j] = FLT_MAX;
+        else
+          new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]+vwgt_j);
+  }
+  else if (scale == 3)
+  { for (i=0; i<g->nVtx; i++)
+      for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+        if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
+          new_ewgt[j] = FLT_MAX;
+        else
+          new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MAX(g->vwgt[i],vwgt_j);
+  }
+  else if (scale == 4)
+  { for (i=0; i<g->nVtx; i++)
+      for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+        if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
+          new_ewgt[j] = FLT_MAX;
+        else if (scale == 4)
+          new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MIN(g->vwgt[i],vwgt_j);
+  }
   return ZOLTAN_OK;
 }
 
 /****************************************************************************/
 
-int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt)
+int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt, int scale)
 { int    i, j;
-  double weight, sum, scale;
 
-  if (!hg->vwgt)
-    return ZOLTAN_FATAL;
-
-  for (i=0; i<hg->nEdge; i++)
-  { scale = sum = 0.0;
-    if (hg->vwgt)
-    { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
-        sum += (double)(hg->vwgt[hg->hvertex[j]]);
-      for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
-      { weight = (double)(hg->vwgt[hg->hvertex[j]]);
-        scale += weight*(sum-weight);
-      }
-      scale /= 2.0;
-    }
+  if (scale == 1)
+  { if (hg->vwgt)
+    { double sum, factor, weight;
+      for (i=0; i<hg->nEdge; i++)
+      { sum = factor = 0.0;
+        for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+          sum += (double)(hg->vwgt[hg->hvertex[j]]);
+        for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+        { weight = (double)(hg->vwgt[hg->hvertex[j]]);
+          factor += weight*(sum-weight);
+        }
+        factor /= 2.0;
+        if (factor <= 0.0)
+          new_ewgt[i] = FLT_MAX;
+        else
+          new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/factor;
+    } }
     else
-      scale = (double)(hg->hindex[i+1]-hg->hindex[i]);
-
-    if (scale == 0.0)
-      new_ewgt[i] = FLT_MAX;
+    { int size;
+      for (i=0; i<hg->nEdge; i++)
+      { size = hg->hindex[i+1]-hg->hindex[i];
+        new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/(float)(size*(size-1)/2);
+  } } }
+  else if (scale == 2)
+  { for (i=0; i<hg->nEdge; i++)
+    { new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0);
+      if (hg->vwgt)
+        for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+        { if (hg->vwgt[hg->hvertex[j]] <= 0.0)
+          { new_ewgt[i] = FLT_MAX;
+            break;
+          }
+          else
+            new_ewgt[i] /= (hg->vwgt[hg->hvertex[j]]);
+  } }   }
+  else if (scale == 3)
+  { if (hg->vwgt)
+    { double sum;
+      for (i=0; i<hg->nEdge; i++)
+      { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+          sum += (double)(hg->vwgt[hg->hvertex[j]]);
+        if (sum <= 0.0)
+          new_ewgt[i] = FLT_MAX;
+        else
+          new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/sum;
+    } }
     else
-      new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/scale;
+      for (i=0; i<hg->nEdge; i++) 
+        new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/
+                      (float)(hg->hindex[i+1]-hg->hindex[i]);
   }
-
+  else if (scale == 4)
+  { if (hg->vwgt)
+    { float max_weight;
+      for (i=0; i<hg->nEdge; i++)
+      { max_weight = 0.0;
+        for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+          max_weight = MAX(max_weight,(hg->vwgt[hg->hvertex[j]]));
+        new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/max_weight;
+    } }
+    else
+      for (i=0; i<hg->nEdge; i++) 
+        new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0);
+  }
+  else if (scale == 5)
+  { if (hg->vwgt)
+    { float min_weight;
+      for (i=0; i<hg->nEdge; i++)
+      { min_weight = 0.0;
+        for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+          min_weight = MIN(min_weight,(hg->vwgt[hg->hvertex[j]]));
+        new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/min_weight;
+    } }
+    else
+      for (i=0; i<hg->nEdge; i++) 
+        new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0);
+  }
   return ZOLTAN_OK;
 }
 
