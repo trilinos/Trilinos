@@ -752,15 +752,20 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
 	ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH,
 					     nsmooth,1., nblocks, blocks);
       }
+#ifdef HAVE_ML_SUPERLU
       else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0) {
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
-      else {
-	printf("unknown coarse grid solver %s\n",context->coarse_solve);
-	exit(1);
+#endif
+#ifdef HAVE_ML_AMESOS
+      else if (ML_strcmp(context->coarse_solve,"KLU") == 0) {
+	ML_Gen_Smoother_Amesos( ml, coarsest_level, ML_AMESOS_KLU,-1);
       }
 #endif
-
+      else {
+	pr_error("unknown coarse grid solver %s\n",context->coarse_solve);
+      }
+#endif
 
     ML_Gen_Solver( ml, ML_MGV, N_levels-1, coarsest_level);
     ML_Aggregate_Destroy(&ag);
