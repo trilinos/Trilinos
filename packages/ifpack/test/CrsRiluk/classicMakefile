@@ -23,7 +23,7 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= $(LIBIFPACK) $(LIBEPETRA) $(LIBMACHDEP) $(LIBSPBLAS) $(LIBBLAS)
+LIB_PATHS= $(LIBIFPACK) $(LIBEPETRA) $(LIBMACHDEP) $(LIBBLAS)
 
 #=======================================================================
 # Ifpack test source files
