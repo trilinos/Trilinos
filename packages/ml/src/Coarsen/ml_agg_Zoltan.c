@@ -108,6 +108,23 @@ static int MLZ_offset;
 static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
 {
 
+  /* Fix the output level */
+  char str[80];
+  switch (ML_Get_PrintLevel()) {
+  case 10:
+    strcpy(str,"2");
+    break;
+  case 9:
+    strcpy(str,"1");
+    break;
+  default:
+    strcpy(str,"0");
+  }
+    
+  if (Zoltan_Set_Param(zz, "DEBUG_LEVEL", str) == ZOLTAN_FATAL) {
+    printf("fatal(0)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
+    return 0;
+  }
   /* Set the load-balance method */
   /* You can change "RCB" to any Zoltan method below. */
 
@@ -225,10 +242,21 @@ static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
 
   for (i = 0 ; i < Nrows ; ++i)
     graph_decomposition[i] = MyPID;
-  if (new_decomp){
+  if (1 || new_decomp){
     for (i = 0 ; i < num_exported ; ++i) {
+#ifdef DEBUG
+      assert (export_gids[i] - MLZ_offset >= 0);
+      assert (export_gids[i] - MLZ_offset < Nrows);
+      assert (export_to_part[i] >= 0);
+      assert (export_to_part[i] < value);
+#endif
       graph_decomposition[export_gids[i] - MLZ_offset] = export_to_part[i];
     }
+#if 0
+  for (i = 0 ; i < Nrows ; ++i)
+    printf("graph_decomposition[%d] = %d\n", i, graph_decomposition[i]);
+#endif
+
 #if 0
     printf("[Proc %1d] My data to export are:\n", myrank);
     for (k=0; k<num_exported; k++){
@@ -384,6 +412,8 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 
   t0 = GetClock();
   
+  Nrows = Amatrix->getrow->Nrows;
+  
   /* ********************************************************************** */
   /* some general variables                                                 */
   /* ********************************************************************** */
@@ -405,13 +435,15 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
     return(-1);
   }
 
+  /* FIXME */
+  for (i = 0 ; i < Nrows * 0; ++i) {
+    printf("[%d] = %e %e\n", i, old_x[i], old_y[i]);
+  }
   /* junk */
   MLZ_x = old_x;
   MLZ_y = old_y;
   MLZ_z = old_z;
 
-  Nrows = Amatrix->getrow->Nrows;
-  
 #ifdef ML_MPI
   MPI_Scan(&Nrows, &MLZ_offset, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MLZ_offset -= Nrows;
@@ -426,7 +458,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   /* ********************************************************************** */
 
   if (N_parts == 1) {
-    for( i=0 ; i<Nrows ; i++ ) {
+    for (i = 0 ; i < Nrows ; i++) {
       graph_decomposition[i] = 0;
     }
     return 1;
@@ -512,6 +544,7 @@ End:
 int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
 			       ML_Operator **Pmatrix, ML_Comm *comm)
 {
+
    unsigned int nbytes, length;
    int     i, j, jj, k, Nrows, exp_Nrows,  N_bdry_nodes;
    int     diff_level, Nrows_global;
@@ -551,7 +584,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int * starting_decomposition = NULL;
    int * reordered_decomposition = NULL;
    ML_Operator * QQ = NULL;
-   ML_Operator * QQT = NULL;
    ML_Operator *Pstart = NULL;
    int starting_aggr_count;
    char str[80], * str2;
@@ -561,18 +593,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double* old_x = NULL;
    double* old_y = NULL;
    double* old_z = NULL;
-   double* new_x = NULL;
-   double* new_y = NULL;
-   double* new_z = NULL;
-   double* next_level_x = NULL;
-   double* next_level_y = NULL;
-   double* next_level_z = NULL;
    double* old_nodal_coord = NULL;
-   double* new_nodal_coord = NULL;
-   double* next_level_nodal_coord = NULL;
-   double* old_vector = NULL;
-   double* new_vector = NULL;
-   int iaggre;
    
    /* ------------------- execution begins --------------------------------- */
 
@@ -839,7 +860,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
     * for the new layout of local rows.
     */
    old_x = old_nodal_coord;
-
    if (N_dimensions > 1 && old_x)
      old_y = old_nodal_coord + Nrows;
    else
@@ -948,8 +968,9 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        exit( EXIT_FAILURE );
      }
 
-     for( i=0 ; i<Nrows ; i++ )
+     for( i=0 ; i<Nrows ; i++ ) {
        graph_decomposition[i] = starting_decomposition[i];
+     }
 
      aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (ml_ag->aggr_viz_and_stats);
      aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
@@ -1160,142 +1181,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      }
    }
    
-   /* ================================================================= */
-   /* RAY: If previous level was not the finest, build the              *
-    * coordinates for this level's nodes (that is, the aggregates of    *
-    * the previous level).                                              *
-    *                                                                   *
-    * NOTE: I suppose at this point that all the nodes belonging to any *
-    * aggregate are LOCAL. This is always verified by the redistributor.*
-    *                                                                   *
-    * NOTE2: variables with `old' refer to coordinates on the previos   *
-    * level with the previous (old) distribution.                       *
-    * Variables with `new' refer to coordinates on the previous (old)   *
-    * level, with a new distribution.                                   *
-    * Variables with `next_level' are self-explicatory. ;)              */
-   /* ================================================================= */
-   
-   i = N_dimensions * sizeof(double) * (new_Nrows);
-   if (i)
-     new_nodal_coord = (double*) ML_allocate(i);
-   else
-     new_nodal_coord = 0;
-
-   ml_ag->nodal_coord[abs(diff_level)] = new_nodal_coord;
-   
-   new_x = new_nodal_coord;
-   if (N_dimensions > 1 && new_nodal_coord)
-     new_y = new_nodal_coord + new_Nrows;
-   else
-     new_y = 0;
-   if (N_dimensions > 2 && new_nodal_coord)
-     new_z = new_nodal_coord + 2 * new_Nrows;
-   else
-     new_z = 0;
-
-   /* It appears that there is something strange about 
-    * the Epetra counterpart of QQ, store as a global
-    * variable Q in ml_epetra_utils.c. On the other side,
-    * QQ behaves correctly. Hence, I use the transpose of QQ.
-    * The only negative point is that I need to allocate
-    * space for the tranpose.
-    *
-    * Also, old_vector and new_vector may be coded in a
-    * slightly more efficient way.
-    */
-   old_vector = (double*)ML_allocate(sizeof(double) * (1 + Nrows) * num_PDE_eqns);
-   new_vector = (double*)ML_allocate(sizeof(double) * (1 + new_Nrows) * num_PDE_eqns);
-
-   QQT = ML_Operator_Create(Amatrix->comm);
-   ML_Operator_Transpose_byrow(QQ,QQT);
-
-   for (j = 0 ; j < Nrows ; ++j)
-     old_vector[j] = old_x[j];
-   ML_Operator_Apply(QQT, Nrows * num_PDE_eqns, old_vector,
-		     new_Nrows * num_PDE_eqns, new_vector );
-   for (j = 0 ; j < new_Nrows ; ++j)
-     new_x[j] = new_vector[j];
-   
-   if (N_dimensions > 1) {
-     for (j = 0 ; j < Nrows ; ++j)
-       old_vector[j] = old_y[j];
-     ML_Operator_Apply(QQT, Nrows * num_PDE_eqns, old_vector,
-		       new_Nrows * num_PDE_eqns, new_vector );
-     for (j = 0 ; j < new_Nrows ; ++j)
-       new_y[j] = new_vector[j];
-   }
-
-   if (N_dimensions > 2) {
-     for (j = 0 ; j < Nrows ; ++j)
-       old_vector[j] = old_z[j];
-     ML_Operator_Apply(QQT, Nrows * num_PDE_eqns, old_vector,
-		       new_Nrows * num_PDE_eqns, new_vector );
-     for (j = 0 ; j < new_Nrows ; ++j)
-       new_z[j] = new_vector[j];
-   }
-
-   ML_free(old_vector);
-   ML_free(new_vector);
-   ML_Operator_Destroy(&QQT);
-
-   /* set up the nodal coordinates for the next level. 
-    * NOTE: this would create a small over(ab)use of memory
-    * as the last level will still create the nodal coordinates
-    * for the next level (that will never exist). However,
-    * the coarse grid should be small enough at that point. */
-
-   i = sizeof(double) * N_dimensions * (aggr_count);
-   if (i)
-     next_level_nodal_coord = (double*)ML_allocate(i);
-   else
-     next_level_nodal_coord = 0;
-
-   ml_ag->nodal_coord[abs(diff_level) + 1] = next_level_nodal_coord;
-
-   next_level_x = next_level_nodal_coord;
-   if (N_dimensions > 1 && next_level_nodal_coord)
-     next_level_y = next_level_nodal_coord + aggr_count;
-   if (N_dimensions > 2 && next_level_nodal_coord)
-     next_level_z = next_level_nodal_coord + 2 * aggr_count;
-
-   /* zero-out new coordinates */
-   for (i = 0 ; i < aggr_count ; ++i) {
-     next_level_x[i] = 0.0;
-     if (next_level_y) 
-       next_level_y[i] = 0.0;
-     if (next_level_z) 
-       next_level_z[i] = 0.0;
-   }
-
-   /* sum up all the contributions for each node in the aggregate */
-   for (i = 0 ; i < new_Nrows ; ++i) {
-     iaggre = aggr_index[i];
-     if (iaggre < 0 || iaggre > aggr_count)
-       continue;
-     next_level_x[iaggre] += new_x[i];
-     if (next_level_y)  
-       next_level_y[iaggre] += new_y[i];
-     if (next_level_z)  
-       next_level_z[iaggre] += new_z[i];
-   }
-
-   for (i = 0 ; i < aggr_count ; ++i) {
-     next_level_x[i] = next_level_x[i] / nodes_per_aggre[i];
-     if (next_level_y)  
-       next_level_y[i] = next_level_y[i] / nodes_per_aggre[i];
-     if (next_level_z) 
-       next_level_z[i] = next_level_z[i] / nodes_per_aggre[i];
-   }
-
-   /* =================================== */
-   /* RAY: END OF COORDINATES COMPUTATION */
-   /* =================================== */
-
-   /* free memory */
-   if (old_nodal_coord && diff_level) 
-     ML_free(old_nodal_coord);
-
-   if( nodes_per_aggre != NULL ) {
+   if (nodes_per_aggre != NULL) {
      ML_free( nodes_per_aggre );
      nodes_per_aggre = NULL;
    }
@@ -1664,6 +1550,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    
    ML_2matmult(QQ, Pstart, Pmatrix2, ML_CSR_MATRIX );
    
+
    ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
    ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->bc);
    str2 = (char *)ML_allocate(80*sizeof(char));
