@@ -41,6 +41,7 @@ static char *cvs_input_id = "$Id$";
 #include "dr_input_const.h"
 #include "dr_util_const.h"
 #include "dr_err_const.h"
+#include "ch_init_dist_const.h"
 
 #define TLIST_CNT 5
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
@@ -88,18 +89,47 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
       /****** The file type ******/
       if (token_compare(cptr, "file type")) {
         if(pio_info->file_type < 0) {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(NULL, "\t=,");
           strip_string(cptr, " \t\n");
           if (cptr == NULL || strlen(cptr) == 0) {
             Gen_Error(0, "fatal: must specify file type");
             return 0;
           }
 
-          if (strcasecmp(cptr, "nemesisi") == 0) {
+          string_to_lower(cptr, '\0');
+          if (strstr(cptr, "nemesisi")) {
             pio_info->file_type = NEMESIS_FILE;
+            pio_info->init_dist_type = INITIAL_FILE;
           }
-          else if (strcasecmp(cptr, "chaco") == 0) {
+          else if (strstr(cptr, "chaco")) {
             pio_info->file_type = CHACO_FILE;
+            cptr = strtok(NULL, ",");
+            if (cptr == NULL) 
+              pio_info->init_dist_type = INITIAL_LINEAR;
+            else {
+              strip_string(cptr, " \t\n");
+              string_to_lower(cptr, '=');
+              if (strstr(cptr, "initial distribution")) {
+                cptr2 = strchr(cptr, '=');
+                if (cptr2 == NULL) {
+                  Gen_Error(0, "fatal: initial distribution type is not "
+                               "specified");
+                  return 0;
+                }
+                cptr2++;
+                string_to_lower(cptr2, '\n');
+                if (strstr(cptr2, "linear")) {
+                  pio_info->init_dist_type = INITIAL_LINEAR;
+                }
+                else if (strstr(cptr2, "deal")) {
+                  pio_info->init_dist_type = INITIAL_DEAL;
+                }
+                else {
+                  Gen_Error(0, "Invalid Chaco initial distribution type.");
+                  return 0;
+                }
+              }
+            }
           }
           else {
             sprintf(cmesg, "fatal: unknown file type, %s", cptr);
@@ -110,7 +140,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
       }
 
       /****** The file name ******/
-      if (token_compare(cptr, "file name")) {
+      else if (token_compare(cptr, "file name")) {
         if(strlen(pio_info->pexo_fname) == 0)
         {
           cptr = strtok(NULL, "\t=");
@@ -124,7 +154,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         cptr = strtok(NULL, "\t=");
         strip_string(cptr, " \t\n");
         if(sscanf(cptr, "%d", &Debug_Driver) != 1) {
-          Gen_Error(0, "fatal: can\'t interp int for Debug_Driver");
+          Gen_Error(0, "fatal: zdrive debug level must be an integer.");
           return 0;
         }
       }

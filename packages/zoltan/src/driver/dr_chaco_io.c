@@ -43,9 +43,11 @@ static char *cvs_dr_chaco_io = "$Id$";
 #include "dr_maps_const.h"
 #include "ch_input_const.h"
 #include "ch_input.h"
+#include "ch_init_dist_const.h"
 
-static int fill_elements(int, int, PROB_INFO_PTR, ELEM_INFO *, int, int *, 
-                         int *, int *, int *, float *, int, 
+static int fill_elements(int, int, PROB_INFO_PTR, 
+                         ELEM_INFO *, int, int, int *, 
+                         int *, int *, float *, int, 
                          float *, float *, float *);
 
 /****************************************************************************/
@@ -63,9 +65,9 @@ int read_chaco_mesh(int Proc,
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
-  int    i, nvtxs;
+  int    i, nvtxs, gnvtxs;
   int    ndim = 0;
-  int   *start = NULL, *adj = NULL, *vwgts = NULL, *vtxdist = NULL;
+  int   *start = NULL, *adj = NULL, *vwgts = NULL;
 
   float *ewgts = NULL;
   float *x = NULL, *y = NULL, *z = NULL;
@@ -115,7 +117,8 @@ int read_chaco_mesh(int Proc,
   }
 
   /* Distribute graph */
-  if (!chaco_dist_graph(MPI_COMM_WORLD, 0, &nvtxs, &vtxdist, &start, &adj, 
+  if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, 
+                        &gnvtxs, &nvtxs, &start, &adj, 
                         &vwgts, &ewgts, &ndim, &x, &y, &z) != 0) {
       Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
       return 0;
@@ -173,7 +176,7 @@ int read_chaco_mesh(int Proc,
    * now fill the element structure array with the
    * information from the Chaco file
    */
-  if (!fill_elements(Proc, Num_Proc, prob, *elements, nvtxs, vtxdist, 
+  if (!fill_elements(Proc, Num_Proc, prob, *elements, gnvtxs, nvtxs,
                      start, adj, vwgts, ewgts, ndim, x, y, z)) {
     Gen_Error(0, "fatal: Error returned from fill_elements");
     return 0;
@@ -183,7 +186,6 @@ int read_chaco_mesh(int Proc,
   if (vwgts != NULL) free(vwgts);
   if (ewgts != NULL) free(ewgts);
   if (start != NULL) free(start);
-  if (vtxdist != NULL) free(vtxdist);
   if (x != NULL) free(x);
   if (y != NULL) free(y);
   if (z != NULL) free(z);
@@ -201,8 +203,8 @@ static int fill_elements(
   int        Num_Proc,
   PROB_INFO_PTR prob,            /* problem description */
   ELEM_INFO  elem[],             /* array of element information */
-  int        nvtxs,              /* number of vertices in graph */
-  int       *vtxdist,            /* vertex distribution data */
+  int        gnvtxs,             /* global number of vertices across all procs*/
+  int        nvtxs,              /* number of vertices in local graph */
   int       *start,              /* start of edge list for each vertex */
   int       *adj,                /* edge list data */
   int       *vwgts,              /* vertex weight list data */
@@ -214,17 +216,21 @@ static int fill_elements(
 )
 {
   /* Local declarations. */
-  int i, j, k, start_id, elem_id, local_id;
+  int i, j, k, elem_id, local_id;
+  int num_vtx; 
+  int *vtx_list = NULL;
   char cmesg[256];
   char *yo = "fill_elements";
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
 
-  start_id = vtxdist[Proc]+1;  /* global ids start at 1 */
+  num_vtx = ch_dist_max_num_vtx();
+  vtx_list = (int *) malloc(num_vtx * sizeof(int));
+  ch_dist_vtx_list(vtx_list, &num_vtx, Proc);
 
-  for (i = 0; i < Mesh.num_elems; i++) {
-    elem[i].globalID = start_id + i;
+  for (i = 0; i < num_vtx; i++) {
+    elem[i].globalID = vtx_list[i]+1;  /* GlobalIDs are 1-based */
     if (vwgts != NULL)
       elem[i].cpu_wgt = vwgts[i];
     else
@@ -272,25 +278,14 @@ static int fill_elements(
         elem_id = adj[start[i] + j];
 
         /* determine which processor the adjacent vertex is on */
-        for (k = 0; k < Num_Proc; k++)
-          /* Compare with <= since elem_id is 1-based and vtxdist is 0-based. */
-          if (elem_id <= vtxdist[k+1]) break;
-
-        /* sanity check */
-        if (k == Num_Proc) {
-          sprintf(cmesg, 
-                  "fatal:  adjacent element %d not in vtxdist array (%d,%d)",
-                  elem_id, i, j);   
-          Gen_Error(0, cmesg);
-          return 0;
-        } 
+        k = ch_dist_proc(elem_id);
 
         /*
          * if the adjacent element is on this processor
          * then find the local id for that element
          */
         if (k == Proc) {
-          local_id = elem_id - start_id;
+          local_id = in_list((elem_id-1), num_vtx, vtx_list);
           elem[i].adj[j] = local_id;
         }
         else /* use the global id */
@@ -303,6 +298,8 @@ static int fill_elements(
       }
     } /* End: "if (elem[i].nadj > 0)" */
   } /* End: "for (i = 0; i < Mesh.num_elems; i++)" */
+
+  safe_free((void **) &vtx_list);
 
   if (!build_elem_comm_maps(Proc, elem)) {
     Gen_Error(0, "Fatal: error building initial elem comm maps");
