@@ -33,6 +33,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 #include "ml_1level.h"
 #include "ml_operatoragx.h"
 #include "ml_vec.h"
+#include "ml_gridagx.h"
 
 #ifdef WKC
 #include <Epetra_Comm.h>
@@ -83,6 +84,21 @@ struct ML_Operator_Subspace_Struct {
    double *res1,*res2,*vec1,*vec2;      /* work vectors */
 };
 
+typedef struct {
+  double    threshold;
+  int       allocated;
+  int*      itmp;
+  double*   dtmp;
+  int       (*aux_func_ptr)(ML_Operator *,int,int*,int,int*,double*,int*);
+  int       enable;
+  int       max_level;
+  int       num_PDEs;
+} ML_Aux_Data;
+
+void ML_Aux_Data_Create(ML_Aux_Data** ptr);
+
+void ML_Aux_Data_Destroy(ML_Aux_Data** ptr);
+
 /* -------------------------------------------------------------------- */
 /** This data structure defines an enriched operator class for the       
     specification of the discretization matrix, the restriction and the  
@@ -118,6 +134,11 @@ struct ML_Operator_Struct {
                    a more appropriate spot for these, especially as they need
                    to be available when ML is used as a preconditioner to a
                    Krylov method. */
+   ML_GridAGX    *grid_info; 
+                 /*!< This field can be used to visualize and auxiliary
+                  * matrix stuff */
+   ML_Aux_Data   *aux_data;     
+                 /*!< General container for auxiliary matrix */
 };
 
 
