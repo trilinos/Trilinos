@@ -1,2 +1,0 @@
-#!/bin/csh
-xemacs Petra_$1.h Petra_$1.cc
