@@ -59,11 +59,21 @@ int i, ierr = 0;
 
   if (lb->Data_Structure == NULL) {
     rcb = (RCB_STRUCT *) LB_SMALLOC(sizeof(RCB_STRUCT));
+    if (!rcb) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      exit(-1);
+    }
     lb->Data_Structure = (void *) rcb;
     rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(__FILE__, __LINE__,
                                                      1, lb->Num_Proc, 
                                                      sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) LB_SMALLOC(sizeof(struct rcb_box));
+    if (!rcb->Tree_Ptr || !rcb->Box) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      exit(-1);
+    }
   }
   else {
     rcb = (RCB_STRUCT *) lb->Data_Structure;
@@ -82,8 +92,15 @@ int i, ierr = 0;
     exit(-1);
   }
   *max_obj = 1.5 * *num_obj;
-  rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__, 1, *max_obj,
+  rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                *max_obj,
                                                 sizeof(struct rcb_dot));
+  if (!rcb->Dots) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+            lb->Proc, yo);
+    exit(-1);
+  }
+
 
 
   /*
@@ -119,6 +136,12 @@ int i, ierr = 0;
                                            sizeof(LB_GID));
     objs_local  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
                                            sizeof(LB_LID));
+    if (!objs_global || !objs_local) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      exit(-1);
+    }
+
     lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local, &ierr);
     if (ierr) {
       fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
