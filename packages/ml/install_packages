@@ -38,7 +38,6 @@ yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
 #   test `expr $yes_or_no` = 's'
 then
-   BINARY_DATA=yes
    PACKAGES=`${echo} $PACKAGES -Dbinary` 
 fi
 ${echo} -n "Do you want to use MPI? [yes] " | sed "s/-n//"
