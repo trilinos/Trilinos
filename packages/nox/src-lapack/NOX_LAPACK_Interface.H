@@ -57,13 +57,13 @@ namespace NOX {
       virtual ~Interface() {};
 
       //! Get initial guess
-      virtual const Vector& getInitialGuess() = 0;
+      virtual const NOX::LAPACK::Vector& getInitialGuess() = 0;
 
       //! Compute RHS given the specified input vector x.  Returns true if computation was successful.
-      virtual bool computeF(Vector& rhs, const Vector &x) = 0;
+      virtual bool computeF(NOX::LAPACK::Vector& rhs, const NOX::LAPACK::Vector &x) = 0;
   
       //! Compute Jacobian given the specified input vector x.  Returns true if computation was successful.
-      virtual bool computeJacobian(Matrix& J, const Vector & x) = 0;
+      virtual bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector & x) = 0;
 
     };
   } // namespace LAPACK
