@@ -1587,8 +1587,6 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
  |                                                                      |
  | returns Epetra_CrsMatrix* on success, NULL otherwise                 |
  |                                                                      |
- |                                                                      |
- | WARNING/FIXME: works for square matrices only at the moment          |                                                                      |
  *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetra_Comm& comm)
 {
@@ -1631,22 +1629,20 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
          for (int i=0; i<numeq_total; i++)
          {
             fgets(buffer,9999,fp);
-            int row = strtol(buffer,&bptr,10);
+            int row = i;
             if (!map.MyGID(row)) // it's not one of my rows 
                continue;
             else                 // this row belongs to me, read it
             {
                cout << "."; fflush(stdout);
-               // read the main diagonal value
-               double value = strtod(bptr,&bptr);
-               A->InsertGlobalValues(row,1,&value,&row);
-               // read off-diagonal entries and insert them
+               // read row and insert them
+               bptr = buffer;
                int column = 0;
                while (column != -1)
                {
                   column = strtol(bptr,&bptr,10);
                   if (column == -1) break;
-                  value = strtod(bptr,&bptr);
+                  double value = strtod(bptr,&bptr);
                   A->InsertGlobalValues(row,1,&value,&column);
                }
             }
