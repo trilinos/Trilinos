@@ -773,7 +773,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Sm_Hiptmair_Data *dataptr;
    ML_CommInfoOP *getrow_comm;
    int totalsize;
-#define ML_SMOOTHER_DEBUG
 #ifdef ML_SMOOTHER_DEBUG
    double *res2, res_norm, dtemp;
 #endif
