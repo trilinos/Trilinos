@@ -120,6 +120,7 @@ extern int MSR_matvec_WKC(ML_Operator *Amat, int, double *p, int, double *ap);
 extern int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]);
 extern int CSR_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int sCSR_trans_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
+extern int CSR_trans_ones_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int sCSR_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int CSR_ones_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int sCSR_ones_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
