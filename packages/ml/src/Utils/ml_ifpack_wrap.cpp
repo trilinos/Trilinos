@@ -4,7 +4,6 @@
 /* ******************************************************************** */
 
 #include "ml_include.h"
-#ifdef HAVE_ML_IFPACK
 
 #include "ml_utils.h"
 #include "ml_epetra_utils.h"
@@ -93,8 +92,8 @@ int ML_Ifpack_Gen(ML *ml, int curr_level, int choice, int * options,
     Overlap     = options[ML_IFPACK_OVERLAP];
     LevelOfFill = options[ML_IFPACK_LEVEL_OF_FILL];
   } else {
-    Overlap = 1;
-    LevelOfFill = 1;
+    Overlap = 0;
+    LevelOfFill = 0;
   }
 
   double Condest;
@@ -214,6 +213,6 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle)
 
 #else
 
-int ciao=0;
+static int ciao=0;
 
 #endif /* #ifdef ML_HAVE_IFPACK */

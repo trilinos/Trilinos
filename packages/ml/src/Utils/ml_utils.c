@@ -2659,7 +2659,10 @@ int ML_build_global_numbering( ML_Operator *Amat,
   Nrows = Amat->getrow->Nrows;
   Nghosts = Amat->getrow->pre_comm->total_rcv_length;
   
-  dtemp = (double *) malloc( sizeof(double) * (Nrows+Nghosts));
+  /* allocate +1 because it is possible that some procs will have
+     no rows at all (with ParMETIS) */
+
+  dtemp = (double *) malloc( sizeof(double) * (Nrows+Nghosts+1));
   if( dtemp == NULL ) {
     fprintf( stderr,
 	     "*ML*ERR* not enough memory to allocated %d bytes\n"
@@ -2695,10 +2698,9 @@ int ML_build_global_numbering( ML_Operator *Amat,
 		   Amat->outvec_leng,
 		   comm, ML_OVERWRITE,NULL);
 
-  /* allocates memory for global_ordering */
-    
-  ML_memory_alloc((void*)&global_numbering, sizeof(int)*(Nrows+Nghosts),
-		  "global numbering 1812");
+  /* allocates memory for global_ordering (+1 as before) */
+  
+  global_numbering = (int *)malloc(sizeof(int)*(Nrows+Nghosts+1));
        
   if( global_numbering == NULL ) {
     fprintf( stderr,

@@ -136,7 +136,8 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   double * rowi_val = NULL;
   int offset;
   int *values;
-  int max_Naggregates, global;
+  int max_Naggregates, global, ok;
+  int shuffle, * reorder = NULL;
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -202,8 +203,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 		      &rowi_N, 0);
 
     for( i=0 ; i<rowi_N ; i++ ) {
-      if( rowi_col[i]<Nrows )
-	N_edges++;
+      if( rowi_col[i]<Nrows ) N_edges++;
       
     }
     
@@ -277,20 +277,59 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   /* natural ordering, with lots of aggregates results in colors too      */
   /*  close for aggregates of the same domain. So, here I rearrange the   */
   /* node numbering so that coloring is (hopefully) improved.             */
+  /* Also, if `shuffle' == 1, then I create a temp vector, with random    */
+  /* reodering, so that visualization will (probably) work also for the 1 */
+  /* proc case.                                                           */
   /* ******************************************************************** */
+
+  shuffle = 1;
+  
+  if( shuffle == 1 ) {
+
+    reorder = (int *) malloc( sizeof(int) * Naggregates );
+    if( reorder == NULL ) {
+      fprintf( stderr,
+	       "*ML*ERR* not enough memory for %d bytes\n"
+	       "*ML*ERR* (file %s, line %d)\n",
+	       sizeof(int) * Naggregates,
+	       __FILE__,
+	       __LINE__ );
+      exit( EXIT_FAILURE );
+    }
+    for( i=0 ; i<Naggregates ; ++i ) reorder[i] = -1;
+
+    srand(0);
+    
+    for( i=0 ; i<Naggregates ; ++i ) {
+
+      do {
+
+	ok = 0;
+	
+	j = (int)(1.0*(Naggregates)*rand()/RAND_MAX);
+
+	if( reorder[j] == -1 && j<Naggregates ) {
+	  reorder[j] = i;
+	  ok = 1;
+	}
+      } while( ok == 0 );
+
+    }
+
+  } /* if  */
 
   if( local_or_global == ML_LOCAL_INDICES ) {
     
     max_Naggregates = ML_gmax_int( Naggregates, comm);
 
     for( i=0 ; i<Nrows ; i++ ) {
-      values[i] = mypid +  nprocs * graph_decomposition[i];
+      values[i] = mypid +  nprocs * reorder[graph_decomposition[i]];
     }
     
   } else {
 
     for( i=0 ; i<Nrows ; i++ ) {
-      values[i] = graph_decomposition[i];
+      values[i] = reorder[graph_decomposition[i]];
     }
   }
   
