@@ -37,7 +37,6 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Parameter_UserNorm.H"
 #include "NOX_Parameter_MeritFunction.H"
-#include "NOX_Parameter_PrePostOperator.H"
 #include "NOX_Utils.H"
 
 using namespace NOX;
@@ -79,8 +78,7 @@ TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t,
   userNormPtr(0),
   userMeritFuncPtr(0),
   useAredPredRatio(false),
-  prePostOperatorPtr(0),
-  havePrePostOperator(false)
+  prePostOperator(utils, paramsPtr->sublist("Solver Options"))
 {
   init();
 }
@@ -92,7 +90,6 @@ void TrustRegionBased::init()
   nIter = 0;
   dx = 0;
   status = StatusTest::Unconverged;
-  havePrePostOperator = false;
 
   // Print out initialization information
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
@@ -168,31 +165,6 @@ void TrustRegionBased::init()
     userMeritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(&mf);
   }
 
-  // Check for a user defined Pre/Post Operator
-  NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
-  havePrePostOperator = false;
-  prePostOperatorPtr = 0;
-  if (p.isParameter("User Defined Pre/Post Operator")) {
-    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
-      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
-	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
-      if (prePostOperatorPtr != 0)
-	havePrePostOperator = true;
-      else
-	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-	  cout << "Warning: NOX::Solver::LineSearchBased::init() - " 
-	       << "\"User Defined Pre/Post Operator\" not derived from " 
-	       << "NOX::Parameter::PrePostOperator class!\n" 
-	       << "Ignoring this flag!"<< endl;
-    }
-    else {
-      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
-	   << "\"User Defined Pre/Post Operator\" must be derived from an"
-	   << "arbitrary parameter!" << endl;
-      throw "NOX Error";
-    }
-  }
-
   // Check for the using Homer Walker's Ared/Pred ratio calculation
   useAredPredRatio = 
     paramsPtr->sublist("Trust Region").getParameter("Use Ared/Pred Ratio Calculation", false);
@@ -232,6 +204,7 @@ bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t,
   testPtr = &t;
   paramsPtr = &p;			
   utils.reset(paramsPtr->sublist("Printing"));
+  prePostOperator.reset(utils, paramsPtr->sublist("Solver Options"));
   init();
   return true;
 }
@@ -275,7 +248,6 @@ bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t)
 
 TrustRegionBased::~TrustRegionBased() 
 {
-  delete prePostOperatorPtr;
   delete oldSolnPtr;
 }
 
@@ -287,8 +259,7 @@ NOX::StatusTest::StatusType TrustRegionBased::getStatus()
 
 NOX::StatusTest::StatusType TrustRegionBased::iterate()
 {
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPreIterate(*this);
+  prePostOperator.runPreIterate(*this);
 
   // First check status
   if (status != StatusTest::Unconverged) 
@@ -305,8 +276,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   {
     cout << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
     status = StatusTest::Failed;
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
@@ -315,8 +285,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   {
     cerr << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
@@ -607,8 +576,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
     cout << NOX::Utils::fill(72) << endl;
 
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPostIterate(*this);
+  prePostOperator.runPostIterate(*this);
 
   // Return status.
   return status;
@@ -616,8 +584,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
 NOX::StatusTest::StatusType TrustRegionBased::solve()
 {
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPreSolve(*this);
+  prePostOperator.runPreSolve(*this);
 
   printUpdate();
 
@@ -631,8 +598,7 @@ NOX::StatusTest::StatusType TrustRegionBased::solve()
   outputParams.setParameter("Nonlinear Iterations", nIter);
   outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
 
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPostSolve(*this);
+  prePostOperator.runPostSolve(*this);
 
   return status;
 }

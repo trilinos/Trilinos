@@ -116,6 +116,7 @@ am__libnox_a_SOURCES_DIST = $(srcdir)/NOX_Abstract_Vector.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
 	$(srcdir)/NOX_Solver_TensorBased.C \
+	$(srcdir)/NOX_Solver_PrePostOperator.C \
 	$(srcdir)/NOX_StatusTest_Generic.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
 	$(srcdir)/NOX_StatusTest_FiniteValue.C \
@@ -148,7 +149,8 @@ am__objects_4 = libnox_a-NOX_Parameter_Entry.$(OBJEXT) \
 am__objects_5 = libnox_a-NOX_Solver_Manager.$(OBJEXT) \
 	libnox_a-NOX_Solver_LineSearchBased.$(OBJEXT) \
 	libnox_a-NOX_Solver_TrustRegionBased.$(OBJEXT) \
-	libnox_a-NOX_Solver_TensorBased.$(OBJEXT)
+	libnox_a-NOX_Solver_TensorBased.$(OBJEXT) \
+	libnox_a-NOX_Solver_PrePostOperator.$(OBJEXT)
 am__objects_6 = libnox_a-NOX_StatusTest_Generic.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_NormF.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_FiniteValue.$(OBJEXT) \
@@ -208,6 +210,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_InexactTrustRegionBased.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_LineSearchBased.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_Manager.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_TensorBasedTest.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_TrustRegionBased.Po \
@@ -260,6 +263,7 @@ am__include_HEADERS_DIST = $(srcdir)/NOX.H $(srcdir)/NOX_Common.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
 	$(srcdir)/NOX_Solver_TrustRegionBased.H \
 	$(srcdir)/NOX_Solver_TensorBased.H \
+	$(srcdir)/NOX_Solver_PrePostOperator.H \
 	$(srcdir)/NOX_StatusTest_Generic.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
 	$(srcdir)/NOX_StatusTest_FiniteValue.H \
@@ -600,13 +604,15 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
 	$(srcdir)/NOX_Solver_TrustRegionBased.H \
-	$(srcdir)/NOX_Solver_TensorBased.H
+	$(srcdir)/NOX_Solver_TensorBased.H \
+	$(srcdir)/NOX_Solver_PrePostOperator.H
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
-	$(srcdir)/NOX_Solver_TensorBased.C
+	$(srcdir)/NOX_Solver_TensorBased.C \
+	$(srcdir)/NOX_Solver_PrePostOperator.C
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
@@ -797,6 +803,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_InexactTrustRegionBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_LineSearchBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_Manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_TensorBasedTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_TrustRegionBased.Po@am__quote@
@@ -1179,6 +1186,22 @@ libnox_a-NOX_Solver_TensorBased.obj: $(srcdir)/NOX_Solver_TensorBased.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_TensorBased.obj `if test -f '$(srcdir)/NOX_Solver_TensorBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_TensorBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_TensorBased.C'; fi`
+
+libnox_a-NOX_Solver_PrePostOperator.o: $(srcdir)/NOX_Solver_PrePostOperator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_PrePostOperator.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Tpo" -c -o libnox_a-NOX_Solver_PrePostOperator.o `test -f '$(srcdir)/NOX_Solver_PrePostOperator.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_PrePostOperator.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Tpo" "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Solver_PrePostOperator.C' object='libnox_a-NOX_Solver_PrePostOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_PrePostOperator.o `test -f '$(srcdir)/NOX_Solver_PrePostOperator.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_PrePostOperator.C
+
+libnox_a-NOX_Solver_PrePostOperator.obj: $(srcdir)/NOX_Solver_PrePostOperator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_PrePostOperator.obj -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Tpo" -c -o libnox_a-NOX_Solver_PrePostOperator.obj `if test -f '$(srcdir)/NOX_Solver_PrePostOperator.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_PrePostOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_PrePostOperator.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Tpo" "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Solver_PrePostOperator.C' object='libnox_a-NOX_Solver_PrePostOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_PrePostOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_PrePostOperator.obj `if test -f '$(srcdir)/NOX_Solver_PrePostOperator.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_PrePostOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_PrePostOperator.C'; fi`
 
 libnox_a-NOX_StatusTest_Generic.o: $(srcdir)/NOX_StatusTest_Generic.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_StatusTest_Generic.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_StatusTest_Generic.Tpo" -c -o libnox_a-NOX_StatusTest_Generic.o `test -f '$(srcdir)/NOX_StatusTest_Generic.C' || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_Generic.C; \

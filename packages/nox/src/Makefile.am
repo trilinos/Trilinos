@@ -194,13 +194,15 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
 	$(srcdir)/NOX_Solver_TrustRegionBased.H \
-	$(srcdir)/NOX_Solver_TensorBased.H
+	$(srcdir)/NOX_Solver_TensorBased.H \
+	$(srcdir)/NOX_Solver_PrePostOperator.H
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
-	$(srcdir)/NOX_Solver_TensorBased.C
+	$(srcdir)/NOX_Solver_TensorBased.C \
+	$(srcdir)/NOX_Solver_PrePostOperator.C
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \

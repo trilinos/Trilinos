@@ -33,18 +33,12 @@
 #ifndef NOX_SOLVER_LINESEARCHBASED_H
 #define NOX_SOLVER_LINESEARCHBASED_H
 
-#include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_LineSearch_Manager.H" // class data element
-#include "NOX_Direction_Manager.H"  // class data element
-#include "NOX_Parameter_List.H"	    // class data element
-#include "NOX_Utils.H"		    // class data element
-
-//Forward Declarations
-namespace NOX {
-  namespace Parameter {
-    class PrePostOperator;
-  }
-}
+#include "NOX_Solver_Generic.H"	         // base class
+#include "NOX_LineSearch_Manager.H"      // class data element
+#include "NOX_Direction_Manager.H"       // class data element
+#include "NOX_Solver_PrePostOperator.H"  // class data element
+#include "NOX_Parameter_List.H"	         // class data element
+#include "NOX_Utils.H"		         // class data element
 
 namespace NOX {
 namespace Solver {
@@ -182,10 +176,7 @@ protected:
   NOX::StatusTest::StatusType status;
 
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
-
-  //! True if a PrePostOperator was registered with the solver.
-  bool havePrePostOperator;
+  NOX::Solver::PrePostOperator prePostOperator;
 
 };
 } // namespace Solver

@@ -66,7 +66,6 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Parameter_PrePostOperator.H"
 #include "NOX_Utils.H"
 
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
@@ -89,8 +88,7 @@ NOX::Solver::TensorBasedTest::TensorBasedTest(NOX::Abstract::Group& xgrp,
   utils(paramsPtr->sublist("Printing")),               // initialize utils
   lineSearch(utils, paramsPtr->sublist("Line Search")),// initialize linesearch
   direction(utils, paramsPtr->sublist("Direction")),   // initialize direction
-  prePostOperatorPtr(0),
-  havePrePostOperator(false)
+  prePostOperator(utils, paramsPtr->sublist("Solver Options"))
 {
   init();
 }
@@ -102,31 +100,6 @@ void NOX::Solver::TensorBasedTest::init()
   step = 0;
   niter = 0;
   status = NOX::StatusTest::Unconverged;
-
-  // Check for a user defined Pre/Post Operator
-  NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
-  havePrePostOperator = false;
-  prePostOperatorPtr = 0;
-  if (p.isParameter("User Defined Pre/Post Operator")) {
-    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
-      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
-	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
-      if (prePostOperatorPtr != 0)
-	havePrePostOperator = true;
-      else
-	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-	  cout << "Warning: NOX::Solver::LineSearchBased::init() - " 
-	       << "\"User Defined Pre/Post Operator\" not derived from " 
-	       << "NOX::Parameter::PrePostOperator class!\n" 
-	       << "Ignoring this flag!"<< endl;
-    }
-    else {
-      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
-	   << "\"User Defined Pre/Post Operator\" must be derived from an"
-	   << "arbitrary parameter!" << endl;
-      throw "NOX Error";
-    }
-  }
 
   // Print out initialization information
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
@@ -173,6 +146,7 @@ bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
   utils.reset(paramsPtr->sublist("Printing"));
   lineSearch.reset(paramsPtr->sublist("Line Search"));
   direction.reset(paramsPtr->sublist("Direction"));
+  prePostOperator.reset(utils, paramsPtr->sublist("Solver Options"));
   init();
 
   return true;
@@ -189,7 +163,6 @@ bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
 
 NOX::Solver::TensorBasedTest::~TensorBasedTest() 
 {
-  delete prePostOperatorPtr;
   delete oldsolnptr;
   delete dirptr;
 }
@@ -202,13 +175,11 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::getStatus()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
 {
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPreIterate(*this);
+  prePostOperator.runPreIterate(*this);
 
   // First check status
-  if (status != NOX::StatusTest::Unconverged) { 
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+  if (status != NOX::StatusTest::Unconverged) {
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
@@ -223,8 +194,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
     cout << "NOX::Solver::TensorBasedTest::iterate - "
 	 << "unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
@@ -241,8 +211,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
     if (step == 0) {
       cout << "NOX::Solver::TensorBasedTest::iterate - line search failed" << endl;
       status = NOX::StatusTest::Failed;
-      if (havePrePostOperator)
-	prePostOperatorPtr->runPostIterate(*this);
+      prePostOperator.runPostIterate(*this);
       return status;
     }
     else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
@@ -257,8 +226,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
     cout << "NOX::Solver::LineSearchBased::iterate - "
 	 << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
@@ -266,8 +234,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
   // Evaluate the current status.
   status = test.checkStatus(*this);
  
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPostIterate(*this);
+  prePostOperator.runPostIterate(*this);
 
   // Return status.
   return status;
@@ -276,8 +243,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::solve()
 {
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPreSolve(*this);
+  prePostOperator.runPreSolve(*this);
 
   printUpdate();
 
@@ -291,8 +257,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::solve()
   outputParams.setParameter("Nonlinear Iterations", niter);
   outputParams.setParameter("2-Norm of Residual", solnptr->getNormF());
 
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPostSolve(*this);
+  prePostOperator.runPostSolve(*this);
 
   return status;
 }
@@ -493,8 +458,8 @@ bool NOX::LineSearch::Tensor::compute(NOX::Abstract::Group& newGrp,
   else if (lsType == Dual) {
     const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
     double fprime = slopeObj.computeSlope(dir, oldGrp);
-    double tensorf;
-    double tensorStep;
+    double tensorf = 0.0;
+    double tensorStep = 1.0;
     bool isTensorDescent = false;
     
     if (fprime < 0) {
@@ -616,7 +581,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
       // bwb - oldsoln needed for preconditioner, test when right pre available
       //bool ok = direction.computeCurvilinearStep2(*dir2, newsoln, s, step);
       //bool ok = direction.computeCurvilinearStep(*dir2, newsoln, s, step);
-      bool ok = direction.computeCurvilinearStep(*dir2, oldsoln, s, step);
+      direction.computeCurvilinearStep(*dir2, oldsoln, s, step);
       newsoln.computeX(oldsoln, *dir2, 1.0);
     }
     else {

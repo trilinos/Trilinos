@@ -33,17 +33,17 @@
 #ifndef NOX_SOLVER_TRUSTREGIONBASED_H
 #define NOX_SOLVER_TRUSTREGIONBASED_H
 
-#include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_LineSearch_Manager.H" // class data element
-#include "NOX_Direction_Manager.H"  // class data element
-#include "NOX_Parameter_List.H"	    // class data element
-#include "NOX_Utils.H"	            // class data element
+#include "NOX_Solver_Generic.H"	        // base class
+#include "NOX_LineSearch_Manager.H"     // class data element
+#include "NOX_Direction_Manager.H"      // class data element
+#include "NOX_Parameter_List.H"	        // class data element
+#include "NOX_Utils.H"	                // class data element
+#include "NOX_Solver_PrePostOperator.H" // class data element
 
 namespace NOX {
   namespace Parameter {
     class UserNorm;
     class MeritFunction;
-    class PrePostOperator;
   }
 }
 
@@ -386,10 +386,7 @@ protected:
   bool useAredPredRatio;
 
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
-
-  //! True if a PrePostOperator was registered with the solver.
-  bool havePrePostOperator;
+  NOX::Solver::PrePostOperator prePostOperator;
 
 };
 } // namespace Solver

@@ -35,6 +35,7 @@
 #define NOX_SOLVER_TENSORBASED_H
 
 #include "NOX_Solver_Generic.H"	    // base class
+#include "NOX_Solver_PrePostOperator.H"  // class data member
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Manager.H"  // class data element
 #include "NOX_Parameter_List.H"	    // class data element
@@ -45,13 +46,6 @@
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
-
-//Forward Declarations
-namespace NOX {
-  namespace Parameter {
-    class PrePostOperator;
-  }
-}
 
 namespace NOX {
 namespace Solver {
@@ -537,10 +531,7 @@ protected:
   mutable int numJ2vMults;
 
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
-
-  //! True if a PrePostOperator was registered with the solver.
-  bool havePrePostOperator;
+  NOX::Solver::PrePostOperator prePostOperator;
 
 };
 } // namespace Solver

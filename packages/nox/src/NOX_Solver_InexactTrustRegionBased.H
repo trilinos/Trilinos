@@ -43,12 +43,12 @@
 #include "NOX_Parameter_List.H"	    
 #include "NOX_Utils.H"	            
 #include "NOX_Direction_Utils_InexactNewton.H" 
+#include "NOX_Solver_PrePostOperator.H"
 
 namespace NOX {
   namespace Parameter {
     class UserNorm;
     class MeritFunction;
-    class PrePostOperator;
   }
 }
 
@@ -527,10 +527,7 @@ protected:
   bool useDoglegMinimization;
 
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
-
-  //! True if a PrePostOperator was registered with the solver.
-  bool havePrePostOperator;
+  NOX::Solver::PrePostOperator prePostOperator;
 
 };
 } // namespace Solver

@@ -36,7 +36,6 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Parameter_PrePostOperator.H"
 #include "NOX_Utils.H"
 
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
@@ -71,8 +70,7 @@ NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
   paramsPtr(&p),		// copy p
   utils(paramsPtr->sublist("Printing")),   // initialize utils
   print(utils),
-  prePostOperatorPtr(0),
-  havePrePostOperator(false)
+  prePostOperator(utils, paramsPtr->sublist("Solver Options"))
 {
   reset(xGrp, t, p);
 }
@@ -89,34 +87,6 @@ void NOX::Solver::TensorBased::init()
   counter.reset();
   numJvMults = 0;
   numJ2vMults = 0;
-  
-  // Check for a user defined Pre/Post Operator
-  NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
-  havePrePostOperator = false;
-  prePostOperatorPtr = 0;
-  if (p.isParameter("User Defined Pre/Post Operator"))
-  {
-    if (p.isParameterArbitrary("User Defined Pre/Post Operator"))
-    {
-      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
-	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
-      if (prePostOperatorPtr != 0)
-	havePrePostOperator = true;
-      else
-	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-	  cout << "Warning: NOX::Solver::TensorBased::init() - " 
-	       << "\"User Defined Pre/Post Operator\" not derived from " 
-	       << "NOX::Parameter::PrePostOperator class!\n" 
-	       << "Ignoring this flag!"<< endl;
-    }
-    else
-    {
-      cerr << "ERROR: NOX::Solver::TensorBased::init() - the parameter "
-	   << "\"User Defined Pre/Post Operator\" must be derived from an"
-	   << "arbitrary parameter!" << endl;
-      throw "NOX Error";
-    }
-  }
   
   // Print out parameters
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
@@ -167,6 +137,7 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   paramsPtr = &p;
 
   utils.reset(paramsPtr->sublist("Printing"));
+  prePostOperator.reset(utils, paramsPtr->sublist("Solver Options"));
 
   // *** Reset direction parameters ***
   NOX::Parameter::List& dirParams = paramsPtr->sublist("Direction");
@@ -310,7 +281,6 @@ NOX::Solver::TensorBased::~TensorBased()
     cout << "mults2Jv = " << numJ2vMults << endl;
   }
 #endif
-  delete prePostOperatorPtr;
   delete oldSolnPtr;
   delete newtonVecPtr;
   delete tensorVecPtr;
@@ -328,14 +298,12 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::getStatus()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
 {
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPreIterate(*this);
+  prePostOperator.runPreIterate(*this);
 
   // First check status
   if (status != NOX::StatusTest::Unconverged)
   { 
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
@@ -351,8 +319,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
       cout << "NOX::Solver::TensorBased::iterate - "
 	   << "unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
@@ -372,8 +339,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
 	cout << "NOX::Solver::TensorBased::iterate - line search failed"
 	     << endl;
       status = NOX::StatusTest::Failed;
-      if (havePrePostOperator)
-	prePostOperatorPtr->runPostIterate(*this);
+      prePostOperator.runPostIterate(*this);
       return status;
     }
     else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
@@ -389,15 +355,13 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
       cout << "NOX::Solver::TensorBased::iterate - "
 	   << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
-    if (havePrePostOperator)
-      prePostOperatorPtr->runPostIterate(*this);
+    prePostOperator.runPostIterate(*this);
     return status;
   }
 
   status = test.checkStatus(*this);
  
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPostIterate(*this);
+  prePostOperator.runPostIterate(*this);
 
   return status;
 }
@@ -405,8 +369,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
 {
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPreSolve(*this);
+  prePostOperator.runPreSolve(*this);
 
   printUpdate();
 
@@ -421,8 +384,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
   outputParams.setParameter("Nonlinear Iterations", nIter);
   outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
 
-  if (havePrePostOperator)
-    prePostOperatorPtr->runPostSolve(*this);
+  prePostOperator.runPostSolve(*this);
 
   return status;
 }
@@ -854,9 +816,9 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
     ok = performLinesearch(newGrp, step, searchDirection, s);
   else if (lsType == Dual)
   {
-    double fTensor;
-    double fNew;
-    double tensorStep;
+    double fTensor = 0.0;
+    double fNew = 0.0;
+    double tensorStep = 1.0;
     bool isTensorDescent = false;
 
     const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
@@ -1002,7 +964,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
     // Compute new trial point and its function value
     if ((lsType == Curvilinear) && !(isNewtonDirection))
     {
-      bool ok = computeCurvilinearStep(tmpVec, oldSoln, s, step);
+      computeCurvilinearStep(tmpVec, oldSoln, s, step);
       // Note: oldSoln is needed above to get correct preconditioner 
       newSoln.computeX(oldSoln, tmpVec, 1.0);
     }
@@ -1037,7 +999,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 	// Update the group using recovery step
 	if ((lsType == Curvilinear) && !(isNewtonDirection))
 	{
-	  bool ok = computeCurvilinearStep(tmpVec, oldSoln, s, step);
+	  computeCurvilinearStep(tmpVec, oldSoln, s, step);
 	  // Note: oldSoln is needed above to get correct preconditioner 
 	  newSoln.computeX(oldSoln, tmpVec, 1.0);
 	}
