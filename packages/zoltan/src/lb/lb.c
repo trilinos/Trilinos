@@ -15,7 +15,7 @@ static void clean_up(LB_COMM *);
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Initialize(int *argc, char ***argv)
+void LB_Initialize(int argc, char **argv)
 {
 /*
  *  Function to initialize values needed in load balancing tools.
@@ -34,15 +34,15 @@ int mpi_flag;
   MPI_Initialized(&mpi_flag);
 
   if (!mpi_flag) {
-    MPI_Init(argc, argv);
+    MPI_Init(&argc, &argv);
   }
 
   /*
    *  Set global processor values for the load balacing tools.
    */
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
-  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &LB_Proc);
+  MPI_Comm_size(MPI_COMM_WORLD, &LB_Num_Proc);
 
 #endif  /* LB_MPI */
 }
@@ -70,7 +70,7 @@ LB *lb;
    * Allocate storage for the load-balancing object.
    */
 
-  lb = (LB *) smalloc(sizeof(LB));
+  lb = (LB *) LB_smalloc(sizeof(LB));
 
   /*
    *  Set defaults for fields of lb:
@@ -203,7 +203,7 @@ int i;
     exit(-1);
   }
 
-  if (Proc == 0) {
+  if (LB_Proc == 0) {
     printf("LB:  Load balancing method = %d (%s)\n", i, method_name);
   }
 
@@ -254,7 +254,7 @@ char *yo = "LB_Set_LB_Tolerance";
 
   lb->Tolerance = tolerance;
 
-  if (Proc == 0) {
+  if (LB_Proc == 0) {
     printf("LB:  Load balancing tolerance = %f\n", tolerance);
   }
 }
@@ -281,7 +281,7 @@ void LB_Set_LB_Object_Type(LB *lb, int object_type)
 
 
   lb->Object_Type = object_type;
-  if (Proc == 0) {
+  if (LB_Proc == 0) {
     printf("LB:  Load balancing object type = %d\n", object_type);
   }
 }

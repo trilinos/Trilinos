@@ -31,7 +31,7 @@ typedef enum LB_Fn_Type LB_FN_TYPE;
  */
 
 typedef int LB_OBJECT_TYPE;
-typedef void *LB_ID;
+typedef int LB_ID;
 
 struct LB_Struct;
 
@@ -200,7 +200,7 @@ typedef LB_ID LB_NEXT_BORDER_OBJ_FN(LB_ID, LB_OBJECT_TYPE, int);
  *  If the application does not use MPI, this function calls MPI_Init for
  *  use by the load balancer.
  */
-extern void LB_Initialize(int *argc, char ***argv);
+extern void LB_Initialize(int argc, char **argv);
 
 /*****************************************************************************/
 /*
