@@ -37,6 +37,9 @@
 #            This option may be specified more than once, in order to
 #            exclude a variety of files.
 #
+#        --with-total   
+#            The total coverage for all files examined will be displayed.
+#
 # Written by Joe Outzen, for the Trilinos project.
 #
 #==========================================================================
@@ -56,6 +59,9 @@ $sdir = pop;
 $covmax = 100;
 $covmin = 0;
 $fc = 0;
+$tc = 0;
+$texec = 0;
+$tcomp = 0;
 @exlist = ();
 foreach (@ARGV){
     if(/--with-files=(\d+)-(\d+)/){
@@ -71,6 +77,9 @@ foreach (@ARGV){
     }
     elsif(/--exclude=(.*)/){
 	push @exlist, $1;
+    }
+    elsif(/--with-total/){
+	$tc = 1;
     }
     else{ 
 	die "Invalid paramater: $_"; 
@@ -109,7 +118,9 @@ foreach (`find $sdir -name "*.bbg"`){
 	foreach $line (`gcov -n $_ 2> /dev/null`){
 	    if($line =~ /\s*(\d+\.\d+)% of (\d+) source lines executed in file ([^\/][\w\.]+)/ && !defined($filelist{$3})){
 		$fcomp += $2;
+		$tcomp += $2;
 		$fexec += &round($1 * $2 / 100);
+		$texec += &round($1 * $2 / 100);
 		$filelist{$3} = $1;
 	    }
 	}
@@ -129,4 +140,8 @@ foreach (`find $sdir -name "*.bbg"`){
 	print "$_$fper%\n";
     }
     chdir $base;
+}
+
+if($tc){
+    print "Total: ".($tcomp == 0 ? 0 : 100 * $texec / $tcomp)."%\n";
 }
