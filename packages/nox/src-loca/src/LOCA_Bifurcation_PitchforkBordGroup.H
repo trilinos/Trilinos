@@ -31,7 +31,7 @@
 //@HEADER
 
 #ifndef LOCA_BIFURCATION_PITCHFORKBORDGROUP_H
-#define LOCA_BIFURCATION_PITCHFORBORDGROUP_H
+#define LOCA_BIFURCATION_PITCHFORKBORDGROUP_H
 
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Bifurcation_PitchforkBordVector.H"
