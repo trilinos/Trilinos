@@ -36,6 +36,7 @@
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Continuation_NaturalGroup.H"
 #include "LOCA_Continuation_ArcLengthGroup.H"
+#include "LOCA_Continuation_HouseholderGroup.H"
 #include "LOCA_Utils.H"
 
 LOCA::Continuation::Manager::Manager(NOX::Parameter::List& p) :
@@ -67,6 +68,9 @@ LOCA::Continuation::Manager::createContinuationGroup(
     return new LOCA::Continuation::NaturalGroup(grp, conParamID, *paramsPtr);
   else if (method == "Arc Length")
     return new LOCA::Continuation::ArcLengthGroup(grp, conParamID, *paramsPtr);
+  else if (method == "Householder Arc Length")
+    return new LOCA::Continuation::HouseholderGroup(grp, conParamID, 
+						    *paramsPtr);
   else {
     if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "LOCA::Continuation::Manager::createContinuationGroup() "

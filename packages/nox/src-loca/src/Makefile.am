@@ -63,7 +63,8 @@ LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
 	$(srcdir)/LOCA_Continuation_Manager.H \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H 
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_Continuation_HouseholderGroup.H
 
 LOCA_CONTINUATION = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
@@ -73,7 +74,8 @@ LOCA_CONTINUATION = \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.C \
 	$(srcdir)/LOCA_Continuation_Manager.C \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_Continuation_HouseholderGroup.C
 
 LOCA_SINGULARSOLVE_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
@@ -92,6 +94,7 @@ LOCA_SINGULARSOLVE = \
 
 LOCA_BIFURCATION_H = \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
@@ -109,6 +112,7 @@ LOCA_BIFURCATION_H = \
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \

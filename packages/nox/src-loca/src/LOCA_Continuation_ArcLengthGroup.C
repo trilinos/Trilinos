@@ -279,7 +279,7 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   tmpVec->update(-1.0, prevXVec, 1.0);
   
   fVec.getParam() =  
-    computeScaledDotProduct(predictorVec, *tmpVec) - arclengthStep;
+    computeScaledDotProduct(predictorVec, *tmpVec) - arclengthStep * computeScaledDotProduct(predictorVec, predictorVec);
 
   delete tmpVec;
   

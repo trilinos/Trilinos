@@ -59,6 +59,7 @@ namespace LOCA {
       <ul> 
       <li> "%Natural" (LOCA::Continuation::NaturalGroup) [Default]
       <li> "%Arc Length" (LOCA::Continuation::ArcLengthGroup) 
+      <li> "%Householder Arc Length" (LOCA::Continuation::HouseholderGroup) 
       </ul>
       </ul>
 

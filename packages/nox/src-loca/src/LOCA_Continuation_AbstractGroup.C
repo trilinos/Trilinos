@@ -114,3 +114,19 @@ LOCA::Continuation::AbstractGroup::computeEigenvalues(
 		       "No eigensolver defined for group");
   return NOX::Abstract::Group::Failed;
 }
+
+NOX::Abstract::Group::ReturnType
+LOCA::Continuation::AbstractGroup::applyHouseholderJacobianInverse(
+				         NOX::Parameter::List& params,
+					 const NOX::Abstract::Vector& f,
+					 const NOX::Abstract::Vector& dfdp,
+					 const NOX::Abstract::Vector& ux,
+					 double up, double beta,
+					 NOX::Abstract::Vector& result_x,
+					 double& result_p) const
+{
+  LOCA::ErrorCheck::throwError(
+	  "LOCA::Continuation::AbstractGroup::applyHouseholderJacobianInverse",
+	  "No implementation defined for group");
+  return NOX::Abstract::Group::Failed;
+}

@@ -199,6 +199,38 @@ namespace LOCA {
       virtual void printSolution(const NOX::Abstract::Vector& x_,
                                  const double conParam) const  {}
 
+      //! Solve arclength continuation equations using Householder projection
+      /*!
+       * This method should compute a solution to the following system
+       * of equations
+       * \f[
+       *    \begin{bmatrix}
+       *      J & \frac{df}{dp}
+       *   \end{bmatrix} Q y = f 
+       * \f]
+       * where \f$Q\in\Re^{n+1\times n}$\f$ is an orthogonal matrix such that
+       * for any \f$z\in\Re^n\f$,
+       * \f[
+       *    Q z = P \begin{bmatrix} z \\ 0 \end{bmatrix}.
+       * \f]
+       * Here \f$P = I - \beta u u^T\in\Re^{n+1\times n+1\f$ is a Householder
+       * transformation such that \f$P v = \|v\|_2 e_{n+1}\f$ and 
+       * \f$u_{n+1} = 1\f$ where \f$v\in\Re^{n+1}\f$ is the predictor 
+       * vector and \f$e_{n+1}\f$ is the \f$n+1\f$ column of the identity.
+       *
+       * The default implementation here is to throw an error.  This method
+       * is only called by the Householder continuation group, and should
+       * be implemented to use this continuation method.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyHouseholderJacobianInverse(NOX::Parameter::List& params,
+				      const NOX::Abstract::Vector& f,
+				      const NOX::Abstract::Vector& dfdp,
+				      const NOX::Abstract::Vector& ux,
+				      double up, double beta,
+				      NOX::Abstract::Vector& result_x,
+				      double& result_p) const;
+
       //@}
 
     };
