@@ -284,8 +284,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       int IfpackOverlap = List_.get(parameter,0);
 
       if( verbose_ ) {
-	cout << msg << "IFPACK, type = `" << IfpackType << "', "
-	     << PreOrPostSmoother
+	cout << msg << "IFPACK, type = `" << IfpackType << "', " << endl
+	     << msg << PreOrPostSmoother
 	     << ", Overlap = " << IfpackOverlap << endl;
       }
 

@@ -1190,7 +1190,7 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
   } else                                sprintf(finest, "~"); 
 
   if (ml_ptr->post_smoother[i].smoother->func_ptr != NULL) {
-    label = ml_ptr->pre_smoother[i].label;
+    label = ml_ptr->post_smoother[i].label;
     if( strncmp(label,"PostS_", 5) == 0 ) sprintf(finest, "%s/~", finest);
     else                                  sprintf(finest, "%s/%s", finest, label);
   } else                                  sprintf(finest, "%s/~", finest);  
