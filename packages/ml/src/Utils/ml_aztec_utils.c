@@ -3191,24 +3191,41 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
     switch( Settings.Level[i].smoother ) {
 
     case MLAZ_Jacobi:
+      if( proc_config[AZ_node] == 0 ) 
+	printf("Smoother (level %d) : Jacobi (its=%d,omega=%e)\n",
+	       i,
+	       num_smoother_steps, omega);
       sprintf( label, "Jacobi");
       ML_Gen_Smoother_Jacobi(ml, i, pre_or_post_smoother,
 			     num_smoother_steps, omega);
       break;
 
     case MLAZ_GaussSeidel:
+      if( proc_config[AZ_node] == 0 ) 
+	printf("Smoother (level %d) : Gauss-Seidel (its=%d,omega=%e)\n",
+	       i,
+	       num_smoother_steps, omega);
       sprintf( label, "Gauss-Seidel ");
       ML_Gen_Smoother_GaussSeidel(ml, i, pre_or_post_smoother,
 				  num_smoother_steps, omega);
       break;
       
     case MLAZ_SymGaussSeidel:
+      if( proc_config[AZ_node] == 0 ) 
+	printf("Smoother (level %d) : Symmetric Gauss-Seidel (its=%d,omega=%e)\n",
+	       i,
+	       num_smoother_steps, omega);      
       sprintf( label, "Symmetric Gauss-Seidel");
       ML_Gen_Smoother_SymGaussSeidel(ml, i, pre_or_post_smoother,
 				  num_smoother_steps, omega);
       break;
 
     case MLAZ_MLS:
+      if( proc_config[AZ_node] == 0 ) 
+	printf("Smoother (level %d) : MLS (order=%d,alpha=%e)\n",
+	       i,
+	       Settings.MLS_poly_order,
+	       Settings.MLS_alpha );
       sprintf( label, "MLS"); 
       ML_Gen_Smoother_MLS(ml, i, pre_or_post_smoother,
 			  Settings.MLS_alpha,
@@ -3216,12 +3233,63 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
       break;
       
     case MLAZ_BlockGaussSeidel:
+      if( proc_config[AZ_node] == 0 ) 
+	printf("Smoother (level %d) : Block Gauss-Seidel (eqns=%d,order=%d,alpha=%e)\n",
+	       i,
+	       num_smoother_steps,
+	       num_smoother_steps, omega);
+      
       sprintf( label, "Block Gauss-Seidel");
       ML_Gen_Smoother_BlockGaussSeidel(ml, i, pre_or_post_smoother,
 				       num_smoother_steps, omega, num_PDE_eqns);
       break;
 
     case MLAZ_Aztec:
+      if( proc_config[AZ_node] == 0 ) {
+	printf("Smoother (level %d) : Aztec ",
+	       i);
+	if( Settings.Level[i].options[AZ_precond] == AZ_dom_decomp ) {
+	  printf("DD, overlap=%d, ", Settings.Level[i].options[AZ_overlap]);
+	  if( Settings.Level[i].options[AZ_reorder] == 1 ) printf("reord, ");
+	  else printf("no reord, ");
+	  switch( Settings.Level[i].options[AZ_subdomain_solve] ) {
+	  case AZ_lu: printf(" with LU"); break;
+	  case AZ_ilu:
+	    printf("ILU(fill=%d)", Settings.Level[i].options[AZ_graph_fill]);
+	    break;
+	  case AZ_ilut:
+	    printf("ILUT(fill=%5.2e,drop=%5.2e)",
+		   Settings.Level[i].params[AZ_ilut_fill],
+		   Settings.Level[i].params[AZ_drop] );
+	    break;
+	  case AZ_icc:
+	    printf("ICC(fill=%d)", Settings.Level[i].options[AZ_graph_fill]);
+	    break;
+	  case AZ_bilu:
+	    printf("BILU(fill=%d)",Settings.Level[i].options[AZ_graph_fill]);
+	    break;
+	  case AZ_rilu:
+	    printf("RILU(fill=%d,omega=%5.2e)",
+		   Settings.Level[i].options[AZ_graph_fill],
+		   Settings.Level[i].params[AZ_omega]); 
+	    break;
+	  }
+	} else if( Settings.Level[i].options[AZ_precond] == AZ_Jacobi ) {
+	  printf(" Jacobi preconditioner");
+	} else if( Settings.Level[i].options[AZ_precond] == AZ_Neumann ) {
+	  printf(" Neumann preconditioner, order = %d", Settings.Level[i].options[AZ_poly_ord]);
+	} else if( Settings.Level[i].options[AZ_precond] == AZ_ls ) {
+	  printf(" LS preconditioner, order = %d",
+		 Settings.Level[i].options[AZ_poly_ord]);
+	} else if( Settings.Level[i].options[AZ_precond] == AZ_sym_GS ) {
+	  printf(" symmetric Gauss-Seidel preconditioner, sweeps = %d",
+		 Settings.Level[i].options[AZ_poly_ord]);
+	} else if( Settings.Level[i].options[AZ_precond] == AZ_none ) {
+	  printf(" with no preconditioning");
+	}
+	printf("\n");
+      }
+      
       sprintf( label, "Aztec");
       ML_Gen_SmootherAztec(ml, i, Settings.Level[i].options,
 			   Settings.Level[i].params,
@@ -3230,6 +3298,9 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
       break;
 
     case MLAZ_IFPACK:
+      if( proc_config[AZ_node] == 0 ) 
+	printf("Smoother (level %d) : IFPACK\n",
+	       i);
       sprintf( label, "IFPACK");
       ML_Gen_Smoother_Ifpack(ml, i, pre_or_post_smoother, NULL, NULL);
       break;
