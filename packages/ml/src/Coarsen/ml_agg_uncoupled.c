@@ -23,7 +23,9 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_viz_stats.h"
-
+#ifdef MB_MODIF_QR
+#include "ml_qr_fix.h"
+#endif
 
 /* ************************************************************************* */
 /* local defines                                                             */
@@ -64,7 +66,16 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    double  printflag;
    int     *amal_mat_indx=NULL, amal_count, **rows_in_aggs = NULL,ibeg;
    int     lwork, *agg_sizes = NULL, row, level, new_cnt, max_agg_size;
+#ifndef MB_REMOVE
    int     zerodiag_cnt, offset, jnode, *agg_sizes_cum=NULL, index, info;
+#else
+   int     zerodiag_cnt, offset, jnode, index, info;
+#endif
+#ifdef MB_MODIF_QR
+   int     numDeadNod;
+   ML_QR_FIX_TYPE dead;
+   int     nCDofTrunc, dof;
+#endif
    int     iend, bdry_blk, *bdry_array;
    double  epsilon, *col_val, *tmp_vect = NULL;
    double  dcompare1, dcompare2, *new_val=NULL, *diagonal=NULL;
@@ -665,7 +676,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    nbytes = aggr_count * sizeof(int);
    ML_memory_alloc((void**)&agg_sizes, (unsigned int) nbytes,"AVI");
+#ifndef MB_REMOVE
+/*-mb: this array is allocated and set, but never used! */
    ML_memory_alloc((void**)&agg_sizes_cum, (unsigned int) nbytes, "AVJ");
+#endif
 
    /* ------------------------------------------------------------- */
    /* fill the temporary variables and also find the maximum        */
@@ -684,6 +698,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       }
    }
    max_agg_size = agg_sizes[0];
+#ifndef MB_REMOVE
    if ( aggr_count > 0 ) agg_sizes_cum[0] = 0;
    for (i = 0; i < aggr_count-1; i++)
    {
@@ -691,6 +706,12 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       if (agg_sizes[i+1] > max_agg_size) max_agg_size = agg_sizes[i+1];
    }
    ML_memory_free((void**)&agg_sizes_cum);
+#else
+   for (i = 0; i < aggr_count-1; i++)
+   {
+      if (agg_sizes[i+1] > max_agg_size) max_agg_size = agg_sizes[i+1];
+   }
+#endif
 
    /* ------------------------------------------------------------- */
    /* generate an array to store which aggregate has which rows.Then*/
@@ -738,6 +759,15 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_memory_alloc((void**)&work, (unsigned int) nbytes, "AVK");
 
    work[0] = lwork;
+#ifdef MB_MODIF_QR
+   ML_qr_fix_Create(aggr_count); /* alloc array in structure */
+   numDeadNod = 0;  /* number of nodes with dead dofs on current coarse lev */
+   if (nullspace_dim > ML_qr_fix_Bitsize()) {
+       fprintf(stderr,"[SS] nullspace_dim=%d exceeds dim for xDeadNodDof\n",
+           nullspace_dim);
+       exit(1);
+   }
+#endif
    for (i = 0; i < aggr_count; i++) 
    {
       /* set up the matrix we want to decompose into Q and R: */
@@ -775,6 +805,111 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
                qr_tmp[k*agg_sizes[i] + j] = 
                   nullspace_vect[ k*Nrows + rows_in_aggs[i][j] ];
       }
+
+#ifdef MB_MODIF_QR
+     /* Graciously treat the case where we have more kernel 
+      * components than freedom. For this, we need the xCDeadNodDof structure.  
+      */
+      nCDofTrunc = nullspace_dim;
+      dead       = 0;
+      if (nullspace_dim > agg_sizes[i]) {
+         /* mark the coarse degree(s) of freedom that will be dead */
+          nCDofTrunc = agg_sizes[i];
+          for (dof=nCDofTrunc; dof < nullspace_dim; dof++) dead |= (1 << dof); 
+          numDeadNod++;
+          ML_qr_fix_setDeadNod(i, dead);
+      }
+
+      /* now calculate QR using an LAPACK routine */
+
+      if ( nullspace_dim == 1 )
+      {
+         dtemp = 0.0;
+         for (j = 0; j < agg_sizes[i]; j++)
+            dtemp += ( qr_tmp[j] * qr_tmp[j] ); 
+         dtemp = sqrt( dtemp );
+         tmp_vect[0] = qr_tmp[0];
+         qr_tmp[0] = dtemp;
+      }
+      else
+      {
+         DGEQRF_F77(&(agg_sizes[i]), &nCDofTrunc, qr_tmp, 
+                           &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
+         if (info != 0) {
+            pr_error("ERROR (CoarsenUncoupled) : dgeqrf returned a non-zero\n");
+         }
+      }
+
+      if (work[0] > lwork) 
+      {
+         lwork=(int) work[0]; 
+         ML_memory_free((void**) &work);
+         ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGk");
+      }
+/*-mb: never truncate here
+      else lwork=(int) work[0];
+*/
+		 
+     /* the upper triangle of qr_tmp is now R, so copy that into the 
+      * new nullspace. 
+      * treat separately the case where any coarse dofs are dead */
+
+      if (dead) {
+          for (k = 0; k < nullspace_dim; k++) {
+            if (dead & (1 << k)) {
+               for (j = 0; j < k+1; j++) 
+                  new_null[i*nullspace_dim+j+k*Ncoarse] = 0.e0;
+            } else {
+               for (j = 0; j < k+1; j++)
+                  new_null[i*nullspace_dim+j+k*Ncoarse] = 
+                      qr_tmp[j+agg_sizes[i]*k];
+            }
+          }
+      } else {
+          for (k = 0; k < nullspace_dim; k++)
+            for (j = 0; j < k+1; j++)
+              new_null[i*nullspace_dim+j+k*Ncoarse] = qr_tmp[j+agg_sizes[i]*k];
+      }
+
+      /* to get this block of P, need to run qr_tmp through another LAPACK 
+         function: */
+
+      if ( nullspace_dim == 1 )
+      {
+         dtemp = qr_tmp[0];
+         qr_tmp[0] = tmp_vect[0];
+         dtemp = 1.0 / dtemp;
+         for (j = 0; j < agg_sizes[i]; j++)
+            qr_tmp[j] *= dtemp;
+      }
+      else
+      {
+         DORGQR_F77(&(agg_sizes[i]), &nCDofTrunc, &nCDofTrunc, 
+                 qr_tmp, &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
+         if (info != 0)
+            pr_error("ERROR (CoarsenUncoupled): dorgqr returned a non-zero\n");
+         if (dead) {
+            /* modify dead columns of Q if any */
+            for (k = 0; k < nullspace_dim; k++) {
+                 if (dead & (1 << k)) {
+                     for (j = 0; j < agg_sizes[i]; j++) 
+                         qr_tmp[k*agg_sizes[i] + j] = 0.e0;
+                 }
+            }
+         }
+      }
+     /* -mb: we could check cols of Q locally to see if more dofs are dead */
+
+      if (work[0] > lwork) 
+      {
+         lwork=(int) work[0]; 
+         ML_memory_free((void**) &work);
+         ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AVM");
+      }
+/*-mb: never truncate here
+      else lwork=(int) work[0];
+*/
+#else /*MB_MODIF_QR*/
 
       /* now calculate QR using an LAPACK routine */
 
@@ -836,7 +971,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AVM");
       }
       else lwork=(int) work[0];
-		 
+#endif/*MO_MODIF*/
+
       /* now copy Q over into the appropriate part of P: */
       /* The rows of P get calculated out of order, so I assume the Q is 
          totally dense and use what I know of how big each Q will be to 
@@ -866,6 +1002,14 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          }
       }
    }
+#ifdef MB_MODIF_QR
+  /* set the number of nodes with dead dofs on current coarse grid */
+   ML_qr_fix_setNumDeadNod(numDeadNod);
+/*
+   printf("[II] out of %d coarse nodes, %d have dead dofs\n",
+      aggr_count, numDeadNod);
+*/
+#endif
 	 
    ML_Aggregate_Set_NullSpace(ml_ag, nullspace_dim, nullspace_dim, 
                               new_null, Ncoarse);
@@ -903,6 +1047,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_memory_alloc((void**) &csr_data,sizeof(struct ML_CSR_MSRdata),"AVP");
 
    (*Pmatrix)->N_nonzeros = ML_Comm_GsumInt( comm, nz_cnt);
+
+   /* this must be set so that the hierarchy generation does not abort early
+      in adaptive SA */
+   (*Pmatrix)->num_PDEs = nullspace_dim;
 
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
