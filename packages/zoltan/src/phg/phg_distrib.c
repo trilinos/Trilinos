@@ -102,8 +102,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     nno = (int *) ZOLTAN_MALLOC(ohg->nEdge * sizeof(int));
 
     if (!nhg->dist_x || !nhg->dist_y || !dist_x || !dist_y ||
-        !vsn || !nsn || !vno || !nno )
+        !vsn || !nsn || (ohg->nVtx && !vno) || (ohg->nEdge && !nno) ) {
+        uprintf(ocomm, " new comm nProcx=%d nProcy=%d nvtx=%d nedge=%d", ncomm->nProc_x, ncomm->nProc_y, ohg->nVtx, ohg->nEdge);
         MEMORY_ERROR;
+    }
       
     for (v = 0; v < ohg->nVtx; ++v)
         ++dist_x[v2Col[v]];

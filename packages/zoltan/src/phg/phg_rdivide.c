@@ -116,16 +116,15 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
           MEMORY_ERROR;
       ierr = split_hypergraph (pins, hg, right, part, 1, zz);
   
-      ZOLTAN_FREE (&pins[0]); /* we don't need pins */      
       if (ierr != ZOLTAN_OK)
           goto End;
   } else {
-      ZOLTAN_FREE (&pins[0]); /* we don't need pins */
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==1)
               final[hg->vmap[i]] = hi;
   }
-
+  Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
+  
 
   if (hgp->proc_split && hgc->nProc>1 && left && right) {
       PHGComm  leftcomm, rightcomm;
@@ -158,10 +157,11 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       Zoltan_HG_HGraph_Free (right);
       
       nsend = MAX(newleft.nVtx, newright.nVtx);
+      part = (Partition) ZOLTAN_MALLOC (nsend * sizeof (int));
       proclist = (int *) ZOLTAN_MALLOC (nsend * sizeof (int));
       sendbuf =  (int *) ZOLTAN_MALLOC (nsend * 2 * sizeof (int));
       recvbuf =  (int *) ZOLTAN_MALLOC (hg->nVtx * 2 * sizeof (int));
-      if ((nsend && (!proclist || !sendbuf)) ||
+      if ((nsend && (!proclist || !sendbuf || !part)) ||
           (hg->nVtx && !recvbuf))
           MEMORY_ERROR;
       nsend = 0;
