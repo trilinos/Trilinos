@@ -590,9 +590,9 @@ report($SUMMARY);
 		  $result = $ENV{"HOST"};
 		}
 		if ($result =~ /stratus/) {
-		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n 3 "
+		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n "
 		} else {
-		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np 3 "
+		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np "
 		}
  
                 # run all tests 
