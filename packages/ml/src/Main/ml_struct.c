@@ -5818,11 +5818,11 @@ int ML_build_ggb(ML *ml, void *data)
 
   switch( ML_ggb_CoarseSolver ) {
   case 1:
-    // superlu, default solver
+    /* superlu, default solver */
     ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
     break;
   case 2:
-    // amesos, now default is KLU
+    /* amesos, now default is KLU */
     ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1);
     break;
   default:

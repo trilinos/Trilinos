@@ -33,6 +33,7 @@ void *ml_void_mem_ptr;
 /* memory allocation function                                           */
 /* -------------------------------------------------------------------- */
 
+#define ML_FUNCTION_NAME ML_memory_alloc
 int ML_memory_alloc( void **memptr, unsigned int leng, char *name )
 {
    int  i, *int_ptr, nchunks, ndouble=sizeof(double);
@@ -83,9 +84,11 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
 
       if (var_ptr == NULL)
       {
-         printf("ML_malloc error : unable to allocate ");
-         printf("%d bytes to %s.\n", leng, name );
-         exit(-1);
+         int mypid=0;
+#ifdef ML_MPI
+         MPI_Comm_rank(MPI_COMM_WORLD,&mypid);
+#endif
+         pr_error("(%d) %s: unable to allocate %d bytes to %s.\n",mypid, ML_FUNCTION_NAME,leng, name );
       }
 
       /* -------------------------------------------------------------- */
@@ -138,6 +141,9 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
       }
    }
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
 /* ******************************************************************** */
 /* memory deallocation function                                         */
@@ -946,7 +952,7 @@ int ML_MaxMemorySize()
   fragments = M.ordblks + M.smblks + M.hblks; 
   total_free = M.fsmblks + M.fordblks; 
   total_used = M.hblkhd + M.usmblks + M.uordblks; 
-  //  total_free = ml_total_mem - total_used; 
+  /*  total_free = ml_total_mem - total_used;  */
   largest_free = -1024; 
 #endif 
   /* convert to Kbytes */ 
