@@ -43,7 +43,7 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
-
+touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start TestAmesos.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
 echo "COMMENT column 1 - machine name " >> SST.summary 

@@ -44,6 +44,7 @@
 #   NumSolves > 1 means use blocked right hand sides
 #
 
+touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start TestAmesosSerial.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
 echo "COMMENT column 1 - machine name " >> SST.summary 
