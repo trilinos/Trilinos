@@ -115,6 +115,7 @@ extern int CSR_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int sCSR_trans_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int sCSR_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int CSR_ones_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
+extern int sCSR_ones_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, 
                            double ap[]);
 
