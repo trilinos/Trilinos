@@ -809,11 +809,6 @@ error:
 
 static int global_gr0 (ZZ *zz, HGraph *hg, int p, Partition part)
 { 
-  static char *yo = "global_gr0";
-  if (p != 2)
-  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not yet implemented for global_gr0.");
-    return ZOLTAN_FATAL;
-  }
   return global_greedy(zz, hg, p, part, 0);
 }
 
