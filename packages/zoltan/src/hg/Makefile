@@ -1,11 +1,11 @@
 # Used for switching on memory checking
-# C_pre          = purify -best-effort -cache-dir=/tmp
+#C_pre          = purify -best-effort -cache-dir=/tmp
 
 #Compiler
 C_comp		= cc -DHGEXEC -DZOLTAN_NO_MPI -DZOLTAN_HG
 
 # Assume that environment OSTYPE is set to 'solaris' or 'linux'!
-# OSTYPE        = solaris
+#OSTYPE        = solaris
 # OSTYPE        = linux
 
 C_flag_solaris  = -g #-fast

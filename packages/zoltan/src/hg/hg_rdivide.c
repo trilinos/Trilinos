@@ -134,7 +134,7 @@ static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
 
    /* continue allocating memory for dynamic arrays in new HGraph */
    new->vmap    = (int*) ZOLTAN_REALLOC (new->vmap, new->nVtx * sizeof (int));
-   new->hindex  = (int*) ZOLTAN_MALLOC (old->nEdge * sizeof (int));
+   new->hindex  = (int*) ZOLTAN_MALLOC ((old->nEdge+1) * sizeof (int));
    new->hvertex = (int*) ZOLTAN_MALLOC (old->nInput * sizeof (int));
    if (new->vmap == NULL || new->hindex == NULL || new->hvertex == NULL)  {
       Zoltan_Multifree (__FILE__, __LINE__, 5, &new->vmap, &new->hindex,

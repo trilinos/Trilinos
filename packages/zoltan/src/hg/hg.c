@@ -139,7 +139,7 @@ char *yo = "Zoltan_HG";
      goto End;
      }
   ZOLTAN_FREE (&zoltan_hg->HG.vmap);
-  
+
 
 if (zz->Proc == 0)
 {
@@ -231,8 +231,8 @@ static int Zoltan_HG_Initialize_Params(
                               (void*) hgp->redmo_str);
 
   /* Set default values */
-  strcpy(hgp->redm_str,    "grg");
-  strcpy(hgp->redmo_str,   "aug2");
+  strcpy(hgp->redm_str,   "grg");
+  strcpy(hgp->redmo_str,  "aug2");
   strcpy(hgp->global_str, "gr0");
   strcpy(hgp->local_str,  "fm");
   hgp->ews = 1;
