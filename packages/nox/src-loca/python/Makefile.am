@@ -146,13 +146,12 @@ EXTRA_DIST = $(INTERFACES)
 # General definitions
 # ------------------------------------------------------------------------
 
-CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS)
-
-CXXFLAGS = -Wall -O2
-
 SWIG_PYTHON_LIBS =
 
-SWIG_LOCA_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+SWIG_LOCA_CXXFLAGS = \
+	$(PYTHON_CPPFLAGS) \
+	$(SWIG_PYTHON_CPPFLAGS) \
+	$(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/python \
 	-I$(top_srcdir)/src-loca/src \

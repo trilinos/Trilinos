@@ -167,13 +167,12 @@ EXTRA_DIST = $(INTERFACES) NOX_LAPACK_import.i NOX_LAPACK.swi
 # General definitions
 # ------------------------------------------------------------------------
 
-CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS)
-
-CXXFLAGS = -Wall -O2
-
 SWIG_PYTHON_LIBS =
 
-SWIG_NOX_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+SWIG_NOX_CXXFLAGS = \
+	$(PYTHON_CPPFLAGS) \
+	$(SWIG_PYTHON_CPPFLAGS) \
+	$(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/python 
 

@@ -782,6 +782,19 @@ if test X${ADDON_python} = Xyes; then
   BUILD_PYTHON=yes
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_PYTHON, true)
+
+  # Get python include/lib paths
+  AC_PYTHON_DEVEL
+
+  # Check that Python.h is available
+  save_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="$save_CPPFLAGS $PYTHON_CPPFLAGS"
+  AC_LANG([C++])
+  AC_CHECK_HEADER(
+  [Python.h],
+  break,
+  AC_MSG_ERROR([You must have Python.h in order to build the Python support!!]))
+  CPPFLAGS="$save_CPPFLAGS"
 else
   AC_MSG_RESULT(no)
   BUILD_PYTHON=no
@@ -798,6 +811,9 @@ AC_SUBST(IMPORT_LAPACK)
 IMPORT_EPETRA=0
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
   IMPORT_EPETRA=1
+
+  # Check for Numeric when building the Epetra module
+  AC_PYTHON_MODULE(Numeric)
 fi
 AC_SUBST(IMPORT_EPETRA)
 
@@ -1461,7 +1477,9 @@ if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
 fi
 
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
-  TRILINOS_HEADER(PyTrilinos,PyTrilinos_config.h,src)
+# Commenting out the check for PyTrilinos_config.h for right now since
+# PyTrilinos is configured after NOX, so this file may not exist
+#  TRILINOS_HEADER(PyTrilinos,PyTrilinos_config.h,src)
   TRILINOS_HEADER(PyTrilinos,PyTrilinos.h,src)
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 fi

@@ -114,6 +114,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_devel.m4 \
+	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
@@ -281,15 +282,11 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
-
-# ------------------------------------------------------------------------
-# General definitions
-# ------------------------------------------------------------------------
-CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS)
+CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
-CXXFLAGS = -Wall -O2
+CXXFLAGS = @CXXFLAGS@
 CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
@@ -496,8 +493,15 @@ noxPythonexecdir = $(prefix)/python/NOX
 # Extra files to be installed by 'make dist'
 # ------------------------------------------------------------------------
 EXTRA_DIST = $(INTERFACES) NOX_LAPACK_import.i NOX_LAPACK.swi
+
+# ------------------------------------------------------------------------
+# General definitions
+# ------------------------------------------------------------------------
 SWIG_PYTHON_LIBS = 
-SWIG_NOX_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+SWIG_NOX_CXXFLAGS = \
+	$(PYTHON_CPPFLAGS) \
+	$(SWIG_PYTHON_CPPFLAGS) \
+	$(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/python 
 
