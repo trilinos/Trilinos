@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
 	//
 	int i,info;
 	int n_nonzeros, N_update;
-	int *bindx=0, *update=0, *col_inds=0;
-	double *val=0, *row_vals=0;
+	int *bindx=0, *update=0;
+	double *val=0;
 	double zero = 0.0;
 	Anasazi::ReturnType returnCode = Anasazi::Ok;
 
@@ -120,13 +120,11 @@ int main(int argc, char *argv[]) {
 	//
 	int NumEntries;
 	for (i=0; i<NumMyElements; i++) {
-		row_vals = val + bindx[i];
-		col_inds = bindx + bindx[i];
-		NumEntries = bindx[i+1] - bindx[i];
-		info = A->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
-		assert(info==0 );
-		info = A->InsertGlobalValues(update[i], 1, val+i, update+i);
-		assert( info==0 );
+	  NumEntries = bindx[i+1] - bindx[i];
+	  info = A->InsertGlobalValues(update[i], NumEntries, val + bindx[i], bindx + bindx[i]);
+	  assert(info==0 );
+	  info = A->InsertGlobalValues(update[i], 1, val+i, update+i);
+	  assert( info==0 );
 	}
 	//
 	// Finish up
@@ -278,9 +276,7 @@ int main(int argc, char *argv[]) {
 
 	if (bindx) delete [] bindx;
 	if (update) delete [] update;
-	if (col_inds) delete [] col_inds;
 	if (val) delete [] val;
-	if (row_vals) delete [] row_vals;
 
   	return 0;
 
