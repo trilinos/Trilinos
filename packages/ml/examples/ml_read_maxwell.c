@@ -765,10 +765,6 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   /* For now we add something to the diagonal instead of adding in the */
   /* real mass matrix.                                                 */
 
-  /*
-    for (i = 0; i < Nlocal_edges; i++) Ke_val[i] += 1.;
-    */
-
   AZ_transform_norowreordering(proc_config, &global_edge_externs, Ke_bindx,
 			       Ke_val, global_edge_inds, &reordered_glob_edges, 
 			       &reordered_edge_externs, &Ke_data_org, Nlocal_edges, 0, 0, 0, 
@@ -1146,6 +1142,7 @@ nx = nx--; /* rst dirichlet */
 		 proc_config);
   AZ_ML_Set_Amat(ml_nodes, N_levels-1, Nlocal_nodes, Nlocal_nodes, Kn_mat, 
 		 proc_config);
+  ml_edges->Amat[N_levels-1].N_nonzeros = Ke_bindx[Nlocal_edges];
 
 /* Check symmetry of Ke. */
   Amat = &(ml_edges->Amat[N_levels-1]);
