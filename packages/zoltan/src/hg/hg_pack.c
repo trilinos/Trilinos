@@ -452,27 +452,22 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
         side = 1-side;
 
         for (j=hg->hindex[cur_edge]; j<hg->hindex[cur_edge+1]; j++)
-        { vertex = hg->hvertex[j];
-          if ((taken_vertex[vertex]/(1+side))%2 == 0)
+          if ((taken_vertex[vertex=hg->hvertex[j]]/(1+side))%2 == 0)
             for (k=hg->vindex[vertex]; k<hg->vindex[vertex+1]; k++)
-            { edge = hg->vedge[k];
-              if ((taken_edge[edge]/(1+side))%2 == 0)
+              if ((taken_edge[edge=hg->vedge[k]]/(1+side))%2 == 0)
                 size[edge]++;
-        }   }
         best_weight = 0.0;
         best_edge = -1;
         for (j=hg->hindex[cur_edge]; j<hg->hindex[cur_edge+1]; j++)
-        { vertex = hg->hvertex[j];
-          if ((taken_vertex[vertex]/(1+side))%2 == 0)
+          if ((taken_vertex[vertex=hg->hvertex[j]]/(1+side))%2 == 0)
             for (k=hg->vindex[vertex]; k<hg->vindex[vertex+1]; k++)
-            { edge = hg->vedge[k];
-              if ((taken_edge[edge]/(1+side))%2 == 0) 
+              if ((taken_edge[edge=hg->vedge[k]]/(1+side))%2==0 && size[edge]>0) 
               { if ((hg->ewgt?hg->ewgt[edge]:1.0)/size[edge]>best_weight)
                 { best_edge = edge;
                   best_weight = (hg->ewgt?hg->ewgt[best_edge]:1.0);
                 }
-                size[edge]--;
-        }   } }
+                size[edge] = 0;
+              }
         cur_edge = best_edge;
       }
       while (cur_edge>=0 && limits[side]>0);
