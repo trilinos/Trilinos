@@ -51,6 +51,7 @@
 #include "Trilinos_Util.h"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_Time.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
+	Teuchos::Time timer("Belos Preconditioned CG");
 	
 #ifdef EPETRA_MPI	
 	// Initialize MPI	
@@ -174,16 +176,16 @@ int main(int argc, char *argv[]) {
 	if (verbose) cout << endl << endl;
 	if (verbose) cout << "Constructing ICT preconditioner" << endl;
 	int Lfill = 0;
-	if (argc > 2) Lfill = atoi(argv[2]);
+	// if (argc > 2) Lfill = atoi(argv[2]);
 	if (verbose) cout << "Using Lfill = " << Lfill << endl;
 	int Overlap = 0;
-	if (argc > 3) Overlap = atoi(argv[3]);
+	// if (argc > 3) Overlap = atoi(argv[3]);
 	if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
 	double Athresh = 0.0;
-	if (argc > 4) Athresh = atof(argv[4]);
+	// if (argc > 4) Athresh = atof(argv[4]);
 	if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
 	double Rthresh = 1.0;
-	if (argc >5) Rthresh = atof(argv[5]);
+	// if (argc >5) Rthresh = atof(argv[5]);
 	if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
 	double dropTol = 1.0e-6;
 	//
@@ -258,7 +260,9 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
+	timer.start();
 	MyBlockCG.Solve();	
+	timer.stop();
         //
         // Compute actual residuals.
         //
@@ -274,7 +278,11 @@ int main(int argc, char *argv[]) {
           for (i=0; i<numrhs; i++) {
                 cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
           }
+	  cout<<endl;
         }
+	if (verbose)
+	  cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
+	
   // Release all objects  
   if (ICT) { delete ICT; ICT = 0; }
   delete [] NumNz;
