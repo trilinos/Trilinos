@@ -266,15 +266,21 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
 	break;
       }
       
-      if (fabs(a) < 1.e-12) 
+      if (b > 0.0) // Check to prevent round off error (H. Walker)
       {
-	step = -oldSlope / (2.0 * b);
+	step = -oldSlope / (b + sqrt(disc));
       }
-      else 
+      else
       {
-	step = (-b + sqrt(disc))/ (3.0 * a);
+	if (fabs(a) < 1.e-12) // check for when a is small
+	{
+	  step = -oldSlope / (2.0 * b);
+	}
+	else 
+	{
+	  step = (-b + sqrt(disc))/ (3.0 * a);
+	}
       }
-
     }
 
     // Apply bounds
