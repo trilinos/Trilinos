@@ -33,6 +33,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_MapColoring.h>
 #include <Epetra_Map.h>
+#include <Epetra_Util.h>
 
 #ifdef EPETRAEXT_TIMING
 #include <Epetra_Time.h>
@@ -203,14 +204,107 @@ operator()( OriginalTypeRef orig  )
 #ifdef EPETRAEXT_TIMING
     wTime2 = timer.WallTime();
     cout << "EpetraExt::MapColoring [GREEDY COLORING] Time: " << wTime2-wTime1 << endl;
+    cout << "Num GREEDY Colors: " << ColorMap->NumColors() << endl;
 #endif
   }
   else if( algo_ == ALGO_LUBI )
   {
     //Assign Random Keys To Rows
+    Epetra_Util util;
+    vector<int> Keys(nCols);
+    vector<int> State(nCols,-1);
 
-    //do until empty set
-      //generate maximal independent set as color
+    for( int col = 0; col < nCols; ++col )
+      Keys[col] = util.RandomInt();
+
+    int NumRemaining = nCols;
+    int CurrentColor = 1;
+
+    while( NumRemaining > 0 )
+    {
+      //maximal independent set
+      while( NumRemaining > 0 )
+      {
+        NumRemaining = 0;
+
+        //zero out everyone less than neighbor
+        for( int col = 0; col < nCols; ++col )
+          if( State[col] < 0 )
+          {
+#ifdef EPETRAEXT_TEST_LUBI
+            cout << "Testing Node: " << col << " " << State[col] << " " << Keys[col] << endl;
+#endif
+            Adj2.ExtractMyRowView( col, NumIndices, Indices );
+            int MyKey = Keys[col];
+            for( int i = 0; i < NumIndices; ++i )
+              if( col != Indices[i] && State[ Indices[i] ] < 0 )
+              {
+                if( MyKey > Keys[ Indices[i] ] ) State[ Indices[i] ] = 0;
+                else                             State[ col ] = 0;
+              }
+          }
+
+        //assign -1's to current color
+        for( int col = 0; col < nCols; ++col )
+        {
+#ifdef EPETRAEXT_TEST_LUBI
+          cout << "Node: " << col << " State: " << State[col] << endl;
+#endif
+          if( State[col] < 0 )
+          {
+            State[col] = CurrentColor;
+#ifdef EPETRAEXT_TEST_LUBI
+            cout << "Node,Color: " << col << "," << CurrentColor << endl;
+#endif
+	  }
+        }
+
+        //reinstate any zero not neighboring current color
+        for( int col = 0; col < nCols; ++col )
+          if( State[col] == 0 )
+          {
+            Adj2.ExtractMyRowView( col, NumIndices, Indices );
+	    bool flag = false;
+            for( int i = 0; i < NumIndices; ++i )
+              if( col != Indices[i] && State[ Indices[i] ] == CurrentColor )
+              {
+                flag = true;
+                break;
+              }
+            if( !flag )
+            {
+              State[col] = -1;
+              ++NumRemaining;
+            }
+          }
+      }
+
+      //Reset Status for all non-colored nodes
+      for( int col = 0; col < nCols; ++col )
+        if( State[col] == 0 )
+        {
+          State[col] = -1;
+          ++NumRemaining;
+        }
+
+      if( verbose_ )
+      {
+        cout << "Finished Color: " << CurrentColor << endl;
+        cout << "NumRemaining: " << NumRemaining << endl;
+      }
+
+      //New color
+      ++CurrentColor;
+    }
+
+    for( int col = 0; col < nCols; ++col )
+      (*ColorMap)[col] = State[col]-1;
+
+#ifdef EPETRAEXT_TIMING
+    wTime2 = timer.WallTime();
+    cout << "EpetraExt::MapColoring [LUBI COLORING] Time: " << wTime2-wTime1 << endl;
+    cout << "Num LUBI Colors: " << ColorMap->NumColors() << endl;
+#endif
   }
   else
     abort(); //UNKNOWN ALGORITHM
