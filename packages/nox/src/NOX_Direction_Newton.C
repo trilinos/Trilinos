@@ -218,7 +218,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       // Impose safeguard and constraints ...
       const double alpha = (1.0 + sqrt(5.0)) / 2.0;
       const double eta_km1_alpha = pow(eta_km1, alpha);
-      eta_k = max(eta_k, eta_km1_alpha);
+      if (eta_km1_alpha > 0.1) 
+	eta_k = max(eta_k, eta_km1_alpha);
       eta_k = max(eta_k, eta_min);
       eta_k = min(eta_max, eta_k);
     }
@@ -250,7 +251,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       
       // Impose safeguard and constraints ... 
       const double eta_k_alpha = gamma * pow(eta_km1, alpha);
-      eta_k = max(eta_k, eta_k_alpha);
+      if (eta_k_alpha > 0.1) 
+	eta_k = max(eta_k, eta_k_alpha);
       eta_k = max(eta_k, eta_min);
       eta_k = min(eta_max, eta_k);
     }
