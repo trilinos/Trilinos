@@ -68,7 +68,7 @@ int Superludist_NumProcRows( int NumProcs ) {
 //=============================================================================
 Amesos_Superludist::~Amesos_Superludist(void) {
 
-  if ( FactorizationDone_ ) {
+  if ( false && FactorizationDone_ ) {
     SUPERLU_FREE( superluA_.Store );
     ScalePermstructFree(&ScalePermstruct_);
     Destroy_LU(numrows_, &grid_, &LUstruct_);
@@ -180,13 +180,6 @@ int Amesos_Superludist::PerformNumericFactorization( ) {
     CurrentRowPtr += SuperLUmat->NumMyEntries( i ) ; 
     MyRowPtr[i+1] = CurrentRowPtr ; 
   }
-
-  //
-  //  Ap, Ai, Aval form the compressed row storage used by Klu
-  //
-  vector <int> Ap;
-  vector <int> Ai;
-  vector <double> Aval;
 
   //
   //  Extract Ai, Ap and Aval from SuperLUmat

@@ -220,6 +220,13 @@ public:
                                //  prior to calling Superludist
   Epetra_Map *UniformMap_ ;    //  Uniform Map (SuperLUdist requires a linear map)
   //
+  //  Ap, Ai, Aval form the compressed row storage used by Klu
+  //
+  vector <int> Ap;
+  vector <int> Ai;
+  vector <double> Aval;
+
+  //
   //  Here are the structures used by Superlu
   //
   SuperMatrix superluA_;
