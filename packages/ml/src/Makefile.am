@@ -65,6 +65,7 @@ CORE = \
 $(srcdir)/Coarsen/ml_agg_uncoupled.c \
 $(srcdir)/Coarsen/ml_amg.c \
 $(srcdir)/Coarsen/ml_agg_coupled.c     $(srcdir)/Coarsen/ml_amg_genP.c \
+$(srcdir)/Coarsen/ml_check.c \
 $(srcdir)/Coarsen/ml_agg_dd.c \
 $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \

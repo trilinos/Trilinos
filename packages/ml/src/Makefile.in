@@ -156,6 +156,7 @@ CORE = \
 $(srcdir)/Coarsen/ml_agg_uncoupled.c \
 $(srcdir)/Coarsen/ml_amg.c \
 $(srcdir)/Coarsen/ml_agg_coupled.c     $(srcdir)/Coarsen/ml_amg_genP.c \
+$(srcdir)/Coarsen/ml_check.c \
 $(srcdir)/Coarsen/ml_agg_dd.c \
 $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
@@ -411,12 +412,13 @@ LIBRARIES = $(lib_LIBRARIES)
 libml_a_DEPENDENCIES =
 am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_coupled.$(OBJEXT) ml_amg_genP.$(OBJEXT) \
-	ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) ml_amg_MIS.$(OBJEXT) \
-	ml_agg_MIS.$(OBJEXT) ml_agg_METIS.$(OBJEXT) \
-	ml_agg_ParMETIS.$(OBJEXT) ml_aggregate.$(OBJEXT) \
-	ml_ggraph.$(OBJEXT) ml_agg_reitzinger.$(OBJEXT) \
-	ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) \
-	ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
+	ml_check.$(OBJEXT) ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) \
+	ml_amg_MIS.$(OBJEXT) ml_agg_MIS.$(OBJEXT) \
+	ml_agg_METIS.$(OBJEXT) ml_agg_ParMETIS.$(OBJEXT) \
+	ml_aggregate.$(OBJEXT) ml_ggraph.$(OBJEXT) \
+	ml_agg_reitzinger.$(OBJEXT) ml_gridagx.$(OBJEXT) \
+	ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) ml_grid.$(OBJEXT) \
+	ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
 	ml_elementagx.$(OBJEXT) ml_get_basis.$(OBJEXT) \
 	ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) driver.$(OBJEXT) \
 	mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) ml_ggb.$(OBJEXT) \
@@ -465,7 +467,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_utils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_bdrypts.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_bicgstabl.Po ./$(DEPDIR)/ml_cg.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_comm.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_check.Po ./$(DEPDIR)/ml_comm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_comminfoagx.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_comminfoop.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_csolve.Po ./$(DEPDIR)/ml_eigf2c.Po \
@@ -575,6 +577,7 @@ ml_agg_uncoupled.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_uncoupled.c
 ml_amg.$(OBJEXT): $(srcdir)/Coarsen/ml_amg.c
 ml_agg_coupled.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_coupled.c
 ml_amg_genP.$(OBJEXT): $(srcdir)/Coarsen/ml_amg_genP.c
+ml_check.$(OBJEXT): $(srcdir)/Coarsen/ml_check.c
 ml_agg_dd.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_dd.c
 ml_agg_genP.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_genP.c
 ml_amg_MIS.$(OBJEXT): $(srcdir)/Coarsen/ml_amg_MIS.c
@@ -664,6 +667,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_bdrypts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_bicgstabl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_cg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_check.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_comm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_comminfoagx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_comminfoop.Po@am__quote@
@@ -772,6 +776,18 @@ ml_amg_genP.obj: $(srcdir)/Coarsen/ml_amg_genP.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_amg_genP.Po' tmpdepfile='$(DEPDIR)/ml_amg_genP.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_amg_genP.obj `cygpath -w $(srcdir)/Coarsen/ml_amg_genP.c`
+
+ml_check.o: $(srcdir)/Coarsen/ml_check.c
+@AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_check.c' object='ml_check.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_check.Po' tmpdepfile='$(DEPDIR)/ml_check.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_check.o `test -f '$(srcdir)/Coarsen/ml_check.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_check.c
+
+ml_check.obj: $(srcdir)/Coarsen/ml_check.c
+@AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_check.c' object='ml_check.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_check.Po' tmpdepfile='$(DEPDIR)/ml_check.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_check.obj `cygpath -w $(srcdir)/Coarsen/ml_check.c`
 
 ml_agg_dd.o: $(srcdir)/Coarsen/ml_agg_dd.c
 @AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_agg_dd.c' object='ml_agg_dd.o' libtool=no @AMDEPBACKSLASH@
