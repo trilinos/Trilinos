@@ -12,14 +12,6 @@
 #define FALSE_ (0)
 #define TRUE_ (1)
 #include "ml_eigf2c.h"
-    void *dmout_(int *, int *, int *, double *, int *lda, int *idigit,
-		 char *, ftnlen);
-    void dneupd_(int *, char *, int *, double *, double *, double *, 
-		 int *, double *, double *, double *, char *bmat, 
-		 int *n, char *which, int *nev, double *tol, double *, 
-		 int *ncv, double *, int *, int *, int *, double *,
-		 double *, int *, int *, ftnlen, ftnlen, ftnlen);
-
 
 int ml_c_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
 		  int *lda, int *idigit)
