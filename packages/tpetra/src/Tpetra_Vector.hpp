@@ -85,7 +85,7 @@ public:
 		OrdinalType const length = getNumMyEntries();
 		for(OrdinalType i = ordinalZero; i < length; i++)
 			scalarArray_[i] = scalarZero;
-	};
+	}
   
   //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
 	Vector(ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
@@ -101,7 +101,7 @@ public:
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < length; i++)
 			scalarArray_[i] = vectorEntries[i];
-	};
+	}
 
 	//! Copy constructor.
   Vector(Vector<OrdinalType, ScalarType> const& Source)
@@ -124,7 +124,7 @@ public:
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = 0; i < numEntries; i++)
 			scalarArray_[indices[i]] = values[i];
-	};
+	}
 
 	//! Set all entries to scalarValue.
 	void setAllToScalar(ScalarType const value) {
@@ -132,7 +132,7 @@ public:
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < max; i++)
 			scalarArray_[i] = value;
-	};
+	}
 
 	//! Set all entries to random values.
 	void setAllToRandom() {
@@ -140,7 +140,7 @@ public:
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < max; i++)
 			scalarArray_[i] = Teuchos::ScalarTraits<ScalarType>::random();
-	};
+	}
 
 	//@}
 
@@ -161,7 +161,7 @@ public:
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < max; i++)
 			userPointerArray[i] = &scalarArray_[i];
-	};
+	}
 
 	//@}
 
@@ -172,7 +172,13 @@ public:
 	void dotProduct(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType> const& y) const;
 
 	//! Changes this vector to elementwise absolute values of x.
-	void absoluteValue(Vector<OrdinalType, ScalarType> const& x);
+	void absoluteValue(Vector<OrdinalType, ScalarType> const& x) {
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const length = getNumMyEntries();
+		
+		for(OrdinalType i = ordinalZero; i < length; i++)
+			scalarArray_[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(x.scalarArray_[i]);
+	}
 
   //! Changes this vector to element-wise reciprocal values of x.
   void reciprocal(Vector<OrdinalType, ScalarType> const& x) {
@@ -188,17 +194,63 @@ public:
 	}
 
   //! Scale the current values of a vector, \e this = scalarThis*\e this.
-  void scale(ScalarType scalarThis);
+  void scale(ScalarType scalarThis) {
+	  OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	  OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+	  OrdinalType const length = getNumMyEntries();
+	  
+	  BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
+  }
 
   //! Replace vector values with scaled values of x, \e this = scalarX*x.
-  void scale(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x);
+  void scale(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x) {
+	  OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	  OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+	  OrdinalType const length = getNumMyEntries();
+	  
+	  // this = x
+	  scalarArray_ = x.scalarArray_;
+	  
+	  // this = this * scalarX
+	  BLAS_.SCAL(length, scalarX, &scalarArray_[ordinalZero], ordinalOne);
+  }
 
   //! Update vector values with scaled values of x, \e this = scalarThis*\e this + scalarX*x.
-  void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis);
+  void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis) {
+	  if(! vectorSpace().isCompatible(x.vectorSpace()))
+		  throw reportError("Vector sizes do not match.", 2);
+	  
+	  OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	  OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+	  OrdinalType const length = getNumMyEntries();
+	  
+	  // calculate this *= scalarThis
+	  BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
+	  
+	  // calculate this += scalarX * x
+	  BLAS_.AXPY(length, scalarX, &x.scalarArray_[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+  }
 
   //! Update vector with scaled values of x and y, \e this = scalarThis*\e this + scalarX*x + scalarY*y.
   void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarY, 
-							Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+			  Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
+	  if(!vectorSpace().isCompatible(x.vectorSpace()) ||
+	     !vectorSpace().isCompatible(y.vectorSpace()))
+		  throw reportError("Vector sizes do not match.", 2);
+	  
+	OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+	OrdinalType const length = getNumMyEntries();
+		  
+	// calculate this *= scalarThis
+	BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
+		  
+	// calculate this += scalarX * x
+	BLAS_.AXPY(length, scalarX, &x.scalarArray_[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+	
+	// calculate this += scalarY * y
+	BLAS_.AXPY(length, scalarY, &y.scalarArray_[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+  }
 
   //! Compute 1-norm of vector.
   ScalarType norm1() const;
@@ -215,12 +267,12 @@ public:
   //! Compute minimum value of vector.
   ScalarType minValue() const {
 		return(*(min_element(scalarArray_.begin(), scalarArray_.end()))); // use STL min_element, takes constant time
-	};
+	}
 
   //! Compute maximum value of vector.
   ScalarType maxValue() const {
 		return(*(max_element(scalarArray_.begin(), scalarArray_.end()))); // use STL max_element, takes constant time
-	};
+	}
 
   //! Compute mean (average) value of vector.
   ScalarType meanValue() const {
@@ -228,45 +280,53 @@ public:
 		ScalarType length = getNumMyEntries(); // implicit cast from OT to ST
 		ScalarType total = accumulate(scalarArray_.begin(), scalarArray_.end(), scalarZero); // use STL accumulate, takes linear time
 		return(total / length);
-	};
+	}
 
 	//! Vector multiplication (elementwise) 
 	/*! \e this = scalarThis*\e this + scalarXY*x@y, where @ represents elementwise multiplication. */
 	void elementwiseMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
-													 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
-		if((x.getNumMyEntries() != y.getNumMyEntries()) || 
-			 (x.getNumGlobalEntries() != y.getNumGlobalEntries()) ||
-			 (x.getNumMyEntries() != getNumMyEntries()) ||
-			 (x.getNumGlobalEntries() != getNumGlobalEntries()))
+							 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
+		if(!vectorSpace().isCompatible(x.vectorSpace()) ||
+	       !vectorSpace().isCompatible(y.vectorSpace()))
 			throw reportError("Vector sizes do not match.", 2);
 
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 		OrdinalType const length = getNumMyEntries();
-
-		// with BLAS
 		
 		// calculate this *= scalarThis
 		BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
-		/*
+
 		// calculate x@y into temp vector
 		vector<ScalarType> xytemp(length);
 		transform(x.scalarArray_.begin(), x.scalarArray_.end(), y.scalarArray_.begin(), xytemp.begin(), multiplies<ScalarType>());
 
 		// calculate this = scalarXY * temp + this
 		BLAS_.AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
-		*/
-
-		// without BLAS
-
-		// calculate this *= scalarThis
-
 	}
 
 	//! Reciprocal multiply (elementwise)
 	/*! \e this = scalarThis*\e this + scalarXY*y@x, where @ represents elementwise division. */
 	void elementwiseReciprocalMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
-																		 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+									Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
+		if(!vectorSpace().isCompatible(x.vectorSpace()) ||
+	       !vectorSpace().isCompatible(y.vectorSpace()))
+			throw reportError("Vector sizes do not match.", 2);
+		
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+		OrdinalType const length = getNumMyEntries();
+		
+		// calculate this *= scalarThis
+		BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
+	
+		// calculate y@x into temp vector
+		vector<ScalarType> xytemp(length);
+		transform(y.scalarArray_.begin(), y.scalarArray_.end(), x.scalarArray_.begin(), xytemp.begin(), divides<ScalarType>());
+		
+		// calculate this += scalarXY * temp
+		BLAS_.AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+	}
 
 	//@}
 
@@ -276,12 +336,12 @@ public:
 	//! Get seed
 	ScalarType getSeed() const {
 	 return(seed_);
-	};
+	}
 
 	//! Set seed
 	void setSeed(ScalarType seed) {
 		seed_ = seed;
-	};
+	}
 
 	//@}
 
@@ -291,12 +351,12 @@ public:
 	//! [] operator, nonconst version
 	ScalarType& operator[](OrdinalType index) {
 		return(scalarArray_[index]);
-	};
+	}
 
 	//! [] operator, const version
 	ScalarType const& operator[](OrdinalType index) const {
 		return(scalarArray_[index]);
-	};
+	}
 
 	//@}
 
@@ -306,12 +366,12 @@ public:
 	//! Returns number of vector entries owned by this image.
 	OrdinalType getNumMyEntries() const {
 		return(vectorSpace().getNumMyEntries());
-	};
+	}
 
 	//! Returns number of vector entries across all images.
 	OrdinalType getNumGlobalEntries() const {
 		return(vectorSpace().getNumGlobalEntries());
-	};
+	}
 
 	//@}
 
@@ -337,7 +397,7 @@ public:
 				os << endl << endl;
 			}
 		}
-	};
+	}
 	//@}
 
 	//@{ \name Misc. 
@@ -345,7 +405,7 @@ public:
 	//! Returns a const reference to the VectorSpace this Vector belongs to.
 	VectorSpace<OrdinalType, ScalarType> const& vectorSpace() const {
 		return(VectorSpace_);
-	};
+	}
 
 	//@}
 

@@ -128,10 +128,25 @@ int unitTests(bool verbose, bool debug) {
 	vector.setAllToRandom();
 
 	// math functions
-
+	
 	// reciprocal
+	if(verbose) cout << "absolute value..." << endl;
+	vector.absoluteValue(v2);
 	if(verbose) cout << "reciprocal..." << endl;
 	vector.reciprocal(v2);
+	// scale
+	if(verbose) cout << "scale..." << endl;
+	vector.scale(Teuchos::ScalarTraits<ScalarType>::random());
+	// scale #2
+	if(verbose) cout << "scale #2..." << endl;
+	vector.scale(Teuchos::ScalarTraits<ScalarType>::random(), v2);
+	// update
+	if(verbose) cout << "update..." << endl;
+	vector.update(Teuchos::ScalarTraits<ScalarType>::random(), v2, Teuchos::ScalarTraits<ScalarType>::random());
+	// update #2
+	if(verbose) cout << "update #2..." << endl;
+	vector.update(Teuchos::ScalarTraits<ScalarType>::random(), v2, 
+			      Teuchos::ScalarTraits<ScalarType>::random(), vector1a, Teuchos::ScalarTraits<ScalarType>::random());
 	// min value
 	if(verbose) cout << "minValue..." << endl;
 	vector.minValue();
@@ -144,7 +159,9 @@ int unitTests(bool verbose, bool debug) {
 	// elementwiseMultiply
 	if(verbose) cout << "elementwiseMultiply..." << endl;
 	vector.elementwiseMultiply(temp1, vector1a, v2, scalar3);
-
+	// elementwiseReciprocalMultiply
+	if(verbose) cout << "elementwiseReciprocalMultiply..." << endl;
+	vector.elementwiseMultiply(temp1, vector1a, v2, scalar3);
 
 	if(verbose) cout << "Code coverage section finished." << endl;
 
