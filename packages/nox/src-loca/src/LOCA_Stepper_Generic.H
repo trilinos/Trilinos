@@ -123,7 +123,13 @@ public:
   virtual const Abstract::Group& getPreviousSolutionGroup() const = 0;
 
   //! Returns the number of continuation steps taken by LOCA
-  virtual int getNumContinuationSteps() const = 0;
+  virtual int getNumContinuationSteps() const;
+
+  //! Returns the number of continuation steps that failed to converge
+  virtual int getNumFailedSteps() const;
+
+  //! Returns the total number of continuation steps attempted
+  virtual int getNumTotalSteps() const;
 
   //! Return the output parameters from the stepper algorithm. 
   virtual const NOX::Parameter::List& getParameterList() const = 0;

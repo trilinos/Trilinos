@@ -62,7 +62,7 @@ public:
   ~ParameterVector();
 
   //! Adds a parameter to the list.  Returns the index value assigned to the parameter.
-  int addParameter(string label = "", double value = 0.0);
+  int addParameter(string label, double value = 0.0);
 
   //! Initialize the vector.  Returns true if successful.
   bool init(double value);
@@ -76,22 +76,28 @@ public:
   //! Updates the parameter vector: this = alpha * alphaVector + b * this.  Returns true if successful.
   bool update(double alpha, const ParameterVector& alphaVector, double b);
 
-  //! Set a parameter vector equal to another.  
+  //! Set a parameter vector equal to another. This will erase any old parameters in the object. 
   ParameterVector& operator=(const ParameterVector& y);
 
-  //! Return a reference to the i-th element
+  //! Return a reference to the i-th element.  Will throw an error if index is out of range.
   double& operator[] (int i);
 
-  //! Return a reference to the i-th element (no l-value type)
+  //! Return a reference to the i-th element (no l-value type).  Will throw an error if index is out of range.
   const double& operator[] (int i) const;
 
-  //! Returns the value of the parameter with index i.
+  //! Set the value of the parameter with index i.  Will throw an error if index is out of range.
+  void setValue(int i, double value);
+
+  //! Set the value of the parameter with the corresponding label.  Will throw an error if "label" is not valid.
+  void setValue(string label, double value);
+
+  //! Returns the value of the parameter with index i.  Will throw an error if index is out of range.
   double getValue(int i) const;
 
-  //! Returns the value of the parameter with the corresponding label.
+  //! Returns the value of the parameter with the corresponding label.  Will throw an error if "label" is not valid.
   double getValue(string label) const;
 
-  //! Returns the index of the parameter with the corresponding label.
+  //! Returns the index of the parameter with the corresponding label.  Returns a -1 if "label" is not found.
   int getIndex(string label) const;
 
   //! Returns a pointer to a C-style array of the parameter values.

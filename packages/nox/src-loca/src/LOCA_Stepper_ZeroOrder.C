@@ -84,13 +84,13 @@ StatusType ZeroOrder::step()
   if (stepNumber != 0) {
     prevStepSize = curStepSize;
     prevValue = curValue;
+    curStepSize = computeStepSize(solverStatus);
+    curValue += curStepSize;
   }      
-
-  curStepSize = computeStepSize(solverStatus);
-  curValue += curStepSize;
-
+  
   printStartStep();
   
+  conParams.setValue(conParamID, curValue);
   solverPtr->setParams(conParams);
   solverStatus = Unconverged;
   solverStatus = solverPtr->solve();
@@ -122,11 +122,6 @@ const Abstract::Group& ZeroOrder::getPreviousSolutionGroup() const
   // We should save the soln at the previous time step.
   // The following is wrong - it is the prev nonlinear step.
   return solverPtr->getPreviousSolutionGroup();
-}
-
-int ZeroOrder::getNumContinuationSteps() const
-{
-  return stepNumber;
 }
 
 const NOX::Parameter::List& ZeroOrder::getParameterList() const

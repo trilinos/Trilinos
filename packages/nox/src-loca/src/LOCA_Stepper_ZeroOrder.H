@@ -88,8 +88,6 @@ public:
 
   virtual const Abstract::Group& getPreviousSolutionGroup() const;
 
-  virtual int getNumContinuationSteps() const;
-
   virtual const NOX::Parameter::List& getParameterList() const;
 
 protected:

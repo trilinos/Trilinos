@@ -32,6 +32,8 @@
 
 #include "LOCA_Parameter_Vector.H" // class definition
 
+#include "LOCA_Utils.H"            // print utilities
+
 using namespace LOCA;
 
 ParameterVector::ParameterVector()
@@ -110,16 +112,69 @@ ParameterVector& ParameterVector::operator=(const ParameterVector& source)
 
 double& ParameterVector::operator[] (int i)
 {
+  if ((i < 0) || (i >= x.size())) {
+    if (Utils::doPrint(Utils::Error)) {
+      cout << "ERROR: LOCA::Parameter::Vector::operator[] - index is out "
+	   << "of range!" << endl;
+    }
+    throw "NOX Error";
+  }
   return x[i];
 }
 
 const double& ParameterVector::operator[] (int i) const
 {
+  if ((i < 0) || (i >= x.size())) {
+    if (Utils::doPrint(Utils::Error)) {
+      cout << "ERROR: LOCA::Parameter::Vector::operator[] const - index is "
+	   << "out of range!" << endl;
+    }
+    throw "NOX Error";
+  }
   return x[i];
+}
+
+void ParameterVector::setValue(int i, double value)
+{
+  if ((i < 0) || (i >= x.size())) {
+    if (Utils::doPrint(Utils::Error)) {
+      cout << "ERROR: LOCA::Parameter::Vector::setValue() - index is "
+	   << "out of range!" << endl;
+    }
+    throw "NOX Error";
+  }
+
+  x[i] = value;
+  return;
+}
+
+void ParameterVector::setValue(string label, double value)
+{
+  if (!isParameter(label)) {
+    if (Utils::doPrint(Utils::Error)) {
+      cout << "ERROR: LOCA::Parameter::Vector::setValue() - label is "
+	   << "not valid!" << endl;
+    }
+    throw "NOX Error";
+  }
+  
+  for (unsigned int i = 0; i < x.size(); i++) {
+    if (l[i] == label)
+      x[i] = value;
+  }
+  
+  return;
 }
 
 double ParameterVector::getValue(int i) const
 {
+  if ((i < 0) || (i >= x.size())) {
+    if (Utils::doPrint(Utils::Error)) {
+      cout << "ERROR: LOCA::Parameter::Vector::getValue(int) - index is "
+	   << "out of range!" << endl;
+    }
+    throw "NOX Error";
+  }
   return x[i];
 }
 
@@ -129,9 +184,12 @@ double ParameterVector::getValue(string label) const
     if (l[i] == label)
       return x[i];
   }
-  cout << "ERROR: LOCA::ParameterVector::getValue() - The string \"" 
-       << label << "\" was not found!" << endl;
-  exit(-1);
+
+  if (Utils::doPrint(Utils::Error)) {
+    cout << "ERROR: LOCA::Parameter::Vector::getValue(string) - label is "
+	 << "not valid!" << endl;
+  }
+  throw "NOX Error";
 
   return 0.0;
 }
@@ -142,11 +200,13 @@ int ParameterVector::getIndex(string label) const
     if (l[i] == label)
       return i;
   }
-  cout << "ERROR: LOCA::ParameterVector::getIndex() - The string \"" 
-       << label << "\" was not found!" << endl;
-  exit(-1);
 
-  return 0;
+  if (Utils::doPrint(Utils::Warning)) {
+    cout << "Warning: LOCA::ParameterVector::getIndex() - The string \"" 
+	 << label << "\" was not found!" << endl;
+  }
+
+  return -1;
 }
 
 double* ParameterVector::getDoubleArrayPointer()

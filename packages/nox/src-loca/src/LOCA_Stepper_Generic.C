@@ -69,14 +69,30 @@ Generic::~Generic()
 
 }
 
+int Generic::getNumContinuationSteps() const
+{
+  return stepNumber;
+}
+
+int Generic::getNumFailedSteps() const
+{
+  return numFailedSteps;
+}
+
+int Generic::getNumTotalSteps() const
+{
+  return numTotalSteps;
+}
+
+
 
 void Generic::printInitializationInfo()
 {  
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << endl << Utils::fill(72, '~') << endl;
     cout << "Beginning Continuation Run \n" 
-	 << "Stepper Method:     " << stepperMethod << "\n"
-	 << "Solver Method: " << solverMethod << "\n\n"
+	 << "Stepper Method:             " << stepperMethod << "\n"
+	 << "Solver Method:              " << solverMethod << "\n\n"
 	 << "Initial Parameter Value = " << startValue << "\n"
 	 << "Final Parameter Value = " << finalValue << "\n"
 	 << "Initial Step Size = " << startStepSize << "\n" 
