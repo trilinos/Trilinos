@@ -62,6 +62,7 @@ set no_order = $?ZOLTAN_NO_ORDER
 set no_reftree = $?ZOLTAN_NO_REFTREE
 set yes_jostle = $?ZOLTAN_YES_JOSTLE
 set yes_fortran = $?ZOLTAN_YES_FORTRAN
+set yes_cpp = $?ZOLTAN_YES_CPP
 set yes_serial = $?ZOLTAN_YES_SERIAL
 set old_interface = $?ZOLTAN_OLD_INTERFACE
 
@@ -96,6 +97,8 @@ while ( $#argv )
      @ yes_jostle = 1
   else if ( "$1" == "-yes_fortran" ) then
      @ yes_fortran = 1
+  else if ( "$1" == "-yes_cpp" ) then
+     @ yes_cpp = 1
   else if ( "$1" == "-yes_serial" ) then
      @ yes_serial = 1
      @ no_nemesis = 1   # Nemesis input files require multiple processors
@@ -237,13 +240,16 @@ if ( $yes_fortran ) then
   else
     set zdrives = $zdrive
   endif
-  foreach zdrive ($zdrives)
-    if ( -x $zdrive ) then
-      echo "Found zdrive = $zdrive "
-      @ found = 1
-      break
-    endif
-  end
+else if ( $yes_cpp ) then
+# Using C++ 
+  if (! $?zdrive ) then
+    set zdrive = zCPPdrive
+  endif
+  if ( $?arch ) then
+    set zdrives = ( $zdrive ../Obj_${arch}/zCPPdrive )
+  else
+    set zdrives = $zdrive
+  endif
 else
 # Using C
   if (! $?zdrive ) then
@@ -254,14 +260,14 @@ else
   else
     set zdrives = $zdrive
   endif
-  foreach zdrive ($zdrives)
-    if ( -x $zdrive ) then
-      echo "Found zdrive = $zdrive "
-      @ found = 1
-      break
-    endif
-  end
 endif
+foreach zdrive ($zdrives)
+  if ( -x $zdrive ) then
+    echo "Found zdrive = $zdrive "
+    @ found = 1
+    break
+  endif
+end
 
 if (! $found) then
   echo "Error: Could not find zdrive executable"
@@ -358,9 +364,9 @@ if ( $yes_fortran ) then
     endif
   endif
 else
-# Using C
+# Using C or C++
 
-  # These Chaco problems are run only for C driver; F90 driver does not
+  # These Chaco problems are run only for C/C++ driver; F90 driver does not
   # read assignment input files or multiple weights.
   if ( $yes_serial ) then
     set ch_name = ($ch_name vwgt2 hammond2)
@@ -513,6 +519,7 @@ echo "Test date  = `date`" > $logfile
 echo "System     = `uname -a`" >> $logfile
 echo "Arch       = ${arch}" >> $logfile
 echo "Fortran    = $yes_fortran" >> $logfile
+echo "C++        = $yes_cpp" >> $logfile
 echo "Run cmd    = $run" >> $logfile
 echo "Run dir    = $cwd" >> $logfile
 echo "Executable = $zdrive" >> $logfile
@@ -887,6 +894,7 @@ usage:
   echo "   -no_chaco"
   echo "   -no_hg"
   echo "   -yes_fortran"
+  echo "   -yes_cpp"
   echo "   -yes_jostle"
   echo "   -old_interface"
   echo "The default is to run all methods (except Jostle) and file formats."

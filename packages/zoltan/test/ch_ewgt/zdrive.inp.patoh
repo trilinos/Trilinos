@@ -1,4 +1,4 @@
-Decomposition Method 	= hg
+Decomposition Method 	= patoh
 Zoltan Parameters	= num_global_partitions=5
 Zoltan Parameters	= comm_weight_dim=1
 File Type		= hypergraph
