@@ -85,9 +85,11 @@ install_sh = @install_sh@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = BlockArnoldiPetraEx
+noinst_PROGRAMS = BlockArnoldiPetraEx BlockArnoldiPetraExHb
 
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
+
+BlockArnoldiPetraExHb_SOURCES = $(srcdir)/BlockArnoldiPetraExHb.cpp
 
 
 #np# Specify locations of include files within Trilinos, but outside np
@@ -111,6 +113,22 @@ BlockArnoldiPetraEx_LDADD = $(top_builddir)/utils/libanasaziutils.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 
+BlockArnoldiPetraExHb_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/utils/libanasaziutils.a 
+
+
+BlockArnoldiPetraExHb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/utils \
+	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+
+
+#np# List libraries that np is dependent on.
+BlockArnoldiPetraExHb_LDADD = $(top_builddir)/utils/libanasaziutils.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
 #np# conditionally.
@@ -123,13 +141,18 @@ subdir = example
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = BlockArnoldiPetraEx$(EXEEXT)
+noinst_PROGRAMS = BlockArnoldiPetraEx$(EXEEXT) \
+	BlockArnoldiPetraExHb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_BlockArnoldiPetraEx_OBJECTS = \
 	BlockArnoldiPetraEx-BlockArnoldiPetraEx.$(OBJEXT)
 BlockArnoldiPetraEx_OBJECTS = $(am_BlockArnoldiPetraEx_OBJECTS)
 BlockArnoldiPetraEx_LDFLAGS =
+am_BlockArnoldiPetraExHb_OBJECTS = \
+	BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.$(OBJEXT)
+BlockArnoldiPetraExHb_OBJECTS = $(am_BlockArnoldiPetraExHb_OBJECTS)
+BlockArnoldiPetraExHb_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -138,14 +161,16 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = \
-@AMDEP_TRUE@	$(DEPDIR)/BlockArnoldiPetraEx-BlockArnoldiPetraEx.Po
+@AMDEP_TRUE@	$(DEPDIR)/BlockArnoldiPetraEx-BlockArnoldiPetraEx.Po \
+@AMDEP_TRUE@	$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-DIST_SOURCES = $(BlockArnoldiPetraEx_SOURCES)
+DIST_SOURCES = $(BlockArnoldiPetraEx_SOURCES) \
+	$(BlockArnoldiPetraExHb_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
@@ -153,7 +178,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(BlockArnoldiPetraEx_SOURCES)
+SOURCES = $(BlockArnoldiPetraEx_SOURCES) $(BlockArnoldiPetraExHb_SOURCES)
 
 all: all-recursive
 
@@ -174,6 +199,11 @@ BlockArnoldiPetraEx-BlockArnoldiPetraEx.$(OBJEXT): \
 BlockArnoldiPetraEx$(EXEEXT): $(BlockArnoldiPetraEx_OBJECTS) $(BlockArnoldiPetraEx_DEPENDENCIES) 
 	@rm -f BlockArnoldiPetraEx$(EXEEXT)
 	$(CXXLINK) $(BlockArnoldiPetraEx_LDFLAGS) $(BlockArnoldiPetraEx_OBJECTS) $(BlockArnoldiPetraEx_LDADD) $(LIBS)
+BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.$(OBJEXT): \
+	$(srcdir)/BlockArnoldiPetraExHb.cpp
+BlockArnoldiPetraExHb$(EXEEXT): $(BlockArnoldiPetraExHb_OBJECTS) $(BlockArnoldiPetraExHb_DEPENDENCIES) 
+	@rm -f BlockArnoldiPetraExHb$(EXEEXT)
+	$(CXXLINK) $(BlockArnoldiPetraExHb_LDFLAGS) $(BlockArnoldiPetraExHb_OBJECTS) $(BlockArnoldiPetraExHb_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -182,6 +212,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/BlockArnoldiPetraEx-BlockArnoldiPetraEx.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
@@ -209,6 +240,18 @@ BlockArnoldiPetraEx-BlockArnoldiPetraEx.obj: $(srcdir)/BlockArnoldiPetraEx.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/BlockArnoldiPetraEx-BlockArnoldiPetraEx.Po' tmpdepfile='$(DEPDIR)/BlockArnoldiPetraEx-BlockArnoldiPetraEx.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraEx_CXXFLAGS) $(CXXFLAGS) -c -o BlockArnoldiPetraEx-BlockArnoldiPetraEx.obj `cygpath -w $(srcdir)/BlockArnoldiPetraEx.cpp`
+
+BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.o: $(srcdir)/BlockArnoldiPetraExHb.cpp
+@AMDEP_TRUE@	source='$(srcdir)/BlockArnoldiPetraExHb.cpp' object='BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po' tmpdepfile='$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraExHb_CXXFLAGS) $(CXXFLAGS) -c -o BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.o `test -f $(srcdir)/BlockArnoldiPetraExHb.cpp || echo '$(srcdir)/'`$(srcdir)/BlockArnoldiPetraExHb.cpp
+
+BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.obj: $(srcdir)/BlockArnoldiPetraExHb.cpp
+@AMDEP_TRUE@	source='$(srcdir)/BlockArnoldiPetraExHb.cpp' object='BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po' tmpdepfile='$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraExHb_CXXFLAGS) $(CXXFLAGS) -c -o BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.obj `cygpath -w $(srcdir)/BlockArnoldiPetraExHb.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 

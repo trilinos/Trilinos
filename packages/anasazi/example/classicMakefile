@@ -17,10 +17,17 @@ LDFLAGS=$(ARCH_LDFLAGS)
 LIB_PATHS= ../utils/libanasaziutils.$(LIB_EXT) $(LIBIFPACK) $(LIBEPETRA) \
 $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
 
+all:  BlockArnoldiPetraEx BlockArnoldiPetraExHb
+
 BlockArnoldiPetraEx: BlockArnoldiPetraEx.$(OBJ_EXT)
 	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
 
 BlockArnoldiPetraEx.$(OBJ_EXT) : BlockArnoldiPetraEx.cpp 
+
+BlockArnoldiPetraExHb: BlockArnoldiPetraExHb.$(OBJ_EXT)
+	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
+
+BlockArnoldiPetraExHb.$(OBJ_EXT) : BlockArnoldiPetraExHb.cpp 
 
 clean:
 	rm -f *.$(OBJ_EXT) *.stackdump core

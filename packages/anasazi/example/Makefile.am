@@ -3,9 +3,11 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = BlockArnoldiPetraEx
+noinst_PROGRAMS = BlockArnoldiPetraEx BlockArnoldiPetraExHb
 
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
+
+BlockArnoldiPetraExHb_SOURCES = $(srcdir)/BlockArnoldiPetraExHb.cpp
 
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
@@ -24,6 +26,19 @@ BlockArnoldiPetraEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/utils
 #np# List libraries that np is dependent on.
 BlockArnoldiPetraEx_LDADD = $(top_builddir)/utils/libanasaziutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+BlockArnoldiPetraExHb_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/utils/libanasaziutils.a 
+
+BlockArnoldiPetraExHb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/utils \
+	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+
+#np# List libraries that np is dependent on.
+BlockArnoldiPetraExHb_LDADD = $(top_builddir)/utils/libanasaziutils.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
