@@ -1,4 +1,5 @@
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Version.hpp"
 
 class A { 
  public: 
@@ -14,6 +15,8 @@ using namespace Teuchos;
 
 int main(int argc, char* argv[])
 {
+
+  cout << Teuchos::Teuchos_Version() << endl << endl;
 
   // Create some reference-counted pointers.
   // Create a reference-counted NULL pointer of type A.

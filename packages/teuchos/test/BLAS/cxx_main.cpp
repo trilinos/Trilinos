@@ -40,6 +40,7 @@ The test routine for TRSM is still being developed; all of the others are more o
 */
 
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_Version.hpp"
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
@@ -179,6 +180,10 @@ int main(int argc, char *argv[])
 	    }
 	}
     }
+
+  if (verbose)
+    cout << Teuchos::Teuchos_Version() << endl << endl;
+
   if(InvalidCmdLineArgs || (argc > 4))
     {
       cout << "Invalid command line arguments detected. Use the following flags:" << endl

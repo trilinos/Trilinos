@@ -1,7 +1,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   // Creating an empty command line processor looks like:
   Teuchos::CommandLineProcessor My_CLP;
 

@@ -30,6 +30,7 @@
 #include <string>
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_Version.hpp"
 
 using namespace std;
 using namespace Teuchos;
@@ -51,6 +52,9 @@ int main(int argc, char* argv[])
   int i, j;
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+
+  if (verbose)
+    cout << Teuchos::Teuchos_Version() << endl << endl;
 
   int numberFailedTests = 0;
   int returnCode = 0;

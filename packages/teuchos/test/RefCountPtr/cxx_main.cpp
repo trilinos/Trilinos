@@ -28,6 +28,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_Version.hpp"
 
 // Return constants from class functions
 const int
@@ -178,6 +179,9 @@ int main( int argc, char* argv[] ) {
 		clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
+	if (verbose)
+		cout << Teuchos::Teuchos_Version() << endl << endl;
 
 		// Create some smart pointers
 

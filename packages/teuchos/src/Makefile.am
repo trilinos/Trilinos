@@ -129,7 +129,8 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_XMLObject.cpp \
 	$(srcdir)/Teuchos_XMLObjectImplem.cpp
 
-UTIL_H =
+UTIL_H = \
+	$(srcdir)/Teuchos_Version.hpp
 
 UTIL =
 
