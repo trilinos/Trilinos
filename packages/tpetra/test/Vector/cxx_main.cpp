@@ -40,6 +40,7 @@
 // function prototype
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug);
+void checkOutputs();
 
 int main(int argc, char* argv[]) {
 	// initialize verbose & debug flags
@@ -58,7 +59,9 @@ int main(int argc, char* argv[]) {
 	int ierr = 0;
 	if(verbose) cout << "Starting VectorTest..." << endl;
 	ierr += unitTests<int, float>(verbose, debug);
-	ierr += unitTests<int, double>(verbose, debug);
+    ierr += unitTests<int, double>(verbose, debug);
+    
+    if(verbose) checkOutputs();
 
 	// finish up
 	if(ierr == 0)
@@ -66,6 +69,71 @@ int main(int argc, char* argv[]) {
 	else
 		cout << "Vector test failed." << endl;
 	return(ierr);
+}
+
+//======================================================================
+void checkOutputs() {
+    cout << "Doing checkOutput..." << endl;
+    int const length = 5;
+	int const indexBase = 0;
+    const Tpetra::SerialPlatform<int, int> platformE;
+	Tpetra::ElementSpace<int> elementspace(length, indexBase, platformE);
+    const Tpetra::SerialPlatform<int, double> platformV;
+	Tpetra::VectorSpace<int, double> vectorspace(elementspace, platformV);
+	Tpetra::Vector<int, double> v1(vectorspace);
+    cout << "Created v1, default constructor" << endl;
+    v1.printValues(cout);
+    cout << "Setting all to 3.0" << endl;
+    v1.setAllToScalar(3.0);
+    v1.printValues(cout);
+    cout << "Setting all to random" << endl;
+    v1.setAllToRandom();
+    v1.printValues(cout);
+    cout << "Min value: " << v1.minValue() << endl;
+    cout << "Max value: " << v1.maxValue() << endl;
+    cout << "Mean value: " << v1.meanValue() << endl;
+    cout << "1-norm: " << v1.norm1() << endl;
+    cout << "2-norm: " << v1.norm2() << endl;
+    cout << "Inf-norm: " << v1.normInf() << endl;
+    cout << "Creating v2, setting all to random" << endl;
+    Tpetra::Vector<int, double> v2(vectorspace);
+    v2.setAllToRandom();
+    v2.printValues(cout);
+    cout << "dot product of v1.v2 : " << v1.dotProduct(v2) << endl;
+    cout << "Setting v1 by 2.0 (scale):" << endl;
+    cout << "v1(before): "; v1.printValues(cout);
+    v1.scale(2.0);
+    cout << "v1(after): "; v1.printValues(cout);
+    cout << "copying v1 to user array" << endl;
+    double* dblArray = new double[5];
+    v1.extractCopy(dblArray);
+    cout << "values of dblArray: ";
+    for(int i = 0; i < length; i++)
+        cout << dblArray[i] << " ";
+    cout << endl;
+    delete[] dblArray;
+    cout << "Setting v1 to reciprocal of v2" << endl;
+    v2[0] = 0.25;
+    v2[1] = 5.0;
+    v2[2] = 0.125;
+    v2[3] = 2.0;
+    v2[4] = 0.75;
+    cout << "v2: "; v2.printValues(cout);
+    v1.reciprocal(v2);
+    cout << "v1: "; v1.printValues(cout);
+    
+    cout << "Elementwise multiply:" << endl;
+    v1[0] = 6.25; v1[1] = 18.0; v1[2] = 0.0; v1[3] = 3.0; v1[4] = 1.0;
+    cout << "v3 = v1 @ v2" << endl;
+    Tpetra::Vector<int, double> v3(vectorspace);
+    v3.elementwiseMultiply(1.0, v1, v2, 1.0);
+    cout << "v1: "; v1.printValues(cout);
+    cout << "v2: "; v2.printValues(cout);
+    cout << "v3: "; v3.printValues(cout);
+    cout << "v3 = v3 @ v1" << endl;
+    v3.elementwiseMultiply(1.0, v1, v3, 0.0);
+    cout << "v3: "; v3.printValues(cout);
+    
 }
 
 //======================================================================
@@ -132,9 +200,10 @@ int unitTests(bool verbose, bool debug) {
 	// dot product
 	if(verbose) cout << "dot product..." << endl;
 	vector.dotProduct(v2); // throw away return value
-	// reciprocal
+    // absolute value
 	if(verbose) cout << "absolute value..." << endl;
 	vector.absoluteValue(v2);
+    // reciprocal
 	if(verbose) cout << "reciprocal..." << endl;
 	vector.reciprocal(v2);
 	// scale

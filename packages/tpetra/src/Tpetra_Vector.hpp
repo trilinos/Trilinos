@@ -389,13 +389,13 @@ public:
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 		OrdinalType const length = getNumMyEntries();
-		
-		// calculate this *= scalarThis
-		BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
 
 		// calculate x@y into temp vector
 		vector<ScalarType> xytemp(length);
 		transform(x.scalarArray().begin(), x.scalarArray().end(), y.scalarArray().begin(), xytemp.begin(), multiplies<ScalarType>());
+        
+        // calculate this *= scalarThis
+		BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
 
 		// calculate this = scalarXY * temp + this
 		BLAS().AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, scalarPointer(), ordinalOne);
@@ -415,13 +415,13 @@ public:
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 		OrdinalType const length = getNumMyEntries();
-		
-		// calculate this *= scalarThis
-		BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
 	
 		// calculate y@x into temp vector
 		vector<ScalarType> xytemp(length);
 		transform(y.scalarArray().begin(), y.scalarArray().end(), x.scalarArray().begin(), xytemp.begin(), divides<ScalarType>());
+        
+        // calculate this *= scalarThis
+		BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
 		
 		// calculate this += scalarXY * temp
 		BLAS().AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, scalarPointer(), ordinalOne);
@@ -482,25 +482,31 @@ public:
 
 	//! Print method, used by overloaded << operator.
 	void print(ostream& os) const {
-		
-		OrdinalType myImageID = vectorSpace().comm().getMyImageID();
-		OrdinalType numImages = vectorSpace().comm().getNumImages();
+		OrdinalType const myImageID = vectorSpace().comm().getMyImageID();
+		OrdinalType const numImages = vectorSpace().comm().getNumImages();
 		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+        OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		
-		for (int imageCtr = ordinalOne; imageCtr < numImages; imageCtr++) {
+		for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
 			if (myImageID == imageCtr) {
-				if (myImageID == ordinalOne) {
-					os << endl << "Number of Global Entries  = " << getNumGlobalEntries() << endl;
+				if (myImageID == ordinalZero) {
+					os << "Number of Global Entries  = " << getNumGlobalEntries() << endl;
 				}
-				os << endl <<   "ImageID = " << myImageID << endl;
+				os <<   "ImageID = " << myImageID << endl;
 				os <<           "Number of Local Entries   = " << getNumMyEntries() << endl;
 				os <<           "Contents: ";
-				for(OrdinalType i = ordinalOne; i < getNumMyEntries(); i++)
+				for(OrdinalType i = ordinalZero; i < getNumMyEntries(); i++)
 					os << VectorData_->scalarArray_[i] << " ";
-				os << endl << endl;
+				os << endl;
 			}
 		}
 	}
+    
+    void printValues(ostream& os) const {
+        for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < getNumMyEntries(); i++)
+            os << VectorData_->scalarArray_[i] << " ";
+        os << endl;        
+    }
 	//@}
 
 	//@{ \name Misc. 
