@@ -33,13 +33,17 @@ static double determinant(double[3][3]);
 static void eigenvec3(double[3][3], double, double *, double *);
 
 int LB_inertial3d(
+     LB               *lb,      /* load balancing structure Tflops_Special */
      struct Dot_Struct *dotpt,  /* graph data structure */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
      double           evec[3],  /* eigenvector */
      double           *value,   /* array for value to sort on */
-     MPI_Comm         comm      /* communicator for partition */
+     MPI_Comm         comm,     /* communicator for partition */
+     int proc,          /* Global proc number (Tflops_Special) */
+     int nproc,         /* Number of procs in partition (Tflops_Special) */
+     int proclower      /* Lowest numbered proc in partition (Tflops_Special)*/
 )
 {
      double    tensor[3][3];    /* inertia tensor */
@@ -52,6 +56,7 @@ int LB_inertial3d(
      double    cmt[3], wgtt;    /* temp for center of mass */
      double    xxt, yyt, zzt;   /* temp for inertial tensor */
      double    xyt, xzt, yzt;   /* temp for inertial tensor */
+     int       rank;            /* rank in partition (Tflops_Special) */
 
      /* Compute center of mass and total mass. */
      cm[0] = cm[1] = cm[2] = 0.0;
@@ -75,8 +80,15 @@ int LB_inertial3d(
 
      /* Sum weights across processors */
 
-     MPI_Allreduce(cm,cmt,3,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&wgt_sum,&wgtt,1,MPI_DOUBLE,MPI_SUM,comm);
+     if (lb->Tflops_Special) {
+        rank = proc - proclower;
+        LB_reduce_double(cm, cmt, 3, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
+     }
+     else {
+        MPI_Allreduce(cm,cmt,3,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&wgt_sum,&wgtt,1,MPI_DOUBLE,MPI_SUM,comm);
+     }
 
      cm[0] = cmt[0]/wgtt;
      cm[1] = cmt[1]/wgtt;
@@ -111,12 +123,22 @@ int LB_inertial3d(
 
      /* Sum tensor across processors */
 
-     MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&yy,&yyt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&zz,&zzt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&xy,&xyt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&xz,&xzt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&yz,&yzt,1,MPI_DOUBLE,MPI_SUM,comm);
+     if (lb->Tflops_Special) {
+        LB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&zz, &zzt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&xy, &xyt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&xz, &xzt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&yz, &yzt, 1, comm, nproc, rank, proc, 1);
+     }
+     else {
+        MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&yy,&yyt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&zz,&zzt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&xy,&xyt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&xz,&xzt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&yz,&yzt,1,MPI_DOUBLE,MPI_SUM,comm);
+     }
 
      /* Compute eigenvector with maximum eigenvalue. */
 
@@ -382,4 +404,39 @@ static void eigenvec3(
      res3 = fabs(A[2][0]) + fabs(A[2][1]) + fabs(A[2][2]);
      res2 = max(res2, res3);
      *res /= max(res1, res2);
+}
+
+void LB_reduce_double(double *in, double *out, int len, MPI_Comm comm,
+                      int nproc, int rank, int proc, int n)
+{
+   int i, m, to, tag = 32107;
+   MPI_Status status;
+ 
+   /* this is a recursive function for Tflops_Special that takes a double
+      vector in and returns the summed vector out for a subset of processors
+      of the entire number of processors.  rank is a processors rank within
+      its partition of size nproc while proc is the rank of the processor with
+      the entire number of processors being used. */
+
+   m = 2*n;
+   if (rank%m) {
+      to = proc - n;
+      MPI_Send(in, len, MPI_DOUBLE, to, tag, comm);
+      MPI_Recv(out, len, MPI_DOUBLE, to, tag, comm, &status);
+   }
+   else
+      if (rank + n < nproc) {
+         to = proc + n;
+         MPI_Recv(out, len, MPI_DOUBLE, to, tag, comm, &status);
+         for (i = 0; i < len; i++)
+            in[i] += out[i];
+         if (m < nproc)
+            LB_reduce_double(in, out, len, comm, nproc, rank, proc, m);
+         else
+            for (i = 0; i < len; i++) 
+               out[i] = in[i];
+         MPI_Send(out, len, MPI_DOUBLE, to, tag, comm);
+      }  
+      else
+         LB_reduce_double(in, out, len, comm, nproc, rank, proc, m);
 }

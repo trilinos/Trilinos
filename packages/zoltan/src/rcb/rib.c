@@ -198,6 +198,8 @@ static int rib_fn(
 
   double start_time, end_time;
   double lb_time[2];
+  int tmp_nprocs;             /* added for Tflops_Special */
+  int old_nprocs;             /* added for Tflops_Special */
 
   /* MPI data types and user functions */
 
@@ -296,7 +298,10 @@ static int rib_fn(
 
   /* create local communicator for use in recursion */
 
-  MPI_Comm_dup(lb->Communicator,&local_comm);
+  if (lb->Tflops_Special)
+     local_comm = lb->Communicator;
+  else
+     MPI_Comm_dup(lb->Communicator,&local_comm);
 
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
     time2 = LB_Time(lb->Timer);
@@ -305,16 +310,20 @@ static int rib_fn(
 
   /* recursively halve until just one proc in partition */
 
-  num_procs = nprocs;
+  old_nprocs = num_procs = nprocs;
   root = 0;
   old_set = 1;
   treept[proc].parent = 0;
   treept[proc].left_leaf = 0;
+  if (lb->Tflops_Special) {
+     proclower = 0;
+     tmp_nprocs = nprocs;
+  }
 
-  while (num_procs > 1) {
-
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
-      time1 = LB_Time(lb->Timer);
+  while (num_procs > 1 || (lb->Tflops_Special && tmp_nprocs > 1)) {
+    /* tmp_nprocs is size of largest partition - force all processors to go
+       through all levels of rib */
+    if (lb->Tflops_Special) tmp_nprocs = (tmp_nprocs + 1)/2;
 
     ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
                              &procmid, &num_procs, &fractionlo);
@@ -356,26 +365,27 @@ static int rib_fn(
     for (i = 0; i < dotnum; i++) {
       wgts[i] = dotpt[i].Weight;
     }
+    if (old_nprocs > 1)      /* for Tflops_Special */
     switch (rib->Num_Geom) {
-    case 3:
-      ierr = LB_inertial3d(dotpt, dotnum, wgtflag, cm, evec, value,
-                           local_comm);
-      break;
-    case 2:
-      ierr = LB_inertial2d(dotpt, dotnum, wgtflag, cm, evec, value,
-                           local_comm);
-      break;
-    case 1:
-      ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
-      break;
+       case 3:
+          ierr = LB_inertial3d(lb, dotpt, dotnum, wgtflag, cm, evec, value,
+                               local_comm, proc, old_nprocs, proclower);
+          break;
+       case 2:
+          ierr = LB_inertial2d(lb, dotpt, dotnum, wgtflag, cm, evec, value,
+                               local_comm, proc, old_nprocs, proclower);
+          break;
+       case 1:
+          ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
+          break;
     }
 
     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
       time2 = LB_Time(lb->Timer);
 
-    if (!LB_find_median(value, wgts, dotmark, dotnum, proc, fractionlo,
+    if (!LB_find_median(lb, value, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess,
-                        &(counters[0]))) {
+                        &(counters[0]), nprocs, old_nprocs, proclower)) {
       LB_PRINT_ERROR(proc, yo, "Error returned from find_median.");
       LB_FREE(&dotmark);
       LB_FREE(&value);
@@ -410,7 +420,8 @@ static int rib_fn(
 
     ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
                                &dotnum, &dotmax, set, &allocflag, overalloc,
-                               stats, counters, local_comm);
+                               stats, counters, local_comm, proclower,
+                               old_nprocs);
     if (ierr) {
       LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
       LB_FREE(&dotmark);
@@ -432,9 +443,15 @@ static int rib_fn(
 
     /* create new communicators */
 
-    MPI_Comm_split(local_comm,set,proc,&tmp_comm);
-    MPI_Comm_free(&local_comm);
-    local_comm = tmp_comm;
+    if (lb->Tflops_Special) {
+       if (set) proclower = procmid;
+       old_nprocs = num_procs;
+    }
+    else {
+       MPI_Comm_split(local_comm,set,proc,&tmp_comm);
+       MPI_Comm_free(&local_comm);
+       local_comm = tmp_comm;
+    }
 
     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
       time4 = LB_Time(lb->Timer);
@@ -448,7 +465,7 @@ static int rib_fn(
 
   /* free all memory used by RIB and MPI */
 
-  MPI_Comm_free(&local_comm);
+  if (!lb->Tflops_Special) MPI_Comm_free(&local_comm);
 
   LB_FREE(&value);
   LB_FREE(&wgts);

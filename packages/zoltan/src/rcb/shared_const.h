@@ -37,7 +37,7 @@ extern void LB_RB_Print_All(LB *, LB_ID_PTR , struct Dot_Struct *,
 
 extern int LB_RB_Send_Outgoing(LB *, LB_ID_PTR *, LB_ID_PTR *,
   struct Dot_Struct **, int *, int *, int *, int *, int, int *, double, int,
-  int *, MPI_Comm);
+  int *, MPI_Comm, int, int);
 
 extern int LB_RB_Send_Dots(LB *, LB_ID_PTR *, LB_ID_PTR *,
   struct Dot_Struct **, int *, int *, int, int *, int *, int, int *, double,

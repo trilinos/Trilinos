@@ -16,6 +16,6 @@
 
 /* function prototype */
 
-extern int LB_Create_Proc_List(int, int, int, int *, MPI_Comm);
+extern int LB_Create_Proc_List(LB *, int, int, int, int *, MPI_Comm, int, int);
 
 #endif

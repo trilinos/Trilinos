@@ -30,13 +30,17 @@ static void evals2(double[2][2], double *, double *);
 static void eigenvec2(double[2][2], double, double *, double *);
 
 int LB_inertial2d(
+     LB               *lb,      /* load balancing structure Tflops_Special */
      struct Dot_Struct *dotpt,  /* graph data structure for weights */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
      double           evec[3],  /* eigenvector */
      double           *value,   /* array for value to sort on */
-     MPI_Comm         comm      /* communicator for partition */
+     MPI_Comm         comm,     /* communicator for partition */
+     int proc,          /* global proc number (Tflops_Special) */
+     int nproc,         /* Number of procs in partition (Tflops_Special) */
+     int proclower      /* Lowest numbered proc in partition (Tflops_Special)*/
 )
 {
      double tensor[2][2];       /* inertial tensor */
@@ -48,6 +52,7 @@ int LB_inertial2d(
      int    i;                  /* loop counter */
      double xcmt, ycmt, wgtt;   /* temp for center of mass */
      double xxt, yyt, xyt;      /* temp for tensor */
+     int    rank;               /* rank in partition (Tflops_Special) */
 
      /* Compute center of mass and total mass. */
 
@@ -70,9 +75,17 @@ int LB_inertial2d(
 
      /* Sum weights across processors */
 
-     MPI_Allreduce(&xcm,&xcmt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&ycm,&ycmt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&wgt_sum,&wgtt,1,MPI_DOUBLE,MPI_SUM,comm);
+     if (lb->Tflops_Special) {
+        rank = proc - proclower;
+        LB_reduce_double(&xcm, &xcmt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&ycm, &ycmt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
+     }   
+     else {
+        MPI_Allreduce(&xcm,&xcmt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&ycm,&ycmt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&wgt_sum,&wgtt,1,MPI_DOUBLE,MPI_SUM,comm);
+     }
 
      xcm = xcmt/wgtt;
      ycm = ycmt/wgtt;
@@ -98,9 +111,16 @@ int LB_inertial2d(
 
      /* Sum tensor across processors */
 
-     MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&yy,&yyt,1,MPI_DOUBLE,MPI_SUM,comm);
-     MPI_Allreduce(&xy,&xyt,1,MPI_DOUBLE,MPI_SUM,comm);
+     if (lb->Tflops_Special) {
+        LB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
+        LB_reduce_double(&xy, &xyt, 1, comm, nproc, rank, proc, 1);
+     }
+     else {
+        MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&yy,&yyt,1,MPI_DOUBLE,MPI_SUM,comm);
+        MPI_Allreduce(&xy,&xyt,1,MPI_DOUBLE,MPI_SUM,comm);
+     }
 
      /* Compute eigenvector with maximum eigenvalue. */
 

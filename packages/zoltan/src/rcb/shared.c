@@ -205,7 +205,9 @@ int LB_RB_Send_Outgoing(
                                        4 = most dot memory this proc ever allocs
                                        5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
-  MPI_Comm local_comm
+  MPI_Comm local_comm,
+  int proclower,                    /* smallest processor for Tflops_Special */
+  int numprocs                      /* number of processors for Tflops_Special*/
 )
 {
 /* Routine to determine new processors for outgoing dots. */
@@ -232,7 +234,8 @@ int LB_RB_Send_Outgoing(
       return LB_MEMERR;
     }
 
-  ierr = LB_Create_Proc_List(set, *dotnum, outgoing, proc_list, local_comm);
+  ierr = LB_Create_Proc_List(lb, set, *dotnum, outgoing, proc_list, local_comm,
+                             proclower, numprocs);
   if (ierr != LB_OK && ierr != LB_WARN) {
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Create_Proc_List.");
     LB_FREE(&proc_list);

@@ -16,11 +16,14 @@
 #include "create_proc_list_const.h"
 
 int LB_Create_Proc_List(
+     LB       *lb,            /* Load-balancing structure. */
      int       set,           /* set that processor is in */
      int       dotnum,        /* number of dots that my processor has */
      int       outgoing,      /* number of dots that my processor is sending */
      int      *proclist,      /* processor list for my outgoing dots */
-     MPI_Comm  comm           /* communicator for partition */
+     MPI_Comm  comm,          /* communicator for partition */
+     int       proclower,     /* smallest processor for Tflops_Special */
+     int       numprocs       /* number of processors for Tflops_Special */
 )
 {
 /* This routine calculates a communication pattern for the situation where
@@ -41,6 +44,9 @@ int LB_Create_Proc_List(
      int  s, sp;              /* temporary sums on number of dots */
      int  num_to;             /* number of dots to send to a processor */
      int  i, j, k;            /* loop indexes */
+     int *tmp_send;           /* temporary for Tflops_Special */
+     int *tmp_rem;            /* temporary for Tflops_Special */
+     int *tmp_sets;           /* temporary for Tflops_Special */
 
      /* allocate memory for arrays */
      MPI_Comm_rank(comm, &rank);
@@ -65,16 +71,29 @@ int LB_Create_Proc_List(
      sets[rank] = set;
      MPI_Allgather(&sets[rank], 1, MPI_INT, sets, 1, MPI_INT, comm);
 
+     if (lb->Tflops_Special) {
+        tmp_send = &send[proclower];
+        tmp_rem = &rem[proclower];
+        tmp_sets = &sets[proclower];
+        rank -= proclower;
+        nprocs = numprocs;
+     }
+     else {
+        tmp_send = send;
+        tmp_rem = rem;
+        tmp_sets = sets;
+     }
+
      /* Convert processor numbers to local (for this communicator) numbering
         and determine which subset of processors a processor is in. */
 
      /* to determine the number of dots (a) that will be on each of the
         processors in the other group, start with the average */
      for (i = sum_send = sum_rem = 0; i < nprocs; i++)
-        if (sets[i] == set)
-           sum_send += send[i];
+        if (tmp_sets[i] == set)
+           sum_send += tmp_send[i];
         else {
-           sum_rem += rem[i];
+           sum_rem += tmp_rem[i];
            np_other++;
         }
 
@@ -87,8 +106,8 @@ int LB_Create_Proc_List(
         k = 0;
         while (!k) {
            for (i = s = 0; i < nprocs; i++)
-              if (sets[i] != set && rem[i] < a)
-                 s += a - rem[i];
+              if (tmp_sets[i] != set && tmp_rem[i] < a)
+                 s += a - tmp_rem[i];
            if (s == sum_send)
               k = 1;
            else if (s < sum_send) {
@@ -111,12 +130,12 @@ int LB_Create_Proc_List(
         The variable send is now the number that will be received by each
         processor only in the other part */
      for (i = s = 0; i < nprocs; i++)
-        if (sets[i] != set && rem[i] < a)
-           s += send[i] = a - rem[i];
+        if (tmp_sets[i] != set && tmp_rem[i] < a)
+           s += tmp_send[i] = a - tmp_rem[i];
      while (s < sum_send)
         for (i = 0; i < nprocs && s < sum_send; i++)
-           if (sets[i] != set && (send[i] || !s)) {
-              send[i]++;
+           if (tmp_sets[i] != set && (tmp_send[i] || !s)) {
+              tmp_send[i]++;
               s++;
            }
 
@@ -128,12 +147,13 @@ int LB_Create_Proc_List(
         that we send dots to.  We continue to send dots to processors beyond
         that one until we run out of dots to send. */
      if (outgoing) {
+        if (lb->Tflops_Special) a = outgoing;    /* keep outgoing around in a */
         for (i = j = 0; i < rank; i++)
-           if (sets[i] == set)               /* only overwrote other half */
-              j += send[i];
+           if (tmp_sets[i] == set)               /* only overwrote other half */
+              j += tmp_send[i];
         for (i = k = 0; k <= j; i++)
-           if (sets[i] != set)
-              k += send[i];
+           if (tmp_sets[i] != set)
+              k += tmp_send[i];
         i--;
         num_to = (outgoing < (k - j)) ? outgoing : (k - j);
         for (k = 0; k < num_to; k++)
@@ -141,13 +161,16 @@ int LB_Create_Proc_List(
         outgoing -= num_to;
         while (outgoing > 0) {
            i++;
-           while (sets[i] == set)
+           while (tmp_sets[i] == set)
               i++;
-           num_to = (outgoing < send[i]) ? outgoing : send[i];
+           num_to = (outgoing < tmp_send[i]) ? outgoing : tmp_send[i];
            outgoing -= num_to;
            for (j = 0; j < num_to; j++, k++)
               proclist[k] = i;
         }
+        if (lb->Tflops_Special)
+           for (i = 0; i < a; i++)
+              proclist[i] += proclower;
      }
 
      /* free memory and return */

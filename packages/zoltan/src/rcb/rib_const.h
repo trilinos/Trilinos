@@ -43,9 +43,11 @@ extern int LB_Set_RIB_Param(char *, char *);
 
 extern int LB_inertial1d(struct Dot_Struct *, int, int, double *, double *,
                          double *);
-extern int LB_inertial2d(struct Dot_Struct *, int, int, double *, double *,
-                         double *, MPI_Comm);
-extern int LB_inertial3d(struct Dot_Struct *, int, int, double *, double *,
-                         double *, MPI_Comm);
+extern int LB_inertial2d(LB *, struct Dot_Struct *, int, int, double *,
+                         double *, double *, MPI_Comm, int, int, int);
+extern int LB_inertial3d(LB *, struct Dot_Struct *, int, int, double *,
+                         double *, double *, MPI_Comm, int, int, int);
+extern void LB_reduce_double(double *, double *, int, MPI_Comm, int, int, int,
+                             int);
 
 #endif
