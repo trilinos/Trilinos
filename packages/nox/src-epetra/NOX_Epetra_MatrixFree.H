@@ -52,7 +52,11 @@ Matrix-Free Newton-Krylov is a method that takes advantage of the fact the Newto
 
 \f[ Jy = \frac{F(x + \delta y) - F(x)}{\delta} \f]
 
-where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, \f$y\f$ is the vector to be operated on, and \f$\delta\f$ is a scalar perturbation.
+where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, \f$y\f$ is the vector to be operated on, and \f$\delta\f$ is a scalar perturbation calculated by:
+
+\f[ \delta = \lambda * (\lambda + \frac{\| x\|}{\| y\|} ) \f]
+
+where \f$ \lambda = 1.0e-6 \f$.
  */
 class MatrixFree : public Epetra_Operator {
       

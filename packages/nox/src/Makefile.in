@@ -99,6 +99,7 @@ DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+MAINT = @MAINT@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
@@ -122,7 +123,8 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_Linesearch_Backtrack.H \
 	$(srcdir)/NOX_Linesearch_Manager.H \
 	$(srcdir)/NOX_Linesearch_MoreThuente.H \
-	$(srcdir)/NOX_Linesearch_Polynomial.H 
+	$(srcdir)/NOX_Linesearch_Polynomial.H \
+	$(srcdir)/NOX_Linesearch_Secant.H 
 
 
 LINESEARCH = \
@@ -130,7 +132,8 @@ LINESEARCH = \
 	$(srcdir)/NOX_Linesearch_Backtrack.C \
 	$(srcdir)/NOX_Linesearch_Manager.C \
 	$(srcdir)/NOX_Linesearch_MoreThuente.C \
-	$(srcdir)/NOX_Linesearch_Polynomial.C 
+	$(srcdir)/NOX_Linesearch_Polynomial.C \
+	$(srcdir)/NOX_Linesearch_Secant.C 
 
 
 DIRECTION_H = \
@@ -288,7 +291,8 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Linesearch_Manager.$(OBJEXT) \
 	NOX_Linesearch_MoreThuente.$(OBJEXT) \
 	NOX_Linesearch_Polynomial.$(OBJEXT) \
-	NOX_Direction_Manager.$(OBJEXT) NOX_Direction_Newton.$(OBJEXT) \
+	NOX_Linesearch_Secant.$(OBJEXT) NOX_Direction_Manager.$(OBJEXT) \
+	NOX_Direction_Newton.$(OBJEXT) \
 	NOX_Direction_SteepestDescent.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Manager.$(OBJEXT) NOX_Solver_LineSearch.$(OBJEXT) \
@@ -317,6 +321,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_MoreThuente.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Polynomial.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Secant.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_LineSearch.Po \
@@ -348,10 +353,10 @@ all: NOX_Config.h
 
 .SUFFIXES:
 .SUFFIXES: .C .o .obj
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  src/Makefile
-Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
@@ -367,7 +372,7 @@ stamp-h: $(srcdir)/NOX_Config.h.in $(top_builddir)/config.status
 	  && CONFIG_FILES= CONFIG_HEADERS=src/NOX_Config.h:src/NOX_Config.h.in \
 	     $(SHELL) ./config.status
 	@mv stamp-hT stamp-h
-$(srcdir)/NOX_Config.h.in:  $(srcdir)/./stamp-h.in
+$(srcdir)/NOX_Config.h.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/./stamp-h.in
 	@if test ! -f $@; then \
 		rm -f $(srcdir)/./stamp-h.in; \
 		$(MAKE) $(srcdir)/./stamp-h.in; \
@@ -415,6 +420,7 @@ NOX_Linesearch_MoreThuente.$(OBJEXT): \
 	$(srcdir)/NOX_Linesearch_MoreThuente.C
 NOX_Linesearch_Polynomial.$(OBJEXT): \
 	$(srcdir)/NOX_Linesearch_Polynomial.C
+NOX_Linesearch_Secant.$(OBJEXT): $(srcdir)/NOX_Linesearch_Secant.C
 NOX_Direction_Manager.$(OBJEXT): $(srcdir)/NOX_Direction_Manager.C
 NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
 NOX_Direction_SteepestDescent.$(OBJEXT): \
@@ -456,6 +462,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_MoreThuente.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Polynomial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Secant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_LineSearch.Po@am__quote@
@@ -545,6 +552,18 @@ NOX_Linesearch_Polynomial.obj: $(srcdir)/NOX_Linesearch_Polynomial.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_Polynomial.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_Polynomial.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_Polynomial.obj `cygpath -w $(srcdir)/NOX_Linesearch_Polynomial.C`
+
+NOX_Linesearch_Secant.o: $(srcdir)/NOX_Linesearch_Secant.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_Secant.C' object='NOX_Linesearch_Secant.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_Secant.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_Secant.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_Secant.o `test -f $(srcdir)/NOX_Linesearch_Secant.C || echo '$(srcdir)/'`$(srcdir)/NOX_Linesearch_Secant.C
+
+NOX_Linesearch_Secant.obj: $(srcdir)/NOX_Linesearch_Secant.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_Secant.C' object='NOX_Linesearch_Secant.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_Secant.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_Secant.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_Secant.obj `cygpath -w $(srcdir)/NOX_Linesearch_Secant.C`
 
 NOX_Direction_Manager.o: $(srcdir)/NOX_Direction_Manager.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Manager.C' object='NOX_Direction_Manager.o' libtool=no @AMDEPBACKSLASH@

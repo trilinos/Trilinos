@@ -26,6 +26,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include "NOX_Epetra_Interface.H"
+#include "NOX_Utils.H"
 
 #include "NOX_Epetra_MatrixFree.H"
 
@@ -66,15 +67,51 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Use a directional derivative to compute y = Jx
   /*
    * eta = scalar perturbation
+   * u = solution vector used to evaluate f
    * f = function evaluation (RHS)
+   * x = vector that J is applied to
    *
-   *        f(x+eta*x) - f(x)
+   *        f(u+eta*x) - f(u)
    * Jx =   -----------------
    *               eta
    */
 
-  // Compute eta
-  double eta = 1.0e-6;
+  // Compute perturbation constant, eta
+  // Taken from LOCA v1.0 manual SAND2002-0396 p. 28 eqn. 2.43
+  // eta = lambda*(lambda + 2norm(u)/2norm(x))
+  double lambda = 1.0e-6;
+  double solutionNorm = 1.0;
+  double vectorNorm = 1.0;
+
+  int test = currentX.Norm2(&solutionNorm);
+
+  // Make sure the norm computed correctly
+  if (test != 0) {
+    if (NOX::Utils::doPrint(Utils::Warning)) 
+      cout << "Warning: NOX::Epetra::MatrixFree::Apply() - solutionNorm "
+	   << "failed!" << endl;
+    solutionNorm = 1.0;
+  }
+
+  test = X.Norm2(&vectorNorm);
+
+  // Make sure the norm computed correctly
+  if (test != 0) {
+    if (NOX::Utils::doPrint(Utils::Warning)) 
+      cout << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm failed!" 
+	   << endl;
+    vectorNorm = 1.0;
+  }
+
+  // Make sure the norm is not zero, otherwise we can get an inf perturbation
+  if (vectorNorm == 0.0) {
+    if (NOX::Utils::doPrint(Utils::Warning)) 
+      cout << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero" 
+	   << endl;
+    vectorNorm = 1.0;
+  }
+
+  double eta = lambda*(lambda + solutionNorm/vectorNorm);
 
   // Compute the perturbed RHS
   perturbX = currentX;
