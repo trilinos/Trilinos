@@ -461,7 +461,7 @@ int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
   double MaxReal,MaxImag;
   Teuchos::ParameterList * EigenList = (Teuchos::ParameterList *) fov->EigenList;
 
-  bool UseDiagScaling = EigenList->get("field-of-values: use diagonal scaling", UseDiagScaling);
+  bool UseDiagScaling = EigenList->get("field-of-values: use diagonal scaling", false);
   EigenList->set("field-of-values: use diagonal scaling", false);
   
   ML_Anasazi::GetFieldOfValuesBox(CrsTemp,MaxReal,MaxImag,*EigenList);
