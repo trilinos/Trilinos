@@ -194,9 +194,51 @@ Please note that this document is a work in progress.
 	**(See Overview Doc pg 12)**
 Source code repository and build tools: 
 
-\triangleright CVS Repository
-Trilinos source code is maintained in a CVS~\cite{CVS} repository.  To 
-access the repository, one must have an account on software.sandia.gov.
+\subsection CVS Repository
+Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
+very easy to add new packages to the repository.  Packages that already use 
+CVS can even rettain their CVS history!  To access the repository, one must 
+have an account on software.sandia.gov.  Once an account has been granted, 
+set the following two environment variables (replace ``your_user_name'' 
+with your user name on software):
+
+\begin{verbatim}
+CVSROOT :ext:your_user_name@software.sandia.gov:/space/CVS
+CVS_RSH ssh
+\end{verbatim}
+
+For those not familiar with CVS, below is a brief discussion covering some 
+of the most common CVS commands.  For more information, see the Gnu CVS Home
+Page~\cite{CVS}.
+
+To get started, checkout a copy of the development branch of the repository.
+(Releases branches can be obtained by by checking out the appropriate 
+tagged version of the repository.)
+
+\begin{verbatim}
+cvs checkout Trilinos
+\end{verbatim}
+
+To update after a version has been obtained use the ``update'' command.  
+First, cd to the directory that is to be updated (usually the Trilinos root 
+directory).  Then type:
+
+\begin{verbatim}
+cvs -q update -dP
+\end{verbatim}
+
+The ``-q'' option means ``be somewhat quiet''.  Try the command without this
+option to see what it does.  
+
+The ``-d'' option means to get any new directories.  For example, if a new 
+package is added to the repository, but the ``-d'' option is not used, that 
+new package will never appear in the working copy.  However, the first time 
+that the ``-d'' option is used, all of the new package directories will be 
+downloaded, and from that time on, all cvs updates will update the 
+directories that were downloaded.  It is good practice to include this 
+option for every cvs update.
+
+... Decide if this section is worth it, or if people should read the doc.
 
 A lot of useful information is accessible via a
 web-based interface package called Bonsai~\cite{Bonsai}.  Features and bug 
