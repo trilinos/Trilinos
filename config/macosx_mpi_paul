@@ -1,9 +1,10 @@
 # This builds Trilinos on Paul Sexton's Quicksilver G4.
 # NOTE: You will need to have Fink installed (as well as the g77 
-# and lam packages) for this script to work properly.
+# and lammpi packages) for this script to work properly.
 
 ../configure \
-    --with-mpi-compilers \
+    --enable-mpi \
+    CC=mpicc CXX=mpic++ F77=mpif77 \
     FLIBS="-L/sw/lib/ -lg2c" \
     LDFLAGS="-framework vecLib"
 
