@@ -27,6 +27,7 @@
 #@HEADER
 
 SUBDIRS = scripts \
+	  Test_Basic \
 	  Test_Epetra_RowMatrix Test_Epetra_CrsMatrix \
 	  Test_Epetra_VbrMatrix Test_MultipleSolves \
 	  Test_Detailed \
