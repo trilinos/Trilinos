@@ -144,8 +144,8 @@ broyden_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir)/s
 
 broyden_CXXFLAGS = -I$(top_srcdir)/src
 
-# Order matters here!
-broyden_LDADD = $(CXXREPOS) -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
+# Be sure to specify the **exact** library you want since others may be elsewhere in the path
+broyden_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
 
 # ------------------------------------------------------------------------
