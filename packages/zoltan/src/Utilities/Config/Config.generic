@@ -99,6 +99,7 @@ FFLAGS    		=
 # conditional compilation in f90gl.  F90 compilers requiring 
 # special support are absoft, nas, and sun; for these compilers
 # specify spprinc.absoft, spprinc.nas, or spprinc.sun, respectively.
+# 64-bit architectures should use spprinc.64bit.
 # For other compilers, use spprinc.most.
 SPPR_HEAD 		= spprinc.most
 
