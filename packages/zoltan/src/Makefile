@@ -167,7 +167,8 @@ ALL_INC		= all_const.h all_allo_const.h
 LB_CSRC		= lb_balance.c lb_eval.c lb_free.c lb_init.c \
 		  lb_invert.c lb_migrate.c \
 		  lb_set_fn.c lb_set_method.c  \
-		  lb_point_assign.c lb_box_assign.c lb_part2proc.c
+		  lb_point_assign.c lb_box_assign.c lb_part2proc.c \
+                  lb_set_part_sizes.c
 LB_INC		= lb_const.h lb_init_const.h
 
 ORDER_CSRC	= order.c order_struct.c perm.c
