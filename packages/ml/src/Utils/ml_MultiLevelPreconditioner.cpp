@@ -674,10 +674,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_Create(&ml_,MaxCreationLevels);
     ml_->output_level = OutputLevel;
 
-    // FIXME: should be grabbed from the parameters list
-    // ml_->MinPerProc_repartition = 129;
-    // ml_->LargestMinMaxRatio_repartition = 1.001;
-
     int NumMyRows;
     
     NumMyRows = RowMatrix_->NumMyRows();
@@ -1213,9 +1209,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   
   // print unused parameters
-  if( List_.isParameter("print unused") ) {
+  if (List_.isParameter("print unused")) {
     int ProcID = List_.get("print unused",-2);
-    if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
+    if (Comm().MyPID() == ProcID || ProcID == -1) PrintUnused();
   }
 
   // ===================================================================== //

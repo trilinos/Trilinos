@@ -64,7 +64,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
   int num_smoother_steps = List_.get("smoother: sweeps", 1);
 
-  double omega = List_.get("smoother: damping factor",1.0);
+  double omega = List_.get("smoother: damping factor",0.67);
 
   int pre_or_post = 0;
   string PreOrPostSmoother = List_.get("smoother: pre or post","both");

@@ -28,7 +28,7 @@
  *
  * \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
  *
- *  \date Last update do Doxygen: 22-Jul-04
+ * \date Last update do Doxygen: 22-Jul-04
  *
  */
 
@@ -148,7 +148,11 @@ namespace ML_Epetra
   int SetParameters(int argc, char* argv[],
                     Teuchos::ParameterList& List);
 
-/* Class ML_Epetra::MultiLevelPreconditioner defined black-box algebraic
+/*!
+ 
+   \brief MultiLevelPreconditioner: a class to define black-box multilevel preconditioners using aggregation methods.
+
+   Class ML_Epetra::MultiLevelPreconditioner defined black-box algebraic
    multilevel preconditioners of matrices defined as Epetra_RowMatrix derived
    objects. The resulting preconditioner can be used in AztecOO, and in any
    other solver that accepts Epetra_Operator derived objects, and apply the
@@ -183,7 +187,7 @@ namespace ML_Epetra
     - \ref ml_2level_DD_cpp shows how to
       define a 2-level domain decomposition preconditioner using 
       this class;
-    - \ref ml ml_viz_cpp details how to visualize the aggregates;
+    - \ref ml_viz_cpp details how to visualize the aggregates;
     - \ref ml_maxwell_cpp reports how to
       use this class for Maxwell problems.
       
@@ -200,6 +204,8 @@ namespace ML_Epetra
      aggregates, and/or you want to experiment various combinations of the
      parameters, simply changing some parameters in a Teuchos::ParameterList.
   
+   Defaults parameters can be specified using function SetDefaults().
+
     \warning The Maxwell interface is still under development. 
 
     \author Marzio Sala, SNL 9214
@@ -208,7 +214,7 @@ class MultiLevelPreconditioner : public virtual Epetra_Operator {
       
 public:  
 
-  //@{ \name Destructor.
+  //@{ \name Constructors.
 
   //! Constructs an MultiLevelPreconditioner with default values.
 
@@ -241,6 +247,7 @@ public:
   
   //@{ \name Destructor.
 
+  //! Destroys the preconditioner.
   ~MultiLevelPreconditioner() {
     if (IsComputePreconditionerOK_) 
       DestroyPreconditioner(); 
