@@ -873,17 +873,30 @@ common CVS commands is available in~\ref{Section:CVS}.  For a more complete
 listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
 
 \subsection{Bonsai}
+
 The CVS history of the Trilinos project is accessible via a
 web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be 
 found on the web at 
 \newline
-\InlineDirectory{http://software.sandia.gov/bonsai}.  Bonsai gives a 
-developer the ability to view the changes made to the files in the 
-repository. Developers can search 
+\InlineDirectory{http://software.sandia.gov/bonsai}.  
+
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+
+Bonsai gives a developer the ability to view the changes made to the files in 
+the repository. Developers can search 
 based on filename, directory, branch, date, user who made the 
 change, or any combination of these criteria.  The differences between any two 
 versions of a file may also be viewed, which can be very helpful when 
 debugging.  
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+The differences between any two versions of a file may also be viewed, 
+which can be very helpful when debugging.  
+}\end{minipage}}
+\end{minipage}
 
 \subsection{Bugzilla}
 \label{subsect:Bugzilla}
@@ -891,7 +904,7 @@ Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.
 Bugzilla can be found on the web at 
 \InlineDirectory{http://software.sandia.gov/bugzilla}.  
 A Bugzilla account is necessary for submitting bugs.  Those interested can 
-sign up at the website.  All bugs related to any package of Trilnos that uses 
+sign up at the website.  All issues related to any Trilnos package that uses 
 Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
 one developer diagnoses and fixes a bug within a short period of time.  A bug 
 report is still very valuable in this case because it provides an artifact 
@@ -1075,9 +1088,20 @@ structure.
 \item A package must be portable to all supported platform in order to
 be built by default using the top-level Trilinos configure process.
 \end{enumerate}
+
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+
 A package can remain in a predistribution state indefinitely.  
-When release branches are created, any packages not ready or approved for 
-distribution can easily be omitted from the distribution.
+Any package that is not ready or approved for 
+release can easily be omitted from a distribution.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+A package can remain in a predistribution state indefinitely.
+}\end{minipage}}
+\end{minipage}
 
 \subsection{Port Package to All Supported Platforms}
 Although use of Trilinos Autotools is the easiest and most robust way
@@ -1375,8 +1399,7 @@ many details about the problem being solved and the platform on which
 application is being run. However, even though
 there are many different solvers, conceptually, from an abstract view,
 these solvers are providing a similar capability, and it is
-advantageous to utilize this abstract view.be the coupling of
-linear solvers and eigensolvers in various ways.
+advantageous to utilize this abstract view.
 TSF is a collection of abstract classes that provides an application
 programmer interface (API) to perform the most common solver
 operations.  It can provide a single interface to many different
@@ -1596,7 +1619,7 @@ pulled from this file.  It is usually best to include it through a
 ConfigDefs file; read on for more information.  
 
 \item Include np\_config.h before (usually indirectly) including \newline
-(AnyOtherPackage\_ConfigDefs.h, or the Autotools PACKAGE macros will 
+(AnyOtherPackage)\_ConfigDefs.h, or the Autotools PACKAGE macros will 
 be improperly defined.
 
 \item Consider creating a file analogous to Epetra\_ConfigDefs.h.  This file 
@@ -1713,9 +1736,9 @@ subsequent \InlineCommand{cvs commit} is necessary.  Directories cannot be
 removed from the repository using \InlineCommand{cvs remove}.
 
 \item{\bf Committing Changes:}
-Note that the \InlineDirectory'{CVSEDITOR} environment variable denotes which 
+Note that the \InlineDirectory{CVSEDITOR} environment variable denotes which 
 text editor will be used to edit CVS commit logs.  The default value for
-\InlineDirectory'{CVSEDITOR} is 
+\InlineDirectory{CVSEDITOR} is 
 \begin {verbatim} 
 vi
 \end {verbatim}.
