@@ -481,7 +481,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_memory_alloc((void**)&rows_in_aggs,aggr_count*sizeof(int*),"MLt");
    for (i = 0; i < aggr_count; i++) 
       rows_in_aggs[i] = (int *) ML_allocate( (agg_sizes[i]+1)*sizeof(int) );
-   if (rows_in_aggs[aggr_count-1] == NULL) 
+   if ( (aggr_count > 0) && (rows_in_aggs[aggr_count-1] == NULL) )
    {
       printf("Error: couldn't allocate memory in CoarsenUncoupledVB\n");
       exit(1);
@@ -660,10 +660,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
             new_ja[index++] = new_ja[j];  
          }
       }
+	  /* JJH This code fragment forces at least one entry in each row,
+			 even if that entry is zero.
       if ( index == new_ia[i] ) 
       {
          new_val[index] = new_val[k]; new_ja[index++] = new_ja[k];
       }
+	  -- JJH */
       k = new_ia[i+1];
       new_ia[i+1] = index;
    }

@@ -174,6 +174,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    if ( totallength < maxiter ) maxiter = totallength;
 
    /* Check if A is 1x1.  If so, return early. */
+   /* JJH This was causing problems in parallel if a processor owns no rows. 
    if (matrix->invec_leng == 1)
    {
       ML_Operator_Get_Diag(matrix, 1, &diag); 
@@ -181,6 +182,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       data->ML_eigen_min = *diag;
       return 1;
    }
+   */
 /*
    maxiter = - maxiter;
    maxiter = ML_gmax_int(maxiter, comm);
