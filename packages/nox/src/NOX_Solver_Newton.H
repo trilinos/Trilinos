@@ -39,36 +39,36 @@
 namespace NOX {
 namespace Solver {
 
-//! Newton-like solver with a line search.
 /*!
+  \brief %Newton-like solver with a line search.
   
-The following parameters are valid for this solver:
+  The following parameters are valid for this solver:
 
-- "Line Search" - Sublist of the line search parameters, passed to the
-  NOX::Linesearch::Manager constructor. Defaults to an empty list.
+  - "Line Search" - Sublist of the line search parameters, passed to
+    the NOX::Linesearch::Manager constructor. Defaults to an empty list.
 
-- "Linear %Solver" - Sublist of the linear solver paramaters, passed
-  to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
-  within this list may be modified by the resetForcingTerm(). Defaults
-  to an empty list.
+  - "Linear %Solver" - Sublist of the linear solver paramaters, passed
+    to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
+    within this list may be modified by the
+    resetForcingTerm(). Defaults to an empty list.
 
-- "Forcing Term Method" - Method to compute the forcing term, i.e.,
-  the tolerance for the linear solver. Defaults to ""
-  (nothing). Choices are "Type 1" and "Type 2".
+  - "Forcing Term Method" - Method to compute the forcing term, i.e.,
+    the tolerance for the linear solver. Defaults to ""
+    (nothing). Choices are "Type 1" and "Type 2".
 
-- "Forcing Term Minimum Tolerance" - Minimum acceptable linear solver
-  tolerance. Defaults to 1.0e-6.
+  - "Forcing Term Minimum Tolerance" - Minimum acceptable linear
+    solver tolerance. Defaults to 1.0e-6.
 
-- "Forcing Term Maximum Tolerance" = Maximum acceptable linear solver
-  tolerance. Default to 0.01.
+  - "Forcing Term Maximum Tolerance" = Maximum acceptable linear
+    solver tolerance. Default to 0.01.
 
-- "Forcing Term Alpha" - Used for the "Type 2" forcing term
-  calcuation. Defaults to 1.5.
+  - "Forcing Term Alpha" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 1.5.
 
-- "Forcing Term Gamma" - Used for the "Type 2" forcing term
-  calcuation. Defaults to 0.9.
+  - "Forcing Term Gamma" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 0.9.
 
-
+  \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
 class Newton : public Generic {

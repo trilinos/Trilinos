@@ -36,7 +36,11 @@
 #include "NOX_Common.H"		
 #include "NOX_Utils.H"
 
-/*! \mainpage %NOX: An Object-Oriented Nonlinear Solver Package
+/*! 
+
+  \mainpage %NOX: An Object-Oriented Nonlinear Solver Package
+
+  \todo Add regression testing.
  */
  
 //! Nonlinear solvers package namespace
@@ -48,9 +52,13 @@ namespace NOX {
 //! %NOX abstract interface for vector and group
 namespace Abstract {
 
-  /*! \brief %NOX's pure abstract vector interface for vectors that are
-   * used by the NLS solver. We require only limited functionality for
-   * the vectors.*/
+/*! 
+  \brief %NOX's pure abstract vector interface for vectors that are
+  used by the NLS solver. We require only limited functionality for
+  the vectors.
+
+  \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+*/
 
 class Vector {
 
@@ -59,10 +67,10 @@ public:
   //! Norm types.
   enum NormType {TWO, ONE, INF};
 
-  //! Vector constructor.
+  //! %Vector constructor.
   Vector() {};
 
-  //! Vector destructor.
+  //! %Vector destructor.
   virtual ~Vector() {};
 
   //@{ \name Initialization methods.
@@ -97,7 +105,7 @@ public:
 
   //@{ \name Creating new Vectors.
 
-  /*! \brief Create a new Vector of the same underlying type by
+  /*! \brief Create a new %Vector of the same underlying type by
    * cloning "this", and return a pointer to the new vector.  If type
    * is "DeepCopy", then we need to create an exact replica of
    * "this". Otherwise, if type is "CopyShape", we need only replicate
@@ -126,7 +134,7 @@ public:
   //! Return length of vector.
   virtual int length() const = 0;
 
-};
+}; // class Vector
 } // namespace Abstract
 } // namespace NOX
 
