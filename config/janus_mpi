@@ -1,0 +1,9 @@
+../configure --host=i686-intel-linux \
+	--with-blas=$TLOPS_XDEV/tflops/lib/libcsmath.a \
+	--with-lapack=$TFLOPS_XDEV/tflops/lib/scalapack/liblapack.a \
+	--with-referencey12m \
+	CXX=iCC CC=icc F77=if77 \
+	--with-cxxflags="-cougar -Wc,-tlocal -DTFLOP" \
+	--with-fflags=-cougar --with-cflags=-cougar \
+	CPPFLAGS=-I$FLOPS_XDEV/tflops/include/CC/RW \
+	LDFLAGS="-L$TFLOPS_XDEV/tflops/lib/RW -lstd -lmpi -lm"
