@@ -1,23 +1,26 @@
-#!/bin/csh
 ../configure --host=powerpc-ibm-aix5.1.0.0 \
-    --enable-mpi \
-    --enable-referencey12m --enable-aztecoo-azlu \
-    --with-ar="ar -X64 csrv" \
-    --with-blas="-lessl -L/sierra/Release/lapack/3.0/lib/dbg_dp_ibm -lblas" \
-    --with-lapack="-lessl -L/sierra/Release/lapack/3.0/lib/dbg_dp_ibm -llapack" \
-    --with-mpi-incdir=/usr/lpp/ppe.poe/include \
-    --with-mpi-libdir=/usr/lpp/ppe.poe/lib \
-    --with-mpi-cxx=xlC --with-mpi-cc=xlc --with-mpi-f77=f77 \
-    --enable-nox --enable-nox-epetra \
-    --enable-prerelease --enable-epetraext --enable-loca \
-    CXX="xlC -q64 -qlanglvl=redefmac" \
-    CXXCPP="KCC -E" \
-    CC="xlc -b64 -q64" \
-    F77="f77 -b64 -q64" \
-    --with-cxxflags="-g" \
-    --with-fflags="-g" \
-    --with-cflags="-g" \
-    LDFLAGS=
+  --enable-teuchos --enable-teuchos-extended --disable-new-package \
+  --enable-aztecoo-azlu \
+  --enable-anasazi \
+  --enable-epetraext --enable-epetraext-transform \
+  --enable-epetraext-transform-tests \
+  --enable-amesos \
+  --with-ml_teuchos --with-ml_anasazi \
+  --with-ml_external_mpi_functions \
+  --disable-examples \
+  --with-blas="-lessl -L/sierra/Release/lapack/3.0/lib/dbg_dp_ibm -lblas" \
+  --with-lapack="-lessl -L/sierra/Release/lapack/3.0/lib/dbg_dp_ibm -llapack" \
+  --enable-mpi \
+  --with-ldflags="-L/sierra/Release/y12m/1.00/lib/dbg_dp_ibm -ly12m" \
+  --prefix=/sierra/Release/Trilinos/3.1.1/install_ibm \
+  --with-mpi-incdir=. \
+  --with-mpi-libdir=. \
+  --with-mpi-libs="-binitfini:poe_remote_main -lmpi_r -lvtd_r" \
+  --with-ar="ar -X64 csrv" \
+  CXX="mpCC -q64" CC="mpcc -b64 -q64" F77="mpxlf -b64 -q64" \
+  CXXFLAGS="-O3 -w -qnofullpath -qlanglvl=ansi" \
+  CCFLAGS="-O3 -w" \
+  FFLAGS="-O3 -w" \
+  CPPFLAGS=  LDFLAGS= LIBS=-lm \
+  FLIBS="-lxlf90 -lxlopt -lxlf -lxlomp_ser"
 
-#    --with-cppflags="-qlanglvl=redefmac" \
-# -qlanglvl=redefmac -I../epetra/src -I../../epetra/src" \
