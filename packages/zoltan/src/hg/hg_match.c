@@ -778,10 +778,10 @@ char  *yo = "matching_pgm";
 /*****************************************************************************/
 
 /* inner product matching                                                    */ 
-/* based on Rob Bisseling's implementation in Mondriaan                      */
+/* based on implementations by Rob Bisseling and Umit Catalyurek             */
 /* for each vertex, we match with the unmatched vertex which has the most    */
 /* hyperedges in common with it (ie, the pair with greatest inner product).  */
-
+/* by Aaron Becker, UIUC, Summer 2004                                        */
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
     int   i, j, n, v1, v2, edge, maxip, maxindex;
@@ -805,7 +805,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         if (match[v1] != v1)
             continue;
         
-        n=0;
+        n = 0;
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
             edge = hg->vedge[i];
@@ -813,12 +813,15 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
             /* for every other vertex in the hyperedge */
             for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
                 v2 = hg->hvertex[j];
+                //if(match[v2] != v2) {
+                    // row swapping goes here
+                //}
                 if (!ips[v2]++)
                     adj[n++] = v2;
             }
         }
 
-        /* match v1 with v2 having greatest inner product */
+        /* now choose the vector with greatest inner product */
         maxip = 0;
         maxindex = -1;
         for (i = 0; i < n; i++) {
@@ -829,15 +832,14 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
             }
             ips[v2] = 0;
         }
-        
-        //printf("Done with %d, best match is %d with product %d\n",
-        //        v1, maxindex, maxip);
-        
         if (maxindex != -1) {
             match[v1] = maxindex;
             match[maxindex] = v1;
             (*limit)--;
         } 
+        
+        //printf("Done with %d, best match is %d with product %d\n",
+        //        v1, maxindex, maxip);
     }
 
     //printf("Final Matching:\n");
