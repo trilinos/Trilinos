@@ -17,6 +17,7 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_viz_opendx.h"
+#include "ml_agg_METIS.h"
 
 int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
 				     int N_rows, int N_parts,

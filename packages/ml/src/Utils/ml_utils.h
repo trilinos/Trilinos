@@ -27,6 +27,7 @@
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_comm.h"
+#include "ml_operator.h"
 
 #define ML_dabs(x) (((x) > 0.) ? x : (-(x)))
 #define ML_abs(x) (((x) > 0) ? x : (-(x)))
@@ -121,6 +122,8 @@
    int ML_gmin_int(int val, ML_Comm *comm);
    double ML_gmin_double(double val, ML_Comm *comm);
    /*ms*/
+   extern int ML_build_global_numbering( ML_Operator *Amat,
+              ML_Comm *comm, int **pglobal_numbering );
 
 #ifndef ML_CPP
 #ifdef __cplusplus

@@ -20,6 +20,7 @@
 #include "ml_utils.h"
 #include "ml_agg_METIS.h"
 #include "ml_viz_stats.h"
+#include "ml_agg_info.h"
 
 /* ********************************************************************** */
 /* metis.h is required to properly define idxtype, and to declare the     */

@@ -195,6 +195,7 @@ extern int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
 extern void AZ_block_matvec(double *, double *, AZ_MATRIX *, int *);
 
 extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
+extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 
 /* The following definition and function declaration as used by
    MLAZ_iterate, which is supposed to replace AZ_iterate in code
