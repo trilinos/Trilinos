@@ -19,7 +19,7 @@
 /* EBEB: The following constants, structs, and function prototypes should 
    probably be moved to a header file. */
 
-#define NODEBUG 
+#define NO_DEBUG 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on either side of cut */
@@ -93,11 +93,11 @@ int Zoltan_RB_find_bisector(
   int num_parts,        /* Number of partitions in set (Tflops_Special)      */
   double valuemin,      /* minimum value in partition (input) */
   double valuemax,      /* maximum value in partition (input) */
-  double *weight,       /* weight of entire partition (input) */
+  double *weight,       /* weight of entire partition (input) NOT USED */
   double *weightlo,     /* weight of lower partition (output) */
   double *weighthi,     /* weight of upper partition (output) */
   int    *dotlist,      /* list of active dots */
-  int rectilinear_blocks,/* if 1, all dots with same value on same side of cut*/
+  int rectilinear,      /* if 1, all dots with same value on same side of cut*/
   int obj_wgt_comparable /* 1 if object weights are of same units, no scaling */
 )
 {
@@ -356,12 +356,26 @@ int Zoltan_RB_find_bisector(
      MPI_Allreduce(localsum, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
   }
 
-  if (valuemin2 != valuemin)
+  if (valuemin2 != valuemin){
     printf("[%2d] Warning: computed valuemin %lf does not match input %lf\n",
       proc, valuemin2, valuemin);
-  if (valuemax2 != valuemax)
+    if (valuemin2<valuemin) valuemin = valuemin2;
+  }
+  if (valuemax2 != valuemax){
     printf("[%2d] Warning: computed valuemax %lf does not match input %lf\n",
       proc, valuemax2, valuemax);
+    if (valuemax2>valuemax) valuemax = valuemax2;
+  }
+
+  /* For sum of weights, 'wtsum' is correct while 'weight' is incorrect
+     due to scaling issues. Sanity check removed. *********************
+  for (j=0; j<nwgts; j++){
+    if (wtsum[j] != weight[j]){
+      printf("[%2d] Warning: computed wtsum[%1d] %lf does not match input %lf\n",
+        proc, j, wtsum[j], weight[j]);
+    }
+  }
+  */
 
   /* Scale weights if not comparable or if variable imbal. tols. */
   flag = 0;
@@ -386,6 +400,7 @@ int Zoltan_RB_find_bisector(
       if (!obj_wgt_comparable)
         wtsum[j] = 1.0;
       if (flag)
+        /* EBEB Use same fudge factor as above. */
         wtsum[j] /= (zz->LB.Imbalance_Tol[j]-0.9);
     }
   }
@@ -552,17 +567,38 @@ int Zoltan_RB_find_bisector(
         Zoltan_daxpy(nwgts, 1., med->wthi, tmplo, tmplo);
         /* tmphi = tmphi - med->wthi */
         Zoltan_daxpy(nwgts, -1., med->wthi, tmphi, tmphi);
-        if (med->counthi == 1) {                 /* only one dot to move */
+        /* rectilinear case: treat several dots as a single dot. */
+        if (rectilinear || (med->counthi == 1)) { /* only one dot to move */
           if (Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo) < 
               Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) ){                 
                                                  /* move it, keep iterating */
-            if (proc == med->prochi) 
-              dotmark[indexhi] = 0;  /* weightlo will be updated later */
+            if (med->counthi == 1){    /* single dot */
+              if (proc == med->prochi) 
+                dotmark[indexhi] = 0;  /* weightlo will be updated later */
+            }
+            else{
+              /* multiple dots on a line, move them all. */
+              for (j = 0; j < numlist; j++) {  
+                i = dotlist[j];
+                if (dots[i] == med->valuehi) 
+                  dotmark[i] = 0;        /* weightlo will be updated later */
+              }
+            }
           }
           else {                                 /* only move if beneficial */
             if (Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo) < normhi){
-              if (proc == med->prochi) 
-                dotmark[indexhi] = 0;
+              if (med->counthi == 1){    /* single dot */
+                if (proc == med->prochi) 
+                  dotmark[indexhi] = 0;
+              }
+              else{
+                /* multiple dots on a line, move them all. */
+                for (j = 0; j < numlist; j++) {  
+                  i = dotlist[j];
+                  if (dots[i] == med->valuehi) 
+                    dotmark[i] = 0;        
+                }
+              }
               for (k=0; k<nwgts; k++)
                 weightlo[k] = tmplo[k];
             }
@@ -571,7 +607,6 @@ int Zoltan_RB_find_bisector(
         }
         else {                                   /* multiple dots to move */
           breakflag = 0;                         /* must decide which ones */
-          /* EBEB Add: if (rectilinear_blocks) move all or none */
           for (k=0; k<nwgts; k++){
             localsum[k] = 0.0;
             wtupto[k] = 0.0;
@@ -686,17 +721,38 @@ int Zoltan_RB_find_bisector(
         Zoltan_daxpy(nwgts, 1., med->wtlo, tmphi, tmphi);
         /* tmplo = tmplo - med->wtlo */
         Zoltan_daxpy(nwgts, -1., med->wtlo, tmplo, tmplo);
-        if (med->countlo == 1) {                 /* only one dot to move */
+        /* rectilinear case: treat several dots as a single dot. */
+        if (rectilinear || (med->countlo == 1)) {  /* only one dot to move */
           if (Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) < 
               Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo)){                 
                                                  /* move it, keep iterating */
-            if (proc == med->proclo) 
-              dotmark[indexlo] = 1;  /* weighthi will be updated later */
+            if (med->counthi == 1){    /* single dot */
+              if (proc == med->proclo) 
+                dotmark[indexlo] = 1;  /* weighthi will be updated later */
+            }
+            else{
+              /* multiple tied dots, move them all. */
+              for (j = 0; j < numlist; j++) {
+                i = dotlist[j];
+                if (dots[i] == med->valuelo)
+                  dotmark[i] = 1;        /* weighthi will be updated later */
+              }
+            }
           }
           else {                                 /* only move if beneficial */
             if (Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) < normlo){
-              if (proc == med->proclo) 
-                dotmark[indexlo] = 1;
+              if (med->counthi == 1){    /* single dot */
+                if (proc == med->proclo) 
+                  dotmark[indexlo] = 1;
+              }
+              else{
+                /* multiple tied dots, move them all. */
+                for (j = 0; j < numlist; j++) {
+                  i = dotlist[j];
+                  if (dots[i] == med->valuelo)
+                    dotmark[i] = 1;
+                }
+              }
               for (k=0; k<nwgts; k++)
                 weighthi[k] = tmphi[k];
             }
@@ -705,7 +761,6 @@ int Zoltan_RB_find_bisector(
         }
         else {                                   /* multiple dots to move */
           breakflag = 0;                         /* must decide which ones */
-          /* EBEB Add: if (rectilinear_blocks) move all or none */
           for (k=0; k<nwgts; k++){
             localsum[k] = 0.0;
             wtupto[k] = 0.0;
@@ -1035,7 +1090,7 @@ static double Zoltan_norm(int mcnorm, int n, double *x, double *scal)
       result += tmp;
     else if (mcnorm==2)
       result += tmp*tmp;
-    else
+    else if (mcnorm>2) /* use infinity norm */
       if (tmp > result) result = tmp;
   }
 
