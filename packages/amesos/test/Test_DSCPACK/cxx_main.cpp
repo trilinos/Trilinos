@@ -1,6 +1,10 @@
+//
+//  This test does not exercise multiple processes on DSCPACK.
+//  DSCPACK uses only one process for dense matrices.
+//
+//
 #include "Amesos_ConfigDefs.h"
 #ifdef HAVE_AMESOS_DSCPACK
-
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -163,6 +167,10 @@ int main(int argc, char *argv[]) {
   Problem.SetOperator(&Matrix);
   Problem.SetLHS(&x);
   Problem.SetRHS(&b);
+
+  Teuchos::ParameterList ParamList ;
+  ParamList.set( "MaxProcs", -3 );
+  EPETRA_CHK_ERR( Solver.SetParameters( ParamList ) ); 
 
   AMESOS_CHK_ERR(Solver.SymbolicFactorization());
   AMESOS_CHK_ERR(Solver.NumericFactorization());

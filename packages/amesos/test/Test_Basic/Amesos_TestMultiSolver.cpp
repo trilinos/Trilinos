@@ -309,6 +309,8 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     } else if ( SparseSolver == DSCPACK ) { 
       Teuchos::ParameterList ParamList ;
       Amesos_Dscpack dscpack( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( superludist.SetParameters( ParamList ) ); 
     
       EPETRA_CHK_ERR( dscpack.Solve( ) ); 
 #endif
@@ -316,6 +318,8 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     } else if ( SparseSolver == UMFPACK ) { 
       Teuchos::ParameterList ParamList ;
       Amesos_Umfpack umfpack( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( umfpack.SetParameters( ParamList ) ); 
       EPETRA_CHK_ERR( umfpack.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( umfpack.Solve( ) ); 
@@ -324,6 +328,8 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     } else if ( SparseSolver == KLU ) { 
       Teuchos::ParameterList ParamList ;
       Amesos_Klu klu( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( klu.SetParameters( ParamList ) ); 
       EPETRA_CHK_ERR( klu.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( klu.SymbolicFactorization(  ) ); 
@@ -343,6 +349,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_LAPACK
     } else if ( SparseSolver == LAPACK ) { 
       Teuchos::ParameterList ParamList ;
+      ParamList.set( "MaxProcs", -3 );
       Amesos_Lapack lapack( Problem ) ; 
       EPETRA_CHK_ERR( lapack.SetUseTranspose( transpose ) ); 
     
@@ -354,6 +361,8 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     } else if ( SparseSolver == MUMPS ) { 
       Teuchos::ParameterList ParamList ;
       Amesos_Mumps mumps( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( mumps.SetParameters( ParamList ) ); 
       EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( mumps.Solve( ) ); 
@@ -361,10 +370,10 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) { 
       Teuchos::ParameterList ParamList ;
-      ParamList.set( "MaxProcs", -3 );
       Amesos_Superludist superludist( Problem ) ; 
-
+      ParamList.set( "MaxProcs", -3 );
       EPETRA_CHK_ERR( superludist.SetParameters( ParamList ) ); 
+
       EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 
@@ -375,6 +384,8 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     } else if ( SparseSolver == SUPERLU ) { 
       Teuchos::ParameterList ParamList ;
       Amesos_Superlu superlu( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( superlu.SetParameters( ParamList ) ); 
       EPETRA_CHK_ERR( superlu.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( superlu.SymbolicFactorization(  ) ); 

@@ -27,6 +27,7 @@ int TestOtherClasses(char* AmesosClass,
     Teuchos::ParameterList ParamList ;
     ParamList.set( "Redistribute", true );
     ParamList.set( "AddZeroToDiag", true );
+    ParamList.set( "MaxProcs", 100000 );
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
 
     //  ParamList.print( cerr, 10 ) ; 

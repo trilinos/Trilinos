@@ -278,18 +278,10 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     
     if ( false ) { 
       //  TEST_UMFPACK is never set by configure
-#ifdef TEST_UMFPACK
-    } else if ( SparseSolver == UMFPACKOLD ) { 
-      UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
-			 (Epetra_MultiVector *) passx, 
-			 (Epetra_MultiVector *) passb ) ; 
-      
-      umfpack.SetTrans( transpose ) ; 
-      umfpack.Solve() ; 
-#endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) {
 	Teuchos::ParameterList ParamList ;
+	ParamList.set( "MaxProcs", -3 );
 	Amesos_Superludist A_Superludist( Problem ) ; 
 
   //ParamList.set( "Redistribute", true );
@@ -307,8 +299,10 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == DSCPACK ) {
       
       Teuchos::ParameterList ParamList ;
+      ParamList.set( "MaxProcs", -3 );
 
       Amesos_Dscpack A_dscpack( Problem ) ; 
+      EPETRA_CHK_ERR( A_dscpack.SetParameters( ParamList ) ); 
       EPETRA_CHK_ERR( A_dscpack.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( A_dscpack.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
@@ -316,56 +310,66 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) {
 
-	Teuchos::ParameterList ParamList ;
-	Amesos_Mumps A_mumps( Problem ) ; 
-	EPETRA_CHK_ERR( A_mumps.SetUseTranspose( transpose ) ); 
-	EPETRA_CHK_ERR( A_mumps.SymbolicFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_mumps.NumericFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_mumps.Solve(  ) ); 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Mumps A_mumps( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_mumps.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_mumps.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_mumps.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_mumps.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_mumps.Solve(  ) ); 
 
 #endif
 #ifdef HAVE_AMESOS_SUPERLU
     } else if ( SparseSolver == SUPERLU ) {
 
-	Teuchos::ParameterList ParamList ;
-	Amesos_Superlu A_superlu( Problem ) ; 
-	EPETRA_CHK_ERR( A_superlu.SetUseTranspose( transpose ) ); 
-	EPETRA_CHK_ERR( A_superlu.SymbolicFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_superlu.NumericFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_superlu.Solve(  ) ); 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Superlu A_superlu( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_superlu.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_superlu.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_superlu.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_superlu.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_superlu.Solve(  ) ); 
 
 #endif
 #ifdef HAVE_AMESOS_LAPACK
     } else if ( SparseSolver == LAPACK ) {
 
-	Teuchos::ParameterList ParamList ;
-	Amesos_Lapack A_lapack( Problem ) ; 
-	EPETRA_CHK_ERR( A_lapack.SetUseTranspose( transpose ) ); 
-	EPETRA_CHK_ERR( A_lapack.SymbolicFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_lapack.NumericFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_lapack.Solve(  ) ); 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Lapack A_lapack( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_lapack.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_lapack.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_lapack.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_lapack.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_lapack.Solve(  ) ); 
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
     } else if ( SparseSolver == UMFPACK ) {
 
-	Teuchos::ParameterList ParamList ;
-	Amesos_Umfpack A_umfpack( Problem ) ; 
-	EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
-	EPETRA_CHK_ERR( A_umfpack.SymbolicFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_umfpack.NumericFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_umfpack.Solve(  ) ); 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Umfpack A_umfpack( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_umfpack.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_umfpack.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_umfpack.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_umfpack.Solve(  ) ); 
 #endif
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) {
 
-	Teuchos::ParameterList ParamList ;
-	//	ParamList.set("OutputLevel",2);
-	Amesos_Klu A_klu( Problem ); 
-	EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ) ; 
-	EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
-	EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
+      Teuchos::ParameterList ParamList ;
+      //	ParamList.set("OutputLevel",2);
+      Amesos_Klu A_klu( Problem ); 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ) ; 
+      EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
 
 #endif
     } else { 

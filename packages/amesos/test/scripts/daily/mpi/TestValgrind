@@ -65,13 +65,17 @@ else
     set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
     rm -f $file
 endif
-echo  $file 
+echo "LOG FILE: "  $file 
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
 #
 #  I thought that I had Test_Epetra_CrsMatrix working, but now it has a memory error in it.
 #
 #foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix ) 
+# foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+# foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK )  # fails 25 Feb 2005
+# foreach f (  Test_Epetra_CrsMatrix  )
+# foreach f (  Test_Epetra_KLU  )  #  This passes - 25 Feb 2005
 foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix ) 
    cd $f
 ## Different directory structures will require different setups.
@@ -93,7 +97,7 @@ foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix )
       echo "" >>& ../$file
       echo "############" $g "##############" >>& ../$file
       rm valg.out.pid*
-      rm TestFailed
+      rm -f TestFailed
       echo `pwd`
       $mpigo 4 valgrind --logfile=valg.out --leak-check=yes --suppressions=../Test_Basic/Suppressions $g -s
       grep ERROR valg.out.pid* | grep -v "SUMMARY: 0 " && touch TestFailed

@@ -140,11 +140,13 @@ int sub_main( bool verbose, Epetra_Comm &Comm ) {
   
   vector<string> SolverType;
   SolverType.push_back("Amesos_Lapack");
+#if 0 
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
+#endif
 
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
@@ -176,7 +178,7 @@ int sub_main( bool verbose, Epetra_Comm &Comm ) {
   // =============================== //
 
   CrsMatrixGallery SymGallery("laplace_3d", Comm);
-  SymGallery.Set("problem_size", 8000);
+  SymGallery.Set("problem_size", 1000);
   SymGallery.Set("num_vectors", 5);
 
   Epetra_LinearProblem* SymProblem = SymGallery.GetLinearProblem();

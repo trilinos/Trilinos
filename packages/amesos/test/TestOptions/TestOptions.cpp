@@ -121,6 +121,7 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
 	// Call routine to read in HB problem
 	Trilinos_Util_ReadHb2Epetra( filename, Comm, readMap, readA, readx, 
 						     readb, readxexact) ;
+	if (  LastFourBytes == ".rsa" ) symmetric = true ; 
       }
     }
   }
@@ -382,14 +383,21 @@ int NextMain( int argc, char *argv[] ) {
 
 
   bool verbose = false; 
+  bool small = false ; 
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'v') ) 
     verbose = true ; 
   if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 'v') ) 
     verbose = true ; 
 
+  if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 's') ) 
+    small = true ; 
+  if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 's') ) 
+    small = true ; 
+
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'h') ) {
     cerr << "Usage TestOptions [-s] [-v] " << endl ; 
     cerr << "-v:  verbose  " << endl ; 
+    cerr << "-s:  small  " << endl ; 
     exit(-1);
   }
 
@@ -418,6 +426,8 @@ int NextMain( int argc, char *argv[] ) {
   Amesos_BaseSolver* Abase ; 
   Amesos Afactory;
 
+  Comm.SetTracebackMode(2);
+
   //  for (int i=0; i < 0; i++ ) {
   for (int i=0; i < NumAmesosClasses; i++ ) {
 
@@ -442,13 +452,17 @@ int NextMain( int argc, char *argv[] ) {
   //  result += TestOneMatrix("../Test_Basic/bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
   //  result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #if 0
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-#endif
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-#if 0
+      // Khead.triS fails on DSCPACK 
       result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/Khead.triS", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #endif
+
+      if ( ! small ) {
+	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      }
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/662_bus_out.rsa", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
   if ( verbose) cout << result << " Tests failed " ; 
 

@@ -265,12 +265,13 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
 
   // MS // here I continue with the old code...
   
+
   DscNumProcs = 1 ; 
-  while ( DscNumProcs * 2 <=EPETRA_MIN( MaxProcs_, 
-					DSC_Analyze( numrows, &Ap[0], &Ai[0], 
-						     &Replicates[0] ) ) )
-    DscNumProcs *= 2 ;
+  int DscMax = DSC_Analyze( numrows, &Ap[0], &Ai[0], &Replicates[0] );
   
+  while ( DscNumProcs * 2 <=EPETRA_MIN( MaxProcs_, DscMax ) )  DscNumProcs *= 2 ;
+  
+  MyDscRank = -1; 
   DSC_Open0( MyDSCObject, DscNumProcs, &MyDscRank, MPIC ) ; 
   
   NumLocalCols = 0 ; // This is for those processes not in the Dsc grid
@@ -294,7 +295,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
     
   }
   
-  //    A_and_LU_built = true; 
+  //  A_and_LU_built = true; 
   
   SymTime_ += Time_->ElapsedTime();
   return 0;
@@ -338,8 +339,6 @@ int Amesos_Dscpack::PerformNumericFactorization()
   Epetra_CrsMatrix DscMat(Copy, *DscMap_, 0);
   EPETRA_CHK_ERR( DscMat.Import( *CastCrsMatrixA, *ImportToSerial_, Insert) );
   EPETRA_CHK_ERR( DscMat.FillComplete() ) ; 
-
-  //    cout << "Amesos_Dscpack.cpp:: DscMat = " << DscMat << endl ; 
 
   //    assert( DscGraph_ == 0 ) ; 
   if ( DscGraph_ ) delete DscGraph_ ; 
