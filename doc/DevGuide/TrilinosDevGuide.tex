@@ -1,8 +1,5 @@
  \documentclass[12pt,relax]{TrilinosDevGuide}
-
-%
-% Set the title, author, and date
-%
+\usepackage{array}
     \title{Trilinos Developers Guide}
 \SANDsubtitle{}
 
@@ -20,10 +17,6 @@
     % the generic \date should generally be empty.
     \date{\today} % Remove ``\today'' in final version
 
-    % While this document is under active development, the date
-    % field will reflect the current date, eventually a final date
-    % will be assigned.
-%    \today - Latex spits out errors when this is used here
 
 \SANDnum{SAND2003-xxxx}
 \SANDprintDate{April 2003}
@@ -33,7 +26,7 @@
 \SANDreleaseType{Unlimited Release}
 
 
-\SANDdistcategory{UC-999}     % DOE mandates it, but many reports don't have it
+\SANDdistcategory{UC-999}    
 
 \begin{document}
 \maketitle
@@ -161,28 +154,56 @@ For a higher-level view of the Trilinos project, please see An Overview
 of the Trilinos Project~\cite{TrilinosOverview}. The current set of
 packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
 \begin{figure}
-\begin{center}
-\includegraphics[height=10in]{Trilinos_Packages_Diagram}
-\end{center}
+%\begin{center}
+\includegraphics[height=6in,angle=270]{Trilinos_Packages_Diagram}
+%\end{center}
 \label{Figure:TrilinosPackages}
 \caption{Current collection of Trilinos Packages}
 \end{figure}
 
 \subsection{How To Use This Guide}
 
-This guide supports three types of development activities:
+Although all sections of this guide will be useful to most developers,
+it is worth mentioning that 
+this guide supports three types of development activities:
 \begin{enumerate}
 \item New Project: Development of a new package using little or no
 existing software as a base.  All sections of this guide are
 appropriate reading.
 \item Integration of an existing third-party software: In this case,
-existing software is being imported into the Trilinos framework.  It
-is likely that a directory structure, build process and documentation
-already exist.  In this case,
-\item Ongoing development:
-\end{enumerate}
+existing software is being imported into the Trilinos framework.  In
+this case, Section~\ref{Section:IntegratingPackages} is particularly
+important, as are Sections~\ref{Section:PackageRequirements},
+~\ref{Section:AvailableServices} and~\ref{Section:EpetraAndTSF}.
+\item Ongoing development:  For existing Trilinos package developers,
 Sections~\ref{Section:PackageRequirements}
-and~\ref{Section:AvailableServices} are best read first
+and~\ref{Section:AvailableServices} are designed as a reference for
+software engineering practices and policies for Trilinos development.
+\end{enumerate}
+
+\subsection{Typographical Conventions}
+
+Our typographical conventions are found in
+Table~\ref{Table:TypoConventions}.
+\begin{table}[ht]
+\scriptsize
+\begin{center}
+\begin{tabular}{|l|l|p{2.0in}|} \hline
+Notation & Example & Description \\ \hline
+\InlineCommand{Verbatim text} & \InlineCommand{../configure --enable-mpi} & 
+Commands, directory and file name examples, and other text associated
+with text displayed in a computer terminal window. \\ \hline
+\InlineCommand{CAPITALIZED\_TEXT} & \InlineCommand{CXX\_FLAGS} & 
+Environment variables used to configure how tools such as compilers behave. \\ \hline
+\InlineCommand{[text in angle brackets]} & \InlineCommand{../configure
+<user parameters>} & 
+Optional parameters. \\ \hline
+\end{tabular}
+\end{center}
+\caption{\label{Table:TypoConventions} Typographical Conventions for This Document.}
+
+\end{table}
+
 
 \section{Getting Started}
 \label{Section:GettingStarted}
@@ -190,7 +211,7 @@ This chapter covers some of the basics that a developer will need to know when
 beginning to work on the Trilinos project.  We address how to configure and 
 build Trilinos, as well as how to add files to an existing package.
 
-\subsection{Recommended Directory Structure for Building Trilinos}
+\subsection{Recommended Build Directory Structure}
 
 Via Autoconf and Automake the Trilinos configuration facilities
 provide a great deal of flexibility for configuring and building the
@@ -216,15 +237,38 @@ example, serial and parallel libraries.  A less obvious advantage is that
 there can be problems with configuring in a 'dirty' directory (one that has 
 already been configured in).
 
-	Setting up a build tree is very easy.  First, cd to the highest 
+	Setting up a build tree is straight-forward.
+Figure~\ref{Figure:TrilinosDirectoryStructure} illustrates the
+\begin{figure}
+\begin{center}
+\includegraphics[width=4in,angle=270]{TrilinosDirectoryStructure}
+\end{center}
+\label{Figure:TrilinosDirectoryStructure}
+\caption{Recommended Layout for Trilinos Build Directories}
+\end{figure}recommended layout.  First, \InlineCommand{cd} to the highest 
 directory in the source tree (Trilinos for a repository copy, Trilinos-3.0.1 
-for a distribution).  Now, make a new directory - for a serial build, a 
-typical name is SERIAL.  Finally cd into that dirctory.  Please note that a 
-user can set up a build tree anywhere - the highest directory in the source 
-tree is merely a common example.
+for a distribution).  Now, make a new directory - for an MPI build
+on a Linux platform, a 
+typical name could be \InlineDirectory{LINUX\_MPI}.  
+Finally \InlineDirectory{cd} into that dirctory.  In summary:
+
+\begin{verbatim}
+       cd Trilinos
+       mkdir LINUX_MPI
+       cd LINUX_MPI
+       ../configure --enable-mpi
+       make
+\end{verbatim}
+At this point, the MPI version of Trilinos on a Linux platform is
+built and completely contained in the \InlineDirectory{LINUX\_MPI}
+directory.  No files outside this directory have been modified.  This
+procedure can be repeated for any number of build targets.
+
+{\bf Note:} Although we recommend the above location for build trees,
+they can be set up anywhere.
 
 \subsection{Configuring Trilinos}
-
+\label{Subsection:ConfiguringTrilinos}
 	To configure from a remote build tree, simply run the configure script 
 in source tree from the root of the build tree.  In the example above, cd to 
 the SERIAL directory and type 
@@ -276,8 +320,8 @@ this matter.
 
 	To install libraries and header files in a particular location, 
 use \InlineCommand{--prefix=<dir>} on the configure line.  If this option is 
-used, libraries will be located in <dir>/lib and header files in 
-<dir>/include/<package>.
+used, libraries will be located in \InlineDirectory{<dir>/lib} and header files in 
+\InlineDirectory{<dir>/include/<package>}.
 
 	The second imporant piece of information that a user must provide at 
 this stage is the name and or location of anything that autotools needs and 
@@ -312,7 +356,7 @@ the repository can send their scripts to jmwille@sandia.gov.
 
 If the configure stage completed successfully, just type \DisplayCommand{make}
  and if 
---prefix was specified, \DisplayCommand{make install}.
+--prefix was specified, \DisplayCommand{make install}
 
 The following section describes the configuration options mentioned above that 
 are common to all Trilinos packages.  These options DO NOT cover all options 
@@ -421,27 +465,30 @@ have to be set if autoconf does not choose the correct compilers by default.
 \item \InlineCommand{--with-mpi=MPIROOT}
 
 Specify the MPI root directory. Automatically enables MPI mode.  If this 
-option is set, --with-mpi-incdir and --with-mpi-libdir should not be used.  
---with-mpi is meant to be a shortcut for setting --with-mpi-libdir=MPIROOT/lib 
-and --with-mpi-incdir=MPIROOT/include.  Use these two options instead if 
+option is set, \InlineCommand{--with-mpi-incdir} and 
+\InlineCommand{--with-mpi-libdir} should not be used.  
+\InlineCommand{--with-mpi} is meant to be a shortcut for setting 
+\InlineCommand{--with-mpi-libdir=MPIROOT/lib} 
+and \InlineCommand{--with-mpi-incdir=MPIROOT/include}.  Use these two options instead if 
 these default locations are not correct.
 
 \item \InlineCommand{--with-mpi-libdir=DIR}
 
 Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
 is specified. If multiple directories must be specified, try 
---with-ldflags="-L<dir1> -L<dir2>" instead. 
+\InlineCommand{--with-ldflags="-L<dir1> -L<dir2>"} instead. 
 
 \item \InlineCommand{--with-mpi-libs="LIBS"} 
 
-Specify the MPI libraries. Defaults to "-lmpi" if either --with-mpi or 
---with-mpi-libdir is specified.
+Specify the MPI libraries. Defaults to \InlineCommand{"-lmpi"}
+ if either\InlineCommand{ --with-mpi} or 
+\InlineCommand{--with-mpi-libdir} is specified.
 
 \item \InlineCommand{--with-mpi-incdir=DIR}
 
-Specify the MPI include files location. Defaults to MPIROOT/include if 
---with-mpi is specified. If multiple directories  must be specified, try 
---with-cppflags="-I<dir1> -I<dir2>" instead.
+Specify the MPI include files location. Defaults to \InlineDirectory{MPIROOT/include} if 
+\InlineCommand{--with-mpi} is specified. If multiple directories  must be specified, try 
+\InlineCommand{--with-cppflags="-I<dir1> -I<dir2>"} instead.
 \end{itemize}
 
 Developer-Related Options
@@ -462,11 +509,11 @@ package failed to configure, simply look at the bottom of the output from the
 'configure' command.  One of the last lines should say something like:
 
 \begin{verbatim}
-configure: error: /bin/sh '../../../packages/epetra/configure' 
-failed for packages/epetra.
+    configure: error: /bin/sh '../../../packages/epetra/configure' 
+    failed for packages/epetra.
 \end{verbatim}
 
-This particular error indicates to look in packages/epetra/config.log.  This 
+This particular error indicates to look in \InlineDirectory{packages/epetra/config.log}.  This 
 file is useful for developers trying to build Trilinos, and those who are 
 adding or editing autoconf-specific files such as configure.ac.
 \end{itemize}
@@ -496,7 +543,7 @@ mpi implementation installed.
 Obtain the most current version of Trilinos (for the branch being worked on).  
 First, cd to the top Trilinos directory, then type
 
-\DisplayCommand{cvs -q update-dP}
+\DisplayCommand{cvs -q update -dP}
 
 \item Add new files to or remove obsolete files from the Trilinos repository
 
@@ -637,123 +684,6 @@ type of commit is simply ``Checking in for safe keeping; code is not yet
 funcitoning''.  Sometimes developers will include a short description of what 
 the code will do when complete.
 \end{enumerate}
-
-% start reading Mike's stuff at 243
-
-\section{Package Requirements}
-\label{Section:PackageRequirements}
-The Trilinos team makes a conscious effort to minimize the requirements that 
-are placed on Trilinos packages.  Packages can be integrated into Trilinos in 
-a gradual manner.  Listed below are four levels of requirement compliance.  
-It is common for new packages to address these steps one at a time, and not 
-necessarily in the listed order.
-
-\subsection{Package is Added to the Trilinos Repository}
-
-This is a minimum requrirement for any package wanting to become a part of 
-Trilinos.  Other than receiving approval from the Trilinos Project Leader to 
-add a new package to Trilinos, there are no prerequisites for adding a new 
-package to the Trilinos repository.  At this stage, it does not matter if the 
-package is finished, or even if it works.  However, a package in an unstable 
-state should not be added to the Trilinos level configure and build 
-structure.  A package can remain in this predistribution state indefinitely.  
-When release branches are created, any packages not ready or approved for 
-distribution can easily be ommitted.
-
-\subsection{Package Responds to all Relevant Configure Options}
-
-
-\subsection{Package has a Process in Place to Port to all Supported Platforms}
-%make dist must work!
-
-\subsection{Package Responds to Bug Reports in a Timely Manner}
-
-The Trilinos Team does not have any specific requirements concerning how 
-bugs should be submitted and processed.  However, packages should have a 
-process in place that deals with issue tracking.  Packages developer teams 
-that are looking for an efficient and useful issue tracking tool are 
-encouraged to consider using Bugzilla, which is discussed in 
-Section~\ref{subsect:Bugzilla}.
-
-\section{Suggested Practices}
-\label{Section:SuggestPractices}
-
-There are many ways to define an effective software process.  As a result, the 
-Trilinos project specifies very few {\it requirements}.  At the same time, 
-many software packages do not have well-defined practices to support good 
-software engineering.  In this section, we discuss suggested practices based 
-on our experience with some common tools and processes for software 
-engineering.  We want to strongly emphasize that these are {\it suggested} 
-practices only and we discuss them here in order to facilitate adoption of 
-practices for packages that have few existing practices in place.
-
-\subsection{Preliminary Steps}
-
-\begin{enumerate}
-\item Set up necessary accounts on software.sandia.gov.
-\item Establish Bugzilla Product and Component Definitions.
-Discussion of how to define bugzilla pieces.  Should discuss common component 
-definitions.  List Heroux or Kolda or Sery as contacts.
-\item Establish Email Lists
-%\item Others?
-\end{enumerate}
-
-\subsection{Practices to Support Software Lifecycle}
-
-One common view of software engineering processes breaks the process down into 
-seven phases:
-\begin{enumerate}
-\item Requirements.
-\item Specification.
-\item Design.
-\item Implementation.
-\item Integration.
-\item Maintenance.
-\item Retirement/Replacement.
-\end{enumerate}
-In this section we discuss suggested practices to address most of these 
-phases.  The value of adopting these practices is that they are commonly used 
-or planned for use in a number of existing Trilinos packages.  It is worth 
-noting that testing is not a phase, but should be done at each of the above 
-phases in the process as appropriate for that phase.
-
-\subsection{Requirements}
-The majority of requirements for Trilinos packages come either directly or 
-indirectly from funded research proposals and plans.  Although these 
-requirements are sometimes difficult to elicit from the proposals and plans, 
-we assume that a package is satisfying requirements by virtue of being 
-funded.  Therefore we only suggest that package developers track their 
-requirements as part of the communication with funding sponsors.
-
-\subsection{Specification/Design}
-Package specifications can be done in many ways.  An effective way for 
-object-oriented, e.g., C++ packages is to use documented header files and a 
-documentation tool such as Doxygen~\cite{doxyen}, and then communicate the 
-generated HTML output to the package development team via the 
-{\it package-developers@software.sandia.gov} email list.  This both
-
-\subsection{Implementation}
-Implementing new capabilites should never take place in a release branch.  
-Changes to release branches should be limited to fixing broken code and 
-related activities.  For example, clarifying vague or incorrect documentation 
-and making changes necessary to port to a new platform.
-
-\subsection{Integration}
-Mention Epetra/TSF. Autotools.Integration into a release.
-
-\subsection{Maintenance}
-Say something about bugzilla, bonzai, mailman (checkins list), CVS (release 
-branches) the test harness.
-
-\subsection{Retirement/Replacement}
-To the extent possible checkins to a release branch should not force interface 
-changes for users.  Even on the development branch, users should be notified 
-(via the package-users mail list) that checkins are about to happen that would 
-require an interface change to user code.
-
-In general, we will be very slow to omit a package, or version of a package, 
-that is in use unless there is equivalent interface and functionality support 
-from a new package.
 
 \section{Services Available to Trilinos Packages}
 \label{Section:AvailableServices}
@@ -980,6 +910,194 @@ that provide uniform access to the BLAS and LAPACK across a broad
 set of platforms.  These interfaces are accessible to
 other packages.
 %**(Expand on this)**
+
+
+\section{Trilinos Package Requirements}
+\label{Section:PackageRequirements}
+The philosophy of the Trilinos project is to minimize the number of
+explicit requirements placed on packages.  Instead, we attempt to
+describe high-level requirements coupled with {\it suggested
+practices}. This approach allows freedom to define how
+requirements are satisfied yet, at the same time, provides guidance
+and support for packages that do not have a full set of established
+software engineering practices. 
+
+Package requirements can be split into two basic categories:
+\begin{enumerate}
+\item Interoperability mechanisms: Depending what a new Trilinos
+package does, it should be able to interact with one or more other
+Trilinos packages.  Often this means being able to accept application
+matrix and vector objects as either TSF objects or Epetra objects, and
+that the package implements relevant TSF abstract interfaces.
+Response to Trilinos configuration options also falls in this category.
+\item Software engineering processes: This category includes formal
+support for software design, implementation and support, including
+processes for capturing user requirements, documenting
+design, source control, user documentation, issue tracking and product
+release.
+\end{enumerate}
+
+Trilinos package requirements and suggest practices are summarized in
+Table~\ref{Table:RequirementsAndPractices}.
+\begin{table}[ht]
+\scriptsize
+\begin{center}
+\begin{tabular}{|p{2.5in}|p{2.5in}|} \hline
+{\bf Requirement} Package must: & {\bf Suggested Practice} Package can: \\ \hline
+Be under version control. &
+Keep source files as a self-contained collection in a
+single directory under the
+\InlineDirectory{Trilinos/packages} directory and utilize the Trilinos
+mailman lists to communicate software change logs.\\\hline
+Respond to software faults in a timely manner &  Use
+Trilinos Bugzilla site to record and track software issues, responding
+to issues in order of priority. \\\hline
+Respond to all relevant configure options & Use Autoconf and Automake,
+utilizing the collection of Trilinos M4 macros to minimize extra
+effort. \\\hline
+\end{tabular}
+\end{center}
+\caption{\label{Table:RequirementsAndPractices} Trilinos Package
+Requirements and Suggested Practices.}
+
+\end{table}
+
+
+
+In addition to listing package requirements, we also structure the
+integration
+process so that packages can be incorporated into Trilinos in 
+a gradual manner.  Listed below are four levels of requirement compliance.  
+It is common for new packages to address these steps one at a time, and not 
+necessarily in the listed order.
+
+\subsection{Package is Added to the Trilinos Repository}
+
+This is a minimum requrirement for any package wanting to become a part of 
+Trilinos.  Other than receiving approval from the Trilinos Project Leader to 
+add a new package to Trilinos, there are no prerequisites for adding a new 
+package to the Trilinos repository.  At this stage, it does not matter if the 
+package is finished, or even if it works.  In fact, we encourage
+developers to keep source files in the repository from package
+inception, so that source code is backed up and properly managed.
+Our primary restrictions are:
+\begin{enumerate}
+\item A package must be buildable on one or more platforms in order to
+be added to the Trilinos level configure and build 
+structure.  
+\item A package must be portable to all supported platform in order to
+be built by default using the top-level Trilinos configure process.
+\end{enumerate}
+A package can remain in a predistribution state indefinitely.  
+When release branches are created, any packages not ready or approved for 
+distribution can easily be omitted from the distribution.
+
+\subsection{Package has a Process in Place to Port to all Supported Platforms}
+%make dist must work!
+
+\subsection{Package Responds to all Relevant Configure Options}
+
+The Trilinos top-level configure script accept numerous configuration
+options as described in Section~\ref{Subsection:ConfiguringTrilinos}.
+To the extent that each option is appropriate, a package should
+respond to each option.  For example, if a package can be built with
+MPI support, it shoud respond \InlineCommand{--enable-mpi} option.
+
+\subsection{Package Responds to Bug Reports in a Timely Manner}
+
+The Trilinos Team does not have any specific requirements concerning how 
+bugs should be submitted and processed.  However, packages should have a 
+process in place that deals with issue tracking.  Packages developer teams 
+that are looking for an efficient and useful issue tracking tool are 
+encouraged to consider using Bugzilla, which is discussed in 
+Section~\ref{subsect:Bugzilla}.
+
+\section{Suggested Practices}
+\label{Section:SuggestPractices}
+
+There are many ways to define an effective software process.  As a result, the 
+Trilinos project specifies very few {\it requirements}.  At the same time, 
+many software packages do not have well-defined practices to support good 
+software engineering.  In this section, we discuss suggested practices based 
+on our experience with some common tools and processes for software 
+engineering.  We want to strongly emphasize that these are {\it suggested} 
+practices only and we discuss them here in order to facilitate adoption of 
+practices for packages that have few existing practices in place.
+
+\subsection{Preliminary Steps}
+
+Prior to anything else, a new Trilinos package should have the
+following infrastructure established.  Visit the Trilinos home
+page~\cite{Trilinos-home-page} for information on who to contact for
+these prelimary steps.
+
+The preliminary steps are:
+\begin{enumerate}
+\item Set up necessary accounts on \InlineDirectory{software.sandia.gov}.
+\item Establish Bugzilla Product and Component Definitions for the new
+package, identifying who will be 
+Discussion of how to define bugzilla pieces.  Should discuss common component 
+definitions.  List Heroux or Kolda or Sery as contacts.
+\item Establish Email Lists
+%\item Others?
+\end{enumerate}
+
+\subsection{Practices to Support Software Lifecycle}
+
+One common view of software engineering processes breaks the process down into 
+seven phases:
+\begin{enumerate}
+\item Requirements.
+\item Specification.
+\item Design.
+\item Implementation.
+\item Integration.
+\item Maintenance.
+\item Retirement/Replacement.
+\end{enumerate}
+In this section we discuss suggested practices to address most of these 
+phases.  The value of adopting these practices is that they are commonly used 
+or planned for use in a number of existing Trilinos packages.  It is worth 
+noting that testing is not a phase, but should be done at each of the above 
+phases in the process as appropriate for that phase.
+
+\subsection{Requirements}
+The majority of requirements for Trilinos packages come either directly or 
+indirectly from funded research proposals and plans.  Although these 
+requirements are sometimes difficult to elicit from the proposals and plans, 
+we assume that a package is satisfying requirements by virtue of being 
+funded.  Therefore we only suggest that package developers track their 
+requirements as part of the communication with funding sponsors.
+
+\subsection{Specification/Design}
+Package specifications can be done in many ways.  An effective way for 
+object-oriented, e.g., C++ packages is to use documented header files and a 
+documentation tool such as Doxygen~\cite{doxyen}, and then communicate the 
+generated HTML output to the package development team via the 
+{\it package-developers@software.sandia.gov} email list.  This both
+
+\subsection{Implementation}
+Implementing new capabilites should never take place in a release branch.  
+Changes to release branches should be limited to fixing broken code and 
+related activities.  For example, clarifying vague or incorrect documentation 
+and making changes necessary to port to a new platform.
+
+\subsection{Integration}
+Mention Epetra/TSF. Autotools.Integration into a release.
+
+\subsection{Maintenance}
+Say something about bugzilla, bonzai, mailman (checkins list), CVS (release 
+branches) the test harness.
+
+\subsection{Retirement/Replacement}
+To the extent possible checkins to a release branch should not force interface 
+changes for users.  Even on the development branch, users should be notified 
+(via the package-users mail list) that checkins are about to happen that would 
+require an interface change to user code.
+
+In general, we will be very slow to omit a package, or version of a package, 
+that is in use unless there is equivalent interface and functionality support 
+from a new package.
 
 \section{Epetra and TSF: Two Special Trilinos Packages}
 \label{Section:EpetraAndTSF}

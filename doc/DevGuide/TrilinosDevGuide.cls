@@ -70,10 +70,10 @@
 \RequirePackage{scalefnt}
 \RequirePackage{fancyhdr}
 \RequirePackage{epsfig}
-\RequirePackage{tabularx}
-\RequirePackage{supertabular}
+%\RequirePackage{tabularx}
+%\RequirePackage{supertabular}
 \RequirePackage{alltt}
-\RequirePackage{colortbl}
+%\RequirePackage{colortbl}
 %\RequirePackage{framed}
 \RequirePackage{verbatim}
 \RequirePackage{fancybox}
@@ -728,10 +728,10 @@
 \setlength{\parskip}{1ex plus0.5ex minus0.2ex}
 
 % Tabularx environment changes
-\renewcommand{\tabularxcolumn}[1]{>{\vspace{0.5em}}m{#1}}
-\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
-\newcolumntype{Z}{>{\raggedright\arraybackslash}X}
-\newcolumntype{W}{>{\centering\arraybackslash}X}
+%\renewcommand{\tabularxcolumn}[1]{>{\vspace{0.5em}}m{#1}}
+%\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+%\newcolumntype{Z}{>{\raggedright\arraybackslash}X}
+%\newcolumntype{W}{>{\centering\arraybackslash}X}
 
 % Trilinos Colors remapped to BW
 % \definecolor{TrilinosBlue}{rgb}{0,0,0}
@@ -813,6 +813,10 @@
 
 % InlineCommand
 \newcommand{\InlineCommand}[1]{
+  {\hspace{0.1 in}} {\tt #1} {\hspace{0.1 in}}}
+
+% InlineCommand
+\newcommand{\InlineDirectory}[1]{
   {\hspace{0.1 in}} {\tt #1} {\hspace{0.1 in}}}
 
 % Verbatim-quote environment
