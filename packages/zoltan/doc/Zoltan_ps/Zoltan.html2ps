@@ -1,0 +1,29 @@
+/* This is a configuration file for html2ps. */
+
+@html2ps {
+  header {              /* Running page header */
+    odd-left: $T;         /* Document title */
+    odd-right: $H;        /* Current main heading */
+    even-left: $H;        /* Ditto */
+    even-right: $A;       /* Document author (from <META NAME="Author"...>) */
+  }
+  footer {              /* Running page footer */
+    center: "- $N -";     /* Page number */
+  }
+  option {
+    toc: h;               /* Generate a table of contents, based on headings */
+    underline: 1;         /* Underline hyperlinks */
+  }
+  showurl: 0;             /* Show URLs for external links */
+  seq-number: 1;          /* Automatic numbering of headings */
+}
+
+/* Standard style sheet definitions */
+P { text-align: justify }
+H1, H2, H3, H4, H5, H6 { font-family: Helvetica; font-weight: bold }
+H1 { font-size: 19pt; text-align: center }
+H3, H5 { font-style: oblique }
+H2, H3 { font-size: 16pt }
+H4, H5 { font-size: 14pt }
+H6 { font-size: 12pt }
+ADDRESS { text-align: right }

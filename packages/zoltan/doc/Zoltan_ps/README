@@ -1,0 +1,15 @@
+The Zoltan documentation is written in HTML.
+If you want to print a hardcopy of e.g. the
+User's Guide, this may be difficult to do from
+a web browser because the User's Guide consists
+of many HTML files. A better alternative is to convert
+the HTML files to PostScript. The Makefile in this directory
+attempts to create a single ps file out of many HTML files
+using the html2ps script. The paths are specific to
+SNL Bldg 980, so you have to edit the Makefile to
+make it consistent with your system.
+
+html2ps is available from http://www.tdb.uu.se/~jan/html2ps.html
+It is a fairly simple yet powerful converter, but you
+may choose to use a different conversion program.
+
