@@ -201,9 +201,10 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
                              ML_Aggregate *ag)
 {
-   int         Ncoarse, Nfine, gNfine, gNcoarse;
+   int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
    double      max_eigen = -1.;
    ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
+   ML_Operator **prev_P_tentatives;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
 #ifdef SYMMETRIZE
@@ -218,6 +219,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    widget.near_bdry = NULL;
    Amat     = (ML_Operator *) data;
    Amat->num_PDEs = ag->num_PDE_eqns;
+   prev_P_tentatives = (ML_Operator **) ag->P_tentative;
    /*
    widget.near_bdry = (char *) ML_allocate(sizeof(char)*Amat->outvec_leng);
    ML_AGG_Compute_Near_Bdry(Amat, widget.near_bdry);
@@ -226,12 +228,23 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    Nfine    = Amat->outvec_leng;
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
-   if (ag->smoothP_damping_factor != 0.0)
-      Pmatrix = ML_Operator_Create(ml->comm);
-   else
+   if (ag->smoothP_damping_factor != 0.0) {
+     if ((ag->keep_P_tentative == ML_NO) || (prev_P_tentatives == NULL) ||
+	 (prev_P_tentatives[clevel] == NULL)) {
+       Pmatrix = ML_Operator_Create(ml->comm);
+       Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
+     }
+     else {
+       Pmatrix = prev_P_tentatives[clevel];
+       Ncoarse = Pmatrix->invec_leng;
+     }
+   }
+   else {
      Pmatrix = &(ml->Pmat[clevel]);
-
-   Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
+     if (Pmatrix->invec_leng == 0)
+       Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
+     else Ncoarse = Pmatrix->invec_leng;
+   }
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
    if ( gNcoarse == 0 || ((1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05) )
    {
@@ -318,7 +331,16 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      if (t3 != NULL) ML_Operator_Destroy(t3);
      if (t2 != NULL) ML_Operator_Destroy(t2);
 #endif
-     ML_Operator_Destroy(Pmatrix);
+     if (ag->keep_P_tentative == ML_NO) ML_Operator_Destroy(Pmatrix);
+     else {
+       if (prev_P_tentatives == NULL) {
+	 ag->P_tentative = ML_Operator_ArrayCreate(ag->max_levels);
+         prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+	 for (jj = 0; jj < ag->max_levels; jj++) prev_P_tentatives[jj] = NULL;
+       }
+       prev_P_tentatives[clevel] = Pmatrix;
+     }
+
      ML_Operator_Destroy(AGGsmoother);
    }
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
@@ -1471,6 +1493,83 @@ int ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry)
    allocated = 0; 
 
    ML_free(dtemp);
+
+   return 0;
+}
+
+/******************************************************************************
+Regenerate the multigrid hierarchy with the existing restriction and
+prolongation operators.
+******************************************************************************/
+
+int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml)
+{
+   int mesh_level, old_mesh_level;
+   ML_Operator *mat;
+
+
+   mesh_level = ml->ML_finest_level;
+
+   while( ml->SingleLevel[mesh_level].Rmat->to != NULL) {
+     old_mesh_level = mesh_level;
+     mesh_level = ml->SingleLevel[mesh_level].Rmat->to->levelnum;
+     mat = &(ml->Amat[mesh_level]);
+     ML_Operator_Clean(mat);
+     ML_Operator_Init(mat,ml->comm);
+     ML_Gen_AmatrixRAP(ml, old_mesh_level, mesh_level);
+   }
+
+   return 0;
+}
+/******************************************************************************
+Regenerate the multigrid hierarchy using smoothed aggregation reusing the 
+existing aggregates.
+******************************************************************************/
+
+int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
+							   ML_Aggregate *ag)
+{
+   int mesh_level, old_mesh_level;
+   int nblocks, *block_list;
+   ML_Operator *mat;
+
+   /* must clear away old nullspace information */
+
+   if (ag->nullspace_vect != NULL) {
+     ML_memory_free((void **)&(ag->nullspace_vect));
+   }
+
+   mesh_level = ml->ML_finest_level;
+
+   while( ml->SingleLevel[mesh_level].Rmat->to != NULL) {
+     old_mesh_level = mesh_level;
+     mesh_level = ml->SingleLevel[mesh_level].Rmat->to->levelnum;
+     /* clean and regenerate P */
+
+     mat = &(ml->Pmat[mesh_level]);
+     if (ag->smoothP_damping_factor != 0.0) {
+       ML_Operator_Clean(mat);
+       ML_Operator_Init(mat,ml->comm);
+       ML_AGG_Gen_Prolongator(ml, old_mesh_level, mesh_level, 
+			      &(ml->Amat[old_mesh_level]), ag);
+     }
+
+     /* clean and regenerate R */
+
+     mat = &(ml->Rmat[old_mesh_level]);
+     if (ag->smoothP_damping_factor != 0.0) {
+       ML_Operator_Clean(mat);
+       ML_Operator_Init(mat,ml->comm);
+       ML_Gen_Restrictor_TransP(ml, old_mesh_level, mesh_level);
+     }
+
+     /* clean and regenerate A */
+
+     mat = &(ml->Amat[mesh_level]);
+     ML_Operator_Clean(mat);
+     ML_Operator_Init(mat,ml->comm);
+     ML_Gen_AmatrixRAP(ml, old_mesh_level, mesh_level);
+   }
 
    return 0;
 }

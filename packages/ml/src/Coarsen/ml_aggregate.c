@@ -82,6 +82,8 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->nvblocks                   = 0;
    (*ag)->vblock_info                = NULL;
    (*ag)->operator_complexity        = 0.0;
+   (*ag)->keep_P_tentative           = ML_NO;
+   (*ag)->P_tentative                = NULL;
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -120,6 +122,9 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
       {
          ML_memory_free((void **)&((*ag)->aggr_count));
       } 
+      if ( (*ag)->P_tentative != NULL) 
+	ML_Operator_ArrayDestroy( (*ag)->P_tentative, (*ag)->max_levels);
+
       ML_memory_free( (void **) ag );
       (*ag) = NULL;
    }
@@ -154,6 +159,22 @@ int ML_Aggregate_Set_OutputLevel( ML_Aggregate *ag, int level )
       exit(-1);
    }
    ag->print_flag = level;
+   return 0;
+}
+
+int ML_Aggregate_Set_Reuse(ML_Aggregate *ag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_Reuse : wrong object. \n");
+      exit(-1);
+   }
+   ag->keep_P_tentative = ML_YES;
+   if (ag->nullspace_vect != NULL) {
+      printf("ML_Aggregate_Set_Reuse : Can not reuse aggregates with\n");
+      printf("                         nontrivial nullspace.\n");
+      exit(-1);
+   }
    return 0;
 }
 
@@ -521,8 +542,15 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
    ag->nullspace_dim = null_dim;
 
    /* if there was a nullspace vector specified before, free it */
-
    if (ag->nullspace_vect != NULL)
+   /*
+     if (ag->keep_P_tentative == ML_YES) {
+       printf("ML_Aggregate_Set_NullSpace: Can not reuse aggregates with\n");
+       printf("                            nontrivial nullspace.\n");
+       exit(-1);
+     }
+   */
+
       ML_memory_free((void **)&(ag->nullspace_vect));
 
    /* if the user-supplied nullspace vector isn't null, allocate space */

@@ -76,6 +76,9 @@ extern int  ML_AGG_DD_Solve(void *data, int, double *, int, double *);
 extern int  ML_AGG_Extract_Matrix(ML_Operator *mat, int *, int **, double ***);
 extern int ML_AGG_Smoother_Wrapper(void *obj, int leng1, double *outvec, 
 				   int leng2, double *invec);
+extern int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml );
+extern int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
+								  ML_Aggregate *ag);
 
 #ifdef __cplusplus
 }

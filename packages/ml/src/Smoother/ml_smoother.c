@@ -3177,9 +3177,11 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                       ML_allocate(Tmat->invec_leng * sizeof(double));
    dataptr->edge_update = (double * )
                           ML_allocate(Amat->invec_leng * sizeof(double));
+   /*
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
 #endif       
+   */
    return 0;
 }
 #endif /* ifdef MatrixProductHiptmair */
@@ -5881,30 +5883,30 @@ void ML_Smoother_Clean_ParaSails(void *data)
  changed in the multigrid hierarchy (the interpolation and projection are
  the same) and the smoother needs to be regenerated on each level.
 
- pre_smoother   the pre-smoother data structure created in ML_Create
- post_smoother   the postre-smoother data structure created in ML_Create
- SingleLevel    single level data structure created in ML_Create
- N_levels       (number of entries in ml_edges array) - 1
 *******************************************************************************/
 
-int ML_Smoother_Reinit(ML_Smoother *pre_smoother, ML_Smoother *post_smoother,
-                       ML_CSolve *csolve, ML_1Level *SingleLevel, int N_levels)
+int ML_Smoother_Reinit(ML *ml )
 {
     int             i;
     char            str[80];
 
-    for (i = 0; i < N_levels; i++)
-    {
-       ML_CSolve_Init( &(csolve[i]) );
-       ML_CSolve_Set_1Level( &(csolve[i]), &(SingleLevel[i]) );
-       ML_Smoother_Init( &(pre_smoother[i]), &(SingleLevel[i]) );
-       ML_Smoother_Init( &(post_smoother[i]), &(SingleLevel[i]) );
-       sprintf(str,"PreS_%d",i);
-       ML_Smoother_Set_Label( &(pre_smoother[i]),str);
-       sprintf(str,"PostS_%d",i);
-       ML_Smoother_Set_Label( &(post_smoother[i]),str);
-       sprintf(str,"Solve_%d",i);
-       ML_CSolve_Set_Label(&(csolve[i]),str);
+    for (i = 0; i < ml->ML_num_levels; i++) {
+      ML_Smoother_Clean( &(ml->pre_smoother[i]));
+      ML_Smoother_Clean( &(ml->post_smoother[i]));
+      ML_CSolve_Clean(&(ml->csolve[i]));
+
+      ML_Smoother_Init( &(ml->pre_smoother[i]), &(ml->SingleLevel[i]) );
+      ML_Smoother_Init( &(ml->post_smoother[i]), &(ml->SingleLevel[i]) );
+      ML_CSolve_Init( &(ml->csolve[i]) );
+      ML_CSolve_Set_1Level( &(ml->csolve[i]), &(ml->SingleLevel[i]) );
+
+      sprintf(str,"PreS_%d",i);
+      ML_Smoother_Set_Label( &(ml->pre_smoother[i]),str);
+      sprintf(str,"PostS_%d",i);
+      ML_Smoother_Set_Label( &(ml->post_smoother[i]),str);
+      sprintf(str,"Solve_%d",i);
+      ML_CSolve_Set_Label(&(ml->csolve[i]),str);
     }
     return 0;
 }
+

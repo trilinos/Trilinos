@@ -1263,3 +1263,27 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
   return 1;
 
 }
+/****************************************************************************
+Create an array of ML_Operator pointers.
+****************************************************************************/
+void *ML_Operator_ArrayCreate( int length)
+{
+  ML_Operator **op_array;
+  int i;
+
+  return((void *)  ML_allocate(length*sizeof(ML_Operator *)));
+}
+/****************************************************************************
+Destroy an array of ML_Operators.
+****************************************************************************/
+int ML_Operator_ArrayDestroy( void *array, int length)
+{
+  ML_Operator **op_array;
+  int i;
+
+  op_array = (ML_Operator **) array;
+  for (i = 0; i < length; i++) ML_Operator_Destroy(op_array[i]);
+  ML_free(op_array);
+
+  return 1;
+}

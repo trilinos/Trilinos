@@ -48,6 +48,8 @@ typedef struct ML_Aggregate_Struct
    double fine_complexity;             /* nnz of the finest A           */
    int    nvblocks;                    /* for variable blocks (finest)  */
    int    *vblock_info;                /* for variable blocks (finest)  */
+   int    keep_P_tentative;            /* keeping tentative prolongator */
+   void   *P_tentative;                /* so it can be reused later.    */
 } ML_Aggregate;
 
 /* ************************************************************************* */
@@ -117,6 +119,7 @@ int ML_Aggregate_Create( ML_Aggregate ** );
 int ML_Aggregate_Destroy( ML_Aggregate ** );
 
 int ML_Aggregate_Set_OutputLevel( ML_Aggregate *, int level );
+int ML_Aggregate_Set_Reuse(ML_Aggregate *ag);
 
 int ML_Aggregate_Set_MaxLevels( ML_Aggregate *, int level );
 int ML_Aggregate_Set_CurrentLevel( ML_Aggregate *, int level );
