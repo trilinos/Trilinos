@@ -74,6 +74,19 @@ AC_CONFIG_AUX_DIR(config)
 
 AM_CONFIG_HEADER(src/Anasazi_config.h:src/Anasazi_config.h.in)
 
+# Allow users to specify their own "install" command.  If none is specified,
+# the default is install-sh found in the config subdirectory.
+                                                                                
+AC_ARG_WITH(install,
+ [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
+ [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
+ [
+   INSTALL=$withval
+   INSTALL_PROGRAM=$withval
+   INSTALL_SCRIPT=$withval
+   INSTALL_DATA="$withval -m 644"
+ ],)
+                                                                                
 # AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the

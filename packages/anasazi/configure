@@ -885,6 +885,10 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-install=INSTALL_PROGRAM
+                          Use the installation program INSTALL_PROGRAM rather
+                          the default that is provided. For example
+                          --with-install="/path/install -p"
   --with-mpi-compilers=PATH
                           use MPI compilers mpicc, mpif77, and mpicxx (or
                           mpiCC) in the specified path or in the default path
@@ -1430,6 +1434,21 @@ ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
           ac_config_headers="$ac_config_headers src/Anasazi_config.h:src/Anasazi_config.h.in"
 
 
+# Allow users to specify their own "install" command.  If none is specified,
+# the default is install-sh found in the config subdirectory.
+
+
+# Check whether --with-install or --without-install was given.
+if test "${with_install+set}" = set; then
+  withval="$with_install"
+
+   INSTALL=$withval
+   INSTALL_PROGRAM=$withval
+   INSTALL_SCRIPT=$withval
+   INSTALL_DATA="$withval -m 644"
+
+fi;
+
 # AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
@@ -1551,7 +1570,7 @@ test -n "$target_alias" &&
 
 # Use automake
 
-#  #np# - Package name and version below
+# Specify required version of automake.
 am__api_version="1.8"
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -1825,8 +1844,8 @@ fi
 
 
 # Define the identity of the package.
- PACKAGE=anasazi
- VERSION=0.0
+ PACKAGE='anasazi'
+ VERSION='1.0'
 
 
 cat >>confdefs.h <<_ACEOF
@@ -3392,7 +3411,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3395:" \
+echo "$as_me:3414:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6242,7 +6261,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6245: \"$ac_link\") >&5
+(eval echo $as_me:6264: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6320,7 +6339,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6323: \"$ac_link\") >&5
+(eval echo $as_me:6342: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9151,7 +9170,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9154: \"$ac_link\") >&5
+(eval echo $as_me:9173: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9229,7 +9248,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9232: \"$ac_link\") >&5
+(eval echo $as_me:9251: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
