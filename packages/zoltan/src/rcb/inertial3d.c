@@ -181,7 +181,7 @@ static void evals3(
      if (a3 == 0) {
         root1 = 0;              /* Solve quadratic. */
 
-        q = -.5 * (a1 + sign(a1) * sqrt(a1 * a1 - 4 * a2));
+        q = -.5 * (a1 + sign(a1) * sqrt(max(0.0, a1 * a1 - 4 * a2)));
         root2 = q;
         root3 = a2 / q;
      }

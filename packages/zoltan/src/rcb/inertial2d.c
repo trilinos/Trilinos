@@ -148,7 +148,7 @@ static void evals2(
 
      b = -M[0][0] - M[1][1];
      c = M[0][0] * M[1][1] - M[1][0] * M[1][0];
-     root1 = -.5 * (b + sign(b) * sqrt(b * b - 4 * c));
+     root1 = -.5 * (b + sign(b) * sqrt(max(0.0, b * b - 4 * c)));
      root2 = c / root1;
 
      root1 *= xmax;
