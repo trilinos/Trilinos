@@ -17,6 +17,7 @@
 #include "MLAPI_Space.h"
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_Operator.h"
+#include "Ifpack_Utils.h"
 
 using namespace std;
 
@@ -581,18 +582,15 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 // ====================================================================== 
 void AnalyzeCheap(const Operator& A) 
 {
-  ML_Operator_Analyze(A.GetML_Operator(), const_cast<char*>(A.GetLabel().c_str()));
+  Ifpack_Analyze(*(A.GetRowMatrix()));
 }
 
 // ====================================================================== 
 void PrintSparsity(const Operator& A, int NumPDEEquations)
 {
-  char* title = const_cast<char*>(A.GetLabel().c_str());
-  char filename[80];
-  sprintf(filename, "%s.ps", title);
-          
-  ML_Operator_PrintSparsity(A.GetML_Operator(), title,
-                            filename, ML_TRUE, NumPDEEquations = 1);
+  string FileName = A.GetLabel() + ".ps";
+  Ifpack_PrintSparsity(*(A.GetRowMatrix()), FileName.c_str(),
+                       NumPDEEquations);
 }
 
 // ====================================================================== 

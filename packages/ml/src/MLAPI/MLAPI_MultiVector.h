@@ -537,7 +537,10 @@ public:
     ResetTimer();
     StackPush();
 
-    CheckSpaces(rhs);
+    if (rhs.GetVectorSpace() != GetVectorSpace()) {
+      ML_THROW("rhs.GetVectorSpace() is not equal to this->GetVectorSpace()", -1);
+    }
+
     CheckNumVectors(rhs.GetNumVectors());
     
     if (v == -1) {

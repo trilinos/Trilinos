@@ -9,7 +9,10 @@
 #include "float.h"
 #include <fstream>
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_LinearProblem.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Amesos_Lapack.h"
 
 namespace MLAPI {
 
@@ -88,9 +91,6 @@ double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling)
 // ====================================================================== 
 void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI)
 {
-  if (GetNumProcs() != 1)
-    ML_THROW("Function Eig() works only w/ one process, use Eigs() instead.", -1);
-
   int ierr;
   if (Op.GetDomainSpace() != Op.GetRangeSpace())
     ML_THROW("Matrix is not square", -1);
@@ -98,12 +98,22 @@ void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI)
   ER.Reshape(Op.GetDomainSpace());
   EI.Reshape(Op.GetDomainSpace());
 
-  ierr = ML_Operator_Eigensolver_Dense(Op.GetML_Operator(), ER.GetValues(0), 
-                                       EI.GetValues(0), NULL);
+  Epetra_LinearProblem Problem;
+  Problem.SetOperator(const_cast<Epetra_RowMatrix*>(Op.GetRowMatrix()));
+  Amesos_Lapack Lapack(Problem);
+
+  Epetra_Vector ER_Epetra(Op.GetRowMatrix()->RowMatrixRowMap());
+  Epetra_Vector EI_Epetra(Op.GetRowMatrix()->RowMatrixRowMap());
+
+  ierr = Lapack.GEEV(ER_Epetra, EI_Epetra);
 
   if (ierr)
-    ML_THROW("Error occurred, code = " + GetString(ierr), -1);
+    ML_THROW("GEEV returned error code = " + GetString(ierr), -1);
   
+  for (int i = 0 ; i < ER.GetMyLength() ; ++i) {
+    ER(i) = ER_Epetra[i];
+    EI(i) = EI_Epetra[i];
+  }
 }
 
 // ====================================================================== 
