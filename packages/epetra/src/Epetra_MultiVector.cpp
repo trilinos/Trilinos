@@ -1555,7 +1555,7 @@ void Epetra_MultiVector::Print(ostream& os) const {
 	  for (int j = 0; j < NumVectors1 ; j++)
 	    {   
 	      os.width(20);
-	      os <<  A_Pointers[j][i];
+	      os <<  A_Pointers[j][ii];
 	    }
 	  os << endl;
 	}
