@@ -34,6 +34,7 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Matrix.H"
+#include "LOCA_Utils.H"
 
 ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
 					   double s)  : 
@@ -131,23 +132,26 @@ ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
                                     const double conParam)
 {
 
-   cout << "At parameter value: " << conParam << "   the solution vector is\n";
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "At parameter value: " << conParam 
+	 << "   the solution vector is\n";
 
-   if (n < 8) {
-     for (int i=0; i<n; i++)  cout << " " << x(i);
-   }
-   else {
-     for (int i=0; i<6; i++)  cout << " " << x(i);
-     cout << " ...";
-     for (int i=n-2; i<n; i++)  cout << " " << x(i);
-   }
-   cout << endl;
+    if (n < 8) {
+      for (int i=0; i<n; i++)  cout << " " << x(i);
+    }
+    else {
+      for (int i=0; i<6; i++)  cout << " " << x(i);
+      cout << " ...";
+      for (int i=n-2; i<n; i++)  cout << " " << x(i);
+    }
+    cout << endl;
+  }
 
-   if (outputFilePtr != NULL) {
-     (*outputFilePtr) << conParam << " ";
-     for (int i=0; i<n; i++)
-       (*outputFilePtr) << x(i) << " ";
-     (*outputFilePtr) << endl << endl;
-   }
+  if (outputFilePtr != NULL) {
+    (*outputFilePtr) << conParam << " ";
+    for (int i=0; i<n; i++)
+      (*outputFilePtr) << x(i) << " ";
+    (*outputFilePtr) << endl << endl;
+  }
 
 }
