@@ -555,8 +555,8 @@ int Zoltan_SFC(
   for(i=0;i<num_local_objects;i++) 
     if(sfc_vert_ptr[i].destination_proc != zz->Proc) {
       *((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
-      ZOLTAN_SET_GID(zz, (*export_global_ids+j), (global_ids+i));
-      ZOLTAN_SET_LID(zz, (*export_local_ids+j), (local_ids+i));
+      ZOLTAN_SET_GID(zz, (*export_global_ids+j*num_gid_entries), (global_ids+i*num_gid_entries));
+      ZOLTAN_SET_LID(zz, (*export_local_ids+j*num_lid_entries), (local_ids+i*num_lid_entries));
       j++;
     }
 
