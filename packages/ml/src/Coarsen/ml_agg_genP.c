@@ -206,7 +206,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
-#define SYMxETRIZE
 #ifdef SYMMETRIZE
    ML_Operator *t2, *t3;
 #endif
