@@ -93,7 +93,7 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= mpicc
+CC			= mpicc -Wall
 
 # ifeq "$(MPI_VERSION)" "lam"
 # INCLUDE_PATH		= -I$(LAMHOME)/include
@@ -101,9 +101,9 @@ CC			= mpicc
 # INCLUDE_PATH          = -I$(MPIR_HOME)/include
 # endif
 
-DBG_FLAGS		= -g
-OPT_FLAGS		= -O
-CFLAGS 			= $(OPT_FLAGS)
+DBG_FLAGS		= -g 
+OPT_FLAGS		= -O 
+CFLAGS 			= $(DBG_FLAGS)
 
 LOCAL_F90		= $(F90)
 
