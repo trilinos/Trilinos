@@ -39,6 +39,7 @@ static char *cvs_all_allo_h =
 
 #define LB_MALLOC(a) LB_Malloc((a), __FILE__, __LINE__)
 #define LB_REALLOC(a, b) LB_Realloc((a), (b), __FILE__, __LINE__)
+#define LB_FREE(a) LB_Free((void **) (a), __FILE__, __LINE__)
 
 /* function declarations for dynamic array allocation */
 
@@ -47,12 +48,18 @@ extern double *LB_Array_Alloc(char *file, int lineno, int numdim, ...);
 #else
 extern double *LB_Array_Alloc();
 #endif
+
 extern int LB_Set_Malloc_Param(char *, char *);
-extern void LB_Free(void **ptr);
+extern void LB_Free(void **ptr, char *file, int lineno);
 extern double *LB_Malloc(int n, char *file, int lineno);
 extern double *LB_Realloc(void *ptr, int n, char *filename, int lineno);
 extern void LB_Memory_Stats();
 extern int LB_Memory_Num();
 extern void LB_Free_Structure(LB *);
+#ifdef __STDC__
+extern void LB_Multifree(int n, ...);
+#else
+extern void LB_Multifree();
+#endif
 
 #endif
