@@ -163,11 +163,12 @@ int main(int argc, char *argv[])
   if (!Test<Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,List)) {
     TestPassed = false;
   }
-
+ 
   // this is ok as long as just one sweep is applied
   List = DefaultList;
   List.set("relaxation: type", "symmetric Gauss-Seidel");
   List.set("partitioner: local parts", 128);
+  List.set("partitioner: type", "linear");
   if (!Test<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,List)) {
     TestPassed = false;
   }
@@ -176,6 +177,7 @@ int main(int argc, char *argv[])
   List = DefaultList;
   List.set("relaxation: type", "symmetric Gauss-Seidel");
   List.set("partitioner: local parts", 128);
+  List.set("partitioner: type", "linear");
   if (!Test<Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > >(Matrix,List)) {
     TestPassed = false;
   }

@@ -258,27 +258,36 @@ public:
   //! Returns the number of flops in the initialization phase.
   virtual double InitializeFlops() const
   {
+    if (Containers_.size() == 0)
+      return(0.0);
+
     // the total number of flops is computed each time InitializeFlops() is
     // called. This is becase I also have to add the contribution from each
     // container.
     double total = InitializeFlops_;
-    for (int i = 0 ; i < NumLocalBlocks() ; ++i)
+    for (unsigned int i = 0 ; i < Containers_.size() ; ++i)
       total += Containers_[i]->InitializeFlops();
     return(total);
   }
 
   virtual double ComputeFlops() const
   {
+    if (Containers_.size() == 0)
+      return(0.0);
+    
     double total = ComputeFlops_;
-    for (int i = 0 ; i < NumLocalBlocks() ; ++i)
+    for (unsigned int i = 0 ; i < Containers_.size() ; ++i)
       total += Containers_[i]->ComputeFlops();
     return(total);
   }
 
   virtual double ApplyInverseFlops() const
   {
+    if (Containers_.size() == 0)
+      return(0.0);
+
     double total = ApplyInverseFlops_;
-    for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
+    for (unsigned int i = 0 ; i < Containers_.size() ; ++i) {
       total += Containers_[i]->ApplyInverseFlops();
     }
     return(total);
