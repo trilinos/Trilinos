@@ -41,7 +41,6 @@ static LB_SET_PARAM_FN * Param_func[] = {
         LB_Set_Jostle_Param,
         LB_Set_Octpart_Param,
         LB_Set_Reftree_Param,
-        LB_Set_Timer_Param,
         LB_Set_IRB_Param,
      /* LB_Set_Machine_Param, */
    /*** Add your new parameter setting function here! ***/
