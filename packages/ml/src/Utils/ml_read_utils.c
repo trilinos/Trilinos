@@ -74,7 +74,7 @@ Spectral norm calculation    = Anorm
 #include "ml_read_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -162,7 +162,7 @@ void ML_Reader_GetGeneralSpecs(FILE *ifp, struct reader_context *context)
   }
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
-  strcpy(context->partition_file,input);
+  strcpy(context->partition_file,(const char *) input);
 
   /* How often should the residual be printed */
 

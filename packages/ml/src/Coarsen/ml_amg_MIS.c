@@ -1600,7 +1600,7 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
    if ( vlist_cnt > 0 )
    {
       nbytes      = vlist_cnt2 * sizeof(char);
-      in_preflist = (int *) malloc( nbytes );
+      in_preflist = (char *) malloc( nbytes );
       if (in_preflist == NULL) printf("MALLOC ERROR (LabelVertices) : inplist\n");
       for (i = 0; i < vlist_cnt2; i++) in_preflist[i] = 'f';
 

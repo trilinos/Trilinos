@@ -4,3 +4,4 @@ FC=f77
 RANLIB=touch
 LINKER=$(CC)
 ARCH_LIBS=-lots -lfor
+AR=ar

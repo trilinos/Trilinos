@@ -1,6 +1,8 @@
-ARCH_FLAGS=-O4 -fast
+ARCH_FLAGS=-O4 
 CC=cc
 FC=cc
 RANLIB=touch
 LINKER=$(CC)
-ARCH_LIBS=-lUfor -lots -lfor -lFutil -lm
+ARCH_LIBS= -lm
+#ARCH_LIBS=-lUfor -lots -lfor -lFutil -lm
+AR=ar

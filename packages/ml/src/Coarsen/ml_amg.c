@@ -92,7 +92,7 @@ int ML_AMG_Destroy( ML_AMG **amg )
       printf("ML_AMG_Destroy : wrong object. \n");
       exit(-1);
    }
-   if ( (*amg)->blk_info != NULL ) ML_memory_free((*amg)->blk_info);
+   if ( (*amg)->blk_info != NULL ) ML_memory_free((void **) (*amg)->blk_info);
    ML_memory_free( (void **) amg );
    (*amg) = NULL;
    return 0;

@@ -60,7 +60,7 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
          printf("Gen_AMG ERROR : local nrows not divisible by blksize\n");
          exit(1);
       }
-      ML_memory_alloc(&(ml_amg->blk_info), nrows*sizeof(int), "AM1");
+      ML_memory_alloc((void **) &(ml_amg->blk_info), nrows*sizeof(int), "AM1");
       for ( i = 0; i < nrows; i+= blksize )
          for ( j = 0; j < blksize; j++ ) ml_amg->blk_info[i+j] = j;
    }
