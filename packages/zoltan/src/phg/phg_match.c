@@ -74,7 +74,8 @@ char  *yo = "Zoltan_PHG_Matching";
 
   /* Scale the weight of the edges */
   if (hgp->edge_scaling) {
-     if (!(new_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
+     if (hg->nEdge && !(new_ewgt = (float*) 
+                      ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         err = ZOLTAN_MEMERR;
         goto End;
@@ -163,15 +164,17 @@ static int pmatching_col_ipm(
 
     lips = gips = NULL;
     sendbuf = recvbuf = NULL;
+    adj = order = NULL;
 
-    if (!(lips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
-     || !(gips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))
-     || !(adj =  (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
-     || !(order = (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))){
-        Zoltan_Multifree(__FILE__, __LINE__, 4, &lips, &gips, &adj, &order);
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-    }
+    if (hg->nVtx)  
+      if (!(lips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
+       || !(gips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))
+       || !(adj =  (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
+       || !(order = (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))){
+          Zoltan_Multifree(__FILE__, __LINE__, 4, &lips, &gips, &adj, &order);
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+          return ZOLTAN_MEMERR;
+      }
     
     for (i = 0; i < hg->nVtx; i++){
         lips[i] = gips[i] = .0;
