@@ -213,7 +213,7 @@ public:				// functions
   /*! 
     \brief Creates a Sci object which can be used in an output stream
     for printing a double precision number in scientific format with
-    an arbitrary precision. The default precision is that specificed
+    an arbitrary precision. The precision is that specificed
     by the Utils object.
 
     For example,
@@ -222,7 +222,12 @@ public:				// functions
     This is modeled after the Form and Bound_form objects in
     Stroustrup, C++ Programming Langauge, 3rd ed., Chapter 21.4.
   */
-  Sci sciformat(double dval, int prec = -1) const;
+  Sci sciformat(double dval) const;
+
+  /*!
+    \brief Static version of sciformat().
+  */
+  static Sci sciformat(double dval, int prec);
 
 private:
 

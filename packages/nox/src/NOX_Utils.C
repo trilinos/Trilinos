@@ -71,9 +71,14 @@ ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
   return os;
 }
 
-NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p) const
+NOX::Utils::Sci NOX::Utils::sciformat(double dval) const
 {
-  return NOX::Utils::Sci(dval, ((p > 0) ? p : precision) );
+  return NOX::Utils::Sci(dval, precision);
+}
+
+NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p) 
+{
+  return NOX::Utils::Sci(dval, p);
 }
 
 ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
