@@ -1,0 +1,29 @@
+epetraext/src/matlab build instructions
+see the normal Trilinos doxygen documentation for usage instructions and references
+for questions/problems/comments contact Jason Cross at jcross@software.sandia.goc
+
+NOTES:
+MATLAB will refer to the root directory of a Matlab installation.  These instructions assume you are framiliar with building Trilinos with epetraext and only need instructions on how to enable building epetraext with Matlab support.
+
+1. UNIX-like systems (Solaris, Linux, etc. -- NOT CYGWIN)
+1.a. Add the library path of the Matlab libraries using --with-libdirs="-LMATLAB/LIBLOCATIONS/ARCH".  For Matlab version 7 (release 14) the location of the libraries is MATLAB/bin/ARCH where ARCH is your system archecture (sol2 for Solaris, etc).  For Matlab versions below 7 the location of the libraries is MATLAB/extern/lib/ARCH.
+1.b. Now add the Matlab headers path using --with-incdirs="-I/MATLAB/extern/include"
+If you've done the previous steps properly you are now ready to build epetraext with src/matlab.
+To do so do a normal Trilinos build process but add the necessary --with-incdirs and --with-inclibs described in the previous steps.  You will also need to specify --enable-epetraext-matlab.  The configure script in epetraext will make sure that all necessary header files and libraries can be found by the compiler and linker.
+1.c. You probably will have to add the Matlab libraries directory to your environmental variable LD_LIBRARY_PATH so that the Matlab shared libraries can be found at runtime.
+For bash you would do export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/MATLAB/LIBLOCATIONS/ARCH" and for tcsh setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:/MATLAB/LIBLOCATIONS/ARCH"
+
+
+2. CYGWIN (with gcc in MS Windows)
+2.a. First you will need to generate lib*.a files from the Matlab dlls. On the cygwin command line move into MATLAB/extern/include
+2.b. Run the following commands:
+dlltool --def libeng.def --dllname libeng.dll --output-lib libeng.a
+dlltool --def libmx.def --dllname libmx.dll --output-lib libmx.a
+Note that you must have write access to the MATLAB/extern/include directory for the above commands to work verbatim.  If you do not have write access change the --output-lib lib*.a to --output-lib SOMEPATH/lib*.a where SOMEPATH is a directory where you have write access to.
+2.c. Now move libeng.a and libmx.a to some directory which we will call MATLABLIBDIR and then add that directory path to the ./configure parameter --with-libdirs="-L/the/path/to/MATLABLIBDIR"
+Note that you only need to generate these lib*.a libraries whenever you install a new version of Matlab.
+2.d. Now libeng.dll and libmx.dll must be in the Windows PATH environmental variable.  This can either be specified using normal Windows environmental command tools or by using you cygwin shell such as bash to modify the PATH variable.  The dlls are located in MATLAB/bin/win32
+2.e. Now you must add the MATLAB include files directory to your ./configure parameter --with-incdirs="-I/MATLAB/extern/include"
+2.f. If you've done the previous steps properly you are now ready to build epetraext with src/matlab.
+To do so do a normal Trilinos build process but add the necessary --with-incdirs and --with-inclibs described in the previous steps.  You will also need to specify --enable-epetraext-matlab.  The configure script in epetraext will make sure that all necessary header files and libraries can be found by the compiler and linker.
+2.g. If your MATLABLIBDIR is a nonstandard library directory (not /lib, /usr/lib, etc) then you will need to add that directory's path to the environmental variable LD_LIBRARY_PATH so that the Matlab shared libraries can be found at runtime.  See 1.c. for more specific shell examples.
