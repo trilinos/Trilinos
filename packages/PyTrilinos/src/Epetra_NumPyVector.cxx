@@ -64,7 +64,8 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_BlockMap & blockMap,
 
 // =============================================================================
 Epetra_NumPyVector::Epetra_NumPyVector(PyObject * pyObject):
-  Epetra_Vector(View, getEpetraMap(pyObject), (double*)tmp_array->data) 
+  //Epetra_Vector(View, getEpetraMap(pyObject), (double*)tmp_array->data) 
+  Epetra_Vector(View, getEpetraMap(pyObject), getSourceData(pyObject)) 
 {
   // Store the pointer to the Epetra_Map
   assert(NULL != tmp_map);
