@@ -174,9 +174,10 @@ bool CommandLine::findDouble(const string& str, Array<double>& val, int count)
 
 	checkInitialization();
 	
-	bool rtn = tokenMap_.get(str);
+	bool rtn = tokenMap_.containsKey(str);
 	if (rtn)
 		{
+			position = tokenMap_.get(str);
 			val.resize(count);
 			for (int i=0; i<count; i++) val[i] = atof(tokens_[position+1+i].c_str());
 		}
@@ -189,9 +190,10 @@ bool CommandLine::findInt(const string& str, Array<int>& val, int count)
 	
 	checkInitialization();
 		
-	bool rtn = tokenMap_.get(str);
+	bool rtn = tokenMap_.containsKey(str);
 	if (rtn)
 		{
+			position = tokenMap_.get(str);
 			val.resize(count);
 			for (int i=0; i<count; i++) val[i] = atoi(tokens_[position+1+i].c_str());
 		}
@@ -205,9 +207,10 @@ bool CommandLine::findString(const string& str, Array<string>& val, int count)
 
 	checkInitialization();
 		
-	bool rtn = tokenMap_.get(str);
+	bool rtn = tokenMap_.containsKey(str);
 	if (rtn)
 		{
+			position = tokenMap_.get(str);
 			val.resize(count);
 			for (int i=0; i<count; i++) val[i] = tokens_[position+1+i];
 		}
