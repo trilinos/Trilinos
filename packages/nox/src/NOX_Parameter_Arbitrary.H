@@ -40,7 +40,7 @@ namespace NOX {
 namespace Parameter {
 
 /*! 
-  \brief Support for Arbitrary parameters. 
+  \brief Support for %Arbitrary parameters. 
 
   Any object which derives from this class may be passed as a
   parameter via a NOX::Parameter::List.
@@ -121,10 +121,10 @@ public:
    */
   virtual Arbitrary* clone() const = 0;
 
-  //! Get a short descriptive string describing Arbitrary object
+  //! Get a short descriptive string describing the %Arbitrary object
   virtual const string& getType() const = 0;
 
-  //! Print out detailed information describing the Arbitrary object
+  //! Print out detailed information describing the %Arbitrary object
   /*!
     Each line of output should be indented by the number of spaces specified by \c indent.
   */
