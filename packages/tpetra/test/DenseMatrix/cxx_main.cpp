@@ -1,21 +1,23 @@
-// tpetra/test/DenseMatrix/cc_main.cc
+/*Paul
 // 16-May-2002 - Changed names to use Tpetra instead of TPetra
 // 17-May-2002 - Switched from Petra_Comm, Petra_Time, and Petra_Map to Epetra's versions
 // 20-May-2002 - Changed formatting for readability, no real changes
+*/
 
-// Used to easily change scalar type
-#define SCALARTYPE float
+#include <complex>
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
+#ifdef TPETRA_MPI
+#include "Tpetra_MpiComm.h" 
 #include <mpi.h>
 #else
-#include "Epetra_SerialComm.h"
+#include "Tpetra_SerialComm.h"
 #endif
 
-#include "Epetra_Map.h"
-#include "Epetra_Time.h" 
+#include "Tpetra_Time.h" 
 #include "Tpetra_DenseMatrix.h"
+
+// Used to easily change scalar type
+#define SCALARTYPE complex<float>
 
 // Local prototypes
 template<class scalarType> bool check(int M, int N, Tpetra::DenseMatrix<scalarType> A, Tpetra::DenseMatrix<scalarType> B, Tpetra::DenseMatrix<scalarType>& C);
@@ -23,7 +25,7 @@ template<class scalarType> bool check(int M, int N, Tpetra::DenseMatrix<scalarTy
 int main(int argc, char *argv[])
 {
 
-#ifdef EPETRA_MPI 
+#ifdef TPETRA_MPI 
 
   // Initialize MPI
 
@@ -33,13 +35,13 @@ int main(int argc, char *argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Tpetra::MpiComm comm( MPI_COMM_WORLD );
 
 #else
 
   int size = 1; // Serial case (not using MPI)
   int rank = 0;
-  Epetra_SerialComm Comm;
+  Tpetra::SerialComm comm;
 
 #endif
 
@@ -48,8 +50,8 @@ int main(int argc, char *argv[])
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
+  int MyPID = comm.myPID();
+  int NumProc = comm.numProc();
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
 
   bool verbose1 = verbose;
@@ -81,8 +83,8 @@ int main(int argc, char *argv[])
   Tpetra::DenseMatrix<SCALARTYPE> C2;
   
 
-  int M = 600;
-  int N = 700;
+  int M = 60;
+  int N = 70;
   SCALARTYPE zero = Tpetra::ScalarTraits<SCALARTYPE>::zero();
   SCALARTYPE one = Tpetra::ScalarTraits<SCALARTYPE>::one(); 
   A.shape(M,N);
@@ -101,15 +103,15 @@ int main(int argc, char *argv[])
   if (verbose && smallProblem) cout << "\nContents of A:\n" << A << endl;
   if (verbose && smallProblem) cout << "\nContents of B:\n" << B << endl;
 
-  Epetra_Flops flop_counter;
-  C1.SetFlopCounter(flop_counter);
-  Epetra_Time timer(Comm);
+  Tpetra::Flops flop_counter;
+  C1.setFlopCounter(flop_counter);
+  Tpetra::Time timer(comm);
   
-  double startFlops = C1.Flops();
-  double startTime = timer.ElapsedTime();
+  double startFlops = C1.flops();
+  double startTime = timer.elapsedTime();
   C1.multiply('N', 'N', one, A, B, zero);
-  double time = timer.ElapsedTime() - startTime;
-  double flops = C1.Flops() - startFlops;
+  double time = timer.elapsedTime() - startTime;
+  double flops = C1.flops() - startFlops;
   double MFLOPS = flops/time/1000000.0;
 
   if (verbose) cout << "Statistics for multiply method C(MxM) = A(MxN) * B(NxM) " << "M = " << M

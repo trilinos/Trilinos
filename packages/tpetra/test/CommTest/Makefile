@@ -39,12 +39,12 @@ TEST_C_OBJ          = $(TEST_C:.c=.o)
 TEST_CXX_OBJ          = $(TEST_CXX:.cpp=.o)
 TEST_F_OBJ          = $(TEST_F:.f=.o)
 
-TARGET_C_MPI = c_tpetra_densematrix_mpi
-TARGET_CXX_MPI = cxx_tpetra_densematrix_mpi
-TARGET_F_MPI = f_tpetra_densematrix_mpi
-TARGET_C_SERIAL = c_tpetra_densematrix_serial
-TARGET_CXX_SERIAL = cxx_tpetra_densematrix_serial
-TARGET_F_SERIAL = f_tpetra_densematrix_serial
+TARGET_C_MPI = c_tpetra_commtest_mpi
+TARGET_CXX_MPI = cxx_tpetra_commtest_mpi
+TARGET_F_MPI = f_tpetra_commtest_mpi
+TARGET_C_SERIAL = c_tpetra_commtest_serial
+TARGET_CXX_SERIAL = cxx_tpetra_commtest_serial
+TARGET_F_SERIAL = f_tpetra_commtest_serial
 
 TARGET_C = $(TARGET_C_$(TRILINOS_COMM))
 TARGET_CXX = $(TARGET_CXX_$(TRILINOS_COMM))
