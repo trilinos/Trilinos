@@ -1,0 +1,55 @@
+# Doxyfile 1.3.5
+
+@INCLUDE               = ../../../../Trilinos/packages/common/Doxyfile
+
+############################################################################
+# TRILINOS PACKAGE DEVELOPERS:
+#
+# Use this Doxyfile in Trilinos/packages/YOUR_PACKAGE/doc to control the
+# way in which your documentation is generated. Do not modify the @INCLUDE
+# line above--that provides you with default behavior. To modify the
+# default behavior, simply include (below) the option you would like to
+# overwrite (or use += to append more to the default). 
+#
+# There are essentially two types of configuration options: 
+#
+#   1) those that you can overwrite completely, and
+#   2) those that you can overwrite for local generation, but that are 
+#      automatically overwritten by TrilinosWeb before being posted online
+#
+# Both are present in Trilinos/packages/common/Doxyfile. The first type are 
+# simply present without note, while the second type are noted as such.
+#
+# - IN ORDER FOR TrilinosWeb TO FIND YOUR RESOURCES, you must give all paths 
+#   up to Trilinos' parent and back down to your resource (see the @INCLUDE
+#   above for an example). This should ALWAYS be:
+#
+#       ../../../../Trilinos/YOUR_RESOURCE...
+#
+#   and will usually be:
+#
+#       ../../../../Trilinos/packages/YOUR_PACKAGE/YOUR_RESOURCE...
+#
+#   IF YOU DON'T DO THIS, DOXYGEN WILL NOT BE ABLE TO LOCATE YOUR RESOURCES!
+#
+# - To view the explanation of an option, run 
+#
+#     doxygen -g COMMENTED_DOXYFILE_NAME
+#     (open COMMENTED_DOXYFILE_NAME)
+#
+#   or visit http://www.stack.nl/~dimitri/doxygen/config.html
+#
+# - To use this Doxyfile locally to generate your documentation and 
+#   iteratively develop it:
+#
+#     cd Trilinos/packages/YOUR_PACKAGE/doc
+#     (modify this Doxyfile accordingly)
+#     doxygen
+#     (open Trilinos/packages/YOUR_PACKAGE/doc/html/index.html)
+#     rinse, repeat.
+#
+# - At the very least, you will need to overwrite the INPUT option.
+#
+############################################################################
+
+INPUT                  = ../../../../Trilinos/packages/kokkos/src
