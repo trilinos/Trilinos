@@ -65,6 +65,9 @@ extern "C" {
 extern int ML_Gen_MGHierarchy_UsingAggregation(ML *, int start, 
                        int increment_or_decrement, ML_Aggregate *);
 
+extern int  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
+								   ML_Aggregate *ag);
+
 /* ************************************************************************* */
 /* internal functions called by developers                                   */
 /* ------------------------------------------------------------------------- */
