@@ -21,7 +21,7 @@
 #include "ml_include.h"
 
 #ifdef ML_BENCHMARK
-#if !defined(HAVE_ML_SUPERLU) && !defined(HAVE_ML_AMESOS)
+#if !defined(SUPERLU) && !defined(HAVE_ML_AMESOS)
 #define ML_NO_DIRECT_SOLVER
 #endif
 #endif
@@ -759,7 +759,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
 	ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH,
 					     nsmooth,1., nblocks, blocks);
       }
-#ifdef HAVE_ML_SUPERLU
+#ifdef SUPERLU
       else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0) {
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
