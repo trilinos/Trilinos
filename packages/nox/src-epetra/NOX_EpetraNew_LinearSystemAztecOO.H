@@ -355,7 +355,9 @@ public:
   
   virtual bool applyJacobianInverse(NOX::Parameter::List& linearSolverParams, 
 				    const NOX::Epetra::Vector& input, 
-				    NOX::Epetra::Vector& result);
+				    NOX::Epetra::Vector& result,
+				    Epetra_Operator* jacOperator = NULL,
+				    Epetra_Operator* precOperator = NULL);
 
   virtual bool applyRightPreconditioning(bool useTranspose,
 				   NOX::Parameter::List& linearSolverParams, 
@@ -396,6 +398,9 @@ public:
 
   //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack). 
   virtual const Epetra_Operator& getPrecOperator() const;
+
+  //! Return preconditioner operator generated and stored in AztecOO
+  virtual const Epetra_Operator& getGeneratedPrecOperator() const;
 
   //virtual void getNormLastLinearSolveResidual(double & residual) const;
 

@@ -47,6 +47,7 @@ namespace NOX {
   }
 }
 class Epetra_Vector;
+class Epetra_Operator;
 
 namespace NOX {
 namespace EpetraNew {
@@ -96,7 +97,9 @@ public:
   */
   virtual bool applyJacobianInverse(NOX::Parameter::List &params, 
 				    const NOX::Epetra::Vector &input, 
-				    NOX::Epetra::Vector &result) = 0;
+				    NOX::Epetra::Vector &result,
+				    Epetra_Operator* jacOperator = NULL,
+				    Epetra_Operator* precOperator = NULL) = 0;
 
   /*!
     \brief Apply right preconditiong to the given input vector
@@ -158,6 +161,12 @@ public:
   */
   virtual bool checkPreconditionerReuse()
     { return false; } 
+
+  //! Return Jacobian operator
+  virtual const Epetra_Operator& getJacobianOperator() const = 0;
+
+  //! Return preconditioner operator
+  virtual const Epetra_Operator& getGeneratedPrecOperator() const = 0;
 };
 
 } // namespace EpetraNew

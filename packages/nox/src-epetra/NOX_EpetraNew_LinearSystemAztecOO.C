@@ -549,9 +549,19 @@ applyJacobianTranspose(const NOX::Epetra::Vector& input,
 bool NOX::EpetraNew::LinearSystemAztecOO::
 applyJacobianInverse(Parameter::List &p,
 		     const NOX::Epetra::Vector& input, 
-		     NOX::Epetra::Vector& result)
+		     NOX::Epetra::Vector& result,
+		     Epetra_Operator* jacOperator,
+		     Epetra_Operator* precOperator)
 {
   double startTime = timer.WallTime();
+
+  Epetra_Operator* prevPrecOperator = NULL;
+  if (jacOperator == NULL)
+    jacOperator = jacPtr;
+  if (precOperator != NULL) {
+    prevPrecOperator = aztecSolverPtr->GetPrecOperator();
+    aztecSolverPtr->SetPrecOperator(precOperator);
+  }
 
   // Need non-const version of the input vector
   // Epetra_LinearProblem requires non-const versions so we can perform
@@ -563,7 +573,7 @@ applyJacobianInverse(Parameter::List &p,
     result.init(0.0);
 
   // Create Epetra linear problem object for the linear solve
-  Epetra_LinearProblem Problem(jacPtr, 
+  Epetra_LinearProblem Problem(jacOperator, 
   			       &(result.getEpetraVector()), 
 			       &(nonConstInput.getEpetraVector()));
 
@@ -622,6 +632,10 @@ applyJacobianInverse(Parameter::List &p,
     outputList.setParameter("Total Number of Linear Iterations", 
 			    (prevLinIters + curLinIters));
     outputList.setParameter("Achieved Tolerance", achievedTol);
+  }
+
+  if (precOperator != NULL) {
+    aztecSolverPtr->SetPrecOperator(prevPrecOperator);
   }
 
   double endTime = timer.WallTime();
@@ -1130,6 +1144,13 @@ NOX::EpetraNew::LinearSystemAztecOO::getPrecOperator() const
 }
 
 //***********************************************************************
+const Epetra_Operator&
+NOX::EpetraNew::LinearSystemAztecOO::getGeneratedPrecOperator() const
+{
+  return *(aztecSolverPtr->GetPrecOperator());
+}
+
+//***********************************************************************
 bool NOX::EpetraNew::LinearSystemAztecOO::checkPreconditionerReuse()
 {
   if (!isPrecConstructed)
@@ -1171,3 +1192,5 @@ NOX::EpetraNew::LinearSystemAztecOO::getTimeApplyJacobianInverse() const
 {
   return timeApplyJacbianInverse;
 }
+
+
