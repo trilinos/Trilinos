@@ -344,6 +344,7 @@ protected:
 
   };
 
+public: 
   //! List of types of operators that can be used for the Jacobian and/or Preconditioner.
   enum OperatorType {
 
@@ -552,6 +553,10 @@ public:
   //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.
   virtual void setLinearSolveScaling(NOX::Epetra::Scaling& scalingObject);
 
+  //! Returns the type of operator that is passed into the group constructors.
+  /*! Uses dynamic casting to identify the underlying object type. */
+  virtual OperatorType getOperatorType(const Epetra_Operator& o);
+
 protected:
 
   //! resets the isValid flags to false
@@ -613,10 +618,6 @@ protected:
   */
   virtual bool computeNormNewtonSolveResidual();
   //@}
-
-  //! Returns the type of operator that is passed into the group constructors.
-  /*! Uses dynamic casting to identify the underlying object type. */
-  virtual OperatorType getOperatorType(const Epetra_Operator& o);
 
 protected:
 
