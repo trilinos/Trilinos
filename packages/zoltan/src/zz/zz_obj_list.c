@@ -305,7 +305,6 @@ int Zoltan_Print_Obj_List(
 )
 {
   int len, i, ierr, j, k, rowSize;
-  char *yo = "Zoltan_Print_Obj_List";
   int num_obj=0;
   int lidSize = zz->Num_LID;
   int gidSize = zz->Num_GID;
