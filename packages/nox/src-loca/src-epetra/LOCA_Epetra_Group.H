@@ -91,25 +91,23 @@ public:
   //! See above.
   virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
 
-  /** @name "Compute" functions. */
-  //@{
-
   //! Set the bifurcation/continuation parameter list in the group.
   virtual void setParams(const ParameterVector& p);
 
-  //! Set the bifurcation/continuation parameter list in the group.
-  virtual void computeParams(const ParameterVector& oldParams,
-			     const ParameterVector& direction, 
-			     double step);
+  //! Set parameter indexed by paramID
+  virtual void setParam(int paramID, double val);
+  
+  //! Set parameter indexed by paramID
+  virtual void setParam(string paramID, double val);
+
+  /** @name "Compute" functions. */
+  //@{
 
   virtual NOX::Abstract::Group::ReturnType 
   computeF();
 
   virtual NOX::Abstract::Group::ReturnType 
   computeJacobian();
-
-  virtual NOX::Abstract::Group::ReturnType 
-  computeTangent(NOX::Parameter::List& params, int paramId);
 
   //@}
 
@@ -119,9 +117,14 @@ public:
    * are valid. Must use the "Is" functions for that purpose. */
   //@{
 
-  virtual const ParameterVector& getParams() const;
+  //! Return a const reference to the ParameterVector owned by the group. 
+  const LOCA::ParameterVector& getParams() const;
 
-  virtual const NOX::Abstract::Vector& getTangent() const;
+  //! Return copy of parameter indexed by paramID
+  virtual double getParam(int paramID) const;
+
+  //! Return copy of parameter indexed by paramID
+  virtual double getParam(string paramID) const;
 
   //@}
 
@@ -134,19 +137,8 @@ public:
 
 protected:
 
-  //! resets the isValid flags to false
-  virtual void resetIsValid();
-
-protected:
-
-  //! Solution vector pointer.
-  ParameterVector* pVectorPtr;
-
-  NOX::Epetra::Vector* tangentVecPtr;
-
-  NOX::Epetra::Vector& tangentVec;
-
-  bool isValidTangent;
+  //! Parameter vector
+  LOCA::ParameterVector params;
 
   /** @name Additional Shared Operators */
   //@{

@@ -33,174 +33,130 @@
 #include "LOCA_Epetra_Group.H"	          // class definition
 
 #include "LOCA_Epetra_Interface.H"        // class data members
-//#include "NOX_Epetra_SharedOperator.H"
 #include "NOX_Parameter_List.H"
 
-using namespace LOCA;
-using namespace LOCA::Epetra;
-
-Group::Group(const NOX::Parameter::List& params, Interface& i, 
-	     const ParameterVector& p, NOX::Epetra::Vector& x, 
-	     Epetra_Operator& J) :
-  NOX::Epetra::Group(params, i, x, J),
-  pVectorPtr(new ParameterVector(p)),
-  tangentVecPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone())),
-  tangentVec(*tangentVecPtr),
-  userInterface(i),
-  isValidTangent(false)
+LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+			   LOCA::Epetra::Interface& i, 
+			   const LOCA::ParameterVector& p, 
+			   NOX::Epetra::Vector& x, 
+			   Epetra_Operator& J) :
+  NOX::Epetra::Group(par, i, x, J),
+  params(p),
+  userInterface(i)
 {
 }
 
-Group::Group(const NOX::Parameter::List& params, Interface& i, 
-	     const ParameterVector& p, NOX::Epetra::Vector& x, 
-	     Epetra_Operator& J, 
-	     Epetra_Operator& M) :
-  NOX::Epetra::Group(params, i, x, J, M),
-  pVectorPtr(new ParameterVector(p)),
-  tangentVecPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone())),
-  tangentVec(*tangentVecPtr),
-  userInterface(i),
-  isValidTangent(false)
+LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+			   LOCA::Epetra::Interface& i, 
+			   const LOCA::ParameterVector& p, 
+			   NOX::Epetra::Vector& x, 
+			   Epetra_Operator& J, 
+			   Epetra_Operator& M) :
+  NOX::Epetra::Group(par, i, x, J, M),
+  params(p),
+  userInterface(i)
 {
 }
 
-Group::Group(const Group& source, NOX::CopyType type) :
+LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source, 
+			   NOX::CopyType type) :
   NOX::Epetra::Group(source, type),
-  pVectorPtr(new ParameterVector(*(source.pVectorPtr))),
-  tangentVecPtr(dynamic_cast<NOX::Epetra::Vector*>(source.tangentVecPtr->clone())),
-  tangentVec(*tangentVecPtr),
+  params(source.params),
   userInterface(source.userInterface)
 {
-  switch (type) {
-    
-  case NOX::DeepCopy:
-    
-    isValidTangent = source.isValidTangent;
-    break;
-
-  case NOX::ShapeCopy:
-    resetIsValid();
-    break;
-
-  default:
-    cerr << "LOCA::LAPACK::Group - invalid CopyType for copy constructor." << endl;
-    throw "LOCA LAPACK Error";
-  }
 }
 
-Group::~Group() 
+LOCA::Epetra::Group::~Group() 
 {
-  delete tangentVecPtr;
-  delete pVectorPtr;
 }
 
-NOX::Abstract::Group* Group::clone(NOX::CopyType type) const 
+NOX::Abstract::Group* 
+LOCA::Epetra::Group::clone(NOX::CopyType type) const 
 {
   return new Group(*this, type);
 }
 
-NOX::Abstract::Group& Group::operator=(const NOX::Abstract::Group& source)
+NOX::Abstract::Group& 
+LOCA::Epetra::Group::operator=(const NOX::Abstract::Group& source)
 {
   return operator=(dynamic_cast<const Group&> (source));
 }
 
-Abstract::Group& Group::operator=(const Abstract::Group& source)
+LOCA::Abstract::Group& 
+LOCA::Epetra::Group::operator=(const LOCA::Abstract::Group& source)
 {
   return operator=(dynamic_cast<const Group&> (source));
 }
 
-Group& Group::operator=(const Group& source)
+LOCA::Epetra::Group& 
+LOCA::Epetra::Group::operator=(const LOCA::Epetra::Group& source)
 {
-  *pVectorPtr = *source.pVectorPtr;
-  *tangentVecPtr = *source.tangentVecPtr;
+  params = source.params;
   NOX::Epetra::Group::operator=(source);
   return *this;
 }
 
-void Group::setParams(const ParameterVector& p)
+void 
+LOCA::Epetra::Group::setParams(const LOCA::ParameterVector& p)
 {
-  *pVectorPtr = p;
   resetIsValid();
+  params = p;
 }
 
-void Group::computeParams(const ParameterVector& oldParams,
-			  const ParameterVector& direction, 
-			  double step)
+void
+LOCA::Epetra::Group::setParam(int paramID, double val)
 {
-  *pVectorPtr = oldParams;
-  pVectorPtr->update(step, direction, 1.0);
   resetIsValid();
+  params.setValue(paramID, val);
 }
 
+double
+LOCA::Epetra::Group::getParam(int paramID) const
+{
+  return params.getValue(paramID);
+}
+
+void
+LOCA::Epetra::Group::setParam(string paramID, double val)
+{
+  resetIsValid();
+  params.setValue(paramID, val);
+}
+
+double
+LOCA::Epetra::Group::getParam(string paramID) const
+{
+  return params.getValue(paramID);
+}
 
 NOX::Abstract::Group::ReturnType
-Group::computeF() 
+LOCA::Epetra::Group::computeF() 
 {
   
   // Set the parameters prior to computing F
-  userInterface.setParameters(*pVectorPtr);
+  userInterface.setParameters(params);
   
   return NOX::Epetra::Group::computeF();
 }
 
 NOX::Abstract::Group::ReturnType 
-Group::computeJacobian() 
+LOCA::Epetra::Group::computeJacobian() 
 {
   
   // Set the parameters prior to computing F
-  userInterface.setParameters(*pVectorPtr);
+  userInterface.setParameters(params);
 
   return NOX::Epetra::Group::computeJacobian();
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::Epetra::Group::computeTangent(NOX::Parameter::List& params,
-				    int paramID)
+const LOCA::ParameterVector& 
+LOCA::Epetra::Group::getParams() const 
 {
-  if (isValidTangent)
-    return NOX::Abstract::Group::Ok;
-
-  NOX::Abstract::Group::ReturnType res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  NOX::Abstract::Vector *dfdpVec = tangentVec.clone(NOX::ShapeCopy);
-
-  res = computeDfDp(paramID, *dfdpVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  res = applyJacobianInverse(params, *dfdpVec, tangentVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  tangentVec.scale(-1.0);
-
-  isValidTangent = true;
-
-  delete dfdpVec;
-
-  return res;
+  return params;
 }
 
-const ParameterVector& Group::getParams() const 
-{
-  return *pVectorPtr;
-}
-
-NOX::Epetra::Interface& Group::getUserInterface()
+NOX::Epetra::Interface& 
+LOCA::Epetra::Group::getUserInterface()
 {
   return userInterface;
-}
-
-const NOX::Abstract::Vector&
-LOCA::Epetra::Group::getTangent() const
-{
-  return tangentVec;
-}
-
-void
-LOCA::Epetra::Group::resetIsValid() {
-  isValidTangent = false;
-  NOX::Epetra::Group::resetIsValid();
 }

@@ -66,33 +66,30 @@ namespace LOCA {
 
       NOX::Abstract::Group::ReturnType computeJacobian();
 
-      NOX::Abstract::Group::ReturnType computeTangent(NOX::Parameter::List& params, int paramId);
-
       //! Set the bifurcation/continuation parameter list in the group.
       void setParams(const LOCA::ParameterVector& p);
-
-      //! Compute a new parameter vector where this.pVector = grp.pVector + step*d.
-      void computeParams(const LOCA::ParameterVector& oldParams, 
-			 const LOCA::ParameterVector& direction, double step);
 
       //! Return a const reference to the ParameterVector owned by the group. 
       const LOCA::ParameterVector& getParams() const;
 
-      //! Return Tangent vector (for predictor).
-      const NOX::Abstract::Vector& getTangent() const;
+      //! Set parameter indexed by paramID
+      virtual void setParam(int paramID, double val);
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(int paramID) const;
+
+      //! Set parameter indexed by paramID
+      virtual void setParam(string paramID, double val);
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(string paramID) const;
 
       //! Print out the group
       void print() const;
 
     protected:
-      //! resets the isValid flags to false
-      void resetIsValid();
-
-    protected:
       Interface& locaProblemInterface; 
       ParameterVector params;
-      NOX::LAPACK::Vector tangentVec;
-      bool isValidTangent;
     };
 
   } // namespace LAPACK

@@ -35,33 +35,15 @@
 LOCA::LAPACK::Group::Group(Interface& interface) : 
   NOX::LAPACK::Group(interface), 
   locaProblemInterface(interface), 
-  params(),
-  tangentVec(interface.getInitialGuess()),
-  isValidTangent(false)
-{}
+  params()
+{
+}
 
 LOCA::LAPACK::Group::Group::Group(const Group& source, NOX::CopyType type) : 
   NOX::LAPACK::Group(source,type), 
   locaProblemInterface(source.locaProblemInterface), 
-  params(source.params),
-  tangentVec(source.tangentVec,type)
+  params(source.params)
 {
-  switch (type) {
-    
-  case NOX::DeepCopy:
-    
-    isValidTangent = source.isValidTangent;
-    break;
-
-  case NOX::ShapeCopy:
-    resetIsValid();
-    break;
-
-  default:
-    cerr << "LOCA::LAPACK::Group - invalid CopyType for copy constructor." << endl;
-    throw "LOCA LAPACK Error";
-  }
-
 }
 
 LOCA::LAPACK::Group::~Group() 
@@ -86,8 +68,6 @@ LOCA::LAPACK::Group&
 LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
   NOX::LAPACK::Group::operator=(source);
   params = source.params;
-  tangentVec = source.tangentVec;
-  isValidTangent = source.isValidTangent;
   return *this;
 }
 
@@ -108,51 +88,11 @@ LOCA::LAPACK::Group::computeJacobian() {
   return NOX::LAPACK::Group::computeJacobian();
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Group::computeTangent(NOX::Parameter::List& params,
-                                      int paramID)
-{
-  if (isValidTangent)
-    return NOX::Abstract::Group::Ok;
-
-  NOX::Abstract::Group::ReturnType res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  NOX::Abstract::Vector* dfdpVec = tangentVec.clone(NOX::ShapeCopy);
-
-  res = computeDfDp(paramID, *dfdpVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  res = applyJacobianInverse(params, *dfdpVec, tangentVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  tangentVec.scale(-1.0);
-
-  isValidTangent = true;
-
-  delete dfdpVec;
-
-  return res;
-}
-
 void
 LOCA::LAPACK::Group::setParams(const LOCA::ParameterVector& p) 
 {
   resetIsValid();
   params = p;
-}
-
-void
-LOCA::LAPACK::Group::computeParams(const LOCA::ParameterVector& oldParams, 
-				   const LOCA::ParameterVector& direction, 
-				   double step) 
-{
-  resetIsValid();
-  params = oldParams;
-  params.update(step, direction, 1.0);
 }
 
 const LOCA::ParameterVector& 
@@ -161,10 +101,30 @@ LOCA::LAPACK::Group::getParams() const
   return params;
 }
 
-const NOX::Abstract::Vector&
-LOCA::LAPACK::Group::getTangent() const
+void
+LOCA::LAPACK::Group::setParam(int paramID, double val)
 {
-  return tangentVec;
+  resetIsValid();
+  params.setValue(paramID, val);
+}
+
+double
+LOCA::LAPACK::Group::getParam(int paramID) const
+{
+  return params.getValue(paramID);
+}
+
+void
+LOCA::LAPACK::Group::setParam(string paramID, double val)
+{
+  resetIsValid();
+  params.setValue(paramID, val);
+}
+
+double
+LOCA::LAPACK::Group::getParam(string paramID) const
+{
+  return params.getValue(paramID);
 }
 
 void 
@@ -172,10 +132,4 @@ LOCA::LAPACK::Group::print() const
 {
   cout << "p = " << params << "\n";
   NOX::LAPACK::Group::print();
-}
-
-void LOCA::LAPACK::Group::resetIsValid()
-{
-  isValidTangent = false;
-  NOX::LAPACK::Group::resetIsValid();
 }
