@@ -75,7 +75,7 @@ int LB_ParMetis(
 )
 {
 #ifndef LB_PARMETIS
-  fprintf(stderr, "Error: ParMetis requested but not compiled into library.\n");
+  fprintf(stderr, "Zoltan error: ParMetis requested but not compiled into library.\n");
   return LB_FATAL;
 
 #else /* LB_PARMETIS */
@@ -147,7 +147,7 @@ int LB_Jostle(
 )
 {
 #ifndef LB_JOSTLE
-  fprintf(stderr, "Zoltan Error: Jostle requested but not compiled into library.\n");
+  fprintf(stderr, "Zoltan error: Jostle requested but not compiled into library.\n");
   return LB_FATAL;
 
 #else /* LB_JOSTLE */
@@ -933,21 +933,33 @@ static int LB_ParMetis_Jostle(
   }
 
   tmp_num_obj = num_obj;
-  if (scatter==1){
+  if ((scatter>0) && (scatter<3)){
     /* Decide if the data imbalance is so bad that we should scatter the graph. */
-    /* Current test: Scatter if at least half the processors have no objects. */
+    /* scatter==1: Scatter if all the objects are on a single processor.        */
+    /* scatter==2: Scatter if any processor has no objects.                     */
     if (num_obj==0)
-      tmp = 1;
+      j = 1;
     else 
-      tmp = 0;
-    MPI_Allreduce(&tmp, &j, 1, MPI_INT, MPI_SUM, lb->Communicator);
-    if (2*j < lb->Num_Proc)
-      scatter = 0;
+      j = 0;
+    MPI_Allreduce(&j, &tmp, 1, MPI_INT, MPI_SUM, lb->Communicator);
+    if (scatter == 1){
+      if (tmp < lb->Num_Proc-1)
+        scatter = 0;
+    }
+    else if (scatter==2){
+      if (tmp == 0)
+        scatter = 0;
+    }
   }
 
   if (scatter){
     ierr = LB_scatter_graph(get_graph_data, &vtxdist, &xadj, &adjncy, &vwgt, &adjwgt, &xyz, ndims, 
               lb, &comm_plan);
+    if ((ierr == LB_FATAL) || (ierr == LB_MEMERR)){
+      FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
+      return ierr;
+    }
     tmp_num_obj = vtxdist[lb->Proc+1]-vtxdist[lb->Proc];
   }
 
@@ -1083,8 +1095,18 @@ static int LB_ParMetis_Jostle(
   if (scatter){
     /* Allocate space for partition array under original distribution */
     part2 = (idxtype *) LB_MALLOC(num_obj*sizeof(idxtype)); 
+    if (num_obj && !part2){
+      FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
     /* Use reverse communication to compute the partition array under the original distribution */
     ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), (char *) part2);
+    if ((ierr == LB_FATAL) || (ierr == LB_MEMERR)){
+      FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
+      return ierr;
+    }
     LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
     LB_FREE(&part); /* We don't need the partition array with the scattered distribution any more */
     part = part2;   /* part is now the partition array under the original distribution */
