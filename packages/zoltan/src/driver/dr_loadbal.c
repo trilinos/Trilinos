@@ -260,7 +260,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     mytime = MPI_Wtime() - stime;
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
-      printf("DRIVER:  Zoltan_Balance time = %g\n", maxtime);
+      printf("DRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
   
     if (Proc == 0) {
       double x[] = {0.0L, 0.0L, 0.0L} ;

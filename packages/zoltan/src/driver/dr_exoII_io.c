@@ -37,6 +37,7 @@ extern "C" {
 #include "dr_err_const.h"
 #include "dr_output_const.h"
 #include "dr_elem_util_const.h"
+#include "zoltan_comm.h"
 
 #define LIST_ALLOC 10
 
@@ -713,12 +714,15 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   int  nnodei, nnodeb, nnodee, nelemi, nelemb, nncmap;
   int *int_elem, *bor_elem;
   int *proc_ids;
+  int *gids, *my_procs, *recv_procs;
+  int  ierr, nrecv;
+  int  msg = 200;
   int  sid;
   ELEM_INFO_PTR elements = mesh->elements;
+  ZOLTAN_COMM_OBJ *comm_obj;
 
   E_Type etype;
 
-  MPI_Status status;
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
@@ -777,7 +781,10 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   for (imap = 0; imap < mesh->necmap; imap++)
     max_len += mesh->ecmap_cnt[imap];
 
-  proc_ids = (int *) malloc(max_len * sizeof(int));
+  proc_ids = (int *) malloc(4 * max_len * sizeof(int));
+  gids = proc_ids + max_len;
+  my_procs = gids + max_len;
+  recv_procs = my_procs + max_len;
   mesh->ecmap_elemids = (int *) malloc(max_len * sizeof(int));
   mesh->ecmap_sideids = (int *) malloc(max_len * sizeof(int));
   mesh->ecmap_neighids = (int *) malloc(max_len * sizeof(int));
@@ -802,40 +809,59 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   /*
    * Decrement the ecmap_elemids by one for zero-based local numbering.
    * Convert the element ids to global ids to send to
-   * the neighboring processor. Store them in the proc_ids
-   * array, since the proc_id information is not used for
-   * anything here.
+   * the neighboring processor.
    */
   for (ielem = 0; ielem < max_len; ielem++) {
     mesh->ecmap_elemids[ielem]--;
-    proc_ids[ielem] = elements[mesh->ecmap_elemids[ielem]].globalID;
+    gids[ielem] = elements[mesh->ecmap_elemids[ielem]].globalID;
+    my_procs[ielem] = Proc;
   }
 
   /*
    * Now communicate with other processor to get global IDs
    * for the adjacent elements in this communication map.
-   *
-   * parallel nemesis trick...
-   * each communication map is only for a single neigboring
-   * processor, and the communication map id is the processor
-   * number that it is for
    */
-  offset = 0;
-  for (imap = 0; imap < mesh->necmap; imap++) {
 
-    /*
-     * handshake with processor and wait until it is ready
-     * to talk
-     */
-    MPI_Send(NULL, 0, MPI_INT, mesh->ecmap_id[imap], 0, MPI_COMM_WORLD);
-    MPI_Recv(NULL, 0, MPI_INT, mesh->ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
+  ierr = Zoltan_Comm_Create(&comm_obj, max_len, proc_ids, MPI_COMM_WORLD, 
+                            msg, &nrecv);
+  if (ierr != ZOLTAN_OK) {
+    Gen_Error(0, "fatal: Error returned from Zoltan_Comm_Create");
+    return 0;
+  }
+  if (nrecv != max_len) {
+    /* Sanity check; this should never happen. */
+    Gen_Error(0, "fatal: Error returned from Zoltan_Comm_Create");
+    return 0;
+  }
 
-    /* now send list of global element ids to the processor for this map */
-    MPI_Send(&(proc_ids[offset]), mesh->ecmap_cnt[imap], MPI_INT, 
-             mesh->ecmap_id[imap], 0, MPI_COMM_WORLD);
-    MPI_Recv(&(mesh->ecmap_neighids[offset]), mesh->ecmap_cnt[imap], MPI_INT, 
-             mesh->ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
-    offset += mesh->ecmap_cnt[imap];
+  /* Exchange ids to neighbors.  
+   * Assuming messages will be stored in order of processor number in 
+   * ecmap_neighids. 
+   */
+  ierr = Zoltan_Comm_Do(comm_obj, msg+1, (char *) gids, sizeof(int), 
+                        (char *) (mesh->ecmap_neighids));
+
+  /* Exchange sanity check information. 
+   * Allows to check assumption that messages are stored in order of
+   * processor number.
+   */
+  if (ierr == ZOLTAN_OK)
+    ierr = Zoltan_Comm_Do(comm_obj, msg+2, (char *) my_procs, sizeof(int), 
+                          (char *) recv_procs);
+
+  if (ierr != ZOLTAN_OK) {
+    Gen_Error(0, "fatal: Error returned from Zoltan_Comm_Do");
+    return 0;
+  }
+
+  ierr = Zoltan_Comm_Destroy(&comm_obj);
+
+  /* Sanity check: messages stored in order of processor number. */
+  for (ielem = 0; ielem < max_len; ielem++) {
+    if (proc_ids[ielem] != recv_procs[ielem]) {
+      Gen_Error(0, "fatal: Sanity check failed; assumption wrong");
+      return 0;
+    }
   }
 
   /* now process all of the element ids that have been received */
