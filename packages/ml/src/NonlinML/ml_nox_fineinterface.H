@@ -254,7 +254,8 @@ public:
   
   //! Printlevel
   /*! The user's ML_NOX::Ml_Nox_Fineinterface derived class should set a
-  */  printlevel value between 0 and 10
+  printlevel value between 0 and 10
+  */  
   int printlevel_;
 
   //! t_ should be used for time measurement of time spent in this class

@@ -194,7 +194,6 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
 
     //! not implemented, method will throw error and terminate execution.
-  */
     int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
 	      Epetra_MultiVector& Y) const
     {
