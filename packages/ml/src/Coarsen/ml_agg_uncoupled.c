@@ -80,6 +80,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
    int * graph_decomposition;
    /*ms*/
+   char *true_bdry;
 #ifdef ML_NEWDROPSCHEME
    double maxentry, minentry;
    double stddev;
@@ -180,6 +181,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* find out about how much memory to allocate for the matrix     */
    /* ------------------------------------------------------------- */
 
+   true_bdry = (char *) ML_allocate( Nrows * sizeof(char) );
+   for ( i = 0; i < Nrows; i++ )  true_bdry[i] = 'F';
+
    nz_cnt = zerodiag_cnt = 0;
    for ( i = 0; i < Nrows; i++ ) 
      {
@@ -199,6 +203,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 	 }
        nz_cnt += m;
        if ( diagonal[i] == 0.0 ) {nz_cnt++; zerodiag_cnt++;}
+       if (m < 2) true_bdry[i] = 'T';
      }
    if ( zerodiag_cnt > 0 ) 
      {
@@ -481,6 +486,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 						  struct ML_CSR_MSRdata));
    csr_data->values  = NULL;
    Cmatrix = ML_Operator_Create(Amatrix->comm);
+   if (ml_ag->num_PDE_eqns > 1)
+     ML_free(true_bdry);
    if ((nvblockflag == 1) && (ml_ag->num_PDE_eqns == 1)) {
      /*JJH Prevents aggregation error in Phase2_3 clean up.*/
      for ( i = 0; i < nz_cnt; i++ ) mat_indx[i] = abs(mat_indx[i]);
@@ -494,7 +501,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 			    Cmatrix->outvec_leng, 
 			    MSR_get_ones_rows);
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,mat_indx,
-				       bdry_array, &aggr_count, &aggr_index);
+				       bdry_array, &aggr_count, &aggr_index, true_bdry);
    }
    else {
      /*JJH same error as above could occur here!*/
@@ -504,11 +511,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      ML_Operator_Set_Getrow(Cmatrix, ML_EXTERNAL, nvblocks, MSR_get_ones_rows);
 
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
-				       bdry_array, &aggr_count, &aggr_index);
+				       bdry_array, &aggr_count, &aggr_index, true_bdry);
    }
    ML_Operator_Destroy(&Cmatrix);
    ML_free(csr_data);
    ML_free( bdry_array );
+   if (ml_ag->num_PDE_eqns == 1)
+     ML_free(true_bdry);
 
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
@@ -954,7 +963,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
 int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                       ML_Operator *Amat, int *mat_indx, int *bdry_array,
-                      int *aggr_count_in, int **aggr_index_in)
+                      int *aggr_count_in, int **aggr_index_in, char *true_bdry)
 {
    int     i, j, k, m, kk, inode, jnode, nbytes, length, Nrows;
    int     select_flag, aggr_count, index, mypid, inode2;
@@ -1254,7 +1263,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    }
 #ifdef newstuff
    ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amat, &aggr_count, Nrows, aggr_index,
-   				 Nrows, comm, NULL, "UC_Phase2_3",NULL);
+   				   Nrows, comm, true_bdry, "UC_Phase2_3",NULL);
 #else
    /* ============================================================= */
    /* Phase 2 : aggregate the rest of the nodes into one of the     */
