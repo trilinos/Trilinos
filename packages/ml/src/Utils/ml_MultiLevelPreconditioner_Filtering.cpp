@@ -166,7 +166,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
     Epetra_MultiVector EigenVectors(OperatorDomainMap(),NumEigenvalues);
     EigenVectors.Random();
 
-    int NumRealEigenvectors, NumImagEigenvectors;
+    int NumRealEigenvectors = 0, NumImagEigenvectors = 0;
 
 #ifdef HAVE_ML_ANASAZI
     // 2.- call Anasazi and store the results in eigenvectors      
