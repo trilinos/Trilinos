@@ -32,7 +32,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 {
   /* Eigenvalue definitions */
   int      iparam[11];
-  int      nev, ncv, info, mode=0, nconv, Fattening=0;
+  int      nev, ncv, info, mode=0, Fattening=0;
   double   tol, tm, tmp_tol;
   char     bmat[2], which[3];
 
@@ -119,18 +119,18 @@ void  ML_ARPACK_driver(char which[],
 		       int Debug_Flag, int GGB_alp_flag)
 {
 
-  int        i, j, kk, ldv, lworkl;
+  int        i, j, kk, ldv, lworkl, Nglobal;
   int        nloc,  nloc2, ido, flag, counter;
   int        count, nconv, ierr, info;
   int        ipntr[14], m=0;
   int        one = 1, dummy1, dummy2, dummy3, dummy4;
   double     a1 , a2  , lamR, lamI, time;
   char       string[4];
-  double     *v, *workl, *workd, *workev, *d, *resid;         /* Pointers used by ARPACK */  
-  int        *select, rvec, *work;
+  double     *v=NULL, *workl=NULL, *workd=NULL, *workev=NULL, *d=NULL, *resid=NULL;         /* Pointers used by ARPACK */  
+  int        *select=NULL, rvec, *work=NULL;
   int        proc_id;
 
-  double     *vecx, *vecy, *rhs, *rhs1;                       /* Dummy Pointers */
+  double     *vecx=NULL, *vecy=NULL, *rhs=NULL, *rhs1=NULL;                       /* Dummy Pointers */
   /* FILE       *ifp; */
   ML_Operator *Amat;
 
@@ -187,25 +187,23 @@ void  ML_ARPACK_driver(char which[],
    * details, see the documentation in P??AUPD.
    ******************************************************/
 
-  nloc2  =  nloc; 
-  
-  
+  nloc2  =  nloc;   
   
   select = (int    *) ML_allocate(ncv*sizeof(int));
   work   = (int    *) ML_allocate(ncv*sizeof(int));
-  rhs    = (double *) ML_allocate(nloc2*sizeof(double));
-  rhs1   = (double *) ML_allocate(nloc2*sizeof(double));
+  rhs    = (double *) ML_allocate(2*nloc2*sizeof(double));
+  rhs1   = (double *) ML_allocate(2*nloc2*sizeof(double));
   d      = (double *) ML_allocate(4*ncv*sizeof(double));
-  resid  = (double *) ML_allocate(nloc2*sizeof(double));
-  workd  = (double *) ML_allocate(3*nloc2*sizeof(double));
+  resid  = (double *) ML_allocate(2*nloc2*sizeof(double));
+  workd  = (double *) ML_allocate(2*3*nloc2*sizeof(double));
   workev = (double *) ML_allocate(3*ncv*sizeof(double));
   workl  = (double *) ML_allocate(lworkl*sizeof(double));
   v      = (double *) ML_allocate(ncv*ldv*sizeof(double));
   
 
   if (Debug_Flag > 2) {
-    vecx   = (double *) ML_allocate(nloc2*sizeof(double));
-    vecy   = (double *) ML_allocate(nloc2*sizeof(double));
+    vecx   = (double *) ML_allocate(2*nloc2*sizeof(double));
+    vecy   = (double *) ML_allocate(2*nloc2*sizeof(double));
   }
   
   if (v == NULL) {
@@ -575,7 +573,11 @@ void  ML_ARPACK_driver(char which[],
 	printf("\nEigenvalue Calculation Summary");
 	printf("\n");    ML_print_line("=", 32);  
 	printf("The number of processors is %d\n", ml->comm->ML_nprocs);
-	printf("The global size of the matrix = %d\n", nloc);
+	printf("The local size of the matrix = %d\n", nloc);
+	/*
+	Nglobal = ML_Comm_GsumInt( ml->comm, nloc);
+	printf("The global size of the matrix = %d\n",Nglobal); 
+	*/
 	printf("The number of Ritz values requested is %d\n", nev);
 	printf("The number of Arnoldi vectors generated (NCV) is %d\n",ncv);
 	printf("What portion of the spectrum: %s\n", which);
@@ -670,7 +672,7 @@ void ML_GGB2CSR (double *v, int nconv, int MatSize, int proc_id,
   
   rowptr = (int *) ML_allocate((nrows+1)*sizeof(int));
   columns = (int *) ML_allocate((nnz+1)*sizeof(int));
-  values = (double *) ML_allocate((nnz+1)*sizeof(double));
+  values = (double *) ML_allocate((nnz)*sizeof(double));
   
 
   rowptr[0] = 0;
