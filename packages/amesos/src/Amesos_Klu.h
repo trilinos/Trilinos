@@ -33,6 +33,7 @@
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
+#include "Epetra_Import.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -401,6 +402,8 @@ private:
   int NumSolve_;  
 
   Epetra_Time * Time_;
+
+  Epetra_Import * ImportToSerial_;
   
 };  // End of  class Amesos_Klu  
 #endif /* _AMESOS_KLU_H_ */

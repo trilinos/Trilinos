@@ -89,7 +89,8 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0),
-  Time_(0)
+  Time_(0),
+  ImportToSerial_(0)
 {
   // MS // move declaration of Problem_ above because I need it
   // MS // set up before calling Comm()
@@ -106,11 +107,12 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ;
   delete PrivateKluData_;
 
+  if( Time_ ) { delete Time_; Time_ = 0; }
+  if( ImportToSerial_ ) { delete ImportToSerial_; ImportToSerial_ = 0; }
+
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
-
-  if( Time_ ) { delete Time_; Time_ = 0; }
 
 }
 
@@ -163,6 +165,7 @@ int Amesos_Klu::ConvertToSerial() {
     if ( SerialMap_ ) delete SerialMap_ ;
     SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
 
+    // FIXME: can I be ImportToSerial??
     Epetra_Export export_to_serial( OriginalMap, *SerialMap_);
 
     if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ;
@@ -543,8 +546,15 @@ int Amesos_Klu::Solve() {
     Epetra_MultiVector *SerialXextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ;
     Epetra_MultiVector *SerialBextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ;
 
-    Epetra_Import ImportToSerial( *SerialMap_, OriginalMap );
-    SerialBextract->Import( *vecB, ImportToSerial, Insert ) ;
+    if( ImportToSerial_ == 0 ) {
+      // MS // create importer from distributed to proc 0.
+      // FIXME: I don't work if matrix and/or vectors are changed!
+      // This Importer is destroyed by the dtor only...
+      ImportToSerial_ = new Epetra_Import ( *SerialMap_, OriginalMap );
+      assert( ImportToSerial_ != 0 );
+    }
+    
+    SerialBextract->Import( *vecB, *ImportToSerial_, Insert ) ;
     SerialB = SerialBextract ;
     SerialX = SerialXextract ;
   }
@@ -578,9 +588,9 @@ int Amesos_Klu::Solve() {
   Time_->ResetStartTime();  // track time to broadcast vectors
 
   if ( IsLocal_ == 0 ) {
-    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ;
-    Epetra_Import ImportFromSerial( OriginalMap, *SerialMap_ );
-    vecX->Import( *SerialX, ImportFromSerial, Insert ) ;
+    //    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ;
+    //    Epetra_Import ImportFromSerial( OriginalMap, *SerialMap_ );
+    vecX->Export( *SerialX, *ImportToSerial_, Insert ) ;
     delete SerialBextract ;
     delete SerialXextract ;
   } else {
