@@ -50,23 +50,23 @@
 #define DEBUG_LEVEL 0
 #undef ALPHA   // Idea for ensuring that tensor model has a root
 
-NOX::Solver::TensorBasedTest::TensorBasedTest(NOX::Abstract::Group& xgrp,
+NOX::Solver::TensorBasedTest::TensorBasedTest(NOX::Abstract::Group& xGrp,
 				      NOX::StatusTest::Generic& t,
 				      NOX::Parameter::List& p) :
-  solnPtr(&xgrp),		// pointer to xgrp
-  oldSolnPtr(xgrp.clone(DeepCopy)), // create via clone
+  solnPtr(&xGrp),		// pointer to xGrp
+  oldSolnPtr(xGrp.clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnPtr),		// reference to just-created pointer
-  newtonVecPtr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  newtonVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
   newtonVec(*newtonVecPtr),	// reference to just-created pointer
-  tensorVecPtr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  tensorVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
   tensorVec(*tensorVecPtr),	// reference to just-created pointer
-  acVecPtr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  acVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
   acVec(*acVecPtr),		// reference to just-created pointer
-  scVecPtr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  scVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
   scVec(*scVecPtr),		// reference to just-created pointer
-  tmpVecPtr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  tmpVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
   tmpVec(*tmpVecPtr),		// reference to just-created pointer
-  residualVecPtr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  residualVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
   testPtr(&t),			// pointer to t
   paramsPtr(&p),		// copy p
   lsParams(paramsPtr->sublist("Line Search")),  // reference to list
@@ -120,8 +120,9 @@ void NOX::Solver::TensorBasedTest::init()
     cout <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 
+  ///////////////////////////////////////////////////
+  
   NOX::Parameter::List& teParams = dirParams.sublist("Tensor");
-  //NOX::Parameter::List& teParams = dirParams.sublist("Newton");
   //doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
   // bwb: Probably want to move this to outside of the Linear Solver parameter
@@ -148,6 +149,7 @@ void NOX::Solver::TensorBasedTest::init()
   //NOX::Parameter::List& params = paramsPtr->sublist("Line Search");
 
   multsJv = 0;
+  mults2Jv = 0;
   
   NOX::Parameter::List& lsparams =
     lsParams.sublist(lsParams.getParameter("Method", "Tensor"));
@@ -210,18 +212,19 @@ void NOX::Solver::TensorBasedTest::init()
 }
 
 
-bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
+bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xGrp,
 					 NOX::StatusTest::Generic& t,
 					 NOX::Parameter::List& p)
 {
-  solnPtr = &xgrp;
+  solnPtr = &xGrp;
   testPtr = &t;
   paramsPtr = &p;
   utils.reset(paramsPtr->sublist("Printing"));
-  //direction.reset(paramsPtr->sublist("Direction"));
-  //lineSearch.reset(paramsPtr->sublist("Line Search"));
 
+  //direction.reset(paramsPtr->sublist("Direction"));
   dirParams = paramsPtr->sublist("Direction");
+
+  //lineSearch.reset(paramsPtr->sublist("Line Search"));
   lsParams = paramsPtr->sublist("Line Search");
 
   init();
@@ -229,18 +232,19 @@ bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
   return true;
 }
 
-bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
+bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xGrp,
 					 NOX::StatusTest::Generic& t)
 {
-  solnPtr = &xgrp;
+  solnPtr = &xGrp;
   testPtr = &t;
-  init();       // bwb: TrustRegionBased is different here...
+  init();
   return true;
 }
 
 NOX::Solver::TensorBasedTest::~TensorBasedTest() 
 {
   printf("multsJv = %d   (linesearch)\n", multsJv);
+  printf("mults2Jv = %d\n", mults2Jv);
   delete oldSolnPtr;
   delete newtonVecPtr;
   delete tensorVecPtr;
@@ -419,6 +423,7 @@ bool NOX::Solver::TensorBasedTest::computeTensorDirection(
   
   // Begin processing for the tensor step, if necessary.
   double sDotS = 0.0;
+  int tempVal1 = 0;
   if ((nIter > 0)  &&  (requestedBaseStep == TensorStep)) {
 
     // Save old Newton step as initial guess to second system  (not necessary)
@@ -497,7 +502,9 @@ bool NOX::Solver::TensorBasedTest::computeTensorDirection(
     if (isInitialGuessGood) 
       tmpVec.update(1.0, tensorVec, 1.0);
     localParams.setParameter("Tolerance",  tol);
-
+    tempVal1 = localParams.sublist("Output").
+    getParameter("Number of Linear Iterations", 0);
+    
 #if DEBUG_LEVEL > 0
     // Compute residual of linear system with initial guess...
     soln.applyJacobian(tmpVec, *residualVecPtr);      multsJv++;
@@ -515,6 +522,10 @@ bool NOX::Solver::TensorBasedTest::computeTensorDirection(
     NOX::Solver::TensorBasedTest::throwError("compute",
 					      "Unable to compute Newton step");
   newtonVec = soln.getNewton();
+  int tempVal2 = localParams.sublist("Output").
+    getParameter("Number of Linear Iterations", 0);
+
+  mults2Jv += (tempVal1 > tempVal2) ? tempVal1 : tempVal2;
   
 #ifdef CHECK_RESIDUALS
   printDirectionInfo("newtonVec", newtonVec, soln, false);

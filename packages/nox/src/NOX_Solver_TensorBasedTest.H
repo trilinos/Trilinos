@@ -476,6 +476,9 @@ protected:
   //! Counter for number of Jacobian-vector products
   mutable int multsJv;
 
+  //! Counter for number of "double" Jacobian-vector products
+  mutable int mults2Jv;
+
 };
 } // namespace Solver
 } // namespace NOX
