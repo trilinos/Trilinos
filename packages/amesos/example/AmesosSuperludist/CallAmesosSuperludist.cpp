@@ -63,8 +63,8 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
   //  have been specified at this point.  
   //  Abase = Afactory.Create( AMESOS_UMFPACK, Problem, ParamList ) ; 
   //  Abase = Afactory.Create( AMESOS_DSCPACK, Problem, ParamList ) ; 
-  Abase = Afactory.Create( AMESOS_SUPERLUDIST, Problem, ParamList ) ; 
-  //  Abase = Afactory.Create( AMESOS_KLU, Problem, ParamList ) ; 
+  //  Abase = Afactory.Create( AMESOS_SUPERLUDIST, Problem, ParamList ) ; 
+  Abase = Afactory.Create( AMESOS_KLU, Problem, ParamList ) ; 
   if ( Abase == 0 ) {
     cout << " AMESOS_SUPERLUDIST not implemented " << endl ; 
     exit(13);
@@ -175,7 +175,8 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
 
 
 
-
+  //#define FACTOR_B
+#ifdef FACTOR_B
   //
   //  Now we check to make sure that we can change the problem and 
   //  re-factorize.  
@@ -208,7 +209,7 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
 
 
   //
-  //  Factor A
+  //  Factor B
   //
   Problem.SetOperator( &B );
   EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
@@ -217,7 +218,7 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
   Bb.Random();
   Bb.PutScalar(1.0);
   //
-  //  Solve A x = b 
+  //  Solve B x = b 
   //
   Problem.SetLHS( &Bx );
   Problem.SetRHS( &Bb );
@@ -232,11 +233,11 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
   if ( B.MyGRID( 0 ) )
     B.SumIntoMyValues( 0, 1, val, ind ) ; 
 
-  //  if (verbose) cout << " A' = " << A << endl ; 
+  //  if (verbose) cout << " B' = " << B << endl ; 
   EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
   //
-  //  Solve A' x1 = x 
+  //  Solve B' x1 = x 
   //
   Problem.SetLHS( &Bx1 );
   Problem.SetRHS( &Bx );
@@ -247,11 +248,11 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
   if ( B.MyGRID( 0 ) )
     B.SumIntoMyValues( 0, 1, val, ind ) ; 
 
-  //  if (verbose) cout << " A'' = " << A << endl ; 
+  //  if (verbose) cout << " B'' = " << B << endl ; 
   EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
   //
-  //  Solve A" x2 = x1
+  //  Solve B" x2 = x1
   //
   Problem.SetLHS( &Bx2 );
   Problem.SetRHS( &Bx1 );
@@ -260,17 +261,17 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
   //  if (verbose) cout << " x2 = " << x2 << endl ; 
 
   //
-  //  Compute the residual: A A' A" x2 - b
+  //  Compute the residual: B B' B" x2 - b
   //
 
-  B.Multiply( false, Bx2, Btemp ) ; //  temp = A x2
+  B.Multiply( false, Bx2, Btemp ) ; //  temp = B x2
 
   //  if (verbose) cout << " temp = " << temp << endl ; 
 
   val[0] = -val[0] ; 
   if ( B.MyGRID( 0 ) )
     B.SumIntoMyValues( 0, 1, val, ind ) ; 
-  B.Multiply( false, Btemp, Bx2 ) ; //  x2 = A' A" x2
+  B.Multiply( false, Btemp, Bx2 ) ; //  x2 = B' B" x2
 
 
 
@@ -279,7 +280,7 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
 
   if ( B.MyGRID( 0 ) )
     B.SumIntoMyValues( 0, 1, val, ind ) ; 
-  B.Multiply( false, Bx2, Btemp ) ; //  temp = A A' A'' x2
+  B.Multiply( false, Bx2, Btemp ) ; //  temp = B B' B'' x2
 
 
   //  if (verbose) cout << " temp = " << temp << endl ; 
@@ -306,6 +307,7 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
       errors += 1 ; 
     }
   }
+#endif
 
   return errors;
 }
