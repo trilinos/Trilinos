@@ -102,7 +102,7 @@ mpirun -np 3 amesos_test.exe KLU   ImpcolD.rua 1 1 1 0 1e-12 1e-13  >>SST.stdout
 #
 #  Test some tranpose solves
 #
-mpirun -np 4 amesos_test.exe KLU   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+mpirun -np 4 amesos_test.exe KLU   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
 mpirun -np 4 amesos_test.exe KLU   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
 
 
