@@ -1546,7 +1546,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    comm = ml->comm;
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
-   data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
+   data->blk_info = (int *) ML_allocate(data->Nrows * sizeof(int));
    if ( blkinfo != NULL && length != 0 )
    {
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
@@ -1655,7 +1655,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    comm = ml->comm;
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
-   data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
+   data->blk_info = (int *) ML_allocate(data->Nrows * sizeof(int));
    if ( blkinfo != NULL && length != 0 )
    {
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
@@ -2330,8 +2330,8 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
            ML_Mapper_Check(current_level->grid2eqn) == 1 )
       {
          ML_Mapper_GetLength(current_level->grid2eqn, &leng1, &leng2);
-         dtmp1 = (double*) malloc( leng1 * sizeof(double) );
-         dtmp2 = (double*) malloc( leng2 * sizeof(double) );
+         dtmp1 = (double*) ML_allocate( leng1 * sizeof(double) );
+         dtmp2 = (double*) ML_allocate( leng2 * sizeof(double) );
          ML_BdryPts_Get_Dirichlet_Grid_Info(current_level->BCs,&leng3,&itmp3);
          for ( j = 0; j < leng1; j++ ) dtmp1[j] = 0.0;
          for ( j = 0; j < leng2; j++ ) dtmp2[j] = 0.0;
@@ -2339,7 +2339,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
          ML_Mapper_Apply(current_level->grid2eqn, dtmp1, dtmp2);
          leng1 = 0;
          for ( j = 0; j < leng2; j++ ) if ( dtmp2[j] == 1.0 ) leng1++;
-         itmp3 = (int*) malloc( leng1 * sizeof(int) );
+         itmp3 = (int*) ML_allocate( leng1 * sizeof(int) );
          leng1 = 0;
          for ( j = 0; j < leng2; j++ ) 
             if ( dtmp2[j] == 1.0 ) itmp3[leng1++] = j;
@@ -2457,7 +2457,7 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
    level = ml->ML_finest_level;
    leng = ml->Amat[level].outvec_leng;
    for ( i = 0; i < leng; i++ ) dout[i] = 0.0;
-   din_temp = (double*) malloc( leng * sizeof(double) );
+   din_temp = (double*) ML_allocate( leng * sizeof(double) );
 
    /* ------------------------------------------------------------ */
    /* on the fixed boundaries, set them to be each to the solution */
@@ -2523,7 +2523,7 @@ int ML_Solve_MGFull( ML *ml , double *din, double *dout)
    level = ml->ML_finest_level;
    leng = ml->Amat[level].outvec_leng;
    for ( i = 0; i < leng; i++ ) dout[i] = 0.0;
-   din_temp = (double*) malloc( leng * sizeof(double) );
+   din_temp = (double*) ML_allocate( leng * sizeof(double) );
 
    /* ------------------------------------------------------------ */
    /* on the fixed boundaries, set them to be each to the solution */
@@ -2618,7 +2618,7 @@ int ML_Seg_Solve( ML *ml , double *din, double *dout)
    level = ml->ML_finest_level;
    leng = ml->Amat[level].outvec_leng;
    for ( i = 0; i < leng; i++ ) dout[i] = 0.0;
-   din_temp = (double*) malloc( leng * sizeof(double) );
+   din_temp = (double*) ML_allocate( leng * sizeof(double) );
 
    /* ------------------------------------------------------------ */
    /* on the fixed boundaries, set them to be each to the solution */
@@ -2705,7 +2705,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    /* first do the normalization                                   */
    /* ------------------------------------------------------------ */
 
-   rhss = (double *) malloc( lengf * sizeof(double) );
+   rhss = (double *) ML_allocate( lengf * sizeof(double) );
    ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
    for ( i = 0; i < lengf; i++ ) rhss[i] = rhs[i];
 
@@ -2716,15 +2716,15 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       Nrows = lengf;
       fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
       allocated_space = 100;
-      cols = (int    *) malloc(allocated_space*sizeof(int   ));
-      vals = (double *) malloc(allocated_space*sizeof(double));
+      cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+      vals = (double *) ML_allocate(allocated_space*sizeof(double));
       for (i = 0; i < lengf; i++) {
          while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)==0)
          {
             allocated_space = 2*allocated_space + 1;
             free(vals); free(cols);
-            cols = (int    *) malloc(allocated_space*sizeof(int   ));
-            vals = (double *) malloc(allocated_space*sizeof(double));
+            cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+            vals = (double *) ML_allocate(allocated_space*sizeof(double));
             if (vals == NULL) {
                printf("Not enough space to get matrix row. Row length of\n");
                printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -2760,7 +2760,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          ML_Smoother_Apply(post, lengf, sol, lengf, rhss, ML_NONZERO);
       }
       if (res_norm_or_not == ML_COMPUTE_RES_NORM) {
-         res = (double *) malloc(lengf*sizeof(double));
+         res = (double *) ML_allocate(lengf*sizeof(double));
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
          res_norm = sqrt(ML_gdot(lengf, res, res, comm));
@@ -2768,7 +2768,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       }
    }
    else {
-      res = (double *) malloc(lengf*sizeof(double));
+      res = (double *) ML_allocate(lengf*sizeof(double));
 
       /* --------------------------------------------------------- */
       /* pre-smoothing and compute residual                        */
@@ -2790,16 +2790,16 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          Nrows = lengf;
          fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -2825,19 +2825,19 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
 /*
          printf("Constructing eigensystem...\n");
          Nrows = lengf;
-         squareA = malloc( Nrows * Nrows * sizeof(double) );
+         squareA = ML_allocate( Nrows * Nrows * sizeof(double) );
          for ( i = 0; i < Nrows*Nrows; i++ ) squareA[i] = 0.0;
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -2848,8 +2848,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                squareA[cols[j]*Nrows+i] = vals[j];
          }
          free(cols); free(vals);
-         eig = (double *) malloc( Nrows * sizeof(double) );
-         work = (double *) malloc( 4 * Nrows * sizeof(double) );
+         eig = (double *) ML_allocate( Nrows * sizeof(double) );
+         work = (double *) ML_allocate( 4 * Nrows * sizeof(double) );
          lwork = 4 * Nrows;
          jobz = 'V'; jobz2 = 'U';
          MLFORTRAN(dsyev)(&jobz,&jobz2,&Nrows,squareA,&Nrows,eig,work,&lwork,&info,
@@ -2895,8 +2895,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
 
       lengc = Rmat->outvec_leng;
 
-      rhs2 = (double *) malloc(lengc*sizeof(double));
-      sol2 = (double *) malloc(lengc*sizeof(double));
+      rhs2 = (double *) ML_allocate(lengc*sizeof(double));
+      sol2 = (double *) ML_allocate(lengc*sizeof(double));
       for ( i = 0; i < lengc; i++ ) sol2[i] = 0.0;
 
       /* --------------------------------------------------------- */
@@ -2912,7 +2912,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* ------------------------------------------------------------ */
       if ( ML_Mapper_Check(curr->eqn2grid) == 1 )
       {
-         dtmp = (double *) malloc( lengf * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->eqn2grid, res, dtmp );
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
          free( dtmp );
@@ -2920,7 +2920,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, res, lengc, rhs2);
       if ( ML_Mapper_Check(Rmat->to->grid2eqn) == 1 )
       {
-         dtmp = (double *) malloc( lengc * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->grid2eqn, rhs2, dtmp );
          for ( i = 0; i < lengc; i++ ) rhs2[i] = dtmp[i];
          free( dtmp );
@@ -2942,7 +2942,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* ------------------------------------------------------------ */
       if ( ML_Mapper_Check(Rmat->to->eqn2grid) == 1 )
       {
-         dtmp = (double *) malloc( lengc * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->eqn2grid, sol2, dtmp);
          for ( i = 0; i < lengc; i++ ) sol2[i] = dtmp[i];
          free( dtmp );
@@ -2950,7 +2950,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,sol2,lengf,res);
       if ( ML_Mapper_Check(curr->grid2eqn) == 1 )
       {
-         dtmp = (double *) malloc( lengf * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->grid2eqn, res, dtmp);
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
          free( dtmp );
@@ -2975,16 +2975,16 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          Nrows = lengf;
          fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -3038,16 +3038,16 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          Nrows = lengf;
          fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -3097,7 +3097,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
    /* first do the normalization                                   */
    /* ------------------------------------------------------------ */
 
-   rhss = (double *) malloc( lengf * sizeof(double) );
+   rhss = (double *) ML_allocate( lengf * sizeof(double) );
    ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
    for ( i = 0; i < lengf; i++ ) rhss[i] = rhs[i];
 
@@ -3105,7 +3105,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
    /* smoothing or coarse solve                                    */
    /* ------------------------------------------------------------ */
    if (Rmat->to != NULL) {    /* not coarsest grid */
-      res = (double *) malloc(lengf*sizeof(double));
+      res = (double *) ML_allocate(lengf*sizeof(double));
       if ( approx_all_zeros != ML_ZERO ) {
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
@@ -3115,8 +3115,8 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
       /* project down and do a full cycle */
 
       lengc = Rmat->outvec_leng;
-      rhs2 = (double *) malloc(lengc*sizeof(double));
-      sol2 = (double *) malloc(lengc*sizeof(double));
+      rhs2 = (double *) ML_allocate(lengc*sizeof(double));
+      sol2 = (double *) ML_allocate(lengc*sizeof(double));
       for ( i = 0; i < lengc; i++ ) sol2[i] = 0.0;
 
       /* --------------------------------------------------------- */
@@ -3132,7 +3132,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
       /* ------------------------------------------------------------ */
       if ( ML_Mapper_Check(curr->eqn2grid) == 1 )
       {
-         dtmp = (double *) malloc( lengf * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->eqn2grid, res, dtmp );
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
          free( dtmp );
@@ -3140,7 +3140,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
       ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, res, lengc, rhs2);
       if ( ML_Mapper_Check(Rmat->to->grid2eqn) == 1 )
       {
-         dtmp = (double *) malloc( lengc * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->grid2eqn, rhs2, dtmp );
          for ( i = 0; i < lengc; i++ ) rhs2[i] = dtmp[i];
          free( dtmp );
@@ -3159,7 +3159,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
       /* ------------------------------------------------------------ */
       if ( ML_Mapper_Check(Rmat->to->eqn2grid) == 1 )
       {
-         dtmp = (double *) malloc( lengc * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->eqn2grid, sol2, dtmp);
          for ( i = 0; i < lengc; i++ ) sol2[i] = dtmp[i];
          free( dtmp );
@@ -3167,7 +3167,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
       ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,sol2,lengf,res);
       if ( ML_Mapper_Check(curr->grid2eqn) == 1 )
       {
-         dtmp = (double *) malloc( lengf * sizeof( double ) );
+         dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->grid2eqn, res, dtmp);
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
          free( dtmp );
@@ -3253,15 +3253,15 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
       Nrows = lengf;
       fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
       allocated_space = 100;
-      cols = (int    *) malloc(allocated_space*sizeof(int   ));
-      vals = (double *) malloc(allocated_space*sizeof(double));
+      cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+      vals = (double *) ML_allocate(allocated_space*sizeof(double));
       for (i = 0; i < lengf; i++) {
          while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)==0) 
          {
             allocated_space = 2*allocated_space + 1;
             free(vals); free(cols);
-            cols = (int    *) malloc(allocated_space*sizeof(int   ));
-            vals = (double *) malloc(allocated_space*sizeof(double));
+            cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+            vals = (double *) ML_allocate(allocated_space*sizeof(double));
             if (vals == NULL) {
                printf("Not enough space to get matrix row. Row length of\n");
                printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -3301,7 +3301,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          ML_Smoother_Apply(post, lengf, sol, lengf, rhs, ML_NONZERO);
       }
       if ( (lengf == fine_size) && (curr->Pmat->to == NULL)) {
-         res = (double *) malloc(lengf*sizeof(double));
+         res = (double *) ML_allocate(lengf*sizeof(double));
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhs[i] - res[i];
          res_norm = sqrt(ML_gdot(lengf, res, res, comm));
@@ -3310,7 +3310,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
    }
    else 
    {
-      res = (double *) malloc(lengf*sizeof(double));
+      res = (double *) ML_allocate(lengf*sizeof(double));
 
       /* --------------------------------------------------------- */
       /* pre-smoothing and compute residual                        */
@@ -3333,16 +3333,16 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          Nrows = lengf;
          fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
                   == 0) 
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -3368,11 +3368,11 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 /*
          printf("Constructing eigensystem...\n");
          Nrows = lengf;
-         squareA = malloc( Nrows * Nrows * sizeof(double) );
+         squareA = ML_allocate( Nrows * Nrows * sizeof(double) );
          for ( i = 0; i < Nrows*Nrows; i++ ) squareA[i] = 0.0;
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) 
          {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols) 
@@ -3380,8 +3380,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -3392,8 +3392,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                squareA[cols[j]*Nrows+i] = vals[j];
          }
          free(cols); free(vals);
-         eig = (double *) malloc( Nrows * sizeof(double) );
-         work = (double *) malloc( 4 * Nrows * sizeof(double) );
+         eig = (double *) ML_allocate( Nrows * sizeof(double) );
+         work = (double *) ML_allocate( 4 * Nrows * sizeof(double) );
          lwork = 4 * Nrows;
          jobz = 'V'; jobz2 = 'U';
          MLFORTRAN(dsyev)(&jobz,&jobz2,&Nrows,squareA,&Nrows,eig,work,&lwork,&info,
@@ -3444,8 +3444,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 
       if ( lengc > 0 )
       {
-         rhs2 = (double *) malloc(lengc*sizeof(double));
-         sol2 = (double *) malloc(lengc*sizeof(double));
+         rhs2 = (double *) ML_allocate(lengc*sizeof(double));
+         sol2 = (double *) ML_allocate(lengc*sizeof(double));
       }
       for ( i = 0; i < lengc; i++ ) sol2[i] = 0.0;
 
@@ -3489,16 +3489,16 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          Nrows = lengf;
          fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols) 
                   == 0) 
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -3548,16 +3548,16 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          Nrows = lengf;
          fprintf(fp, "A = sparse(%d,%d);\n", Nrows, Nrows);
          allocated_space = 100;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols) 
                   == 0) 
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
                   printf("Not enough space to get matrix row. Row length of\n");
                   printf("%d was not sufficient\n",(allocated_space-1)/2);
@@ -3794,7 +3794,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       nblocks = -op->invec_leng;
       op->invec_leng = osize;
    }
-   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+   row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
    if ( op->getrow->internal != NULL ) {
@@ -3809,8 +3809,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    flag    = 0;
 
    while (flag == 0) {
-      cols    = (int    *) malloc(sizeof(int)*space);
-      vals    = (double *) malloc(sizeof(double)*space);
+      cols    = (int    *) ML_allocate(sizeof(int)*space);
+      vals    = (double *) ML_allocate(sizeof(double)*space);
 
       nz_ptr = 0;
       row_ptr[0] = nz_ptr;
@@ -3848,7 +3848,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
          ML_free(cols);
       }
    }
-   csr_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    csr_mat->mat_n  = osize;
    csr_mat->mat_ja = cols;
    csr_mat->mat_a  = vals;
@@ -3859,7 +3859,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    /* form a global matrix                                              */
    /* ----------------------------------------------------------------- */
 
-   csr2_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
    free(row_ptr);
    free(cols);
@@ -3873,7 +3873,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       mat_ja  = csr2_mat->mat_ja;
       mat_val = csr2_mat->mat_a;
       nrows   = csr2_mat->mat_n;
-      temp_ptr =(struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+      temp_ptr =(struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
       temp_ptr->rowptr = mat_ia;
       temp_ptr->columns= mat_ja;
       temp_ptr->values = mat_val;
@@ -4058,7 +4058,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       nblocks = -op->invec_leng;
       op->invec_leng = osize;
    }
-   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+   row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
    if ( op->getrow->internal != NULL ) {
@@ -4073,8 +4073,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    flag    = 0;
 
    while (flag == 0) {
-      cols    = (int    *) malloc(sizeof(int)*space);
-      vals    = (double *) malloc(sizeof(double)*space);
+      cols    = (int    *) ML_allocate(sizeof(int)*space);
+      vals    = (double *) ML_allocate(sizeof(double)*space);
 
       nz_ptr = 0;
       row_ptr[0] = nz_ptr;
@@ -4101,7 +4101,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
          ML_free(cols);
       }
    }
-   csr_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    csr_mat->mat_n  = osize;
    csr_mat->mat_ja = cols;
    csr_mat->mat_a  = vals;
@@ -4114,7 +4114,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    /* mat := csr2_mat (in column format) = csr2_mat transpose           */
    /* ----------------------------------------------------------------- */
 
-   csr2_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
    free(cols);
    free(vals);
@@ -4128,7 +4128,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       mat_ja  = csr2_mat->mat_ja;
       mat_val = csr2_mat->mat_a;
       nrows   = csr2_mat->mat_n;
-      temp_ptr =(struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+      temp_ptr =(struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
       temp_ptr->rowptr = mat_ia;
       temp_ptr->columns= mat_ja;
       temp_ptr->values = mat_val;
@@ -4456,7 +4456,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    op      = (ML_Operator *) &ml_handle->Amat[level];
    data    = op->data;
    osize   = op->outvec_leng;
-   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+   row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
    if      ( op->getrow->internal != NULL ) getrow_flag = 1;
@@ -4471,8 +4471,8 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 
    while (flag == 0)
    {
-      cols    = (int    *) malloc(sizeof(int)*space);
-      vals    = (double *) malloc(sizeof(double)*space);
+      cols    = (int    *) ML_allocate(sizeof(int)*space);
+      vals    = (double *) ML_allocate(sizeof(double)*space);
 
       nz_ptr = 0;
       row_ptr[0] = nz_ptr;
@@ -4511,7 +4511,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
          free(cols);
       }
    }
-   csr_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    csr_mat->mat_n  = osize;
    csr_mat->mat_ja = cols;
    csr_mat->mat_a  = vals;
@@ -4602,7 +4602,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    local_ml->Amat[local_nlevels-1].N_nonzeros = csr2_mat->mat_ia[N_local];
    ML_Set_Amatrix_Getrow(local_ml,local_nlevels-1,ML_Matrix_DCSR_Getrow,NULL,
                          N_local);
-   diagonal = (double *) malloc(N_local * sizeof(double));
+   diagonal = (double *) ML_allocate(N_local * sizeof(double));
    for ( i = 0; i < N_local; i++ )
    {
       for ( j = row_ptr[i]; j < row_ptr[i+1]; j++ )

@@ -46,7 +46,7 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
    /* allocate temporary memory*/
    /* -----------------------------------------------------------------*/
 
-   r  = (double *) malloc( ((blen+2)*2+6) * length * sizeof(double));
+   r  = (double *) ML_allocate( ((blen+2)*2+6) * length * sizeof(double));
    rh = r + length;
    xh = rh + length;
    t  = xh + length;
@@ -75,16 +75,16 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
    /* -----------------------------------------------------------------*/
 
    eps1 = tol * init_norm;
-   sigma   = (double *) malloc( sizeof(double) * (blen+1));
-   gammap  = (double *) malloc( sizeof(double) * (blen+1));
-   gammanp = (double *) malloc( sizeof(double) * (blen+1));
-   gammapp = (double *) malloc( sizeof(double) * (blen+1));
-   mat     = (double **) malloc( sizeof(double*) * (blen+1));
-   tau     = (double **) malloc( sizeof(double*) * (blen+1));
+   sigma   = (double *) ML_allocate( sizeof(double) * (blen+1));
+   gammap  = (double *) ML_allocate( sizeof(double) * (blen+1));
+   gammanp = (double *) ML_allocate( sizeof(double) * (blen+1));
+   gammapp = (double *) ML_allocate( sizeof(double) * (blen+1));
+   mat     = (double **) ML_allocate( sizeof(double*) * (blen+1));
+   tau     = (double **) ML_allocate( sizeof(double*) * (blen+1));
    for (i=1; i<=blen; i++) 
    {
-      mat[i] = (double *) malloc(sizeof(double)*(blen+1));
-      tau[i] = (double *) malloc(sizeof(double)*(blen+1));
+      mat[i] = (double *) ML_allocate(sizeof(double)*(blen+1));
+      tau[i] = (double *) ML_allocate(sizeof(double)*(blen+1));
    }
 
    /* -----------------------------------------------------------------*/

@@ -264,7 +264,7 @@ int ML_Krylov_Set_Diagonal(ML_Krylov *data, int leng, double *diag )
       printf("ML_Krylov_Set_Diagonal error : wrong object.\n");
       exit(-1);
    }
-   if ( leng > 0 ) data->diag_scale = (double*) malloc(leng * sizeof(double));
+   if ( leng > 0 ) data->diag_scale = (double*) ML_allocate(leng * sizeof(double));
    else            data->diag_scale = NULL;
    printf("set diag = %d\n", leng);
 

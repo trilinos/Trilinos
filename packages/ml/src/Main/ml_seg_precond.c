@@ -26,15 +26,15 @@ int ML_SEG_Create(struct ML_SEG_Struct **seg, AZ_MATRIX *Amat, int nblocks,
 {
    int i, j, noffdiags, nrows, ctr;
 
-   (*seg) = (struct ML_SEG_Struct *) malloc(sizeof(struct ML_SEG_Struct));
+   (*seg) = (struct ML_SEG_Struct *) ML_allocate(sizeof(struct ML_SEG_Struct));
 	
    (*seg)->SEG_nblocks = nblocks;
    (*seg)->SEG_format  = format;
 
    (*seg)->SEG_diag_list = 
-       (ML_SEG_MATRIX **)malloc(nblocks*sizeof(struct ML_SEG_MATRIX_Struct *));
-   (*seg)->SEG_rowlist_lengs=(int *)malloc(nblocks*sizeof(int));
-   (*seg)->SEG_rowlists=(int **)malloc(nblocks*sizeof(int *));
+       (ML_SEG_MATRIX **)ML_allocate(nblocks*sizeof(struct ML_SEG_MATRIX_Struct *));
+   (*seg)->SEG_rowlist_lengs=(int *)ML_allocate(nblocks*sizeof(int));
+   (*seg)->SEG_rowlists=(int **)ML_allocate(nblocks*sizeof(int *));
 
    if ((*seg)->SEG_rowlists == NULL) 
    {
@@ -47,7 +47,7 @@ int ML_SEG_Create(struct ML_SEG_Struct **seg, AZ_MATRIX *Amat, int nblocks,
    nrows=0;
    for (i = 0; i < nblocks; i++) 
    {
-      (*seg)->SEG_rowlists[i]=(int *)malloc(rowlengs[i]*sizeof(int));
+      (*seg)->SEG_rowlists[i]=(int *)ML_allocate(rowlengs[i]*sizeof(int));
       (*seg)->SEG_rowlist_lengs[i] = rowlengs[i];
       if ((*seg)->SEG_rowlists[i] == NULL) {
          printf("ML_SEG_Create: memory allocation error\n");
@@ -80,7 +80,7 @@ int ML_SEG_Create(struct ML_SEG_Struct **seg, AZ_MATRIX *Amat, int nblocks,
    {
       noffdiags = nblocks * (nblocks-1) / 2;
       (*seg)->SEG_offdiag_list = 
-                  (ML_SEG_MATRIX **) malloc(noffdiags*sizeof(ML_SEG_MATRIX *));
+                  (ML_SEG_MATRIX **) ML_allocate(noffdiags*sizeof(ML_SEG_MATRIX *));
       ctr=0;
       /* for an upper triangular matrix, we will store the off diagonal */
       /* matrices starting with the bottom one (since when we apply the */
@@ -106,7 +106,7 @@ int ML_SEG_Create(struct ML_SEG_Struct **seg, AZ_MATRIX *Amat, int nblocks,
    {
       noffdiags = nblocks * (nblocks-1) / 2;
       (*seg)->SEG_offdiag_list = 
-            (ML_SEG_MATRIX **) malloc(noffdiags*sizeof(ML_SEG_MATRIX *));
+            (ML_SEG_MATRIX **) ML_allocate(noffdiags*sizeof(ML_SEG_MATRIX *));
       ctr=0;
       /* for a lower triangular matrix, we will store the off diagonal */
       /* matrices starting with the top one (since when we apply the   */
@@ -185,7 +185,7 @@ struct ML_SEG_MATRIX_Struct *ML_SEG_Matrix_Create(AZ_MATRIX *Amat, int nrows,
    struct ML_SEG_MATRIX_Struct *Smat;
 
    Smat = (struct ML_SEG_MATRIX_Struct *)
-          malloc(sizeof(struct ML_SEG_MATRIX_Struct));
+          ML_allocate(sizeof(struct ML_SEG_MATRIX_Struct));
    if (Smat == NULL) 
    {
       printf("ML_SEG_Matrix Create: allocation error\n");
@@ -278,8 +278,8 @@ void ML_SEG_Precondition(double ff[], int options[], int proc_config[],
    /* will be larger than the whole matrix, so this is a convenient   */
    /* upper bound */
 
-   vect = (double *)malloc(lenf*sizeof(double));
-   fftmp = (double *)malloc(lenf*sizeof(double));
+   vect = (double *)ML_allocate(lenf*sizeof(double));
+   fftmp = (double *)ML_allocate(lenf*sizeof(double));
    if (fftmp == NULL) 
    {
       printf("ML_SEG_precondition: memory allocation error\n");
@@ -438,7 +438,7 @@ void ML_SEG_Set_ML_Precond(struct ML_SEG_Struct *seg, ML *ml, int block_row,
    /* copy the options sent in and store them in seg->AZ_opt since aztec */
    /* expects certain options from an ml preconditioner */
 
-   prec_options = (int *)malloc(AZ_OPTIONS_SIZE * sizeof(int));
+   prec_options = (int *)ML_allocate(AZ_OPTIONS_SIZE * sizeof(int));
    if (prec_options == NULL) 
    {
       printf("memory allocation error in ML_SEG_Set_ML_Precond\n");
@@ -593,8 +593,8 @@ void ML_SEG_Set_AZ_Precond(struct ML_SEG_Struct *seg,int block_row,
       exit(-1);
    }
 	
-   prec_opts = (int *)malloc(AZ_OPTIONS_SIZE * sizeof(int));
-   prec_pars = (double *)malloc(AZ_PARAMS_SIZE * sizeof(double));
+   prec_opts = (int *)ML_allocate(AZ_OPTIONS_SIZE * sizeof(int));
+   prec_pars = (double *)ML_allocate(AZ_PARAMS_SIZE * sizeof(double));
    if (prec_pars == NULL) 
    {
       printf("memory alloction error in ML_SEG_Set_AZ_Precond\n");

@@ -126,7 +126,7 @@ int MLI_CSRExchBdry(double *vec, void *obj)
    sendList    = Amat->sendList;
    nRows       = Amat->Nrows;
 
-   request = (MPI_Request *) malloc( recvProcCnt * sizeof( MPI_Request ));
+   request = (MPI_Request *) ML_allocate( recvProcCnt * sizeof( MPI_Request ));
    msgid = 234;
    offset = nRows;
    for ( i = 0; i < recvProcCnt; i++ )
@@ -141,7 +141,7 @@ int MLI_CSRExchBdry(double *vec, void *obj)
    {
       dest = sendProc[i];
       leng = sendLeng[i] * sizeof( double );
-      dbuf = (double *) malloc( leng );
+      dbuf = (double *) ML_allocate( leng );
       tempList = sendList[i];
       for ( j = 0; j < sendLeng[i]; j++ ) {
          dbuf[j] = vec[tempList[j]];
@@ -186,7 +186,7 @@ int MLI_CSRMatVec(void *obj, int leng1, double p[], int leng2, double ap[])
 
     length = nRows;
     for ( i = 0; i < Amat->recvProcCnt; i++ ) length += Amat->recvLeng[i];
-    dbuf = (double *) malloc( length * sizeof( double ) );
+    dbuf = (double *) ML_allocate( length * sizeof( double ) );
     for ( i = 0; i < nRows; i++ ) dbuf[i] = p[i];
     MLI_CSRExchBdry(dbuf, obj);
     for ( i = 0 ; i < nRows; i++ ) 
@@ -244,7 +244,7 @@ MLI_Solver *MLI_Solver_Create( MPI_Comm comm )
 {
     /* create an internal ML data structure */
 
-    MLI_Solver *solver = (MLI_Solver *) malloc(sizeof(MLI_Solver));
+    MLI_Solver *solver = (MLI_Solver *) ML_allocate(sizeof(MLI_Solver));
     if ( solver == NULL ) return NULL;   
 
     /* fill in all other default parameters */
@@ -358,18 +358,18 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     /* -------------------------------------------------------- */ 
 
     localEqns = solver->nRows;
-    row_partition = (int*) malloc( (nprocs+1) * sizeof(int));
+    row_partition = (int*) ML_allocate( (nprocs+1) * sizeof(int));
     for (i=0; i<nprocs; i++) row_partition[i] = 0;
     row_partition[my_id+1] = localEqns;
     MPI_Allgather(&localEqns,1,MPI_INT,&row_partition[1],1,MPI_INT,solver->comm);
     for (i=2; i<=nprocs; i++) row_partition[i] += row_partition[i-1];
-    context = (MLI_Context *) malloc(sizeof(MLI_Context));
+    context = (MLI_Context *) ML_allocate(sizeof(MLI_Context));
     solver->contxt = context;
     context->comm = solver->comm;
 
     context->globalEqns = row_partition[nprocs];
     context->partition = row_partition;
-    mli_mat = ( MLI_CSRMatrix * ) malloc( sizeof( MLI_CSRMatrix) );
+    mli_mat = ( MLI_CSRMatrix * ) ML_allocate( sizeof( MLI_CSRMatrix) );
     context->Amat = mli_mat;
     mat_ia = solver->mat_ia;
     mat_ja = solver->mat_ja;
@@ -419,7 +419,7 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
           ML_Aggregate_Set_CoarsenScheme_Uncoupled( solver->ml_ag);
        else
           ML_Aggregate_Set_CoarsenScheme_Coupled( solver->ml_ag);
-       dble_array = (double*) malloc( localEqns * sizeof(double));
+       dble_array = (double*) ML_allocate( localEqns * sizeof(double));
        if ( dble_array == NULL )
        {
           printf("memory allocation problem in MLI_Solver_Setup %d.\n",localEqns);
@@ -674,7 +674,7 @@ int MLI_Solver_Solve( MLI_Solver *solver)
     /********* another choice : diagonal preconditioner 
     ML_Krylov_Set_Precon(ml_kry, ml_kry);
     ML_Krylov_Set_PreconFunc(ml_kry, ML_DiagScale_Wrapper);
-    diag = (double *) malloc(leng * sizeof(double));
+    diag = (double *) ML_allocate(leng * sizeof(double));
     for ( i = 0; i < leng; i++ )
        diag[i] = diag_scale[i] * diag_scale[i];
     ML_Krylov_Set_Diagonal(ml_kry, leng, diag);
@@ -911,8 +911,8 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     /* block information                                        */
     /* -------------------------------------------------------- */
 
-    diagSize    = (int*) malloc( sizeof(int) * localEqns );
-    offdiagSize = (int*) malloc( sizeof(int) * localEqns );
+    diagSize    = (int*) ML_allocate( sizeof(int) * localEqns );
+    offdiagSize = (int*) ML_allocate( sizeof(int) * localEqns );
     num_bdry = 0;
     for ( i = startRow; i <= endRow; i++ )
     {
@@ -942,7 +942,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     externLeng = 0;
     for ( i = 0; i < localEqns; i++ ) externLeng += offdiagSize[i];
     if ( externLeng > 0 )
-         externList = (int *) malloc( sizeof(int) * externLeng);
+         externList = (int *) ML_allocate( sizeof(int) * externLeng);
     else externList = NULL;
     externLeng = 0;
     for ( i = startRow; i <= endRow; i++ )
@@ -970,7 +970,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     /* allocate the CSR matrix                                  */
     /* -------------------------------------------------------- */ 
 
-    diag_scale = (double *) malloc((nrows+externLeng)*sizeof(double)); 
+    diag_scale = (double *) ML_allocate((nrows+externLeng)*sizeof(double)); 
     nnz = 0; 
     for (i = 0; i < localEqns; i++) nnz += diagSize[i] + offdiagSize[i]; 
     free( diagSize );
@@ -1031,7 +1031,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        /* remote processor (assume sequential mapping)          */
        /* ----------------------------------------------------- */ 
 
-       tempCnt = (int *) malloc( sizeof(int) * nprocs );
+       tempCnt = (int *) ML_allocate( sizeof(int) * nprocs );
        for ( i = 0; i < nprocs; i++ ) tempCnt[i] = 0;
        for ( i = 0; i < externLeng; i++ )
        {
@@ -1053,8 +1053,8 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        recvProcCnt = 0;
        for ( i = 0; i < nprocs; i++ )
           if ( tempCnt[i] > 0 ) recvProcCnt++;
-       recvLeng = (int*) malloc( sizeof(int) * recvProcCnt );
-       recvProc = (int*) malloc( sizeof(int) * recvProcCnt );
+       recvLeng = (int*) ML_allocate( sizeof(int) * recvProcCnt );
+       recvProc = (int*) ML_allocate( sizeof(int) * recvProcCnt );
        recvProcCnt = 0;
        for ( i = 0; i < nprocs; i++ )
        {
@@ -1070,7 +1070,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        /* has to send data to                                   */
        /* ----------------------------------------------------- */ 
 
-       sendLeng = (int *) malloc( nprocs * sizeof(int) );
+       sendLeng = (int *) ML_allocate( nprocs * sizeof(int) );
        for ( i = 0; i < nprocs; i++ ) tempCnt[i] = 0;
        for ( i = 0; i < recvProcCnt; i++ ) tempCnt[recvProc[i]] = 1;
        MPI_Allreduce(tempCnt, sendLeng, nprocs, MPI_INT, MPI_SUM, comm );
@@ -1078,9 +1078,9 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        free( sendLeng );
        if ( sendProcCnt > 0 )
        {
-          sendLeng = (int *)  malloc( sendProcCnt * sizeof(int) );
-          sendProc = (int *)  malloc( sendProcCnt * sizeof(int) );
-          sendList = (int **) malloc( sendProcCnt * sizeof(int*) );
+          sendLeng = (int *)  ML_allocate( sendProcCnt * sizeof(int) );
+          sendProc = (int *)  ML_allocate( sendProcCnt * sizeof(int) );
+          sendList = (int **) ML_allocate( sendProcCnt * sizeof(int*) );
        }
        else 
        {
@@ -1103,7 +1103,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
           MPI_Recv((void*) &sendLeng[i],1,MPI_INT,MPI_ANY_SOURCE,msgid,
                    comm,&status);
           sendProc[i] = status.MPI_SOURCE;
-          sendList[i] = (int *) malloc( sendLeng[i] * sizeof(int) );
+          sendList[i] = (int *) ML_allocate( sendLeng[i] * sizeof(int) );
           if ( sendList[i] == NULL ) 
              printf("allocate problem %d \n", sendLeng[i]);
        }
@@ -1238,9 +1238,9 @@ void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
       printf("Error : nrows,nnz = %d %d\n", Nrows, nnz);
       exit(1);
    }
-   mat_ia = (int *)    malloc((Nrows+1) * sizeof(int));
-   mat_ja = (int *)    malloc(nnz * sizeof(int));
-   mat_a  = (double *) malloc(nnz * sizeof(double));
+   mat_ia = (int *)    ML_allocate((Nrows+1) * sizeof(int));
+   mat_ja = (int *)    ML_allocate(nnz * sizeof(int));
+   mat_a  = (double *) ML_allocate(nnz * sizeof(double));
    mat_ia[0] = 0;
 
    curr_row = 0;
@@ -1282,7 +1282,7 @@ void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
    fp = fopen( rhsfile, "r" );
    if ( fp == NULL ) {
       printf("No rhs file found.\n");
-      rhs_local = (double *) malloc(Nrows * sizeof(double));
+      rhs_local = (double *) ML_allocate(Nrows * sizeof(double));
       for ( k = 0; k < Nrows; k++ ) {
          rhs_local[k] = drand48();
       }
@@ -1296,7 +1296,7 @@ void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
          exit(1);
       }
       fflush(stdout);
-      rhs_local = (double *) malloc(Nrows * sizeof(double));
+      rhs_local = (double *) ML_allocate(Nrows * sizeof(double));
       m = 0;
       for ( k = 0; k < ncnt; k++ ) {
          fscanf(fp, "%d %lg", &rnum, &dtemp);
@@ -1345,10 +1345,10 @@ int MLI_Solver_Get_IJAFromFile(MLI_Solver *solver, char *matfile, char *rhsfile)
    } else {
       MPI_Bcast(&mat_N, 1, MPI_INT, 0, MPI_COMM_WORLD);
       MPI_Bcast(&nnz,   1, MPI_INT, 0, MPI_COMM_WORLD);
-      mat_ia  = (int    *) malloc( (mat_N + 1) * sizeof( int ) );
-      mat_ja  = (int    *) malloc( nnz * sizeof( int ) );
-      mat_a   = (double *) malloc( nnz * sizeof( double ) );
-      mat_rhs = (double *) malloc( mat_N * sizeof( double ) );
+      mat_ia  = (int    *) ML_allocate( (mat_N + 1) * sizeof( int ) );
+      mat_ja  = (int    *) ML_allocate( nnz * sizeof( int ) );
+      mat_a   = (double *) ML_allocate( nnz * sizeof( double ) );
+      mat_rhs = (double *) ML_allocate( mat_N * sizeof( double ) );
 
       MPI_Bcast(mat_ia,  mat_N+1, MPI_INT,    0, MPI_COMM_WORLD);
       MPI_Bcast(mat_ja,  nnz,     MPI_INT,    0, MPI_COMM_WORLD);
@@ -1372,10 +1372,10 @@ int MLI_Solver_Get_IJAFromFile(MLI_Solver *solver, char *matfile, char *rhsfile)
    local_N = myend - mybegin + 1;
    nnz = 0;
    for ( i = mybegin; i <= myend; i++ ) nnz += (mat_ia[i+1] - mat_ia[i]);
-   ia  = (int *) malloc( (local_N+1) * sizeof(int));
-   ja  = (int *) malloc( nnz * sizeof(int));
-   val = (double *) malloc( nnz * sizeof(double));
-   rhs = (double *) malloc( local_N * sizeof(double));
+   ia  = (int *) ML_allocate( (local_N+1) * sizeof(int));
+   ja  = (int *) ML_allocate( nnz * sizeof(int));
+   val = (double *) ML_allocate( nnz * sizeof(double));
+   rhs = (double *) ML_allocate( local_N * sizeof(double));
    ia[0] = 0;
    ncnt = 0;
    for ( i = mybegin; i <= myend; i++ ) 
@@ -1429,7 +1429,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
                printf("Error : should call MatrixRead before RBMRead\n");
             exit(1);
          }
-         rbm_global = (double *) malloc(global_N * sizeof(double));
+         rbm_global = (double *) ML_allocate(global_N * sizeof(double));
          for ( k = 0; k < global_N; k++ ) rbm_global[k] = 1.0;
          nullDimension = 1;
       }
@@ -1441,7 +1441,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
             printf("Error in reading RBM : dimension not matched.\n");
             exit(1);
          }
-         rbm_global = (double *) malloc(global_N*nullDimension*sizeof(double));
+         rbm_global = (double *) ML_allocate(global_N*nullDimension*sizeof(double));
          for ( k = 0; k < ncnt*nullDimension; k++ ) {
             fscanf(fp, "%lg", &dtemp);
             rbm_global[k] = dtemp;
@@ -1463,11 +1463,11 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
 
    MPI_Bcast(&nullDimension, 1, MPI_INT, 0, MPI_COMM_WORLD);
    if ( my_id != 0 )
-      rbm_global = (double *) malloc(global_N*nullDimension*sizeof(double));
+      rbm_global = (double *) ML_allocate(global_N*nullDimension*sizeof(double));
 
    MPI_Bcast(rbm_global,global_N*nullDimension,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
-   rbm = (double *) malloc(local_N * nullDimension * sizeof(double));
+   rbm = (double *) ML_allocate(local_N * nullDimension * sizeof(double));
    ncnt = 0;
    for ( k = 0; k < nullDimension; k++ ) 
       for ( i = mybegin; i <= myend; i++ ) 
@@ -1516,18 +1516,18 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     /* -------------------------------------------------------- */ 
 
     localEqns = Nrows;
-    row_partition = (int*) malloc( (nprocs+1) * sizeof(int));
+    row_partition = (int*) ML_allocate( (nprocs+1) * sizeof(int));
     for (i=0; i<nprocs; i++) row_partition[i] = 0;
     row_partition[my_id+1] = Nrows;
     MPI_Allgather(&Nrows,1,MPI_INT,&row_partition[1],1,MPI_INT,solver->comm);
     for (i=2; i<=nprocs; i++) row_partition[i] += row_partition[i-1];
-    context = (MLI_Context *) malloc(sizeof(MLI_Context));
+    context = (MLI_Context *) ML_allocate(sizeof(MLI_Context));
     solver->contxt = context;
     context->comm = (USR_COMM) one;
 
     context->globalEqns = Nrows;
     context->partition = NULL;
-    mli_mat = ( MLI_CSRMatrix * ) malloc( sizeof( MLI_CSRMatrix) );
+    mli_mat = ( MLI_CSRMatrix * ) ML_allocate( sizeof( MLI_CSRMatrix) );
     context->Amat = mli_mat;
     MLI_Solver_Construct_LocalCSRMatrix(Nrows,mat_ia,mat_ja,mat_a,
                          mli_mat, solver, context->partition,context); 
@@ -1714,7 +1714,7 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     /* block information                                        */
     /* -------------------------------------------------------- */
 
-    diagSize    = (int*) malloc( sizeof(int) * localEqns );
+    diagSize    = (int*) ML_allocate( sizeof(int) * localEqns );
     num_bdry = 0;
     for ( i = startRow; i <= endRow; i++ )
     {
@@ -1736,7 +1736,7 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     /* allocate the CSR matrix                                  */
     /* -------------------------------------------------------- */ 
 
-    diag_scale = (double *) malloc(nrows*sizeof(double)); 
+    diag_scale = (double *) ML_allocate(nrows*sizeof(double)); 
     nnz = 0; 
     for (i = 0; i < localEqns; i++) nnz += diagSize[i]; 
     free( diagSize );

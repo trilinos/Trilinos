@@ -37,7 +37,7 @@ main(int argc, char *argv[])
    */
    globalN = 128 * 128;
    nrows = ML_PDE_GenMat(solver,globalN);
-   sol = (double *) malloc( nrows * sizeof(double) );
+   sol = (double *) ML_allocate( nrows * sizeof(double) );
    for ( i = 0; i < nrows; i++ ) sol[i] = 0.0;
    MLI_Solver_Set_MLNumLevels(solver, 7);
    MLI_Solver_Set_KrylovMethod(solver, 0);

@@ -45,12 +45,12 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
    /* allocate temporary memory */
    /* ----------------------------------------------------------------*/
 
-   r  = (double *) malloc(length * sizeof(double));
-   p  = (double *) malloc(length * sizeof(double));
-   ap  = (double *) malloc(length * sizeof(double));
+   r  = (double *) ML_allocate(length * sizeof(double));
+   p  = (double *) ML_allocate(length * sizeof(double));
+   ap  = (double *) ML_allocate(length * sizeof(double));
    if ( precfcn == NULL ) z = r;
    else {
-      z = (double *) malloc(length * sizeof(double));
+      z = (double *) ML_allocate(length * sizeof(double));
       for ( i = 0; i < length; i++ ) z[i] = 0.0;
    }
 
@@ -177,7 +177,6 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    if (matrix->invec_leng == 1)
    {
       ML_Operator_Get_Diag(matrix, 1, &diag); 
-      printf("Retrieving diagonal %e\n",*diag);
       data->ML_eigen_max = *diag;
       data->ML_eigen_min = *diag;
       return 1;
@@ -194,8 +193,8 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    /* set up to write matrix to a file */
    /* ----------------------------------------------------------------*/
 
-   offset_array = (int *) malloc(nprocs * sizeof(int));
-   itmp_array   = (int *) malloc(nprocs * sizeof(int));
+   offset_array = (int *) ML_allocate(nprocs * sizeof(int));
+   itmp_array   = (int *) ML_allocate(nprocs * sizeof(int));
    for ( i = 0; i < nprocs; i++ ) offset_array[i] = 0;
    offset_array[mypid] = length;
    ML_gsum_vec_int(offset_array, itmp_array, nprocs, comm);
@@ -210,13 +209,13 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    if (getrow_comm != NULL) {
       ext_leng = length + getrow_comm->total_rcv_length;
    } else ext_leng = length;
-   u = (double *) malloc((ext_leng+1)*sizeof(double));
+   u = (double *) ML_allocate((ext_leng+1)*sizeof(double));
    for (i = 0; i < length; i++) u[i] = myoffset + i;
    for (i = length; i <= ext_leng; i++) u[i] = 0.0;
    if (getrow_comm != NULL) {
       ML_exchange_bdry(u,getrow_comm, length,comm,ML_OVERWRITE,NULL);
    }
-   index_array = (int *) malloc((ext_leng+1)*sizeof(int));
+   index_array = (int *) ML_allocate((ext_leng+1)*sizeof(int));
    for (i = 0; i <= ext_leng; i++) index_array[i] = (int) u[i];
    free(u);
 
@@ -226,12 +225,12 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 
    if ( length > 0 )
    {
-      u    = (double *) malloc(length * sizeof(double));
-      r    = (double *) malloc(length * sizeof(double));
-      p    = (double *) malloc(length * sizeof(double));
-      ap   = (double *) malloc(length * sizeof(double));
-      rhs  = (double *) malloc(length * sizeof(double));
-      diag = (double *) malloc(length * sizeof(double));
+      u    = (double *) ML_allocate(length * sizeof(double));
+      r    = (double *) ML_allocate(length * sizeof(double));
+      p    = (double *) ML_allocate(length * sizeof(double));
+      ap   = (double *) ML_allocate(length * sizeof(double));
+      rhs  = (double *) ML_allocate(length * sizeof(double));
+      diag = (double *) ML_allocate(length * sizeof(double));
       if ( diag == NULL )
       {
          printf("ML : ERROR in allocating memory.\n");
@@ -239,13 +238,13 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       }
    }
    ML_random_vec(rhs, length, comm); 
-   alpha_array = (double *) malloc((maxiter+1) * sizeof(double));
-   rnorm_array = (double *) malloc((maxiter+1) * sizeof(double));
-   Tmat = (double **) malloc((maxiter+1) * sizeof(double*));
+   alpha_array = (double *) ML_allocate((maxiter+1) * sizeof(double));
+   rnorm_array = (double *) ML_allocate((maxiter+1) * sizeof(double));
+   Tmat = (double **) ML_allocate((maxiter+1) * sizeof(double*));
    original_maxiter = maxiter;
    for ( i = 0; i <= maxiter; i++ ) 
    { 
-      Tmat[i] = (double *) malloc((maxiter+1) * sizeof(double));
+      Tmat[i] = (double *) ML_allocate((maxiter+1) * sizeof(double));
       for ( j = 0; j <= maxiter; j++ ) Tmat[i][j] = 0.0;
       Tmat[i][i] = 1.0;
    }
@@ -255,8 +254,8 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    /* ----------------------------------------------------------------*/
 
    allocated = 100;
-   colInd = (int    *) malloc( allocated * sizeof(int) );
-   colVal = (double *) malloc( allocated * sizeof(double) );
+   colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+   colVal = (double *) ML_allocate( allocated * sizeof(double) );
    sprintf(fname, "mat_%d", mypid);
 #ifdef PRINTMAT
    fp = fopen(fname, "w");
@@ -268,8 +267,8 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       {
          allocated *= 2;
          free(colInd); free(colVal);
-         colInd = (int    *) malloc( allocated * sizeof(int) );
-         colVal = (double *) malloc( allocated * sizeof(double) );
+         colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+         colVal = (double *) ML_allocate( allocated * sizeof(double) );
       }
 
       sum = 0.0;

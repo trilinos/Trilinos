@@ -2502,7 +2502,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    nbytes = cnvert * sizeof(double);
    ML_memory_alloc((void**) &(xsfer_op->restrict_wgts), nbytes, "XSg");
    for ( i = 0; i < cnvert; i++ ) xsfer_op->restrict_wgts[i] = 1.0;
-   oper = (ML_Operator *) malloc( sizeof(ML_Operator) );
+   oper = (ML_Operator *) ML_allocate( sizeof(ML_Operator) );
    oper->data = (void *) xsfer_op;
    oper->invec_leng = fnvert;
    oper->outvec_leng = cnvert;

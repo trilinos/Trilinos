@@ -86,9 +86,9 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
    }
 
    total_nz = nnode_local * avg_nonzeros_per_row + 1;
-   mat_ia  = (int *) malloc((nnode_local+1) * sizeof(int));
-   mat_ja  = (int *) malloc(total_nz * sizeof(int));
-   mat_aa  = (double *) malloc(total_nz * sizeof(double));
+   mat_ia  = (int *) ML_allocate((nnode_local+1) * sizeof(int));
+   mat_ja  = (int *) ML_allocate(total_nz * sizeof(int));
+   mat_aa  = (double *) ML_allocate(total_nz * sizeof(double));
  
    mat_ia[0] = 0;
    index = 0;
@@ -125,7 +125,7 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
    for ( i = 0; i < nnode_part_1d*3; i++ )
       ML_memory_free((void*) &(square[i]));
    ML_memory_free((void*) &(square));
-   rhs  = (double *) malloc(nnode_local * sizeof(double));
+   rhs  = (double *) ML_allocate(nnode_local * sizeof(double));
    for ( i = 0; i < nnode_local; i++ ) rhs[i] = 1.0; 
 
    solver->nRows = nnode_local;

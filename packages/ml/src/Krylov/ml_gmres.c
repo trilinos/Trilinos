@@ -47,17 +47,17 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
    /* allocate temporary memory */
    /* -----------------------------------------------------------------*/
 
-   darray = (double*) malloc((mlen+1)*sizeof(double));
-   HH = (double**) malloc((mlen+2)*sizeof(double*));
+   darray = (double*) ML_allocate((mlen+1)*sizeof(double));
+   HH = (double**) ML_allocate((mlen+2)*sizeof(double*));
    for (i=0; i<=mlen+1; i++) 
-      HH[i] = (double*) malloc((mlen+2)*sizeof(double));
-   RS = (double*) malloc((mlen+2)*sizeof(double));
-   S  = (double*) malloc((mlen+2)*sizeof(double));
-   C  = (double*) malloc((mlen+2)*sizeof(double));
-   indlist  = (int*) malloc((2*mlen+2)*sizeof(int));
-   ws = (double**) malloc((mlen+3)*sizeof(double*));
+      HH[i] = (double*) ML_allocate((mlen+2)*sizeof(double));
+   RS = (double*) ML_allocate((mlen+2)*sizeof(double));
+   S  = (double*) ML_allocate((mlen+2)*sizeof(double));
+   C  = (double*) ML_allocate((mlen+2)*sizeof(double));
+   indlist  = (int*) ML_allocate((2*mlen+2)*sizeof(int));
+   ws = (double**) ML_allocate((mlen+3)*sizeof(double*));
    for (i=0; i<=mlen+2; i++) 
-      ws[i] = (double*) malloc(length*sizeof(double));
+      ws[i] = (double*) ML_allocate(length*sizeof(double));
 
    /* -----------------------------------------------------------------*/
    /* compute initial residual vector and norm */
