@@ -36,6 +36,10 @@ my $TRILINOS_BUILD_ERROR = 5;         # Trilinos build failed
 my $TEST_FAILED = 6;                  # test failed
 my $TEST_PASSED = 7;                  # test passed
 my $SUMMARY = 8;                      # test-harness summary
+
+# Host Operating System Variable
+chomp (my $hostOS=`uname`);
+$hostOS =~ s/\s*$//; 
         
 ################################################################################
 # Execution ####################################################################
@@ -184,14 +188,12 @@ report($SUMMARY);
         
         # delete files
         my $tempDir = "$options{'TRILINOS_DIR'}[0]/testharness/temp";
-        chomp (my $hostOS=`uname`);
-        $hostOS =~ s/\s*$//; 
         
         system "rm -f $tempDir/update_log.txt";
-        system "rm -f $tempDir/trilinos_configure_log.txt";
-        system "rm -f $tempDir/trilinos_configure_log.txt.gz";
-        system "rm -f $tempDir/trilinos_build_log.txt";
-        system "rm -f $tempDir/trilinos_build_log.txt.gz";
+        system "rm -f $tempDir/trilinos_configure_log_$hostOS.txt";
+        system "rm -f $tempDir/trilinos_configure_log_$hostOS.txt.gz";
+        system "rm -f $tempDir/trilinos_build_log_$hostOS.txt";
+        system "rm -f $tempDir/trilinos_build_log_$hostOS.txt.gz";
         system "rm -f $tempDir/test_compile_log.txt";
         system "rm -f $tempDir/event_log.txt";
         system "rm -f $tempDir/invoke-configure-mpi";
@@ -449,7 +451,7 @@ report($SUMMARY);
                     if ($configureOutput) {    
                         
                         # fix invoke configure
-                        my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log.txt";
+                        my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log_$hostOS.txt";
                         my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
                         my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);      
                             
@@ -495,7 +497,7 @@ report($SUMMARY);
                         if ($buildOutput) {
                                        
                             # fix invoke configure         
-                            my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log.txt";
+                            my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log_$hostOS.txt";
                             my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
                             my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);
                             
@@ -839,7 +841,7 @@ report($SUMMARY);
             
         my $command = "";
         $command .= "./invoke-configure >> $options{'TRILINOS_DIR'}[0]";
-        $command .= "/testharness/temp/trilinos_configure_log.txt 2>&1";
+        $command .= "/testharness/temp/trilinos_configure_log_$hostOS.txt 2>&1";
         return system $command;
         
     } # configure()
@@ -861,10 +863,10 @@ report($SUMMARY);
         my $command = "";
         if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
             $command .= "make $options{'MAKE_FLAGS'}[0] >> $options{'TRILINOS_DIR'}[0]";
-            $command .= "/testharness/temp/trilinos_build_log.txt 2>&1";
+            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt 2>&1";
         } else {
             $command .= "make >> $options{'TRILINOS_DIR'}[0]";
-            $command .= "/testharness/temp/trilinos_build_log.txt 2>&1";
+            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt 2>&1";
         }
         return system $command;
         
@@ -928,14 +930,14 @@ report($SUMMARY);
         chdir "$options{'TRILINOS_DIR'}[0]/testharness/temp";
             
         # host information
-        chomp (my $hostOS=`uname`);             # host operating system
+        # chomp (my $hostOS=`uname`);           # now defined globally
         chomp (my $hostOSRelease=`uname -r`);   # host operating system release
         chomp (my $hostOSVersion=`uname -v`);   # host operating system version 
         chomp (my $hostHardware=`uname -m`);    # host hardware 
         chomp (my $hostName=`uname -n`);        # host name    
         
         # remove extra newlines
-        $hostOS =~ s/\s*$//; 
+        # $hostOS =~ s/\s*$//;                  # now defined globally
         $hostOSRelease =~ s/\s*$//; 
         $hostOSVersion =~ s/\s*$//;  
         $hostHardware =~ s/\s*$//; 
@@ -1247,12 +1249,12 @@ report($SUMMARY);
         }
         
         # trilinos configure failed
-        if ($code == $TRILINOS_CONFIGURE_ERROR && -f "trilinos_configure_log.txt") {
+        if ($code == $TRILINOS_CONFIGURE_ERROR && -f "trilinos_configure_log_$hostOS.txt") {
             $attachmentsExist = 1;
-            my $log = "trilinos_configure_log.txt";
+            my $log = "trilinos_configure_log_$hostOS.txt";
             my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                my $gzLog = "trilinos_configure_log.txt.gz";
+                my $gzLog = "trilinos_configure_log_$hostOS.txt.gz";
                 my $gzLogPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$gzLog";
                 system "gzip $logPath"; 
                 $attachmentText .= "    $gzLog\n";
@@ -1263,12 +1265,12 @@ report($SUMMARY);
         }       
         
         # trilinos build failed
-        if ($code == $TRILINOS_BUILD_ERROR && -f "trilinos_build_log.txt") {
+        if ($code == $TRILINOS_BUILD_ERROR && -f "trilinos_build_log_$hostOS.txt") {
             $attachmentsExist = 1;
-            my $log = "trilinos_build_log.txt";  
+            my $log = "trilinos_build_log_$hostOS.txt";  
             my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";         
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                my $gzLog = "trilinos_build_log.txt.gz";
+                my $gzLog = "trilinos_build_log_$hostOS.txt.gz";
                 my $gzLogPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$gzLog";
                 system "gzip $logPath";
                 $attachmentText .= "    $gzLog\n";
@@ -1527,10 +1529,10 @@ report($SUMMARY);
         }
         
         system "rm -f update_log.txt";
-        system "rm -f trilinos_configure_log.txt";
-        system "rm -f trilinos_configure_log.txt.gz";
-        system "rm -f trilinos_build_log.txt";
-        system "rm -f trilinos_build_log.txt.gz";
+        system "rm -f trilinos_configure_log_$hostOS.txt";
+        system "rm -f trilinos_configure_log_$hostOS.txt.gz";
+        system "rm -f trilinos_build_log_$hostOS.txt";
+        system "rm -f trilinos_build_log_$hostOS.txt.gz";
         system "rm -f test_compile_log.txt";
         system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
         system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
