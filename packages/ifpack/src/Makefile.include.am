@@ -110,16 +110,8 @@ COMP_H = \
 	$(srcdir)/Ifpack_CondestType.h        \
 	$(srcdir)/Ifpack_Condest.h            \
 	$(srcdir)/Ifpack.h                    \
-	$(srcdir)/Ifpack_Jacobi.h             \
-	$(srcdir)/Ifpack_GaussSeidel.h        \
-	$(srcdir)/Ifpack_SymGaussSeidel.h     \
-	$(srcdir)/Ifpack_SOR.h                \
-	$(srcdir)/Ifpack_SSOR.h               \
-	$(srcdir)/Ifpack_PointPreconditioner.h \
-	$(srcdir)/Ifpack_BlockPreconditioner.h \
-	$(srcdir)/Ifpack_BlockJacobi.h         \
-	$(srcdir)/Ifpack_BlockGaussSeidel.h    \
-	$(srcdir)/Ifpack_BlockSymGaussSeidel.h \
+	$(srcdir)/Ifpack_PointRelaxation.h     \
+	$(srcdir)/Ifpack_BlockRelaxation.h     \
 	$(srcdir)/Ifpack_Container.h           \
 	$(srcdir)/Ifpack_SparseContainer.h     \
 	$(srcdir)/Ifpack_AdditiveSchwarz.h     \
@@ -158,14 +150,9 @@ COMP = \
 	$(srcdir)/icrout_cholesky_mex.c          \
 	$(srcdir)/icrout_quicksort.c             \
 	$(srcdir)/ifp_parameters.cpp             \
-	$(srcdir)/Ifpack_PointPreconditioner.cpp \
+	$(srcdir)/Ifpack_PointRelaxation.cpp \
 	$(srcdir)/Ifpack_Condest.cpp         \
 	$(srcdir)/Ifpack.cpp                 \
-	$(srcdir)/Ifpack_Jacobi.cpp          \
-	$(srcdir)/Ifpack_GaussSeidel.cpp     \
-	$(srcdir)/Ifpack_SymGaussSeidel.cpp  \
-	$(srcdir)/Ifpack_SOR.cpp             \
-	$(srcdir)/Ifpack_SSOR.cpp            \
 	$(srcdir)/Ifpack_LocalFilter.cpp     \
 	$(srcdir)/Ifpack_DropFilter.cpp             \
 	$(srcdir)/Ifpack_SparsityFilter.cpp         \
