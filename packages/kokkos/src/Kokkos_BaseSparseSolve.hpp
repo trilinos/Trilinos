@@ -179,8 +179,15 @@ namespace Kokkos {
     //! Returns a reference to the most recent Kokkos::CisMatrix that was passed into the \e this object.
     virtual const CisMatrix<OrdinalType, ScalarType> & getMatrix() const {
       if (matrixForValues_==0) return(*matrixForStructure_);
-      else return(*matrixForValues_);
-    };
+      else return(*matrixForValues_);};
+
+    //! Returns a reference to the left Kokkos::Permutation object, which is the identity for this implementation.
+    virtual const Permutation<OrdinalType, ScalarType> & getLeftPermutation() const {
+      return(leftPermutation_);};
+
+    //! Returns a reference to the right Kokkos::Permutation object, which is the identity for this implementation.
+    virtual const Permutation<OrdinalType, ScalarType> & getRightPermutation() const {
+      return(rightPermutation_);};
 	
     //@}
   
@@ -195,6 +202,8 @@ namespace Kokkos {
 
     CisMatrix<OrdinalType, ScalarType> * matrixForStructure_;
     CisMatrix<OrdinalType, ScalarType> * matrixForValues_;
+    Permutation<OrdinalType, ScalarType> leftPermutation_;
+    Permutation<OrdinalType, ScalarType> rightPermutation_;
 
     bool willKeepStructure_;
     bool willKeepValues_;

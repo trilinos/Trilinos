@@ -219,6 +219,10 @@ void runChecks (bool verbose, bool generateClassicHbMatrix, bool isRowOriented,
   
   numberFailedTests += PrintTestResults<bool>("getCanUseStructure()", solveA.getCanUseStructure(), canUseStructure, verbose);
   numberFailedTests += PrintTestResults<bool>("getCanUseValues()", solveA.getCanUseValues(), canUseValues, verbose);
+  numberFailedTests += PrintTestResults<OTYPE>("getLeftPermutation().getIsIdentity()", solveA.getLeftPermutation().getIsIdentity(), 
+					       true, verbose);
+  numberFailedTests += PrintTestResults<OTYPE>("getRightPermutation().getIsIdentity()", solveA.getRightPermutation().getIsIdentity(), 
+					       true, verbose);
   Kokkos::Flops multCounter;
   Kokkos::Flops solveCounter;
   multA.setFlopCounter(multCounter);

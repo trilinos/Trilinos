@@ -167,6 +167,13 @@ namespace Kokkos {
     //! Returns a reference to the most recent Kokkos::CisMatrix that was passed into the \e this object.
     virtual const CisMatrix<OrdinalType, ScalarType> & getMatrix() const = 0;
 	
+
+    //! Returns a reference to the left Kokkos::Permutation object.
+    virtual const Permutation<OrdinalType, ScalarType> & getLeftPermutation() const = 0;
+
+    //! Returns a reference to the right Kokkos::Permutation object, which is the identity for this implementation.
+    virtual const Permutation<OrdinalType, ScalarType> & getRightPermutation() const = 0;
+
     //@}
   
   };

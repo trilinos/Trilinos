@@ -30,6 +30,7 @@
 #define KOKKOS_BASESPARSEMULTIPLY_H
 
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_Permutation.hpp"
 #include "Kokkos_CisMatrix.hpp" 
 #include "Kokkos_SparseOperation.hpp" 
 extern "C" {
@@ -179,8 +180,15 @@ namespace Kokkos {
     //! Returns a reference to the most recent Kokkos::CisMatrix that was passed into the \e this object.
     virtual const CisMatrix<OrdinalType, ScalarType> & getMatrix() const {
       if (matrixForValues_==0) return(*matrixForStructure_);
-      else return(*matrixForValues_);
-    };
+      else return(*matrixForValues_);};
+
+    //! Returns a reference to the left Kokkos::Permutation object, which is the identity for this implementation.
+    virtual const Permutation<OrdinalType, ScalarType> & getLeftPermutation() const {
+      return(leftPermutation_);};
+
+    //! Returns a reference to the right Kokkos::Permutation object, which is the identity for this implementation.
+    virtual const Permutation<OrdinalType, ScalarType> & getRightPermutation() const {
+      return(rightPermutation_);};
 	
     //@}
   
@@ -195,6 +203,8 @@ namespace Kokkos {
 
     CisMatrix<OrdinalType, ScalarType> * matrixForStructure_;
     CisMatrix<OrdinalType, ScalarType> * matrixForValues_;
+    Permutation<OrdinalType, ScalarType> leftPermutation_;
+    Permutation<OrdinalType, ScalarType> rightPermutation_;
 
     bool willKeepStructure_;
     bool willKeepValues_;
@@ -612,7 +622,7 @@ namespace Kokkos {
     updateFlops(costOfMatVec_ * ((double) numVectors));
     return(0);
   }
-
+  /*
   //==============================================================================
   template<>
   int BaseSparseMultiply<int, double>::apply(const MultiVector<int, double>& x, 
@@ -691,6 +701,6 @@ namespace Kokkos {
     return(0);
   }
 
-
+  */
 } // namespace Kokkos
 #endif /* KOKKOS_BASESPARSEMULTIPLY_H */
