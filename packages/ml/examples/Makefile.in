@@ -147,7 +147,6 @@ am__ml_aztec_simple_SOURCES_DIST = $(srcdir)/ml_aztec_simple.c
 ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@	$(top_builddir)/../amesos/amd/src/libamd.a \
 @ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a \
 @ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
@@ -573,7 +572,6 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 # Amesos require Teuchos
 @ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@             $(top_builddir)/../amesos/amd/src/libamd.a \
 @ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
 
 @ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_FALSE@anasazi_lib = 
