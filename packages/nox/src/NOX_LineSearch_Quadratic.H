@@ -74,6 +74,8 @@ namespace LineSearch {
 
   - "Max Iters" - maximum number of iterations (i.e., RHS computations)
 
+  - "Convergence Criteria" - choice of algorithm used to determine if the line search algorithm has converged (defaults to "Ared/Pred")
+
   - "Alpha Factor" - Scaling factor for the Armijo-Goldstein condition (defaults to 1.0e-4)
 
   - "Bounds Factor" - Factor that limits the minimum size of the new step based on the previous step (defaults to 0.1)
@@ -98,12 +100,22 @@ public:
 	       const Abstract::Vector& dir,
 	       const Solver::Generic& s);
   
+protected:
+  //! sets the output parameters for the linesearch in an "Output" sublist of the "Line Search" sublist. 
+  bool setOutputParameters();
+
 private:
 
-   //! Minimum step length (i.e., when we give up)
+  //! Algorithms used to determine convergence of the line search
+  enum convergenceCriteriaType {ArmijoGoldstein, AredPred};
+
+  //! Choice of convergence criteria
+  convergenceCriteriaType convCriteria;
+
+  //! Minimum step length (i.e., when we give up)
   double minStep;
  
- //! Default step
+  //! Default step
   double defaultStep;
 
   //! Default step for linesearch failure
@@ -117,6 +129,15 @@ private:
 
   //! Factor that limits the minimum size of the new step based on the previous step.
   double boundFactor;
+
+  //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters.  
+  NOX::Parameter::List* inputList;
+
+  //! Counter for the total number of line search iterations performed
+  int totalNumIterations;
+
+  //! Counter for the number of failed line searches
+  int totalNumFailedLineSearches;
 
 };
 } // namespace LineSearch
