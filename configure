@@ -2214,7 +2214,7 @@ fi
 
 
 
-if test "X$ac_cv_use_teuchos" != "Xno"
+if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno"; then
   BUILD_TEUCHOS_TRUE=

@@ -85,7 +85,7 @@ TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, yes)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
-AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno"
+AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
