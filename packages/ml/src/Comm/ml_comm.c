@@ -50,13 +50,16 @@ int ML_Comm_Create( ML_Comm ** com )
 
 int ML_Comm_Destroy( ML_Comm ** com )
 {
-   if ( (*com)->ML_id != ML_ID_COMM )
+   if ( (*com) != NULL )
    {
-      printf("ML_Comm_Destroy : Wrong Comm object to destroy. \n");
-      return -1;
+      if ( (*com)->ML_id != ML_ID_COMM )
+      {
+         printf("ML_Comm_Destroy : Wrong Comm object to destroy. \n");
+         return -1;
+      }
+      (*com)->ML_id = -1;
+      ML_memory_free( (void **) com );
    }
-   (*com)->ML_id = -1;
-   ML_memory_free( (void **) com );
    return 0;
 }
 
