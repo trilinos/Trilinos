@@ -13817,13 +13817,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 # -- DEC CXX --
 # MS # Add the following 21-Apr-04
-case $target in
-  alpha*)
-    if test $CXX = cxx; then
-      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
-    fi
-  ;;
-esac
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+  case $target in
+    alpha*)
+      if test $CXX = cxx; then
+        TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+      fi
+    ;;
+  esac
+fi
 
 echo "$as_me:$LINENO: checking for template-specific object files to be linked" >&5
 echo $ECHO_N "checking for template-specific object files to be linked... $ECHO_C" >&6

@@ -1037,13 +1037,15 @@ AC_F77_LIBRARY_LDFLAGS
 
 # -- DEC CXX --
 # MS # Add the following 21-Apr-04
-case $target in
-  alpha*)
-    if test $CXX = cxx; then
-      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
-    fi
-  ;;
-esac
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+  case $target in
+    alpha*)
+      if test $CXX = cxx; then
+        TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+      fi
+    ;;
+  esac
+fi
 
 AC_MSG_CHECKING([for template-specific object files to be linked])
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
