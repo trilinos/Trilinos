@@ -61,8 +61,22 @@ COMP = \
 #Specify locations of include files within Trilinos, but outside Amesos
 # AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 #               -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
+
+if BUILD_SLUSERIAL
+SLUSERIAL_CPPFLAGS = -I$(top_srcdir)/../../external/slu
+else
+SLUSERIAL_CPPFLAGS = 
+endif
+
+if BUILD_KUNDERT
+KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
+else
+KUNDERT_CPPFLAGS = 
+endif
+
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-              -I$(top_srcdir)/src/ksparse
+              $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+
 # ------------------------------------------------------------------------
 # Amesos library specifications
 # ------------------------------------------------------------------------

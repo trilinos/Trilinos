@@ -135,6 +135,7 @@ COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
 
+
 #
 #  I turned off the addition of external/slu to the include path 
 #  so that I could get SLU dist to work.  Ken Feb 11, 2003
@@ -142,8 +143,15 @@ COMP = \
 #Specify locations of include files within Trilinos, but outside Amesos
 # AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 #               -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
+@BUILD_SLUSERIAL_TRUE@SLUSERIAL_CPPFLAGS = -I$(top_srcdir)/../../external/slu
+@BUILD_SLUSERIAL_FALSE@SLUSERIAL_CPPFLAGS = 
+
+@BUILD_KUNDERT_TRUE@KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
+@BUILD_KUNDERT_FALSE@KUNDERT_CPPFLAGS = 
+
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-              -I$(top_srcdir)/src/ksparse
+              $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+
 
 
 # ------------------------------------------------------------------------
