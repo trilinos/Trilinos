@@ -98,15 +98,10 @@ void TrustRegionBased::init()
   solnPtr->computeF();
   newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
-  // Get parameter settings
-  if (!params.sublist("Direction").isParameter("Method"))
-    params.sublist("Direction").setParameter("Method", "Newton");
-
-  if (!params.sublist("Cauchy Direction").isParameter("Method"))
-    params.sublist("Cauchy Direction").setParameter("Method", "Steepest Descent");
-
-  if (!params.sublist("Cauchy Direction").isParameter("Scaling Type"))
-    params.sublist("Cauchy Direction").setParameter("Scaling Type", "Quadratic Model Min");
+  // Set default parameter settings using getParameter() if they are not set
+  params.sublist("Direction").getParameter("Method", "Newton");
+  params.sublist("Cauchy Direction").getParameter("Method", "Steepest Descent");
+  params.sublist("Cauchy Direction").sublist("Steepest Descent").getParameter("Scaling Type", "Quadratic Model Min");
 
   newton.reset(params.sublist("Direction"));
   cauchy.reset(params.sublist("Cauchy Direction"));
