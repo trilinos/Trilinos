@@ -50,6 +50,9 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
 /* define if we want to use EXPAT */
 #undef HAVE_EXPAT
 

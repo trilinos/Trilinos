@@ -239,6 +239,13 @@ TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all pa
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 # ------------------------------------------------------------------------
+# Checks if examples should be built
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -468,6 +475,8 @@ AC_CONFIG_FILES([
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
+		example/Makefile
+		example/hilbert/Makefile
 		])
 
 AC_OUTPUT()

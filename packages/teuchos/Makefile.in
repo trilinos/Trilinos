@@ -105,7 +105,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test
+DIST_SUBDIRS = src test example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -127,6 +127,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
+BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
@@ -266,7 +268,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #  of tests.  At present, new_package only offers src and example.
 # SUBDIRS = src example test 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
-SUBDIRS = src $(TEST_SUBDIR)
+@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 all: all-recursive
 
 .SUFFIXES:

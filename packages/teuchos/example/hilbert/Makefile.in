@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = run-teuchos-tests.c
+SOURCES = $(hilbert_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -50,7 +50,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../../../..
+top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -65,8 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = run-teuchos-tests$(EXEEXT)
-subdir = test/scripts/daily/serial
+noinst_PROGRAMS = hilbert$(EXEEXT)
+subdir = example/hilbert
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -95,19 +95,20 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Teuchos_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-run_teuchos_tests_SOURCES = run-teuchos-tests.c
-run_teuchos_tests_OBJECTS = run-teuchos-tests.$(OBJEXT)
-run_teuchos_tests_LDADD = $(LDADD)
+am_hilbert_OBJECTS = hilbert-cxx_main.$(OBJEXT)
+hilbert_OBJECTS = $(am_hilbert_OBJECTS)
+am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/run-teuchos-tests.Po
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = run-teuchos-tests.c
-DIST_SOURCES = run-teuchos-tests.c
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/hilbert-cxx_main.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(hilbert_SOURCES)
+DIST_SOURCES = $(hilbert_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -140,7 +141,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = .pl.exe
+EXEEXT = .exe
 EXPAT_INC = @EXPAT_INC@
 EXPAT_LIBS = @EXPAT_LIBS@
 F77 = @F77@
@@ -232,10 +233,29 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+
+#np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
+#np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
+#np# files needed to compile the exe.
+hilbert_SOURCES = $(srcdir)/cxx_main.cpp
+
+#np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
+#np# exe depends on.  (This primary is not absolutely essential.)
+hilbert_DEPENDENCIES = 
+
+#np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
+#np# building the exe.
+hilbert_CXXFLAGS = -I$(top_srcdir)/src
+
+#np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
+#np# building the exe.
+hilbert_LDADD = $(top_builddir)/src/libteuchos.a \
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -245,9 +265,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/scripts/daily/serial/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/hilbert/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/scripts/daily/serial/Makefile
+	  $(AUTOMAKE) --foreign  example/hilbert/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -268,6 +288,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+hilbert$(EXEEXT): $(hilbert_OBJECTS) $(hilbert_DEPENDENCIES) 
+	@rm -f hilbert$(EXEEXT)
+	$(CXXLINK) $(hilbert_LDFLAGS) $(hilbert_OBJECTS) $(hilbert_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -275,23 +298,39 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run-teuchos-tests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hilbert-cxx_main.Po@am__quote@
 
-.c.o:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
-.c.obj:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+hilbert-cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hilbert_CXXFLAGS) $(CXXFLAGS) -MT hilbert-cxx_main.o -MD -MP -MF "$(DEPDIR)/hilbert-cxx_main.Tpo" -c -o hilbert-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/hilbert-cxx_main.Tpo" "$(DEPDIR)/hilbert-cxx_main.Po"; else rm -f "$(DEPDIR)/hilbert-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='hilbert-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/hilbert-cxx_main.Po' tmpdepfile='$(DEPDIR)/hilbert-cxx_main.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hilbert_CXXFLAGS) $(CXXFLAGS) -c -o hilbert-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+
+hilbert-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hilbert_CXXFLAGS) $(CXXFLAGS) -MT hilbert-cxx_main.obj -MD -MP -MF "$(DEPDIR)/hilbert-cxx_main.Tpo" -c -o hilbert-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/hilbert-cxx_main.Tpo" "$(DEPDIR)/hilbert-cxx_main.Po"; else rm -f "$(DEPDIR)/hilbert-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='hilbert-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/hilbert-cxx_main.Po' tmpdepfile='$(DEPDIR)/hilbert-cxx_main.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hilbert_CXXFLAGS) $(CXXFLAGS) -c -o hilbert-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -455,13 +494,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-
-# This program name is not the program that is actually copied.
-# Therefore, this target will always be built.  This was the only
-# way that I could get the makefile working.
-
-run-teuchos-tests$(EXEEXT) :    
-	cp $(srcdir)/run-teuchos-tests.pl .
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
