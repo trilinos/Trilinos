@@ -57,7 +57,7 @@ public:
 	typedef T ptr_t;
 	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
 	void free( T* ptr ) { if(ptr) delete ptr; }
-}; // end class DeallocDelete
+};
 
 ///
 /** Templated class for reference counted smart pointers.
@@ -443,6 +443,15 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
  * to make it easier for clients to use this class without stomping on
  * each other.
  *
+ * When the last <tt>RefcountPtr</tt> object is removed the underlying
+ * reference-counted object is deleted before any of the extra data
+ * that has been associated with this object.  The extra data objects
+ * will then be destoried in a first-in basis based on their context.
+ * In other words, the first extra data object added will be deleted
+ * first, the second extra data object will be deleted second and so
+ * on.  This must be considered when multiple pieces of extra data are
+ * being added.
+ *
  * Preconditions:<ul>
  * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> [<tt>ctx >= 0</tt>] <tt>ctx</tt> must be value returned from a previous
@@ -502,7 +511,7 @@ template<class T1, class T2>
 const T1& get_extra_data( const RefCountPtr<T2>& p, int ctx );
 
 ///
-/** Return a non-const reference to the underlying deallocator object.
+/** Return a non-<tt>const</tt> reference to the underlying deallocator object.
  *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -515,7 +524,7 @@ template<class Dealloc_T, class T>
 Dealloc_T& get_dealloc( RefCountPtr<T>& p );
 
 ///
-/** Return a const reference to the underlying deallocator object.
+/** Return a <tt>const</tt> reference to the underlying deallocator object.
  *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -523,6 +532,12 @@ Dealloc_T& get_dealloc( RefCountPtr<T>& p );
  *      (throws <tt>std::logic_error</tt>)
  * </ul>
  *
+ * Note that the <tt>const</tt> version of this function provides only
+ * a very ineffective attempt to avoid accidental changes to the
+ * deallocation object.  A client can always just create a new
+ * non-<tt>const</tt> <tt>RefCountPtr<T></tt> object from any
+ * <tt>const</tt> <tt>RefCountPtr<T></tt> object and then call the
+ * non-<tt>const</tt> version of this function.
  */
 template<class Dealloc_T, class T>
 const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
@@ -531,7 +546,7 @@ const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
 
 /** \defgroup TestRefCountPtr_grp Testing program for RefCountPtr<>.
  *
- * \include TestRefCountPtrMain.cpp
+ * \include RefCountPtr/cxx_main.cpp
  */
 //@{
 //@}

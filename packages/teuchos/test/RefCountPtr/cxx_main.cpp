@@ -54,8 +54,7 @@ A_g_return  = 1,
 //            -----
 //
 
-class A
-{
+class A {
 	int A_g_, A_f_;
 public:
 	A() : A_g_(A_g_return), A_f_(A_f_return) {}
@@ -64,8 +63,7 @@ public:
 	virtual int A_f() const { return A_f_; }
 };
 
-class B1 : virtual public A
-{
+class B1 : virtual public A {
 	int B1_g_, B1_f_;
 public:
 	B1() : B1_g_(B1_g_return), B1_f_(B1_f_return) {}
@@ -73,8 +71,7 @@ public:
 	virtual int B1_f() const { return B1_f_; }
 };
 
-class B2 : virtual public A
-{
+class B2 : virtual public A {
 	int B2_g_, B2_f_;
 public:
 	B2() : B2_g_(B2_g_return), B2_f_(B2_f_return) {}
