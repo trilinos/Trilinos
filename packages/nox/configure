@@ -3813,11 +3813,8 @@ fi
 
 
 # ------------------------------------------------------------------------
-# LOCA-BLAS Library Check
+# LOCA-LAPACK Library Check
 # ------------------------------------------------------------------------
-
-
-
 
 echo "$as_me:$LINENO: checking whether we should build the localapack library" >&5
 echo $ECHO_N "checking whether we should build the localapack library... $ECHO_C" >&6
@@ -3827,11 +3824,11 @@ echo "${ECHO_T}yes" >&6
 
 
 if true; then
-  BUILD_LIBLOCABLAS_TRUE=
-  BUILD_LIBLOCABLAS_FALSE='#'
+  BUILD_LIBLOCALAPACK_TRUE=
+  BUILD_LIBLOCALAPACK_FALSE='#'
 else
-  BUILD_LIBLOCABLAS_TRUE='#'
-  BUILD_LIBLOCABLAS_FALSE=
+  BUILD_LIBLOCALAPACK_TRUE='#'
+  BUILD_LIBLOCALAPACK_FALSE=
 fi
 else
   echo "$as_me:$LINENO: result: no" >&5
@@ -3839,21 +3836,17 @@ echo "${ECHO_T}no" >&6
 
 
 if false; then
-  BUILD_LIBLOCABLAS_TRUE=
-  BUILD_LIBLOCABLAS_FALSE='#'
+  BUILD_LIBLOCALAPACK_TRUE=
+  BUILD_LIBLOCALAPACK_FALSE='#'
 else
-  BUILD_LIBLOCABLAS_TRUE='#'
-  BUILD_LIBLOCABLAS_FALSE=
+  BUILD_LIBLOCALAPACK_TRUE='#'
+  BUILD_LIBLOCALAPACK_FALSE=
 fi
 fi
 
 # ------------------------------------------------------------------------
-# Checks for building loca blas examples
+# Checks for building loca lapack examples
 # ------------------------------------------------------------------------
-
-
-
-
 
 echo "$as_me:$LINENO: checking whether we should build the loca-lapack examples" >&5
 echo $ECHO_N "checking whether we should build the loca-lapack examples... $ECHO_C" >&6
@@ -3863,11 +3856,11 @@ echo "${ECHO_T}yes" >&6
 
 
 if true; then
-  BUILD_LOCA_BLAS_EXAMPLES_TRUE=
-  BUILD_LOCA_BLAS_EXAMPLES_FALSE='#'
+  BUILD_LOCA_LAPACK_EXAMPLES_TRUE=
+  BUILD_LOCA_LAPACK_EXAMPLES_FALSE='#'
 else
-  BUILD_LOCA_BLAS_EXAMPLES_TRUE='#'
-  BUILD_LOCA_BLAS_EXAMPLES_FALSE=
+  BUILD_LOCA_LAPACK_EXAMPLES_TRUE='#'
+  BUILD_LOCA_LAPACK_EXAMPLES_FALSE=
 fi
 else
   echo "$as_me:$LINENO: result: no" >&5
@@ -3875,19 +3868,17 @@ echo "${ECHO_T}no" >&6
 
 
 if false; then
-  BUILD_LOCA_BLAS_EXAMPLES_TRUE=
-  BUILD_LOCA_BLAS_EXAMPLES_FALSE='#'
+  BUILD_LOCA_LAPACK_EXAMPLES_TRUE=
+  BUILD_LOCA_LAPACK_EXAMPLES_FALSE='#'
 else
-  BUILD_LOCA_BLAS_EXAMPLES_TRUE='#'
-  BUILD_LOCA_BLAS_EXAMPLES_FALSE=
+  BUILD_LOCA_LAPACK_EXAMPLES_TRUE='#'
+  BUILD_LOCA_LAPACK_EXAMPLES_FALSE=
 fi
 fi
 
 # ------------------------------------------------------------------------
 # LOCA-Epetra Library Check
 # ------------------------------------------------------------------------
-
-
 
 echo "$as_me:$LINENO: checking whether we should build the locaepetra library" >&5
 echo $ECHO_N "checking whether we should build the locaepetra library... $ECHO_C" >&6
@@ -3920,9 +3911,6 @@ fi
 # ------------------------------------------------------------------------
 # Checks for building loca epetra examples
 # ------------------------------------------------------------------------
-
-
-
 
 echo "$as_me:$LINENO: checking whether we should build the loca-epetra examples" >&5
 echo $ECHO_N "checking whether we should build the loca-epetra examples... $ECHO_C" >&6
@@ -4275,7 +4263,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4278:" \
+echo "$as_me:4266:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4442,7 +4430,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:4445: \"$ac_link\") >&5
+(eval echo $as_me:4433: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -4521,7 +4509,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:4524: \"$ac_link\") >&5
+(eval echo $as_me:4512: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9080,7 +9068,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-blas/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-blas/Makefile src-loca/example-blas/Chan/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9584,11 +9572,11 @@ do
   "src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/Makefile" ;;
   "src-loca/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src/Makefile" ;;
   "src-loca/src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-epetra/Makefile" ;;
-  "src-loca/src-blas/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-blas/Makefile" ;;
+  "src-loca/src-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-lapack/Makefile" ;;
   "src-loca/example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/Makefile" ;;
   "src-loca/example-epetra/1Dfem/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/1Dfem/Makefile" ;;
-  "src-loca/example-blas/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-blas/Makefile" ;;
-  "src-loca/example-blas/Chan/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-blas/Chan/Makefile" ;;
+  "src-loca/example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/Makefile" ;;
+  "src-loca/example-lapack/Chan/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/Chan/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/NOX_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/NOX_Config.h:src/NOX_Config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -9738,10 +9726,10 @@ s,@BUILD_PETSC_EXAMPLES_TRUE@,$BUILD_PETSC_EXAMPLES_TRUE,;t t
 s,@BUILD_PETSC_EXAMPLES_FALSE@,$BUILD_PETSC_EXAMPLES_FALSE,;t t
 s,@BUILD_LIBLOCA_TRUE@,$BUILD_LIBLOCA_TRUE,;t t
 s,@BUILD_LIBLOCA_FALSE@,$BUILD_LIBLOCA_FALSE,;t t
-s,@BUILD_LIBLOCABLAS_TRUE@,$BUILD_LIBLOCABLAS_TRUE,;t t
-s,@BUILD_LIBLOCABLAS_FALSE@,$BUILD_LIBLOCABLAS_FALSE,;t t
-s,@BUILD_LOCA_BLAS_EXAMPLES_TRUE@,$BUILD_LOCA_BLAS_EXAMPLES_TRUE,;t t
-s,@BUILD_LOCA_BLAS_EXAMPLES_FALSE@,$BUILD_LOCA_BLAS_EXAMPLES_FALSE,;t t
+s,@BUILD_LIBLOCALAPACK_TRUE@,$BUILD_LIBLOCALAPACK_TRUE,;t t
+s,@BUILD_LIBLOCALAPACK_FALSE@,$BUILD_LIBLOCALAPACK_FALSE,;t t
+s,@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@,$BUILD_LOCA_LAPACK_EXAMPLES_TRUE,;t t
+s,@BUILD_LOCA_LAPACK_EXAMPLES_FALSE@,$BUILD_LOCA_LAPACK_EXAMPLES_FALSE,;t t
 s,@BUILD_LIBLOCAEPETRA_TRUE@,$BUILD_LIBLOCAEPETRA_TRUE,;t t
 s,@BUILD_LIBLOCAEPETRA_FALSE@,$BUILD_LIBLOCAEPETRA_FALSE,;t t
 s,@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@,$BUILD_LOCA_EPETRA_EXAMPLES_TRUE,;t t

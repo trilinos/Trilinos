@@ -667,76 +667,34 @@ AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 
 
 # ------------------------------------------------------------------------
-# LOCA-BLAS Library Check
+# LOCA-LAPACK Library Check
 # ------------------------------------------------------------------------
-
-dnl AC_ARG_ENABLE(loca-blas,
-dnl [AC_HELP_STRING([--enable-loca-blas],[compile the locablas library])],
-dnl [BUILD_LIBLOCABLAS=${enableval}],
-dnl [BUILD_LIBLOCABLAS=no]
-dnl )
-
-dnl # Cannot build the locablas library if we don't build the loca library
-dnl if test X${BUILD_LIBLOCA} != Xyes; then
-dnl    BUILD_LIBLOCABLAS=no
-dnl fi
-
-dnl AC_MSG_CHECKING(whether we should build the locablas library)
-dnl AC_MSG_RESULT([${BUILD_LIBLOCABLAS}])
-dnl AM_CONDITIONAL(BUILD_LIBLOCABLAS, test X${BUILD_LIBLOCABLAS} = Xyes)
 
 AC_MSG_CHECKING(whether we should build the localapack library)
 if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_lapack} = Xyes; then
   AC_MSG_RESULT(yes)
-  AM_CONDITIONAL(BUILD_LIBLOCABLAS, true)
+  AM_CONDITIONAL(BUILD_LIBLOCALAPACK, true)
 else
   AC_MSG_RESULT(no)
-  AM_CONDITIONAL(BUILD_LIBLOCABLAS, false)
+  AM_CONDITIONAL(BUILD_LIBLOCALAPACK, false)
 fi
 
 # ------------------------------------------------------------------------
-# Checks for building loca blas examples 
+# Checks for building loca lapack examples 
 # ------------------------------------------------------------------------
-
-dnl AC_ARG_ENABLE(loca-blas-examples,
-dnl [AC_HELP_STRING([--enable-loca-blas-examples],[compile loca blas examples])],
-dnl [BUILD_LOCA_BLAS_EXAMPLES=${enableval}],
-dnl [BUILD_LOCA_BLAS_EXAMPLES=no]
-dnl )
-
-dnl # Cannot build the blas examples if we don't build the loca-blas libraries
-dnl if test X${BUILD_LIBLOCABLAS} != Xyes; then
-dnl    BUILD_LOCA_BLAS_EXAMPLES=no
-dnl fi
-
-dnl AC_MSG_CHECKING(whether we should build the locablas examples)
-dnl AC_MSG_RESULT(${BUILD_LOCA_BLAS_EXAMPLES})
-dnl AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, test X${BUILD_LOCA_BLAS_EXAMPLES} = Xyes)
-
 
 AC_MSG_CHECKING(whether we should build the loca-lapack examples)
 if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_lapack_EXAMPLES} = Xyes; then
   AC_MSG_RESULT(yes)
-  AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, true)
+  AM_CONDITIONAL(BUILD_LOCA_LAPACK_EXAMPLES, true)
 else
   AC_MSG_RESULT(no)
-  AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, false)
+  AM_CONDITIONAL(BUILD_LOCA_LAPACK_EXAMPLES, false)
 fi
 
 # ------------------------------------------------------------------------
 # LOCA-Epetra Library Check
 # ------------------------------------------------------------------------
-
-dnl AC_ARG_ENABLE(loca-epetra,
-dnl [AC_HELP_STRING([--enable-loca-epetra],[compile the locaepetra library])],
-dnl [BUILD_LIBLOCAEPETRA=${enableval}],
-dnl [BUILD_LIBLOCAEPETRA=no]
-dnl )
-
-dnl # Cannot build the locaepetra library if we don't build the loca library
-dnl if test X${BUILD_LIBLOCA} != Xyes; then
-dnl    BUILD_LIBLOCAEPETRA=no
-dnl fi
 
 AC_MSG_CHECKING(whether we should build the locaepetra library)
 if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_epetra} = Xyes; then
@@ -750,24 +708,6 @@ fi
 # ------------------------------------------------------------------------
 # Checks for building loca epetra examples 
 # ------------------------------------------------------------------------
-
-dnl AC_ARG_ENABLE(loca-epetra-examples,
-dnl [AC_HELP_STRING([--enable-loca-epetra-examples],[compile loca epetra examples])],
-dnl [BUILD_LOCA_EPETRA_EXAMPLES=${enableval}],
-dnl [BUILD_LOCA_EPETRA_EXAMPLES=no]
-dnl )
-
-dnl # Cannot build the epetra example if we don't build the epetra libraries
-dnl if test X${BUILD_LIBNOXEPETRA} != Xyes; then
-dnl    BUILD_LOCA_EPETRA_EXAMPLES=no
-dnl fi
-dnl if test X${BUILD_LIBLOCAEPETRA} != Xyes; then
-dnl    BUILD_LOCA_EPETRA_EXAMPLES=no
-dnl fi
-
-dnl AC_MSG_CHECKING(whether we should build the locaepetra examples)
-dnl AC_MSG_RESULT(${BUILD_LOCA_EPETRA_EXAMPLES})
-dnl AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes)
 
 AC_MSG_CHECKING(whether we should build the loca-epetra examples)
 if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_epetra_EXAMPLES} = Xyes; then
@@ -1207,11 +1147,11 @@ AC_CONFIG_FILES([
 		src-loca/Makefile
 		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
-		src-loca/src-blas/Makefile
+		src-loca/src-lapack/Makefile
                 src-loca/example-epetra/Makefile
                 src-loca/example-epetra/1Dfem/Makefile
-		src-loca/example-blas/Makefile
-		src-loca/example-blas/Chan/Makefile
+		src-loca/example-lapack/Makefile
+		src-loca/example-lapack/Chan/Makefile
 		])
 
 AC_OUTPUT()
