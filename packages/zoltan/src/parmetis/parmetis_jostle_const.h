@@ -26,7 +26,7 @@
 #define MAX_OPTIONS             4  /* Total number of options +1 */
 
 /* Do we have the multiconstraint beta version of ParMetis? */
-/* #define BETA_PARMETIS */
+#define BETA_PARMETIS 
 
 /* Misc. defs to be used with MPI */
 #define TAG1  32001
@@ -66,11 +66,11 @@ struct LB_hash_node {
 #ifdef IDXTYPE_IS_SHORT
 typedef short idxtype;
 #define IDX_DATATYPE    MPI_SHORT
-#define MAX_WGT_SUM (.2*SHRT_MAX)
+#define MAX_WGT_SUM (SHRT_MAX/8)
 #else /* the default is int */
 typedef int idxtype;
 #define IDX_DATATYPE    MPI_INT
-#define MAX_WGT_SUM (.2*INT_MAX)
+#define MAX_WGT_SUM (INT_MAX/8)
 #endif
 
 /* Zoltan function prototypes */

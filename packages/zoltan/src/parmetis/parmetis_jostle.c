@@ -55,7 +55,7 @@ static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_GID **imp_gids,
   LB_LID **exp_lids, int **exp_procs, char *alg, int  *options);
 static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
-                 int max_wgt_sum, MPI_Comm comm);
+                 int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 
 #endif  /* (defined(LB_JOSTLE) || defined(LB_PARMETIS)) */
 
@@ -858,8 +858,8 @@ static int LB_ParMetis_Jostle(
     if (obj_wgt_dim){
       vwgt = (idxtype *)LB_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
-      scale_round_weights(float_vwgt, vwgt, num_obj, obj_wgt_dim, 
-                          MAX_WGT_SUM, lb->Communicator);
+      scale_round_weights(float_vwgt, vwgt, num_obj, obj_wgt_dim, 1,
+                          (int) MAX_WGT_SUM, lb->Debug_Level, lb->Communicator);
 
       if (lb->Debug_Level >= LB_DEBUG_ALL)
         printf("[%1d] Debug: First object weights are (after scaling) = %d, %d, %d\n",
@@ -1180,55 +1180,116 @@ static int LB_ParMetis_Jostle(
 /* 
  * Scale and round float weights to integer (non-negative) weights 
  * subject to sum(weights) <= max_wgt_sum.
- * Only scale if deemed necessary. All weight dimensions are scaled by
- * the same scaling factor. 
+ * Only scale if deemed necessary. 
+ *
+ *   mode == 0 : no scaling, just round to int
+ *   mode == 1 : scale each weight dimension separately
+ *   mode == 2 : use same scale factor for all weights
+ * 
  */
 
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
-                 int max_wgt_sum, MPI_Comm comm)
+                 int mode, int max_wgt_sum, int debug_level, MPI_Comm comm)
 {
-  int i, flag, tmp, nonint_wgt; 
-  float scale, sum_wgt_local, sum_wgt;
+  int i, j, tmp, ierr, proc; 
+  int *nonint, *nonint_local; 
+  float *scale, *sum_wgt_local, *sum_wgt;
+  static char *yo = "scale_round_weights";
 
-      /* Compute local sum of the weights (over all dimensions) */
+  ierr = LB_OK;
+
+  if (mode == 0) {
+    /* No scaling; just convert to int */
+    for (i=0; i<n*dim; i++){
+      iwgts[i] = (int) fwgts[i];
+    }
+  }
+  else{
+      /* Allocate local arrays */
+      nonint = (int *)LB_MALLOC(dim*sizeof(int));
+      nonint_local = (int *)LB_MALLOC(dim*sizeof(int));
+      scale = (float *)LB_MALLOC(dim*sizeof(float));
+      sum_wgt = (float *)LB_MALLOC(dim*sizeof(float));
+      sum_wgt_local = (float *)LB_MALLOC(dim*sizeof(float));
+      if (!(nonint && nonint_local && scale && sum_wgt && sum_wgt_local)){
+        fprintf(stderr, "ZOLTAN ERROR: Out of memory in %s\n", yo);
+        LB_FREE(&nonint);
+        LB_FREE(&nonint_local);
+        LB_FREE(&scale);
+        LB_FREE(&sum_wgt);
+        LB_FREE(&sum_wgt_local);
+        return LB_MEMERR;
+      }
+      /* Initialize */
+      for (j=0; j<dim; j++){
+        nonint_local[j] = 0;
+        sum_wgt_local[j] = 0;
+      }
+
+      /* Compute local sums of the weights */
       /* Check if all weights are integers */
-      flag = 0;
-      sum_wgt_local = 0;
-      for (i=0; i<n*dim; i++){
-        if (!flag){ 
-          tmp = fwgts[i]; /* Converts to nearest int */
-          if (fabs((double)tmp-fwgts[i]) > .001){
-            flag = 1;
+      for (i=0; i<n; i++){
+        for (j=0; j<dim; j++){
+          if (!nonint_local[j]){ 
+            tmp = fwgts[i*dim+j]; /* Converts to nearest int */
+            if (fabs((double)tmp-fwgts[i*dim+j]) > .001){
+              nonint_local[j] = 1;
+            }
           }
+          sum_wgt_local[j] += fwgts[i*dim+j];
         }
-        sum_wgt_local += fwgts[i];
       }
       /* Compute global sum of the weights */
-      MPI_Allreduce(&flag, &nonint_wgt, 1, 
+      MPI_Allreduce(nonint_local, nonint, dim, 
           MPI_INT, MPI_LOR, comm);
-      MPI_Allreduce(&sum_wgt_local, &sum_wgt, 1, 
+      MPI_Allreduce(sum_wgt_local, sum_wgt, dim, 
           MPI_FLOAT, MPI_SUM, comm);
 
-      if (sum_wgt == 0){
-        fprintf(stderr, "ZOLTAN ERROR: All weights are zero.\n");
-        return LB_FATAL;
+      /* Calculate scale factor */
+      for (j=0; j<dim; j++){
+        scale[j] = 1.;
+        /* Scale unless all weights are integers */
+        if (nonint[j] || (sum_wgt[j] > max_wgt_sum)){
+          scale[j] = max_wgt_sum/sum_wgt[j];
+        }
       }
 
-      /* Convert weights to integers between 1 and max_wgt_sum/sum_wgt */
-      scale = 1;
-      /* Scale unless all weights are integers */
-      if (nonint_wgt || (sum_wgt > max_wgt_sum)){
-        scale = max_wgt_sum/sum_wgt;
+      /* If mode==2, let the scale factor be the same for all weights */
+      if (mode==2){
+        for (j=1; j<dim; j++){
+          if (scale[j]<scale[0])
+            scale[0] = scale[j];
+        }
+        for (j=1; j<dim; j++){
+          scale[j] = scale[0];
+        }
       }
 
-      for (i=0; i<n*dim; i++){
-        if (scale==1)
-           iwgts[i] = (int) fwgts[i];
-        else
-           iwgts[i] = (int) ceil(fwgts[i]*scale);
+      MPI_Comm_rank(comm, &proc);
+      if ((debug_level >= LB_DEBUG_ALL) && (proc==0)){
+        printf("Zoltan debug: scaling weights with scale factors = ");
+        for (j=0; j<dim; j++)
+          printf("%f ", scale[j]);
+        printf("\n");
       }
 
-  return LB_OK;
+      /* Convert weights to positive integers using the computed scale factor */
+      for (i=0; i<n; i++){
+        for (j=0; j<dim; j++){
+          if (scale[j] == 1)
+             iwgts[i*dim+j] = (int) fwgts[i*dim+j];
+          else
+             iwgts[i*dim+j] = (int) ceil(fwgts[i*dim+j]*scale[j]);
+        }
+      }
+
+    LB_FREE(&nonint);
+    LB_FREE(&nonint_local);
+    LB_FREE(&scale);
+    LB_FREE(&sum_wgt);
+    LB_FREE(&sum_wgt_local);
+  }
+  return ierr;
 }
 
 #endif /* defined (LB_JOSTLE) || defined (LB_PARMETIS) */
