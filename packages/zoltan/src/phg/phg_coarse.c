@@ -22,7 +22,7 @@ extern "C" {
 #include "zoltan_comm.h"
 
     
-/* #define USE_NEW_COARSENING  */
+#define USE_NEW_COARSENING  
 #define REMOVE_IDENTICAL_NETS
     
     
@@ -33,15 +33,12 @@ extern "C" {
 
 #ifdef USE_NEW_COARSENING
 
-    /*
-#define _DEBUG
-    */
 
-typedef struct _TagSortItem
-{
-int id;
-unsigned long val;
-} SortItem;
+/*
+  #define _DEBUG
+  #define _DEBUG2
+*/
+
     
 /* UVC:
    Following quicksort routines are modified from
@@ -54,68 +51,6 @@ unsigned long val;
 
 #define M             7
 #define NSTACK        50
-
-static void uqsort(int n, SortItem *arr)
-{
-    int           i, ir=n, j, k, l=1;
-    int           jstack=0, istack[NSTACK];
-    unsigned long aval;
-    SortItem      a, temp;
-    
-    --arr;
-    for (;;) {
-        if (ir-l < M) {
-            for (j=l+1;j<=ir;j++) {
-                a=arr[j];
-                aval = a.val;
-                for (i=j-1;i>=1;i--) {
-                    if (arr[i].val <= aval) 
-                        break;
-                    arr[i+1] = arr[i];
-                }
-                arr[i+1]=a;
-            }
-            if (jstack == 0) 
-                break;
-            ir=istack[jstack--];
-            l=istack[jstack--];
-        } else {
-            k=(l+ir) >> 1;
-            SWAP(arr[k],arr[l+1]);
-            if (arr[l+1].val > arr[ir].val) 
-                SWAP(arr[l+1],arr[ir]);
-            if (arr[l].val > arr[ir].val) 
-                SWAP(arr[l],arr[ir]);
-            if (arr[l+1].val > arr[l].val) 
-                SWAP(arr[l+1],arr[l]);
-
-            i=l+1;
-            j=ir;
-            a=arr[l];
-            aval = a.val;
-            for (;;) {
-                do i++; while (arr[i].val < aval);
-                do j--; while (arr[j].val > aval);
-                if (j < i) break;
-                SWAP(arr[i],arr[j]);
-            }
-            arr[l]=arr[j];
-            arr[j]=a;
-            jstack += 2;
-            if (jstack > NSTACK) 
-                errexit("uqsort: NSTACK too small in sort.");
-            if (ir-i+1 >= j-l) {
-                istack[jstack]=ir;
-                istack[jstack-1]=i;
-                ir=j-1;
-            } else {
-                istack[jstack]=j-1;
-                istack[jstack-1]=l;
-                l=i;
-            }
-        }
-    }
-}
 
 
 static void uqsorti(int n, int *arr)
@@ -180,17 +115,81 @@ static void uqsorti(int n, int *arr)
 #undef NSTACK
 #undef SWAP
 
-static long hashValue(int n, int *ar)
+#ifdef _DEBUG2
+int WriteIntArray(int myProc, int lev, int size, int *ar)
 {
-    unsigned long l=0;
+    FILE *fp;
+    char fname[512];
+    int i;
+
+    sprintf(fname, "iden.l%02d.p%02d.txt", lev, myProc);
+    fp = fopen(fname, "w");
+    for (i=0; i<size; ++i)
+        fprintf(fp, "%d: %d\n", i, ar[i]);
+    fclose(fp);
+    return 0;
+}
+#endif
+
+static unsigned int hashValue(HGraph *hg, int n, int *ar)
+{
+    unsigned int l=0;
     int i;
 
     /* Chris Torek's hash function */
     for (i=0; i<n; ++i) {
         l *= 33;
-        l += ar[i];
+        l += (unsigned int) VTX_LNO_TO_GNO(hg, ar[i]);
     }
     return l;
+}
+
+/*
+  identical operator:
+  a[i]  b[i]     res[i]
+  -1    -1       -1  : -1 means no edge in that proc; identical to everything :)
+  -1    y        -1==a[y] ? y : 0   --> UVC note that this is same as x < y
+  x     -1       -1==b[x] ? x : 0   --> UVC note that this is same as y < x
+  0     y        0   : 0 means not identical to anyone in this proc; hence not identical anyone in all
+  x     0        0   
+  x     x        x   : they are identical to same net
+  x <   y       x==a[y] ? y : 0
+  x >   y       y==b[x] ? x : 0
+*/
+
+static int *idenOperandBuf=NULL;
+
+void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
+{
+    int *a=(int *)va, *b=(int *)vb; 
+    int i, *x=a, *y=b;
+
+#ifdef _DEBUG2
+    printf("identicalOperator: Len=%d\n#\t:a\tb", *len);
+#endif
+
+    memcpy(idenOperandBuf, b, sizeof(int)*(*len));
+    b = idenOperandBuf;
+    --a; --b; /* net ids in the a and b are base-1 numbers */
+    for (i=0; i < *len; ++i, ++x, ++y) {
+#ifdef _DEBUG2
+        int dx=*x, dy=*y;
+#endif
+        if (*x == -1 && *y == -1)
+            ; /* no op *y = *y */
+        else if (*x==0 || *y == 0)
+            *y = 0;
+        else if (*x==*y)
+            ; /* no op */
+        else if (*x < *y)
+            *y = (*x==a[*y]) ? *y : 0;
+        else /* *x > *y */ 
+            *y = (*y==b[*x]) ? *x : 0;
+#ifdef _DEBUG2
+        printf("%5d: %6d %6d = %d\n", i, dx, dy, *y);
+#endif
+        
+    }
 }
 
 
@@ -214,16 +213,22 @@ int Zoltan_PHG_Coarsening
   struct Zoltan_Comm_Obj  **comm_plan
     )   
 {
-  char *yo = "Zoltan_PHG_Coarsening";
-  int  ierr=ZOLTAN_OK, i, j, count, size, me, idx, ni;
-  int  *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
-  int  *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL;
+  char  *yo = "Zoltan_PHG_Coarsening";
+  int   ierr=ZOLTAN_OK, i, j, count, size, me, idx, ni;
+  int   *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
+  int   *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL, *ids=NULL, *iden;
   float *c_ewgt=NULL;
-  unsigned long *hash=NULL, *lhash=NULL;
-  char *buffer=NULL, *rbuffer=NULL;
-  PHGComm          *hgc = hg->comm;
-  struct Zoltan_Comm_Obj  *plan=NULL;
-  SortItem *slist=NULL;
+  char  *buffer=NULL, *rbuffer=NULL;
+  unsigned int           *hash=NULL, *lhash=NULL;
+  PHGComm                *hgc = hg->comm;
+  struct Zoltan_Comm_Obj *plan=NULL;
+  MPI_Op                 idenOp;
+#ifdef _DEBUG
+  double starttime=MPI_Wtime();
+
+  uprintf(hgc, "In Coarsening....\n");
+#endif
+
   
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->comm    = hg->comm;         /* set communicators */
@@ -333,8 +338,8 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
   if (hg->nEdge && (
        !(hlsize  = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
-    || !(lhash   = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
-    || !(hash    = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
+    || !(lhash   = (unsigned int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned int)))
+    || !(hash    = (unsigned int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned int)))
           ))
       MEMORY_ERROR;
 
@@ -441,15 +446,17 @@ int Zoltan_PHG_Coarsening
 
 
 #ifdef REMOVE_IDENTICAL_NETS
+#ifdef _DEBUG
+  uprintf(hgc, "In Coarsening..Starting removing identical nets. ElapT=%.3lf\n", MPI_Wtime()-starttime);
+#endif
   for (i=0; i < c_hg->nEdge; ++i) { /* compute size and hashvalue */
       hlsize[i] = c_hg->hindex[i+1]-c_hg->hindex[i];
-      lhash[i] = hashValue(hlsize[i], &c_hg->hvertex[c_hg->hindex[i]]);
+      lhash[i] = hashValue(hg, hlsize[i], &c_hg->hvertex[c_hg->hindex[i]]);
   }
 
-  /* UVC TODO to compute global hash; right now we'll use bitwise xor;
+  /* UVC TODO to compute global hash; right now we'll use SUM (UVC TODO: try:bitwise xor);
      we need to check if this is good, if not we need to find a better way */
-  MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_LONG, MPI_PROD, hgc->row_comm);
-
+  MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
 
   for (i=0; i < hg->nEdge; ++i)  /* decide where to send */
       listproc[i] = (int) (hash[i] % hgc->nProc_y);
@@ -460,11 +467,11 @@ int Zoltan_PHG_Coarsening
   /* send hash values */
   if (size > hg->nEdge) {
       Zoltan_Multifree(__FILE__, __LINE__, 2, &lhash, &listproc);
-      if (!(lhash=(unsigned long *) ZOLTAN_MALLOC(size * sizeof(unsigned long)))
+      if (!(lhash=(unsigned int *) ZOLTAN_MALLOC(size * sizeof(unsigned int)))
           || !(listproc=(int *) ZOLTAN_MALLOC(size * sizeof(int))))
           MEMORY_ERROR;
   }
-  Zoltan_Comm_Do(plan, PLAN_TAG+11, (char *) hash, sizeof(unsigned long), (char *) lhash);
+  Zoltan_Comm_Do(plan, PLAN_TAG+11, (char *) hash, sizeof(unsigned int), (char *) lhash);
   ZOLTAN_FREE(&hash); /* we don't need it anymore */
 
   /* now local sizes */
@@ -483,78 +490,155 @@ int Zoltan_PHG_Coarsening
   /* now vertices of hyperedges */
   Zoltan_Comm_Resize(plan, hlsize, PLAN_TAG+13, &idx);
   if (idx && !(ahvertex = (int *) ZOLTAN_MALLOC(idx * sizeof(int))))
-      MEMORY_ERROR; 
-  Zoltan_Comm_Do(plan, PLAN_TAG+14, (char *) c_hg->hvertex, sizeof(int), (char *) ahvertex);
-  ZOLTAN_FREE(&hlsize);    hlsize=ip;
+      MEMORY_ERROR;
 
+  Zoltan_Comm_Do(plan, PLAN_TAG+14, (char *) c_hg->hvertex, sizeof(int), (char *) ahvertex);
   Zoltan_Comm_Destroy (&plan);
 
+  ZOLTAN_FREE(&hlsize);    hlsize=ip;
+  MPI_Allreduce(hlsize, hsize, size, MPI_INT, MPI_SUM, hgc->row_comm);
+#ifdef _DEBUG  
+  uprintf(hgc, "Nets has been reshuffled....H(%d, %d, %d)  ElapT= %.3lf\n", c_hg->nVtx, size, idx, MPI_Wtime()-starttime);
+#endif
+
+
+
   /* in order to find identical nets; we're going to sort hash values and compare them */
-  if (size && !(slist = (SortItem *) ZOLTAN_MALLOC(size * sizeof(SortItem))))
+  if (size && !(ids = (int *) ZOLTAN_MALLOC(size * sizeof(int))))
       MEMORY_ERROR;
   ahindex[0] = 0;
   for (i=0; i<size; ++i) {
       ahindex[1+i] = ahindex[i] + hlsize[i];
-      slist[i].id = i;
-      slist[i].val = lhash[i];
+      ids[i] = i;
   }
-  uqsort(size, slist);
-      
-  idx = 0;
-  memset(listproc, 0, sizeof(int)*size);
+
+  /* lhash is actually global hash */
+  Zoltan_quicksort_pointer_inc_int_int (ids, (int *)lhash, hsize, 0, size-1);
+
+  iden = listproc; /* just better variable name */
+  for (j=0; j<size; ++j)
+      iden[j] = (hlsize[j]) ? 0 : -1; /* if no local pins iden is -1 */
+#ifdef _DEBUG  
+  count = idx = me = 0;
+  for (j=0; j<size; ++j)
+      if (iden[j]==-1)
+          ++me;
+#endif
   for (j=0; j<size; ++j) {
-      int n1=slist[j].id;
-      if (!listproc[n1]) {
-          for (i = j+1; i<size && slist[j].val==slist[i].val; ++i) {
-              int n2=slist[i].id;
-              if (!listproc[n2] && hlsize[n1]==hlsize[n2] && 
-                  !memcmp(&ahvertex[ahindex[n1]], &ahvertex[ahindex[n2]],
-                          sizeof(int)*hlsize[n1])) {
-                  listproc[n2] = 1+n1; /* n2 is potentially identical to n1 */
-                  ++idx;
-              }
+      int n1=ids[j];
+      if (!iden[n1]) {
+          int last=1+n1, minv=last;
+              
+          for (i = j+1; i<size && lhash[n1] == lhash[ids[i]] && hsize[n1]==hsize[ids[i]]; ++i) {
+              int n2=ids[i];
+              
+#ifdef _DEBUG
+              ++idx;
+#endif
+              if (!iden[n2] && hlsize[n1]==hlsize[n2]
+                  && !memcmp(&ahvertex[ahindex[n1]], &ahvertex[ahindex[n2]],
+                             sizeof(int)*hlsize[n1])) {
+                  iden[n2] = last; /* n2 is potentially identical to n1 */
+                  last = 1+n2;
+                  minv = (last<minv) ? last : minv;
+#ifdef _DEBUG
+                  ++count;
+#endif
+              }                  
           }
+          /* iden[last] is a link list (in array) now make the
+             all identical nets to point the same net with the smallest id;
+             it will be needed in identicalOperator; we'll zero(clear) the
+             original net (net with the smallest id) after this loop */
+          while (last!=1+n1) {
+              int prev=iden[last-1];
+              iden[last-1] = minv;
+              last = prev;
+          }
+          iden[n1] = minv;
       }
   }
 
+  for (i=0; i<size; ++i)
+      if (iden[i]==1+i) /* original net; clear iden */
+          iden[i] = 0;
+  ZOLTAN_FREE(&ids); 
+  
 #ifdef _DEBUG
-  printf("H(%d, %d, %d) CH(%d, %d, %d) size=%d\n", hg->nVtx, hg->nEdge, hg->nPins, c_hg->nVtx, c_hg->nEdge, c_hg->nPins, size);
-  for (j=0; j<size; ++j)
-      for (i=j+1; i<size; ++i) {
-          if (hlsize[i]==hlsize[j] && !memcmp(&ahvertex[ahindex[i]], &ahvertex[ahindex[j]], sizeof(int)*hlsize[i])) {
-              if (listproc[i]==0 && listproc[j]==0) {
-                  int k;
-                  printf("NET %d: ", i);
-                  for (k=ahindex[i]; k<ahindex[i+1]; ++k)
-                      printf("%d ", ahvertex[k]);
-                  printf("\n");
-                  errexit("ERROR:net %d (%lx) is identical to net %d (%lx) but none marked as identical\n", i, lhash[i], j, lhash[j]);
+  uprintf(hgc, "#Loc.Iden= %7d   (Computed= %d)   #Comp.PerNet= %.2lf     ElapT= %.3lf\n", count+me, count, (double) idx / (double) size, MPI_Wtime()-starttime);
+  count += me;
+  
+#ifdef _DEBUG2
+  if (hgc->nProc==1) {
+      for (j=0; j<size; ++j)
+          for (i=j+1; i<size; ++i) {
+              if (hlsize[i]==hlsize[j] && !memcmp(&ahvertex[ahindex[i]], &ahvertex[ahindex[j]], sizeof(int)*hlsize[i])) {
+                  if (iden[i]==0 && iden[j]==0) {
+                      int k;
+                      printf("NET %d: ", i);
+                      for (k=ahindex[i]; k<ahindex[i+1]; ++k)
+                          printf("%d ", ahvertex[k]);
+                      printf("\n");
+                      errexit("ERROR:net %d (%lx) is identical to net %d (%lx) but none marked as identical\n", i, lhash[i], j, lhash[j]);
+                  }
               }
           }
-      }
+  }
+#endif
 #endif
   
-  ZOLTAN_FREE(&slist); 
-  ip = (int *) lhash; /* UVC: should be safe; it is always sizeof(int)<=sizeof(long) */
-  MPI_Allreduce(listproc, ip, size, MPI_INT, MPI_LAND, hgc->row_comm);
-  MPI_Allreduce(hlsize, hsize, size, MPI_INT, MPI_SUM, hgc->row_comm);
+
+  ip = (int *) lhash; 
+  MPI_Op_create(identicalOperator, 1, &idenOp);
+  if (size && !(idenOperandBuf = (int *) ZOLTAN_MALLOC(size * sizeof(int))))
+      MEMORY_ERROR;
+  MPI_Allreduce(iden, ip, size, MPI_INT, idenOp, hgc->row_comm);
+  MPI_Op_free(&idenOp);
+  ZOLTAN_FREE(&idenOperandBuf);
+
+
+#ifdef _DEBUG2  
+  WriteIntArray(hgc->myProc, hg->info, size, ip);
+#endif
+  
+
+#ifdef _DEBUG  
+  idx = 0;
+#endif
   
   c_hg->nPins = 0;
   c_hg->nEdge = 0;
   for (i=0; i<size; ++i) {
-      if (ip[i]) { /* identical net */
-          int n1=listproc[i]-1; /* i is identical to n1 */
+#ifdef _DEBUG
+      if (ip[i]==-1 && hlsize[i])
+          errexit("ip[%d]==-1 but hlsize[%d] = %d", i, i, hlsize[i]);
+#endif
+      if (ip[i]>0) { /* identical net */
+          int n1=ip[i]-1; /* i is identical to n1 */
           for (j=0; j<c_hg->EdgeWeightDim; ++j)
               c_ewgt[n1*c_hg->EdgeWeightDim + j] += c_ewgt[i*c_hg->EdgeWeightDim + j];
+#ifdef _DEBUG
+          ++idx;
+          if (n1>i)
+              errexit("n1(%d) > i(%d)", n1, i);
+          if (hsize[n1]>1 && ip[n1]==0)
+              errexit("i=%d is pointing net %d but that net is going to be removed", i, n1);
+#ifdef _DEBUG2          
+          uprintf(hgc, "after adding net %d's weight (%.0f) to net %d (%.0f)\n", i, c_ewgt[i*c_hg->EdgeWeightDim], n1, c_ewgt[n1*c_hg->EdgeWeightDim]);
+#endif
+#endif
           ip[i] = 0; /* ignore */
-      } else if (hsize[i]>1) { /* size not 0/1 and NOT identical */          
+      } else if (hsize[i]>1) { /*  NOT identical and size not 0/1 */          
           c_hg->nPins += hlsize[i];
           ++c_hg->nEdge;
           ip[i] = 1; /* Don't ignore */
       } else 
-          ip[i] = 0; /* ignore size 0/1 nets*/
+          ip[i] = 0; /* ignore size 0/1 nets*/      
   }
-  
+#ifdef _DEBUG
+  uprintf(hgc, "#GlobIden= %7d    SuccessRate= %.1lf%%    ElapT= %.3lf\n", idx, 100.0 * idx / (double) count, MPI_Wtime()-starttime);  
+#endif
+
   Zoltan_Multifree(__FILE__, __LINE__, 3, &c_hg->hindex, &c_hg->hvertex, &c_hg->ewgt);
 
   c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int));
@@ -565,6 +649,9 @@ int Zoltan_PHG_Coarsening
       !(c_hg->ewgt=(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float))))
       MEMORY_ERROR;
 
+#ifdef _DEBUG  
+  uprintf(hgc, "Reconstructing coarsen hygr.... ElapT= %.3lf\n", MPI_Wtime()-starttime);
+#endif  
   
   for (idx=ni=i=0; i<size; ++i)
       if (ip[i]) {
@@ -602,6 +689,9 @@ int Zoltan_PHG_Coarsening
                     &buffer, &rbuffer, &ahindex, &ahvertex, &vmark,
                     &hlsize, &hsize, &lhash, &hash, &c_ewgt 
                     );
+#ifdef _DEBUG  
+  uprintf(hgc, "Terminating Coarsening ... ElapT=%.3lf\n", MPI_Wtime()-starttime);
+#endif
   return ierr;
 }
 
