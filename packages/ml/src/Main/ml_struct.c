@@ -5058,7 +5058,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
      */
 
 {
-   ML_Sm_BlockHiptmair_Data *data;
+   ML_Sm_BlockHiptmair_Data *data = NULL;
    int (*fun)(void *, int, double *, int, double *);
    int start_level, end_level, i, status = 1;
    int *BClist=NULL, BClength=0;
