@@ -66,7 +66,7 @@ namespace Teuchos
       /**
        * Create an empty Hashtable
        */
-      inline Hashtable(int capacity=101);
+      inline Hashtable(int capacity=101, double rehashDensity = 0.8);
 
       /**
        * Check for the presence of a key
@@ -96,6 +96,22 @@ namespace Teuchos
        */
       inline void arrayify(Array<Key>& keys, Array<Value>& values) const ;
 
+      /**
+       * Return the average degeneracy (average number of entries per hash code).
+       */
+      inline double avgDegeneracy() const {return avgDegeneracy_;}
+
+      /**
+       * Return the density of the hashtable (num entries / capacity)
+       */
+      inline double density() const {return ((double)count_)/((double) capacity_);}
+
+
+      /**
+       * Set the density at which to do a rehash
+       */
+      inline void setRehashDensity(double rehashDensity);
+
       /** 
        * Write to a string
        */
@@ -105,6 +121,7 @@ namespace Teuchos
 
       inline void rehash();
       inline int nextPrime(int newCap) const ;
+      inline void accumulateAvgFill(int n) const ;
 
 
       Array<Array<HashPair<Key, Value> > > data_;
@@ -112,6 +129,10 @@ namespace Teuchos
       int capacity_;
       mutable Value mostRecentValue_;
       mutable Key mostRecentKey_;
+
+      mutable int nHits_;
+      mutable double avgDegeneracy_;
+      double rehashDensity_;
     };
 
   template<class Key, class Value>
@@ -123,10 +144,11 @@ namespace Teuchos
 
 
   template<class Key, class Value> inline
-    Hashtable<Key, Value>::Hashtable(int capacity)
-    : data_(), count_(0), capacity_(HashUtils::nextPrime(capacity))
+    Hashtable<Key, Value>::Hashtable(int capacity, double rehashDensity)
+    : data_(), count_(0), capacity_(HashUtils::nextPrime(capacity)),
+    nHits_(0), avgDegeneracy_(0), rehashDensity_(rehashDensity)
     {
-      data_.resize(capacity);
+      data_.resize(capacity_);
     }
 
   template<class Key, class Value> inline
@@ -169,7 +191,7 @@ namespace Teuchos
       count_++;
       
       // check for need to resize.
-      if (count_ > capacity_)
+      if ((double) count_ > rehashDensity_ * (double) capacity_)
         {
           capacity_ = HashUtils::nextPrime(capacity_+1);
           rehash();
@@ -266,6 +288,8 @@ namespace Teuchos
       
       const Array<HashPair<Key, Value> >& candidates
         = data_[hashCode(key) % capacity_];
+
+      accumulateAvgFill(candidates.length());
       
       for (int i=0; i<candidates.length(); i++)
         {
@@ -304,7 +328,12 @@ namespace Teuchos
         }
     }
 
-
+  template<class Key, class Value> inline
+  void Hashtable<Key, Value>::accumulateAvgFill(int n) const
+  {
+    avgDegeneracy_ = ((double) nHits_)/(nHits_ + 1.0) * avgDegeneracy_ + ((double) n)/(nHits_ + 1.0);
+    nHits_++;
+    }
 
   template<class Key, class Value>  inline
     ostream& operator<<(ostream& os, const Hashtable<Key, Value>& h)

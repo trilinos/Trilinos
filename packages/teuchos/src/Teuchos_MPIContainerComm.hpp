@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_CONTAINERCOMM_H
-#define TEUCHOS_CONTAINERCOMM_H
+#ifndef TEUCHOS_MPICONTAINERCOMM_H
+#define TEUCHOS_MPICONTAINERCOMM_H
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
@@ -42,30 +42,14 @@ namespace Teuchos
    * @author Kevin Long
    */
 
-  template <class T> class ContainerComm
+  template <class T> class MPIContainerComm
   {
   public:
     /** broadcast a single object */
     static void bcast(T& x, int src, const MPIComm& comm);
 
-    /** send a single object */
-    static void send(const T& x, int tag, int dest,
-                     const MPIComm& comm);
-
-    /** recv a single object */
-    static void recv(T& x, int tag, int src,
-                     const MPIComm& comm);
-
     /** bcast an array of objects */
     static void bcast(Array<T>& x, int src, const MPIComm& comm);
-
-    /** send an array of objects */
-    static void send(const Array<T>& x, int tag, int dest,
-                     const MPIComm& comm);
-
-    /** recv an array of objects */
-    static void recv(Array<T>& x, int tag, int src,
-                     const MPIComm& comm);
 
     /** bcast an array of arrays  */
     static void bcast(Array<Array<T> >& x,
@@ -105,29 +89,15 @@ namespace Teuchos
   };
 
   /** \ingroup MPI
-   * Specialiaztion of ContainerComm<T> to string
+   * Specialiaztion of MPIContainerComm<T> to string
    */
-  template <> class ContainerComm<string>
+  template <> class MPIContainerComm<string>
   {
   public:
     static void bcast(string& x, int src, const MPIComm& comm);
 
-    static void send(const string& x, int tag, int dest,
-                     const MPIComm& comm);
-
-    static void recv(string& x, int tag, int src,
-                     const MPIComm& comm);
-
     /** bcast an array of objects */
     static void bcast(Array<string>& x, int src, const MPIComm& comm);
-
-    /** send an array of objects */
-    static void send(const Array<string>& x, int tag, int dest,
-                     const MPIComm& comm);
-
-    /** recv an array of objects */
-    static void recv(Array<string>& x, int tag, int src,
-                     const MPIComm& comm);
 
     /** bcast an array of arrays  */
     static void bcast(Array<Array<string> >& x,
@@ -154,32 +124,21 @@ namespace Teuchos
 
   /* --------- generic functions for primitives ------------------- */
 
-  template <class T> inline void ContainerComm<T>::bcast(T& x, int src,
+  template <class T> inline void MPIContainerComm<T>::bcast(T& x, int src,
                                                          const MPIComm& comm)
   {
     comm.bcast((void*)&x, 1, MPITraits<T>::type(), src);
   }
 
-  template <class T> inline void ContainerComm<T>::send(const T& x, int tag, int dest,
-                                                        const MPIComm& comm)
-  {
-    comm.send((void*)&x, 1, MPITraits<T>::type(), tag, dest);
-  }
-
-  template <class T> inline void ContainerComm<T>::recv(T& x, int tag, int src,
-                                                        const MPIComm& comm)
-  {
-    comm.recv((void*)&x, 1, MPITraits<T>::type(), tag, src);
-  }
 
   /* ----------- generic functions for arrays of primitives ----------- */
 
   template <class T>
-  inline void ContainerComm<T>::bcast(Array<T>& x, int src, const MPIComm& comm)
+  inline void MPIContainerComm<T>::bcast(Array<T>& x, int src, const MPIComm& comm)
   {
      
     int len = x.length();
-    ContainerComm<int>::bcast(len, src, comm);
+    MPIContainerComm<int>::bcast(len, src, comm);
 
     if (comm.getRank() != src)
       {
@@ -193,37 +152,11 @@ namespace Teuchos
   }
 
 
-  template <class T>
-  inline void ContainerComm<T>::send(const Array<T>& x, int tag,
-                                     int dest, const MPIComm& comm)
-  {
-    /* first send the length */
-    int len = x.length();
-    ContainerComm<int>::send(len, tag, dest, comm);
-
-    /* now send the data */
-    comm.send((void*) &(x[0]), len,
-              MPITraits<T>::type(), tag, dest);
-  }
-
-  template <class T>
-  inline void ContainerComm<T>::recv(Array<T>& x, int tag, int src, const MPIComm& comm)
-  {
-    /* first recv the length */
-    int len;
-    ContainerComm<int>::recv(len, tag, src, comm);
-
-    /* set the size of the array to the recvd length */
-    x.resize(len);
-
-    /* recv the data */
-    comm.recv((void*)&(x[0]), len, MPITraits<T>::type(), tag, src);
-  }
 
   /* ---------- generic function for arrays of arrays ----------- */
 
   template <class T>
-  inline void ContainerComm<T>::bcast(Array<Array<T> >& x, int src, const MPIComm& comm)
+  inline void MPIContainerComm<T>::bcast(Array<Array<T> >& x, int src, const MPIComm& comm)
   {
     Array<T> bigArray;
     Array<int> offsets;
@@ -234,7 +167,7 @@ namespace Teuchos
       }
 
     bcast(bigArray, src, comm);
-    ContainerComm<int>::bcast(offsets, src, comm);
+    MPIContainerComm<int>::bcast(offsets, src, comm);
 
     if (src != comm.getRank())
       {
@@ -245,7 +178,7 @@ namespace Teuchos
   /* ---------- generic gather and scatter ------------------------ */
 
   template <class T> inline
-  void ContainerComm<T>::allToAll(const Array<T>& outgoing,
+  void MPIContainerComm<T>::allToAll(const Array<T>& outgoing,
                                   Array<Array<T> >& incoming,
                                   const MPIComm& comm)
   {
@@ -260,10 +193,10 @@ namespace Teuchos
       }
 
     T* sendBuf = new T[numProcs * outgoing.length()];
-    TEST_FOR_EXCEPTIONsendBuf==0, 
+    TEST_FOR_EXCEPTION(sendBuf==0, 
       std::runtime_error, "Comm::allToAll failed to allocate sendBuf");
     T* recvBuf = new T[numProcs * outgoing.length()];
-    TEST_FOR_EXCEPTIONrecvBuf==0, 
+    TEST_FOR_EXCEPTION(recvBuf==0, 
       std::runtime_error, "Comm::allToAll failed to allocate recvBuf");
 
     int i;
@@ -294,7 +227,7 @@ namespace Teuchos
   }
 
   template <class T> inline
-  void ContainerComm<T>::allToAll(const Array<Array<T> >& outgoing,
+  void MPIContainerComm<T>::allToAll(const Array<Array<T> >& outgoing,
                                   Array<Array<T> >& incoming, const MPIComm& comm)
   {
     int numProcs = comm.getNProc();
@@ -307,10 +240,10 @@ namespace Teuchos
       }
 
     int* sendMesgLength = new int[numProcs];
-    TEST_FOR_EXCEPTIONsendMesgLength==0, 
+    TEST_FOR_EXCEPTION(sendMesgLength==0, 
       std::runtime_error, "failed to allocate sendMesgLength");
     int* recvMesgLength = new int[numProcs];
-    TEST_FOR_EXCEPTIONrecvMesgLength==0, 
+    TEST_FOR_EXCEPTION(recvMesgLength==0, 
       std::runtime_error, "failed to allocate recvMesgLength");
 
     int p = 0;
@@ -332,17 +265,17 @@ namespace Teuchos
       }
 
     T* sendBuf = new T[totalSendLength];
-    TEST_FOR_EXCEPTIONsendBuf==0, 
+    TEST_FOR_EXCEPTION(sendBuf==0, 
       std::runtime_error, "failed to allocate sendBuf");
     T* recvBuf = new T[totalRecvLength];
-    TEST_FOR_EXCEPTIONrecvBuf==0, 
+    TEST_FOR_EXCEPTION(recvBuf==0, 
       std::runtime_error, "failed to allocate recvBuf");
 
     int* sendDisp = new int[numProcs];
-    TEST_FOR_EXCEPTIONsendDisp==0, 
+    TEST_FOR_EXCEPTION(sendDisp==0, 
       std::runtime_error, "failed to allocate sendDisp");
     int* recvDisp = new int[numProcs];
-    TEST_FOR_EXCEPTIONrecvDisp==0, 
+    TEST_FOR_EXCEPTION(recvDisp==0, 
       std::runtime_error, "failed to allocate recvDisp");
 
     int count = 0;
@@ -387,7 +320,7 @@ namespace Teuchos
   }
 
   template <class T> inline
-  void ContainerComm<T>::allGather(const T& outgoing, Array<T>& incoming,
+  void MPIContainerComm<T>::allGather(const T& outgoing, Array<T>& incoming,
                                    const MPIComm& comm)
   {
     int nProc = comm.getNProc();
@@ -405,7 +338,7 @@ namespace Teuchos
   }
 
   template <class T> inline
-  void ContainerComm<T>::accumulate(const T& localValue, Array<T>& sums,
+  void MPIContainerComm<T>::accumulate(const T& localValue, Array<T>& sums,
                                     const MPIComm& comm)
   {
     Array<T> contributions;
@@ -423,7 +356,7 @@ namespace Teuchos
 
 
   template <class T> inline
-  void ContainerComm<T>::getBigArray(const Array<Array<T> >& x, Array<T>& bigArray,
+  void MPIContainerComm<T>::getBigArray(const Array<Array<T> >& x, Array<T>& bigArray,
                                      Array<int>& offsets)
   {
     offsets.resize(x.length()+1);
@@ -448,7 +381,7 @@ namespace Teuchos
   }
 
   template <class T> inline
-  void ContainerComm<T>::getSmallArrays(const Array<T>& bigArray,
+  void MPIContainerComm<T>::getSmallArrays(const Array<T>& bigArray,
                                         const Array<int>& offsets,
                                         Array<Array<T> >& x)
   {
@@ -466,39 +399,18 @@ namespace Teuchos
 
   /* --------------- string specializations --------------------- */
 
-  inline void ContainerComm<string>::bcast(string& x,
+  inline void MPIContainerComm<string>::bcast(string& x,
                                            int src, const MPIComm& comm)
   {
     int len = x.length();
-    ContainerComm<int>::bcast(len, src, comm);
+    MPIContainerComm<int>::bcast(len, src, comm);
 
     x.resize(len);
     comm.bcast((void*)&(x[0]), len, MPITraits<char>::type(), src);
   }
 
-  inline void ContainerComm<string>::send(const string& x, int tag, int dest,
-                                          const MPIComm& comm)
-  {
-    int len = x.length();
-    ContainerComm<int>::send(len, tag, dest, comm);
 
-    void* start = (void*) x.c_str();
-    comm.send(start, len, MPITraits<char>::type(), tag, dest);
-  }
-
-  inline void ContainerComm<string>::recv(string& x, int tag, int src,
-                                          const MPIComm& comm)
-  {
-    int len;
-    ContainerComm<int>::recv(len, tag, src, comm);
-
-    x.resize(len);
-
-    void* start = (void*) x.c_str();
-    comm.recv(start, len, MPITraits<char>::type(), tag, src);
-  }
-
-  inline void ContainerComm<string>::bcast(Array<string>& x, int src,
+  inline void MPIContainerComm<string>::bcast(Array<string>& x, int src,
                                            const MPIComm& comm)
   {
     /* begin by packing all the data into a big char array. This will
@@ -511,8 +423,8 @@ namespace Teuchos
       }
 
     /* now broadcast the big array and the offsets */
-    ContainerComm<char>::bcast(bigArray, src, comm);
-    ContainerComm<int>::bcast(offsets, src, comm);
+    MPIContainerComm<char>::bcast(bigArray, src, comm);
+    MPIContainerComm<int>::bcast(offsets, src, comm);
 
     /* finally, reassemble the array of strings */
     if (comm.getRank() != src)
@@ -521,45 +433,21 @@ namespace Teuchos
       }
   }
 
-  inline void ContainerComm<string>::bcast(Array<Array<string> >& x,
+  inline void MPIContainerComm<string>::bcast(Array<Array<string> >& x,
                                            int src, const MPIComm& comm)
   {
     int len = x.length();
-    ContainerComm<int>::bcast(len, src, comm);
+    MPIContainerComm<int>::bcast(len, src, comm);
 
     x.resize(len);
     for (int i=0; i<len; i++)
       {
-        ContainerComm<string>::bcast(x[i], src, comm);
+        MPIContainerComm<string>::bcast(x[i], src, comm);
       }
   }
 
 
-  inline void ContainerComm<string>::send(const Array<string>& x, int tag,
-                                          int dest, const MPIComm& comm)
-  {
-    Array<char> bigArray;
-    Array<int> offsets;
-
-    getBigArray(x, bigArray, offsets);
-
-    ContainerComm<int>::send(offsets, tag, dest, comm);
-    ContainerComm<char>::send(bigArray, tag, dest, comm);
-  }
-
-  inline void ContainerComm<string>::recv(Array<string>& x,
-                                          int tag, int src, const MPIComm& comm)
-  {
-    Array<char> bigArray;
-    Array<int> offsets;
-
-    ContainerComm<int>::recv(offsets, tag, src, comm);
-    ContainerComm<char>::recv(bigArray, tag, src, comm);
-
-    getStrings(bigArray, offsets, x);
-  }
-
-  inline void ContainerComm<string>::allGather(const string& outgoing,
+  inline void MPIContainerComm<string>::allGather(const string& outgoing,
                                                Array<string>& incoming,
                                                const MPIComm& comm)
   {
@@ -609,7 +497,7 @@ namespace Teuchos
   }
 
 
-  inline void ContainerComm<string>::getBigArray(const Array<string>& x,
+  inline void MPIContainerComm<string>::getBigArray(const Array<string>& x,
                                                  Array<char>& bigArray,
                                                  Array<int>& offsets)
   {
@@ -634,7 +522,7 @@ namespace Teuchos
       }
   }
 
-  inline void ContainerComm<string>::getStrings(const Array<char>& bigArray,
+  inline void MPIContainerComm<string>::getStrings(const Array<char>& bigArray,
                                                 const Array<int>& offsets,
                                                 Array<string>& x)
   {
