@@ -72,15 +72,16 @@ using namespace MLAPI;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
+  Epetra_Time Time(Comm);
 
-  int ProblemSize = 10000;
-  if (argc == 2) {
+  int ProblemSize = 100;
+  if (argc > 1) {
     ProblemSize = atoi(argv[1]);
   }
     
@@ -93,17 +94,69 @@ int main(int argc, char *argv[])
 
   AztecOO solver(*Problem);
 
+  if (argc == 3) {
+
+    int rep = 100;
+    double res_ML, res_MLAPI;
+
+    // want to compute r = b - A * x
+    Epetra_Vector x_ML(A->OperatorDomainMap());
+    Epetra_Vector b_ML(A->OperatorRangeMap());
+    Epetra_Vector r_ML(A->OperatorRangeMap());
+
+    // test the Epetra normal way
+    Time.ResetStartTime();
+    for (int i = 0 ; i < rep ; ++i) {
+
+      x_ML.PutScalar(1.0);
+      b_ML.PutScalar(1.0);
+      A->Multiply(false,x_ML,r_ML);
+      r_ML.Update(1.0, b_ML, -1.0);
+
+    }
+    res_ML = Time.ElapsedTime();
+    cout << "time - ML    = " << res_ML / rep << endl;
+
+    // now the MAPI way
+    Init();
+    Space S(-1,A->NumMyRows());
+    Operator A_MLAPI(S,S,A,false);
+    MultiVector x_MLAPI(S), b_MLAPI(S), r_MLAPI(S);
+
+    Time.ResetStartTime();
+    for (int i = 0 ; i < rep ; ++i) {
+
+      x_MLAPI = 1.0;
+      b_MLAPI = 1.0;
+
+#if 1
+      A_MLAPI.Apply(x_MLAPI, r_MLAPI);
+      r_MLAPI.Update(1.0, b_MLAPI, -1.0);
+#else
+      r_MLAPI = b_MLAPI - A_MLAPI * x_MLAPI;
+#endif
+
+    }
+    res_MLAPI = Time.ElapsedTime();
+    cout << "time - MLAPI = " << res_MLAPI / rep << endl;
+
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+
+    exit(0);
+  }
+
   // =========================== parameters =================================
-  
+
   double DampingFactor = 1.333;
-  int    Output = 16;
+  int    OutputLevel = 16;
 
   int MLPIters, MLAPIIters;
   double MLPResidual, MLAPIResidual;
   double MLPConstructionTime, MLAPIConstructionTime;
   double MLPSolveTime, MLAPISolveTime;
-  Epetra_Time Time(Comm);
-    
+
   // =========================== begin of ML part ===========================
   
   ParameterList MLList;
@@ -143,7 +196,7 @@ int main(int argc, char *argv[])
 
   solver.SetPrecOperator(MLPPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 16);
+  solver.SetAztecOption(AZ_output, OutputLevel);
   solver.Iterate(1550, 1e-5);
 
   MLPIters = solver.NumIters();
@@ -179,7 +232,7 @@ int main(int argc, char *argv[])
 
   solver.SetPrecOperator(MLAPIPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 16);
+  solver.SetAztecOption(AZ_output, OutputLevel);
   solver.Iterate(1550, 1e-5);
 
   MLAPIIters = solver.NumIters();
