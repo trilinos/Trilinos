@@ -1290,8 +1290,9 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
 	double * RowValues  = *Values++;
 	if (!UnitDiagonal) 
 	  yp[i] = yp[i]/RowValues[0];
+	double ytmp = yp[i];
 	for (j=j0; j < NumEntries; j++) 
-	  yp[RowIndices[j]] -= RowValues[j] * yp[i];
+	  yp[RowIndices[j]] -= RowValues[j] * ytmp;
       }
     }
     else {
@@ -1306,8 +1307,9 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
 	double * RowValues  = *Values--;
 	if (!UnitDiagonal) 
 	  yp[i] = yp[i]/RowValues[NumEntries];
+	double ytmp = yp[i];
 	for (j=0; j < NumEntries; j++) 
-	  yp[RowIndices[j]] -= RowValues[j] * yp[i];
+	  yp[RowIndices[j]] -= RowValues[j] * ytmp;
       }
     }
 		
@@ -1423,12 +1425,13 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
 	int*    RowIndices = *Indices++;
 	double* RowValues  = *Values++;
 	if(!UnitDiagonal) 
-	  diag = 1.0/RowValues[j0]; // Take inverse of diagonal once for later use
+	  diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
 	for(k = 0; k < NumVectors; k++) {
 	  if(!UnitDiagonal) 
 	    Yp[k][i] = Yp[k][i]*diag;
+	  double ytmp = Yp[k][i];
 	  for(j = j0; j < NumEntries; j++) 
-	    Yp[k][RowIndices[j]] -= RowValues[j] * Yp[k][i];
+	    Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
 	}
       }
     }
@@ -1440,11 +1443,14 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
 	int     NumEntries = *NumEntriesPerRow-- - j0;
 	int*    RowIndices = *Indices--;
 	double* RowValues  = *Values--;
+	if(!UnitDiagonal) 
+	  diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
 	for(k = 0; k < NumVectors; k++) {
 	  if(!UnitDiagonal)  
-	    Yp[k][i] = Yp[k][i]/Xp[k][i];
+	    Yp[k][i] = Yp[k][i]*diag;
+	  double ytmp = Yp[k][i];
 	  for(j = 0; j < NumEntries; j++)
-	    Yp[k][RowIndices[j]] -= RowValues[j] * Yp[k][i];
+	    Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
         }
       }
     }

@@ -1143,6 +1143,17 @@ int Epetra_CrsGraph::ReplaceRowMap(const Epetra_BlockMap& newmap)
   return(-1);
 }
 
+//==============================================================================
+int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
+{
+  if (ColMap().PointSameAs(newmap)) {
+    CrsGraphData_->ColMap_ = newmap;
+    return(0);
+  }
+
+  return(-1);
+}
+
 // private =====================================================================
 int Epetra_CrsGraph::CheckSizes(const Epetra_SrcDistObject& Source) {
   try {

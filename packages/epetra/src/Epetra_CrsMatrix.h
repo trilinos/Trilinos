@@ -753,6 +753,10 @@ or if the number of entries in this row exceed the Length parameter.
 	int ReplaceRowMap(const Epetra_BlockMap& newmap)
 	  {return( Graph_->ReplaceRowMap(newmap) ); }
 
+	//! Replaces the current ColMap with the user-specified map object.
+	int ReplaceColMap(const Epetra_BlockMap& newmap)
+	  {return( Graph_->ReplaceColMap(newmap) ); }
+
 	//! Returns the Epetra_Map object that describes the column distribution across processors.
 	const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_->ColMap());};
 	
