@@ -1,4 +1,7 @@
 #include "ml_agg_reitzinger.h"
+extern int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
+			       double smoothP_damping_factor,
+			       ML_Operator *SPn_mat);
 
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
                     int fine_level, int incr_or_decrease,
@@ -14,6 +17,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int allocated = 0, lower;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
+#ifdef LEASTSQ_SERIAL
+  ML_Operator *SPn_mat;
+#endif
   struct ML_CSR_MSRdata *csr_data;
   int Nlevels_nodal, grid_level;
   int created_ag_obj = 0;
@@ -47,8 +53,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
   /*------------------------------------------------------------------*/
-  Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros;                       
-  Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros; 
+  Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros; 
+  Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros;
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
@@ -128,9 +134,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
      for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
        ML_get_matrix_row(Tfine, 1, &i, &allocated, &temp_bindx, &temp_val,
-            &row_length, 0);
+			 &row_length, 0);
        if (row_length == 2) {
-     if (temp_val[1] == 0.) row_length--;
+	 if (temp_val[1] == 0.) row_length--;
 	 if (temp_val[0] == 0.) {
 	   row_length--;
 	   if (row_length != 0) {
@@ -437,6 +443,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_free(Tcoarse_vec);
      Tcoarse->outvec_leng = counter;
      Tcoarse->getrow->Nrows = counter;
+
+     csr_data->rowptr = (int *) realloc(csr_data->rowptr,
+					sizeof(int)*(counter+1));
      csr_data->values = (double *) realloc(csr_data->values,
 					   sizeof(double)*nz_ptr); 
      csr_data->columns = (int *) realloc(csr_data->columns,
@@ -624,6 +633,20 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Pe->matvec->internal = CSR_matvec;
      Pe->matvec->external = NULL;
      Pe->matvec->ML_id = ML_INTERNAL;
+#ifdef LEASTSQ_SERIAL
+     SPn_mat = ML_Operator_Create(Pn_coarse->comm);
+     ML_Gen_SmoothPnodal(ml_nodes,grid_level+1, grid_level, 
+			 &(ml_nodes->Amat[grid_level+1]),1.5,
+			 SPn_mat);
+     Pn_coarse->N_nonzeros = 10*Pn_coarse->outvec_leng;
+     ml_leastsq_edge_interp(Pn_coarse, SPn_mat, Tfine, Tcoarse,Pe,
+			    Pn_coarse->N_nonzeros*3);
+     Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
+     ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
+     (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
+     Pn_coarse = SPn_mat;
+#endif
+
    
 /****************** Check the construction of Pe ***********************/
      vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->invec_leng+1+
@@ -649,6 +672,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	 printf("ML_agg_reitzinger: Pe TH != Th Pn %e %e\n",d1,d2);
      }
      ML_free(vec); ML_free(Tfine_Pn_vec);
+
+#ifdef LEASTSQ_SERIAL
+     ML_Operator_Destroy(SPn_mat);
+#endif
+
 
    
 #ifdef postprocessscheck
@@ -688,9 +716,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      exit(1);
 #endif /*postprocesscheck*/
 
-     /***************************
-     * Smooth edge prolongator. *
-     ***************************/
+
+      /***************************
+      * Smooth edge prolongator. *
+      ***************************/
      if (smooth_flag == ML_YES)
      {
         if (Tmat->comm->ML_mypid == 0)
@@ -704,7 +733,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
            ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
         ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,
                                (void *) &(ml_edges->Amat[grid_level+1]), ag);
-    
+        
         /* Weed out small values in Pe. */
         droptol = 1e-12;
         if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
@@ -734,13 +763,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         Pe->N_nonzeros = nz_ptr;
      }
 
-     if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
+    if (ag->print_flag < ML_Get_PrintLevel()) {
         Pe = &(ml_edges->Pmat[grid_level]);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-        printf("Pe: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
-               Pe->outvec_leng);
+        if (Tfine->comm->ML_mypid==0)
+           printf("Pe: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
+                  Pe->outvec_leng);
      }
-   
+
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
                  &(ml_edges->SingleLevel[grid_level]), 
                  &(ml_edges->SingleLevel[grid_level+1]));
@@ -748,11 +778,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
      Nnz_allgrids += ml_edges->Amat[grid_level].N_nonzeros;
 
-     if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
-        Pe = &(ml_edges->Amat[grid_level]);
+     if (ag->print_flag < ML_Get_PrintLevel()) {
+	Pe = &(ml_edges->Amat[grid_level]);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-        printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
-               Pe->outvec_leng);
+        if (Tfine->comm->ML_mypid==0)
+           printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
+                  Pe->outvec_leng);
      }
 
      Tfine = Tcoarse;
@@ -766,11 +797,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     if (Tfine->comm->ML_mypid==0 )
     {
       if (Nnz_finegrid == 0) 
-         printf("Number of nonzeros on finest grid not given!"
-                " Complexity not computed!\n");
+	printf("Number of nonzeros on finest grid not given!"
+               " Complexity not computed!\n");
       else
-         printf("Multilevel complexity is %e\n",
-               ((double) Nnz_allgrids)/ ((double) Nnz_finegrid));
+	printf("Multilevel complexity is %e\n",
+               ((double) Nnz_allgrids)/((double) Nnz_finegrid));
     }
   }
 
@@ -811,3 +842,483 @@ int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
     }
     return 0;
 }
+/* ************************************************************************* */
+/* generate smooth prolongator                                               */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
+			   double smoothP_damping_factor,
+			   ML_Operator *SPn_mat)
+
+{
+   int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
+   double      max_eigen = -1.;
+   ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
+   ML_Operator **prev_P_tentatives;
+   struct      ML_AGG_Matrix_Context widget;
+   ML_Krylov   *kdata;
+
+   if ( smoothP_damping_factor == 0.0 ) return 0;
+
+   Amat     = (ML_Operator *) data;
+   Nfine    = Amat->outvec_leng;
+   Pmatrix =  &(ml->Pmat[clevel]);
+   Ncoarse = Pmatrix->invec_leng;
+
+   kdata = ML_Krylov_Create( ml->comm );
+   ML_Krylov_Set_PrintFreq( kdata, 0 );
+   ML_Krylov_Set_ComputeEigenvalues( kdata );
+   ML_Krylov_Set_Amatrix(kdata, Amat);
+   ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+   max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+   max_eigen = 2.;
+   Amat->lambda_max = max_eigen; 
+   Amat->lambda_min = kdata->ML_eigen_min; 
+   ML_Krylov_Destroy( &kdata );
+   if ( max_eigen <= 0.0 ) {
+     printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+     max_eigen = 1.0;
+   }
+   widget.near_bdry = NULL;
+   widget.omega  = smoothP_damping_factor / max_eigen;
+
+   widget.drop_tol = 0.;
+   widget.Amat   = &(ml->Amat[level]);
+   AGGsmoother = ML_Operator_Create(ml->comm);
+   ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
+				 widget.Amat->outvec_leng, ML_EXTERNAL,&widget,
+				 widget.Amat->matvec->Nrows, NULL, 0);
+   ML_Operator_Set_Getrow(AGGsmoother, ML_EXTERNAL,
+                          widget.Amat->getrow->Nrows, 
+                          ML_AGG_JacobiSmoother_Getrows);
+   ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
+		       widget.Amat->getrow->pre_comm);
+
+   ML_2matmult(AGGsmoother, Pmatrix, SPn_mat);
+   ML_Operator_Destroy(AGGsmoother);
+
+   return 0;
+}
+ 
+struct linked_list {
+  struct linked_list *next;
+  int duplicate_row;
+};
+
+extern int ml_comp_Pe_entries(int coef_cols[], double coef_values[], 
+			      int coef_count, int leftagg, 
+			      struct linked_list **Trecorder,
+			      struct ML_CSR_MSRdata *Tfine,
+			      int *Trowcount, int *Tnzcount,
+			      struct ML_CSR_MSRdata *Tcoarse,
+			      int *Pnzcount, int Pe_columns[], 
+			      double Pe_values[]);
+
+extern int ml_record_entry(struct linked_list **Trecorder,int lower,int upper, 
+			int therow);
+extern int ml_dup_entry(int node1, int node2, struct linked_list **Trecorder,
+	int Tcols[], int Trowptr[], int *lower, int *upper, 
+	int *duplicate_row);
+
+extern int ml_clean_Trecorder(struct linked_list ***Trecorder ,int N);
+
+extern int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat, 
+			   ML_Operator *Tfine_mat, ML_Operator *Tcoarse_mat, 
+			   ML_Operator *Pe_mat, int);
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int ml_clean_Trecorder(struct linked_list ***Trecorder ,int N)
+{
+  struct linked_list *current, *tmp;
+  int i;
+
+  for (i = 0; i < N; i++) {
+    current = (*Trecorder)[i];
+    while (current != NULL) {
+      tmp = current->next;
+      ML_free(current);
+      current = tmp;
+    }
+  }
+  ML_free(*Trecorder);
+  *Trecorder = NULL;
+  return 1;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int ml_record_entry(struct linked_list **Trecorder, int lower, int upper, 
+		 int therow)
+{
+  /* Record the edge (lower, upper) in the linked list table pointed to */
+  /* by Trecorder. The matrix row index associated with this edge is    */
+  /* recorded as well. It is assumed that this edge is not already in   */
+  /* the table and that lower < upper.                                  */
+  /* This routine is used in conjunction with 'ml_dup_entry' to see if     */
+  /* edges have already been added to the table.                        */
+
+  struct linked_list *prev_head;
+
+  prev_head = Trecorder[lower];
+  Trecorder[lower] = (struct linked_list *) ML_allocate(sizeof(struct linked_list));
+  Trecorder[lower]->next = prev_head;
+  Trecorder[lower]->duplicate_row  = therow;
+  return 1;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int ml_dup_entry(int node1, int node2, struct linked_list **Trecorder,
+	int Tcols[], int Trowptr[], int *lower, int *upper, int *duplicate_row)
+{
+  /* This routine is used to check if a pair (node1,node2) is already  */
+  /* in the table pointed to by Trecorder (this table is normally      */
+  /* constructed via ml_record_entry). On return,                         */
+  /*     duplicate_row    Set to -1 if the pair is not in the table.   */
+  /*                      Set to indicate matrix row associated with   */
+  /*                      pair if (node1,node2) is in the table.       */
+
+  struct linked_list *current;
+  int tmp, therow, flag = 0;
+  *lower = node1;
+  *upper = node2;
+  if (*lower > node2) {
+    *lower = node2;
+    *upper = node1;
+  }
+  if (*lower == -1) {
+    *lower = *upper;
+    *upper = -1;
+  }
+  *duplicate_row = -1;
+  current = Trecorder[*lower];
+  while (( current != NULL) && (*duplicate_row == -1)) {
+    therow = current->duplicate_row;
+    tmp = Trowptr[therow];
+    if (Tcols[tmp] == *upper) { flag = 1; }
+    else {
+      if (tmp+1 < Trowptr[therow+1]) {
+	if (Tcols[tmp+1]== *upper)
+	  { flag = 1; }
+      }
+      else if (*upper == -1) { flag = 1; }
+    }
+    if (flag == 1) {
+      *duplicate_row = current->duplicate_row;
+    }
+    current = current->next;
+  }
+  return 1;
+}
+
+
+
+
+int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat, 
+			   ML_Operator *Tfine_mat, ML_Operator *Tcoarse_mat, 
+			   ML_Operator *Pe_mat, int Tcoarse_nz_bound)
+{
+  /* Given SPn, Tfine and the nodal aggregates (given by Pn), compute */
+  /* Tcoarse and Pe such that the following relation holds:           */
+  /*              Pe Tcoarse = Tfine SPn                              */
+  /* Each row of Pe is computed by solving a small least squares whose*/
+  /* solution is known analytically. This algorithm will be described */
+  /* in more detail in an upcoming paper for copper mtn (3/02).       */
+
+  int i, j, max_nz_per_row;
+  struct linked_list **Trecorder;
+  struct ML_CSR_MSRdata *Pn, *SPn, *Tfine, *Tcoarse, *Pe;
+  double thesign;
+  int left,leftagg, right, rightagg;
+  int coef_count, coef_cols[100], jcoef_count, k;
+  double alpha0, beta0, alpha_m, beta_m, coef_vals[100];
+  int Trowcount = 0, Tnzcount = 0, Pnzcount = 0;
+  int *SPn_columns, *SPn_rowptr, *Tfine_columns, *Pn_columns, *Pn_rowptr;
+  int *Tfine_rowptr;
+  double *SPn_values, *Tfine_values;
+
+  /* pull out a bunch of pointers */
+
+  Pn            = Pn_mat->data;
+  Pn_columns    = Pn->columns;
+  Pn_rowptr     = Pn->rowptr;
+  Tfine         = Tfine_mat->data;
+  Tfine_columns = Tfine->columns;
+  Tfine_values  = Tfine->values;
+  Tfine_rowptr  = Tfine->rowptr;
+  SPn           = SPn_mat->data;
+  SPn_columns   = SPn->columns;
+  SPn_values    = SPn->values;
+  SPn_rowptr    = SPn->rowptr;
+
+  ML_Operator_Init(Tcoarse_mat,Pn_mat->comm);
+  Tcoarse = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  Tcoarse_mat->data = Tcoarse;
+  ML_Operator_Init(Pe_mat,Pn_mat->comm);
+  Pe = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  Pe_mat->data = Pe;
+
+  /* allocate space for Tcoarse */
+
+  Tcoarse->columns = (int    *) ML_allocate(Tcoarse_nz_bound*sizeof(int));
+  Tcoarse->values  = (double *) ML_allocate(Tcoarse_nz_bound*sizeof(double));
+  Tcoarse->rowptr  = (int    *) ML_allocate(Tcoarse_nz_bound*sizeof(int));
+
+  /* build header information for a table that will be used to record */
+  /* coarse edges that have already been created (i.e. there already  */
+  /* exists a row in Tcoarse).                                        */
+
+  Trecorder = (struct linked_list **) ML_allocate((Pn_mat->outvec_leng+1)*
+					     sizeof(struct linked_list *));
+  for (i = 0; i < Pn_mat->outvec_leng; i++) Trecorder[i] = NULL;
+  Tcoarse->rowptr[0] = 0;
+
+  /* lets try to bound the amount of space needed in Pe */
+
+  coef_count = 0;
+  for (i=0; i < Tfine_mat->outvec_leng; i++) {
+    if (Tfine_rowptr[i+1] - Tfine_rowptr[i] == 1) {
+      left  = Tfine_columns[Tfine_rowptr[i]];
+      coef_count += (SPn_rowptr[left+1] - SPn_rowptr[left]);
+    }
+    else if (Tfine_rowptr[i+1] - Tfine_rowptr[i] == 2) {
+      right = Tfine_columns[Tfine_rowptr[i]];
+      left  = Tfine_columns[Tfine_rowptr[i]+1];
+      coef_count += (SPn_rowptr[left+1] - SPn_rowptr[left]);
+      coef_count += (SPn_rowptr[right+1] - SPn_rowptr[right]);
+    }
+  }
+  coef_count = 2*coef_count + 10;
+
+  Pe->columns = (int    *) ML_allocate(coef_count*sizeof(int));
+  Pe->values  = (double *) ML_allocate(coef_count*sizeof(double));
+  Pe->rowptr  = (int    *) ML_allocate((Tfine_mat->outvec_leng+1)*sizeof(int));
+  Pe_mat->outvec_leng = Tfine_mat->outvec_leng;
+  Pe->rowptr[0] = 0;
+
+  coef_count = 0;
+  for (i=0; i < Tfine_mat->outvec_leng; i++) {
+    /* special case when Tfine(i,:) has only one entry */
+
+    if (Tfine_rowptr[i+1] - Tfine_rowptr[i] == 1) {
+      if (Tfine_values[Tfine_rowptr[i]] == 1.) thesign = 1.;
+      else thesign = -1.;
+      left  = Tfine_columns[Tfine_rowptr[i]];
+      coef_count = 0;
+      for (j = SPn_rowptr[left]; j < SPn_rowptr[left+1]; j++) {
+	coef_cols[coef_count  ] = SPn_columns[j];
+	coef_vals[coef_count++] = thesign*SPn_values[j];
+      }
+      ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, -1, Trecorder,
+			 Tfine, &Trowcount, &Tnzcount, Tcoarse, 
+			 &Pnzcount,Pe->columns,Pe->values);
+   
+    }
+
+    /* normal case when Tfine(i,:) has only two entries */
+
+    else if (Tfine_rowptr[i+1] - Tfine_rowptr[i] == 2) {
+
+      /* determine the two fine grid points and the  */
+      /* corresponding aggregates where they reside. */
+
+      j = Tfine_rowptr[i];
+      if (Tfine_values[j] == 1.) {
+	right = Tfine_columns[j];
+	left  = Tfine_columns[j+1];
+      }
+      else {
+	left  = Tfine_columns[j];
+	right = Tfine_columns[j+1];
+      }
+      leftagg = Pn_columns[Pn_rowptr[left]];
+      rightagg = Pn_columns[Pn_rowptr[right]];
+
+      coef_count = 0;
+
+      if (leftagg == rightagg) {
+	/* case 1 */
+
+	/* copy alpha into coef */
+	for (j = SPn_rowptr[left]; j < SPn_rowptr[left+1]; j++) {
+	  if (SPn_columns[j] != leftagg) {
+	    coef_cols[coef_count  ] = SPn_columns[j];
+	    coef_vals[coef_count++] = -SPn_values[j];
+	  }
+	  else alpha0 = SPn_values[j];
+	}
+	jcoef_count = coef_count;
+	/* copy beta into coef */
+	for (j = SPn_rowptr[right]; j < SPn_rowptr[right+1]; j++) {
+	  if (SPn_columns[j] != rightagg) {
+	    for (k = 0; k < jcoef_count; k++) {
+	      if (SPn_columns[j] == coef_cols[k]) break;
+	    }
+	    if (k != jcoef_count) {
+	      coef_vals[k] += SPn_values[j];
+	    }
+	    else {
+	      coef_cols[coef_count  ] = SPn_columns[j];
+	      coef_vals[coef_count++] = SPn_values[j];
+	    }
+	  }
+	  else beta0 = SPn_values[j];
+	}
+
+	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg, 
+			   Trecorder, Tfine, &Trowcount, &Tnzcount, Tcoarse,
+			   &Pnzcount,Pe->columns,Pe->values);
+	coef_count = 0;
+      }
+      else {
+	alpha_m = 0.; alpha0 = 0.;
+	beta_m = 0.; beta0 = 0.;
+	/* case 2 */
+
+	/* copy alpha into coef */
+
+	for (j = SPn_rowptr[left]; j < SPn_rowptr[left+1]; j++) {
+	  if (SPn_columns[j] == leftagg)
+	    alpha_m = SPn_values[j];
+	  else if (SPn_columns[j] == rightagg)
+	    alpha0 = SPn_values[j];
+	  else {
+	    coef_cols[coef_count  ] = SPn_columns[j];
+	    coef_vals[coef_count++] = -SPn_values[j];
+	  }
+	}
+	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg,
+			   Trecorder,Tfine, &Trowcount, &Tnzcount, Tcoarse, 
+			   &Pnzcount,Pe->columns,Pe->values);
+	coef_count = 0;
+
+      /* copy beta into coef */
+	for (j = SPn_rowptr[right]; j < SPn_rowptr[right+1]; j++) {
+	  if (SPn_columns[j] == leftagg)
+	    beta_m = SPn_values[j];
+	  else if (SPn_columns[j] == rightagg)
+	    beta0 = SPn_values[j];
+	  else {
+	    coef_cols[coef_count  ] = SPn_columns[j];
+	    coef_vals[coef_count++] = SPn_values[j];
+	  }
+	}
+	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, rightagg,
+			   Trecorder,Tfine, &Trowcount, &Tnzcount, Tcoarse, 
+			   &Pnzcount,Pe->columns,Pe->values);
+	coef_count = 1;
+	coef_cols[0] = leftagg;
+	coef_vals[0] = beta_m+alpha0-1.;
+	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, rightagg,
+			   Trecorder,Tfine, &Trowcount, &Tnzcount, Tcoarse,
+			   &Pnzcount,Pe->columns,Pe->values);
+      }
+
+
+    }
+    Pe->rowptr[i+1] = Pnzcount;
+    if (Pe->rowptr[i+1] - Pe->rowptr[i] > max_nz_per_row)
+      max_nz_per_row =  Pe->rowptr[i+1] - Pe->rowptr[i];
+  }
+  Pe_mat->outvec_leng = Tfine_mat->outvec_leng;
+
+  Tcoarse->columns = (int    *) realloc(Tcoarse->columns, sizeof(int)*
+					(Tcoarse->rowptr[Trowcount] +1));
+  Tcoarse->values  = (double *) realloc(Tcoarse->values, sizeof(double)*
+					(Tcoarse->rowptr[Trowcount] +1));
+  Tcoarse->rowptr  = (int    *) realloc(Tcoarse->rowptr, sizeof(int)*
+					(Trowcount+1));
+  Pe->columns      = (int    *) realloc(Pe->columns, sizeof(int)*
+					(Pnzcount +1));
+  Pe->values       = (double *) realloc(Pe->values, sizeof(double)*
+					(Pnzcount +1));
+
+
+   ML_Operator_Set_ApplyFuncData(Pe_mat,Trowcount, Tfine_mat->outvec_leng,
+				 ML_EMPTY,Pe,Tfine_mat->outvec_leng,NULL,0);
+   ML_Operator_Set_ApplyFunc (Pe_mat, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow(Pe_mat, ML_EXTERNAL, Tfine_mat->outvec_leng, CSR_getrows);
+   Pe_mat->getrow->Nrows = Tfine_mat->outvec_leng;
+   Pe_mat->max_nz_per_row = max_nz_per_row;
+   Pe_mat->N_nonzeros     = Pnzcount;
+
+   ML_Operator_Set_ApplyFuncData(Tcoarse_mat,Pn_mat->invec_leng, Trowcount,
+				 ML_EMPTY,Tcoarse,Trowcount,NULL,0);
+   ML_Operator_Set_ApplyFunc (Tcoarse_mat, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow(Tcoarse_mat, ML_EXTERNAL, Trowcount, CSR_getrows);
+   Tcoarse_mat->getrow->Nrows = Trowcount;
+   Tcoarse_mat->max_nz_per_row = 2;
+   Tcoarse_mat->N_nonzeros     = Tcoarse->rowptr[Trowcount];
+   /*
+  ML_Operator_Print(Pe_mat,"Pe");
+  ML_Operator_Print(Tcoarse_mat,"Tcoarse");
+   */
+
+  ml_clean_Trecorder(&Trecorder,Pn_mat->outvec_leng);
+
+  return 1;
+
+}
+
+int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
+		       int leftagg, struct linked_list **Trecorder,
+		       struct ML_CSR_MSRdata *Tfine,
+		       int *Trowcount, int *Tnzcount,
+		       struct ML_CSR_MSRdata *Tcoarse, 
+		       int *Pnzcount, int Pe_columns[], double Pe_values[]) {
+
+  /* Add entries in Pe using interpolation coefficients coef_values[j]   */
+  /* corresponding to the coarse grid edge between coarse grid node      */
+  /* 'leftagg' and the coarse grid node 'coef_cols[j]. In the process,'  */
+  /* add edges to Tcoarse (leftagg,coef_cols[j]) if they are not already */
+  /* present.                                                            */
+
+  int j, k, edge, lower, upper;
+  int duplicate_row, *Tcoarse_columns, *Tcoarse_rowptr;
+  double *Tcoarse_values;
+
+  Tcoarse_columns = Tcoarse->columns;
+  Tcoarse_values  = Tcoarse->values;
+  Tcoarse_rowptr  = Tcoarse->rowptr;
+
+  for (j = 0; j < coef_count; j++) {
+    ml_dup_entry(leftagg, coef_cols[j], Trecorder,
+	      Tcoarse_columns, Tcoarse_rowptr,&lower, &upper, 
+	      &duplicate_row);
+    if (duplicate_row == -1) {
+
+      /* record the edge in Trecorder so that we can find */
+      /* it later given two node entries.                */
+
+      ml_record_entry(Trecorder, lower, upper, *Trowcount);
+      edge = *Trowcount;
+      Tcoarse_columns[*Tnzcount     ] = coef_cols[j];
+      Tcoarse_values[(*Tnzcount)++ ] = 1;
+      if (leftagg != -1) {
+	Tcoarse_columns[*Tnzcount     ] = leftagg;
+	Tcoarse_values[(*Tnzcount)++ ] = -1;
+      }
+      (*Trowcount)++;
+      Tcoarse_rowptr[*Trowcount] = *Tnzcount;
+    }
+    else {
+      edge = duplicate_row;
+      k = Tcoarse_rowptr[duplicate_row];
+      if (Tcoarse_columns[k] == leftagg) k++;
+      if ( Tcoarse_values[k] == -1.) 
+	coef_values[j] = -coef_values[j];
+    }
+    Pe_columns[ (*Pnzcount) ] = edge;
+    Pe_values[ (*Pnzcount)++] = coef_values[j];
+  }
+  return 1;
+
+}
+
