@@ -103,7 +103,7 @@ float   **z
 
 	if (i == EOF) {
 	    printf("Too few lines of values in geometry file; nvtxs=%d, but only %d read\n",
-		   nvtxs, nread + 1);
+		   nvtxs, nread);
 	    fclose(fingeom);
 	    return (1);
 	}
