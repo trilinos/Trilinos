@@ -40,6 +40,13 @@
 #include "NOX_Utils.H"	            // class data element
 
 namespace NOX {
+  namespace Parameter {
+    class UserNorm;
+    class MeritFunction;
+  }
+}
+
+namespace NOX {
 namespace Solver {
 
 /*!
@@ -348,6 +355,11 @@ protected:
   //! Type of step to be taken.
   StepType stepType;
 
+  //! Stores a user supplied norm if supplied in the parameter list.
+  NOX::Parameter::UserNorm* userNormPtr;
+  
+  //! Stores a user supplied merit function if supplied in the parameter list.
+  NOX::Parameter::MeritFunction* userMeritFuncPtr;
 
 };
 } // namespace Solver

@@ -35,6 +35,8 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Parameter_UserNorm.H"
+#include "NOX_Parameter_MeritFunction.H"
 #include "NOX_Utils.H"
 
 using namespace NOX;
@@ -72,7 +74,9 @@ TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t,
   paramsPtr(&p),			// copy p
   utils(paramsPtr->sublist("Printing")), // inititalize utils
   newton(utils),		// initialize direction
-  cauchy(utils)			// initialize direction
+  cauchy(utils),       		// initialize direction
+  userNormPtr(0),
+  userMeritFuncPtr(0)
 {
   init();
 }
@@ -91,10 +95,6 @@ void TrustRegionBased::init()
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     paramsPtr->print(cout,5);
   }
-
-  // Compute F of initital guess
-  solnPtr->computeF();
-  newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Set default parameter settings using getParameter() if they are not set
   paramsPtr->sublist("Direction").getParameter("Method", "Newton");
@@ -136,6 +136,40 @@ void TrustRegionBased::init()
   if (recoveryStep < 0) 
     invalid("Recovery Step", recoveryStep);
 
+
+  // Check for a user defined Norm
+  if (paramsPtr->sublist("Trust Region").
+      isParameterArbitrary("User Defined Norm")) {
+    const NOX::Parameter::UserNorm& un = 
+      dynamic_cast<const NOX::Parameter::UserNorm&>(paramsPtr->
+      sublist("Trust Region").getArbitraryParameter("User Defined Norm"));
+    userNormPtr = const_cast<NOX::Parameter::UserNorm*>(&un);
+
+    /*
+    // RPP: Hack!!  Need to get the scaling vectors computed.
+    solnPtr->computeF();
+    solnPtr->computeJacobian();
+    solnPtr->computeNewton(paramsPtr->sublist("Direction").sublist("Newton").sublist("Linear Solver"));
+    */
+  }
+
+  // Check for a user defined Merit Function
+  if (paramsPtr->sublist("Trust Region").
+      isParameterArbitrary("User Defined Merit Function")) {
+    const NOX::Parameter::MeritFunction& mf = 
+      dynamic_cast<const NOX::Parameter::MeritFunction&>
+      (paramsPtr->sublist("Trust Region").
+       getArbitraryParameter("User Defined Merit Function"));
+    userMeritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(&mf);
+  }
+
+  // Compute F of initital guess
+  solnPtr->computeF();
+  if (userMeritFuncPtr != 0) {
+    newF = userMeritFuncPtr->computef(*solnPtr);
+  }
+  else 
+    newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Test the initial guess
   status = testPtr->checkStatus(*this);
@@ -183,7 +217,11 @@ bool TrustRegionBased::reset()
 
   // Compute F of initital guess
   solnPtr->computeF();
-  newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+  if (userMeritFuncPtr != 0) {
+    newF = userMeritFuncPtr->computef(*solnPtr);
+  }
+  else 
+    newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Test the initial guess
   status = testPtr->checkStatus(*this);
@@ -237,7 +275,12 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
   if (nIter == 0) 
   {
-    radius = newtonVec.norm();
+    if (userNormPtr != 0) {
+      radius = userNormPtr->norm(newtonVec);
+    }
+    else 
+      radius = newtonVec.norm();
+    
     if (radius < minRadius)
       radius = 2 * minRadius;
   }
@@ -247,7 +290,13 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
   // Copy current soln to the old soln.
   oldSoln = soln;
-  oldF = newF;
+  // RPP: Can't just copy over oldf.  Scaling could change between iterations
+  // so user Merit Functions could be out of sync
+  if (userMeritFuncPtr != 0) {
+    oldF = userMeritFuncPtr->computef(oldSoln);
+  }
+  else 
+    oldF = newF;
 
   // Improvement ratio = (oldF - newF) / (mold - mnew)
   double ratio = -1;
@@ -267,16 +316,27 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     double step;
 
     // Trust region step
-    if (newtonVec.norm() <= radius) 
+    double newtonVecNorm = 0.0;
+    double cauchyVecNorm = 0.0;
+    if (userNormPtr != 0) {
+      newtonVecNorm = userNormPtr->norm(newtonVec);
+      cauchyVecNorm = userNormPtr->norm(cauchyVec);
+    }
+    else { 
+      newtonVecNorm = newtonVec.norm();
+      cauchyVecNorm = cauchyVec.norm();
+    }
+
+    if (newtonVecNorm <= radius) 
     {
       stepType = TrustRegionBased::Newton;
       step = 1.0;
       dirPtr = &newtonVec;
     }
-    else if (cauchyVec.norm() >= radius) 
+    else if (cauchyVecNorm >= radius) 
     {
       stepType = TrustRegionBased::Cauchy;
-      step = radius / cauchyVec.norm();
+      step = radius / cauchyVecNorm;
       dirPtr = &cauchyVec;
     }
     else 
@@ -284,13 +344,24 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
       // aVec = newtonVec - cauchyVec
       aVec.update(1.0, newtonVec, -1.0, cauchyVec, 0.0);
-
+      
       // cta = cauchyVec' * aVec
-      double cta = cauchyVec.dot(aVec);	
+      double cta = 0.0;
       // ctc = cauchyVec' * cauchyVec
-      double ctc = cauchyVec.dot(cauchyVec);
+      double ctc = 0.0;
       // ata = aVec' * aVec
-      double ata = aVec.dot(aVec);
+      double ata = 0.0;
+
+      if (userNormPtr != 0) {
+	cta = userNormPtr->dot(cauchyVec, aVec);
+	ctc = userNormPtr->dot(cauchyVec, cauchyVec);
+	ata = userNormPtr->dot(aVec, aVec);
+      }
+      else {
+	cta = cauchyVec.dot(aVec);
+	ctc = cauchyVec.dot(cauchyVec);
+	ata = aVec.dot(aVec);
+      }
 
       // sqrt of quadratic equation
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
@@ -319,8 +390,12 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     const Abstract::Vector& dir = *dirPtr;
 
     // Calculate true step length
-    dx = step * dir.norm();
-    
+    if (userNormPtr != 0) {
+      dx = step * userNormPtr->norm(dir);
+    }
+    else
+      dx = step * dir.norm();
+
     // Compute new X
     soln.computeX(oldSoln, dir, step);
 
@@ -333,7 +408,12 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     }
 
     // Compute ratio of actual to predicted reduction
-    newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+    if (userMeritFuncPtr != 0) {
+      newF = userMeritFuncPtr->computef(*solnPtr);
+    }
+    else 
+      newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+
     if (newF >= oldF) 
     {
       ratio = -1;
@@ -348,7 +428,16 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 	throw "NOX Error";
       }
       double numerator = oldF - newF;
-      double denominator = fabs(dir.dot(oldSoln.getGradient()) + 0.5 * bVec.dot(bVec));
+      double denominator = 0.0;
+
+      if (userMeritFuncPtr != 0) {
+	denominator = fabs(oldF - userMeritFuncPtr->
+			   computeQuadraticModel(dir,oldSoln));
+      }
+      else 
+	denominator = fabs(dir.dot(oldSoln.getGradient()) + 
+			   0.5 * bVec.dot(bVec));
+
       ratio = numerator / denominator;
       if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
 	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
@@ -385,8 +474,13 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     // Update trust region
     if (ratio < contractTriggerRatio) 
     {
-      if (stepType == TrustRegionBased::Newton)
-	radius = newtonVec.norm();
+      if (stepType == TrustRegionBased::Newton) {
+	if (userNormPtr != 0) {
+	  radius = userNormPtr->norm(newtonVec);
+	}
+	else 
+	  radius = newtonVec.norm();
+      }
       radius = max(contractFactor * radius, minRadius);
     }
     else if ((ratio > expandTriggerRatio) && (dx == radius)) 
@@ -404,7 +498,11 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       cout << "Using recovery step and resetting trust region." << endl;
     soln.computeX(oldSoln, newtonVec, recoveryStep);
     soln.computeF();
-    radius = newtonVec.norm();
+    if (userNormPtr != 0) {
+      radius = userNormPtr->norm(newtonVec);
+    }
+    else
+      radius = newtonVec.norm();
     /*if (radius < minRadius)
       radius = 2 * minRadius;*/
   }

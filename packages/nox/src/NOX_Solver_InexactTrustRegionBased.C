@@ -289,6 +289,8 @@ NOX::StatusTest::StatusType InexactTrustRegionBased::iterate()
 
   // Copy current soln to the old soln.
   oldSoln = soln;
+  // RPP: Can't just copy over oldf.  Scaling could change between iterations
+  // so user Merit Functions could be out of sync
   if (userMeritFuncPtr != 0) {
     oldF = userMeritFuncPtr->computef(oldSoln);
   }
