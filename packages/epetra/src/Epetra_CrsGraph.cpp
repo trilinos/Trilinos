@@ -42,41 +42,41 @@
 #include "Epetra_OffsetIndex.h"
 
 //==============================================================================
-Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int* NumIndicesPerRow) 
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int* NumIndicesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
-    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap))
+    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, StaticProfile))
 {
-  Allocate(NumIndicesPerRow, 1);
+  Allocate(NumIndicesPerRow, 1, StaticProfile);
 }
 
 //==============================================================================
-Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumIndicesPerRow) 
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumIndicesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
-    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap))
+    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, StaticProfile))
 {
-  Allocate(&NumIndicesPerRow, 0);
-}
-
-//==============================================================================
-Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, 
-				 const Epetra_BlockMap& RowMap, 
-				 const Epetra_BlockMap& ColMap, 
-				 int* NumIndicesPerRow) 
-  : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
-    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, ColMap))
-{
-  Allocate(NumIndicesPerRow, 1);
+  Allocate(&NumIndicesPerRow, 0, StaticProfile);
 }
 
 //==============================================================================
 Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, 
 				 const Epetra_BlockMap& RowMap, 
 				 const Epetra_BlockMap& ColMap, 
-				 int NumIndicesPerRow) 
+				 int* NumIndicesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
-    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, ColMap))
+    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, ColMap, StaticProfile))
 {
-  Allocate(&NumIndicesPerRow, 0);
+  Allocate(NumIndicesPerRow, 1, StaticProfile);
+}
+
+//==============================================================================
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, 
+				 const Epetra_BlockMap& RowMap, 
+				 const Epetra_BlockMap& ColMap, 
+				 int NumIndicesPerRow, bool StaticProfile) 
+  : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
+    CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, ColMap, StaticProfile))
+{
+  Allocate(&NumIndicesPerRow, 0, StaticProfile);
 }
 
 //==============================================================================
@@ -88,42 +88,49 @@ Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph& Graph)
 }
 
 // private =====================================================================
-int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc) {
+int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc, bool StaticProfile) {
   int i;
   const int numMyBlockRows = CrsGraphData_->NumMyBlockRows_;
 
   //*** portions specific to ISDVs
-  int errorcode = CrsGraphData_->NumIndicesPerRow_.Size(CrsGraphData_->NumMyBlockRows_);
+  int errorcode = CrsGraphData_->NumIndicesPerRow_.Size(numMyBlockRows);
   if(errorcode != 0) 
     throw ReportError("Error with NumIndicesPerRow_ allocation.", -99);
-  errorcode = CrsGraphData_->NumAllocatedIndicesPerRow_.Size(CrsGraphData_->NumMyBlockRows_);
+  errorcode = CrsGraphData_->NumAllocatedIndicesPerRow_.Size(numMyBlockRows);
   if(errorcode != 0) 
     throw ReportError("Error with NumAllocatedIndicesPerRow_ allocation.", -99);
 
+  int nnz = 0;
   if(CrsGraphData_->CV_ == Copy) {
-    if (NumIndicesPerRow != NULL) {
+    if (NumIndicesPerRow != 0) {
       for(i = 0; i < numMyBlockRows; i++) {
-        CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndicesPerRow[i*Inc];
-        //CrsGraphData_->NumIndicesPerRow_[i] = 0; // already 0 from sizing
+	int nnzr = NumIndicesPerRow[i*Inc];
+        CrsGraphData_->NumAllocatedIndicesPerRow_[i] = nnzr;
+	nnz += nnzr;
       }
     }
   }
-  else {
-    //CrsGraphData_->NumAllocatedIndicesPerRow_[i] = 0; // already 0 from sizing
-    //CrsGraphData_->NumIndicesPerRow_[i] = 0; // already 0 from sizing
-  }
+  CrsGraphData_->NumMyEntries_ = nnz; // Define this now since we have it and might want to use it
   //***
 
   CrsGraphData_->MaxNumIndices_ = 0;
   
   // Allocate and initialize entries if we are copying data
   if(CrsGraphData_->CV_ == Copy) {
+    if (StaticProfile) CrsGraphData_->All_Indices_.Size(nnz);
+    int * All_Indices = CrsGraphData_->All_Indices_.Values(); // First address of contiguous buffer
     for(i = 0; i < numMyBlockRows; i++) {
-      const int NumIndices = NumIndicesPerRow==NULL ? 0 :NumIndicesPerRow[i*Inc];
+      const int NumIndices = NumIndicesPerRow==0 ? 0 :NumIndicesPerRow[i*Inc];
 
       if(NumIndices > 0) {
-	int * temp = new int[NumIndices];
-	CrsGraphData_->Indices_[i] = temp;
+	if (StaticProfile) {
+	  CrsGraphData_->Indices_[i] = All_Indices;
+	  All_Indices += NumIndices;
+	}
+	else {
+	  int * temp = new int[NumIndices];
+	  CrsGraphData_->Indices_[i] = temp;
+	}
       }
       else {
 	CrsGraphData_->Indices_[i] = 0;
@@ -136,6 +143,7 @@ int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc) {
 	ColIndices[j] = indexBaseMinusOne; // Fill column indices with out-of-range values
       }
     }
+    if (StaticProfile) assert(CrsGraphData_->All_Indices_.Values()+nnz==All_Indices); // Sanity check
   }	 
   else { // CV_ == View
     for(i = 0; i < numMyBlockRows; i++) {
@@ -261,6 +269,9 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     int stop = start + NumIndices;
     int NumAllocatedIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[Row];
     if(stop > NumAllocatedIndices) {
+      if (CrsGraphData_->StaticProfile_) {
+	EPETRA_CHK_ERR(-2); // Cannot reallocate storage if graph created using StaticProfile
+      }
       if(NumAllocatedIndices == 0) {
 	int * temp = new int[NumIndices];
 	CrsGraphData_->Indices_[Row] = temp;
@@ -1008,9 +1019,11 @@ int Epetra_CrsGraph::OptimizeStorage() {
     CrsGraphData_->NumMyNonzeros_ += CrsGraphData_->NumIndicesPerRow_[i];
 
   // Allocate one big integer array for all index values
-  int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
-  if(errorcode != 0) 
-    throw ReportError("Error with All_Indices_ allocation.", -99);
+  if (!(CrsGraphData_->StaticProfile_)) { // If static profile, All_Indices_ is already allocated, only need to pack data
+    int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
+    if(errorcode != 0) 
+      throw ReportError("Error with All_Indices_ allocation.", -99);
+  }
 
   // Set Indices_ to point into All_Indices_
 
@@ -1018,8 +1031,11 @@ int Epetra_CrsGraph::OptimizeStorage() {
   for(i = 0; i < numMyBlockRows; i++) {
     int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
     int* ColIndices = CrsGraphData_->Indices_[i];
-    for(j = 0; j < NumIndices; j++) 
-      tmp[j] = ColIndices[j];
+    if (tmp!=ColIndices) { // No need to copy if pointing to same space
+      for(j = 0; j < NumIndices; j++) 
+	tmp[j] = ColIndices[j];
+    }
+    if (!(CrsGraphData_->StaticProfile_) && NumIndices>0) delete [] CrsGraphData_->Indices_[i];
     CrsGraphData_->Indices_[i] = tmp;
     tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
   }

@@ -33,7 +33,7 @@
 //#include "Epetra_ConfigDefs.h" //DATA_DEBUG
 
 //=============================================================================
-Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap)
+Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, bool StaticProfile)
   // maps
   : RowMap_(RowMap),
     ColMap_(RowMap),
@@ -56,6 +56,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     UpperTriangular_(true),
     NoDiagonal_(true),
     GlobalConstantsComputed_(false),
+    StaticProfile_(StaticProfile),
     // ints
     IndexBase_(RowMap.IndexBase()),
     NumGlobalEntries_(0),
@@ -91,7 +92,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
 //=============================================================================
 Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, 
 					 const Epetra_BlockMap& RowMap, 
-					 const Epetra_BlockMap& ColMap)
+					 const Epetra_BlockMap& ColMap, bool StaticProfile)
   // maps
   : RowMap_(RowMap),
     ColMap_(ColMap),
@@ -114,6 +115,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     UpperTriangular_(true),
     NoDiagonal_(true),
     GlobalConstantsComputed_(false),
+    StaticProfile_(StaticProfile),
     // ints
     IndexBase_(RowMap.IndexBase()),
     NumGlobalEntries_(0),
@@ -230,7 +232,8 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os.width(25); os << "LowerTriangular_: "         << LowerTriangular_;
     os.width(25); os << "UpperTriangular_: "         << UpperTriangular_;
     os.width(25); os << "NoDiagonal_: "              << NoDiagonal_ << endl;
-    os.width(25); os << "GlobalConstantsComputed_: " << GlobalConstantsComputed_ << endl << endl;
+    os.width(25); os << "GlobalConstantsComputed_: " << GlobalConstantsComputed_ << endl;
+    os.width(25); os << "StaticProfile_: " << StaticProfile_ << endl << endl;
 		
     os.width(10); os << "NGBR_: " << NumGlobalBlockRows_;
     os.width(10); os << "NGBC_: " << NumGlobalBlockCols_;

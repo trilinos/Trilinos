@@ -45,6 +45,7 @@
 #endif
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
+#include <cstdlib>
                                             
 // prototypes
 
@@ -55,7 +56,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact);
+			Epetra_Vector *&xexact, bool StaticProfile);
 
 void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, int nrhs,
@@ -64,7 +65,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact);
+			Epetra_MultiVector *&xexact, bool StaticProfile);
  
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff,
@@ -74,7 +75,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact);
+			Epetra_Vector *&xexact, bool StaticProfile);
 
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, 
@@ -84,7 +85,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact);
+			Epetra_MultiVector *&xexact, bool StaticProfile);
 
 void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int numProcs,
 			      int myPID, int * & myGlobalElements);
@@ -224,7 +225,7 @@ int main(int argc, char *argv[])
 
   GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 		     Xoff.Values(), Yoff.Values(), comm, verbose, summary,
-		     map, A, b, bt, xexact);
+		     map, A, b, bt, xexact, false);
 
   Epetra_Vector q(b->Map());
   Epetra_Vector z(b->Map());
@@ -235,12 +236,17 @@ int main(int argc, char *argv[])
   A->SetFlopCounter(flopcounter);
   Epetra_Time timer(comm);
     
-  for (j=0; j<2; j++) { // j = 0 is notrans, j = 1 is trans
+  for (j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
       
+    bool TransA = (j==1 || j==3);
+    std::string contig = "without";
+    if (j>1) contig = "with";
+
+    if (j==2) A->OptimizeStorage();
+
     flopcounter.ResetFlops();
     timer.ResetStartTime();
 
-    bool TransA = (j==1);
     //10 matvecs
     for( int i = 0; i < 10; ++i )
       A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
@@ -248,12 +254,67 @@ int main(int argc, char *argv[])
     elapsed_time = timer.ElapsedTime();
     total_flops = A->Flops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's (Trans = " << TransA
-		      << ")     = " << MFLOPs << endl<< endl;
+    if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's with dynamic Profile (Trans = " << TransA
+		      << ")  and " << contig << " optimized storage = " << MFLOPs << endl<< endl;
     if (summary) {
       if (comm.NumProc()==1) {
-	if (TransA) cout << "TransMV" << '\t';
-	else cout << "NoTransMV" << '\t';
+	if (TransA) cout << "TransMvDynProf" << contig << "OptStor" << '\t';
+	else cout << "NoTransMvDynProf" << contig << "OptStor" << '\t';
+      }
+      cout << MFLOPs << endl;
+    }
+      
+
+    // Compute residual
+    if (TransA)
+      r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
+    else
+      r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
+
+    double rnorm;
+    r.Norm2(&rnorm);
+    if (verbose) cout << "Norm of difference between computed and exact RHS = " << rnorm << endl;
+  }
+
+  delete map;
+  delete A;
+  delete b;
+  delete bt; 
+  delete xexact;
+		
+  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
+		     Xoff.Values(), Yoff.Values(), comm, verbose, summary,
+		     map, A, b, bt, xexact, true);
+
+  //Timings
+  A->SetFlopCounter(flopcounter);
+    
+  for (j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
+      
+    bool TransA = (j==1 || j==3);
+    std::string contig = "without";
+    if (j>1) contig = "with";
+
+    if (j==2) A->OptimizeStorage();
+
+    TransA = (j==1 || j==3);
+
+    flopcounter.ResetFlops();
+    timer.ResetStartTime();
+
+    //10 matvecs
+    for( int i = 0; i < 10; ++i )
+      A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
+      
+    elapsed_time = timer.ElapsedTime();
+    total_flops = A->Flops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+    if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's with Static Profile (Trans = " << TransA
+		      << ") and " << contig << " optimized storage = " << MFLOPs << endl<< endl;
+    if (summary) {
+      if (comm.NumProc()==1) {
+	if (TransA) cout << "TransMvStatProf" << contig << "OptStor" << '\t';
+	else cout << "NoTransMvStatProf" << contig << "OptStor" << '\t';
       }
       cout << MFLOPs << endl;
     }
@@ -379,13 +440,13 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact) {
+			Epetra_Vector *&xexact, bool StaticProfile) {
 
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
   GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, 
 		     xoff, yoff, 1, comm, verbose, summary, 
-		     map, A, b1, bt1, xexact1);
+		     map, A, b1, bt1, xexact1, StaticProfile);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
   bt = dynamic_cast<Epetra_Vector *>(bt1);
@@ -401,7 +462,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact) {
+			Epetra_MultiVector *&xexact, bool StaticProfile) {
   
   Epetra_Time timer(comm);
   // Determine my global IDs
@@ -414,8 +475,10 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   delete [] myGlobalElements;
 
   int numGlobalEquations = map->NumGlobalElements();
+
+  int profile = 0; if (StaticProfile) profile = numPoints;
   
-  A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix
+  A = new Epetra_CrsMatrix(Copy, *map, profile, StaticProfile); // Construct matrix
 
   int * indices = new int[numPoints];
   double * values = new double[numPoints];
@@ -447,7 +510,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   delete [] values;
   double insertTime = timer.ElapsedTime();
   timer.ResetStartTime();
-  A->TransformToLocal();
+  A->FillComplete();
   double fillCompleteTime = timer.ElapsedTime();
 
   if (verbose)
@@ -527,13 +590,13 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact) {
+			Epetra_Vector *&xexact, bool StaticProfile) {
 	
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
   GenerateVbrProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 		     xoff, yoff, nsizes, sizes,
-		     1, comm, verbose, summary, map, A, b1, bt1, xexact1);
+		     1, comm, verbose, summary, map, A, b1, bt1, xexact1, StaticProfile);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
   bt = dynamic_cast<Epetra_Vector *>(bt1);
@@ -550,7 +613,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact) {
+			Epetra_MultiVector *&xexact, bool StaticProfile) {
 
   int i, j;
 
@@ -572,8 +635,9 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   map = new Epetra_BlockMap(-1, numMyElements, ptMap.MyGlobalElements(), elementSizes.Values(),
 			    ptMap.IndexBase(), ptMap.Comm());
 
+  int profile = 0; if (StaticProfile) profile = numPoints;
   
-  A = new Epetra_VbrMatrix(Copy, *map, 0); // Construct matrix
+  A = new Epetra_VbrMatrix(Copy, *map, profile); // Construct matrix
 
   int * indices = new int[numPoints];
   double * values = new double[numPoints];
@@ -612,7 +676,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   delete [] indices;
 
-  A->TransformToLocal();
+  A->FillComplete();
 
   // Compute the InvRowSums of the matrix rows
   Epetra_Vector invRowSums(A->RowMap());

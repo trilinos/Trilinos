@@ -141,11 +141,8 @@ int Epetra_IntSerialDenseMatrix::Reshape(int NumRows, int NumCols) {
   M_ = NumRows;
   N_ = NumCols;
   LDA_ = M_;
-	if(newsize > 0) {
-		A_ = A_tmp; // Set pointer to new A
-		A_Copied_ = true;
-	}
-
+  A_ = A_tmp; // Set pointer to new A
+  A_Copied_ = (newsize>0);
   return(0);
 }
 //=============================================================================

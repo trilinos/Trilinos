@@ -38,7 +38,7 @@
 #include "Epetra_OffsetIndex.h"
 
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow) 
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
@@ -50,13 +50,13 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
 
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int NumEntriesPerRow) 
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
@@ -68,13 +68,13 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
-				   const Epetra_Map& ColMap, int* NumEntriesPerRow) 
+				   const Epetra_Map& ColMap, int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
@@ -86,14 +86,14 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
 
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
-				   const Epetra_Map& ColMap, int NumEntriesPerRow) 
+				   const Epetra_Map& ColMap, int NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
@@ -105,7 +105,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap,  NumEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap,  NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
@@ -211,11 +211,23 @@ int Epetra_CrsMatrix::Allocate() {
 
   // Allocate and initialize entries if we are copying data
   if (CV_==Copy) {
+    if (Graph().StaticProfile()) {
+      int NumMyNonzeros = Graph().NumMyEntries();
+      if (NumMyNonzeros>0) All_Values_ = new double[NumMyNonzeros];
+    }
+  double * All_Values = All_Values_;
     for (i=0; i<NumMyRows_; i++) {
       int NumAllocatedEntries = NumAllocatedEntriesPerRow_[i];
 			
-      if (NumAllocatedEntries > 0) 
+      if (NumAllocatedEntries > 0) {
+	if (Graph().StaticProfile()) {
+	  Values_[i] = All_Values;
+	  All_Values += NumAllocatedEntries;
+	}
+	else {
 	Values_[i] = new double[NumAllocatedEntries];
+	}
+      }
       else 
 	Values_[i] = 0;
 
@@ -391,6 +403,9 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
     int stop = start + NumEntries;
     int NumAllocatedEntries = NumAllocatedEntriesPerRow_[Row];
     if(stop > NumAllocatedEntries) {
+      if (Graph().StaticProfile()) {
+	EPETRA_CHK_ERR(-2); // Cannot reallocate storage if graph created using StaticProfile
+      }
       if(NumAllocatedEntries == 0) 
 	Values_[Row] = new double[NumEntries]; // Row was never allocated, so do it
       else {
@@ -785,19 +800,26 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   // Compute Number of Nonzero entries (Done in FillComplete, but we may not have been there yet.)
   int NumMyNonzeros = Graph_->NumMyNonzeros();
 
-  // Allocate one big integer array for all index values
-  All_Values_ = new double[NumMyNonzeros];
+  // Allocate one big array for all values
+  if (!(Graph().StaticProfile())) { // If static profile, All_Values_ is already allocated, only need to pack data
+    All_Values_ = new double[NumMyNonzeros];
+    if(All_Values_ == 0) 
+      throw ReportError("Error with All_Values_ allocation.", -99);
+  }
   
   // Set Entries_ to point into All_Entries_
   
   double * tmp = All_Values_;
   for (i=0; i<NumMyRows_; i++) {
     int NumEntries = NumEntriesPerRow_[i];
-    for (j=0; j<NumEntries; j++) 
-      tmp[j] = Values_[i][j];
-    if (Values_[i] !=0) 
-      delete [] Values_[i];
-    Values_[i] = tmp;
+    double * Values = Values_[i];
+    if (tmp!=Values) { // Copy values if not pointing to same location
+      for (j=0; j<NumEntries; j++) 
+	tmp[j] = Values[j];
+      if (!(Graph().StaticProfile()) && Values !=0) 
+	delete [] Values;
+      Values_[i] = tmp;
+    }
     tmp += NumEntries;
   }
   

@@ -149,70 +149,70 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   //! Epetra_CrsMatrix constructor with variable number of indices per row.
   /*! Creates a Epetra_CrsMatrix object and allocates storage.  
     
-	\param In
-	CV - A Epetra_DataAccess enumerated type set to Copy or View.
-	\param In 
-	RowMap - An Epetra_Map defining the numbering and distribution of matrix rows.
-	\param In
-	NumEntriesPerRow - An integer array of length NumRows
-	such that NumEntriesPerRow[i] indicates the (approximate) number of entries in the ith row.
+  \param CV - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+  \param RowMap - (In) An Epetra_Map defining the numbering and distribution of matrix rows.
+  \param NumEntriesPerRow - (In) An integer array of length NumRows
+  such that NumEntriesPerRow[i] indicates the (approximate if StaticProfile=false) number of entries in the ith row.
+  \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+  count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+  dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+  block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
-  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow);
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsMatrix constructor with fixed number of indices per row.
   /*! Creates a Epetra_CrsMatrix object and allocates storage.  
     
-	\param In
-	CV - A Epetra_DataAccess enumerated type set to Copy or View.
-	\param In 
-	RowMap - An Epetra_Map defining the numbering and distribution of matrix rows.
-	\param In
-	NumEntriesPerRow - An integer that indicates the (approximate) number of entries in the each row.
-	Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+  \param CV - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+  \param RowMap - (In) An Epetra_Map defining the numbering and distribution of matrix rows.
+  \param NumEntriesPerRow - (In) An integer that indicates the (approximate) number of entries in the each row.
+  Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+  \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+  count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+  dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+  block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
 	
   */
-  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int NumEntriesPerRow);
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int NumEntriesPerRow, bool StaticProfile = false);
 
   //! Epetra_CrsMatrix constructor with variable number of indices per row.
   /*! Creates a Epetra_CrsMatrix object and allocates storage.  
     
-	\param In
-	CV - A Epetra_DataAccess enumerated type set to Copy or View.
-	\param In 
-	RowMap - An Epetra_Map defining the numbering and distribution of matrix rows.
-	\param In 
-	ColMap - An Epetra_Map defining the set of column-indices that appear in each processor's
-          locally owned matrix rows.
-	\param In
-	NumEntriesPerRow - An integer array of length NumRows
-	such that NumEntriesPerRow[i] indicates the (approximate) number of entries in the ith row.
+  \param CV - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+  \param RowMap - (In) An Epetra_Map defining the numbering and distribution of matrix rows.
+  \param ColMap - (In) An Epetra_Map defining the set of column-indices that appear in each processor's
+  locally owned matrix rows.
+  \param NumEntriesPerRow - (In) An integer array of length NumRows
+  such that NumEntriesPerRow[i] indicates the (approximate if StaticProfile=false) number of entries in the ith row.
+  \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+  count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+  dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+  block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
-  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, int* NumEntriesPerRow);
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, int* NumEntriesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsMatrix constuctor with fixed number of indices per row.
   /*! Creates a Epetra_CrsMatrix object and allocates storage.  
     
-	\param In
-	CV - A Epetra_DataAccess enumerated type set to Copy or View.
-	\param In 
-	RowMap - An Epetra_Map defining the numbering and distribution of matrix rows.
-	\param In 
-	ColMap - An Epetra_Map defining the set of column-indices that appear in each processor's
-          locally owned matrix rows.
-	\param In
-	NumEntriesPerRow - An integer that indicates the (approximate) number of entries in the each row.
-	Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
-	
+  \param CV - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+  \param RowMap - (In) An Epetra_Map defining the numbering and distribution of matrix rows.
+  \param ColMap - (In) An Epetra_Map defining the set of column-indices that appear in each processor's
+  locally owned matrix rows.
+  \param NumEntriesPerRow - (In) An integer that indicates the (approximate if StaticProfile=false) number of entries in the each row.
+  Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+  \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+  count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+  dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+  block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
+  
   */
-  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, int NumEntriesPerRow);
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, int NumEntriesPerRow, bool StaticProfile = false);
 
   //! Construct a matrix using an existing Epetra_CrsGraph object.
   /*! Allows the nonzero structure from another matrix, or a structure that was
-		constructed independently, to be used for this matrix.
-    \param In
-		CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In
-		Graph - A Epetra_CrsGraph object, constructed directly or extracted from another Epetra matrix object.
+    constructed independently, to be used for this matrix.
+    \param CV - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+    \param Graph - (In) A Epetra_CrsGraph object, constructed directly or extracted from another Epetra matrix object.
   */
 	
   Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& Graph);
@@ -231,8 +231,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   //! Initialize all values in the matrix with constant value.
   /*!
-    \param In
-		ScalarConstant - Value to use.
+    \param ScalarConstant - (In) Value to use.
 		
     \return Integer error code, set to 0 if successful.
     \pre None.
@@ -242,8 +241,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	
   //! Multiply all values in the matrix by a constant value (in place: A <- ScalarConstant * A).
   /*!
-    \param In
-		ScalarConstant - Value to use.
+    \param ScalarConstant - (In) Value to use.
 		
     \return Integer error code, set to 0 if successful.
     \pre None.
@@ -253,14 +251,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	
   //! Insert a list of elements in a given global row of the matrix.
   /*!
-    \param In
-		GlobalRow - Row number (in global coordinates) to put elements.
-    \param In
-		NumEntries - Number of entries.
-    \param In
-		Values - Values to enter.
-    \param In
-		Indices - Global column indices corresponding to values.
+    \param GlobalRow - (In) Row number (in global coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Global column indices corresponding to values.
 		
     \return Integer error code, set to 0 if successful. Note that if the
     allocated length of the row has to be expanded, a positive warning code
@@ -272,14 +266,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   //! Replace specified existing values with this list of entries for a given global row of the matrix.
   /*!
-    \param In
-		GlobalRow - Row number (in global coordinates) to put elements.
-    \param In
-		NumEntries - Number of entries.
-    \param In
-		Values - Values to enter.
-    \param In
-		Indices - Global column indices corresponding to values.
+    \param GlobalRow - (In) Row number (in global coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Global column indices corresponding to values.
 		
     \return Integer error code, set to 0 if successful. Note that if a value
     is not already present for the specified location in the matrix, the
@@ -291,14 +281,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	
   //! Add this list of entries to existing values for a given global row of the matrix.
   /*!
-    \param In
-		GlobalRow - Row number (in global coordinates) to put elements.
-    \param In
-		NumEntries - Number of entries.
-    \param In
-		Values - Values to enter.
-    \param In
-		Indices - Global column indices corresponding to values.
+    \param GlobalRow - (In) Row number (in global coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Global column indices corresponding to values.
 
     \return Integer error code, set to 0 if successful. Note that if a value
     is not already present for the specified location in the matrix, the
@@ -310,14 +296,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   //! Insert a list of elements in a given local row of the matrix.
   /*!
-    \param In
-		MyRow - Row number (in local coordinates) to put elements.
-    \param In
-		NumEntries - Number of entries.
-    \param In
-		Values - Values to enter.
-    \param In
-		Indices - Local column indices corresponding to values.
+    \param MyRow - (In) Row number (in local coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Local column indices corresponding to values.
 		
     \return Integer error code, set to 0 if successful. Note that if the
     allocated length of the row has to be expanded, a positive warning code
@@ -330,14 +312,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   //! Replace current values with this list of entries for a given local row of the matrix.
   /*!
-    \param In
-		MyRow - Row number (in local coordinates) to put elements.
-    \param In
-		NumEntries - Number of entries.
-    \param In
-		Values - Values to enter.
-    \param In
-		Indices - Local column indices corresponding to values.
+    \param MyRow - (In) Row number (in local coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Local column indices corresponding to values.
 		
     \return Integer error code, set to 0 if successful. Note that if a value
     is not already present for the specified location in the matrix, the
@@ -349,14 +327,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   //! Add this list of entries to existing values for a given local row of the matrix.
   /*!
-    \param In
-		MyRow - Row number (in local coordinates) to put elements.
-    \param In
-		NumEntries - Number of entries.
-    \param In
-		Values - Values to enter.
-    \param In
-		Indices - Local column indices corresponding to values.
+    \param MyRow - (In) Row number (in local coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Local column indices corresponding to values.
 		
     \return Integer error code, set to 0 if successful. Note that if the
     allocated length of the row has to be expanded, a positive warning code
@@ -375,7 +349,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     The Epetra_Map associated with the input Epetra_Vector must be compatible with
     the RowMap of the matrix.
 		
-    \param Diagonal (In) - New values to be placed in the main diagonal.
+    \param Diagonal - (In) New values to be placed in the main diagonal.
 		
     \return Integer error code, set to 0 if successful, 1 of one or more diagonal entries not present in matrix.
     \pre Filled()==true
@@ -400,11 +374,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
      and multi-vector elements that are needed for distributed matrix computations.  For
      example, to compute y = Ax in parallel, we would specify the DomainMap as the distribution
      of the vector x and the RangeMap as the distribution of the vector y.
-    \param In
-		DomainMap - Map that describes the distribution of vector and multi-vectors in the
+    \param DomainMap - (In) Map that describes the distribution of vector and multi-vectors in the
 		matrix domain.
-    \param In
-		RangeMap - Map that describes the distribution of vector and multi-vectors in the
+    \param RangeMap - (In) Map that describes the distribution of vector and multi-vectors in the
 		matrix range.
 
     \return error code, 0 if successful. positive warning code of 2 if it is detected that the
@@ -432,16 +404,11 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	
   //! Returns a copy of the specified global row in user-provided arrays.
   /*! 
-    \param In
-		GlobalRow - Global row to extract.
-    \param In
-		Length - Length of Values and Indices.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
-    \param Out
-		Indices - Extracted global column indices for the corresponding values.
+    \param GlobalRow - (In) Global row to extract.
+    \param ILength - (In) Length of Values and Indices.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
+    \param Indices - (Out) Extracted global column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful, non-zero if global row is not owned by calling process
 or if the number of entries in this row exceed the Length parameter.
@@ -450,16 +417,11 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns a copy of the specified local row in user-provided arrays.
   /*! 
-    \param In
-		MyRow - Local row to extract.
-    \param In
-		Length - Length of Values and Indices.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
-    \param Out
-	   	Indices - Extracted local column indices for the corresponding values.
+    \param MyRow - (In) Local row to extract.
+    \param Length - (In) Length of Values and Indices.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
+    \param Indices - (Out) Extracted local column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful.
 
@@ -469,14 +431,10 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns a copy of the specified global row values in user-provided array.
   /*! 
-    \param In
-		GlobalRow - Global row to extract.
-    \param In
-		Length - Length of Values.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
+    \param GlobalRow - (In) Global row to extract.
+    \param Length - (In) Length of Values.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
 	  
     \return Integer error code, set to 0 if successful.
   */
@@ -484,14 +442,10 @@ or if the number of entries in this row exceed the Length parameter.
 
 	//! Returns a copy of the specified local row values in user-provided array.
 	/*! 
-    \param In
-		MyRow - Local row to extract.
-    \param In
-		Length - Length of Values.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
+    \param MyRow - (In) Local row to extract.
+    \param Length - (In) Length of Values.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
 	  
     \return Integer error code, set to 0 if successful.
   */
@@ -499,8 +453,7 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns a copy of the main diagonal in a user-provided vector.
   /*! 
-    \param Out
-		Diagonal - Extracted main diagonal.
+    \param Diagonal - (Out) Extracted main diagonal.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -510,14 +463,10 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //! Returns a view of the specified global row values via pointers to internal data.
   /*! 
-    \param In
-		GlobalRow - Global row to view.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
-    \param Out
-		Indices - Extracted global column indices for the corresponding values.
+    \param GlobalRow - (In) Global row to view.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
+    \param Indices - (Out) Extracted global column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful. Returns -1 of row not on this processor.  
 		Returns -2 if matrix is not in global form (if FillComplete() has already been called).
@@ -528,14 +477,10 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //! Returns a view of the specified local row values via pointers to internal data.
   /*! 
-    \param In
-		MyRow - Local row to view.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
-    \param Out
-		Indices - Extracted local column indices for the corresponding values.
+    \param MyRow - (In) Local row to view.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
+    \param Indices - (Out) Extracted local column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful. Returns -1 of row not on this processor.  
 		Returns -2 if matrix is not in local form (if FillComplete() has \e not been called).
@@ -546,12 +491,9 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //! Returns a view of the specified global row values via pointers to internal data.
   /*! 
-    \param In
-		GlobalRow - Global row to extract.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
+    \param GlobalRow - (In) Global row to extract.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
 	  
     \return Integer error code, set to 0 if successful.
   */
@@ -559,12 +501,9 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns a view of the specified local row values via pointers to internal data.
   /*! 
-    \param In
-		MyRow - Local row to extract.
-    \param Out
-		NumEntries - Number of nonzero entries extracted.
-    \param Out
-		Values - Extracted values for this row.
+    \param MyRow - (In) Local row to extract.
+    \param NumEntries - (Out) Number of nonzero entries extracted.
+    \param Values - (Out) Extracted values for this row.
 	  
     \return Integer error code, set to 0 if successful.
   */
@@ -575,12 +514,9 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //! Returns the result of a Epetra_CrsMatrix multiplied by a Epetra_Vector x in y.
   /*! 
-    \param In
-		TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
-    \param In
-		x -A Epetra_Vector to multiply by.
-    \param Out
-		y -A Epetra_Vector containing result.
+    \param TransA - (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
+    \param x - (In) An Epetra_Vector to multiply by.
+    \param y - (Out) An Epetra_Vector containing result.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -590,12 +526,9 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns the result of a Epetra_CrsMatrix multiplied by a Epetra_MultiVector X in Y.
   /*! 
-    \param In
-		TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
-    \param In
-		X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param Out
-		Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
+    \param TransA - (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
+    \param X - (In) An Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Y - (Out) An Epetra_MultiVector of dimension NumVectorscontaining result.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -605,16 +538,11 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns the result of a local solve using the Epetra_CrsMatrix on a Epetra_Vector x in y.
   /*! This method solves a triangular system of equations asynchronously on each processor.
-    \param In
-		Upper -If true, solve Uy = x, otherwise solve Ly = x.
-    \param In
-		Trans -If true, solve transpose problem.
-    \param In
-		UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
-    \param In
-		x -A Epetra_Vector to solve for.
-    \param Out
-		y -A Epetra_Vector containing result.
+    \param Upper - (In) If true, solve Uy = x, otherwise solve Ly = x.
+    \param Trans - (In) If true, solve transpose problem.
+    \param UnitDiagonal - (In) If true, assume diagonal is unit (whether it's stored or not).
+    \param x - (In) An Epetra_Vector to solve for.
+    \param y - (Out) An Epetra_Vector containing result.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -624,16 +552,11 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //! Returns the result of a local solve using the Epetra_CrsMatrix a Epetra_MultiVector X in Y.
   /*! This method solves a triangular system of equations asynchronously on each processor.
-    \param In
-		Upper -If true, solve Uy = x, otherwise solve Ly = x.
-    \param In
-		Trans -If true, solve transpose problem.
-    \param In
-		UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
-    \param In
-		X - A Epetra_MultiVector of dimension NumVectors to solve for.
-    \param Out
-		Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param Upper - (In) If true, solve Uy = x, otherwise solve Ly = x.
+    \param Trans - (In) If true, solve transpose problem.
+    \param UnitDiagonal - (In) If true, assume diagonal is unit (whether it's stored or not).
+    \param X - (In) An Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Y - (Out) An Epetra_MultiVector of dimension NumVectors containing result.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -648,8 +571,7 @@ or if the number of entries in this row exceed the Length parameter.
                 \warning The NormInf() method will not properly calculate the infinity norm for a matrix that has entries that are
                 replicated on multiple processors.  In this case, if the rows are fully replicated, NormInf() will return a
                 value equal to the maximum number of processors that any individual row of the matrix is repliated on.
-    \param Out
-                x -A Epetra_Vector containing the row sums of the \e this matrix.
+    \param x - (Out) An Epetra_Vector containing the row sums of the \e this matrix.
                 \warning When rows are fully replicated on multiple processors, it is assumed that the distribution of x is
                 the same as the rows (RowMap())of \e this.  When multiple processors contain partial sums for individual entries, the
                 distribution of x is assumed to be the same as the RangeMap() of \e this.  When each row of \e this is
@@ -665,8 +587,7 @@ or if the number of entries in this row exceed the Length parameter.
   /*! The vector x will return such that x[i] will contain the inverse of max of the absolute values of the entries in the ith
 	        row of the \e this matrix.
                 \warning This method will not work when multiple processors contain partial sums for individual entries.
-    \param Out
-		x -A Epetra_Vector containing the row maxs of the \e this matrix. 
+    \param x - (Out) An Epetra_Vector containing the row maxs of the \e this matrix. 
 		\warning When rows are fully replicated on multiple processors, it is assumed that the distribution of x is
                 the same as the rows (RowMap())of \e this.  When each row of \e this is uniquely owned, the distribution of 
 		x can be that of the RowMap() or the RangeMap().
@@ -680,8 +601,7 @@ or if the number of entries in this row exceed the Length parameter.
   //! Scales the Epetra_CrsMatrix on the left with a Epetra_Vector x.
   /*! The \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the row number of A
 		and j denotes the column number of A.
-    \param In
-		x -A Epetra_Vector to solve for.
+    \param x - (In) An Epetra_Vector to scale with.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -697,8 +617,7 @@ or if the number of entries in this row exceed the Length parameter.
                 replicated on multiple processors.  In this case, if the columns are fully replicated, NormOne() will return a
                 value equal to the maximum number of processors that any individual column of the matrix is repliated on.
 
-    \param Out
-		x -A Epetra_Vector containing the column sums of the \e this matrix. 
+    \param x - (Out) An Epetra_Vector containing the column sums of the \e this matrix. 
                 \warning When columns are fully replicated on multiple processors, it is assumed that the distribution of x is
                 the same as the columns (ColMap()) of \e this.  When multiple processors contain partial sums for entries, the
                 distribution of x is assumed to be the same as the DomainMap() of \e this.  When each column of \e this is
@@ -714,8 +633,7 @@ or if the number of entries in this row exceed the Length parameter.
   /*! The vector x will return such that x[j] will contain the inverse of max of the absolute values of the entries
 		in the jth row of the \e this matrix.
                 \warning This method will not work when multiple processors contain partial sums for individual entries.
-    \param Out
-		x -A Epetra_Vector containing the column maxs of the \e this matrix. 
+    \param x - (Out) An Epetra_Vector containing the column maxs of the \e this matrix. 
                 \warning When columns are fully replicated on multiple processors, it is assumed that the distribution of x is
                 the same as the columns (ColMap()) of \e this.  When each column of \e this is
                 uniquely owned, the distribution of x can be that of the ColMap() or the DomainMap().
@@ -729,8 +647,7 @@ or if the number of entries in this row exceed the Length parameter.
   //! Scales the Epetra_CrsMatrix on the right with a Epetra_Vector x.
   /*! The \e this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
 		and j denotes the global column number of A.
-    \param In
-		x -The Epetra_Vector used for scaling \e this.
+    \param x - (In) The Epetra_Vector used for scaling \e this.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -971,8 +888,7 @@ or if the number of entries in this row exceed the Length parameter.
 		affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
 		does not support transpose use, this method should return a value of -1.
 		
-    \param In
-		UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+    \param UseTranspose - (In) If true, multiply by the transpose of operator, otherwise just use operator.
 		
     \return Always returns 0.
   */
@@ -980,10 +896,8 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
   /*! 
-    \param In
-		X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param Out
-		Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param X - (In) An Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Y -(Out) An Epetra_MultiVector of dimension NumVectors containing result.
 	
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -994,15 +908,13 @@ or if the number of entries in this row exceed the Length parameter.
 	
 	//! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
 	/*! In this implementation, we use several existing attributes to determine how virtual
-		method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
-		the Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
-		if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
-		be accounted for when doing a triangular solve.
-		
-		\param In
-		X - A Epetra_MultiVector of dimension NumVectors to solve for.
-    \param Out
-		Y -A Epetra_MultiVector of dimension NumVectors containing result.
+	  method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
+	  the Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
+	  if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
+	  be accounted for when doing a triangular solve.
+	  
+	  \param X - (In) An Epetra_MultiVector of dimension NumVectors to solve for.
+	  \param Y - (Out) An Epetra_MultiVector of dimension NumVectors containing result.
 		
     \return Integer error code, set to 0 if successful.
     \pre Filled()==true
@@ -1029,10 +941,8 @@ or if the number of entries in this row exceed the Length parameter.
 	//! Return the current number of values stored for the specified local row.
 	/*! Similar to NumMyEntries() except NumEntries is returned as an argument
 		and error checking is done on the input value MyRow.
-    \param In
-		MyRow - Local row.
-    \param Out
-		NumEntries - Number of nonzero values.
+    \param MyRow - (In) Local row.
+    \param NumEntries - (Out) Number of nonzero values.
 	  
     \return Integer error code, set to 0 if successful.
     \pre None.
@@ -1055,8 +965,7 @@ or if the number of entries in this row exceed the Length parameter.
 	
 	//! Inlined bracket operator for fast access to data. (Const and Non-const versions)
 	/*! No error checking and dangerous for optimization purposes.
-    \param In
-		Loc - Local row.
+    \param Loc - (In) Local row.
 	  
     \return reference to pointer to locally indexed Loc row in matrix.
   */

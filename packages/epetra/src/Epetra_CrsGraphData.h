@@ -53,10 +53,10 @@ class Epetra_CrsGraphData : public Epetra_Data {
   //@{ \name Constructor/Destructor Methods
 
   //! Epetra_CrsGraphData Default Constructor.
-  Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap);
+  Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, bool StaticProfile);
 
   //! Epetra_CrsGraphData Constructor (user provided ColMap).
-  Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const Epetra_BlockMap& ColMap);
+  Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const Epetra_BlockMap& ColMap, bool StaticProfile);
 
 	//! Epetra_CrsGraphData copy constructor (not defined).
   Epetra_CrsGraphData(const Epetra_CrsGraphData& CrsGraphData);
@@ -75,29 +75,29 @@ class Epetra_CrsGraphData : public Epetra_Data {
 	*/
   void Print(ostream& os, int level = 3) const;
 
-	//! Epetra_CrsGraphData assignment operator (not defined)
-	Epetra_CrsGraphData& operator=(const Epetra_CrsGraphData& CrsGraphData);
-
-	//@{ \name Helper methods called in CrsGraph. Mainly memory allocations and deallocations.
-
-	//! called by FillComplete (and TransformToLocal)
-	int MakeImportExport();
-
-	//! called by PackAndPrepare
-	int ReAllocateAndCast(char*& UserPtr, int& Length, const int IntPacketSizeTimesNumTrans);
-
-	//@}
-
+  //! Epetra_CrsGraphData assignment operator (not defined)
+  Epetra_CrsGraphData& operator=(const Epetra_CrsGraphData& CrsGraphData);
+  
+  //@{ \name Helper methods called in CrsGraph. Mainly memory allocations and deallocations.
+  
+  //! called by FillComplete (and TransformToLocal)
+  int MakeImportExport();
+  
+  //! called by PackAndPrepare
+  int ReAllocateAndCast(char*& UserPtr, int& Length, const int IntPacketSizeTimesNumTrans);
+  
+  //@}
+  
   // Defined by CrsGraph::FillComplete and related
-	const Epetra_BlockMap RowMap_;
-	Epetra_BlockMap ColMap_;
-	Epetra_BlockMap DomainMap_;
-	Epetra_BlockMap RangeMap_;
-
-	const Epetra_Import* Importer_;
+  const Epetra_BlockMap RowMap_;
+  Epetra_BlockMap ColMap_;
+  Epetra_BlockMap DomainMap_;
+  Epetra_BlockMap RangeMap_;
+  
+  const Epetra_Import* Importer_;
   const Epetra_Export* Exporter_;
 
-	bool HaveColMap_;
+  bool HaveColMap_;
   bool Filled_;
   bool Allocated_;
   bool Sorted_;
@@ -110,6 +110,7 @@ class Epetra_CrsGraphData : public Epetra_Data {
   bool UpperTriangular_;
   bool NoDiagonal_;
   bool GlobalConstantsComputed_;
+  bool StaticProfile_;
 
   int IndexBase_;
 

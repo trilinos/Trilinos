@@ -124,68 +124,71 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //! Epetra_CrsGraph constuctor with variable number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
     
-    \param In
-           CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
-           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
-	   processor will contribute to.
-    \param In
-           NumIndicesPerRow - An integer array of length NumMyRows
-	   such that NumIndicesPerRow[i] indicates the (approximate) number of entries in the ith row.
+    \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+	   processor will contribute to.In
+    \param NumIndicesPerRow - (In) An integer array of length NumMyRows
+	   such that NumIndicesPerRow[i] indicates the (approximate if StaticProfile=false) number of entries in the ith row.
+    \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+	   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
-  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int* NumIndicesPerRow);
+  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int* NumIndicesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsGraph constuctor with fixed number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
     
-    \param In
-           CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
-           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+    \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
 	   processor will contribute to.
-    \param In
-           NumIndicesPerRow - An integer that indicates the (approximate) number of entries in the each row.
+    \param NumIndicesPerRow - (In) An integer that indicates the (approximate if StaticProfile=false) number of entries in the each row.
 	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+    \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+	   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
 	   
   */
-  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumIndicesPerRow);
+  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumIndicesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsGraph constuctor with variable number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
     
-    \param In
-           CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
-           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+    \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
 	   processor will contribute to.
-    \param In 
-           ColMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
+    \param ColMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
 	   processor will contribute to.
-    \param In
-           NumIndicesPerRow - An integer array of length NumMyRows
-	   such that NumIndicesPerRow[i] indicates the (approximate) number of entries in the ith row.
+    \param NumIndicesPerRow - (In) An integer array of length NumMyRows
+	   such that NumIndicesPerRow[i] indicates the (approximate if StaticProfile=false) number of entries in the ith row.
+    \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+	   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
-		  const Epetra_BlockMap& ColMap, int* NumIndicesPerRow);
+		  const Epetra_BlockMap& ColMap, int* NumIndicesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsGraph constuctor with fixed number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
     
-    \param In
-           CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
-           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+    \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
 	   processor will contribute to.
-    \param In 
-           ColMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
+    \param ColMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
 	   processor will contribute to.
     \param In
-           NumIndicesPerRow - An integer that indicates the (approximate) number of entries in the each row.
+           NumIndicesPerRow - An integer that indicates the (approximate if StaticProfile=false) number of entries in the each row.
 	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+    \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
+	   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
 	   
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
-		  const Epetra_BlockMap& ColMap, int NumIndicesPerRow);
+		  const Epetra_BlockMap& ColMap, int NumIndicesPerRow, bool StaticProfile = false);
   
   //! Copy constructor. 
 	/*! This will create a Level 1 deep copy. This Graph will share ownership
@@ -242,12 +245,9 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   
   //! Enter a list of elements in a specified local row of the graph.
   /*!
-    \param In
-           Row - Local row number of indices.
-    \param In
-           NumIndices - Number of Indices.
-    \param In
-           Indices - Local column indices to insert.
+    \param Row - (In) Local row number of indices.
+    \param NumIndices - (In) Number of Indices.
+    \param Indices - (In) Local column indices to insert.
 
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
@@ -257,12 +257,9 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   
   //! Remove a list of elements from a specified local row of the graph.
   /*!
-    \param In
-           Row - Local row number of indices.
-    \param In
-           NumIndices - Number of Indices.
-    \param In
-           Indices - Local column indices to remove.
+    \param Row - (In) Local row number of indices.
+    \param NumIndices - (In) Number of Indices.
+    \param Indices - (In) Local column indices to remove.
 	   
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
@@ -272,8 +269,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   
   //! Remove all indices from a specified local row of the graph.
   /*!
-    \param In
-           Row - Local row number of indices.
+    \param Row - (In) Local row number of indices.
 
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
@@ -330,14 +326,10 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
   //! Extract a list of elements in a specified global row of the graph. Put into storage allocated by calling routine.
   /*!
-    \param In
-           Row - Global row number to get indices.
-    \param In
-           LenOfIndices - Length of Indices array.
-    \param Out
-           NumIndices - Number of Indices.
-    \param Out
-           Indices - Global column indices corresponding to values.
+    \param Row - (In) Global row number to get indices.
+    \param LenOfIndices - (In) Length of Indices array.
+    \param NumIndices - (Out) Number of Indices.
+    \param Indices - (Out) Global column indices corresponding to values.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -345,14 +337,10 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
   //! Extract a list of elements in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
-    \param In
-           Row - Local row number to get indices.
-    \param In
-           LenOfIndices - Length of Indices array.
-    \param Out
-           NumIndices - Number of Indices.
-    \param Out
-           Indices - Local column indices corresponding to values.
+    \param Row - (In) Local row number to get indices.
+    \param LenOfIndices - (In) Length of Indices array.
+    \param NumIndices - (Out) Number of Indices.
+    \param Indices - (Out) Local column indices corresponding to values.
 
     \return Integer error code, set to 0 if successful.
 
@@ -363,12 +351,9 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //! Get a view of the elements in a specified global row of the graph.
   /*!
     This function requires that the graph not be completed (FillComplete() was \e not called).
-    \param In
-           Row - Local row number to get indices.
-    \param Out
-           NumIndices - Number of Indices.
-    \param Out
-           Indices - Column indices corresponding to values.
+    \param Row - (In) Local row number to get indices.
+    \param NumIndices - (Out) Number of Indices.
+    \param Indices - (Out) Column indices corresponding to values.
 
     \return Integer error code, set to 0 if successful. Returns -1 if invalid row.  Returns -2 if graph is completed.
 
@@ -379,12 +364,9 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //! Get a view of the elements in a specified local row of the graph.
   /*!
     This function requires that the graph be completed FillComplete() was called).
-    \param In
-           Row - Local row number to get indices.
-    \param Out
-           NumIndices - Number of Indices.
-    \param Out
-           Indices - Column indices corresponding to values.
+    \param Row - (In) Local row number to get indices.
+    \param NumIndices - (Out) Number of Indices.
+    \param Indices - (Out) Column indices corresponding to values.
 
     \return Integer error code, set to 0 if successful. Returns -1 if invalid row.  Returns -2 if graph is not completed.
 
@@ -755,6 +737,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	// If column indices are stored in one long array (via a call to OptimizeStorage), 
 	// IndicesAreContiguous returns true, otherwise it returns false.
 	bool IndicesAreContiguous() const {return(CrsGraphData_->IndicesAreContiguous_);}
+	bool StaticProfile() const {return(CrsGraphData_->StaticProfile_);}
 	bool GlobalConstantsComputed() const;
 	bool FindGlobalIndexLoc(int LocalRow, int Index, int Start, int& Loc) const;
 	bool FindGlobalIndexLoc(int NumIndices, const int* Indices, int Index, int Start, int& Loc) const;
@@ -790,7 +773,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	void SetNoRedundancies(bool Flag) {CrsGraphData_->NoRedundancies_ = Flag;}
 	void ComputeIndexState();
 	int MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
-	int Allocate(int* NumIndicesPerRow, int Inc);
+	int Allocate(int* NumIndicesPerRow, int Inc, bool StaticProfile);
 	int ReAllocate();
 	int ComputeGlobalConstants();
 	void SetFilled(bool Flag) {CrsGraphData_->Filled_ = Flag;}
