@@ -139,7 +139,7 @@ def main():
     print "colorMap = {", colorMap, "\n}"
     colorMapIndex = EpetraExt.CrsGraph_MapColoringIndex(colorMap)
     columns       = colorMapIndex(problem.getGraph())
-    #print "columns = {\n", columns, "}"
+    print "columns = {\n", columns, "}"
 
     # Create the finite difference coloring object
 ##    fdc = NOX_Epetra.FiniteDifference(interface,soln,problem.getGraph())
