@@ -1,18 +1,34 @@
 
 /*************************************************************************************       
   HAIM: GLOBAL EIGENVALUE CALCULATIONS FOR MULTIGRID           
-        GENERALIZED GLOBAL BASIS (GGB) METHOD USING ARPACK                      
+  GLOBAL BASIS (GB) METHOD / GENERALIZED GLOBAL BASIS (GGB) METHOD USING ARPACK                      
 **************************************************************************************/     
+/*                                                            
+   THE IDEA:                                                  
+        We want to solve     (STS)*x = lam*x                      
+        S - Smoothing iteration matrix
+	T - Multilevel projector
+		
+        + We solve the problem by supplying ARPACK with the function that
+	  produces Matrix-vector product 
+	+ We use simple non-symmetric ARPACK mode                            
+                                                              
+	*/                                                            
+#ifndef __MLGGB_
+#define __MLGGB_
+
+
 
 #define SHIFTS   0 
 #define MAX_ITRS 2 
 #define MODE     6 
 
-
 #include <stdio.h>
 #include <stdlib.h>
-//#include "ml_struct.h" 
+#include "ml_common.h"
 #include "ml_mat_formats.h" 
+
+
 struct ML_Eigenvalue_Struct  {
   int     Max_Iter;                  /* User input from input file */ 
   int     Num_Eigenvalues;
@@ -27,6 +43,13 @@ struct ML_Eigenvalue_Struct  {
 			     with MGGB */
 
 };
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
+
 
 
 void  ML_ARPACK_driver(char which[],
@@ -66,3 +89,19 @@ extern double ML_normc(double *real, double *imag,  int leng );
 
 
 
+
+
+
+
+void dnaupd_(int *, char *, int *, char *, int *, double *, double *,
+		 int *, double *, int *, int *, int *, double *, double *,
+		 int *, int *);
+
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#endif
