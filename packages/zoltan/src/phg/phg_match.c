@@ -476,7 +476,8 @@ static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size,
 /* Because this calculation is done in two locations it has been converted to
 ** a subroutine to assure it is always consistant.  */
 static int calc_nCandidates (int num_vtx, int procs)
- /* 2 below because each match pairs 2 vertices */
+ /* static formula : 2 below because each match pairs 2 vertices */
+ /* dynamic nCandidates (different in each round) is another option */
  {return num_vtx ? 1 + num_vtx/(2 * procs * ROUNDS_CONSTANT) : 0;}
  
 
@@ -522,6 +523,8 @@ static int pmatching_ipm(
 
   /* determine basic working parameters */
   nRounds     = hgc->nProc_x * ROUNDS_CONSTANT;
+  /* TODO replace hg->nVtx by number of unmatched vertices in 
+     nCandidates formula. Important if we start with a partial match. */
   nCandidates = calc_nCandidates (hg->nVtx, hgc->nProc_x) ;
   
   /* determine maximum global number of Vtx and Pins */
