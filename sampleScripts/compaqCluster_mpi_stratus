@@ -1,4 +1,5 @@
-.././configure --enable-mpi --with-cxxflags="-DMPI_NO_CPPBIND" \
-CXXFLAGS="-O2 -DMPICH_SKIP_MPICXX" CFLAGS=-O2 FFLAGS=-O2 \
---enable-nox-epetra \
---enable-loca --with-mpi-libs=-lmpi
+.././configure --enable-mpi CXXFLAGS="-O2 -DMPICH_SKIP_MPICXX -DMPI_NO_CPPBIND" 
+CFLAGS=-O2 FFLAGS=-O2 CPPFLAGS="-D__USE_STD_IOSTREAM" \
+--enable-nox-epetra --enable-loca --with-mpi-libs=-lmpi \
+--with-ar="$TRILINOS_HOME/sampleScripts/stratus_ar.pl ar cru" \
+TRILINOS_TEMPLATE_OBJS="cxx_repository"

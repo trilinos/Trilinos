@@ -1,5 +1,7 @@
 .././configure CXXFLAGS="-O2 -DMPI_NO_CPPBIND" \
+CPPFLAGS="-D__USE_STD_IOSTREAM" \
 CFLAGS=-O2 FFLAGS=-O2 --enable-nox-epetra \
 --enable-loca --enable-nox-epetra-examples \
---enable-nox-lapack-examples \
---enable-komplex
+--enable-nox-lapack-examples --enable-komplex \
+--with-ar="$TRILINOS_HOME/sampleScripts/stratus_ar.pl ar cru" \
+TRILINOS_TEMPLATE_OBJS="cxx_repository"
