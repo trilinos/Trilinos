@@ -89,8 +89,8 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos kokkos epetra triutils tpetra ifpack aztecoo \
-	anasazi ml komplex TSFCoreUtils TSFCore TSF TSFExtended amesos \
-	epetraext belos meros new_package nox
+	belos anasazi ml komplex TSFCoreUtils TSFCore TSF TSFExtended \
+	amesos epetraext meros new_package nox
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
 AMTAR = @AMTAR@
@@ -226,11 +226,11 @@ AUTOMAKE_OPTIONS = foreign
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 SUBDIRS = $(TEUCHOS_SUBDIR) $(KOKKOS_SUBDIR) $(EPETRA_SUBDIR) \
 	  $(TRIUTILS_SUBDIR) $(TPETRA_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(ANASAZI_SUBDIR) \
+	  $(AZTECOO_SUBDIR) $(BELOS_SUBDIR) $(ANASAZI_SUBDIR) \
 	  $(ML_SUBDIR) $(KOMPLEX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 		$(TSFEXTENDED_SUBDIR) \
-	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
+	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) \
 	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) \
           $(NOX_SUBDIR)
 
