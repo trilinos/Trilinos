@@ -149,14 +149,14 @@ int main(int argc, char *argv[]) {
 	int restarts = 10;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
-	// or copy is determined by the petra constructor called by AnasaziPetraVec.
+	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
 	// This is possible because I pass in arguements needed by petra.
-	AnasaziPetraVec<double> ivec(Map, block);
+	Anasazi::PetraVec<double> ivec(Map, block);
 	ivec.MvRandom();
 
 	// call the ctor that calls the petra ctor for a matrix
-	AnasaziPetraMat<double> Amat(A);	
-	AnasaziEigenproblem<double> MyProblem(&Amat, &ivec);
+	Anasazi::PetraMat<double> Amat(A);	
+	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// initialize the Block Arnoldi solver
 	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
@@ -188,9 +188,9 @@ int main(int argc, char *argv[]) {
 	double* evali = MyBlockArnoldi.getiEvals();
 
 	// retrieve eigenvectors
-	AnasaziPetraVec<double> evecr(Map, nev);
+	Anasazi::PetraVec<double> evecr(Map, nev);
 	MyBlockArnoldi.getEvecs( evecr );
-	AnasaziPetraVec<double> eveci(Map, nev);
+	Anasazi::PetraVec<double> eveci(Map, nev);
 	MyBlockArnoldi.getiEvecs( eveci );
 
 	// output results to screen

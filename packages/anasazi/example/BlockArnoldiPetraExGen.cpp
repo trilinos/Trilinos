@@ -191,8 +191,8 @@ int main(int argc, char *argv[]) {
         //
         // call the ctor for the preconditioning object
         //
-	BelosPetraMat<double> BelosMat(A);
-        BelosPetraPrec<double> EpetraOpPrec(prec);
+	Belos::PetraMat<double> BelosMat(A);
+        Belos::PetraPrec<double> EpetraOpPrec(prec);
 
 	//*******************************************************
 	// Set up Belos Block GMRES operator for inner iteration
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
 	int debuglevel = 0; // debuglevel of solver; how much information should be displayed.
         double btol = 1.0e-7;  // relative residual tolerance
 
-	BelosEpetraOperator<double> BelosOp( BelosMat, EpetraOpPrec, "BlockCG", btol, maxits, block, debuglevel, verbose );
+	Belos::EpetraOperator<double> BelosOp( BelosMat, EpetraOpPrec, "BlockCG", btol, maxits, block, debuglevel, verbose );
 
 	//************************************
 	// Start the block Arnoldi iteration
@@ -222,15 +222,15 @@ int main(int argc, char *argv[]) {
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 
-	AnasaziPetraVec<double> ivec(Map, block);
+	Anasazi::PetraVec<double> ivec(Map, block);
 	ivec.MvRandom();
 
 	// call the ctor that calls the petra ctor for a matrix
 
-	AnasaziPetraMat<double> Amat(A);
-	AnasaziPetraMat<double> Bmat(B);
-	AnasaziPetraGenOp<double> Aop(BelosOp, B);	
-	AnasaziEigenproblem<double> MyProblem(&Amat, &Bmat, &Aop, &ivec);
+	Anasazi::PetraMat<double> Amat(A);
+	Anasazi::PetraMat<double> Bmat(B);
+	Anasazi::PetraGenOp<double> Aop(BelosOp, B);	
+	Anasazi::Eigenproblem<double> MyProblem(&Amat, &Bmat, &Aop, &ivec);
 
 	// initialize the Block Arnoldi solver
 	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
@@ -261,10 +261,10 @@ int main(int argc, char *argv[]) {
 	double* evalr = MyBlockArnoldi.getEvals(); 
 
 	// retrieve real and imaginary parts of the eigenvectors
-	AnasaziPetraVec<double> evecr(Map, nev);
+	Anasazi::PetraVec<double> evecr(Map, nev);
 	MyBlockArnoldi.getEvecs( evecr );
 
-	AnasaziDenseMatrix<double> dmatr(nev,nev);
+	Anasazi::DenseMatrix<double> dmatr(nev,nev);
 	MyProblem.AInProd( one, evecr, evecr, dmatr );
 	double* ptr_dmatr = dmatr.getarray();
 	double compeval;
