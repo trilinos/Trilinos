@@ -17,6 +17,7 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/CreateTridi.cpp \
 	$(srcdir)/CreateTridi.h \
 	$(srcdir)/TestSuperludist.cpp \
+	$(srcdir)/TestScalapack.cpp \
 	$(srcdir)/TestSuperludist.h \
 	$(srcdir)/TestAllClasses.cpp \
 	$(srcdir)/TestAllClasses.h \

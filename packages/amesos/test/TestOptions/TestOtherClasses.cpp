@@ -27,9 +27,8 @@ int TestOtherClasses(char* AmesosClass,
     Teuchos::ParameterList ParamList ;
     ParamList.set( "Redistribute", true );
     ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 2 );
+    if ( verbose ) ParamList.set( "DebugLevel", 1 );
+
     //  ParamList.print( cerr, 10 ) ; 
 
     double relerror;

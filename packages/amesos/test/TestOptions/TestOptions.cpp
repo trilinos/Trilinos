@@ -52,7 +52,28 @@
 #endif 
 #endif 
 
-const int NumAmesosClasses = 7;
+string AS = "Amesos_Scalapack" ;
+string AU = "Amesos_Umfpack" ;
+
+vector<string> FactorySet( 7, ("Amesos_Scalapack",
+				     "Amesos_Umfpack",
+				     "Amesos_Mumps",
+				     "Amesos_Superludist",
+				     "Amesos_Klu",
+				     "Amesos_Superlu",
+				     "Amesos_Dscpack")   );
+#if 0
+  char* FactorySet[] = { "Amesos_Scalapack",
+			 "Amesos_Umfpack",
+			 "Amesos_Mumps",
+			 "Amesos_Superludist",
+			 "Amesos_Klu",
+			 "Amesos_Superlu",
+			 "Amesos_Dscpack" };
+#endif
+
+
+const int NumAmesosClasses = FactorySet.size();
 
 int CreateCrsMatrix( char *filename, Epetra_Comm &Comm, 
 		     bool transpose, bool distribute, 
@@ -63,6 +84,8 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   Epetra_Vector * readx; 
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
+
+  assert( NumAmesosClasses == 7 ) ;
    
   symmetric = false ; 
   string FileName = filename ;
@@ -301,6 +324,12 @@ int main( int argc, char *argv[] ) {
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'v') ) 
     verbose = true ; 
 
+  bool Short = false; 
+  if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 's') ) 
+    Short = true ; 
+  if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 's') ) 
+    Short = true ; 
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -310,22 +339,15 @@ int main( int argc, char *argv[] ) {
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
 
-  char* FactorySet[] = { "Amesos_Klu",
-			 "Amesos_Umfpack",
-			 "Amesos_Mumps",
-			 "Amesos_Superludist",
-			 "Amesos_Scalapack",
-			 "Amesos_Superlu",
-			 "Amesos_Dscpack" };
-
   Teuchos::ParameterList ParamList ;
+    ParamList.set( "DebugLevel", 1 );
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
   Amesos Afactory;
 
   //  for (int i=0; i < NumAmesosClasses; i++ ) {
   for (int i=0; i < 0; i++ ) {
-    Abase = Afactory.Create( FactorySet[i], Problem ) ; 
+    Abase = Afactory.Create( &FactorySet[i][0], Problem ) ; 
     if ( Abase == 0 ) {
       if ( verbose ) cout << FactorySet[i] << " not built in this configuration"  << endl ;
     } else {
@@ -356,10 +378,14 @@ int main( int argc, char *argv[] ) {
 #ifdef HAVE_VALGRIND 
   if ( ! RUNNING_ON_VALGRIND ) {
 #endif
-    result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-    //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-    result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-    result += TestOneMatrix("../bcsstk08.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+
+    if ( ! Short) { 
+      result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix("../bcsstk08.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+
+    }
 #ifdef HAVE_VALGRIND 
   }
 #endif

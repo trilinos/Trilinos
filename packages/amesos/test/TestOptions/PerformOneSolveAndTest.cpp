@@ -162,6 +162,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //
     Problem.SetLHS( &sAAx );
     Problem.SetRHS( &b );
+    Teuchos::ParameterList ParamList ;
+    ParamList.set( "DebugLevel", 1 );
+    EPETRA_CHK_ERR( Abase->SetParameters( ParamList ) ); 
     EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
     EPETRA_CHK_ERR( Abase->Solve(  ) ); 

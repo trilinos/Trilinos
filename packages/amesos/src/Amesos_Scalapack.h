@@ -1,3 +1,14 @@
+/*
+  TODO:
+  1)  Allow user level control over whether to use a 1D or 2D data 
+      distribution.
+  2)  Figure out how to redistribute the vectors.  (Allow no more than 
+      nb vectors at a time for now).  Done - I think 
+  3)  Move the code from software:MyExamples/TwodMap/TwoDMap.cpp in to
+      this routine (for the 2D case) Done - I think
+  4)  Create the ScaLAPACK 2D dense matrix.  Done - I think 
+ */
+
 // @HEADER
 // ***********************************************************************
 // 
@@ -142,8 +153,7 @@ public:
       <li>GetProblem().GetOperator() != 0 (return -1)
       <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)   NOT IMPLEMENTED
       <li>X and B must have the same shape (NOT CHECKED)
-      <li>X and B must have fewer than nb right hand sides.  (nb >=n/p and unless the 
-heuristic for the number of processes to use is overridden, nb >= 200).  assert() 
+      <li>X and B must have fewer than nb right hand sides.  EPETRA_CHK_ERR(-2)
       <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
       <li>The matrix should not have changed
           since the last call to NumericFactorization().
@@ -287,10 +297,11 @@ revert to their default values.
                                          //  blocked (not block cyclic) distribution
   Epetra_CrsMatrix *ScaLAPACK1DMatrix_ ; //  Points to a  ScaLAPACK 1D
                                          //  blocked (not block cyclic) distribution
-  Epetra_Map *SerialMap_ ;               //  Points to a 1D Map which matches a ScaLAPACK 1D
-                                         //  blocked (not block cyclic) distribution
+  Epetra_Map *VectorMap_ ;               //  Points to a Map for vectors X and B
   vector<double> DenseA_;                //  The data in a ScaLAPACK 1D blocked format
   vector<int> Ipiv_ ;                    //  ScaLAPACK pivot information
+  int NumOurRows_ ;
+  int NumOurColumns_ ;
  
 
   bool UseTranspose_;     
@@ -316,7 +327,26 @@ revert to their default values.
   int NumNumericFact_;
   int NumSolve_;  
 
-  Epetra_Time Time;
+
+
+  //
+  //  Control of the data distribution
+  //
+  bool TwoD_distribution_;  // True if 2D data distribution is used
+  int grid_mb_;             // Row blocking factor (only used in 2D distribution)  
+  int grid_nb_;             // Column blocking factor (only used in 2D distribution)  
+  int mypcol_;              // Process column in the ScaLAPACK2D grid
+  int myprow_;              // Process row in the ScaLAPACK2D grid
+  Epetra_CrsMatrix* FatOut_;//
+
+  //
+  //  Blocking factors (For both 1D and 2D data distributions)
+  //
+  int mb_;
+  int nb_;
+  int lda_;
+
+  Epetra_Time * Time_;
   
 };  // End of  class Amesos_Scalapack  
 #endif /* _AMESOS_SCALAPACK_H_ */

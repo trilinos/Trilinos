@@ -153,6 +153,7 @@ TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 # No C or Fortran code needs to be compiled at this time
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+TAC_ARG_WITH_LIBS(libs, LIBS)
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
