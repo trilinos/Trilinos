@@ -72,7 +72,8 @@ LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
   params(p),
   userInterface(i),
   tmpVectorPtr2(0),
-  eigenvalCounter(0)
+  eigenvalCounter(0),
+  scaleVecPtr(NULL)
 {
 }
 
@@ -87,7 +88,8 @@ LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
   params(p),
   userInterface(i),
   tmpVectorPtr2(0),
-  eigenvalCounter(0)
+  eigenvalCounter(0),
+  scaleVecPtr(NULL)
 {
 }
 
@@ -98,13 +100,18 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
   params(source.params),
   userInterface(source.userInterface),
   tmpVectorPtr2(0),
-  eigenvalCounter(source.eigenvalCounter)
+  eigenvalCounter(source.eigenvalCounter),
+  scaleVecPtr(NULL)
 {
+  if (source.scaleVecPtr != NULL)
+    scaleVecPtr = source.scaleVecPtr->clone(NOX::DeepCopy);
 }
 
 LOCA::Epetra::Group::~Group() 
 {
   delete tmpVectorPtr2;
+  if (scaleVecPtr != NULL)
+    delete scaleVecPtr;
 }
 
 NOX::Abstract::Group* 
@@ -129,8 +136,11 @@ LOCA::Epetra::Group&
 LOCA::Epetra::Group::operator=(const LOCA::Epetra::Group& source)
 {
   params = source.params;
+  eigenvalCounter = source.eigenvalCounter;
   NOX::Epetra::Group::operator=(source);
   LOCA::Abstract::Group::operator=(source);
+  if (source.scaleVecPtr != NULL)
+    scaleVecPtr = source.scaleVecPtr->clone(NOX::DeepCopy);
   return *this;
 }
 
@@ -269,108 +279,27 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   return LOCA::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::Epetra::Group::applyJacobianInverseMulti(NOX::Parameter::List& p,
-			   const NOX::Abstract::Vector* const* inputs,
-			   NOX::Abstract::Vector** outputs, int nVecs) const
+double
+LOCA::Epetra::Group::computeScaledDotProduct(
+				       const NOX::Abstract::Vector& a,
+				       const NOX::Abstract::Vector& b) const
 {
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-  
-  const NOX::Epetra::Vector* noxEpetraInput;
-  NOX::Epetra::Vector* nonConstInput;
-  Epetra_Vector* epetraInput;
+  if (scaleVecPtr == NULL)
+    return a.dot(b);
+  else {
+    NOX::Abstract::Vector* as = a.clone(NOX::DeepCopy);
+    NOX::Abstract::Vector* bs = b.clone(NOX::DeepCopy);
+    double d;
 
-  NOX::Epetra::Vector* noxEpetraResult;
-  Epetra_Vector* epetraResult;
+    as->scale(*scaleVecPtr);
+    bs->scale(*scaleVecPtr);
+    d = as->dot(*bs);
 
-  // Get the non-const versions of the Jacobian and input vector
-  // Epetra_LinearProblem requires non-const versions so we can perform
-  // scaling of the linear problem.
-  Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
+    delete as;
+    delete bs;
 
-  // Create Epetra linear problem object for the linear solve
-  Epetra_LinearProblem Problem;
-
-  // To be safe, first remove the old solver/preconditionr 
-  // that was created by applyRightPreconditioner().
-  destroyAztecSolver();
-
-  // Get linear solver convergence parameters
-  int maxit = p.getParameter("Max Iterations", 400);
-  double tol = p.getParameter("Tolerance", 1.0e-6);
-
-  // Loop over each right-hand-side
-  for (int i=0; i<nVecs; i++) {
-    noxEpetraInput = dynamic_cast<const NOX::Epetra::Vector*>(inputs[i]);
-    nonConstInput = const_cast<NOX::Epetra::Vector*>(noxEpetraInput);
-    epetraInput = &(nonConstInput->getEpetraVector());
-
-    noxEpetraResult = dynamic_cast<NOX::Epetra::Vector*>(outputs[i]);
-    epetraResult = &(noxEpetraResult->getEpetraVector());
-
-    // Set up linear problem
-    Problem.SetOperator(&Jacobian);
-    Problem.SetLHS(epetraResult);
-    Problem.SetRHS(epetraInput);
-
-    // ************* Begin linear system scaling *******************
-
-    if (scaling != 0) {
-      scaling->computeScaling(Problem);
-      scaling->scaleLinearSystem(Problem);
-
-//       if (utils.isPrintProcessAndType(Utils::Details)) {
-// 	cout << *scaling << endl;
-//       }
-    }
-
-    // ************* End linear system scaling *******************
-  
-    // Set the default Problem parameters to "hard" (this sets Aztec defaults
-    // during the AztecOO instantiation)
-    Problem.SetPDL(hard);
-
-    // Create the solver.  
-    if (i == 0)
-      aztecSolver = new AztecOO(Problem);
-    else
-      aztecSolver->SetProblem(Problem);
-  
-    // Set specific Aztec parameters requested by NOX
-    setAztecOptions(p, *aztecSolver);
-  
-    // Compute and set the Preconditioner in AztecOO if needed
-    if (i == 0)
-      createPreconditioner(ImplicitConstruction, p);
-  
-    int aztecStatus = -1;
-
-    aztecStatus = aztecSolver->Iterate(maxit, tol);
-  
-    // Unscale the linear system
-    if (scaling != 0)
-      scaling->unscaleLinearSystem(Problem);
-
-    // Set the output parameters in the "Output" sublist
-    NOX::Parameter::List& outputList = p.sublist("Output");
-    int prevLinIters = outputList.getParameter("Total Number of Linear Iterations", 0);
-    int curLinIters = 0;
-    double achievedTol = -1.0;
-    curLinIters = aztecSolver->NumIters();
-    achievedTol = aztecSolver->ScaledResidual();
-
-    outputList.setParameter("Number of Linear Iterations", curLinIters);
-    outputList.setParameter("Total Number of Linear Iterations", (prevLinIters + curLinIters));
-    outputList.setParameter("Achieved Tolerance", achievedTol);
-
-    if (aztecStatus != 0) 
-      finalStatus = Abstract::Group::NotConverged;
+    return d;
   }
-
-  // Delete the solver and reset to NULL.
-  destroyAztecSolver();
-  
-  return finalStatus;
 }
 
 #ifdef HAVE_LOCA_ANASAZI
@@ -594,6 +523,17 @@ LOCA::Epetra::Group::applyBorderedJacobianInverse(bool trans,
     return NOX::Abstract::Group::NotConverged;
   
   return NOX::Abstract::Group::Ok;
+}
+
+void
+LOCA::Epetra::Group::setScaleVector(const NOX::Abstract::Vector& s)
+{
+  if (scaleVecPtr != NULL)
+    delete scaleVecPtr;
+
+  scaleVecPtr = s.clone(NOX::DeepCopy);
+
+  return;
 }
 
 void 

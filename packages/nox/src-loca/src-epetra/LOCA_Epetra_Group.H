@@ -182,15 +182,19 @@ namespace LOCA {
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
-      //! applyJacobianInverse for multiple right-hand sides
-      /*!
-       * This calls aztec serially for each right-hand-side, but only
-       * computes the preconditioner once.
+      //! Compute a scaled dot product
+      /*! 
+       * The implementation here uses the scaling vector \f$s\f$ if one
+       * is supplied:
+       * \f[
+       *     \sum_{i=1}^n a_i*b_i*s_i*s_i.
+       * \f]
+       * If the scaling vector is not provided, the standard dot product
+       * is used.
        */
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseMulti(NOX::Parameter::List& params,
-			   const NOX::Abstract::Vector* const* inputs,
-			   NOX::Abstract::Vector** outputs, int nVecs) const;
+      virtual double
+      computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			      const NOX::Abstract::Vector& b) const;
 
       //! Computes leading eigenvalues/eigenvectors using Anasazi package
       /*!
@@ -269,6 +273,9 @@ namespace LOCA {
       virtual void printSolution(const NOX::Epetra::Vector& x,
                                  const double conParam) const;
 
+      //! Sets the scale vector.  
+      void setScaleVector(const NOX::Abstract::Vector& s);
+
       protected:
 
       //! Sets aztec solver options for matrix-free bordered system
@@ -297,6 +304,9 @@ namespace LOCA {
 
       //! Step counter for option of computing eigenvalues every n continuation steps
       int eigenvalCounter;
+
+      //! Stores a pointer to the scale vector
+      NOX::Abstract::Vector* scaleVecPtr;
     };
 
   } // namespace Epetra
