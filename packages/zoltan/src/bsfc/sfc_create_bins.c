@@ -426,6 +426,7 @@ void single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
       }
       current_loc=current_loc-number_of_cuts2;
     
+
       if(*number_of_cuts < number_of_cuts2)
 	*number_of_cuts = number_of_cuts2;
     }
@@ -433,6 +434,8 @@ void single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
   }
   /* make sure that the last bin gets the rest of the work */
   bin_proc_array[0] = -1;
+  if(level_flag != SFC_COARSE_LEVEL_FLAG)
+    bin_proc_array[current_loc] = -1;
 
   return;
 

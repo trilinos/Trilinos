@@ -40,7 +40,7 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
   int ll_counter, ll_location, *ll_bins_head_copy;
 
   /* amount of sub-bins in a bin, probably want this as a passed in parameter */
-  int number_of_bins = 1; /* should equal user specified parameter sub_bins_per_bin */
+  int number_of_bins = 10; /* should equal user specified parameter sub_bins_per_bin */
 
   printf("refining some bins on proc %d!!!\n",lb->Proc);
 
@@ -69,6 +69,7 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
   /* loop over all bins that have a cut in them using linklist to find objects in the cut bins */
   for(ll_counter=0;ll_counter<=number_of_cuts;ll_counter++) 
     if(ll_bins_head[ll_counter] != -1) {
+      int temp_max_cuts_in_bin = 0;
       
       /* calculate new bin numbers for objects that are in a cut bin */
       ll_location = ll_bins_head[ll_counter];
@@ -106,7 +107,6 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
       
       /* find new cut(s) in the sub-bins */
       if(wgt_dim==1) {
-	int temp_max_cuts_in_bin = 0;
 	single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter], total_weight_array, 
 				  bin_proc_array, lb, binned_weight_array, 
 				  (work_percent_array+lb->Proc+ll_counter-2*number_of_cuts),
@@ -142,7 +142,9 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
 	    non_cut_bin_counter++;
 	}
 	vert_in_cut_ptr[ll_location].destination_proc += 
-	  j-number_of_cuts+non_cut_bin_counter;
+	  j-number_of_cuts; //+non_cut_bin_counter-temp_max_cuts_in_bin+1;
+	/*if(vert_in_cut_ptr[ll_location].destination_proc != 2 && lb->Proc == 2)
+	  printf("right here\n");*/
 
 	if(vert_in_cut_ptr[ll_location].destination_proc < 0)
 	  printf("bad proc right here!!!!!!! i'm proc %d >>>>>>>\n",lb->Proc);
