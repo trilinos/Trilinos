@@ -359,7 +359,18 @@ sub sendemail {
   if ($errorcount || -f $testfile ||  -f $testfile1 || $warningcount || $updateerror || $testCompileError || $trilinosCompileError) {
 
     # At least one problem occurred throughout the course of testing
-    my $subject_line=join " - ", $ARCH,'At least one test failed';
+
+    my $subject_line=join " - ", $ARCH,'At least one error occurred';
+    if ( $updateerror ) {
+      $subject_line=join " - ", $ARCH,'CVS update error';
+    }
+    elsif ( $trilinosCompileError ) {
+      $subject_line=join " - ", $ARCH, $comm,'Trilinos compile error';
+    }
+    else {
+      $subject_line=join " - ", $ARCH,'At least one test failed';
+    }
+
     my $msg=MIME::Lite->new(
 			    From =>'trilinos-regression@software.sandia.gov',
 #			    To =>'jmwille@sandia.gov',
