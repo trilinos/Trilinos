@@ -99,13 +99,16 @@ int main(int argc, char *argv[])
   // set defaults for classic smoothed aggregation
   int options[AZ_OPTIONS_SIZE];
   double params[AZ_PARAMS_SIZE];
+  AZ_defaults(options,params);
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_ilu;
+  options[AZ_graph_fill] = 0;
   
   // SetDefaults() will call AZ_defaults(options,params), and will also set the
-  // preconditioner as `AZ_dom_decomp'. We will overwrite some values later in
-  // this file.
+  // preconditioner as `AZ_dom_decomp'. 
   // NOTE THAT THE VECTORS ARE NOT COPIED! Only the pointer is copied, 
-  // so do not destroy options and params
-  // before the end of the linear system solution!
+  // so do not delete options and params before the end of the linear 
+  // system solution!
   //
   // You can also call SetDefaults() without passing `options' and `params.' This
   // way, the code will allocate a int and a double vector, that must be freed by
