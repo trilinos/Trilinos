@@ -156,7 +156,7 @@ extern void Destroy_Dense_Matrix(SuperMatrix *);
 
 extern void    dallocateA (int, int, double **, int **, int **);
 extern void    StatInit    (int, int);
-extern void    StatFree    ();
+extern void    StatFree    (void);
 extern void    get_perm_c(int, SuperMatrix *, int *);
 extern void    sp_preorder (char*, SuperMatrix*, int*, int*, SuperMatrix*);
 extern int     sp_coletree (int *, int *, int *, int, int, int *);
@@ -223,7 +223,6 @@ extern int     sp_dgemm (char *, char *, int, int, int, double,
 
 /* Memory-related */
 extern void    superlu_abort_and_exit(char*);
-extern void    *superlu_malloc (int);
 extern void    superlu_free (void*);
 extern int     dLUMemInit (char *, void *, int, int, int, int, int,
 			     SuperMatrix *, SuperMatrix *,
@@ -239,14 +238,14 @@ extern int     *intCalloc (int);
 extern double  *doubleMalloc(int);
 extern double  *doubleCalloc(int);
 extern void    *superlu_malloc(int);
-extern int     memory_usage();
+extern int     memory_usage(void);
 extern int     dQuerySpace (SuperMatrix *, SuperMatrix *, int,
 				mem_usage_t *);
 
 /* Auxiliary routines */
 extern void    dCompRow_to_CompCol(int, int, int, double*, int*, int*,
 		                   double **, int **, int **);
-extern double  SuperLU_timer_ ();
+extern double  SuperLU_timer_ (void);
 extern int     sp_ienv (int);
 extern int     lsame_ (char *, char *);
 extern int     xerbla_ (char *, int *);
