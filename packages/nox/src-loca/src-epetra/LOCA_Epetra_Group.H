@@ -106,6 +106,8 @@ public:
 
   virtual bool computeJacobian();
 
+  virtual bool computeTangent(NOX::Parameter::List& params, int paramId);
+
   //@}
 
   /** @name "Get" functions 
@@ -115,6 +117,8 @@ public:
   //@{
 
   virtual const ParameterVector& getParams() const;
+
+  virtual const NOX::Abstract::Vector& getTangent() const;
 
   //@}
 
@@ -129,6 +133,12 @@ protected:
 
   //! Solution vector pointer.
   ParameterVector* pVectorPtr;
+
+  NOX::Epetra::Vector* tangentVecPtr;
+
+  NOX::Epetra::Vector& tangentVec;
+
+  bool isValidTangent;
 
   /** @name Additional Shared Operators */
   //@{

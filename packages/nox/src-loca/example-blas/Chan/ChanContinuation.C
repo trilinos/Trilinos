@@ -74,6 +74,7 @@ int main()
   locaStepperList.setParameter("Step Size Aggressiveness", 0.0);
   locaStepperList.setParameter("Max Continuation Steps", 100);
   locaStepperList.setParameter("Max Nonlinear Iterations", 15);
+  locaStepperList.setParameter("First Order Predictor", true);
 
   // Set the LOCA Utilities
   NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
@@ -82,22 +83,20 @@ int main()
 			     LOCA::Utils::StepperIteration +
 			     LOCA::Utils::StepperDetails +
 			     LOCA::Utils::Solver +
+                             LOCA::Utils::Parameters +
 			     LOCA::Utils::SolverDetails);
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
   NOX::Parameter::List& nlParams = locaParamsList.sublist("Solver");
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
   nlParams.setParameter("Output Information", 
-			NOX::Utils::Details + 
+			NOX::Utils::Details +
+	                NOX::Utils::OuterIteration + 
+	                NOX::Utils::InnerIteration + 
 			NOX::Utils::Warning);
 
-  // Create the "Line Search" sublist for the "Line Search Based" solver
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
-  searchParams.setParameter("Max Iters", 15);
-  searchParams.setParameter("Default Step", 1.0000);
-  searchParams.setParameter("Recovery Step", 0.0001);
-  searchParams.setParameter("Minimum Step", 0.0001);
+  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+  NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
 
   // Set up the status tests
   NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);
@@ -118,7 +117,7 @@ int main()
   const NOX::BLAS::Vector& finalSolution = dynamic_cast<const NOX::BLAS::Vector&>(finalGroup.getX());
 
   // Output the parameter list
-  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+  if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
     stepper.getParameterList().print(cout);

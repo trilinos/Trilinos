@@ -297,6 +297,9 @@ LOCA::Bifurcation::ArcLengthGroup::computeJacobian()
 bool
 LOCA::Bifurcation::ArcLengthGroup::computeGradient() 
 {
+  cout << "ERROR: LOCA::Bifurcation::ArcLengthGroup::computeGradient()"
+       << " - not implemented" << endl;
+  throw "LOCA Error";
   return false;
 }
    
@@ -317,22 +320,20 @@ LOCA::Bifurcation::ArcLengthGroup::computeNewton(NOX::Parameter::List& params)
 
 bool
 LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
-                                                  int paramId,
-                                                  Vector& result) 
+                                                  int paramId) 
 {
-  ArcLengthVector& al_result = dynamic_cast<ArcLengthVector&>(result);
-  Vector& result_x = al_result.getXVec();
-  double& result_param =  al_result.getArcParam();
+  Vector& tangent_x = alTangentVec.getXVec();
+  double& tangent_param =  alTangentVec.getArcParam();
 
-  Vector *dfdpVec = result_x.clone(NOX::ShapeCopy);
+  Vector *dfdpVec = tangent_x.clone(NOX::ShapeCopy);
 
   bool res = grpPtr->computeJacobian();
 
   res = res && grpPtr->computeDfDp(paramId, *dfdpVec);
 
-  res = res && grpPtr->applyJacobianInverse(params, *dfdpVec, result_x);
+  res = res && grpPtr->applyJacobianInverse(params, *dfdpVec, tangent_x);
 
-  result_param = sqrt(1.0 + result_x.dot(result_x));
+  tangent_param = sqrt(1.0 + tangent_x.dot(tangent_x));
   
   // Construct residual of arclength equation
   ArcLengthVector tmpVec(alPrevXVec);
@@ -341,15 +342,15 @@ LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
   ArcLengthVector tmpVec2(*dfdpVec, 1.0);
 
   // CHECK FOR SIGN CHANGE!
-  if (tmpVec.dot(tmpVec2) < 0.0) result_param *= -1.0;
+  if (tmpVec.dot(tmpVec2) < 0.0) tangent_param *= -1.0;
 
-  result_x.scale(result_param);
+  tangent_x.scale(tangent_param);
 
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
 
-  alTangentVec = result;
+  alTangentVec.setVec(tangent_x, tangent_param);
 
   delete dfdpVec;
   return res;

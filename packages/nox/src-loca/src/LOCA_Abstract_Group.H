@@ -125,9 +125,10 @@ public:
   virtual const ParameterVector& getParams() const = 0;
 
   //! Compute tangent direction
-  virtual bool computeTangent(NOX::Parameter::List& params,
-                              int paramID,
-			      NOX::Abstract::Vector& result);
+  virtual bool computeTangent(NOX::Parameter::List& params, int paramID) = 0;
+
+  //! Get tangent direction vector, needed for predictor
+  virtual const NOX::Abstract::Vector& getTangent() const = 0;
 
   virtual bool computeDfDp(int paramID, NOX::Abstract::Vector& result);
 

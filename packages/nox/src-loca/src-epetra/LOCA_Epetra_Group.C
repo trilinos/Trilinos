@@ -44,6 +44,8 @@ Group::Group(const NOX::Parameter::List& params, Interface& i,
 	     Epetra_Operator& J) :
   NOX::Epetra::Group(params, i, x, J),
   pVectorPtr(new ParameterVector(p)),
+  tangentVecPtr(x.clone()),
+  tangentVec(*tangentVecPtr),
   userInterface(i)
 {
 }
@@ -54,6 +56,8 @@ Group::Group(const NOX::Parameter::List& params, Interface& i,
 	     Epetra_Operator& M) :
   NOX::Epetra::Group(params, i, x, J, M),
   pVectorPtr(new ParameterVector(p)),
+  tangentVecPtr(x.clone()),
+  tangentVec(*tangentVecPtr),
   userInterface(i)
 {
 }
@@ -61,12 +65,15 @@ Group::Group(const NOX::Parameter::List& params, Interface& i,
 Group::Group(const Group& source, NOX::CopyType type) :
   NOX::Epetra::Group(source, type),
   pVectorPtr(new ParameterVector(*(source.pVectorPtr))),
+  tangentVecPtr(source.tangentVecPtr->clone()),
+  tangentVec(*tangentVecPtr),
   userInterface(source.userInterface)
 {
 }
 
 Group::~Group() 
 {
+  delete tangentVecPtr;
   delete pVectorPtr;
 }
 
@@ -137,6 +144,23 @@ bool Group::computeJacobian()
   return NOX::Epetra::Group::computeJacobian();
 }
 
+bool
+LOCA::Abstract::Group::computeTangent(NOX::Parameter::List& params,
+                                      int paramID)
+{
+  bool res = computeJacobian();
+
+  NOX::Abstract::Vector *dfdpVec = tangentVec.clone(NOX::ShapeCopy);
+
+  res = res && computeDfDp(paramID, *dfdpVec);
+
+  res = res && applyJacobianInverse(params, *dfdpVec, tangentVec);
+
+  delete dfdpVec;
+
+  return res;
+}
+
 const ParameterVector& Group::getParams() const 
 {
   return *pVectorPtr;
@@ -145,4 +169,10 @@ const ParameterVector& Group::getParams() const
 NOX::Epetra::Interface& Group::getUserInterface()
 {
   return userInterface;
+}
+
+const Vector&
+LOCA::Epetra::Group::getTangent() const
+{
+  return tangentVec;
 }

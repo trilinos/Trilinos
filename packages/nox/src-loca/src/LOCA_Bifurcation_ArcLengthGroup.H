@@ -159,10 +159,8 @@ public:
   virtual bool computeNewton(NOX::Parameter::List& params);
 
   //! Compute Tangent direction (dx/ds, dp/ds), using parameters 
-  //! for nonlinear solve, and return in result.
-  virtual bool computeTangent(NOX::Parameter::List& params,
-                              int paramId,
-                              NOX::Abstract::Vector& result);
+  //! for nonlinear solve.
+  virtual bool computeTangent(NOX::Parameter::List& params, int paramId);
   //@}
 
   /** @name Jacobian operations.
@@ -369,6 +367,9 @@ protected:
 
   //! Is Newton vector valid
   bool isValidNewton;
+
+  //! Is Tangent vector vector valid
+  bool isValidTangent;
 
 };
 } // namespace Bifurcation

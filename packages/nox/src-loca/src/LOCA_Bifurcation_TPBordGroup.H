@@ -151,6 +151,11 @@ public:
   */
   virtual bool computeNewton(NOX::Parameter::List& params);
 
+  //! Compute Tangent direction (dx/ds, dp/ds), using parameters
+  //! for nonlinear solve.
+  virtual bool computeTangent(NOX::Parameter::List& params,
+                              int paramId);
+
   //@}
 
   /** @name Jacobian operations.
@@ -284,6 +289,9 @@ public:
   //! Return Newton direction.
   virtual const NOX::Abstract::Vector& getNewton() const;
 
+  //! Return Tangent direction.
+  virtual const NOX::Abstract::Vector& getTangent() const;
+
   /*!
     \brief Return the norm of the Newton solve residual.
   
@@ -327,6 +335,9 @@ protected:
   //! Stores the turning point Newton vector
   TPBordVector tpNewtonVec;
 
+  //! Stores the turning point Tangent vector
+  TPBordVector tpTangentVec;
+
   //! Stores the constant length vector
   NOX::Abstract::Vector* lengthVecPtr;
 
@@ -352,6 +363,8 @@ protected:
   //! Is Newton vector valid
   bool isValidNewton;
 
+  //! Is Tangent vector valid
+  bool isValidTangent;
 };
 } // namespace Bifurcation
 } // namespace LOCA

@@ -111,8 +111,11 @@ public:
   virtual NOX::StatusTest::StatusType solve();
 
   //! Solve for one step of the continuation problem 
-  //! (i.e. one entire nonlinear solve)
+  //! (i.e. predictor, stepper, then call nonlinearSolve())
   virtual NOX::StatusTest::StatusType step();
+
+  //! Call nonlinear solver, check status, print, update counters
+  virtual NOX::StatusTest::StatusType nonlinearSolve();
 
   //@{ \name Information accessor methods.
 
@@ -144,6 +147,9 @@ protected:
 
   //! Compute a new step size based on results from the previous step
   virtual double computeStepSize(NOX::StatusTest::StatusType solverStatus);
+
+  //! Creates augmented ArclengthGroup from current group, resets solver
+  virtual bool beginArclength();
 
   //! Checks to see if convergence of the stepper algorithm is achieved.  
   /*! Convergence is achieved if the stepper has either hit the max number of steps or has reached the final parameter value
@@ -244,6 +250,12 @@ protected:
 
   //! Maximum number of continuation steps to take. Defaults to 100.
   int maxConSteps;
+
+  //! Flag specifying to specify Arclength contuinuation. Defaults to false.
+  bool doArclength;
+
+  //! Flag specifying to specify first order predictor. Defaults to false.
+  bool doFirstOrderPredictor;
 
   //! Current status of the stepper.
   NOX::StatusTest::StatusType stepperStatus;

@@ -45,6 +45,7 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
     tpXVec(g.getX(), lenVec, 0.0),
     tpFVec(lenVec, lenVec, 0.0),
     tpNewtonVec(lenVec, lenVec, 0.0),
+    tpTangentVec(lenVec, lenVec, 0.0),
     lengthVecPtr(lenVec.clone(NOX::ShapeCopy)), 
     bifParamId(paramId), 
     derivResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
@@ -62,6 +63,7 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source)
     tpXVec(source.tpXVec),
     tpFVec(source.tpFVec),
     tpNewtonVec(source.tpNewtonVec),
+    tpTangentVec(source.tpTangentVec),
     lengthVecPtr(source.lengthVecPtr->clone(NOX::DeepCopy)), 
     bifParamId(source.bifParamId),
     derivResidualParamPtr(source.derivResidualParamPtr->clone(NOX::DeepCopy)),
@@ -114,6 +116,7 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
     tpXVec = source.tpXVec;
     tpFVec = source.tpFVec;
     tpNewtonVec = source.tpNewtonVec;
+    tpTangentVec = source.tpTangentVec;
     lengthVecPtr = source.lengthVecPtr->clone(type);
     derivResidualParamPtr = source.derivResidualParamPtr->clone(type);
     derivNullResidualParamPtr = source.derivNullResidualParamPtr->clone(type);
@@ -290,6 +293,23 @@ LOCA::Bifurcation::TPBordGroup::computeNewton(NOX::Parameter::List& params)
     tpNewtonVec.scale(-1.0);
     isValidNewton = true;
   }
+
+  return res;
+}
+
+bool
+LOCA::Bifurcation::TPBordGroup::computeTangent(NOX::Parameter::List& params,
+                                      int paramID)
+{
+  bool res = computeJacobian();
+
+  NOX::Abstract::Vector* dfdpVec = tpTangentVec.clone(NOX::ShapeCopy);
+
+  res = res && computeDfDp(paramID, *dfdpVec);
+
+  res = res && applyJacobianInverse(params, *dfdpVec, tpTangentVec);
+
+  delete dfdpVec;
 
   return res;
 }
@@ -553,7 +573,16 @@ LOCA::Bifurcation::TPBordGroup::getNormF() const
 const Vector&
 LOCA::Bifurcation::TPBordGroup::getGradient() const 
 {
+  cout << "ERROR: LOCA::Bifurcation::TPBordGroup::getGradient() "
+       << " - not implemented" << endl;
+  throw "LOCA Error";
   return getNewton();
+}
+
+const Vector&
+LOCA::Bifurcation::TPBordGroup::getTangent() const 
+{
+  return tpTangentVec;
 }
 
 const Vector&

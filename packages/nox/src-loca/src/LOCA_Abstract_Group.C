@@ -71,23 +71,24 @@ LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
   return *this;
 }
 
+/*
 bool
 LOCA::Abstract::Group::computeTangent(NOX::Parameter::List& params, 
-                                      int paramID, 
-                                      NOX::Abstract::Vector& result) 
+                                      int paramID) 
 {
   bool res = computeJacobian();
 
-  NOX::Abstract::Vector *dfdpVec = result.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector *dfdpVec = tangentVec.clone(NOX::ShapeCopy);
 
   res = res && computeDfDp(paramID, *dfdpVec);
 
-  res = res && applyJacobianInverse(params, *dfdpVec, result);
+  res = res && applyJacobianInverse(params, *dfdpVec, tangentVec);
 
   delete dfdpVec;
 
   return res;
 }
+*/
 
 bool
 LOCA::Abstract::Group::computeDfDp(int paramID, NOX::Abstract::Vector& result) 

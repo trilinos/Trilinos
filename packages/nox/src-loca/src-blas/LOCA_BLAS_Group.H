@@ -64,6 +64,8 @@ namespace LOCA {
 
       virtual bool computeJacobian();
 
+      virtual bool computeTangent(NOX::Parameter::List& params, int paramId);
+
       //! Set the bifurcation/continuation parameter list in the group.
       virtual bool setParams(const ParameterVector& p);
 
@@ -75,12 +77,17 @@ namespace LOCA {
       //! Return a const reference to the ParameterVector owned by the group. 
       virtual const ParameterVector& getParams() const;
 
+      //! Return Tangent vector (for predictor).
+      virtual const NOX::Abstract::Vector& getTangent() const;
+
       //! Print out the group
       virtual bool print() const;
 
     protected:
       Interface& locaProblemInterface; 
       ParameterVector params;
+      NOX::BLAS::Vector tangentVec;
+      bool isValidTangent;
     };
 
   } // namespace BLAS

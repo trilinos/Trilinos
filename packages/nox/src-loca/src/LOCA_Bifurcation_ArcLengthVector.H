@@ -70,6 +70,8 @@ public:
 
   virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
 
+  virtual LOCA::Bifurcation::ArcLengthVector& operator=(const LOCA::Bifurcation::ArcLengthVector& y);
+
   virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
 
   virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);

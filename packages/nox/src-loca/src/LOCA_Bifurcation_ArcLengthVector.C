@@ -76,6 +76,13 @@ NOX::Abstract::Vector& ArcLengthVector::abs(const NOX::Abstract::Vector& y)
 
 NOX::Abstract::Vector& ArcLengthVector::operator=(const NOX::Abstract::Vector& y)
 {
+ const LOCA::Bifurcation::ArcLengthVector* aly = dynamic_cast<const LOCA::Bifurcation::ArcLengthVector*>(&y);
+
+  return (*this = *aly);
+}
+
+LOCA::Bifurcation::ArcLengthVector& ArcLengthVector::operator=(const LOCA::Bifurcation::ArcLengthVector& y)
+{
   const ArcLengthVector* tpY = 0;
   tpY = dynamic_cast<const ArcLengthVector*>(&y);
   

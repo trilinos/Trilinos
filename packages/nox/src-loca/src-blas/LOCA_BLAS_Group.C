@@ -37,12 +37,14 @@ using namespace LOCA;
 using namespace LOCA::BLAS;
 
 Group::Group(Interface& interface) : 
-  NOX::BLAS::Group(interface), locaProblemInterface(interface), params()
+  NOX::BLAS::Group(interface), locaProblemInterface(interface), params(),
+  tangentVec(interface.getInitialGuess())
 {}
 
 Group::Group(const Group& source, NOX::CopyType type) : 
   NOX::BLAS::Group(source,type), 
-  locaProblemInterface(source.locaProblemInterface), params(source.params)
+  locaProblemInterface(source.locaProblemInterface), params(source.params),
+  tangentVec(source.tangentVec)
 {}
 
 Group::~Group() 
@@ -62,6 +64,7 @@ Group&
 LOCA::BLAS::Group::operator=(const Group& source) {
   NOX::BLAS::Group::operator=(source);
   params = source.params;
+  tangentVec = source.tangentVec;
   return *this;
 }
 
@@ -80,6 +83,23 @@ bool
 LOCA::BLAS::Group::computeJacobian() {
   locaProblemInterface.setParams(params);
   return NOX::BLAS::Group::computeJacobian();
+}
+
+bool
+LOCA::BLAS::Group::computeTangent(NOX::Parameter::List& params,
+                                      int paramID)
+{
+  bool res = computeJacobian();
+
+  NOX::Abstract::Vector* dfdpVec = tangentVec.clone(NOX::ShapeCopy);
+
+  res = res && computeDfDp(paramID, *dfdpVec);
+
+  res = res && applyJacobianInverse(params, *dfdpVec, tangentVec);
+
+  delete dfdpVec;
+
+  return res;
 }
 
 bool 
@@ -105,6 +125,12 @@ const ParameterVector&
 LOCA::BLAS::Group::getParams() const
 {
   return params;
+}
+
+const NOX::Abstract::Vector&
+LOCA::BLAS::Group::getTangent() const
+{
+  return tangentVec;
 }
 
 bool 

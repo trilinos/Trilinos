@@ -36,8 +36,9 @@
 #include "LOCA_Utils.H"		      // for static function doPrint
 #include "LOCA_Abstract_Group.H"      // class data element
 #include "LOCA_Abstract_Vector.H"     // class data element
+#include "LOCA_Bifurcation_ArcLengthGroup.H"   //
 
-using namespace LOCA;
+using namespace LOCA;;
 using namespace NOX::StatusTest;
 
 /* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
@@ -100,6 +101,10 @@ StatusType Stepper::getStatus()
 
 StatusType Stepper::solve()
 {
+  stepperStatus = nonlinearSolve();
+
+  if (stepperStatus == Unconverged && doArclength) beginArclength();
+
   while (stepperStatus == Unconverged) {
     stepperStatus = step();
   }
@@ -109,45 +114,46 @@ StatusType Stepper::solve()
 StatusType Stepper::step()
 {
   stepperStatus = Unconverged;
-
-  if (stepNumber != 0) {
  
-    if (solverStatus == Failed) {
+  if (solverStatus == Failed) {
 
-      *curGroupPtr = *prevGroupPtr;
+    *curGroupPtr = *prevGroupPtr;
 
-      curStepSize = computeStepSize(Failed);
-      curValue = prevValue + curStepSize;
+    curStepSize = computeStepSize(Failed);
+    curValue = prevValue + curStepSize;
 
-    }
-    else {
-      // Set initial guess for next step equal to last step's final solution 
-      *curGroupPtr = dynamic_cast<const LOCA::Abstract::Group&>(solver.getSolutionGroup());
-
-      prevStepSize = curStepSize;
-      prevValue = curValue;
-      curStepSize = computeStepSize(solverStatus);
-
-      // Cap the con parameter so we don't go past the final value
+  }
+  else {
+    // Set initial guess for next step equal to last step's final solution 
+    *curGroupPtr = getSolutionGroup();
+ 
+    // COMPUTE TANGENT VECTOR FOR PREDICTOR
+    // Change param values to arclength values... conParamId=-1?
     
-      if ( (prevValue+curStepSize-finalValue)*(prevValue-finalValue) < 0.0)
-        curStepSize = finalValue - prevValue;
+    if (doFirstOrderPredictor)
+      curGroupPtr->computeTangent(paramList.sublist("Solver").sublist("Direction").sublist("Linear Solver"),
+         conParams.getIndex(conParamID)); 
 
-      curValue += curStepSize;
+    prevStepSize = curStepSize;
+    prevValue = curValue;
+    curStepSize = computeStepSize(solverStatus);
 
-      // PREDICTOR
-    }
+    curValue += curStepSize;
 
+    if (doFirstOrderPredictor)
+      curGroupPtr->computeX(*curGroupPtr, curGroupPtr->getTangent(), -curStepSize);
+  }
 
-    conParams.setValue(conParamID, curValue);
-    curGroupPtr->setParams(conParams);
+  conParams.setValue(conParamID, curValue);
+  curGroupPtr->setParams(conParams);
 
-    // is this computeF needed?
-    curGroupPtr->computeF();
-    solver.reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
-    
-  }      
-  
+  solver.reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
+
+  return nonlinearSolve();
+}
+
+StatusType Stepper::nonlinearSolve()
+{
   printStartStep();
   
   solverStatus = Unconverged;
@@ -160,10 +166,8 @@ StatusType Stepper::step()
   }
   else  {
     stepNumber += 1;
-  }
 
-  if (solverStatus != Failed) {
-    dataOutput.saveGroupData(dynamic_cast<const LOCA::Abstract::Group&>(solver.getSolutionGroup()));
+    dataOutput.saveGroupData(getSolutionGroup());
   }
   
   numTotalSteps += 1;
@@ -171,6 +175,91 @@ StatusType Stepper::step()
   stepperStatus = checkStepperStatus();
 
   return stepperStatus;
+}
+
+double Stepper::computeStepSize(StatusType solverStatus)
+{
+  double tmpStepSize = curStepSize;
+  double predStepSize = curStepSize;
+
+  if ((solverStatus == Failed) || 
+      (solverStatus == Unconverged)) {
+
+    // A failed nonlinear solve cuts the current step size in half
+    tmpStepSize = curStepSize * 0.5;    
+
+  }
+  else if (stepNumber > 1) {
+
+    // adapive step size control
+    if (agrValue != 0.0) {
+
+      // Number of nonlinear iterations to reach convergence for last 
+      // nonlinear solve -- used to pick next step size
+      double numNonlinearSteps = ((double) solver.getNumIterations());
+
+      double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
+                      / ((double) maxNonlinearSteps - 1.0);
+
+      tmpStepSize = curStepSize * (1.0 + agrValue * factor * factor);
+  
+    }
+    // if constant step size (agrValue = 0.0), the step size may still be 
+    // reduced by a solver failure.  We should then slowly bring the step 
+    // size back towards its constant value using agrValue = 0.5.
+    else{
+      if (curStepSize != startStepSize) {  
+	double numNonlinearSteps = ((double) solver.getNumIterations());
+
+        double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
+                        / ((double) maxNonlinearSteps - 1.0);
+
+        tmpStepSize = curStepSize * (1.0 + 0.5 * factor * factor);
+
+        if (startStepSize > 0.0) {
+          tmpStepSize = min(tmpStepSize, startStepSize);
+	}
+        else {
+	  tmpStepSize = max(tmpStepSize, startStepSize);
+	}
+      }
+    }
+  }  
+  predStepSize = tmpStepSize;
+
+  // Clip the step size if above the bounds
+  if (fabs(tmpStepSize) > maxStepSize) {
+     predStepSize = maxStepSize;
+     if (tmpStepSize < 0.0) predStepSize *= -1.0;
+  }
+
+  // Clip step size at minimum, signal for failed run
+  if (fabs(tmpStepSize) < minStepSize) {
+    stepperStatus = Failed;
+    predStepSize =  minStepSize;
+    if (tmpStepSize < 0.0) predStepSize *= -1.0;
+  }
+  
+  // Cap the con parameter so we don't go past the final value
+    
+  if ( (prevValue+predStepSize-finalValue)*(prevValue-finalValue) < 0.0)
+    predStepSize = finalValue - prevValue;
+
+  return predStepSize;
+}
+
+bool Stepper::beginArclength()
+{
+  const  LOCA::Abstract::Group& oldGroup = getSolutionGroup();
+  LOCA::Bifurcation::ArcLengthGroup
+         alGroup(oldGroup, oldGroup.getX(),
+                 conParams.getIndex(conParamID), curValue);
+
+  solver.reset(alGroup, *statusTestPtr, paramList.sublist("Solver"));
+
+// Change param values to arclength values??... conParamId=-1?
+
+  return true;
 }
 
 const Abstract::Group& Stepper::getSolutionGroup() const
@@ -249,6 +338,9 @@ bool Stepper::init()
   agrValue = p.getParameter("Step Size Aggressiveness", 1.0e+6);
   maxNonlinearSteps = p.getParameter("Max Nonlinear Iterations", 15);
   maxConSteps = p.getParameter("Max Continuation Steps", 100);
+  doArclength = p.getParameter("Arclength Continuation", false);
+  doFirstOrderPredictor =  p.getParameter("First Order Predictor", false);
+
   stepperStatus = Unconverged;
   solverStatus = Unconverged;
 
@@ -301,7 +393,7 @@ void Stepper::printStartStep()
 	 << " = " << curValue << " from " << prevValue << endl;
     cout << "Current step size  = " << curStepSize << "   "
 	 << "Previous step size = " << prevStepSize << endl;
-    cout << "\n" << Utils::fill(72, '~') << "\n" << endl;
+    cout << Utils::fill(72, '~') << "\n" << endl;
   }
 }
 
@@ -314,8 +406,9 @@ void Stepper::printEndStep(StatusType& solverStatus)
       cout << "End of  Continuation Step " << stepNumber << endl;
       cout << "Continuation Parameter: " << conParamID
 	   << " = " << curValue << " from " << prevValue << endl;
-      cout << "--> Step Converged!";
-      cout << "\n" << Utils::fill(72, '~') << "\n" << endl;
+      cout << "--> Step Converged in "
+           << solver.getNumIterations() <<" Nonlinear Solver Iterations!\n";
+      cout << Utils::fill(72, '~') << "\n" << endl;
     }
   }
   else {
@@ -323,11 +416,12 @@ void Stepper::printEndStep(StatusType& solverStatus)
       // RPP: We may not need this, the failure info should be 
       // at the method level!
       cout << endl << Utils::fill(72, '~') << endl;
-      cout << "Continuation Step Number " << stepNumber << " experienced a "
-	   << "convergence failure in the nonlinear solver!" << endl;
+      cout << "Continuation Step Number " << stepNumber 
+           << " experienced a convergence failure in\n"
+           << "the nonlinear solver after "<< solver.getNumIterations() <<" Iterations\n";
       cout << "Value of continuation parameter at failed step = " << curValue
 	   << " from " << prevValue << endl;
-      cout << endl << Utils::fill(72, '~') << endl;
+      cout << Utils::fill(72, '~') << endl;
     }
   }
 }
@@ -335,73 +429,6 @@ void Stepper::printEndStep(StatusType& solverStatus)
 void Stepper::printEndInfo()
 {
 
-}
-
-
-double Stepper::computeStepSize(StatusType solverStatus)
-{
-  double tmpStepSize = curStepSize;
-  double predStepSize = curStepSize;
-
-  if ((solverStatus == Failed) || 
-      (solverStatus == Unconverged)) {
-
-    // A failed nonlinear solve cuts the current step size in half
-    tmpStepSize = curStepSize * 0.5;    
-
-  }
-  else if (stepNumber > 1) {
-
-    // adapive step size control
-    if (agrValue != 0.0) {
-
-      // Number of nonlinear iterations to reach convergence for last 
-      // nonlinear solve -- used to pick next step size
-      double numNonlinearSteps = ((double) solver.getNumIterations());
-
-      double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
-                      / ((double) maxNonlinearSteps - 1.0);
-
-      tmpStepSize = curStepSize * (1.0 + agrValue * factor * factor);
-  
-    }
-    // if constant step size (agrValue = 0.0), the step size may still be 
-    // reduced by a solver failure.  We should then slowly bring the step 
-    // size back towards its constant value using agrValue = 0.5.
-    else{
-      if (curStepSize != startStepSize) {  
-	double numNonlinearSteps = ((double) solver.getNumIterations());
-
-        double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
-                        / ((double) maxNonlinearSteps - 1.0);
-
-        tmpStepSize = curStepSize * (1.0 + 0.5 * factor * factor);
-
-        if (startStepSize > 0.0) {
-          tmpStepSize = min(tmpStepSize, startStepSize);
-	}
-        else {
-	  tmpStepSize = max(tmpStepSize, startStepSize);
-	}
-      }
-    }
-  }  
-  predStepSize = tmpStepSize;
-
-  // Clip the step size if above the bounds
-  if (fabs(tmpStepSize) > maxStepSize) {
-     predStepSize = maxStepSize;
-     if (tmpStepSize < 0.0) predStepSize *= -1.0;
-  }
-
-  // Abort run if step size below bounds
-  if (fabs(tmpStepSize) < minStepSize) {
-    stepperStatus = Failed;
-    predStepSize =  minStepSize;
-    if (tmpStepSize < 0.0) predStepSize *= -1.0;
-  }
-  
-  return predStepSize;
 }
 
 StatusType Stepper::checkStepperStatus()
