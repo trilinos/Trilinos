@@ -122,6 +122,7 @@ $(srcdir)/FEGrid/ml_mapper.h \
 $(srcdir)/FEGrid/ml_gridagx.h \
 $(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/Coarsen/ml_agg_reitzinger.h \
+$(srcdir)/Coarsen/ml_agg_METIS.h \
 $(srcdir)/FEGrid/ml_gridfunc.h \
 $(srcdir)/FEGrid/ml_setup.h \
 $(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
@@ -158,6 +159,7 @@ $(srcdir)/Coarsen/ml_agg_dd.c \
 $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
+$(srcdir)/Coarsen/ml_agg_METIS.c \
 $(srcdir)/Coarsen/ml_aggregate.c \
 $(srcdir)/Coarsen/ml_ggraph.c \
 $(srcdir)/Coarsen/ml_agg_reitzinger.c  \
@@ -224,7 +226,9 @@ $(srcdir)/Utils/ml_epetra_utils.cpp \
 $(srcdir)/Utils/ml_utils.c             $(srcdir)/Utils/ml_intlist.c \
 $(srcdir)/Utils/ml_vec.c \
 $(srcdir)/Utils/ml_lapack.c \
-$(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c
+$(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
+$(srcdir)/Utils/ml_agg_info.c \
+$(srcdir)/Utils/ml_viz_opendx.c
 
 
 ENUM_H = 
@@ -406,7 +410,8 @@ libml_a_DEPENDENCIES =
 am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_coupled.$(OBJEXT) ml_amg_genP.$(OBJEXT) \
 	ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) ml_amg_MIS.$(OBJEXT) \
-	ml_agg_MIS.$(OBJEXT) ml_aggregate.$(OBJEXT) ml_ggraph.$(OBJEXT) \
+	ml_agg_MIS.$(OBJEXT) ml_agg_METIS.$(OBJEXT) \
+	ml_aggregate.$(OBJEXT) ml_ggraph.$(OBJEXT) \
 	ml_agg_reitzinger.$(OBJEXT) ml_gridagx.$(OBJEXT) \
 	ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) ml_grid.$(OBJEXT) \
 	ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
@@ -426,7 +431,8 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_read_utils.$(OBJEXT) ml_epetra_operator.$(OBJEXT) \
 	ml_twogrid_analysis.$(OBJEXT) ml_epetra_utils.$(OBJEXT) \
 	ml_utils.$(OBJEXT) ml_intlist.$(OBJEXT) ml_vec.$(OBJEXT) \
-	ml_lapack.$(OBJEXT) ml_memory.$(OBJEXT) ml_eigf2c.$(OBJEXT)
+	ml_lapack.$(OBJEXT) ml_memory.$(OBJEXT) ml_eigf2c.$(OBJEXT) \
+	ml_agg_info.$(OBJEXT) ml_viz_opendx.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
 @HAVE_MPI_FALSE@am__objects_4 =
@@ -442,9 +448,12 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/driver.Po ./$(DEPDIR)/ml_agg_MIS.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/driver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_agg_METIS.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_agg_MIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_coupled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_dd.Po ./$(DEPDIR)/ml_agg_genP.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_agg_info.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_reitzinger.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_uncoupled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aggregate.Po ./$(DEPDIR)/ml_amg.Po \
@@ -481,8 +490,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_superlu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_twogrid_analysis.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_utils.Po ./$(DEPDIR)/ml_vec.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_xxt.Po ./$(DEPDIR)/ml_xyt.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mli_solver.Po
+@AMDEP_TRUE@	./$(DEPDIR)/ml_viz_opendx.Po ./$(DEPDIR)/ml_xxt.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_xyt.Po ./$(DEPDIR)/mli_solver.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -567,6 +576,7 @@ ml_agg_dd.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_dd.c
 ml_agg_genP.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_genP.c
 ml_amg_MIS.$(OBJEXT): $(srcdir)/Coarsen/ml_amg_MIS.c
 ml_agg_MIS.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_MIS.c
+ml_agg_METIS.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_METIS.c
 ml_aggregate.$(OBJEXT): $(srcdir)/Coarsen/ml_aggregate.c
 ml_ggraph.$(OBJEXT): $(srcdir)/Coarsen/ml_ggraph.c
 ml_agg_reitzinger.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_reitzinger.c
@@ -619,6 +629,8 @@ ml_vec.$(OBJEXT): $(srcdir)/Utils/ml_vec.c
 ml_lapack.$(OBJEXT): $(srcdir)/Utils/ml_lapack.c
 ml_memory.$(OBJEXT): $(srcdir)/Utils/ml_memory.c
 ml_eigf2c.$(OBJEXT): $(srcdir)/Utils/ml_eigf2c.c
+ml_agg_info.$(OBJEXT): $(srcdir)/Utils/ml_agg_info.c
+ml_viz_opendx.$(OBJEXT): $(srcdir)/Utils/ml_viz_opendx.c
 libml.a: $(libml_a_OBJECTS) $(libml_a_DEPENDENCIES) 
 	-rm -f libml.a
 	$(libml_a_AR) libml.a $(libml_a_OBJECTS) $(libml_a_LIBADD)
@@ -631,10 +643,12 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_MIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_coupled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_dd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_genP.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_reitzinger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_uncoupled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aggregate.Po@am__quote@
@@ -686,6 +700,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_twogrid_analysis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_vec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz_opendx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_xxt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_xyt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mli_solver.Po@am__quote@
@@ -800,6 +815,18 @@ ml_agg_MIS.obj: $(srcdir)/Coarsen/ml_agg_MIS.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_MIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_MIS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_MIS.obj `cygpath -w $(srcdir)/Coarsen/ml_agg_MIS.c`
+
+ml_agg_METIS.o: $(srcdir)/Coarsen/ml_agg_METIS.c
+@AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_agg_METIS.c' object='ml_agg_METIS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_METIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_METIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_METIS.o `test -f '$(srcdir)/Coarsen/ml_agg_METIS.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_METIS.c
+
+ml_agg_METIS.obj: $(srcdir)/Coarsen/ml_agg_METIS.c
+@AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_agg_METIS.c' object='ml_agg_METIS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_METIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_METIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_METIS.obj `cygpath -w $(srcdir)/Coarsen/ml_agg_METIS.c`
 
 ml_aggregate.o: $(srcdir)/Coarsen/ml_aggregate.c
 @AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_aggregate.c' object='ml_aggregate.o' libtool=no @AMDEPBACKSLASH@
@@ -1388,6 +1415,30 @@ ml_eigf2c.obj: $(srcdir)/Utils/ml_eigf2c.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_eigf2c.Po' tmpdepfile='$(DEPDIR)/ml_eigf2c.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_eigf2c.obj `cygpath -w $(srcdir)/Utils/ml_eigf2c.c`
+
+ml_agg_info.o: $(srcdir)/Utils/ml_agg_info.c
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_agg_info.c' object='ml_agg_info.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_info.Po' tmpdepfile='$(DEPDIR)/ml_agg_info.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_info.o `test -f '$(srcdir)/Utils/ml_agg_info.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_agg_info.c
+
+ml_agg_info.obj: $(srcdir)/Utils/ml_agg_info.c
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_agg_info.c' object='ml_agg_info.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_info.Po' tmpdepfile='$(DEPDIR)/ml_agg_info.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_info.obj `cygpath -w $(srcdir)/Utils/ml_agg_info.c`
+
+ml_viz_opendx.o: $(srcdir)/Utils/ml_viz_opendx.c
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_viz_opendx.c' object='ml_viz_opendx.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_viz_opendx.Po' tmpdepfile='$(DEPDIR)/ml_viz_opendx.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_opendx.o `test -f '$(srcdir)/Utils/ml_viz_opendx.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_viz_opendx.c
+
+ml_viz_opendx.obj: $(srcdir)/Utils/ml_viz_opendx.c
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_viz_opendx.c' object='ml_viz_opendx.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_viz_opendx.Po' tmpdepfile='$(DEPDIR)/ml_viz_opendx.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_opendx.obj `cygpath -w $(srcdir)/Utils/ml_viz_opendx.c`
 CCDEPMODE = @CCDEPMODE@
 
 .cpp.o:
