@@ -96,7 +96,7 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
 	<li><tt>Teuchos::getConst()</tt> is a silly little templated function that returns a
 	constant reference given any constant object.  This function allows a piece of code
-	to access the <tt>const</t> version of a function given a non-<tt>const</tt> reference
+	to access the <tt>const</tt> version of a member function given a non-<tt>const</tt> reference
 	to an object.
 
   </ul>
