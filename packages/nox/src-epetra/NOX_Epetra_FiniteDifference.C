@@ -488,6 +488,11 @@ void FiniteDifference::setDifferenceMethod(DifferenceType diffType_)
   diffType = diffType_;
 }
 
+Epetra_CrsMatrix& FiniteDifference::getUnderlyingMatrix() const
+{
+  return *jacobian;
+}
+
 void FiniteDifference::Print(ostream& strm) const
 {
   jacobian->Print(strm);
