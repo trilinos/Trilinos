@@ -16,7 +16,7 @@
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Amesos_Factory.h"
-#include "Amesos_Parameter_List.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_CrsMatrix.h"
@@ -278,7 +278,7 @@ int main( int argc, char *argv[] ) {
 				"AMESOS_SUPERLUDIST",
 				"AMESOS_DSCPACK" }; 
 
-  AMESOS::Parameter::List ParamList ;
+  Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
   Amesos_Factory Afactory;

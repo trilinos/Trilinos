@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Amesos_ConfigDefs.h"
-#include "Amesos_Parameter_List.h"
+#include "Teuchos_ParameterList.hpp"
 #include <string>
 #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
@@ -279,14 +279,14 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) {
-	AMESOS::Parameter::List ParamList ;
+	Teuchos::ParameterList ParamList ;
 	Amesos_Superludist A_Superludist( Problem, ParamList ) ; 
 
-	//  ParamList.setParameter( "Redistribute", true );
-	//  ParamList.setParameter( "AddZeroToDiag", true );
-	AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-	//  SuperludistParams.setParameter( "ReuseSymbolic", true );
-	//  SuperludistParams.setParameter( "MaxProcesses", 100 );
+  //ParamList.setParameter( "Redistribute", true );
+  //ParamList.setParameter( "AddZeroToDiag", true );
+  Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+  //SuperludistParams.setParameter( "ReuseSymbolic", true );
+  //SuperludistParams.setParameter( "MaxProcesses", 100 );
 
 	EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_Superludist.SymbolicFactorization(  ) ); 
@@ -307,8 +307,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( dscpack.Solve( true ) ); 
     } else if ( SparseSolver == DSCPACK ) {
       
-      AMESOS::Parameter::List ParamList ;
-      //      (void) ParamList.sublist("Bogus");   // At one point, I thought that this kept parameter list from crashing when run on paunchy with Purify Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
+      Teuchos::ParameterList ParamList ;
+      //      (void) ParamList.sublist("Bogus");   // At one point, I thought that this kept parameter list from crashing when run on paunchy with Purify
+
       Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( A_dscpack.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( A_dscpack.NumericFactorization(  ) ); 
@@ -317,7 +318,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) {
 
-	AMESOS::Parameter::List ParamList ;
+	Teuchos::ParameterList ParamList ;
 	Amesos_Mumps A_mumps( Problem, ParamList ) ; 
 	EPETRA_CHK_ERR( A_mumps.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_mumps.SymbolicFactorization(  ) ); 
@@ -349,7 +350,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_UMFPACK
     } else if ( SparseSolver == UMFPACK ) {
 
-	AMESOS::Parameter::List ParamList ;
+	Teuchos::ParameterList ParamList ;
 	Amesos_Umfpack A_umfpack( Problem, ParamList ) ; 
 	EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_umfpack.SymbolicFactorization(  ) ); 
@@ -359,7 +360,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) {
 
-	AMESOS::Parameter::List ParamList ;
+	Teuchos::ParameterList ParamList ;
 	Amesos_Klu A_klu( Problem, ParamList ) ; 
 	EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 

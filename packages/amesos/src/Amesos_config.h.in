@@ -23,6 +23,9 @@
 /* Define if want to build amesos-mumps */
 #undef HAVE_AMESOS_MUMPS
 
+/* Define if want to build amesos-scalapack */
+#undef HAVE_AMESOS_SCALAPACK
+
 /* Define if want to build amesos-slud */
 #undef HAVE_AMESOS_SLUD
 
@@ -31,6 +34,9 @@
 
 /* Define if want to build amesos-slus */
 #undef HAVE_AMESOS_SLUS
+
+/* Define if want to build amesos-superlu */
+#undef HAVE_AMESOS_SUPERLU
 
 /* Define if want to build amesos-superludist */
 #undef HAVE_AMESOS_SUPERLUDIST

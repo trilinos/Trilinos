@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Amesos_ConfigDefs.h"
-#include "Amesos_Parameter_List.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
@@ -324,7 +324,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
     } else if ( SparseSolver == DSCPACK ) { 
-      AMESOS::Parameter::List ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Dscpack dscpack( Problem, ParamList ) ; 
 
       bool factor = true; 
@@ -349,7 +349,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
     } else if ( SparseSolver == UMFPACK ) { 
-      AMESOS::Parameter::List ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Umfpack umfpack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( umfpack.SetUseTranspose( transpose ) ); 
 
@@ -403,7 +403,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) { 
-      AMESOS::Parameter::List ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Klu klu( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( klu.SetUseTranspose( transpose ) ); 
 
@@ -459,7 +459,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) { 
-      AMESOS::Parameter::List ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Mumps mumps( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
 
@@ -485,7 +485,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) { 
-      AMESOS::Parameter::List ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Superludist superludist( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
       EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 

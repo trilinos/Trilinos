@@ -7,7 +7,8 @@ noinst_PROGRAMS = $(TEST)
 
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
-  -I$(top_builddir)/../epetra/src -I$(top_builddir)/../triutils/src
+  -I$(top_builddir)/../epetra/src -I$(top_builddir)/../triutils/src \
+   -I$(top_builddir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
 TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/TestOptions.h \
