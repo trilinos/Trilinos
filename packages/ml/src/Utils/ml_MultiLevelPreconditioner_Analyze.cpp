@@ -106,8 +106,8 @@ void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector,
 
   for (int i = 0 ; i < size ; ++i) {
     // Linf norm 
-    if (abs(vector[i]) > Linf[i % NumPDEEqns_]) 
-      Linf[i % NumPDEEqns_] = abs(vector[i]);
+    if (fabs(vector[i]) > Linf[i % NumPDEEqns_]) 
+      Linf[i % NumPDEEqns_] = fabs(vector[i]);
     // L2 norm
     L2[i % NumPDEEqns_] += vector[i] * vector[i];
   }

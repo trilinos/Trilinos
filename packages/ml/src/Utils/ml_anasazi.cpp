@@ -481,7 +481,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
     for( int i=0 ; i<NumBlocks ; ++i ) {
       double norm;
       vec(i)->Norm2(&norm);
-      if( abs(norm)>1e-8 )  {
+      if( fabs(norm)>1e-8 )  {
 	for( int j=0 ; j<NumRows ; ++j ) {
 	  RealEigenvectors[(*NumRealEigenvectors)*NumRows+j] = vec[i][j];
 	}
@@ -501,7 +501,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
     for( int i=0 ; i<NumBlocks ; ++i ) {
       double norm;
       vec(i)->Norm2(&norm);
-      if( abs(norm)>1e-8 ) {
+      if( fabs(norm)>1e-8 ) {
 	for( int j=0 ; j<EigenVectors.Map().NumMyPoints() ; ++j ) {
 	  ImagEigenvectors[(*NumImagEigenvectors)*NumRows+j] = vec[i][j];
 	}

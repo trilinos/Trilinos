@@ -110,7 +110,7 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
   // create vectors containing coordinates, replicated for all unknonws
   // FIXME: I don't really need Z in all cases
-  // All this crap is for that f*k*g bastard of west!
+  // for west
   // I am over-allocating, for large number of equations per node
   // this is not optimal. However, it is a only-once importing
   // of some more data. It should harm too much...
@@ -178,9 +178,9 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
       // equations. For each block, I replace values with the sum of
       // the abs of each block entry.
       for (int j = 0 ; j < NumEntries ; j += NumPDEEqns_) {
-	colVal[j] = abs(colVal[j]);
+	colVal[j] = fabs(colVal[j]);
 	for (int k = 1 ; k < NumPDEEqns_ ; ++k) {
-	  colVal[j] += abs(colVal[j+k]);
+	  colVal[j] += fabs(colVal[j+k]);
 	}
       }
 

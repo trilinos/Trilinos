@@ -1110,9 +1110,9 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
     // the abs of each block entry.
 
     for (int j = 0 ; j < NnzRow ; j += NumPDEEqns) {
-      colVal[j] = abs(colVal[j]);
+      colVal[j] = fabs(colVal[j]);
       for (int k = 1 ; k < NumPDEEqns ; ++k) {
-	colVal[j] += abs(colVal[j+k]);
+	colVal[j] += fabs(colVal[j+k]);
       }
     }
 
