@@ -410,6 +410,7 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
           <ul>
 	  <li> NOX::Direction::Newton - Tolerance
 	  </ul>
+     <li> NOX::Direction::Newton - \e Reset \e Jacobian
      <li> NOX::Direction::Newton - \e Forcing \e Term \e Method
      <li> NOX::Direction::Newton - \e Forcing \e Term \e Initial \e Tolerance
      <li> NOX::Direction::Newton - \e Forcing \e Term \e Minimum \e Tolerance
