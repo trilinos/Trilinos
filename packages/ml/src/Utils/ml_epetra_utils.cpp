@@ -1871,7 +1871,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      y = new double[nnode];
      z = new double[nnode];
      // create array for dofs on each node
-     dof    = new (int*)[nnode];
+     dof    = new int* [nnode];
      dof[0] = new int[nnode*dofpernode];
      for (int i=1; i<nnode; i++)
         dof[i] = &(dof[0][i*dofpernode]);
@@ -1914,7 +1914,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      nelement    = strtol(buffer,&bptr,10);
      nodesperele = strtol(bptr,&bptr,10);
      // allocate array for topology
-     top    = new (int*)[nelement];
+     top    = new int* [nelement];
      top[0] = new int[nelement*nodesperele];
      for (int i=1; i<nelement; i++)
         top[i] = &(top[0][i*nodesperele]);
