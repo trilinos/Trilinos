@@ -367,6 +367,28 @@ Other important notes about the configure and build processes.
 \item Any code that links to Trilinos should define 
 \InlineCommand{HAVE\_CONFIG\_H}.
 
+\item Do not attempt to specify optimization flags using the 
+\InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, or 
+\InlineCommand{--with-fflags} options.   Use \InlineCommand{CXXFLAGS}, 
+\InlineCommand{CFLAGS} and \InlineCommand{FFLAGS} instead.
+
+\item When creating a configure invocation script, be sure to use 
+line continuation characters properly.  The characters should be at the 
+end of every line, except the last line, and should not be followed by any 
+spaces.
+
+\item To verify that the entire configure invocation script has been parsed by 
+Autoconf, open the \InlineDirectory{config.status} file in the top level of 
+the build tree and grep for the string "with options".  Here you will find all 
+of the options that Autoconf pulled from the invoke configure script.
+
+\item Autoconf cannot detect spelling mistakes in configure invocation scripts.
+
+\item When experiencing problems during the make phase, it is often useful to 
+\InlineCommand{make clean} before attempting to \InlineCommand{make} again.  
+Sometimes it even helps to blow away the entire build tree and start over, 
+although this is rarely necessary.
+
 \item When building with LAM under RH9 Linux, configure complains that it 
 cannot find mpi++.h.  The message in the config.log file is:
 \begin{verbatim}
@@ -377,6 +399,9 @@ The following modified configure invocation works:
 
 \item The build process will fail on OSX if ``DropZip'' is used to 
 unzip the Trilinos tarball.  This utility truncates long file names.
+
+\item A list of FAQ's for the Trilinos build process can be found online at
+\newline\InlineCommand{http://software.sandia.gov/Trilinos/faq.html}.
 
 \end{itemize}
 
