@@ -220,7 +220,7 @@ va_dcl
   if (dim[0].index <= 0) {
     if (DEBUG_MEMORY > 0) {
       fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-            "dimension <= 0, %d; will return NULL\n", 
+            "dimension <= 0, %ld; will return NULL\n", 
             yo, file, lineno, dim[0].index);
     }
     return((double *) NULL);
@@ -233,7 +233,7 @@ va_dcl
     dim[i].index = va_arg(va, int);
     if (dim[i].index <= 0) {
       fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d <= 0, "
-              "%d; will return NULL\n",
+              "%ld; will return NULL\n",
               yo, file, lineno, i+1, dim[i].index);
       return((double *) NULL);
     }
@@ -280,7 +280,7 @@ double *LB_Malloc(int n, char *filename, int lineno)
 
 {
   char *yo = "LB_Malloc";
-  struct malloc_debug_data *new;     /* data structure for malloc data */
+  struct malloc_debug_data *new_ptr;     /* data structure for malloc data */
   int       proc;             /* processor ID for debugging msg */
   double *pntr;           /* return value */
 
@@ -305,23 +305,23 @@ double *LB_Malloc(int n, char *filename, int lineno)
 
   if (DEBUG_MEMORY > 1 && pntr != NULL) {
     /* Add allocation to linked list of active allocations. */
-    new = (struct malloc_debug_data *)
+    new_ptr = (struct malloc_debug_data *)
       malloc(sizeof(struct malloc_debug_data));
 
-    if (new == NULL) {
+    if (new_ptr == NULL) {
       MPI_Comm_rank(MPI_COMM_WORLD, &proc);
       fprintf(stderr, "WARNING: No space on proc %d for malloc_debug %d.\n",
 	proc, n);
       return (pntr);
     }
 
-    new->order = nmalloc;
-    new->size = n;
-    new->ptr = pntr;
-    strncpy(new->file, filename, MAX_PARAM_STRING_LEN);
-    new->line = lineno;
-    new->next = top;
-    top = new;
+    new_ptr->order = nmalloc;
+    new_ptr->size = n;
+    new_ptr->ptr = pntr;
+    strncpy(new_ptr->file, filename, MAX_PARAM_STRING_LEN);
+    new_ptr->line = lineno;
+    new_ptr->next = top;
+    top = new_ptr;
     bytes_used += n;
     if (bytes_used > bytes_max) {
       bytes_max = bytes_used;
@@ -578,24 +578,24 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
       switch(type) {
       case LB_SPECIAL_MALLOC_INT:
 #ifdef PGI /* special case for PGI Fortran compiler */
-         LB_Fort_Malloc_int(array[1],&size,&ret_addr,array[2]);
+         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
-         LB_Fort_Malloc_int(array[1],&size,&ret_addr);
+         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
 #endif
          if (ret_addr==0) success=0;
          break;
       case LB_SPECIAL_MALLOC_GID:
          if (LB_GID_IS_INT) {
 #ifdef PGI
-            LB_Fort_Malloc_int(array[1],&size,&ret_addr,array[2]);
+            LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
-            LB_Fort_Malloc_int(array[1],&size,&ret_addr);
+            LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
 #endif
          }else{
 #ifdef PGI
-            LB_Fort_Malloc_GID(array[1],&size,&ret_addr,array[2]);
+            LB_Fort_Malloc_GID((LB_GID *)(array[1]),&size,&ret_addr,array[2]);
 #else
-            LB_Fort_Malloc_GID(array[1],&size,&ret_addr);
+            LB_Fort_Malloc_GID((LB_GID *)(array[1]),&size,&ret_addr);
 #endif
          }
          if (ret_addr==0) success=0;
@@ -603,15 +603,15 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
       case LB_SPECIAL_MALLOC_LID:
          if (LB_LID_IS_INT) {
 #ifdef PGI
-            LB_Fort_Malloc_int(array[1],&size,&ret_addr,array[2]);
+            LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
-            LB_Fort_Malloc_int(array[1],&size,&ret_addr);
+            LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
 #endif
          }else{
 #ifdef PGI
-            LB_Fort_Malloc_LID(array[1],&size,&ret_addr,array[2]);
+            LB_Fort_Malloc_LID((LB_LID *)(array[1]),&size,&ret_addr,array[2]);
 #else
-            LB_Fort_Malloc_LID(array[1],&size,&ret_addr);
+            LB_Fort_Malloc_LID((LB_LID *)(array[1]),&size,&ret_addr);
 #endif
          }
          if (ret_addr==0) success=0;
@@ -662,38 +662,38 @@ int LB_Special_Free(struct LB_Struct *lb, void **array,
       switch(type) {
       case LB_SPECIAL_MALLOC_INT:
 #ifdef PGI /* special case for PGI Fortran compiler */
-         LB_Fort_Free_int(array[1],array[2]);
+         LB_Fort_Free_int((int *)(array[1]),array[2]);
 #else
-         LB_Fort_Free_int(array[1]);
+         LB_Fort_Free_int((int *)(array[1]));
 #endif
          break;
       case LB_SPECIAL_MALLOC_GID:
          if (LB_GID_IS_INT) {
 #ifdef PGI
-            LB_Fort_Free_int(array[1],array[2]);
+            LB_Fort_Free_int((int *)(array[1]),array[2]);
 #else
-            LB_Fort_Free_int(array[1]);
+            LB_Fort_Free_int((int *)(array[1]));
 #endif
          }else{
 #ifdef PGI
-            LB_Fort_Free_GID(array[1],array[2]);
+            LB_Fort_Free_GID((LB_GID *)(array[1]),array[2]);
 #else
-            LB_Fort_Free_GID(array[1]);
+            LB_Fort_Free_GID((LB_GID *)(array[1]));
 #endif
          }
          break;
       case LB_SPECIAL_MALLOC_LID:
          if (LB_LID_IS_INT) {
 #ifdef PGI
-            LB_Fort_Free_int(array[1],array[2]);
+            LB_Fort_Free_int((int *)(array[1]),array[2]);
 #else
-            LB_Fort_Free_int(array[1]);
+            LB_Fort_Free_int((int *)(array[1]));
 #endif
          }else{
 #ifdef PGI
-            LB_Fort_Free_LID(array[1],array[2]);
+            LB_Fort_Free_LID((LB_LID *)(array[1]),array[2]);
 #else
-            LB_Fort_Free_LID(array[1]);
+            LB_Fort_Free_LID((LB_LID *)(array[1]));
 #endif
          }
          break;
