@@ -290,9 +290,14 @@ dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-### Include Blas/Lapack example here. ###  For now, developers should see
-### The configure.ac file for epetra (Trilinos/packages/epetra) if blas and
-### or Lapack are needed.
+# #np# If Lapack is also needed, see the  
+# configure.ac file for epetra (Trilinos/packages/epetra)
+
+dnl Check for user-specified names for BLAS lib
+TAC_ARG_WITH_BLASLIB
+
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
