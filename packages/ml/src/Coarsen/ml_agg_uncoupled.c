@@ -76,6 +76,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_Aggregate_Comm *aggr_comm;
    ML_GetrowFunc     *getrow_obj;
    int               (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   void              *getrowdata;
    /*MS*/
    ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
    int * graph_decomposition;
@@ -163,8 +164,14 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    getrow_obj = Amatrix->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) getrowfunc=getrow_obj->external;
-   else                                  getrowfunc=getrow_obj->internal;
+   if (getrow_obj->ML_id == ML_EXTERNAL) {
+     getrowfunc=getrow_obj->external;
+     getrowdata = Amatrix->data;
+   }
+   else {
+     getrowfunc=getrow_obj->internal;
+     getrowdata = Amatrix;
+   }
    if ( getrowfunc == NULL ) 
      {
        printf("ML_Aggregate_CoarsenUncoupled ERROR : no getrow.\n");
@@ -192,7 +199,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    for ( i = 0; i < Nrows; i++ ) 
      {
        diagonal[i] = 0.0;
-       while (getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind, 
+       while (getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind, 
 			 col_val,&m) == 0 ) 
 	 {
 	   ML_free(col_ind);
@@ -256,7 +263,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    for ( i = 0; i < Nrows; i++ ) 
    {
-     getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind,col_val, &m);
+     getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind,col_val, &m);
      if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
 #ifdef ML_NEWDROPSCHEME /* new dropping scheme */
      totalnnz += m;
