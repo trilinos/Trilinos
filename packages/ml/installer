@@ -1,8 +1,18 @@
 #!/bin/sh
+#
+# see if echo is messed up (i.e. -n does not work)
+# and see if we can find another one
+#
 export echo
+ee=`echo -n test | grep n | wc | sed "s/^ *//" | sed "s/ .*//"`
+if test `expr ${ee}` = '1'
+then
 if test -x /usr/ucb/echo
 then
    echo=/usr/ucb/echo
+else
+   echo=echo
+fi
 else
    echo=echo
 fi
