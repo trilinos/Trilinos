@@ -29,8 +29,13 @@
 #include "AztecOO.h"
 
 #include <vector>
-#include "EDT_CrsGraph_MapColoring.H"
-#include "EDT_CrsGraph_MapColoringIndex.H"
+#ifdef HAVE_NOX_EPETRAEXT 	// Use epetraext package in Trilinos
+#include "EDT_CrsGraph_MapColoring.h"
+#include "EDT_CrsGraph_MapColoringIndex.h"
+#else  // Otherwise use the local version of the needed coloring files
+#include "nox_EDT_CrsGraph_MapColoring.H"
+#include "nox_EDT_CrsGraph_MapColoringIndex.H"
+#endif
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
@@ -162,12 +167,20 @@ int main(int argc, char *argv[])
   Problem_Interface interface(Problem);
 
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
+#ifndef HAVE_NOX_EPETRAEXT
   bool verbose = false;
   std::auto_ptr<Epetra_MapColoring> colorMap = Epetra_Transform::
         CrsGraph_MapColoring( verbose )( Problem.getGraph());
   Epetra_Transform::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
   std::auto_ptr<vector<Epetra_IntVector> > columns = 
                                      colorMapIndex(Problem.getGraph());
+#else
+  bool verbose = false;
+  EpetraExt::CrsGraph_MapColoring tmpMapColoring( verbose );
+  Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
+  EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
+  vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
+#endif
 
   // Use this constructor to create the graph numerically as a means of timing
   // the old way of looping without colors :
