@@ -192,6 +192,8 @@ int main(int argc, char *argv[])
   converged.addStatusTest(update);
   NOX::StatusTest::MaxIters maxiters(800);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
+  NOX::StatusTest::FiniteValue fv;
+  combo.addStatusTest(fv);
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);
 

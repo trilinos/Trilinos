@@ -294,6 +294,7 @@ SOLVER = \
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
+	$(srcdir)/NOX_StatusTest_FiniteValue.H \
 	$(srcdir)/NOX_StatusTest_NormUpdate.H \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
@@ -304,6 +305,7 @@ STATUSTEST_H = \
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
+	$(srcdir)/NOX_StatusTest_FiniteValue.C \
 	$(srcdir)/NOX_StatusTest_NormUpdate.C \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
@@ -378,6 +380,7 @@ am__objects_5 = NOX_Solver_Manager.$(OBJEXT) \
 	NOX_Solver_TrustRegionBased.$(OBJEXT)
 am__objects_6 = NOX_StatusTest_Generic.$(OBJEXT) \
 	NOX_StatusTest_NormF.$(OBJEXT) \
+	NOX_StatusTest_FiniteValue.$(OBJEXT) \
 	NOX_StatusTest_NormUpdate.$(OBJEXT) \
 	NOX_StatusTest_Combo.$(OBJEXT) \
 	NOX_StatusTest_MaxIters.$(OBJEXT) \
@@ -436,6 +439,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Solver_TensorBased.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Solver_TrustRegionBased.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_StatusTest_Combo.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_StatusTest_FiniteValue.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_StatusTest_Generic.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_StatusTest_MaxIters.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_StatusTest_NormF.Po \
@@ -545,6 +549,8 @@ NOX_Solver_TrustRegionBased.$(OBJEXT): \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C
 NOX_StatusTest_Generic.$(OBJEXT): $(srcdir)/NOX_StatusTest_Generic.C
 NOX_StatusTest_NormF.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormF.C
+NOX_StatusTest_FiniteValue.$(OBJEXT): \
+	$(srcdir)/NOX_StatusTest_FiniteValue.C
 NOX_StatusTest_NormUpdate.$(OBJEXT): \
 	$(srcdir)/NOX_StatusTest_NormUpdate.C
 NOX_StatusTest_Combo.$(OBJEXT): $(srcdir)/NOX_StatusTest_Combo.C
@@ -610,6 +616,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Solver_TensorBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Solver_TrustRegionBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_StatusTest_Combo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_StatusTest_FiniteValue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_StatusTest_Generic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_StatusTest_MaxIters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_StatusTest_NormF.Po@am__quote@
@@ -884,6 +891,18 @@ NOX_StatusTest_NormF.obj: $(srcdir)/NOX_StatusTest_NormF.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormF.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormF.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormF.obj `cygpath -w $(srcdir)/NOX_StatusTest_NormF.C`
+
+NOX_StatusTest_FiniteValue.o: $(srcdir)/NOX_StatusTest_FiniteValue.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_FiniteValue.C' object='NOX_StatusTest_FiniteValue.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_FiniteValue.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_FiniteValue.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_FiniteValue.o `test -f '$(srcdir)/NOX_StatusTest_FiniteValue.C' || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_FiniteValue.C
+
+NOX_StatusTest_FiniteValue.obj: $(srcdir)/NOX_StatusTest_FiniteValue.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_FiniteValue.C' object='NOX_StatusTest_FiniteValue.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_FiniteValue.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_FiniteValue.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_FiniteValue.obj `cygpath -w $(srcdir)/NOX_StatusTest_FiniteValue.C`
 
 NOX_StatusTest_NormUpdate.o: $(srcdir)/NOX_StatusTest_NormUpdate.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_NormUpdate.C' object='NOX_StatusTest_NormUpdate.o' libtool=no @AMDEPBACKSLASH@

@@ -194,6 +194,7 @@ SOLVER = \
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
+	$(srcdir)/NOX_StatusTest_FiniteValue.H \
 	$(srcdir)/NOX_StatusTest_NormUpdate.H \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
@@ -203,6 +204,7 @@ STATUSTEST_H = \
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
+	$(srcdir)/NOX_StatusTest_FiniteValue.C \
 	$(srcdir)/NOX_StatusTest_NormUpdate.C \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
