@@ -79,6 +79,7 @@ AztecOO::AztecOO(const Epetra_LinearProblem& prob) {
   AllocAzArrays();
   SetAztecDefaults();
 
+  Problem_ = (Epetra_LinearProblem *) &prob; // Record this object for later access if needed
   // Try to cast operator to matrix 
   Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(prob.GetOperator());
   if (UserMatrix!=0) 
@@ -108,6 +109,7 @@ AztecOO::AztecOO(const AztecOO& source) {
   AllocAzArrays();
   SetAztecDefaults();
 
+  SetProblem(*source.GetProblem());
   SetUserMatrix(source.GetUserMatrix());
   SetUserOperator(source.GetUserOperator());
   SetPrecMatrix(source.GetPrecMatrix());   // Assume user want to base preconditioner on this matrix
@@ -165,6 +167,7 @@ int AztecOO::SetAztecDefaults() {
   UserMatrixData_ = 0;
   PrecOperatorData_ = 0;
   PrecMatrixData_ = 0;
+  Problem_ = 0;
   X_ = 0;
   B_ = 0;
   ResidualVector_ = 0;
@@ -200,6 +203,8 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob) {
 
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
                           //  Although this routine is not a constructor, we treat it like one
+
+  Problem_ = (Epetra_LinearProblem *) &prob; // Record this object for later access if needed
 
   // Try to cast operator to matrix 
   Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(prob.GetOperator());

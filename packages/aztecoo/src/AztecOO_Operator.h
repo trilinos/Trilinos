@@ -104,7 +104,13 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   //@{ \name Atribute access functions
 
   //! Returns a character string describing the operator
-  char * Label() const{return(Label_);};
+  char * Label() const {return(Label_);};
+
+  //! Returns a pointer to the AztecOO solver object that was used to create this AztecOO_Operator object.
+  AztecOO * Solver() const {return(solver_);};
+
+  //! Returns the number of iterations that will be performed with the AztecOO solver.
+  int NumIters() const {return(NumIters_);};
   
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(false);};

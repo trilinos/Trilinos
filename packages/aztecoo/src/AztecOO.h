@@ -266,7 +266,9 @@ class AztecOO {
   int CheckInput() const {
     return(AZ_check_input(Amat_->data_org, options_, params_, proc_config_));};
 
-  //! Get a pointer to the user operator A.
+  //! Get a pointer to the Linear Problem used to construct this solver; returns zero if not available.
+  Epetra_LinearProblem * GetProblem() const {return(Problem_);};
+   //! Get a pointer to the user operator A.
   Epetra_Operator * GetUserOperator() const {return(UserOperatorData_->A);};
   //! Get a pointer to the user matrix A.
   Epetra_RowMatrix * GetUserMatrix() const {return(UserMatrixData_->A);};
@@ -463,6 +465,7 @@ class AztecOO {
   void DeleteMemory();
 
 
+  Epetra_LinearProblem * Problem_;
   Epetra_MultiVector * X_;
   Epetra_MultiVector * B_;
   Epetra_Vector * ResidualVector_;
