@@ -63,7 +63,6 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
     convCriteria = None;
   else {
     convCriteria = ArmijoGoldstein;
-    p.setParameter("Convergence Criteria", "Armijo-Goldstein");
   }
 
   choice = p.getParameter("Interpolation Type", "Cubic");
