@@ -677,7 +677,7 @@ private:
   ML_Operator* TMatrixTransposeML_;
   ML_Operator** Tmat_array, ** Tmat_trans_array;
   //! ML structures for Maxwell
-  ML* ml_edges_,* ml_nodes_;
+  ML* ml_nodes_;
   ML_Aggregate* agg_edge_;
 
   void** nodal_args_,** edge_args_;

@@ -135,7 +135,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   if (agg_edge_ != 0) { ML_Aggregate_Destroy(&agg_edge_); agg_edge_ = 0; }
   if (ml_ != 0) { ML_Destroy(&ml_); ml_ = 0; }
   if (ml_nodes_ != 0) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
-  if (ml_edges_ != 0) { ML_Destroy(&ml_edges_); ml_edges_ = 0; }
 
   if (TMatrixML_ != 0) {
     ML_Operator_Destroy(&TMatrixML_);
@@ -544,7 +543,6 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   CreatedML_Kn_ = false;
   EdgeMatrix_ = 0;
   TMatrix_ = 0;
-  ml_edges_ = 0;
   ml_nodes_ = 0;
   agg_edge_ = 0;
   TMatrixML_ = 0;
@@ -893,7 +891,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   } else {
 
     // ====================================================================== //
-    // create hierarchy for Maxwell. Needs to define ml_edges_ and ml_nodes_  //
+    // create hierarchy for Maxwell. Needs to define ml_ and ml_nodes_  //
     // The only way to activate SolvingMaxwell_ == true is through the        //
     // constructor for Maxwell. I suppose that the matrices are called not    //
     // Matrix_, but moreover NodeMatrix_ and EdgeMatrix_.                     //
@@ -905,19 +903,19 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
     // create hierarchy for edges
 
-    ML_Create(&ml_edges_,MaxCreationLevels);
+    ML_Create(&ml_,MaxCreationLevels);
 
     NumMyRows = EdgeMatrix_->NumMyRows();
     N_ghost   = EdgeMatrix_->NumMyCols() - NumMyRows;
     
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
     
-    ML_Init_Amatrix(ml_edges_,LevelID_[0],NumMyRows,
+    ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows,
 		    NumMyRows, (void *) EdgeMatrix_);
-    ML_Set_Amatrix_Getrow(ml_edges_, LevelID_[0], Epetra_ML_getrow,
+    ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
 
-    ML_Set_Amatrix_Matvec(ml_edges_, LevelID_[0], Epetra_ML_matvec);
+    ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
 
     // create hierarchy for nodes
     
@@ -943,7 +941,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       string Repartitioner = List_.get("repartition: partitioner","Zoltan");
 
-      ML_Repartition_Activate(ml_edges_);
+      ML_Repartition_Activate(ml_);
       ML_Repartition_Activate(ml_nodes_);
 
       double minmax = List_.get("repartition: node min max ratio", 1.1);
@@ -952,9 +950,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
 
       minmax = List_.get("repartition: edge min max ratio", 1.1);
-      ML_Repartition_Set_LargestMinMaxRatio(ml_edges_,minmax);
+      ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
       minperproc = List_.get("repartition: edge min per proc", 20);
-      ML_Repartition_Set_MinPerProc(ml_edges_,minperproc);
+      ML_Repartition_Set_MinPerProc(ml_,minperproc);
 
       if (Repartitioner == "Zoltan") {
         // create aggregate structure necessary for repartitioning via Zoltan
@@ -976,15 +974,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
         coord = List_.get("repartition: Zoltan edge coordinates", (double *)0);
         //FIXME JJH this would be a bug if increasing is ever supported
         agg_edge_->begin_level = MaxCreationLevels-1; 
-        ML_Aggregate_Set_NodalCoordinates(ml_edges_, agg_edge_, coord);
+        ML_Aggregate_Set_NodalCoordinates(ml_, agg_edge_, coord);
         ML_Aggregate_Set_Dimensions(agg_edge_, NumDimensions);
-        ML_Repartition_Set_Partitioner(ml_edges_,ML_USEZOLTAN);
-        ML_Aggregate_Set_MaxLevels(agg_edge_, ml_edges_->ML_num_levels);
+        ML_Repartition_Set_Partitioner(ml_,ML_USEZOLTAN);
+        ML_Aggregate_Set_MaxLevels(agg_edge_, ml_->ML_num_levels);
       }
       else if (Repartitioner == "ParMETIS")
-        ML_Repartition_Set_Partitioner(ml_edges_,ML_USEPARMETIS);
+        ML_Repartition_Set_Partitioner(ml_,ML_USEPARMETIS);
       else if (Repartitioner == "Jostle")
-        ML_Repartition_Set_Partitioner(ml_edges_,ML_USEJOSTLE);
+        ML_Repartition_Set_Partitioner(ml_,ML_USEJOSTLE);
       else {
         if (Comm().MyPID() == 0) {
           cerr << ErrorMsg_ << "Unrecognized partitioner `"
@@ -1037,7 +1035,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
   } else {
     // Jonathan, is it right ???
-    ML_Aggregate_Set_ReqLocalCoarseSize( ml_edges_, agg_, -1, ReqAggrePerProc);
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
     ML_Aggregate_Set_ReqLocalCoarseSize( ml_nodes_, agg_, -1, ReqAggrePerProc);
   }
   
@@ -1303,16 +1301,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       // convert TMatrix to ML_Operator
 
-      TMatrixML_ = ML_Operator_Create(ml_edges_->comm);
+      TMatrixML_ = ML_Operator_Create(ml_->comm);
 
       Epetra2MLMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),TMatrixML_);
 
     }
 
-    TMatrixTransposeML_ = ML_Operator_Create(ml_edges_->comm);
+    TMatrixTransposeML_ = ML_Operator_Create(ml_->comm);
     ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
     
-    NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_,&ml_nodes_,
+    NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
                             LevelID_[0], Direction,agg_,agg_edge_,
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
@@ -1448,11 +1446,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
   }
   
-  if( SolvingMaxwell_ == false ) 
-    ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
-  else {
-    ML_Gen_Solver(ml_edges_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
-  }
+  ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
 
   // ====================================================================== //
   // Use of filtering functions, here called `filtering: enable'            //
@@ -1511,6 +1505,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
       sprintf(name,"Rmat_%d", LevelID_[i]);
       ML_Operator_Print(&(ml_->Rmat[LevelID_[i]]), name);
     }
+
+    // Tmat (one for each level, except first)
+    if (SolvingMaxwell_)
+      for( int i=0 ; i<NumLevels_-1 ; ++i ) {
+        char name[80];
+        sprintf(name,"Tmat_%d", LevelID_[i]);
+        ML_Operator_Print(Tmat_array[LevelID_[i]], name);
+      }
   
   }
 
@@ -1755,38 +1757,34 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
   coarsest[0] = '\0';
   char * label;
 
-  ML * ml_ptr;
-  if( SolvingMaxwell_ == false ) ml_ptr = ml_;
-  else                           ml_ptr = ml_edges_;
- 
-  int i = ml_ptr->ML_finest_level;
+  int i = ml_->ML_finest_level;
      
-  if (ml_ptr->pre_smoother[i].smoother->func_ptr != NULL) {
-    label = ml_ptr->pre_smoother[i].label;
+  if (ml_->pre_smoother[i].smoother->func_ptr != NULL) {
+    label = ml_->pre_smoother[i].label;
     if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "~");
     else                                sprintf(finest, "%s", label);
   } else                                sprintf(finest, "~"); 
 
-  if (ml_ptr->post_smoother[i].smoother->func_ptr != NULL) {
-    label = ml_ptr->post_smoother[i].label;
+  if (ml_->post_smoother[i].smoother->func_ptr != NULL) {
+    label = ml_->post_smoother[i].label;
     if( strncmp(label,"PostS_", 5) == 0 ) sprintf(finest, "%s/~", finest);
     else                                  sprintf(finest, "%s/%s", finest, label);
   } else                                  sprintf(finest, "%s/~", finest);  
 
-  if (i != ml_ptr->ML_coarsest_level) {
-    i = ml_ptr->ML_coarsest_level;
-    if ( ML_CSolve_Check( &(ml_ptr->csolve[i]) ) == 1 ) {
-	sprintf(coarsest, "%s", ml_ptr->csolve[i].label);
+  if (i != ml_->ML_coarsest_level) {
+    i = ml_->ML_coarsest_level;
+    if ( ML_CSolve_Check( &(ml_->csolve[i]) ) == 1 ) {
+	sprintf(coarsest, "%s", ml_->csolve[i].label);
     }
     
     else {
-      if (ml_ptr->pre_smoother[i].smoother->func_ptr != NULL) {
-	label = ml_ptr->pre_smoother[i].label;
+      if (ml_->pre_smoother[i].smoother->func_ptr != NULL) {
+	label = ml_->pre_smoother[i].label;
 	if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest, "~");
 	else                                sprintf(coarsest, "%s", label);
       } else                                sprintf(coarsest, "~"); 
-      if (ml_ptr->post_smoother[i].smoother->func_ptr != NULL) {
-	label = ml_ptr->post_smoother[i].label;
+      if (ml_->post_smoother[i].smoother->func_ptr != NULL) {
+	label = ml_->post_smoother[i].label;
 	if( strncmp(label,"PostS_", 5) == 0 ) sprintf(coarsest, "%s/~", coarsest); 
 	else                                  sprintf(coarsest, "%s/%s",coarsest, label);
       } else                                  sprintf(coarsest, "%s/~", coarsest); 
@@ -1798,7 +1796,7 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
 	    ml_->ML_num_actual_levels, finest, coarsest);
   else
     sprintf(Label_,"ML (Maxwell, L=%d, %s, %s)", 
-	    ml_ptr->ML_num_actual_levels, finest, coarsest);
+	    ml_->ML_num_actual_levels, finest, coarsest);
   
   return 0;
     
@@ -1855,11 +1853,6 @@ ApplyInverse(const Epetra_MultiVector& X,
   ML_CHK_ERR(xtmp.ExtractView(&xvectors));
   ML_CHK_ERR(Y.ExtractView(&yvectors));
 
-  ML* ml_ptr;
-  
-  if (SolvingMaxwell_ == false) ml_ptr = ml_;
-  else                          ml_ptr = ml_edges_;
-
   for (int i = 0; i < X.NumVectors(); ++i) {
 
     // ================================================== //
@@ -1886,37 +1879,37 @@ ApplyInverse(const Epetra_MultiVector& X,
       else
         StartingSolution = ML_ZERO;
 
-      switch(ml_ptr->ML_scheme) {
+      switch(ml_->ML_scheme) {
       case(ML_MGFULLV):
-        ML_Solve_MGFull(ml_ptr, xvectors[i], yvectors[i]); 
+        ML_Solve_MGFull(ml_, xvectors[i], yvectors[i]); 
         break;
       case(ML_SAAMG): //Marian Brezina's solver
-        ML_Solve_AMGV(ml_ptr, xvectors[i], yvectors[i]); 
+        ML_Solve_AMGV(ml_, xvectors[i], yvectors[i]); 
         break;
       case(ML_ONE_LEVEL_DD): 
-        ML_DD_OneLevel(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
+        ML_DD_OneLevel(&(ml_->SingleLevel[ml_->ML_finest_level]),
                        yvectors[i], xvectors[i],
-                       ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
+                       ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);
         break;
       case(ML_TWO_LEVEL_DD_ADD):
-        ML_DD_Additive(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
+        ML_DD_Additive(&(ml_->SingleLevel[ml_->ML_finest_level]),
                        yvectors[i], xvectors[i],
-                       ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
+                       ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);
         break;
       case(ML_TWO_LEVEL_DD_HYBRID): 
-        ML_DD_Hybrid(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
+        ML_DD_Hybrid(&(ml_->SingleLevel[ml_->ML_finest_level]),
                      yvectors[i], xvectors[i],
-                     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
+                     ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);    
         break;
     case(ML_TWO_LEVEL_DD_HYBRID_2):
-      ML_DD_Hybrid_2(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
+      ML_DD_Hybrid_2(&(ml_->SingleLevel[ml_->ML_finest_level]),
 		     yvectors[i], xvectors[i],
-		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
+		     ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);    
       break;
     default: 
-      ML_Cycle_MG(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]), 
+      ML_Cycle_MG(&(ml_->SingleLevel[ml_->ML_finest_level]), 
                   yvectors[i], xvectors[i], StartingSolution,
-                  ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
+                  ml_->comm, ML_NO_RES_NORM, ml_);
       }
     }
 
@@ -1985,40 +1978,35 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     
   int MaxProcs = List_.get("coarse: max processes", -1);
 
-  ML * ml_ptr;
-  
-  if( SolvingMaxwell_ == false ) ml_ptr = ml_;
-  else                           ml_ptr = ml_edges_;
-    
   if( CoarseSolution == "Jacobi" ) 
-    ML_Gen_Smoother_Jacobi(ml_ptr, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+    ML_Gen_Smoother_Jacobi(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
 			   NumSmootherSteps, Omega);
   else if( CoarseSolution == "Gauss-Seidel" ) 
-    ML_Gen_Smoother_GaussSeidel(ml_ptr, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+    ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
 				NumSmootherSteps, Omega);
   else if( CoarseSolution == "SuperLU" ) 
-    ML_Gen_CoarseSolverSuperLU( ml_ptr, LevelID_[NumLevels_-1]);
+    ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
   else if( CoarseSolution == "Amesos-KLU" ) {
     // commented out, Amesos output is already printed on screen
     // cout << "\n\nCreating AMESOS smoother\n\n" << endl;
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_KLU, MaxProcs, AddToDiag);
   } else if( CoarseSolution == "Amesos-UMFPACK" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_UMFPACK, MaxProcs, AddToDiag);
   else if(  CoarseSolution == "Amesos-Superludist" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag);
   else if( CoarseSolution == "Amesos-MUMPS" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_MUMPS, MaxProcs, AddToDiag);
   else if( CoarseSolution == "Amesos-ScaLAPACK" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
   else if( CoarseSolution == "do-nothing" ) {
     // do nothing, ML will not use any coarse solver 
   } else {
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_KLU, MaxProcs, AddToDiag);
     ML_EXIT(-1); // Amesos is only the default...
   }
