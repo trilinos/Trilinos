@@ -70,10 +70,12 @@ AC_PREREQ(2.52)
 # Specify revision number of configure.ac that was used to generate
 # configure.
 
-AC_REVISION($Revision$)
+dnl Commented out this line for now because it causes headaches in
+dnl committing.
+dnl AC_REVISION($Revision$)
 
 # ------------------------------------------------------------------------
-# Configure command line options
+# Debug configure command line option
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(debug,
@@ -102,6 +104,10 @@ esac
 )
 AC_MSG_CHECKING(whether debugging is on)
 AC_MSG_RESULT([${DEBUG}])
+
+# ------------------------------------------------------------------------
+# MPI configure command line option
+# ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(mpi,
 [  --enable-mpi            Enable MPI.],
@@ -148,7 +154,38 @@ AC_MSG_CHECKING(whether we are using mpi)
 AC_MSG_RESULT([${USE_MPI}])
 
 # ------------------------------------------------------------------------
-# Checks for programs
+# Trilinos configure command line option
+# ------------------------------------------------------------------------
+
+AC_ARG_WITH(trilinos_arch,
+[  --with-trilinos-arch    Specify arch directory for TRILINOS],
+[
+USE_TRILINOS=yes
+USE_TRILINOS_ARCH=yes
+TRILINOS_ARCH_DIR=$enableval
+]
+)
+
+AC_ARG_ENABLE(trilinos,
+[  --disable-trilinos      Disable TRILINOS],
+[
+case $enableval in
+  yes)
+    USE_TRILINOS=yes
+  ;;
+  no)
+    USE_TRILINOS=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --disable-trilinos ($enableval)])
+  ;;
+esac
+],
+[USE_TRILINOS=yes]
+)
+
+# ------------------------------------------------------------------------
+# Checks for MPI compiler
 # ------------------------------------------------------------------------
 
 if test X${USE_MPI} = Xyes; then
@@ -171,12 +208,16 @@ if test X${USE_MPI} = Xyes; then
 
 fi
 
+# ------------------------------------------------------------------------
+# Checks for programs
+# ------------------------------------------------------------------------
+
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
-# MPI check
+# MPI link check
 # ------------------------------------------------------------------------
 
 if test X${USE_MPI} = Xyes; then
@@ -204,6 +245,105 @@ if test X${USE_MPI} = Xyes; then
   AC_LANG_RESTORE
 
 fi
+
+# ------------------------------------------------------------------------
+# Trilinos variables
+# ------------------------------------------------------------------------
+
+if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
+
+   AC_MSG_CHECKING(whether TRILINOS_HOME is defined)
+   if test $TRILINOS_HOME; then
+      AC_MSG_RESULT([yes (${TRILINOS_HOME})])
+   else
+      AC_MSG_RESULT([no (using ${HOME}/Trilinos)])
+      TRILINOS_HOME=${HOME}/Trilinos
+   fi
+
+   AC_MSG_CHECKING(whether TRILINOS_HOME is valid)
+   if test -d ${TRILINOS_HOME}; then
+      AC_MSG_RESULT(yes)
+   else
+      AC_MSG_RESULT([no (disabling Trilinos)])
+      USE_TRILINOS=no
+   fi
+fi
+
+if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
+
+   AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
+   if test ${TRILINOS_ARCH}; then
+      AC_MSG_RESULT([yes (${TRILINOS_ARCH})])
+   else
+      case $target in
+	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
+	TRILINOS_ARCH="IBMSP"
+	;;	
+	*)
+	TRILINOS_ARCH="LINUX"
+  	;;
+      esac
+      AC_MSG_RESULT([no (using ${TRILINOS_ARCH})])
+   fi
+
+   AC_MSG_CHECKING(whether TRILINOS_COMM is defined)
+   if test ${USE_MPI} = yes; then
+      TRILINOS_COMM="MPI"
+   else
+      TRILINOS_COMM="SERIAL"
+   fi
+   AC_MSG_RESULT([overriding with ${TRILINOS_COMM}])
+
+   AC_MSG_CHECKING(whether TRILINOS_ID is defined)
+   if test ${TRILINOS_ID}; then
+      AC_MSG_RESULT([yes (${TRILINOS_ID})])
+   else
+      AC_MSG_RESULT(no)
+   fi
+
+   AC_MSG_CHECKING(whether TRILINOS_TARGET is defined)
+   if test ${TRILINOS_TARGET}; then
+      AC_MSG_RESULT([yes (${TRILINOS_TARGET})])
+   else
+      TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
+      AC_MSG_RESULT([no (using ${TRILINOS_TARGET})])
+   fi
+
+   TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_HOME}/packages/epetra/src -I${TRILINOS_HOME}/packages/aztecoo/src"
+
+   TRILINOS_LDADD="-L${TRILINOS_HOME}/lib/${TRILINOS_TARGET}"
+
+fi
+
+
+if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
+
+   AC_MSG_CHECKING(whether TRILINOS_ARCH_DIR is valid)
+   if test -d ${TRILINOS_ARCH_DIR}; then
+      AC_MSG_RESULT(yes)
+   else
+      AC_MSG_RESULT([no (disabling Trilinos)])
+      USE_TRILINOS=no
+   fi
+
+fi
+
+if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
+
+   if test ${USE_MPI} = yes; then
+      TRILINOS_COMM="MPI"
+   else
+      TRILINOS_COMM="SERIAL"
+   fi
+
+   TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_ARCH_DIR}/include/epetra/ -I${TRILINOS_ARCH_DIR}/include/aztecoo/"
+   TRILINOS_LDADD="-L${TRILINOS_ARCH_DIR}/lib/"
+
+fi
+
+
+AC_SUBST(TRILINOS_CXXFLAGS)
+AC_SUBST(TRILINOS_LDADD)
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -273,10 +413,8 @@ CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS} ${XTRAINC}"
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Checks for MPI/SERIAL status (only affects the examples)
+# Checks for TRILINOS status 
 # ------------------------------------------------------------------------
-
-AC_TRILINOS
 
 if test X${USE_TRILINOS} = Xyes; then
    AM_CONDITIONAL(BUILD_NOXEPETRA, true)
