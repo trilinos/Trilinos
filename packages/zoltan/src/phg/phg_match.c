@@ -801,10 +801,7 @@ skip_phase1:
 
         if (sendsize + msgsize <= nSend)  {
           /* current partial sums fit, so put them into the send buffer */
-          if (cFLAG)
-            dest[sendcnt]   = 0;  /* debug: let row 0 do sum */
-          else
-            dest[sendcnt]   = gno % hgc->nProc_y;  /* proc to compute tsum */
+          dest[sendcnt]   = gno % hgc->nProc_y;  /* proc to compute tsum */
           size[sendcnt++] = msgsize;             /* size of message */
           sendsize     += msgsize;             /* cummulative size of message */
           
