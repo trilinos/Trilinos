@@ -1121,7 +1121,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   if( verbose_ ) {
     cout << PrintMsg_ << "Aggregation threshold = " << Threshold << endl;
     cout << PrintMsg_ << "Max coarse size = " << MaxCoarseSize << endl;
-    cout << PrintMsg_ << "Requested next-level aggregates per process (ParMETIS) = " << ReqAggrePerProc << endl;
     
   }
 
@@ -1483,11 +1482,13 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   sprintf(parameter,"%sprint hierarchy", Prefix_);
   bool PrintHierarchy = List_.get(parameter, false);
   
-  if( Comm().NumProc() > 1 ) {
-    cerr << endl;
-    cerr << ErrorMsg_ << "Option `print hierarchy' == `true' is available" << endl
-         << ErrorMsg_ << "only for serial runs." << endl;
-    cerr << endl;
+  if( Comm().NumProc() > 1 && PrintHierarchy == true ) {
+    if( Comm().MyPID() == 0 ) {
+      cerr << endl;
+      cerr << ErrorMsg_ << "Option `print hierarchy' == `true' is available" << endl
+	<< ErrorMsg_ << "only for serial runs." << endl;
+      cerr << endl;
+    }
   }
   
   if( PrintHierarchy == true && Comm().NumProc() == 1 ) {
