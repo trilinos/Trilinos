@@ -1938,15 +1938,18 @@ extern int Zoltan_LB_Balance(
  *  Returned value:       --  Error code
  */
 
+struct Zoltan_Order_Struct; /* Structure defined in order/order_const.h */
+
 extern int Zoltan_Order(
-/** EBEBEB need to declare struct Zoltan_Order_Struct somewhere 
   struct Zoltan_Struct *zz,
   int *num_gid_entries,
   int *num_lid_entries,
-  ZOLTAN_ID_PTR *global_ids,
-  ZOLTAN_ID_PTR *local_ids,
-  struct Zoltan_Order_Struct *order_info
-***/
+  int num_obj,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *rank,
+  int *iperm,
+  struct Zoltan_Order_Struct *order_info  /* Currently not used. */
 );
 
 /*****************************************************************************/
