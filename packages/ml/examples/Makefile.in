@@ -144,7 +144,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
-	$(top_srcdir)/config/tac_arg_enable_default_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_option.m4 \
@@ -608,6 +608,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
 @ML_STANDALONE_MODE_FALSE@ml_aztecoo_SOURCES = $(srcdir)/ml_aztecoo.cpp
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
+@ML_USING_AZTECOO_FALSE@aztecoo_incdir = 
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
 # libraries that the exe depends on.  (This primary is not absolutely
@@ -621,24 +622,36 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 #else
 #mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
 #endif
-ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-                   -I$(top_srcdir)/src/Coarsen                  \
-                   -I$(top_srcdir)/src/Comm                  \
-                   -I$(top_srcdir)/src/FEGrid                  \
-                   -I$(top_srcdir)/src/Include                  \
-                   -I$(top_srcdir)/src/Krylov                  \
-                   -I$(top_srcdir)/src/Main                  \
-                   -I$(top_srcdir)/src/Operator                  \
-                   -I$(top_srcdir)/src/Smoother                  \
-                   -I$(top_srcdir)/src/Utils                  \
-                   -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src \
-                   -I$(top_srcdir)/../epetra/src            \
-                   -I$(top_builddir)/../epetra/src \
-                   -I$(top_srcdir)/../teuchos/src            \
-                   -I$(top_builddir)/../teuchos/src \
-                   -I$(top_srcdir)/../triutils/src            \
-                   -I$(top_builddir)/../triutils/src
+@ML_USING_AZTECOO_TRUE@aztecoo_incdir = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
+@ML_USING_AMESOS_FALSE@amesos_incdir = 
+@ML_USING_AMESOS_TRUE@amesos_incdir = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
+@ML_USING_IFPACK_FALSE@ifpack_incdir = 
+@ML_USING_IFPACK_TRUE@ifpack_incdir = -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src 
+@ML_USING_TEUCHOS_TRUE@teuchos_incdir = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+@ML_USING_TEUCHOS_FALSE@teucho_incdir = 
+@ML_USING_ANASAZI_FALSE@anasazi_incdir = 
+@ML_USING_ANASAZI_TRUE@anasazi_incdir = -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
+@ML_USING_TRIUTILS_FALSE@triutils_incdir = 
+@ML_USING_TRIUTILS_TRUE@triutils_incdir = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+@ML_USING_EPETRA_FALSE@epetra_incdir = 
+@ML_USING_EPETRA_TRUE@epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+ml_common_include_locations = -I$(top_srcdir)/src/Include \
+                   -I$(top_srcdir)/src/Coarsen            \
+                   -I$(top_srcdir)/src/Comm               \
+                   -I$(top_srcdir)/src/FEGrid             \
+                   -I$(top_srcdir)/src/Include            \
+                   -I$(top_srcdir)/src/Krylov             \
+                   -I$(top_srcdir)/src/Main               \
+                   -I$(top_srcdir)/src/Operator           \
+                   -I$(top_srcdir)/src/Smoother           \
+                   -I$(top_srcdir)/src/Utils              \
+	           $(aztecoo_incdir) \
+	           $(ifpack_incdir) \
+	           $(amesos_incdir) \
+	           $(teuchos_incdir) \
+	           $(anasazi_incdir) \
+	           $(triutils_incdir) \
+	           $(epetra_incdir)
 
 @ML_STANDALONE_MODE_FALSE@mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 

@@ -366,28 +366,26 @@ TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --wi
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
 #
-TAC_ARG_ENABLE_FEATURE_SUB( default, packages, [Build all default packages unless explicitly disabled.  When this option is disabled, only packages explicitly enabled and packages needed to satisfy the dependencies of enabled packages will be built], DEFAULT_PACKAGES, yes)
-#
-TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Enable Epetra support.], ML_EPETRA, yes)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, [Enable Epetra support.], ML_EPETRA)
 AM_CONDITIONAL(ML_USING_EPETRA, test "X$ac_cv_use_epetra" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --enable-epetra. See notes for --enable-ml_metis.], ML_AMESOS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --enable-epetra. See notes for --enable-ml_metis.], ML_AMESOS)
 AM_CONDITIONAL(ML_USING_AMESOS, test "X$ac_cv_use_amesos" = "Xyes")
 #
-TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --enable_epetra. See notes for --enable-ml_metis.], ML_IFPACK, yes)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --enable_epetra. See notes for --enable-ml_metis.], ML_IFPACK)
 AM_CONDITIONAL(ML_USING_IFPACK, test "X$ac_cv_use_ifpack" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(teuchos, [Enable TEUCHOS support. Teuchos, a Trilinos package, is required by the class Epetra_ML_Preconditioner. Teuchos requires --enable_epetra. See notes for --enable-ml_metis.], ML_TEUCHOS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, [Enable TEUCHOS support. Teuchos, a Trilinos package, is required by the class Epetra_ML_Preconditioner. Teuchos requires --enable_epetra. See notes for --enable-ml_metis.], ML_TEUCHOS)
 #
 AM_CONDITIONAL(ML_USING_TEUCHOS, test "X$ac_cv_use_teuchos" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(anasazi, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --enable_epetra and --enable-teuchos.], ML_ANASAZI, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --enable_epetra and --enable-teuchos.], ML_ANASAZI)
 AM_CONDITIONAL(ML_USING_ANASAZI, test "X$ac_cv_use_anasazi" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --enable_epetra.], ML_TRIUTILS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --enable_epetra.], ML_TRIUTILS)
 AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 #
-TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis.], ML_AZTECOO, yes)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis.], ML_AZTECOO)
 AM_CONDITIONAL(ML_USING_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
 
 #if we're not using aztecoo, then build certain ML examples

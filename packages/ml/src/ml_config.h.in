@@ -35,9 +35,6 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build default-packages */
-#undef HAVE_DEFAULT_PACKAGES
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -84,7 +81,7 @@
 /* Define if want to build with ml_aztec2_1 enabled */
 #undef HAVE_ML_AZTEC2_1
 
-/* Define if want to build aztecoo */
+/* Define if want to build with aztecoo enabled */
 #undef HAVE_ML_AZTECOO
 
 /* Define if want to build with ml_benchmarking enabled */
@@ -96,7 +93,7 @@
 /* Define if want to build with ml_enrich enabled */
 #undef HAVE_ML_ENRICH
 
-/* Define if want to build epetra */
+/* Define if want to build with epetra enabled */
 #undef HAVE_ML_EPETRA
 
 /* Define if want to build ml-examples */
@@ -108,7 +105,7 @@
 /* Define if want to build with ml_flops enabled */
 #undef HAVE_ML_FLOPS
 
-/* Define if want to build ifpack */
+/* Define if want to build with ifpack enabled */
 #undef HAVE_ML_IFPACK
 
 /* Define if want to build with ml_metis enabled */
