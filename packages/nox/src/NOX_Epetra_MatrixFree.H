@@ -130,7 +130,7 @@ protected:
   mutable Epetra_Vector fp;
 
 };
-}; // namespace Epetra
-}; // namespace NOX
+} // namespace Epetra
+} // namespace NOX
 
 #endif /* _EPETRA_ROWMATRIX_H_ */

@@ -116,48 +116,48 @@ int MatrixFree::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_Mu
   // Check that flags we can't handle are not set.
   if (Upper == true) {
     cout << "ERROR: Matrix-Free can not compute an Upper Multiply!" << endl;
-    throw;  
+    throw 1;  
   }
   else if (UnitDiagonal == true) {
     cout << "ERROR: Matrix-Free can not compute a Diagonal Multiply!" << endl;
-    throw;  
+    throw 1;  
   }
 
   Multiply(Trans, X, Y);
   return 0;
 }
 
-int MatrixFree::InvRowSums(Epetra_Vector& x) const{}
+int MatrixFree::InvRowSums(Epetra_Vector& x) const{return 0;}
   
-int MatrixFree::LeftScale(const Epetra_Vector& x){}
+int MatrixFree::LeftScale(const Epetra_Vector& x){return 0;}
   
-int MatrixFree::InvColSums(Epetra_Vector& x) const{}
+int MatrixFree::InvColSums(Epetra_Vector& x) const{return 0;}
   
-int MatrixFree::RightScale(const Epetra_Vector& x){}
+int MatrixFree::RightScale(const Epetra_Vector& x){return 0;}
   
-double MatrixFree::NormInf() const{}
+double MatrixFree::NormInf() const{return 0.0;}
 
-double MatrixFree::NormOne() const{}
+double MatrixFree::NormOne() const{return 0.0;}
   
-int MatrixFree::NumGlobalNonzeros() const{}
+int MatrixFree::NumGlobalNonzeros() const{return 0;}
   
-int MatrixFree::NumGlobalRows() const{}
+int MatrixFree::NumGlobalRows() const{return 0;}
   
-int MatrixFree::NumGlobalCols() const{}
+int MatrixFree::NumGlobalCols() const{return 0;}
   
-int MatrixFree::NumGlobalDiagonals() const{}
+int MatrixFree::NumGlobalDiagonals() const{return 0;}
   
-int MatrixFree::NumMyNonzeros() const{}
+int MatrixFree::NumMyNonzeros() const{return 0;}
   
-int MatrixFree::NumMyRows() const{}
+int MatrixFree::NumMyRows() const{return 0;}
   
-int MatrixFree::NumMyCols() const{}
+int MatrixFree::NumMyCols() const{return 0;}
   
-int MatrixFree::NumMyDiagonals() const{}
+int MatrixFree::NumMyDiagonals() const{return 0;}
   
-bool MatrixFree::LowerTriangular() const{}
+bool MatrixFree::LowerTriangular() const{return true;}
 
-bool MatrixFree::UpperTriangular() const{}
+bool MatrixFree::UpperTriangular() const{return true;}
 
 const Epetra_Comm& MatrixFree::Comm() const
 {

@@ -144,7 +144,7 @@ protected:
   mutable Epetra_Vector Jc;
 
 };
-}; // namespace Epetra
-}; // namespace NOX
+}  // namespace Epetra
+}  // namespace NOX
 
 #endif /* _EPETRA_FINITEDIFFERENCE_H_ */

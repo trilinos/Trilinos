@@ -137,6 +137,6 @@ protected:
   SharedJacobian* sharedJacobian;
 
 };
-};
-};
+}
+}
 #endif

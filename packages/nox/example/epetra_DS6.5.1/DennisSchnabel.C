@@ -41,11 +41,9 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   } 
   else {
 
-    int OverlapNumMyElements;
-    int OverlapMinMyGID;    
-
-    OverlapNumMyElements = 2;    
-    int OverlapMyGlobalElements[OverlapNumMyElements];
+    int OverlapNumMyElements = 2;
+    int OverlapMinMyGID;     
+    int OverlapMyGlobalElements[2];
     
     for (i = 0; i < OverlapNumMyElements; i ++) 
       OverlapMyGlobalElements[i] = i;

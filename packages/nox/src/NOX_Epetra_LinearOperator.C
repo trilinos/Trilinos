@@ -137,6 +137,8 @@ bool LinearOperator::solveLinearSystem(const Parameter::List& params,
   // Solve Aztex problem
   aztec.Iterate(maxit, tol);
 
+  // For now return true.  We should put a check in here.
+  return true;
 }
 
 SharedJacobian& LinearOperator::getSharedJacobian()

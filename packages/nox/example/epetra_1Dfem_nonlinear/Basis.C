@@ -1,5 +1,3 @@
-#include<cmath>
-
 #include "Basis.H"
 
 // Constructor
@@ -17,8 +15,8 @@ Basis::~Basis() {
 // Calculates a linear 1D basis
 void Basis::getBasis(int gp, double *x, double *u) {
   int N = 2;
-  if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}
-  if (gp==1) {eta=1.0/sqrt(3.0); wt=1.0;}
+  if (gp==0) {eta=-1.0/std::sqrt(3.0); wt=1.0;}
+  if (gp==1) {eta=1.0/std::sqrt(3.0); wt=1.0;}
 
   // Calculate basis function and derivatives at nodel pts
   phi[0]=(1.0-eta)/2.0;
