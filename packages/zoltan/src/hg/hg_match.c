@@ -19,6 +19,7 @@ extern "C" {
 #include "hypergraph.h"
 
 static ZOLTAN_HG_MATCHING_FN matching_mxm; /* maximal matching */
+static ZOLTAN_HG_MATCHING_FN matching_rem; /* random edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_rrm; /* random, random edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_rhm; /* random, heavy edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_grm; /* greedy edge matching */
@@ -41,6 +42,7 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 
   str = hgp->redm_str;
   if      (!strcasecmp(str, "mxm"))  hgp->matching = matching_mxm;
+  else if (!strcasecmp(str, "rem"))  hgp->matching = matching_rem;
   else if (!strcasecmp(str, "rrm"))  hgp->matching = matching_rrm;
   else if (!strcasecmp(str, "rhm"))  hgp->matching = matching_rhm;
   else if (!strcasecmp(str, "grm"))  hgp->matching = matching_grm;
@@ -125,6 +127,51 @@ static int matching_mxm (ZZ *zz, Graph *g, Matching match, int limit)
       }
   return ZOLTAN_OK;
 }
+
+/*****************************************************************************/
+
+static int matching_rem (ZZ *zz, Graph *g, Matching match, int limit)
+   {
+   int i,j,k=0, ii, jj ;
+   int *v1, *v2 ;
+   int size=0, random ;
+
+   v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ;
+   v2 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ;
+
+   for (i = 0 ; i < g->nVtx ; i++)
+      match[i] = i ;
+
+   for (i = 0 ; i < g->nVtx ; i++)
+      for (j = g->nindex[i] ; j < g->nindex[i+1] ; j++)
+          if (i < g->neigh[j])
+             {
+             v1[k] = i ;
+             v2[k] = g->neigh[j] ;
+             k++ ;
+             }
+
+   for (i = k ; i > 0 && size < limit ; i--)
+      {
+      random = rand() % i ;
+      ii = v1[random] ;
+      jj = v2[random] ;
+      v1[random] = v1[i-1] ;
+      v2[random] = v2[i-1] ;
+
+      if (match[ii] == ii && match[jj] == jj)
+         {
+         match[ii] = jj ;
+         match[jj] = ii ;
+         size++ ;
+         }
+      }
+
+   ZOLTAN_FREE (&v1) ;
+   ZOLTAN_FREE (&v2) ;
+   return ZOLTAN_OK ;
+   }
+
 
 /*****************************************************************************/
 

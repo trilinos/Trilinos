@@ -63,7 +63,7 @@ int main (int argc, char **argv)
     puts("-p      # of parts:       (2)");
     puts("-bal    balance tolerance:(10.0)");
     puts("-redl   reduction limit:  (0)");
-    puts("-redm   reduction method: {mxm,rrm,rhm,grm,lhm,pgm,");
+    puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
     puts("                           mxg,reg,rrg,rhg,(grg)}");
     puts("-reda   reduction augment:{no,(aug3)}");
