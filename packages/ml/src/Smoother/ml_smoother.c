@@ -942,6 +942,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
              sqrt(ML_gdot(Tmat_trans->outvec_leng,
                           rhs_nodal,rhs_nodal,Tmat_trans->comm)));
 #endif
+      smooth_ptr->init_guess = ML_ZERO;
 
 #ifdef USEJACOBI
       ML_Smoother_Jacobi(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
@@ -966,6 +967,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ML_Smoother_SGS(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                       TtATmat->outvec_leng, rhs_nodal);
 #endif
+      smooth_ptr->init_guess = ML_NONZERO;
 
 #ifdef ML_DEBUG_SMOOTHER
       printf("After SGS on nodes\n");
