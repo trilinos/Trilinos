@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP FLIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_SLUD_TRUE HAVE_AMESOS_SLUD_FALSE HAVE_AMESOS_SLUD2_TRUE HAVE_AMESOS_SLUD2_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SLUS_TRUE HAVE_AMESOS_SLUS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE AMESOS_LIBS BLAS_LIBS LAPACK_LIBS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP FLIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_SLUD_TRUE HAVE_AMESOS_SLUD_FALSE HAVE_AMESOS_SLUD2_TRUE HAVE_AMESOS_SLUD2_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SLUS_TRUE HAVE_AMESOS_SLUS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE AMESOS_LIBS BLAS_LIBS LAPACK_LIBS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -876,6 +876,9 @@ Optional Features:
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-amesos-slud    Enable Amesos interface support for SuperLU Dist
                           (default is no)
+  --enable-amesos-superludist
+                          Enable Amesos interface support for SuperLU Dist
+                          (default is no)
   --enable-amesos-slud2   Enable Amesos interface support for SuperLU Dist 2.0
                           (requires amesos-slud) (default is no)
   --enable-amesos-dscpack Enable Amesos interface support for DSCPACK (default
@@ -922,6 +925,15 @@ Optional Packages:
                           format
   --with-trilinos3pldir   Set Trilinos3PL directory (default is
                           must_specify_trilinos3pldir, )
+  --with-amesos-superludistdir
+                          Set SuperLU dist directory (default is
+                          ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0, )
+  --with-amesos-superludistlib
+                          Set SuperLU dist library (default is
+                          ${tac_with_amesos_superludistdir}/libsuperludist.a, )
+  --with-amesos-superludistincdir
+                          Set SuperLU dist include directory (default is
+                          ${tac_with_amesos_superludistdir}/SRC, )
   --with-amesos-sluddir   Set SuperLU dist directory (default is
                           ${tac_with_trilinos3pldir}/SuperLU_DIST, )
   --with-amesos-sludlib   Set SuperLU dist library (default is
@@ -3559,7 +3571,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3562:" \
+echo "$as_me:3574:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5953,7 +5965,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5956: \"$ac_link\") >&5
+(eval echo $as_me:5968: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6033,7 +6045,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6036: \"$ac_link\") >&5
+(eval echo $as_me:6048: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6689,6 +6701,32 @@ fi
 
 
 
+# Check whether --enable-amesos-superludist or --disable-amesos-superludist was given.
+if test "${enable_amesos_superludist+set}" = set; then
+  enableval="$enable_amesos_superludist"
+  ac_cv_use_amesos_superludist=$enableval
+else
+  ac_cv_use_amesos_superludist=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos-superludist" >&5
+echo $ECHO_N "checking whether to use amesos-superludist... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_SUPERLUDIST
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
 # Check whether --enable-amesos-slud2 or --disable-amesos-slud2 was given.
 if test "${enable_amesos_slud2+set}" = set; then
   enableval="$enable_amesos_slud2"
@@ -6934,6 +6972,250 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
+
+  if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+    { { echo "$as_me:$LINENO: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&5
+echo "$as_me: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+
+# Check whether --with-amesos-superludistdir or --without-amesos-superludistdir was given.
+if test "${with_amesos_superludistdir+set}" = set; then
+  withval="$with_amesos_superludistdir"
+  tac_with_amesos_superludistdir=$withval
+else
+  tac_with_amesos_superludistdir=${tac_with_trilinos3pldir}/SuperLU_DIST_2.0
+fi;
+
+  as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistdir}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistdir}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_superludistdir}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_superludistdir}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+
+
+
+
+# Check whether --with-amesos-superludistlib or --without-amesos-superludistlib was given.
+if test "${with_amesos_superludistlib+set}" = set; then
+  withval="$with_amesos_superludistlib"
+  tac_with_amesos_superludistlib=$withval
+else
+  tac_with_amesos_superludistlib=${tac_with_amesos_superludistdir}/libsuperludist.a
+fi;
+
+  as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistlib}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistlib}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_superludistlib}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_superludistlib}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+
+
+
+
+# Check whether --with-amesos-superludistincdir or --without-amesos-superludistincdir was given.
+if test "${with_amesos_superludistincdir+set}" = set; then
+  withval="$with_amesos_superludistincdir"
+  tac_with_amesos_superludistincdir=$withval
+else
+  tac_with_amesos_superludistincdir=${tac_with_amesos_superludistdir}/SRC
+fi;
+
+  as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistincdir}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistincdir}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_superludistincdir}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_superludistincdir}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+
+
+#
+# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+
+  as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistincdir}/supermatrix.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistincdir}/supermatrix.h" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_superludistincdir}/supermatrix.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_superludistincdir}/supermatrix.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+
+
+  as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistincdir}/supermatrix.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistincdir}/supermatrix.h" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_superludistincdir}/supermatrix.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_superludistincdir}/supermatrix.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  :
+else
+  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_superludistincdir} , specify a location using --with-amesos-superludistincdir, --with-amesos-superludistdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_superludistincdir} , specify a location using --with-amesos-superludistincdir, --with-amesos-superludistdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
+
+##  LDFLAGS="${tac_with_amesos_superludistlib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_superludistincdir} ${CXXFLAGS}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_superludistlib} ${MPI_LIBS} ${LIBS}"
+     cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char SuperLU_timer_ ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+SuperLU_timer_ ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+{ { echo "$as_me:$LINENO: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)" >&5
+echo "$as_me: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+    LIBS="${SAVE_LIBS}"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
+
+
+
+if true ; then
+  HAVE_AMESOS_SUPERLUDIST_TRUE=
+  HAVE_AMESOS_SUPERLUDIST_FALSE='#'
+else
+  HAVE_AMESOS_SUPERLUDIST_TRUE='#'
+  HAVE_AMESOS_SUPERLUDIST_FALSE=
+fi
+
+else
+
+
+if false ; then
+  HAVE_AMESOS_SUPERLUDIST_TRUE=
+  HAVE_AMESOS_SUPERLUDIST_FALSE='#'
+else
+  HAVE_AMESOS_SUPERLUDIST_TRUE='#'
+  HAVE_AMESOS_SUPERLUDIST_FALSE=
+fi
+
+fi
+
+
+
+
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that supermatrix.h is in the SuperLU distributed include directory
+#    Make sure that SuperLU_timer is in the SuperLU distributed library
+#
 
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
 
@@ -10092,7 +10374,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10095: \"$ac_link\") >&5
+(eval echo $as_me:10377: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10172,7 +10454,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10175: \"$ac_link\") >&5
+(eval echo $as_me:10457: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10502,6 +10784,20 @@ if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE
   { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SUPERLUDIST_TRUE}" && test -z "${HAVE_AMESOS_SUPERLUDIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SUPERLUDIST_TRUE}" && test -z "${HAVE_AMESOS_SUPERLUDIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11253,6 +11549,8 @@ s,@EGREP@,$EGREP,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@NEED_PARAMETER_LIST_TRUE@,$NEED_PARAMETER_LIST_TRUE,;t t
 s,@NEED_PARAMETER_LIST_FALSE@,$NEED_PARAMETER_LIST_FALSE,;t t
+s,@HAVE_AMESOS_SUPERLUDIST_TRUE@,$HAVE_AMESOS_SUPERLUDIST_TRUE,;t t
+s,@HAVE_AMESOS_SUPERLUDIST_FALSE@,$HAVE_AMESOS_SUPERLUDIST_FALSE,;t t
 s,@HAVE_AMESOS_SLUD_TRUE@,$HAVE_AMESOS_SLUD_TRUE,;t t
 s,@HAVE_AMESOS_SLUD_FALSE@,$HAVE_AMESOS_SLUD_FALSE,;t t
 s,@HAVE_AMESOS_SLUD2_TRUE@,$HAVE_AMESOS_SLUD2_TRUE,;t t

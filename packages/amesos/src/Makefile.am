@@ -91,7 +91,6 @@ KLU = \
 	$(srcdir)/mc21b.f \
 	$(srcdir)/mc13e.f \
 	$(srcdir)/mc13d.f \
-	$(srcdir)/cbtf.c \
 	$(srcdir)/klu_btf_factor.c \
 	$(srcdir)/klu_btf_free_symbolic.c \
 	$(srcdir)/klu_btf_free_numeric.c \
@@ -100,6 +99,7 @@ KLU = \
 	$(srcdir)/klu_btf_solve.c \
 	$(srcdir)/klu_btf_analyze.c \
 	$(srcdir)/klu_dump.c \
+	$(srcdir)/cbtf.c \
 	$(srcdir)/Amesos_Klu.cpp \
 	$(srcdir)/klu.c \
 	$(srcdir)/klu_kernel.c \

@@ -84,11 +84,8 @@ extern "C" {
 main(int argc, char **argv)
 {
 
-
-  exit(13);
-
-    vector <double> BBval ; 
-    BBval.resize(12);
+  vector <double> BBval ; 
+  BBval.resize(12);
   //
   //  The following are the values returned from the tester
   //

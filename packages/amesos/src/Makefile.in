@@ -100,6 +100,15 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
+@HAVE_AMESOS_SUPERLUDIST_TRUE@SUPERLUDIST_H = \
+@HAVE_AMESOS_SUPERLUDIST_TRUE@	$(srcdir)/Amesos_Superludist.h
+
+@HAVE_AMESOS_SUPERLUDIST_FALSE@SUPERLUDIST_H = 
+@HAVE_AMESOS_SUPERLUDIST_TRUE@SUPERLUDIST = \
+@HAVE_AMESOS_SUPERLUDIST_TRUE@	$(srcdir)/Amesos_Superludist.cpp
+
+@HAVE_AMESOS_SUPERLUDIST_FALSE@SUPERLUDIST = 
+
 @HAVE_AMESOS_SLUD_TRUE@SLUDIST_H = \
 @HAVE_AMESOS_SLUD_TRUE@	$(srcdir)/SuperludistOO.h
 
@@ -156,6 +165,7 @@ install_sh = @install_sh@
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/cbtf.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_dump.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel.h
 
 @HAVE_AMESOS_KLU_FALSE@KLU_H = 
@@ -165,7 +175,6 @@ install_sh = @install_sh@
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/mc21b.f \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/mc13e.f \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/mc13d.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/cbtf.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf_factor.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf_free_symbolic.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf_free_numeric.c \
@@ -174,6 +183,7 @@ install_sh = @install_sh@
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf_solve.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf_analyze.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_dump.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/cbtf.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.cpp \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel.c \
@@ -267,6 +277,7 @@ AMESOS_H = \
 	$(UMFPACK_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
+	$(SUPERLUDIST_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
 	$(SLUSERIAL_H) \
@@ -280,6 +291,7 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
+	$(SUPERLUDIST) \
 	$(SLUDIST) \
 	$(SLUDIST2) \
 	$(SLUSERIAL) \
@@ -359,41 +371,44 @@ libamesos_a_DEPENDENCIES =
 @HAVE_AMESOS_DSCPACK_FALSE@am__objects_2 =
 @HAVE_AMESOS_KLU_TRUE@am__objects_3 = btf.$(OBJEXT) mc21a.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	mc21b.$(OBJEXT) mc13e.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	mc13d.$(OBJEXT) cbtf.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu_btf_factor.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	mc13d.$(OBJEXT) klu_btf_factor.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_free_symbolic.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_free_numeric.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_refactor.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_scale.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_solve.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_analyze.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu_dump.$(OBJEXT) Amesos_Klu.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu.$(OBJEXT) klu_kernel.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_dump.$(OBJEXT) cbtf.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	Amesos_Klu.$(OBJEXT) klu.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_kernel.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_noprune_kernel.$(OBJEXT)
 @HAVE_AMESOS_KLU_FALSE@am__objects_3 =
 @HAVE_AMESOS_UMFPACK_TRUE@am__objects_4 = Amesos_Umfpack.$(OBJEXT)
 @HAVE_AMESOS_UMFPACK_FALSE@am__objects_4 =
 @HAVE_AMESOS_MUMPS_TRUE@am__objects_5 = Amesos_Mumps.$(OBJEXT)
 @HAVE_AMESOS_MUMPS_FALSE@am__objects_5 =
-@HAVE_AMESOS_SLUD_TRUE@am__objects_6 = SuperludistOO.$(OBJEXT)
-@HAVE_AMESOS_SLUD_FALSE@am__objects_6 =
-@HAVE_AMESOS_SLUD2_TRUE@am__objects_7 = Superludist2_OO.$(OBJEXT)
-@HAVE_AMESOS_SLUD2_FALSE@am__objects_7 =
-@HAVE_AMESOS_SLUS_TRUE@am__objects_8 = Epetra_SLU.$(OBJEXT)
-@HAVE_AMESOS_SLUS_FALSE@am__objects_8 =
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_9 = \
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_6 = \
+@HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
+@HAVE_AMESOS_SUPERLUDIST_FALSE@am__objects_6 =
+@HAVE_AMESOS_SLUD_TRUE@am__objects_7 = SuperludistOO.$(OBJEXT)
+@HAVE_AMESOS_SLUD_FALSE@am__objects_7 =
+@HAVE_AMESOS_SLUD2_TRUE@am__objects_8 = Superludist2_OO.$(OBJEXT)
+@HAVE_AMESOS_SLUD2_FALSE@am__objects_8 =
+@HAVE_AMESOS_SLUS_TRUE@am__objects_9 = Epetra_SLU.$(OBJEXT)
+@HAVE_AMESOS_SLUS_FALSE@am__objects_9 =
+@HAVE_AMESOS_KUNDERT_TRUE@am__objects_10 = \
 @HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) smplinkrows.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spbuild.$(OBJEXT) spoutput.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_FALSE@am__objects_9 =
-am__objects_10 = CrsMatrixTranspose.$(OBJEXT)
+@HAVE_AMESOS_KUNDERT_FALSE@am__objects_10 =
+am__objects_11 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
-	$(am__objects_9) $(am__objects_10)
+	$(am__objects_9) $(am__objects_10) $(am__objects_11)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -408,6 +423,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Mumps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_Entry.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_List.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Superludist.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Umfpack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CrsMatrixTranspose.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DscpackOO.Po \
@@ -519,7 +535,6 @@ mc21a.$(OBJEXT): $(srcdir)/mc21a.f
 mc21b.$(OBJEXT): $(srcdir)/mc21b.f
 mc13e.$(OBJEXT): $(srcdir)/mc13e.f
 mc13d.$(OBJEXT): $(srcdir)/mc13d.f
-cbtf.$(OBJEXT): $(srcdir)/cbtf.c
 klu_btf_factor.$(OBJEXT): $(srcdir)/klu_btf_factor.c
 klu_btf_free_symbolic.$(OBJEXT): $(srcdir)/klu_btf_free_symbolic.c
 klu_btf_free_numeric.$(OBJEXT): $(srcdir)/klu_btf_free_numeric.c
@@ -528,12 +543,14 @@ klu_btf_scale.$(OBJEXT): $(srcdir)/klu_btf_scale.c
 klu_btf_solve.$(OBJEXT): $(srcdir)/klu_btf_solve.c
 klu_btf_analyze.$(OBJEXT): $(srcdir)/klu_btf_analyze.c
 klu_dump.$(OBJEXT): $(srcdir)/klu_dump.c
+cbtf.$(OBJEXT): $(srcdir)/cbtf.c
 Amesos_Klu.$(OBJEXT): $(srcdir)/Amesos_Klu.cpp
 klu.$(OBJEXT): $(srcdir)/klu.c
 klu_kernel.$(OBJEXT): $(srcdir)/klu_kernel.c
 klu_noprune_kernel.$(OBJEXT): $(srcdir)/klu_noprune_kernel.c
 Amesos_Umfpack.$(OBJEXT): $(srcdir)/Amesos_Umfpack.cpp
 Amesos_Mumps.$(OBJEXT): $(srcdir)/Amesos_Mumps.cpp
+Amesos_Superludist.$(OBJEXT): $(srcdir)/Amesos_Superludist.cpp
 SuperludistOO.$(OBJEXT): $(srcdir)/SuperludistOO.cpp
 Superludist2_OO.$(OBJEXT): $(srcdir)/Superludist2_OO.cpp
 Epetra_SLU.$(OBJEXT): $(srcdir)/Epetra_SLU.cpp
@@ -565,6 +582,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_List.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Superludist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Umfpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CrsMatrixTranspose.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DscpackOO.Po@am__quote@
@@ -609,18 +627,6 @@ distclean-depend:
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(COMPILE) -c `cygpath -w $<`
-
-cbtf.o: $(srcdir)/cbtf.c
-@AMDEP_TRUE@	source='$(srcdir)/cbtf.c' object='cbtf.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.o `test -f '$(srcdir)/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/cbtf.c
-
-cbtf.obj: $(srcdir)/cbtf.c
-@AMDEP_TRUE@	source='$(srcdir)/cbtf.c' object='cbtf.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.obj `cygpath -w $(srcdir)/cbtf.c`
 
 klu_btf_factor.o: $(srcdir)/klu_btf_factor.c
 @AMDEP_TRUE@	source='$(srcdir)/klu_btf_factor.c' object='klu_btf_factor.o' libtool=no @AMDEPBACKSLASH@
@@ -717,6 +723,18 @@ klu_dump.obj: $(srcdir)/klu_dump.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/klu_dump.Po' tmpdepfile='$(DEPDIR)/klu_dump.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_dump.obj `cygpath -w $(srcdir)/klu_dump.c`
+
+cbtf.o: $(srcdir)/cbtf.c
+@AMDEP_TRUE@	source='$(srcdir)/cbtf.c' object='cbtf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.o `test -f '$(srcdir)/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/cbtf.c
+
+cbtf.obj: $(srcdir)/cbtf.c
+@AMDEP_TRUE@	source='$(srcdir)/cbtf.c' object='cbtf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.obj `cygpath -w $(srcdir)/cbtf.c`
 
 klu.o: $(srcdir)/klu.c
 @AMDEP_TRUE@	source='$(srcdir)/klu.c' object='klu.o' libtool=no @AMDEPBACKSLASH@
@@ -970,6 +988,18 @@ Amesos_Mumps.obj: $(srcdir)/Amesos_Mumps.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Mumps.Po' tmpdepfile='$(DEPDIR)/Amesos_Mumps.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Mumps.obj `cygpath -w $(srcdir)/Amesos_Mumps.cpp`
+
+Amesos_Superludist.o: $(srcdir)/Amesos_Superludist.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Superludist.cpp' object='Amesos_Superludist.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Superludist.Po' tmpdepfile='$(DEPDIR)/Amesos_Superludist.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Superludist.o `test -f '$(srcdir)/Amesos_Superludist.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Superludist.cpp
+
+Amesos_Superludist.obj: $(srcdir)/Amesos_Superludist.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Superludist.cpp' object='Amesos_Superludist.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Superludist.Po' tmpdepfile='$(DEPDIR)/Amesos_Superludist.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Superludist.obj `cygpath -w $(srcdir)/Amesos_Superludist.cpp`
 
 SuperludistOO.o: $(srcdir)/SuperludistOO.cpp
 @AMDEP_TRUE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.o' libtool=no @AMDEPBACKSLASH@

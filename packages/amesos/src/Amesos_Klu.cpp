@@ -59,7 +59,6 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
   if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
   if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
-
 }
 
 int Amesos_Klu::ConvertToSerial() { 
