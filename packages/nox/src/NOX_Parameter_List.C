@@ -187,7 +187,7 @@ List& List::sublist(const string& name)
   return params[name].setList();
 }
   
-ostream& List::print(ostream& stream, int indent = 0) const
+ostream& List::print(ostream& stream, int indent) const
 {
   if (params.begin() == params.end()) {
     for (int j = 0; j < indent; j ++)
