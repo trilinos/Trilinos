@@ -50,12 +50,12 @@
     %
     %\clearpage - this is the beginning of the document
     \section*{Acknowledgement}
-The author would like to acknowledge the support of the ASCI and LDRD programs 
-that funded development of Trilinos and recognize all Trilinos 
+The author would like to acknowledge the support of the ASCI and LDRD 
+programs that funded development of Trilinos and recognize all Trilinos 
 contributors: Michael Heroux, Teri Barth, David Day, Bob Heaphy, 
 Robert Hoekstra, Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin Long, 
-Roger Pawlowski, Andrew Rothfuss, Andrew Salinger, Ken Stanley, Ray Tuminaro, 
-Jim Willenbring, and Alan Williams.
+Roger Pawlowski, Andrew Rothfuss, Andrew Salinger, Ken Stanley, Ray 
+Tuminaro, Jim Willenbring, and Alan Williams.
 
     % --------------------------------------------------------- %
     % The table of contents and list of figures and tables
@@ -149,14 +149,23 @@ packages.  Many existing
 Trilinos packages use Autoconf and Automake (and will use
 Libtool in the future).  However, use of these tools is not required.
 
-In order to minimize the amount of redudant effort, Trilinos provides a set of
-M4~\cite{M4} macros that can be used by any other
+Package developers who are not currently using autotools, but would like
+to, can get a jump start by using a Trilinos package called 
+new_package.  This trivial package exists for one primary 
+purpose.  It walks a developer through the process of setting up a 
+package to configure and build using autotools.  General instructions for
+how to get started can be found in Trilinos/packages/new_package/README.  
+Please note that new_package is a work in progess, suggestions and 
+contributions are welcome, especially for FAQ's.
+
+Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
 package that wants to use Autoconf and Automake for configuring and
 building libraries.  These macros perform common configuration tasks such as
-locating a valid LAPACK~\cite{lapack} library, or checking for a user-defined 
-MPI C compiler.  These macros can be found in the Trilinos cvs repository ...
-**(Add something about looking at the configure.ac files, and who to contact)**
-
+locating a valid LAPACK~\cite{lapack} library, or checking for a user-
+defined MPI C compiler.  The macros can be found in the Trilinos cvs 
+repository in Trilinos/config.  These macros minimize the amount of redudant
+ effort in using Autotools, and make it easier to apply a general change to 
+the configure process for all packages.
 	\section{Regression Testing}
 Trilinos provides a variety of regression
 testing capabilities.  Within a number of Trilinos packages, we employ
@@ -167,12 +176,29 @@ interfaces.  Any package that implements the TSF interfaces (see
 Section~\ref{subsect:InteropTSF} below **(MAKE SURE BELOW, NOTE ABOVE)), can be tested via this black box
 test environment.  ({\bf NOTE: Black box testing via TSF is not in
 place at this time}
+	\section{Periodic Testing}
+Trilinos Packages that configure and build using Autotools can easily 
+utilize the the Trilinos testharness.  The testharness performs a cvs update
+(gets the most recent source code) every night and then builds the libraries
+and runs any tests that have been integrated into the testharness.  
+Currently the testharness only runs on a Linux platform, but it will 
+eventually run on 5-8 platforms.  Packages that have not ported to a 
+particular platform can be excluded from the testing process on that 
+platform.  Packages that do not have any tests integrated into the 
+testharness can still benefit by ensuring that libraries build without 
+errors.  Integrating existing tests into the testharness is not difficult.  
+The process is discussed in Trilinos/testharness/HowToAddToTestHarness.  
+Please note that this document is a work in progress.
 
-	
 	\section{Source Code Repository and Build Tools}
 	**(See Overview Doc pg 12)**
-Source code repository and build tools: Trilinos source code is
-maintained in a CVS~\cite{CVS} repository that is accessible via a
+Source code repository and build tools: 
+
+\triangleright CVS Repository
+Trilinos source code is maintained in a CVS~\cite{CVS} repository.  To 
+access the repository, one must have an account on software.sandia.gov.
+
+A lot of useful information is accessible via a
 web-based interface package called Bonsai~\cite{Bonsai}.  Features and bug 
 reports are tracked using Bugzilla~\cite{Bugzilla}, and email lists are
 maintained for Trilinos as a whole and for each package through 
@@ -213,13 +239,13 @@ other packages.
 \section Trilinos Configuration Options
 
 The following options apply to all Trilinos packages unless 
-the option doesn't apply to a particular package (for example, a package that 
-does not include any Fortran code will not be sensitive to F77=g77), or 
-otherwise noted.  NOTE: This list is not yet complete, in particular many 
-options that apply to only a subset of Trilinos packages are not included.  
-For options specific to individual package, 'cd' to the home directory of
-the source code of the individual package and type ``configure --help'' 
-(without quotes).
+the option doesn't make sense for a particular package (for example, a 
+package that does not include any Fortran code will not be sensitive to 
+F77=g77), or otherwise noted.  NOTE: This list is not yet complete, in 
+particular many options that apply to only a subset of Trilinos packages 
+are not included.  For options specific to individual package, 'cd' to the 
+home directory of the source code of the individual package and type 
+``configure --help'' (without quotes).
 
 \triangleright Basic Options
 
@@ -297,7 +323,7 @@ with MPI.
 
 \bullet --with-mpi-cxx 
 
-If no argument is specified, uses "mpiCC". Otherwise, uses specified MPI C++ 
+If no argument is specified, uses "mpiCC". Otherwise, uses specified MPI C++
 compiler. Automatically enables MPI mode. 
 
 \bullet --with-mpi=MPIROOT 
@@ -307,29 +333,26 @@ Specify the MPI root directory. Automatically enables MPI mode.
 \bullet --with-mpi-libs="LIBS" 
 
 Specify the MPI libraries. Defaults to "-lmpi" if either --with-mpi or 
---with-mpi-libdir is specified. **(Verify that the default applies only in these cases)**
+--with-mpi-libdir is specified.
 
-\bullet --with-mpi-incdir=DIR (Nox)
-\bullet --with-mpi-include=-I<DIR> (Other Trilinos packages)
+\bullet --with-mpi-incdir=DIR
 
 Specify the MPI include files location. Defaults to MPIROOT/include if 
 --with-mpi is specified. If multiple directories  must be specified, try 
---with-cppflags="-I<dir1> -I<dir2>" instead.  NOTE: The ``other'' Trilinos 
-packages will replace --with-mpi-include with --with-mpi-incdir in the near
-future.
+--with-cppflags="-I<dir1> -I<dir2>" instead.
 
 \bullet --with-mpi-libdir=DIR 
 
-Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi is 
-specified. If multiple directories must be specified, try 
+Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
+is specified. If multiple directories must be specified, try 
 --with-ldflags="-L<dir1> -L<dir2>" instead. 
 
    Developer-Related Options
 
 \bullet --enable-maintainer-mode 
 
-Enable make rules and dependencies not useful (and sometimes confusing) to the 
-casual installer.
+Enable make rules and dependencies not useful (and sometimes confusing) to 
+the casual installer.
 
 \triangleright Other important notes about the configure/build process.
 
