@@ -37,6 +37,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEigenproblem.hpp"
+#include "AnasaziOutputManager.hpp"
 
 /*!	\class Anasazi::BlockArnoldi
 
@@ -55,10 +56,9 @@ namespace Anasazi {
     
     //! %Anasazi::BlockArnoldi constructor.
     BlockArnoldi( Eigenproblem<TYPE>& problem, 
+		  OutputManager<TYPE>& om,
 		  const TYPE tol=1.0e-6,
-		  const int nev=5, 
 		  const int length=25, 
-		  const int block=1,
 		  const string which="LM", 
 		  const int step=25, 
 		  const int restarts=0 
@@ -116,11 +116,6 @@ namespace Anasazi {
     
     //@{ \name Output methods.
     
-    /*! \brief This method allows the user to set the solver's level of visual output
-      during computations.
-    */
-    void setDebugLevel( const int );
-    
     //! This method requests that the solver print out its current status to screen.
     void currentStatus();
     //@}
@@ -139,6 +134,7 @@ namespace Anasazi {
     void CheckBlkArnRed( const int j );
     void CheckSchurVecs( const int j ); 
     Eigenproblem<TYPE> &_problem; // must be passed in by the user
+    OutputManager<TYPE> &_om; // must be passed in by the user
     MultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
     Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
     const int _nev, _length, _block, _restarts, _step;
@@ -146,7 +142,7 @@ namespace Anasazi {
     string _which;
     TYPE *_ritzresiduals, *_actualresiduals, *_evalr, *_evali;
     int *_order;
-    int _restartiter, _iter, _jstart, _jend, _nevblock, _debuglevel, _defblock;
+    int _restartiter, _iter, _jstart, _jend, _nevblock, _defblock;
     int _offset, _maxoffset;
     bool _initialguess, _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     TYPE _schurerror, _scalefactor, _dep_tol, _blk_tol, _sing_tol, _def_tol;
@@ -158,22 +154,22 @@ namespace Anasazi {
   //
   template <class TYPE>
   BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem, 
+				   OutputManager<TYPE> & om,
 				   const TYPE tol, 
-				   const int nev, 
 				   const int length, 
-				   const int block,
 				   const string which, 
 				   const int step, 
 				   const int restarts
 				   ): 
     _problem(problem), 
+    _om(om),
     _basisvecs(0), 
     _evecr(0), 
     _eveci(0), 
     _hessmatrix(),
-    _nev(nev), 
+    _nev(problem.GetNEV()), 
     _length(length), 
-    _block(block), 
+    _block(problem.GetBlockSize()), 
     _restarts(restarts),
     _step(step),
     _residual_tolerance(tol),
@@ -188,7 +184,6 @@ namespace Anasazi {
     _jstart(0), 
     _jend(0), 
     _nevblock(0),
-    _debuglevel(0),
     _defblock(0),
     _offset(0),
     _maxoffset(0),
@@ -427,75 +422,72 @@ namespace Anasazi {
   }
   
   template <class TYPE>
-  void BlockArnoldi<TYPE>::setDebugLevel( const int level ) {
-    _debuglevel = level;
-  }
-  
-  template <class TYPE>
   void BlockArnoldi<TYPE>::currentStatus() {
     int i;
-    cout<<" "<<endl;
-    cout<<"********************CURRENT STATUS********************"<<endl;
-    cout<<"Iterations :\t"<<_iter<<endl;
-    
-    if (_restartiter > _restarts) 
-      cout<<"Restarts :\t"<<_restartiter-1<<" of\t"<< _restarts<<endl;
-    else
-      cout<<"Restarts :\t"<<_restartiter<<" of\t"<< _restarts<<endl;
-    
-    cout<<"Block Size :\t"<<_block<<endl;
-    cout<<"Requested Eigenvalues : "<<_nev<<endl;
-    cout<<"Requested Ordering : "<<_which<<endl;
-    cout<<"Residual Tolerance : "<<_residual_tolerance<<endl;	
-    cout<<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
-    //
-    //  Determine status of solver and output information correctly.
-    //
-    if ( _schurerror < _residual_tolerance ) {
-      cout<<"------------------------------------------------------"<<endl;
-      cout<<"Computed Eigenvalues: "<<endl;
-	} else {
-	  if (_exit_flg && _iter != _length+_restarts*(_length-_nevblock)) {
-	    cout<<"ERROR: Complete orthogonal basis could not be computed"<<endl;
-	  }
-	  cout<<"------------------------------------------------------"<<endl;
-	  cout<<"Current Eigenvalue Estimates: "<<endl;
-	}
-    //
-    //  Print out current computed eigenvalues.  If we don't have all the requested
-    //  eigenvalues yet, print out the ones we have.
-    //
-    int _nevtemp = _nev;
-    if (_jstart < _nevblock) { _nevtemp = _jstart*_block; }
-    //
-    if (_problem.IsSymmetric()) {
-      cout<<"Eigenvalue\tRitz Residual"<<endl;
-      cout<<"------------------------------------------------------"<<endl;
-      if ( _nevtemp == 0 ) {
-	cout<<"[none computed]"<<endl;
-      } else {
-	for (i=0; i<_nevtemp; i++) {
-	  cout.width(10);
-	  cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<endl;
-	}
-      }
-      cout<<"------------------------------------------------------"<<endl;
-    } else {
-      cout<<"Real Part\tImag Part\tRitz Residual"<<endl;
-      cout<<"------------------------------------------------------"<<endl;
-      if ( _nevtemp == 0 ) {
-	cout<<"[none computed]"<<endl;
-      } else {
-	for (i=0; i<_nevtemp; i++) {
-	  cout.width(10);
-	  cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t\t"<<_ritzresiduals[i]<<endl;
-	}
-      }
-      cout<<"------------------------------------------------------"<<endl;
+    if (_om.doOutput(-1)) {
       cout<<" "<<endl;
-    }
-    cout<<"******************************************************"<<endl;
-  }	
+      cout<<"********************CURRENT STATUS********************"<<endl;
+      cout<<"Iterations :\t"<<_iter<<endl;
+      
+      if (_restartiter > _restarts) 
+	cout<<"Restarts :\t"<<_restartiter-1<<" of\t"<< _restarts<<endl;
+      else
+	cout<<"Restarts :\t"<<_restartiter<<" of\t"<< _restarts<<endl;
+      
+      cout<<"Block Size :\t"<<_block<<endl;
+      cout<<"Requested Eigenvalues : "<<_nev<<endl;
+      cout<<"Requested Ordering : "<<_which<<endl;
+      cout<<"Residual Tolerance : "<<_residual_tolerance<<endl;	
+      cout<<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
+      //
+      //  Determine status of solver and output information correctly.
+      //
+      if ( _schurerror < _residual_tolerance ) {
+	cout<<"------------------------------------------------------"<<endl;
+	cout<<"Computed Eigenvalues: "<<endl;
+      } else {
+	if (_exit_flg && _iter != _length+_restarts*(_length-_nevblock)) {
+	  cout<<"ERROR: Complete orthogonal basis could not be computed"<<endl;
+	}
+	cout<<"------------------------------------------------------"<<endl;
+	cout<<"Current Eigenvalue Estimates: "<<endl;
+      }
+      //
+      //  Print out current computed eigenvalues.  If we don't have all the requested
+      //  eigenvalues yet, print out the ones we have.
+      //
+      int _nevtemp = _nev;
+      if (_jstart < _nevblock) { _nevtemp = _jstart*_block; }
+      //
+      if (_problem.IsSymmetric()) {
+	cout<<"Eigenvalue\tRitz Residual"<<endl;
+	cout<<"------------------------------------------------------"<<endl;
+	if ( _nevtemp == 0 ) {
+	  cout<<"[none computed]"<<endl;
+	} else {
+	  for (i=0; i<_nevtemp; i++) {
+	    cout.width(10);
+	    cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<endl;
+	  }
+	}
+	cout<<"------------------------------------------------------"<<endl;
+      } else {
+	cout<<"Real Part\tImag Part\tRitz Residual"<<endl;
+	cout<<"------------------------------------------------------"<<endl;
+	if ( _nevtemp == 0 ) {
+	  cout<<"[none computed]"<<endl;
+	} else {
+	  for (i=0; i<_nevtemp; i++) {
+	    cout.width(10);
+	    cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t\t"<<_ritzresiduals[i]<<endl;
+	  }
+	}
+	cout<<"------------------------------------------------------"<<endl;
+	cout<<" "<<endl;
+      }
+      cout<<"******************************************************"<<endl;
+    }	
+  }
 
   template <class TYPE>
   void BlockArnoldi<TYPE>::SetInitBlock() {
@@ -611,7 +603,7 @@ namespace Anasazi {
 	ComputeResiduals( false );		
 	_isdecompcurrent = false;
 	// Output current information if necessary
-	if (_debuglevel > 0) {
+	if (_om.doOutput(0)) {
 	  currentStatus();
 	}
       }
@@ -644,7 +636,7 @@ namespace Anasazi {
 	  _isdecompcurrent = false;
 	}
 	// Output current information if necessary
-	if (_debuglevel > 0) {
+	if (_om.doOutput(0)) {
 	  currentStatus();
 	}
       }
@@ -778,7 +770,7 @@ namespace Anasazi {
     for (i=0; i<_block; i++) {
       if (norm1[i] == zero) {
 	_dep_flg = true;
-	if (_debuglevel > 2 ){
+	if (_om.doOutput(2)){
 	  cout << "Col " << num_prev+i << " is the zero vector" << endl;
 	  cout << endl;
 	}
@@ -818,7 +810,7 @@ namespace Anasazi {
     for (i=0; i<_block; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
 	_dep_flg = true;
-	if (_debuglevel > 2 ){
+	if (_om.doOutput(2)){
 	  cout << "Col " << num_prev+i << " is dependent on previous "
 	       << "Arnoldi vectors in V_prev" << endl;
 	  cout << endl;
@@ -826,7 +818,7 @@ namespace Anasazi {
       }
     } // end for (i=0;...)
     //
-    if (_debuglevel>2) {
+    if (_om.doOutput(2)) {
       CheckBlkArnRed(j);
     }
     //
@@ -924,7 +916,7 @@ namespace Anasazi {
       // Leave if this is the zero vector, there is no more we can do here.
       //
       if (norm1[0] == zero) { 
-	if (_debuglevel > 2) {
+	if (_om.doOutput(2)) {
 	  cout << "Column " << num_prev << " of _basisvecs is the zero vector" 
 	       << endl<<endl;
 	}
@@ -974,7 +966,7 @@ namespace Anasazi {
       // Check for linear dependence
       //
       if (norm2[0] < norm1[0] * _sing_tol) {
-	if (_debuglevel > 2) {
+	if (_om.doOutput(2)) {
 	  cout << "Column " << num_prev << " of _basisvecs is dependent" 
 	       << endl<<endl;
 	}
@@ -1041,7 +1033,7 @@ namespace Anasazi {
       } // end else ...
     } // end for (i=0;...)
     //
-    if (_debuglevel > 2){
+    if (_om.doOutput(2)){
       cout << "Checking Orthogonality after BlkOrthSing()"
 	   << " Iteration: " << j << endl<<endl;
       CheckBlkArnRed(j);
@@ -1159,7 +1151,7 @@ namespace Anasazi {
 	  // and orthogonalized against all previous basis vectors.
 	  //
 	  if (norm2[0] < norm1[0] * _blk_tol) {
-	    if (_debuglevel > 2) {
+	    if (_om.doOutput(2)) {
 	      cout << "Column " << j << " of current block is dependent"<<endl;
 	    }
 	    _dep_flg = true;
@@ -1400,7 +1392,7 @@ namespace Anasazi {
     //
     // Check the Schur form.
     //
-    if (_debuglevel > 2 )
+    if (_om.doOutput(2))
       CheckSchurVecs( _jstart );
     //
     //  If the operator is symmetric, then the Ritz vectors are the eigenvectors.
@@ -1664,7 +1656,7 @@ namespace Anasazi {
     //  If there are blocks to deflate, we need to set the subdiagonal entries to zero
     //
     if (_defblock > 0) {
-      if (_debuglevel > 2) {
+      if (_om.doOutput(2)) {
 	cout<<"Deflating blocks with eigenvalue residuals below : "<<_def_tol<<endl;
 	cout<<"Number of blocks being deflated : "<<_defblock<<endl;
       }

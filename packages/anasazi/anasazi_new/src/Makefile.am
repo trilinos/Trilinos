@@ -18,6 +18,7 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/AnasaziBasicSort.hpp \
 	$(srcdir)/AnasaziBlockArnoldi.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
@@ -28,6 +29,7 @@ CORE_H = \
 	$(srcdir)/AnasaziPetraInterface.hpp \
 	$(srcdir)/AnasaziLOCAInterface.hpp \
 	$(srcdir)/AnasaziReturnType.hpp
+	$(srcdir)/AnasaziSortManager.hpp
 
 CORE = \
 	$(srcdir)/AnasaziVersion.cpp

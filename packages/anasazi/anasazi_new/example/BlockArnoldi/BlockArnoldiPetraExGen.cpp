@@ -255,28 +255,34 @@ int main(int argc, char *argv[]) {
 	int step = 5;
 	int restarts = 5;
 
-	// create a PetraAnasaziVec. Note that the decision to make a view or
+	// Create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 
 	Anasazi::PetraVec ivec(Map, block);
 	ivec.MvRandom();
     
-	// call the ctor that calls the petra ctor for a matrix
+	// Call the ctor that calls the petra ctor for a matrix
 
 	Anasazi::PetraOp Amat(A);
 	Anasazi::PetraOp Bmat(B);
 	Anasazi::PetraGenOp Aop(BelosOp, B);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &Bmat, &Aop, &ivec);
 
-	// inform the eigenproblem that the matrix pencil (A,B) is symmetric
+	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
 	MyProblem.SetSymmetric(true);
 
-	// initialize the Block Arnoldi solver
-	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
+	// Set the number of eigenvalues requested and the blocksize the solver should use
+	MyProblem.SetNEV( nev );
+	MyProblem.SetBlockSize( block );
+
+        // Create an output manager to handle the I/O from the solver
+        Anasazi::OutputManager<double> MyOM( MyPID );
+        //MyOM.SetVerbosity( 2 );
+
+	// Initialize the Block Arnoldi solver
+	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, MyOM, tol, length, 
 						which, step, restarts);
-	
-	//MyBlockArnoldi.setDebugLevel(3);
 	
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);

@@ -107,6 +107,12 @@ namespace Anasazi {
      */
     void SetPrec( Operator<TYPE>* Prec ) { _Prec = Prec; }
     
+    //! Inform the eigenproblem of the number of eigenvalues (NEV) that are required.
+    void SetNEV( const int nev ){ _nev = nev; };
+
+    //! Set the blocksize to be used by the iterative solver in solving this eigenproblem.
+    void SetBlockSize( const int blocksize ){ _blocksize = blocksize; };
+
     //! Inform the eigenproblem that this problem is symmetric.
     /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
       Some computational work can be avoided by setting this properly.
@@ -144,6 +150,12 @@ namespace Anasazi {
     //! Get a pointer to the imaginary part of the eigenvectors of the operator.
     MultiVec<TYPE>* GetIEvecs() { return(_IEvecs); };
     
+    //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
+    int GetNEV() const { return(_nev); }
+
+    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
+    int GetBlockSize() const { return(_blocksize); }
+
     //! Get the symmetry information for this eigenproblem.
     bool IsSymmetric() const { return(_isSym); }
     
@@ -211,6 +223,7 @@ namespace Anasazi {
     MultiVec<TYPE> *_InitVec;
     TYPE *_REvals, *_IEvals;
     MultiVec<TYPE> *_REvecs, *_IEvecs; 	
+    int _nev, _blocksize;
     bool _isSym;
   };		
   
@@ -221,7 +234,7 @@ namespace Anasazi {
   template<class TYPE>
   Eigenproblem<TYPE>::Eigenproblem(void) : 
     _A(0), _B(0), _Op(0), _Prec(0), _InitVec(0),_REvals(0), 
-    _IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
   {
   }
   
@@ -230,7 +243,7 @@ namespace Anasazi {
   template<class TYPE>
   Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec ) :
     _A(A), _B(0), _Op(0), _Prec(0), _InitVec(Ivec), _REvals(0), 
-    _IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
   {
   }
   
@@ -240,7 +253,7 @@ namespace Anasazi {
   Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec, 
 				    Operator<TYPE>* Op ) :    
     _A(A), _B(0), _Op(Op), _Prec(0), _InitVec(Ivec), _REvals(0),
-    _IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
   {
   }
   
@@ -250,7 +263,7 @@ namespace Anasazi {
   Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, Operator<TYPE>* B,
 				    MultiVec<TYPE>* Ivec ) :
     _A(A), _B(B), _Op(0), _Prec(0), _InitVec(Ivec), _REvals(0),
-    _IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
   {
   }
   
@@ -260,7 +273,7 @@ namespace Anasazi {
   Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, Operator<TYPE>* B,
 				    MultiVec<TYPE>* Ivec, Operator<TYPE>* Op ) :
     _A(A), _B(B), _Op(Op), _Prec(0), _InitVec(Ivec), _REvals(0),
-    _IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
   {
   }
 
@@ -271,7 +284,8 @@ namespace Anasazi {
     _A(Problem._A), _B(Problem._B), _Op(Problem._Op), _Prec(Problem._Prec), 
     _InitVec(Problem._InitVec), _REvals(Problem._REvals),
     _IEvals(Problem._IEvals), _REvecs(Problem._REvecs),
-    _IEvecs(Problem._IEvecs), _isSym(Problem._isSym)
+    _IEvecs(Problem._IEvecs), _nev(Problem._nev), _blocksize(Problem._blocksize),
+    _isSym(Problem._isSym)
   {
   }
   

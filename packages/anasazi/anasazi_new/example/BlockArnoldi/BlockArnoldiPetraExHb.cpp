@@ -155,13 +155,19 @@ int main(int argc, char *argv[]) {
 	// Inform the eigenproblem that the matrix A is symmetric
 	//MyProblem.SetSymmetric(true);
 
+	// Set the number of eigenvalues requested and the blocksize the solver should use
+	MyProblem.SetNEV( nev );
+	MyProblem.SetBlockSize( block );
+
+        // Create an output manager to handle the I/O from the solver
+        Anasazi::OutputManager<double> MyOM( MyPID );
+        //MyOM.SetVerbosity( 2 );
+
 	//
 	//  Initialize the Block Arnoldi solver
 	//
-        Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block,
+        Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, MyOM, tol, length,
                                          which, step, restarts);
-
-        MyBlockArnoldi.setDebugLevel(0);
 
 #ifdef UNIX
         Epetra_Time & timer = *new Epetra_Time(Comm);

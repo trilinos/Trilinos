@@ -232,6 +232,7 @@ target_vendor = @target_vendor@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/AnasaziBasicSort.hpp \
 	$(srcdir)/AnasaziBlockArnoldi.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
@@ -708,6 +709,7 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
+	$(srcdir)/AnasaziSortManager.hpp
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
