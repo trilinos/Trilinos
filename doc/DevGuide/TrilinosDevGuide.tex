@@ -80,7 +80,7 @@ platforms that Trilinos has been ported to.
     %
     %\clearpage - this is the beginning of the document
     \section*{Acknowledgement}
-The author would like to acknowledge the support of the ASCI and LDRD 
+The authors would like to acknowledge the support of the ASCI and LDRD 
 programs that funded development of Trilinos and recognize all Trilinos 
 contributors: Michael Heroux, Teri Barth, David Day, Bob Heaphy, 
 Robert Hoekstra, Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin Long, 
@@ -143,7 +143,6 @@ Tuminaro, Jim Willenbring, and Alan Williams.
 %
     \section{Introduction}
 	\subsection{Briew Overview}
-	\begin{quote}
 The Trilinos Project is an effort to develop parallel solver algorithms and 
 libraries within 
 an object-oriented software framework for the solution of large-scale, complex
@@ -156,10 +155,9 @@ Fortran user interface support.  We provide an open architecture that allows
 easy integration with other solver packages and we deliver our software to 
 the outside community via the Gnu Lesser General Public License
 (LGPL)~\cite{gnu-license-site}.
-	\end{quote}
-% Figure out how to cite Mike's overview doc
+
 	\subsection{Motivation}
-	\begin{quote}
+
 Research efforts in advanced solution algorithms and parallel solver
 libraries have historically had a large impact on engineering and
 scientific computing.  Algorithmic advances increase the range
@@ -175,7 +173,6 @@ extent self-contained but at the same time inter-related.  The
 Trilinos design allows individual packages to grow and mature
 autonomously to the extent the algorithms and package developers
 dictate. 
-	\end{quote}
 
 	\subsection{What is Covered in this Guide}
 
@@ -194,7 +191,10 @@ of the Trilinos Project by Mike Heroux.
 %**(Use a citation.)
 
 	\section{Getting Started}
-%	**(Need intro! - also include examples!)**
+
+This chapter covers some of the basics that a developer will need to know when 
+beginning to work on the Trilinos project.  We address how to configure and 
+build Trilinos, as well as how to add files to an existing package.
 
 \subsection{Recommended Directory Structure}
 
@@ -635,11 +635,11 @@ the code will do when complete.
 %	**(Req's and how to satisfy them - break into subsections)**
 The Trilinos team makes a conscious effort to minimize the requirements that 
 are placed on Trilinos packages.  Packages can be integrated into Trilinos in 
-a gradual manner.  Listed below are three levels of requirement compliance.  
-It is common for new packages to address these steps one at a time.
-Stages of integration:
-\begin{enumerate}
-\item Put the package in the Trilinos repository.
+a gradual manner.  Listed below are four levels of requirement compliance.  
+It is common for new packages to address these steps one at a time, and not 
+necessarily in the listed order.
+
+\subsection{Package is Added to the Trilinos Repository}
 
 This is a minimum requrirement for any package wanting to become a part of 
 Trilinos.  Other than receiving approval from the Trilinos Project Leader to 
@@ -647,15 +647,24 @@ add a new package to Trilinos, there are no prerequisites for adding a new
 package to the Trilinos repository.  At this stage, it does not matter if the 
 package is finished, or even if it works.  However, a package in an unstable 
 state should not be added to the Trilinos level configure and build 
-structure.  A package can remain in this predistribution state indefinitely.  When release branches 
-are created, any packages not ready or approved for distribution can easily be 
-ommitted.
+structure.  A package can remain in this predistribution state indefinitely.  
+When release branches are created, any packages not ready or approved for 
+distribution can easily be ommitted.
 
-\item Package should respond to all relevant configure options.
-\item Package should have a process in place to port to all supported 
-platforms and respond to bug reports in timely manner.
-\end{enumerate}
+\subsection{Package Responds to all Relevant Configure Options}
 
+
+\subsection{Package has a Process in Place to Port to all Supported Platforms}
+%make dist must work!
+
+\subsection{Package Responds to Bug Reports in a Timely Manner}
+
+The Trilinos Team does not have any specific requirements concerning how 
+bugs should be submitted and processed.  However, packages should have a 
+process in place that deals with issue tracking.  Packages developer teams 
+that are looking for an efficient and useful issue tracking tool are 
+encouraged to consider using Bugzilla, which is discussed in 
+Section~\ref{subsect:Bugzilla}.
 
 \section{Suggested Practices}
 %	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
@@ -863,7 +872,7 @@ individual files returned in a search can be utilized in finding the source of
 bugs.  The differences between any two versions of a file may be viewed.  
 
 \subsection{Bugzilla}
-
+\label{subsect:Bugzilla}
 Features and bug reports are tracked using Bugzilla~\cite{Bugzilla}.  Bugzilla 
 can be found on the web at ``http://software.sandia.gov/bugzilla''.  A 
 Bugzilla account is necessary for submitting bugs.  Those interested can sign 
@@ -968,6 +977,49 @@ set of platforms.  These interfaces are accessible to
 other packages.
 %**(Expand on this)**
 
+\section{Epetra and TSF: Two Special Trilinos Packages}
+\label{sect:EpetraAndTSF}
+In order to understand what Trilinos provides beyond the
+contributions of each Trilinos package, we briefly discuss two special
+Trilinos packages: Epetra and TSF.  These two packages are complimentary,
+with TSF providing a common abstract application
+programmer interface (API) for other Trilinos packages and Epetra
+providing a common concrete implementation of basic classes used by most
+Trilinos packages.
+
+\subsection{Epetra}
+Matrices, vectors and graphs are basic objects used in most solver
+algorithms. Most Trilinos
+packages interact with these kinds of objects via abstract interfaces that
+allow a package to define what services and behaviors are expected from the objects,
+without enforcing a specific implementation.  However, in order to use
+these packages, some concrete
+implementation must be selected.  Epetra (and in the future other packages described
+in Section~\ref{subsect:PetraObjectModel}) is a collection of concrete
+classes that supports the construction and use of vectors, sparse
+graphs, and dense and sparse matrices.  It provides serial, parallel and
+ distributed memory
+capabilities.  It uses the BLAS and LAPACK where possible, and as a
+result has good performance characteristics.
+
+\subsection{TSF}
+\label{subsect:InteropTSF}
+Many different algorithms are available to solve any given numerical
+problems.  For example, there are many algorithms for solving a system
+of linear equations, and many solver packages are available to solve
+linear systems.  Which package is appropriate is a function of
+many details about the problem being solved and the platform on which
+application is being run. However, even though
+there are many different solvers, conceptually, from an abstract view,
+these solvers are providing a similar capability, and it is
+advantageous to utilize this abstract view.
+TSF is a collection of abstract classes that provides an application
+programmer interface (API) to perform the most common solver
+operations.  It can provide a single interface to many different
+solvers and has powerful compositional mechanisms that support the
+light-weight construction of composite objects from a set of
+existing objects.  As a result, TSF users gain easy access to many
+solvers and can bring multiple solvers to bear on a single problem.
 
 	\section{Integrating a Package into Trilinos}
 %	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
