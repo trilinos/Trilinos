@@ -2590,8 +2590,10 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
              NglobalCols = global_col_ordering[bindx[j]];
          }
        }
+       /* in case last row is empty so that matlab gets the matrix size right */
   	   if (row_length == 0)
-  	     fprintf(fid,"%d  1 0.0\n", matrix->getrow->Nrows);
+  	     fprintf(fid,"%d  1 0.0\n",
+                 global_row_ordering[matrix->getrow->Nrows-1]+1);
          if( label != NULL ) fclose(fid);
      }
 #ifdef ML_MPI
