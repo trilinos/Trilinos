@@ -457,7 +457,8 @@ rm -f make_${ARCH}.variables
 ${echo} ARCH=$ARCH                    >  make_${ARCH}.variables
 ${echo} PACKAGES=$PACKAGES  \\          >> make_${ARCH}.variables
 cd etc
-./find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
+#./find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
+./find_missing_lapack_functions "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
 cd ..
 cat etc/.thedefs >>  make_${ARCH}.variables
 \rm -f etc/.thedefs
