@@ -1,0 +1,417 @@
+\section{{\protect \bf Aztec}: High Level View\label{highlevel}}
+
+The following tasks must be performed to successfully
+invoke \Az{}:
+\begin{itemize}
+\item describe the parallel machine (e.g. number of processors).
+%      Done by invoking {\sf AZ\_set\_proc\_config} on the array
+%      {\sf proc\_config} of size {\sf AZ\_PROC\_SIZE}.
+\item initialize matrix and vector data structures.
+\item choose iterative methods, preconditioners and the convergence criteria.
+\item initialize the right hand side and initial guess.
+\item invoke the solver.
+\end{itemize}
+A sample C program is shown in Figure~\ref{highlevel_code} omitting
+declarations and some
+%
+\begin{figure}[Htbp]
+  \shadowbox{
+%    \begin{minipage}{\textwidth}
+    \begin{minipage}{6.2in}
+      \vspace{0.5em}
+      {\large \flushleft{\bf Example}} \hrulefill %
+      \vspace{0.5em}
+%%%
+\begin{verbatim}
+#include "az_aztec.h"
+
+void main(void) {
+
+  AZ_set_proc_config(proc_config, AZ_NOT_MPI );
+
+  init_matrix_vector_structures(bindx, val, update, external,
+                                update_index, extern_index, data_org);
+
+  AZ_defaults(options,params);
+  choose_solver_options(options, params);
+
+  init_guess_and_rhs(x, b, data_org, update, update_index);
+
+  AZ_solve(x, b, options, params, bindx, val, data_org, status,
+           proc_config);
+}
+\end{verbatim}
+%%%
+      \vspace{0.1em}
+    \end{minipage}}
+  \caption{High level code for \Az{} application.}\label{highlevel_code}
+\end{figure}
+%
+parameters\footnote{The entire main program with specific sample problems is
+  distributed with the package in the file \tt az\_main.c}. The functions
+{\sf init\_matrix\_vector\_structures}, {\sf choose\_solver\_options}, and {\sf
+  init\_guess\_and\_rhs} are supplied by the user.
+All functions beginning with {\sf AZ\_} are \Az{} functions.
+%and will be discussed in this document.
+%The functions {\sf AZ\_set\_proc\_config} and {\sf
+%AZ\_solve} are supplied with the library and are discussed in
+%Section~\ref{subroutines}.
+In this section, we give an overview of \Az{}'s features by describing the user
+input arrays, {\it proc\_config}, {\it options\/} and {\it params\/}, that are set 
+by the user.
+A discussion of other parameters 
+%{\sf init\_matrix\_vector\_structures} and {\sf init\_rhs\_guess}
+is deferred to Sections~\ref{highlevel_data_inter} and~\ref{examples}.
+
+\subsection{proc\_config\label{proc_configI}}
+The integer array {\it proc\_config} of length {\sf AZ\_PROC\_SIZE}
+is set by invoking {\sf AZ\_set\_proc\_config()}. This array
+contains the number of processors, the processor id, and an MPI communicator
+(if MPI is used\cite{mpi}). Most users need not be concerned with the
+contents of this 
+array. They must simply set it and pass it to other \Az{} functions.
+
+\subsection{Aztec Options\label{optionI}}
+
+The integer array {\it options\/} of length {\sf AZ\_OPTIONS\_SIZE} is set by 
+the
+user. It is used (but not altered) by the function {\sf AZ\_solve} to choose
+between iterative solvers, preconditioners, etc.  Default values for
+this array (as well as for {\it params}) are set by invoking 
+{\sf AZ\_defaults()}.
+Below we discuss each of the
+possible options.  In some of these descriptions, reference is made to a
+user-defined {\it options\/} or {\it params\/} value which is yet be
+introduced.  These descriptions will follow but the reader may wish to ``jump
+ahead'' and read the descriptions if the immediate context is not clear.
+
+\vspace{2em}
+{\flushleft{\bf Specifications} \hrulefill}
+\nopagebreak \\[0.5em]
+%
+\optionbox{options[{\sf AZ\_solver}]}{Specifies solution
+  algorithm. DEFAULT: \sf AZ\_gmres.}
+\choicebox{AZ\_cg}{Conjugate gradient (only
+  applicable to symmetric positive definite matrices).}
+\choicebox{AZ\_gmres}{Restarted generalized minimal residual.}
+\choicebox{AZ\_cgs}{Conjugate gradient squared.}
+\choicebox{AZ\_tfqmr}{Transpose-free quasi-minimal residual.}
+\choicebox{AZ\_bicgstab}{Bi-conjugate gradient with
+  stabilization.}
+\choicebox{AZ\_lu}{Sparse direct solver (single processor only).}
+%
+\optionbox{options[{\sf AZ\_scaling}]}{Specifies scaling algorithm.
+  The entire matrix is scaled (overwriting the old
+  matrix). Additionally, the right hand side, the initial guess and
+  the final computed solution are scaled if necessary. For 
+  symmetric scaling, this transforms $ A x = b$ into
+  $ S A S y = S b $ as opposed to $ S A x = S b $ when symmetric
+  scaling is not used. NOTE: The residual within \Az{} is now 
+  given by $ S (b - A x) $. Thus, residual printing and convergence
+  checking are effected by scaling.  DEFAULT: \sf
+  AZ\_none.}
+%
+\choicebox{AZ\_none}{No scaling.}
+\choicebox{AZ\_Jacobi}{Point Jacobi scaling.}
+\choicebox{AZ\_BJacobi}{Block Jacobi scaling where the block
+  size corresponds to the VBR blocks.  Point Jacobi scaling is
+  performed when using the MSR format.}
+\choicebox{AZ\_row\_sum}{Scale each row so the magnitude of its
+  elements sum to 1.}
+\choicebox{AZ\_sym\_diag}{Symmetric scaling so diagonal elements
+  are 1.}
+\choicebox{AZ\_sym\_row\_sum}{Symmetric scaling using the matrix
+  row sums.}
+%
+\optionbox{options[{\sf AZ\_precond}]}{Specifies preconditioner.
+  DEFAULT: \sf AZ\_none.}
+\choicebox{AZ\_none}{No preconditioning.}
+\choicebox{AZ\_Jacobi}{$k$ step Jacobi (block Jacobi for DVBR matrices
+  where each block corresponds to a VBR block). The number of
+  Jacobi steps, $k$, is set via {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_Neumann}{Neumann series polynomial
+  where the polynomial order is set via
+  {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_ls}{Least-squares polynomial
+  where the polynomial order is set via
+  {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_sym\_GS}{Non-overlapping domain decomposition
+  (additive Schwarz)
+  $k$ step symmetric Gauss-Siedel.
+  In particular, a symmetric Gauss-Siedel domain decomposition
+  procedure is used where each processor independently
+  performs one step of
+  symmetric Gauss-Siedel on its local matrix, followed by communication
+  to update boundary values before the next local symmetric
+  Gauss-Siedel step. The number of steps, $k$, is set via
+  {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_dom\_decomp}{Domain decomposition preconditioner
+  (additive Schwarz). That is, each processor augments
+  its submatrix according to {\it options}[{\sf AZ\_overlap}]
+  and approximately ``solves'' the resulting subsystem 
+  using the solver specified by \\
+  $\hphantom{using the solr}$
+  {\it options}[{\sf AZ\_subdomain\_solve}].\\
+  Note: {\it options}[{\sf AZ\_reorder}] determines whether
+  matrix equations are reordered (RCM) before ``solving'' submatrix problem.}
+\optionbox{options[{\sf AZ\_subdomain\_solve}]}{Specifies the solver
+  to use on each subdomain when {\it options}[{\sf AZ\_precond}] is set
+  to {\sf AZ\_dom\_decomp} DEFAULT: \sf AZ\_ilut.}
+\choicebox{AZ\_lu}{Approximately solve processor's submatrix via
+  a sparse LU factorization in conjunction with a drop tolerance 
+  {\it params}[{\sf AZ\_drop}]. The current sparse
+  lu factorization is provided by the package y12m~\cite{y12m}.}
+\choicebox{AZ\_ilut}{Similar to {\sf AZ\_lu} using
+  Saad's {\sf ILUT} instead of LU \cite{ilut}. The drop 
+  tolerance is given by {\it params}[{\sf AZ\_drop}]
+  while the fill-in is given by {\it params}[{\sf AZ\_ilut\_fill}]. }
+\choicebox{AZ\_ilu}{Similar to {\sf AZ\_lu} using
+  {\sf ilu(k)} instead of LU with k determined by 
+  {\it options}[{\sf AZ\_graph\_fill}]}
+\choicebox{AZ\_rilu}{Similar to {\sf AZ\_ilu} using
+  {\sf rilu(k,$\omega$)} instead of {\sf ilu(k)}
+  with $\omega$ ($0 \ge \omega \ge 1$) given by {\it params}[{\sf AZ\_omega}]
+  \cite{milu}.}
+\choicebox{AZ\_bilu}{Similar to {\sf AZ\_ilu} using block
+  {\sf ilu(k)} instead of {\sf ilu(k)} where each block corresponds
+  to a VBR block.}
+\choicebox{AZ\_icc}{Similar to {\sf AZ\_ilu} using
+  {\sf icc(k)} instead of {\sf ilu(k)} \cite{icc}.}
+%
+\optionbox{options[{\sf AZ\_conv}]}{Determines the residual expression used
+  in convergence checks and printing.  DEFAULT: {\sf AZ\_r0}.
+  The iterative solver terminates if the corresponding residual expression
+  is less than {\it params}[{\sf AZ\_tol}]:}
+\choicebox{AZ\_r0}{$\|r\|_2 / \|r^{(0)}\|_2 $}
+\choicebox{AZ\_rhs}{$\|r\|_2 / \|b\|_2 $}
+\choicebox{AZ\_Anorm}{$\|r\|_2 / \|A\|_{\infty} $}
+\choicebox{AZ\_noscaled}{$\|r\|_2$}
+\choicebox{AZ\_sol}{$\|r\|_{\infty}
+  /(\|A\|_{\infty} * \|x\|_1 + \|b\|_{\infty}) $}
+\choicebox{AZ\_weighted}{$\|r\|_{WRMS} $\\
+  where $\| \cdot \|_{WRMS} = \sqrt{(1/n) \sum_{i=1}^n (r_i/w_i)^2}$,
+  $n$ is the total number of unknowns, $w$ is a weight
+  vector provided by the
+  user  via {\it params}[{\sf AZ\_weights}] and
+  $r^{(0)}$ is the initial residual.}
+%
+\optionbox{options[{\sf AZ\_output}]}{Specifies information (residual
+  expressions - see {\it options}[{\sf AZ\_conv}]) to be printed.
+  DEFAULT: \sf 1.}
+\choicebox{AZ\_all}{Print out the matrix and indexing vectors for
+  each processor. Print out all intermediate residual expressions.}
+\choicebox{AZ\_none}{No intermediate results are printed.}
+\choicebox{AZ\_warnings}{Only Aztec warnings are printed.}
+\choicebox{AZ\_last}{Print out only the final residual expression.}
+\choicebox{$>$ 0}{Print residual expression every {\it
+    options[{\sf AZ\_output}]\/} iterations.}
+%
+\optionbox{options[{\sf AZ\_pre\_calc}]}{Indicates whether to use
+  factorization information from previous calls to {\sf AZ\_solve}.
+  DEFAULT: {\sf AZ\_calc}.}
+\choicebox{AZ\_calc}{Use no information from previous {\sf
+    AZ\_solve} calls.}
+\choicebox{AZ\_recalc}{Use preprocessing information from a
+  previous call but recalculate preconditioning factors. This is
+  primarily intended for factorization software which performs a
+  symbolic stage.}
+\choicebox{AZ\_reuse}{Use preconditioner from a previous
+  {\sf AZ\_solve} call, do not recalculate preconditioning factors.
+  Also, use scaling factors from previous call to scale the
+  right hand side, initial guess and the final solution.}
+%
+%
+\optionbox{options[{\sf AZ\_graph\_fill}]}{The level of graph fill-in (k)
+  for incomplete factorizations: ilu(k), icc(k), bilu(k).
+  DEFAULT: 0}
+%
+\optionbox{options[{\sf AZ\_max\_iter}]}{Maximum number of iterations. DEFAULT:
+  500.}
+%
+\optionbox{options[{\sf AZ\_poly\_ord}]}{The polynomial order when using
+  polynomial preconditioning.  Also, the number of steps when using Jacobi or
+  symmetric Gauss-Seidel preconditioning.  DEFAULT: 3.}
+%
+\optionbox{options[{\sf AZ\_overlap}]}{Determines the submatrices factored with
+  the domain decomposition algorithms (see {\it options}[{\sf AZ\_precond}]).
+  DEFAULT: 0.}
+%
+%\choicebox{AZ\_none}{Factor the local submatrix defined on this processor
+%  by discarding column entries that correspond to external elements.}
+%
+\choicebox{AZ\_diag}{Factor the local submatrix defined on this processor
+  augmented by a diagonal (block diagonal for VBR format) matrix. This diagonal
+  matrix corresponds to the diagonal entries of the matrix rows (found on other
+  processors) associated with external elements.  This can be viewed as taking
+  one Jacobi step to update the external elements and then performing domain
+  decomposition with {\sf AZ\_none} on the residual equations.}
+%
+\choicebox{k}{Augment each processor's local submatrix with
+  rows from other processors. The new rows are obtained in k 
+  steps (k $\ge$ 0). Specifically at each augmentation step,
+  rows corresponding to external unknowns are obtained. These
+  external unknowns are defined by nonzero columns in the 
+  current augmented matrix not containing a corresponding
+  row on this processor. After the k steps, all columns 
+  associated with external
+  unknowns are discarded to obtain a square matrix.
+  The resulting procedure is an overlapped additive Schwarz
+  procedure.}
+%
+\optionbox{options[{\sf AZ\_type\_overlap}]}{Determines how overlapping
+    subdomain results are combined when different processors
+    have computed different values for the same unknown.
+    DEFAULT: \sf AZ\_standard.}
+\choicebox{AZ\_standard}{The resulting value of an unknown is 
+    determined by the processor owning that unknown. Information
+    from other processors about that unknown is discarded.}
+\choicebox{AZ\_symmetric}{Add together the results obtained from different
+    processors corresponding to the same unknown. This keeps the 
+    preconditioner symmetric if a symmetric technique was used on
+    each subdomain.}
+%
+\optionbox{options[{\sf AZ\_kspace}]}{Krylov subspace size for
+  restarted GMRES.\\
+  DEFAULT: 30.}
+%
+\optionbox{options[{\sf AZ\_reorder}]}{Determines whether RCM reordering
+  will be done in conjunction with domain decomposition incomplete 
+  factorizations. 1 indicates RCM reordering is used. 0 indicates that
+  equations are not reordered.  DEFAULT:~1.}
+%
+\optionbox{options[{\sf AZ\_keep\_info}]}{Determines whether matrix
+  factorization information will be kept after this solve (for example
+  to solve the same system with another right hand side, see 
+  {\it options}[{\sf AZ\_pre\_calc}]).  1 indicates factorization 
+  information is kept.  0 indicates that factorization information is
+  discarded.  DEFAULT: 0.}
+%
+\optionbox{options[{\sf AZ\_orthog}]}{GMRES orthogonalization scheme.\\
+  DEFAULT: {\sf AZ\_classic}.}
+\choicebox{AZ\_classic}{2 steps of classical Gram-Schmidt orthogonalization.}
+\choicebox{AZ\_modified}{Modified Gram-Schmidt orthogonalization.}
+%
+\optionbox{options[{\sf AZ\_aux\_vec}]}{Determines $\tilde r$ (a required
+  vector within some iterative methods). The convergence behavior varies
+  slightly depending on how this is set.  DEFAULT: \sf AZ\_resid.}
+\choicebox{AZ\_resid}{$\tilde r$ is set to the initial residual vector.}
+\choicebox{AZ\_rand}{$\tilde r$ is set to random numbers between -1 and 1.
+  NOTE: When using this option, the convergence depends on the number of
+  processors (i.e. the iterates obtained with x processors differ from the
+  iterates obtained with y processors if x $\ne$ y).}  $\hphantom{h}$
+\subsection{\Az{} parameters\label{optionD}}
+
+The double precision array {\it params\/} set by the user and normally of
+length {\sf AZ\_PARAMS\_SIZE}. However, when a weight vector is needed for the
+convergence check (i.e. {\it options}[{\sf AZ\_conv}] = {\sf AZ\_weighted}), it
+is embedded in {\it params\/} whose length must now be {\sf AZ\_PARAMS\_SIZE} +
+\# of elements updated on this processor.  In either case, the contents of {\it
+  params\/} are used (but not altered) by the function {\sf AZ\_solve} to
+control the behavior of the iterative methods.  The array elements are
+specified as follows: \vspace{2em}
+{\flushleft{\bf Specifications} \hrulefill} \nopagebreak \\[0.5em]
+%
+\optionbox{params[{\sf AZ\_tol}]}{Specifies tolerance value used in
+   conjunction with convergence tests. DEFAULT: $10^{-6}$.}
+\optionbox{params[{\sf AZ\_drop}]}{Specifies drop tolerance used in
+   conjunction with LU  or ILUT preconditioners (see description
+   below for ILUT). \\ DEFAULT: 0.0.}
+\optionbox{params[{\sf AZ\_ilut\_fill}]}{ ILUT uses two criteria for
+   determining the number of nonzeros in the resulting approximate
+   factorizations. For examples, setting {\it params}[{\sf AZ\_ilut\_fill}]
+   $ = 1.3 $, requires that the ILUT factors contain no more than
+   approximately 1.3 times the number of nonzeros of the original matrix.
+   Additionally, ILUT drops all elements in the resulting factors that are
+   less than {\it params}[{\sf AZ\_drop}]. Thus, when
+   {\it params}[{\sf AZ\_drop}] is set to zero, nothing is dropped and the
+   size of the matrix factors is governed only by {\it params}[{\sf AZ\_ilut\_fill}].
+   However, positive values of {\it params}[{\sf AZ\_drop}] may result in
+   matrix factors containing significantly fewer nonzeros. \cite{ilut} \\
+   DEFAULT: 1.}
+\optionbox{params[{\sf AZ\_omega}]}{Damping or relaxation parameter used
+   for RILU. When {\it params}[{\sf AZ\_omega}] is set to zero, RILU
+   corresponds to ILU(k). When it is set to one, RILU corresponds to
+   MILU(k) where k is given by {\it options}[{\sf AZ\_graph\_fill}]. 
+   \cite{milu}\\ DEFAULT: 1.}
+\optionbox{params[{\sf AZ\_weights}]}{
+   When {\it options}[{\sf AZ\_conv}] = AZ\_weighted, the {\it i\/}'th local
+   component of the weight vector is stored in the location
+   {\it params}[{\sf AZ\_weights}+i].}
+Figure \ref{init_options} illustrates a sample user function {\sf choose\_solver\_options} that chooses specific solver options 
+(by overwriting default values set with {\sf AZ\_defaults}).
+
+\begin{figure}[Htbp]
+  \shadowbox{
+%    \begin{minipage}{\textwidth}
+    \begin{minipage}{6.2in}
+      \vspace{0.5em}
+      {\large \flushleft{\bf Example}} \hrulefill %
+      \vspace{0.5em}
+%%%
+\begin{verbatim}
+void choose_solver_options(int options[AZ_OPTIONS_SIZE],
+                  double params[AZ_PARAMS_SIZE])
+{
+  options[AZ_solver]     = AZ_cgs;
+  options[AZ_scaling]    = AZ_none;
+  options[AZ_precond]    = AZ_ls;
+  options[AZ_output]     = 1;
+  options[AZ_max_iter]   = 640;
+  options[AZ_poly_ord]   = 7;
+  params[AZ_tol]         = 0.0000001;
+  params[AZ_drop]        = 0.;
+  params[AZ_omega]        = 1.;
+
+}
+\end{verbatim}
+%%%
+      \vspace{0.1em}
+    \end{minipage}}
+  \caption{Example option initialization routine (\/{\sf
+      choose\_solver\_options}).} \label{init_options}
+ \end{figure}
+
+\subsection{Return status\label{status}}
+
+The double precision array {\it status} of length {\sf AZ\_STATUS\_SIZE}
+returned from {\sf AZ\_solve}\footnote{ All integer information returned from
+  {\sf AZ\_solve} is cast into double precision and stored in {\it status}.}.
+The contents of {\it status} are described below.  \vspace{2em}
+{\flushleft{\bf Specifications} \hrulefill} \nopagebreak \\[0.5em]
+%
+\optionbox{status[{\sf AZ\_its}]}{Number of iterations taken by the
+   iterative method.}
+\optionbox{status[{\sf AZ\_why}]}{Reason why {\sf AZ\_solve} terminated.}
+      \choicebox{AZ\_normal}{User requested convergence criteria is
+                 satisfied.}
+      \choicebox{AZ\_param}{User requested option is not available.}
+      \choicebox{AZ\_breakdown}{Numerical breakdown occurred.}
+      \choicebox{AZ\_loss}{Numerical loss of precision occurred.}
+      \choicebox{AZ\_ill\_cond}{The Hessenberg matrix within GMRES is
+        ill-conditioned. This could be caused by a number of reasons.
+        For example, the preconditioning matrix could be nearly singular
+        due to an unstable factorization (note: pivoting is not implemented
+        in any of the incomplete factorizations). Ill-conditioned Hessenberg
+        matrices could also arise from a singular application
+        matrix. In this case, GMRES tries to compute a least-squares solution.}
+      \choicebox{AZ\_maxits}{Maximum iterations taken without convergence.}
+\optionbox{status[{\sf AZ\_r}]}{The true residual norm corresponding to
+   the choice {\it options}[{\sf AZ\_conv}] (this norm is calculated
+   using the computed solution).}
+\optionbox{status[{\sf AZ\_scaled\_r}]}{The true residual ratio expression
+   as defined by  {\it options}[{\sf AZ\_conv}].}
+\optionbox{status[{\sf AZ\_rec\_r}]}{Norm corresponding to
+   {\it options}[{\sf AZ\_conv}] of final residual or estimated final
+   residual (recursively computed by iterative method). Note: When using
+   the 2-norm, {\bf tfqmr} computes an estimate of the residual norm
+   instead of computing the residual.}
+\optionbox{status[{\sf AZ\_solve\_time}]}{Utilization time in Aztec to solve system.}
+\optionbox{status[{\sf AZ\_Aztec\_version}]}{Version number of Aztec.}
+%
+ When {\sf AZ\_solve} returns abnormally, the user may elect to restart using
+ the current computed solution as an initial guess.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "az_ug_20"
+%%% End:

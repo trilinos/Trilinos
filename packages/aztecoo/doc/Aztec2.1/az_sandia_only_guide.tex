@@ -1,0 +1,247 @@
+\documentclass{article}[12pt]
+\usepackage{fancyhdr, fancybox, tabularx, verbatim, epsfig}
+%\usepackage{fancyhdr, graphicx, fancybox, wrapfig, epic, ecltree, tabularx,
+%  verbatim, alltt, ifthen, boxedminipage, epsfig}
+
+\includeonly{unadvertised}
+
+%\setlength{\oddsidemargin}{0.4\oddsidemargin}
+%\setlength{\evensidemargin}{0.4\evensidemargin}
+%\setlength{\topmargin}{0.0\topmargin}
+%\setlength{\textheight}{1.16\textheight}
+%\setlength{\textwidth}{1.29\textwidth}
+\setlength{\oddsidemargin}{0.3\oddsidemargin}
+\setlength{\evensidemargin}{0.3\evensidemargin}
+\setlength{\topmargin}{0.0\topmargin}
+\setlength{\textheight}{1.16\textheight}
+\setlength{\textwidth}{1.39\textwidth}
+
+%
+% macros for formatting symbols for reals, integers, etc.
+%
+
+\newcommand{\Az}  {{\bf Aztec}}
+\newcommand\R     {{\rm \bf R}}
+\newcommand\I     {{\rm \bf I}}
+\newcommand\C     {{\rm \bf C}}
+
+%
+% define boxes for describing variables, etc
+%
+
+\def\optionbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it
+#1}}{\parbox[t]{3.9in}{#2}} \\[1.1em]}
+
+\def\choicebox#1#2{\noindent$\hphantom{hixthere}$\parbox[t]{2.10in}{\sf
+#1}\parbox[t]{3.5in}{#2}\\[0.8em]}
+
+\def\structbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it
+#1}}{\parbox[t]{3.9in}{#2}} \\[.02cm]}
+
+\def\in{\hskip .2in \=}
+\def\hsp{\hskip .4in \=}
+\def\sp{\hskip .18in \=}
+\def\sh{\hskip .18in }
+\def\bb{\hskip .034in }
+\def\lil{\hskip .1in }
+
+
+\def\protobox#1{\vspace{2em}{\flushleft{\bf Prototype}
+\hrulefill}\flushleft{\fbox{\parbox[t]{6in}{\vspace{1em}{\sf
+#1}\vspace{1em}}}}}
+
+%--- redefine this for the tabularx environment
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{Z}{>{\small\raggedright\arraybackslash}X}
+
+%
+% ***********************************************************************
+% * 02 July 1993: McCorkle                                              *
+% * Define a macro that will lightly print the word `DRAFT' diagonally  *
+% * across each page of the document. This macro was obtained from the  *
+% * NMSU math department                                                *
+% *                                                                     *
+% * Usage: \draft                                                       *
+% ***********************************************************************
+%
+\def\draft{%
+\special{!userdict begin /bop-hook{gsave
+200 30 translate 65 rotate
+/Times-Roman findfont 216 scalefont setfont
+0 0 moveto 0.9 setgray (DRAFT) show grestore}def end}
+}
+
+\renewcommand\baselinestretch{0.9}
+
+\begin{document}
+
+\large
+\pagenumbering{roman}
+
+%\draft                                   % Lightly print `DRAFT' on every
+                                         % page of the document
+
+%
+% Stuff for SAND report style from B.A. Hendrickson, SNL, 1422
+%
+\hspace{2.22in}
+SAND--internal document
+\hfill
+Distribution
+
+\hspace{2.07in}
+Unlimited Release
+\hfill
+Category UC--405
+\begin{center}
+Printed Nov 1999
+\end{center}
+
+\vspace{0.8in}
+
+\begin{center}
+%{\Large{\bf \Az{} User's Guide$^\ast$ \\ Version 2.1}}
+  {\Large{\bf Sandia Only \Az{} User's Addendum\footnote{This work was supported by 
+	the
+        Applied Mathematical Sciences program, U.S. Department of Energy,
+        Office of Energy Research, and was performed at Sandia National
+        Laboratories, operated for the U.S. Department of Energy under contract
+        No. DE-AC04-94AL85000. The \Az{} software package was developed by the
+        authors at Sandia National Laboratories and is under copyright
+        protection} \\ Version 2.1}}
+
+\vspace*{0.4in}
+
+Ray S. Tuminaro\footnote{Applied \& Numerical Mathematics Department;
+  tuminaro@cs.sandia.gov; (925) 294-2564}
+\,\,\,\,Mike Heroux\footnote{Applied \& Numerical Mathematics Department;
+  maherou@cs.sandia.gov; (320) 845-7695}
+\,\,\,\,Scott A. Hutchinson\footnote{Parallel Computational Sciences Department;
+  sahutch@cs.sandia.gov; (505) 845-7996}
+\,\,\,\, John N. Shadid\footnote{Parallel Computational Sciences Department;
+  jnshadi@cs.sandia.gov; (505) 845-7876}
+\\
+
+Massively Parallel Computing Research Laboratory \\
+Sandia National Laboratories \\
+Albuquerque, NM \, 87185
+
+\vspace*{.9in}
+
+\end{center}
+
+{\centering\large Abstract \\[1em]}
+
+This manual describes unadvertised features of \Az{} that are only 
+available to Sandia users. Please see the \Az{} User's Guide for 
+a more complete description of \Az{}.
+
+\vfill
+
+\newpage
+
+%--- heading stuff
+
+\pagestyle{fancyplain}
+\addtolength{\headwidth}{\marginparsep}
+%\addtolength{\headwidth}{\marginparwidth}
+%--- remember section title
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+%\renewcommand{\subsectionmark}[1]{\markright{\thesubsection\ #1}}
+%\lhead[\fancyplain{}{\bfseries\thepage}]%
+%      {\fancyplain{}{\bfseries\rightmark}}
+\rhead[\fancyplain{}{\bfseries\leftmark}]%
+      {\fancyplain{}{\bfseries\thepage}}
+\cfoot{}
+%\rfoot{\leftmark\\\rightmark}
+
+\large
+
+\newpage
+
+{\flushleft {\bf Notation Conventions} \hrulefill
+\\[0.5em]
+
+Different fonts are used to indicate program fragments, keys words, variables,
+or parameters in order to clarify the presentation.  The table below describes
+the meaning denoted by these different fonts.\\[3em]
+
+\begin{tabularx}{\textwidth}{lX} \hline \\
+{\bf Convention} & {\bf Meaning} \\[1.25em]
+
+\tt typewriter & File names, code examples and code
+fragments. \\
+
+{\sf sans serif} & C language elements such as function names and constants
+when they appear embedded in text or in function definition syntax
+lines. \\
+
+{\it italics\/} & Parameter and variable names when they appear embedded in
+text or function definition syntax lines. \\
+
+{\bf AZ\_ } & C language elements such as function names and constants which
+are supplied by the \Az{} library. \\[1em] \hline
+\end{tabularx}
+%
+\vskip 3.0em
+\flushleft {\bf Code Distribution} \hrulefill
+\\[0.5em]
+
+\Az{} is publicly available for research purposes and may be licensed for
+commercial application.  The code is distributed along with technical
+documentation, example C and Fortran driver routines and sample input files via
+the internet.  It may be obtained by contacting one of the authors listed on
+page i of this report or from the \Az{} web site at
+\tt http://www.cs.sandia.gov/CRF/aztec1.html.}
+
+\newpage
+\pagenumbering{arabic}
+
+\include{unadvertised}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\vspace{2em}
+%
+%\section{Compiling and Linking\label{comp_link}}
+%
+%The krylov solver library \Az{} uses code from a few publicly
+%available linear algebra packages.  These packages are 1) the basic
+%linear algebra subroutine library - BLAS  2) the linear algebra
+%package - LAPACK and 3) a sparse direct lu solver Y12M. These packages
+%can be obtained form netlib as described below.
+%
+%The following packages are needed by \Az{}:
+%\begin{itemize}
+%\item Y12M (used for LU factorizations)
+%\item LAPACK routines
+%\item BLAS   routines
+%\end{itemize}
+%These routines can be obtained via netlib.
+%Send email to netlib@ornl.gov with the following information
+%in the message:
+%\vskip .5in
+%\begin{verbatim}
+%send help
+%send index for y12m
+%send index for lapack
+%send index for blas
+%\end{verbatim}
+%\vskip .5in
+%
+%Current information on compiling and linking \Az{}
+%for supported machines can be found in the file \verb'README'
+%in the source code distribution directory.
+%
+%To obtain the \Az{} distribution send an email request to
+%Ray S. Tuminaro (tuminaro@cs.sandia.gov).
+
+\newpage
+\bibliographystyle{plain}
+\bibliography{aztec_guide}
+
+
+\end{document}
