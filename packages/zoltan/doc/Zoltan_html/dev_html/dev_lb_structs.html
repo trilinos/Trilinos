@@ -90,8 +90,11 @@ set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method<
 <TR>
 <TD VALIGN=TOP>double *<I> Params</I></TD>
 
-<TD>An array of parameters to be passed to the load-balancing function
-specified by <I>Method</I>; set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.</TD>
+<TD>A linked list of string pairs.  The first item in each pair is the name
+of a modifiable parameter.  The second string is the new value the parameter
+should adopt.  These string pairs are read upon invocation of a load balancing
+algorithm and the appropriate parameter changes are made.  This design allows
+for different LB objects to have different parameter settings.</TD>
 </TR>
 
 <TR>

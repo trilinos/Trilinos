@@ -31,16 +31,11 @@ Zoltan library; their descriptions are included below.
 <BR><B><A HREF="#LB_Free_Data">LB_Free_Data</A></B></BLOCKQUOTE>
 
 <HR WIDTH="100%"><A NAME="LB_Set_Method"></A>int <B>LB_Set_Method</B>(struct
-<B>LB_Struct</B> *<I> lb</I>, char * <I>string</I>, double <I>params</I>[<B>LB_PARAMS_MAX_SIZE</B>]);&nbsp;
+<B>LB_Struct</B> *<I> lb</I>, char * <I>string</I>);&nbsp;
 <HR WIDTH="100%"><B>LB_Set_Method</B> is used to specify which load-balancing
 technique should be used by the application.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
-<TR VALIGN=TOP>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
 
 <TR>
 <TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
@@ -61,6 +56,7 @@ and&nbsp;
 </TD>
 </TR>
 
+<!--  Following now obsolete
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; params []&nbsp;</I></TD>
 
@@ -70,6 +66,7 @@ The application specifies desired parameters by overwriting the appropriate
 values of this array. See the individual algorithm descriptions in <A HREF="ug_alg.html#Algorithms">Algorithms</A>
 for descriptions of the parameters for each algorithm.</TD>
 </TR>
+-->
 
 <TR>
 <TD><B>Returned Value:</B></TD>

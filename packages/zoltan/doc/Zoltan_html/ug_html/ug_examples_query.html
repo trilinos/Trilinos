@@ -159,7 +159,7 @@ int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = Mesh.Nodes[i].Global_ID_Num;&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = i;&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; }&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</TT>&nbsp;
 <BR><TT>}&nbsp;</TT>&nbsp;
 
 <P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
@@ -171,7 +171,7 @@ int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = Mesh.Nodes[local_id].Coordinates[0];&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = Mesh.Nodes[local_id].Coordinates[1];&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = Mesh.Nodes[local_id].Coordinates[2];&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</TT>&nbsp;
 <BR><TT>}</TT></TD>
 </TR>
 
@@ -245,7 +245,7 @@ Nodes array entries for local_ids.</FONT></I> */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = <FONT COLOR="#FF0000">(void
 *) &amp;(Mesh.Nodes[i])</FONT>;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;
 
 <P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
@@ -257,7 +257,7 @@ the requested node.</I> */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = ((struct Node_Type *) local_id)->Coordinates[0];</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = ((struct Node_Type *) local_id)->Coordinates[1];</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = ((struct Node_Type *) local_id)->Coordinates[2];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>}</TT></TD>
 </TR>
 
@@ -341,7 +341,7 @@ int *ierr)</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[i].Global_ID_Num</FONT>;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = i;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;
 
 <P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
@@ -359,7 +359,7 @@ int *ierr)</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[0]</FONT>;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[1]</FONT>;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[2]</FONT>;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>}</TT></TD>
 </TR>
 
@@ -418,7 +418,7 @@ user_unpack_node, NULL);&nbsp;&nbsp;</TT>&nbsp;
 <P><TT>int user_size_node(void *data, int *ierr)</TT>&nbsp;
 <BR><TT>{</TT>&nbsp;
 <BR><TT>/* <I>Return the size of data associated with one node.</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;
 
@@ -429,7 +429,7 @@ int dest_proc, int size, char *buf, int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>/* Copy<I> the specified node's data into buffer buf.</I> */</TT>&nbsp;
 <BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT>&nbsp;
 
-<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<P><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[0] = Mesh.Nodes[local_id].Coordinates[0];</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[1] = Mesh.Nodes[local_id].Coordinates[1];</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[2] = Mesh.Nodes[local_id].Coordinates[2];</TT>&nbsp;
@@ -444,7 +444,7 @@ char *buf, int *ierr)</TT>&nbsp;
 <BR><TT>int i;</TT>&nbsp;
 <BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT>&nbsp;
 
-<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<P><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; i = Mesh.Number_Owned;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Number_Owned = Mesh.Number_Owned + 1;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[0] = node_buf->Coordinates[0];</TT>&nbsp;

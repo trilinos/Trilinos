@@ -152,7 +152,7 @@ describing the new decomposition to the application.
 <TD>.<TT>..</TT>&nbsp;
 <BR><TT>/* <I>Register method and application query functions</I> */</TT>&nbsp;
 <BR><TT>lb = LB_Create_Object();</TT>&nbsp;
-<BR><TT>LB_Set_Method(lb, "RCB", parameters);</TT>&nbsp;
+<BR><TT>LB_Set_Method(lb, "RCB");</TT>&nbsp;
 <BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn,NULL);</TT>&nbsp;
 <BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</TT>&nbsp;
 <BR><TT>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,user_return_elem_list_fn,NULL);</TT>&nbsp;
@@ -178,7 +178,7 @@ describing the new decomposition to the application.
 <DIV ALIGN=right><TABLE BORDER=2 WIDTH="80%" NOSAVE >
 <TR>
 <TD><TT>...</TT>&nbsp;
-<BR><TT>/* <I>call registered functions to build DLB data structures</I>
+<BR><TT>/* <I>call registered functions to build LB data structures</I>
 */</TT>&nbsp;
 <BR><TT>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &amp;ierr);&nbsp;</TT>&nbsp;
 

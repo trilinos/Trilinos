@@ -25,7 +25,9 @@ Functions used to initialize the library and load-balancing objects are
 described below:
 <UL><A HREF="#LB_Initialize">LB_Initialize</A>
 <BR><A HREF="#LB_Create_Object">LB_Create_Object</A>
+<!--
 <BR><A HREF="#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A>
+-->
 <BR><A HREF="#LB_Set_Fn">LB_Set_Fn</A></UL>
 
 
@@ -123,6 +125,7 @@ is assumed to be fatal.</TD>
 </TABLE>
 &nbsp;
 
+<!--  Following is now obsolete.
 <P>
 <HR WIDTH="100%"><A NAME="LB_Initialize_Params_Array"></A>int <B>LB_Initialize_Params_Array</B>(double
 <I>params</I>[<B>LB_PARAMS_MAX_SIZE</B>]);&nbsp;
@@ -160,6 +163,10 @@ Upon return, all array values are set to a default value.</TD>
 </TR>
 </TABLE>
 &nbsp;
+-->
+
+
+
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_Set_Fn"></A>int <B>LB_Set_Fn</B>(struct <B>LB_Struct

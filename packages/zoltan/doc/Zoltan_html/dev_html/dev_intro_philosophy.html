@@ -67,7 +67,7 @@ library can perform the desired load balancing.
 <TD><FONT SIZE=-1>.</FONT>..
 <BR>/<TT>* <I>Register method and application query functions</I> */</TT>
 <BR><TT>lb = LB_Create_Object();</TT>
-<BR><TT>LB_Set_Method(lb, "RCB", parameters);</TT>
+<BR><TT>LB_Set_Method(lb, "RCB");</TT>
 <BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn, NULL);</TT>
 <BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</TT>
 <BR><TT>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,user_return_elem_list_fn,NULL);</TT>
@@ -93,7 +93,7 @@ library can perform the desired load balancing.
 <DIV ALIGN=right><TABLE BORDER=2 WIDTH="80%" NOSAVE >
 <TR>
 <TD><TT>...</TT>
-<BR><TT>/* <I>call registered functions to build DLB data structures.</I>*/</TT>
+<BR><TT>/* <I>call registered functions to build LB data structures.</I>*/</TT>
 <BR><TT>/* <I>get the number of objects assigned to the processor.</I>
 */</TT>
 <BR><TT>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);&nbsp;</TT><TT></TT>
