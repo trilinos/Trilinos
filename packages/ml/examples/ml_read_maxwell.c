@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 
   /* Operator for use in Hiptmair smoother only */
   ML_Operator *Tmatbc = NULL;
-  double *Tmatbc_val;
+  double *Tmatbc_val, sum;
   int *Tmatbc_bindx;
 
   /* Used in zeroing out rows of Tmat. */
@@ -883,28 +883,28 @@ free(xxx);
     Kn_bindx[i+1] = Kn_bindx[i] + 8;
     Kn_val[i] = 8.;
     inv2dnodeindex(global_node_inds[i], &ii, &jj, nx);
-    Kn_val[Kn_bindx[i]+0] = -1.;
-    Kn_val[Kn_bindx[i]+1] = -1.;
-    Kn_val[Kn_bindx[i]+2] = -1.;
-    Kn_val[Kn_bindx[i]+3] = -1.;
     Kn_bindx[Kn_bindx[i]+0] =  southeast2d(ii,jj,nx);
+    Kn_val[  Kn_bindx[i]+0] = -1.;
     Kn_bindx[Kn_bindx[i]+1] =  northwest2d(ii,jj,nx);
-    Kn_val[Kn_bindx[i]+4] = -1.;
-    Kn_val[Kn_bindx[i]+5] = -1.;
-    Kn_val[Kn_bindx[i]+6] = -1.;
-    Kn_val[Kn_bindx[i]+7] = -1.;
+    Kn_val[  Kn_bindx[i]+1] = -1.;
     Kn_bindx[Kn_bindx[i]+4] =  northeast2d(ii,jj,nx);
+    Kn_val[  Kn_bindx[i]+4] = -.00000001;
     if (ii == 0) ii = nx-1;
     else ii--;
     Kn_bindx[Kn_bindx[i]+5] =  northwest2d(ii,jj,nx);
+    Kn_val[  Kn_bindx[i]+5] = -.00000001;
     if (jj == 0) jj = nx-1;
     else jj--;
     Kn_bindx[Kn_bindx[i]+2] =  southeast2d(ii,jj,nx);
+    Kn_val[  Kn_bindx[i]+2] = -1.;
     Kn_bindx[Kn_bindx[i]+3] =  northwest2d(ii,jj,nx);
+    Kn_val[  Kn_bindx[i]+3] = -1.;
     Kn_bindx[Kn_bindx[i]+6] =  southwest2d(ii,jj,nx);
+    Kn_val[  Kn_bindx[i]+6] = -.00000001;
     if (ii == nx-1) ii = 0;
     else ii++;
     Kn_bindx[Kn_bindx[i]+7] =  southeast2d(ii,jj,nx);
+    Kn_val[  Kn_bindx[i]+7] = -.00000001;
     AZ_sort( &(Kn_bindx[Kn_bindx[i]]),8,NULL,&(Kn_val[Kn_bindx[i]]));
   }
 #else
@@ -986,12 +986,17 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+4] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+5] = northeastback3d(ii,jj,kk,nx);
 if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
   }
+#endif
   compress_matrix(Kn_val, Kn_bindx, Nlocal_nodes);
+
   for (i = 0; i < Nlocal_nodes; i++) {
-    Kn_val[i] = Kn_bindx[i+1] - Kn_bindx[i]; 
+    sum = 0.;
+    for (j = Kn_bindx[i]; j < Kn_bindx[i+1]; j++) {
+      sum += Kn_val[j];
+    }
+    Kn_val[i] = -sum;
   }
 
-#endif
 #else
   AZ_input_msr_matrix("Kn_mat.az", global_node_inds, &Kn_val, &Kn_bindx, 
 		      Nlocal_nodes, proc_config);
@@ -1029,9 +1034,11 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
   {
      printf("Reading T matrix\n"); fflush(stdout);
   }
-
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
   nx = (int) pow( ((double) Nglobal_edges/3) + .00001,.333333333334);
+#ifdef HARDWIRE2D 
+  nx = (int) sqrt( ((double) Nglobal_nodes) + .00001);
+#endif
   Tmat_bindx = (int    *) malloc((3*Nlocal_edges+5)*sizeof(int));
   Tmat_val   = (double *) malloc((3*Nlocal_edges+5)*sizeof(double));
   Tmat_bindx[0] = Nlocal_edges + 1;
@@ -1594,17 +1601,16 @@ nx = nx--; /* rst dirichlet */
     printf("done reading initial guess\n");
   }
 #endif /* ifdef HierarchyCheck */
-
   if (Tmat_transbc != NULL)
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmatbc,
                                  Tmat_transbc, &Tmat_array, &Tmat_trans_array,
-							 ML_NO, 1.333333333333333);
+							 ML_NO, 1.5);
   else
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmat,
                                  Tmat_trans, &Tmat_array, &Tmat_trans_array,
-							 ML_NO, 1.333333333333);
+							 ML_NO, 1.5);
 
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
