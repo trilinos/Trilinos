@@ -249,7 +249,7 @@ void LineSearchBased::printUpdate()
   // ...But only the print process actually prints the result.
   if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";
-    cout << "-- Line Search Method Step " << niter << " -- \n";
+    cout << "-- Nonlinear Solver Step " << niter << " -- \n";
     cout << "f = " << Utils::sci(norm_soln);
     cout << "  step = " << Utils::sci(step);
     cout << "  dx = " << Utils::sci(norm_step);
