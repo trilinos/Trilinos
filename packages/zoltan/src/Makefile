@@ -19,10 +19,8 @@ GDEFINES	= -DDEBUG
 
 TARGET		= dlb
 LIB_NAME	= libdlb.a
-LINT_TARGET	= llib-ldlb.ln
-SRC_MAIN	= all_main.c
 
-SUPP_TARGS	="sgi10k smos sun sun_lint tflop"
+SUPP_TARGS	= "sgi10k smos sun tflop"
 
 #
 # Makefile for load-balancing library.
@@ -32,55 +30,64 @@ SUPP_TARGS	="sgi10k smos sun sun_lint tflop"
 #
 #   Paths to submodules
 #
-SUB_VPATH=../all ../lb ../par ../rcb ../comm ../oct
-SUBINCPATH=-I../all -I../lb -I../par -I../rcb -I../comm -I../oct
-#SUBDIRS= all lb par rcb oct Obj_sgi10k Obj_smos Obj_sun Obj_tflop 
-SUBDIRS= all lb par rcb oct
-
-# for lint, set VPATH here
-VPATH=$(SUBDIRS)
+SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct
+SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct
 
 #source code from SCCS projects
 
-GR_CSRC=gr.c gr_hash.c gr_list.c gr_tree.c gr_type.c gr_util.c
-GR_INC= gr_type.h gr_const.h gr_hash_const.h gr_list_const.h \
-	gr_tree_const.h gr_type_const.h \
-        gr_util_const.h
+GR_CSRC		= gr.c gr_hash.c gr_list.c gr_tree.c gr_type.c gr_util.c
+GR_INC		= gr_type.h gr_const.h gr_hash_const.h gr_list_const.h \
+		  gr_tree_const.h gr_type_const.h \
+		  gr_util_const.h
 
-ID_CSRC=id.c id_util.c
-ID_INC= id_const.h id_util.h id_util_const.h
+ID_CSRC		= id.c id_util.c
+ID_INC		= id_const.h id_util.h id_util_const.h
 
-VX_CSRC=vx.c
-VX_INC= vx_const.h
+VX_CSRC		= vx.c
+VX_INC		= vx_const.h
 
-ALL_CSRC=all_allo.c
-ALL_INC=all_const.h all_allo_const.h
+ALL_CSRC	= all_allo.c
+ALL_INC		= all_const.h all_allo_const.h
 
-LB_CSRC=lb.c lb_util.c 
-LB_INC=lb_const.h lb.h lbi_const.h lb_util_const.h
+LB_CSRC		= lb.c lb_util.c 
+LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
 
-RCB_CSRC=rcb.c rcb_util.c 
-RCB_INC=rcb.h
+RCB_CSRC	= rcb.c rcb_util.c 
+RCB_INC		= rcb.h
 
-OCT_CSRC=msg.c octant.c util.c octupdate.c dfs.c costs.c migoct.c output.c \
-	migreg.c hilbert.c
-OCT_INC=msg_const.h octant_const.h util_const.h octupdate_const.h \
-	octupdate.h dfs_const.h dfs.h migoct_const.h migoct.h migreg.h \
-	hilbert_const.h
+OCT_CSRC	= msg.c octant.c util.c octupdate.c dfs.c costs.c migoct.c \
+		  output.c migreg.c hilbert.c
+OCT_INC		= msg_const.h octant_const.h util_const.h octupdate_const.h \
+		  octupdate.h dfs_const.h dfs.h migoct_const.h migoct.h \
+		  migreg.h hilbert_const.h
 
-COMM_CSRC=comm.c
-COMM_INC=comm.h
+COMM_CSRC	= comm.c
+COMM_INC	= comm.h
 
-PAR_CSRC=par_util.c
-PAR_INC=par_const.h par.h
+PAR_CSRC	= par_util.c
+PAR_INC		= par_const.h par.h
 
 # machine independent routines
-INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) $(RCB_INC) \
-               $(COMM_INC) $(OCT_INC)
-#LIB_SRC_C    = $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
-LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
-		$(OCT_CSRC)
-LIB_SRC_OBJ  = $(LIB_SRC_C:.c=.o) 
+INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
+		  $(RCB_INC) $(COMM_INC) $(OCT_INC)
+#LIB_SRC_C	= $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
+LIB_SRC_C	= $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
+		  $(OCT_CSRC)
+LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o) 
+
+#
+# lint defines
+#
+LINT		= alint
+LINT_INC_PATH	= -Iall -Ilb -Ipar -Ircb -Icomm -Ioct \
+		  -I/Net/local/lang/SC2.0.1/include \
+		  -I/Net/local/lang/SC2.0.1/ansi_include \
+		  -I/Net/pecos/puma/pumatmp1/tools/mpi/include
+LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES) -DSUNOS
+LINT_TARGET	= llib-ldlb.ln
+SRC_MAIN	= all_main.c
+SUBDIRS		= all lb par rcb comm oct
+VPATH		= $(SUBDIRS)
 
 #
 # sunmos defines
@@ -143,10 +150,6 @@ SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_OPT_FLAGS)
 
 SUN_DEFS	= $(GDEFINES) -DSUNOS
 
-# additional defines for lint
-SUN_LINT	= alint
-SUN_LINT_FLAGS	=
-
 #
 # sgi10k defines
 #
@@ -165,6 +168,7 @@ SGI10K_INC_PATH	= $(SUBINCPATH)
 SGI10K_CCOMP	= $(SGI10K_CC) $(SGI10K_INC_PATH) $(SGI10K_OPT_FLAGS)
 
 SGI10K_DEFS	= $(GDEFINES) -DSGI10KOS
+
 
 ###########################################################################
 #      TARGETS FOR DIFFERENT MACHINES
@@ -210,20 +214,6 @@ sun:
 	"RANLIB=$(SUN_RANLIB)"
 #	@cscope -b $(MAIN) $(SUN_CSRC) $(SUN_INC)
 
-sun_lint:
-	@if [ ! -d Obj_sun ]; \
-	then mkdir Obj_sun; \
-	fi
-	@rm -f Obj_sun/Makefile
-	@cp Makefile_sub Obj_sun/Makefile
-	@cd Obj_sun; \
-	$(MAKE) $(SUN_LINT) "LINT=$(SUN_LINT)" \
-	"SRC_FILES=$(SUN_CSRC)" "TARGET=$(TARGET)" \
-	"LINT_TARGET=$(LINT_TARGET)" "LINTFLAGS=$(SUN_LINT_FLAGS)" \
-	"CFLAGS=$(SUN_INC_PATH) $(SUN_DEFS)" \
-	"SRC_MAIN=$(SRC_MAIN)" "VPATH=$(SUB_VPATH)"
-
-
 sgi10k:
 	@if [ ! -d Obj_sgi10k ]; \
 	then mkdir Obj_sgi10k; \
@@ -252,6 +242,15 @@ default:
 	done
 	@echo " "
 
+$(LINT_TARGET): $(LIB_SRC_C)
+	@echo "Generating lint file for library..."
+	$(LINT) $(LINT_FLAGS) $? -y -o $(TARGET)
+
+lint: $(SRC_MAIN) $(LINT_TARGET)
+	@echo "running lint..."
+	$(LINT) $(LINT_FLAGS) $< $(LINT_TARGET)
+
+
 printout:
 	cat $(MAIN) $(LIB_SRC_C) > source.c
 	tps -c source.c | lpr
@@ -262,6 +261,3 @@ clean:
 	-for a in $(SUBDIRS); do cd $$a; \
 	 $(RM) *.o *.d *.d@ dlb dlb.pure; \
 	 cd ..; done; exit 0
-
-foo:
-	@echo "$(VPATH)"
