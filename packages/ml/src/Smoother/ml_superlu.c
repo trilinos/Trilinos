@@ -112,7 +112,7 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
       ML_memory_alloc((void**) &perm_r, 2 * n * sizeof(int), "LU3" );
       solver->int_params1 = perm_r;
       solver->int_params2 = perm_c;
-      permc_spec = 0;
+      permc_spec = 2;
       get_perm_c(permc_spec, A, perm_c);
       ML_memory_alloc((void**) &L, sizeof(SuperMatrix), "LU4" );
       ML_memory_alloc((void**) &U, sizeof(SuperMatrix), "LU5" );
@@ -207,10 +207,10 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    solver->reuse_flag = 1;
 #elif DSUPERLU
    int                flag, N_local, offset;
-   double            *local_x, one = 1.0, zero = 0.0;
+   double            *local_rhs;
    ML_Comm           *mlcomm;
+   MPI_Comm          *newcomm;
    ML_Solver         *solver;
-   int_t              nprocs;                    /* int_t short integer */
    superlu_options_t  options;
    superlu_options_t *optionsptr;
    SuperMatrix       *A;
@@ -219,13 +219,8 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    LUstruct_t        *LUstruct;
    gridinfo_t        *grid;
    double             berr;
-   double            *xtrue;
-   int_t              i, j, n, nnz;
-   int                iam, info, ldb, ldx, nrhs;
-   int_t              nprow, npcol;
-   char               trans[1];
-   int                color, key;
-   MPI_Comm           *newcomm;
+   int_t              i, n, nprow, npcol, nprocs; /* short integers */
+   int                iam, info, nrhs, color, key;
    /* ------------------------------------------------------------- */
    /* fetch the sparse matrix and other parameters                  */
    /* ------------------------------------------------------------- */
@@ -253,15 +248,16 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    /* if factorization has not been done, allocate space for it     */
    /* Fetching the factorization (flag=1) is unneccessary           */
    /* ------------------------------------------------------------- */
-   if ( flag == -999 ) 
-   {
+   if ( flag == -999 ) {
+
+     if( iam == 0 )printf("ml_superlu flag = %d\n",flag); /* dmd */
+
      /* deallocate storage and clean up */
      info = flag;
      if ( A != NULL ) {
         ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
         ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
         ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
-        SUPERLU_FREE( ((NCformat *) A->Store)->nzval);
         SUPERLU_FREE( A->Store );
         ML_memory_free((void**) &A);
      }
@@ -280,11 +276,8 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      ML_memory_free( ( void**) &(solver->ML_subcomm) );
      solver->ML_subcomm = NULL;
      return 0;
-   } 
-   else if ( flag == 0 ) 
-   {
+   } else if ( flag == 0 ) {
      nprocs = sqrt(nprocs);
-     if(nprocs > 16) nprocs = 16;
      color = iam/nprocs;
      key = 0;
      ML_memory_alloc((void**) &newcomm, sizeof(MPI_Comm), "com" );
@@ -293,13 +286,13 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      nprow = sqrt( nprocs );
      npcol = nprocs/nprow;
      grid = ( gridinfo_t *) malloc( sizeof( gridinfo_t) );
-     superlu_gridinit( *newcomm, nprow, npcol, grid); 
+     superlu_gridinit( *newcomm, nprow, npcol, grid);
      /*
-      * Fact = DOFACT Trans = NOTRANS Equil = YES RowPerm = LargeDiag
-      * ColPerm = COLAMD ReplaceTinyPivot = YES IterRefine = DOUBLE
+      * Fact = DOFACT Trans = NOTRANS Equil = EQUI RowPerm = LargeDiag
+      * ColPerm = COLAMD ReplaceTinyPivot = REPLACE IterRefine = DOUBLE
       */
      set_default_options(optionsptr);
-     optionsptr->Equil = NO;
+     optionsptr->Equil = NEQU;
      optionsptr->IterRefine = NOREFINE;
      /*
       * Future possiblities to experiment with include
@@ -316,76 +309,47 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      solver->PERMspl = (void *) ScalePermstruct;
      solver->LUspl = (void *) LUstruct;
      solver->grid = (void *) grid;
-   } 
-   else 
-   {
+   } else {
 
      /* Indicate that the factored form of A is supplied. */
      /* Reset options */
      optionsptr->Fact = FACTORED;
      optionsptr->Trans = NOTRANS;
-     optionsptr->Equil = NO;
+     optionsptr->Equil = NEQU;
      optionsptr->RowPerm = MY_PERMR;
      optionsptr->ColPerm = MY_PERMC;
-     optionsptr->ReplaceTinyPivot = YES;
-     optionsptr->IterRefine = DOUBLE;
+     optionsptr->ReplaceTinyPivot = REPLACE;
+     optionsptr->IterRefine = NOREFINE;
    }
-   PStatInit(&stat);
 
    /* ------------------------------------------------------------- */
    /* gather from all processors the complete right hand side       */
    /* ------------------------------------------------------------- */
-
    nrhs = 1;
-   ML_memory_alloc((void**) &local_x, n*sizeof(double),"LU1" );
-   if ( flag != 0 ) 
-   {
-     for ( i = 0; i < N_local; i++ ) local_x[i] = rhs[i];
-     i = N_local;
-     ML_Comm_GappendDouble((ML_Comm *) mlcomm, local_x, &i, n);
-   } 
-   else 
-   {
-     /* Generate the exact solution and compute the right-hand side. */
-     if ( !(xtrue = doubleMalloc(n)) ) ABORT("Malloc fails for xtrue[]");
-     for (i = 0; i < n; ++i) xtrue[i] = one;
-    *trans = 'N';
-     ldx = n;
-     ldb = n;
-     sp_dgemm(trans, "N", n, nrhs, n, one, A, xtrue, n, zero, local_x, n);
-   }
+   ML_memory_alloc((void**) &local_rhs, n*sizeof(double),"LU1" );
+   for ( i = 0; i < N_local; i++ ) local_rhs[i] = rhs[i];
+   i = N_local;
+   ML_Comm_GappendDouble((ML_Comm *) mlcomm, local_rhs, &i, n);
 
    /* ------------------------------------------------------------- */
    /* perform LU decomposition and then solve                       */
    /* ------------------------------------------------------------- */
-
    info = flag;
-   pdgssvx_ABglobal(optionsptr, A, ScalePermstruct, local_x, n, nrhs, grid,
+   PStatInit(&stat);
+   pdgssvx_ABglobal(optionsptr, A, ScalePermstruct, local_rhs, n, nrhs, grid,
                     LUstruct, &berr, &stat, &info);
    solver->reuse_flag = 1;
-   if( flag==0 )
-   {
-     if( iam==0 ) dinf_norm_error(n, nrhs, local_x, n, xtrue, n);
-     SUPERLU_FREE(xtrue);
-   }
 
-   /* Ken's bug: without -g pstat must be called after each solve */
-   PStatPrint(&stat, grid);
    PStatFree(&stat);
    if( info != 0 ){
-     printf("Error: ml_superlu    info = %d\n",info);
-     exit(-1);
+     if( iam == 0 )printf("Error: ml_superlu    info = %d\n",info);
+     return(-1);
    }
-
    /* ------------------------------------------------------------- */
    /* extract the local solution sub-vector and then clean up       */
    /* ------------------------------------------------------------- */
-
-   if ( flag != 0 ) 
-   {
-      for ( i = 0; i < N_local; i++ ) x[i] = local_x[i+offset];
-   }
-   ML_memory_free( (void **) &local_x );
+   for ( i = 0; i < N_local; i++ ) x[i] = local_rhs[i+offset];
+   ML_memory_free( (void **) &local_rhs );
 #else
    printf("SuperLU_Solve : SuperLU not used.\n");
 #endif
