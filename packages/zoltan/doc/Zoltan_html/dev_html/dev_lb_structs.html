@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <TITLE> Zoltan Developer's Guide:  Load Balancing</TITLE>
 <!
   ------------------------
@@ -17,7 +17,7 @@
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+<IMG SRC="dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="interface_structs"></A>Data Structures</H2>
@@ -90,24 +90,26 @@ set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method<
 <TR>
 <TD VALIGN=TOP>LB_PARAM *<I> Params</I></TD>
 
-<TD>A linked list of string pairs.  The first item in each pair is the name
-of a modifiable parameter.  The second string is the new value the parameter
-should adopt.  These string pairs are read upon invocation of a load balancing
-algorithm and the appropriate parameter changes are made.  This design allows
+<TD>A linked list of string pairs. The first item in each pair is the name
+of a modifiable parameter. The second string is the new value the parameter
+should adopt. These string pairs are read upon invocation of a load balancing
+algorithm and the appropriate parameter changes are made. This design allows
 for different LB objects to have different parameter settings.</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP>double <I>Tolerance</I></TD>
 
-<!--
+<TD>
+<CENTER><!--
   BAH: Revisit this discussion.  Add pointer to LB_Set_Param section.
        Perhaps change meaning of Tolerance.  Mention name of variable
        in call to Set_Param.
--->
+--></CENTER>
+</TD>
 
 <TD>The tolerance to which to load balance; <I>Tolerance</I> = 0.9 implies
-a 10% imbalance is acceptable. Set via a call to <B>LB_Set_Param</B>.
+a 10% imbalance is acceptable. Set via a call to <B>LB_Set_Param</B>.&nbsp;</TD>
 </TR>
 
 <TR>
@@ -115,21 +117,6 @@ a 10% imbalance is acceptable. Set via a call to <B>LB_Set_Param</B>.
 
 <TD>The data structure used by the selected load-balancing algorithm; this
 pointer is cast by the algorithm to the appropriate data type.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_OBJ_WEIGHT_FN">LB_OBJ_WEIGHT_FN</A>
-*<I> Get_Obj_Weight</I></TD>
-
-<TD>A pointer to an application-registered function that returns a given
-object's weight. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>void <I>*Get_Obj_Weight_Data</I></TD>
-
-<TD>A pointer to data provided by the user that will be passed to the function
-pointed to by <I>Get_Obj_Weight</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
 </TR>
 
 <TR>
