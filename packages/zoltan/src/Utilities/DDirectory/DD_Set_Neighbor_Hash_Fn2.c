@@ -30,7 +30,7 @@ typedef struct
    } Range_Info ;
 
 
-static unsigned int dd_nh2 (LB_ID_PTR gid, int gid_length,
+static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc) ;
 
 static int compare_sort   (const void *a, const void *b) ;
@@ -106,11 +106,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
 
 
 
-
-
-
-
-static unsigned int dd_nh2 (LB_ID_PTR gid, int gid_length,
+static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int junk)
    {
    Range_Info *p ;
@@ -151,8 +147,8 @@ static int compare_sort (const void *a, const void *b)
 
 static int compare_search (const void *a, const void *b)
     {
-    if (*((LB_ID_TYPE *) a) < ((Range_Info *) b)->low)  return -1 ;
-    if (*((LB_ID_TYPE *) a) > ((Range_Info *) b)->high) return  1 ;
+    if (*((ZOLTAN_ID_TYPE *) a) < ((Range_Info *) b)->low)  return -1 ;
+    if (*((ZOLTAN_ID_TYPE *) a) > ((Range_Info *) b)->high) return  1 ;
     else return 0 ;
     }
 

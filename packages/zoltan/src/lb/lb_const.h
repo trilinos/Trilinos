@@ -25,6 +25,7 @@
 
 #include "lbi_const.h"
 #include "lb_id_const.h"
+#include "zoltan_util.h"
 #include "mem_const.h"
 #include "par_const.h"
 #include "timer_const.h"
@@ -454,12 +455,10 @@ struct LB_Struct {
  */
 
 #define LB_PRINT_ERROR(proc,yo,str) \
-  fprintf(stderr, "[%d] Zoltan ERROR in %s (line %d of %s):  %s\n", \
-          proc, yo, __LINE__, __FILE__, str);
+  ZOLTAN_PRINT_ERROR(proc, yo, str)
 
 #define LB_PRINT_WARN(proc,yo,str) \
-  fprintf(stderr, "[%d] Zoltan WARNING in %s (line %d of %s):  %s\n", \
-          proc, yo, __LINE__, __FILE__, str);
+  ZOLTAN_PRINT_WARN(proc, yo, str)
 
 /*  
  *  Print trace information.
@@ -468,17 +467,17 @@ struct LB_Struct {
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
       (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
-    printf("ZOLTAN (Processor %d) Entering %s\n", (lb)->Proc, (yo));
+    ZOLTAN_TRACE_ENTER((lb)->Proc, (yo), NULL);
 
 #define LB_TRACE_EXIT(lb,yo) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
       (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
-    printf("ZOLTAN (Processor %d) Leaving %s\n", (lb)->Proc, (yo));
+    ZOLTAN_TRACE_EXIT((lb)->Proc, (yo), NULL);
 
 #define LB_TRACE_DETAIL(lb,yo,string) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_DETAIL) \
-    printf("ZOLTAN (Processor %d) %s: %s\n", (lb)->Proc, (yo), (string));
+    ZOLTAN_PRINT_INFO((lb)->Proc, (yo), (string));
 
 /*
  *  Debugging macro for Tflop architecture.

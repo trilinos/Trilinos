@@ -75,8 +75,8 @@ int Zoltan_DD_Create (
 
    /* save useful constants into directory for convenience */
    (*dd)->debug_level      = debug_level ;  /* [0,3], default 0          */
-   (*dd)->gid_length       = num_gid ;      /* saved lb->Num_GID         */
-   (*dd)->lid_length       = num_lid ;      /* saved lb->Num_LIB         */
+   (*dd)->gid_length       = num_gid ;      /* saved input Num_GID       */
+   (*dd)->lid_length       = num_lid ;      /* saved input Num_LIB       */
    (*dd)->table_length     = size ;         /* # of linked list heads    */
    (*dd)->user_data_length = user_length ;  /* optional user data length */
    (*dd)->hash             = DD_Hash2 ;     /* default hash algorithm    */
@@ -84,14 +84,14 @@ int Zoltan_DD_Create (
    (*dd)->max_id_length    = (num_gid > num_lid) ? num_gid : num_lid ;
 
    /* frequently used dynamic allocation computed sizes */
-   size = (num_gid + num_lid + user_length) * sizeof (LB_ID_PTR) ;
+   size = (num_gid + num_lid + user_length) * sizeof (ZOLTAN_ID_PTR) ;
    (*dd)->node_size       = size + sizeof(DD_Node) ;
    (*dd)->update_msg_size = size + sizeof(DD_Update_Msg) ;
 
-   size = num_gid * sizeof (LB_ID_PTR) ;
+   size = num_gid * sizeof (ZOLTAN_ID_PTR) ;
    (*dd)->remove_msg_size = size + sizeof(DD_Remove_Msg) ;
 
-   size = (user_length + (*dd)->max_id_length) * sizeof (LB_ID_PTR) ;
+   size = (user_length + (*dd)->max_id_length) * sizeof (ZOLTAN_ID_PTR) ;
    (*dd)->find_msg_size   = size + sizeof (DD_Find_Msg) ;
 
    /* force alignment, algorithm from Plauger, The Standard C Library    */

@@ -23,7 +23,7 @@
 
 
 
-static int DD_Remove_Local (Zoltan_DD_Directory *dd, LB_ID_PTR gid) ;
+static int DD_Remove_Local (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid) ;
 
 
 
@@ -32,7 +32,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd, LB_ID_PTR gid) ;
 
 int Zoltan_DD_Remove (
  Zoltan_DD_Directory *dd,            /* directory state infomation      */
- LB_ID_PTR gid,                      /* Incoming list of GIDs to remove */
+ ZOLTAN_ID_PTR gid,                  /* Incoming list of GIDs to remove */
  int count)                          /* Number of GIDs in removal list  */
    {
    int             *procs = NULL ;   /* list of processors to contact   */
@@ -98,7 +98,7 @@ int Zoltan_DD_Remove (
 
       ptr = (DD_Remove_Msg *) (sbuff + i * dd->remove_msg_size) ;
       ptr->owner = dd->my_proc ;
-      LB_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length) ;
+      ZOLTAN_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length) ;
       }
 
    /* now create efficient communication plan */
@@ -182,7 +182,7 @@ int Zoltan_DD_Remove (
 */
 
 static int DD_Remove_Local (Zoltan_DD_Directory *dd,
- LB_ID_PTR gid)                /* GID to be removed (in)  */
+ ZOLTAN_ID_PTR gid)                /* GID to be removed (in)  */
    {
    DD_Node **ptr ;
    DD_Node  *old ;
@@ -206,7 +206,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
    /* walk linked list until end looking for matching gid (key) */
    for (ptr = dd->table + index ; *ptr != NULL ; ptr = &((*ptr)->next))
       {
-      if (LB_EQ_ID(dd->gid_length, gid, (*ptr)->gid) == TRUE)
+      if (ZOLTAN_EQ_ID(dd->gid_length, gid, (*ptr)->gid) == TRUE)
          {
          /* found node to remove, need to preserve its next ptr. */
           old =  *ptr ;

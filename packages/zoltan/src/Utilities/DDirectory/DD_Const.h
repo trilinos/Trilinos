@@ -17,9 +17,10 @@
 
 #include "mem_const.h"
 #include "comm_const.h"
-#include "lbi_const.h"
-#include "lb_id_const.h"
+#include "zoltan_types.h"
+#include "zoltan_id.h"
 #include "zoltan_util.h"
+
 
 #ifndef ZOLTAN_ALIGN    /* Plauger alignment algorithm, The Standard C Library*/
 #define ZOLTAN_ALIGN 7U /* to force malloc'ed variable size struct alignment  */
@@ -66,7 +67,7 @@ typedef struct DD_Node
    int              partition ;  /* Optional data                         */
    int              errcheck ;   /* Error checking (inconsistent updates) */
    struct DD_Node  *next ;       /* Next DD_Node in linked list or NULL   */
-   LB_ID_TYPE       gid[1] ;     /* gid used as key for update & lookup   */
+   ZOLTAN_ID_TYPE   gid[1] ;     /* gid used as key for update & lookup   */
                                  /* lid starts at gid + dd->gid_length    */
                                  /* (user) data starts at                 */
                                  /* gid + dd->gid_length + dd->lid_length */
@@ -90,7 +91,7 @@ typedef struct
    int gid_length ;         /* = lb->Num_GID -- avoid needing lb*     */
    int lid_length ;         /* = lb->Num_LID -- avoid needing lb*     */
    int max_id_length ;      /* max (gid_length, lid_length)           */
-   int user_data_length ;   /* Optional user data stored as LB_ID_PTR */
+   int user_data_length ;   /* Optional user data stored as ZOLTAN_ID_PTR */
    int table_length ;       /* # of heads of linked lists             */
    int node_size ;          /* Malloc'd to include GID & LID storage  */
    int find_msg_size ;      /* Total allocation for DD_FIND_MSG       */
@@ -98,7 +99,7 @@ typedef struct
    int remove_msg_size ;    /* Total allocation for DD_REMOVE_MSG     */
    int debug_level ;        /* Determines actions to multiple updates */
 
-   unsigned int (*hash)(LB_ID_PTR, int, unsigned int) ;
+   unsigned int (*hash)(ZOLTAN_ID_PTR, int, unsigned int) ;
    void (*cleanup) (void) ;
 
    MPI_Comm comm ;          /* Dup of original MPI Comm (KDD)         */
@@ -120,10 +121,10 @@ typedef struct           /* Only used by Zoltan_DD_Update()           */
    {
    int owner ;           /* range [0, nproc-1]                        */
    int partition ;
-   LB_ID_TYPE gid[1] ;   /* struct malloc'd to include gid & lid & user */
-                         /* LID found at gid[dd->gid_length]          */
-                         /* USER found at gid[dd->gid_length          */
-                         /*  + dd->lid_length] if used                */
+   ZOLTAN_ID_TYPE gid[1] ;   /* struct malloc'd to include gid & lid & user */
+                             /* LID found at gid[dd->gid_length]            */
+                             /* USER found at gid[dd->gid_length            */
+                             /*  + dd->lid_length] if used                  */
    } DD_Update_Msg ;
 
 
@@ -145,7 +146,7 @@ typedef struct            /* Only used by Zoltan_DD_Find()         */
    int        proc ;      /* destination or location               */
    int        partition ;
    int        index ;     /* to put things back in order afterward */
-   LB_ID_TYPE id[1] ;     /* allocated as max(Num_GID, Num_LID)    */
+   ZOLTAN_ID_TYPE id[1] ; /* allocated as max(Num_GID, Num_LID)    */
                           /* + user data length                    */
    } DD_Find_Msg ;
 
@@ -154,10 +155,10 @@ typedef struct            /* Only used by Zoltan_DD_Find()         */
 
 
 
-typedef struct           /* Only used by Zoltan_DD_Remove()      */
+typedef struct             /* Only used by Zoltan_DD_Remove()      */
    {
-   int        owner ;    /* range [0, nproc-1]                   */
-   LB_ID_TYPE gid[1] ;   /* structure malloc'd to include gid    */
+   int        owner ;      /* range [0, nproc-1]                   */
+   ZOLTAN_ID_TYPE gid[1] ; /* structure malloc'd to include gid    */
    }  DD_Remove_Msg ;
 
 
@@ -174,24 +175,21 @@ int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm, int num_gid,
 
 void Zoltan_DD_Destroy (Zoltan_DD_Directory **dd) ;
 
+int Zoltan_DD_Update (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+ ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR user, int *partition, int count) ;
 
-int Zoltan_DD_Update (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
- LB_ID_PTR lid, LB_ID_PTR user, int *partition, int count) ;
+int Zoltan_DD_Find (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid, 
+ ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR data, int *partition, int count,
+ int *owner) ;
 
-
-int Zoltan_DD_Find (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
- LB_ID_PTR lid, LB_ID_PTR data, int *partition, int count, int *owner) ;
-
-
-int Zoltan_DD_Remove (Zoltan_DD_Directory *dd, LB_ID_PTR gid, int count) ;
-
+int Zoltan_DD_Remove (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+ int count) ;
 
 int Zoltan_DD_Set_Hash_Fn (Zoltan_DD_Directory *dd,
- unsigned int (*hash) (LB_ID_PTR, int, unsigned int)) ;
+ unsigned int (*hash) (ZOLTAN_ID_PTR, int, unsigned int)) ;
 
-
-unsigned int DD_Hash2(LB_ID_PTR key, int num_id_entries, unsigned int n) ;
-
+unsigned int DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries,
+ unsigned int n) ;
 
 void Zoltan_DD_Stats (Zoltan_DD_Directory *dd) ;
 

@@ -26,8 +26,9 @@
 /* LB_Hash is a hash function for Zoltan ids (local or global). 
  *
  * Input:
- *   key: a key to hash of type LB_ID_PTR
- *   num_id_entries: the number of (LB_ID_TYPE-sized) entries of the key to use
+ *   key: a key to hash of type ZOLTAN_ID_PTR
+ *   num_id_entries: the number of (ZOLTAN_ID_TYPE-sized) entries of 
+ *                    the key to use
  *   n: the range of the hash function is 0..n-1
  *
  * Return value:
@@ -51,12 +52,12 @@
 
 #define ZOLTAN_DD_HASH_CONSTANT 2654435761U   /* consider 516595003U */
 
-unsigned int DD_Hash2(LB_ID_PTR key, int num_id_entries, unsigned int n)
+unsigned int DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
   unsigned int h, rest, *p;
   char *byteptr;
   int bytes;
-  int num_bytes = num_id_entries * sizeof(LB_ID_TYPE);
+  int num_bytes = num_id_entries * sizeof(ZOLTAN_ID_TYPE);
 
   /* First hash the int-sized portions of the key */
   h = 0;

@@ -58,17 +58,20 @@ else
 LIB_DIR = $(OBJ_DIR)
 endif
 
+ifndef ZOLTAN_LIB
+ZOLTAN_LIB = libzoltan.a
+endif
+
 ############################################################################
 #                  SOURCE CODE
 ############################################################################
 #
 #   Paths to submodules
 #
-
-SUB_VPATH	= ../shared ../Memory ../Communication ../DDirectory \
-		  ../../lb #ERASE THIS LINE
-SUBINCPATH	= -I../shared -I../Memory -I../Communication -I../DDirectory \
-		  -I../../lb -I../../par -I../../timer  #ERASE THIS LINE!!!
+SUB_VPATH	= ../../include ../shared \
+		  ../Memory ../Communication ../DDirectory 
+SUBINCPATH	= -I../../include -I../shared \
+		  -I../Memory -I../Communication -I../DDirectory 
 SUBDIRS		= Memory Communication DDirectory
 
 ############################################################################
@@ -100,20 +103,27 @@ COMM_DRIVER_LIBS= -L. -l$(COMM_TARGET) -l$(MEM_TARGET) $(MPI_LIBPATH) $(MPI_LIB)
 COMM_DRIVER_DEP = $(COMM_LIB) $(MEM_LIB)
 
 ############################################################################
+# ID UTILITIES
+ID_CSRC		= zoltan_id.c
+ID_INC		= zoltan_id.h
+
+  
+############################################################################
 # DISTRIBUTED DIRECTORY PACKAGE
 
 DD_CSRC		= DD_Create.c DD_Destroy.c DD_Find.c DD_Remove.c DD_Update.c \
                   DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c DD_Print.c\
-                  DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c
+                  DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c \
+		  $(ID_CSRC)
 DD_INC		= DD_Const.h
 DD_LIB		= libzoltan_dd.a
 DD_TARGET	= zoltan_dd
 
 DD_DRIVER	= zdrive_dd
-DD_DRIVER_CSRC	= DD_Main.c lb_id.c
+DD_DRIVER_CSRC	= DD_Main.c
 DD_DRIVER_LIBS 	= -L. -l$(DD_TARGET) -l$(COMM_TARGET) -l$(MEM_TARGET) \
                   $(MPI_LIBPATH) $(MPI_LIB)
-DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB)
+DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB) $(ID_OBJ)
 
 
 ##############################################################################
@@ -192,7 +202,8 @@ $(MEM_LIB):
 	"OBJ_FILES=$(MEM_CSRC:.c=.o)"		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
-	"RANLIB=$(RANLIB)" 			
+	"RANLIB=$(RANLIB)" 			\
+        "BUILD_DIR=./"
 	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
 	then cp -f $(OBJ_DIR)/$(MEM_LIB) $(LIB_DIR); \
 	fi
@@ -229,7 +240,8 @@ $(COMM_LIB):
 	"OBJ_FILES=$(COMM_CSRC:.c=.o)" 		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
-	"RANLIB=$(RANLIB)" 			
+	"RANLIB=$(RANLIB)" 			\
+        "BUILD_DIR=./"
 	@if [ $(OBJ_DIR) != $(LIB_DIR) ];                \
 	then cp -f $(OBJ_DIR)/$(COMM_LIB) $(LIB_DIR);    \
 	fi
@@ -266,13 +278,14 @@ $(DD_LIB):
 	"OBJ_FILES=$(DD_CSRC:.c=.o)"		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
-	"RANLIB=$(RANLIB)" 			
+	"RANLIB=$(RANLIB)" 			\
+        "BUILD_DIR=./"
 	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
 	then cp -f $(OBJ_DIR)/$(DD_LIB) $(LIB_DIR); \
 	fi
 
 
-zdrive_DD dd:
+zdrive_dd dd:
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
 	$(MAKE) $(DD_LIB) 
@@ -288,6 +301,19 @@ zdrive_DD dd:
 	"LNK_LIBS=$(DD_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(DD_DRIVER_DEP)"
 
+$(ZOLTAN):
+	$(MAKE) $(MEM_LIB)
+	$(MAKE) $(COMM_LIB)
+	$(MAKE) $(DD_LIB) 
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) $(ZOLTAN_LIB) 			\
+	"LIB_NAME=$(ZOLTAN_LIB)"		\
+	"OBJ_FILES=$(DD_CSRC:.c=.o) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o)" \
+	"AR=$(AR)" 				\
+	"RANLIB=$(RANLIB)" 			\
+        "BUILD_DIR=../../$(OBJ_DIR)/"
 
 zscript:
 	@echo "Building Utilities zoltan_script..."

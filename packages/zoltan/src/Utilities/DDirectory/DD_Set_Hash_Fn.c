@@ -31,7 +31,7 @@
 
 int Zoltan_DD_Set_Hash_Fn (
  Zoltan_DD_Directory *dd,              /* directory state information */
- unsigned int (*hash) (LB_ID_PTR, int, unsigned int))
+ unsigned int (*hash) (ZOLTAN_ID_PTR, int, unsigned int))
      {
      char *yo = "Zoltan_DD_Set_Hash_Fn" ;
 

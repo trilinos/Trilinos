@@ -22,7 +22,7 @@
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 
 
-static unsigned int dd_nh1 (LB_ID_PTR gid, int gid_length,
+static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc) ;
 
 static int max_gid ;
@@ -62,7 +62,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
 
 
 
-static unsigned int dd_nh1 (LB_ID_PTR gid, int gid_length,
+static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc)
    {
    return (*gid < max_gid) ? (*gid / groupsize) : (*gid % nproc) ;

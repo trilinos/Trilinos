@@ -33,8 +33,8 @@ include $(OBJ_FILES:.o=.d)
 
 $(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES) 
 		@echo "creating library "$(LIB_NAME)
-		@$(AR) $(LIB_NAME) $(OBJ_FILES) 
-		@$(RANLIB) $(LIB_NAME)
+		$(AR) $(BUILD_DIR)/$(LIB_NAME) $(OBJ_FILES) 
+		$(RANLIB) $(BUILD_DIR)/$(LIB_NAME)
 
 $(DRIVER_NAME):	$(DEP_LIBS) $(OBJ_FILES:.o=.d) $(OBJ_FILES)
 		@echo "linking driver "$(DRIVER_NAME)

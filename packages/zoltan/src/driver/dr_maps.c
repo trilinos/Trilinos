@@ -303,7 +303,6 @@ int num_nbor = 0;    /* Number of neighboring elements not on this processor. */
                      /* is a neighbor of > 1 element on this processor.       */
 int cnt;
 int num_others = 0;
-int prev_map_id = -1;
 int num_maps = 0;
 int map_size = 0;
 int max_map_size = 0;
@@ -340,7 +339,7 @@ COMM_OBJ *comm;
    * Create DDirectory and register all owned elements. 
    */
 
-  ierr = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, 0, 1);
+  ierr = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, 0, 0);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Create");
     error = 1;
@@ -399,7 +398,7 @@ COMM_OBJ *comm;
     error = 1;
   }
  
-  Zoltan_DD_Destroy(dd);
+  Zoltan_DD_Destroy(&dd);
 
   /*
    * Check for errors 
@@ -470,12 +469,6 @@ COMM_OBJ *comm;
     return;
   }
 
-  /* 
-   * Set dummy value at end of others_want data to trigger map comparison for
-   * final map.
-   */
-  others_want[num_others * want_size] = -1;
-
   free(i_want);
   ierr = LB_Comm_Destroy(&comm);
   if (ierr) {
@@ -489,22 +482,17 @@ COMM_OBJ *comm;
    * in others_want.
    */
 
-  prev_map_id = -1;
   num_maps = 0;
   map_size = max_map_size = 0;
-  for (i = 0, j = 0; i <= num_others; i++, j += want_size) {
+  for (i = 0, j = 0; i < num_others; i++, j += want_size) {
     nbor_proc = others_want[j];
-    if (nbor_proc != prev_map_id) {
-      if (prev_map_id != -1) {
-        num_maps++;
-        if (map_size > max_map_size) max_map_size = map_size;
-        map_size = 0;
-      }
-      prev_map_id = nbor_proc;
-    }
-    if (nbor_proc == -1) 
-      break;
     map_size++;
+    if (i == (num_others - 1) || nbor_proc != others_want[j+want_size]) {
+      /* End of map reached */
+      num_maps++;
+      if (map_size > max_map_size) max_map_size = map_size;
+      map_size = 0;
+    }
   }
 
   if (num_maps != mesh->necmap) {
@@ -542,28 +530,9 @@ COMM_OBJ *comm;
     print_sync_start(proc, 1);
   }
 
-  prev_map_id = -1;
   map_size = 0;
-  for (i = 0, j = 0; i <= num_others; i++, j += want_size) {
+  for (i = 0, j = 0; i < num_others; i++, j += want_size) {
     nbor_proc = others_want[j];
-    if (nbor_proc != prev_map_id) {
-      if (prev_map_id != -1) {
-        /*
-         * A new map has been reached.
-         * Sort and compare the current map.
-         */
-        sort_and_compare_maps(proc, prev_map_id, mesh, &map, map_size, sindex);
-      
-        /*
-         * Reinitialize data structures for new map.
-         */
-
-        map_size = 0;
-      }
-      prev_map_id = nbor_proc;
-    }
-    if (nbor_proc == -1) 
-      break;
     map.glob_id[map_size] = others_want[j+1];
     map.elem_id[map_size] = others_want[j+2];
     current = &(mesh->elements[map.elem_id[map_size]]);
@@ -578,6 +547,18 @@ COMM_OBJ *comm;
       }
     }
     map_size++;
+    if (i == (num_others-1) || nbor_proc != others_want[j+want_size]) {
+      /*
+       * End of map has been reached.
+       * Sort and compare the current map.
+       */
+      sort_and_compare_maps(proc, nbor_proc, mesh, &map, map_size, sindex);
+      
+      /*
+       * Reinitialize data structures for new map.
+       */
+      map_size = 0;
+    }
   }
 
   if (Debug_Driver > 3) {

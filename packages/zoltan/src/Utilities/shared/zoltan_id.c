@@ -11,8 +11,11 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "lb_id_const.h"
+#include <stdio.h>
+#include "zoltan_types.h"
+#include "zoltan_id.h"
+#include "zoltan_util.h"
+#include "mem_const.h"
 
 /*****************************************************************************/
 /*
@@ -31,25 +34,25 @@
  *  Routines for allocating and initializing IDs.
  */
 
-LB_ID_PTR LB_Malloc_ID(int n, char *file, int line)
+ZOLTAN_ID_PTR ZOLTAN_Malloc_ID(int n, char *file, int line)
 {
 /*
- * Allocates an array of size n of LB_ID_TYPEs and initializes them.
+ * Allocates an array of size n of ZOLTAN_ID_TYPEs and initializes them.
  */
 
-LB_ID_PTR tmp;
-char *yo = "LB_Malloc_ID";
+ZOLTAN_ID_PTR tmp;
+char *yo = "ZOLTAN_Malloc_ID";
 
-  tmp = (LB_ID_PTR) LB_Malloc(n * sizeof(LB_ID_TYPE), file, line);
+  tmp = (ZOLTAN_ID_PTR) LB_Malloc(n * sizeof(ZOLTAN_ID_TYPE), file, line);
 
   if (tmp != NULL) {
-    LB_INIT_ID(n,tmp);
+    ZOLTAN_INIT_ID(n,tmp);
   }
   else if (n > 0) {
     char msg[256];
     sprintf(msg, "NULL pointer returned; malloc called from %s, line %d.",
             file, line);
-    LB_PRINT_ERROR(-1, yo, msg);
+    ZOLTAN_PRINT_ERROR(-1, yo, msg);
   }
 
   return tmp;
@@ -61,7 +64,7 @@ char *yo = "LB_Malloc_ID";
  *  Routines for printing IDs.
  */
 
-void LB_PRINT_ID(int n, LB_ID_PTR a)
+void ZOLTAN_PRINT_ID(int n, ZOLTAN_ID_PTR a)
 {
 /* Prints a single ID. */
 int i;
@@ -76,35 +79,33 @@ int i;
 /*****************************************************************************/
 /*
  *  Routines to compare Global IDs.  
- *  Functions are provided to test whether two LB_GIDs are equal (EQ),
+ *  Functions are provided to test whether two IDs are equal (EQ),
  *  less than (LT), and greater than (GT).
- *  The negation operator can be used to test whether two LB_GIDs are 
- *  not equal (!LB_EQ_GID(lb,a,b)), less than or equal (!LB_GT_GID(lb,a,b))
- *  or greater than or equal (!LB_LT_GID(lb,a,b)).
- *  Comparison functions are not needed for LB_LIDs as LB_LIDs are not used
- *  within the load-balancing routines.
+ *  The negation operator can be used to test whether two IDs are 
+ *  not equal (!ZOLTAN_EQ_ID(n,a,b)), less than or equal (!ZOLTAN_GT_GID(n,a,b))
+ *  or greater than or equal (!ZOLTAN_LT_GID(n,a,b)).
  */
 /*****************************************************************************/
 
-int LB_EQ_ID(int n, LB_ID_PTR a, LB_ID_PTR b)
+int ZOLTAN_EQ_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b)
 {
 /* 
- * Returns TRUE if a == b; FALSE otherwise.
+ * Returns 1 if a == b; 0 otherwise.
  * a == b if for all i, a[i] == b[i].
  */
 int i;
   for (i = 0; i < n; i++)
     if (a[i] != b[i])
-      return(FALSE);
-  return(TRUE);
+      return(0);
+  return(1);
 }
 
 /*****************************************************************************/
 
-int LB_LT_ID(int n, LB_ID_PTR a, LB_ID_PTR b)
+int ZOLTAN_LT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b)
 {
 /* 
- * Returns TRUE if a < b; FALSE otherwise.
+ * Returns 1 if a < b; 0 otherwise.
  * a < b if for some i, a[i] < b[i] and a[j] == b[j] for all j < i.
  */
 int i;
@@ -112,19 +113,19 @@ int i;
     if (a[i] == b[i])
       continue;
     else if (a[i] > b[i])
-      return(FALSE);
+      return(0);
     else /* a[i] < b[i] */
-      return(TRUE);
+      return(1);
 
-  return(FALSE); /* because a == b */
+  return(0); /* because a == b */
 }
 
 /*****************************************************************************/
 
-int LB_GT_ID(int n, LB_ID_PTR a, LB_ID_PTR b)
+int ZOLTAN_GT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b)
 {
 /* 
- * Returns TRUE if a < b; FALSE otherwise.
+ * Returns 1 if a < b; 0 otherwise.
  * a > b if for some i, a[i] > b[i] and a[j] == b[j] for all j < i.
  */
 int i;
@@ -132,9 +133,9 @@ int i;
     if (a[i] == b[i])
       continue;
     else if (a[i] < b[i])
-      return(FALSE);
+      return(0);
     else /* a[i] > b[i] */
-      return(TRUE);
+      return(1);
 
-  return(FALSE); /* because a == b */
+  return(0); /* because a == b */
 }

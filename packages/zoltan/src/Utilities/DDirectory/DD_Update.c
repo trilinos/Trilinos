@@ -27,8 +27,8 @@
 
 
 
-static int DD_Update_Local (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
- LB_ID_PTR lid, LB_ID_PTR user, int partition, int owner) ;
+static int DD_Update_Local (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+ ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR user, int partition, int owner) ;
 
 
 
@@ -36,12 +36,12 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
 /******************   Zoltan_DD_Update()  *************************/
 
 int Zoltan_DD_Update (
- Zoltan_DD_Directory *dd,  /* directory state information               */
- LB_ID_PTR gid,            /* Incoming list of GIDs to update           */
- LB_ID_PTR lid,            /* Incoming corresponding LIDs (optional)    */
- LB_ID_PTR user,           /* Incoming list of user data (optional)     */
- int *partition,           /* Optional, grouping of GIDs to partitions  */
- int count)                /* Number of GIDs in update list             */
+ Zoltan_DD_Directory *dd,  /* directory state information              */
+ ZOLTAN_ID_PTR gid,        /* Incoming list of GIDs to update          */
+ ZOLTAN_ID_PTR lid,        /* Incoming corresponding LIDs (optional)   */
+ ZOLTAN_ID_PTR user,       /* Incoming list of user data (optional)    */
+ int *partition,           /* Optional, grouping of GIDs to partitions */
+ int count)                /* Number of GIDs in update list            */
    {
    int             *procs = NULL ;   /* list of processors to contact   */
    DD_Update_Msg   *ptr   = NULL ;
@@ -116,13 +116,13 @@ int Zoltan_DD_Update (
       ptr->owner     = dd->my_proc ;
       ptr->partition = (partition == NULL) ? 0 : *(partition + i) ;
 
-      LB_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length) ;
+      ZOLTAN_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length) ;
 
       if (lid)
-         LB_SET_ID (dd->lid_length, ptr->gid + dd->gid_length, lid
+         ZOLTAN_SET_ID (dd->lid_length, ptr->gid + dd->gid_length, lid
           + i * dd->lid_length) ;
       if (user)
-         LB_SET_ID (dd->user_data_length, ptr->gid + (dd->gid_length
+         ZOLTAN_SET_ID (dd->user_data_length, ptr->gid + (dd->gid_length
           + dd->lid_length), user + i * dd->user_data_length) ;
       }
 
@@ -220,9 +220,9 @@ fini:
 */
 
 static int DD_Update_Local (Zoltan_DD_Directory *dd,
- LB_ID_PTR gid,          /* GID to update (in)                        */
- LB_ID_PTR lid,          /* gid's LID (in), NULL if not needed        */
- LB_ID_PTR user,         /* gid's user data (in), NULL if not needed  */
+ ZOLTAN_ID_PTR gid,          /* GID to update (in)                        */
+ ZOLTAN_ID_PTR lid,          /* gid's LID (in), NULL if not needed        */
+ ZOLTAN_ID_PTR user,         /* gid's user data (in), NULL if not needed  */
  int partition,          /* gid's partition (in), 0 if not used       */
  int owner)              /* gid's current owner (proc number) (in)    */
    {
@@ -252,13 +252,13 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
    /* walk linked list until end looking for matching gid */
    for (ptr = dd->table+index ; *ptr != NULL ; ptr = &((*ptr)->next))
        {
-       if (LB_EQ_ID (dd->gid_length, gid, (*ptr)->gid) == TRUE)
+       if (ZOLTAN_EQ_ID (dd->gid_length, gid, (*ptr)->gid) == TRUE)
           {
           /* found match, update directory information */
           if (lid)
-             LB_SET_ID (dd->lid_length,(*ptr)->gid + dd->gid_length, lid) ;
+             ZOLTAN_SET_ID (dd->lid_length,(*ptr)->gid + dd->gid_length, lid) ;
           if (user)
-             LB_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
+             ZOLTAN_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
               + dd->lid_length), user) ;
 
           (*ptr)->owner     = owner ;
@@ -300,12 +300,12 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
 
-   LB_SET_ID (dd->gid_length, (*ptr)->gid, gid) ;
+   ZOLTAN_SET_ID (dd->gid_length, (*ptr)->gid, gid) ;
 
    if (lid)
-      LB_SET_ID (dd->lid_length,       (*ptr)->gid + dd->gid_length, lid) ;
+      ZOLTAN_SET_ID (dd->lid_length,       (*ptr)->gid + dd->gid_length, lid) ;
    if (user)
-      LB_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
+      ZOLTAN_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
        + dd->lid_length), user) ;
 
    (*ptr)->next      = NULL ;

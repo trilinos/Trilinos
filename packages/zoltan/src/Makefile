@@ -31,7 +31,8 @@
 ##############################################################################
 
 TARGET=zdrive
-LIB_NAME=libzoltan.a
+LIB_NAME=libzoltan.a     # if change LIB_NAME, must change ZOLTAN_LIB 
+                         # in Utilities/Makefile
 LIB_TARGET=zoltan
 
 ##############################################################################
@@ -123,25 +124,28 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../all ../lb ../par ../rcb ../oct ../bsfc \
+SUB_VPATH	= ../include ../Utilities/shared \
+		  ../all ../lb ../par ../rcb ../oct ../bsfc \
 		  ../params ../driver ../ch ../parmetis ../timer \
                   ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
-                  ../Utilities/DDirectory ../Utilities/shared
-SUBINCPATH	= -I../all -I../lb -I../par -I../rcb  -I../oct  -I../bsfc \
+                  ../Utilities/DDirectory 
+SUBINCPATH	= -I../include -I../Utilities/shared \
+		  -I../all -I../lb -I../par -I../rcb  -I../oct  -I../bsfc \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
-                  -I../Utilities/DDirectory -I../Utilities/shared
+                  -I../Utilities/DDirectory 
 SUBDIRS		= driver ch all lb par rcb oct bsfc parmetis params timer ha \
-		  reftree 
-UTIL_SUBDIRS	= Utilities/Communication Utilities/Memory Utilities/DDirectory
+		  reftree include
+UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
+		  Utilities/Memory Utilities/DDirectory
 
 
 ALL_CSRC	= all_allo.c free_structure.c
 ALL_INC		= all_const.h all_allo_const.h
 
-LB_CSRC		= lb_balance.c lb_eval.c lb_id.c lb_init.c lb_migrate.c \
+LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c \
 		  lb_set_fn.c lb_set_method.c lb_struct.c lb_util.c 
 LB_INC		= lb_const.h lb.h lbi_const.h lb_id_const.h lb_util_const.h
 
@@ -219,9 +223,9 @@ ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
 ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
-		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm
+#		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
 ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) 
@@ -236,10 +240,10 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 # for an example.
 #
 LINT		= lint
-LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams \
+LINT_INC_PATH	= -Iinclude -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams \
 		  -Ioct -Ibsfc -Iparmetis -Itimer -Iha -Ireftree \
-		  -IUtilities/Memory -IUtilities/Communication \
-		  -IUtilities/DDirectory -IUtilities/shared \
+		  -IUtilities/shared -IUtilities/Memory \
+		  -IUtilities/Communication -IUtilities/DDirectory \
 		  -I$(ZOLTAN_INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) $(UTIL_SUBDIRS) $(THIRD_PARTY_VPATH)
@@ -280,13 +284,14 @@ zoltan:
 	@if [ ! -d $(ZOLTAN_LIB_DIR) ];		\
 	then mkdir $(ZOLTAN_LIB_DIR);		\
 	fi;					 
-	@cd Utilities; \
-	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_mem.a; \
-	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_dd.a; \
-	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_comm.a  
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
 	then mkdir $(ZOLTAN_OBJ_DIR); 		\
 	fi
+	@cd Utilities; \
+	$(MAKE) \
+	"ZOLTAN=$(LIB_TARGET)" \
+	"ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" \
+	"ZOLTAN_LIB=$(LIB_NAME)"  $(LIB_TARGET)
 	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
 	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
 	@cd $(ZOLTAN_OBJ_DIR); 			\

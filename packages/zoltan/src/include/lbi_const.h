@@ -20,14 +20,15 @@ extern "C" {
 #endif
 
 #include <mpi.h>
+#include "zoltan.h"
 
 /*
  *  Data type LB_ID for global and local identifiers used in Zoltan.
  */
 
-typedef unsigned int    LB_ID_TYPE;
-typedef LB_ID_TYPE     *LB_ID_PTR;
-#define LB_ID_MPI_TYPE  MPI_UNSIGNED
+typedef ZOLTAN_ID_TYPE  LB_ID_TYPE;
+typedef ZOLTAN_ID_TYPE *LB_ID_PTR;
+#define LB_ID_MPI_TYPE  ZOLTAN_ID_MPI_TYPE
 
 /*
  *  Data types and functions describing the interface between the

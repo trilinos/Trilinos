@@ -23,21 +23,21 @@
 
 
 
-static int DD_Find_Local (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
- LB_ID_PTR lid, LB_ID_PTR user, int *partition, int *owner) ;
+static int DD_Find_Local (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+ ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR user, int *partition, int *owner) ;
 
 
 
 /********************  Zoltan_DD_Find()  **************************/
 
 int Zoltan_DD_Find (
- Zoltan_DD_Directory *dd,  /* contains directory state information     */
- LB_ID_PTR gid,       /* Incoming list of GIDs to get owners proc      */
- LB_ID_PTR lid,       /* Outgoing corresponding list of LIDs           */
- LB_ID_PTR data,      /* Outgoing optional corresponding user data     */
- int *partition,      /* Outgoing optional partition information       */
- int  count,          /* Count of GIDs in above list (in)              */
- int *owner)          /* Outgoing corresponding list of data locations */
+ Zoltan_DD_Directory *dd, /* contains directory state information          */
+ ZOLTAN_ID_PTR gid,       /* Incoming list of GIDs to get owners proc      */
+ ZOLTAN_ID_PTR lid,       /* Outgoing corresponding list of LIDs           */
+ ZOLTAN_ID_PTR data,      /* Outgoing optional corresponding user data     */
+ int *partition,          /* Outgoing optional partition information       */
+ int  count,              /* Count of GIDs in above list (in)              */
+ int *owner)              /* Outgoing corresponding list of data locations */
    {
    struct Comm_Obj *plan  = NULL ;  /* efficient MPI communication     */
    char            *rbuff = NULL ;  /* receive buffer                  */
@@ -103,7 +103,7 @@ int Zoltan_DD_Find (
 
       ptr->index = i ;
       ptr->proc  = procs[i] ;
-      LB_SET_ID (dd->gid_length, ptr->id, gid + i*dd->gid_length) ;
+      ZOLTAN_SET_ID (dd->gid_length, ptr->id, gid + i*dd->gid_length) ;
       }
 
    if (dd->debug_level > 2)
@@ -173,10 +173,11 @@ int Zoltan_DD_Find (
          partition[ptr->index] = ptr->partition ;
 
       if (lid != NULL)
-         LB_SET_ID (dd->lid_length, lid + ptr->index * dd->lid_length, ptr->id) ;
+         ZOLTAN_SET_ID (dd->lid_length, lid + ptr->index * dd->lid_length,
+           ptr->id) ;
 
       if (data != NULL)
-         LB_SET_ID (dd->user_data_length, data + ptr->index
+         ZOLTAN_SET_ID (dd->user_data_length, data + ptr->index
           * dd->user_data_length, ptr->id + dd->max_id_length) ;
       }
 
@@ -223,9 +224,9 @@ fini:
 */
 
 static int DD_Find_Local (Zoltan_DD_Directory *dd,
- LB_ID_PTR gid,         /* incoming GID to locate (in)            */
- LB_ID_PTR lid,         /* gid's LID (out)                        */
- LB_ID_PTR user,        /* gid's user data (out)                  */
+ ZOLTAN_ID_PTR gid,         /* incoming GID to locate (in)            */
+ ZOLTAN_ID_PTR lid,         /* gid's LID (out)                        */
+ ZOLTAN_ID_PTR user,        /* gid's user data (out)                  */
  int *partition,        /* gid's partition number (out)           */
  int *owner)            /* gid's owner (processor number) (out)   */
    {
@@ -248,12 +249,13 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
 
    /* walk link list until end looking for matching global ID */
    for (ptr = dd->table[index] ; ptr != NULL ; ptr = ptr->next)
-      if (LB_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)
-         {
+      if (ZOLTAN_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)
+         { 
          /* matching global ID found! Return gid's information */
-         if (lid)  LB_SET_ID (dd->lid_length, lid, ptr->gid + dd->gid_length) ;
-         if (user) LB_SET_ID (dd->user_data_length, user, ptr->gid
-          + (dd->gid_length + dd->lid_length)) ;
+         if (lid) ZOLTAN_SET_ID(dd->lid_length, lid, 
+                                ptr->gid + dd->gid_length);
+         if (user) ZOLTAN_SET_ID(dd->user_data_length, user,
+                                 ptr->gid + (dd->gid_length + dd->lid_length));
 
          if (owner     != NULL)   *owner     = ptr->owner ;
          if (partition != NULL)   *partition = ptr->partition ;
@@ -264,8 +266,10 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
          return ZOLTAN_DD_NORMAL_RETURN ;
          }
 
-   if (dd->debug_level > 0) ZOLTAN_PRINT_INFO (dd->my_proc, yo, "GID not found.") ;
-   if (dd->debug_level > 2) ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+   if (dd->debug_level > 0) 
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "GID not found.");
+   if (dd->debug_level > 2) 
+      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
 
    return ZOLTAN_DD_GID_NOT_FOUND_ERROR ;
    }

@@ -137,7 +137,6 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
@@ -195,15 +194,14 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
 
 #ifdef OLD_DD_TEST
 {
-int ii ;
-for (ii = 0 ; ii < num_imported ; ii++)
-   printf ("ZOLTAN_DEBUG(%d): GID %3u\n", Proc, import_gids[ii]) ;
+  int ii ;
+  for (ii = 0 ; ii < num_imported ; ii++)
+    printf ("ZOLTAN_DEBUG(%d): GID %3u\n", Proc, import_gids[ii]) ;
+
+  Zoltan_DD_Create(&dd, MPI_COMM_WORLD, Num_GID, Num_LID, 0, 0, 1);
+  Zoltan_DD_Update(dd, import_gids, import_lids, NULL, NULL, num_imported); 
+  Zoltan_DD_Stats(dd);
 }
-
-
-Zoltan_DD_Create (&dd, MPI_COMM_WORLD, Num_GID, Num_LID, 0, 0, 1) ;
-Zoltan_DD_Update (dd, import_gids, import_lids, NULL, NULL, num_imported) ; /* rthrth */
-Zoltan_DD_Stats (dd) ;  /* rthrth */
 #endif /* OLD_DD_TEST */
 
   /*
@@ -226,28 +224,26 @@ Zoltan_DD_Stats (dd) ;  /* rthrth */
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
-
 #ifdef OLD_DD_TEST
 {
-int *ownerlist=NULL ;
-int ii ;
+  int *ownerlist = NULL;
+  int ii;
 
-ownerlist = (int *) malloc (sizeof (int) * num_exported) ;
+  ownerlist = (int *) malloc (sizeof (int) * num_exported);
 
-Zoltan_DD_Find (dd, export_gids, NULL, NULL, NULL, num_exported, ownerlist) ;
+  Zoltan_DD_Find(dd, export_gids, NULL, NULL, NULL, num_exported, ownerlist);
 
-for (ii = 0 ; ii < num_exported ; ii++)
-   printf ("ZOLTAN_FIND_DEBUG(%d): GID %3u, Owner %3d\n", Proc, export_gids[ii], ownerlist[ii]) ;
+  for (ii = 0 ; ii < num_exported ; ii++)
+     printf("ZOLTAN_FIND_DEBUG(%d): GID %3u, Owner %3d\n", 
+            Proc, export_gids[ii], ownerlist[ii]);
 
-free (ownerlist) ;
+  free(ownerlist);
+
+  Zoltan_DD_Remove (dd, export_gids, num_exported) ;
+  Zoltan_DD_Stats (dd) ;
+  Zoltan_DD_Destroy (dd) ;
 }
-
-
-Zoltan_DD_Remove (dd, export_gids, num_exported) ;
-Zoltan_DD_Stats (dd) ;
-Zoltan_DD_Destroy (dd) ;
 #endif /* OLD_DD_TEST */
-
 
   /* Clean up */
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
