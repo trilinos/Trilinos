@@ -147,10 +147,11 @@ where the options that may be specified are listed below.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; NO_PARMETIS=1</I></TD>
 
-<TD>Do not compile and link with ParMETIS in the Zoltan library.&nbsp;
-If this option is specified, no ParMETIS libraries are needed when the
-application is linking.&nbsp; Otherwise, a ParMETIS library path must be
-specified to <A HREF="#Building Applications">build the application</A>.</TD>
+<TD>Do not compile and link with <A HREF="ug_alg_parmetis.html">ParMETIS</A>
+in the Zoltan library.&nbsp; If this option is specified, no <A HREF="ug_alg_parmetis.html">ParMETIS</A>libraries
+are needed when the application is linking.&nbsp; Otherwise, a <A HREF="ug_alg_parmetis.html">ParMETIS</A>
+library path must be specified to <A HREF="#Building Applications">build
+the application</A>.</TD>
 </TR>
 </TABLE>
 The resulting library is stored in Obj_tflop/libzoltan.a. Paths within
@@ -164,9 +165,9 @@ Zoltan library routines. The application should then be linked with the
 Zoltan library by including -lzoltan in the linking command for the application.
 Communication within the library is performed through MPI, so appropriate
 MPI libraries must be linked with the application. If the <I>NO_PARMETIS=1
-</I>parameter was not specified when Zoltan was compiled, ParMETIS libraries
--lparmetis and -lmetis must also be included in the application's linking
-command.
+</I>parameter was not specified when Zoltan was compiled, <A HREF="ug_alg_parmetis.html">ParMETIS</A>
+libraries -lparmetis and -lmetis must also be included in the application's
+linking command.
 <BR>&nbsp;
 
 <P>
