@@ -64,9 +64,9 @@ amesos_test_DEPENDENCIES = \
 
 amesos_test_CXXFLAGS = -I$(top_srcdir)/src
 
-amesos_test_LDADD = -L$(top_builddir)/src -lamesos \
-	-L$(top_builddir)/../epetra/src -lepetra \
-	-L$(top_builddir)/../triutils/src -ltriutils \
+amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(AMESOS_LIBS) $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)
 
