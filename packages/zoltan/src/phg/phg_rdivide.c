@@ -13,6 +13,12 @@
 
 #include "phg.h"
 
+#define MEMORY_ERROR { \
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
+  ierr = ZOLTAN_MEMERR; \
+  goto End; \
+}
+
 static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*);
 
 /* recursively divides problem into 2 parts until all p found */
@@ -141,82 +147,83 @@ static int split_hypergraph (int *pins[2], HGraph *old, HGraph *new, Partition p
                              int partid, ZZ *zz)
 {
   int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
-  int edge, i;                                            /* loop counters */
+  int edge, i, ierr=ZOLTAN_OK;  
   PHGComm *hgc = old->comm;
   char *yo = "split_hypergraph";
-          
+
+  new->comm = old->comm;
+  new->info               = old->info;
+  new->VtxWeightDim       = old->VtxWeightDim;
+  new->EdgeWeightDim      = old->EdgeWeightDim;
+  
   /* allocate memory for dynamic arrays in new HGraph and for tmap array */
-  if (old->nVtx) {
-    new->vmap = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int));
-    tmap      = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int));
-    if (new->vmap == NULL || tmap == NULL)  {
-      Zoltan_Multifree (__FILE__, __LINE__, 2, &new->vmap, &tmap);
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory 1.");
-      return ZOLTAN_MEMERR;
-    }
-  }
-    
-  /* save vertex and edge weights if they exist */
-  if (old->vwgt && old->VtxWeightDim)
-    new->vwgt=(float*)ZOLTAN_MALLOC(old->nVtx*sizeof(float)*old->VtxWeightDim);
-  if (old->ewgt && old->EdgeWeightDim)
-    new->ewgt=(float*)ZOLTAN_MALLOC(old->nEdge*sizeof(float)*old->EdgeWeightDim);
-    
+  if (old->nVtx && (tmap = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int)))==NULL)
+      MEMORY_ERROR;
+  
   /* fill in tmap array, -1 for ignored vertices, otherwise nonnegative int */
   new->nVtx = 0;
   for (i = 0; i < old->nVtx; i++)
-    if (part[i] == partid)  {
-      tmap[i] = new->nVtx;
-      new->vmap[new->nVtx] = old->vmap[i];
-      if (new->vwgt)
-        new->vwgt[new->nVtx] = old->vwgt[i];
-      new->nVtx++;
-    }
-    else
-      tmap[i] = -1;
+      tmap[i] = (part[i] == partid) ? new->nVtx++ : -1; 
 
-  new->comm = old->comm;
+  /* save vertex and edge weights if they exist */
+  if (old->vwgt && new->VtxWeightDim)
+    new->vwgt=(float*)ZOLTAN_MALLOC(new->nVtx*sizeof(float)*new->VtxWeightDim);
+  if (new->nVtx && (new->vmap = (int*) ZOLTAN_MALLOC (new->nVtx * sizeof (int)))==NULL)
+      MEMORY_ERROR;
   
-  /* continue allocating memory for dynamic arrays in new HGraph */
-  new->vmap    = (int*) ZOLTAN_REALLOC (new->vmap, new->nVtx * sizeof (int));
-  new->hindex  = (int*) ZOLTAN_MALLOC ((old->nEdge+1) * sizeof (int));
-  new->hvertex = (int*) ZOLTAN_MALLOC (old->nPins * sizeof (int));
-  if ((new->nVtx && new->vmap == NULL) || new->hindex == NULL || 
-   (old->nPins && new->hvertex == NULL))  {
-     Zoltan_Multifree (__FILE__, __LINE__, 5, &new->vmap, &new->hindex,
-      &new->hvertex, &new->vmap, &tmap);
-     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory 2.");
-     return ZOLTAN_MEMERR;
+  for (i = 0; i < old->nVtx; i++) {
+      int v=tmap[i];
+      if (v!=-1) {
+          new->vmap[v] = old->vmap[i];
+          if (new->vwgt)
+              memcpy(&new->vwgt[v*new->VtxWeightDim], &old->vwgt[i*new->VtxWeightDim],
+                     new->VtxWeightDim * sizeof(float));
+      }
   }
+  
     
   /* fill in hindex and hvertex arrays in new HGraph */
   new->nEdge = 0;
   new->nPins = 0;
-  for (edge = 0; edge < old->nEdge; edge++)
+  for (edge = 0; edge < old->nEdge; ++edge)
+      if (pins[partid][edge] > 1) {
+          ++new->nEdge;
+          new->nPins += pins[partid][edge];
+      }
+
+
+  /* continue allocating memory for dynamic arrays in new HGraph */
+  if (new->nEdge && (new->hindex  = (int*) ZOLTAN_MALLOC ((new->nEdge+1) * sizeof (int)))==NULL)
+      MEMORY_ERROR;
+  if (new->nPins && (new->hvertex = (int*) ZOLTAN_MALLOC (new->nPins * sizeof (int)))==NULL)
+      MEMORY_ERROR;
+  if (old->ewgt && new->EdgeWeightDim && new->nEdge)
+      if ((new->ewgt=(float*)ZOLTAN_MALLOC(new->nEdge*sizeof(float)*new->EdgeWeightDim))==NULL)
+          MEMORY_ERROR;
+  
+  new->nEdge = 0;
+  new->nPins = 0;
+  for (edge = 0; edge < old->nEdge; ++edge)
     if (pins[partid][edge] > 1) { /* edge has at least two vertices in partition:
                                         we are skipping size 1 nets */
       new->hindex[new->nEdge] = new->nPins;
-      for (i = old->hindex[edge]; i < old->hindex[edge+1]; i++)
+      for (i = old->hindex[edge]; i < old->hindex[edge+1]; ++i)
         if (tmap [old->hvertex[i]] >= 0)  {
           new->hvertex[new->nPins] = tmap[old->hvertex[i]];
           new->nPins++;  
         }
         if (new->ewgt)
-          new->ewgt[new->nEdge] = old->ewgt[edge];
-        new->nEdge++;
+            memcpy(&new->ewgt[new->nEdge*new->VtxWeightDim], &old->vwgt[edge*new->VtxWeightDim],
+                   new->EdgeWeightDim * sizeof(float));
+        ++new->nEdge;
     }
   new->hindex[new->nEdge] = new->nPins;
-  new->info               = old->info;
-  new->VtxWeightDim       = old->VtxWeightDim;
-  new->EdgeWeightDim      = old->EdgeWeightDim;
 
   /* We need to compute dist_x, dist_y */
   if (!(new->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
-	 || !(new->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int)))) {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     ZOLTAN_TRACE_EXIT (zz, yo);
-     return ZOLTAN_MEMERR;
-  }
+	 || !(new->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int))))
+      MEMORY_ERROR;
+
   MPI_Scan(&new->nVtx, new->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
   MPI_Allgather(new->dist_x, 1, MPI_INT, &(new->dist_x[1]), 1, MPI_INT, hgc->row_comm);
   new->dist_x[0] = 0;
@@ -230,6 +237,7 @@ static int split_hypergraph (int *pins[2], HGraph *old, HGraph *new, Partition p
   new->hindex  = (int*)ZOLTAN_REALLOC(new->hindex,  sizeof(int) *(new->nEdge+1));
   
   Zoltan_HG_Create_Mirror (zz, new);
+ End:
   ZOLTAN_FREE (&tmap);
-  return ZOLTAN_OK;
+  return ierr;
 }
