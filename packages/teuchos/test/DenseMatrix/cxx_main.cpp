@@ -98,31 +98,31 @@ int main(int argc, char* argv[])
   DimTest2x3Result.shape(2, 3);
   DimTest3x3Result.shape(3, 3);
 
-  returnCode = DimTest2x2Result.multiply('N', 'N', 1, DimTest2x2A, DimTest2x2B, 1);
+  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest2x2B, 1);
   testName = "multiply() -- dimensions -- compatible square matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
-  returnCode = DimTest2x3Result.multiply('N', 'N', 1, DimTest2x2A, DimTest3x3, 1);
+  returnCode = DimTest2x3Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest3x3, 1);
   testName = "multiply() -- dimensions -- incompatible square matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest1x1Result.multiply('N', 'N', 1, DimTest1x2, DimTest2x1, 1);
+  returnCode = DimTest1x1Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest1x2, DimTest2x1, 1);
   testName = "multiply() -- dimensions -- compatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
-  returnCode = DimTest2x2Result.multiply('N', 'N', 1, DimTest2x1, DimTest1x2, 1);
+  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x1, DimTest1x2, 1);
   testName = "multiply() -- dimensions -- compatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
-  returnCode = DimTest2x1Result.multiply('N', 'N', 1, DimTest2x1, DimTest2x1, 1);
+  returnCode = DimTest2x1Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x1, DimTest2x1, 1);
   testName = "multiply() -- dimensions -- incompatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest1x2Result.multiply('N', 'N', 1, DimTest1x2, DimTest1x2, 1);
+  returnCode = DimTest1x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest1x2, DimTest1x2, 1);
   testName = "multiply() -- dimensions -- incompatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest2x2Result.multiply('N', 'N', 1, DimTest2x0, DimTest2x2A, 1);
+  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x0, DimTest2x2A, 1);
   testName = "multiply() -- dimensions -- first operand bad numCols";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest0x2Result.multiply('N', 'N', 1, DimTest2x2A, DimTest0x2, 1);
+  returnCode = DimTest0x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest0x2, 1);
   testName = "multiply() -- dimensions -- second operand bad numRows";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest2x2Result.multiply('N', 'N', 1, DimTest2x2A, DimTest2x0, 1);
+  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest2x0, 1);
   testName = "multiply() -- dimensions -- second operand bad numCols";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
 
@@ -207,21 +207,21 @@ int main(int argc, char* argv[])
   MultTest3x2BTimes2x3AExpResult(1, 0) = 28; MultTest3x2BTimes2x3AExpResult(1, 1) = 38; MultTest3x2BTimes2x3AExpResult(1, 2) = 48;
   MultTest3x2BTimes2x3AExpResult(2, 0) = 48; MultTest3x2BTimes2x3AExpResult(2, 1) = 66; MultTest3x2BTimes2x3AExpResult(2, 2) = 84;
 
-  MultTest2x2ATimes2x2B.multiply('N', 'N', 1, MultTest2x2A, MultTest2x2B, 1);
+  MultTest2x2ATimes2x2B.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x2A, MultTest2x2B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x2 * 2x2", MultTest2x2ATimes2x2B, MultTest2x2ATimes2x2BExpResult, verbose);
-  MultTest2x2BTimes2x2A.multiply('N', 'N', 1, MultTest2x2B, MultTest2x2A, 1);
+  MultTest2x2BTimes2x2A.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x2B, MultTest2x2A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x2 * 2x2", MultTest2x2BTimes2x2A, MultTest2x2BTimes2x2AExpResult, verbose);
-  MultTest3x3ATimes3x3B.multiply('N', 'N', 1, MultTest3x3A, MultTest3x3B, 1);
+  MultTest3x3ATimes3x3B.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x3A, MultTest3x3B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x3 * 3x3", MultTest3x3ATimes3x3B, MultTest3x3ATimes3x3BExpResult, verbose);
-  MultTest3x3BTimes3x3A.multiply('N', 'N', 1, MultTest3x3B, MultTest3x3A, 1);
+  MultTest3x3BTimes3x3A.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x3B, MultTest3x3A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x3 * 3x3", MultTest3x3BTimes3x3A, MultTest3x3BTimes3x3AExpResult, verbose);
-  MultTest2x3ATimes3x2B.multiply('N', 'N', 1, MultTest2x3A, MultTest3x2B, 1);
+  MultTest2x3ATimes3x2B.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x3A, MultTest3x2B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x3 * 3x2", MultTest2x3ATimes3x2B, MultTest2x3ATimes3x2BExpResult, verbose);
-  MultTest2x3BTimes3x2A.multiply('N', 'N', 1, MultTest2x3B, MultTest3x2A, 1);
+  MultTest2x3BTimes3x2A.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x3B, MultTest3x2A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x3 * 3x2", MultTest2x3BTimes3x2A, MultTest2x3BTimes3x2AExpResult, verbose);
-  MultTest3x2ATimes2x3B.multiply('N', 'N', 1, MultTest3x2A, MultTest2x3B, 1);
+  MultTest3x2ATimes2x3B.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x2A, MultTest2x3B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x2 * 2x3", MultTest3x2ATimes2x3B, MultTest3x2ATimes2x3BExpResult, verbose);
-  MultTest3x2BTimes2x3A.multiply('N', 'N', 1, MultTest3x2B, MultTest2x3A, 1);
+  MultTest3x2BTimes2x3A.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x2B, MultTest2x3A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x2 * 2x3", MultTest3x2BTimes2x3A, MultTest3x2BTimes2x3AExpResult, verbose);
 
   DMatrix MultTestHugeA, MultTestHugeB, MultTestHugeATimesHugeBExpResult, MultTestHugeATimesHugeB;
@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
 	}
     }
 
-  MultTestHugeATimesHugeB.multiply('N', 'N', 1, MultTestHugeA, MultTestHugeB, 1);
+  MultTestHugeATimesHugeB.multiply(NO_TRANS, NO_TRANS, 1, MultTestHugeA, MultTestHugeB, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- huge * huge", MultTestHugeATimesHugeB, MultTestHugeATimesHugeBExpResult, verbose);
 
   // tacked-on tests for code coverage

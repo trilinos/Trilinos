@@ -44,6 +44,7 @@ using namespace Teuchos;
 // Large values of SCALARMAX may cause problems with SType2 = int, as large integer values will overflow floating-point types.
 #define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
+#define ROTGTESTS  5
 #define ASUMTESTS  5
 #define AXPYTESTS  5
 #define COPYTESTS  5
@@ -97,10 +98,10 @@ double ConvertType(mp_real, double);
 #endif
 
 // These functions return a random character appropriate for the BLAS arguments that share their names (uses GetRandom())
-char RandomSIDE();
-char RandomUPLO();
-char RandomTRANS();
-char RandomDIAG();
+Teuchos::ESide RandomSIDE();
+Teuchos::EUplo RandomUPLO();
+Teuchos::ETransp RandomTRANS();
+Teuchos::EDiag RandomDIAG();
 
 int main(int argc, char *argv[])
 {
@@ -177,13 +178,16 @@ int main(int argc, char *argv[])
   SType2* SType2x;
   SType2* SType2y; 
   SType2 SType2alpha, SType2beta;
-  SType1 SType1ASUMresult, SType1DOTresult, SType1NRM2result;
-  SType2 SType2ASUMresult, SType2DOTresult, SType2NRM2result;
+  SType1 SType1ASUMresult, SType1DOTresult, SType1NRM2result, SType1SINresult, SType1COSresult;
+  SType2 SType2ASUMresult, SType2DOTresult, SType2NRM2result, SType2SINresult, SType2COSresult;
   int incx, incy;
   int SType1IAMAXresult;
   int SType2IAMAXresult;
   int TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, LDC, Mx, My;
-  char UPLO, SIDE, TRANS, TRANSA, TRANSB, DIAG;
+  Teuchos::EUplo UPLO;
+  Teuchos::ESide SIDE;
+  Teuchos::ETransp TRANS, TRANSA, TRANSB;
+  Teuchos::EDiag DIAG;
   SType2 convertTo = ScalarTraits<SType2>::zero();
 
   srand(time(NULL));
@@ -194,6 +198,49 @@ int main(int argc, char *argv[])
 
   //--------------------------------------------------------------------------------
   // BEGIN LEVEL 1 BLAS TESTS
+  //--------------------------------------------------------------------------------
+  // Begin ROTG Tests
+  //--------------------------------------------------------------------------------
+  GoodTestSubcount = 0;
+  for(i = 0; i < ROTGTESTS; i++)
+    {
+      SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
+      SType2alpha = ConvertType(SType1alpha, convertTo);
+      SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
+      SType2beta = ConvertType(SType1beta, convertTo);
+      SType1COSresult = ScalarTraits<SType1>::zero();
+      SType2COSresult = ConvertType(SType1COSresult, convertTo);
+      SType1SINresult = ScalarTraits<SType1>::zero();
+      SType2SINresult = ConvertType(SType1SINresult, convertTo);
+      
+      if(debug)
+	{
+	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  cout << "SType1alpha = "  << SType1alpha << endl;
+	  cout << "SType2alpha = " << SType2alpha << endl;
+	  cout << "SType1beta = "  << SType1beta << endl;
+	  cout << "SType2beta = " << SType2beta << endl;
+	}
+      TotalTestCount++;
+      SType1BLAS.ROTG(&SType1alpha, &SType1beta, &SType1COSresult, &SType1SINresult);
+      SType2BLAS.ROTG(&SType2alpha, &SType2beta, &SType2COSresult, &SType2SINresult);
+      if(debug)
+	{
+	  cout << "SType1 ROTG COS result: " << SType1COSresult << endl;
+	  cout << "SType2 ROTG COS result: " << SType2COSresult << endl;
+	  cout << "SType1 ROTG SIN result: " << SType1SINresult << endl;
+	  cout << "SType2 ROTG SIN result: " << SType2SINresult << endl;
+	}
+      GoodTestSubcount += ( CompareScalars(SType1COSresult, SType2COSresult, TOL) && 
+			    CompareScalars(SType1SINresult, SType2SINresult, TOL) );
+    }
+  GoodTestCount += GoodTestSubcount;
+  if(verbose || debug) cout << "ROTG: " << GoodTestSubcount << " of " << ROTGTESTS << " tests were successful." << endl;
+  if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
+  // End ROTG Tests
+  //--------------------------------------------------------------------------------
+
   //--------------------------------------------------------------------------------
   // Begin ASUM Tests
   //--------------------------------------------------------------------------------
@@ -231,6 +278,7 @@ int main(int argc, char *argv[])
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "ASUM: " << GoodTestSubcount << " of " << ASUMTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+
   //--------------------------------------------------------------------------------
   // End ASUM Tests
   //--------------------------------------------------------------------------------
@@ -557,7 +605,7 @@ int main(int argc, char *argv[])
       N = GetRandom(MVMIN, MVMAX);
 
       TRANS = RandomTRANS();
-      if (TRANS == 'N') {	
+      if (Teuchos::ETranspChar[TRANS] == 'N') {	
       	M2 = M*abs(incy);
       	N2 = N*abs(incx);   
       } else {
@@ -645,7 +693,7 @@ int main(int argc, char *argv[])
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
       //DIAG = RandomDIAG();  
-      DIAG = 'N';
+      DIAG = Teuchos::NON_UNIT_DIAG;
 
       N = GetRandom(MVMIN, MVMAX);
       incx = GetRandom(-SCALARMAX, SCALARMAX);
@@ -671,7 +719,7 @@ int main(int argc, char *argv[])
 
       for(j = 0; j < N; j++)
 	{	     
-	  if(UPLO == 'U') {
+	  if(Teuchos::EUploChar[UPLO] == 'U') {
 	    // The operator is upper triangular, make sure that the entries are
 	    // only in the upper triangular part of A and the diagonal is non-zero.
 	    for(k = 0; k < N; k++) 
@@ -683,7 +731,7 @@ int main(int argc, char *argv[])
 	      }
 	      SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 	      if(k == j) {
-		if (DIAG == 'N') {
+		if (Teuchos::EDiagChar[DIAG] == 'N') {
 		  SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 		  while (SType1A[j*LDA+k] == SType1zero) {
 		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -707,7 +755,7 @@ int main(int argc, char *argv[])
 		}
 		SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		if(k == j) {
-		  if (DIAG == 'N') {
+		  if (Teuchos::EDiagChar[DIAG] == 'N') {
 		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 		    while (SType1A[j*LDA+k] == SType1zero) {
 		      SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -852,7 +900,7 @@ int main(int argc, char *argv[])
 	  cout << "Test #" << TotalTestCount << " --" << endl;
       }
       LDA = GetRandom(MVMIN, MVMAX);
-      if (TRANSA == 'N') {
+      if (Teuchos::ETranspChar[TRANSA] == 'N') {
 	while (LDA < M) {  LDA = GetRandom(MVMIN, MVMAX); }
 	SType1A = new SType1[LDA * P];
 	SType2A = new SType2[LDA * P];
@@ -881,7 +929,7 @@ int main(int argc, char *argv[])
       }
 
       LDB = GetRandom(MVMIN, MVMAX);
-      if (TRANSB == 'N') {
+      if (Teuchos::ETranspChar[TRANSB] == 'N') {
 	while (LDB < P) {  LDB = GetRandom(MVMIN, MVMAX); }
 	SType1B = new SType1[LDB * N];
 	SType2B = new SType2[LDB * N];
@@ -963,7 +1011,7 @@ int main(int argc, char *argv[])
       UPLO = RandomUPLO();
 
       LDA = GetRandom(MVMIN, MVMAX);
-      if(SIDE == 'L') {
+      if(Teuchos::ESideChar[SIDE] == 'L') {
 	while (LDA < M) { LDA = GetRandom(MVMIN, MVMAX); }
 	SType1A = new SType1[LDA * M];
 	SType2A = new SType2[LDA * M];
@@ -1032,7 +1080,7 @@ int main(int argc, char *argv[])
 	  PrintMatrix(SType2C, M, N, LDC,"SType2C_after_operation", matlab);
 	}
       GoodTestSubcount += CompareMatrices(SType1C, SType2C, M, N, LDC, TOL);
-      //cout<<M<<" "<<N<<" "<<SType1alpha<<" "<<SType1beta<<" "<<SIDE<<" "<<UPLO<<" "<<CompareMatrices(SType1C, SType2C, M,N,LDC,TOL)<<endl;
+
       delete [] SType1A;
       delete [] SType1B;
       delete [] SType1C;
@@ -1068,9 +1116,8 @@ int main(int argc, char *argv[])
       UPLO = RandomUPLO();
       TRANSA = RandomTRANS();
       DIAG = RandomDIAG();
-      //cout<<SIDE<<"\t"<<UPLO<<"\t"<<TRANSA<<"\t"<<DIAG<<endl;
 
-      if(SIDE == 'L')  // The operator is on the left side
+      if(Teuchos::ESideChar[SIDE] == 'L')  // The operator is on the left side
 	{
           LDA = GetRandom(MVMIN, MVMAX);
       	  while (LDA < M) {
@@ -1082,7 +1129,7 @@ int main(int argc, char *argv[])
 
 	  for(j = 0; j < M; j++)
 	    {	     
-	      if(UPLO == 'U') {
+	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
 		for(k = 0; k < M; k++) 
@@ -1094,7 +1141,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
 	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1118,7 +1165,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
       			    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1145,7 +1192,7 @@ int main(int argc, char *argv[])
 
 	  for(j = 0; j < N; j++)
 	    {	     
-	      if(UPLO == 'U') {
+	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
 		for(k = 0; k < N; k++) 
@@ -1157,7 +1204,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
 	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1181,7 +1228,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
 	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1265,10 +1312,9 @@ int main(int argc, char *argv[])
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
       //DIAG = RandomDIAG();  
-      DIAG = 'N';
-      //cout<<SIDE<<"\t"<<UPLO<<"\t"<<TRANSA<<"\t"<<DIAG<<endl;
+      DIAG = Teuchos::NON_UNIT_DIAG;
 
-      if(SIDE == 'L')  // The operator is on the left side
+      if(Teuchos::ESideChar[SIDE] == 'L')  // The operator is on the left side
 	{
           LDA = GetRandom(MVMIN, MVMAX);
       	  while (LDA < M) {
@@ -1280,7 +1326,7 @@ int main(int argc, char *argv[])
 
 	  for(j = 0; j < M; j++)
 	    {	     
-	      if(UPLO == 'U') {
+	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
 		for(k = 0; k < M; k++) 
@@ -1292,7 +1338,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
 	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1316,7 +1362,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
       			    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1343,7 +1389,7 @@ int main(int argc, char *argv[])
 
 	  for(j = 0; j < N; j++)
 	    {	     
-	      if(UPLO == 'U') {
+	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
 		for(k = 0; k < N; k++) 
@@ -1355,7 +1401,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
 	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1379,7 +1425,7 @@ int main(int argc, char *argv[])
 		    }
 	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
 		    if(k == j) {
-			if (DIAG == 'N') {
+			if (Teuchos::EDiagChar[DIAG] == 'N') {
 	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
 			    while (SType1A[j*LDA+k] == SType1zero) {
 				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1435,7 +1481,7 @@ int main(int argc, char *argv[])
 	}
 
       GoodTestSubcount += CompareMatrices(SType1B, SType2B, M, N, LDB, TOL);
-  
+
       delete [] SType1A;
       delete [] SType1B;
       delete [] SType2A;
@@ -1537,14 +1583,14 @@ void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool
 template<typename TYPE1, typename TYPE2>
 bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, double Tolerance)
 {
-  TYPE2 convertTo;
+  TYPE2 convertTo = ScalarTraits<SType2>::zero();
   return(ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Scalar1, convertTo)) - ScalarTraits<TYPE2>::magnitude(Scalar2)) <= Tolerance);
 }
 
 template<typename TYPE1, typename TYPE2>
 bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance)
 {
-  TYPE2 convertTo;
+  TYPE2 convertTo = ScalarTraits<SType2>::zero();
   int i;
   for(i = 0; i < Size; i++)
     {
@@ -1560,7 +1606,7 @@ bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance)
 template<typename TYPE1, typename TYPE2>
 bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, double Tolerance)
 {
-  TYPE2 convertTo;
+  TYPE2 convertTo = ScalarTraits<SType2>::zero();
   int i,j;
   for(j = 0; j < Columns; j++)
      {
@@ -1589,66 +1635,66 @@ double ConvertType(mp_real T1, double T2)
 }
 #endif
 
-char RandomSIDE()
+Teuchos::ESide RandomSIDE()
 {
-  char result = 'X';
+  Teuchos::ESide result;
   int r = GetRandom(1, 2);
   if(r == 1)
     {
-      result = 'L';
+      result = Teuchos::LEFT_SIDE;
     }
   else
     {
-      result = 'R';
+      result = Teuchos::RIGHT_SIDE;
     }
   return result;
 }
 
-char RandomUPLO()
+Teuchos::EUplo RandomUPLO()
 {
-  char result = 'X';
+  Teuchos::EUplo result;
   int r = GetRandom(1, 2);
   if(r == 1)
     {
-      result = 'U';
+      result = Teuchos::UPPER_TRI;
     }
   else
     {
-      result = 'L';
+      result = Teuchos::LOWER_TRI;
     }
   return result;
 }
 
-char RandomTRANS()
+Teuchos::ETransp RandomTRANS()
 {
-  char result = 'X';
+  Teuchos::ETransp result;
   int r = GetRandom(1, 4);
   if(r == 1 || r == 2)
     {
-      result = 'N';
+      result = Teuchos::NO_TRANS;
     }
   else if(r == 3)
     {
-      result = 'T';
+      result = Teuchos::TRANS;
     }
   else
     {
-      result = 'C';
+      result = Teuchos::CONJ_TRANS;
     }
   return result;
 }
 
-char RandomDIAG()
+Teuchos::EDiag RandomDIAG()
 {
-  char result = 'X';
+  Teuchos::EDiag result;
   int r = GetRandom(1, 2);
   if(r == 1)
     {
-      result = 'N';
+      result = Teuchos::NON_UNIT_DIAG;
     }
   else
     {
-      result = 'U';
+      result = Teuchos::UNIT_DIAG;
     }
   return result;
 }

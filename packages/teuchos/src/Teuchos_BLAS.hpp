@@ -13,6 +13,7 @@
 //          -- Removed warning messages for generic calls
 // 08.08.03 -- TRSM now works for all cases where SIDE == L and DIAG == N. DIAG == U is implemented but does not work correctly; SIDE == R is not yet implemented.
 // 08.14.03 -- TRSM now works for all cases and accepts (and uses) leading-dimension information.
+// 09.26.03 -- character input replaced with enumerated input to cause compiling errors and not run-time errors ( suggested by RAB ).
 
 #ifndef _TEUCHOS_BLAS_HPP_
 #define _TEUCHOS_BLAS_HPP_
@@ -45,6 +46,16 @@ namespace Teuchos
     (or shared memory parallel).
 */
 
+  enum ESide{ LEFT_SIDE, RIGHT_SIDE };
+  enum ETransp { NO_TRANS, TRANS, CONJ_TRANS };
+  enum EUplo { UPPER_TRI, LOWER_TRI };
+  enum EDiag { UNIT_DIAG, NON_UNIT_DIAG };
+
+  char ESideChar[] = {'L' , 'R'   };
+  char ETranspChar[] = {'N' , 'T' , 'C' };
+  char EUploChar[] = {'U' , 'L'   };
+  char EDiagChar[] = {'U' , 'N'   };
+
   template<typename OrdinalType, typename ScalarType>
   class BLAS
   {    
@@ -62,7 +73,7 @@ namespace Teuchos
     //@}
 
     //@{ \name Level 1 BLAS Routines.
-    void ROTG(ScalarType da, ScalarType db, ScalarType c, ScalarType s);
+    void ROTG(ScalarType* da, ScalarType* db, ScalarType* c, ScalarType* s);
     void SCAL(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx);
     void COPY(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy);
     void AXPY(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy);
@@ -73,20 +84,20 @@ namespace Teuchos
     //@}
 
     //@{ \name Level 2 BLAS Routines.
-    void GEMV(char Trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, 
+    void GEMV(ETransp trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, 
 	      OrdinalType lda, ScalarType* x, OrdinalType incx, ScalarType beta, ScalarType* y, OrdinalType incy);
-    void TRMV(char Uplo, char Trans, char Diag, OrdinalType n, ScalarType* A, 
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, ScalarType* A, 
 	      OrdinalType lda, ScalarType* x, OrdinalType incx);
     void GER(OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, 
 	     ScalarType* y, OrdinalType incy, ScalarType* A, OrdinalType lda);
     //@}
     
     //@{ \name Level 3 BLAS Routines. 
-    void GEMM(char TransA, char TransB, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
-    void SYMM(char Side, char Uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
-    void TRMM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n,
+    void GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n,
                 ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb);
-    void TRSM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n,
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n,
                 ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb);
     //@}
   };
@@ -96,11 +107,32 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
     
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType da, ScalarType db, ScalarType c, ScalarType s)
+  void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, ScalarType* c, ScalarType* s)
   {
-    cout<<"Not implemented right now!"<<endl;
-  }
+    ScalarType roe, scale, r;
+    ScalarType zero = ScalarTraits<ScalarType>::zero();
+    ScalarType one = ScalarTraits<ScalarType>::one();
 
+    if ( ScalarTraits<ScalarType>::magnitude( *da ) > ScalarTraits<ScalarType>::magnitude( *db ) ) { roe = *da; }
+    scale = ScalarTraits<ScalarType>::magnitude( *da ) + ScalarTraits<ScalarType>::magnitude( *db );
+    if ( scale == zero ) // There is nothing to do.
+    {
+      *c = one;
+      *s = zero;
+      *da = zero; *db = zero;
+    } else { // Compute the Givens rotation.
+      r = scale*ScalarTraits<ScalarType>::squareroot( ( *da/scale)*(*da/scale) + (*db/scale)*(*db/scale) );
+      if ( roe < zero ) { r *= -one; }
+      *c = *da / r;
+      *s = *db / r;
+      *db = ScalarTraits<ScalarType>::one();
+      if( ScalarTraits<ScalarType>::magnitude( *da ) > ScalarTraits<ScalarType>::magnitude( *db ) ){ *db = *s; }
+      if( ScalarTraits<ScalarType>::magnitude( *db ) >= ScalarTraits<ScalarType>::magnitude( *da ) &&
+	   *c != ScalarTraits<ScalarType>::zero() ) { *db = one / *c; }
+      *da = r;
+    }
+  } /* end ROTG */
+      
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::SCAL(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx)
   {
@@ -256,7 +288,7 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GEMV(char Trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* x, OrdinalType incx, ScalarType beta, ScalarType* y, OrdinalType incy)
+  void BLAS<OrdinalType, ScalarType>::GEMV(ETransp trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* x, OrdinalType incx, ScalarType beta, ScalarType* y, OrdinalType incy)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -268,10 +300,6 @@ namespace Teuchos
     if( m == izero || n == izero || ( alpha == zero && beta == one ) ){ return; }
     
     // Otherwise, we need to check the argument list.
-    if(!((toupper(Trans) == 'N') || (toupper(Trans) == 'T') || (toupper(Trans) == 'C'))) {
-        cout << "BLAS::GEMV Error: TRANS == " << Trans << endl;
-      	BadArgument = true; 
-    }
     if( m < izero ) { 
 	cout << "BLAS::GEMV Error: M == " << m << endl;	    
 	BadArgument = true;
@@ -299,7 +327,7 @@ namespace Teuchos
       ScalarType temp;
 
       // Determine the lengths of the vectors x and y.
-      if(toupper(Trans) == 'N') {
+      if(ETranspChar[trans] == 'N') {
 	lenx = n;
 	leny = m;
       } else {
@@ -338,7 +366,7 @@ namespace Teuchos
       // Return if we don't have to do anything more.
       if(alpha == zero) { return; }
 
-      if( Trans == 'N' ) {
+      if( ETranspChar[trans] == 'N' ) {
 	// Form y = alpha*A*y
 	jx = kx;
 	if (incy == ione) {
@@ -392,7 +420,7 @@ namespace Teuchos
   } /* end GEMV */
 
  template<typename OrdinalType, typename ScalarType>
- void BLAS<OrdinalType, ScalarType>::TRMV(char Uplo, char Trans, char Diag, OrdinalType n, ScalarType* A, OrdinalType lda, ScalarType* x, OrdinalType incx)
+ void BLAS<OrdinalType, ScalarType>::TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, ScalarType* A, OrdinalType lda, ScalarType* x, OrdinalType incx)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -404,18 +432,6 @@ namespace Teuchos
     if( n == izero ){ return; }
     
     // Otherwise, we need to check the argument list.
-    if(!((toupper(Uplo) == 'U') || (toupper(Uplo) == 'L'))) {
-      cout << "BLAS::TRMV Error: UPLO == "<< Uplo << endl;
-      BadArgument = true;
-    }
-    if(!((toupper(Trans) == 'N') || (toupper(Trans) == 'T') || (toupper(Trans) == 'C'))) {
-      cout << "BLAS::TRMV Error: TRANS == " << Trans << endl;
-      BadArgument = true; 
-    }
-    if(!((toupper(Diag) == 'U') || (toupper(Diag) == 'N'))) {
-      cout << "BLAS::TRMV Error: DIAG == "<< Diag << endl;
-      BadArgument = true;
-    }
     if( n < izero ) { 
       cout << "BLAS::TRMV Error: N == " << n << endl;	    
       BadArgument = true;
@@ -432,15 +448,15 @@ namespace Teuchos
     if(!BadArgument) {
       OrdinalType i, j, ix, jx, kx = izero;
       ScalarType temp;
-      bool NoUnit = (toupper(Diag) == 'N');
+      bool NoUnit = (EDiagChar[diag] == 'N');
 
       // Set the starting pointer for the vector x if incx < 0.
       if (incx < izero) { kx = (-n+ione)*incx; }
 
       // Start the operations for a nontransposed triangular matrix 
-      if (toupper(Trans) == 'N') {
+      if (ETranspChar[trans] == 'N') {
 	/* Compute x = A*x */
-	if (toupper(Uplo) == 'U') {
+	if (EUploChar[uplo] == 'U') {
 	  /* A is an upper triangular matrix */
 	  if (incx == ione) {
 	    for (j=izero; j<n; j++) {
@@ -498,10 +514,10 @@ namespace Teuchos
 	      jx -= incx;
 	    }
 	  }
-	} /* if (toupper(Uplo)=='U') */
+	} /* if (EUploChar[uplo]=='U') */
       } else { /* A is transposed/conjugated */
 	/* Compute x = A'*x */
-	if (toupper(Uplo)=='U') {
+	if (EUploChar[uplo]=='U') {
 	  /* A is an upper triangular matrix */
 	  if (incx == ione) {
 	    for (j=n-ione; j>-ione; j--) {
@@ -555,8 +571,8 @@ namespace Teuchos
 	      jx += incx;	      
 	    }
 	  }
-	} /* if (toupper(Uplo)=='U') */
-      } /* if (toupper(Trans)=='N') */
+	} /* if (EUploChar[uplo]=='U') */
+      } /* if (ETranspChar[trans]=='N') */
     } /* if (!BadArgument) */
   } /* end TRMV */
         
@@ -635,38 +651,27 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
         
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GEMM(char TransA, char TransB, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
+  void BLAS<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
     OrdinalType i, j, p;
-    OrdinalType NRowA = m, NColA = k, NRowB = k;
+    OrdinalType NRowA = m, NRowB = k;
     ScalarType temp;
     bool BadArgument = false;
 
     // Change dimensions of matrix if either matrix is transposed
-    if( !(toupper(TransA)=='N') ) {
+    if( !(ETranspChar[transa]=='N') ) {
       NRowA = k;
-      NColA = m;
     }
-    if( !(toupper(TransB)=='N') ) {
+    if( !(ETranspChar[transb]=='N') ) {
       NRowB = n;
     }
 
     // Quick return if there is nothing to do!
     if( (m==izero) || (n==izero) || (((alpha==zero)||(k==izero)) && (beta==one)) ){ return; }
-    
-    // Otherwise, we need to check the argument list.
-    if(!((toupper(TransA) == 'N') || (toupper(TransA) == 'T') || (toupper(TransA) == 'C'))) {
-      cout << "BLAS::GEMM Error: TRANSA == " << TransA << endl;
-      BadArgument = true; 
-    }
-    if(!((toupper(TransB) == 'N') || (toupper(TransB) == 'T') || (toupper(TransB) == 'C'))) {
-      cout << "BLAS::GEMM Error: TRANSB == " << TransB << endl;
-      BadArgument = true; 
-    }
     if( m < izero ) { 
       cout << "BLAS::GEMM Error: M == " << m << endl;	    
       BadArgument = true;
@@ -714,8 +719,8 @@ namespace Teuchos
       //
       // Now start the operations.
       //
-      if ( toupper(TransB)=='N' ) {
-	if ( toupper(TransA)=='N' ) {
+      if ( ETranspChar[transb]=='N' ) {
+	if ( ETranspChar[transa]=='N' ) {
 	  // Compute C = alpha*A*B + beta*C
 	  for (j=izero; j<n; j++) {
 	    if( beta == zero ) {
@@ -753,7 +758,7 @@ namespace Teuchos
 	  }
 	}
       } else {
-	if ( toupper(TransA)=='N' ) {
+	if ( ETranspChar[transa]=='N' ) {
 	  // Compute C = alpha*A*B' + beta*C
 	  for (j=izero; j<n; j++) {
 	    if (beta == zero) {
@@ -789,14 +794,14 @@ namespace Teuchos
 	      }
 	    }
 	  }
-	} // end if (toupper(TransA)=='N') ...
-      } // end if (toupper(TransB)=='N') ...
+	} // end if (ETranspChar[transa]=='N') ...
+      } // end if (ETranspChar[transb]=='N') ...
     } // end if (!BadArgument) ...
   } // end of GEMM
 
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::SYMM(char Side, char Uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
+  void BLAS<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -805,18 +810,11 @@ namespace Teuchos
     OrdinalType i, j, k, NRowA = m;
     ScalarType temp1, temp2;
     bool BadArgument = false;
-    bool Upper = (toupper(Uplo) == 'U');
-    if (toupper(Side) == 'R') { NRowA = n; }
+    bool Upper = (EUploChar[uplo] == 'U');
+    if (ESideChar[side] == 'R') { NRowA = n; }
     
     // Quick return.
     if ( (m==izero) || (n==izero) || ( (alpha==zero)&&(beta==one) ) ) { return; }
-
-    if(!((toupper(Side) == 'L') || (toupper(Side) == 'R'))) {
-      cout << "BLAS::SYMM Error: SIDE == " << Side << endl;
-      BadArgument = true; }
-    if(!((toupper(Uplo) == 'L') || Upper)) {
-      cout << "BLAS::SYMM Error: UPLO == " << Uplo << endl;
-      BadArgument = true; }
     if( m < 0 ) { 
       cout << "BLAS::SYMM Error: M == "<< m << endl;
       BadArgument = true; }
@@ -853,7 +851,7 @@ namespace Teuchos
 	return;
       }
 
-      if ( toupper(Side) == 'L') {
+      if ( ESideChar[side] == 'L') {
 	// Compute C = alpha*A*B + beta*C
 
 	if (Upper) {
@@ -925,12 +923,12 @@ namespace Teuchos
 	    }
 	  }
 	}
-      } // end if (toupper(Side)=='L') ...
+      } // end if (ESideChar[side]=='L') ...
     } // end if(!BadArgument) ...
 } // end SYMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRMM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
+  void BLAS<OrdinalType, ScalarType>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -939,27 +937,14 @@ namespace Teuchos
     OrdinalType i, j, k, NRowA = m;
     ScalarType temp;
     bool BadArgument = false;
-    bool LSide = (toupper(Side) == 'L');
-    bool NoUnit = (toupper(Diag) == 'N');
-    bool Upper = (toupper(Uplo) == 'U');
+    bool LSide = (ESideChar[side] == 'L');
+    bool NoUnit = (EDiagChar[diag] == 'N');
+    bool Upper = (EUploChar[uplo] == 'U');
 
     if(!LSide) { NRowA = n; }
 
     // Quick return.
     if (n==izero || m==izero) { return; }
-
-    if(!( LSide || (toupper(Side) == 'R'))) {
-      cout << "BLAS::TRMM Error: SIDE == " << Side << endl;
-      BadArgument = true; }
-    if(!((toupper(Uplo) == 'L') || Upper )) {
-      cout << "BLAS::TRMM Error: UPLO == " << Uplo << endl;
-      BadArgument = true; }
-    if(!((toupper(TransA) == 'N') || (toupper(TransA) == 'T') || (toupper(TransA) == 'C'))) {
-      cout << "BLAS::TRMM Error: TRANSA == " << TransA << endl;
-      BadArgument = true; }
-    if(!( NoUnit || (toupper(Diag) == 'U'))) {
-      cout << "BLAS::TRMM Error: DIAG == " << Diag << endl;
-      BadArgument = true; }
     if( m < 0 ) {
       cout << "BLAS::TRMM Error: M == "<< m <<endl;
       BadArgument = true; }
@@ -989,7 +974,7 @@ namespace Teuchos
       if ( LSide ) {
 	// A is on the left side of B.
 	
-	if ( toupper(TransA)=='N' ) {
+	if ( ETranspChar[transa]=='N' ) {
 	  // Compute B = alpha*A*B
 
 	  if ( Upper ) {
@@ -1054,7 +1039,7 @@ namespace Teuchos
       } else {
 	// A is on the right hand side of B.
 	
-	if( toupper(TransA) == 'N' ) {
+	if( ETranspChar[transa] == 'N' ) {
 	  // Compute B = alpha*B*A
 
 	  if( Upper ) {
@@ -1136,13 +1121,13 @@ namespace Teuchos
 	      }
 	    }
 	  }
-	} // end if( toupper(TransA) == 'N' ) ...
+	} // end if( ETranspChar[transa] == 'N' ) ...
       } // end if ( LSide ) ...
     } // end if (!BadArgument)
   } // end TRMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRSM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
+  void BLAS<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -1151,25 +1136,12 @@ namespace Teuchos
     ScalarType temp;
     OrdinalType NRowA = m;
     bool BadArgument = false;
-    bool NoUnit = (toupper(Diag)=='N');
+    bool NoUnit = (EDiagChar[diag]=='N');
     
-    if (!(toupper(Side) == 'L')) { NRowA = n; }
+    if (!(ESideChar[side] == 'L')) { NRowA = n; }
 
     // Quick return.
     if (n == izero || m == izero) { return; }
-
-    if(!((toupper(Side) == 'L') || (toupper(Side) == 'R'))) {
-      cout << "BLAS::TRSM Error: SIDE == " << Side << endl;
-      BadArgument = true; }
-    if(!((toupper(Uplo) == 'L') || (toupper(Uplo) == 'U'))) {
-      cout << "BLAS::TRSM Error: UPLO == " << Uplo << endl;
-      BadArgument = true; }
-    if(!((toupper(TransA) == 'N') || (toupper(TransA) == 'T') || (TransA == 'C'))) {
-      cout << "BLAS::TRSM Error: TRANSA == " << TransA << endl;
-      BadArgument = true; }
-    if(!((toupper(Diag) == 'N') || (toupper(Diag) == 'U'))) {
-      cout << "BLAS::TRSM Error: DIAG == " << Diag << endl;
-      BadArgument = true; }
     if( m < izero ) {
       cout << "BLAS::TRSM Error: M == "<<m<<endl;
       BadArgument = true; }
@@ -1196,15 +1168,15 @@ namespace Teuchos
 	}
 	else 
 	{ // Start the operations.
-	    if(toupper(Side) == 'L') {
+	    if(ESideChar[side] == 'L') {
 		//
 	    	// Perform computations for OP(A)*X = alpha*B	    
 		//
-		if(toupper(TransA) == 'N') {
+		if(ETranspChar[transa] == 'N') {
 		    //
 		    //  Compute B = alpha*inv( A )*B
 		    //
-		    if(toupper(Uplo) == 'U') { 
+		    if(EUploChar[uplo] == 'U') { 
 			// A is upper triangular.
 			for(j = izero; j < n; j++) {
 	    		    // Perform alpha*B if alpha is not 1.
@@ -1249,13 +1221,13 @@ namespace Teuchos
                                 }
                             }
                         }
-		    } // end if (Uplo == 'U')
-		}  // if (TransA =='N')	
+		    } // end if (uplo == 'U')
+		}  // if (transa =='N')	
 	    	else { 
 		    //
 		    //  Compute B = alpha*inv( A' )*B
 		    //
-		    if(Uplo == 'U') { 
+		    if(EUploChar[uplo] == 'U') { 
 			// A is upper triangular.
 			for(j = izero; j < n; j++) {
 	    	    	    for( i = izero; i < m; i++) {
@@ -1286,17 +1258,17 @@ namespace Teuchos
                         }
 		    }
 		}
-	    }  // if (Side == 'L')
+	    }  // if (side == 'L')
 	    else { 
-	       // Side == 'R'
+	       // side == 'R'
 	       //
 	       // Perform computations for X*OP(A) = alpha*B	    
 	       //
-	      if (toupper(TransA) == 'N') {
+	      if (ETranspChar[transa] == 'N') {
 		    //
 		    //  Compute B = alpha*B*inv( A )
 		    //
-		    if(toupper(Uplo) == 'U') { 
+		    if(EUploChar[uplo] == 'U') { 
 			// A is upper triangular.
 	    		// Perform a backsolve for column j of B.
 			for(j = izero; j < n; j++) {
@@ -1347,13 +1319,13 @@ namespace Teuchos
 				}
 			    }			
                         }
-		    } // end if (Uplo == 'U')
-		}  // if (TransA =='N')	
+		    } // end if (uplo == 'U')
+		}  // if (transa =='N')	
 	    	else { 
 		    //
 		    //  Compute B = alpha*B*inv( A' )
 		    //
-		    if(Uplo == 'U') { 
+		    if(EUploChar[uplo] == 'U') { 
 			// A is upper triangular.
 			for(k = (n - ione); k > -ione; k--) {
 			    if (NoUnit) {
@@ -1407,8 +1379,6 @@ namespace Teuchos
     }
   }
   
-#if 0
-
   template<typename OrdinalType>
   class BLAS<OrdinalType, float>
   {    
@@ -1416,26 +1386,26 @@ namespace Teuchos
     inline BLAS(void) {};
     inline BLAS(const BLAS& BLAS_source) {};
     inline virtual ~BLAS(void) {};
-    void ROTG(float da, float db, float c, float s);
-    float ASUM(OrdinalType, float*, OrdinalType);
-    void AXPY(OrdinalType, float, float*, OrdinalType, float*, OrdinalType);
-    void COPY(OrdinalType, float*, OrdinalType, float*, OrdinalType);
-    float DOT(OrdinalType, float*, OrdinalType, float*, OrdinalType);
-    OrdinalType IAMAX(OrdinalType, float*, OrdinalType);   
-    float NRM2(OrdinalType, float*, OrdinalType);
-    void SCAL(OrdinalType, float, float*, OrdinalType);
-    void GEMV(char, OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType, float, float*, OrdinalType);
-    void GER(OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType, float*, OrdinalType);
-    void TRMV(char, char, char, OrdinalType, float*, OrdinalType, float*, OrdinalType);
-    void GEMM(char, char, OrdinalType, OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType, float, float*, OrdinalType);
-    void SYMM(char, char, OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType, float, float*, OrdinalType);
-    void TRMM(char, char, char, char, OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType);
-    void TRSM(char, char, char, char, OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType);
+    void ROTG(float* da, float* db, float* c, float* s);
+    float ASUM(OrdinalType n, float* x, OrdinalType incx);
+    void AXPY(OrdinalType n, float alpha, float* x, OrdinalType incx, float* y, OrdinalType incy);
+    void COPY(OrdinalType n, float* x, OrdinalType incx, float* y, OrdinalType incy);
+    float DOT(OrdinalType n, float* x, OrdinalType incx, float* y, OrdinalType incy);
+    float NRM2(OrdinalType n, float* x, OrdinalType incx);
+    void SCAL(OrdinalType n, float alpha, float* x, OrdinalType incx);
+    OrdinalType IAMAX(OrdinalType n, float* x, OrdinalType incx);
+    void GEMV(ETransp trans, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* x, OrdinalType incx, float beta, float* y, OrdinalType incy);
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, float* A, OrdinalType lda, float* x, OrdinalType incx);
+    void GER(OrdinalType m, OrdinalType n, float alpha, float* x, OrdinalType incx, float* y, OrdinalType incy, float* A, OrdinalType lda);
+    void GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float *B, OrdinalType ldb, float beta, float *C, OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb);
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb);
   };
 
   template<typename OrdinalType>
-  float BLAS<OrdinalType, float>::ROTG(float da, float db, float c, float s);
-  { SROTG_F77(&da, &db, &c, &s ); }
+  void BLAS<OrdinalType, float>::ROTG(float* da, float* db, float* c, float* s)
+  { SROTG_F77(da, db, c, s ); }
 
   template<typename OrdinalType>
   float BLAS<OrdinalType, float>::ASUM(OrdinalType n, float* x, OrdinalType incx)
@@ -1466,34 +1436,33 @@ namespace Teuchos
   { SSCAL_F77(&n, &alpha, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::GEMV(char trans, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* x, OrdinalType incx, float beta, float* y, OrdinalType incy)
-  { SGEMV_F77(&trans, &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  void BLAS<OrdinalType, float>::GEMV(ETransp trans, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* x, OrdinalType incx, float beta, float* y, OrdinalType incy)
+  { SGEMV_F77(&ETranspChar[trans], &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
   
   template<typename OrdinalType>
   void BLAS<OrdinalType, float>::GER(OrdinalType m, OrdinalType n, float alpha, float* x, OrdinalType incx, float* y, OrdinalType incy, float* A, OrdinalType lda)
   { SGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
 
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::TRMV(char uplo, char trans, char diag, OrdinalType n, float* A, OrdinalType lda, float* x, OrdinalType incx)
-  { STRMV_F77(&uplo, &trans, &diag, &n, A, &lda, x, &incx); }
+  void BLAS<OrdinalType, float>::TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, float* A, OrdinalType lda, float* x, OrdinalType incx)
+  { STRMV_F77(&EUploChar[uplo], &ETranspChar[trans], &EDiagChar[diag], &n, A, &lda, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::GEMM(char transa, char transb, OrdinalType m, OrdinalType n, OrdinalType k, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc)
-  { SGEMM_F77(&transa, &transb, &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  void BLAS<OrdinalType, float>::GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc)
+  { SGEMM_F77(&ETranspChar[transa], &ETranspChar[transb], &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::SYMM(char side, char uplo, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc)
-  { SSYMM_F77(&side, &uplo, &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  void BLAS<OrdinalType, float>::SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc)
+  { SSYMM_F77(&ESideChar[side], &EUploChar[uplo], &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::TRMM(char side, char uplo, char transa, char diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb)
-  { STRMM_F77(&side, &uplo, &transa, &diag, &m, &n, &alpha, A, &lda, B, &ldb); }
+  void BLAS<OrdinalType, float>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb)
+  { STRMM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::TRSM(char side, char uplo, char transa, char diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb)
-  { STRSM_F77(&side, &uplo, &transa, &diag, &m, &n, &alpha, A, &lda, B, &ldb); }
+  void BLAS<OrdinalType, float>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb)
+  { STRSM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
 
-#endif
 
   template<typename OrdinalType>
   class BLAS<OrdinalType, double>
@@ -1502,7 +1471,7 @@ namespace Teuchos
     inline BLAS(void) {};
     inline BLAS(const BLAS& BLAS_source) {};
     inline virtual ~BLAS(void) {};
-    void ROTG(double da, double db, double c, double s);
+    void ROTG(double* da, double* db, double* c, double* s);
     double ASUM(OrdinalType n, double* x, OrdinalType incx);
     void AXPY(OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy);
     void COPY(OrdinalType n, double* x, OrdinalType incx, double* y, OrdinalType incy);
@@ -1510,18 +1479,18 @@ namespace Teuchos
     double NRM2(OrdinalType n, double* x, OrdinalType incx);
     void SCAL(OrdinalType n, double alpha, double* x, OrdinalType incx);
     OrdinalType IAMAX(OrdinalType n, double* x, OrdinalType incx);
-    void GEMV(char trans, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* x, OrdinalType incx, double beta, double* y, OrdinalType incy);
-    void TRMV(char uplo, char trans, char diag, OrdinalType n, double* A, OrdinalType lda, double* x, OrdinalType incx);
+    void GEMV(ETransp trans, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* x, OrdinalType incx, double beta, double* y, OrdinalType incy);
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, double* A, OrdinalType lda, double* x, OrdinalType incx);
     void GER(OrdinalType m, OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy, double* A, OrdinalType lda);
-    void GEMM(char transa, char transb, OrdinalType m, OrdinalType n, OrdinalType k, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb, double beta, double* C, OrdinalType ldc);
-    void SYMM(char side, char uplo, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double *B, OrdinalType ldb, double beta, double *C, OrdinalType ldc);
-    void TRMM(char side, char uplo, char transa, char diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb);
-    void TRSM(char side, char uplo, char transa, char diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb);
+    void GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb, double beta, double* C, OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double *B, OrdinalType ldb, double beta, double *C, OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb);
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb);
   };
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::ROTG(double da, double db, double c, double s)
-  { DROTG_F77(&da, &db, &c, &s); }
+  void BLAS<OrdinalType, double>::ROTG(double* da, double* db, double* c, double* s)
+  { DROTG_F77(da, db, c, s); }
 
   template<typename OrdinalType>
   double BLAS<OrdinalType, double>::ASUM(OrdinalType n, double* x, OrdinalType incx)
@@ -1552,32 +1521,32 @@ namespace Teuchos
   { DSCAL_F77(&n, &alpha, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::GEMV(char trans, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* x, OrdinalType incx, double beta, double* y, OrdinalType incy)
-  { DGEMV_F77(&trans, &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  void BLAS<OrdinalType, double>::GEMV(ETransp trans, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* x, OrdinalType incx, double beta, double* y, OrdinalType incy)
+  { DGEMV_F77(&ETranspChar[trans], &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
   
   template<typename OrdinalType>
   void BLAS<OrdinalType, double>::GER(OrdinalType m, OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy, double* A, OrdinalType lda)
   { DGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
 
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::TRMV(char uplo, char trans, char diag, OrdinalType n, double* A, OrdinalType lda, double* x, OrdinalType incx)
-  { DTRMV_F77(&uplo, &trans, &diag, &n, A, &lda, x, &incx); }
+  void BLAS<OrdinalType, double>::TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, double* A, OrdinalType lda, double* x, OrdinalType incx)
+  { DTRMV_F77(&EUploChar[uplo], &ETranspChar[trans], &EDiagChar[diag], &n, A, &lda, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::GEMM(char transa, char transb, OrdinalType m, OrdinalType n, OrdinalType k, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb, double beta, double* C, OrdinalType ldc)
-  { DGEMM_F77(&transa, &transb, &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  void BLAS<OrdinalType, double>::GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb, double beta, double* C, OrdinalType ldc)
+  { DGEMM_F77(&ETranspChar[transa], &ETranspChar[transb], &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::SYMM(char side, char uplo, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double *B, OrdinalType ldb, double beta, double *C, OrdinalType ldc)
-  { DSYMM_F77(&side, &uplo, &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  void BLAS<OrdinalType, double>::SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double *B, OrdinalType ldb, double beta, double *C, OrdinalType ldc)
+  { DSYMM_F77(&ESideChar[side], &EUploChar[uplo], &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::TRMM(char side, char uplo, char transa, char diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb)
-  { DTRMM_F77(&side, &uplo, &transa, &diag, &m, &n, &alpha, A, &lda, B, &ldb); }
+  void BLAS<OrdinalType, double>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb)
+  { DTRMM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
 
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::TRSM(char side, char uplo, char transa, char diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb)
-  { DTRSM_F77(&side, &uplo, &transa, &diag, &m, &n, &alpha, A, &lda, B, &ldb); }
+  void BLAS<OrdinalType, double>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb)
+  { DTRSM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
   
 } // namespace Teuchos
 

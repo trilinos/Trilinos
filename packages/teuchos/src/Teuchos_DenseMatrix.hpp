@@ -39,7 +39,7 @@ namespace Teuchos
     int shape(int numRows, int numCols);
     int reshape(int numRows, int numCols);
     typename ScalarTraits<ScalarType>::magnitudeType DenseMatrix<OrdinalType, ScalarType>::oneNorm();
-    int  multiply (char TransA, char TransB, ScalarType alpha, const DenseMatrix<OrdinalType, ScalarType> &A, const DenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
+    int  multiply (ETransp transa, ETransp transb, ScalarType alpha, const DenseMatrix<OrdinalType, ScalarType> &A, const DenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
     bool operator== (const DenseMatrix<OrdinalType, ScalarType> &Operand);
     bool operator!= (const DenseMatrix<OrdinalType, ScalarType> &Operand);
     ScalarType &operator () (int RowIndex, int ColIndex);
@@ -290,19 +290,19 @@ ScalarType* DenseMatrix<OrdinalType, ScalarType>::operator [] (int ColIndex)
 }
 
 template<typename OrdinalType, typename ScalarType>
-int  DenseMatrix<OrdinalType, ScalarType>::multiply(char TransA, char TransB, ScalarType alpha, const DenseMatrix<OrdinalType, ScalarType> &A, const DenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
+int  DenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETransp transb, ScalarType alpha, const DenseMatrix<OrdinalType, ScalarType> &A, const DenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
 {
   // Check for compatible dimensions
-  int A_nrows = (TransA=='T') ? A.numCols() : A.numRows();
-  int A_ncols = (TransA=='T') ? A.numRows() : A.numCols();
-  int B_nrows = (TransB=='T') ? B.numCols() : B.numRows();
-  int B_ncols = (TransB=='T') ? B.numRows() : B.numCols();
+  int A_nrows = (ETranspChar[transa]=='T') ? A.numCols() : A.numRows();
+  int A_ncols = (ETranspChar[transa]=='T') ? A.numRows() : A.numCols();
+  int B_nrows = (ETranspChar[transb]=='T') ? B.numCols() : B.numRows();
+  int B_ncols = (ETranspChar[transb]=='T') ? B.numRows() : B.numCols();
   if ((numRows_ != A_nrows) || (A_ncols != B_nrows) || (numCols_ != B_ncols))
     {
       TEUCHOS_CHK_ERR(-1); // Return error
     }
   // Call GEMM function
-  GEMM(TransA, TransB, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
+  GEMM(transa, transb, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
   double nflops = 2 * numRows_;
   nflops *= numCols_;
   nflops *= A_ncols;
