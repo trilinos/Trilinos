@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 #else
   bool verbose = false;
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-    EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
+    EpetraExt::CrsGraph_MapColoring::GREEDY;
   EpetraExt::CrsGraph_MapColoring tmpMapColoring( algType, verbose );
   Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);

@@ -59,6 +59,12 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
  
+  bool verbose = false;
+
+  if (argc > 1)
+    if (argv[1][0]=='-' && argv[1][1]=='v')
+      verbose = true;
+
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
@@ -70,19 +76,19 @@ int main(int argc, char *argv[]) {
   printParams.setParameter("MyPID", MyPID); 
   printParams.setParameter("Output Precision", 5);
   printParams.setParameter("Output Processor", 0);
-  if (argc > 1) { 
-    if (argv[1][0]=='-' && argv[1][1]=='v')
-       printParams.setParameter("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning +
-			NOX::Utils::TestDetails);
-    else
-       printParams.setParameter("Output Information", NOX::Utils::Error);
-  }
+  if( verbose )
+    printParams.setParameter("Output Information", 
+		NOX::Utils::OuterIteration + 
+		NOX::Utils::OuterIterationStatusTest + 
+		NOX::Utils::InnerIteration +
+		NOX::Utils::Parameters + 
+		NOX::Utils::Details + 
+		NOX::Utils::Warning +
+		NOX::Utils::TestDetails);
+  else
+    printParams.setParameter("Output Information", NOX::Utils::Error +
+		NOX::Utils::TestDetails);
+
   NOX::Utils printing(printParams);
 
   // Identify the test problem

@@ -82,15 +82,15 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  bool verbose = false;
+
+  if (argc > 1)
+    if (argv[1][0]=='-' && argv[1][1]=='v')
+      verbose = true;
+
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-
-  bool verbose = false;
-  // Check for verbose output
-  if (argc>1) 
-    if (argv[1][0]=='-' && argv[1][1]=='v') 
-      verbose = true;
 
   // Get the number of elements from the command line
   int NumGlobalElements = 0;
@@ -143,9 +143,11 @@ int main(int argc, char *argv[])
 			     NOX::Utils::Details + 
 			     NOX::Utils::Warning +
                              NOX::Utils::Debug +
+			     NOX::Utils::TestDetails +
 			     NOX::Utils::Error);
   else
-    printParams.setParameter("Output Information", NOX::Utils::Error);
+    printParams.setParameter("Output Information", NOX::Utils::Error +
+			     NOX::Utils::TestDetails);
 
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -297,14 +299,26 @@ int main(int argc, char *argv[])
   NOX::StatusTest::StatusType solvStatus = solver.solve();
 
   // Create a print class for controlling output below
-  NOX::Utils utils(printParams);
+  NOX::Utils printing(printParams);
 
   // Check for convergence
   int status = 0;
   if (solvStatus != NOX::StatusTest::Converged) {
       status = 1;
-      if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      if (printing.isPrintProcessAndType(NOX::Utils::Error))
 	cout << "Nonlinear solver failed to converge!" << endl;
+  }
+
+  // *** Insert your testing here! ***
+
+  // Final return value (0 = successfull, non-zero = failure)
+
+  // Summarize test results  
+  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+    if (status == 0)
+      cout << "Test Successfull!" << endl;
+    else 
+      cout << "Test Failed!" << endl;
   }
 
   //
@@ -316,7 +330,7 @@ int main(int argc, char *argv[])
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+  if (printing.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
     solver.getParameterList().print(cout);

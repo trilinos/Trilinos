@@ -75,14 +75,12 @@ Problem_Manager::~Problem_Manager()
   vector<GenericEpetraProblem*>::iterator last = Problems.end();
 
   vector<NOX::Epetra::Group*>::iterator GroupsIter = Groups.begin();   
-  vector<Problem_Interface*>::iterator InterfacesIter = Interfaces.begin();
   vector<NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
 
 #ifdef HAVE_NOX_EPETRAEXT
   vector<EpetraExt::CrsGraph_MapColoring*>::iterator TmpMapColoringsIter = TmpMapColorings.begin();
   vector<Epetra_MapColoring*>::iterator ColorMapsIter = ColorMaps.begin();
   vector<EpetraExt::CrsGraph_MapColoringIndex*>::iterator ColorMapIndexSetsIter = ColorMapIndexSets.begin();
-  vector<vector<Epetra_IntVector>*>::iterator ColumnsSetsIter = ColumnsSets.begin();
   vector<Epetra_Operator*>::iterator MatrixOperatorsIter = MatrixOperators.begin();
 #endif
 
@@ -158,7 +156,7 @@ void Problem_Manager::registerComplete()
 
     bool verbose = false;
     EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
-      EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
+      EpetraExt::CrsGraph_MapColoring::GREEDY;
     TmpMapColorings.push_back(new 
       EpetraExt::CrsGraph_MapColoring(algType, verbose));
     ColorMaps.push_back(&((*TmpMapColorings.back())((*iter)->getGraph())));

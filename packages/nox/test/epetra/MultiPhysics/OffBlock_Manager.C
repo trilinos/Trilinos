@@ -201,9 +201,8 @@ void OffBlock_Manager::createFDCobjects()
 #ifdef HAVE_NOX_EPETRAEXT
   // Create a timer for performance
   Epetra_Time colorTime(*Comm);
-  bool verbose = false;
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
-    EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
+    EpetraExt::CrsGraph_MapColoring::GREEDY;
 
   Epetra_CrsGraph &graph = *AA;
 
@@ -212,7 +211,7 @@ void OffBlock_Manager::createFDCobjects()
   // Just a dummy for now, but needs to be hooked up correctly.
   Epetra_Vector &compositeVec = myManager.getCompositeSoln();
 
-  mapColoring = new EpetraExt::CrsGraph_MapColoring(algType, verbose);
+  mapColoring = new EpetraExt::CrsGraph_MapColoring(algType);
   colorMap = &(*mapColoring)(graph);
   colorMapIndex = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
   columnSet = &(*colorMapIndex)(graph);

@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   bool verbose = false;
+
   // Check for verbose output
   if (argc>1) 
     if (argv[1][0]=='-' && argv[1][1]=='v') 
@@ -134,9 +135,11 @@ int main(int argc, char *argv[])
 			     NOX::Utils::Parameters + 
 			     NOX::Utils::Details + 
 			     NOX::Utils::Warning +
+			     NOX::Utils::TestDetails + 
 			     NOX::Utils::Error);
   else
-    printParams.setParameter("Output Information", NOX::Utils::Error);
+    printParams.setParameter("Output Information", NOX::Utils::Error +
+			     NOX::Utils::TestDetails);
 
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -197,17 +200,29 @@ int main(int argc, char *argv[])
 
   // Create the solver
   NOX::Solver::Manager solver(grp, combo, nlParams);
-  NOX::StatusTest::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType solvStatus = solver.solve();
 
   // Create a print class for controlling output below
-  NOX::Utils utils(printParams);
+  NOX::Utils printing(printParams);
 
   // Check for convergence
-  int ierr = 0;
-  if (status != NOX::StatusTest::Converged) {
-      ierr = 1;
-      if (utils.isPrintProcessAndType(NOX::Utils::Error))
+  int status = 0;
+  if (solvStatus != NOX::StatusTest::Converged) {
+      status = 1;
+      if (printing.isPrintProcessAndType(NOX::Utils::Error))
 	cout << "Nonlinear solver failed to converge!" << endl;
+  }
+
+  // *** Insert your testing here! ***
+
+  // Final return value (0 = successfull, non-zero = failure)
+
+  // Summarize test results  
+  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+    if (status == 0)
+      cout << "Test Successfull!" << endl;
+    else 
+      cout << "Test Failed!" << endl;
   }
 
   // Get the Epetra_Vector with the final solution from the solver
@@ -217,7 +232,7 @@ int main(int argc, char *argv[])
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+  if (printing.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
     solver.getParameterList().print(cout);
@@ -240,5 +255,5 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  return ierr;
+  return status;
 }

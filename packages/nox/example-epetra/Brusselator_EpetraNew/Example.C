@@ -241,16 +241,14 @@ int main(int argc, char *argv[])
   Epetra_Time fillTime(Comm);
 
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-    EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
+    EpetraExt::CrsGraph_MapColoring::GREEDY;
   bool verbose = false; 
-  int reordering = 0; 
   bool colorParallel = true; 
-  bool serialBoundaryColoring = true; 
+  int reordering = 0; 
   int verbosityLevel = 0; 
   bool distance1 = false; 
   EpetraExt::CrsGraph_MapColoring tmpMapColoring(
-    algType, verbose, reordering, colorParallel, serialBoundaryColoring, 
-    verbosityLevel, distance1); 
+    algType, reordering, distance1, verbosityLevel);
   Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
   vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
