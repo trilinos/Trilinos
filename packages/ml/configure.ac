@@ -670,6 +670,7 @@ AC_CONFIG_FILES([
                 test/IFPACKSmoothers/Makefile
                 test/MLAPICompare/Makefile
                 test/Communicator/Makefile
+                test/SelfSmoother/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
