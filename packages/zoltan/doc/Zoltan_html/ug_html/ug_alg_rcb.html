@@ -1,11 +1,11 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-
-   <TITLE>Zoltan User's Guide:  RCB</TITLE>
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  RCB</title>
 <!
   ------------------------
   | CVS File Information |
@@ -15,166 +15,165 @@
   $Date$
   $Revision$
 >
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+</head>
+<body bgcolor="#FFFFFF">
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
+<div ALIGN=right>
+<h3>
+<img SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></h3></div>
 
-<H2>
-<A NAME="RCB"></A>Recursive Coordinate Bisection (RCB)</H2>
+<h2>
+<a NAME="RCB"></a>Recursive Coordinate Bisection (RCB)</h2>
 An implementation of Recursive Coordinate Bisection (RCB) due to Steve
 Plimpton of Sandia National Laboratories is included in the dynamic load-balancing
 library. RCB was first proposed as a static load-balancing algorithm by
-<A HREF="ug_refs.html#berger">Berger and Bokhari</A>, but is attractive
-as a dynamic load-balancing algorithm because it implicitly produces incremental
-partitions. In RCB, the computational domain is first divided into two
-regions by a cutting plane orthogonal to one of the coordinate axes so
-that half the work load is in each of the sub-regions. The splitting direction
-is determined by computing in which coordinate direction the set of objects
-is most elongated, based upon the geometric locations of the objects. The
-sub-regions are then further divided by recursive application of the same
-splitting algorithm until the number of sub-regions equals the number of
-processors. Although this algorithm was first devised to cut into a number
-of sets which is a power of two, the set sizes in a particular cut needn't
-be equal. By adjusting the partition sizes appropriately, any number of
-equally-sized sets can be created. If the parallel machine has processors
-with different speeds, unequally-sized sets can also be easily generated.
-The Zoltan implementation of RCB has several parameters which can be modified
-by the <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>
+<a href="ug_refs.html#berger">Berger
+and Bokhari</a>, but is attractive as a dynamic load-balancing algorithm
+because it implicitly produces incremental partitions. In RCB, the computational
+domain is first divided into two regions by a cutting plane orthogonal
+to one of the coordinate axes so that half the work load is in each of
+the sub-regions. The splitting direction is determined by computing in
+which coordinate direction the set of objects is most elongated, based
+upon the geometric locations of the objects. The sub-regions are then further
+divided by recursive application of the same splitting algorithm until
+the number of sub-regions equals the number of processors. Although this
+algorithm was first devised to cut into a number of sets which is a power
+of two, the set sizes in a particular cut needn't be equal. By adjusting
+the partition sizes appropriately, any number of equally-sized sets can
+be created. If the parallel machine has processors with different speeds,
+unequally-sized sets can also be easily generated. The Zoltan implementation
+of RCB has several parameters which can be modified by the <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
 function.
-<BR>&nbsp;
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
+<br>&nbsp;
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Method String:</b></td>
 
-<TD><B>RCB</B></TD>
-</TR>
+<td><b>RCB</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>RCB_OVERALLOC</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>RCB_OVERALLOC</i></td>
 
-<TD>The amount by which to over-allocate temporary storage arrays for objects
+<td>The amount by which to over-allocate temporary storage arrays for objects
 within the RCB algorithm when additional storage is due to changes in processor
 assignments.&nbsp;
-<BR>1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</TD>
-</TR>
+<br>1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; RCB_REUSE</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; RCB_REUSE</i></td>
 
-<TD>Flag to indicate whether to use previous cuts as initial guesses for
+<td>Flag to indicate whether to use previous cuts as initial guesses for
 the current RCB invocation.&nbsp;
-<BR>0 = don't use previous cuts; 1 = use previous cuts.</TD>
-</TR>
+<br>0 = don't use previous cuts; 1 = use previous cuts.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_CHECK</I></TD>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_CHECK</i></td>
 
-<TD>Flag controlling the invocation of input and output error checking.&nbsp;
-<BR>0 = don't do checking; 1 = do checking.</TD>
-</TR>
+<td>Flag controlling the invocation of input and output error checking.&nbsp;
+<br>0 = don't do checking; 1 = do checking.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_STATS</I></TD>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_OUTPUT_LEVEL</i></td>
 
-<TD>Flag controlling the amount of timing and diagnostic output the routine
+<td>Flag controlling the amount of timing and diagnostic output the routine
 produces.&nbsp;
-<BR>0 = no output; 1 = print summary; 2 = print data for each processor.</TD>
-</TR>
+<br>0 = no output; 1 = print summary; 2 = print data for each processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> KEEP_CUTS</I></TD>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
 
-<TD>Should information about the cuts determining the RCB decomposition
+<td>Should information about the cuts determining the RCB decomposition
 be retained? It costs a bit of time to do so, but this information is necessary
 if application wants to add more objects to the decomposition via calls
-to <B><A HREF="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
-or to <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>.&nbsp;
-<BR>0 = don't keep cuts; 1 = keep cuts.</TD>
-</TR>
+to <b><a href="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</a></b>
+or to <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>.&nbsp;
+<br>0 = don't keep cuts; 1 = keep cuts.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Default:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><I>RCB_OVERALLOC</I> = 1.0</TD>
-</TR>
+<td><i>RCB_OVERALLOC</i> = 1.0</td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><I>RCB_REUSE</I> = 0</TD>
-</TR>
+<td><i>RCB_REUSE</i> = 0</td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><I>RCB_CHECK</I> = 1</TD>
-</TR>
+<td><i>RCB_CHECK</i> = 1</td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><I>RCB_STATS</I> = 0</TD>
-</TR>
+<td><i>RCB_OUTPUT_LEVEL</i> = 0</td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><I>KEEP_CUTS</I> = 0</TD>
-</TR>
+<td><i>KEEP_CUTS</i> = 0</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><B><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B></TD>
-</TR>
+<td><b><a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b></td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
-or <B><A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
-pair</TD>
-</TR>
+<td><b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+or <b><a href="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+pair</td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><B><A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B></TD>
-</TR>
+<td><b><a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b></td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD><B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B></TD>
-</TR>
-</TABLE>
-&nbsp;
+<td><b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b></td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_alg_parmetis.html">Next:&nbsp; ParMETIS</A> |&nbsp; <A HREF="ug_alg.html">Previous:&nbsp;
-Algorithms</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_alg_parmetis.html">Next:&nbsp;
+ParMETIS</a> |&nbsp; <a href="ug_alg.html">Previous:&nbsp; Algorithms</a>]
+</body>
+</html>

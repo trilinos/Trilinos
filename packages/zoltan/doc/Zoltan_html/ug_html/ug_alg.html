@@ -33,7 +33,7 @@ in the Zoltan library:
 <br><a href="ug_alg_oct.html#Octree">Octree Partitioning (OCTPART)</a>
 <br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning (REFTREE)</a></blockquote>
 The parenthetical string is the input argument for <b><a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>
-to enable the corresponding method.<a href="#General_Parameters"></a>
+to enable the corresponding method.
 <p><a href="#General_Parameters">Parameters
 </a>and
 <a href="#Debug Levels in Zoltan">debugging-output
@@ -65,10 +65,18 @@ parameters are described below.
 Zoltan.&nbsp; Higher values of<i> <a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
 produce more output and potentially slow down Zoltan's computations.&nbsp;
 The least output is produced when <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>=
-0.
-<br><i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>&nbsp; primarily
-controls Zoltan's behavior; most algorithms have their own parameters to
-control their output level. Values used within Zoltan are listed <a href="#Debug Levels in Zoltan">below</a>.</td>
+0.&nbsp; <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>&nbsp;
+primarily controls Zoltan's behavior; most algorithms have their own parameters
+to control their output level. Values used within Zoltan are listed <a href="#Debug Levels in Zoltan">below</a>.
+<br>Note:&nbsp; Because some debugging levels use processor synchronization,
+all processors should use the same value of <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="Debug_Processor"></a><i>&nbsp;&nbsp;&nbsp; DEBUG_PROCESSOR</i></td>
+
+<td>Processor number from which trace output should be printed when <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
+is 5.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -148,6 +156,12 @@ geometric partitioning must be retained by setting <i>KEEP_CUTS</i> to
 <tr>
 <td></td>
 
+<td><i>DEBUG_PROCESSOR</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
 <td><i>IMBALANCE_TOL</i> = 1.1</td>
 </tr>
 
@@ -194,6 +208,11 @@ at a time.&nbsp; The least output is produced when <i>DEBUG_LEVEL</i> =
 </i>are
 included below.&nbsp; For a given <i>DEBUG_LEVEL</i> value<i> n,</i> all
 output for values less than or equal to<i> n</i> is produced.
+<p>Some high debugging levels use processor synchronization to force processors
+to write one-at-a-time.&nbsp;&nbsp; For example, when <i>DEBUG_LEVEL</i>
+is greater than or equal to eight, each processor writes its list in turn
+so that the lists from all processors are not jumbled together in the output.&nbsp;
+This synchronization requires all processors to use the same value of <i>DEBUG_LEVEL</i>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -239,7 +258,8 @@ by algorithms is optional).</td>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 5</td>
 
 <td NOSAVE>Trace information (enter/exit) for major Zoltan interface routines
-(printed by Processor 0).</td>
+(printed by the processor specified by the <i><a href="#Debug_Processor">DEBUG_PROCESSOR</a></i>
+parameter).</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
