@@ -30,3 +30,10 @@ Differences between output on Sun and TFlops for test rib-oneproc:
   the tolerance used in LB_find_median to stop iterations, the different
   medians persist after leaving LB_find_median.
   Result verified by Karen Devine, February 2002.
+-------------------------------------------------------------------------------
+Answers differ for ParMETIS tests on linux platforms 
+Suspect difference in rand() is the cause.
+On linux, rand() returns values in the range 0 to 2147483647; on
+Solaris, it returns values in the range 0 to 32767.  (See definition of
+RAND_MAX in <stdlib.h>.)
+

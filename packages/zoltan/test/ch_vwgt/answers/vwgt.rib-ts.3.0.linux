@@ -1,0 +1,20 @@
+Decomposition Method 	= rib
+Zoltan Parameters	= tflops_special=1
+Zoltan Parameters	= obj_weight_dim=1
+File Type		= Chaco
+File Name		= vwgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+5
+9
+10
+13
+14
+15
+18
+19
+20
+22
+23
+24
+25
