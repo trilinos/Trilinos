@@ -65,4 +65,9 @@ if BUILD_TESTS
 TEST_SUBDIR=test
 endif
 
-SUBDIRS = src $(TEST_SUBDIR) doc
+if BUILD_EXAMPLES
+EXAMPLE_SUBDIR=example
+endif 
+
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc
+

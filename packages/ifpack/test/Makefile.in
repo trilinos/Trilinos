@@ -114,6 +114,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
+BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
@@ -238,6 +240,7 @@ SUBDIRS = CrsRiluk                \
           Relaxation              \
           ILU                     \
           IC                      \
+	  TestAll		  \
           scripts            
 
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@IFPACK_COMPARE_WITH_AZTECOO_TEST = CompareWithAztecOO/TestCompareWithAztecOO.exe

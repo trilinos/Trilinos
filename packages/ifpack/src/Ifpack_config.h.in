@@ -44,6 +44,9 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
 /* Define if want to build with amesos enabled */
 #undef HAVE_IFPACK_AMESOS
 
@@ -52,6 +55,9 @@
 
 /* Define if want to build with epetraext enabled */
 #undef HAVE_IFPACK_EPETRAEXT
+
+/* Define if want to build ifpack-examples */
+#undef HAVE_IFPACK_EXAMPLES
 
 /* Define if you want to build Ifpack's ParameterList interface */
 #undef HAVE_IFPACK_METIS

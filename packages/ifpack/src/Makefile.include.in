@@ -210,6 +210,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
+BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
@@ -372,6 +374,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_IC.h               \
 	$(srcdir)/Ifpack_IC_Utils.h         \
 	$(srcdir)/icrout_cholesky_mex.h       \
+        $(srcdir)/ifp_parameters.h		\
 	$(srcdir)/Ifpack_Preconditioner.h     \
 	$(srcdir)/Ifpack_CondestType.h        \
 	$(srcdir)/Ifpack_Condest.h            \

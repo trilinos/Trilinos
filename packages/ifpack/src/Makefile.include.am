@@ -107,6 +107,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_IC.h               \
 	$(srcdir)/Ifpack_IC_Utils.h         \
 	$(srcdir)/icrout_cholesky_mex.h       \
+        $(srcdir)/ifp_parameters.h		\
 	$(srcdir)/Ifpack_Preconditioner.h     \
 	$(srcdir)/Ifpack_CondestType.h        \
 	$(srcdir)/Ifpack_Condest.h            \

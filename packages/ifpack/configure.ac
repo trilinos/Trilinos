@@ -290,12 +290,16 @@ AM_CONDITIONAL(HAVE_IFPACK_METIS, [test "X$ac_cv_use_ifpack_metis" != "Xno"])
 #AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, [test "X$ac_cv_use_ifpack_teuchos" != "Xno"])
 
 # ------------------------------------------------------------------------
-# Checks if tests should be built
+# Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( ifpack, tests, [Build Ifpack tests], IFPACK_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_ifpack_tests" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( ifpack, examples, [Build Ifpack examples], IFPACK_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_ifpack_examples" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
@@ -317,8 +321,7 @@ AC_F77_WRAPPERS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
-#if test "X$ac_cv_use_ifpack_tests" != "Xno" || test "X$ac_cv_use_ifpack_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-if test "X$ac_cv_use_ifpack_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_ifpack_tests" != "Xno" || test "X$ac_cv_use_ifpack_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
@@ -329,16 +332,7 @@ TAC_ARG_WITH_BLASLIB
 TAC_ARG_WITH_LAPACKLIB
 
 # find or choose to supply valid blas and lapack libraries
-#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-ldflags, additional lib names using --with-blas or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-#fi
-#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
-#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referencelapack" = "Xno" && test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-ldflags, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
   ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 fi
@@ -411,9 +405,9 @@ AC_CONFIG_FILES([
                 Makefile.export
 		src/Makefile
 		src/Makefile.include
-                doc/Makefile
 		example/Makefile
 		example/Makefile.include
+                doc/Makefile
 		test/Makefile
 		test/PreconditionerFactory/Makefile
 		test/PreconditionerFactory/Makefile.include
