@@ -202,7 +202,6 @@ int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, E
   }
   if ( LoopError ) {
     numerrors++ ; 
-    cout << "Error = " << Error <<endl;
   }
 
   //
