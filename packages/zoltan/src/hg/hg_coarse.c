@@ -17,10 +17,11 @@ extern "C" {
 #endif
 
 #include "hg_hypergraph.h"
+#include "zz_sort.h"
 
 /****************************************************************************/
 
-#define UMIT_SPEEDUP_HACK
+/* #define MERGE_DUPLICATE_EDGES  */
 
 
 /*Procedure to coarsen a hypergraph based on a packing. All vertices of one pack
@@ -122,7 +123,12 @@ char *yo = "Zoltan_HG_Coarsening";
      return Zoltan_HG_Create_Mirror(zz, c_hg);
      }
 
-#ifndef UMIT_SPEEDUP_HACK
+#ifdef MERGE_DUPLICATE_EDGES
+  { /* local scope for local vars */
+  int *sorted, *hsize, *sum;
+  int k, l;
+  int deleted_he, deleted_pins;
+ 
   /* Move weight of identical hyperedges to one of them */
   if (!(sorted = (int*) ZOLTAN_MALLOC (c_hg->nEdge * sizeof(int)))
    || !(hsize  = (int*) ZOLTAN_MALLOC (c_hg->nEdge * sizeof(int)))
@@ -176,6 +182,7 @@ char *yo = "Zoltan_HG_Coarsening";
   Zoltan_Multifree (__FILE__, __LINE__, 3, &sorted, &hsize, &sum);
 
   /* delete hyperedges without weight */
+#define EPS (1e-8)
   deleted_he = deleted_pins = 0;
   for (i = 0; i < c_hg->nEdge; i++) {
      if (c_ewgt[i] <= EPS) {
@@ -191,11 +198,12 @@ char *yo = "Zoltan_HG_Coarsening";
      }
   c_hg->nEdge -= deleted_he;
   c_hg->nPins = c_hindex[c_hg->nEdge];
+  }
 #endif
 
 
 
-#ifndef UMIT_SPEEDUP_HACK
+#ifdef MERGE_DUPLICATE_EDGES
   /* Reallocate the arrays to their exact size */
   c_hg->ewgt    =(float*)ZOLTAN_REALLOC(c_ewgt,    c_hg->nEdge  * sizeof(float));
   c_hg->hindex  =(int*)  ZOLTAN_REALLOC(c_hindex, (c_hg->nEdge+1) * sizeof(int));
