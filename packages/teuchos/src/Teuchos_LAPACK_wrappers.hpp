@@ -8,14 +8,14 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-/*! \file Tpetra_LAPACK_wrappers.h
-    \brief It should be noted that Tpetra_LAPACK_wrappers.h is an almost 
+/*! \file Teuchos_LAPACK_wrappers.h
+    \brief It should be noted that Teuchos_LAPACK_wrappers.h is an almost 
     exact duplicate of Epetra_LAPACK_wrappers.h. 
     More info on how/why to be added 
     at a later date, when Paul gets around to it, and once he has a better idea 
     of what's going on here.
 */
-/* Define fcd (Fortran Tpetra_fcd descriptor) for non-standard situations */
+/* Define fcd (Fortran Teuchos_fcd descriptor) for non-standard situations */
 
 #if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
 
@@ -56,7 +56,7 @@
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall 
-#define Teuchos_fcd char *, unsigned int 
+#define Teuchos_fcd const char *, unsigned int 
 
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
@@ -89,7 +89,7 @@
 #elif defined(INTEL_MKL)
 
 #define PREFIX
-#define Teuchos_fcd char *
+#define Teuchos_fcd const char *
 
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
@@ -134,7 +134,7 @@
 #else /* Define Teuchos_fcd for all other machines */
 
 #define PREFIX
-#define Teuchos_fcd char * 
+#define Teuchos_fcd const char * 
 
 #ifndef HAVE_CONFIG_H
 

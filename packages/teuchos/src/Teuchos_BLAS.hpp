@@ -51,10 +51,10 @@ namespace Teuchos
   enum EUplo { UPPER_TRI, LOWER_TRI };
   enum EDiag { UNIT_DIAG, NON_UNIT_DIAG };
 
-  extern char ESideChar[];
-  extern char ETranspChar[];
-  extern char EUploChar[];
-  extern char EDiagChar[];
+  extern const char ESideChar[];
+  extern const char ETranspChar[];
+  extern const char EUploChar[];
+  extern const char EDiagChar[];
 
   template<typename OrdinalType, typename ScalarType>
   class BLAS
@@ -74,31 +74,31 @@ namespace Teuchos
 
     //@{ \name Level 1 BLAS Routines.
     void ROTG(ScalarType* da, ScalarType* db, ScalarType* c, ScalarType* s);
-    void SCAL(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx);
-    void COPY(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy);
-    void AXPY(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy);
-    ScalarType ASUM(OrdinalType n, ScalarType* x, OrdinalType incx);
-    ScalarType DOT(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy);
-    ScalarType NRM2(OrdinalType n, ScalarType* x, OrdinalType incx);
-    OrdinalType IAMAX(OrdinalType n, ScalarType* x, OrdinalType incx);
+    void SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx);
+    void COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy);
+    void AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy);
+    ScalarType ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx);
+    ScalarType DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy);
+    ScalarType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx);
+    OrdinalType IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx);
     //@}
 
     //@{ \name Level 2 BLAS Routines.
-    void GEMV(ETransp trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, 
-	      OrdinalType lda, ScalarType* x, OrdinalType incx, ScalarType beta, ScalarType* y, OrdinalType incy);
-    void TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, ScalarType* A, 
-	      OrdinalType lda, ScalarType* x, OrdinalType incx);
-    void GER(OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, 
-	     ScalarType* y, OrdinalType incy, ScalarType* A, OrdinalType lda);
+    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, 
+	      const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy);
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, 
+	      const OrdinalType lda, ScalarType* x, const OrdinalType incx);
+    void GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, 
+	     const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda);
     //@}
     
     //@{ \name Level 3 BLAS Routines. 
-    void GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
-    void SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
-    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n,
-                ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb);
-    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n,
-                ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb);
+    void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
+                const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb);
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
+                const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb);
     //@}
   };
 
@@ -134,7 +134,7 @@ namespace Teuchos
   } /* end ROTG */
       
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::SCAL(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx)
+  void BLAS<OrdinalType, ScalarType>::SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -152,7 +152,7 @@ namespace Teuchos
   } /* end SCAL */
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::COPY(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy)
+  void BLAS<OrdinalType, ScalarType>::COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -172,7 +172,7 @@ namespace Teuchos
   } /* end COPY */
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::AXPY(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy)
+  void BLAS<OrdinalType, ScalarType>::AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -193,7 +193,7 @@ namespace Teuchos
   } /* end AXPY */
 
   template<typename OrdinalType, typename ScalarType>
-  ScalarType BLAS<OrdinalType, ScalarType>::ASUM(OrdinalType n, ScalarType* x, OrdinalType incx)
+  ScalarType BLAS<OrdinalType, ScalarType>::ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -213,7 +213,7 @@ namespace Teuchos
   } /* end ASUM */
   
   template<typename OrdinalType, typename ScalarType>
-  ScalarType BLAS<OrdinalType, ScalarType>::DOT(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy)
+  ScalarType BLAS<OrdinalType, ScalarType>::DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -236,7 +236,7 @@ namespace Teuchos
   } /* end DOT */
   
   template<typename OrdinalType, typename ScalarType>
-  ScalarType BLAS<OrdinalType, ScalarType>::NRM2(OrdinalType n, ScalarType* x, OrdinalType incx)
+  ScalarType BLAS<OrdinalType, ScalarType>::NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -258,7 +258,7 @@ namespace Teuchos
   } /* end NRM2 */
   
   template<typename OrdinalType, typename ScalarType>
-  OrdinalType BLAS<OrdinalType, ScalarType>::IAMAX(OrdinalType n, ScalarType* x, OrdinalType incx)
+  OrdinalType BLAS<OrdinalType, ScalarType>::IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -288,7 +288,7 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GEMV(ETransp trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* x, OrdinalType incx, ScalarType beta, ScalarType* y, OrdinalType incy)
+  void BLAS<OrdinalType, ScalarType>::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -420,7 +420,7 @@ namespace Teuchos
   } /* end GEMV */
 
  template<typename OrdinalType, typename ScalarType>
- void BLAS<OrdinalType, ScalarType>::TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, ScalarType* A, OrdinalType lda, ScalarType* x, OrdinalType incx)
+ void BLAS<OrdinalType, ScalarType>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* x, const OrdinalType incx)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -577,7 +577,7 @@ namespace Teuchos
   } /* end TRMV */
         
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GER(OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy, ScalarType* A, OrdinalType lda)
+  void BLAS<OrdinalType, ScalarType>::GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -651,7 +651,7 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
         
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
+  void BLAS<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -801,7 +801,7 @@ namespace Teuchos
 
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
+  void BLAS<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -928,7 +928,7 @@ namespace Teuchos
 } // end SYMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
+  void BLAS<OrdinalType, ScalarType>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -1127,7 +1127,7 @@ namespace Teuchos
   } // end TRMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
+  void BLAS<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -1387,20 +1387,20 @@ namespace Teuchos
     inline BLAS(const BLAS& BLAS_source) {};
     inline virtual ~BLAS(void) {};
     void ROTG(float* da, float* db, float* c, float* s);
-    float ASUM(OrdinalType n, float* x, OrdinalType incx);
-    void AXPY(OrdinalType n, float alpha, float* x, OrdinalType incx, float* y, OrdinalType incy);
-    void COPY(OrdinalType n, float* x, OrdinalType incx, float* y, OrdinalType incy);
-    float DOT(OrdinalType n, float* x, OrdinalType incx, float* y, OrdinalType incy);
-    float NRM2(OrdinalType n, float* x, OrdinalType incx);
-    void SCAL(OrdinalType n, float alpha, float* x, OrdinalType incx);
-    OrdinalType IAMAX(OrdinalType n, float* x, OrdinalType incx);
-    void GEMV(ETransp trans, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* x, OrdinalType incx, float beta, float* y, OrdinalType incy);
-    void TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, float* A, OrdinalType lda, float* x, OrdinalType incx);
-    void GER(OrdinalType m, OrdinalType n, float alpha, float* x, OrdinalType incx, float* y, OrdinalType incy, float* A, OrdinalType lda);
-    void GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc);
-    void SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float *B, OrdinalType ldb, float beta, float *C, OrdinalType ldc);
-    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb);
-    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb);
+    float ASUM(const OrdinalType n, const float* x, const OrdinalType incx);
+    void AXPY(const OrdinalType n, const float alpha, const float* x, const OrdinalType incx, float* y, const OrdinalType incy);
+    void COPY(const OrdinalType n, const float* x, const OrdinalType incx, float* y, const OrdinalType incy);
+    float DOT(const OrdinalType n, const float* x, const OrdinalType incx, const float* y, const OrdinalType incy);
+    float NRM2(const OrdinalType n, const float* x, const OrdinalType incx);
+    void SCAL(const OrdinalType n, const float alpha, float* x, const OrdinalType incx);
+    OrdinalType IAMAX(const OrdinalType n, const float* x, const OrdinalType incx);
+    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, const float* x, const OrdinalType incx, const float beta, float* y, const OrdinalType incy);
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const float* A, const OrdinalType lda, float* x, const OrdinalType incx);
+    void GER(const OrdinalType m, const OrdinalType n, const float alpha, const float* x, const OrdinalType incx, const float* y, const OrdinalType incy, float* A, const OrdinalType lda);
+    void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const float alpha, const float* A, const OrdinalType lda, const float* B, const OrdinalType ldb, const float beta, float* C, const OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, const float *B, const OrdinalType ldb, const float beta, float *C, const OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb);
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb);
   };
 
   template<typename OrdinalType>
@@ -1408,59 +1408,59 @@ namespace Teuchos
   { SROTG_F77(da, db, c, s ); }
 
   template<typename OrdinalType>
-  float BLAS<OrdinalType, float>::ASUM(OrdinalType n, float* x, OrdinalType incx)
+  float BLAS<OrdinalType, float>::ASUM(const OrdinalType n, const float* x, const OrdinalType incx)
   { return SASUM_F77(&n, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::AXPY(OrdinalType n, float alpha, float* x, OrdinalType incx, float* y, OrdinalType incy)
+  void BLAS<OrdinalType, float>::AXPY(const OrdinalType n, const float alpha, const float* x, const OrdinalType incx, float* y, const OrdinalType incy)
   { SAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::COPY(OrdinalType n, float* x, OrdinalType incx, float* y, OrdinalType incy)
+  void BLAS<OrdinalType, float>::COPY(const OrdinalType n, const float* x, const OrdinalType incx, float* y, const OrdinalType incy)
   { SCOPY_F77(&n, x, &incx, y, &incy); }
   
   template<typename OrdinalType>
-  float BLAS<OrdinalType, float>::DOT(OrdinalType n, float* x, OrdinalType incx, float* y, OrdinalType incy)
+  float BLAS<OrdinalType, float>::DOT(const OrdinalType n, const float* x, const OrdinalType incx, const float* y, const OrdinalType incy)
   { return SDOT_F77(&n, x, &incx, y, &incy); }
   
   template<typename OrdinalType>
-  OrdinalType BLAS<OrdinalType, float>::IAMAX(OrdinalType n, float* x, OrdinalType incx)
+  OrdinalType BLAS<OrdinalType, float>::IAMAX(const OrdinalType n, const float* x, const OrdinalType incx)
   { return ISAMAX_F77(&n, x, &incx); }
 
   template<typename OrdinalType>
-  float BLAS<OrdinalType, float>::NRM2(OrdinalType n, float* x, OrdinalType incx)
+  float BLAS<OrdinalType, float>::NRM2(const OrdinalType n, const float* x, const OrdinalType incx)
   { return SNRM2_F77(&n, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::SCAL(OrdinalType n, float alpha, float* x, OrdinalType incx)
+  void BLAS<OrdinalType, float>::SCAL(const OrdinalType n, const float alpha, float* x, const OrdinalType incx)
   { SSCAL_F77(&n, &alpha, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::GEMV(ETransp trans, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* x, OrdinalType incx, float beta, float* y, OrdinalType incy)
+  void BLAS<OrdinalType, float>::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, const float* x, const OrdinalType incx, const float beta, float* y, const OrdinalType incy)
   { SGEMV_F77(&ETranspChar[trans], &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::GER(OrdinalType m, OrdinalType n, float alpha, float* x, OrdinalType incx, float* y, OrdinalType incy, float* A, OrdinalType lda)
+  void BLAS<OrdinalType, float>::GER(const OrdinalType m, const OrdinalType n, const float alpha, const float* x, const OrdinalType incx, const float* y, const OrdinalType incy, float* A, const OrdinalType lda)
   { SGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
 
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, float* A, OrdinalType lda, float* x, OrdinalType incx)
+  void BLAS<OrdinalType, float>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const float* A, const OrdinalType lda, float* x, const OrdinalType incx)
   { STRMV_F77(&EUploChar[uplo], &ETranspChar[trans], &EDiagChar[diag], &n, A, &lda, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc)
+  void BLAS<OrdinalType, float>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const float alpha, const float* A, const OrdinalType lda, const float* B, const OrdinalType ldb, const float beta, float* C, const OrdinalType ldc)
   { SGEMM_F77(&ETranspChar[transa], &ETranspChar[transb], &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb, float beta, float* C, OrdinalType ldc)
+  void BLAS<OrdinalType, float>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, const float* B, const OrdinalType ldb, const float beta, float* C, const OrdinalType ldc)
   { SSYMM_F77(&ESideChar[side], &EUploChar[uplo], &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb)
+  void BLAS<OrdinalType, float>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb)
   { STRMM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, float>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, float alpha, float* A, OrdinalType lda, float* B, OrdinalType ldb)
+  void BLAS<OrdinalType, float>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb)
   { STRSM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
 
 
@@ -1472,20 +1472,20 @@ namespace Teuchos
     inline BLAS(const BLAS& BLAS_source) {};
     inline virtual ~BLAS(void) {};
     void ROTG(double* da, double* db, double* c, double* s);
-    double ASUM(OrdinalType n, double* x, OrdinalType incx);
-    void AXPY(OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy);
-    void COPY(OrdinalType n, double* x, OrdinalType incx, double* y, OrdinalType incy);
-    double DOT(OrdinalType n, double* x, OrdinalType incx, double* y, OrdinalType incy);
-    double NRM2(OrdinalType n, double* x, OrdinalType incx);
-    void SCAL(OrdinalType n, double alpha, double* x, OrdinalType incx);
-    OrdinalType IAMAX(OrdinalType n, double* x, OrdinalType incx);
-    void GEMV(ETransp trans, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* x, OrdinalType incx, double beta, double* y, OrdinalType incy);
-    void TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, double* A, OrdinalType lda, double* x, OrdinalType incx);
-    void GER(OrdinalType m, OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy, double* A, OrdinalType lda);
-    void GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb, double beta, double* C, OrdinalType ldc);
-    void SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double *B, OrdinalType ldb, double beta, double *C, OrdinalType ldc);
-    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb);
-    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb);
+    double ASUM(const OrdinalType n, const double* x, const OrdinalType incx);
+    void AXPY(const OrdinalType n, const double alpha, const double* x, const OrdinalType incx, double* y, const OrdinalType incy);
+    void COPY(const OrdinalType n, const double* x, const OrdinalType incx, double* y, const OrdinalType incy);
+    double DOT(const OrdinalType n, const double* x, const OrdinalType incx, const double* y, const OrdinalType incy);
+    double NRM2(const OrdinalType n, const double* x, const OrdinalType incx);
+    void SCAL(const OrdinalType n, const double alpha, double* x, const OrdinalType incx);
+    OrdinalType IAMAX(const OrdinalType n, const double* x, const OrdinalType incx);
+    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, const double* x, const OrdinalType incx, const double beta, double* y, const OrdinalType incy);
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const double* A, const OrdinalType lda, double* x, const OrdinalType incx);
+    void GER(const OrdinalType m, const OrdinalType n, const double alpha, const double* x, const OrdinalType incx, const double* y, const OrdinalType incy, double* A, const OrdinalType lda);
+    void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const double alpha, const double* A, const OrdinalType lda, const double* B, const OrdinalType ldb, const double beta, double* C, const OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, const double *B, const OrdinalType ldb, const double beta, double *C, const OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb);
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb);
   };
   
   template<typename OrdinalType>
@@ -1493,61 +1493,234 @@ namespace Teuchos
   { DROTG_F77(da, db, c, s); }
 
   template<typename OrdinalType>
-  double BLAS<OrdinalType, double>::ASUM(OrdinalType n, double* x, OrdinalType incx)
+  double BLAS<OrdinalType, double>::ASUM(const OrdinalType n, const double* x, const OrdinalType incx)
   { return DASUM_F77(&n, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::AXPY(OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy)
+  void BLAS<OrdinalType, double>::AXPY(const OrdinalType n, const double alpha, const double* x, const OrdinalType incx, double* y, const OrdinalType incy)
   { DAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::COPY(OrdinalType n, double* x, OrdinalType incx, double* y, OrdinalType incy)
+  void BLAS<OrdinalType, double>::COPY(const OrdinalType n, const double* x, const OrdinalType incx, double* y, const OrdinalType incy)
   { DCOPY_F77(&n, x, &incx, y, &incy); }
   
   template<typename OrdinalType>
-  double BLAS<OrdinalType, double>::DOT(OrdinalType n, double* x, OrdinalType incx, double* y, OrdinalType incy)
+  double BLAS<OrdinalType, double>::DOT(const OrdinalType n, const double* x, const OrdinalType incx, const double* y, const OrdinalType incy)
   { return DDOT_F77(&n, x, &incx, y, &incy); }
   
   template<typename OrdinalType>
-  OrdinalType BLAS<OrdinalType, double>::IAMAX(OrdinalType n, double* x, OrdinalType incx)
+  OrdinalType BLAS<OrdinalType, double>::IAMAX(const OrdinalType n, const double* x, const OrdinalType incx)
   { return IDAMAX_F77(&n, x, &incx); }
 
   template<typename OrdinalType>
-  double BLAS<OrdinalType, double>::NRM2(OrdinalType n, double* x, OrdinalType incx)
+  double BLAS<OrdinalType, double>::NRM2(const OrdinalType n, const double* x, const OrdinalType incx)
   { return DNRM2_F77(&n, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::SCAL(OrdinalType n, double alpha, double* x, OrdinalType incx)
+  void BLAS<OrdinalType, double>::SCAL(const OrdinalType n, const double alpha, double* x, const OrdinalType incx)
   { DSCAL_F77(&n, &alpha, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::GEMV(ETransp trans, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* x, OrdinalType incx, double beta, double* y, OrdinalType incy)
+  void BLAS<OrdinalType, double>::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, const double* x, const OrdinalType incx, const double beta, double* y, const OrdinalType incy)
   { DGEMV_F77(&ETranspChar[trans], &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::GER(OrdinalType m, OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy, double* A, OrdinalType lda)
+  void BLAS<OrdinalType, double>::GER(const OrdinalType m, const OrdinalType n, const double alpha, const double* x, const OrdinalType incx, const double* y, const OrdinalType incy, double* A, const OrdinalType lda)
   { DGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
 
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::TRMV(EUplo uplo, ETransp trans, EDiag diag, OrdinalType n, double* A, OrdinalType lda, double* x, OrdinalType incx)
+  void BLAS<OrdinalType, double>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const double* A, const OrdinalType lda, double* x, const OrdinalType incx)
   { DTRMV_F77(&EUploChar[uplo], &ETranspChar[trans], &EDiagChar[diag], &n, A, &lda, x, &incx); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::GEMM(ETransp transa, ETransp transb, OrdinalType m, OrdinalType n, OrdinalType k, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb, double beta, double* C, OrdinalType ldc)
+  void BLAS<OrdinalType, double>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const double alpha, const double* A, const OrdinalType lda, const double* B, const OrdinalType ldb, const double beta, double* C, const OrdinalType ldc)
   { DGEMM_F77(&ETranspChar[transa], &ETranspChar[transb], &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::SYMM(ESide side, EUplo uplo, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double *B, OrdinalType ldb, double beta, double *C, OrdinalType ldc)
+  void BLAS<OrdinalType, double>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, const double *B, const OrdinalType ldb, const double beta, double *C, const OrdinalType ldc)
   { DSYMM_F77(&ESideChar[side], &EUploChar[uplo], &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
   
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb)
+  void BLAS<OrdinalType, double>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb)
   { DTRMM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
 
   template<typename OrdinalType>
-  void BLAS<OrdinalType, double>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb)
+  void BLAS<OrdinalType, double>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const double alpha, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb)
   { DTRSM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
   
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+  template<typename OrdinalType>
+  class BLAS<OrdinalType, complex<float> >
+  {    
+  public:
+    inline BLAS(void) {};
+    inline BLAS(const BLAS& BLAS_source) {};
+    inline virtual ~BLAS(void) {};
+    void ROTG(complex<float>* da, complex<float>* db, complex<float>* c, complex<float>* s);
+    complex<float> ASUM(const OrdinalType n, const complex<float>* x, const OrdinalType incx);
+    void AXPY(const OrdinalType n, const complex<float> alpha, const complex<float>* x, const OrdinalType incx, complex<float>* y, const OrdinalType incy);
+    void COPY(const OrdinalType n, const complex<float>* x, const OrdinalType incx, complex<float>* y, const OrdinalType incy);
+    complex<float> DOT(const OrdinalType n, const complex<float>* x, const OrdinalType incx, const complex<float>* y, const OrdinalType incy);
+    complex<float> NRM2(const OrdinalType n, const complex<float>* x, const OrdinalType incx);
+    void SCAL(const OrdinalType n, const complex<float> alpha, complex<float>* x, const OrdinalType incx);
+    OrdinalType IAMAX(const OrdinalType n, const complex<float>* x, const OrdinalType incx);
+    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, const complex<float>* x, const OrdinalType incx, const complex<float> beta, complex<float>* y, const OrdinalType incy);
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const complex<float>* A, const OrdinalType lda, complex<float>* x, const OrdinalType incx);
+    void GER(const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* x, const OrdinalType incx, const complex<float>* y, const OrdinalType incy, complex<float>* A, const OrdinalType lda);
+    void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, const complex<float>* B, const OrdinalType ldb, const complex<float> beta, complex<float>* C, const OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, const complex<float> *B, const OrdinalType ldb, const complex<float> beta, complex<float> *C, const OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb);
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb);
+  };
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::ROTG(complex<float>* da, complex<float>* db, complex<float>* c, complex<float>* s)
+  { SROTG_F77(da, db, c, s ); }
+
+  template<typename OrdinalType>
+  complex<float> BLAS<OrdinalType, complex<float> >::ASUM(const OrdinalType n, const complex<float>* x, const OrdinalType incx)
+  { return SASUM_F77(&n, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::AXPY(const OrdinalType n, const complex<float> alpha, const complex<float>* x, const OrdinalType incx, complex<float>* y, const OrdinalType incy)
+  { SAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::COPY(const OrdinalType n, const complex<float>* x, const OrdinalType incx, complex<float>* y, const OrdinalType incy)
+  { SCOPY_F77(&n, x, &incx, y, &incy); }
+  
+  template<typename OrdinalType>
+  complex<float> BLAS<OrdinalType, complex<float> >::DOT(const OrdinalType n, const complex<float>* x, const OrdinalType incx, const complex<float>* y, const OrdinalType incy)
+  { return SDOT_F77(&n, x, &incx, y, &incy); }
+  
+  template<typename OrdinalType>
+  OrdinalType BLAS<OrdinalType, complex<float> >::IAMAX(const OrdinalType n, const complex<float>* x, const OrdinalType incx)
+  { return ISAMAX_F77(&n, x, &incx); }
+
+  template<typename OrdinalType>
+  complex<float> BLAS<OrdinalType, complex<float> >::NRM2(const OrdinalType n, const complex<float>* x, const OrdinalType incx)
+  { return SNRM2_F77(&n, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::SCAL(const OrdinalType n, const complex<float> alpha, complex<float>* x, const OrdinalType incx)
+  { SSCAL_F77(&n, &alpha, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, const complex<float>* x, const OrdinalType incx, const complex<float> beta, complex<float>* y, const OrdinalType incy)
+  { SGEMV_F77(&ETranspChar[trans], &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::GER(const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* x, const OrdinalType incx, const complex<float>* y, const OrdinalType incy, complex<float>* A, const OrdinalType lda)
+  { SGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const complex<float>* A, const OrdinalType lda, complex<float>* x, const OrdinalType incx)
+  { STRMV_F77(&EUploChar[uplo], &ETranspChar[trans], &EDiagChar[diag], &n, A, &lda, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, const complex<float>* B, const OrdinalType ldb, const complex<float> beta, complex<float>* C, const OrdinalType ldc)
+  { SGEMM_F77(&ETranspChar[transa], &ETranspChar[transb], &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, const complex<float>* B, const OrdinalType ldb, const complex<float> beta, complex<float>* C, const OrdinalType ldc)
+  { SSYMM_F77(&ESideChar[side], &EUploChar[uplo], &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb)
+  { STRMM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb)
+  { STRSM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
+
+
+  template<typename OrdinalType>
+  class BLAS<OrdinalType, complex<double> >
+  {    
+  public:
+    inline BLAS(void) {};
+    inline BLAS(const BLAS& BLAS_source) {};
+    inline virtual ~BLAS(void) {};
+    void ROTG(complex<double>* da, complex<double>* db, complex<double>* c, complex<double>* s);
+    complex<double> ASUM(const OrdinalType n, const complex<double>* x, const OrdinalType incx);
+    void AXPY(const OrdinalType n, const complex<double> alpha, const complex<double>* x, const OrdinalType incx, complex<double>* y, const OrdinalType incy);
+    void COPY(const OrdinalType n, const complex<double>* x, const OrdinalType incx, complex<double>* y, const OrdinalType incy);
+    complex<double> DOT(const OrdinalType n, const complex<double>* x, const OrdinalType incx, const complex<double>* y, const OrdinalType incy);
+    complex<double> NRM2(const OrdinalType n, const complex<double>* x, const OrdinalType incx);
+    void SCAL(const OrdinalType n, const complex<double> alpha, complex<double>* x, const OrdinalType incx);
+    OrdinalType IAMAX(const OrdinalType n, const complex<double>* x, const OrdinalType incx);
+    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, const complex<double>* x, const OrdinalType incx, const complex<double> beta, complex<double>* y, const OrdinalType incy);
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const complex<double>* A, const OrdinalType lda, complex<double>* x, const OrdinalType incx);
+    void GER(const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* x, const OrdinalType incx, const complex<double>* y, const OrdinalType incy, complex<double>* A, const OrdinalType lda);
+    void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, const complex<double>* B, const OrdinalType ldb, const complex<double> beta, complex<double>* C, const OrdinalType ldc);
+    void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, const complex<double> *B, const OrdinalType ldb, const complex<double> beta, complex<double> *C, const OrdinalType ldc);
+    void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb);
+    void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb);
+  };
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::ROTG(complex<double>* da, complex<double>* db, complex<double>* c, complex<double>* s)
+  { DROTG_F77(da, db, c, s); }
+
+  template<typename OrdinalType>
+  complex<double> BLAS<OrdinalType, complex<double> >::ASUM(const OrdinalType n, const complex<double>* x, const OrdinalType incx)
+  { return DASUM_F77(&n, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::AXPY(const OrdinalType n, const complex<double> alpha, const complex<double>* x, const OrdinalType incx, complex<double>* y, const OrdinalType incy)
+  { DAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::COPY(const OrdinalType n, const complex<double>* x, const OrdinalType incx, complex<double>* y, const OrdinalType incy)
+  { DCOPY_F77(&n, x, &incx, y, &incy); }
+  
+  template<typename OrdinalType>
+  complex<double> BLAS<OrdinalType, complex<double> >::DOT(const OrdinalType n, const complex<double>* x, const OrdinalType incx, const complex<double>* y, const OrdinalType incy)
+  { return DDOT_F77(&n, x, &incx, y, &incy); }
+  
+  template<typename OrdinalType>
+  OrdinalType BLAS<OrdinalType, complex<double> >::IAMAX(const OrdinalType n, const complex<double>* x, const OrdinalType incx)
+  { return IDAMAX_F77(&n, x, &incx); }
+
+  template<typename OrdinalType>
+  complex<double> BLAS<OrdinalType, complex<double> >::NRM2(const OrdinalType n, const complex<double>* x, const OrdinalType incx)
+  { return DNRM2_F77(&n, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::SCAL(const OrdinalType n, const complex<double> alpha, complex<double>* x, const OrdinalType incx)
+  { DSCAL_F77(&n, &alpha, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, const complex<double>* x, const OrdinalType incx, const complex<double> beta, complex<double>* y, const OrdinalType incy)
+  { DGEMV_F77(&ETranspChar[trans], &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::GER(const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* x, const OrdinalType incx, const complex<double>* y, const OrdinalType incy, complex<double>* A, const OrdinalType lda)
+  { DGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const complex<double>* A, const OrdinalType lda, complex<double>* x, const OrdinalType incx)
+  { DTRMV_F77(&EUploChar[uplo], &ETranspChar[trans], &EDiagChar[diag], &n, A, &lda, x, &incx); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, const complex<double>* B, const OrdinalType ldb, const complex<double> beta, complex<double>* C, const OrdinalType ldc)
+  { DGEMM_F77(&ETranspChar[transa], &ETranspChar[transb], &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, const complex<double> *B, const OrdinalType ldb, const complex<double> beta, complex<double> *C, const OrdinalType ldc)
+  { DSYMM_F77(&ESideChar[side], &EUploChar[uplo], &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb)
+  { DTRMM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb)
+  { DTRSM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
+  
+#endif
+
 } // namespace Teuchos
 
 #endif // _TEUCHOS_BLAS_HPP_

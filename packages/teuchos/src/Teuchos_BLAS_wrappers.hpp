@@ -39,11 +39,31 @@
 #define DSYMM_F77   F77_FUNC(ssymm,SSYMM)
 #define DTRMM_F77   F77_FUNC(strmm,STRMM)
 #define DTRSM_F77   F77_FUNC(strsm,STRSM)
+ 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define ZROTG_F77   F77_FUNC(crotg,CROTG)
+#define ZASUM_F77   F77_FUNC(casum,CASUM) 
+#define ZAXPY_F77   F77_FUNC(caxpy,CAXPY)
+#define ZCOPY_F77   F77_FUNC(ccopy,CCOPY)
+#define ZDOT_F77    F77_FUNC(cdot,CDOT)
+#define ZNRM2_F77   F77_FUNC(cnrm2,CNRM2)
+#define ZSCAL_F77   F77_FUNC(cscal,CSCAL)
+#define IZAMAX_F77  F77_FUNC(icamax,ICAMAX)
+#define ZGEMV_F77   F77_FUNC(cgemv,CGEMV)
+#define ZGER_F77    F77_FUNC(cger,CGER)
+#define ZTRMV_F77   F77_FUNC(ctrmv,CTRMV)
+#define ZGEMM_F77   F77_FUNC(cgemm,CGEMM)
+#define ZSYMM_F77   F77_FUNC(csymm,CSYMM)
+#define ZTRMM_F77   F77_FUNC(ctrmm,CTRMM)
+#define ZTRSM_F77   F77_FUNC(ctrsm,CTRSM)
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall 
-#define Teuchos_fcd char *, unsigned int 
+#define Teuchos_fcd const char *, unsigned int 
 
 #define DROTG_F77   F77_FUNC(drotg,DROTG)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
@@ -60,11 +80,31 @@
 #define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
+#define ZASUM_F77   F77_FUNC(zasum,ZASUM)
+#define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
+#define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
+#define ZDOT_F77    F77_FUNC(zdot,ZDOT)  
+#define ZNRM2_F77   F77_FUNC(znrm2,ZNRM2)
+#define ZSCAL_F77   F77_FUNC(zscal,ZSCAL)
+#define IZAMAX_F77  F77_FUNC(izamax,IZAMAX)
+#define ZGEMV_F77   F77_FUNC(zgemv,ZGEMV)
+#define ZGER_F77    F77_FUNC(zger,ZGER)
+#define ZTRMV_F77   F77_FUNC(ztrmv,ZTRMV)
+#define ZGEMM_F77   F77_FUNC(zgemm,ZGEMM)
+#define ZSYMM_F77   F77_FUNC(zsymm,ZSYMM)
+#define ZTRMM_F77   F77_FUNC(ztrmm,ZTRMM)
+#define ZTRSM_F77   F77_FUNC(ztrsm,ZTRSM)
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 #elif defined(INTEL_MKL)
 
 #define PREFIX
-#define Teuchos_fcd char *
+#define Teuchos_fcd const char *
 
 #define DROTG_F77   F77_FUNC(drotg,DROTG)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
@@ -81,6 +121,26 @@
 #define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
+#define ZASUM_F77   F77_FUNC(zasum,ZASUM)
+#define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
+#define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
+#define ZDOT_F77    F77_FUNC(zdot,ZDOT)  
+#define ZNRM2_F77   F77_FUNC(znrm2,ZNRM2)
+#define ZSCAL_F77   F77_FUNC(zscal,ZSCAL)
+#define IZAMAX_F77  F77_FUNC(izamax,IZAMAX)
+#define ZGEMV_F77   F77_FUNC(zgemv,ZGEMV)
+#define ZGER_F77    F77_FUNC(zger,ZGER)
+#define ZTRMV_F77   F77_FUNC(ztrmv,ZTRMV)
+#define ZGEMM_F77   F77_FUNC(zgemm,ZGEMM)
+#define ZSYMM_F77   F77_FUNC(zsymm,ZSYMM)
+#define ZTRMM_F77   F77_FUNC(ztrmm,ZTRMM)
+#define ZTRSM_F77   F77_FUNC(ztrsm,ZTRSM)
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 #endif 
 
@@ -98,7 +158,7 @@
 #else /* Define Teuchos_fcd for all other machines */
 
 #define PREFIX
-#define Teuchos_fcd char * 
+#define Teuchos_fcd const char * 
 
 /* In the future use autoconf's definition of F77_FUNC */ 
 
@@ -132,6 +192,26 @@
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
+#define ZASUM_F77   F77_FUNC(zasum,ZASUM)
+#define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
+#define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
+#define ZDOT_F77    F77_FUNC(zdot,ZDOT)  
+#define ZNRM2_F77   F77_FUNC(znrm2,ZNRM2)
+#define ZSCAL_F77   F77_FUNC(zscal,ZSCAL)
+#define IZAMAX_F77  F77_FUNC(izamax,IZAMAX)
+#define ZGEMV_F77   F77_FUNC(zgemv,ZGEMV)
+#define ZGER_F77    F77_FUNC(zger,ZGER)
+#define ZTRMV_F77   F77_FUNC(ztrmv,ZTRMV)
+#define ZGEMM_F77   F77_FUNC(zgemm,ZGEMM)
+#define ZSYMM_F77   F77_FUNC(zsymm,ZSYMM)
+#define ZTRMM_F77   F77_FUNC(ztrmm,ZTRMM)
+#define ZTRSM_F77   F77_FUNC(ztrsm,ZTRSM)
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
+
 #endif
 
 
@@ -154,6 +234,26 @@
 #define STRMM_F77   F77_FUNC(strmm,STRMM)
 #define STRSM_F77   F77_FUNC(strsm,STRSM)
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define CROTG_F77   F77_FUNC(crotg,CROTG)
+#define CASUM_F77   F77_FUNC(casum,CASUM) 
+#define CAXPY_F77   F77_FUNC(caxpy,CAXPY)
+#define CCOPY_F77   F77_FUNC(ccopy,CCOPY)
+#define CDOT_F77    F77_FUNC(cdot,CDOT)
+#define CNRM2_F77   F77_FUNC(cnrm2,CNRM2)
+#define CSCAL_F77   F77_FUNC(cscal,CSCAL)
+#define ICAMAX_F77  F77_FUNC(icamax,ICAMAX)
+#define CGEMV_F77   F77_FUNC(cgemv,CGEMV)
+#define CGER_F77    F77_FUNC(cger,CGER)
+#define CTRMV_F77   F77_FUNC(ctrmv,CTRMV)
+#define CGEMM_F77   F77_FUNC(cgemm,CGEMM)
+#define CSYMM_F77   F77_FUNC(csymm,CSYMM)
+#define CTRMM_F77   F77_FUNC(ctrmm,CTRMM)
+#define CTRSM_F77   F77_FUNC(ctrsm,CTRSM)
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -161,67 +261,151 @@ extern "C" {
 
 /* Double precision BLAS 1 */
 void PREFIX DROTG_F77(double* da, double* db, double* c, double* s);
-double PREFIX DASUM_F77(int* n, double x[], int* incx);
-void PREFIX DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
-void PREFIX DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
-double PREFIX DDOT_F77(int* n, double x[], int* incx, double y[], int* incy);
-double PREFIX DNRM2_F77(int* n, double x[], int* incx); 
-void PREFIX DSCAL_F77(int* n, double* alpha, double *x, int* incx);
-int PREFIX IDAMAX_F77(int* n, double *x, int* incx);
+double PREFIX DASUM_F77(const int* n, const double x[], const int* incx);
+void PREFIX DAXPY_F77(const int* n, const double* alpha, const double x[], const int* incx, double y[], const int* incy);
+void PREFIX DCOPY_F77(const int* n, const double *x, const int* incx, double *y, const int* incy);
+double PREFIX DDOT_F77(const int* n, const double x[], const int* incx, const double y[], const int* incy);
+double PREFIX DNRM2_F77(const int* n, const double x[], const int* incx); 
+void PREFIX DSCAL_F77(const int* n, const double* alpha, double *x, const int* incx);
+int PREFIX IDAMAX_F77(const int* n, const double *x, const int* incx);
+
+/* Double complex precision BLAS 1 */
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+void PREFIX ZROTG_F77(complex<double>* da, complex<double>* db, complex<double>* c, complex<double>* s);
+complex<double> PREFIX ZASUM_F77(const int* n, const complex<double> x[], const int* incx);
+void PREFIX ZAXPY_F77(const int* n, const complex<double>* alpha, const complex<double> x[], const int* incx, complex<double> y[], const int* incy);
+void PREFIX ZCOPY_F77(const int* n, const complex<double> *x, const int* incx, complex<double> *y, const int* incy);
+complex<double> PREFIX ZDOT_F77(const int* n, const complex<double> x[], const int* incx, const complex<double> y[], const int* incy);
+complex<double> PREFIX ZNRM2_F77(const int* n, const complex<double> x[], const int* incx); 
+void PREFIX ZSCAL_F77(const int* n, const complex<double>* alpha, complex<double> *x, const int* incx);
+int PREFIX IZAMAX_F77(const int* n, const complex<double> *x, const int* incx);
+
+#endif
 
 /* Single precision BLAS 1 */ 
 void PREFIX SROTG_F77(float* da, float* db, float* c, float* s);
-float PREFIX SASUM_F77(int* n, float x[], int* incx);
-void PREFIX SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
-void PREFIX SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
-float PREFIX SDOT_F77(int* n, float x[], int* incx, float y[], int* incy);
-float PREFIX SNRM2_F77(int* n, float x[], int* incx); 
-void PREFIX SSCAL_F77(int* n, float* alpha, float *x, int* incx);
-int PREFIX ISAMAX_F77(int* n, float *x, int* incx);
+float PREFIX SASUM_F77(const int* n, const float x[], const int* incx);
+void PREFIX SAXPY_F77(const int* n, const float* alpha, const float x[], const int* incx, float y[], const int* incy);
+void PREFIX SCOPY_F77(const int* n, const float *x, const int* incx, float *y, const int* incy);
+float PREFIX SDOT_F77(const int* n, const float x[], const int* incx, const float y[], const int* incy);
+float PREFIX SNRM2_F77(const int* n, const float x[], const int* incx); 
+void PREFIX SSCAL_F77(const int* n, const float* alpha, float *x, const int* incx);
+int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
+
+/* Single complex precision BLAS 1 */ 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+void PREFIX CROTG_F77(complex<float>* da, complex<float>* db, complex<float>* c, complex<float>* s);
+complex<float> PREFIX CASUM_F77(const int* n, const complex<float> x[], const int* incx);
+void PREFIX CAXPY_F77(const int* n, const complex<float>* alpha, const complex<float> x[], const int* incx, complex<float> y[], const int* incy);
+void PREFIX CCOPY_F77(const int* n, const complex<float> *x, const int* incx, complex<float> *y, const int* incy);
+complex<float> PREFIX CDOT_F77(const int* n, const complex<float> x[], const int* incx, const complex<float> y[], const int* incy);
+complex<float> PREFIX CNRM2_F77(const int* n, const complex<float> x[], const int* incx); 
+void PREFIX CSCAL_F77(const int* n, const complex<float>* alpha, complex<float> *x, const int* incx);
+int PREFIX ICAMAX_F77(const int* n, const complex<float> *x, const int* incx);
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 /* Double precision BLAS 2 */
-void PREFIX DGEMV_F77(Teuchos_fcd, int* m, int* n, double* alpha, double A[], int* lda,
-                 double x[], int* incx, double* beta, double y[], int* incy);
-void PREFIX DTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, int *n, 
-                double *a, int *lda, double *x, int *incx); 
-void PREFIX DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y,
-               int *incy, double *a, int *lda);
+void PREFIX DGEMV_F77(Teuchos_fcd, const int* m, const int* n, const double* alpha, const double A[], const int* lda,
+                 const double x[], const int* incx, const double* beta, double y[], const int* incy);
+void PREFIX DTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n, 
+                const double *a, const int *lda, double *x, const int *incx); 
+void PREFIX DGER_F77(const int *m, const int *n, const double *alpha, const double *x, const int *incx, const double *y,
+               const int *incy, double *a, const int *lda);
 
+/* Double precision BLAS 2 */
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+void PREFIX ZGEMV_F77(Teuchos_fcd, const int* m, const int* n, const complex<double>* alpha, const complex<double> A[], const int* lda,
+                 const complex<double> x[], const int* incx, const complex<double>* beta, complex<double> y[], const int* incy);
+void PREFIX ZTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n, 
+                const complex<double> *a, const int *lda, complex<double> *x, const int *incx); 
+void PREFIX ZGER_F77(const int *m, const int *n, const complex<double> *alpha, const complex<double> *x, const int *incx, const complex<double> *y,
+               const int *incy, complex<double> *a, const int *lda);
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 /* Single precision BLAS 2 */
-void PREFIX SGEMV_F77(Teuchos_fcd, int* m, int* n, float* alpha, float A[], int* lda,
-                 float x[], int* incx, float* beta, float y[], int* incy);
-void PREFIX STRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, int *n,
-                float *a, int *lda, float *x, int *incx); 
-void PREFIX SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y,
-               int *incy, float *a, int *lda);
+void PREFIX SGEMV_F77(Teuchos_fcd, const int* m, const int* n, const float* alpha, const float A[], const int* lda,
+                 const float x[], const int* incx, const float* beta, float y[], const int* incy);
+void PREFIX STRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n,
+                const float *a, const int *lda, float *x, const int *incx); 
+void PREFIX SGER_F77(const int *m, const int *n, const float *alpha, const float *x, const int *incx, const float *y,
+               const int *incy, float *a, const int *lda);
+
+/* Single complex precision BLAS 2 */
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+void PREFIX CGEMV_F77(Teuchos_fcd, const int* m, const int* n, const complex<float>* alpha, const complex<float> A[], const int* lda,
+                 const complex<float> x[], const int* incx, const complex<float>* beta, complex<float> y[], const int* incy);
+void PREFIX CTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n,
+                const complex<float> *a, const int *lda, complex<float> *x, const int *incx); 
+void PREFIX CGER_F77(const int *m, const int *n, const complex<float> *alpha, const complex<float> *x, const int *incx, const complex<float> *y,
+               const int *incy, complex<float> *a, const int *lda);
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 /* Double precision BLAS 3 */
-void PREFIX DGEMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * 
-                n, int *k, double *alpha, double *a, int *lda, 
-                double *b, int *ldb, double *beta, double *c, int *ldc);
-void PREFIX DSYMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * n,
-                double *alpha, double *a, int *lda, 
-                double *b, int *ldb, double *beta, double *c, int *ldc);
+void PREFIX DGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * 
+                n, const int *k, const double *alpha, const double *a, const int *lda, 
+                const double *b, const int *ldb, const double *beta, double *c, const int *ldc);
+void PREFIX DSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
+                const double *alpha, const double *a, const int *lda, 
+                const double *b, const int *ldb, const double *beta, double *c, const int *ldc);
 void PREFIX DTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,  
-                int *m, int *n, double *alpha, double *a, int * lda, double *b, int *ldb);
+                const int *m, const int *n, const double *alpha, const double *a, const int * lda, double *b, const int *ldb);
 void PREFIX DTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
-                int *m, int *n, double *alpha, double *a, int *
-                lda, double *b, int *ldb);
+                const int *m, const int *n, const double *alpha, const double *a, const int *
+                lda, double *b, const int *ldb);
+
+/* Double complex precision BLAS 3 */
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+void PREFIX ZGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * 
+                n, const int *k, const complex<double> *alpha, const complex<double> *a, const int *lda, 
+                const complex<double> *b, const int *ldb, const complex<double> *beta, complex<double> *c, const int *ldc);
+void PREFIX ZSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
+                const complex<double> *alpha, const complex<double> *a, const int *lda, 
+                const complex<double> *b, const int *ldb, const complex<double> *beta, complex<double> *c, const int *ldc);
+void PREFIX ZTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,  
+                const int *m, const int *n, const complex<double> *alpha, const complex<double> *a, const int * lda, complex<double> *b, const int *ldb);
+void PREFIX ZTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
+                const int *m, const int *n, const complex<double> *alpha, const complex<double> *a, const int *
+                lda, complex<double> *b, const int *ldb);
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 /* Single precision BLAS 3 */
-void PREFIX SGEMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int *
-                n, int *k, float *alpha, float *a, int *lda, 
-                float *b, int *ldb, float *beta, float *c, int *ldc);
-void PREFIX SSYMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * n,
-                float *alpha, float *a, int *lda, 
-                float *b, int *ldb, float *beta, float *c, int *ldc);
+void PREFIX SGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
+                n, const int *k, const float *alpha, const float *a, const int *lda, 
+                const float *b, const int *ldb, const float *beta, float *c, const int *ldc);
+void PREFIX SSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
+                const float *alpha, const float *a, const int *lda, 
+                const float *b, const int *ldb, const float *beta, float *c, const int *ldc);
 void PREFIX STRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
-                int *m, int *n, float *alpha, float *a, int * lda, float *b, int *ldb);
+                const int *m, const int *n, const float *alpha, const float *a, const int * lda, float *b, const int *ldb);
 void PREFIX STRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
-                int *m, int *n, float *alpha, float *a, int *
-                lda, float *b, int *ldb);
+                const int *m, const int *n, const float *alpha, const float *a, const int *
+                lda, float *b, const int *ldb);
 
+/* Single complex precision BLAS 3 */
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+void PREFIX CGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
+                n, const int *k, const complex<float> *alpha, const complex<float> *a, const int *lda, 
+                const complex<float> *b, const int *ldb, const complex<float> *beta, complex<float> *c, const int *ldc);
+void PREFIX CSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
+                const complex<float> *alpha, const complex<float> *a, const int *lda, 
+                const complex<float> *b, const int *ldb, const complex<float> *beta, complex<float> *c, const int *ldc);
+void PREFIX CTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
+                const int *m, const int *n, const complex<float> *alpha, const complex<float> *a, const int * lda, complex<float> *b, const int *ldb);
+void PREFIX CTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
+                const int *m, const int *n, const complex<float> *alpha, const complex<float> *a, const int *
+                lda, complex<float> *b, const int *ldb);
+
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 #ifdef __cplusplus
 }
