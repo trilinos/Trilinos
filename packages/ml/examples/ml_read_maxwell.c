@@ -146,6 +146,7 @@ int    *cpntr = NULL, *Ke_bindx = NULL, *Kn_bindx = NULL, Nlocal_edges, iii, *Tm
 int    *update, *update_index;
 int *external, *extern_index;
 struct reader_context *context;
+int mls_poly_degree;
 
 #ifdef debugSmoother
 double *xxx;
@@ -1663,9 +1664,9 @@ nx = nx--; /* rst dirichlet */
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
-	  nodal_args = ML_Smoother_Arglist_Create(2);
+	  nodal_args = ML_Smoother_Arglist_Create(3);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-	  edge_args = ML_Smoother_Arglist_Create(2);
+	  edge_args = ML_Smoother_Arglist_Create(3);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
 	}
     }
@@ -1717,17 +1718,19 @@ nx = nx--; /* rst dirichlet */
 	    if (nodal_eig_ratio[level] < 4.) nodal_eig_ratio[level] = 4.;
 	    ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[level]));
 	    ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[level]));
+        mls_poly_degree = 1;
+        printf("\n\nChebychev polynomial degree hardwired to 1\a\a\n\n");
+	    ML_Smoother_Arglist_Set(nodal_args, 2, &mls_poly_degree);
+	    ML_Smoother_Arglist_Set(edge_args, 2, &mls_poly_degree);
 	  }
-          if (level == N_levels-1)
-             ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-				      Tmat_array, Tmat_trans_array,
-				      Tmatbc, 
-edge_smoother,edge_args, nodal_smoother,nodal_args);
-          else
-             ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-				      Tmat_array, Tmat_trans_array, 
-				      NULL, 
-edge_smoother,edge_args, nodal_smoother,nodal_args);
+      if (level == N_levels-1)
+         ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+                      Tmat_array, Tmat_trans_array, Tmatbc, edge_smoother,
+                      edge_args, nodal_smoother,nodal_args);
+      else
+         ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+                      Tmat_array, Tmat_trans_array, 
+				      NULL, edge_smoother,edge_args, nodal_smoother,nodal_args);
 	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -1821,6 +1824,10 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
     if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
        ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[coarsest_level]));
        ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[coarsest_level]));
+       mls_poly_degree = 1;
+       printf("\n\nChebychev polynomial degree hardwired to 1\a\a\n\n");
+       ML_Smoother_Arglist_Set(edge_args, 2, &mls_poly_degree);
+       ML_Smoother_Arglist_Set(nodal_args, 2, &mls_poly_degree);
     }
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
