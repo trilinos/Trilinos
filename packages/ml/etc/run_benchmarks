@@ -22,7 +22,7 @@
 #   3) If you are running in parallel and need something other than mpirun, 
 #      edit the 'PARALLEL_CMD' variable below.
 #
-PARALLEL_CMD=`echo /usr/bin/mpirun -np `
+PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
 #
 #      Note:
 #      a) Some systems may require that you use a batch queue system to run
@@ -65,7 +65,7 @@ BENCH_ROOT_DIRECTORY=${HOME}/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
 PARALLEL=TRUE
-BATCH=FALSE
+BATCH=TRUE
 CVS_UPDATE=FALSE
 ARCH=PCLINUX
 SUMMARY_FILE=${SCRATCH_ROOT_DIRECTORY}/summary
@@ -241,7 +241,7 @@ rm -f ${SUMMARY_FILE}
 if test `expr ${CVS_UPDATE}` = 'TRUE'
 then
   MYNAME=`whoami`
-  CVSROOT=:ext:${MYNAME}@146.246.245.133:/home/tuminaro/CVS
+  CVSROOT=:ext:${MYNAME}@skip.sandia.gov:/space/CVS
   CVS_RSH=/usr/bin/ssh
   export CVSROOT
   export CVS_RSH
