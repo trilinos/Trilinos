@@ -162,13 +162,16 @@ int main(int argc, char *argv[])
 	Indices[1] = MyGlobalElements[i]+1;
 	NumEntries = 2;
       }
-     assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+     ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
+     assert(ierr==0);
      // Put in the diagonal entry
-     assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i)==0);
+     ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i);
+     assert(ierr==0);
     }
-  
+   
   // Finish up
-  assert(A.TransformToLocal()==0);
+  ierr = A.TransformToLocal();
+  assert(ierr==0);
 
   // Create vectors for Power method
 
