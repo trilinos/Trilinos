@@ -67,7 +67,7 @@ if ($date =~/Sun/) {
 print "$frequency\n";
 # Set proper location of cvsroot and cvscmd
 my $cvsroot=":ext:jmwille\@software.sandia.gov:/space/CVS";
-my $cvscmd="/usr/bin/cvs";
+my $cvscmd="cvs";
 
 # name of the file containing the names of the machines to be used for parallel jobs
 # If this file doesn't exist, parallel jobs will be run on the local machine only
