@@ -1296,7 +1296,8 @@ namespace Anasazi {
 	  _exit_flg = true;
 	}
       
-      delete basistemp, basistemp2;
+      delete basistemp;
+      delete basistemp2;
       delete [] index;
     }			
   }
