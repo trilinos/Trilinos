@@ -286,6 +286,8 @@ Epetra_VbrMatrix::~Epetra_VbrMatrix(){
 //==============================================================================
 int Epetra_VbrMatrix::PutScalar(double ScalarConstant) 
 {
+  if (!Allocated_) return(0);
+
   for (int i=0; i<NumMyBlockRows_; i++) {
     int NumBlockEntries = NumBlockEntriesPerRow_[i];
     int RowDim = ElementSizeList_[i];
