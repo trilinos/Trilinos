@@ -39,4 +39,3 @@
 #include "NOX_StatusTest_NormWRMS.H"
 #include "NOX_StatusTest_MaxIters.H"
 #include "NOX_Utils.H"
-//#include "LOCA_Stepper.H"
