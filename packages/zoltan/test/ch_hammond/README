@@ -1,0 +1,7 @@
+-------------------------------------------------------------------------------
+ch_hammond
+  hammond graph included with Chaco distribution.
+  fairly small, 2D finite element grid with triangular elements
+  Graph and coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------

@@ -1,0 +1,7 @@
+-------------------------------------------------------------------------------
+ch_simple
+  Simple graph.
+  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
+  Graph and coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------

@@ -1,0 +1,70 @@
+*************************   CHACO TEST PROBLEMS   *****************************
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ch_film
+  Film graph included with Chaco distribution.
+  Small finite element grid with quadrilateral elements.
+  Graph and coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ch_grid20
+  Simple graph.
+  20x20 grid.
+  Graph and coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ch_hammond
+  hammond graph included with Chaco distribution.
+  fairly small, 2D finite element grid with triangular elements
+  Graph and coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ch_nograph
+  Simple graph.
+  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
+  No graph specified; only coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ch_simple
+  Simple graph.
+  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
+  Graph and coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ch_vwgt
+  Simple graph.
+  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
+  Graph and coordinates included.
+  Vertex weights specified.
+-------------------------------------------------------------------------------
+
+
+
+*************************   NEMESIS TEST PROBLEMS   ***************************
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+nem_ti_300
+  3D Tilted Reactor mesh with approx. 300 elements.
+  Run on 6 processors (for committed values).
+  Random Chaco decomposition initially.
+  No vertex weighting.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+nem_ti_4k
+  3D Tilted Reactor mesh with approx. 4k elements.
+  Run on 9 processors (for committed values).
+  Random Chaco decomposition initially.
+  No vertex weighting.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+nem_ti_20k
+  3D Tilted Reactor mesh with approx. 20k elements.
+  Run on 36 processors (for committed values).
+  Random Chaco decomposition initially.
+  No vertex weighting.
+-------------------------------------------------------------------------------
