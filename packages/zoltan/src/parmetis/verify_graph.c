@@ -382,10 +382,8 @@ barrier1:
   }
   else {
     if (proc==0 && output_level>0){
-      if (check_graph == 1)
-        printf("ZOLTAN %s: graph is OK locally on each processor\n", yo);
-      else /* check_graph >= 2 */
-        printf("ZOLTAN %s: graph is OK\n", yo);
+      printf("ZOLTAN %s: The graph is valid with check_graph = %1d\n", 
+             yo, check_graph);
     }
     return LB_OK;
   }
