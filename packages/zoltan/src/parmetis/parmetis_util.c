@@ -78,3 +78,17 @@ int LB_hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n)
   /* Key not in hash table */
   return -1;
 }
+
+void LB_Print_Time (LB *lb, double time, char *msg)
+{
+  double sum, max;
+
+  MPI_Reduce((void *)&time, (void *)&sum, 1, MPI_DOUBLE, MPI_SUM, 0, lb->Communicator);
+
+  MPI_Reduce((void *)&time, (void *)&max, 1, MPI_DOUBLE, MPI_MAX, 0, lb->Communicator);
+
+  if (lb->Proc == 0 && sum != 0.0)
+    printf("%s: Max: %7.3lf, Sum: %7.3lf, Balance: %7.3lf\n", 
+            msg, max, sum, max*(lb->Num_Proc)/sum);
+
+}

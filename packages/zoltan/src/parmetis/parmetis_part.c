@@ -38,7 +38,7 @@ static char *cvs_parmetis_part_id = "$Id$";
 
 /******** Interface routine between Zoltan and ParMetis. ************/
 
-int LB_ParMetis_Part(
+int LB_ParMetis(
   LB *lb,             /* load balancing object */
   int *num_imp,       /* number of objects to be imported */
   LB_GID **imp_gids,  /* global ids of objects to be imported */
@@ -67,6 +67,7 @@ int LB_ParMetis_Part(
   struct Comm_Obj *plan;
   MPI_Request *request;
   MPI_Status *status;
+  double times[5];
 
   PARAM_VARS parmetis_params[] = {
         { "PARMETIS_METHOD", NULL, "STRING" },
@@ -79,8 +80,11 @@ int LB_ParMetis_Part(
   
 #ifdef LB_DEBUG
   int i99, *p99;
-  printf("[%1d] Debug: Entering ParMetis_Part()\n", lb->Proc);
+  printf("[%1d] Debug: Entering LB_ParMetis()\n", lb->Proc);
 #endif
+
+  /* Start timer here */
+  times[0] = MPI_Wtime();
 
   /* Set default return values (in case of early exit) */
   /* Unnecessary because this was done in LB_Balance.
@@ -505,6 +509,9 @@ int LB_ParMetis_Part(
     }
   }
 
+  /* Get a time here */
+  times[1] = MPI_Wtime();
+
   /* Call ParMETIS */
   wgtflag = 2*(vwgt_dim>0) + (ewgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
@@ -550,6 +557,10 @@ int LB_ParMetis_Part(
     printf("Error: Unknown ParMetis algorithm %s\n", alg);
     return LB_FATAL;
   }
+
+  /* Get a time here */
+  times[2] = MPI_Wtime();
+
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Returned from ParMETIS partitioner with edgecut= %d\n", lb->Proc, edgecut);
 #endif
@@ -666,6 +677,20 @@ int LB_ParMetis_Part(
   if (get_geom_data){
     LB_Free((void **) &xyz);
   }
+
+  /* Get a time here */
+  times[3] = MPI_Wtime();
+
+  /* Output timing results if desired */
+  if (options[OPTION_DBGLVL]>0){
+    if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics (wall clock):\n");
+    LB_Print_Time(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
+    LB_Print_Time(lb, times[2]-times[1], "ParMETIS  Library time         ");
+    LB_Print_Time(lb, times[3]-times[2], "ParMETIS  Post-processing time ");
+    LB_Print_Time(lb, times[3]-times[0], "ParMETIS  Total time           ");
+    if (lb->Proc==0) printf("\n");
+  }
+
 #ifdef LB_DEBUG
   printf("[%1d] Debug: exiting ParMetis_Part\n", lb->Proc);
 #endif
