@@ -102,7 +102,7 @@ Albuquerque, NM 87185-1110
 %-----------------------------------------------------------------------------
 \section*{Acknowledgments}
 %-----------------------------------------------------------------------------
-The authors would like to acknowledge the support of the ASCI and LDRD programs
+The author would like to acknowledge the support of the ASCI and LDRD programs
 that funded development of \amesos.
 
 \clearpage
@@ -141,7 +141,7 @@ The classes covered in this guide are:
 \begin{itemize}
 \item \verb!Amesos_LAPACK!: Interface to LAPACK's dense solvers (in
   Section~\ref{sec:lapack}). This class is the only interface to
-  dense solver in \amesos;
+  aa  dense solver;
 \item \verb!Amesos_KLU!: Interface to \amesos's internal solver KLU (in
   Section~\ref{sec:klu});
 \item \verb!Amesos_Umfpack!: Interface to Tim Davis's
@@ -183,7 +183,7 @@ can be created using the function class \verb!Amesos!\footnote{A function
 class is a class that contains methods, but no private data. Function
 classes can be used, for example, to create objects.}, as follows:
 \begin{verbatim}
-Amesos_BaseSolver * Solver;
+Amesos_BaseSolver* Solver;
 Amesos Factory;
 char* SolverType = "Amesos_Klu";
 Solver = Factory.Create(SolverType, Problem);
@@ -195,7 +195,7 @@ in Table~\ref{tab:classes}.
 It is important to note that all available solvers can be selected
 simply by changing an input parameter. Some solvers are serial, other
 parallel; generally, each solver has its own matrix format. However, the
-user will still have the {\em same} interface to all of them.
+user will still have the {\em same} Amesos interface to all of them.
 \end{remark}
 
 The \verb!Factory! object will create an \verb!Amesos_Klu! object (if \amesos\
@@ -211,14 +211,14 @@ bool IsAvailable = Factory.Query(SolverType);
 \end{verbatim}
 
 Parameters for all \amesos\ solvers are specified using a 
-Teuchos\footnote{\amesos cannot be compiled without 
+Teuchos\footnote{\amesos\ cannot be compiled without 
   the support for \teuchos.} 
 parameters list, whose
 definition requires the input file \verb!Teuchos_ParameterList.hpp!. For
 a detailed description, we refer to the Teuchos documentation. We report
 the most important methods of this class in Table~\ref{tab:teuchos}.
 The user may decide to proceed without calling
-\verb!SetParameters()!.
+\verb!SetParameters()!, and use the default values.
 
 \begin{table}[htbp]
   \centering
@@ -289,9 +289,7 @@ AMESOS_CHK_ERR(Solver->Solve());
 
 Should users need to re-factorize the matrix, they must call
 \verb!NumericFactorization()!. If the structure of the matrix is changed,
-they must call \verb!SymbolicFactorization()!. However, it is supposed
-that the linear system matrix and the solution and right-hand side vectors
-are still defined with the same \verb!Epetra_Map!.
+they must call \verb!SymbolicFactorization()!. 
 
 \begin{table}[tbhp]
   \centering
@@ -299,6 +297,7 @@ are still defined with the same \verb!Epetra_Map!.
     \hline
     Class & Communicator  & Matrix type & Interface to \\
     \hline
+    \tt Amesos\_Lapack       & serial   & general & LAPACK \\
     \tt Amesos\_Klu          & serial   & general & KLU \\
     \tt Amesos\_Umfpack      & serial   & general & UMFPACK 4.3 \\
     \tt Amesos\_Superlu      & serial   & general & SuperLU 3.0 \\
@@ -382,7 +381,7 @@ Other flags may be required depending on the location of
     \hline
     LINUX           & SERIAL  & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & --        & --        & --        \\
     % --------------------------------------------------------
-    LINUX, GNU      & LAM/MPI & $\bullet$ & $\bullet$ & $\bullet$ & --        & $\bullet$ & --        & $\bullet$ \\
+    LINUX, GNU      & LAM/MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & --        & $\bullet$ \\
     % --------------------------------------------------------
     LINUX, Intel    & MPICH   & $\bullet$ & $\bullet$ & $\bullet$ & --        & --        & $\bullet$ & $\bullet$ \\
     % --------------------------------------------------------
@@ -556,7 +555,6 @@ means to use its 2nd alternative method, and so on.}
     % -------------------------------------------------------------------
     \tt OutputLevel         & \tt int    & \tt 1      & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$  & $\bullet$\\
     % -------------------------------------------------------------------
-    \tt DebugLevel          & \tt int    & \tt 0      & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
 %---- added by Tim Davis:
     \tt Refactorize         & \tt bool   & \tt false  & $\bullet$ & -- & -- & -- & -- & -- \\
     % -------------------------------------------------------------------
@@ -642,7 +640,8 @@ In order to use KLU, \amesos\ must be configured with the options
 --enable-amesos-klu
 \end{verbatim}
 The KLU sources are distributed with the \amesos\ package. We strongly encourage
-to configure \amesos\ with KLU support. KLU is the only interface that is
+to configure \amesos\ with KLU support. KLU and LAPACK are the only interface
+that are
 turned on by default.
 
 \smallskip
