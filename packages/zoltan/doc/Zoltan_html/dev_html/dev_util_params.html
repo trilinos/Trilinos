@@ -50,16 +50,10 @@ function, resetting parameter values which are appropriate to the method.
 In addition to the method-specific parameters, Zoltan also has a set of
 so-called&nbsp;<a NAME="key_params"></a><b>key parameters</b>. These are normally
 stored in the load balance structure and may be accessed by any part of
-the Zoltan code (including all the methods). Currently, the key parameters
-are:
-<blockquote>
-        IMBALANCE_TOL, double, the load imbalance allowed<br>
-        AUTO_MIGRATE, int, perform auto migration?<br>
-        OBJ_WEIGHT_DIM, int, dimension of object weights<br>
-        COMM_WEIGHT_DIM, int, dimension of communication weights<br>
-        DEBUG_LEVEL, int, debug level<br>
-        DETERMINISTIC, int, deterministic behavior?<br>
-</blockquote>
+the Zoltan code (including all the methods). A list of the 
+<A HREF="../ug_html/ug_alg.html#General_Parameters">
+key parameters currently used in Zoltan</A> can be found 
+in the User's Guide.
 
 <p>The routines that control parameter setting are listed below.
 Note that these routines have been written to be as independent of
