@@ -203,7 +203,12 @@ extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
 extern  int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data);
 extern  int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data**,
                          ML_Operator*, ML_Operator*, ML_Operator*,
-                         ML_Operator*, int, int*, double);
+                         ML_Operator*, int, int*, void *, void **,
+					  void *, void **);
+extern int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
+					   ML_Operator *Amat, void *smoother, 
+						  void **args, double default_omega);
+
 extern void ML_Smoother_Destroy_Hiptmair_Data(void *data);
 extern  int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data);
 extern void ML_Smoother_Destroy_BGS_Data(void *data);
@@ -215,6 +220,13 @@ extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*);
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
 extern void ML_Smoother_Destroy_MLS(void *data);
+extern void **ML_Smoother_Arglist_Create(int nargs);
+extern int ML_Smoother_Arglist_Set(void **arglist, int which_arg, void *ptr);
+extern void *ML_Smoother_Arglist_Get(void **arglist, int which_arg);
+extern int ML_Smoother_Arglist_Delete(void ***arglist);
+extern int ML_Smoother_Arglist_Nargs(void **arglist);
+
+
 
 extern  int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *, ML_Operator *, 
                     ML_Comm *, int, int *,int*,double *,int *, int *,int);
@@ -231,6 +243,7 @@ extern  int ML_Smoother_GetRowLengths(ML_CommInfoOP *, ML_Comm *,
                   ML_Operator *, int *, int **);
 extern  int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *, ML_Comm *,
                   int *, int **, int **, double **, int **, int **, int *);
+extern   ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int);
 
 /* -------------------------------------------------------------------- */
 /* Ray's functions                                                      */
