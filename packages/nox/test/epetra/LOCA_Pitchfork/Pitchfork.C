@@ -87,8 +87,6 @@ int main(int argc, char *argv[])
     if (argv[1][0]=='-' && argv[1][1]=='v') 
       verbose = true;
 
-  cout << "Starting epetra/LOCA_Pitchfork/Pitchfork_exe" << endl;
-
   // Get the number of elements from the command line
   int NumGlobalElements = 0;
   if ((argc > 2) && (verbose))
@@ -317,14 +315,16 @@ int main(int argc, char *argv[])
     cout << endl;
   }
 
+  if (MyPID == 0) {
+    if (ierr == 0)
+      cout << "All tests passed!" << endl;
+    else
+      cout << ierr << " test(s) failed!" << endl;
+  }
+
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
-
-  if (ierr == 0)
-    cout << "All tests passed!" << endl;
-  else
-    cout << ierr << " test(s) failed!" << endl;
 
 /* end main
 */
