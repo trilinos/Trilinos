@@ -31,6 +31,8 @@
 #                    without ParMETIS.
 #    NO_NEMESIS=1    Use to compile and link a version of zdrive that runs
 #                    without Nemesis (i.e., reads only Chaco files).
+#    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
+#                    be called from Fortran.
 #
 # Example:
 # To compile a version of zdrive for SunOS 4 that doesn't use PARMETIS or
@@ -48,6 +50,11 @@ endif
 # If NO_NEMESIS, don't compile Nemesis, Exodus and Netcdf into the library.
 ifdef NO_NEMESIS
 GDEFINES       += -DLB_NO_NEMESIS
+endif
+
+# If YES_FORTRAN, compile the Fortran interface into the library.
+ifdef YES_FORTRAN
+INC_FORTRAN	= inc_fortran
 endif
 
 TARGET		= zdrive
@@ -109,6 +116,12 @@ PARMETIS_INC	= parmetis_jostle_const.h
 
 TIMER_CSRC	= timer.c
 TIMER_INC	= timer_const.h
+
+# object files for the Fortran interface
+
+ifdef YES_FORTRAN
+FOBJ_FILES	= lb_user_const.o ztypes.o fwrap.o cwrap.o
+endif
 
 # source code and defines for driver
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
@@ -337,8 +350,36 @@ CPLANT_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(CPLANT_ARCHD)/lib $(NEM_LIBS) \
 	          $(CPLANT_PAR_LPATH) $(PARMETIS_LIBS) $(CPLANT_MPI_LIBS) -lm
 
 ##############################################################################
+#
+# Optional parameters for the NIST targets.  These will not be documented
+# anywhere but here, unless they find more widespread use.  Valid values
+# are the character strings listed after the description of the parameter.
+#
+# MPI_LIB       Determines which MPI library to use if more than one is avail
+#   lam
+#   mpich  (default)
+#
+# F90_COMPILER  Determines which f90 compiler to use on a multicompiler machine
+#   absoft
+#   fujitsu
+#   lahey
+#   nag    (default)
+#   nas
+#   pgi
+#   psr
+#
+##############################################################################
+
+##############################################################################
 # NIST SUN defines (Solaris)
 ##############################################################################
+NISTSUN_F90 = f90
+NISTSUN_FFLAGS = -g
+NISTSUN_F90CFLAGS = -DFMANGLE=UNDERSCORE
+NISTSUN_SPPR_HEAD = spprinc.sun
+NISTSUN_FARG = farg_typical
+NISTSUN_ZOLTAN_MOD_DIR = -M../fort
+
 NISTSUN_CC		= gcc
 NISTSUN_DBG_FLAGS	= -g 
 NISTSUN_OPT_FLAGS	= -O
@@ -349,38 +390,29 @@ NISTSUN_CSRC		= $(LIB_SRC_C)
 NISTSUN_INC		= $(INC)
 NISTSUN_OBJ		= $(NISTSUN_CSRC:.c=.o)
 
+ifeq "$(MPI_LIB)" "lam"
 # For LAM
-#NISTSUN_INC_PATH	= -I$(LAMHOME)/include \
-#		  	$(SUBINCPATH)
+NISTSUN_INC_PATH	= -I$(LAMHOME)/include \
+		  	$(SUBINCPATH)
 
-#NISTSUN_MPI_LIBS	= -L$(LAMHOME)/lib \
-#		  	-lmpi -largs -ltrillium -ltstdio -lt -lsocket \
-#		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
-
+NISTSUN_MPI_LIBS	= -L$(LAMHOME)/lib \
+		  	-lmpi -largs -ltrillium -ltstdio -lt -lsocket \
+		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.95.1 -lgcc
 # end For LAM
+else
 
-# For MPICH, ITL compilation
-#NISTSUN_INC_PATH	= -I/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/include \
-#			-I/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/lib/solaris/ch_p4 \
-#		  	$(SUBINCPATH)
-
-#NISTSUN_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/lib/solaris/ch_p4 \
-#		  	-lpmpich -lmpich -lsocket -lnsl -laio \
-#		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
-
-# end For MPICH, ITL compilation
-
-# For MPICH, my compilation
+# For MPICH (default if MPI_LIB is not defined)
 NISTSUN_INC_PATH	= -I$(MPIR_HOME)/include \
 		  	$(SUBINCPATH)
 
 NISTSUN_MPI_LIBS	= -L$(MPIR_HOME)/build/solaris/ch_p4/lib \
 		  	-lpmpich -lmpich -lsocket -lnsl -laio \
-		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
-
+		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.95.1 -lgcc
 # end For MPICH, my compilation
+endif
 
-NISTSUN_CCOMP		= $(NISTSUN_CC) $(NISTSUN_INC_PATH) $(NISTSUN_DBG_FLAGS)
+NISTSUN_CCOMP		= $(NISTSUN_CC) $(NISTSUN_INC_PATH) \
+			$(NISTSUN_DBG_FLAGS) $(NISTSUN_F90CFLAGS)
 
 NISTSUN_PAR_LPATH   	= -L$(PARMETISLIB_PATH)
 
@@ -403,6 +435,70 @@ NISTSUN_DR_LIBS		= -L. -l$(LIB_TARGET) -L$(NISTSUN_ARCHD)/lib \
 
 # Standard definitions for this section
 
+# Compiler dependent macros
+
+ifeq "$(F90_COMPILER)" "absoft"
+NISTLINUX_F90 = abf90
+NISTLINUX_FFLAGS = -g -YEXT_NAMES=LCS -YCFRL=1 -YEXT_SFX=_ -lU77
+NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
+NISTLINUX_SPPR_HEAD = spprinc.absoft
+NISTLINUX_FARG = farg_typical
+NISTLINUX_ZOLTAN_MOD_DIR = -p ../fort
+else
+ifeq "$(F90_COMPILER)" "fujitsu"
+NISTLINUX_F90 = f95
+NISTLINUX_FFLAGS = -g -Am -X9 -static-flib
+NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
+NISTLINUX_SPPR_HEAD = spprinc.most
+NISTLINUX_FARG = farg_typical
+NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
+else
+ifeq "$(F90_COMPILER)" "lahey"
+NISTLINUX_F90 = lf95
+NISTLINUX_FFLAGS = -g --staticlink
+NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
+NISTLINUX_SPPR_HEAD = spprinc.most
+NISTLINUX_FARG = farg_typical
+NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
+else
+ifeq "$(F90_COMPILER)" "nas"
+NISTLINUX_F90 = nasf95
+NISTLINUX_FFLAGS = -g -nocheckint
+NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
+NISTLINUX_SPPR_HEAD = spprinc.nas
+NISTLINUX_FARG = farg_nas
+NISTLINUX_ZOLTAN_MOD_DIR =
+else
+ifeq "$(F90_COMPILER)" "pgi"
+NISTLINUX_F90 = pgf90
+NISTLINUX_FFLAGS =
+NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE -DPGI
+NISTLINUX_SPPR_HEAD = spprinc.most
+NISTLINUX_FARG = farg_typical
+NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
+else
+ifeq "$(F90_COMPILER)" "psr"
+NISTLINUX_F90 = psrf90
+NISTLINUX_FFLAGS = -g
+NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
+NISTLINUX_SPPR_HEAD = spprinc.most
+NISTLINUX_FARG = farg_typical
+# not sure, -H may only be for include files, not module information files
+NISTLINUX_ZOLTAN_MOD_DIR = -H../fort
+else
+# default is NAG
+NISTLINUX_F90 = nagf95
+NISTLINUX_FFLAGS = -g -mismatch -gline -C
+NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
+NISTLINUX_SPPR_HEAD = spprinc.most
+NISTLINUX_FARG = farg_nagf95
+NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
+endif
+endif
+endif
+endif
+endif
+endif
 NISTLINUX_CC		= gcc
 NISTLINUX_DBG_FLAGS	= -g 
 NISTLINUX_OPT_FLAGS	= -O
@@ -413,6 +509,7 @@ NISTLINUX_CSRC		= $(LIB_SRC_C)
 NISTLINUX_INC		= $(INC)
 NISTLINUX_OBJ		= $(NISTLINUX_CSRC:.c=.o)
 
+ifeq "$(MPI_LIB)" "lam"
 # For LAM
 NISTLINUX_INC_PATH	= -I$(LAMHOME)/include \
 		  	$(SUBINCPATH)
@@ -420,37 +517,22 @@ NISTLINUX_INC_PATH	= -I$(LAMHOME)/include \
 NISTLINUX_MPI_LIBS	= -L$(LAMHOME)/lib \
 		  	-lmpi -largs -ltrillium -ltstdio -lt \
 		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
-
 # end For LAM
 
-# For MPICH, ITL compilation
-#NISTLINUX_INC_PATH	= -I/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/include \
-#			-I/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/lib/LINUX/ch_p4 \
-#		  	$(SUBINCPATH)
+else
 
-#NISTLINUX_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/lib/LINUX/ch_p4 \
-#		  	-lpmpich -lmpich \
-#		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
+# For MPICH (default if MPI_LIB is not defined)
+NISTLINUX_INC_PATH	= -I$(MPIR_HOME)/include \
+		  	$(SUBINCPATH)
 
-# end For MPICH, ITL compilation
-
-# For MPICH, my compilation
-#NISTLINUX_INC_PATH	= -I$(MPIR_HOME)/include \
-#		  	$(SUBINCPATH)
-
-#NISTLINUX_MPI_LIBS	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
-#		  	-lpmpich -lmpich \
-#		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lg2c
-
-# end For MPICH, my compilation
-
-NISTLINUX_CCOMP		= $(NISTLINUX_CC) $(NISTLINUX_INC_PATH) $(NISTLINUX_DBG_FLAGS)
-ifdef PGI_COMPILER
-NISTLINUX_CCOMP        += -DPGI
+NISTLINUX_MPI_LIBS	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
+		  	-lpmpich -lmpich \
+		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lg2c
+# end For MPICH
 endif
-ifdef FUJITSU_COMPILER
-NISTLINUX_CCOMP        += -DFUJITSU
-endif
+
+NISTLINUX_CCOMP		= $(NISTLINUX_CC) $(NISTLINUX_INC_PATH) \
+			$(NISTLINUX_DBG_FLAGS) $(NISTLINUX_F90CFLAGS)
 
 NISTLINUX_PAR_LPATH   	= -L$(PARMETISLIB_PATH)
 
@@ -659,8 +741,9 @@ nistsun:
 	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTSUN_INC)"\
 	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
 	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTSUN_RANLIB)"
-#	@cscope -b $(MAIN) $(NISTSUN_CSRC) $(NISTSUN_INC)
+	"RANLIB=$(NISTSUN_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTSUN_F90) $(NISTSUN_FFLAGS)" \
+	"SPPR_HEAD=$(NISTSUN_SPPR_HEAD)"
 
 nistsun-dr:
 	@if [ ! -d Obj_nistsun ]; \
@@ -673,14 +756,22 @@ nistsun-dr:
 	"CC=$(NISTSUN_CCOMP) $(NISTSUN_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
 	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
 	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTSUN_RANLIB)" "MAIN_OBJ=$(NISTSUN_DR_OBJ)" \
+	"RANLIB=$(NISTSUN_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "MAIN_OBJ=$(NISTSUN_DR_OBJ)" \
 	"LNK_LIBS=$(NISTSUN_DR_LIBS)"
 	@if [ ! -f test/$(TARGET).nistsun ]; \
 	then ln -s ../Obj_nistsun/$(TARGET) test/$(TARGET).nistsun; \
 	fi
 
+nistsun-fdr:
+	@cd fdriver; \
+	$(MAKE) zfdrive "F90=$(NISTSUN_F90)" "FFLAGS=$(NISTSUN_FFLAGS)" \
+	"CC=$(NISTSUN_CCOMP)" "FARG=$(NISTSUN_FARG)" \
+        "ZOLTAN_MOD_DIR=$(NISTSUN_ZOLTAN_MOD_DIR)" \
+	"ZOLTAN_OBJ_DIR=../Obj_nistsun" "MPIINC=$(NISTSUN_INC_PATH)" \
+	"MPILIB=$(NISTSUN_MPI_LIBS)" "TARGET_ARCH=nistsun"
+
 nistlinux:
-	@echo "ccomp is: $(NISTLINUX_CCOMP)"
 	@if [ ! -d Obj_nistlinux ]; \
 	then mkdir Obj_nistlinux; \
 	fi
@@ -691,8 +782,9 @@ nistlinux:
 	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTLINUX_INC)"\
 	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
 	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTLINUX_RANLIB)"
-#	@cscope -b $(MAIN) $(NISTLINUX_CSRC) $(NISTLINUX_INC)
+	"RANLIB=$(NISTLINUX_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTLINUX_F90) $(NISTLINUX_FFLAGS)" \
+	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"
 
 nistlinux-dr:
 	@if [ ! -d Obj_nistlinux ]; \
@@ -705,12 +797,20 @@ nistlinux-dr:
 	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
 	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
 	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTLINUX_RANLIB)" "MAIN_OBJ=$(NISTLINUX_DR_OBJ)" \
+	"RANLIB=$(NISTLINUX_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "MAIN_OBJ=$(NISTLINUX_DR_OBJ)" \
 	"LNK_LIBS=$(NISTLINUX_DR_LIBS)"
-	@if [ ! -f test/$(TARGET).nistlinux ]; \
+	if [ ! -f test/$(TARGET).nistlinux ]; \
 	then ln -s ../Obj_nistlinux/$(TARGET) test/$(TARGET).nistlinux; \
 	fi
-	@echo $(NISTLINUX_DR_LIBS)
+
+nistlinux-fdr:
+	@cd fdriver; \
+	$(MAKE) zfdrive "F90=$(NISTLINUX_F90)" "FFLAGS=$(NISTLINUX_FFLAGS)" \
+	"CC=$(NISTLINUX_CCOMP)" "FARG=$(NISTLINUX_FARG)" \
+	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
+	"ZOLTAN_OBJ_DIR=../Obj_nistlinux" "MPIINC=$(NISTLINUX_INC_PATH)" \
+        "MPILIB=$(NISTLINUX_MPI_LIBS)" "TARGET_ARCH=nistlinux"
 
 #
 ############################################################################
@@ -736,4 +836,6 @@ printout:
 clean:
 	-for a in $(SUBDIRS); do cd $$a; \
 	 $(RM) -f *.o *.d *.d@ zdrive zdrive.pure; \
-	 cd ..; done; exit 0
+	 cd ..; done;
+	 cd fort; $(MAKE) clean;
+	 cd fdriver; $(MAKE) clean; exit 0

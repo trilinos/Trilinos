@@ -74,3 +74,6 @@ ch              -- Routines developed by Hendrickson and Leland to read Chaco
 fort            -- William Mitchell's Fortran interface for Zoltan.  This
                    is currently under development and not compiled into
                    the library.
+
+fdriver         -- Fortran version of driver, primarily used for testing
+                   the Fortran interface.
