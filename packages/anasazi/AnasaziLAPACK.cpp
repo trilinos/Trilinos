@@ -313,20 +313,12 @@ float AnasaziLAPACK::LAPY2( float X, float Y ) const {
   return(SLAPY2_F77( &X, &Y ));
 }
 //=============================================================================
-float AnasaziLAPACK::SLAMCH( char CMACH) const {
-#if defined (INTEL_CXML)
-  return(SLAMCH_F77(CMACH));
-#else
-  return(SLAMCH_F77(&CMACH));
-#endif
+void AnasaziLAPACK::LAMCH( char CMACH, float & T ) const {
+  T = SLAMCH_F77( CHAR_MACRO(CMACH));
 }
 //=============================================================================
-double AnasaziLAPACK::DLAMCH( char CMACH) const {
-#if defined (INTEL_CXML)
-  return(DLAMCH_F77(CMACH));
-#else
-  return(DLAMCH_F77(&CMACH));
-#endif
+void AnasaziLAPACK::LAMCH( char CMACH, double & T ) const {
+  T = DLAMCH_F77( CHAR_MACRO(CMACH));
 }
   
 

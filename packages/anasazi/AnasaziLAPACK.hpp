@@ -222,9 +222,9 @@ class AnasaziLAPACK {
 
   //@{ \name Machine characteristics routines.
   //! AnasaziLAPACK wrapper for DLAMCH routine that returns machine double precision floating point characteristics
-  double DLAMCH( char CMACH) const; 
+  void LAMCH( char CMACH, double & T) const; 
   //! AnasaziLAPACK wrapper for SLAMCH routine that returns machine single precision floating point characteristics
-  float SLAMCH( char CMACH) const;
+  void LAMCH( char CMACH, float & T) const;
  //@}
 
   //@{ \name Auxiliary routines
