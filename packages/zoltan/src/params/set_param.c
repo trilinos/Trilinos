@@ -28,6 +28,7 @@
 #include "timer_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
+#include "sfc_const.h"
 #include "all_allo_const.h"
 
 static int add_param(LB *, char *, char *);
@@ -42,6 +43,7 @@ static LB_SET_PARAM_FN * Param_func[] = {
         LB_Set_Octpart_Param,
         LB_Set_Reftree_Param,
         LB_Set_RIB_Param,
+	LB_Set_SFC_Param,
      /* LB_Set_Machine_Param, */
    /*** Add your new parameter setting function here! ***/
         NULL /* Last entry _must_ be NULL! */
