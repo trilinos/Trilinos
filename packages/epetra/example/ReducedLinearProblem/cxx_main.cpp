@@ -1,9 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
@@ -86,7 +80,13 @@ int main(int argc, char *argv[]) {
 
   x->PutScalar(0.0);
 
-  Epetra_LinearProblem FullProblem(A, x, b); 
+  Epetra_LinearProblem FullProblem(A, x, b);
+  double normb, norma;
+  b->NormInf(&normb);
+  norma = A->NormInf();
+  if (verbose)
+    cout << "Inf norm of Original Matrix = " << A->NormInf() << endl
+	 << "Inf norm of Original RHS    = " << normb << endl;
   
   Epetra_Time ReductionTimer(Comm);
   Epetra_CrsSingletonFilter SingletonFilter;
@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
 
   if (verbose) cout << "Condition number estimate for this preconditioner = " << Condest << endl;
   }
-  int Maxiter = 50;
-  double Tolerance = 1.0E-11;
+  int Maxiter = 100;
+  double Tolerance = 1.0E-8;
 
   Epetra_Flops counter;
   Ap->SetFlopCounter(counter);
@@ -196,6 +196,13 @@ int main(int argc, char *argv[]) {
   if (ILUK!=0) ILUK->SetFlopCounter(*Ap);
 
   elapsed_time = timer.ElapsedTime();
+
+  double normreducedb, normreduceda;
+  bp->NormInf(&normreducedb);
+  normreduceda = Ap->NormInf();
+  if (verbose) 
+    cout << "Inf norm of Reduced Matrix = " << normreduceda << endl
+	 << "Inf norm of Reduced RHS    = " << normreducedb << endl;
 
   double residual;
   BiCGSTAB(*Ap, *xp, *bp, ILUK, Maxiter, Tolerance, &residual, verbose);
@@ -220,22 +227,121 @@ int main(int argc, char *argv[]) {
   resid.Update(1.0, *x, -1.0, *xexact, 0.0); // resid = xcomp - xexact
 
   resid.Norm2(&residual);
+  double normx, normxexact;
+  x->Norm2(&normx);
+  xexact->Norm2(&normxexact);
 
   if (verbose) 
-    cout << "2-norm of difference between computed and exact solution  = " << residual << endl;
+    cout << "2-norm of computed solution                               = " << normx << endl
+	 << "2-norm of exact solution                                  = " << normxexact << endl
+	 << "2-norm of difference between computed and exact solution  = " << residual << endl;
     
   if (verbose1 && residual>1.0e-5) {
     if (verbose)
       cout << "Difference between computed and exact solution appears large..." << endl
 	   << "Computing norm of A times this difference.  If this norm is small, then matrix is singular"
 	   << endl;
-    assert(A->Multiply(false, resid, *b)==0);
-    assert(b->Norm2(&residual)==0);
+    Epetra_Vector bdiff(*b);
+    assert(A->Multiply(false, resid, bdiff)==0);
+    assert(bdiff.Norm2(&residual)==0);
     if (verbose) 
       cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
     
   }
+  if (verbose) 
+    cout << "********************************************************" << endl
+	 << "              Solving again with 2*Ax=2*b" << endl
+	 << "********************************************************" << endl;
+
+  A->Scale(1.0); // A = 2*A
+  b->Scale(1.0); // b = 2*b
+  x->PutScalar(0.0);
+  b->NormInf(&normb);
+  norma = A->NormInf();
+  if (verbose)
+    cout << "Inf norm of Original Matrix = " << norma << endl
+	 << "Inf norm of Original RHS    = " << normb << endl;
+  double updateReducedProblemTime = ReductionTimer.ElapsedTime();
+  SingletonFilter.UpdateReducedProblem(&FullProblem);
+  Comm.Barrier();
+  updateReducedProblemTime = ReductionTimer.ElapsedTime() - updateReducedProblemTime;
+  if (verbose)
+    cout << "\n\n****************************************************" << endl
+	 << "    Update Reduced Problem time (sec)           = " << updateReducedProblemTime<< endl
+	 << "****************************************************" << endl;
+   SingletonFilter.Statistics();
+
+  if (LevelFill>-1) {
+
+    Epetra_Flops fact_counter;
   
+    elapsed_time = timer.ElapsedTime();
+
+    int initerr = ILUK->InitValues(*Ap);
+    if (initerr!=0) {
+      cout << endl << Comm << endl << "  InitValues error = " << initerr;
+      if (initerr==1) cout << "  Zero diagonal found, warning error only";
+      cout << endl << endl;
+    }
+    assert(ILUK->Factor()==0);
+    elapsed_time = timer.ElapsedTime() - elapsed_time;
+    total_flops = ILUK->Flops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+    if (verbose) cout << "Time to compute preconditioner values = " 
+		    << elapsed_time << endl
+		    << "MFLOPS for Factorization = " << MFLOPs << endl;
+    double Condest;
+    ILUK->Condest(false, Condest);
+    
+    if (verbose) cout << "Condition number estimate for this preconditioner = " << Condest << endl;
+  }
+  bp->NormInf(&normreducedb);
+  normreduceda = Ap->NormInf();
+  if (verbose) 
+    cout << "Inf norm of Reduced Matrix = " << normreduceda << endl
+	 << "Inf norm of Reduced RHS    = " << normreducedb << endl;
+
+  BiCGSTAB(*Ap, *xp, *bp, ILUK, Maxiter, Tolerance, &residual, verbose);
+
+  elapsed_time = timer.ElapsedTime() - elapsed_time;
+  total_flops = counter.Flops();
+  MFLOPs = total_flops/elapsed_time/1000000.0;
+  if (verbose) cout << "Time to compute solution = " 
+		    << elapsed_time << endl
+		    << "Number of operations in solve = " << total_flops << endl
+		    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
+
+  SingletonFilter.ComputeFullSolution();
+
+  if (smallProblem)
+  cout << " Reduced LHS after sol = " << endl << *xp << endl
+       << " Full    LHS after sol = " << endl << *x << endl
+       << " Full  Exact LHS         = " << endl << *xexact << endl;
+
+  resid.Update(1.0, *x, -1.0, *xexact, 0.0); // resid = xcomp - xexact
+
+  resid.Norm2(&residual);
+  x->Norm2(&normx);
+  xexact->Norm2(&normxexact);
+
+  if (verbose) 
+    cout << "2-norm of computed solution                               = " << normx << endl
+	 << "2-norm of exact solution                                  = " << normxexact << endl
+	 << "2-norm of difference between computed and exact solution  = " << residual << endl;
+    
+  if (verbose1 && residual>1.0e-5) {
+    if (verbose)
+      cout << "Difference between computed and exact solution appears large..." << endl
+	   << "Computing norm of A times this difference.  If this norm is small, then matrix is singular"
+	   << endl;
+    Epetra_Vector bdiff(*b);
+    assert(A->Multiply(false, resid, bdiff)==0);
+    assert(bdiff.Norm2(&residual)==0);
+    if (verbose) 
+      cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
+    
+  }
+ 
 
 
   if (ILUK!=0) delete ILUK;
@@ -261,7 +367,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
   Epetra_Vector shat(x.Map()); shat.SetFlopCounter(x);
   Epetra_Vector s(x.Map()); s.SetFlopCounter(x);
   Epetra_Vector r(b.Map()); r.SetFlopCounter(x);
-  Epetra_Vector rtilde(x.Map()); rtilde.Random(); rtilde.SetFlopCounter(x);
+  Epetra_Vector rtilde(x.Map()); rtilde.PutScalar(1.0); rtilde.SetFlopCounter(x);
   Epetra_Vector v(x.Map()); v.SetFlopCounter(x);
   
 
