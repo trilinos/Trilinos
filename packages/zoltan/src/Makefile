@@ -16,79 +16,83 @@
 # Top-level Makefile for Zoltan library and Zoltan driver zdrive.
 #
 # To compile the library, type
-#    gmake <optional flags> targetmachine
+#    gmake TARGET_ARCH=<targetmachine> zoltan
 # where
 #    targetmachine = sun, sunos, smos, or tflop.
 #
-# To compile the driver, type
-#    gmake <optional flags> targetmachine-dr
+# To compile zdrive, type
+#    gmake <optional flags> zdrive
 #
 # The optional flags are:
-#    NO_PARMETIS=1   Use to compile and link a version of Zoltan that runs
-#                    without ParMETIS.
-#    NO_NEMESIS=1    Use to compile and link a version of zdrive that runs
-#                    without Nemesis (i.e., reads only Chaco files).
 #    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
 #                    be called from Fortran.
-#    YES_JOSTLE=1    Use to compile and link a version of Zoltan that runs
-#                    with the JOSTLE library.
-#    LOCAL_F90=path  Path to local (not cross-compiling) version of F90.
-#                    Used when cross-compiling the F90 interface of Zoltan.  
-#                    Default is $(SUN_F90) for tflop or architecture 
-#                    specific F90 compiler for other architectures.
-#
 # Example:
-# To compile a version of zdrive for SunOS 4 that doesn't use PARMETIS or
-# NEMESIS, type
-#    gmake NO_PARMETIS=1 NO_NEMESIS=1 sunos-dr
+# To compile a version of Zoltan for tflop including the F90 interface, type
+#    gmake YES_FORTRAN=1 ZOLTAN_ARCH=tflop zoltan
 ##############################################################################
+
+TARGET=zdrive
+LIB_NAME=libzoltan.a
+LIB_TARGET=zoltan
+
+##############################################################################
+# Process architecture flag
+##############################################################################
+
+ifndef ZOLTAN_ARCH
+  ZOLTAN_ARCH=generic
+endif
+
+include Makefiles/Makefile.$(ZOLTAN_ARCH)
+ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
+ZOLTAN_CSRC =
 
 ##############################################################################
 # Process input flags
 ##############################################################################
-
 GDEFINES	= -DDEBUG
-
-# If NO_PARMETIS, compile the ParMETIS interface and link ParMETIS into zdrive.
-ifdef NO_PARMETIS
-GDEFINES       += -DLB_NO_PARMETIS
-endif
-
-# If NO_NEMESIS, don't compile or link Nemesis, Exodus and Netcdf into zdrive.
-ifdef NO_NEMESIS
-GDEFINES       += -DLB_NO_NEMESIS
-endif
 
 # If YES_FORTRAN, compile the Fortran interface into the library.
 ifdef YES_FORTRAN
-INC_FORTRAN	= inc_fortran
+  INC_FORTRAN	= inc_fortran
 endif
 
-# If YES_JOSTLE, compile the JOSTLE interface and link JOSTLE into zdrive.
-ifdef YES_JOSTLE
-GDEFINES       += -DLB_JOSTLE
+##############################################################################
+# Process third-party library information.
+##############################################################################
+
+# If PARMETIS_LIBPATH is defined, compile the ParMETIS interface and 
+# link ParMETIS into zdrive.
+ifdef PARMETIS_LIBPATH
+  GDEFINES     += -DLB_PARMETIS
+  PARMETIS_LIBS = -lparmetis -lmetis
 endif
 
-TARGET		= zdrive
-LIB_TARGET	= zoltan
-LIB_NAME	= libzoltan.a
+# If JOSTLE_LIBPATH is defined, compile the JOSTLE interface and 
+# link JOSTLE into zdrive.
+ifdef JOSTLE_LIBPATH
+  GDEFINES     += -DLB_JOSTLE
+  JOSTLE_LIBS   = -ljostle
+  ifndef JOSTLE_INCPATH
+    JOSTLE_INCPATH = .
+  endif
+  ifndef JOSTLE_SRCPATH
+    JOSTLE_SRCPATH = .
+  endif
+  ZOLTAN_CSRC += $(JOSTLE_SRCPATH)/jmpilib.c
+endif
 
-##### Paths to third party libraries (not really part of Zoltan)  #####
-  
-# If you already have ParMetis on your machine, give the path here.
-# Otherwise you first need to make ParMetis from the source in
-# the directory parmetis/ParMetis (type "make" over there),
-# and then move those libraries to the appropriate Obj_* directory. 
-PARMETISLIB_PATH = .
+# If NEMESIS_LIBPATH is defined, link Nemesis, Exodus and Netcdf into zdrive.
+ifdef NEMESIS_LIBPATH
+  NEM_LIBS	= -lnemIc -lexoIIc -lnetcdf
+else
+  GDEFINES     += -DLB_NO_NEMESIS
+endif
 
-# If you already have Jostle on your machine, give the path here.
-# Otherwise, you first need to get Jostle from Chris Walshaw and 
-# install it on your system.
-JOSTLELIB_PATH = .
+THIRD_PARTY_LIBS    = $(PARMETIS_LIBS) $(JOSTLE_LIBS) $(NEM_LIBS)
+THIRD_PARTY_LIBPATH = $(PARMETIS_LIBPATH) $(JOSTLE_LIBPATH) $(NEMESIS_LIBPATH)
+THIRD_PARTY_INCPATH = $(NEMESIS_INCPATH)  $(JOSTLE_INCPATH)
 
-THIRD_PARTY_LIB_PATH = $(PARMETISLIB_PATH) $(JOSTLIB_PATH)
-
-# Makefile for load-balancing library.
 
 ############################################################################
 #                  OBJECT DIRECTORIES
@@ -102,8 +106,9 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver ../ch \
-		  ../params ../parmetis ../timer ../ha ../reftree
+SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct \
+		  ../params ../driver ../ch ../parmetis ../timer \
+                  ../ha ../reftree
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree
@@ -152,13 +157,7 @@ HA_INC          = ha_const.h
 REFTREE_CSRC    = reftree_build.c reftree_part.c reftree_hash.c
 REFTREE_INC     = reftree_const.h
 
-# object files for the Fortran interface
-
-ifdef YES_FORTRAN
-FOBJ_FILES	= lb_user_const.o ztypes.o fwrap.o cwrap.o
-endif
-
-# source code and defines for driver
+# source code and defines for zdrive
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_elem_util.c \
@@ -172,33 +171,18 @@ CH_CSRC		= ch_dist_graph.c ch_input_geom.c ch_input_graph.c \
 
 CH_INC		= ch_input_const.h ch_init_dist_const.h
 
-# libraries and paths
-ROOT_ARCHD	= /Net/proj/zoltan/arch
 
-ifndef NO_NEMESIS
-NEM_LIBS	= -lnemIc -lexoIIc -lnetcdf
+# object files for the Fortran interface
+
+ifdef YES_FORTRAN
+FOBJ_FILES	= lb_user_const.o ztypes.o fwrap.o cwrap.o
 endif
 
-ifndef NO_PARMETIS
-PARMETIS_LIBS   = -lparmetis -lmetis
-endif
 
-ifdef YES_JOSTLE
-JOSTLE_LIBS     = -ljostle
-endif
 
-THIRD_PARTY_LIBS = $(PARMETIS_LIBS) $(JOSTLE_LIBS)
-
-# machine independent routines
-INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
-		  $(RCB_INC) $(COMM_INC) $(OCT_INC) $(PARAMS_INC) \
-		  $(PARMETIS_INC) $(TIMER_INC) $(HA_INC) $(REFTREE_INC)
-#LIB_SRC_C	= $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
-LIB_SRC_C	= $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
-		  $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) $(TIMER_CSRC) \
-                  $(HA_CSRC) $(REFTREE_CSRC)
-LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o) 
-
+############################################################################
+#                  LINT DEFINITIONS KDDKDD
+############################################################################
 #
 # lint defines
 #
@@ -218,714 +202,120 @@ SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer ha \
 		  reftree
 VPATH		= $(SUBDIRS)
 
-##############################################################################
-# sunmos defines
-##############################################################################
-SMOS_CC		= sicc
-SMOS_DBG_FLAGS	= -g
-SMOS_OPT_FLAGS	= -O
-SMOS_RANLIB	= touch
-SMOS_AR		= ar860 r
-
-SMOS_CSRC	= $(LIB_SRC_C)
-SMOS_INC	= $(INC)
-SMOS_OBJ	= $(SMOS_CSRC:.c=.o)
-
-SMOS_INC_PATH	= $(SUBINCPATH)
-
-SMOS_CCOMP	= $(SMOS_CC) $(SMOS_DBG_FLAGS) $(SMOS_INC_PATH)
-
-SMOS_DEFS	= $(GDEFINES) -DSMOS
-
-# driver stuff
-SMOS_ARCHD	= $(ROOT_ARCHD)/smos
-SMOS_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
-SMOS_DR_OBJ	= $(SMOS_DR_CSRC:.c=.o)
-SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
-#SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
-SMOS_MPI_LIB	= -L/Net/mp/mpi/lib/paragon/ch_nx -lmpi
-SMOS_TP_LPATH  = -L$(THIRD_PARTY_LIB_PATH) 
-SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
-		   $(SMOS_TP_LPATH) $(THIRD_PARTY_LIBS) $(SMOS_MPI_LIB)
 
 ##############################################################################
-# Intel P6 defines
-##############################################################################
-#
-TFLOP_CC	= pgcc -cougar
-TFLOP_DBG_FLAGS	= -g
-TFLOP_OPT_FLAGS	= -O3 -Minfo=all
-TFLOP_RANLIB	= xranlib
-TFLOP_AR	= xar r
-
-#F90 Flags
-TFLOP_F90	= pgf90 -cougar
-ifdef LOCAL_F90
-  TFLOP_LOCAL_F90 = $(LOCAL_F90)
-else
-  TFLOP_LOCAL_F90 = $(SUN_F90)
-endif
-TFLOP_F90CFLAGS = -DFMANGLE=UNDERSCORE -DPGI -DNO_MPI2
-TFLOP_FFLAGS    =
-TFLOP_FARG      = farg_typical
-TFLOP_ZOLTAN_MOD_DIR = -I../Obj_tflop
-TFLOP_SPPR_HEAD = spprinc.most
-
-TFLOP_CSRC	= $(LIB_SRC_C)
-TFLOP_INC	= $(INC)
-TFLOP_OBJ	= $(TFLOP_CSRC:.c=.o)
-
-TFLOP_INC_PATH	= $(SUBINCPATH)
-
-TFLOP_CCOMP	= $(TFLOP_CC) $(TFLOP_INC_PATH) $(TFLOP_DBG_FLAGS)
-
-TFLOP_DEFS	= $(GDEFINES) -DTFLOP
-
-# driver stuff
-TFLOP_ARCHD	= $(ROOT_ARCHD)/tflop
-TFLOP_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
-TFLOP_DR_OBJ	= $(TFLOP_DR_CSRC:.c=.o)
-TFLOP_DR_IPATH	= -I$(TFLOP_ARCHD)/include
-TFLOP_MPI_LIB	= -lmpi
-TFLOP_TP_LPATH = -L$(THIRD_PARTY_LIB_PATH)
-TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
-	          $(TFLOP_TP_LPATH) $(THIRD_PARTY_LIBS) $(TFLOP_MPI_LIB)
-
-#
-##############################################################################
-# SUN defines (Solaris)
-##############################################################################
-#SUN_CC          = acc -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
-#                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
-#                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
-#SUN_CC		= purify -follow-child-processes=yes -cache-dir=/tmp/purify gcc
-SUN_CC		= gcc
-SUN_F90         = f90
-SUN_DBG_FLAGS	= -g 
-SUN_OPT_FLAGS	= -O
-SUN_RANLIB	= ranlib
-SUN_AR		= ar r
-
-SUN_CSRC	= $(LIB_SRC_C)
-SUN_INC		= $(INC)
-SUN_OBJ		= $(SUN_CSRC:.c=.o)
-
-SUN_INC_PATH	= -I/Net/local/lang/SC3.0.1/include \
-		  -I/Net/local/lang/SC3.0.1/ansi_include \
-		  -I/Net/local/mpi/include \
-                  -I/Net/local/mpi/build/solaris/ch_p4/include \
-		  $(SUBINCPATH)
-
-SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_DBG_FLAGS)
-
-SUN_TP_LPATH   = -L$(THIRD_PARTY_LIB_PATH)
-
-SUN_DEFS	= $(GDEFINES)
-# driver stuff
-SUN_ARCHD	= $(ROOT_ARCHD)/solaris
-SUN_MPI_LIBS	= -L/Net/local/mpi/build/solaris/ch_p4/lib \
-		  -lpmpich -lmpich -lsocket -lnsl -laio \
-		  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1 -lgcc
-
-SUN_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
-SUN_DR_OBJ	= $(SUN_DR_CSRC:.c=.o)
-SUN_DR_IPATH	= -I$(SUN_ARCHD)/include
-
-SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) \
-	          $(SUN_TP_LPATH) $(THIRD_PARTY_LIBS) $(SUN_MPI_LIBS) -lm 
-		  
-##############################################################################
-# SUNOS Definitions
+#  Architecture-independent definitions
 ##############################################################################
 
-#SUNOS_CC          = purify -follow-child-processes=yes acc-2.0.1 -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
-#                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
-#                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
+ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INC_PATH)
+ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
+		  $(COMM_CSRC) $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) \
+		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC)
+ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o) 
 
-SUNOS_CC          = acc-2.0.1 -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
-                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
-                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
-SUNOS_DBG_FLAGS   = -g
-SUNOS_OPT_FLAGS   = -O4
-SUNOS_RANLIB      = ranlib
-SUNOS_AR          = ar r
+ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
+ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
+ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
+	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
+		  $(MPI_LIBPATH) $(MPI_LIB) -lm
 
-SUNOS_CSRC        = $(LIB_SRC_C)
-SUNOS_INC         = $(INC)
-SUNOS_OBJ         = $(SUNOS_CSRC:.c=.o)
-SUNOS_INC_PATH	= -I/Net/local/lang/SC2.0.1/include \
-		  -I/Net/local/lang/SC2.0.1/ansi_include \
-		  -I/Net/local/mpi/mpich/include \
-                  -I/Net/local/mpi/mpich/lib/sun4/ch_p4 \
-		  $(SUBINCPATH)
-SUNOS_TP_LPATH   = -L$(THIRD_PARTY_LIB_PATH)
-SUNOS_DEFS	= $(GDEFINES)
-
-SUNOS_CCOMP	= $(SUNOS_CC) $(SUNOS_INC_PATH) $(SUNOS_DBG_FLAGS)
-
-# driver stuff
-SUNOS_ARCHD	= $(ROOT_ARCHD)/sun
-SUNOS_MPI_LIBS	= -L/Net/local/mpi/mpich/lib/sun4/ch_p4 -lpmpich -lmpich \
-		  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.6.3 \
-		  -lgcc
-
-SUNOS_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
-SUNOS_DR_OBJ	= $(SUNOS_DR_CSRC:.c=.o)
-SUNOS_DR_IPATH	= -I$(SUNOS_ARCHD)/include
-
-SUNOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUNOS_ARCHD)/lib $(NEM_LIBS) \
-	          $(SUNOS_TP_LPATH) $(THIRD_PARTY_LIBS) $(SUNOS_MPI_LIBS) -lm 
-
-##############################################################################
-# CPlant Definitions
-##############################################################################
-CPLANT_CC          = /Net/mp/cplant/current/bin/cc
-CPLANT_DBG_FLAGS   = -g
-CPLANT_OPT_FLAGS   = -O
-CPLANT_RANLIB      = ranlib
-CPLANT_AR          = ar r
-
-CPLANT_CSRC        = $(LIB_SRC_C)
-CPLANT_INC         = $(INC)
-CPLANT_OBJ         = $(CPLANT_CSRC:.c=.o)
-CPLANT_INC_PATH	= -I/Net/mp/cplant/current/include \
-		  $(SUBINCPATH)
-CPLANT_TP_LPATH   = -L$(THIRD_PARTY_LIB_PATH)
-CPLANT_DEFS	= $(GDEFINES)
-
-CPLANT_CCOMP	= $(CPLANT_CC) $(CPLANT_INC_PATH) $(CPLANT_DBG_FLAGS)
-
-# driver stuff
-CPLANT_ARCHD	= $(ROOT_ARCHD)/alpha
-CPLANT_MPI_LIBS	= -L/Net/mp/cplant/current/lib -lmpi
-
-CPLANT_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
-CPLANT_DR_OBJ	= $(CPLANT_DR_CSRC:.c=.o)
-CPLANT_DR_IPATH	= -I$(CPLANT_ARCHD)/include
-
-CPLANT_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(CPLANT_ARCHD)/lib $(NEM_LIBS) \
-	          $(CPLANT_TP_LPATH) $(THIRD_PARTY_LIBS) $(CPLANT_MPI_LIBS) -lm
-
-##############################################################################
-#
-# Optional parameters for the NIST targets.  These will not be documented
-# anywhere but here, unless they find more widespread use.  Valid values
-# are the character strings listed after the description of the parameter.
-#
-# MPI_LIB       Determines which MPI library to use if more than one is avail
-#   lam
-#   mpich  (default)
-#
-# F90_COMPILER  Determines which f90 compiler to use on a multicompiler machine
-#   absoft
-#   fujitsu
-#   lahey
-#   nag    (default)
-#   nas
-#   pgi
-#   psr
-#
-##############################################################################
-
-##############################################################################
-# NIST SUN defines (Solaris)
-##############################################################################
-NISTSUN_F90 = f90
-ifdef LOCAL_F90
-  NISTSUN_LOCAL_F90 = $(LOCAL_F90)
-else
-  NISTSUN_LOCAL_F90 = $(NISTSUN_F90)
-endif
-NISTSUN_FFLAGS = -g
-NISTSUN_F90CFLAGS = -DFMANGLE=UNDERSCORE
-NISTSUN_SPPR_HEAD = spprinc.sun
-NISTSUN_FARG = farg_typical
-NISTSUN_ZOLTAN_MOD_DIR = -M../fort
-
-NISTSUN_CC		= gcc
-NISTSUN_DBG_FLAGS	= -g 
-NISTSUN_OPT_FLAGS	= -O
-NISTSUN_RANLIB		= ranlib
-NISTSUN_AR		= ar r
-
-NISTSUN_CSRC		= $(LIB_SRC_C)
-NISTSUN_INC		= $(INC)
-NISTSUN_OBJ		= $(NISTSUN_CSRC:.c=.o)
-
-ifeq "$(MPI_LIB)" "lam"
-# For LAM
-NISTSUN_INC_PATH	= -I$(LAMHOME)/include \
-		  	$(SUBINCPATH)
-
-NISTSUN_MPI_LIBS	= -L$(LAMHOME)/lib \
-		  	-lmpi -largs -ltrillium -ltstdio -lt -lsocket \
-		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.95.1 -lgcc
-# end For LAM
-else
-
-# For MPICH (default if MPI_LIB is not defined)
-NISTSUN_INC_PATH	= -I$(MPIR_HOME)/include \
-		  	$(SUBINCPATH)
-
-NISTSUN_MPI_LIBS	= -L$(MPIR_HOME)/build/solaris/ch_p4/lib \
-		  	-lpmpich -lmpich -lsocket -lnsl -laio \
-		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.95.1 -lgcc
-# end For MPICH, my compilation
-endif
-
-NISTSUN_CCOMP		= $(NISTSUN_CC) $(NISTSUN_INC_PATH) \
-			$(NISTSUN_DBG_FLAGS) $(NISTSUN_F90CFLAGS)
-
-NISTSUN_TP_LPATH   	= -L$(THIRD_PARTY_LIB_PATH)
-
-NISTSUN_DEFS		= $(GDEFINES) 
-
-# driver stuff
-NISTSUN_ARCHD		=
-
-NISTSUN_DR_CSRC		= $(DR_CSRC) $(CH_CSRC)
-NISTSUN_DR_OBJ		= $(NISTSUN_DR_CSRC:.c=.o)
-NISTSUN_DR_IPATH	= -I$(NISTSUN_ARCHD)/include
-
-NISTSUN_DR_LIBS		= -L. -l$(LIB_TARGET) -L$(NISTSUN_ARCHD)/lib \
-			 $(NEM_LIBS) $(NISTSUN_TP_LPATH) $(THIRD_PARTY_LIBS) \
-			 $(NISTSUN_MPI_LIBS) -lm 
-
-##############################################################################
-# NIST Linux defines
-##############################################################################
-
-# Standard definitions for this section
-
-# Compiler dependent macros
-
-ifeq "$(F90_COMPILER)" "absoft"
-NISTLINUX_F90 = abf90
-NISTLINUX_FFLAGS = -g -YEXT_NAMES=LCS -YCFRL=1 -YEXT_SFX=_ -lU77
-NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
-NISTLINUX_SPPR_HEAD = spprinc.absoft
-NISTLINUX_FARG = farg_typical
-NISTLINUX_ZOLTAN_MOD_DIR = -p ../fort
-else
-ifeq "$(F90_COMPILER)" "fujitsu"
-NISTLINUX_F90 = f95
-NISTLINUX_FFLAGS = -g -Am -X9 -static-flib
-NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
-NISTLINUX_SPPR_HEAD = spprinc.most
-NISTLINUX_FARG = farg_typical
-NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
-else
-ifeq "$(F90_COMPILER)" "lahey"
-NISTLINUX_F90 = lf95
-NISTLINUX_FFLAGS = -g --staticlink
-NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
-NISTLINUX_SPPR_HEAD = spprinc.most
-NISTLINUX_FARG = farg_typical
-NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
-else
-ifeq "$(F90_COMPILER)" "nas"
-NISTLINUX_F90 = nasf95
-NISTLINUX_FFLAGS = -g -nocheckint
-NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
-NISTLINUX_SPPR_HEAD = spprinc.nas
-NISTLINUX_FARG = farg_nas
-NISTLINUX_ZOLTAN_MOD_DIR =
-else
-ifeq "$(F90_COMPILER)" "pgi"
-NISTLINUX_F90 = pgf90
-NISTLINUX_FFLAGS =
-NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE -DPGI
-NISTLINUX_SPPR_HEAD = spprinc.most
-NISTLINUX_FARG = farg_typical
-NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
-else
-ifeq "$(F90_COMPILER)" "psr"
-NISTLINUX_F90 = psrf90
-NISTLINUX_FFLAGS = -g
-NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
-NISTLINUX_SPPR_HEAD = spprinc.most
-NISTLINUX_FARG = farg_typical
-# not sure, -H may only be for include files, not module information files
-NISTLINUX_ZOLTAN_MOD_DIR = -H../fort
-else
-# default is NAG
-NISTLINUX_F90 = nagf95
-NISTLINUX_FFLAGS = -g -mismatch -gline -C
-NISTLINUX_F90CFLAGS = -DFMANGLE=UNDERSCORE
-NISTLINUX_SPPR_HEAD = spprinc.most
-NISTLINUX_FARG = farg_nagf95
-NISTLINUX_ZOLTAN_MOD_DIR = -I../fort
-endif
-endif
-endif
-endif
-endif
-endif
-ifdef LOCAL_F90
-  NISTLINUX_LOCAL_F90 = $(LOCAL_F90)
-else
-  NISTLINUX_LOCAL_F90 = $(NISTLINUX_F90)
-endif
-NISTLINUX_CC		= gcc
-NISTLINUX_DBG_FLAGS	= -g 
-NISTLINUX_OPT_FLAGS	= -O
-NISTLINUX_RANLIB	= ranlib
-NISTLINUX_AR		= ar r
-
-NISTLINUX_CSRC		= $(LIB_SRC_C)
-NISTLINUX_INC		= $(INC)
-NISTLINUX_OBJ		= $(NISTLINUX_CSRC:.c=.o)
-
-ifeq "$(MPI_LIB)" "lam"
-# For LAM
-NISTLINUX_INC_PATH	= -I$(LAMHOME)/include \
-		  	$(SUBINCPATH)
-
-NISTLINUX_MPI_LIBS	= -L$(LAMHOME)/lib \
-		  	-lmpi -largs -ltrillium -ltstdio -lt \
-		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
-# end For LAM
-
-else
-
-# For MPICH (default if MPI_LIB is not defined)
-NISTLINUX_INC_PATH	= -I$(MPIR_HOME)/include \
-		  	$(SUBINCPATH)
-
-NISTLINUX_MPI_LIBS	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
-		  	-lpmpich -lmpich \
-		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lg2c
-# end For MPICH
-endif
-
-NISTLINUX_CCOMP		= $(NISTLINUX_CC) $(NISTLINUX_INC_PATH) \
-			$(NISTLINUX_DBG_FLAGS) $(NISTLINUX_F90CFLAGS)
-
-NISTLINUX_TP_LPATH   	= -L$(THIRD_PARTY_LIB_PATH)
-
-NISTLINUX_DEFS		= $(GDEFINES)
-
-# driver stuff
-NISTLINUX_ARCHD		=
-
-NISTLINUX_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
-NISTLINUX_DR_OBJ	= $(NISTLINUX_DR_CSRC:.c=.o)
-NISTLINUX_DR_IPATH	= -I$(NISTLINUX_ARCHD)/include
-
-NISTLINUX_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(NISTLINUX_ARCHD)/lib \
-			 $(NEM_LIBS) $(NISTLINUX_TP_LPATH) $(THIRD_PARTY_LIBS) \
-			 $(NISTLINUX_MPI_LIBS) -lm 
+CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) \
+		  $(THIRD_PARTY_INCPATH)
+F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 
 ###########################################################################
-#      HELP HELP HELP HELP HELP
+#      HELP HELP HELP HELP HELP  
 ###########################################################################
 help:
 	@echo ' '
-	@echo 'To build the Zoltan library only, type "gmake target";'
-	@echo 'to build the Zoltan library and the driver zdrive,'
-	@echo 'type "gmake target-dr", where target is one of the following:'
+	@echo 'To build the Zoltan library only, type '
+	@echo '   gmake ZOLTAN_ARCH=desired_arch zoltan'
+	@echo 'where desired_arch is the architecture on which Zoltan'
+	@echo 'will run.  The file Makefiles/Makefile.desired_arch '
+	@echo 'should exist.  See Makefiles/Makefile.generic for '
+	@echo 'instructions on creating Makefiles/Makefile.desired_arch'
+	@echo 'and Makefiles/Makefile.* for examples.'
 	@echo ' '
-	@echo '      smos       (for Intel Paragon)'
-	@echo '      sun        (for Solaris with MPI; same as solaris)'
-	@echo '      solaris    (for Solaris with MPI; same as sun)'
-	@echo '      sunos      (for SunOS4 with MPI)'
-	@echo '      tflop      (for Intel/Sandia ASCI Red)'
-	@echo '      cplant     (for Computational Plant)'
+	@echo 'To build the the test driver zdrive, type'
+	@echo '   gmake ZOLTAN_ARCH=desired_arch zdrive'
+	@echo 'where desired_arch is defined as above.'
 	@echo ' '
-	@echo 'Accepted compilation flags are'
-	@echo '      NO_PARMETIS=1  (to exclude ParMetis from library)'
-	@echo '      NO_NEMESIS=1   (to exclude Nemesis from driver)'
+	@echo 'To include the F90 interface in Zoltan, use the gmake
+	@echo 'command line argument'
 	@echo '      YES_FORTRAN=1  (to compile fortran interface)'
-	@echo '      YES_JOSTLE=1   (to include Jostle in the library)'
-	@echo '      LOCAL_F90=path (specifies local F90 compiler; used only'
-	@echo '                      when cross-compiling the F90 interface)'
 	@echo ' '
+	@echo 'Example:'
+	@echo '   gmake ZOLTAN_ARCH=tflop YES_FORTRAN=1 zoltan'
+	@echo 'builds the tflop version of the Zoltan library'
+	@echo 'including the F90 interface.'
+
 
 ###########################################################################
 #      TARGETS FOR DIFFERENT MACHINES
 ###########################################################################
 
-smos:
-	@if [ ! -d Obj_smos ]; \
-	then mkdir Obj_smos; \
-	fi
-	@rm -f Obj_smos/Makefile
-	@cp Makefile_sub Obj_smos/Makefile
-	@cd Obj_smos; \
-	$(MAKE) $(LIB_NAME) "CC=$(SMOS_CCOMP)"\
-	"LIB_NAME=$(LIB_NAME)" "INC_PATH=$(SMOS_INC_PATH)"\
-	"AR=$(SMOS_AR)" "OBJ_FILES=$(SMOS_OBJ)" \
-	"DEFS=$(SMOS_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(SMOS_RANLIB)"
 
-smos-dr:
-	@if [ ! -d Obj_smos ]; \
-	then mkdir Obj_smos; \
+zoltan:
+	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
+	then mkdir $(ZOLTAN_OBJ_DIR); 		\
 	fi
-	@rm -f Obj_smos/Makefile
-	@cp Makefile_sub Obj_smos/Makefile
-	@cd Obj_smos; \
-	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(SMOS_CCOMP) $(SMOS_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
-	"AR=$(SMOS_AR)" "OBJ_FILES=$(SMOS_OBJ)" \
-	"DEFS=$(SMOS_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(SMOS_RANLIB)" "MAIN_OBJ=$(SMOS_DR_OBJ)" \
-	"LNK_LIBS=$(SMOS_DR_LIBS)"
-	@if [ ! -f test/$(TARGET).smos ]; \
-	then ln -s ../Obj_smos/$(TARGET) test/$(TARGET).smos; \
-	fi
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
+	$(MAKE) $(LIB_NAME) 			\
+	"LIB_NAME=$(LIB_NAME)"			\
+	"CC=$(CCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(ZOLTAN_OBJ)" 		\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"INC_FORTRAN=$(INC_FORTRAN)" 		\
+	"F90=$(F90COMP)" 			\
+	"LOCAL_F90=$(LOCAL_F90)" 		\
+	"FOBJ_FILES=$(FOBJ_FILES)" 		\
+	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)"\
+	"SPPR_HEAD=$(SPPR_HEAD)" 		\
+	"AR=$(AR)" 				\
+	"RANLIB=$(RANLIB)" 			\
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
-tflop:
-	@if [ ! -d Obj_tflop ]; \
-	then mkdir Obj_tflop; \
+zdrive:
+	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
+	then mkdir $(ZOLTAN_OBJ_DIR); 		\
 	fi
-	@rm -f Obj_tflop/Makefile
-	@cp Makefile_sub Obj_tflop/Makefile
-	@cd Obj_tflop; \
-	$(MAKE) $(LIB_NAME) \
-	"CC=$(TFLOP_CCOMP) $(TFLOP_F90CFLAGS)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(TFLOP_INC)"\
-	"AR=$(TFLOP_AR)" "OBJ_FILES=$(TFLOP_OBJ)" \
-	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(TFLOP_RANLIB)"  \
-	"INC_FORTRAN=$(INC_FORTRAN)" \
-	"ZOLTAN_OBJ_DIR=../Obj_tflop" \
-	"ZOLTAN_MOD_DIR=$(TFLOP_ZOLTAN_MOD_DIR)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(TFLOP_F90) $(TFLOP_FFLAGS)" \
-	"SPPR_HEAD=$(TFLOP_SPPR_HEAD)" "LOCAL_F90=$(TFLOP_LOCAL_F90)"
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
+	$(MAKE) $(TARGET)			\
+	"TARGET=$(TARGET)"			\
+	"LIB_NAME=$(LIB_NAME)"			\
+	"CC=$(CCOMP)" 				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(ZOLTAN_OBJ)"		\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"INC_FORTRAN=$(INC_FORTRAN)" 		\
+	"F90=$(F90COMP)"			\
+	"LOCAL_F90=$(LOCAL_F90)" 		\
+	"FOBJ_FILES=$(FOBJ_FILES)" 		\
+	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)"\
+	"SPPR_HEAD=$(SPPR_HEAD)" 		\
+	"AR=$(AR)" 				\
+	"RANLIB=$(RANLIB)" 			\
+	"MAIN_OBJ=$(ZDRIVE_OBJ)" 		\
+	"LNK_LIBS=$(ZDRIVE_LIBS)" 		\
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
-tflop-dr:
-	@if [ ! -d Obj_tflop ]; \
-	then mkdir Obj_tflop; \
-	fi
-	@rm -f Obj_tflop/Makefile
-	@cp Makefile_sub Obj_tflop/Makefile
-	@cd Obj_tflop; \
-	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(TFLOP_CCOMP) $(TFLOP_F90CFLAGS) $(TFLOP_DR_IPATH)" \
-	"LIB_NAME=$(LIB_NAME)" "INC=$(TFLOP_INC)"\
-	"AR=$(TFLOP_AR)" "OBJ_FILES=$(TFLOP_OBJ)" \
-	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(TFLOP_RANLIB)" \
-	"INC_FORTRAN=$(INC_FORTRAN)" \
-	"ZOLTAN_OBJ_DIR=../Obj_tflop" \
-	"ZOLTAN_MOD_DIR=$(TFLOP_ZOLTAN_MOD_DIR)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(TFLOP_F90) $(TFLOP_FFLAGS)" \
-	"SPPR_HEAD=$(TFLOP_SPPR_HEAD)" "LOCAL_F90=$(TFLOP_LOCAL_F90)" \
-	"MAIN_OBJ=$(TFLOP_DR_OBJ)" \
-	"LNK_LIBS=$(TFLOP_DR_LIBS)" 
-	@if [ ! -f test/$(TARGET).tflop ]; \
-	then ln -s ../Obj_tflop/$(TARGET) test/$(TARGET).tflop; \
-	fi
-
-tflop-fdr:
-	@cd fdriver; \
-	$(MAKE) zfdrive "F90=$(TFLOP_F90)" "FFLAGS=$(TFLOP_FFLAGS)" \
-	"CC=$(TFLOP_CCOMP) $(TFLOP_F90CFLAGS)" "FARG=$(TFLOP_FARG)" \
-	"ZOLTAN_MOD_DIR=$(TFLOP_ZOLTAN_MOD_DIR)" \
-	"ZOLTAN_OBJ_DIR=../Obj_tflop" "MPIINC=$(TFLOP_INC_PATH)" \
-        "TARGET_ARCH=tflop" "LOCAL_F90=$(TFLOP_LOCAL_F90)" \
-        "MPILIB=$(TFLOP_TP_LPATH) $(THIRD_PARTY_LIBS) $(TFLOP_MPI_LIB)"
-
-solaris: sun
-
-sun:
-	@if [ ! -d Obj_sun ]; \
-	then mkdir Obj_sun; \
-	fi
-	@rm -f Obj_sun/Makefile
-	@cp Makefile_sub Obj_sun/Makefile
-	@cd Obj_sun; \
-	$(MAKE) $(LIB_NAME) "CC=$(SUN_CCOMP)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(SUN_INC)"\
-	"AR=$(SUN_AR)" "OBJ_FILES=$(SUN_OBJ)" \
-	"DEFS=$(SUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(SUN_RANLIB)"
-#	@cscope -b $(MAIN) $(SUN_CSRC) $(SUN_INC)
-
-solaris-dr: sun-dr
-
-sun-dr:
-	@if [ ! -d Obj_sun ]; \
-	then mkdir Obj_sun; \
-	fi
-	@rm -f Obj_sun/Makefile
-	@cp Makefile_sub Obj_sun/Makefile
-	@cd Obj_sun; \
-	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(SUN_CCOMP) $(SUN_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
-	"AR=$(SUN_AR)" "OBJ_FILES=$(SUN_OBJ)" \
-	"DEFS=$(SUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(SUN_RANLIB)" "MAIN_OBJ=$(SUN_DR_OBJ)" \
-	"LNK_LIBS=$(SUN_DR_LIBS)"
-	@if [ ! -f test/$(TARGET).sun ]; \
-	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).sun; \
-	fi
-
-sunos:
-	@if [ ! -d Obj_sunos ]; \
-	then mkdir Obj_sunos; \
-	fi
-	@rm -f Obj_sunos/Makefile
-	@cp Makefile_sub Obj_sunos/Makefile
-	@cd Obj_sunos; \
-	$(MAKE) $(LIB_NAME) "CC=$(SUNOS_CCOMP)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(SUNOS_INC)"\
-	"AR=$(SUNOS_AR)" "OBJ_FILES=$(SUNOS_OBJ)" \
-	"DEFS=$(SUNOS_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(SUNOS_RANLIB)"
-#	@cscope -b $(MAIN) $(SUNOS_CSRC) $(SUNOS_INC)
-
-sunos-dr:
-	@if [ ! -d Obj_sunos ]; \
-	then mkdir Obj_sunos; \
-	fi
-	@rm -f Obj_sunos/Makefile
-	@cp Makefile_sub Obj_sunos/Makefile
-	@cd Obj_sunos; \
-	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(SUNOS_CCOMP) $(SUNOS_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
-	"AR=$(SUNOS_AR)" "OBJ_FILES=$(SUNOS_OBJ)" \
-	"DEFS=$(SUNOS_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(SUNOS_RANLIB)" "MAIN_OBJ=$(SUNOS_DR_OBJ)" \
-	"LNK_LIBS=$(SUNOS_DR_LIBS)"
-	@if [ ! -f test/$(TARGET).sunos ]; \
-	then ln -s ../Obj_sunos/$(TARGET) test/$(TARGET).sunos; \
-	fi
-
-cplant:
-	@if [ ! -d Obj_cplant ]; \
-	then mkdir Obj_cplant; \
-	fi
-	@rm -f Obj_cplant/Makefile
-	@cp Makefile_sub Obj_cplant/Makefile
-	@cd Obj_cplant; \
-	$(MAKE) $(LIB_NAME) "CC=$(CPLANT_CCOMP)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(CPLANT_INC)"\
-	"AR=$(CPLANT_AR)" "OBJ_FILES=$(CPLANT_OBJ)" \
-	"DEFS=$(CPLANT_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(CPLANT_RANLIB)"
-
-cplant-dr:
-	@if [ ! -d Obj_cplant ]; \
-	then mkdir Obj_cplant; \
-	fi
-	@rm -f Obj_cplant/Makefile
-	@cp Makefile_sub Obj_cplant/Makefile
-	@cd Obj_cplant; \
-	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(CPLANT_CCOMP) $(CPLANT_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
-	"AR=$(CPLANT_AR)" "OBJ_FILES=$(CPLANT_OBJ)" \
-	"DEFS=$(CPLANT_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(CPLANT_RANLIB)" "MAIN_OBJ=$(CPLANT_DR_OBJ)" \
-	"LNK_LIBS=$(CPLANT_DR_LIBS)"
-	@if [ ! -f test/$(TARGET).cplant ]; \
-	then ln -s ../Obj_cplant/$(TARGET) test/$(TARGET).cplant; \
-	fi
-
-nistsun:
-	@if [ ! -d Obj_nistsun ]; \
-	then mkdir Obj_nistsun; \
-	fi
-	@rm -f Obj_nistsun/Makefile
-	@cp Makefile_sub Obj_nistsun/Makefile
-	@cd Obj_nistsun; \
-	$(MAKE) $(LIB_NAME) \
-	"CC=$(NISTSUN_CCOMP) $(NISTSUN_F90CFLAGS)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTSUN_INC)"\
-	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
-	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTSUN_RANLIB)" \
-	"INC_FORTRAN=$(INC_FORTRAN)" \
-	"ZOLTAN_OBJ_DIR=../Obj_nistsun" \
-        "ZOLTAN_MOD_DIR=$(NISTSUN_ZOLTAN_MOD_DIR)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTSUN_F90) $(NISTSUN_FFLAGS)" \
-	"SPPR_HEAD=$(NISTSUN_SPPR_HEAD)" "LOCAL_F90=$(NISTSUN_LOCAL_F90)"
-
-nistsun-dr:
-	@if [ ! -d Obj_nistsun ]; \
-	then mkdir Obj_nistsun; \
-	fi
-	@rm -f Obj_nistsun/Makefile
-	@cp Makefile_sub Obj_nistsun/Makefile
-	@cd Obj_nistsun; \
-	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(NISTSUN_CCOMP) $(NISTSUN_F90CFLAGS) $(NISTSUN_DR_IPATH)" \
-	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTSUN_INC)"\
-	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
-	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTSUN_RANLIB)" \
-	"INC_FORTRAN=$(INC_FORTRAN)" \
-	"ZOLTAN_OBJ_DIR=../Obj_nistsun" \
-        "ZOLTAN_MOD_DIR=$(NISTSUN_ZOLTAN_MOD_DIR)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTSUN_F90) $(NISTSUN_FFLAGS)" \
-	"SPPR_HEAD=$(NISTSUN_SPPR_HEAD)" "LOCAL_F90=$(NISTSUN_LOCAL_F90)" \
-	"MAIN_OBJ=$(NISTSUN_DR_OBJ)" \
-	"LNK_LIBS=$(NISTSUN_DR_LIBS)"
-	@if [ ! -f test/$(TARGET).nistsun ]; \
-	then ln -s ../Obj_nistsun/$(TARGET) test/$(TARGET).nistsun; \
-	fi
-
-nistsun-fdr:
-	@cd fdriver; \
-	$(MAKE) zfdrive "F90=$(NISTSUN_F90)" "FFLAGS=$(NISTSUN_FFLAGS)" \
-	"CC=$(NISTSUN_CCOMP) $(NISTSUN_F90CFLAGS)" "FARG=$(NISTSUN_FARG)" \
-        "ZOLTAN_MOD_DIR=$(NISTSUN_ZOLTAN_MOD_DIR)" \
-	"ZOLTAN_OBJ_DIR=../Obj_nistsun" "MPIINC=$(NISTSUN_INC_PATH)" \
-	"TARGET_ARCH=nistsun"  "LOCAL_F90=$(NISTSUN_LOCAL_F90)" \
-	"MPILIB=$(NISTSUN_MPI_LIBS) $(THIRD_PARTY_LIBS)" 
-
-nistlinux:
-	@if [ ! -d Obj_nistlinux ]; \
-	then mkdir Obj_nistlinux; \
-	fi
-	@rm -f Obj_nistlinux/Makefile
-	@cp Makefile_sub Obj_nistlinux/Makefile
-	@cd Obj_nistlinux; \
-	$(MAKE) $(LIB_NAME) \
-	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_F90CFLAGS)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTLINUX_INC)"\
-	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
-	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTLINUX_RANLIB)" \
-	"INC_FORTRAN=$(INC_FORTRAN)" \
-	"ZOLTAN_OBJ_DIR=../Obj_nistlinux" \
-	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTLINUX_F90) $(NISTLINUX_FFLAGS)" \
-	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"  "LOCAL_F90=$(NISTLINUX_LOCAL_F90)"
-
-nistlinux-dr:
-	@if [ ! -d Obj_nistlinux ]; \
-	then mkdir Obj_nistlinux; \
-	fi
-	@rm -f Obj_nistlinux/Makefile
-	@cp Makefile_sub Obj_nistlinux/Makefile
-	@cd Obj_nistlinux; \
-	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_F90CFLAGS) $(NISTLINUX_DR_IPATH)" \
-	"LIB_NAME=$(LIB_NAME)" \
-	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
-	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTLINUX_RANLIB)" \
-	"INC_FORTRAN=$(INC_FORTRAN)" \
-	"ZOLTAN_OBJ_DIR=../Obj_nistlinux" \
-	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTLINUX_f()) $(NISTLINUX_FFLAGS)" \
-	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"  "LOCAL_F90=$(NISTLINUX_LOCAL_F90)" \
-	"MAIN_OBJ=$(NISTLINUX_DR_OBJ)" \
-	"LNK_LIBS=$(NISTLINUX_DR_LIBS)" 
-	if [ ! -f test/$(TARGET).nistlinux ]; \
-	then ln -s ../Obj_nistlinux/$(TARGET) test/$(TARGET).nistlinux; \
-	fi
-
-nistlinux-fdr:
-	@cd fdriver; \
-	$(MAKE) zfdrive "F90=$(NISTLINUX_F90)" "FFLAGS=$(NISTLINUX_FFLAGS)" \
-	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_F90CFLAGS)" "FARG=$(NISTLINUX_FARG)"\
-	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
-	"ZOLTAN_OBJ_DIR=../Obj_nistlinux" "MPIINC=$(NISTLINUX_INC_PATH)" \
-        "TARGET_ARCH=nistlinux"  "LOCAL_F90=$(NISTLINUX_LOCAL_F90)" \
-        "MPILIB=$(NISTLINUX_MPI_LIBS) $(THIRD_PARTY_LIBS)"
+zfdrive: 
+	$(MAKE) YES_FORTRAN=1 ZOLTAN_ARCH=$(ZOLTAN_ARCH) zoltan
+	@cd fdriver; 				\
+	$(MAKE) zfdrive 			\
+	"CC=$(CCOMP)"				\
+	"ZOLTAN_INC_PATH=$(ZOLTAN_INC_PATH)"	\
+	"F90=$(F90COMP)" 			\
+	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)"\
+	"FARG=$(FARG)" 				\
+        "LNK_LIBS=$(ZDRIVE_LIBS)"		\
+	"ZOLTAN_ARCH=$(ZOLTAN_ARCH)"		\
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
 #
 ############################################################################
@@ -941,7 +331,6 @@ lint: $(DR_CSRC) $(CH_CSRC) $(LINT_TARGET)
 	@echo "running lint..."
 	$(LINT) $(LINT_FLAGS) $?
 
-
 printout:
 	cat $(MAIN) $(LIB_SRC_C) > source.c
 	tps -c source.c | lpr
@@ -952,14 +341,13 @@ clean:
 	-for a in $(SUBDIRS); do \
 	 cd $$a; \
          echo $$a; \
-	 $(RM) -f *.o *.d *.d@ zdrive zdrive.pure libzoltan.a; \
+	 $(RM) -f *.o *.d *.d@ $(TARGET) $(TARGET).pure $(LIB_NAME); \
 	 cd ..; \
 	 done;
 	-for a in $(ALL_OBJ_DIRS); do \
          echo $$a; \
-	 cd fort; $(MAKE) "ZOLTAN_OBJ_DIR=../$$a" clean; cd ..; \
-	 cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=../$$a" clean; cd ..; \
-	 cd $$a; $(RM) -f *.o *.d *.d@ zdrive zdrive.pure libzoltan.a; cd ..; \
+	 cd fort; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
+	 cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
+	 cd $$a; $(RM) -f *.o *.d *.d@ $(TARGET) $(TARGET).pure $(LIB_NAME); cd ..; \
 	 done;
 	 exit 0
-
