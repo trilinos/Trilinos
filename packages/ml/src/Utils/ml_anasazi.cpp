@@ -466,9 +466,9 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
     EigenVectors.MinValue(MinVals);
 
     for( int i=0 ; i<NumBlocks ; ++i ) {
-      Vals[i] = EPETRA_MAX(abs(MaxVals[i]),abs(MinVals[i]));
-      if( Vals[i] == abs(MaxVals[i]) && MaxVals[i]<0 ) Vals[i] *= -1.0;
-      if( Vals[i] == abs(MinVals[i]) && MinVals[i]<0 ) Vals[i] *= -1.0;
+      Vals[i] = EPETRA_MAX(fabs(MaxVals[i]),fabs(MinVals[i]));
+      if( Vals[i] == fabs(MaxVals[i]) && MaxVals[i]<0 ) Vals[i] *= -1.0;
+      if( Vals[i] == fabs(MinVals[i]) && MinVals[i]<0 ) Vals[i] *= -1.0;
       Vals[i] = 1.0/Vals[i];
       EigenVectors(i)->Scale(Vals[i]);
 
@@ -592,7 +592,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
     
     double * evali = MyBlockArnoldi2.getiEvals();
     
-    MaxImag = abs(evali[0] / 2);
+    MaxImag = fabs(evali[0] / 2);
 
     delete [] evali;
     
@@ -755,7 +755,7 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
   double * evalr = MyBlockArnoldi.getEvals();
   double * evali = MyBlockArnoldi.getiEvals(); 
 
-  *LambdaMax = sqrt(pow(evalr[0],2) + pow(evali[0],2));
+  *LambdaMax = sqrt(evalr[0]*evalr[0] + evali[0]*evali[0]);
   
   if( verbose ) {
     double * residuals  = MyBlockArnoldi.getResiduals();
