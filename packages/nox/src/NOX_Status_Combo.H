@@ -38,32 +38,40 @@
 namespace NOX {
 namespace Status {
 
-  //! Combination of tests.
-  /*!
-    We always runs through all tests, even if we don't need to. This
-    is useful so that the user knows which tests have and have not be
-    satisfied.
+/*!
+  \brief Arbitrary combination of status tests.
 
-    In the AND combination, the result is UNCONVERGED if any of the
-    tests is UNCONVERGED. Otherwise, the result is equal to the result
-    of the first test in the list (either CONVERGED or FAILED). In
-    general, one does not imagine mixing CONVERGED and FAILED tests in
-    the same AND combination.
+  In the \c AND (see NOX::Status::Combo::ComboType) combination, the
+  result is \c Unconverged (see NOX::Status::StatusType) if \e any of
+  the tests is \c Unconverged. Otherwise, the result is equal to the
+  result of the \e first test in the list that is either \c Converged
+  or \c Failed. It is not recommended to mix \c Converged and \c
+  Failed tests in an \c AND combination.
 
-    In the OR combination, the result is UNCONVERGED if all of the
-    tests are UNCONVERGED. Otherwise, it is the result of the first
-    test in the list that is either CONVERGED or FAILED. Therefore, it
-    will generally make sense to put the FAILED-type tests at the end
-    of the OR list.
-  */
+  In the \c OR combination, the result is \c Unconverged if \e all of
+  the tests are \c Unconverged. Otherwise, it is the result of the \e
+  first test in the list that is either \c Converged or \c
+  Failed. Therefore, it will generally make sense to put the \c Failed
+  -type tests at the end of the \c OR list.
+
+  \note We always runs through all tests, even if we don't need
+  to. This is useful so that the user knows which tests have and have
+  not be satisfied.
+
+  \author Tammy Kolda (SNL 8950)
+*/
 class Combo : public Test {
 
 public:
 
-  /*! \brief The test can be either the AND of all the component
-    tests, or the OR of all the component tests.
+  /*! 
+    \brief The test can be either the AND of all the component tests,
+    or the OR of all the component tests.
   */
   enum ComboType {AND, OR};
+
+  //! Constructor
+  Combo(ComboType t = OR);
 
   //! Constructor with a single test.
   Combo(Test& a, ComboType t = OR);
@@ -80,13 +88,14 @@ public:
   
 protected:
 
-  //! Use this for operator() when this is an OR type combo
+  //! Use this for operator() when this is an OR type combo. Updates status.
   virtual void orOp(const Solver::Generic& problem);
 
-  //! Use this for operator() when this is an AND type combo
+  //! Use this for operator() when this is an AND type combo. Updates status.
   virtual void andOp(const Solver::Generic& problem);
 
-  //! Check for repeaters.
+  //! Check whether or not it is safe to add a to the list of
+  //! tests. This is necessary to avoid any infinite recursions.
   bool isSafe(Test& a);
 
   //! Type of test
@@ -98,10 +107,10 @@ protected:
   //! %Status
   StatusType status;
 
-};
+}; // class Combo
 
-}
-}
+} // namespace Status
+} // namespace NOX
 
 
 #endif

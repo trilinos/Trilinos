@@ -34,6 +34,12 @@
 
 using namespace NOX::Status;
 
+Combo::Combo(ComboType t)
+{
+  type = t;
+  status = Unconverged;
+}
+
 Combo::Combo(Test& a, ComboType t)
 {
   type = t;
@@ -60,18 +66,21 @@ Combo& Combo::addTest(Test& a)
 
 bool Combo::isSafe(Test& a)
 {
+  // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (&a == this)
     return false;
   
-  Combo* ptr;
+  // Recursively test that we're not adding something that's already
+  // in the list because that can also lead to infinite recursions.
   for (vector<Test*>::iterator i = tests.begin(); i != tests.end(); ++i) {
     
-    ptr = dynamic_cast<Combo*>(*i);
+    Combo* ptr = dynamic_cast<Combo*>(*i);
     if (ptr != NULL)
       if (!ptr->isSafe(a))
 	return false;
   }
 
+  // Otherwise, it's safe to add a to the list.
   return true;
 }
 
@@ -91,6 +100,8 @@ StatusType Combo::operator()(const Solver::Generic& problem)
 
 void Combo::orOp(const Solver::Generic& problem)
 {
+  // Checks the status of each test. The first test it encounters, if
+  // any, that is unconverged is the status that it sets itself too.
   for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
     StatusType s = (*i)->operator()(problem);
