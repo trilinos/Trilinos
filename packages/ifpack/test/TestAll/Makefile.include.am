@@ -26,26 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export
 EXEEXT = .exe
 
 noinst_PROGRAMS = TestAll
 
-TestAll_SOURCES = $(srcdir)/cxx_main.cpp
-
-TestAll_DEPENDENCIES = $(IFPACK_LIBS)
-
-TestAll_CXXFLAGS = $(IFPACK_INCLUDES)  \
-	-I$(top_srcdir)/../triutils/src \
-	-I$(top_builddir)/../triutils/src
-
-if HAVE_IFPACK_TRIUTILS
-triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-else
-triutils_lib = 
-endif
-
-TestAll_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
- 	$(triutils_lib) \
-	$(IFPACK_LIBS) \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
+TestAll_SOURCES      = $(srcdir)/cxx_main.cpp
+TestAll_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestAll_CXXFLAGS     = $(IFPACK_INCLUDES)
+TestAll_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) \
+                       $(BLAS_LIBS) $(FLIBS)  $(FLIBS)

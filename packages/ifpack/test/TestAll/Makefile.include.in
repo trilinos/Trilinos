@@ -101,7 +101,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_TestAll_OBJECTS = TestAll-cxx_main.$(OBJEXT)
 TestAll_OBJECTS = $(am_TestAll_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_IFPACK_TRIUTILS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../triutils/src/libtriutils.a
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -243,17 +242,10 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TestAll_SOURCES = $(srcdir)/cxx_main.cpp
-TestAll_DEPENDENCIES = $(IFPACK_LIBS)
-TestAll_CXXFLAGS = $(IFPACK_INCLUDES)  \
-	-I$(top_srcdir)/../triutils/src \
-	-I$(top_builddir)/../triutils/src
-
-@HAVE_IFPACK_TRIUTILS_FALSE@triutils_lib = 
-@HAVE_IFPACK_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-TestAll_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
- 	$(triutils_lib) \
-	$(IFPACK_LIBS) \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+TestAll_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestAll_CXXFLAGS = $(IFPACK_INCLUDES)
+TestAll_LDADD = $(IFPACK_LIBS) $(LAPACK_LIBS) \
+                       $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
 all: all-am
 
@@ -499,6 +491,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
