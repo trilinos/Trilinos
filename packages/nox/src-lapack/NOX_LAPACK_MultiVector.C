@@ -39,18 +39,22 @@ NOX::LAPACK::MultiVector::MultiVector() {}
 NOX::LAPACK::MultiVector::MultiVector(int n, int nVecs) :
   x(n*nVecs), 
   vecPtrs(nVecs),
+  noxVectors(nVecs),
   len(n),
   numCols(nVecs),
   ownsCols(true)
 {
   checkDimensions();
-  for (int i=0; i<nVecs; i++) 
+  for (int i=0; i<nVecs; i++) {
     vecPtrs[i] = &(x[n*i]);
+    noxVectors[i] = NULL;
+  }
 }
 
 NOX::LAPACK::MultiVector::MultiVector(int n, int nVecs, double *v) :
   x(n*nVecs), 
   vecPtrs(nVecs),
+  noxVectors(nVecs),
   len(n),
   numCols(nVecs),
   ownsCols(true)
@@ -58,13 +62,16 @@ NOX::LAPACK::MultiVector::MultiVector(int n, int nVecs, double *v) :
   checkDimensions();
   for (int i=0; i<n*nVecs; i++)
     x[i] = v[i];
-  for (int i=0; i<nVecs; i++) 
+  for (int i=0; i<nVecs; i++) {
     vecPtrs[i] = &(x[n*i]);
+    noxVectors[i] = NULL;
+  }
 }
 
 NOX::LAPACK::MultiVector::MultiVector(int n, int nVecs, double **v) :
   x(n*nVecs), 
   vecPtrs(nVecs),
+  noxVectors(nVecs),
   len(n),
   numCols(nVecs),
   ownsCols(true)
@@ -73,14 +80,17 @@ NOX::LAPACK::MultiVector::MultiVector(int n, int nVecs, double **v) :
   for (int j=0; j<nVecs; j++)
     for (int i=0; i<n; i++)
       x[n*j+i] = v[j][i];
-  for (int i=0; i<nVecs; i++) 
+  for (int i=0; i<nVecs; i++) {
     vecPtrs[i] = &(x[n*i]);
+    noxVectors[i] = NULL;
+  }
 }
 
 NOX::LAPACK::MultiVector::MultiVector(const NOX::LAPACK::MultiVector& source,
 				      NOX::CopyType type) :
   x(source.numCols * source.len), 
   vecPtrs(source.numCols),
+  noxVectors(source.numCols),
   len(source.len),
   numCols(source.numCols),
   ownsCols(true)
@@ -89,11 +99,15 @@ NOX::LAPACK::MultiVector::MultiVector(const NOX::LAPACK::MultiVector& source,
     for (int i=0; i<len; i++) 
       x[j*len+i] = source.vecPtrs[j][i];
     vecPtrs[j] = &(x[len*j]);
+    noxVectors[j] = NULL;
   }
 }
 
 NOX::LAPACK::MultiVector::~MultiVector()
 {
+  for (unsigned int i=0; i<noxVectors.size(); i++)
+    if (noxVectors[i] != NULL)
+      delete noxVectors[i];
 }
 
 NOX::Abstract::MultiVector& 
@@ -189,6 +203,34 @@ NOX::LAPACK::MultiVector::augment(const NOX::LAPACK::MultiVector& source)
   numCols = newSize;
 
   return *this;
+}
+
+NOX::Abstract::Vector*
+NOX::LAPACK::MultiVector::operator [] (int i)
+{
+  if ( i < 0 || i > numCols ) {
+    cerr << "NOX::LAPACK::MultiVector::operator[]:  Error!  Invalid index " 
+	 << i << endl;
+    throw "NOX::LAPACK Error";
+  }
+  if (noxVectors[i] == NULL) {
+    noxVectors[i] = new NOX::LAPACK::Vector(len, vecPtrs[i], true);
+  }
+  return noxVectors[i];
+}
+
+const NOX::Abstract::Vector*
+NOX::LAPACK::MultiVector::operator [] (int i) const
+{
+  if ( i < 0 || i > numCols ) {
+    cerr << "NOX::LAPACK::MultiVector::operator[]:  Error!  Invalid index " 
+	 << i << endl;
+    throw "NOX::LAPACK Error";
+  }
+  if (noxVectors[i] == NULL) {
+    noxVectors[i] = new NOX::LAPACK::Vector(len, vecPtrs[i], true);
+  }
+  return noxVectors[i];
 }
 
 void 
@@ -451,13 +493,6 @@ NOX::LAPACK::MultiVector::operator () (int i, int j) const
 {
   checkIndex(i,j);
   return vecPtrs[j][i];
-}
-
-double* 
-NOX::LAPACK::MultiVector::operator [] (int j) const
-{
-  checkIndex(j);
-  return vecPtrs[j];
 }
 
 int 

@@ -40,6 +40,12 @@
 #include "NOX_Random.H" // for Random class
 
 namespace NOX {
+  namespace LAPACK {
+    class Vector;
+  }
+}
+
+namespace NOX {
 
   namespace LAPACK {
 
@@ -109,6 +115,32 @@ namespace NOX {
       //@}
 
       //@{ \name Accessor methods
+
+      /*!
+       * \brief Return a pointer to the i-th column of the multivector as
+       * an abstract vector.  
+       */
+      /*!
+       * It is assumed that any implementation of this method returns a 
+       * vector that has a view of the underlying data in the multivector,
+       * and therefore the returned pointer should not be deleted.  This
+       * requires a careful implementation of this method to avoid a heap
+       * leak.
+       */
+      virtual NOX::Abstract::Vector* operator [] (int i);
+    
+      /*!
+       * \brief Return a pointer to the i-th column of the multivector as
+       * an abstract vector.  
+       */
+      /*!
+       * It is assumed that any implementation of this method returns a 
+       * vector that has a view of the underlying data in the multivector,
+       * and therefore the returned pointer should not be deleted.  This
+       * requires a careful implementation of this method to avoid a heap
+       * leak.
+       */
+      virtual const NOX::Abstract::Vector* operator [] (int i) const;
 
       /*!
        * \brief Copy the column vector given by \c i into vector \c vec.
@@ -225,9 +257,6 @@ namespace NOX {
       //! Return component \c i of column \c j of %MultiVector
       const double& operator () (int i, int j) const;
 
-      //! Return pointer to column \c j of %MultiVector
-      double* operator [] (int j) const;
-
       //@}
 
       //! Return the length of multi-vector.
@@ -246,6 +275,9 @@ namespace NOX {
 
       //! Pointers to each column of multi-vector
       vector<double*> vecPtrs;
+
+      //! Pointers to each column as a NOX::LAPACK::Vector
+      mutable vector<NOX::LAPACK::Vector*> noxVectors;
 
       //! Length of each column
       int len;

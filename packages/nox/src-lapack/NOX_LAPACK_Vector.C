@@ -36,44 +36,80 @@
 
 NOX::LAPACK::Vector::Vector() : 
   n(0),
-  x()		       // initialize an empty vector
+  na(0),
+  x(NULL),		       
+  isView(false)
 {
 }
 
 
 NOX::LAPACK::Vector::Vector(int N) :
   n(N),
-  x(N, 0.0)		       // initialize a zero vector of length n
+  na(N),
+  x(NULL),       
+  isView(false)
 {
+  // initialize a zero vector of length n
+  x = new double[n];
+  for (int i=0; i<n; i++)
+    x[i] = 0.0;
 }
 
-NOX::LAPACK::Vector::Vector(int N, int na) :
+NOX::LAPACK::Vector::Vector(int N, int Na) :
   n(N),
-  x(na, 0.0)		       // initialize a zero vector of length na
+  na(Na),
+  x(NULL),
+  isView(false)
 {
+  // initialize a zero vector of length na
+  x = new double[na];
+  for (int i=0; i<na; i++)
+    x[i] = 0.0;
 }
 
-NOX::LAPACK::Vector::Vector(int N, double *v) : 
+NOX::LAPACK::Vector::Vector(int N, double *v, bool createView) : 
   n(N),
-  x(v,v+N)		       // initialize a vector of length n from array v
+  na(N),
+  x(NULL),
+  isView(createView)
 {
+  if (isView)
+    x = v;
+  else {
+    // initialize a vector of length n from array v
+    x = new double[n];
+    for (int i=0; i<n; i++)
+      x[i] = 0.0;
+  }
 }
 
 NOX::LAPACK::Vector::Vector(const NOX::LAPACK::Vector& source, 
-			    NOX::CopyType type) :
+			    NOX::CopyType type, bool createView) :
   n(source.n),
-  x(source.x)
+  na(source.na),
+  x(NULL),
+  isView(createView)
 {
+  if (isView)
+    x = source.x;
+  else {
+    x = new double[na];
+    for (int i=0; i<na; i++)
+      x[i] = source.x[i];
+  }
 }
 
 NOX::LAPACK::Vector::~Vector()
 {
+  if (!isView)
+    delete [] x;
 }
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
 						const vector<double>& source)
 {
-  x = source;
+  for (int i=0; i<n; i++)
+    x[i] = source[i];
   return *this;
 }
 
@@ -86,8 +122,8 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
 NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
 					   const NOX::LAPACK::Vector& source)
 {
-  n = source.n;
-  x = source.x;
+  for (int i=0; i<n; i++)
+    x[i] = source.x[i];
   return *this;
 }
 
@@ -207,7 +243,7 @@ NOX::Abstract::Vector* NOX::LAPACK::Vector::clone(CopyType type) const
 double NOX::LAPACK::Vector::norm(NOX::Abstract::Vector::NormType type) const
 {
   
-  if (x.empty())
+  if (n == 0)
     return 0.0;
 
   int i;			// counter
@@ -315,5 +351,5 @@ void NOX::LAPACK::Vector::print() const
 
 int NOX::LAPACK::Vector::lengthAllocated() const
 {
-  return x.size();
+  return na;
 }

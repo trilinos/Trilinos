@@ -70,10 +70,11 @@ namespace NOX {
       Vector(int n, int na);
 
       //! Construct a vector of length n from given array
-      Vector(int n, double *v);
+      Vector(int n, double *v, bool createView = false);
     
       //! Copy constructor
-      Vector(const NOX::LAPACK::Vector& source, CopyType type = DeepCopy);
+      Vector(const NOX::LAPACK::Vector& source, CopyType type = DeepCopy,
+	     bool createView = false);
       
       //! Destruct Vector.
       ~Vector();
@@ -185,8 +186,14 @@ namespace NOX {
       //! The used length of vector
       int n;
 
+      //! The allocated length of vector
+      int na;
+
       //! The vector owned by this object
-      vector<double> x;
+      double *x;
+
+      //! Whether this vector is a view
+      bool isView;
 
       //! Random number generator
       NOX::Random urand;
