@@ -12,9 +12,14 @@
 CORE_H = \
 	$(srcdir)/AnasaziDenseMatrix.hpp \
 	$(srcdir)/AnasaziMatrix.hpp \
+	$(srcdir)/AnasaziReturnType.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
-	$(srcdir)/AnasaziPetra.hpp \
-	$(srcdir)/AnasaziPrecondition.hpp
+	$(srcdir)/AnasaziPrecondition.hpp \
+	$(srcdir)/BelosPetraInterface.hpp \
+	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosBlockGmres.hpp \
+	$(srcdir)/BelosBlockCG.hpp 
+
 
 CORE = 
 
