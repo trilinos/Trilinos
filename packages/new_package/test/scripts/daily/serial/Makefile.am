@@ -24,7 +24,7 @@
 # Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 # 
 # ************************************************************************
-@HEADER
+#@HEADER
 # Scripts in this directory are automatically detected by the test harness
 # if set up to build properly below.  Scripts are executed by the test harness.
 
