@@ -15,19 +15,25 @@ using std::vector;
 using std::set;
 using std::map;
 
-EpetraExt::CrsGraph_MapColoring::NewTypePtr EpetraExt::CrsGraph_MapColoring::operator()( EpetraExt::CrsGraph_MapColoring::OriginalTypeRef original )
+namespace EpetraExt {
+
+CrsGraph_MapColoring::NewTypeRef
+CrsGraph_MapColoring::
+operator()( OriginalTypeRef orig  )
 {
+  origObj_ = &orig;
+
   int err;
 
-  const Epetra_BlockMap & RowMap = original.RowMap();
+  const Epetra_BlockMap & RowMap = orig.RowMap();
   int nRows = RowMap.NumMyElements();
-  const Epetra_BlockMap & ColMap = original.ColMap();
+  const Epetra_BlockMap & ColMap = orig.ColMap();
   int nCols = ColMap.NumMyElements();
 
   if( verbose_ ) cout << "RowMap:\n" << RowMap;
   if( verbose_ ) cout << "ColMap:\n" << ColMap;
 
-  Epetra_CrsGraph * base = &( const_cast<Epetra_CrsGraph&>(original) );
+  Epetra_CrsGraph * base = &( const_cast<Epetra_CrsGraph&>(orig) );
 
   int NumIndices;
   int * Indices;
@@ -40,7 +46,7 @@ EpetraExt::CrsGraph_MapColoring::NewTypePtr EpetraExt::CrsGraph_MapColoring::ope
 
     for( int i = 0; i < nRows; ++i )
     {
-      assert( original.ExtractMyRowView( i, NumIndices, Indices ) == 0 );
+      assert( orig.ExtractMyRowView( i, NumIndices, Indices ) == 0 );
       assert( base->InsertMyIndices( i, NumIndices, Indices ) >= 0 );
 
       for( int j = 0; j < NumIndices; ++j )
@@ -54,11 +60,12 @@ EpetraExt::CrsGraph_MapColoring::NewTypePtr EpetraExt::CrsGraph_MapColoring::ope
   if( verbose_ ) cout << "Base Graph:\n" << *base << endl;
 
   //Generate Local Distance-1 Adjacency Graph
-  //(Transpose of original excluding non-local column indices)
-  Epetra_CrsGraph* Adj1 = CrsGraph_Transpose( true )( *base );
-  if( verbose_ ) cout << "Adjacency 1 Graph!\n" << *Adj1;
+  //(Transpose of orig excluding non-local column indices)
+  EpetraExt::CrsGraph_Transpose transposeTransform( true );
+  Epetra_CrsGraph & Adj1 = transposeTransform( *base );
+  if( verbose_ ) cout << "Adjacency 1 Graph!\n" << Adj1;
 
-  int Delta = Adj1->MaxNumIndices();
+  int Delta = Adj1.MaxNumIndices();
   cout << endl << "Delta: " << Delta << endl;
 
   //Generation of Local Distance-2 Adjacency Graph
@@ -67,7 +74,7 @@ EpetraExt::CrsGraph_MapColoring::NewTypePtr EpetraExt::CrsGraph_MapColoring::ope
   int * Adj1Indices;
   for( int i = 0; i < nCols; ++i )
   {
-    assert( Adj1->ExtractMyRowView( i, NumAdj1Indices, Adj1Indices ) == 0 );
+    assert( Adj1.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices ) == 0 );
 
     for( int j = 0; j < NumAdj1Indices; ++j )
     {
@@ -118,5 +125,9 @@ EpetraExt::CrsGraph_MapColoring::NewTypePtr EpetraExt::CrsGraph_MapColoring::ope
 
   if( distributedGraph ) delete base;
 
-  return NewTypePtr( ColorMap );
+  newObj_ = ColorMap;
+
+  return *ColorMap;
 }
+
+} // namespace EpetraExt

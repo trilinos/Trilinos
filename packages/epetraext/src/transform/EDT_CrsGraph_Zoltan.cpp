@@ -1,10 +1,6 @@
 
 #include <EDT_CrsGraph_Zoltan.h>
 
-#ifdef ZOLTAN_ORDER
-#include <EDT_CrsGraph_ZoltanOrder.h>
-#endif
-
 #include <EDT_CrsGraph_Transpose.h>
 
 #include <Epetra_ZoltanQuery.h>
@@ -19,32 +15,43 @@
 #include <vector>
 #include <set>
 
-EpetraExt::CrsGraph_Zoltan::NewTypePtr EpetraExt::CrsGraph_Zoltan::operator()( EpetraExt::CrsGraph_Zoltan::OriginalTypeRef original )
+using std::vector;
+using std::set;
+
+namespace EpetraExt {
+
+CrsGraph_Zoltan::
+~CrsGraph_Zoltan()
 {
+  if( newObj_ ) delete newObj_;
+
+  if( NewRowMap_ ) delete NewRowMap_;
+}
+
+CrsGraph_Zoltan::NewTypeRef
+CrsGraph_Zoltan::
+operator()( OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
   int err;
 
-  Zoltan_LoadBalance * LB = lb_;
-  Epetra_ZoltanQuery * Query = 0;
-  Epetra_CrsGraph * TransGraph = 0;
+  //Setup Load Balance Object
+  float version;
+  char * dummy = 0;
+  Zoltan_LoadBalance LB( 0, &dummy, &version );
+  err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(orig.Comm()).Comm() );
+  if( err == ZOLTAN_OK ) err = LB.Set_Param( "LB_METHOD", "PARMETIS" );
+  if( err == ZOLTAN_OK ) err = LB.Set_Param( "PARMETIS_METHOD", partitionMethod_ );
 
-  if( !LB )
-  {
-    //Setup Load Balance Object
-    float version;
-    char * dummy = 0;
-    LB = new Zoltan_LoadBalance( 0, &dummy, &version );
-    err = LB->Create( dynamic_cast<const Epetra_MpiComm&>(original.Comm()).Comm() );
-    if( err == ZOLTAN_OK ) err = LB->Set_Param( "LB_METHOD", "PARMETIS" );
-    if( err == ZOLTAN_OK ) err = LB->Set_Param( "PARMETIS_METHOD", partitionMethod_ );
+  //Setup Query Object
+  CrsGraph_Transpose transposeTransform;
+  Epetra_CrsGraph & TransGraph = transposeTransform( orig );
+  Epetra_ZoltanQuery Query( orig, &TransGraph );
+  if( err == ZOLTAN_OK ) err = LB.Set_QueryObject( &Query );
 
-    //Setup Query Object
-    TransGraph = CrsGraph_Transpose()( original );
-    Query = new Epetra_ZoltanQuery( original, TransGraph );
-    if( err == ZOLTAN_OK ) err = LB->Set_QueryObject( Query );
-
-    if( err != ZOLTAN_OK )
-    { cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; exit(0); }
-  }
+  if( err != ZOLTAN_OK )
+  { cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; exit(0); }
 
   //Generate Load Balance
   int changes;
@@ -56,19 +63,20 @@ EpetraExt::CrsGraph_Zoltan::NewTypePtr EpetraExt::CrsGraph_Zoltan::operator()( E
   ZOLTAN_ID_PTR export_global_ids, export_local_ids;
   int * export_procs;
 
-  original.Comm().Barrier();
-  err = LB->Balance( &changes,
+//  orig.Comm().Barrier();
+//  err = LB.Generate_Files( "zoltan_output" );
+  orig.Comm().Barrier();
+  err = LB.Balance( &changes,
                      &num_gid_entries, &num_lid_entries,
                      &num_import, &import_global_ids, &import_local_ids, &import_procs,
                      &num_export, &export_global_ids, &export_local_ids, &export_procs );
-  original.Comm().Barrier();
-
-  if( TransGraph ) delete TransGraph;
+  LB.Evaluate( 1, 0, 0, 0, 0, 0, 0 );
+  orig.Comm().Barrier();
 
   //Generate New Element List
-  int numMyElements = original.RowMap().NumMyElements();
+  int numMyElements = orig.RowMap().NumMyElements();
   vector<int> elementList( numMyElements );
-  original.RowMap().MyGlobalElements( &elementList[0] );
+  orig.RowMap().MyGlobalElements( &elementList[0] );
 
   int newNumMyElements = numMyElements - num_export + num_import;
   vector<int> newElementList( newNumMyElements );
@@ -89,36 +97,28 @@ EpetraExt::CrsGraph_Zoltan::NewTypePtr EpetraExt::CrsGraph_Zoltan::operator()( E
 
   //Free Zoltan Data
   if( err == ZOLTAN_OK )
-    err = LB->Free_Data( &import_global_ids, &import_local_ids, &import_procs,
+    err = LB.Free_Data( &import_global_ids, &import_local_ids, &import_procs,
                          &export_global_ids, &export_local_ids, &export_procs );
 
-  if( !lb_ ) { delete LB; delete Query; }
-
   //Create Import Map
-  Epetra_Map * ImportMap = new Epetra_Map( original.RowMap().NumGlobalElements(),
+  NewRowMap_ = new Epetra_Map( orig.RowMap().NumGlobalElements(),
                                            newNumMyElements,
                                            &newElementList[0],
-                                           original.RowMap().IndexBase(),
-                                           original.RowMap().Comm() );
+                                           orig.RowMap().IndexBase(),
+                                           orig.RowMap().Comm() );
 
   //Create Importer
-  Epetra_Import Importer( *ImportMap, original.RowMap() );
+  Epetra_Import Importer( *NewRowMap_, orig.RowMap() );
 
   //Create New Graph
-  Epetra_CrsGraph * NewGraph( new Epetra_CrsGraph( Copy, *ImportMap, 0 ) );
-  NewGraph->Import( original, Importer, Insert );
+  Epetra_CrsGraph * NewGraph = new Epetra_CrsGraph( Copy, *NewRowMap_, 0 );
+  NewGraph->Import( orig, Importer, Insert );
   NewGraph->TransformToLocal();
 
-#ifdef ZOLTAN_ORDER
-  if( reorder_ )
-  {
-    Epetra_CrsGraph * oldGraph = NewGraph;
-    NewGraph = CrsGraph_ZoltanOrder()( *oldGraph );
-    delete oldGraph;
-    delete ImportMap;
-  }
-#endif
-  
-  return NewGraph;
+  newObj_ = NewGraph;
+
+  return *NewGraph;
 }
+
+} // namespace EpetraExt
 

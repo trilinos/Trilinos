@@ -1,6 +1,5 @@
 
-#include <EDT_LinearProblem_Zoltan.h>
-#include <EDT_CrsGraph_Zoltan.h>
+#include <EDT_LinearProblem_GraphTrans.h>
 
 #include <Epetra_Export.h>
 #include <Epetra_Import.h>
@@ -15,8 +14,8 @@
 
 namespace EpetraExt {
 
-LinearProblem_Zoltan::
-~LinearProblem_Zoltan()
+LinearProblem_GraphTrans::
+~LinearProblem_GraphTrans()
 {
   if( Exporter_ ) delete Exporter_;
   if( Importer_ ) delete Importer_;
@@ -27,12 +26,10 @@ LinearProblem_Zoltan::
   if( NewMatrix_ ) delete NewMatrix_;
 }
 
-LinearProblem_Zoltan::NewTypeRef
-LinearProblem_Zoltan::
+LinearProblem_GraphTrans::NewTypeRef
+LinearProblem_GraphTrans::
 operator()( OriginalTypeRef orig )
 {
-  origObj_ = &orig;
-
   OldProblem_ = &orig;
   OldMatrix_ = dynamic_cast<Epetra_CrsMatrix*>( orig.GetMatrix() );
   OldGraph_ = const_cast<Epetra_CrsGraph*>(&OldMatrix_->Graph());
@@ -48,7 +45,7 @@ operator()( OriginalTypeRef orig )
   if( !OldRHS_ )    ierr = -3;
   if( !OldLHS_ )    ierr = -4;
 
-  Epetra_CrsGraph & NewGraph = CrsGraph_Zoltan()(*OldGraph_);
+  Epetra_CrsGraph & NewGraph = graphTrans_( *OldGraph_ );
   NewMatrix_ = new Epetra_CrsMatrix( Copy, NewGraph );
 
   Epetra_BlockMap & NewRowMap = const_cast<Epetra_BlockMap&>(NewGraph.RowMap());
@@ -61,13 +58,11 @@ operator()( OriginalTypeRef orig )
 
   NewProblem_ = new Epetra_LinearProblem( NewMatrix_, NewLHS_, NewRHS_ );
 
-  newObj_ = NewProblem_;
-
   return *NewProblem_;
 }
 
 bool
-LinearProblem_Zoltan::
+LinearProblem_GraphTrans::
 fwd()
 {
   NewLHS_->Export( *OldLHS_, *Exporter_, Insert );
@@ -78,7 +73,7 @@ fwd()
 }
 
 bool
-LinearProblem_Zoltan::
+LinearProblem_GraphTrans::
 rvs()
 {
   OldLHS_->Import( *NewLHS_, *Exporter_, Insert );
@@ -89,3 +84,4 @@ rvs()
 }
 
 } //namespace EpetraExt
+

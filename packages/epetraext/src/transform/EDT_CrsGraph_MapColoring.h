@@ -21,7 +21,7 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
   : verbose_(verbose)
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 
 };
 

@@ -7,6 +7,8 @@
 #include <string>
 
 class Epetra_CrsGraph;
+class Epetra_Map;
+
 class Zoltan_LoadBalance;
 
 namespace EpetraExt {
@@ -14,22 +16,19 @@ namespace EpetraExt {
 class CrsGraph_Zoltan : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
   const std::string partitionMethod_;
-  const bool reorder_;
-  Zoltan_LoadBalance * lb_;
+
+  Epetra_Map * NewRowMap_;
 
  public:
 
-  ~CrsGraph_Zoltan() {}
+  ~CrsGraph_Zoltan();
 
-  CrsGraph_Zoltan( const std::string & part_method = std::string("PartKway"),
-                   const bool reorder = true,
-                   Zoltan_LoadBalance * lb = 0 )
+  CrsGraph_Zoltan( const std::string & part_method = std::string("PartKway") )
   : partitionMethod_(part_method),
-    reorder_(reorder),
-    lb_(lb)
+    NewRowMap_(0)
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 
 };
 

@@ -4,12 +4,24 @@
 
 #include <EDT_CrsMatrix_View.h>
 
-EpetraExt::CrsMatrix_View::NewTypePtr EpetraExt::CrsMatrix_View::operator()( EpetraExt::CrsMatrix_View::OriginalTypeRef original )
-{
-  if( original.IndicesAreGlobal() ) cout << "EDT_CrsMatrix_View: Indices must be LOCAL!\n";
-  assert( !original.IndicesAreGlobal() );
+namespace EpetraExt {
 
-  //test graph, new graph must be left subset of old
+CrsMatrix_View::
+~CrsMatrix_View()
+{
+  if( newObj_ ) delete newObj_;
+}
+
+CrsMatrix_View::NewTypeRef
+CrsMatrix_View::
+operator()( OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
+  if( orig.IndicesAreGlobal() ) cout << "EDT_CrsMatrix_View: Indices must be LOCAL!\n";
+  assert( !orig.IndicesAreGlobal() );
+
+  //test graph, new graph must be contiguous subset of old
 
   //intial construction of matrix 
   Epetra_CrsMatrix * newMatrix( new Epetra_CrsMatrix( View, NewGraph_ ) );
@@ -21,7 +33,7 @@ EpetraExt::CrsMatrix_View::NewTypePtr EpetraExt::CrsMatrix_View::operator()( Epe
   int numMyRows = newMatrix->NumMyRows();
   for( int i = 0; i < numMyRows; ++i )
   {
-    original.ExtractMyRowView( i, indicesCnt, myValues, myIndices );
+    orig.ExtractMyRowView( i, indicesCnt, myValues, myIndices );
 
     int newIndicesCnt = indicesCnt;
     bool done = false;
@@ -37,6 +49,10 @@ EpetraExt::CrsMatrix_View::NewTypePtr EpetraExt::CrsMatrix_View::operator()( Epe
 
   newMatrix->TransformToLocal();
 
-  return newMatrix;
+  newObj_ = newMatrix;
+
+  return *newMatrix;
 }
+
+} // namespace EpetraExt
 

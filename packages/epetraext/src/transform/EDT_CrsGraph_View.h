@@ -16,7 +16,7 @@ class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 
  public:
 
-  ~CrsGraph_View() {}
+  ~CrsGraph_View();
 
   CrsGraph_View( const Epetra_BlockMap * new_row_map,
                  const Epetra_BlockMap * new_col_map = 0 )
@@ -24,7 +24,7 @@ class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
     NewColMap_(new_col_map)
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 
 };
 

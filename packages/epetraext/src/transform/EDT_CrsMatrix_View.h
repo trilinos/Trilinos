@@ -16,7 +16,7 @@ class CrsMatrix_View : public ViewTransform<Epetra_CrsMatrix> {
 
  public:
 
-  ~CrsMatrix_View() {}
+  ~CrsMatrix_View();
 
   CrsMatrix_View( const Epetra_CrsGraph & orig_graph,
                   const Epetra_CrsGraph & new_graph )
@@ -24,7 +24,7 @@ class CrsMatrix_View : public ViewTransform<Epetra_CrsMatrix> {
     NewGraph_(new_graph)
   { /*Should test graphs for requirements*/ }
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 
 };
 

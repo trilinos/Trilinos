@@ -95,57 +95,64 @@ install_sh = @install_sh@
 
 TRANSFORM_H = \
 	$(srcdir)/Epetra_Transform.h \
+        $(srcdir)/Epetra_Transform_Composite.h \
 	$(srcdir)/EDT_CrsGraph_View.h \
 	$(srcdir)/EDT_CrsMatrix_View.h \
 	$(srcdir)/EDT_MultiVector_View.h \
-	$(srcdir)/EDT_CrsGraph_Overlap.h \
 	$(srcdir)/EDT_CrsGraph_Transpose.h \
         $(srcdir)/EDT_CrsGraph_MapColoring.h \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.h \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.h \
-        $(srcdir)/EDT_CrsGraph_SymmRCM.h
+	$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.h \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.h \
+        $(srcdir)/EDT_LinearProblem_GraphTrans.h
 
 
 TRANSFORM = \
 	$(srcdir)/EDT_CrsGraph_View.cpp \
 	$(srcdir)/EDT_CrsMatrix_View.cpp \
 	$(srcdir)/EDT_MultiVector_View.cpp \
-	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
 	$(srcdir)/EDT_CrsGraph_Transpose.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoring.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp \
-        $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
+	$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.cpp \
+        $(srcdir)/EDT_LinearProblem_GraphTrans.cpp
 
 
 BTF_H = \
-        $(srddir)/ET_CrsGraph_BTF.h
+        $(srcdir)/EDT_CrsGraph_BTF.h
 
 
 BTF = \
-        $(srddir)/ET_CrsGraph_BTF.cpp \
-        $(srddir)/btf/concmp.f \
-        $(srddir)/btf/genbtf.f \
-        $(srddir)/btf/corsum.f \
-        $(srddir)/btf/finsum.f \
-        $(srddir)/btf/fnrsum.f \
-        $(srddir)/btf/izero.f \
-        $(srddir)/btf/maxmatch.f \
-        $(srddir)/btf/rectblk.f \
-        $(srddir)/btf/mmc13e.f \
-        $(srddir)/btf/prtivs.f \
-        $(srddir)/btf/strchk.f \
-        $(srddir)/btf/mattrans.f
+        $(srcdir)/EDT_CrsGraph_BTF.cpp \
+        $(srcdir)/btf/concmp.f \
+        $(srcdir)/btf/genbtf.f \
+        $(srcdir)/btf/corsum.f \
+        $(srcdir)/btf/finsum.f \
+        $(srcdir)/btf/fnrsum.f \
+        $(srcdir)/btf/izero.f \
+        $(srcdir)/btf/maxmatch.f \
+        $(srcdir)/btf/rectblk.f \
+        $(srcdir)/btf/mmc13e.f \
+        $(srcdir)/btf/prtivs.f \
+        $(srcdir)/btf/strchk.f \
+        $(srcdir)/btf/mattrans.f
 
 
 EXTRA_MPI_H = \
+	$(srcdir)/EDT_CrsGraph_Overlap.h \
 	$(srcdir)/EDT_CrsGraph_Zoltan.h \
+	$(srcdir)/EDT_LinearProblem_Zoltan.h \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.h \
 	$(srcdir)/Epetra_ZoltanQuery.h
 
 
 EXTRA_MPI = \
+	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
 	$(srcdir)/EDT_CrsGraph_Zoltan.cpp \
+	$(srcdir)/EDT_LinearProblem_Zoltan.cpp \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp \
 	$(srcdir)/Epetra_ZoltanQuery.cpp
 
@@ -161,23 +168,28 @@ EXTRA_MPI = \
 
 
 # ------------------------------------------------------------------------
-# EpetraExt library specifications
+# EpetraExt Tranform library specifications
 # ------------------------------------------------------------------------
-EPETRAEXT_LIB = libepetraext.a
-
-EPETRAEXT_H = \
-	$(TRANSFORM_H) \
-	$(MPI_H)
-
-
-libepetraext_a_SOURCES = \
+libepetraext_trans_a_SOURCES = \
 	$(TRANSFORM) \
+        $(BTF) \
 	$(MPI)
 
+
+# libraries to be installed in $(libexecdir)
+@BUILD_TRANSFORM_TRUE@EPETRAEXT_TRANSFORM_LIB = libepetraext_trans.a
+@BUILD_TRANSFORM_FALSE@EPETRAEXT_TRANSFORM_LIB = 
+@BUILD_TRANSFORM_TRUE@EPETRAEXT_TRANSFORM_H = \
+@BUILD_TRANSFORM_TRUE@	$(TRANSFORM_H) \
+@BUILD_TRANSFORM_TRUE@        $(BTF_H) \
+@BUILD_TRANSFORM_TRUE@	$(MPI_H)
+
+@BUILD_TRANSFORM_FALSE@EPETRAEXT_TRANSFORM_H = 
 
 #We need the following to support separate build directories
 AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
             -I$(top_srcdir)/../../external/Zoltan_C++
+
 
 
 # ------------------------------------------------------------------------
@@ -187,8 +199,8 @@ AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@libepetraext_a_AR = $(ALTERNATE_AR)
-@USE_ALTERNATE_AR_FALSE@libepetraext_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_TRUE@libepetraext_trans_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libepetraext_trans_a_AR = $(AR) cru
 
 
 # ------------------------------------------------------------------------
@@ -196,19 +208,19 @@ AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
 # be sure to include these, and this is the hack to do it.
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
-libepetraext_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+libepetraext_trans_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
-lib_LIBRARIES = $(EPETRAEXT_LIB)
+lib_LIBRARIES = $(EPETRAEXT_TRANSFORM_LIB)
 
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
-pkginclude_HEADERS = $(EPETRAEXT_H) 
+pkginclude_HEADERS = $(EPETRAEXT_TRANSFORM_H) 
 
 
 # ------------------------------------------------------------------------
@@ -232,36 +244,56 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
-MOSTLYERCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
+MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
 subdir = src/transform
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
-libepetraext_a_DEPENDENCIES =
-@HAVE_MPI_TRUE@am_libepetraext_a_OBJECTS = EDT_CrsGraph_View.$(OBJEXT) \
+libepetraext_trans_a_DEPENDENCIES =
+@HAVE_MPI_TRUE@am_libepetraext_trans_a_OBJECTS = \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_View.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsMatrix_View.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_MultiVector_View.$(OBJEXT) \
-@HAVE_MPI_TRUE@	EDT_CrsGraph_Overlap.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_Transpose.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_MapColoring.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_LinearProblem_CrsSingletonFilter.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_SymmRCM.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_LinearProblem_GraphTrans.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_BTF.$(OBJEXT) concmp.$(OBJEXT) \
+@HAVE_MPI_TRUE@	genbtf.$(OBJEXT) corsum.$(OBJEXT) \
+@HAVE_MPI_TRUE@	finsum.$(OBJEXT) fnrsum.$(OBJEXT) \
+@HAVE_MPI_TRUE@	izero.$(OBJEXT) maxmatch.$(OBJEXT) \
+@HAVE_MPI_TRUE@	rectblk.$(OBJEXT) mmc13e.$(OBJEXT) \
+@HAVE_MPI_TRUE@	prtivs.$(OBJEXT) strchk.$(OBJEXT) \
+@HAVE_MPI_TRUE@	mattrans.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_Overlap.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_Zoltan.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_LinearProblem_Zoltan.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_ZoltanOrder.$(OBJEXT) \
 @HAVE_MPI_TRUE@	Epetra_ZoltanQuery.$(OBJEXT)
-@HAVE_MPI_FALSE@am_libepetraext_a_OBJECTS = EDT_CrsGraph_View.$(OBJEXT) \
+@HAVE_MPI_FALSE@am_libepetraext_trans_a_OBJECTS = \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_View.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_CrsMatrix_View.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_MultiVector_View.$(OBJEXT) \
-@HAVE_MPI_FALSE@	EDT_CrsGraph_Overlap.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_CrsGraph_Transpose.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_CrsGraph_MapColoring.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT) \
-@HAVE_MPI_FALSE@	EDT_CrsGraph_SymmRCM.$(OBJEXT)
-libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
+@HAVE_MPI_FALSE@	EDT_LinearProblem_CrsSingletonFilter.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_SymmRCM.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_LinearProblem_GraphTrans.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_BTF.$(OBJEXT) concmp.$(OBJEXT) \
+@HAVE_MPI_FALSE@	genbtf.$(OBJEXT) corsum.$(OBJEXT) \
+@HAVE_MPI_FALSE@	finsum.$(OBJEXT) fnrsum.$(OBJEXT) \
+@HAVE_MPI_FALSE@	izero.$(OBJEXT) maxmatch.$(OBJEXT) \
+@HAVE_MPI_FALSE@	rectblk.$(OBJEXT) mmc13e.$(OBJEXT) \
+@HAVE_MPI_FALSE@	prtivs.$(OBJEXT) strchk.$(OBJEXT) \
+@HAVE_MPI_FALSE@	mattrans.$(OBJEXT)
+libepetraext_trans_a_OBJECTS = $(am_libepetraext_trans_a_OBJECTS)
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -269,7 +301,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/EDT_CrsGraph_MapColoring.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/EDT_CrsGraph_BTF.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_MapColoring.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Overlap.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_SymmRCM.Po \
@@ -278,7 +311,10 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Zoltan.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsMatrix_View.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_LinearProblem_CrsSingletonFilter.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_LinearProblem_GraphTrans.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_LinearProblem_Zoltan.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_MultiVector_View.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_ZoltanQuery.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -287,16 +323,25 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-DIST_SOURCES = $(libepetraext_a_SOURCES)
+F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
+F77LD = $(F77)
+F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+FFLAGS = @FFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+DIST_SOURCES = $(libepetraext_trans_a_SOURCES)
 HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
 
 DIST_COMMON = $(pkginclude_HEADERS) Makefile.am Makefile.in
-SOURCES = $(libepetraext_a_SOURCES)
+SOURCES = $(libepetraext_trans_a_SOURCES)
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .cpp .f .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  src/transform/Makefile
@@ -335,7 +380,6 @@ clean-libLIBRARIES:
 EDT_CrsGraph_View.$(OBJEXT): $(srcdir)/EDT_CrsGraph_View.cpp
 EDT_CrsMatrix_View.$(OBJEXT): $(srcdir)/EDT_CrsMatrix_View.cpp
 EDT_MultiVector_View.$(OBJEXT): $(srcdir)/EDT_MultiVector_View.cpp
-EDT_CrsGraph_Overlap.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Overlap.cpp
 EDT_CrsGraph_Transpose.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Transpose.cpp
 EDT_CrsGraph_MapColoring.$(OBJEXT): \
 	$(srcdir)/EDT_CrsGraph_MapColoring.cpp
@@ -343,15 +387,35 @@ EDT_CrsGraph_MapColoringIndex.$(OBJEXT): \
 	$(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp
 EDT_LinearProblem_StaticCondensation.$(OBJEXT): \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+EDT_LinearProblem_CrsSingletonFilter.$(OBJEXT): \
+	$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp
 EDT_CrsGraph_SymmRCM.$(OBJEXT): $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
+EDT_LinearProblem_GraphTrans.$(OBJEXT): \
+	$(srcdir)/EDT_LinearProblem_GraphTrans.cpp
+EDT_CrsGraph_BTF.$(OBJEXT): $(srcdir)/EDT_CrsGraph_BTF.cpp
+concmp.$(OBJEXT): $(srcdir)/btf/concmp.f
+genbtf.$(OBJEXT): $(srcdir)/btf/genbtf.f
+corsum.$(OBJEXT): $(srcdir)/btf/corsum.f
+finsum.$(OBJEXT): $(srcdir)/btf/finsum.f
+fnrsum.$(OBJEXT): $(srcdir)/btf/fnrsum.f
+izero.$(OBJEXT): $(srcdir)/btf/izero.f
+maxmatch.$(OBJEXT): $(srcdir)/btf/maxmatch.f
+rectblk.$(OBJEXT): $(srcdir)/btf/rectblk.f
+mmc13e.$(OBJEXT): $(srcdir)/btf/mmc13e.f
+prtivs.$(OBJEXT): $(srcdir)/btf/prtivs.f
+strchk.$(OBJEXT): $(srcdir)/btf/strchk.f
+mattrans.$(OBJEXT): $(srcdir)/btf/mattrans.f
+EDT_CrsGraph_Overlap.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Overlap.cpp
 EDT_CrsGraph_Zoltan.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Zoltan.cpp
+EDT_LinearProblem_Zoltan.$(OBJEXT): \
+	$(srcdir)/EDT_LinearProblem_Zoltan.cpp
 EDT_CrsGraph_ZoltanOrder.$(OBJEXT): \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
 Epetra_ZoltanQuery.$(OBJEXT): $(srcdir)/Epetra_ZoltanQuery.cpp
-libepetraext.a: $(libepetraext_a_OBJECTS) $(libepetraext_a_DEPENDENCIES) 
-	-rm -f libepetraext.a
-	$(libepetraext_a_AR) libepetraext.a $(libepetraext_a_OBJECTS) $(libepetraext_a_LIBADD)
-	$(RANLIB) libepetraext.a
+libepetraext_trans.a: $(libepetraext_trans_a_OBJECTS) $(libepetraext_trans_a_DEPENDENCIES) 
+	-rm -f libepetraext_trans.a
+	$(libepetraext_trans_a_AR) libepetraext_trans.a $(libepetraext_trans_a_OBJECTS) $(libepetraext_trans_a_LIBADD)
+	$(RANLIB) libepetraext_trans.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -359,6 +423,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_BTF.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_MapColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Overlap.Po@am__quote@
@@ -368,7 +433,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Zoltan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsMatrix_View.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_LinearProblem_CrsSingletonFilter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_LinearProblem_GraphTrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_LinearProblem_Zoltan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_MultiVector_View.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_ZoltanQuery.Po@am__quote@
 
@@ -423,18 +491,6 @@ EDT_MultiVector_View.obj: $(srcdir)/EDT_MultiVector_View.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_MultiVector_View.obj `cygpath -w $(srcdir)/EDT_MultiVector_View.cpp`
 
-EDT_CrsGraph_Overlap.o: $(srcdir)/EDT_CrsGraph_Overlap.cpp
-@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Overlap.cpp' object='EDT_CrsGraph_Overlap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Overlap.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Overlap.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Overlap.o `test -f $(srcdir)/EDT_CrsGraph_Overlap.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_Overlap.cpp
-
-EDT_CrsGraph_Overlap.obj: $(srcdir)/EDT_CrsGraph_Overlap.cpp
-@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Overlap.cpp' object='EDT_CrsGraph_Overlap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Overlap.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Overlap.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Overlap.obj `cygpath -w $(srcdir)/EDT_CrsGraph_Overlap.cpp`
-
 EDT_CrsGraph_Transpose.o: $(srcdir)/EDT_CrsGraph_Transpose.cpp
 @AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Transpose.cpp' object='EDT_CrsGraph_Transpose.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Transpose.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Transpose.TPo' @AMDEPBACKSLASH@
@@ -483,6 +539,18 @@ EDT_LinearProblem_StaticCondensation.obj: $(srcdir)/EDT_LinearProblem_StaticCond
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_StaticCondensation.obj `cygpath -w $(srcdir)/EDT_LinearProblem_StaticCondensation.cpp`
 
+EDT_LinearProblem_CrsSingletonFilter.o: $(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp' object='EDT_LinearProblem_CrsSingletonFilter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_CrsSingletonFilter.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_CrsSingletonFilter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_CrsSingletonFilter.o `test -f $(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp
+
+EDT_LinearProblem_CrsSingletonFilter.obj: $(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp' object='EDT_LinearProblem_CrsSingletonFilter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_CrsSingletonFilter.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_CrsSingletonFilter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_CrsSingletonFilter.obj `cygpath -w $(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp`
+
 EDT_CrsGraph_SymmRCM.o: $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
 @AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_SymmRCM.cpp' object='EDT_CrsGraph_SymmRCM.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_SymmRCM.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_SymmRCM.TPo' @AMDEPBACKSLASH@
@@ -495,6 +563,42 @@ EDT_CrsGraph_SymmRCM.obj: $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_SymmRCM.obj `cygpath -w $(srcdir)/EDT_CrsGraph_SymmRCM.cpp`
 
+EDT_LinearProblem_GraphTrans.o: $(srcdir)/EDT_LinearProblem_GraphTrans.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_GraphTrans.cpp' object='EDT_LinearProblem_GraphTrans.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_GraphTrans.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_GraphTrans.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_GraphTrans.o `test -f $(srcdir)/EDT_LinearProblem_GraphTrans.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_LinearProblem_GraphTrans.cpp
+
+EDT_LinearProblem_GraphTrans.obj: $(srcdir)/EDT_LinearProblem_GraphTrans.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_GraphTrans.cpp' object='EDT_LinearProblem_GraphTrans.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_GraphTrans.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_GraphTrans.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_GraphTrans.obj `cygpath -w $(srcdir)/EDT_LinearProblem_GraphTrans.cpp`
+
+EDT_CrsGraph_BTF.o: $(srcdir)/EDT_CrsGraph_BTF.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_BTF.cpp' object='EDT_CrsGraph_BTF.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_BTF.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_BTF.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_BTF.o `test -f $(srcdir)/EDT_CrsGraph_BTF.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_BTF.cpp
+
+EDT_CrsGraph_BTF.obj: $(srcdir)/EDT_CrsGraph_BTF.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_BTF.cpp' object='EDT_CrsGraph_BTF.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_BTF.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_BTF.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_BTF.obj `cygpath -w $(srcdir)/EDT_CrsGraph_BTF.cpp`
+
+EDT_CrsGraph_Overlap.o: $(srcdir)/EDT_CrsGraph_Overlap.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Overlap.cpp' object='EDT_CrsGraph_Overlap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Overlap.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Overlap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Overlap.o `test -f $(srcdir)/EDT_CrsGraph_Overlap.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_Overlap.cpp
+
+EDT_CrsGraph_Overlap.obj: $(srcdir)/EDT_CrsGraph_Overlap.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Overlap.cpp' object='EDT_CrsGraph_Overlap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Overlap.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Overlap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Overlap.obj `cygpath -w $(srcdir)/EDT_CrsGraph_Overlap.cpp`
+
 EDT_CrsGraph_Zoltan.o: $(srcdir)/EDT_CrsGraph_Zoltan.cpp
 @AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Zoltan.cpp' object='EDT_CrsGraph_Zoltan.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.TPo' @AMDEPBACKSLASH@
@@ -506,6 +610,18 @@ EDT_CrsGraph_Zoltan.obj: $(srcdir)/EDT_CrsGraph_Zoltan.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Zoltan.obj `cygpath -w $(srcdir)/EDT_CrsGraph_Zoltan.cpp`
+
+EDT_LinearProblem_Zoltan.o: $(srcdir)/EDT_LinearProblem_Zoltan.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_Zoltan.cpp' object='EDT_LinearProblem_Zoltan.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_Zoltan.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_Zoltan.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_Zoltan.o `test -f $(srcdir)/EDT_LinearProblem_Zoltan.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_LinearProblem_Zoltan.cpp
+
+EDT_LinearProblem_Zoltan.obj: $(srcdir)/EDT_LinearProblem_Zoltan.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_Zoltan.cpp' object='EDT_LinearProblem_Zoltan.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_Zoltan.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_Zoltan.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_Zoltan.obj `cygpath -w $(srcdir)/EDT_LinearProblem_Zoltan.cpp`
 
 EDT_CrsGraph_ZoltanOrder.o: $(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
 @AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp' object='EDT_CrsGraph_ZoltanOrder.o' libtool=no @AMDEPBACKSLASH@
@@ -531,6 +647,84 @@ Epetra_ZoltanQuery.obj: $(srcdir)/Epetra_ZoltanQuery.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_ZoltanQuery.obj `cygpath -w $(srcdir)/Epetra_ZoltanQuery.cpp`
 CXXDEPMODE = @CXXDEPMODE@
+
+.f.o:
+	$(F77COMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.f.obj:
+	$(F77COMPILE) -c -o $@ `cygpath -w $<`
+
+concmp.o: $(srcdir)/btf/concmp.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o concmp.o `test -f $(srcdir)/btf/concmp.f || echo '$(srcdir)/'`$(srcdir)/btf/concmp.f
+
+concmp.obj: $(srcdir)/btf/concmp.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o concmp.obj `cygpath -w $(srcdir)/btf/concmp.f`
+
+genbtf.o: $(srcdir)/btf/genbtf.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o genbtf.o `test -f $(srcdir)/btf/genbtf.f || echo '$(srcdir)/'`$(srcdir)/btf/genbtf.f
+
+genbtf.obj: $(srcdir)/btf/genbtf.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o genbtf.obj `cygpath -w $(srcdir)/btf/genbtf.f`
+
+corsum.o: $(srcdir)/btf/corsum.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o corsum.o `test -f $(srcdir)/btf/corsum.f || echo '$(srcdir)/'`$(srcdir)/btf/corsum.f
+
+corsum.obj: $(srcdir)/btf/corsum.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o corsum.obj `cygpath -w $(srcdir)/btf/corsum.f`
+
+finsum.o: $(srcdir)/btf/finsum.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o finsum.o `test -f $(srcdir)/btf/finsum.f || echo '$(srcdir)/'`$(srcdir)/btf/finsum.f
+
+finsum.obj: $(srcdir)/btf/finsum.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o finsum.obj `cygpath -w $(srcdir)/btf/finsum.f`
+
+fnrsum.o: $(srcdir)/btf/fnrsum.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o fnrsum.o `test -f $(srcdir)/btf/fnrsum.f || echo '$(srcdir)/'`$(srcdir)/btf/fnrsum.f
+
+fnrsum.obj: $(srcdir)/btf/fnrsum.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o fnrsum.obj `cygpath -w $(srcdir)/btf/fnrsum.f`
+
+izero.o: $(srcdir)/btf/izero.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o izero.o `test -f $(srcdir)/btf/izero.f || echo '$(srcdir)/'`$(srcdir)/btf/izero.f
+
+izero.obj: $(srcdir)/btf/izero.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o izero.obj `cygpath -w $(srcdir)/btf/izero.f`
+
+maxmatch.o: $(srcdir)/btf/maxmatch.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o maxmatch.o `test -f $(srcdir)/btf/maxmatch.f || echo '$(srcdir)/'`$(srcdir)/btf/maxmatch.f
+
+maxmatch.obj: $(srcdir)/btf/maxmatch.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o maxmatch.obj `cygpath -w $(srcdir)/btf/maxmatch.f`
+
+rectblk.o: $(srcdir)/btf/rectblk.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o rectblk.o `test -f $(srcdir)/btf/rectblk.f || echo '$(srcdir)/'`$(srcdir)/btf/rectblk.f
+
+rectblk.obj: $(srcdir)/btf/rectblk.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o rectblk.obj `cygpath -w $(srcdir)/btf/rectblk.f`
+
+mmc13e.o: $(srcdir)/btf/mmc13e.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mmc13e.o `test -f $(srcdir)/btf/mmc13e.f || echo '$(srcdir)/'`$(srcdir)/btf/mmc13e.f
+
+mmc13e.obj: $(srcdir)/btf/mmc13e.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mmc13e.obj `cygpath -w $(srcdir)/btf/mmc13e.f`
+
+prtivs.o: $(srcdir)/btf/prtivs.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o prtivs.o `test -f $(srcdir)/btf/prtivs.f || echo '$(srcdir)/'`$(srcdir)/btf/prtivs.f
+
+prtivs.obj: $(srcdir)/btf/prtivs.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o prtivs.obj `cygpath -w $(srcdir)/btf/prtivs.f`
+
+strchk.o: $(srcdir)/btf/strchk.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o strchk.o `test -f $(srcdir)/btf/strchk.f || echo '$(srcdir)/'`$(srcdir)/btf/strchk.f
+
+strchk.obj: $(srcdir)/btf/strchk.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o strchk.obj `cygpath -w $(srcdir)/btf/strchk.f`
+
+mattrans.o: $(srcdir)/btf/mattrans.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mattrans.o `test -f $(srcdir)/btf/mattrans.f || echo '$(srcdir)/'`$(srcdir)/btf/mattrans.f
+
+mattrans.obj: $(srcdir)/btf/mattrans.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mattrans.obj `cygpath -w $(srcdir)/btf/mattrans.f`
 uninstall-info-am:
 install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -642,6 +836,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 

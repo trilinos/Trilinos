@@ -108,13 +108,19 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
   virtual ~LinearProblem_CrsSingletonFilter();
   //@}
 
-  //@{ \name operator() methods.
-  NewTypePtr operator()( OriginalTypeRef original );
+  ///
+  NewTypeRef operator()( OriginalTypeRef orig );
 
-  //@{ \name fwd methods.
+  ///
+  bool analyze( OriginalTypeRef orig );
+
+  ///
+  NewTypeRef construct();
+
+  ///
   bool fwd();
 
-  //@{ \name rvs methods.
+  ///
   bool rvs();
 
   //@{ \name Analyze methods.
@@ -303,4 +309,5 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
 };
 
 } //namespace EpetraExt
+
 #endif /* _EDT_LINEARPROBLEM_CRSSINGLETONFILTER_H_ */

@@ -112,7 +112,7 @@ class LinearProblem_StaticCondensation : public SameTypeTransform<Epetra_LinearP
     LLMatrix_(0)
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 
   bool fwd();
   bool rvs();

@@ -18,7 +18,7 @@ class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
 
  public:
 
-  ~MultiVector_View() {}
+  ~MultiVector_View();
 
   MultiVector_View( const Epetra_BlockMap & orig_map,
                     const Epetra_BlockMap & new_map,
@@ -28,7 +28,7 @@ class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
     NumVec_(num_vec)
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 
 };
 

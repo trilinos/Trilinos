@@ -17,49 +17,60 @@
 #include <vector>
 #include <set>
 
-EpetraExt::CrsGraph_ZoltanOrder::NewTypePtr EpetraExt::CrsGraph_ZoltanOrder::operator()( EpetraExt::CrsGraph_ZoltanOrder::OriginalTypeRef original )
+using std::vector;
+using std::set;
+
+namespace EpetraExt {
+
+CrsGraph_ZoltanOrder::
+~CrsGraph_ZoltanOrder()
 {
+  if( newObj_ ) delete newObj_;
+  if( NewRowMap_ ) delete NewRowMap_;
+}
+
+CrsGraph_ZoltanOrder::NewTypeRef
+CrsGraph_ZoltanOrder::
+operator()( OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
   int err;
 
-  Zoltan_LoadBalance * LB = lb_;
-  Epetra_ZoltanQuery * Query = 0;
-  Epetra_CrsGraph * TransGraph = 0;
-  if( !LB )
-  {
-    //Setup Load Balance Object
-    float version;
-    char * dummy = 0;
-    LB = new Zoltan_LoadBalance( 0, &dummy, &version );
-    err = LB->Create( dynamic_cast<const Epetra_MpiComm&>(original.Comm()).Comm() );
-    LB->Set_Param( "ORDER_METHOD", "METIS" );
-    LB->Set_Param( "ORDER_TYPE", "LOCAL" );
+  //Setup Load Balance Object
+  float version;
+  char * dummy = 0;
+  Zoltan_LoadBalance LB( 0, &dummy, &version );
+  err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(orig.Comm()).Comm() );
+  LB.Set_Param( "ORDER_METHOD", "METIS" );
+  LB.Set_Param( "ORDER_TYPE", "LOCAL" );
 
-    //Setup Query Object
-    TransGraph = CrsGraph_Transpose()( original );
-    Query = new Epetra_ZoltanQuery( original, TransGraph, true );
-    if( err == ZOLTAN_OK ) err = LB->Set_QueryObject( Query );
+  //Setup Query Object
+  CrsGraph_Transpose transposeTransform;
+  Epetra_CrsGraph & TransGraph = transposeTransform( orig );
+  Epetra_ZoltanQuery Query( orig, &TransGraph, true );
+  if( err == ZOLTAN_OK ) err = LB.Set_QueryObject( &Query );
 
-    if( err != ZOLTAN_OK )
-    { cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; exit(0); }
-  }
+  if( err != ZOLTAN_OK )
+  { cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; exit(0); }
 
   //Generate Reorder
-  int num_elements = original.RowMap().NumMyElements();
+  int num_elements = orig.RowMap().NumMyElements();
   int num_gid_entries, num_lid_entries;
   vector<ZOLTAN_ID_TYPE> global_ids(num_elements,0);
   vector<ZOLTAN_ID_TYPE> local_ids(num_elements,0);
   vector<int> rank(num_elements);
   vector<int> iperm(num_elements);
 
-  original.Comm().Barrier();
-  err = LB->Order( &num_gid_entries,
+  orig.Comm().Barrier();
+  err = LB.Order( &num_gid_entries,
                    &num_lid_entries,
                    num_elements,
                    &global_ids[0],
                    &local_ids[0],
                    &rank[0],
                    &iperm[0] );
-  original.Comm().Barrier();
+  orig.Comm().Barrier();
 
 #ifdef EDT_ZOLTANORDER_DEBUG
 cout << "------------------------------\n";
@@ -72,29 +83,29 @@ for( int i = 0; i < num_elements; ++i ) cout << rank[i] << " " << iperm[i] << en
 cout << "------------------------------\n";
 #endif
 
-  if( !lb_ ) { delete LB; delete Query; }
-
-  if( TransGraph ) delete TransGraph;
-
   //Generate New Row Map
   vector<int> gids(num_elements);
   for( int i = 0; i < num_elements; ++i )
     gids[ (num_elements-1) - rank[i] ] = global_ids[i];
-  Epetra_Map * NewRowMap = new Epetra_Map( original.RowMap().NumGlobalElements(),
+  NewRowMap_ = new Epetra_Map( orig.RowMap().NumGlobalElements(),
                                            num_elements,
                                            &gids[0],
-                                           original.RowMap().IndexBase(),
-                                           original.RowMap().Comm() );
+                                           orig.RowMap().IndexBase(),
+                                           orig.RowMap().Comm() );
 
   //Create Importer
-  Epetra_Import Importer( *NewRowMap, original.RowMap() );
+  Epetra_Import Importer( *NewRowMap_, orig.RowMap() );
 
   //Create New Graph
-  Epetra_CrsGraph * NewGraph( new Epetra_CrsGraph( Copy, *NewRowMap, 0 ) );
-  NewGraph->Import( original, Importer, Insert );
+  Epetra_CrsGraph * NewGraph( new Epetra_CrsGraph( Copy, *NewRowMap_, 0 ) );
+  NewGraph->Import( orig, Importer, Insert );
   NewGraph->TransformToLocal();
   
+  newObj_ = NewGraph;
+
   return NewGraph;
 }
+
+} // namespace EpetraExt
 
 #endif //ZOLTAN_ORDER

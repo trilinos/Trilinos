@@ -1,5 +1,4 @@
 
-#include <vector>
 #include <set>
 
 #include <Epetra_Util.h>
@@ -10,18 +9,34 @@
 #include <EDT_CrsGraph_Transpose.h>
 #include <EDT_CrsGraph_SymmRCM.h>
 
+using std::set;
+using std::vector;
+
 namespace EpetraExt {
 
-CrsGraph_SymmRCM::NewTypePtr CrsGraph_SymmRCM::operator()( CrsGraph_SymmRCM::OriginalTypeRef original )
+CrsGraph_SymmRCM::
+~CrsGraph_SymmRCM()
 {
+  if( newObj_ ) delete newObj_;
+
+  if( RCMMap_ ) delete RCMMap_;
+}
+
+CrsGraph_SymmRCM::NewTypeRef
+CrsGraph_SymmRCM::
+operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
   int err;
 
   //Generate Local Transpose Graph
-  Epetra_CrsGraph * trans = CrsGraph_Transpose()( original );
+  CrsGraph_Transpose transposeTransform;
+  Epetra_CrsGraph & trans = transposeTransform( orig );
 
   //Generate Local Symmetric Adj. List
   //Find Min Degree Node While at it
-  int NumNodes = original.NumMyRows();
+  int NumNodes = orig.NumMyRows();
   int * LocalRow;
   int * LocalRowTrans;
   int RowSize, RowSizeTrans;
@@ -30,30 +45,18 @@ CrsGraph_SymmRCM::NewTypePtr CrsGraph_SymmRCM::operator()( CrsGraph_SymmRCM::Ori
   int MinDegreeNode;
   for( int i = 0; i < NumNodes; ++i )
   {
-    original.ExtractMyRowView( i, RowSize, LocalRow );
-    trans->ExtractMyRowView( i, RowSizeTrans, LocalRowTrans );
-    int index = 0;
-    int indexTrans = 0;
-    while( ((index<RowSize)&&(LocalRow[index]<NumNodes)) ||
-           ((indexTrans<RowSizeTrans)&&(LocalRowTrans[indexTrans]<NumNodes)) )
-    {
-      if( LocalRow[index] < LocalRowTrans[indexTrans] )
-      {
-        AdjList[i].push_back( LocalRow[index] );
-        ++index;
-      }
-      else if( LocalRow[index] > LocalRowTrans[indexTrans] )
-      {
-        AdjList[i].push_back( LocalRowTrans[indexTrans] );
-        ++indexTrans;
-      }
-      else
-      {
-        AdjList[i].push_back( LocalRow[index] );
-        ++index;
-        ++indexTrans;
-      }
-    }   
+    orig.ExtractMyRowView( i, RowSize, LocalRow );
+    trans.ExtractMyRowView( i, RowSizeTrans, LocalRowTrans );
+
+    set<int> adjSet;
+    for( int j = 0; j < RowSize; ++j ) adjSet.insert( LocalRow[j] );
+    for( int j = 0; j < RowSizeTrans; ++j ) adjSet.insert( LocalRowTrans[j] );
+
+    set<int>::iterator iterS = adjSet.begin();
+    set<int>::iterator endS = adjSet.end();
+    AdjList[i].resize( adjSet.size() );
+    for( int j = 0; iterS != endS; ++iterS, ++j ) AdjList[i][j] = *iterS;
+    
     if( AdjList[i].size() < MinDegree )
     {
       MinDegree = AdjList[i].size();
@@ -69,21 +72,16 @@ CrsGraph_SymmRCM::NewTypePtr CrsGraph_SymmRCM::operator()( CrsGraph_SymmRCM::Ori
   int BestWidth = MinWidth;
   int Diameter = BestBFT->Depth();
   vector<int> Leaves;
-  BestBFT->NonNeighborLeaves(Leaves,5);
+  BestBFT->NonNeighborLeaves( Leaves, testLeafWidth_ );
 
-  BFT * DeeperBFT;
   bool DeeperFound;
-  BFT * NarrowerBFT;
   bool NarrowerFound;
   
   bool Finished = false;
 
   while( !Finished )
   {
-    DeeperBFT = 0;
     DeeperFound = false;
-
-    NarrowerBFT = 0;
     NarrowerFound = false;
 
     for( int i = 0; i < Leaves.size(); ++i )
@@ -99,19 +97,18 @@ CrsGraph_SymmRCM::NewTypePtr CrsGraph_SymmRCM::operator()( CrsGraph_SymmRCM::Ori
 
         if( TestBFT->Depth() > Diameter )
         {
-          if( DeeperBFT ) delete DeeperBFT;
+          delete BestBFT;
           Diameter = TestBFT->Depth();
           BestWidth = TestBFT->Width();
-          DeeperBFT = TestBFT;
+          BestBFT = TestBFT;
           DeeperFound = true;
-          if( NarrowerFound ) delete NarrowerBFT;
           NarrowerFound = false;
         }
         else if( (TestBFT->Depth()==Diameter) && (TestBFT->Width()<BestWidth) )
         {
-          if( NarrowerBFT ) delete NarrowerBFT;
-          NarrowerBFT = TestBFT;
-          BestWidth = NarrowerBFT->Width();
+          delete BestBFT;
+          BestWidth = TestBFT->Width();
+          BestBFT = TestBFT;
           NarrowerFound = true;
         }
         else delete TestBFT;
@@ -119,15 +116,9 @@ CrsGraph_SymmRCM::NewTypePtr CrsGraph_SymmRCM::operator()( CrsGraph_SymmRCM::Ori
     }
 
     if( DeeperFound )
-    {
-      BestBFT = DeeperBFT;
       BestBFT->NonNeighborLeaves(Leaves,5);
-    }
     else if( NarrowerFound )
-    {
-      BestBFT = NarrowerBFT;
       Finished = true;
-    }
     else Finished = true;
 
   }
@@ -136,101 +127,159 @@ CrsGraph_SymmRCM::NewTypePtr CrsGraph_SymmRCM::operator()( CrsGraph_SymmRCM::Ori
   BestBFT->ReverseVector( RCM );
 
   //Generate New Row Map
-  Epetra_Map * RCMMap = new Epetra_Map( original.RowMap().NumGlobalElements(),
+  RCMMap_ = new Epetra_Map( orig.RowMap().NumGlobalElements(),
                                         NumNodes,
                                         &RCM[0],
-                                        original.RowMap().IndexBase(),
-                                        original.RowMap().Comm() );
+                                        orig.RowMap().IndexBase(),
+                                        orig.RowMap().Comm() );
 
 
   //Create New Graph
-  Epetra_Import Importer( *RCMMap, original.RowMap() );
-  Epetra_CrsGraph * RCMGraph( new Epetra_CrsGraph( Copy, *RCMMap, 0 ) );
-  RCMGraph->Import( original, Importer, Insert );
+  Epetra_Import Importer( *RCMMap_, orig.RowMap() );
+  Epetra_CrsGraph * RCMGraph( new Epetra_CrsGraph( Copy, *RCMMap_, 0 ) );
+  RCMGraph->Import( orig, Importer, Insert );
   RCMGraph->TransformToLocal();
+
+  newObj_ = RCMGraph;
   
-  return RCMGraph;
+  return *RCMGraph;
 }
 
-CrsGraph_SymmRCM::BFT::BFT( const vector< vector<int> > & adjlist,
-                            int root,
-                            int max_width,
-                            bool & failed )
+CrsGraph_SymmRCM::BFT::
+BFT( const vector< vector<int> > & adjlist,
+     int root,
+     int max_width,
+     bool & failed )
 : width_(0),
   depth_(0),
   nodes_(adjlist.size()),
-  adjList_(adjlist)
+  adjList_(adjlist),
+  failed_(false)
 {
   set<int> touchedNodes;
+
+  //setup level 0 of traversal
   levelSets_.push_back( vector<int>(1) );
   levelSets_[0][0] = root;
+  ++depth_;
+
+  //start set of touched nodes
   touchedNodes.insert( root );
 
-  while( touchedNodes.size() < (nodes_-1) )
+  while( touchedNodes.size() < nodes_ )
   {
+    //start new level set
     levelSets_.push_back( vector<int>() );
+    ++depth_;
 
-    int currAdj;
-    for( int i = 0; i < levelSets_[depth_].size(); ++i )
+    for( int i = 0; i < levelSets_[depth_-2].size(); ++i )
     {
-      int currNode = levelSets_[depth_][i];
-
-      for( int j = 0; j < adjlist[currNode].size(); ++j )
+      int currNode = levelSets_[depth_-2][i];
+      int adjSize  = adjlist[currNode].size();
+      for( int j = 0; j < adjSize; ++j )
       {
-        currAdj = adjlist[currNode][j];
+        // add nodes to current level set when new
+        int currAdj = adjlist[currNode][j];
         if( !touchedNodes.count( currAdj ) )
         {
-          levelSets_[depth_+1].push_back( currAdj );
+          levelSets_[depth_-1].push_back( currAdj );
           touchedNodes.insert( currAdj );
         }
       }
     }
 
-    int currWidth = levelSets_[depth_+1].size();
+    int currWidth = levelSets_[depth_-1].size();
 
-    if( currWidth )
+    if( currWidth ) //sort adj nodes by degree
     {
       if( currWidth > width_ ) width_ = currWidth;
-      if( width_ > max_width ) { failed = true; return; }
+
+      //fail if width is greater than allowed
+      if( width_ > max_width )
+      {
+        failed_ = true;
+        failed = failed_;
+        return;
+      }
 
       //Increasing Order By Degree
       vector<int> degrees( currWidth );
       for( int i = 0; i < currWidth; ++i )
-        degrees[i] = adjList_[ levelSets_[depth_+1][i] ].size();
+        degrees[i] = adjList_[ levelSets_[depth_-1][i] ].size();
       int ** indices = new int*[1];
-      indices[0] = &(levelSets_[depth_+1][0]);
-      Epetra_Util().Sort( true, currWidth, &degrees[0],
-                        0, 0, 1, indices );
-
-      ++depth_;
+      indices[0] = &(levelSets_[depth_-1][0]);
+      Epetra_Util().Sort( true, currWidth, &degrees[0], 0, 0, 1, indices );
     }
     else //it is a disconnected graph
     {
+      //start again from minimum degree node of those remaining
       bool found = false;
+      int minDegree = nodes_;
+      int minDegreeNode;
       for( int i = 0; i < nodes_; ++i )
-        if( !touchedNodes.count( i ) )
+      {
+        if( !touchedNodes.count( i ) && adjList_[i].size() < minDegree )
         {
-          levelSets_[depth_+1].push_back(i);
-          ++depth_;
+          minDegree = adjList_[i].size();
+          minDegreeNode = i;
           found = true;
-          i = nodes_;
         }
-      if( !found ) { failed = true; return; }
+      }
+
+      if( found )
+      {
+        touchedNodes.insert( minDegreeNode );
+        levelSets_[depth_-1].push_back( minDegreeNode );
+      }
+      else
+      {
+        --depth_;
+        failed_ = true;
+        failed = failed_;
+        return;
+      }
+
     }
 
   }
 
+  cout << "BFT<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+  cout << "Width: " << width_ << endl;
+  cout << "Depth: " << depth_ << endl;
+  cout << "Adj List: " << nodes_ << endl;
+  for( int i = 0; i < nodes_; ++i )
+  {
+    cout << i << "\t";
+    for( int j = 0; j < adjList_[i].size(); ++j )
+      cout << adjList_[i][j] << " ";
+    cout << endl;
+  }
+  cout << "Level Sets: " << depth_ << endl;
+  for( int i = 0; i < depth_; ++i )
+  {
+    cout << i << "\t";
+    for( int j = 0; j < levelSets_[i].size(); ++j )
+      cout << levelSets_[i][j] << " ";
+    cout << endl;
+  }
+  cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+
+  failed = failed_;
 }
 
-void CrsGraph_SymmRCM::BFT::NonNeighborLeaves( vector<int> & leaves,
-                                               int count )
+void
+CrsGraph_SymmRCM::BFT::
+NonNeighborLeaves( vector<int> & leaves,
+                   int count )
 {
+  assert( (depth_>0) && (failed_==false) );
+
   leaves.clear();
-  int leafWidth = levelSets_[depth_].size();
+  int leafWidth = levelSets_[depth_-1].size();
   set<int> adjSeen;
   for( int i = 0; i < leafWidth; ++i )
   {
-    int currLeaf = levelSets_[depth_][i];
+    int currLeaf = levelSets_[depth_-1][i];
     if( !adjSeen.count( currLeaf ) )
     {
       leaves.push_back( currLeaf );
@@ -241,15 +290,20 @@ void CrsGraph_SymmRCM::BFT::NonNeighborLeaves( vector<int> & leaves,
   }
 }
 
-void CrsGraph_SymmRCM::BFT::ReverseVector( vector<int> & ordered )
+void
+CrsGraph_SymmRCM::BFT::
+ReverseVector( vector<int> & ordered )
 {
+  assert( (depth_>0) && (failed_==false) );
+
   ordered.resize( nodes_ );
   int loc = 0;
-  for( int i = 0; i < (depth_+1); ++i )
+  for( int i = 0; i < (depth_-1); ++i )
   {
-    int currWidth = levelSets_[depth_-i].size();
+    int currLevel = depth_ - (i+1);
+    int currWidth = levelSets_[currLevel].size();
     for( int j = 0; j < currWidth; ++j )
-      ordered[loc++] = levelSets_[depth_-i][j];
+      ordered[loc++] = levelSets_[currLevel][j];
   }
 }
 

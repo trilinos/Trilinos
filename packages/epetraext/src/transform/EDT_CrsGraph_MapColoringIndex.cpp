@@ -6,15 +6,23 @@
 #include <Epetra_IntVector.h>
 #include <Epetra_Map.h>
 
+#include <vector>
 #include <map>
 
+using std::vector;
 using std::map;
 
-EpetraExt::CrsGraph_MapColoringIndex::NewTypePtr EpetraExt::CrsGraph_MapColoringIndex::operator()( EpetraExt::CrsGraph_MapColoringIndex::OriginalTypeRef original )
+namespace EpetraExt {
+
+CrsGraph_MapColoringIndex::NewTypeRef
+CrsGraph_MapColoringIndex::
+operator()( OriginalTypeRef orig )
 {
+  origObj_ = &orig;
+
   int err;
 
-  const Epetra_BlockMap & RowMap = original.RowMap();
+  const Epetra_BlockMap & RowMap = orig.RowMap();
   int nRows = RowMap.NumMyElements();
 
   int NumColors = ColorMap_.NumColors();
@@ -25,20 +33,24 @@ EpetraExt::CrsGraph_MapColoringIndex::NewTypePtr EpetraExt::CrsGraph_MapColoring
 
   //initial setup of stl vector of IntVectors for indexing
   vector<int> dummy( nRows, -1 );
-  NewTypePtr IndexVec( new vector<Epetra_IntVector>( NumColors, Epetra_IntVector( Copy, RowMap, &dummy[0] ) ) );
+  NewTypePtr IndexVec = new NewType( NumColors, Epetra_IntVector( Copy, RowMap, &dummy[0] ) );
 
-  int MaxNumIndices = original.MaxNumIndices();
+  int MaxNumIndices = orig.MaxNumIndices();
   int NumIndices;
   vector<int> Indices( MaxNumIndices );
 
   for( int i = 0; i < nRows; ++i )
   {
-    original.ExtractGlobalRowCopy( original.GRID(i), MaxNumIndices, NumIndices, &Indices[0] );
+    orig.ExtractGlobalRowCopy( orig.GRID(i), MaxNumIndices, NumIndices, &Indices[0] );
 
     for( int j = 0; j < NumIndices; ++j )
      (*IndexVec)[ MapOfColors[ColorMap_(Indices[j])] ][i] = Indices[j];
   }
 
-  return IndexVec;
+  newObj_ = IndexVec;
+
+  return *IndexVec;
 }
+
+} // namespace EpetraExt
 

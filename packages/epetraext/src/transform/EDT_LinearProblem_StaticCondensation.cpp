@@ -1,10 +1,6 @@
 
 #include <EDT_LinearProblem_StaticCondensation.h>
 
-#include <vector>
-#include <map>
-#include <set>
-
 #include <Epetra_Export.h>
 #include <Epetra_LinearProblem.h>
 #include <Epetra_CrsGraph.h>
@@ -15,7 +11,18 @@
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 
-EpetraExt::LinearProblem_StaticCondensation::~LinearProblem_StaticCondensation()
+#include <vector>
+#include <map>
+#include <set>
+
+using std::vector;
+using std::map;
+using std::set;
+
+namespace EpetraExt {
+
+LinearProblem_StaticCondensation::
+~LinearProblem_StaticCondensation()
 {
   if( Exporter_ ) delete Exporter_;
 
@@ -57,15 +64,18 @@ EpetraExt::LinearProblem_StaticCondensation::~LinearProblem_StaticCondensation()
   if( LMap_ ) delete LMap_;
 }
 
-EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem_StaticCondensation::operator()
-	( EpetraExt::LinearProblem_StaticCondensation::OriginalTypeRef original )
+LinearProblem_StaticCondensation::NewTypeRef
+LinearProblem_StaticCondensation::
+operator()( OriginalTypeRef orig )
 {
+  origObj_ = &orig;
+
   int ierr = 0;
 
-  OldMatrix_ = dynamic_cast<Epetra_CrsMatrix*>( original.GetMatrix() );
+  OldMatrix_ = dynamic_cast<Epetra_CrsMatrix*>( orig.GetMatrix() );
   OldGraph_  = &OldMatrix_->Graph();
-  OldRHS_    = original.GetRHS();
-  OldLHS_    = original.GetLHS();
+  OldRHS_    = orig.GetRHS();
+  OldLHS_    = orig.GetLHS();
   OldRowMap_ = &OldMatrix_->RowMap();
 
   const Epetra_Comm & CommObj = OldRowMap_->Comm();
@@ -80,10 +90,10 @@ EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem
   int NRows = OldGraph_->NumMyRows();
   int IndexBase = OldRowMap_->IndexBase();
 
-  std::vector<int> ColNZCnt( NRows );
-  std::vector<int> CS_RowIndices( NRows );
-  std::map<int,int> RS_Map;
-  std::map<int,int> CS_Map;
+  vector<int> ColNZCnt( NRows );
+  vector<int> CS_RowIndices( NRows );
+  map<int,int> RS_Map;
+  map<int,int> CS_Map;
 
   int NumIndices;
   int * Indices;
@@ -104,7 +114,7 @@ EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem
   {
     cout << "-------------------------\n";
     cout << "Row Singletons\n";
-    for( std::map<int,int>::iterator itM = RS_Map.begin(); itM != RS_Map.end(); ++itM )
+    for( map<int,int>::iterator itM = RS_Map.begin(); itM != RS_Map.end(); ++itM )
       cout << itM->first << "\t" << itM->second << endl;
     cout << "Col Counts\n";
     for( int i = 0; i < NRows; ++i )
@@ -112,8 +122,8 @@ EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem
     cout << "-------------------------\n";
   }
 
-  std::set<int> RS_Set;
-  std::set<int> CS_Set;
+  set<int> RS_Set;
+  set<int> CS_Set;
 
   for( int i = 0; i < NRows; ++i )
     if( ColNZCnt[i] == 1 )
@@ -130,10 +140,10 @@ EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem
   {
     cout << "-------------------------\n";
     cout << "Singletons: " << CS_Set.size() << endl;
-    std::set<int>::iterator itRS = RS_Set.begin();
-    std::set<int>::iterator itCS = CS_Set.begin();
-    std::set<int>::iterator endRS = RS_Set.end();
-    std::set<int>::iterator endCS = CS_Set.end();
+    set<int>::iterator itRS = RS_Set.begin();
+    set<int>::iterator itCS = CS_Set.begin();
+    set<int>::iterator endRS = RS_Set.end();
+    set<int>::iterator endCS = CS_Set.end();
     for( ; itRS != endRS; ++itRS, ++itCS )
       cout << *itRS << "\t" << *itCS << endl;
     cout << "-------------------------\n";
@@ -142,9 +152,9 @@ EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem
   //build new maps
   int NSingletons = CS_Set.size();
   int NReducedRows = NRows - 2* NSingletons; 
-  std::vector<int> ReducedIndices( NReducedRows );
-  std::vector<int> CSIndices( NSingletons );
-  std::vector<int> RSIndices( NSingletons );
+  vector<int> ReducedIndices( NReducedRows );
+  vector<int> CSIndices( NSingletons );
+  vector<int> RSIndices( NSingletons );
   int Reduced_Loc = 0;
   int RS_Loc = 0;
   int CS_Loc = 0;
@@ -156,12 +166,12 @@ EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem
     else                       ReducedIndices[Reduced_Loc++] = GlobalIndex;
   }
 
-  std::vector<int> RowPermutedIndices( NRows );
+  vector<int> RowPermutedIndices( NRows );
   copy( RSIndices.begin(), RSIndices.end(), RowPermutedIndices.begin() );
   copy( ReducedIndices.begin(), ReducedIndices.end(), RowPermutedIndices.begin() + NSingletons );
   copy( CSIndices.begin(), CSIndices.end(), RowPermutedIndices.begin() + NReducedRows + NSingletons );
 
-  std::vector<int> ColPermutedIndices( NRows );
+  vector<int> ColPermutedIndices( NRows );
   copy( CSIndices.begin(), CSIndices.end(), ColPermutedIndices.begin() );
   copy( ReducedIndices.begin(), ReducedIndices.end(), ColPermutedIndices.begin() + NSingletons );
   copy( RSIndices.begin(), RSIndices.end(), ColPermutedIndices.begin() + NReducedRows + NSingletons );
@@ -304,10 +314,14 @@ cout << "LExporter:\n" << *LExporter_;
 
   NewProblem_ = new Epetra_LinearProblem( RRMatrix_, RLHS_, RRHS_ );
 
-  return NewProblem_;
+  newObj_ = NewProblem_;
+
+  return *NewProblem_;
 }
 
-bool EpetraExt::LinearProblem_StaticCondensation::fwd()
+bool
+LinearProblem_StaticCondensation::
+fwd()
 {
   ULHS_->Export( *OldLHS_, *LExporter_, Insert );
   RLHS_->Export( *OldLHS_, *RExporter_, Insert );
@@ -344,7 +358,9 @@ bool EpetraExt::LinearProblem_StaticCondensation::fwd()
   return true;
 }
 
-bool EpetraExt::LinearProblem_StaticCondensation::rvs()
+bool
+LinearProblem_StaticCondensation::
+rvs()
 {
   Epetra_Vector UUpdate( *UMap_ );
   URMatrix_->Multiply( false, *RLHS_, UUpdate );
@@ -365,4 +381,6 @@ bool EpetraExt::LinearProblem_StaticCondensation::rvs()
 
   return true;
 }
+
+} // namespace EpetraExt
 

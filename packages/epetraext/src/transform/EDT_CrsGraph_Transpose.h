@@ -8,22 +8,19 @@ class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
-class CrsGraph_Transpose : public SameTypeTransform<Epetra_CrsGraph> {
+class CrsGraph_Transpose : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  bool ignoreNonLocalCols_;
 
  public:
 
-  ~CrsGraph_Transpose() {}
+  ~CrsGraph_Transpose();
 
   CrsGraph_Transpose( bool IgnoreNonLocalCols = false )
   : ignoreNonLocalCols_(IgnoreNonLocalCols)
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
-
-  bool fwd();
-  bool rvs();
+  NewTypeRef operator()( OriginalTypeRef orig );
 };
 
 } //namespace EpetraExt

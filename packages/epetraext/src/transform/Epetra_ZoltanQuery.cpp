@@ -384,10 +384,10 @@ void Epetra_ZoltanQuery::Coarse_Object_List   ( void * data,
                                                 ZOLTAN_ID_PTR local_ids,
                                                 int * assigned,
                                                 int * number_vertices,
-                                                int * vertices,
+                                                ZOLTAN_ID_PTR vertices,
                                                 int * in_order,
-                                                int * in_vertex,
-                                                int * out_vertex,
+                                                ZOLTAN_ID_PTR in_vertex,
+                                                ZOLTAN_ID_PTR out_vertex,
                                                 int * ierr )
 {
   cout << "Error: Epetra_ZoltanQuery::Coarse_Object_List( void *, "
@@ -405,10 +405,10 @@ int Epetra_ZoltanQuery::First_Coarse_Object   ( void * data,
                                                 ZOLTAN_ID_PTR first_local_id,
                                                 int * assigned,
                                                 int * number_vertices,
-                                                int * vertices,
+                                                ZOLTAN_ID_PTR vertices,
                                                 int * in_order,
-                                                int * in_vertex,
-                                                int * out_vertex,
+                                                ZOLTAN_ID_PTR in_vertex,
+                                                ZOLTAN_ID_PTR out_vertex,
                                                 int * ierr )
 {
   cout << "Error: Epetra_ZoltanQuery::First_Coarse_Object( void *, "
@@ -430,9 +430,9 @@ int Epetra_ZoltanQuery::Next_Coarse_Object    ( void * data,
                                                 ZOLTAN_ID_PTR next_local_id,
                                                 int * assigned,
                                                 int * number_vertices,
-                                                int * vertices,
-                                                int * in_vertex,
-                                                int * out_vertex,
+                                                ZOLTAN_ID_PTR vertices,
+                                                ZOLTAN_ID_PTR in_vertex,
+                                                ZOLTAN_ID_PTR out_vertex,
                                                 int * ierr )
 {
   cout << "Error: Epetra_ZoltanQuery::Next_Coarse_Object( void *, "
@@ -470,10 +470,10 @@ void Epetra_ZoltanQuery::Child_List   ( void * data,
                                         ZOLTAN_ID_PTR child_local_ids,
                                         int * assigned,
                                         int * number_vertices,
-                                        int * vertices,
+                                        ZOLTAN_ID_PTR vertices,
                                         ZOLTAN_REF_TYPE * reference_type,
-                                        int * in_vertex,
-                                        int * out_vertex, 
+                                        ZOLTAN_ID_PTR in_vertex,
+                                        ZOLTAN_ID_PTR out_vertex,
                                         int * ierr  ) 
 {
   cout << "Error: Epetra_ZoltanQuery::Child_List( void *, int, int, "
@@ -498,6 +498,65 @@ void Epetra_ZoltanQuery::Child_Weight ( void * data,
         << endl;
   
   *ierr = ZOLTAN_FATAL;
+}
+
+int Epetra_ZoltanQuery::Number_HG_Edges ( void * data,
+					  int * ierr )
+{
+  int num = graph_.NumMyRows();
+  cout << "NRows: " << num << endl;
+
+  *ierr = ZOLTAN_OK;
+  return num;
+}
+
+int Epetra_ZoltanQuery::Number_HG_Pins ( void * data,
+				         int * ierr )
+{
+  int num = graph_.NumMyEntries();
+  cout << "NNZ: " << num << endl;
+
+  *ierr = ZOLTAN_OK;
+  return num;
+}
+
+int Epetra_ZoltanQuery::HG_Edge_List   ( void * data,
+                                         int num_gid_entries,
+                                         int ewgt_dim,
+                                         int nedge,
+                                         int maxsize,
+                                         int * edge_sizes,
+                                         ZOLTAN_ID_PTR edge_verts,
+                                         int * edge_procs,
+                                         float * edge_weights )
+
+{
+  int NumHEs = graph_.NumMyRows();
+  int maxEntries = graph_.MaxNumIndices();
+
+  int numIndices;
+  vector<int> indices( maxEntries );
+
+  cout << "nedge: " << nedge << endl;
+  cout << "maxsize: " << maxsize << endl;
+
+  int loc = 0;
+  for( int i = 0; i < NumHEs; ++i )
+  {
+    assert( graph_.ExtractGlobalRowCopy( graph_.GRID(i), maxEntries, numIndices, &indices[0] ) == 0 );
+
+    edge_sizes[i] = numIndices;
+    for( int j = 0; j < numIndices; ++j )
+    {
+      edge_verts[loc] = indices[j];
+      edge_procs[loc] = LBProc_[i][j];
+      ++loc;
+    }
+  }
+
+  cout << "last_loc: " << loc << endl;
+
+  return ZOLTAN_OK;
 }
 
 } //namespace EpetraExt

@@ -1,6 +1,6 @@
 
-#ifndef EDT_LINEARPROBLEM_ZOLTAN_H
-#define EDT_LINEARPROBLEM_ZOLTAN_H
+#ifndef EDT_LINEARPROBLEM_GRAPHTRANS_H
+#define EDT_LINEARPROBLEM_GRAPHTRANS_H
 
 #include <Epetra_Transform.h>
 
@@ -14,9 +14,9 @@ class Epetra_Import;
 
 namespace EpetraExt {
 
-class LinearProblem_Zoltan : public SameTypeTransform<Epetra_LinearProblem>
+class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
 {
-  const bool verbose_;
+  StructuralSameTypeTransform<Epetra_CrsGraph> & graphTrans_;
 
   Epetra_Import * Importer_;
   Epetra_Export * Exporter_;
@@ -35,10 +35,11 @@ class LinearProblem_Zoltan : public SameTypeTransform<Epetra_LinearProblem>
 
  public:
 
-  ~LinearProblem_Zoltan();
+  ~LinearProblem_GraphTrans();
 
-  LinearProblem_Zoltan( bool verbose = false )
-  : verbose_(verbose),
+  //Note: User is responsible for destroying input Graph Transform.
+  LinearProblem_GraphTrans( StructuralSameTypeTransform<Epetra_CrsGraph> & graph_trans )
+  : graphTrans_(graph_trans),
     OldProblem_(0),
     OldGraph_(0),
     OldMatrix_(0),
@@ -62,4 +63,5 @@ class LinearProblem_Zoltan : public SameTypeTransform<Epetra_LinearProblem>
 
 } //namespace EpetraExt
 
-#endif //EDT_LINEARPROBLEM_ZOLTAN_H
+#endif //EDT_LINEARPROBLEM_GRAPHTRANS_H
+

@@ -9,26 +9,38 @@
 
 using std::vector;
 
-EpetraExt::CrsGraph_Transpose::NewTypePtr EpetraExt::CrsGraph_Transpose::operator()( EpetraExt::CrsGraph_Transpose::OriginalTypeRef original )
+namespace EpetraExt {
+
+CrsGraph_Transpose::
+~CrsGraph_Transpose()
 {
+  delete newObj_;
+}
+
+CrsGraph_Transpose::NewTypeRef
+CrsGraph_Transpose::
+operator()( OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
   int err;
 
-  int nRows = original.NumMyRows();
-  int nCols = original.NumMyCols();
+  int nRows = orig.NumMyRows();
+  int nCols = orig.NumMyCols();
 
-  const Epetra_BlockMap & RowMap = original.RowMap();
+  const Epetra_BlockMap & RowMap = orig.RowMap();
 
   int numIndices;
   int * Indices;
 
   Epetra_CrsGraph * TransposeGraph = 0;
 
-  if( !ignoreNonLocalCols_ && original.DistributedGlobal() )
+  if( !ignoreNonLocalCols_ && orig.DistributedGlobal() )
   {
     vector<int> TransNumNZ( nCols, 0 );
     for( int i = 0; i < nRows; ++i )
     {
-      original.ExtractMyRowView( i, numIndices, Indices );
+      orig.ExtractMyRowView( i, numIndices, Indices );
       for( int j = 0; j < numIndices; ++j ) ++TransNumNZ[ Indices[j] ];
     }
 
@@ -42,18 +54,18 @@ EpetraExt::CrsGraph_Transpose::NewTypePtr EpetraExt::CrsGraph_Transpose::operato
 
     for( int i = 0; i < nRows; ++i )
     {
-      original.ExtractMyRowView( i, numIndices, Indices );
+      orig.ExtractMyRowView( i, numIndices, Indices );
       for( int j = 0; j < numIndices; ++j )
         TransIndices[ Indices[j] ][ TransNumNZ[ Indices[j] ]++ ] = i;
     }
 
-    Epetra_CrsGraph SharedTransGraph( View, original.ImportMap(), RowMap, &TransNumNZ[0] );
+    Epetra_CrsGraph SharedTransGraph( View, orig.ImportMap(), RowMap, &TransNumNZ[0] );
     for( int i = 0; i < nCols; ++i )
       if( TransNumNZ[i] ) SharedTransGraph.InsertMyIndices( i, TransNumNZ[i], &TransIndices[i][0] );
     SharedTransGraph.TransformToLocal();
 
     TransposeGraph = new Epetra_CrsGraph( Copy, RowMap, 0 );
-    Epetra_Export Exporter( original.ImportMap(), RowMap ); 
+    Epetra_Export Exporter( orig.ImportMap(), RowMap ); 
     TransposeGraph->Export( SharedTransGraph, Exporter, Add );
     TransposeGraph->TransformToLocal();
   }
@@ -62,7 +74,7 @@ EpetraExt::CrsGraph_Transpose::NewTypePtr EpetraExt::CrsGraph_Transpose::operato
     vector<int> TransNumNZ( nRows, 0 );
     for( int i = 0; i < nRows; ++i )
     {
-      original.ExtractMyRowView( i, numIndices, Indices );
+      orig.ExtractMyRowView( i, numIndices, Indices );
       for( int j = 0; j < numIndices; ++j )
         if( Indices[j] < nRows ) ++TransNumNZ[ Indices[j] ];
     }
@@ -77,7 +89,7 @@ EpetraExt::CrsGraph_Transpose::NewTypePtr EpetraExt::CrsGraph_Transpose::operato
 
     for( int i = 0; i < nRows; ++i )
     {
-      original.ExtractMyRowView( i, numIndices, Indices );
+      orig.ExtractMyRowView( i, numIndices, Indices );
       for( int j = 0; j < numIndices; ++j )
         if( Indices[j] < nRows ) TransIndices[ Indices[j] ][ TransNumNZ[ Indices[j] ]++ ] = i;
     }
@@ -90,18 +102,10 @@ EpetraExt::CrsGraph_Transpose::NewTypePtr EpetraExt::CrsGraph_Transpose::operato
     TransposeGraph->TransformToLocal();
   }
 
-  return TransposeGraph;
+  newObj_ = TransposeGraph;
+
+  return *TransposeGraph;
 }
 
-bool EpetraExt::CrsGraph_Transpose::fwd()
-{
-  cout << "EpetraExt::CrsGraph_Transpose::fwd() NOT IMPLEMENTED YET!\n";
-  return false;
-}
-
-bool EpetraExt::CrsGraph_Transpose::rvs()
-{
-  cout << "EpetraExt::CrsGraph_Transpose::rvs() NOT IMPLEMENTED YET!\n";
-  return false;
-}
+} // namespace EpetraExt
 

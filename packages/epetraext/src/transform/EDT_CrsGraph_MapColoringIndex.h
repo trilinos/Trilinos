@@ -6,15 +6,14 @@
 
 #include <vector>
 
-using std::vector;
-
 class Epetra_CrsGraph;
 class Epetra_MapColoring;
 class Epetra_IntVector;
 
 namespace EpetraExt {
 
-class CrsGraph_MapColoringIndex : public StructuralTransform< Epetra_CrsGraph,vector<Epetra_IntVector> > {
+class CrsGraph_MapColoringIndex
+: public StructuralTransform< Epetra_CrsGraph,std::vector<Epetra_IntVector> > {
 
  const Epetra_MapColoring & ColorMap_;
 
@@ -26,7 +25,7 @@ class CrsGraph_MapColoringIndex : public StructuralTransform< Epetra_CrsGraph,ve
   : ColorMap_( ColorMap )
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 };
 
 } //namespace EpetraExt

@@ -37,15 +37,16 @@
 namespace EpetraExt {
 
 //==============================================================================
-LinearProblem_CrsSingletonFilter::LinearProblem_CrsSingletonFilter( bool verbose )
+LinearProblem_CrsSingletonFilter::
+LinearProblem_CrsSingletonFilter( bool verbose )
 : verbose_(verbose)
 {
   InitializeDefaults();
 }
 //==============================================================================
-LinearProblem_CrsSingletonFilter::~LinearProblem_CrsSingletonFilter(){
-
-
+LinearProblem_CrsSingletonFilter::
+~LinearProblem_CrsSingletonFilter()
+{
   if (ReducedProblem_!=0) delete ReducedProblem_;
   if (ReducedMatrix_!=0) delete ReducedMatrix_;
   if (ReducedLHS_!=0) delete ReducedLHS_;
@@ -72,12 +73,24 @@ LinearProblem_CrsSingletonFilter::~LinearProblem_CrsSingletonFilter(){
 }
 
 //==============================================================================
-LinearProblem_CrsSingletonFilter::NewTypePtr LinearProblem_CrsSingletonFilter::operator()( LinearProblem_CrsSingletonFilter::OriginalTypeRef original )
+LinearProblem_CrsSingletonFilter::NewTypeRef
+LinearProblem_CrsSingletonFilter::
+operator()( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
 {
-  FullMatrix_ = original.GetMatrix();
+  analyze( orig );
+  return construct();
+}
 
-  int ierr = Analyze( FullMatrix_ );
-  if( ierr ) cout << "EDT_LinearProblem_CrsSingletonFilter::Analyze FAILED!\n";
+//==============================================================================
+bool
+LinearProblem_CrsSingletonFilter::
+analyze( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
+  FullMatrix_ = orig.GetMatrix();
+
+  assert( Analyze( FullMatrix_ ) >= 0 );
 
   if( verbose_ )
   {
@@ -85,15 +98,33 @@ LinearProblem_CrsSingletonFilter::NewTypePtr LinearProblem_CrsSingletonFilter::o
     cout << "---------------------------\n";
     cout << "Singletons Detected: " << SingletonsDetected() << endl;
     cout << "Num Singletons:      " << NumSingletons() << endl;
+    cout << "---------------------------\n\n";
+  }
+
+  return true;
+}
+
+//==============================================================================
+LinearProblem_CrsSingletonFilter::NewTypeRef
+LinearProblem_CrsSingletonFilter::
+construct()
+{
+  if( !origObj_ ) abort();
+
+  assert( ConstructReducedProblem( origObj_ ) >= 0 );
+
+  newObj_ = ReducedProblem();
+
+  if( verbose_ )
+  {
+    cout << "\nConstructedSingleton Problem:\n";
+    cout << "---------------------------\n";
     cout << "RatioOfDimensions:   " << RatioOfDimensions() << endl;
     cout << "RatioOfNonzeros:     " << RatioOfNonzeros() << endl;
     cout << "---------------------------\n\n";
   }
 
-  ierr = ConstructReducedProblem( &original );
-  if( ierr ) cout << "EDT_LinearProblem_CrsSingletonFilter::ConstructReducedProblem FAILED!\n";
-
-  return ReducedProblem();
+  return *newObj_;
 }
 
 //==============================================================================
@@ -747,3 +778,4 @@ int LinearProblem_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVect
 }
 
 } //namespace EpetraExt
+

@@ -142,10 +142,10 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
                                 ZOLTAN_ID_PTR local_ids,
                                 int * assigned,
                                 int * number_vertices,
-                                int * vertices,
+                                ZOLTAN_ID_PTR vertices,
                                 int * in_order,
-                                int * in_vertex,
-                                int * out_vertex,
+                                ZOLTAN_ID_PTR in_vertex,
+                                ZOLTAN_ID_PTR out_vertex,
                                 int * ierr );
 
   int First_Coarse_Object     ( void * data,
@@ -155,10 +155,10 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
                                 ZOLTAN_ID_PTR first_local_id,
                                 int * assigned,
                                 int * number_vertices,
-                                int * vertices,
+                                ZOLTAN_ID_PTR vertices,
                                 int * in_order,
-                                int * in_vertex,
-                                int * out_vertex,
+                                ZOLTAN_ID_PTR in_vertex,
+                                ZOLTAN_ID_PTR out_vertex,
                                 int * ierr );
 
   int Next_Coarse_Object      ( void * data,
@@ -170,9 +170,9 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
                                 ZOLTAN_ID_PTR next_local_id,
                                 int * assigned,
                                 int * number_vertices,
-                                int * vertices,
-                                int * in_vertex,
-                                int * out_vertex,
+                                ZOLTAN_ID_PTR vertices,
+                                ZOLTAN_ID_PTR in_vertex,
+                                ZOLTAN_ID_PTR out_vertex,
                                 int * ierr );
 
   int Number_Children ( void * data,
@@ -191,10 +191,10 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
                         ZOLTAN_ID_PTR child_local_id,
                         int * assigned,
                         int * number_vertices,
-                        int * vertices,
+                        ZOLTAN_ID_PTR vertices,
                         ZOLTAN_REF_TYPE * reference_type,
-                        int * in_vertex,
-                        int * out_vertex,
+                        ZOLTAN_ID_PTR in_vertex,
+                        ZOLTAN_ID_PTR out_vertex,
                         int * ierr  );
 
   void Child_Weight   ( void * data,
@@ -205,6 +205,22 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
                         int weight_dim,
                         float * object_weight,
                         int * ierr ); 
+
+  int Number_HG_Edges ( void * data,
+    		        int * ierr );
+
+  int Number_HG_Pins ( void * data,
+		        int * ierr );
+
+  int HG_Edge_List   ( void * data,
+                       int num_gid_entries,
+                       int ewgt_dim,
+                       int nedge,
+                       int maxsize,
+                       int * edge_sizes,
+                       ZOLTAN_ID_PTR edge_verts,
+                       int * edge_procs,
+                       float * edge_weights );
 
 };
 

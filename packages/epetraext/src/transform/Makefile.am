@@ -11,52 +11,59 @@
 
 TRANSFORM_H = \
 	$(srcdir)/Epetra_Transform.h \
+        $(srcdir)/Epetra_Transform_Composite.h \
 	$(srcdir)/EDT_CrsGraph_View.h \
 	$(srcdir)/EDT_CrsMatrix_View.h \
 	$(srcdir)/EDT_MultiVector_View.h \
-	$(srcdir)/EDT_CrsGraph_Overlap.h \
 	$(srcdir)/EDT_CrsGraph_Transpose.h \
         $(srcdir)/EDT_CrsGraph_MapColoring.h \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.h \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.h \
-        $(srcdir)/EDT_CrsGraph_SymmRCM.h
+	$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.h \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.h \
+        $(srcdir)/EDT_LinearProblem_GraphTrans.h
 
 TRANSFORM = \
 	$(srcdir)/EDT_CrsGraph_View.cpp \
 	$(srcdir)/EDT_CrsMatrix_View.cpp \
 	$(srcdir)/EDT_MultiVector_View.cpp \
-	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
 	$(srcdir)/EDT_CrsGraph_Transpose.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoring.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp \
-        $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
+	$(srcdir)/EDT_LinearProblem_CrsSingletonFilter.cpp \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.cpp \
+        $(srcdir)/EDT_LinearProblem_GraphTrans.cpp
 
 BTF_H = \
-        $(srddir)/ET_CrsGraph_BTF.h
+        $(srcdir)/EDT_CrsGraph_BTF.h
 
 BTF = \
-        $(srddir)/ET_CrsGraph_BTF.cpp \
-        $(srddir)/btf/concmp.f \
-        $(srddir)/btf/genbtf.f \
-        $(srddir)/btf/corsum.f \
-        $(srddir)/btf/finsum.f \
-        $(srddir)/btf/fnrsum.f \
-        $(srddir)/btf/izero.f \
-        $(srddir)/btf/maxmatch.f \
-        $(srddir)/btf/rectblk.f \
-        $(srddir)/btf/mmc13e.f \
-        $(srddir)/btf/prtivs.f \
-        $(srddir)/btf/strchk.f \
-        $(srddir)/btf/mattrans.f
+        $(srcdir)/EDT_CrsGraph_BTF.cpp \
+        $(srcdir)/btf/concmp.f \
+        $(srcdir)/btf/genbtf.f \
+        $(srcdir)/btf/corsum.f \
+        $(srcdir)/btf/finsum.f \
+        $(srcdir)/btf/fnrsum.f \
+        $(srcdir)/btf/izero.f \
+        $(srcdir)/btf/maxmatch.f \
+        $(srcdir)/btf/rectblk.f \
+        $(srcdir)/btf/mmc13e.f \
+        $(srcdir)/btf/prtivs.f \
+        $(srcdir)/btf/strchk.f \
+        $(srcdir)/btf/mattrans.f
 
 EXTRA_MPI_H = \
+	$(srcdir)/EDT_CrsGraph_Overlap.h \
 	$(srcdir)/EDT_CrsGraph_Zoltan.h \
+	$(srcdir)/EDT_LinearProblem_Zoltan.h \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.h \
 	$(srcdir)/Epetra_ZoltanQuery.h
 
 EXTRA_MPI = \
+	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
 	$(srcdir)/EDT_CrsGraph_Zoltan.cpp \
+	$(srcdir)/EDT_LinearProblem_Zoltan.cpp \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp \
 	$(srcdir)/Epetra_ZoltanQuery.cpp
 
@@ -75,22 +82,34 @@ MPI =
 endif
 
 # ------------------------------------------------------------------------
-# EpetraExt library specifications
+# EpetraExt Tranform library specifications
 # ------------------------------------------------------------------------
 
-EPETRAEXT_LIB = libepetraext.a
+libepetraext_trans_a_SOURCES = \
+	$(TRANSFORM) \
+        $(BTF) \
+	$(MPI)
 
-EPETRAEXT_H = \
+if BUILD_TRANSFORM
+
+# libraries to be installed in $(libexecdir)
+EPETRAEXT_TRANSFORM_LIB = libepetraext_trans.a
+EPETRAEXT_TRANSFORM_H = \
 	$(TRANSFORM_H) \
+        $(BTF_H) \
 	$(MPI_H)
 
-libepetraext_a_SOURCES = \
-	$(TRANSFORM) \
-	$(MPI)
+else
+
+EPETRAEXT_TRANSFORM_LIB =
+EPETRAEXT_TRANSFORM_H =
+
+endif
 
 #We need the following to support separate build directories
 AM_CPPFLAGS=-I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
             -I$(top_srcdir)/../../external/Zoltan_C++
+
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
@@ -101,10 +120,11 @@ AM_CPPFLAGS=-I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
 
 if USE_ALTERNATE_AR
 
-libepetraext_a_AR = $(ALTERNATE_AR)
+libepetraext_trans_a_AR = $(ALTERNATE_AR)
+
 else
 
-libepetraext_a_AR = $(AR) cru
+libepetraext_trans_a_AR = $(AR) cru
 
 endif
 
@@ -114,19 +134,19 @@ endif
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
 
-libepetraext_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+libepetraext_trans_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
-lib_LIBRARIES = $(EPETRAEXT_LIB)
+lib_LIBRARIES = $(EPETRAEXT_TRANSFORM_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(EPETRAEXT_H) 
+pkginclude_HEADERS = $(EPETRAEXT_TRANSFORM_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(pkgexecincludedir)
@@ -150,6 +170,5 @@ MAINTAINERCLEANFILES = Makefile.in
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
 
-MOSTLYERCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
-
+MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
 

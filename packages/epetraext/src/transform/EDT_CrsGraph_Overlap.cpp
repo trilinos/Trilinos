@@ -5,43 +5,60 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
 
-EpetraExt::CrsGraph_Overlap::NewTypePtr EpetraExt::CrsGraph_Overlap::operator()( EpetraExt::CrsGraph_Overlap::OriginalTypeRef original )
+namespace EpetraExt {
+
+CrsGraph_Overlap::
+~CrsGraph_Overlap()
 {
-  int err;
+  if( newObj_ ) delete newObj_;
 
-  Epetra_CrsGraph * OverlapGraph = 0;
-
-  if( original.DomainMap().DistributedGlobal() || !levelOverlap_ )
-  {
-    Epetra_Import * OverlapImporter =
-                    const_cast<Epetra_Import *>( original.Importer() );
-    Epetra_BlockMap * OverlapMap =
-                    new Epetra_BlockMap( OverlapImporter->TargetMap() );
-    Epetra_BlockMap * DomainMap =
-                    const_cast<Epetra_BlockMap *>( &original.DomainMap() );
-
-    OverlapGraph = new Epetra_CrsGraph( Copy, *OverlapMap, 0 );
-    OverlapGraph->Import( original, *OverlapImporter, Insert );
-    OverlapGraph->TransformToLocal( DomainMap, OverlapMap );
-
-    for( int level = 1; level < levelOverlap_; ++level )
-    {
-      Epetra_BlockMap * OldMap = OverlapMap;
-      Epetra_CrsGraph * OldGraph = OverlapGraph;
-
-      OverlapImporter = const_cast<Epetra_Import *>( OldGraph->Importer() );
-      OverlapMap = new Epetra_BlockMap( OverlapImporter->TargetMap() );
-
-      OverlapGraph = new Epetra_CrsGraph( Copy, *OverlapMap, 0 );
-      OverlapGraph->Import( *OldGraph, *OverlapImporter, Insert );
-      OverlapGraph->TransformToLocal( DomainMap, OverlapMap );
-
-      delete OldGraph;
-      delete OldMap;
-    }
-
-  }
-  
-  return OverlapGraph;
+  if( OverlapMap_ ) delete OverlapMap_;
 }
 
+CrsGraph_Overlap::NewTypeRef
+CrsGraph_Overlap::
+operator()( OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
+  int err;
+
+  //check that this is a distributed graph and overlap level is not zero
+  if( orig.DomainMap().DistributedGlobal() && levelOverlap_ )
+  {
+    Epetra_CrsGraph * OverlapGraph = new Epetra_CrsGraph( orig );
+    OverlapMap_ = new Epetra_BlockMap( orig.RowMap() );
+
+    Epetra_BlockMap * DomainMap = &(const_cast<Epetra_BlockMap&>(orig.DomainMap()));
+    Epetra_BlockMap * RangeMap = &(const_cast<Epetra_BlockMap&>(orig.RangeMap()));
+
+    for( int level = 0; level < levelOverlap_; ++level )
+    {
+      Epetra_BlockMap * OldRowMap = OverlapMap_;
+      Epetra_CrsGraph * OldGraph = OverlapGraph;
+
+      Epetra_Import & OverlapImporter = *(const_cast<Epetra_Import *>( OldGraph->Importer() ));
+      OverlapMap_ = new Epetra_BlockMap( OverlapImporter.TargetMap() );
+
+      //filter to local square block on last level if required
+      if( squareLocalBlock_ && level==(levelOverlap_-1) )
+        OverlapGraph = new Epetra_CrsGraph( Copy, *OverlapMap_, *OverlapMap_, 0 );
+      else
+        OverlapGraph = new Epetra_CrsGraph( Copy, *OverlapMap_, 0 );
+
+      OverlapGraph->Import( *OldGraph, OverlapImporter, Insert );
+      OverlapGraph->TransformToLocal( DomainMap, RangeMap );
+
+      delete OldGraph;
+      delete OldRowMap;
+    }
+
+    newObj_ = OverlapGraph;
+  }
+  else //just create a copy since this is not a InPlaceTransform
+    newObj_ = new Epetra_CrsGraph( orig );
+
+  return *newObj_;
+}
+
+} // namespace EpetraExt

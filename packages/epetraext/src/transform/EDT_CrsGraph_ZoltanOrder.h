@@ -8,23 +8,24 @@
 
 class Zoltan_LoadBalance;
 
+class Epetra_Map;
 class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
 class CrsGraph_ZoltanOrder : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
-  Zoltan_LoadBalance * lb_;
+  Epetra_Map * NewRowMap_;
 
  public:
 
-  ~CrsGraph_ZoltanOrder() {}
+  ~CrsGraph_ZoltanOrder();
 
-  CrsGraph_ZoltanOrder( Zoltan_LoadBalance * lb = 0 )
-  : lb_(lb)
+  CrsGraph_ZoltanOrder()
+  : NewRowMap_(0)
   {}
 
-  NewTypePtr operator()( OriginalTypeRef original );
+  NewTypeRef operator()( OriginalTypeRef orig );
 
 };
 

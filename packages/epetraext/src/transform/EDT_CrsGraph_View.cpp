@@ -8,14 +8,26 @@
 
 using std::vector;
 
-EpetraExt::CrsGraph_View::NewTypePtr EpetraExt::CrsGraph_View::operator()( EpetraExt::CrsGraph_View::OriginalTypeRef original )
+namespace EpetraExt {
+
+CrsGraph_View::
+~CrsGraph_View()
 {
+  if( newObj_ ) delete newObj_;
+}
+
+CrsGraph_View::NewTypeRef
+CrsGraph_View::
+operator()( OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
   //Error, must be local indices
-  if( original.IndicesAreGlobal() ) return NewTypePtr(0);
+  assert( !orig.IndicesAreGlobal() );
 
   //test maps, new map must be left subset of old
-  const Epetra_BlockMap & oRowMap = original.RowMap();
-  const Epetra_BlockMap & oColMap = original.ColMap();
+  const Epetra_BlockMap & oRowMap = orig.RowMap();
+  const Epetra_BlockMap & oColMap = orig.ColMap();
 
   int oNumRows = oRowMap.NumMyElements();
   int oNumCols = oRowMap.NumMyElements();
@@ -38,7 +50,7 @@ EpetraExt::CrsGraph_View::NewTypePtr EpetraExt::CrsGraph_View::operator()( Epetr
   vector<int*> indices( nNumRows );
   for( int i = 0; i < nNumRows; ++i )
   {
-    original.ExtractMyRowView( i, numIndices[i], indices[i] );
+    orig.ExtractMyRowView( i, numIndices[i], indices[i] );
     int j = 0;
     if( nNumCols )
     {
@@ -58,6 +70,10 @@ EpetraExt::CrsGraph_View::NewTypePtr EpetraExt::CrsGraph_View::operator()( Epetr
 
   newGraph->TransformToLocal();
 
-  return newGraph;
+  newObj_ = newGraph;
+
+  return *newGraph;
 }
+
+} // namespace EpetraExt
 
