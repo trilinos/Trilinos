@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
-  SolverType.push_back("Amesos_Dscpack");
+  //SolverType.push_back("Amesos_Dscpack");
 
   Epetra_Time Time(Comm);
   
