@@ -27,12 +27,9 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+#if defined(HAVE_ML_MLAPI)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -277,4 +274,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_MLAPI) */
