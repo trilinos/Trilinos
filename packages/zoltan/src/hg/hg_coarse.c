@@ -137,7 +137,7 @@ int Zoltan_HG_Coarsening (
       sum[i] += c_hvertex[j];
   }
   /* sort the edges according to their size and their sum of vertexIDs */
-  quicksort_pointer_inc_int_int (sorted, sum, hsize, 0, c_hg->nEdge-1);
+  Zoltan_quicksort_pointer_inc_int_int (sorted, sum, hsize, 0, c_hg->nEdge-1);
   i = 0;
   while (i<c_hg->nEdge)
   { j = i+1;
@@ -147,9 +147,9 @@ int Zoltan_HG_Coarsening (
     if (j > i+1)
     { for (k=i; k<j; k++)
         /* sort the vertex list of these edges */
-        quicksort_list_inc_int (&(c_hvertex[c_hindex[sorted[k]]]),0,c_hindex[sorted[k]+1]-c_hindex[sorted[k]]-1);
+        Zoltan_quicksort_list_inc_int (&(c_hvertex[c_hindex[sorted[k]]]),0,c_hindex[sorted[k]+1]-c_hindex[sorted[k]]-1);
       /* sort edges according to their sorted vertex lists */
-      quicksort_pointer_inc_int_mult (sorted,i,j-1,c_hindex,c_hvertex);
+      Zoltan_quicksort_pointer_inc_int_mult (sorted,i,j-1,c_hindex,c_hvertex);
       /* check if the vertex lists of two hyperedges are identical */
       for (k=i; k<j-1; k++)
       { l = 0;

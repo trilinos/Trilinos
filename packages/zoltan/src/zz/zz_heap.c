@@ -27,8 +27,8 @@ extern "C" {
 static void heapify (HEAP*, int);
 
 /* Inititializes the heap values and allocates space */
-int heap_init (ZZ *zz, HEAP *h, int space)
-{ char *yo = "heap_init";
+int Zoltan_HG_heap_init (ZZ *zz, HEAP *h, int space)
+{ char *yo = "Zoltan_HG_heap_init";
   int i;
 
   h->space = space;
@@ -46,7 +46,7 @@ int heap_init (ZZ *zz, HEAP *h, int space)
 }
 
 /* Frees all memory and sets the heap value back to default */
-void heap_free (HEAP *h)
+void Zoltan_HG_heap_free (HEAP *h)
 { 
   if (h->space != 0){
     ZOLTAN_FREE ((void **) &(h->ele));
@@ -58,9 +58,9 @@ void heap_free (HEAP *h)
 }
 
 /* Checks wheather the heap has the Max-Heap property */
-int heap_check (HEAP *h)
+int Zoltan_HG_heap_check (HEAP *h)
 { int i, left, right;
-  static char * yo = "heap_check";
+  static char * yo = "Zoltan_HG_heap_check";
 
   for (i=0; i<h->n; i++)
   { left = 2*i+1;
@@ -73,14 +73,14 @@ int heap_check (HEAP *h)
   return ZOLTAN_OK;
 }
 
-/* heap_input adds one item to the heap but does NOT
+/* Zoltan_HG_heap_input adds one item to the heap but does NOT
  * rearrange the heap! Constant time.
- * We might want to write a function heap_insert
+ * We might want to write a function Zoltan_HG_heap_insert
  * that adds an item and preserves the heap property. 
  */
-int heap_input (HEAP *h, int element, float value)
+int Zoltan_HG_heap_input (HEAP *h, int element, float value)
 {
-  static char *yo = "heap_input";
+  static char *yo = "Zoltan_HG_heap_input";
 
   if (element >= h->space){
     ZOLTAN_PRINT_ERROR(0, yo, "Inserted heap element out of range!\n");
@@ -99,7 +99,7 @@ int heap_input (HEAP *h, int element, float value)
 /* Moves the values in the heap to gain the Max-Heap property.
    The time is linear!
 */
-int heap_make (HEAP *h)
+int Zoltan_HG_heap_make (HEAP *h)
 { int i;
   
   for (i=h->n/2; i>=0; i--)
@@ -128,7 +128,7 @@ static void heapify (HEAP *h, int root)
 /* Changes the value of an element in the heap and restores the
    heap property. This can take O(log(n)) time. 
 */
-int heap_change_value (HEAP *h, int element, float value)
+int Zoltan_HG_heap_change_value (HEAP *h, int element, float value)
 { int position, father;
 
   if ((element<0) || (element>=h->space)){
@@ -156,7 +156,7 @@ int heap_change_value (HEAP *h, int element, float value)
 /* Extracts the maximum element and restores the heap property. Takes
    time O(log(n)).
 */
-int heap_extract_max (HEAP *h)
+int Zoltan_HG_heap_extract_max (HEAP *h)
 { int max;
 
   if (h->n==0) return -1; /* No elements in heap. */

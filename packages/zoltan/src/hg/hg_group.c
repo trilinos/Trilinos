@@ -30,12 +30,14 @@ static ZOLTAN_HG_GROUPING_FN grouping_aug2; /* augmenting path; length 2 */
 
 int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 {
+int found = 1;
   if      (!strcasecmp(hgp->redm_str,"mxg")) hgp->grouping = grouping_mxg;
   else if (!strcasecmp(hgp->redm_str,"reg")) hgp->grouping = grouping_reg;
   else if (!strcasecmp(hgp->redm_str,"rrg")) hgp->grouping = grouping_rrg;
   else if (!strcasecmp(hgp->redm_str,"rhg")) hgp->grouping = grouping_rhg;
   else if (!strcasecmp(hgp->redm_str,"grg")) hgp->grouping = grouping_grg;
-  else                                       hgp->grouping = NULL;
+  else if (!strcasecmp(hgp->redm_str, "no")) hgp->grouping = NULL;
+  else                          { found = 0; hgp->grouping = NULL; }
 
   if (hgp->grouping) {
   /* If reduction method is a grouping, set the improvement and
@@ -46,7 +48,7 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
     else                                         hgp->grouping_opt = NULL;
   }
 
-  return hgp->grouping ? 1 : 0 ;
+  return found;
 }
 
 /****************************************************************************/
@@ -331,7 +333,7 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
     size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
   for (i=0; i<hg->nEdge; i++)
     sorted[i] = i;
-  quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
+  Zoltan_quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
   ZOLTAN_FREE ((void **) &size);
 
   /* Match hyperedges along decreasing weight */

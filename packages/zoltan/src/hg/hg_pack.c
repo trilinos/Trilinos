@@ -32,6 +32,7 @@ static ZOLTAN_HG_PACKING_FN packing_aug2; /* augmenting path; length 2 */
 
 int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
 {
+int found = 1;
   if      (!strcasecmp(hgp->redm_str, "mxp"))  hgp->packing = packing_mxp;
   else if (!strcasecmp(hgp->redm_str, "rep"))  hgp->packing = packing_rep;
   else if (!strcasecmp(hgp->redm_str, "rrp"))  hgp->packing = packing_rrp;
@@ -39,7 +40,8 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
   else if (!strcasecmp(hgp->redm_str, "grp"))  hgp->packing = packing_grp;
   else if (!strcasecmp(hgp->redm_str, "lhp"))  hgp->packing = packing_lhp;
   else if (!strcasecmp(hgp->redm_str, "pgp"))  hgp->packing = packing_pgp;
-  else                                         hgp->packing = NULL;
+  else if (!strcasecmp(hgp->redm_str, "no"))   hgp->packing = NULL;
+  else                            { found = 0; hgp->packing = NULL; }
 
   if (hgp->packing) {
   /*
@@ -50,7 +52,7 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
     else if (!strcasecmp(hgp->redmo_str,"aug2")) hgp->packing_opt = packing_aug2;
     else                                         hgp->packing_opt = NULL;
   }
-  return  hgp->packing ? 1 : 0 ;
+  return found;
 }
 
 /****************************************************************************/
@@ -332,7 +334,7 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
      size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
   for (i=0; i<hg->nEdge; i++)
      sorted[i] = i;
-  quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
+  Zoltan_quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
   ZOLTAN_FREE ((void **) &size);
 
 /* Match hyperedges along decreasing weight */

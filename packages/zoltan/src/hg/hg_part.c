@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #include "hypergraph.h"
+static float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
 
 /****************************************************************************/
 /* Routine to set function pointers corresponding to input-string options. */
@@ -76,6 +77,10 @@ int Zoltan_HG_HPart_Lib (
     return ZOLTAN_MEMERR;
   }
 
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL, 
+                   "coarsening plot");
+
   if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
   {  printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
        hg->info,hg->nVtx,hg->nEdge,hg->nInput,hgp->redl,hgp->redm_str,
@@ -107,8 +112,9 @@ int Zoltan_HG_HPart_Lib (
   { for (i=0; i<hg->nVtx; i++)
       part[i] = i;
   }
-  else if (hg->nVtx <= hgp->redl || hg->nEdge == 0 )
-          /* fewer vertices than desired or no edges */
+  else if (hg->nVtx <= hgp->redl || hg->nEdge == 0 ||
+       (hgp->matching == NULL && hgp->packing == NULL && hgp->grouping == NULL))
+        /* fewer vertices than desired or no edges or no coarsening requested */
   { ierr = Zoltan_HG_Global (zz, hg, p, part, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       return ierr;
@@ -213,6 +219,9 @@ int Zoltan_HG_HPart_Lib (
       hg->info,hg->nVtx,hg->nEdge,hg->nInput,hgp->redl,hgp->redm_str,
       hgp->global_str,hgp->local_str,p,hcut_size_links(zz,hg,p,part));
 
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, part, 
+                   "partitioned plot");
   return ierr ;
 }
 
@@ -221,7 +230,7 @@ int Zoltan_HG_HPart_Lib (
 /* Calculates the cutsize of a partition by summing the weight of all edges
    which span more than one part. Tiem O(|I|).
 */
-float hcut_size_total (HGraph *hg, Partition part)
+float Zoltan_HG_hcut_size_total (HGraph *hg, Partition part)
 { int   i, j, hpart;
   float cut=0.0;
 
@@ -241,7 +250,7 @@ float hcut_size_total (HGraph *hg, Partition part)
    cutsize of this edge and the total cutsize is the sum of the single
    cutsizes. Time O(|I|).
 */
-float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
+static float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
 { int   i, j, *parts, nparts;
   float cut=0.0;
   char *yo = "hcut_size_links" ;
@@ -357,7 +366,7 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
 
   printf ("EDGE-based:\n");
   printf (" Cuts(total/links)  : %.3f %.3f\n",
-          hcut_size_total(hg,part),hcut_size_links(zz,hg,p,part));
+          Zoltan_HG_hcut_size_total(hg,part),hcut_size_links(zz,hg,p,part));
   printf ("----------------------------------------------------------------\n");
   return ZOLTAN_OK;
 }

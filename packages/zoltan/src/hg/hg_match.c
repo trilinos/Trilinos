@@ -37,6 +37,8 @@ static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
 
 int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 {
+int found = 1;
+
   if      (!strcasecmp(hgp->redm_str, "mxm"))  hgp->matching = matching_mxm;
   else if (!strcasecmp(hgp->redm_str, "rem"))  hgp->matching = matching_rem;
   else if (!strcasecmp(hgp->redm_str, "rrm"))  hgp->matching = matching_rrm;
@@ -44,7 +46,8 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
   else if (!strcasecmp(hgp->redm_str, "grm"))  hgp->matching = matching_grm;
   else if (!strcasecmp(hgp->redm_str, "lhm"))  hgp->matching = matching_lhm;
   else if (!strcasecmp(hgp->redm_str, "pgm"))  hgp->matching = matching_pgm;
-  else                                         hgp->matching = NULL;
+  else if (!strcasecmp(hgp->redm_str, "no"))   hgp->matching = NULL;
+  else                            { found = 0; hgp->matching = NULL;}
 
   if (hgp->matching)
   { /* If reduction method is a matching, set the improvement and
@@ -55,7 +58,7 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
    else if(!strcasecmp(hgp->redmo_str, "aug2"))hgp->matching_opt=matching_aug2;
    else                                         hgp->matching_opt=NULL;
   }
-  return  hgp->matching ? 1 : 0 ;
+  return found;
 }
 
 /*****************************************************************************/
@@ -361,7 +364,7 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
     for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
       vertex[j] = i;
 
-  quicksort_pointer_dec_float (order,g->ewgt,0,g->nEdge-1);
+  Zoltan_quicksort_pointer_dec_float (order,g->ewgt,0,g->nEdge-1);
 
   for (i=0; i<g->nEdge && (*limit)>0; i++)
   { vertex1 = vertex[order[i]];
@@ -394,7 +397,7 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit
     size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
   for (i=0; i<hg->nEdge; i++)
     sorted[i] = i;
-  quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
+  Zoltan_quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
   ZOLTAN_FREE ((void **) &size);
 
   /* Match hyperedges along decreasing weight */

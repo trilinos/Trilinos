@@ -30,6 +30,7 @@ extern "C" {
 #include "zoltan_mem.h"
 typedef struct
   {
+  int Proc;
   int Debug_Level;
   } ZZ ;
 #define ZOLTAN_DEBUG_LIST            1
@@ -56,9 +57,20 @@ typedef struct
 #define EPS                     1e-6
 
 
+/* Matching, Packing, and Grouping arrays.
+ * Technically, they are all the same; the different typedefs are not needed.
+ * In the description below, Matching is used; the same description applies
+ * to Packing and Grouping.
+ * If a vertex i is not being contracted with other vertices,
+ * Matching[i] == i.
+ * If vertices i, j, and k are being contracted together to form one new vertex,
+ * Matching[i] == j; Matching[j] == k; and Matching[k] == i;
+ * The cycle describes the contraction.
+ */
 typedef int* Matching ;  /* length |V|, matching information of vertices */
 typedef int* Packing ;   /* length |V|, packing information of vertices */
 typedef int* Grouping ;  /* length |V|, grouping information of vertices */
+
 typedef int* LevelMap ;  /* length |V|, mapping of fine vertices onto coarse vertices */
 typedef int* Partition ; /* length |V|, partition ID for each vertex */
 
@@ -142,7 +154,6 @@ void          Zoltan_HG_Srand (unsigned long) ;
 void          Zoltan_HG_Rand_Perm_Int (int *, int);
 
 /* Hypergraph read from file */
-int hg_readfile (ZZ *, HGraph *, char *, int *);
 int Zoltan_HG_Readfile ( int, FILE *, int *, int *, int *,
    int **, int **, int *, float **, int *, float **, int *);
 
@@ -194,8 +205,7 @@ typedef struct {
 int Zoltan_HG_Set_Part_Options  (ZZ *, HGPartParams *);
 int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
 int Zoltan_HG_HPart_Info   (ZZ *, HGraph *, int, Partition);
-float hcut_size_total (HGraph *, Partition);
-float hcut_size_links (ZZ *, HGraph *, int, Partition);
+float Zoltan_HG_hcut_size_total (HGraph *, Partition);
 
 /* Scale Edge Weight */
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *, int);
@@ -228,11 +238,11 @@ int Zoltan_HG_Local (ZZ *, HGraph *, int, Partition, HGPartParams *);
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *);
 
 /* Sorting */
-void quicksort_pointer_dec_float_int (int*, float*, int*, int, int);
-void quicksort_pointer_dec_float     (int*, float*, int, int);
-void quicksort_pointer_inc_int_int   (int*, int*, int*, int, int);
-void quicksort_list_inc_int          (int*, int, int);
-void quicksort_pointer_inc_int_mult  (int *, int, int, int*, int*);
+void Zoltan_quicksort_pointer_dec_float_int (int*, float*, int*, int, int);
+void Zoltan_quicksort_pointer_dec_float     (int*, float*, int, int);
+void Zoltan_quicksort_pointer_inc_int_int   (int*, int*, int*, int, int);
+void Zoltan_quicksort_list_inc_int          (int*, int, int);
+void Zoltan_quicksort_pointer_inc_int_mult  (int *, int, int, int*, int*);
 
 /* Heap datastructure */
 typedef struct
@@ -243,18 +253,20 @@ typedef struct
   float *value;
 } HEAP;
 
-#define heap_empty(H)         (((H)->n)==0)
-#define heap_not_empty(H)     (((H)->n)!=0)
-#define heap_max_value(H)     ((H)->value[(H)->ele[0]])
-#define heap_peek_max(H)      ((H)->ele[0])
-int  heap_init         (ZZ *, HEAP*, int);
-void heap_free         (HEAP*);
-int  heap_check        (HEAP*);
-int  heap_input        (HEAP*, int, float);
-int  heap_make         (HEAP*);
-int  heap_change_value (HEAP*, int, float);
-int  heap_extract_max  (HEAP*);
-int  move_vertex   (HGraph *, int, int, int, int *, int **, float *, HEAP *);
+#define Zoltan_HG_heap_empty(H)         (((H)->n)==0)
+#define Zoltan_HG_heap_not_empty(H)     (((H)->n)!=0)
+#define Zoltan_HG_heap_max_value(H)     ((H)->value[(H)->ele[0]])
+#define Zoltan_HG_heap_peek_max(H)      ((H)->ele[0])
+int  Zoltan_HG_heap_init         (ZZ *, HEAP*, int);
+void Zoltan_HG_heap_free         (HEAP*);
+int  Zoltan_HG_heap_check        (HEAP*);
+int  Zoltan_HG_heap_input        (HEAP*, int, float);
+int  Zoltan_HG_heap_make         (HEAP*);
+int  Zoltan_HG_heap_change_value (HEAP*, int, float);
+int  Zoltan_HG_heap_extract_max  (HEAP*);
+int  Zoltan_HG_move_vertex   (HGraph *, int, int, int, int *, int **, float *, HEAP *);
+
+extern void Zoltan_HG_Plot(int, int, int, int *, int *, int *, char *);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -42,15 +42,15 @@ int *sorted, float *val, int start, int end, int* equal, int* smaller
   } }
 }
 
-void quicksort_pointer_dec_float (
+void Zoltan_quicksort_pointer_dec_float (
 int *sorted, float* val, int start, int end
 )
 { int  equal, smaller;
 
   if (start < end)
   { quickpart_pointer_dec_float (sorted,val,start,end,&equal,&smaller);
-    quicksort_pointer_dec_float (sorted,val,start,equal-1);
-    quicksort_pointer_dec_float (sorted,val,smaller,end);
+    Zoltan_quicksort_pointer_dec_float (sorted,val,start,equal-1);
+    Zoltan_quicksort_pointer_dec_float (sorted,val,smaller,end);
   }
 }
 
@@ -85,15 +85,15 @@ int *sorted, float *val1, int *val2, int start, int end, int *equal, int *smalle
   } }
 }
 
-void quicksort_pointer_dec_float_int (
+void Zoltan_quicksort_pointer_dec_float_int (
 int *sorted, float* val1, int *val2, int start, int end
 )
 { int  equal, smaller;
 
   if (start < end)
   { quickpart_pointer_dec_float_int (sorted,val1,val2,start,end,&equal,&smaller);
-    quicksort_pointer_dec_float_int (sorted,val1,val2,start,equal-1);
-    quicksort_pointer_dec_float_int (sorted,val1,val2,smaller,end);
+    Zoltan_quicksort_pointer_dec_float_int (sorted,val1,val2,start,equal-1);
+    Zoltan_quicksort_pointer_dec_float_int (sorted,val1,val2,smaller,end);
   }
 }
 
@@ -125,14 +125,24 @@ int *sorted, int *val1, int *val2, int start, int end, int *equal, int *larger)
   } }
 }
 
-void quicksort_pointer_inc_int_int (
-int *sorted, int* val1, int *val2, int start, int end)
-{ int  equal, larger;
+void Zoltan_quicksort_pointer_inc_int_int (
+  int *sorted,   /* index array that is rearranged; should be initialized 
+                    so that sorted[i] == i. */
+  int* val1,     /* array of primary key values. */
+  int *val2,     /* array of secondary key values. */
+  int start,     /* first array position to be considered for sorting. */
+  int end        /* last array position to be considered for sorting. */
+)
+{ 
+  /* Sorts in increasing order with primary key val1 and secondary key val2.
+     The arrays val1 and val2 are not rearranged; rather the index array
+     sorted is rearranged based on values in val1 and val2. */
+  int  equal, larger;
 
   if (start < end)
   { quickpart_pointer_inc_int_int (sorted,val1,val2,start,end,&equal,&larger);
-    quicksort_pointer_inc_int_int (sorted,val1,val2,start,equal-1);
-    quicksort_pointer_inc_int_int (sorted,val1,val2,larger,end);
+    Zoltan_quicksort_pointer_inc_int_int (sorted,val1,val2,start,equal-1);
+    Zoltan_quicksort_pointer_inc_int_int (sorted,val1,val2,larger,end);
   }
 }
 
@@ -160,13 +170,13 @@ int *list, int start, int end, int *equal, int *larger)
     }
 }
 
-void quicksort_list_inc_int (int* list, int start, int end)
+void Zoltan_quicksort_list_inc_int (int* list, int start, int end)
 { int  equal, larger;
 
   if (start < end)
   { quickpart_list_inc_int (list,start,end,&equal,&larger);
-    quicksort_list_inc_int (list,start,equal-1);
-    quicksort_list_inc_int (list,larger,end);
+    Zoltan_quicksort_list_inc_int (list,start,equal-1);
+    Zoltan_quicksort_list_inc_int (list,larger,end);
   }
 }
 
@@ -203,13 +213,13 @@ int *index, int *data)
   }
 }
 
-void quicksort_pointer_inc_int_mult (int *sorted, int start, int end, int *index, int *data)
+void Zoltan_quicksort_pointer_inc_int_mult (int *sorted, int start, int end, int *index, int *data)
 { int  equal, larger;
 
   if (start < end)
   { quickpart_pointer_inc_int_mult (sorted,start,end,&equal,&larger,index,data);
-    quicksort_pointer_inc_int_mult (sorted,start,equal-1,index,data);
-    quicksort_pointer_inc_int_mult (sorted,larger,end,index,data);
+    Zoltan_quicksort_pointer_inc_int_mult (sorted,start,equal-1,index,data);
+    Zoltan_quicksort_pointer_inc_int_mult (sorted,larger,end,index,data);
   }
 }
 

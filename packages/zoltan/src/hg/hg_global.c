@@ -180,11 +180,11 @@ static int bfs_order (
   Partition part	/* Optional (output): Partition array. */
 )
 {
-  int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank; 
-  int first, last, num_edges, *edges;
+  int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank = NULL; 
+  int first, last, num_edges, *edges = NULL;
   int ierr=ZOLTAN_OK;
   double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
-  char msg[128], *mark_edge;
+  char msg[128], *mark_edge = NULL;
   static char *yo = "bfs_order";
 
 /*
@@ -221,8 +221,10 @@ static int bfs_order (
     if (hg->vindex[i+1] - hg->vindex[i] > num_edges)
       num_edges = hg->vindex[i+1] - hg->vindex[i];
   
-  if (!(mark_edge  = (char *)  ZOLTAN_CALLOC (hg->nEdge, sizeof (char))) ||
-      !(edges      = (int *)   ZOLTAN_CALLOC (num_edges, sizeof (int)))) {
+
+  mark_edge  = (char *)  ZOLTAN_CALLOC (hg->nEdge, sizeof (char));
+  edges      = (int *)   ZOLTAN_CALLOC (num_edges, sizeof (int));
+  if ((hg->nEdge > 0 && mark_edge == NULL) || (num_edges > 0 && edges == NULL)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr =  ZOLTAN_MEMERR;
     goto error;
@@ -324,7 +326,7 @@ static int bfs_order (
       Zoltan_HG_Rand_Perm_Int(edges, num_edges);
     else if (visit_mode==1)
       /* Sort edges by weight */
-      quicksort_pointer_dec_float(edges, hg->ewgt, 0, num_edges-1);
+      Zoltan_quicksort_pointer_dec_float(edges, hg->ewgt, 0, num_edges-1);
 
     for (j=0; j<num_edges; j++){
       edge = edges[j];
@@ -590,8 +592,9 @@ static int greedy_order (
     }
   }
   if (priority_mode==0){
-    if (!(cut[0] = (int *)  ZOLTAN_CALLOC (2*hg->nEdge, sizeof (int))) ||
-        !(visited = (int *)  ZOLTAN_CALLOC (hg->nVtx, sizeof (int)))){
+    cut[0] = (int *)  ZOLTAN_CALLOC (2*hg->nEdge, sizeof (int));
+    visited = (int *)  ZOLTAN_CALLOC (hg->nVtx, sizeof (int));
+    if ((hg->nEdge > 0 && cut[0] == NULL) || visited == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ierr =  ZOLTAN_MEMERR;
       goto error;
@@ -640,16 +643,16 @@ cutoff);
 
   /* Initialize heap. */
   gain[start_vtx] = 1.0;           /* Make it highest value in heap. */
-  heap_init(zz, &(h[0]), hg->nVtx);
-  heap_init(zz, &(h[1]), 0);       /* Dummy heap, not used. */
+  Zoltan_HG_heap_init(zz, &(h[0]), hg->nVtx);
+  Zoltan_HG_heap_init(zz, &(h[1]), 0);       /* Dummy heap, not used. */
   for(i=0; i<hg->nVtx; i++)
-    heap_input(h, i, gain[i]);
-  heap_make(h);
+    Zoltan_HG_heap_input(h, i, gain[i]);
+  Zoltan_HG_heap_make(h);
 
   while (bfsnumber < hg->nVtx ) {
   
     /* Get next vertex from heap */
-    vtx = heap_extract_max(h);
+    vtx = Zoltan_HG_heap_extract_max(h);
 
     if (vtx<0){
       /* This should never happen. */
@@ -698,7 +701,7 @@ rank[vtx]);
       }
       else { /* part[vtx] == pnumber-1 */
         part_sum = 0.0;
-        j = heap_peek_max(h); /* j will be the first vertex in the next part. */
+        j = Zoltan_HG_heap_peek_max(h); /* j will be the first vertex in the next part. */
       }
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
         printf("GLOBAL_PART initializing for partition %2d, cutoff = %f\n", 
@@ -708,7 +711,7 @@ rank[vtx]);
         /* Reset all gain values (but one). */
         for (i=0; i<hg->nVtx; i++){
           if (i != j) gain[i] = 0.0;
-          if (rank[i] <0) heap_change_value(h, i, gain[i]);
+          if (rank[i] <0) Zoltan_HG_heap_change_value(h, i, gain[i]);
         }
         /* Reset counters. */
         if (vtx_count)
@@ -721,7 +724,7 @@ rank[vtx]);
 
     if (priority_mode==0){
       /* Move from visited=0 to visited=1. */
-      move_vertex(hg, vtx, 0, 1, visited, cut, gain, h);
+      Zoltan_HG_move_vertex(hg, vtx, 0, 1, visited, cut, gain, h);
     } 
     else {
       if (part[vtx]==pnumber){
@@ -757,7 +760,7 @@ rank[vtx]);
                else
                  gain[nbor] += delta/edge_sum[nbor];
     
-               heap_change_value(h, nbor, gain[nbor]);
+               Zoltan_HG_heap_change_value(h, nbor, gain[nbor]);
             }
           }
         }
@@ -779,8 +782,8 @@ error:
   if (vtx_count) ZOLTAN_FREE ((void **) &vtx_count);
   if (cut[0])    ZOLTAN_FREE ((void **) &cut[0]);
   if (visited)   ZOLTAN_FREE ((void **) &visited);
-  heap_free(&(h[0]));
-  heap_free(&(h[1]));
+  Zoltan_HG_heap_free(&(h[0]));
+  Zoltan_HG_heap_free(&(h[1]));
   return ierr;
 }
 

@@ -19,7 +19,7 @@ I		= -I../Utilities/Memory
 C		= $(C_pre) $(C_comp) $(C_flag_$(OSTYPE)) $(DTIME) $(I)
 L		= -L. -lhg -lm
 
-src.c		= hg_exec.c hg_readfile.c hg_util.c \
+src.c		= hg_exec.c hg_readfile.c hg_util.c hg_plot.c \
 		  hg_part.c hg_match.c hg_pack.c hg_group.c hg_scale.c \
 		  hg_coarse.c hg_global.c hg_local.c hg_sort.c hg_heap.c \
 		  zoltan_hg_readfile.c mem.c

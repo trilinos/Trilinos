@@ -209,7 +209,7 @@ ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_heap.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c \
-		  hg_part.c hg_util.c zoltan_hg_readfile.c
+		  hg_part.c hg_plot.c hg_util.c zoltan_hg_readfile.c
 HG_INC 		= hg.h hypergraph.h
 GDEFINES       += -DZOLTAN_HG
 else

@@ -44,6 +44,8 @@ static void times_output () {}
 #endif
 
 
+extern int hg_readfile (ZZ *, HGraph *, char *, int *);
+
 
 /* The main procedure for the executable hg_test */
 
@@ -81,7 +83,8 @@ int main (int argc, char **argv)
     puts("-redl   reduction limit:  (0)");
     puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
-    puts("                           mxg,reg,rrg,rhg,(grg)}");
+    puts("                           mxg,reg,rrg,rhg,(grg),");
+    puts("                           no}");
     puts("-redmo  reduction augment:{no,aug1,(aug2)}");
     puts("-reds   reduction scaling:(1)");
     puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,");

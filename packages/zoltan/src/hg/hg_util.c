@@ -194,15 +194,17 @@ int Zoltan_HG_Create_Mirror (
    ZOLTAN_TRACE_ENTER(zz, yo);
 
    /* determine which data to "mirror" and set corresponding data pointers. */
-   if (hg &&  hg->hindex && hg->hvertex && !(hg->vindex) && !(hg->vedge))
+   if (hg &&  hg->hindex && (hg->nInput == 0 || hg->hvertex) 
+          && !(hg->vindex) && !(hg->vedge))
      {
      ZOLTAN_TRACE_DETAIL(zz, yo, "Have hindex; building vindex.");
      inlength  = hg->nEdge ;
      outlength = hg->nVtx ;
      index     = hg->hindex ;
      data      = hg->hvertex ;
-     if (!(outindex=hg->vindex=(int*)ZOLTAN_MALLOC((hg->nVtx+1)*sizeof(int)))||
-         !(outdata =hg->vedge =(int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int)))    )
+     outindex  = hg->vindex = (int*)ZOLTAN_MALLOC((hg->nVtx+1)*sizeof(int));
+     outdata   = hg->vedge = (int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int));
+     if (outindex == NULL || (hg->nInput > 0 && outdata == NULL)) 
        {
        ZOLTAN_FREE ((void **) &(hg->vindex)) ;
        ZOLTAN_FREE ((void **) &(hg->vedge)) ;
@@ -211,15 +213,17 @@ int Zoltan_HG_Create_Mirror (
        return ZOLTAN_MEMERR;
        }
      }
-   else if (hg && hg->vindex && hg->vedge && !(hg->hindex) && !(hg->hvertex))
+   else if (hg && hg->vindex && (hg->nInput == 0 || hg->vedge) 
+               && !(hg->hindex) && !(hg->hvertex))
      {
      ZOLTAN_TRACE_DETAIL(zz, yo, "Have vindex; building hindex.");
      inlength  = hg->nVtx ;
      outlength = hg->nEdge ;
      index     = hg->vindex ;
      data      = hg->vedge ;
-     if (!(outindex=hg->hindex =(int*)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
-         !(outdata =hg->hvertex=(int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int)))     )
+     outindex  = hg->hindex = (int*)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int));
+     outdata   = hg->hvertex = (int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int));
+     if (outindex == NULL || (hg->nInput > 0 && outdata == NULL))
        {
        ZOLTAN_FREE ((void **) &(hg->hindex)) ;
        ZOLTAN_FREE ((void **) &(hg->hvertex)) ;
@@ -230,7 +234,8 @@ int Zoltan_HG_Create_Mirror (
      }
    else {
       ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_WARN ;  /* unable to proceed */
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input error.");
+      return ZOLTAN_FATAL ;  /* unable to proceed */
    }
 
    /* count number of data objects in out index space */
