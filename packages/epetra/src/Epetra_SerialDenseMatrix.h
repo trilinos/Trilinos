@@ -29,6 +29,7 @@
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
 class Epetra_SerialSymDenseMatrix;
+class Epetra_VbrMatrix;
 
 //! Epetra_SerialDenseMatrix: A class for constructing and using real double precision general dense matrices.
 
@@ -338,7 +339,13 @@ This function performs a variety of matrix-matrix multiply operations.
   int N_;
   bool A_Copied_;
 
- public:
+  //For performance reasons, it's better if Epetra_VbrMatrix can access the
+  //LDA_ and A_ members of this class directly without going through an
+  //accessor method. Rather than making them public members, we'll make
+  //Epetra_VbrMatrix a friend class.
+
+  friend class Epetra_VbrMatrix;
+
   int LDA_;
   double * A_;
 
