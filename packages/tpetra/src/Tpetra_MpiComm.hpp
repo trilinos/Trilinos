@@ -117,9 +117,8 @@ class MpiData;
       On entry, contains the length of myVals.
     */
     void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
-      int myCount = MpiTraits<PacketType>::count(count);
-      int allCount = myCount * data().size_;
-      MPI_Allgather(myVals, myCount, MpiTraits<PacketType>::datatype(), allVals, allCount, MpiTraits<PacketType>::datatype(), getMpiComm());
+      MPI_Allgather(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), 
+                    allVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), getMpiComm());
     };
     //@}
     

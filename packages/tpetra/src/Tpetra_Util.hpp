@@ -81,7 +81,7 @@ inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
   }
   os << "}";
   return(os);
-};
+}
 
 } // namespace Tpetra
 
@@ -103,6 +103,6 @@ inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
   }
   os << "}";
   return(os);
-};
+}
 
 #endif // TPETRA_UTIL_HPP
