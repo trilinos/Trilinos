@@ -49,7 +49,7 @@ class CLOP_constraint {
   int *ivec, *mycols, *imap, *row_degree, my_best_row, MyPID, max_nnz_con;
   int *cola, *con_row, *con_col, dimsfac, ncon_me, dimcon_me;
   int *NumEntries1, *NumEntries2, **Indices1, **Indices2;
-  double **colvals, *dvec, *sfaca, **Values1, **Values2;
-  bool *row_flag;
+  double **colvals, *dvec, *sfaca, **Values1, **Values2, *max_abs_con;
+  bool *row_flag, *con_flag;
 };
   

@@ -1706,7 +1706,10 @@ void CLOP_solver::calculate_multipliers(Epetra_Vector* uStand,
   int i, j, NumEntries, *Indices;
   double *Values, rconstraint;
   vStand->ExtractView(&Values);
-  for (i=0; i<nmycon; i++) lambda_local[i] = Values[mycdof[i]];
+  for (i=0; i<nmycon; i++) {
+    lambda_local[i] = 0;
+    if (mycdof[i] >= 0) lambda_local[i] = Values[mycdof[i]];
+  }
   /*
   char fname[101];
   sprintf(fname,"%s%d","test", MyPID);

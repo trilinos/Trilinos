@@ -27,6 +27,7 @@ CLOP_constraint::CLOP_constraint(const Epetra_CrsMatrix* A_)
   imap = new int[nrow]; memset(imap, -1, nrow*sizeof(int));
   row_degree = new int[nrow];
   row_flag = new bool[nrow]; for (i=0; i<nrow; i++) row_flag[i] = false;
+  con_flag = new bool[ncol]; for (i=0; i<ncol; i++) con_flag[i] = false;
   dimsfac = 20; dimcon_me = 20;
   cola = new int[dimsfac];
   sfaca = new double[dimsfac];
@@ -117,7 +118,7 @@ int CLOP_constraint::factor()
   //
   // free memory
   //
-  delete [] dimcol; delete [] dvec; delete [] imap;
+  delete [] dimcol; delete [] dvec; delete [] imap; delete [] max_abs_con;
   delete [] row_degree; delete [] cola; delete [] sfaca;
   if (MyPID == 0) cout << "CLOP_constraint::factor completed" << endl;
   return 0;
@@ -131,6 +132,41 @@ void CLOP_constraint::determine_if_all_simple(int & simple_flag)
   svals_global = new double[blocksize]; myzero(svals_global, blocksize);
   svals_min = new double[blocksize];
   svals_max = new double[blocksize];
+  //
+  // first determine absolute value of largest entry in each constraint
+  //  max_abs_con[j] = absolute value of largest entry in local constraint j
+  //
+  max_abs_con = new double[ncol];
+  for (i=0; i<nrow; i++) {
+    A->ExtractMyRowView(i, NumEntries, Values, Indices);
+    for (j=0; j<NumEntries; j++)
+      if (fabs(Values[j]) > svals[Indices[j]])
+	svals[Indices[j]] = fabs(Values[j]);
+  }
+  nmpi = ncol_global/blocksize;
+  nremain = ncol_global - nmpi*blocksize;
+  if (nremain > 0) nmpi++;
+  for (i=0; i<nmpi; i++) {
+    int ibeg = i*blocksize;
+    nsend = blocksize;
+    if ((i == (nmpi-1)) && (nremain > 0)) nsend = nremain;
+    for (j=0; j<ncol; j++) {
+      jpos = mycols[j] - ibeg;
+      if ((jpos >= 0) && (jpos < nsend)) svals_global[jpos] = svals[j];
+    }
+    Comm.MaxAll(svals_global, svals_max, nsend);
+    for (j=0; j<ncol; j++) {
+      jpos = mycols[j] - ibeg;
+      if ((jpos >= 0) && (jpos < nsend)) {
+	max_abs_con[j] = svals_max[jpos];
+	if (svals_max[jpos] == 0) con_flag[j] = true;
+      }
+    }
+  }
+  myzero(svals, ncol); myzero(svals_global, blocksize);
+  //
+  // next determine whether or not all constraints are of type simple
+  //
   row_con = new int[ncol];
   ncon_me = 0;
   for (i=0; i<nrow; i++) {
@@ -192,8 +228,8 @@ void CLOP_constraint::determine_if_all_simple(int & simple_flag)
   for (j=0; j<ncol; j++) {
     for (i=0; i<nnzcol[j]; i++) colvals[j][i] *= svals[j];
   }
-  delete [] svals; delete [] svals_global; delete [] svals_min; delete [] svals_max;
-  delete [] row_con;
+  delete [] svals; delete [] svals_global; delete [] svals_min; 
+  delete [] svals_max; delete [] row_con;
 }
 
 int CLOP_constraint::update1(int col, int icol)
@@ -226,15 +262,17 @@ void CLOP_constraint::update4(int con_num, double a[])
   for (i=0; i<nnzcol[icol]; i++) {
     row2 = colrows[icol][i];
     if (row2 == row) {
-      a[0] = 1.0/colvals[icol][i];
+      if (con_flag[icol] == false) a[0] = 1.0/colvals[icol][i];
+      if (con_flag[icol] == true ) a[0] = 0.0;
       break;
     }
   }
 }
 
 void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
-			   int* & mycdof, int & nx2, int* & x2_dof, int & nsub_gdofs, 
-			   int sub_gdofs[], Epetra_CrsMatrix* & CtT)
+			   int* & mycdof, int & nx2, int* & x2_dof, 
+			   int & nsub_gdofs, int sub_gdofs[], 
+			   Epetra_CrsMatrix* & CtT)
 {
   int i, j, NumEntries, row, ncolT, gdof, nc1, nc2, nc2_all, *Indices, ierr;
   double *Values;
@@ -246,15 +284,22 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   mycdof = new int[ncon_me];
   for (i=0; i<ncon_me; i++) {
     mycons[i] = mycols[con_col[i]];
-    mycdof[i] = con_row[i];
-    row_flag[con_row[i]] = true;
+    if (con_flag[con_col[i]] == true) {
+      mycdof[i] = -1;
+    }
+    else {
+      mycdof[i] = con_row[i];
+      row_flag[con_row[i]] = true;
+    }
   }
   RowMapMyCon = new Epetra_Map(ncol_global, ncon_me, mycons, 0, Comm);
   //
   // form transpose of transformed constraint matrix
   //
   myzero(ivec, nrow);
-  for (i=0; i<ncon_me; i++) ivec[con_row[i]] = 1;
+  for (i=0; i<ncon_me; i++) 
+    if (row_flag[con_row[i]] == true) 
+      ivec[con_row[i]] = 1;
   for (i=0; i<ncol; i++) {
     for (j=0; j<nnzcol[i]; j++) {
       row = colrows[i][j];
@@ -267,9 +312,11 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   double *val1 = new double[val2[nrow]];
   myzero(ivec, nrow);
   for (i=0; i<ncon_me; i++) {
-    val1[ val2[con_row[i]]] = 1;
-    cval1[val2[con_row[i]]] = con_col[i];
-    ivec[con_row[i]] = 1;
+    if (row_flag[con_row[i]] == true) {
+      val1[ val2[con_row[i]]] = 1;
+      cval1[val2[con_row[i]]] = con_col[i];
+      ivec[con_row[i]] = 1;
+    }
   }
   double con_tol(1e-10);
   for (i=0; i<ncol; i++) {
@@ -300,7 +347,8 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   */
   delete [] ivec; delete [] val1; delete [] val2; delete [] cval1;
   //
-  // construct Epetra_CrsMatrix for on-processor contributions to constraint matrix
+  // construct Epetra_CrsMatrix for on-processor contributions to 
+  // constraint matrix
   //
   Epetra_CrsMatrix ConMat_Loc(View, NewColMap, A->RowMap(), 0);
   for (i=0; i<ncol; i++) {
@@ -332,7 +380,8 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   for (i=0; i<nrow; i++) row_flag[i] = false;
   nc1 = 0;
   for (i=0; i<ncon_me; i++) {
-    if (nnz_con[con_col[i]] <= max_nnz_con) {
+    if ((nnz_con[con_col[i]] <= max_nnz_con) && 
+	(con_flag[con_col[i]] == false)) {
       mycons[nc1] = mycols[con_col[i]];
       row_flag[con_row[i]] = true;
       nc1++;
@@ -342,7 +391,7 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   // determine non-constrained (type 1) dofs in sub_gdofs array
   //
   int *row_active = new int[nrow]; myzero(row_active, nrow);
-  int *row_active_sub = new int[nsub_gdofs]; myzero(row_active_sub, nsub_gdofs);
+  int *row_active_sub = new int[nsub_gdofs]; myzero(row_active_sub,nsub_gdofs);
   for (i=0; i<nrow; i++) if (row_flag[i] == true) row_active[i] = 1;
   Epetra_Map RowMap_sub(-1, nsub_gdofs, sub_gdofs, 0, Comm);
   Epetra_IntVector RA(View, A->RowMap(), row_active);
@@ -516,7 +565,7 @@ void CLOP_constraint::determine_nnz_con(int nnz_con[])
 void CLOP_constraint::get_best_row(int col, int icol, int & iproc)
 {
   int i, row;
-  double max_value(0), colv, max_value_g, tol(1e-3);
+  double max_value(0), colv, max_value_g, tol(1e-3), tol_con(1e-8);
   //
   // find largest entry in column
   //
@@ -527,7 +576,9 @@ void CLOP_constraint::get_best_row(int col, int icol, int & iproc)
     }
   }
   Comm.MaxAll(&max_value, &max_value_g, 1);
-  assert (max_value_g > 0);
+  if (icol != -1) {
+    if (max_value_g < max_abs_con[icol]*tol_con) con_flag[icol] = true;
+  }
   //
   // determine lowest possible degree
   //
@@ -640,14 +691,15 @@ void CLOP_constraint::get_cols_and_sfacs(int col, int icol, int dir)
     row = colrows[icol][j];
     if (row == my_best_row) pivot_val = colvals[icol][j];
   }
-  assert (pivot_val != 0);
+  if (con_flag[icol] == false) assert (pivot_val != 0);
   for (i=0; i<ncol; i++) {
     col2 = mycols[i];
     if (((col2 > col) && (dir == 0)) || ((col2 < col) && (dir == 1))) {
       for (j=0; j<nnzcol[i]; j++) {
 	if (colrows[i][j] == my_best_row) {
 	  cola[n] = col2;
-	  sfaca[n] = -colvals[i][j]/pivot_val;
+	  if (con_flag[icol] == false) sfaca[n] = -colvals[i][j]/pivot_val;
+	  if (con_flag[icol] == true ) sfaca[n] = 0; 
 	  n++;
 	}
       }
