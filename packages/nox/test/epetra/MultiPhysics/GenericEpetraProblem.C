@@ -48,10 +48,12 @@
 #include "Xfer_Operator.H"
 
 GenericEpetraProblem::GenericEpetraProblem(Epetra_Comm& comm, 
-                                           int numGlobalNodes) :
+                                           int numGlobalNodes,
+                                           string name_) :
   Comm(&comm),
   NumGlobalNodes(numGlobalNodes),
   myId(0),
+  myName(name_),
   StandardMap(0),
   OverlapMap(0),
   Importer(0),
@@ -239,18 +241,6 @@ void GenericEpetraProblem::createAuxillaryVectors()
     auxSolutions.insert( pair<int, Epetra_Vector*>(auxProblems[i],
 			    new Epetra_Vector(*initialSolution)) );
   }
-}
-
-void GenericEpetraProblem::setAuxillarySolution(const Epetra_Vector& data)
-{
-  // Create the auxillary vector if needed
-  if(!auxSolutions.find(1)->second)
-  {
-    cout << "ERROR: No auxillary vector created for this Problem !!" << endl;
-    throw "GenericEpetraProblem ERROR";
-  } 
-  else
-    *(auxSolutions.find(1)->second) = data;
 }
 
 void GenericEpetraProblem::addProblemDependence(

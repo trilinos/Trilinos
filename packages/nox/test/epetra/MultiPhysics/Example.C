@@ -217,15 +217,14 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Polynomial Order", 6); 
 
   // Create each part of the Brusselator problem class.  
-  Equation_A ProblemA(Comm, NumGlobalNodes);
-//  Equation_B ProblemB(Comm, NumGlobalNodes);
-  Equation_B ProblemB(Comm, 5*(NumGlobalNodes-1)+1);
-#ifdef DEBUG
-//  ProblemA.getMesh().Print(cout);
-//  ProblemB.getMesh().Print(cout);
-#endif
+  Equation_A ProblemA(Comm, NumGlobalNodes);//, "Temperature");
+//  Equation_A ProblemA2(Comm, 11);
+//  Equation_A ProblemA3(Comm, 501);
+  Equation_B ProblemB(Comm, NumGlobalNodes);//, "Species");
+//  Equation_B ProblemB2(Comm, 11);
+//  Equation_B ProblemB3(Comm, 501);
 
-  // Now start create the Problem Manager
+  // Create the Problem Manager
   Problem_Manager problemManager(Comm);
 
   // An interesting note: the order of solving each problem is based on the
@@ -234,11 +233,19 @@ int main(int argc, char *argv[])
   // variables.  The order of solution appears to strongly affect the rate
   // of convergence of the decoupled Brusselator.  Solving problem A first
   // dramatically reduces the number of total iterations.
-  problemManager.addProblem(ProblemB);
   problemManager.addProblem(ProblemA);
+//  problemManager.addProblem(ProblemA2);
+//  problemManager.addProblem(ProblemA3);
+  problemManager.addProblem(ProblemB);
+//  problemManager.addProblem(ProblemB2);
+//  problemManager.addProblem(ProblemB3);
 
+//  problemManager.createDependency("Temperature", "Species");
   problemManager.createDependency(ProblemA, ProblemB);
+//  problemManager.createDependency(ProblemA2, ProblemB3);
   problemManager.createDependency(ProblemB, ProblemA);
+//  problemManager.createDependency(ProblemB2, ProblemA);
+//  problemManager.createDependency(ProblemB3, ProblemA2);
 
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 
@@ -258,6 +265,8 @@ int main(int argc, char *argv[])
   problemManager.registerParameters(nlParams);
   problemManager.registerStatusTest(combo);
   problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
+
+  problemManager.outputStatus();
 
   // Initialize time integration parameters
   int maxTimeSteps = 1;
@@ -289,44 +298,17 @@ int main(int argc, char *argv[])
     cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
     // Solve decoupled
-//    problemManager.solve(); // Need a status test check here ....
+    problemManager.solve(); // Need a status test check here ....
     // .... OR solve using matrix-free
-    problemManager.solveMF(); // Need a status test check here ....
+//    problemManager.solveMF(); // Need a status test check here ....
   
-    // Write solution, ASSUMES equal number nodes in each problem
-    (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
-    ifp = fopen(file_name, "w");
-    for (int i=0; i<NumMyNodes; i++)
-      fprintf(ifp, "%d  %E  %E  %E\n", 
-                      ProblemA.getSolution().Map().MinMyGID()+i,
-                      xMesh[i], ProblemA.getSolution()[i],
-                      ProblemB.getSolution()[i]);
-    fclose(ifp);
-
-    // Write solution, for special case of differing nodes in ProblemB
-    (void) sprintf(file_name, "Boutput.%03d_%05d",MyPID,timeStep);
-    ifp = fopen(file_name, "w");
-    for (int i=0; i<(5*(NumGlobalNodes-1)+1); i++)
-      fprintf(ifp, "%d  %E  %E \n", 
-                      ProblemB.getSolution().Map().MinMyGID()+i,
-                      ProblemB.getMesh()[i], ProblemB.getSolution()[i]);
-    fclose(ifp);
+    problemManager.outputSolutions(timeStep);
 
     // Reset problems by copying solution into old solution
-    ProblemA.reset(ProblemA.getSolution());
-    ProblemB.reset(ProblemB.getSolution());
+    problemManager.resetProblems();
 
   } // end time step while loop
 
-//  // Output the parameter list
-//  NOX::Utils utils(printParams);
-//  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-//    cout << endl << "Final Parameters" << endl
-//	 << "****************" << endl;
-//    solver.getParameterList().print(cout);
-//    cout << endl;
-//  }
-  //
   // Output timing info
   if(MyPID==0)
     cout << "\nTimings :\n\tWallTime --> " << 

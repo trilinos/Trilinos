@@ -50,7 +50,8 @@ class Equation_A : public GenericEpetraProblem {
 public:
 
   // Constructor
-  Equation_A(Epetra_Comm& Comm, int NumGlobalUnknowns = 0);
+  Equation_A(Epetra_Comm& Comm, int NumGlobalUnknowns = 0,
+                       string name = "");
   
   // Destructor
   ~Equation_A();

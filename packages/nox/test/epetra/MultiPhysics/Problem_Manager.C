@@ -126,10 +126,20 @@ Problem_Manager::~Problem_Manager()
 void Problem_Manager::addProblem(GenericEpetraProblem& problem)
 {
   Problems.insert(pair<int, GenericEpetraProblem*>(++problemCount, &problem));
-  Names.insert( pair<int, string> (problemCount, problem.getName()) );
-  NameLookup.insert( pair<string, int> (problem.getName(), problemCount) );
   problem.setId(problemCount);
   problem.setManager(this);
+
+  // Give this problem a name if it doesn't already have one
+  if( problem.getName() == "" ) {
+    string name = "Problem_";
+    char id_str[4];
+    (void) sprintf(id_str, "%d",problemCount);
+    name += id_str;
+    problem.setName(name);
+  }
+
+  Names.insert( pair<int, string> (problemCount, problem.getName()) );
+  NameLookup.insert( pair<string, int> (problem.getName(), problemCount) );
 
   // Keep a running total of dofs for use in constructing composite objects
   NumMyNodes += problem.NumMyNodes;
@@ -148,6 +158,24 @@ GenericEpetraProblem& Problem_Manager::getProblem(int id_)
   else
     return *problem;
 }
+
+void Problem_Manager::createDependency(string nameA, string nameB)
+{
+  // Create a dependence of Problem A equations on Problem B variables
+  int probId_A = NameLookup.find(nameA)->second;
+  int probId_B = NameLookup.find(nameB)->second;
+  if( !probId_A || !probId_B ) {
+    cout << "ERROR: Could not create dependency of \"" << nameA << "\" on \""
+         << nameB << "\" !!" << endl;
+    throw "Problem_Manager ERROR";
+  }
+ 
+  GenericEpetraProblem &probA = *Problems.find(probId_A)->second,
+                       &probB = *Problems.find(probId_B)->second;
+
+  createDependency(probA, probB);
+}
+
 
 void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
                                        GenericEpetraProblem& problemB)
@@ -1043,3 +1071,33 @@ void Problem_Manager::outputSolutions(int timeStep)
     fclose(ifp);
   }
 }
+
+void Problem_Manager::outputStatus()
+{ 
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  map<int, GenericEpetraProblem*>::iterator dependIter;
+
+  cout << endl << endl << "\t\t********************************" << endl;
+  cout                 << "\t\t*******  Problem Summary  ******" << endl;
+  cout                 << "\t\t********************************" << endl;
+  cout << endl << endl;
+
+  // Loop over each problem being managed and write its solution vector
+  // to a file.
+  for( ; problemIter != problemLast; problemIter++) {
+
+    GenericEpetraProblem& problem = *(*problemIter).second;
+    cout << "\tProblem \"" << problem.getName() << "\" \t Depends on:" << endl;
+    
+    for( int j = 0; j<problem.auxProblems.size(); j++ ) {
+      dependIter = Problems.find( problem.auxProblems[j] );
+      cout << "\t\t-------------> \t\t\"" << dependIter->second->getName() 
+           << "\"" << endl;
+    }
+    cout << endl;
+  }
+}
+

@@ -29,6 +29,7 @@
 
 #include "NOX_Common.H"
 #include "Basis.H"
+#include <vector>
 
 // Constructor
 Basis::Basis()
@@ -44,7 +45,8 @@ Basis::~Basis() {
 }
 
 // Calculates a linear 1D basis
-void Basis::getBasis(int gp, double *x, double *u, double *uold, double *aux)
+void Basis::getBasis(int gp, double *x, double *u, double *uold, 
+                vector<double*>& aux)
 {
   int N = 2;
   if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}
@@ -59,15 +61,17 @@ void Basis::getBasis(int gp, double *x, double *u, double *uold, double *aux)
   // Caculate basis function and derivative at GP.
   dx=0.5*(x[1]-x[0]);
   xx=0.0;
-  uu = duu = uuold = duuold = aaux = 0.0;
-  
+  uu = duu = uuold = duuold = 0.0;
+  aaux.clear();
+  aaux.assign(aux.size(), 0.0); 
   for (int i=0; i < N; i++) {
     xx += x[i] * phi[i];
     uu += u[i] * phi[i];
     duu += u[i] * dphide[i];
     uuold += uold[i] * phi[i];
     duuold += uold[i] * dphide[i];
-    aaux += aux[i] * phi[i];
+    for( int j = 0; j<aux.size(); j++)
+      aaux[j] += aux[j][i] * phi[i];
   }
 
   return;

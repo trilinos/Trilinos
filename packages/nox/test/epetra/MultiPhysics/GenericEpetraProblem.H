@@ -63,10 +63,13 @@ enum StoreUnknowns {Interleaved, Staggered}; // Not currently used
 // Finite Element Problem Class
 class GenericEpetraProblem { 
 
+  friend class Problem_Manager;
+
 public:
 
   // Constructor
-  GenericEpetraProblem(Epetra_Comm& Comm, int NumGlobalElements = 0);
+  GenericEpetraProblem(Epetra_Comm& Comm, int NumGlobalElements = 0,
+                       string name = "");
 
   // Destructor
   virtual ~GenericEpetraProblem();
@@ -94,6 +97,12 @@ public:
   // Query the unique int id for this problem
   virtual int getId() const { return myId; }; 
 
+  // Query the name for this problem
+  virtual string getName() const { return myName; }; 
+
+  // Set the name for this problem
+  virtual void setName(string name_) { myName = name_; }; 
+
   // Set the problem Manager with which this problem interacts 
   // (ie for transfers)
   virtual void setManager(Problem_Manager* manager_) 
@@ -114,9 +123,6 @@ public:
   // Create storage for auxillary data received from other problems via
   // transfer operations
   virtual void createAuxillaryVectors(); 
-
-  // Set auxillary (other problem variables) vector
-  virtual void setAuxillarySolution(const Epetra_Vector&); 
 
   // Create Standard and Overlap (ghost) maps
   virtual void createMaps(); 
@@ -154,6 +160,7 @@ protected:
 protected:
 
   int myId;                     // Unique integer id for this Problem
+  string myName;		// String identifier for convenience
   Problem_Manager* myManager;   // Problem Manager with which this problem interacts
   //Epetra_Map *StandardMap;
   Epetra_Map *OverlapMap;

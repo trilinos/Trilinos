@@ -65,6 +65,9 @@ public:
   GenericEpetraProblem& getProblem(int id);
 
   // Create a dependence of Problem A equations on Problem B variables
+  void createDependency(string nameA, string nameB);
+
+  // Create a dependence of Problem A equations on Problem B variables
   void createDependency(GenericEpetraProblem& problemA,
                         GenericEpetraProblem& problemB);
 
@@ -126,6 +129,12 @@ public:
 
   // Solve problems using matrix-free coupling
   void outputSolutions(int timeStep = 0);
+
+  // Print status of Problem Manager, problems and dependencies
+  void outputStatus();
+
+  // Return the problem name queries
+  string getName(int id) { return Names.find(id)->second; };
 
 
   // These allow inheritance from GenericEpetraProblem base class

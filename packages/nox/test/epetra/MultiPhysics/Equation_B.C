@@ -36,14 +36,16 @@
 #include "Epetra_CrsMatrix.h"
 #include "Basis.H"
 
+#include "Problem_Manager.H"
 #include "Equation_B.H"
 
 // Constructor - creates the Epetra objects (maps and vectors) 
-Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes) :
-  GenericEpetraProblem(comm, numGlobalNodes),
+Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
+                                           string name_) :
+  GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
   xmax(1.0),
-  dt(1.0e+100)
+  dt(1.0e-1)
 {
 
   // Create mesh and solution vectors
@@ -66,7 +68,7 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes) :
   // Next we create and initialize the solution vector
   initialSolution = new Epetra_Vector(*StandardMap);
   initializeSolution();
-  initialSolution->PutScalar(0.0);
+//  initialSolution->PutScalar(0.0);
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
   AA = new Epetra_CrsGraph(Copy, *StandardMap, 0);
@@ -180,10 +182,18 @@ bool Equation_B::evaluate(
     // Do nothing for now
   }
 
+  int numAux = auxProblems.size();
+
+  // Create a String to local vector lookup map
+  map<string, int> findVector;
+  for( int i = 0; i<numAux; i++)
+    findVector.insert(
+        pair<string, int>( myManager->getName(auxProblems[i]), i) );
+  
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  Epetra_Vector aux(*OverlapMap);
+  vector<Epetra_Vector> aux(numAux, Epetra_Vector(*OverlapMap));
   Epetra_Vector xvec(*OverlapMap);
 
   // Export Solution to Overlap vector
@@ -194,8 +204,9 @@ bool Equation_B::evaluate(
   // treatment for the current soution vector arises from use of
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
-//  aux.Import(*(auxSolutions.find(1)->second), *Importer, Insert);
-  aux.Import(*(auxSolutions.find(auxProblems[0])->second), *Importer, Insert);
+  for( int i = 0; i<numAux; i++ )
+    aux[i].Import(*(auxSolutions.find(auxProblems[i])->second), 
+                   *Importer, Insert);
   xvec.Import(*xptr, *Importer, Insert);
   if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
     // Overlap vector for solution received from FD coloring, so simply reorder
@@ -205,7 +216,7 @@ bool Equation_B::evaluate(
     u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int i,j,ierr;
+  int j,ierr;
   int OverlapNumMyNodes = OverlapMap->NumMyElements();
 
   int OverlapMinMyNodeGID;
@@ -221,13 +232,27 @@ bool Equation_B::evaluate(
   double xx[2];
   double uu[2]; 
   double uuold[2];
-  double aaux[2];
+  vector<double*> aaux(numAux, new double[2]);
   Basis basis;
 
   
   // Zero out the objects that will be filled
-  if ( fillMatrix ) i = A->PutScalar(0.0);
-  if ( fillF ) i = rhs->PutScalar(0.0);
+  if ( fillMatrix ) A->PutScalar(0.0);
+  if ( fillF ) rhs->PutScalar(0.0);
+
+  int id_temp; // Index for needed auxillary Species vector
+
+  map<string, int>::iterator id_ptr = findVector.find("Temperature");
+  if( id_ptr == findVector.end() ) {
+    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
+         << "vector for problem \"Temperature\" !!" << endl;
+    cout << "Using auxillary vectors in order of dependence registration."
+         << endl;
+    //myManager->outputStatus();
+    id_temp = 0; // First auxillary field
+  }
+  else
+    id_temp = id_ptr->second;
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
@@ -241,13 +266,15 @@ bool Equation_B::evaluate(
       uu[1] = u[ne+1];
       uuold[0] = uold[ne];
       uuold[1] = uold[ne+1];
-      aaux[0] = aux[ne];
-      aaux[1] = aux[ne+1];
+      for( int i = 0; i<numAux; i++ ) {
+        aaux[i][0] = aux[i][ne];
+        aaux[i][1] = aux[i][ne+1];
+      }
       // Calculate the basis function at the gauss point
       basis.getBasis(gp, xx, uu, uuold, aaux);
 
       // Loop over Nodes in Element
-      for (i=0; i< 2; i++) {
+      for (int i=0; i< 2; i++) {
 	row=OverlapMap->GID(ne+i);
 	if (StandardMap->MyGID(row)) {
 	  if ( fillF ) {
@@ -255,8 +282,8 @@ bool Equation_B::evaluate(
 	      +basis.wt*basis.dx
 	      *((basis.uu - basis.uuold)/dt * basis.phi[i] 
 	      +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
-              + basis.phi[i] * ( -beta*basis.aaux
-                 + basis.aaux*basis.aaux*basis.uu) );
+              + basis.phi[i] * ( -beta*basis.aaux[id_temp]
+                 + basis.aaux[id_temp]*basis.aaux[id_temp]*basis.uu) );
 	  }
 	}
 	// Loop over Trial Functions
@@ -268,7 +295,8 @@ bool Equation_B::evaluate(
                       basis.phi[j]/dt*basis.phi[i] 
                       +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.dphide[j]*
                                                         basis.dphide[i]
-                      + basis.phi[i] * basis.aaux*basis.aaux*basis.phi[j] );
+                      + basis.phi[i] * basis.aaux[id_temp]*basis.aaux[id_temp]*
+		          basis.phi[j] );
 	      ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
 	    }
 	  }
