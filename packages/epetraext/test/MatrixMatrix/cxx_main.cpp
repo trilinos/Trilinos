@@ -492,20 +492,24 @@ int read_matrix_file_names(Epetra_Comm& Comm,
     broadcast_name(Comm, (const char*&)A_file);
     broadcast_name(Comm, (const char*&)B_file);
     broadcast_name(Comm, (const char*&)C_file);
+#ifdef EPETRA_MPI
     int len = transA ? 1 : 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     len = transB ? 1 : 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
   }
   else {
     broadcast_name(Comm, (const char*&)A_file);
     broadcast_name(Comm, (const char*&)B_file);
     broadcast_name(Comm, (const char*&)C_file);
+#ifdef EPETRA_MPI
     int len = 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     transA = len==1 ? true : false;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     transB = len==1 ? true : false;
+#endif
   }
 
   return(0);
