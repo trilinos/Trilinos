@@ -84,7 +84,7 @@ main (int argc, char *argv[])
        fprintf (g, "\n");
        }
     rewind (g);
-    fprintf (g, "%d %d 00\n", nRow, nPin);    /* header line */
+    fprintf (g, "%d %d 00", nRow, nPin);    /* header line */
     fclose (g);
 
     free (storage);
