@@ -182,11 +182,17 @@
 /* Define if want to build teuchos-complex */
 #undef HAVE_TEUCHOS_COMPLEX
 
+/* Define if want to build teuchos-examples */
+#undef HAVE_TEUCHOS_EXAMPLES
+
 /* Define if want to build teuchos-extended */
 #undef HAVE_TEUCHOS_EXTENDED
 
 /* Define if want to build teuchos-gnu_mp */
 #undef HAVE_TEUCHOS_GNU_MP
+
+/* Define if want to build teuchos-tests */
+#undef HAVE_TEUCHOS_TESTS
 
 /* Define to 1 if you have the <typeinfo> header file. */
 #undef HAVE_TYPEINFO

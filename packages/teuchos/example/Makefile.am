@@ -26,12 +26,10 @@
 # ************************************************************************
 #@HEADER
 
-if HAVE_TEUCHOS_EXTENDED
 
-SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
-
-else
-
-SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
-
+if BUILD_TEUCHOS_EXAMPLES
+STANDARD_SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
 endif
+
+SUBDIRS = $(STANDARD_SUBDIRS)
+
