@@ -68,14 +68,12 @@ EXTRA_DIST = \
 	doc/Tutorial/epetra \
 	doc/Tutorial/HBMatrices \
 	doc/Tutorial/ifpack \
-	doc/Tutorial/latex \
 	doc/Tutorial/Makefile \
 	doc/Tutorial/ml \
 	doc/Tutorial/nox \
 	doc/Tutorial/README \
 	doc/Tutorial/teuchos \
-	doc/Tutorial/triutils \
-	doc/Tutorial/tutorial.pdf
+	doc/Tutorial/triutils 
 
 ## #######################################################################
 ## Tools in the auxillary directory 
