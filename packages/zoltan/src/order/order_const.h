@@ -40,7 +40,7 @@ typedef struct Zoltan_Order_Struct ZOS;
  */
 
 struct Zoltan_Order_Options {
-  char *order_type;		/* In: Ordering is LOCAL or GLOBAL? */
+  char order_type[15];		/* In: Ordering is LOCAL or GLOBAL? */
   int start_index;		/* In: Permutations start at 0 or 1? */
   int reorder;			/* In: Permute from existing ordering? */
   int use_order_info;		/* In: Put order info into ZOS? */

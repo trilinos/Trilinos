@@ -70,7 +70,7 @@ int Zoltan_Order(
   int *vtxdist;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
-  char msg[256], method[80], order_type[80];
+  char msg[256], method[80];
   int comm[2],gcomm[2]; 
   ZOLTAN_ORDER_FN *Order_fn;
   struct Zoltan_Order_Options opt;
@@ -192,12 +192,12 @@ int Zoltan_Order(
   if (!(opt.return_args & RETURN_RANK)){
     /* Compute rank from iperm */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-    Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, order_type, opt.start_index);
+    Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, opt.order_type, opt.start_index);
   }
   else if (!(opt.return_args & RETURN_IPERM)){
     /* Compute iperm from rank */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-    Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, order_type, opt.start_index);
+    Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, opt.order_type, opt.start_index);
   }
   ZOLTAN_FREE(&vtxdist);
 
