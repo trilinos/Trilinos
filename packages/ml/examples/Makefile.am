@@ -22,11 +22,11 @@ else
 if HAVE_MPI
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-                  ml_aztec_simple_METIS
+                  ml_aztec_simple_METIS ml_readfile
 else
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-                  ml_aztec_simple_METIS
+                  ml_aztec_simple_METIS ml_readfile
 endif
 
 endif
@@ -45,6 +45,7 @@ ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
 ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
 ml_example3d_SOURCES = $(srcdir)/ml_example3d.c
 ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
+ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
 endif
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
@@ -136,4 +137,8 @@ ml_simple_max_LINK = ${mllink}
 ml_aztec_simple_METIS_CFLAGS = ${ml_common_include_locations}
 ml_aztec_simple_METIS_LDADD = ${ml_libs}
 ml_aztec_simple_METIS_LINK = ${mllink}
+
+ml_readfile_CFLAGS = ${ml_common_include_locations}
+ml_readfile_LDADD = ${ml_libs}
+ml_readfile_LINK = ${mllink}
 endif

@@ -101,12 +101,12 @@ install_sh = @install_sh@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_readfile
 
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide mlguide_par
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_readfile
 
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
@@ -122,6 +122,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
 @ML_STANDALONE_MODE_FALSE@ml_example3d_SOURCES = $(srcdir)/ml_example3d.c
 @ML_STANDALONE_MODE_FALSE@ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
+@ML_STANDALONE_MODE_FALSE@ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
 
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
@@ -208,6 +209,10 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_METIS_CFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_METIS_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_METIS_LINK = ${mllink}
+
+@ML_STANDALONE_MODE_FALSE@ml_readfile_CFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_readfile_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_readfile_LINK = ${mllink}
 subdir = examples
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
@@ -222,7 +227,8 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
@@ -235,7 +241,8 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = \
@@ -292,6 +299,15 @@ ml_example3d_OBJECTS = $(am_ml_example3d_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
 ml_example3d_LDFLAGS =
+@ML_STANDALONE_MODE_FALSE@am_ml_readfile_OBJECTS = \
+@ML_STANDALONE_MODE_FALSE@	ml_readfile-ml_readfile.$(OBJEXT)
+ml_readfile_OBJECTS = $(am_ml_readfile_OBJECTS)
+@ML_STANDALONE_MODE_TRUE@ml_readfile_DEPENDENCIES =
+@ML_STANDALONE_MODE_FALSE@ml_readfile_DEPENDENCIES = \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
+ml_readfile_LDFLAGS =
 @ML_STANDALONE_MODE_FALSE@am_ml_simple_max_OBJECTS = \
 @ML_STANDALONE_MODE_FALSE@	ml_simple_max-ml_simple_max.$(OBJEXT)
 ml_simple_max_OBJECTS = $(am_ml_simple_max_OBJECTS)
@@ -327,6 +343,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example2d-ml_example2d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example3d-ml_example3d.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_simple_max-ml_simple_max.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mlguide-mlguide.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mlguide_par-mlguide_par.Po
@@ -338,10 +355,11 @@ CFLAGS = @CFLAGS@
 DIST_SOURCES = $(ml_aztec_simple_SOURCES) \
 	$(ml_aztec_simple_METIS_SOURCES) $(ml_example1d_SOURCES) \
 	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
-	$(ml_example3d_SOURCES) $(ml_simple_max_SOURCES) \
-	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
+	$(ml_example3d_SOURCES) $(ml_readfile_SOURCES) \
+	$(ml_simple_max_SOURCES) $(mlguide_SOURCES) \
+	$(mlguide_par_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_simple_max_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_readfile_SOURCES) $(ml_simple_max_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 all: all-am
 
@@ -380,6 +398,10 @@ ml_example3d-ml_example3d.$(OBJEXT): $(srcdir)/ml_example3d.c
 ml_example3d$(EXEEXT): $(ml_example3d_OBJECTS) $(ml_example3d_DEPENDENCIES) 
 	@rm -f ml_example3d$(EXEEXT)
 	$(ml_example3d_LINK) $(ml_example3d_LDFLAGS) $(ml_example3d_OBJECTS) $(ml_example3d_LDADD) $(LIBS)
+ml_readfile-ml_readfile.$(OBJEXT): $(srcdir)/ml_readfile.c
+ml_readfile$(EXEEXT): $(ml_readfile_OBJECTS) $(ml_readfile_DEPENDENCIES) 
+	@rm -f ml_readfile$(EXEEXT)
+	$(ml_readfile_LINK) $(ml_readfile_LDFLAGS) $(ml_readfile_OBJECTS) $(ml_readfile_LDADD) $(LIBS)
 ml_simple_max-ml_simple_max.$(OBJEXT): $(srcdir)/ml_simple_max.c
 ml_simple_max$(EXEEXT): $(ml_simple_max_OBJECTS) $(ml_simple_max_DEPENDENCIES) 
 	@rm -f ml_simple_max$(EXEEXT)
@@ -405,6 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example3d-ml_example3d.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_simple_max-ml_simple_max.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide-mlguide.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide_par-mlguide_par.Po@am__quote@
@@ -495,6 +518,18 @@ ml_example3d-ml_example3d.obj: $(srcdir)/ml_example3d.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_example3d-ml_example3d.Po' tmpdepfile='$(DEPDIR)/ml_example3d-ml_example3d.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example3d_CFLAGS) $(CFLAGS) -c -o ml_example3d-ml_example3d.obj `cygpath -w $(srcdir)/ml_example3d.c`
+
+ml_readfile-ml_readfile.o: $(srcdir)/ml_readfile.c
+@AMDEP_TRUE@	source='$(srcdir)/ml_readfile.c' object='ml_readfile-ml_readfile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_readfile-ml_readfile.Po' tmpdepfile='$(DEPDIR)/ml_readfile-ml_readfile.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readfile_CFLAGS) $(CFLAGS) -c -o ml_readfile-ml_readfile.o `test -f '$(srcdir)/ml_readfile.c' || echo '$(srcdir)/'`$(srcdir)/ml_readfile.c
+
+ml_readfile-ml_readfile.obj: $(srcdir)/ml_readfile.c
+@AMDEP_TRUE@	source='$(srcdir)/ml_readfile.c' object='ml_readfile-ml_readfile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_readfile-ml_readfile.Po' tmpdepfile='$(DEPDIR)/ml_readfile-ml_readfile.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readfile_CFLAGS) $(CFLAGS) -c -o ml_readfile-ml_readfile.obj `cygpath -w $(srcdir)/ml_readfile.c`
 
 ml_simple_max-ml_simple_max.o: $(srcdir)/ml_simple_max.c
 @AMDEP_TRUE@	source='$(srcdir)/ml_simple_max.c' object='ml_simple_max-ml_simple_max.o' libtool=no @AMDEPBACKSLASH@
