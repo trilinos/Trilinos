@@ -472,12 +472,13 @@ the following \trilinos~packages: \ifpack, \teuchos, \triutils,
   \amesos.}, \mumps.  It is assumed that you have already built the
 appropriate libraries (e.g., {\tt libsuperlu.a}) and have the header
 files.  To configure \ML\ with one of the above TPLs, you must enable the
-particular TPL interface in \ML. All of the options below are disabled
-by default.
-
+particular TPL interface in \ML. 
 \medskip
 
-The same configure options that one uses to enable certain other Trilinos packages also enables the interfaces to those packages within \ML: \smallskip
+The same configure options that one uses to enable certain other Trilinos
+packages also enables the interfaces to those packages within \ML.
+
+\smallskip
 
 \choicebox{\tt --enable-epetra}
 {Enable support for the \epetra\ package.}
@@ -514,7 +515,21 @@ for various eigenvalue computations.}
 
 \medskip
 
-The following configure line options enable interfaces in \ML\ to certain TPLs.
+To know whether the {\tt --enable-}{\sl package} 
+options below reported are enabled or disabled by default\footnote{This refers
+  to configurations from the Trilinos top level (that is,
+  using {\tt \$TRILINOS\_HOME/configure}).
+  If \ML\ if configured from
+    the \ML\ level (that is, the user directly calls {\tt \$ML\_HOME/configure}), 
+  then all the {\tt --enable-}{\sl package} are off by
+    default.},  please 
+consult the configure at the Trilinos level by typing
+\begin{verbatim}
+$TRILINOS_HOME/configure --help
+\end{verbatim}
+
+The following configure line options enable interfaces in \ML\ to certain
+TPLs. By default, all the {\tt --with-ml-}{\sl TPL} options are disabled.
 \smallskip
 
 %
