@@ -133,14 +133,24 @@ ostream& NormF::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  if (toleranceType == Absolute) {
-    stream << "Absolute F-Norm = " << Utils::sci(normF) << " < " 
-	   << Utils::sci(trueTolerance);
-  }
-  else {
-    stream << "Relative F-Norm = " << Utils::sci(normF) << " < " 
-	   << Utils::sci(trueTolerance);
-  }
+
+  if (toleranceType == Absolute) 
+    stream << "Absolute";
+  else 
+    stream << "Relative";
+
+  stream << " F-";
+
+  if (normType == Abstract::Vector::TwoNorm)
+    stream << "TwoNorm";
+  else if (normType == Abstract::Vector::OneNorm)
+    stream << "OneNorm";
+  else if (normType == Abstract::Vector::MaxNorm)
+    stream << "MaxNorm";
+
+  stream << " = " << Utils::sci(normF);
+  stream << " < " << Utils::sci(trueTolerance);
   stream << endl;
+
   return stream;
 }
