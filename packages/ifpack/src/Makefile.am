@@ -45,6 +45,9 @@ CORE_H = \
 
 CORE = 
 
+UTIL_H = \
+	$(srcdir)/Ifpack_Version.h
+
 ### add in paths as needed - trying to prevent 
 ### unnecessary paths from being listed - see old.Makefile for ideas
 ### Should I add a dependence on AztecOO??  Library doesn't necessarily have
@@ -117,6 +120,7 @@ IFPACK_LIB = libifpack.a
 
 IFPACK_H = \
 	$(CORE_H) \
+	$(UTIL_H) \
 	$(SERIAL_H) \
 	$(USERBASE_H) \
 	$(LANG_WRAPS_H) \

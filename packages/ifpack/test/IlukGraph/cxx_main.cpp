@@ -34,7 +34,7 @@
 #include <string.h>
 #include <math.h>
 #include "Epetra_Map.h"
-
+#include "Ifpack_Version.h"
 #include "Epetra_CrsGraph.h"
 #include "Ifpack_IlukGraph.h"
 #ifdef EPETRA_MPI
@@ -90,6 +90,10 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
+
+  if (verbose && MyPID==0)
+    cout << Ifpack_Version() << endl << endl;
+
   if (verbose) cout << Comm <<endl;
 
   int sqrtNumProc = (int) ceil(sqrt((double) NumProc));

@@ -39,6 +39,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Object.h"
+#include "Ifpack_Version.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -49,23 +50,23 @@
 
 // prototype
 int power_method(Epetra_CrsMatrix& A, 
-		 Epetra_Vector& q,
-		 Epetra_Vector& z, 
-		 Epetra_Vector& resid, 
-		 double * lambda, int niters, double tolerance,
-		 bool verbose);
+		Epetra_Vector& q,
+		Epetra_Vector& z, 
+		Epetra_Vector& resid, 
+		double * lambda, int niters, double tolerance,
+		bool verbose);
 
- 
+
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j;
+	int ierr = 0, i, j;
 
 #ifdef EPETRA_MPI
 
-  // Initialize MPI
+	// Initialize MPI
 
-  MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
+	MPI_Init(&argc,&argv);
+	int size, rank; // Number of MPI processes, My process ID
 
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -84,8 +85,6 @@ int main(int argc, char *argv[])
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-
-
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
   //  if (rank==0) cin >> tmp;
@@ -93,6 +92,10 @@ int main(int argc, char *argv[])
 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
+
+  if (verbose && MyPID==0)
+    cout << Ifpack_Version() << endl << endl;
+
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
               << " is alive."<<endl;
 
