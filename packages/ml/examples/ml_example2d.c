@@ -32,6 +32,7 @@ double parasails_thresh     = 0.01;
 int    parasails_nlevels    = 0;
 double parasails_filter     = 0.;
 double parasails_loadbal    = 0.;
+double *scaling_vect = NULL;
 
 
 /****************************************************************************/
@@ -203,6 +204,10 @@ int main(int argc, char *argv[])
 	fclose(xfile);
 	
 #endif
+	ML_MSR_scalerhs(b, scaling_vect, Amat->data_org[AZ_N_internal] +
+                    Amat->data_org[AZ_N_border]);
+	ML_MSR_scalesol(x, scaling_vect, Amat->data_org[AZ_N_internal] +
+			Amat->data_org[AZ_N_border]);
 
       if (use_cg == 0) {
          ML_Iterate(ml, x, b); 
@@ -488,6 +493,9 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
    (*Amat_f)->matrix_type  = data_org[AZ_matrix_type];
    data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
    ML_GridAGX_Destroy(&f_mesh); 
+   ML_MSR_sym_diagonal_scaling(*Amat_f, proc_config, &scaling_vect);
+
+
 
    if (flag == 1) {
 
@@ -538,6 +546,8 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 
       ML_Aggregate_Set_NullSpace(*ml_ag, num_PDE_eqns, ndim, null_vect, leng); 
       if (null_vect != NULL) free(null_vect);
+      ML_Aggregate_Scale_NullSpace(*ml_ag, scaling_vect,leng);
+
       coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
                                                           ML_DECREASING, *ml_ag);
       coarsest_level = N_levels - coarsest_level;
@@ -864,6 +874,31 @@ void create_msr_matrix_conv_diff(int update[], double **val, int **bindx,
 /******************************************************************************/
 /******************************************************************************/
 
+double *biggie = NULL;
+double f(double x, double y, int m)
+{
+  double mpi = 3.14159;
+  static int seed = 493217272;
+  int i;
+
+  return(1.);
+  if (biggie == NULL) {
+    biggie = (double *) malloc(sizeof(double)*2*m*2*m + 1000);
+    for (i = 0; i < 4*m*m + 1; i++) biggie[i] = pow(10.,AZ_srandom1(&seed));
+  }
+  return( biggie[   (int) (2.*x*m + 2.*y*m + .00001) ] );
+  printf("%e\n",2.*x*m);
+  mpi *= (double) m;
+  /*
+  printf("a few %e %e   %e %e\n",
+	 mpi*x,mpi*y,sin(mpi*x),sin(mpi*y));
+  */
+  return( sin(mpi*x) * sin(mpi*y) + 1.);
+  return( pow(sin(mpi*x),2.) + pow(sin(mpi*y),2.) );
+  if ((x < .315) && (x > .2) ) return(1.0e-5);
+  if ((x < .515) && (x > .4) ) return(1.0e+5);
+  if ((x < .315) && (x > .2) ) return(1.0e-5);
+}
 void add_row_5pt(int row, int location, double val[], 
 								 int bindx[], int *n)
 
@@ -890,6 +925,7 @@ void add_row_5pt(int row, int location, double val[],
   int m;
   int        k;
   int        NP;
+  double x,y,h;
 
   /* determine grid dimensions */
 
@@ -917,6 +953,12 @@ void add_row_5pt(int row, int location, double val[],
   k  = bindx[location];
   NP = num_PDE_eqns;
 
+  x = (double )( (row/NP)%m);
+  y = (double )( (row/(NP*m)));
+  h = 1./((double) m);
+
+  x = h/2. + x/((double) m);
+  y = h/2. + y/((double) m);
   /*
    * Check neighboring points in each direction and add nonzero entry if
    * neighbor exists.
@@ -926,9 +968,19 @@ void add_row_5pt(int row, int location, double val[],
   bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = -1.00;
   bindx[k] = row + m*NP; if ((row/(NP*m))%m != m-1) val[k++] = -1.00;
   bindx[k] = row - m*NP; if ((row/(NP*m))%m !=   0) val[k++] = -1.00;
+  /* MB
+  bindx[k] = row + NP;   if ((row/NP)%m !=     m-1) val[k++] = -f(x+h/2.,y,m);
+  bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = -f(x-h/2.,y,m);
+  bindx[k] = row + m*NP; if ((row/(NP*m))%m != m-1) val[k++] = -f(x,y+h/2.,m);
+  bindx[k] = row - m*NP; if ((row/(NP*m))%m !=   0) val[k++] = -f(x,y-h/2.,m);
+  */
 
   bindx[location+1] = k;
   val[location]     = 4.0;
+  /* ML
+  val[location]     = f(x+h/2.,y,m) + f(x-h/2.,y,m) + f(x,y+h/2.,m) 
+                       + f(x,y-h/2.,m);
+  */
 
 } /* add_row_5pt */
 
