@@ -79,9 +79,11 @@ namespace Teuchos
       /**
        * pi.
        */
-      static double pi() {return -1.0;} // RAB: M_PI does not exist!
-      //static double pi() {return M_PI;}
-
+#ifdef M_PI
+      static double pi() {return M_PI;}
+#else
+      static double pi() {return 3.14159265358979323846;}
+#endif
       /**
        * Get the chopping value, below which numbers are considered to be zero
        */
