@@ -169,7 +169,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 #endif
 
 #ifdef MARZIO
-#define USE_AT
+#define USE_ATandT
 #endif
 #ifdef USE_AT
    char str[80];
@@ -381,6 +381,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    Amat->num_PDEs = ag->num_PDE_eqns;
    prev_P_tentatives = (ML_Operator **) ag->P_tentative;
    max_eigen = Amat->lambda_max;
+
+#ifdef EXTREME_DEBUG
+   printf("### %e %e\n",  ag->smoothP_damping_factor, max_eigen);
+#endif
 
    /*
    widget.near_bdry = (char *) ML_allocate(sizeof(char)*Amat->outvec_leng);
@@ -618,7 +622,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        max_eigen = t3->lambda_max;
      }
 #endif
-    if ((max_eigen < -666.) && (max_eigen > -667)) {
+
+     if ((max_eigen < -666.) && (max_eigen > -667)) {
 
       if ( ag->spectral_radius_scheme == 1 ) /* compute it using CG */
       {
@@ -718,7 +723,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      ML_Operator_Print(AGGsmoother,matname);
      printf("\n\n---------------------------------\n\n");
 */
-
+#ifdef EXTREME_DEBUG
+     printf("\n###the damping parameter is %e\n\n",widget.omega);
+#endif
+     
      ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
 
 #ifdef SYMMETRIZE
@@ -1975,7 +1983,7 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      /* clean and regenerate P */
 
      mat = &(ml->Pmat[mesh_level]);
-     if (ag->smoothP_damping_factor != 0.0) {
+     if (ag->smoothP_damping_factor != 0.0 ) {
        ML_Operator_Clean(mat);
        ML_Operator_Init(mat,ml->comm);
        ML_AGG_Gen_Prolongator(ml, old_mesh_level, mesh_level, (void*) ag);
@@ -1984,7 +1992,7 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      /* clean and regenerate R */
 
      mat = &(ml->Rmat[old_mesh_level]);
-     if (ag->smoothP_damping_factor != 0.0) {
+     if (ag->smoothP_damping_factor != 0.0 ) {
        ML_Operator_Clean(mat);
        ML_Operator_Init(mat,ml->comm);
        ML_Gen_Restrictor_TransP(ml, old_mesh_level, mesh_level);
@@ -2031,7 +2039,7 @@ int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
    /* ----------------------------------------------------------------- */
 
    /* FIXME: I don't know when P_tentative is freed !!!!! */
-   if( ag->smoothP_damping_factor == 0.0 ) ag->Restriction_smoothagg_transpose == ML_FALSE;
+   /*   if( ag->smoothP_damping_factor == 0.0 ) ag->Restriction_smoothagg_transpose == ML_FALSE;*/
    if( ag->Restriction_smoothagg_transpose == ML_TRUE ) ag->keep_P_tentative = ML_TRUE;
    
    idata = 0;
@@ -2205,7 +2213,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Operator *t2 = NULL, *t3 = NULL;
    ML_Aggregate *ag = (ML_Aggregate *) data;
    struct ML_Field_Of_Values * fov;
-   double dtemp, eta;
+   double dtemp, dtemp2, eta;
 #ifdef ML_TIMING
    double t0;
    t0 =  GetClock();
@@ -2227,14 +2235,64 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    /* This is not an error! Here use R (this P will become R later)          */
    /* ********************************************************************** */
 
-   if( ag->smoothP_damping_factor != 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+   if( ag->smoothP_damping_factor == 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+
+     if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+       printf("\n(level %d) : Using non-smoothed aggregation\n\n",
+	      level );
+     }
+     
+   } else if( ag->smoothP_damping_factor != 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
      
      fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
 
      /* compute box surrounding field-of-values */
 
-#ifdef ML_HAVE_ANASAZI
-     ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+#ifdef HAVE_ML_ANASAZI
+     if( fov->choice == 0 ) {
+
+       fov->eta = 0;
+       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	 printf("\n(level %d) : Using non-smoothed aggregation\n\n",
+		level );
+       }
+       
+     } else if( fov->choice == 1 ) {
+       
+       ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
+		level,
+		fov->real_max );
+	 printf("Field of Values Box (level %d) : Max Imag = %e\n",
+		level,
+		fov->imag_max );
+	 printf("Field of Values Box (level %d) : eta = %e\n\n",
+		level,
+		fov->eta );
+       }
+       
+     } else if( fov->choice == 2 ) {
+
+       ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+       fov->eta = sqrt(pow(fov->real_max,2) + pow(fov->imag_max,2));
+
+       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	 printf("\nLargest eigenvalue (in modulus) = %e\n\n",
+		fov->eta );
+       }
+
+     } else {
+       
+       fprintf( stderr,
+		"ERROR: value of choice not correct (%d)\n"
+		"ERROR: (file %s, line %d)\n",
+		fov->choice,
+		__FILE__,
+		__LINE__ );
+       exit( EXIT_FAILURE );
+       
+     }
 #else
      fprintf( stderr,
 	      "ERROR: You must compile with --with-ml_anasazi for eigen-analysis\n"
@@ -2244,38 +2302,28 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      exit( EXIT_FAILURE );
 #endif
      
-     if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-       printf("Field of Values Box (level %d) : Max Real = %e\n",
-	      level,
-	      fov->real_max );
-       printf("Field of Values Box (level %d) : Max Imag = %e\n",
-	      level,
-	      fov->imag_max );
-       printf("Field of Values Box (level %d) : eta = %e\n",
-	      level,
-	      fov->eta );
-     }
      
      eta = fov->eta;
-     dtemp = fov->R_coeff[0] + eta * fov->R_coeff[1] + pow(eta,2) * fov->R_coeff[2];
+     dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2) * (fov->R_coeff[2]);
+     dtemp2 = fov->real_max;
+		      
      ag->smoothP_damping_factor = dtemp;
-     Amat->lambda_max = fov->real_max;
+     Amat->lambda_max = dtemp2;
 
      if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-       printf("Restriction smoother (level %d) : damping factor = %e\n",
+       printf("Restriction smoother (level %d) : damping factor = %e\n"
+	      "Restriction smoother (level %d) : ( = %e / %e)\n",
 	      level,
-	      ag->smoothP_damping_factor );
+	      ag->smoothP_damping_factor/dtemp2,
+	      level,
+	      dtemp,
+	      dtemp2);
      }
 
      ml->symmetrize_matrix = ML_FALSE;
      ag->keep_P_tentative = ML_YES;
      ag->use_transpose = ML_TRUE;
 
-     t3 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Transpose_byrow(Amat,t3);
-
-     ML_Operator_Destroy( &t3 );
-     
    }
 
    max_eigen = Amat->lambda_max;
@@ -2304,7 +2352,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
   prev_P_tentatives = (ML_Operator **) ag->P_tentative;
   
   struct ML_Field_Of_Values * fov;
-  double dtemp, eta;
+  double dtemp, dtemp2, eta;
   char str[80];
   
   Amat = &(ml->Amat[level]);
@@ -2345,17 +2393,23 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 
     fov = (struct ML_Field_Of_Values *)(ag->field_of_values);
     eta = fov->eta;
-    dtemp = fov->P_coeff[0] + eta * fov->P_coeff[1] + pow(eta,2) * fov->P_coeff[2];
     
+    dtemp = fov->P_coeff[0] + eta * (fov->P_coeff[1]) + pow(eta,2) * (fov->P_coeff[2]);
+    dtemp2 = fov->real_max;
+	      
+    ag->smoothP_damping_factor = dtemp;
+    Amat->lambda_max = dtemp2;
+
     if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-      printf("Prolongator smoother (level %d) : damping factor = %e\n",
+      printf("Prolongator smoother (level %d) : damping parameter = %e\n"
+	     "Prolongator smoother (level %d) : ( = %e / %e )\n",
 	     level,
-	     ag->smoothP_damping_factor );
+	     ag->smoothP_damping_factor/dtemp2,
+	     level,
+	     ag->smoothP_damping_factor,
+	     dtemp2 );
     }    
     
-    ag->smoothP_damping_factor = dtemp;
-    Amat->lambda_max = fov->real_max;
-
     /* use old-fashioned functions to create the actual prolongator based on A */
     
     ML_AGG_Gen_Prolongator(ml,level,next,data);

@@ -41,7 +41,7 @@ struct ML_Field_Of_Values
   double R_coeff[ML_POLY_ORDER_MAX];
   double P_coeff[ML_POLY_ORDER_MAX];
   void * EigenList;
-  
+  int choice;
 };
 
 
