@@ -66,7 +66,7 @@ libzoltan_mem.a
 <b>Other libraries used by this library:</b>
 </td>
 <td>
-libmpi.a.
+libmpi.a.  (See <a href="#MPI_NOTE">note</a> below.)
 </td>
 </tr>
 <tr VALIGN=TOP>
@@ -108,6 +108,19 @@ directly, applications using Zoltan can set the
 <a href="#Debug_Memory"><b>DEBUG_MEMORY</b></a> parameter
 used by this utility through calls to
 <a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>.
+</blockquote>
+</td>
+</tr>
+<tr valign=top>
+<td colspan="2">
+<a name="MPI_NOTE"></a>
+<b>Note on MPI usage:</b>
+<blockquote>
+MPI is used only to obtain the processor number (through a call to 
+MPI_Comm_rank) for print statements and error messages.
+If an application does not link with MPI, the memory utilities should be
+compiled with -DZOLTAN_NO_MPI; all output will then appear to be from 
+processor zero, even if it is actually from other processors.
 </blockquote>
 </td>
 </tr>
