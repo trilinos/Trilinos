@@ -1,3 +1,4 @@
+#define MB_MODIF
 /*****************************************************************************/
 /* Copyright 1999, Sandia Corporation. The United States Government retains  */
 /* a nonexclusive license in this software as prescribed in AL 88-1 and AL   */
@@ -40,6 +41,7 @@ double parasails_loadbal    = 0.;
   int    *update_index = NULL, *extern_index = NULL;
   int    *cpntr = NULL, *bindx = NULL, N_update, iii;
 
+double *scaling_vect = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -76,6 +78,7 @@ ML_Operator *Amatrix;
 int *rowi_col = NULL, rowi_N, count2, ccc;
 double *rowi_val = NULL;
 int max_nz_row, big_ind = -1, ii;
+double max_diag, min_diag, max_sum, sum;
 #ifdef ML_partition
    FILE *fp2;
    int count;
@@ -130,7 +133,7 @@ int max_nz_row, big_ind = -1, ii;
   if (proc_config[AZ_N_procs] == 1) i = AZ_linear;
   else i = AZ_file;
   AZ_read_update(&N_update, &update, proc_config, N_grid_pts, num_PDE_eqns,i);
-	
+
   AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
 
 
@@ -138,7 +141,6 @@ int max_nz_row, big_ind = -1, ii;
   /* all block (including the ghost nodes the same size.       */
 
   AZ_block_MSR(&bindx, &val, N_update, num_PDE_eqns, update);
-
 
   AZ_transform(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr,
@@ -150,6 +152,8 @@ int max_nz_row, big_ind = -1, ii;
   Amat->matrix_type  = data_org[AZ_matrix_type];
 	
   data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
+
+  ML_MSR_sym_diagonal_scaling(Amat, proc_config, &scaling_vect);  
 			
   start_time = AZ_second();
 
@@ -189,8 +193,14 @@ int max_nz_row, big_ind = -1, ii;
 #endif
 	
   ML_Aggregate_Create( &ag );
+/*
   ML_Aggregate_Set_CoarsenScheme_MIS(ag);
+*/
+#ifdef MB_MODIF
+  ML_Aggregate_Set_DampingFactor(ag,1.55);
+#else
   ML_Aggregate_Set_DampingFactor(ag,1.5);
+#endif
   ML_Aggregate_Set_Threshold(ag, 0.0);
   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 
@@ -198,6 +208,17 @@ int max_nz_row, big_ind = -1, ii;
   /* read in the rigid body modes */
 
    Nrigid = 0;
+#ifdef MB_MODIF
+  /* to ensure compatibility with RBM dumping software */
+   if (proc_config[AZ_node] == 0) {
+      sprintf(filename,"rigid_body_mode%02d",Nrigid+1);
+      while( (fp = fopen(filename,"r")) != NULL) {
+          fclose(fp);
+          Nrigid++;
+          sprintf(filename,"rigid_body_mode%02d",Nrigid+1);
+      }
+    }
+#else
    if (proc_config[AZ_node] == 0) {
       sprintf(filename,"rigid_body_mode%d",Nrigid+1);
       while( (fp = fopen(filename,"r")) != NULL) {
@@ -206,6 +227,7 @@ int max_nz_row, big_ind = -1, ii;
           sprintf(filename,"rigid_body_mode%d",Nrigid+1);
       }
     }
+#endif
     Nrigid = AZ_gsum_int(Nrigid,proc_config);
 
     if (Nrigid != 0) {
@@ -217,13 +239,40 @@ int max_nz_row, big_ind = -1, ii;
 
     rhs   = (double *) malloc(leng*sizeof(double));
     xxx   = (double *) malloc(leng*sizeof(double));
+
     for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0; 
 	
 
 
     for (i = 0; i < Nrigid; i++) {
+#ifdef MB_MODIF
+       sprintf(filename,"rigid_body_mode%02d",i+1);
+       printf("*** processing file: %s\n", filename);
+       {
+	       int   ndof; 
+	       int   iloc, locrow; 
+	       FILE *fd;
+	       fd = fopen(filename, "r");
+	       fscanf(fd, "%d", &ndof);
+	       mode    = (double *)malloc(ndof*sizeof(double));
+	       garbage = (int *)malloc(ndof*sizeof(int));
+
+	       for (iloc=0; iloc<ndof; iloc++) { 
+		    fscanf(fd, "%d%lg", &locrow, &mode[iloc]);
+		    if (locrow != iloc) { 
+			    printf("*** file %s corrupt.\n", filename);
+		    }
+	       }
+	       fclose(fd);
+	      /*
+	       * modes are scaled later by a call to 
+               * call to ML_Aggregate_Scale_NullSpace(ag, sc_vec, N_update);
+	       */
+       }
+#else
        sprintf(filename,"rigid_body_mode%d",i+1);
        AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
+#endif
 
        /* here is something to stick a rigid body mode as the initial */
        /* The idea is to solve A x = 0 without smoothing with a two   */
@@ -289,12 +338,14 @@ int max_nz_row, big_ind = -1, ii;
 
         /* orthogonalize mode with respect to previous modes. */
 
+#ifndef	MB_MODIF
         for (j = 0; j < i; j++) {
            alpha = -AZ_gdot(N_update, mode, &(rigid[j*N_update]), proc_config)/
                     AZ_gdot(N_update, &(rigid[j*N_update]), 
                                &(rigid[j*N_update]), proc_config);
            daxpy_(&N_update,&alpha,&(rigid[j*N_update]),  &one, mode, &one);
         }
+#endif
    
         for (j = 0; j < N_update; j++) rigid[i*N_update+j] = mode[j];
         free(mode);
@@ -305,6 +356,7 @@ int max_nz_row, big_ind = -1, ii;
        ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Nrigid, rigid, N_update);
        free(rigid);
     }
+    ML_Aggregate_Scale_NullSpace(ag, scaling_vect, N_update);
 
     coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
 				ML_DECREASING, ag);
@@ -335,7 +387,11 @@ int max_nz_row, big_ind = -1, ii;
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
 
+#ifdef MB_MODIF
+      ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth); 	   
+#else
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
+#endif
 
      
 
@@ -387,8 +443,10 @@ int max_nz_row, big_ind = -1, ii;
       */
       num_PDE_eqns = 6;
    }
-	
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+/*
+   ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
+*/
 
    /* Aztec smoother on the coarsest grid */
    /*
@@ -406,7 +464,11 @@ int max_nz_row, big_ind = -1, ii;
    params[AZ_tol] = old_tol;
    */
 		
+#ifdef	MB_MODIF
+   ML_Gen_Solver(ml, ML_SAAMG,   N_levels-1, coarsest_level); 
+#else
    ML_Gen_Solver(ml, ML_MGFULLV, N_levels-1, coarsest_level); 
+#endif
 	
    options[AZ_solver]   = AZ_cg;
    options[AZ_scaling]  = AZ_none;
@@ -414,7 +476,7 @@ int max_nz_row, big_ind = -1, ii;
    options[AZ_conv]     = AZ_r0;
    options[AZ_conv] = AZ_noscaled;
    options[AZ_output]   = 1;
-   options[AZ_max_iter] = 100;
+   options[AZ_max_iter] = 300;
    options[AZ_poly_ord] = 5;
    options[AZ_kspace]   = 130;
    params[AZ_tol]       = 1.0e-11;
@@ -426,6 +488,7 @@ int max_nz_row, big_ind = -1, ii;
  
    fp = fopen("AZ_capture_rhs.dat","r");
    if (fp == NULL) {
+      AZ_random_vector(rhs, data_org, proc_config);
       if (proc_config[AZ_node] == 0) printf("taking random vector for rhs\n");
       AZ_reorder_vec(rhs, data_org, update_index, NULL);
    }
@@ -492,6 +555,31 @@ printf("hey .... should we do something here?\n");
       options[AZ_keep_info] = 1;
       options[AZ_conv] = AZ_noscaled;
       /* ML_Iterate(ml, xxx, rhs); */
+alpha = AZ_gdot(N_update, xxx, xxx, proc_config);
+printf("init guess = %e\n",alpha);
+alpha = AZ_gdot(N_update, rhs, rhs, proc_config);
+printf("rhs = %e\n",alpha);
+	ML_MSR_scalerhs(rhs, scaling_vect, data_org[AZ_N_internal] +
+                    data_org[AZ_N_border]);
+	ML_MSR_scalesol(xxx, scaling_vect, data_org[AZ_N_internal] +
+			data_org[AZ_N_border]);
+
+max_diag = 0.;
+min_diag = 1.e30;
+max_sum  = 0.;
+for (i = 0; i < N_update; i++) {
+   if (Amat->val[i] < 0.) printf("woops negative diagonal A(%d,%d) = %e\n",
+				 i,Amat->val[i]);
+   if (Amat->val[i] > max_diag) max_diag = Amat->val[i];
+   if (Amat->val[i] < min_diag) min_diag = Amat->val[i];
+   sum = fabs(Amat->val[i]);
+   for (j = Amat->bindx[i]; j < Amat->bindx[i+1]; j++) {
+      sum += fabs(Amat->val[j]);
+   }
+   if (sum > max_sum) max_sum = sum;
+}
+printf("Largest diagonal = %e, min diag = %e large abs row sum = %e\n",
+max_diag, min_diag, max_sum);
       AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
@@ -532,3 +620,4 @@ printf("hey .... should we do something here?\n");
   return 0;
 	
 }
+

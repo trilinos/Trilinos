@@ -296,7 +296,6 @@ void init_options(int options[], double params[])
   options[AZ_output]   = 1;
   options[AZ_pre_calc] = AZ_calc;
   options[AZ_max_iter] = 1550; 
-  /*  options[AZ_max_iter] = 5;    MB */
   options[AZ_poly_ord] = 5;
 /*
   options[AZ_overlap]  = AZ_none;
@@ -578,11 +577,15 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
          /* other processors.                                             */
 
 
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
+#define MB_MODIF
+#define MB_MODIF2
+
+#ifndef MB_MODIF2
+         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER,  nsmooth,1.);
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
-	 /* MB
-	    ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth);
-	 */
+#else
+         ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth);
+#endif
       }
 
       if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
@@ -873,8 +876,8 @@ void create_msr_matrix_conv_diff(int update[], double **val, int **bindx,
 
 /******************************************************************************/
 /******************************************************************************/
-
 double *biggie = NULL;
+/* @@@@ */
 double f(double x, double y, int m)
 {
   double mpi = 3.14159;
@@ -964,23 +967,22 @@ void add_row_5pt(int row, int location, double val[],
    * neighbor exists.
    */
 
+#ifndef MB_MODIF
   bindx[k] = row + NP;   if ((row/NP)%m !=     m-1) val[k++] = -1.00;
   bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = -1.00;
   bindx[k] = row + m*NP; if ((row/(NP*m))%m != m-1) val[k++] = -1.00;
   bindx[k] = row - m*NP; if ((row/(NP*m))%m !=   0) val[k++] = -1.00;
-  /* MB
+  val[location]     = 4.0;
+#else
   bindx[k] = row + NP;   if ((row/NP)%m !=     m-1) val[k++] = -f(x+h/2.,y,m);
   bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = -f(x-h/2.,y,m);
   bindx[k] = row + m*NP; if ((row/(NP*m))%m != m-1) val[k++] = -f(x,y+h/2.,m);
   bindx[k] = row - m*NP; if ((row/(NP*m))%m !=   0) val[k++] = -f(x,y-h/2.,m);
-  */
-
-  bindx[location+1] = k;
-  val[location]     = 4.0;
-  /* ML
   val[location]     = f(x+h/2.,y,m) + f(x-h/2.,y,m) + f(x,y+h/2.,m) 
                        + f(x,y-h/2.,m);
-  */
+#endif
+
+  bindx[location+1] = k;
 
 } /* add_row_5pt */
 
