@@ -461,7 +461,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   if (MyPID==0) {
     for (i=0; i< NumVectors; i++) 
       for (int irand=0; irand<nproc; irand++)
-	for (int jrand=irand+1; jrand<NumVectors; jrand++) 
+	for (int jrand=irand+1; jrand<nproc; jrand++) 
 	  if (Allrandstarts[i][irand]==Allrandstarts[i][jrand]) randvalsdiffer = 0; // make false if equal
   }
   allrandvals = 0;
