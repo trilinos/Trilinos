@@ -45,23 +45,60 @@ namespace LineSearch {
 
 //! %Manager for all different line searches
 /*! 
-   The parameters must specify the type of line search as well as all
-   the corresponding parameters for that line search.
- 
+  <b>Parameters</b>
+  
+  "LineSearch":
    <ul>
    <li> "Method" - Name of the line search. Valid choices are
    <ul> 
    <li> "Full Step" (NOX::LineSearch::FullStep)
    <li> "Backtrack" (NOX::LineSearch::Backtrack)
-   <li> "%Polynomial" (NOX::LineSearch::Polynomial)
+   <li> "Polynomial" (NOX::LineSearch::Polynomial)
    <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
    <li> "Secant" (NOX::LineSearch::Secant)
-   <li> "User Defined" (user can pass their own line search through the parameter list as a NOX::Parameter::Arbitrary derived object)
-   </ul>
-
-   <li> "User Defined Line Search" - an object derived from the NOX::Parameter::Arbitrary and NOX::Line Search::Generic objects that allows the user to define their own line search object.  Will only be used if the "Method" is set to "User Defined".
+   <li> "User Defined" - see below
 
    </ul>
+
+   <li> "User Defined Constructor" - see below
+
+   </ul>
+
+<b>Using a User-Defined Line Search</b>
+
+The user has the option of passing in a user-defined line search as
+follows.  
+
+<ol>
+
+<li> Create a line search that derives from
+NOX::LineSearch::Generic. For example, the direction \c Foo might be
+defined as shown below.
+
+\code
+class Foo : public NOX::LineSearch::Generic {
+// Insert class definition here
+}
+\endcode
+
+<li> Define a class that derives from
+NOX::Parameter::LineSearchConstructor. The easiest way to do this is to
+use the templated version of this class, called
+NOX::Parameter::LineSearchConstructorT.
+
+\code
+NOX::Parameter::LineSearchConstructorT<Foo> foo;
+\endcode
+
+<li> Create the appropriate entries in the parameter list, as follows.
+
+\code
+params.sublist("Line Search").setParameter("Method", "User Defined");
+params.sublist("Line Search").setParameter("User Defined Constructor", foo);
+\endcode
+
+</ol>
+
  */  
 class Manager : public Generic {
 
@@ -82,6 +119,16 @@ public:
 	       const NOX::Solver::Generic& s) ;
 
 private:
+
+  /*!
+    \brief Prints a warning message. 
+    
+    \param name - Name of the subroutine where the error occurs
+    \param warning - The warning
+  */
+  void printWarning(const string& name, const string& warning);
+
+private:
   //! Printing utilities
   const NOX::Utils& utils;
 
@@ -90,9 +137,6 @@ private:
 
   //! Pointer to method
   NOX::LineSearch::Generic* ptr;
-
-  //! Boolean that determines if the line search object is created/owned by the manager.  If so it will be deleted by the manager.
-  bool isOwned;
 
 };
 } // namespace LineSearch
