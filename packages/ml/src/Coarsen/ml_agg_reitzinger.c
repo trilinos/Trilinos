@@ -37,7 +37,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Aggregate_Set_Threshold( ag, 0.0);
   }
   Tfine = Tmat;
-  ag->print_flag = 1;
   /********************************************************************/
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
