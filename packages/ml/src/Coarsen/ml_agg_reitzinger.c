@@ -5,6 +5,10 @@
 #define ML_NEW_T_PE
 #endif
 
+#if defined(ML_NEW_ENRICH)
+double checkit(ML_Operator *A, double *v);
+#endif
+
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, ML_Operator *Tmat,
@@ -26,7 +30,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #ifdef LEASTSQ_SERIAL
   ML_Operator *SPn_mat;
 #endif
-#ifdef ML_ENRICH
+#if defined(ML_ENRICH) || defined(ML_NEW_ENRICH)
   ML_Operator *TTtransPe;
   ML_Operator *newPe;
   double dtemp;
@@ -58,6 +62,18 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int nzctr;
 
   double t0 = GetClock();
+
+#if defined(ML_NEW_ENRICH)
+  double *v;
+  double *w;
+  double *randvec=NULL;
+  double *Pv;
+  double *WPv;
+  ML_Operator *W, *V, *Tfine_trans, *tmpmat;
+  double numer, denom;
+  double alpha;
+  double *diag;
+#endif
 
   if (incr_or_decrease != ML_DECREASING)
     pr_error("Hiptmair: Only ML_DECREASING is supported\n");
@@ -1143,18 +1159,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         nz_ptr = 0;
         for (i = 0; i < Pe->outvec_leng; i++) {
           for (j = lower; j < csr_data->rowptr[i+1]; j++) {
-            if (ML_abs(csr_data->values[j]) > droptol) nz_ptr++;
+            if (ML_abs(csr_data->values[j]) > droptol) {
+              csr_data->values[nz_ptr] = csr_data->values[j];
+              csr_data->columns[nz_ptr] = csr_data->columns[j];
+              nz_ptr++;
+            }
           }
           lower = csr_data->rowptr[i+1];
           csr_data->rowptr[i+1] = nz_ptr;
-        }
-        nz_ptr = 0;
-        for (i = 0; i < lower; i++) {
-          if (ML_abs(csr_data->values[i]) > droptol) {
-            csr_data->values[nz_ptr] = csr_data->values[i];
-            csr_data->columns[nz_ptr] = csr_data->columns[i];
-            nz_ptr++;
-          }
         }
 
         Pe->N_nonzeros = nz_ptr;
@@ -1163,7 +1175,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #ifdef ML_VAMPIR
   VT_end(ml_vt_smooth_Pe_state);
 #endif
-#ifdef ML_ENRICH
+#if defined(ML_ENRICH) || defined(ML_NEW_ENRICH)
 
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_enrich_Pe_state);
@@ -1176,10 +1188,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /*  =  (I + alpha inv(diag(S))*S + beta inv(diag(T*T'))*(T*T'))          */
      /*  =  (I + alpha inv(diag(S))*S + T*T'*beta/2)                          */
      /* --------------------------------------------------------------------- */
-
+#if !defined(ML_NEW_ENRICH)
      if (beta != 0.0) {
-       if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
-         printf("\n\nDoing enriched prolongator");
+       if (ml_nodes->comm->ML_mypid == 0) {
+         printf("\n\nDoing old enriched prolongator");
          printf("    *******  beta = %e *******\n\n",beta);
          fflush(stdout);
        }
@@ -1205,12 +1217,122 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      }
      else
        if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
-         printf("\n\nSkipping enriched prolongator\n\n");fflush(stdout);}
+         printf("\n\nnot compiled with enriched prolongator option\n\n");fflush(stdout);}
+#else
+       if (ml_nodes->comm->ML_mypid == 0) {
+         printf("\n\nDoing new enriched prolongator\n\n");
+         fflush(stdout);
+       }
+     v = (double *) ML_allocate( (Pe->invec_leng+Pe->outvec_leng) * sizeof(double));
+     for (i=0; i < Pe->invec_leng; i++) v[i] = 1.0;
+     /*
+     w = (double *) ML_allocate( (Pe->invec_leng+Pe->outvec_leng) * sizeof(double));
+     for (i=0; i < Pe->outvec_leng; i++) w[i] = 1.0;
+     */
+     /*
+     randvec = (double *) ML_allocate( (Pe->invec_leng+Pe->outvec_leng) * sizeof(double));
+     ML_random_vec(randvec, Pe->outvec_leng, Pe->comm);
+     dtemp = sqrt(ML_gdot(Pe->outvec_leng, randvec,randvec, Pe->comm));
+     for (i=0; i<Pe->outvec_leng; i++) randvec[i] = randvec[i] / dtemp; 
+     */
+     /*
+     fid1 = fopen("randvec.txt","w");
+     for (i=0; i<Pe->outvec_leng; i++) {
+        randvec[i] = randvec[i] / dtemp; 
+        fprintf(fid1,"%20.16e\n",randvec[i]);
+     }
+     fclose(fid1);
+     */
+
+     V = &(ml_edges->Amat[grid_level+1]);
+     // W = T * (D_n' \ (T' * M))
+     tmpmat = ML_Operator_Create(Pe->comm);
+     Tfine_trans = (*Tmat_trans_array)[grid_level+1];
+     // T'*M
+     ML_2matmult((*Tmat_trans_array)[grid_level+1],
+                 &(ml_edges->Amat[grid_level+1]),
+                 tmpmat, ML_CSR_MATRIX );
+     /*
+     ML_Operator_Print(&(ml_edges->Amat[grid_level+1]),"Amat");
+     ML_Operator_Print((*Tmat_trans_array)[grid_level+1],"Ttmat");
+     */
+     /*
+     printf("||T'*M*w||^2 = %10.6e\n",checkit(tmpmat,randvec));
+     */
+     /* Dn' \ (T'*M) */
+     ML_Operator_Get_Diag(&(ml_nodes->Amat[grid_level+1]),
+                          ml_nodes->Amat[grid_level+1].outvec_leng, &diag);
+     /*
+     fid1 = fopen("diag","w");
+     for (i=0; i<ml_nodes->Amat[grid_level+1].outvec_leng; i++) {
+        fprintf(fid1,"%20.16e\n",diag[i]);
+     }
+     fclose(fid1);
+     ML_Operator_Print(ml_nodes->Amat+grid_level+1,"Anodal");
+     */
+     csr_data = (struct ML_CSR_MSRdata *) tmpmat->data;
+     for (i = 0; i < tmpmat->outvec_leng; i++)
+       for (j= csr_data->rowptr[i]; j < csr_data->rowptr[i+1]; j++)
+         csr_data->values[j] /= diag[i];
+     /*
+     printf("||D_n' \\ T'*M*w||^2 = %10.6e\n",checkit(tmpmat,randvec));
+     */
+     W = ML_Operator_Create(Pn_coarse->comm);
+     /* T * (Dn' \ (T'*M)) */
+     ML_2matmult(Tfine, tmpmat, W, ML_CSR_MATRIX );
+     ML_Operator_Destroy(&tmpmat);
+
+     /* Pe * v */
+     Pv = (double *) ML_allocate( Pe->outvec_leng*sizeof(double));
+     WPv = (double *) ML_allocate( W->outvec_leng*sizeof(double));
+     ML_Operator_Apply(Pe, Pe->invec_leng, v, Pe->outvec_leng, Pv);
+
+     /*
+     printf("||Pv|| = %lf\n",checkit(Pe,v));
+     */
+
+     /* W * Pe * v */
+     ML_Operator_Apply(W, W->invec_leng, Pv, W->outvec_leng, WPv);
+     /* WPv' * WPv */
+     denom = ML_gdot(W->outvec_leng, WPv,WPv, W->comm);
+
+     /* V * Pv */
+     ML_Operator_Apply(V, V->invec_leng, Pv, V->outvec_leng, v);
+     alpha = ag->smoothP_damping_factor / ml_edges->Amat[grid_level+1].lambda_max;
+     for (i=0; i<V->outvec_leng; i++)
+       v[i] = alpha*v[i] - Pv[i] + 1.0;     /* using 1.0 b/c constant vector
+                                               on fine grid */
+     numer = ML_gdot(W->outvec_leng, WPv,v, W->comm);
+     beta = numer/denom;
+     printf("\n\nbeta = %lf   (numer=%lf, denom = %lf)\n\n",beta,numer,denom);
+
+     /* (T * Dn' \ T'*M) * Pe */
+     TTtransPe = ML_Operator_Create(Pn_coarse->comm);
+     ML_2matmult(W, Pe, TTtransPe, ML_CSR_MATRIX );
+     /* scale new term by beta */
+     csr_data = (struct ML_CSR_MSRdata *) TTtransPe->data;
+     for (i = 0; i < csr_data->rowptr[TTtransPe->outvec_leng]; i++)
+       csr_data->values[i] *= beta;
+
+     newPe = ML_Operator_Create(ml_edges->comm);
+     ML_Operator_Add(Pe, TTtransPe, newPe, ML_CSR_MATRIX,1.);
+
+     ML_Operator_Destroy(&TTtransPe);
+     ML_Operator_Destroy(&W);
+     ML_free(v); /*ML_free(w);*/ ML_free(Pv); ML_free(WPv);
+     if (randvec != NULL) ML_free(randvec);
+
+     ML_Operator_Move2HierarchyAndDestroy_fragile(newPe,
+                            &(ml_edges->Pmat[grid_level]));
+#endif /*ML_NEW_ENRICH*/
+
 #ifdef ML_VAMPIR
   VT_end(ml_vt_enrich_Pe_state);
 #endif
-#endif
-
+#else
+     if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
+       printf("\n\nnot compiled with enriched prolongator option\n\n");fflush(stdout);}
+#endif /*if defined(ML_ENRICH) ... */
 
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_make_coarse_A_with_rap_state);
@@ -1230,7 +1352,37 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
+     /*
+     if (grid_level == fine_level-1)
+       ML_Operator_Print(ml_edges->Amat+grid_level,"Amat_before");
+     */
+#if defined(ML_NEW_ENRICH)
+     /* Weed out small values in A (MSR format). */
+     droptol = 1e-9;
+     tmpmat = ml_edges->Amat+grid_level;
+     if (tmpmat->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel())
+        printf("Dropping Ke(i,j) if |Ke(i,j)| <  %e\n", droptol);
+     csr_data = (struct ML_CSR_MSRdata *) tmpmat->data;
+     lower = csr_data->columns[0];
+     nz_ptr = tmpmat->outvec_leng+1;
+     for (i = 0; i < tmpmat->outvec_leng; i++) {
+       for (j = lower; j < csr_data->columns[i+1]; j++) {
+         if (ML_abs(csr_data->values[j]) > droptol) {
+           csr_data->values[nz_ptr] = csr_data->values[j];
+           csr_data->columns[nz_ptr] = csr_data->columns[j];
+           nz_ptr++;
+         }
+       }
+       lower = csr_data->columns[i+1];
+       csr_data->columns[i+1] = nz_ptr;
+     }
+     tmpmat->N_nonzeros = nz_ptr;
+#endif /*if defined(ML_ENRICH) && ... */
      Nnz_allgrids += ml_edges->Amat[grid_level].N_nonzeros;
+     /*
+     if (grid_level == fine_level-1)
+       ML_Operator_Print(ml_edges->Amat+grid_level,"Amat_after");
+     */
 
      if (ag->print_flag < ML_Get_PrintLevel()) {
         Pe = &(ml_edges->Amat[grid_level]);
@@ -1893,4 +2045,17 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML **new_ml ,
 
 }
 
+#if defined(ML_NEW_ENRICH)
+double checkit(ML_Operator *A, double *v)
+{
+  int i;
+  double *y, result;
 
+  y = (double *) ML_allocate(A->outvec_leng * sizeof(double));
+  ML_Operator_Apply(A,A->invec_leng,v,A->outvec_leng,y);
+  //result = sqrt(ML_gdot(A->outvec_leng, y,y, A->comm));
+  result = ML_gdot(A->outvec_leng, y,y, A->comm);
+  ML_free(y);
+  return result;
+}
+#endif
