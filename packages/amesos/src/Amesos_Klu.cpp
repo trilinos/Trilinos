@@ -476,11 +476,8 @@ int Amesos_Klu::Solve() {
 
     assert( SerialXlda == NumGlobalElements_ ) ; 
 
-    for ( int j =0 ; j < nrhs; j++ ) { 
-
-      klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
-		     &SerialXvalues[j*SerialXlda] );
-    }
+    klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
+		     SerialXlda, nrhs, &SerialXvalues[0] );
   }
     
   SolTime_ += Time_->ElapsedTime();

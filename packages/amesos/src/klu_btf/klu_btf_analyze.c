@@ -314,7 +314,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 {
     int nblocks, *Qbtf, nz, *Cp, *Ci, *Qamd, *Pinv, *Pamd, *Ep, *Ei, *Pbtf,
 	block, maxblock, k1, k2, nk, maxnz, *P, *Q, *R, nzoff, result, j, i, p,
-	pend, do_btf, nzdiag, ordering ;
+	pend, do_btf, nzdiag, ordering, k ;
     klu_symbolic *Symbolic ;
     double *Lnz, lnz, Info2 [KLU_BTF_INFO], *Info ;
 
@@ -452,12 +452,12 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     ordering = MAX (ordering, KLU_BTF_CONTROL_USE_AMD) ;	/* 0 */
     ordering = MIN (ordering, KLU_BTF_CONTROL_USE_COLAMD) ;	/* 1 */
     Symbolic->ordering = ordering ;
+    Symbolic->do_btf = do_btf ;
 
     /* ---------------------------------------------------------------------- */
     /* find the block triangular form (if requested) */
     /* ---------------------------------------------------------------------- */
 
-    nblocks = 1 ;
     if (do_btf)
     {
 	PRINTF (("calling cbtf\n")) ;
@@ -472,24 +472,34 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	    Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	    return ((klu_symbolic *) NULL) ;
 	}
+	/* find the size of the largest block */
+	maxblock = 1 ;
+	for (block = 0 ; block < nblocks ; block++)
+	{
+	    k1 = R [block] ;
+	    k2 = R [block+1] ;
+	    nk = k2 - k1 ;
+	    PRINTF (("block %d size %d\n", block, nk)) ;
+	    maxblock = MAX (maxblock, nk) ;
+	}
+    }
+    else
+    {
+	/* BTF not requested */
+	nblocks = 1 ;
+	maxblock = n ;
+	R [0] = 0 ;
+	R [1] = n ;
+	for (k = 0 ; k < n ; k++)
+	{
+	    Pbtf [k] = k ;
+	    Qbtf [k] = k ;
+	}
     }
 
     Symbolic->nblocks = nblocks ;
     Info [KLU_BTF_INFO_NBLOCKS] = nblocks ;
 
-    /* ---------------------------------------------------------------------- */
-    /* find the size of the largest block */
-    /* ---------------------------------------------------------------------- */
-
-    maxblock = 1 ;
-    for (block = 0 ; block < nblocks ; block++)
-    {
-	k1 = R [block] ;
-	k2 = R [block+1] ;
-	nk = k2 - k1 ;
-	PRINTF (("block %d size %d\n", block, nk)) ;
-	maxblock = MAX (maxblock, nk) ;
-    }
     /* TODO: Ci and Ei could be of size max (nnz of blocks of A) */
     maxnz = nz ;
     PRINTF (("maxblock size %d maxnz %d\n", maxblock, maxnz)) ;
@@ -526,6 +536,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	result = klu_btf_analyze2 (n, Ap, Ai, nblocks, Pbtf, Qbtf, R, ordering,
 	    P, Q, Lnz, &maxnz, &nzoff, &lnz, Pamd, Cp, Ci, Ep, Ei, Pinv, Info) ;
 	PRINTF (("klu_btf_analyze2 done\n")) ;
+	if (!do_btf) ASSERT (nzoff == 0) ;
     }
     Info [KLU_BTF_INFO_STATUS] = result ;
 

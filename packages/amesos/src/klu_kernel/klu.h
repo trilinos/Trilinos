@@ -17,14 +17,14 @@ int klu_factor	/* returns 0 if OK, negative if error */
     int Q [ ],	    /* size n, optional column permutation */
     double Control [ ],	    /* Control parameters (optional) */
 
-    /* outputs, allocated on output (or NULL if error occurs) */
-    int **p_Lp,	    /* Column pointers for L, of size n+1 */
+    /* outputs, not defined on input */
+    int Lp [ ],	    /* Column pointers for L, of size n+1 */
     int **p_Li,	    /* row indices for L */
     double **p_Lx,  /* values of L */
-    int **p_Up,	    /* Column pointers for U, of size n+1 */
+    int Up [ ],	    /* Column pointers for U, of size n+1 */
     int **p_Ui,	    /* row indices for U */
     double **p_Ux,  /* values of U */
-    int **p_P,	    /* row permutation */
+    int P [ ],	    /* row permutation, size n */
 
     /* scalar outputs */
     int *p_noffdiag,	    /* # of off-diagonal pivots chosen */
@@ -39,13 +39,10 @@ int klu_factor	/* returns 0 if OK, negative if error */
 
 void klu_free
 (
-    int **p_Lp,
     int **p_Li,
     double **p_Lx,
-    int **p_Up,
     int **p_Ui,
-    double **p_Ux,
-    int **p_P
+    double **p_Ux
 ) ;
 
 
@@ -56,6 +53,8 @@ void klu_lsolve
     int Lp [ ],
     int Li [ ],
     double Lx [ ],
+    int ldim,
+    int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
     double X [ ]
 ) ;
@@ -68,6 +67,8 @@ void klu_usolve
     int Up [ ],
     int Ui [ ],
     double Ux [ ],
+    int ldim,
+    int nrhs,
     /* right-hand-side on input, solution to Ux=b on output */
     double X [ ]
 ) ;
@@ -78,6 +79,8 @@ void klu_permute
     /* inputs, not modified: */
     int n,
     int P [ ],
+    int ldim,
+    int nrhs,
     double B [ ],
     /* output */
     double X [ ]

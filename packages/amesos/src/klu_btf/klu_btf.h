@@ -30,7 +30,8 @@ typedef struct
 	nblocks,	/* number of blocks */
 	maxnz,		/* max nz in any block */
 	maxblock,	/* size of largest block */
-	ordering ;	/* ordering used (AMD or COLAMD) */
+	ordering,	/* ordering used (AMD or COLAMD) */
+	do_btf ;	/* whether or not BTF preordering was requested */
 
     /* this info is stored as double, to avoid integer overflow: */
     double lnz, unz ;	/* estimated nz in L and U, including diagonals */
@@ -66,7 +67,13 @@ typedef struct
     double *Singleton ;	/* singleton values */
 
     double *Rs ;	/* row scaling factors */
-    double *X ;		/* size n workspace */
+
+    /* permanent workspace for factorization and solve */
+    unsigned int worksize ;	/* size (in bytes) of Work */
+    double *Work ;		/* of size MAX (4n doubles,
+				   n doubles + 5*maxblock int's */
+    double *Xwork ;		/* aliases into Numeric->Work */
+    int *Iwork ;
 
     /* off-diagonal entries */
     int *Offp, *Offi ;
@@ -130,6 +137,8 @@ void klu_btf_solve
     /* inputs, not modified */
     klu_symbolic *Symbolic,
     klu_numeric *Numeric,
+    int ldim,		    /* leading dimension of B */
+    int nrhs,		    /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
     double B [ ]

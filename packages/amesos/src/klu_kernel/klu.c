@@ -59,7 +59,7 @@
  *
  * You can then modify the control parameters before calling klu.
  *
- * Seven arrays are allocated on output of klu, and returned as (int **) or
+ * Four arrays are allocated on output of klu, and returned as (int **) or
  * (double **) pointers.  The call to klu should look like the following:
  *
  *	int n, Ap [n+1], Ai [anz] ;	Ap, Ai, and Ax allocated and defined
@@ -68,32 +68,35 @@
  *	int Q [n] ;			Q is optional, it may be (int *) NULL
  *	double Control [KLU_CONTROL] ;
  *
- *	int *Lp, *Li, *Up, *Ui, *P ;	not allocated or defined
+ *	int Lp [n+1], Up [n+1], P [n] ;
+ *	int *Li, *Ui, ;			not allocated or defined
  *	double *Lx, *Ux ;
  *
- *	result = klu_factor (n, Ap, Ai, Ax, Q, Control,
- *		&Lp, &Li, &Lx, &Up, &Ui, &Ux, &P) ;
+ *	TODO: add discussion of Xwork and Iwork
  *
- * At this point, the matrices P, L, and U are allocated and defined if
+ *	result = klu_factor (n, Ap, Ai, Ax, Q, Control,
+ *		Lp, &Li, &Lx, Up, &Ui, &Ux, P) ;
+ *
+ * At this point, the arrays Li, Lx, Ui, and Ux are allocated and defined if
  * klu returns KLU_OK (zero).  P [k] = i if row i is the kth pivot row.
  * Row indices of column j of L are stored in Li [Lp [j] ... Lp [j+1]-1],
  * and the values are in the same area of Lx.  U is stored similarly.
  * The columns of L and U are not sorted, except the unit diagonal of L
  * always appears first in each column, and the diagonal of U always appears
- * as the last entry in each column.  You must free the 7 arrays Lp, Li, Lx,
- * Up, Ui, Ux, and P after you are done with them.  You can simply use the
+ * as the last entry in each column.  You must free the 4 arrays Li, Lx,
+ * Ui, and Ux after you are done with them.  You can simply use the
  * ANSI free routine (or mxFree if you are using klu within MATLAB) or call
  * klu_free, as in:
  *
- *	klu_free (&Lp, &Li, &Lx, &Up, &Ui, &Ux, &P) ;
+ *	klu_free (&Li, &Lx, &Ui, &Ux) ;
  *
  * To solve Ax=b after calling klu, do the following:
  *
  *	in C notation:			    equivalent MATLAB notation:
- *	klu_permute (n, P, B, X) ;	    x = P*b
- *	klu_lsolve (n, Lp, Li, Lx, X) ;	    x = L\x
- *	klu_usolve (n, Up, Ui, Ux, X) ;	    x = U\x
- *	klu_permute (n, Q, B, X) ;	    x = Q*x
+ *	klu_permute (n, P, B, n, nrhs, X) ;		x = P*b
+ *	klu_lsolve (n, Lp, Li, Lx, n, nrhs, X) ;	x = L\x
+ *	klu_usolve (n, Up, Ui, Ux, n, nrhs, X) ;	x = U\x
+ *	klu_permute (n, Q, B, n, nrhs, X) ;		x = Q*x
  *
  * Copyright August 2004, Tim Davis.  All rights reserved.  See the README
  * file for details on permitted use.  Note that no code from The MathWorks,
@@ -113,7 +116,9 @@
  * If Q is (int *) NULL, then it is assumed to be the identity permutation.
  * Q is not modified.
  *
- * TODO Cite Gilbert, Eisenstat here.  Write README file.
+ * TODO: Cite Gilbert, Eisenstat here.  Write README file.
+ * TODO: do not allocate Lp, Up, or P.  Require them as input.
+ * TODO: require Xwork and Iwork to be allocated on input.
  */
 
 /* ========================================================================== */
@@ -131,14 +136,14 @@ int klu_factor	/* returns 0 if OK, negative if error */
     int Q [ ],	    /* size n, optional column permutation */
     double Control [ ],	    /* Control parameters (optional) */
 
-    /* outputs, allocated on output (or NULL if error occurs) */
-    int **p_Lp,	    /* Column pointers for L, of size n+1 */
+    /* outputs, not defined on input */
+    int Lp [ ],	    /* Column pointers for L, of size n+1 */
     int **p_Li,	    /* row indices for L */
     double **p_Lx,  /* values of L */
-    int **p_Up,	    /* Column pointers for U, of size n+1 */
+    int Up [ ],	    /* Column pointers for U, of size n+1 */
     int **p_Ui,	    /* row indices for U */
     double **p_Ux,  /* values of U */
-    int **p_P,	    /* row permutation */
+    int P [ ],	    /* row permutation, size n */
     int *p_noffdiag,	/* # of off-diagonal pivots chosen */
     double *p_umin,
     double *p_umax,
@@ -150,7 +155,7 @@ int klu_factor	/* returns 0 if OK, negative if error */
 )
 {
     double tol, s, *Lx, *Ux, umin, umax, growth ;
-    int *Pinv, lsize, usize, result, *P, k, anz, *Lp, *Li, *Up, *Ui,
+    int *Pinv, lsize, usize, result, k, anz, *Li, *Ui,
 	*Lpend, *Stack, *Flag, noffdiag, *adj_pos, get_work, get_X, *W ;
 
     /* ---------------------------------------------------------------------- */
@@ -181,13 +186,10 @@ int klu_factor	/* returns 0 if OK, negative if error */
     /* ---------------------------------------------------------------------- */
 
     /* return arguments L, U, and P are not yet assigned */
-    *p_Lp = (int *) NULL ;
     *p_Li = (int *) NULL ;
     *p_Lx = (double *) NULL ;
-    *p_Up = (int *) NULL ;
     *p_Ui = (int *) NULL ;
     *p_Ux = (double *) NULL ;
-    *p_P = (int *) NULL ;
 
     get_work = (Work == (int *) NULL) ;
     if (get_work)
@@ -219,21 +221,17 @@ int klu_factor	/* returns 0 if OK, negative if error */
     }
 
     /* create sparse matrix for P, L, and U */
-    P  = (int *) ALLOCATE (n * sizeof (int)) ;
-    Lp = (int *) ALLOCATE ((n+1) * sizeof (int)) ;
-    Up = (int *) ALLOCATE ((n+1) * sizeof (int)) ;
     Li = (int *) ALLOCATE (lsize * sizeof (int)) ;
     Lx = (double *) ALLOCATE (lsize * sizeof (double)) ;
     Ui = (int *) ALLOCATE (usize * sizeof (int)) ;
     Ux = (double *) ALLOCATE (usize * sizeof (double)) ;
 
-    if ((P == (int *) NULL) ||
-      (Lp == (int *) NULL) || (Li == (int *) NULL) || (Lx == (double *) NULL) ||
-      (Up == (int *) NULL) || (Ui == (int *) NULL) || (Ux == (double *) NULL))
+    if ((Li == (int *) NULL) || (Lx == (double *) NULL) ||
+        (Ui == (int *) NULL) || (Ux == (double *) NULL))
     {
 	if (get_work) FREE (Work, int) ;
 	if (get_X)    FREE (X, double) ;
-	klu_free (&Lp, &Li, &Lx, &Up, &Ui, &Ux, &P) ;
+	klu_free (&Li, &Lx, &Ui, &Ux) ;
 	return (KLU_OUT_OF_MEMORY) ;
     }
 
@@ -259,15 +257,12 @@ int klu_factor	/* returns 0 if OK, negative if error */
 
     if (result != KLU_OK)
     {
-	klu_free (&Lp, &Li, &Lx, &Up, &Ui, &Ux, &P) ;
+	klu_free (&Li, &Lx, &Ui, &Ux) ;
     }
     else
     {
-	*p_P = P ;
-	*p_Lp = Lp ;
 	*p_Li = Li ;
 	*p_Lx = Lx ;
-	*p_Up = Up ;
 	*p_Ui = Ui ;
 	*p_Ux = Ux ;
     }
@@ -284,27 +279,21 @@ int klu_factor	/* returns 0 if OK, negative if error */
 /* === klu_free ============================================================= */
 /* ========================================================================== */
 
-/* Frees the P, L, and U matrices constructed by klu.  Note that if any or all
+/* Frees the L and U matrices constructed by klu.  Note that if any or all
  * of the arrays are already free'd, they are not free'd again. */
 
 void klu_free
 (
-    int **p_Lp,
     int **p_Li,
     double **p_Lx,
-    int **p_Up,
     int **p_Ui,
-    double **p_Ux,
-    int **p_P
+    double **p_Ux
 )
 {
-    FREE (*p_Lp, int) ;
     FREE (*p_Li, int) ;
     FREE (*p_Lx, double) ;
-    FREE (*p_Up, int) ;
     FREE (*p_Ui, int) ;
     FREE (*p_Ux, double) ;
-    FREE (*p_P, int) ;
 }
 
 
@@ -314,7 +303,8 @@ void klu_free
 
 /* Solve Lx=b.  Assumes L is unit lower triangular and where the unit diagonal
  * entry is stored (and appears first in each column of L).  Overwrites B
- * with the solution X. */
+ * with the solution X.  B is n-by-nrhs and is stored in column form with
+ * leading dimension d. */
 
 void klu_lsolve
 (
@@ -323,22 +313,121 @@ void klu_lsolve
     int Lp [ ],
     int Li [ ],
     double Lx [ ],
+    int d,
+    int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
     double X [ ]
 )
 {
-    int k, p, pend ;
-    double xk ;
-    for (k = 0 ; k < n ; k++)
+    double y [4], lik ;
+    double *Y ;
+    int k, p, pend, s, nblocks, block, i, d2, d3, d4 ;
+
+    if (nrhs == 1)
     {
-	xk = X [k] ;
-	if (xk != 0.0)
+	for (k = 0 ; k < n ; k++)
 	{
-	    pend = Lp [k+1] ;
-	    for (p = Lp [k] + 1 ; p < pend ; p++)
+	    y [0] = X [k] ;
+	    if (y [0] != 0.0)
 	    {
-		X [Li [p]] -= Lx [p] * xk ;
+		pend = Lp [k+1] ;
+		for (p = Lp [k] + 1 ; p < pend ; p++)
+		{
+		    X [Li [p]] -= Lx [p] * y [0] ;
+		}
 	    }
+	}
+    }
+    else
+    {
+
+	/* determine how many blocks of 4 to do */
+	nblocks = nrhs / 4 ;
+
+	/* do all the blocks of size 4 */
+	Y = X ;
+	d2 = d*2 ;
+	d3 = d*3 ;
+	d4 = d*4 ;
+	for (block = 0 ; block < nblocks ; block++)
+	{
+	    for (k = 0 ; k < n ; k++)
+	    {
+		y [0] = Y [k     ] ;
+		y [1] = Y [k + d ] ;
+		y [2] = Y [k + d2] ;
+		y [3] = Y [k + d3] ;
+		pend = Lp [k+1] ;
+		for (p = Lp [k] + 1 ; p < pend ; p++)
+		{
+		    i = Li [p] ;
+		    lik = Lx [p] ;
+		    Y [i     ] -= lik * y [0] ;
+		    Y [i + d ] -= lik * y [1] ;
+		    Y [i + d2] -= lik * y [2] ;
+		    Y [i + d3] -= lik * y [3] ;
+		}
+	    }
+	    Y += d4 ;
+	}
+
+	/* clean-up for last block of size 1,2,3 */
+	switch (nrhs % 4)
+	{
+	case 0:
+	    break ;
+
+	case 1:
+
+	    for (k = 0 ; k < n ; k++)
+	    {
+		y [0] = Y [k] ;
+		pend = Lp [k+1] ;
+		for (p = Lp [k] + 1 ; p < pend ; p++)
+		{
+		    Y [Li [p]] -= Lx [p] * y [0] ;
+		}
+	    }
+
+	    break ;
+
+	case 2:
+
+	    for (k = 0 ; k < n ; k++)
+	    {
+		y [0] = Y [k    ] ;
+		y [1] = Y [k + d] ;
+		pend = Lp [k+1] ;
+		for (p = Lp [k] + 1 ; p < pend ; p++)
+		{
+		    i = Li [p] ;
+		    lik = Lx [p] ;
+		    Y [i    ] -= lik * y [0] ;
+		    Y [i + d] -= lik * y [1] ;
+		}
+	    }
+
+	    break ;
+
+	case 3:
+
+	    for (k = 0 ; k < n ; k++)
+	    {
+		y [0] = Y [k     ] ;
+		y [1] = Y [k + d ] ;
+		y [2] = Y [k + d2] ;
+		pend = Lp [k+1] ;
+		for (p = Lp [k] + 1 ; p < pend ; p++)
+		{
+		    i = Li [p] ;
+		    lik = Lx [p] ;
+		    Y [i     ] -= lik * y [0] ;
+		    Y [i + d ] -= lik * y [1] ;
+		    Y [i + d2] -= lik * y [2] ;
+		}
+	    }
+
+	    break ;
 	}
     }
 }
@@ -350,7 +439,7 @@ void klu_lsolve
 
 /* Solve Ux=b.  Assumes U is non-unit upper triangular and where the diagonal
  * entry is stored (and appears last in each column of U).  Overwrites B
- * with the solution X. */
+ * with the solution X.  B is n-by-nrhs and is stored in column form. */
 
 void klu_usolve
 (
@@ -359,23 +448,137 @@ void klu_usolve
     int Up [ ],
     int Ui [ ],
     double Ux [ ],
+    int d,
+    int nrhs,
     /* right-hand-side on input, solution to Ux=b on output */
     double X [ ]
 )
 {
-    int k, p, pend ;
-    double xk ;
-    for (k = n-1 ; k >= 0 ; k--)
+    double y [4], uik, ukk ;
+    double *Y ;
+    int k, p, pend, s, nblocks, block, i, d2, d3, d4 ;
+
+    if (nrhs == 1)
     {
-	pend = Up [k+1] - 1 ;
-	xk = X [k] / Ux [pend] ;
-	X [k] = xk ;
-	if (xk != 0.0)
+
+	for (k = n-1 ; k >= 0 ; k--)
 	{
-	    for (p = Up [k] ; p < pend ; p++)
+	    pend = Up [k+1] - 1 ;
+	    y [0] = X [k] / Ux [pend] ;
+	    X [k] = y [0] ;
+	    if (y [0] != 0.0)
 	    {
-		X [Ui [p]] -= Ux [p] * xk ;
+		for (p = Up [k] ; p < pend ; p++)
+		{
+		    X [Ui [p]] -= Ux [p] * y [0] ;
+		}
 	    }
+	}
+
+    }
+    else
+    {
+
+	/* determine how many blocks of 4 to do */
+	nblocks = nrhs / 4 ;
+
+	/* do all the blocks of size 4 */
+	Y = X ;
+	d2 = d*2 ;
+	d3 = d*3 ;
+	d4 = d*4 ;
+	for (block = 0 ; block < nblocks ; block++)
+	{
+	    for (k = n-1 ; k >= 0 ; k--)
+	    {
+		pend = Up [k+1] - 1 ;
+		ukk = Ux [pend] ;
+		y [0] = Y [k     ] / ukk ;
+		y [1] = Y [k + d ] / ukk ;
+		y [2] = Y [k + d2] / ukk ;
+		y [3] = Y [k + d3] / ukk ;
+		Y [k     ] = y [0] ;
+		Y [k + d ] = y [1] ;
+		Y [k + d2] = y [2] ;
+		Y [k + d3] = y [3] ;
+		for (p = Up [k] ; p < pend ; p++)
+		{
+		    i = Ui [p] ;
+		    uik = Ux [p] ;
+		    Y [i     ] -= uik * y [0] ;
+		    Y [i + d ] -= uik * y [1] ;
+		    Y [i + d2] -= uik * y [2] ;
+		    Y [i + d3] -= uik * y [3] ;
+		}
+	    }
+	    Y += d4 ;
+	}
+
+	/* clean-up for last block of size 1,2,3 */
+	switch (nrhs % 4)
+	{
+	case 0:
+	    break ;
+
+	case 1:
+
+	    for (k = n-1 ; k >= 0 ; k--)
+	    {
+		pend = Up [k+1] - 1 ;
+		y [0] = Y [k] / Ux [pend] ;
+		Y [k] = y [0] ;
+		for (p = Up [k] ; p < pend ; p++)
+		{
+		    Y [Ui [p]] -= Ux [p] * y [0] ;
+		}
+	    }
+
+	    break ;
+
+	case 2:
+
+	    for (k = n-1 ; k >= 0 ; k--)
+	    {
+		pend = Up [k+1] - 1 ;
+		ukk = Ux [pend] ;
+		y [0] = Y [k    ] / ukk ;
+		y [1] = Y [k + d] / ukk ;
+		Y [k    ] = y [0] ;
+		Y [k + d] = y [1] ;
+		for (p = Up [k] ; p < pend ; p++)
+		{
+		    i = Ui [p] ;
+		    uik = Ux [p] ;
+		    Y [i    ] -= uik * y [0] ;
+		    Y [i + d] -= uik * y [1] ;
+		}
+	    }
+
+	    break ;
+
+	case 3:
+
+	    for (k = n-1 ; k >= 0 ; k--)
+	    {
+		pend = Up [k+1] - 1 ;
+		ukk = Ux [pend] ;
+		y [0] = Y [k     ] / ukk ;
+		y [1] = Y [k + d ] / ukk ;
+		y [2] = Y [k + d2] / ukk ;
+		Y [k     ] = y [0] ;
+		Y [k + d ] = y [1] ;
+		Y [k + d2] = y [2] ;
+		for (p = Up [k] ; p < pend ; p++)
+		{
+		    i = Ui [p] ;
+		    uik = Ux [p] ;
+		    Y [i     ] -= uik * y [0] ;
+		    Y [i + d ] -= uik * y [1] ;
+		    Y [i + d2] -= uik * y [2] ;
+		}
+	    }
+
+	    break ;
 	}
     }
 }
@@ -385,22 +588,32 @@ void klu_usolve
 /* === klu_permute ========================================================== */
 /* ========================================================================== */
 
-/* Permute a vector with the permutation matrix P, x = P*b. */
+/* Permute a dense matrix with the permutation matrix P, X = P*B. */
 
 void klu_permute
 (
     /* inputs, not modified: */
     int n,
     int P [ ],
+    int d,
+    int nrhs,
     double B [ ],
     /* output */
     double X [ ]
 )
 {
-    int k ;
-    for (k = 0 ; k < n ; k++)
+    double *Y, *Z ;
+    int k, s ;
+    Y = X ;
+    Z = B ;
+    for (s = 0 ; s < nrhs ; s++)
     {
-	X [k] = B [P [k]] ;
+	for (k = 0 ; k < n ; k++)
+	{
+	    Y [k] = Z [P [k]] ;
+	}
+	Y += d ;
+	Z += d ;
     }
 }
 

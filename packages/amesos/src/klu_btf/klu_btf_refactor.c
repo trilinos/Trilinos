@@ -28,7 +28,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	ukk, ujk, *Lx, *Ux, *X ;
 
     int k1, k2, nk, k, block, oldcol, pend, row, oldrow, newcol, n,
-	pc, p, newrow, col, *P, *Q, *R, nblocks, poff, *Pnum, *Lp, *Up,
+	p, newrow, col, *P, *Q, *R, nblocks, poff, *Pnum, *Lp, *Up,
 	*Offp, *Offi, **Lbp, **Lbi, **Ubp, **Ubi, *Pblock, maxnz, result,
 	i, j, up, upend, upstart, *Ui, *Li, *Pinv, maxblock ;
 
@@ -60,7 +60,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     Ubx = Numeric->Ubx ;
     Rs = Numeric->Rs ;
     Pinv = Numeric->Pinv ;
-    X = Numeric->X ;
+    X = Numeric->Xwork ;
 
     PRINTF (("klu_btf_factor:  n %d nzoff %d nblocks %d maxblock %d maxnz %d\n",
 	n, Symbolic->nzoff, nblocks, maxblock, maxnz)) ;
@@ -106,14 +106,9 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	return (result) ;
     }
 
-    /* TODO: no need to set Singleton to zero */
-    for (block = 0 ; block < nblocks ; block++)
-    {
-	Singleton [block] = 0 ;
-    }
     poff = 0 ;
 
-    /* note that klu_btf_refactor only uses X [0..maxblock-1] */
+    /* clear X for use in the klu_kernel */
     for (k = 0 ; k < maxblock ; k++)
     {
 	X [k] = 0 ;
@@ -218,16 +213,11 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 			/* (newrow,k) is an entry in the block */
 			ASSERT (newrow < k2) ;
 			newrow -= k1 ;
-			if (newrow >= nk || pc >= maxnz)
+			if (newrow >= nk)
 			{
 			    return (KLU_INVALID) ;
 			}
 			X [newrow] = Ax [p] / Rs [oldrow] ;
-			/*
-			Ci [pc] = newrow ;
-			Cx [pc] = Ax [p] / Rs [oldrow] ;
-			pc++ ;
-			*/
 		    }
 		}
 
@@ -239,14 +229,12 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 		for (up = upend-1 ; up >= upstart ; up--)	/* skip U_kk */
 		{
 		    j = Ui [up] ;
-		    ASSERT (j >= 0 && j < nk) ;
 		    ujk = X [j] ;
 		    X [j] = 0 ;
 		    Ux [up] = ujk ;
 		    pend = Lp [j+1] ;
 		    for (p = Lp [j] + 1 ; p < pend ; p++)
 		    {
-			ASSERT (Li [p] >= 0 && Li [p] < nk) ;
 			X [Li [p]] -= Lx [p] * ujk ;
 		    }
 		}
@@ -265,7 +253,6 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 		for ( ; p < pend ; p++)
 		{
 		    i = Li [p] ;
-		    ASSERT (i >= 0 && i < nk) ;
 		    Lx [p] = X [i] / ukk ;
 		    X [i] = 0 ;
 		}
@@ -281,6 +268,19 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	    ASSERT (klu_valid (nk, Ubp [block], Ubi [block], Ubx [block])) ;
 
 	}
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* permute scale factors Rs according to pivotal row order */
+    /* ---------------------------------------------------------------------- */
+
+    for (k = 0 ; k < n ; k++)
+    {
+	X [k] = Rs [Pnum [k]] ;
+    }
+    for (k = 0 ; k < n ; k++)
+    {
+	Rs [k] = X [k] ;
     }
 
     ASSERT (Offp [n] == poff) ;
