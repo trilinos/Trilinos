@@ -12,6 +12,8 @@
 
 #ifndef __MLKRYLOVDATA_
 #define __MLKRYLOVDATA_
+#define ML_CG 0
+#define ML_GMRES 1
 
 /* ******************************************************************** */
 /* local include files                                                  */
@@ -83,6 +85,7 @@ extern int ML_Krylov_Set_ComputeEigenvalues(ML_Krylov *);
 extern double ML_Krylov_Get_MaxEigenvalue(ML_Krylov *);
 
 extern int ML_Krylov_Solve(ML_Krylov *, int, double *, double*);
+extern int ML_MGVSolve_Wrapper(void *, int, double *, int, double*);
 extern int ML_AMGVSolve_Wrapper(void *, int, double *, int, double*);
 extern int ML_DiagScale_Wrapper(void *, int, double *, int, double*);
 

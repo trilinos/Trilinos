@@ -362,9 +362,9 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
    }
    switch ( data->ML_method )
    {
-      case 0  : ML_CG_Solve(data, leng, invec, outvec);
+      case ML_CG :   ML_CG_Solve(data, leng, invec, outvec);
                 break;
-      case 1  : ML_GMRES_Solve(data, leng, invec, outvec);
+      case ML_GMRES : ML_GMRES_Solve(data, leng, invec, outvec);
                 break;
       default : ML_BICGSTABL_Solve(data, leng, invec, outvec);
                 break;
@@ -393,6 +393,27 @@ int ML_DiagScale_Wrapper(void *data,int leng,double *outvec,int leng2,
    diag_scale = kry_obj->diag_scale;
 
    for ( i = 0; i < leng; i++ ) outvec[i] = invec[i] * diag_scale[i];
+
+   return 0;
+}
+
+/* ******************************************************************** */
+/* wrapper for AMG solve                                                */
+/* ******************************************************************** */
+
+int ML_MGVSolve_Wrapper(void *data,int leng,double *outvec,int leng2,
+                         double* invec)
+{
+   ML *ml_ptr;
+
+   ml_ptr = (ML *) data;
+
+   if ( leng != leng2 )
+   {
+      printf("ML_DiagScale_Wrapper ERROR : lengths do not match.\n");
+      exit(0);
+   }
+   ML_Solve_MGV(ml_ptr, invec, outvec);
 
    return 0;
 }
