@@ -86,8 +86,8 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   int         *actual_send_length, *actual_recv_length, *start_send_proc;
   int         Nneighbors, *neighbor, *remap;
   int         Nrows_new, *cols_new, *rowptr_new, Nrows_send, Nrows, max_per_row;
-  int         *ibuff, total_num_recv, total_send, total_recv;
-  double      *vals_new, *dtemp, *dbuff, *dummy1;
+  int         *ibuff, total_num_recv, total_send, total_recv, *iptr;
+  double      *vals_new, *dtemp, *dbuff, *dummy1, *dptr;
   int         i, j, k, ii, jj, *newmap, *orig_map, nonNULL_rcv_list, *dummy2;
   static int  type = ML_MPI_MSG_NUM;
   struct      ML_CSR_MSRdata *temp;
@@ -185,6 +185,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
         total_send += row_length;
      }
   }
+  ML_free(dummy2);
   ML_cheap_exchange_bdry(dtemp, comm_info, Nrows, Nrows_send, comm);
 
 /*
@@ -250,14 +251,11 @@ example (with nonutilized ghost variables still works
   /* allocate integer space for the new matrix rows */
   /* allocate space to pack the messages to be sent */
 
-  cols_new = (int    *) ML_allocate( (total_recv+1)*sizeof(int));
-  vals_new = (double *) ML_allocate( (total_recv+1)*sizeof(double));
   allocated_space = total_send+1;
   ibuff    = (int    *) ML_allocate( allocated_space*sizeof(int   ));
-  dbuff    = (double *) ML_allocate( allocated_space*sizeof(double));
-  if (dbuff == NULL) 
+  if (ibuff == NULL) 
   {
-     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d ints (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
   }
 
   /* pack up the integer information to be sent and send it */
@@ -269,8 +267,9 @@ example (with nonutilized ghost variables still works
      for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++) 
      {
         j = comm_info->neighbors[ii].send_list[jj];
-        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &ibuff,
-                          &dbuff, &row_length, i);
+	iptr = &(ibuff[i]);
+        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &iptr,
+                          &dummy1, &row_length, 0);
         i += row_length;
      }
      actual_send_length[ii] = i - start_send_proc[ii];
@@ -306,6 +305,11 @@ example (with nonutilized ghost variables still works
      rowptr_new[i] = count;
   }
   ML_free(dtemp);
+  cols_new = (int    *) ML_allocate( (total_recv+1)*sizeof(int));
+  if (cols_new == NULL) {
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d ints (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, total_recv+1,Nneighbors);
+
+  }
 
   type++;
   if (type > ML_MPI_MSG_NUM + 100) type = ML_MPI_MSG_NUM;
@@ -313,6 +317,12 @@ example (with nonutilized ghost variables still works
                      sizeof(int), start_send_proc, actual_send_length, 
                      actual_recv_length, neighbor, type, 
                      &total_num_recv, comm);
+  ML_free(ibuff);
+  dbuff    = (double *) ML_allocate( allocated_space*sizeof(double));
+  if (dbuff == NULL) 
+    {
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
+    }
 
   /* pack up the float information to be sent and send it */
 
@@ -322,11 +332,20 @@ example (with nonutilized ghost variables still works
      for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++) 
      {
         j = comm_info->neighbors[ii].send_list[jj];
-        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &ibuff,
-                          &dbuff, &row_length, i);
+	dptr = &(dbuff[i]);
+        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, (int **) &dummy1,
+                          &dptr, &row_length, 0);
         i += row_length;
      } 
   } 
+  ML_free(dummy1);
+  vals_new = (double *) ML_allocate( (total_recv+1)*sizeof(double));
+  if (vals_new == NULL) {
+    printf("out of space in ML_exchange_rows\n");
+    printf("   tried to allocate %d doubles for vals_new\n",allocated_space);
+    exit(1);
+  }
+
   type++;
   if (type > ML_MPI_MSG_NUM + 100) type = ML_MPI_MSG_NUM;
   ML_splitup_big_msg(Nneighbors,(char *) dbuff,(char *) vals_new, 
@@ -336,9 +355,6 @@ example (with nonutilized ghost variables still works
 
   ML_free(neighbor);
   ML_free(dbuff);
-  ML_free(ibuff);
-  ML_free(dummy2);
-  ML_free(dummy1);
   ML_free(start_send_proc);
   ML_free(actual_recv_length);
   ML_free(actual_send_length);
