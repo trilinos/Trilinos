@@ -99,8 +99,8 @@ char *val1)			/* value to set this parameter to */
     /* All parameter setting routines have been called, now finish up. */
 
     if (status == 1)		/* Parameter name never found */
-	printf("Warning: parameter `%s' not found; not reset to `%s'.\n",
-	       name, val);
+	fprintf(stderr, "Warning: parameter `%s' not found;"
+                        " not reset to `%s'.\n", name, val);
 
     if (status == 0)		/* Parameter OK, add it to list */
 	add_param(lb, name, val);
@@ -138,8 +138,7 @@ char **pstring2) 		/* cleaned string to return */
     while (end > start && isspace(string1[end]))
 	end--;
 
-    string2 = (char *)
-       LB_Malloc((end - start + 1) * sizeof(char), __FILE__, __LINE__);
+    string2 = (char *) LB_MALLOC((end - start + 1) * sizeof(char));
     *pstring2 = string2;
 
     if (string2 == NULL)
@@ -180,7 +179,7 @@ char *val)			/* value to set this parameter to */
     }
 
     /* This is a new parameter, add it to list. */
-    param = (LB_PARAM *) LB_Malloc(sizeof(LB_PARAM), __FILE__, __LINE__);
+    param = (LB_PARAM *) LB_MALLOC(sizeof(LB_PARAM));
     if (param == NULL) {
 	LB_FREE(&name);
 	LB_FREE(&val);

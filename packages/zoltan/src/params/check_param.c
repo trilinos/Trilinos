@@ -108,7 +108,8 @@ int *matched_index)		/* where in struct the match occurs */
 	}
 
 	else {
-	    printf("WARNING: Bad type for parameter `%s'\n", params->name);
+	    fprintf(stderr, "WARNING: Bad type for parameter `%s'\n", 
+                    params->name);
 	    status = 2;
 	}
 
