@@ -62,6 +62,45 @@ bool NOX::Direction::Newton::reset(NOX::Parameter::List& params)
   doRescue = p.getParameter("Rescue Bad Newton Solve", true);
   if (!p.sublist("Linear Solver").isParameter("Tolerance"))
     p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
+
+  
+  if ((!p.isParameter("Forcing Term Method")) ||
+      (p.isParameterEqual("Forcing Term Method", "Constant"))) {  
+    useAdjustableForcingTerm = false;
+    eta_k = p.getParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+    p.sublist("Linear Solver").setParameter("Tolerance", eta_k); 
+  }
+  else {
+    useAdjustableForcingTerm = true;
+    method = p.getParameter("Forcing Term Method", "Type 1");
+    eta_min = p.getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  
+    eta_max = p.getParameter("Forcing Term Maximum Tolerance", 0.9);
+    eta_initial = p.getParameter("Forcing Term Initial Tolerance", 0.01);
+    alpha = p.getParameter("Forcing Term Alpha", 1.5);
+    gamma = p.getParameter("Forcing Term Gamma", 0.9);
+    eta_k = eta_min;
+    
+    userNorm = 0;
+    if (p.isParameter("Forcing Term User Defined Norm")) {
+
+      NOX::Parameter::Arbitrary& arbitrary = 
+	const_cast<NOX::Parameter::Arbitrary&>
+	(p.getArbitraryParameter("Forcing Term User Defined Norm"));
+
+      userNorm = dynamic_cast<NOX::Parameter::UserNorm*>(&arbitrary);
+
+      if (userNorm == 0) {
+	if (utils.isPrintProcessAndType(Utils::Warning)) {
+	  cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
+	       << "\"Forcing Term User Defined Norm\" is not of type "
+	       << "NOX::Parameter::UserNorm!\n" 
+	       << "Defaulting to L-2 Norms!" << endl; 
+	}
+      }
+
+    }
+  }
+
   return true;
 }
 
@@ -77,8 +116,16 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
     NOX::Direction::Newton::throwError("compute", "Unable to compute F");
 
   // Reset the linear solver tolerance.
-  resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
-		   solver.getNumIterations(), solver.getParameterList());
+  if (useAdjustableForcingTerm)
+    resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
+		     solver.getNumIterations(), solver.getParameterList());
+  else { 
+    if (utils.isPrintProcessAndType(Utils::Details)) {
+      cout << "       CALCULATING FORCING TERM" << endl;
+      cout << "       Method: Constant" << endl;
+      cout << "       Forcing Term: " << eta_k << endl;
+    }
+  }
 
   // Compute Jacobian at current solution.
   status = soln.computeJacobian();
@@ -118,15 +165,6 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   // Reset the forcing term at the beginning on a nonlinear iteration,
   // based on the last iteration.
 
-  if ((!paramsPtr->sublist("Newton").isParameter("Forcing Term Method")) ||
-      (paramsPtr->sublist("Newton").isParameterEqual("Forcing Term Method", "None")))
-    return true;
-
-  // Get forcing term parameters.
-  const string method = paramsPtr->sublist("Newton").getParameter("Forcing Term Method", "Constant");
-  const double eta_min = paramsPtr->sublist("Newton").getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  
-  const double eta_max = paramsPtr->sublist("Newton").getParameter("Forcing Term Maximum Tolerance", 0.9);
-
   // Get linear solver current tolerance.
 
   double eta_km1 = 0.0;
@@ -143,9 +181,6 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
     
   }
 
-  // New forcing term.
-  double eta_k;
-
   const string indent = "       ";
 
   if (utils.isPrintProcessAndType(Utils::Details)) {
@@ -153,20 +188,12 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
     cout << indent << "Method: " << method << endl;
   }
 
-  if (method == "Constant") {    
 
-    if (eta_km1 != 0.0) 
-      eta_k = eta_km1;
-    else
-      eta_k = eta_min;
-
-  }        
-
-  else if (method == "Type 1") {
+  if (method == "Type 1") {
     
     if (niter == 0) {
-
-      eta_k = paramsPtr->sublist("Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
+      
+      eta_k = eta_initial;
 
     }
     else {
@@ -195,7 +222,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 	  cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
 	       << "Jacobian is out of date! Recomputing Jacobian." << endl;
 	}
-	  const_cast<NOX::Abstract::Group&>(oldsoln).computeJacobian();
+	const_cast<NOX::Abstract::Group&>(oldsoln).computeJacobian();
       }
       oldsoln.applyJacobian(*stepDir, *predRhs);
 
@@ -207,33 +234,14 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       double normf = 0.0;
       double normoldf = 0.0;
 
-      if (paramsPtr->sublist("Newton").isParameter("Forcing Term User Defined Norm")) {
-
-	const NOX::Parameter::Arbitrary& arbitrary = paramsPtr->
-	  sublist("Newton").getArbitraryParameter("Forcing Term User Defined Norm");
-	const NOX::Parameter::UserNorm* userNorm = 0;
-	userNorm = dynamic_cast<const NOX::Parameter::UserNorm*>(&arbitrary);
-	
-	if (userNorm != 0) {
-	  if (utils.isPrintProcessAndType(Utils::Details)) {
-	    cout << indent << "Forcing Term Norm: " << userNorm->getType()
-		 << endl;
-	  }
-	  normpredf = userNorm->norm(*predRhs);
-	  normf = userNorm->norm(soln.getF());
-	  normoldf = userNorm->norm(oldsoln.getF());
+      if (userNorm != 0) {
+	if (utils.isPrintProcessAndType(Utils::Details)) {
+	  cout << indent << "Forcing Term Norm: " << userNorm->getType()
+	       << endl;
 	}
-	else {
-	  if (utils.isPrintProcessAndType(Utils::Warning)) {
-	    cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
-		 << "\"Forcing Term User Defined Norm\" is not of type "
-		 << "NOX::Parameter::UserNorm!\n" 
-		 << "Defaulting to L-2 Norms!" << endl; 
-	  }
-	  normpredf = predRhs->norm();
-	  normf = soln.getNormF();
-	  normoldf = oldsoln.getNormF();
-	}
+	normpredf = userNorm->norm(*predRhs);
+	normf = userNorm->norm(soln.getF());
+	normoldf = userNorm->norm(oldsoln.getF());
       }
       else {
 	if (utils.isPrintProcessAndType(Utils::Details)) {
@@ -269,40 +277,22 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   else if (method == "Type 2") {  
     
     if (niter == 0) {
-
-      eta_k = paramsPtr->sublist("Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
-
+      
+      eta_k = eta_initial;
+      
     }
     else {
 
       double normf = 0.0;
       double normoldf = 0.0;
-
-      if (paramsPtr->sublist("Newton").isParameter("Forcing Term User Defined Norm")) {
-
-	const NOX::Parameter::Arbitrary& arbitrary = paramsPtr->
-	  sublist("Newton").getArbitraryParameter("Forcing Term User Defined Norm");
-	const NOX::Parameter::UserNorm* userNorm = 0;
-	userNorm = dynamic_cast<const NOX::Parameter::UserNorm*>(&arbitrary);
-	
-	if (userNorm != 0) {
-	  if (utils.isPrintProcessAndType(Utils::Details)) {
-	    cout << indent << "Forcing Term Norm: " << userNorm->getType()
-		 << endl;
-	  }
-	  normf = userNorm->norm(soln.getF());
-	  normoldf = userNorm->norm(oldsoln.getF());
+      
+      if (userNorm != 0) {
+	if (utils.isPrintProcessAndType(Utils::Details)) {
+	  cout << indent << "Forcing Term Norm: " << userNorm->getType()
+	       << endl;
 	}
-	else {
-	  if (utils.isPrintProcessAndType(Utils::Warning)) {
-	    cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
-		 << "\"Forcing Term User Defined Norm\" is not of type "
-		 << "NOX::Parameter::UserNorm!\n" 
-		 << "Defaulting to L-2 Norms!" << endl; 
-	  }
-	  normf = soln.getNormF();
-	  normoldf = oldsoln.getNormF();
-	}
+	normf = userNorm->norm(soln.getF());
+	normoldf = userNorm->norm(oldsoln.getF());
       }
       else {
 	if (utils.isPrintProcessAndType(Utils::Details)) {
@@ -313,8 +303,6 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 	normoldf = oldsoln.getNormF();
       }  
 
-      const double alpha = paramsPtr->sublist("Newton").getParameter("Forcing Term Alpha", 1.5);
-      const double gamma = paramsPtr->sublist("Newton").getParameter("Forcing Term Gamma", 0.9);
       const double residual_ratio = normf / normoldf;
       
       eta_k = gamma * pow(residual_ratio, alpha);
@@ -333,20 +321,21 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       eta_k = max(eta_k, eta_min);
       eta_k = min(eta_max, eta_k);
     }
-
+    
   }
 
   else {
-
+    
     if (utils.isPrintProcessAndType(Utils::Warning))
       cout << "NOX::Direction::Newton::resetForcingTerm "
 	   << "- invalid forcing term method (" << method << ")" << endl;
 
     return false;
   }
-
-  // Reset linear solver tolerance
-  paramsPtr->sublist("Newton").sublist("Linear Solver").setParameter("Tolerance", eta_k);
+  
+  // Set the new linear solver tolerance
+  paramsPtr->sublist("Newton").sublist("Linear Solver")
+    .setParameter("Tolerance", eta_k);
 
   if (utils.isPrintProcessAndType(Utils::Details)) 
     cout << indent << "Forcing Term: " << eta_k << endl;

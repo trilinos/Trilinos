@@ -38,7 +38,10 @@
 
 // Forward declaration
 namespace NOX {
-class Utils;
+  class Utils;
+  namespace Parameter {
+    class UserNorm;
+  }
 }
 
 namespace NOX {
@@ -134,6 +137,11 @@ namespace Direction {
 <li>"Forcing Term Alpha" - \f$\alpha\f$ (used only by "Type 2"). Defaults to 1.5.
 
 <li>"Forcing Term Gamma" - \f$\gamma\f$ (used only by "Type 2"). Defaults to 0.9.
+
+  <B>Output Parameters</B>
+
+<li>"Linear Solver" - a sublist that contains the linear solver parameters will be created if it doesn't exist under the "Newton" sublist.  The parameter "Tolerance" will be created in the "Linear Solver" sublist and set to the computed value of the forcing term.
+
 </ul>
 
 \note
@@ -254,6 +262,32 @@ private:
   //! Vector containing the computed direction
   NOX::Abstract::Vector* stepDir;
 
+  //! Flag used to determine if adjustable forcing term is being used.
+  bool useAdjustableForcingTerm;
+
+  //! Current linear solve tolerance.
+  double eta_k;
+  
+  //! Minimum linear solve tolerance.
+  double eta_min;
+
+  //! Maximum linear solve tolerance.
+  double eta_max;
+
+  //! Initial linear solve tolerance.
+  double eta_initial;
+
+  //! Name of the method used for calculating the inexact forcing term.
+  string method;
+  
+  //! Used to store a user defined norm object.
+  NOX::Parameter::UserNorm* userNorm;
+
+  //! Parameter used for Type 2 forcing term calculation.
+  double alpha;
+
+  //! Parameter used for Type 2 forcing term calculation.
+  double gamma;
 };
 } // namespace Direction
 } // namespace NOX
