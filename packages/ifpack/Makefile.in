@@ -130,8 +130,11 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
+
 #SUBDIRS = src example test doc
-SUBDIRS = src test
+@BUILD_TESTS_TRUE@TEST_SUBDIR = test
+
+SUBDIRS = src $(TEST_SUBDIR)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -146,7 +149,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 DIST_COMMON = Makefile.am Makefile.in aclocal.m4 config/config.guess \
 	config/config.sub config/depcomp config/install-sh \
 	config/missing config/mkinstalldirs configure configure.ac
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = src test
 all: all-recursive
 
 .SUFFIXES:
@@ -286,7 +289,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	for subdir in $(SUBDIRS); do \
+	for subdir in $(DIST_SUBDIRS); do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \

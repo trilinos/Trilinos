@@ -204,6 +204,13 @@ AM_CONDITIONAL(BUILD_OLDIFPACK, test "X$ac_cv_use_oldifpack" != "Xno")
 ### fill in ifdefs here - EPETRA_MPI, DEBUG, CRAY, COMPLEX_SUPPORT
 
 # ------------------------------------------------------------------------
+# Checks if tests should be built
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 

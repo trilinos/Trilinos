@@ -220,6 +220,17 @@ TAC_ARG_WITH_PACKAGE(esi, [Enable ESI interface support], ESI, yes)
 TAC_ARG_WITH_PACKAGE(superlu, [Enable SuperLU interface support], SUPERLU, no)
 
 # ------------------------------------------------------------------------
+# Checks if tests and examples should be built
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages], EXAMPLES, yes)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 

@@ -857,6 +857,8 @@ Optional Features:
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-mpi            MPI support
+  --enable-tests          Build tests for all Trilinos packages (default is
+                          yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2887,7 +2889,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:2890:" \
+echo "$as_me:2892:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5101,8 +5103,43 @@ fi
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Checks for special package flags
+# Checks if tests should be built
 # ------------------------------------------------------------------------
+
+
+# Check whether --enable-tests or --disable-tests was given.
+if test "${enable_tests+set}" = set; then
+  enableval="$enable_tests"
+  ac_cv_use_tests=$enableval
+else
+  ac_cv_use_tests=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tests" >&5
+echo $ECHO_N "checking whether to use tests... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tests" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TESTS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_tests" != "Xno"; then
+  BUILD_TESTS_TRUE=
+  BUILD_TESTS_FALSE='#'
+else
+  BUILD_TESTS_TRUE='#'
+  BUILD_TESTS_FALSE=
+fi
 
 # ------------------------------------------------------------------------
 # Specify other directories
@@ -5195,7 +5232,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5198: \"$ac_link\") >&5
+(eval echo $as_me:5235: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5274,7 +5311,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5277: \"$ac_link\") >&5
+(eval echo $as_me:5314: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7495,7 +7532,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7498: \"$ac_link\") >&5
+(eval echo $as_me:7535: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7574,7 +7611,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7577: \"$ac_link\") >&5
+(eval echo $as_me:7614: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8427,6 +8464,8 @@ s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
+s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
+s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
