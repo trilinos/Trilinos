@@ -2893,7 +2893,7 @@ int ML_ggb_Set_GGBCycle(int flag)
 /* Note: store AQ option works only with SuperLU    */
 /*       (For Now...) and   ML_GGBcycFirst = 1      */ 
 /*------------------------------------------------- */
-
+#if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
 #if defined(HAVE_ML_SUPERLU) || defined(HAVE_ML_AMESOS)
 #ifdef HAVE_ML_SUPERLU
 static int ML_ggb_CoarseSolver = 1;
@@ -2908,6 +2908,7 @@ static int ML_ggb_CoarseSolver = 2;
 	   "ERROR: (file %s, line %d)\n",
 	   __FILE__, __LINE__ );
   exit(-1);
+#endif
 #endif
 
 int ML_ggb_Set_CoarseSolver(int flag) 
