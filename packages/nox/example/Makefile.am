@@ -50,6 +50,8 @@ libnoxexample_a_SOURCES = \
 	$(srcdir)/NOX_Example_Group.H \
 	$(srcdir)/NOX_Example_Group.C 
 
+libnoxexample_a_CXXFLAGS = -I$(top_srcdir)/src
+
 rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a $(top_builddir)/example/libnoxexample.a 
