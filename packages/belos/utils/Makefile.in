@@ -14,8 +14,15 @@
 
 @SET_MAKE@
 
-#@HEADER
-#@HEADER
+# @HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside the Belos tests. 
+# The first is the list of all source and any other header files.
+# ------------------------------------------------------------------------
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -23,7 +30,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ..
 
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
@@ -66,8 +73,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -149,52 +155,153 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 
-noinst_PROGRAMS = bl_pgmres_hb
+CORE_H = 
 
-bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp
+CORE = 
 
-bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/utils/libbelosutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a
+UTIL_H = \
+	$(srcdir)/Util.h 
 
 
-bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/utils -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src \
+UTIL = \
+	$(srcdir)/read_hb_matrix.cpp \
+	$(srcdir)/distrib_msr_matrix.cpp 
+
+
+SERIAL_H = 
+
+SERIAL = 
+
+EXTRA_MPI_H = 
+
+EXTRA_MPI = 
+
+
+#if HAVE_MPI
+
+#MPI_H = \
+#	$(EXTRA_MPI_H)
+#MPI = \
+#	$(EXTRA_MPI)
+
+#else
+MPI_H = 
+MPI = 
+
+
+#endif
+EXTRA_MPISMP_H = 
+
+EXTRA_MPISMP = 
+
+
+#if HAVE_THREADS
+
+#MPISMP_H = \
+#	$(EXTRA_MPISMP_H)
+#MPISMP = \
+#	$(EXTRA_MPISMP)
+
+#else
+MPISMP_H = 
+MPISMP = 
+
+
+#endif
+DIST_H = 
+
+DIST = 
+
+COMP_H = 
+
+COMP = 
+
+
+# ------------------------------------------------------------------------
+# Belos Test library specifications
+# ------------------------------------------------------------------------
+BELOSUTILS_LIB = libbelosutils.a
+
+BELOSUTILS_H = \
+	$(CORE_H) \
+	$(UTIL_H) \
+	$(SERIAL_H) \
+	$(DIST_H) \
+	$(COMP_H) \
+	$(MPI_H) \
+	$(MPISMP_H)
+
+
+libbelosutils_a_SOURCES = \
+	$(CORE) \
+	$(UTIL) \
+	$(SERIAL) \
+	$(DIST) \
+	$(COMP) \
+	$(MPI) \
+	$(MPISMP)
+
+
+#We need the following to support separate build directories
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_builddir)/src \
+		-I$(top_srcdir)/../epetra/src \
+		-I$(top_builddir)/../epetra/src \
 		-I$(top_srcdir)/../triutils/src \
 		-I$(top_builddir)/../triutils/src
 
 
-bl_pgmres_hb_LDADD = $(top_builddir)/utils/libbelosutils.a \
-		$(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../ifpack/src/libifpack.a \
-		$(top_builddir)/../epetra/src/libepetra.a \
-		$(LAPACK_LIBS) \
-		$(BLAS_LIBS) $(LIBS) $(FLIBS)
+@USE_ALTERNATE_AR_FALSE@libbelosutils_a_AR = $(AR) cru
 
-subdir = test/BlockGmres
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libbelosutils_a_AR = $(ALTERNATE_AR)
+
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# On alpha-dec machines, the extra .o's are needed for select packages only.
+# ------------------------------------------------------------------------
+libbelosutils_a_LIBADD = $(XTRALDADD)
+
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+lib_LIBRARIES = $(BELOSUTILS_LIB)
+subdir = utils
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = bl_pgmres_hb$(EXEEXT)
-PROGRAMS = $(noinst_PROGRAMS)
+LIBRARIES = $(lib_LIBRARIES)
 
-am_bl_pgmres_hb_OBJECTS = bl_pgmres_hb-test_bl_pgmres_hb.$(OBJEXT)
-bl_pgmres_hb_OBJECTS = $(am_bl_pgmres_hb_OBJECTS)
-bl_pgmres_hb_LDFLAGS =
+libbelosutils_a_DEPENDENCIES =
+am__objects_1 =
+am__objects_2 = read_hb_matrix.$(OBJEXT) distrib_msr_matrix.$(OBJEXT)
+am_libbelosutils_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
+	$(am__objects_1) $(am__objects_1)
+libbelosutils_a_OBJECTS = $(am_libbelosutils_a_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/distrib_msr_matrix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/read_hb_matrix.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-DIST_SOURCES = $(bl_pgmres_hb_SOURCES)
+DIST_SOURCES = $(libbelosutils_a_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(bl_pgmres_hb_SOURCES)
+SOURCES = $(libbelosutils_a_SOURCES)
 
 all: all-am
 
@@ -202,15 +309,45 @@ all: all-am
 .SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/BlockGmres/Makefile
+	  $(AUTOMAKE) --foreign  utils/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-bl_pgmres_hb$(EXEEXT): $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_DEPENDENCIES) 
-	@rm -f bl_pgmres_hb$(EXEEXT)
-	$(CXXLINK) $(bl_pgmres_hb_LDFLAGS) $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_LDADD) $(LIBS)
+AR = ar
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
+	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libbelosutils.a: $(libbelosutils_a_OBJECTS) $(libbelosutils_a_DEPENDENCIES) 
+	-rm -f libbelosutils.a
+	$(libbelosutils_a_AR) libbelosutils.a $(libbelosutils_a_OBJECTS) $(libbelosutils_a_LIBADD)
+	$(RANLIB) libbelosutils.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -218,7 +355,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/distrib_msr_matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/read_hb_matrix.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -245,27 +383,49 @@ distclean-depend:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `if test -f '$<'; then $(CYGPATH_W) '$<'; else $(CYGPATH_W) '$(srcdir)/$<'; fi`
 
-bl_pgmres_hb-test_bl_pgmres_hb.o: $(srcdir)/test_bl_pgmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_hb-test_bl_pgmres_hb.o -MD -MP -MF "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" \
-@am__fastdepCXX_TRUE@	  -c -o bl_pgmres_hb-test_bl_pgmres_hb.o `test -f '$(srcdir)/test_bl_pgmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_pgmres_hb.cpp; \
-@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po"; \
-@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo"; exit 1; \
+read_hb_matrix.o: $(srcdir)/read_hb_matrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT read_hb_matrix.o -MD -MP -MF "$(DEPDIR)/read_hb_matrix.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o read_hb_matrix.o `test -f '$(srcdir)/read_hb_matrix.cpp' || echo '$(srcdir)/'`$(srcdir)/read_hb_matrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/read_hb_matrix.Tpo" "$(DEPDIR)/read_hb_matrix.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/read_hb_matrix.Tpo"; exit 1; \
 @am__fastdepCXX_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_pgmres_hb.cpp' object='bl_pgmres_hb-test_bl_pgmres_hb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/read_hb_matrix.cpp' object='read_hb_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/read_hb_matrix.Po' tmpdepfile='$(DEPDIR)/read_hb_matrix.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_hb-test_bl_pgmres_hb.o `test -f '$(srcdir)/test_bl_pgmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_pgmres_hb.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o read_hb_matrix.o `test -f '$(srcdir)/read_hb_matrix.cpp' || echo '$(srcdir)/'`$(srcdir)/read_hb_matrix.cpp
 
-bl_pgmres_hb-test_bl_pgmres_hb.obj: $(srcdir)/test_bl_pgmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_hb-test_bl_pgmres_hb.obj -MD -MP -MF "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" \
-@am__fastdepCXX_TRUE@	  -c -o bl_pgmres_hb-test_bl_pgmres_hb.obj `if test -f '$(srcdir)/test_bl_pgmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_pgmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_pgmres_hb.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po"; \
-@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo"; exit 1; \
+read_hb_matrix.obj: $(srcdir)/read_hb_matrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT read_hb_matrix.obj -MD -MP -MF "$(DEPDIR)/read_hb_matrix.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o read_hb_matrix.obj `if test -f '$(srcdir)/read_hb_matrix.cpp'; then $(CYGPATH_W) '$(srcdir)/read_hb_matrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/read_hb_matrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/read_hb_matrix.Tpo" "$(DEPDIR)/read_hb_matrix.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/read_hb_matrix.Tpo"; exit 1; \
 @am__fastdepCXX_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_pgmres_hb.cpp' object='bl_pgmres_hb-test_bl_pgmres_hb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/read_hb_matrix.cpp' object='read_hb_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/read_hb_matrix.Po' tmpdepfile='$(DEPDIR)/read_hb_matrix.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_hb-test_bl_pgmres_hb.obj `if test -f '$(srcdir)/test_bl_pgmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_pgmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_pgmres_hb.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o read_hb_matrix.obj `if test -f '$(srcdir)/read_hb_matrix.cpp'; then $(CYGPATH_W) '$(srcdir)/read_hb_matrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/read_hb_matrix.cpp'; fi`
+
+distrib_msr_matrix.o: $(srcdir)/distrib_msr_matrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT distrib_msr_matrix.o -MD -MP -MF "$(DEPDIR)/distrib_msr_matrix.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o distrib_msr_matrix.o `test -f '$(srcdir)/distrib_msr_matrix.cpp' || echo '$(srcdir)/'`$(srcdir)/distrib_msr_matrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/distrib_msr_matrix.Tpo" "$(DEPDIR)/distrib_msr_matrix.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/distrib_msr_matrix.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/distrib_msr_matrix.cpp' object='distrib_msr_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/distrib_msr_matrix.Po' tmpdepfile='$(DEPDIR)/distrib_msr_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o distrib_msr_matrix.o `test -f '$(srcdir)/distrib_msr_matrix.cpp' || echo '$(srcdir)/'`$(srcdir)/distrib_msr_matrix.cpp
+
+distrib_msr_matrix.obj: $(srcdir)/distrib_msr_matrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT distrib_msr_matrix.obj -MD -MP -MF "$(DEPDIR)/distrib_msr_matrix.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o distrib_msr_matrix.obj `if test -f '$(srcdir)/distrib_msr_matrix.cpp'; then $(CYGPATH_W) '$(srcdir)/distrib_msr_matrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/distrib_msr_matrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/distrib_msr_matrix.Tpo" "$(DEPDIR)/distrib_msr_matrix.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/distrib_msr_matrix.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/distrib_msr_matrix.cpp' object='distrib_msr_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/distrib_msr_matrix.Po' tmpdepfile='$(DEPDIR)/distrib_msr_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o distrib_msr_matrix.obj `if test -f '$(srcdir)/distrib_msr_matrix.cpp'; then $(CYGPATH_W) '$(srcdir)/distrib_msr_matrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/distrib_msr_matrix.cpp'; fi`
 uninstall-info-am:
 
 ETAGS = etags
@@ -323,7 +483,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
-top_distdir = ../..
+top_distdir = ..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
@@ -355,9 +515,10 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES)
 
 installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
 
 install: install-am
 install-exec: install-exec-am
@@ -385,7 +546,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 
@@ -402,7 +563,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES
 
 install-info: install-info-am
 
@@ -426,21 +587,19 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	clean-libLIBRARIES ctags distclean distclean-compile \
 	distclean-depend distclean-generic distclean-tags distdir dvi \
 	dvi-am info info-am install install-am install-data \
 	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install-info-am install-libLIBRARIES install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+	uninstall-am uninstall-info-am uninstall-libLIBRARIES
 
-
-#
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -5,10 +5,8 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
           -DIFPACK
 
-INCLUDES = -I../../utils -I../../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) \
-	$(TRIUTILS_INCLUDES)  
+INCLUDES = -I../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)  
   
-
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
 CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
@@ -16,37 +14,36 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= ../../utils/libbelosutils.$(LIB_EXT) $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) \
-$(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
+LIB_PATHS= $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
 
 #=======================================================================
-# EPetra test source files
+# Belos utility source files
 #=======================================================================
 
-TEST_CXX = test_bl_pgmres_hb.cpp
-TEST_C =
-TEST_F =
+UTILS_CXX = read_hb_matrix.cpp distrib_msr_matrix.cpp
+UTILS_C =
+UTILS_F =
 
 #=======================================================================
-# TEST include files
+# UTIL include files
 
-TEST_INC =
+UTILS_INC = Util.h
 
 #=======================================================================
 
-TEST_OBJ        = $(TEST_CXX:.cpp=.$(OBJ_EXT)) $(TEST_C:.c=.$(OBJ_EXT)) \
-                  $(TEST_F:.f=.$(OBJ_EXT))
+BELOS_UTILS_OBJ        = $(UTILS_CXX:.cpp=.$(OBJ_EXT)) $(UTILS_C:.c=.$(OBJ_EXT)) \
+                  $(UTILS_F:.f=.$(OBJ_EXT))
+#=======================================================================
+#Do not see a need to build different serial and mpi libraries at this
+#time
+LIB_MPI = libbelosutils.$(LIB_EXT)
+LIB_SERIAL = libbelosutils.$(LIB_EXT)
+
+LIBBELOSUTILS = $(LIB_$(TRILINOS_COMM))
 #=======================================================================
 
-TARGET_MPI = bl_pgmres_hb_mpi.exe
-TARGET_SERIAL = bl_pgmres_hb_serial.exe
-
-TARGET = $(TARGET_$(TRILINOS_COMM))
-#=======================================================================
-
-$(TARGET): $(TEST_OBJ)
-	$(LINKER) $(LDFLAGS) $(TEST_OBJ) $(LIB_PATHS) $(ARCH_LIBS) \
-	$(LIBMPI)  -o $(TARGET)
+LIBBELOSUTILS: $(BELOS_UTILS_OBJ)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS) $(LIBBELOSUTILS) $(BELOS_UTILS_OBJ)
 
 #=======================================================================
 # dependencies for 'f' files (none at this time)
@@ -56,6 +53,6 @@ $(TARGET): $(TEST_OBJ)
 #=======================================================================
 clean:
 	@echo "junk" > dummy.$(OBJ_EXT)
-	@rm -f *.$(OBJ_EXT)  *~ $(TARGET_MPI) $(TARGET_SERIAL) 
+	@rm -f *.$(OBJ_EXT) *.$(LIB_EXT)  *~ $(LIB_MPI) $(LIB_SERIAL) 
 
 #=======================================================================

@@ -5,7 +5,8 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
           -DIFPACK
 
-INCLUDES = -I../ -I../../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)  
+INCLUDES = -I../../utils -I../../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) \
+	$(TRIUTILS_INCLUDES)  
   
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
@@ -15,7 +16,8 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= ../libBelosTest.$(LIB_EXT) $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
+LIB_PATHS= ../../utils/libbelosutils.$(LIB_EXT) $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) \
+$(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
 
 #=======================================================================
 # EPetra test source files
