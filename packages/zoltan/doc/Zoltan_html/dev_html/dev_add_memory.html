@@ -47,9 +47,9 @@ error checking for the allocations and, thus, their use is highly recommended.
 <p>When a dynamic structure needs to be returned to the application,
 special memory allocation routines are needed.&nbsp; For example, the import
 and export lists of data to migrate are returned to an application from
-<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
 and 
-<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>.
+<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a></b>.
 There are two special routines for managing memory for such situations,
 called <b><a href="#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b> and <b><a href="#Zoltan_Special_Free">Zoltan_Special_Free</a></b>.
 Algorithms must use these functions to maintain compatibility with both
@@ -75,9 +75,9 @@ int <b>Zoltan_Special_Malloc</b>(struct
 <hr>
 <p>The <b>Zoltan_Special_Malloc</b> routine allocates memory to be returned to the application by Zoltan (e.g., the result arrays
 of 
-<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
 and 
-<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>).
+<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a></b>).
 Returned memory must be allocated by <b>Zoltan_Special_Malloc</b> to insure it is allocated
 by the same language as the application. Memory allocated by <b>Zoltan_Special_Malloc</b>
 must be deallocated by <b><a href="#Zoltan_Special_Free">Zoltan_Special_Free</a></b>.

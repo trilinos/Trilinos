@@ -121,11 +121,11 @@ one argument can have more than one type passed to it (for example, it
 is type void in the C interface), then there must be one module procedure
 for each type that can be passed. These are distinguished by appending
 a digit to the end of the module procedure name. If n arguments can have
-more than one type, then n digits are appended. See <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</A></B>
+more than one type, then n digits are appended. See <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A></B>
 for example. Generally the module procedure just calls the C-side wrapper
 function,<B> </B>but in some cases it may need to coerce data to a different
 type (e.g., <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>),
-or may actually do real work (e.g., <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</A></B>).</LI>
+or may actually do real work (e.g., <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A></B>).</LI>
 
 <BR>&nbsp;</UL>
 Here are the items in <I>cwrap.c</I>:

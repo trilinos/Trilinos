@@ -38,11 +38,11 @@ The fields of the <b>Zoltan_Struct</b> data structure are listed and described
 in the <a href="#Zoltan_Struct">table</a> below. See the <a href="../ug_html/ug.html">Zoltan
 User's Guide</a> for descriptions of the function types used in the <b>Zoltan_Struct</b>.
 <p>An <b>Zoltan_Struct</b> data structure <i>zz</i> is passed from the application
-to Zoltan in the call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
+to Zoltan in the call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
 This data structure is passed to the individual load-balancing routines.
 The <i>zz->LB.Data_Structure</i> pointer field should point to the main data
 structures of the particular load-balancing algorithm so that the data
-structures may be preserved for future calls to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+structures may be preserved for future calls to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
 and so that separate instances of the same load-balancing algorithm (with
 different <b>Zoltan_Struct</b> structures) can be used by the application.
 <br>&nbsp;
@@ -494,7 +494,7 @@ or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_
 *<i> Get_Obj_Size</i></td>
 
 <td>A pointer to an application-registered function that returns the size
-(in bytes) of data objects to be migrated. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.&nbsp;
+(in bytes) of data objects to be migrated. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>.&nbsp;
 Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_Size_Fn</a></b>.</td>
 </tr>
@@ -513,7 +513,7 @@ or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_
 
 <td>A pointer to an application-registered function that packs all data
 for a given object into a communication buffer provided by the migration
-tools in preparation for data-migration communication. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+tools in preparation for data-migration communication. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
 for each object to be exported.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pack_Obj_Fn</a></b>.</td>
 </tr>
@@ -532,7 +532,7 @@ or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_
 
 <td>A pointer to an application-registered function that unpacks all data
 for a given object from a communication buffer after the communication
-for data migration is completed. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+for data migration is completed. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
 for each imported object.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Unpack_Obj_Fn</a></b>.</td>
 </tr>
@@ -592,10 +592,36 @@ for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
 </tr>
 
 <tr>
+<td VALIGN=TOP>int <i>Num_Global_Parts</i></td>
+<td>
+The total number of partitions to be generated.  
+Set via a call to
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#NUM_GLOBAL_PARTITIONS">NUM_GLOBAL_PARTITIONS</a> or through
+summation of 
+<a href="../ug_html/ug_alg.html#NUM_LOCAL_PARTITIONS">NUM_LOCAL_PARTITIONS</a> 
+parameters.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>int <i>Num_Local_Parts</i></td>
+<td>
+The number of partitions to be generated on this processor.
+Set via a call to
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#NUM_LOCAL_PARTITIONS">NUM_LOCAL_PARTITIONS</a> or (roughly) through
+division of the
+<a href="../ug_html/ug_alg.html#NUM_GLOBAL_PARTITIONS">NUM_GLOBAL_PARTITIONS</a>
+parameter by the number of processors.
+</td>
+</tr>
+
+<tr>
 <td VALIGN=TOP>int <i>Return_Lists</i></td>
 
 <td>A flag indicating whether the application wants import and/or export
-lists returned by <a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>.
+lists returned by <a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>.
 Set via a call to
 <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
@@ -646,7 +672,7 @@ for <a href="../ug_html/ug_alg.html#LB_METHOD">LB_METHOD</a>.
 The <b>ZOLTAN_MIGRATE</b> structure contains data used by the migration tools,
 including pointers to pre- and post-processing routines. These pointers
 are set through the interface routine <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-and are used in <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
+and are used in <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>.
 The fields of the <b>ZOLTAN_MIGRATE</b> structure are listed and described
 in in the following <a href="#Migrate_Fields">table</a>.
 <br>&nbsp;
@@ -662,10 +688,64 @@ in in the following <a href="#Migrate_Fields">table</a>.
 
 <td>A flag indicating whether Zoltan should perform
 auto-migration for the application. If true, Zoltan
-calls <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+calls <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
 to move objects to their new processors; if false, data migration is left
 to the user. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#AUTO_MIGRATE">AUTO_MIGRATE</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN">ZOLTAN_PRE_MIGRATE_PP_FN</a>
+*<i> Pre_Migrate_PP</i></td>
+
+<td>A pointer to an application-registered function that performs pre-processing
+for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+before data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pre_Migrate_PP_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>void <i>*Pre_Migrate_PP_Data</i></td>
+
+<td>A pointer to data provided by the user that will be passed to the function
+pointed to by <i>Pre_Migrate_PP</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pre_Migrate_PP_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN">ZOLTAN_MID_MIGRATE_PP_FN</a>
+*<i> Mid_Migrate_PP</i></td>
+
+<td>A pointer to an application-registered function that performs processing
+between the packing and unpacking operations in <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>.
+Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Mid_Migrate_PP_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>void <i>*Mid_Migrate_PP_Data</i></td>
+
+<td>A pointer to data provided by the user that will be passed to the function
+pointed to by <i>Mid_Migrate_PP</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Mid_Migrate_PP_Fn</a></b>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN">ZOLTAN_POST_MIGRATE_PP_FN</a>
+*<i>Post_Migrate_PP</i></td>
+
+<td>A pointer to an application-registered function that performs post-processing
+for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+after data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Post_Migrate_PP_Fn</a></b>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>void *<i>Post_Migrate_PP_Data</i></td>
+
+<td>A pointer to data provided by the user that will be passed to the function
+pointed to by <i>Post_Migrate_PP</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Post_Migrate_PP_Fn</a></b>.&nbsp;</td>
 </tr>
 
 <tr>
@@ -675,7 +755,9 @@ for <a href="../ug_html/ug_alg.html#AUTO_MIGRATE">AUTO_MIGRATE</a>.</td>
 <td>A pointer to an application-registered function that performs pre-processing
 for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 before data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pre_Migrate_Fn</a></b>.</td>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pre_Migrate_Fn</a></b>.
+Maintained for backward compatibility with Zoltan v1.3 interface.
+</td>
 </tr>
 
 <tr>
@@ -693,7 +775,9 @@ or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_
 <td>A pointer to an application-registered function that performs processing
 between the packing and unpacking operations in <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
 Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Mid_Migrate_Fn</a></b>.</td>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Mid_Migrate_Fn</a></b>.
+Maintained for backward compatibility with Zoltan v1.3 interface.
+</td>
 </tr>
 
 <tr>
@@ -711,7 +795,9 @@ or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_
 <td>A pointer to an application-registered function that performs post-processing
 for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 after data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Post_Migrate_Fn</a></b>.</td>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Post_Migrate_Fn</a></b>.
+Maintained for backward compatibility with Zoltan v1.3 interface.
+</td>
 </tr>
 
 <tr NOSAVE>
