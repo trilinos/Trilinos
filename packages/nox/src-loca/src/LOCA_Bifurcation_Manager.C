@@ -71,8 +71,9 @@ LOCA::Continuation::AbstractGroup*
 LOCA::Bifurcation::Manager::createBifurcationGroup(
 			            LOCA::Continuation::AbstractGroup& grp) 
 {
-  if (method == "None") 
-    return dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone(NOX::DeepCopy));
+  if (method == "None")
+    return
+      dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone(NOX::DeepCopy));
   else if (method == "Turning Point") {
     LOCA::Bifurcation::TPBord::AbstractGroup& tpGrp =
       dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup&>(grp);
