@@ -1155,13 +1155,12 @@ namespace Anasazi {
       Teuchos::RefCountPtr<MV> evecstempr, evecr1;
       ScalarType t_evecnrm;
       i = 0;
-      _os << "Columns of eigenvectors : "<< MVT::GetNumberVecs( *_evecs )<<endl;
+
       while ( i < curr_nev ) {	
 	if ((*_ritzvalues)[_totallength+i] != zero) {
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[i],evecnrm[i+1]);
 	  index2[0] = i;
 
-	  _os <<" eigenvalue : "<< i << endl;
 	  // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
 	  evecstempr = MVT::CloneView( *evecstemp, index2 );
 	  evecr1 = MVT::CloneView( *_evecs, index2 );
@@ -1202,7 +1201,6 @@ namespace Anasazi {
 	// There is storage for an extra eigenvector.  
 	// So, when the last eigenvalues is the first of a conjugate pair, that eigenvector will be computed.
 	//
-	_os << "Conjugate pairs : "<<conjprs<<endl;
 	for (i=0; i<conjprs; i++) {
 	  indexi_pnev[0] = indexi[i] + _nev;
 	  index2[0] = indexi[i];	  
