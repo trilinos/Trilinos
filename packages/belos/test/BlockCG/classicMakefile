@@ -1,0 +1,59 @@
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
+          -DIFPACK
+
+INCLUDES = -I../ $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)  
+  
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+CCFLAGS=$(CXXFLAGS)
+LDFLAGS=$(ARCH_LDFLAGS)
+
+
+LIB_PATHS= $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
+
+#=======================================================================
+# EPetra test source files
+#=======================================================================
+
+TEST_CXX = test_bl_pcg_hb.cpp ../read_hb_matrix.cpp ../distrib_msr_matrix.cpp
+TEST_C =
+TEST_F =
+
+#=======================================================================
+# TEST include files
+
+TEST_INC = BlockCG.hpp ../Util.h
+
+#=======================================================================
+
+TEST_OBJ        = $(TEST_CXX:.cpp=.$(OBJ_EXT)) $(TEST_C:.c=.$(OBJ_EXT)) \
+                  $(TEST_F:.f=.$(OBJ_EXT))
+#=======================================================================
+
+TARGET_MPI = bl_pcg_hb_mpi.exe
+TARGET_SERIAL = bl_pcg_hb_serial.exe
+
+TARGET = $(TARGET_$(TRILINOS_COMM))
+#=======================================================================
+
+$(TARGET): $(TEST_OBJ)
+	$(LINKER) $(LDFLAGS) $(TEST_OBJ) $(LIB_PATHS) $(ARCH_LIBS) \
+	$(LIBMPI)  -o $(TARGET)
+
+#=======================================================================
+# dependencies for 'f' files (none at this time)
+
+#include ../../build/depends.petra
+
+#=======================================================================
+clean:
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  *~ $(TARGET_MPI) $(TARGET_SERIAL) 
+
+#=======================================================================
