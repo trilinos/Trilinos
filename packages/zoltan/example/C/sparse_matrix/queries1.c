@@ -11,8 +11,8 @@
  *    Revision: 1.79.2.8 $
  ****************************************************************************/
 
-#include <stdio.h>
 #include "zoltan.h"
+#include <stdio.h>
 #include "matrix.h"
 
 

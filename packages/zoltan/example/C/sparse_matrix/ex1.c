@@ -12,9 +12,9 @@
  ****************************************************************************/
 
 
+#include "mpi.h"     /* Zoltan requires MPI. */
 #include <stdio.h> 
 #include <stdlib.h> 
-#include "mpi.h"     /* Zoltan requires MPI. */
 #include "zoltan.h"  /* always include this header for for Zoltan */
 #include "matrix.h"  /* data structure for this example only */
 
@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
   int    k, col; 
   int    myrank, nproc;
   int    max_nnz, error;
+  Matrix A; /* a distributed sparse matrix */
 
 
   /* Fire up MPI. Zoltan will do this if you don't. */
@@ -52,7 +53,6 @@ int main(int argc, char *argv[])
      Each processor owns a single row in this example.
    */
 
-  Matrix A; /* a distributed sparse matrix */
   A.num_globalrows = nproc;
   A.num_globalcols = 20;
   /* Allocate memory for nonzeros. */
