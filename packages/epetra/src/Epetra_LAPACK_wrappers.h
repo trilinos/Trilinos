@@ -95,14 +95,14 @@
 #define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
 #define DPOTRS_F77  F77_FUNC(dpotrs,DPOTRS)
 #define DPOTRI_F77  F77_FUNC(dpotri,DPOTRI)
-#define DPOTRI_F77  F77_FUNC(dpocon,DPOCON)
+#define DPOCON_F77  F77_FUNC(dpocon,DPOCON)
 #define DPOSV_F77   F77_FUNC(dposv,DPOSV)
 #define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
 #define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
 #define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
 #define DGELS_F77   F77_FUNC(dgels,DGELS)
 #define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
-#define DGEHRD_F77  F77_FUNC(dgehrs,DGEHRS)
+#define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
 #define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
@@ -203,173 +203,165 @@ extern "C" {
 #endif
 
   /* Double precision LAPACK linear solvers */
-void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
-void PREFIX DGETRS_F77(Epetra_fcd, int* n, int* nrhs, double* a,
+void DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
+void DGETRS_F77(Epetra_fcd, int* n, int* nrhs, double* a,
                        int* lda, int*ipiv, double*x , int* ldx, int* info);
-void PREFIX DGETRI_F77(int* n, double* a, int* lda, int*ipiv, double * work , int* lwork, int* info);
-void PREFIX DGECON_F77(Epetra_fcd norm, int* n, double* a, int* lda, 
+void DGETRI_F77(int* n, double* a, int* lda, int*ipiv, double * work , int* lwork, int* info);
+void DGECON_F77(Epetra_fcd norm, int* n, double* a, int* lda, 
                        double *anorm, double * rcond, double * work,
                        int * iwork, int* info); 
-void PREFIX DGESV_F77(int * n, int * nrhs, double* a,
+void DGESV_F77(int * n, int * nrhs, double* a,
                        int* lda, int*ipiv, double*x , int* ldx, int* info);
-void PREFIX DGEEQU_F77(int* m, int* n, double* a, int* lda, double * r, double * c, 
+void DGEEQU_F77(int* m, int* n, double* a, int* lda, double * r, double * c, 
 			double * rowcnd, double * colcnd,
                        double * amax, int* info); 
-void PREFIX DGERFS_F77(Epetra_fcd, int * n, int * nrhs, double * a, 
+void DGERFS_F77(Epetra_fcd, int * n, int * nrhs, double * a, 
                        int * lda, double * af, int * ldaf, int*ipiv, 
                        double * b, int * ldb, double * x, int * ldx, 
                        double * ferr, double * berr, double * work, 
                        int * iwork, int * info);
-void PREFIX DGESVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, double * a, 
+void DGESVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, double * a, 
                        int * lda, double * af, int * ldaf, int*ipiv, Epetra_fcd, 
                        double * r, double *c, double * b, int * ldb, double * x, int * ldx, 
                        double * rcond, double * ferr, double * berr, double * work, 
                        int * iwork, int * info);
 
-void PREFIX DPOTRF_F77(Epetra_fcd, int* n, double* a, int* lda, int* info); 
-void PREFIX DPOTRS_F77(Epetra_fcd, int * n, int * nrhs, double* a,
+void DPOTRF_F77(Epetra_fcd, int* n, double* a, int* lda, int* info); 
+void DPOTRS_F77(Epetra_fcd, int * n, int * nrhs, double* a,
                        int* lda, double*x , int* ldx, int* info);
-void PREFIX DPOTRI_F77(Epetra_fcd, int* n, double* a, int* lda, int* info); 
-void PREFIX DPOCON_F77(Epetra_fcd, int* n, double* a, int* lda, 
+void DPOTRI_F77(Epetra_fcd, int* n, double* a, int* lda, int* info); 
+void DPOCON_F77(Epetra_fcd, int* n, double* a, int* lda, 
                        double * anorm, double * rcond, double * work,
                        int * iwork, int* info); 
-void PREFIX DPOSV_F77(Epetra_fcd, int * n, int * nrhs, double* a,
+void DPOSV_F77(Epetra_fcd, int * n, int * nrhs, double* a,
                        int* lda, double*x , int* ldx, int* info);
-void PREFIX DPOEQU_F77(int* n, double* a, int* lda, double * s, double * scond,
+void DPOEQU_F77(int* n, double* a, int* lda, double * s, double * scond,
                        double * amax, int* info); 
 
-void PREFIX DPORFS_F77(Epetra_fcd, int * n, int * nrhs, double * a, 
+void DPORFS_F77(Epetra_fcd, int * n, int * nrhs, double * a, 
                        int * lda, double * af, int * ldaf, 
                        double * b, int * ldb, double * x, int * ldx, 
                        double * ferr, double * berr, double * work, 
                        int * iwork, int * info);
 
-void PREFIX DPOSVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, double * a, 
+void DPOSVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, double * a, 
                        int * lda, double * af, int * ldaf, Epetra_fcd, 
                        double * s, double * b, int * ldb, double * x, int * ldx, 
                        double * rcond, double * ferr, double * berr, double * work, 
                        int * iwork, int * info);
 
   /* Single precision LAPACK linear solvers*/
-void PREFIX SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 
-void PREFIX SGETRS_F77(Epetra_fcd, int* m, int* n, float* a,
+void SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 
+void SGETRS_F77(Epetra_fcd, int* m, int* n, float* a,
                        int* lda, int*ipiv, float*x , int* ldx, int* info);
-void PREFIX SGETRI_F77(int* n, float* a, int* lda, int*ipiv, float * work , int* lwork, int* info);
-void PREFIX SGECON_F77(Epetra_fcd norm, int* n, float* a, int* lda, 
+void SGETRI_F77(int* n, float* a, int* lda, int*ipiv, float * work , int* lwork, int* info);
+void SGECON_F77(Epetra_fcd norm, int* n, float* a, int* lda, 
                        float * anorm, float * rcond, float * work,
                        int * iwork, int* info); 
-void PREFIX SGESV_F77(int * n, int * nrhs, float* a,
+void SGESV_F77(int * n, int * nrhs, float* a,
                        int* lda, int*ipiv, float*x , int* ldx, int* info);
-void PREFIX SGEEQU_F77(int* m, int* n, float* a, int* lda, float * r, float * c, 
+void SGEEQU_F77(int* m, int* n, float* a, int* lda, float * r, float * c, 
 			float * rowcnd, float * colcnd,
 			float * amax, int* info); 
-void PREFIX SGERFS_F77(Epetra_fcd, int * n, int * nrhs, float * a, 
+void SGERFS_F77(Epetra_fcd, int * n, int * nrhs, float * a, 
                        int * lda, float * af, int * ldaf, int*ipiv, 
                        float * b, int * ldb, float * x, int * ldx, 
                        float * ferr, float * berr, float * work, 
                        int * iwork, int * info);
-void PREFIX SGESVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, float * a, 
+void SGESVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, float * a, 
                        int * lda, float * af, int * ldaf, int*ipiv, Epetra_fcd, 
                        float * r, float *c, float * b, int * ldb, float * x, int * ldx, 
                        float * rcond, float * ferr, float * berr, float * work, 
                        int * iwork, int * info);
 
-void PREFIX SPOTRF_F77(Epetra_fcd, int* n, float* a, int* lda, int* info); 
-void PREFIX SPOTRS_F77(Epetra_fcd, int * n, int * nrhs, float* a,
+void SPOTRF_F77(Epetra_fcd, int* n, float* a, int* lda, int* info); 
+void SPOTRS_F77(Epetra_fcd, int * n, int * nrhs, float* a,
                        int* lda, float*x , int* ldx, int* info);
-void PREFIX SPOTRI_F77(Epetra_fcd, int* n, float* a, int* lda, int* info); 
-void PREFIX SPOCON_F77(Epetra_fcd, int* n, float* a, int* lda, 
+void SPOTRI_F77(Epetra_fcd, int* n, float* a, int* lda, int* info); 
+void SPOCON_F77(Epetra_fcd, int* n, float* a, int* lda, 
                        float * anorm, float * rcond, float * work,
                        int * iwork, int* info); 
-void PREFIX SPOSV_F77(Epetra_fcd, int * n, int * nrhs, float* a,
+void SPOSV_F77(Epetra_fcd, int * n, int * nrhs, float* a,
                        int* lda, float*x , int* ldx, int* info);
-void PREFIX SPOEQU_F77(int* n, float* a, int* lda, float * s, float * scond,
+void SPOEQU_F77(int* n, float* a, int* lda, float * s, float * scond,
                        float * amax, int* info); 
 
-void PREFIX SPORFS_F77(Epetra_fcd, int * n, int * nrhs, float * a, 
+void SPORFS_F77(Epetra_fcd, int * n, int * nrhs, float * a, 
                        int * lda, float * af, int * ldaf, 
                        float * b, int * ldb, float * x, int * ldx, 
                        float * ferr, float * berr, float * work, 
                        int * iwork, int * info);
 
-void PREFIX SPOSVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, float * a, 
+void SPOSVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, float * a, 
                        int * lda, float * af, int * ldaf, Epetra_fcd, 
                        float * s, float * b, int * ldb, float * x, int * ldx, 
                        float * rcond, float * ferr, float * berr, float * work, 
                        int * iwork, int * info);
 
   /* Double precision LAPACK eigen solvers*/
-void PREFIX DGELS_F77(Epetra_fcd ch, int*, int*, int*,
+void DGELS_F77(Epetra_fcd ch, int*, int*, int*,
                        double*, int*, double*, int*, double*, int*, int*);
 
-void PREFIX DGEEV_F77(Epetra_fcd, Epetra_fcd, int*, double*, int*,
+void DGEEV_F77(Epetra_fcd, Epetra_fcd, int*, double*, int*,
                       double*, double*, double*, int*, double*, int*,
                       double*, int*, int*);
            
-void PREFIX  DGEHRD_F77(int * n, int * ilo, int * ihi, double * A,
+void DGEHRD_F77(int * n, int * ilo, int * ihi, double * A,
                         int * lda, double * tau, double * work, int * lwork,
                         int * info);
 
-void PREFIX  DHSEQR_F77(Epetra_fcd job, Epetra_fcd, int * n, int * ilo, int * ihi,
+void DHSEQR_F77(Epetra_fcd job, Epetra_fcd, int * n, int * ilo, int * ihi,
                         double * h, int * ldh, double * wr, double * wi, double * z,
                         int * ldz, double * work, int * lwork, int * info);
 
-void PREFIX  DORGHR_F77(int * n, int * ilo, int * ihi, double * a, int * lda, double * tau,
+void DORGHR_F77(int * n, int * ilo, int * ihi, double * a, int * lda, double * tau,
                         double * work, int * lwork, int * info);
                         
-void PREFIX  DORMHR_F77(Epetra_fcd, Epetra_fcd, int * m, int * n, int * ilo,
+void DORMHR_F77(Epetra_fcd, Epetra_fcd, int * m, int * n, int * ilo,
                         int * ihi, double * a, int * lda, double * tau, double * c,
                         int * ldc, double * work, int * lwork, int * info);
 
-void PREFIX  DTREVC_F77(Epetra_fcd, Epetra_fcd, int * select, int * n, double * t,
+void DTREVC_F77(Epetra_fcd, Epetra_fcd, int * select, int * n, double * t,
                         int * ldt, double *vl, int * ldvl, double * vr, int * ldvr,
                         int * mm, int * m, double * work, int * info); 
 
-void PREFIX  DTREXC_F77(Epetra_fcd, int * n, double * t, int * ldt, double * q,
+void  DTREXC_F77(Epetra_fcd, int * n, double * t, int * ldt, double * q,
                         int * ldq, int * ifst, int * ilst, double * work, int * info);
 
-double PREFIX  DLAMCH_F77(Epetra_fcd);
+double  DLAMCH_F77(Epetra_fcd);
 
 
   /* Single precision LAPACK eigen solvers*/
-void PREFIX SGELS_F77(Epetra_fcd, int*, int*, int*,
+void SGELS_F77(Epetra_fcd, int*, int*, int*,
                        float*, int*, float*, int*, float*, int*, int*);
 
-void PREFIX SGEEV_F77(Epetra_fcd, Epetra_fcd, int*, float*, int*,
+void SGEEV_F77(Epetra_fcd, Epetra_fcd, int*, float*, int*,
                       float*, float*, float*, int*, float*, int*,
                       float*, int*, int*);
 
-void PREFIX  SGEHRD_F77(int * n, int * ilo, int * ihi, float * A,
+void  SGEHRD_F77(int * n, int * ilo, int * ihi, float * A,
                         int * lda, float * tau, float * work, int * lwork,
                         int * info);
 
-void PREFIX  SHSEQR_F77(Epetra_fcd job, Epetra_fcd, int * n, int * ilo, int * ihi,
+void  SHSEQR_F77(Epetra_fcd job, Epetra_fcd, int * n, int * ilo, int * ihi,
                         float * h, int * ldh, float * wr, float * wi, float * z,
                         int * ldz, float * work, int * lwork, int * info);
 
-void PREFIX  SORGHR_F77(int * n, int * ilo, int * ihi, float * a, int * lda, float * tau,
+void  SORGHR_F77(int * n, int * ilo, int * ihi, float * a, int * lda, float * tau,
                         float * work, int * lwork, int * info);
                         
-void PREFIX  SORMHR_F77(Epetra_fcd, Epetra_fcd, int * m, int * n, int * ilo,
+void  SORMHR_F77(Epetra_fcd, Epetra_fcd, int * m, int * n, int * ilo,
                         int * ihi, float * a, int * lda, float * tau, float * c,
                         int * ldc, float * work, int * lwork, int * info);
 
-void PREFIX  STREVC_F77(Epetra_fcd, Epetra_fcd, int * select, int * n, float * t,
+void  STREVC_F77(Epetra_fcd, Epetra_fcd, int * select, int * n, float * t,
                         int * ldt, float *vl, int * ldvl, float * vr, int * ldvr,
                         int * mm, int * m, float * work, int * info); 
 
-void PREFIX  STREXC_F77(Epetra_fcd, int * n, float * t, int * ldt, float * q,
+void  STREXC_F77(Epetra_fcd, int * n, float * t, int * ldt, float * q,
                         int * ldq, int * ifst, int * ilst, float * work, int * info);
 
-float PREFIX  SLAMCH_F77(Epetra_fcd);
-
-  /* These functions are not needed by Epetra, but are needed by AztecOO
-     which has a dependency on Epetra. */
-
-void PREFIX  DLASWP_F77(int *, double *, int *, int *, int *, int *, int *);
-
-void PREFIX  DLAIC1_F77(int * , int *, double *, double *, double *, double *,
-			  double *, double *, double *);
+float  SLAMCH_F77(Epetra_fcd);
 
 #ifdef __cplusplus
 }

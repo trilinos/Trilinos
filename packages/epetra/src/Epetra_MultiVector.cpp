@@ -507,12 +507,14 @@ int Epetra_MultiVector::ReplaceGlobalValue(int GlobalRow, int VectorIndex, doubl
 
  // Use the more general method below
   EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, false));
+  return(0);
 }
 //=========================================================================
 int Epetra_MultiVector::ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
 					   int VectorIndex, double ScalarValue) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
+  return(0);
 }
 //=========================================================================
 int Epetra_MultiVector::SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
