@@ -31,7 +31,9 @@ public :: &
    LB_User_Data_1, &
    LB_User_Data_2, &
    LB_User_Data_3, &
-   LB_User_Data_4
+   LB_User_Data_4, &
+   LB_GID, &
+   LB_LID
 
 public :: &
    LB_Struct, &

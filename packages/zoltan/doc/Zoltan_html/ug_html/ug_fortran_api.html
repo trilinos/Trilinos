@@ -110,7 +110,7 @@ the comparative operators if <A HREF="ug_usage.html#Macro defs">LB_GID</A>
 is a user-defined type). The file <I>fort/lb_user_const.f90</I> contains
 this information in Fortran. Three examples of these files are presented
 in <I>fort/</I> to illustrate three different situations, as described
-below. (NOTE: two of them are not yet available.) The example that best
+below.  The example that best
 matches the application should be modified, if necessary, for the application
 and renamed with the above file names, with the <I>.h</I> file moved to
 the <I>lb/</I> directory.
@@ -138,24 +138,28 @@ type is given in <I>fort/lb_user_const_int.*</I>.
 then the exact layout of data in memory is compiler dependent, and <A HREF="ug_usage.html#Macro defs">LB_GID</A>
 cannot be portably defined in <I>lb_user_const.h</I>. However, Zoltan must
 know the amount of memory consumed by an <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-to properly index into arrays of this type. The program <I>fort/TBD</I>
-is provided to determine the size of a user defined type. This can then
+to properly index into arrays of this type. The program <I>fort/structsize</I>
+is provided to determine the size of a user defined type. 
+In directory <I>fort</I> edit the file <I>mfstruct</I> to specify your
+Fortran and C compilers, create your structure as TYPE(LB_GID) in
+<I>lb_user_const.f90</I>, and "make -f mfstruct".  The program <I>structsize</I>
+will then give the number of bytes in the structure, which can
 be used in the definition of <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-in <I>lb_user_const.h</I>, and TYPE(LB_GID) is defined with the user defined
+in <I>lb_user_const.h</I>. TYPE(LB_GID) is defined with the user defined
 type in <I>lb_user_const.f90</I>. In this case, the comparative operators
 must be written in Fortran in <I>lb_user_const.f90</I>, with the C macros
-being a call to the Fortran functions. An example of this type is given
-in <I>fort/TBD.</I>
-<BR>NOTE: there is a little more to be said about this; to be completed
-after I make the other example <I>lb_user_const*</I>.
+being a call to the Fortran functions.   These calls are compiler dependent
+because they must use the compiler-specific name mangling for module
+procedures.  An example of this type is given in
+<I>fort/lb_user_const_struct.*.</I>
 
-<P>The following paragraph also needs to be written:
-<BR>There is performance loss by defining <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-and the comparative operators in the Fortran module instead of C macros.
+<P>There is performance loss by defining
+the comparative operators in the Fortran module instead of C macros.
 If you can determine how a Fortran structure is laid out in memory, and
 have enough knowledge of C programming, then you can define them in <I>lb_user_const.h</I>.
 However, this is highly compiler dependent and will not be portable. An
-example will be provided.
+example for a structure with two components and the NAGWare f95 compiler
+is provided in <I>lb_user_const_nag.*</I>.
 <BR>&nbsp;
 <H3>
 <A NAME="fortran ug api query"></A>Query function data</H3>

@@ -386,8 +386,10 @@ addresses as local identifiers.</I></CAPTION>
 */</TT>&nbsp;
 <BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
 <BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">typedef char LB_LID[4]
-/* compiler dependent size of Fortran type(LB_INT) */</FONT></TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">
+/* compiler dependent size of Fortran type(LB_INT) */&nbsp;
+<BR>struct LB_fortran_structure_holder {char a[4];};&nbsp;
+<BR>typedef struct LB_fortran_structure_holder LB_LID;</FONT></TT>&nbsp;
 <P>
 <HR WIDTH="100%"><TT>! included in file fort/lb_user_const.f90</TT>&nbsp;
 <BR><TT>! LB_GID is a dummy definition</TT>&nbsp;
