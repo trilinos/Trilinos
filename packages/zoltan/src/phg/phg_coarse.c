@@ -6,15 +6,9 @@
 /*****************************************************************************
  * CVS File Information :
  *    $RCSfile$
-<<<<<<< phg_coarse.c
  *    $Author$
  *    $Date$
  *    $Revision$
-=======
- *    $Author$
- *    $Date$
- *    $Revision$
->>>>>>> 1.27
  ****************************************************************************/
 
  
@@ -28,8 +22,9 @@ extern "C" {
 
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
-   match are clustered to one vertex. Identical hyperedges are collapsed to a
-   single hyperedge with combined weight. The array LevelMap is the mapping of
+   match are clustered to a single vertex. All hyperedges are kept;
+   identical hyperedges are not collapsed. 
+   The array LevelMap is the mapping of
    the old vertices to the new vertices. It will be used to pass a partition
    of the coarse graph back to the original graph.                         */
    

@@ -23,6 +23,7 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN matching_ipm;  /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN matching_loc;  /* local ipm (in other words HCM:heavy connectivity matching) */
+static ZOLTAN_PHG_MATCHING_FN matching_ipmloc;  /* local ipm along proc columns*/
 
 
 /*****************************************************************************/
@@ -32,6 +33,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
     
     if (!strcasecmp(hgp->redm_str, "no"))        hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "loc"))  hgp->matching = matching_loc;    
+    else if (!strcasecmp(hgp->redm_str, "ipmloc"))  hgp->matching = matching_ipmloc;    
     else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
     else {
         exist = 0;
@@ -183,8 +185,88 @@ static int matching_loc(ZZ *zz, HGraph *hg, Matching match)
     return ZOLTAN_OK;
 }
     
+/* local inner product matching among vertices in each proc column */
+/* code adapted from serial matching_ipm method */
+static int matching_ipmloc(ZZ *zz, HGraph *hg, Matching match)
+{
+    int   i, j, n, v1, v2, edge, maxip, maxindex;
+    int   matchcount=0;
+    int   *ips, *gips, *adj;
+    char  *yo = "matching_ipmloc";
+    PHGComm *hgc = hg->comm;  
 
+    if (!(ips = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
+     || !(gips = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &gips, &adj);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    
+    for (i = 0; i < hg->nVtx; i++)
+        ips[i] = 0;
+        
+    /* for every vertex */
+    for (v1 = 0; v1 < hg->nVtx; v1++) {
+        if (match[v1] != v1)
+            continue;
+        
+        n = 0; /* number of neighbors */
+        /* for every hyperedge containing the vertex */
+        for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
+            edge = hg->vedge[i];
+                
+            /* for every other vertex in the hyperedge */
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                v2 = hg->hvertex[j];
+                /* 
+                if(match[v2] != v2) {
+                     row swapping goes here
+                } */
+                if (!ips[v2]++)
+                    adj[n++] = v2;
+            }
+        }
 
+        /* sum up local inner products along proc column */
+        /* for now, sum up ip value for all vertices; this is slow! */
+        /* to do: 1) ignore vertices already matched 
+                  2) use "superrows" with only nonzero values */
+        MPI_Allreduce(ips, gips, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);              
+        /* now choose the vector with greatest inner product */
+        /* all processors in a column should get the same answer */
+        maxip = 0;
+        maxindex = -1;
+        for (i = 0; i < hg->nVtx; i++) {
+            v2 = i;
+            if (gips[v2] > maxip && v2 != v1 && match[v2] == v2) {
+                maxip = gips[v2];
+                maxindex = v2;
+            }
+            ips[v2] = 0;
+        }
+        if (maxindex != -1) {
+            match[v1] = maxindex;
+            match[maxindex] = v1;
+            matchcount++;
+        } 
+        
+    }
+
+    /*
+    printf("Matched %d vertices\n", matchcount);
+    printf("Final Matching:\n");
+    for(i = 0; i < hg->nVtx; i++)
+        printf("%2d ",i);
+    printf("\n");
+    for(i = 0; i < hg->nVtx; i++)
+        printf("%2d ",match[i]);
+    printf("\n");
+    */
+
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &gips, &adj);
+    return ZOLTAN_OK;
+}
 
 /****************************************************************************
  * inner product matching
