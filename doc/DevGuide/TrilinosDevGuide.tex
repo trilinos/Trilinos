@@ -1045,10 +1045,10 @@ Mailing list for representatives for each Trilinos package.  There are no
 leaders lists for individual packages.
 \end{itemize}
 
-%**Consider an example showing how tools can work together to fix bugs.**
-
-%\subsection{Website...}
+%\subsection{Package Website Template}
 %\label{subsect:Website}
+
+%A template is available at the Trilinos website for new package websites.  
 
 \subsection{Portable Interface to BLAS and LAPACK}
 
@@ -1275,10 +1275,10 @@ seven phases:
 \item Retirement/Replacement.
 \end{enumerate}
 In this section we discuss suggested practices to address most of these 
-phases.  The value of adopting these practices is that they are commonly used 
-or planned for use in a number of existing Trilinos packages.  It is worth 
-noting that testing is not a phase, but should be done at each of the above 
-phases in the process as appropriate for that phase.
+phases.  The value of adopting these specific practices is that they are 
+commonly used or planned for use in a number of existing Trilinos packages.  
+It is worth noting that testing is not a phase, but should be done at each 
+of the above phases in the process as appropriate for that phase.
 
 \subsection{Requirements}
 The majority of requirements for Trilinos packages come either directly or 
@@ -1883,7 +1883,55 @@ Finally, save the file, and exit the CVS editor to commit the changes.
 
 \end{itemize}
 
+\section{The Trilinos Release Process}
+\label{Section:ReleaseProcess}
+
+From a developer's perspective, the Trilinos Release Process consists 
+of six phases.
+
+\begin{itemize}
+\item A target release date is announced in an email to the 
+Trilinos-Developers mail list.
+
+This message also describes other details of the release such as 
+the (tentative) release version number, which packages are to be 
+released (if this is known at the time the message is sent) and 
+whether the release will be an inside release or a public release.  
+It will be noted in the message that any package development teams 
+that would like a version of their code other than what is in the 
+development branch at the time of the release to be included in the 
+distribution should send the name of a tag that contains the correct 
+version to the Trilinos team member who will be 
+creating the release branch.  The details of upcoming releases are usually
+also discussed during one or more monthly Trilinos Leaders meetings.
+
+\item A release branch is created and tagged.
+
+The creation of a release branch is discussed in 
+Section~\ref{Section:Branching}.
+
+\item Any issues that arise during the testing of the new branch are 
+resolved.
+
+The test suite that the release branch is subjected to varies by 
+the type of release; however, all issues must be resolved before the 
+release can be approved.
+
+\item The Trilinos project leader approves the release.
+
+\item The release is is announced and made available.
+
+An announcement of the release is sent to the Trilinos-Announce 
+mail list.  For outside releases, the release is made available 
+via a compressed tar file from the Trilinos download site.
+
+\item Support for the release continues at least until the next 
+release.
+
+\end{itemize}
+
 \section{Creating a New Trilinos (Release) Branch with CVS}
+\label{Section:Branching}
 
 A CVS branch can be used to maintain a version of the 
 code that is different than the primary development branch.  
@@ -1896,7 +1944,7 @@ branch (ie the experiment fails), the developer might want to create a
 separate branch.  If the experiment is a success, the changes can always be 
 merged back into the development branch.
 
-%Possibly add a bit about where the whole release process can be found
+
 
 There are eight steps in creating a Trilinos release branch:
 
