@@ -428,8 +428,8 @@ int main(int argc, char *argv[])
 #endif
   free(xxx);
   free(rhs);
-  ML_Operator_Destroy(Tmat);
-  ML_Operator_Destroy(Tmat_trans);
+  ML_Operator_Destroy(&Tmat);
+  ML_Operator_Destroy(&Tmat_trans);
   ML_MGHierarchy_ReitzingerDestroy(MaxMgLevels-2, coarsest_level, &Tmat_array,
 				   &Tmat_trans_array);
 #ifdef ML_MPI

@@ -155,7 +155,7 @@ int    *cpntr = NULL, *Ke_bindx = NULL, *Kn_bindx = NULL, Nlocal_edges, iii, *Tm
 int    *update, *update_index;
 int *external, *extern_index;
 struct reader_context *context;
-int poly_degree, eig_ratio_tol = 27.;
+int poly_degree = 1, eig_ratio_tol = 27.;
 int reduced_smoother_flag = 0;
 
 #ifdef debugSmoother
@@ -1717,26 +1717,24 @@ nx = nx--; /* rst dirichlet */
 	  edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
 	  nodal_omega    = ML_DDEFAULT;
 	  edge_omega     = ML_DDEFAULT;
-	  nodal_args = ML_Smoother_Arglist_Create(3);
+	  nodal_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
 	  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
       /*this flag doesn't matter and is just to make the nodal and edge
         arg arrays the same length. */
-	  ML_Smoother_Arglist_Set(nodal_args, 2, &reduced_smoother_flag);
 
-	  edge_args = ML_Smoother_Arglist_Create(3);
+	  edge_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
 	  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
       /* if flag is nonzero, in Hiptmair do edge/nodal combination on pre-
          smooth and nodal/edge combination on post-smooth.   This maintains
          symmetry of the preconditioner. */
-	  ML_Smoother_Arglist_Set(edge_args, 2, &reduced_smoother_flag);
 	}
       else if (ML_strcmp(context->subsmoother,"MLS") == 0)
 	{
 #ifndef BENCHMARK
-      printf("polynomial degree?\n");
-      scanf("%d",&poly_degree);
+	  /* printf("polynomial degree?\n");
+	     scanf("%d",&poly_degree); */
 #else
       ifp = fopen("ml_inputfile", "r");
       if (!ML_Reader_LookFor(ifp, "polynomial degree", input, '='))
@@ -1755,12 +1753,10 @@ nx = nx--; /* rst dirichlet */
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
-	  nodal_args = ML_Smoother_Arglist_Create(4);
-	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-	  ML_Smoother_Arglist_Set(nodal_args, 2, &nodal_omega);
-	  edge_args = ML_Smoother_Arglist_Create(4);
-	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
-	  ML_Smoother_Arglist_Set(edge_args, 2, &edge_omega);
+	  nodal_args = ML_Smoother_Arglist_Create(2);
+	  ML_Smoother_Arglist_Set(nodal_args, 0, &poly_degree);
+	  edge_args = ML_Smoother_Arglist_Create(2);
+	  ML_Smoother_Arglist_Set(edge_args, 0, &poly_degree);
 	}
     }
 
@@ -1816,17 +1812,15 @@ nx = nx--; /* rst dirichlet */
         printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
                 poly_degree);
         */
-	    ML_Smoother_Arglist_Set(nodal_args, 3, &poly_degree);
-	    ML_Smoother_Arglist_Set(edge_args, 3, &poly_degree);
 	  }
       if (level == N_levels-1)
          ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
                       Tmat_array, Tmat_trans_array, Tmatbc, edge_smoother,
-                      edge_args, nodal_smoother,nodal_args);
+                      edge_args, nodal_smoother,nodal_args,reduced_smoother_flag);
       else
          ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
                       Tmat_array, Tmat_trans_array, 
-				      NULL, edge_smoother,edge_args, nodal_smoother,nodal_args);
+				      NULL, edge_smoother,edge_args, nodal_smoother,nodal_args,reduced_smoother_flag);
 	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -1927,17 +1921,15 @@ nx = nx--; /* rst dirichlet */
        /*poly_degree = 1;
        printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
               poly_degree);*/
-       ML_Smoother_Arglist_Set(edge_args, 3, &poly_degree);
-       ML_Smoother_Arglist_Set(nodal_args, 3, &poly_degree);
     }
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
                Tmat_array, Tmat_trans_array, Tmatbc, 
-               edge_smoother,edge_args, nodal_smoother,nodal_args);
+               edge_smoother,edge_args, nodal_smoother,nodal_args,reduced_smoother_flag);
     else
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				Tmat_array, Tmat_trans_array, NULL, 
-				edge_smoother,edge_args, nodal_smoother,nodal_args);
+				edge_smoother,edge_args, nodal_smoother,nodal_args,reduced_smoother_flag);
   }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
     ML_Gen_Smoother_GaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
