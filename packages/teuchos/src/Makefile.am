@@ -48,6 +48,7 @@ CORE = \
 EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_CommandLine.hpp \
+	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_DefaultRaiseHandler.hpp \
 	$(srcdir)/Teuchos_DefaultWriter.hpp \
 	$(srcdir)/Teuchos_DLARAN.hpp \
@@ -66,6 +67,7 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_RandomNumberGeneratorBase.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
+	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StringInputSource.hpp \
 	$(srcdir)/Teuchos_StringInputStream.hpp \
 	$(srcdir)/Teuchos_StrUtils.hpp \
@@ -82,6 +84,7 @@ EXTRA_EXPERIMENTAL_H = \
 
 EXTRA_EXPERIMENTAL = \
 	$(srcdir)/Teuchos_CommandLine.cpp \
+	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_DefaultRaiseHandler.cpp \
 	$(srcdir)/Teuchos_DefaultWriter.cpp \
 	$(srcdir)/Teuchos_DLARAN.cpp \
