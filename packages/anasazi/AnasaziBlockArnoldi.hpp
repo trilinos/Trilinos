@@ -31,12 +31,15 @@ public:
 private:
 	void QRFactorization( AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>& );
 	void BlockReduction();
+	void BlkOrth( const int j );
+	void BlkOrthSing( const int j );
 	void ComputeResiduals( const bool );
 	void ComputeEvecs();
 	void Restart();
 	void Sort( const bool );
 	void SetInitBlock();
-	void Check_Block_Arn_Red( const int );
+	void SetBlkTols();
+	void CheckBlkArnRed( const int );
 	AnasaziMatrix<TYPE> &_amat; // must be passed in by the user
 	AnasaziMultiVec<TYPE> &_ivec; // must be passed in by the user
 	AnasaziMultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
@@ -46,7 +49,8 @@ private:
 	const TYPE _residual_tolerance;
 	TYPE *_ritzresiduals, *_evalr, *_evali;
 	int _restartiter, _iter, _jstart, _jend, _nevblock, _debuglevel, _nconv;
-	bool _initialguess, _qrfact, _issym;
+	bool _initialguess, _issym, _isconv, exit_flg, dep_flg;
+	TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol;
 	string _which;
 	int *_order;
 };
@@ -63,9 +67,10 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 				_hessmatrix(0), _nev(nev), _length(length), _block(block), 
 				_restarts(restarts), _residual_tolerance(tol), _step(step),
 				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), _resB(0), 
-				_iter(0), _jstart(0), _jend(0), _which(which),
+				_iter(0), _jstart(0), _jend(0), _which(which), _isconv(false),
 				_initialguess(true), _debuglevel(0), _nevblock(0),
-				_qrfact(false), _issym(false), _nconv(0) {
+				_issym(false), _nconv(0), _schurerror(1.0), dep_flg(false),
+				_dep_tol(0), _sing_tol(0), _blk_tol(0), exit_flg(false) {
 	//	std::cout << "ctor:BlockArnoldi " << this << std::endl;
 	//
 	// Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
@@ -112,6 +117,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 			array[i*_block + i] = one;				
 		}
 		_resB->setvalues( array, _block );
+		SetBlkTols();  // Set the tolerances for block orthogonality
 		delete [] array;
 	}
 	else {
@@ -214,6 +220,9 @@ void BlockArnoldi<TYPE>::currentStatus() {
 	std::cout<<"Requested Eigenvalues : "<<_nev<<std::endl;
 	std::cout<<"Requested Ordering : "<<_which<<std::endl;
 	std::cout<<"Residual Tolerance : "<<_residual_tolerance<<std::endl;	
+	if (exit_flg && _iter != _length*(_restarts+1)) {
+		std::cout<<"ERROR: Complete orthogonal basis could not be computed"<<std::endl;
+	}
 	std::cout<<"------------------------------------------------------"<<std::endl;
 	std::cout<<"Current Eigenvalue Estimates: "<<std::endl;
 	if (_issym) {
@@ -288,22 +297,33 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 	}
 
 	// Clean up
-	delete [] index; index=0;
+	delete [] index;
 }
 
+template <class TYPE>
+void BlockArnoldi<TYPE>::SetBlkTols() {
+        const TYPE two = 2.0;
+        TYPE eps;
+        char precision = 'P';
+        AnasaziLAPACK lapack;
+        lapack.LAMCH(precision, eps);
+        _blk_tol = 10*sqrt(eps);
+        _sing_tol = 10 * eps;
+        _dep_tol = 1/sqrt(two);
+}
 
 template <class TYPE>
 void BlockArnoldi<TYPE>::iterate(int steps) {
-	int i,j,loops,temp;
+	int i,j,temp;
 	const int izero=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
-	int *index = new int[ (_length+1)*_block ]; assert(index);
-
+	//
 	// If this is the first steps of Block Arnoldi, initialize the first block of _basisvecs
-
+	//
 	if (!_iter) {
 		SetInitBlock();
+		int *index = new int[ (_length+1)*_block ]; assert(index);
 		for ( i=0; i<_block; i++ ) {
 			index[i] = i;
 		}
@@ -311,10 +331,14 @@ void BlockArnoldi<TYPE>::iterate(int steps) {
 		assert(U_vec);
 		AnasaziDenseMatrix<TYPE> G10(_block,_block);
 		QRFactorization( *U_vec, G10 );
-		_qrfact = true;
 		delete U_vec;
+		delete [] index;
 	}				
-				
+	//
+	// Leave the iteration routine now if the orthogonal subspace can't be extended.
+	//
+	if (exit_flg) { return; }	
+	//			
 	// Now we go the number of steps requested by the user.  This may cause
 	// a restart or hit the number of maximum iterations (restarts).  Currently this
 	// doesn't look at the residuals.
@@ -340,7 +364,7 @@ void BlockArnoldi<TYPE>::iterate(int steps) {
 		//
 		// Now restart and do the necessary loops required by the number of steps given.
 		//
-		while (steps > 0 && _restartiter <  _restarts) {
+		while (steps > 0 && _restartiter <  _restarts && !exit_flg) {
 			ComputeResiduals( true );
 			Restart();  // Assuming _jstart is set in Restart()
 
@@ -380,27 +404,17 @@ void BlockArnoldi<TYPE>::solve () {
 
 	// Right now the solver will just go the remaining iterations, but this design will allow
 	// for checking of the residuals every so many iterations, independent of restarts.
-	while (_nconv < _nev && _iter < (_restarts+1)*_length) {
+	while (_nconv < _nev && _iter < (_restarts+1)*_length && !exit_flg) {
 		iterate( _step );
 	}
 }
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::BlockReduction () {
-	int i,j,k,row_offset,col_offset;
-	int *index=0;
-	const int max_num_orth=2;
-	const int IntOne=1;
-	const int IntZero=0;
-	const TYPE zero=0.0;
-	const TYPE one=1.0;
+	int i,j;
 	
-	index = new int[ _block*_length ]; assert(index);
+	int *index = new int[ _block ]; assert(index);
 	
-	int ldh = _hessmatrix->getld();
-	int n_row = _hessmatrix->getrows();
-	int n_col = _hessmatrix->getcols();
-
 	for ( j = _jstart; j < _jend; j++ ) {
 		//
 		// Associate the j-th block of _basisvecs with U_vec.
@@ -410,20 +424,6 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		}
 		AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _block);
 		assert(U_vec);
-		if (!_qrfact) {
-			//
-			// Compute the QR factorization of U_vec
-			//
-			if (j==0) {
-				row_offset = 0; col_offset = 0;
-			}
-			else {
-				row_offset = j*_block; col_offset = (j-1)*_block;
-			}
-			AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, row_offset, col_offset,
-				_block, _block);
-			QRFactorization( *U_vec, sub_block_hess );
-		}
 		//
 		// Associate (j+1)-st block of ArnoldiVecs with F_vec.
 		//
@@ -437,73 +437,355 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		//
 		_amat.ApplyMatrix( *U_vec, *F_vec ); 
 		//
-		//  Compute trans(V_j)*F_vec and store in the j-th diagonal
-		//  block of Hess_matrix.
+		// Use previous dependency information to decide which orthogonalization
+		// routine to use for the new block.  The global variable dep_flg tells us
+		// if we've had problems with orthogonality before.  If no problems have
+		// been detected before we will use standard block orthogonalization.
+		// However, if there are problems with this, we will use a more stringent
+		// approach.
 		//
-		AnasaziDenseMatrix<TYPE> dense_mat((j+1)*_block, _block );
-		for ( i=0; i<(j+1)*_block; i++ ) {
-			index[i] = i;
-		}
-		AnasaziMultiVec<TYPE>* Vj = _basisvecs->CloneView(index, (j+1)*_block);
-		assert(Vj);
-		//
-		// Zero out the full block column of Hess_matrix even though we're only
-		// going to set the coefficients in rows 0:(j+1)*block-1
-		//
-		TYPE* ptr_hess = _hessmatrix->getarray();
-		for ( k=0; k<_block; k++ ) {
-			for ( i=0; i<n_row ; i++ ) {
-				ptr_hess[j*ldh*_block + k*ldh + i] = zero;
-			}
+		if (!dep_flg) {
+			BlkOrth(j);
 		}
 		//
-		// Perform two steps of block classical Gram-Schmidt so that
-		// F_vec is orthogonal to the columns of Vj.
-		//
-		TYPE* ptr_dense = dense_mat.getarray();
-		int ld_dense = dense_mat.getld();
-		int num_orth;
-		for ( num_orth=0; num_orth<max_num_orth; num_orth++ ) {
-			F_vec->MvTransMv (one, *Vj, dense_mat);
-			//
-			// Update the orthogonalization coefficients for the j-th block
-			// column of Hess_matrix.
-			//
-			for ( k=0; k<_block; k++ ) {
-				for ( i=0; i<(j+1)*_block; i++ ) {
-					ptr_hess[j*ldh*_block + k*ldh + i] += 
-						ptr_dense[k*ld_dense + i];
-				}
-			}
-			//
-			// F_vec <- F_vec - V(0:(j+1)*block-1,:) * H(0:(j+1)*block-1,j:(j+1)*block-1)
-			//
-			F_vec->MvTimesMatAddMv( -one, *Vj, dense_mat, one );
-		}
-		if (_debuglevel>2) {
-                        Check_Block_Arn_Red(j);  
-                }
-		//
-		//	Compute the QR factorization of the next block
-		//
-		if (_qrfact) {
-			//
-			// Compute the QR factorization of U_vec
-			//
-			row_offset = (j+1)*_block; col_offset = j*_block;
-			AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, row_offset, col_offset,
-				_block, _block);
-			QRFactorization( *F_vec, sub_block_hess );
+		// If any block dependency was detected previously, then the more stringent
+		// orthogonalization will be used.  If this routine can't resolve the
+		// dependency, then the exit_flg will be set indicating that we can't proceed
+		// any further.
+		//			
+		if (dep_flg) {
+			BlkOrthSing(j);
 		}
 		//
-		//	free heap for located allocated memory
+		delete U_vec, F_vec;
 		//
-		delete U_vec;
-		delete F_vec;
-		delete Vj;
+		// If we cannot go any further with the factorization, then we need to exit
+		// this routine.
+		//
+		if (exit_flg) { return; }
 	}
 	delete [] index;
-}
+} // end BlockReduction()
+
+
+template<class TYPE>
+void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
+        //
+        // Orthogonalization is first done between the new block of
+        // vectors and all previous blocks, then the vectors within the
+        // new block are orthogonalized.
+        //
+        const int IntOne = 1;
+        const TYPE one = 1.0;
+        const TYPE zero = 0.0;
+        const int max_num_orth = 2;
+        int i, k, row_offset, col_offset;
+        int * index = new int[ (_length+1)*_block ]; assert(index);
+        TYPE * norm1 = new TYPE[_block]; assert(norm1);
+        TYPE * norm2 = new TYPE[_block]; assert(norm2);
+        //
+        // Associate (j+1)-st block of ArnoldiVecs with F_vec.
+        //
+        for ( i=0; i<_block; i++ ) {
+                        index[i] = (j+1)*_block+i;
+        }
+        AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+        assert(F_vec);
+        //
+        // Zero out the full block column of the Hessenberg matrix
+        // even though we're only going to set the coefficients in
+        // rows [0:(j+1)*_block-1]
+        //
+        int ldh = _hessmatrix->getld();
+        int n_row = _hessmatrix->getrows();
+        int n_col = _hessmatrix->getcols();
+        //
+        TYPE* ptr_hess = _hessmatrix->getarray();
+        for ( k=0; k<_block; k++ ) {
+                for ( i=0; i<n_row ; i++ ) {
+                                ptr_hess[j*ldh*_block + k*ldh + i] = zero;
+                }
+        }
+        //
+        // Grab all previous Arnoldi vectors
+        //
+        int num_prev = (j+1)*_block;
+        for (i=0; i<num_prev; i++){
+                index[i] = i;
+        }
+        AnasaziMultiVec<TYPE>* V_prev = _basisvecs->CloneView(index,num_prev);
+        assert(V_prev);
+        //
+        // Create a matrix to store the product trans(V_prev)*F_vec
+        //
+        AnasaziDenseMatrix<TYPE> dense_mat(num_prev, _block );
+        TYPE* ptr_dense = dense_mat.getarray();
+        int ld_dense = dense_mat.getld();
+        //
+        F_vec->MvNorm(norm1);
+        //
+        // Perform two steps of block classical Gram-Schmidt so that
+        // F_vec is orthogonal to the columns of V_prev.
+        //
+        for ( int num_orth=0; num_orth<max_num_orth; num_orth++ ) {
+                //
+                // Compute trans(V_prev)*F_vec and store in the j'th diagonal
+                // block of the Hessenberg matrix
+                //
+                F_vec->MvTransMv (one, *V_prev, dense_mat);
+                //
+                // Update the orthogonalization coefficients for the j-th block
+                // column of the Hessenberg matrix.
+                //
+                for ( k=0; k<_block; k++ ) {
+                        for ( i=0; i<num_prev; i++ ) {
+                                ptr_hess[j*ldh*_block + k*ldh + i] +=
+                                        ptr_dense[k*ld_dense + i];
+                        }
+                }
+                //
+                // F_vec <- F_vec - V(0:(j+1)*block-1,:) * H(0:num_prev-1,j:num_prev-1)
+                //
+                F_vec->MvTimesMatAddMv( -one, *V_prev, dense_mat, one );
+		//
+        } // end for num_orth=0;...)
+        //
+        F_vec->MvNorm(norm2);
+        //
+        // Check to make sure the new block of Arnoldi vectors are
+        // not dependent on previous Arnoldi vectors
+        //
+        for (i=0; i<_block; i++){
+                if (norm2[i] < norm1[i] * _blk_tol) {
+                        dep_flg = true;
+                        if (_debuglevel > 2 ){
+                           std::cout << "Col " << num_prev+i << " is dependent on previous "
+                                    << "Arnoldi vectors in V_prev" << std::endl;
+                           std::cout << endl;
+                        }
+                }
+        } // end for (i=0;...)
+        //
+        if (_debuglevel>2) {
+                CheckBlkArnRed(j);
+        }
+        //
+        // If dependencies have not already been detected, compute
+        // the QR factorization of the next block. Otherwise,
+        // this block of Arnoldi vectors will be re-computed via and
+        // implementation of A. Ruhe's block Arnoldi.
+        //
+        if (!dep_flg) {
+                //
+                // Compute the QR factorization of F_vec
+                //
+                row_offset = (j+1)*_block; col_offset = j*_block;
+                AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, row_offset, col_offset,
+                        _block, _block);
+                QRFactorization( *F_vec, sub_block_hess );
+        }
+        //
+        delete F_vec, V_prev;
+        delete [] index;
+        delete [] norm1;
+        delete [] norm2;
+        //
+}  // end BlkOrth()
+
+
+template<class TYPE>
+void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
+        //
+        // This is a variant of A. Ruhe's block Arnoldi
+        // The orthogonalization of the vectors F_vec is done
+        // one at a time. If a dependency is detected, a random
+        // vector is added and orthogonalized against all previous
+        // Arnoldi vectors.
+        //
+        const int IntOne = 1;
+        const TYPE one = 1.0;
+        const TYPE zero = 0.0;
+        int i, k, iter, num_prev;
+        int * index = new int[ (_length+1)*_block ]; assert(index);
+        TYPE norm1[IntOne];
+        TYPE norm2[IntOne];
+        //
+        // Associate (j+1)-st block of ArnoldiVecs with F_vec.
+        //
+        for ( i=0; i<_block; i++ ) {
+        	index[i] = (j+1)*_block+i;
+        }
+        AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+        assert(F_vec);
+        //
+        // Zero out the full block column of the Hessenberg matrix
+        //
+        int ldh = _hessmatrix->getld();
+        int n_row = _hessmatrix->getrows();
+        int n_col = _hessmatrix->getcols();
+        //
+        TYPE* ptr_hess = _hessmatrix->getarray();
+        for ( k=0; k<_block; k++ ) {
+                for ( i=0; i<n_row ; i++ ) {
+                        ptr_hess[j*ldh*_block + k*ldh + i] = zero;
+                }
+        }
+        //
+        AnasaziMultiVec<TYPE> *q_vec=0, *Q_vec=0, *tptr=0;
+        tptr = F_vec->Clone(IntOne); assert(tptr);
+        //
+        // Start a loop to orthogonalize each of the _block
+        // columns of F_vec against all previous _basisvecs
+        //
+        for (int iter=0; iter<_block; iter++){
+                num_prev = (j+1)*_block + iter; // number of previous _basisvecs
+                //
+                // Grab the next column of _basisvecs
+                //
+                index[0] = num_prev;
+                q_vec = _basisvecs->CloneView(index, IntOne); assert(q_vec);
+                //
+                // Grab all previous columns of _basisvecs
+                //
+                for (i=0; i<num_prev; i++){
+                        index[i] = i;
+                }
+                Q_vec = _basisvecs->CloneView(index, num_prev); assert(Q_vec);
+                //
+                // Create matrix to store product trans(Q_vec)*q_vec
+                //
+                AnasaziDenseMatrix<TYPE> dense_mat(num_prev, IntOne);
+                TYPE* ptr_dense = dense_mat.getarray();
+                //
+                // Do one step of classical Gram-Schmidt orthogonalization
+                // with a 2nd correction step if needed.
+                //
+                q_vec->MvNorm(norm1);
+                //
+                // Compute trans(Q_vec)*q_vec
+                //
+                q_vec->MvTransMv(one, *Q_vec, dense_mat);
+                //
+                // Sum results [0:num_prev-1] into column (num_prev-_block)
+                // of the Hessenberg matrix
+                //
+                for (k=0; k<num_prev; k++){
+                        ptr_hess[(j*_block + iter)*ldh +k] += ptr_dense[k];
+                }
+		//
+                // Compute q_vec<- q_vec - Q_vec * dense_mat
+                //
+                q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_mat, one);
+                //
+                q_vec->MvNorm(norm2);
+                //
+                if (norm2[0] < norm1[0] * _dep_tol) {
+                        //
+                        // Repeat process with newly computed q_vec
+                        //
+                    	// Compute trans(Q_vec)*q_vec
+                    	//
+                    	q_vec->MvTransMv(one, *Q_vec, dense_mat);
+                    	//
+                    	// Sum results [0:num_prev-1] into column (num_prev-_block)
+                    	// of the Hessenberg matrix
+                    	//
+                    	for (k=0; k<num_prev; k++){
+                            	ptr_hess[(j*_block + iter)*ldh +k] += ptr_dense[k];
+                        }
+			//
+                    	// Compute q_vec<- q_vec - Q_vec * dense_mat
+                    	//
+                    	q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_mat, one);
+                    	//
+                    	q_vec->MvNorm(norm2);
+                }
+                //
+                // Check for linear dependence
+                //
+                if (norm2[0] < norm1[0] * _sing_tol) {
+                        if (_debuglevel > 2) {
+                           std::cout << "Column " << num_prev << " of _basisvecs is dependent" 
+				<< std::endl<<std::endl;
+                        }
+                        //
+                        // Create a random vector and orthogonalize it against all
+                        // previous cols of _basisvecs
+                        // We could try adding a random unit vector instead -- not
+                        // sure if this would make any difference.
+                        //
+                        tptr->MvRandom();
+                        tptr->MvNorm(norm1);
+                        //
+                        // This code  is automatically doing 2 steps of orthogonalization
+                        // after adding a random vector. We could do one step of
+                        // orthogonalization with a correction step if needed.
+                        //
+                        for (int num_orth=0; num_orth<2; num_orth++){
+                                tptr->MvTransMv(one, *Q_vec, dense_mat);
+                                // Note that we don't change the entries of the
+                                // Hessenberg matrix when we orthogonalize a
+                                // random vector
+                                tptr->MvTimesMatAddMv(-one, *Q_vec, dense_mat, one);
+                        }
+                        //
+                        tptr->MvNorm(norm2);
+                    	//
+                        if (norm2[0] > norm1[0] * _sing_tol){
+                                // Copy vector into the current column of _basisvecs
+                		q_vec->MvAddMv( one, *tptr, zero, *tptr );
+                                q_vec->MvNorm(norm2);
+                		//
+				// Normalize the new q_vec
+                        	//
+                        	TYPE rjj = one/norm2[0];
+                        	q_vec->MvAddMv( rjj, *q_vec, zero, *q_vec );
+                        	//
+                        	// Enter a zero in the [(j+1)*_block + iter] row in the
+                        	// [(j*_block + iter] column of the Hessenberg matrix
+                        	//
+                		ptr_hess[(j*_block+iter)*ldh + (j+1)*_block+iter] = zero;
+                        }
+                        else {
+                                // Can't produce a new orthonormal basis vector
+                                // Clean up and exit this block Arnoldi factorization!
+                                exit_flg = true;
+				delete [] index;
+        			delete q_vec; q_vec=0;
+        			delete Q_vec; Q_vec=0;
+        			delete tptr; tptr=0;
+        			delete F_vec;
+				return;
+                        }
+                }
+                else {
+                        //
+                    	// Normalize the new q_vec
+                    	//
+                    	TYPE rjj = one/norm2[0];
+                    	q_vec->MvAddMv( rjj, *q_vec, zero, *q_vec );
+                        //
+                        // Enter norm of q_vec to the [(j+1)*_block + iter] row
+                    	// in the [(j*_block + iter] column of the Hessenberg matrix
+                        //
+                        ptr_hess[(j*_block+iter)*ldh + (j+1)*_block+iter] = norm2[0];
+                } // end else ...
+        } // end for (i=0;...)
+        //
+        if (_debuglevel > 2){
+                std::cout << "Checking Orthogonality after BlkOrthSing()"
+                            << " Iteration: " << j << std::endl<<std::endl;
+                CheckBlkArnRed(j);
+        }
+        //
+        //      free heap space
+        //
+        delete [] index;
+        delete q_vec; q_vec=0;
+        delete Q_vec; Q_vec=0;
+        delete tptr; tptr=0;
+        delete F_vec;
+} // end BlkOrthSing()
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn, 
@@ -516,12 +798,15 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 	const int IntZero=0;
 	const TYPE zero=0.0;
 	const TYPE one=1.0;
-	const TYPE eps = 1.e-16; // replace this with call to LAPACK lamch
-	TYPE * R = FouierR.getarray();
-	TYPE * NormVecIn = new TYPE[nb]; assert(NormVecIn);
-	AnasaziMultiVec<TYPE> *qj = 0, *Qj = 0;
+	bool addvec = false, flg = false;
 	//
-    // Zero out the array that will contain the Fourier coefficients.
+	TYPE * R = FouierR.getarray();
+	TYPE norm1[IntOne];
+	TYPE norm2[IntOne];
+	AnasaziMultiVec<TYPE> *qj = 0, *Qj = 0, *tptr = 0;
+	tptr = _basisvecs->Clone(IntOne); assert(tptr);
+	//
+    	// Zero out the array that will contain the Fourier coefficients.
 	//
 	for ( j=0; j<nb; j++ ) {
 		for ( i=0; i<nb; i++ ) {
@@ -529,29 +814,22 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 		}
 	}
 	//
-	//  Get the norms of the columns of VecIn; this will be used to
-	//  determine whether there is rank deficiency in VecIn.
-	//
-	VecIn.MvNorm(NormVecIn);
-	//
-	// Compute the Forbenuis norm of VecIn
-	//
-	TYPE FroNorm=0.0;
-	for ( j=0; j<nb; j++ ) {
-		FroNorm += NormVecIn[j]*NormVecIn[j];
-	}
-	//
-    // Start the loop to orthogonalize the nb columns of VecIn.
+    	// Start the loop to orthogonalize the nb columns of VecIn.
 	//
 	for ( j=0; j<nb; j++ ) {
 		//
-        // Grab the j-th column of VecIn (the first column is indexed to 
-        // be the zero-th one).
+		flg = false;
+		//
+        	// Grab the j-th column of VecIn (the first column is indexed to 
+        	// be the zero-th one).
 		//
 		index[0] = j;
 		qj = VecIn.CloneView(index, IntOne); assert(qj);
+		//
+		// If we are beyong the 1st column, orthogonalize against the previous
+		// vectors in the current block.
+		//
 		if ( j ) {
-			int num_orth;
 			for ( i=0; i<j; i++ ) {
 				index[i] = i;
 			}
@@ -561,61 +839,140 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 			//
 			Qj = VecIn.CloneView(index, j);
 			AnasaziDenseMatrix<TYPE> rj(j,1);
+			TYPE * result = rj.getarray();
+			qj->MvNorm(norm1);
 			//
-			// Enter a for loop that does two (num_orth) steps of classical 
-			// Gram-Schmidt orthogonalization.
+			// Do one step of classical Gram-Schmidt orthogonalization
+			// with a second correction step if needed
 			//
-			for (num_orth=0; num_orth<2; num_orth++) {
+			// Determine the Fouier coefficients for orthogonalizing column
+			// j of VecIn against columns 0:j-1 of VecIn. In other words,
+			// result = trans(Qj)*qj.
+			//
+			qj->MvTransMv( one, *Qj, rj );
+			//
+			// Sum results[0:j-1] into column j of R.
+			//
+			for ( k=0; k<j; k++ ) {
+        			R[j*ldR+k] += result[k];
+			}
+			//
+			// Compute qj <- qj - Qj * rj.
+			//
+			qj->MvTimesMatAddMv(-one, *Qj, rj, one);
+			//
+			qj->MvNorm(norm2);			
+			//
+			if (norm2[0] < norm1[0] * _dep_tol){
+        			//
+        			// Repeat process with newly computed qj
+        			//
+        			qj->MvTransMv( one, *Qj, rj );
+    				//
+    				// Sum results[0:j-1] into column j of R.
+    				//
+    				for ( k=0; k<j; k++ ) {
+            			R[j*ldR+k] += result[k];
+        			}
 				//
-				// Determine the Fourier coefficients for orthogonalizing column
-				// j of VecIn against columns 0:j-1 of VecIn. In other words, 
-				// result = trans(Qj)*qj.
-				//
-				qj->MvTransMv( one, *Qj, rj );
-				//
-				// Sum result[0:j-1] into column j of R.
-				//
-				TYPE* result = rj.getarray();
-				for ( k=0; k<j; k++ ) {
-					R[j*ldR+k] += result[k];
-				}
-				//
-				//   Compute qj <- qj - Qj * rj.
+				// Compute qj <- qj - Qj * rj.
 				//
 				qj->MvTimesMatAddMv(-one, *Qj, rj, one);
+				//
+				qj->MvNorm(norm2);
 			}
-		}
-		//
-		// Compute the norm of column j of VecIn (=qj).
-		//
-		qj->MvNorm ( R+j*ldR+j );
-		if ( *(R+j*ldR+j) > eps*FroNorm ) {
 			//
-			// Normalize qj to make it into a unit vector.
+			// Check for dependencies
 			//
-			TYPE rjj = one / *(R+j*ldR+j);
-			qj->MvAddMv ( rjj, *qj, zero, *qj );
-		}
-		else {
-			// 
-			// If qj is the zero vector, get ready to exit this function.
-			//
-			std::cout << " ***rank deficient block*** " << j << std::endl;
-		}	
-		delete qj;
-		delete Qj;
-	}
-	delete [] index;
-	delete [] NormVecIn;
+			if (_iter) {
+        			// This is not the 1st block. A looser tolerance is used to
+        			// determine dependencies. If a dependency is detected, a flag
+        			// is set so we can back out this routine and out of BlkOrth.
+        			// The routine BlkOrthSing is used to construct the new block
+        			// of orthonormal basis vectors one at a time. If a dependency
+        			// is detected within this routine, a random vector is added
+        			// and orthogonalized against all previous basis vectors.
+        			//
+        			if (norm2[0] < norm1[0] * _blk_tol) {
+            				if (_debuglevel > 2) {
+               					std::cout << "Column " << j << " of current block is dependent"<<std::endl;
+	                		}
+        	    			dep_flg = true;
+            				delete qj; delete Qj; delete tptr;
+                			delete [] index;
+                			return;
+       				}
+			}
+                     	else {
+                        	// This is the 1st block of basis vectors.
+                        	// Use a tighter tolerance to determine dependencies, because
+                        	// if a dependency is detected we will be adding a random
+                        	// vector and orthogonalizing it against previous vectors
+                             	// in the 1st block
+                             	//
+                             	if (norm2[0] < norm1[0] * _sing_tol) {
+                                     	// The 1st block of vectors are dependent
+                                 	// Add a random vector and orthogonalize it against
+                                 	// previous vectors in block.
+                                 	//
+                                     	addvec = true;
+                                 	AnasaziDenseMatrix<TYPE> tj(j,1);
+                                 	//
+                                 	tptr->MvRandom();
+                                 	tptr->MvNorm(norm1);
+                                     	//
+                                 	for (int num_orth=0; num_orth<2; num_orth++){
+                                         	tptr->MvTransMv(one, *Qj, tj);
+                                         	tptr->MvTimesMatAddMv(-one, *Qj, tj, one);
+                                     	}
+                                 	tptr->MvNorm(norm2);
+                                 	//
+                                 	if (norm2[0] > norm1[0] * _sing_tol){
+                                         	// Copy vector into current column of _basisvecs
+                                         	qj->MvAddMv(one, *tptr, zero, *tptr);
+                                     	}
+					else {
+                                         	exit_flg = true;
+                                         	delete qj; delete Qj; delete tptr;
+                                             	delete [] index;
+                                             	return;
+                                     	}
+                             	}
+			} // if (_iter) ...
+		} // if (j) ...
+                //
+            	// If we have not exited, compute the norm of column j of
+                // VecIn (qj), then normalize qj to make it into a unit vector
+                //
+                TYPE normq[IntOne];
+                qj->MvNorm(normq);
+                //
+                TYPE rjj = one / normq[0];
+                qj->MvAddMv ( rjj, *qj, zero, *qj );
+                //
+                if (addvec){
+                        // We've added a random vector, so
+                        // enter a zero in j'th diagonal element of R
+                        *(R+j*ldR+j) = zero;
+                }
+                else {
+                        *(R+j*ldR+j) = normq[0];
+                }
+                delete qj; delete Qj;
+      	} // for (j=0; j<nb; j++) ...
+	//
+	delete [] index;	
 }
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	int i=0,j=0;
 	int m = _jstart*_block, n=_jstart*_block, info=0;
+	int mm1 = (_jstart-1)*_block;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
 	AnasaziDenseMatrix<TYPE>* Hj;
+	
 	//
 	// If we are going to restart then we can overwrite the 
 	// hessenberg matrix with the Schur factorization, else we
@@ -669,91 +1026,124 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	// Reorder real Schur factorization, remember to add one to the indices for the
 	// fortran call and determine offset.  The offset is necessary since the TREXC
 	// routine reorders in a nonsymmetric fashion, thus we use the reordering in
-	// a stack-like fashion.  Only necessary if we are restarting.
+	// a stack-like fashion.
 	//
 	AnasaziBLAS blas;
 
-	if (apply) {
-		int _nevtemp;
-		if (_jstart < _nevblock) {
-			_nevtemp = n;
-		} else {
-			_nevtemp = _nevblock*_block;
-		}		
+	int _nevtemp;
+	if (_jstart < _nevblock) {
+		_nevtemp = n;
+	} else {
+		_nevtemp = _nevblock*_block;
+	}		
+	char * compq = "V";
+	int *offset = new int[ _nevtemp ]; assert(offset);
+	for (i=0; i<_nevtemp; i++) {
+		offset[i] = 0;
+		for (j=i; j<_nevtemp; j++) {
+			if (_order[j] > _order[i]) { offset[i]++; }
+		}
+	}
+	for (i=_nevtemp-1; i>=0; i--) {
+		lapack.TREXC( *compq, n, ptr_hj, ldhj, ptr_q, ldq, _order[i]+1+offset[i], 
+				1, work, &info );
+		assert(info==0);
+//		std::cout<<"Moving "<<_order[i]+1+offset[i]<<" to "<<1<<std::endl;
+//		std::cout<<"After sorting and reordering"<<std::endl;
+//		for (j=0; j<n; j++) {
+//	  		std::cout<<j<<"\t"<<ptr_hj[j*ldhj + j]<<std::endl;
+//		}
+	}
+
+	if (apply) { // We're headed for a restart, so update the Krylov basis
 		int *index = new int[ n ]; assert(index);
 		for (i = 0; i < n; i++ ) {
 			index[i] = i;
 		}
-		char * compq = "V";
-		int *offset = new int[ _nevtemp ]; assert(offset);
-		for (i=0; i<_nevtemp; i++) {
-			offset[i] = 0;
-			for (j=i; j<_nevtemp; j++) {
-				if (_order[j] > _order[i]) { offset[i]++; }
-			}
-		}
-		for (i=_nevtemp-1; i>=0; i--) {
-			lapack.TREXC( *compq, n, ptr_hj, ldhj, ptr_q, ldq, _order[i]+1+offset[i], 
-				1, work, &info );
-			assert(info==0);
-//			std::cout<<"Moving "<<_order[i]+1+offset[i]<<" to "<<1<<std::endl;
-//			std::cout<<"After sorting and reordering"<<std::endl;
-//			for (j=0; j<n; j++) {
-//	  			std::cout<<j<<"\t"<<ptr_hj[j*ldhj + j]<<std::endl;
-//			}
-		}
-
 		AnasaziDenseMatrix<TYPE> Qnev(Q,n,_nevtemp);
 		AnasaziMultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
 		AnasaziMultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 		basistemp->MvTimesMatAddMv ( one, *basistemp2, Qnev, zero );
-		//
-		// Check the residual errors
-		//
-	//==========================================================
-	//	need a matrix matrix multiply here, but not sure what form B should be in !
-	//	AnasaziDenseMatrix<TYPE> s(Q, (_jstart-1)*_block, 0, _block, n)
-	//==========================================================
-		for (i=0; i<n ; i++) {
- 	      		AnasaziDenseMatrix<TYPE> s(Q,(_jstart-1)*_block,i,_block,1);
-        		TYPE *ptr_s=s.getarray();
-        		_ritzresiduals[i] = blas.NRM2(_block, ptr_s);
-		}
+
 		delete basistemp, basistemp2;
-		delete [] offset;
 		delete [] index;
 	}
-	else {
-		//
-		// Compute the eigenvectors of the Schur form
-		//
-		char * side = "R";
-		char * howmny = "B";
-		int mm, ldvl = 1;
-		TYPE *vl = new TYPE[ ldvl ];
-		lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
-                		ptr_q, ldq, n, &mm, work, &info );
-		assert(info==0);
-		//
-		// Check the residual errors, the Schur form was never reordered, so use
-		// the _order vector from the sorting routine.
-		//
+	//
+	// Check the residual error for the Schur decomposition.
+	// The residual for the Schur decomposition A(VQ) = (VQ)T + FE_mQ
+	// where HQ = QT is || FE_mQ || <= || H_{m+1,m} || || E_mQ ||.
+	//
+	// We are only interested in the partial Schur decomposition corresponding
+	// to the _nev eigenvalues of interest.
+	//
 	//==========================================================
 	//	need a matrix matrix multiply here, but not sure what form B should be in !
 	//	AnasaziDenseMatrix<TYPE> s(Q, (_jstart-1)*_block, 0, _block, n)
 	//==========================================================
+	//
+	// Compute the norm of the submatrix H_{j+1,j} to determine the
+	// partial Schur decomposition error for the current Arnoldi factorization
+	// The norm of the Schur factor T will also be used to normalize the error.
+	//
+	AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, m, mm1, _block, _block);
+	const TYPE nrm_h = sub_block_hess.getfronorm();
+	//
+	// Since we're only interested in the partial Schur decomp for _nev eigenvalues
+	// nevtemp needs to be changed.
+	//
+	if ( _nevtemp > _nev ) { _nevtemp = _nev; }
+	AnasaziDenseMatrix<TYPE> sub_block_q( Q, mm1, 0, _block, _nevtemp );
+	const TYPE nrm_q = sub_block_q.getfronorm();
+	AnasaziDenseMatrix<TYPE> sub_block_t( *Hj, 0, 0, _nevtemp, _nevtemp );
+	const TYPE nrm_t = sub_block_t.getfronorm();
+	_schurerror = (nrm_h * nrm_q ) / nrm_t;
+	std::cout<< "The error for the partial Schur decomposition is : "<< _schurerror
+		<<std::endl;
+	//
+	// Now compute Ritz residuals for each Ritz pair.
+	// First:  Compute the eigenvectors of the Schur form
+	//
+	char * side = "R";
+	char * howmny = "B";
+	int mm, ldvl = 1;
+	TYPE *vl = new TYPE[ ldvl ];
+	lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
+               		ptr_q, ldq, n, &mm, work, &info );
+	assert(info==0);
+	if (_issym) {
 		for (i=0; i<n ; i++) {
- 	      		AnasaziDenseMatrix<TYPE> s(Q,(_jstart-1)*_block,_order[i],_block,1);
+ 	     		AnasaziDenseMatrix<TYPE> s(Q,mm1,_order[i],_block,1);
         		TYPE *ptr_s=s.getarray();
-        		_ritzresiduals[i] = blas.NRM2(_block, ptr_s);
+        		_ritzresiduals[i] = blas.NRM2(_block, ptr_s)/nrm_t;
 		}
+	} else {  // There is a chance that complex eigenvectors exist.
+		i=0;
+		while ( i<n ) {
+			if ( _evali[i] != zero ) { // The eigenvector is complex
+				AnasaziDenseMatrix<TYPE> sr(Q,mm1,i,_block,1);
+				TYPE *ptr_sr=sr.getarray();
+				_ritzresiduals[i] = blas.NRM2(_block, ptr_sr);
+				AnasaziDenseMatrix<TYPE> si(Q,mm1,i,_block,1);
+				TYPE *ptr_si=si.getarray();
+				_ritzresiduals[i] += blas.NRM2(_block, ptr_si);
+				_ritzresiduals[i] /= sqrt(2.0)*nrm_t;
+				// The conjugate has the same residual
+				_ritzresiduals[i+1] = _ritzresiduals[i]; 
+				i += 2;
+			} else {
+ 	     			AnasaziDenseMatrix<TYPE> s(Q,mm1,i,_block,1);
+        			TYPE *ptr_s=s.getarray();
+        			_ritzresiduals[i] = blas.NRM2(_block, ptr_s)/nrm_t;
+				i++;
+			}
+		}										
 	}		
-	//---------------------------------------------------------------------
-	//  Check convergence before returning to iterate/solve routine
-	//---------------------------------------------------------------------
+	//
+	// Check convergence before returning to iterate/solve routine
+	//
 	_nconv = 0;
 //	std::cout<<"Checking residuals for tolerance : "<<_residual_tolerance<<std::endl;
-	for (i=0; i<_nev; i++) {
+	for (i=0; i<_nevtemp; i++) {
 //		std::cout<<"Eigenvalue "<<i<<" : "<<_ritzresiduals[i]<<std::endl;
 		if ( _ritzresiduals[i] < _residual_tolerance ) {
 			_nconv++;		
@@ -763,6 +1153,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 
 	delete [] work; 
 	delete [] bwork, select;
+	delete [] offset;
 }
 
 
@@ -814,7 +1205,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	int mm, ldvl = 1;
 	TYPE *vl = new TYPE[ ldvl ];
 	lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
-			ptr_q, ldq, n, mm, work, &info );
+			ptr_q, ldq, n, &mm, work, &info );
 	assert(info==0);
 	//
 	// Convert back to approximate eigenvectors of the matrix A, then sort
@@ -883,7 +1274,7 @@ void BlockArnoldi<TYPE>::Restart() {
 }
 
 template<class TYPE>
-void BlockArnoldi<TYPE>::Check_Block_Arn_Red( const int j ) {
+void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         int i,k,m=(j+1)*_block;
         int *index = new int[m];
                 
