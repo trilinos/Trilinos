@@ -1864,11 +1864,12 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    
    ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
    ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->bc);
-   str2 = (char *)ML_allocate(80*sizeof(char));
-   sprintf(str2,"%s",(*Pmatrix)->label);
-   ML_Operator_Set_Label( Pmatrix2,str2);
-   
-   ML_free(str2);
+   if ((*Pmatrix)->label != NULL) {
+     str2 = (char *)ML_allocate(80*sizeof(char));
+     sprintf(str2,"%s",(*Pmatrix)->label);
+     ML_Operator_Set_Label( Pmatrix2,str2);
+     ML_free(str2);
+   }
 
    ML_Operator_Clean( *Pmatrix );
 
