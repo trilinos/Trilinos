@@ -90,9 +90,8 @@ int main(int argc, char *argv[])
 			NOX::Utils::Details + 
 			NOX::Utils::Warning);
   nlParams.setParameter("MyPID", MyPID); 
-  //nlParams.setParameter("Nonlinear Solver", "Newton");
-  nlParams.setParameter("Nonlinear Solver", "Line Search");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region");
+  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");

@@ -85,18 +85,8 @@ int main(int argc, char *argv[])
   NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
-  nlParams.setParameter("Nonlinear Solver", "Newton");
-  //nlParams.setParameter("Nonlinear Solver", "Line Search");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region"); 
-  //nlParams.setParameter("Nonlinear Solver", "NonlinearCG"); 
-  //nlParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
-  //nlParams.setParameter("Direction", "Steepest Descent");  // default
-  //nlParams.setParameter("Direction", "Richardson"); 
-  //nlParams.setParameter("Max Iterations", 100); 
-  //nlParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
-  //nlParams.setParameter("Orthogonalize", "Polak-Ribiere"); 
-  //nlParams.setParameter("Restart Frequency", 5);  // default = 10
-  //nlParams.setParameter("Output Frequency", 10);  // default = 1 
+  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based"); 
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
