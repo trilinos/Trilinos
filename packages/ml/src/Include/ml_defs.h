@@ -124,6 +124,12 @@
 #define ML_TAG_PRESM       1
 #define ML_TAG_POSTSM      101
 
+/*MS*/
+/* those are for the aggregate ordering within METIS or ParMETIS */
+#define ML_LOCAL_INDICES     0
+#define ML_GLOBAL_INDICES    1
+/*ms*/
+
 /* maximum dimension of the subspace associated with an ML_Operator type */
 #define ML_MAX_SUBSPACE_DIM 3
 
