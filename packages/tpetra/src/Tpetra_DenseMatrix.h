@@ -1,17 +1,20 @@
+// 16-May-2002 - Switched names from TPetra to Tpetra
+// 17-May-2002 - Converted from Petra_Flops and Petra_Object to Epetra_CompObject
+
 #ifndef _TPETRA_DENSEMATRIX_H_
 #define _TPETRA_DENSEMATRIX_H_
 
-//! TPetra::DenseMatrix: A class for constructing and using template<scalarType> general dense matrices.
+//! Tpetra::DenseMatrix: A class for constructing and using template<scalarType> general dense matrices.
 
-/*! The TPetra::DenseMatrix class enables the construction and use of general template<scalarType>
+/*! The Tpetra::DenseMatrix class enables the construction and use of general template<scalarType>
     dense matrices.  It is built on the BLAS, and derives from the Petra_BLAS. 
 
-The TPetra::DenseMatrix class is intended to provide very basic support for dense rectangular matrices.
+The Tpetra::DenseMatrix class is intended to provide very basic support for dense rectangular matrices.
 
 
-<b>Constructing TPetra::DenseMatrix Objects</b>
+<b>Constructing Tpetra::DenseMatrix Objects</b>
 
-There are three TPetra::DenseMatrix constructors.  The first constructs a zero-sized object which should be made
+There are three Tpetra::DenseMatrix constructors.  The first constructs a zero-sized object which should be made
 to appropriate length using the Shape() or Reshape() functions and then filled with the [] or () operators. 
 The second is a constructor that accepts user
 data as a 2D array, the third is a copy constructor. The second constructor has
@@ -27,23 +30,23 @@ two data access modes (specified by the Petra_DataAccess argument):
 Therefore, we strongly encourage users to develop code using Copy mode first and 
 only use the View mode in a secondary optimization phase.
 
-<b>Extracting Data from TPetra::DenseMatrix Objects</b>
+<b>Extracting Data from Tpetra::DenseMatrix Objects</b>
 
-Once a TPetra::DenseMatrix is constructed, it is possible to view the data via access functions.
+Once a Tpetra::DenseMatrix is constructed, it is possible to view the data via access functions.
 
 \warning Use of these access functions cam be \e extremely dangerous from a data hiding perspective.
 
 
 <b>Vector and Utility Functions</b>
 
-Once a TPetra::DenseMatrix is constructed, several mathematical functions can be applied to
+Once a Tpetra::DenseMatrix is constructed, several mathematical functions can be applied to
 the object.  Specifically:
 <ul>
   <li> Multiplication.
   <li> Norms.
 </ul>
 
-The final useful function is Flops().  Each TPetra::DenseMatrix object keep track of the number
+The final useful function is Flops().  Each Tpetra::DenseMatrix object keep track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
 to the function.  The Flops() function returns this number as a double precision number.  Using this 
 information, in conjunction with the Petra_Time class, one can get accurate parallel performance
@@ -51,22 +54,21 @@ numbers.
 
 
 */
-#include "Petra_Object.h" 
-#include "Petra_Flops.h"
-#include "TPetra_BLAS.h"
+#include "Epetra_CompObject.h"
+#include "Tpetra_BLAS.h"
 
-namespace TPetra {
+namespace Tpetra {
 
 //=========================================================================
 template<class scalarType>
-class DenseMatrix : public Petra_Flops, public Petra_Object, public TPetra::BLAS<scalarType> {
+class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetra::BLAS<scalarType> {
 
   public:
   
   //@{ \name Constructor/Destructor Methods
   //! Default constructor; defines a zero size object.
   /*!
-    TPetra::DenseMatrix objects defined by the default constructor should be sized with the 
+    Tpetra::DenseMatrix objects defined by the default constructor should be sized with the 
     Shape() or Reshape functions.  
     Values should be defined by using the [] or () operators.
    */
@@ -88,25 +90,25 @@ class DenseMatrix : public Petra_Flops, public Petra_Object, public TPetra::BLAS
 
 	   See Detailed Description section for further discussion.
   */
-  DenseMatrix(Petra_DataAccess CV, scalarType *A, int stride, int numRows, int numCols);
+  DenseMatrix(Epetra_DataAccess CV, scalarType *A, int stride, int numRows, int numCols);
   
-  //! TPetra::DenseMatrix copy constructor.
+  //! Tpetra::DenseMatrix copy constructor.
   
-  DenseMatrix(const TPetra::DenseMatrix<scalarType>& Source);
+  DenseMatrix(const Tpetra::DenseMatrix<scalarType>& Source);
 
   //! DenseMatrix destructor.  
   virtual ~DenseMatrix ();
   //@}
 
   //@{ \name Shaping/sizing Methods
-  //! Set dimensions of a TPetra::DenseMatrix object; init values to zero.
+  //! Set dimensions of a Tpetra::DenseMatrix object; init values to zero.
   /*!
     \param In 
            numRows - number of rows in object.
     \param In 
            numCols - number of columns in object.
 
-	   Allows user to define the dimensions of a TPetra::DenseMatrix at any point. This function can
+	   Allows user to define the dimensions of a Tpetra::DenseMatrix at any point. This function can
 	   be called at any point after construction.  Any values that were previously in this object are
 	   destroyed and the resized matrix starts off with all zero values.
 
@@ -114,14 +116,14 @@ class DenseMatrix : public Petra_Flops, public Petra_Object, public TPetra::BLAS
   */
   int shape(int numRows, int numCols);
   
-  //! Reshape a TPetra::DenseMatrix object.
+  //! Reshape a Tpetra::DenseMatrix object.
   /*!
     \param In 
            numRows - number of rows in object.
     \param In 
            numCols - number of columns in object.
 
-	   Allows user to define the dimensions of a TPetra::DenseMatrix at any point. This function can
+	   Allows user to define the dimensions of a Tpetra::DenseMatrix at any point. This function can
 	   be called at any point after construction.  Any values that were previously in this object are
 	   copied into the new shape.  If the new shape is smaller than the original, the upper left portion
 	   of the original matrix (the principal submatrix) is copied to the new matrix.
@@ -135,7 +137,7 @@ class DenseMatrix : public Petra_Flops, public Petra_Object, public TPetra::BLAS
   /*!
     \return Integer error code, set to 0 if successful.
   */
-  scalarType oneNorm();
+  ScalarTraits<scalarType>::magnitudeType oneNorm();
 
   //! Matrix-Matrix multiplication, \e this = Scalar*\e this + ScalarAB*A*B.
   /*! This function performs a variety of matrix-matrix multiply operations.
@@ -158,8 +160,8 @@ class DenseMatrix : public Petra_Flops, public Petra_Object, public TPetra::BLAS
 	 
   */
   int  multiply (char TransA, char TransB, scalarType ScalarAB, 
-                 const TPetra::DenseMatrix<scalarType>& A, 
-                 const TPetra::DenseMatrix<scalarType>& B,
+                 const Tpetra::DenseMatrix<scalarType>& A, 
+                 const Tpetra::DenseMatrix<scalarType>& B,
                  scalarType Scalar );
 
   //! Element access function.
@@ -233,16 +235,16 @@ class DenseMatrix : public Petra_Flops, public Petra_Object, public TPetra::BLAS
 
 };
 
-} // namespace TPetra
+} // namespace Tpetra
 
 template<class scalarType>
-inline ostream& operator<<(ostream& os, const TPetra::DenseMatrix<scalarType>& obj)
+inline ostream& operator<<(ostream& os, const Tpetra::DenseMatrix<scalarType>& obj)
 {
   // os << obj.Label();
   obj.print(os);
   return os;
 }
-#include "TPetra_DenseMatrix.cpp"
+#include "Tpetra_DenseMatrix.cpp"
 
 
 #endif /* _TPETRA_DENSEMATRIX_H_ */

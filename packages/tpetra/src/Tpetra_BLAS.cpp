@@ -1,15 +1,17 @@
+// 16-May-2002 - Switched names from TPetra to Tpetra
+// 16-May-2002 - Changed from Petra_BLAS_wrappers.h to Epetra_BLAS_wrappers.h
 
-#include "Petra_BLAS_wrappers.h"
-#include "TPetra_ScalarTraits.h"
-namespace TPetra {
+#include "Epetra_BLAS_wrappers.h"
+#include "Tpetra_ScalarTraits.h"
+namespace Tpetra {
 
-// TPetra::BLAS constructor
+// Tpetra::BLAS constructor
 template<class scalarType>
 BLAS<scalarType>::BLAS(void){}
-// TPetra::BLAS constructor
+// Tpetra::BLAS constructor
 template<class scalarType>
-BLAS<scalarType>::BLAS(const TPetra::BLAS<scalarType>& BLAS){}
-// TPetra::BLAS destructor
+BLAS<scalarType>::BLAS(const Tpetra::BLAS<scalarType>& BLAS){}
+// Tpetra::BLAS destructor
 template<class scalarType>
 BLAS<scalarType>::~BLAS(){}
 
@@ -89,4 +91,4 @@ void BLAS<scalarType>::GEMM(char TRANSA, char TRANSB, int M, int N, int K,
   return;
 }
 
-} // namespace TPetra
+} // namespace Tpetra
