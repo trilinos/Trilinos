@@ -258,20 +258,21 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 rosenbrock_SOURCES = \
-	$(srcdir)/Rosenbrock.C 
+                   $(srcdir)/Rosenbrock.C 
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a \
-			  $(top_builddir)/src-lapack/libnoxlapack.a \
-			  $(top_builddir)/test/utils/libnoxtestutils.a
+                          $(top_builddir)/src-lapack/libnoxlapack.a \
+                          $(top_builddir)/test/utils/libnoxtestutils.a
 
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
-		      -I$(top_srcdir)/src-lapack \
-		      -I$(top_srcdir)/test/utils
+                      -I$(top_srcdir)/src-lapack \
+                      -I$(top_srcdir)/test/utils \
+                      $(TRILINOS_CXXFLAGS)
 
 rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
-		   $(top_builddir)/src/libnox.a \
-		   $(top_builddir)/test/utils/libnoxtestutils.a \
-		   $(LIBS) 
+                   $(top_builddir)/src/libnox.a \
+                   $(top_builddir)/test/utils/libnoxtestutils.a \
+                   $(LIBS) 
 
 all: all-am
 
@@ -515,7 +516,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-                      $(TRILINOS_CXXFLAGS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
