@@ -241,11 +241,23 @@ if (VTX_GNO_TO_LNO(hg,ip[i]) < 0 || VTX_GNO_TO_LNO(hg,ip[i]) >= hg->nVtx)
   MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
   c_hg->dist_x[0] = 0;
   for (i = 1; i < hgc->nProc_x; i++)
-     c_hg->dist_x[i] = c_hg->dist_x[i-1] + each_size[i-1];
+    c_hg->dist_x[i] = c_hg->dist_x[i-1] + each_size[i-1];
   size = 0;
   for (i = 0; i < hgc->nProc_x; i++)
-     size += each_size[i];
+    size += each_size[i];
   c_hg->dist_x[hgc->nProc_x] = size;
+
+  /* Assuming that we do not collapse Edges, dist_y for the coarse hgraph
+   * is the same as dist_y for the fine hgraph */
+
+  if (!(c_hg->dist_y = (int*)ZOLTAN_MALLOC ((hgc->nProc_y+1) * sizeof(int)))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT (zz, yo);
+      return ZOLTAN_MEMERR;
+  }  
+
+  for (i = 0; i < hgc->nProc_y+1; i++)
+    c_hg->dist_y[i] = hg->dist_y[i];
 
   /* Done if there are no remaining vertices */
   if (c_hg->nVtx == 0)  {
