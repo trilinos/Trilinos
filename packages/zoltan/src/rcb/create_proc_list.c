@@ -53,6 +53,7 @@ int Zoltan_RB_Create_Proc_List(
      int  num_to;             /* number of dots to send to a processor */
      int  i, j, k;            /* loop indexes */
      int *tmp_send;           /* Work vector */
+     int  err = ZOLTAN_OK;    /* error code */
 
      /* allocate memory for arrays */
      MPI_Comm_rank(comm, &rank);
@@ -111,6 +112,11 @@ int Zoltan_RB_Create_Proc_List(
         will have after communication if the number of dots that it keeps is
         not greater than a.  Set a so there is a non-negative number left. */
      if (sum_send) {
+        if (np_other == 0){
+          /* This should never happen. Prevent divide-by-zero to be safe. */
+          err = ZOLTAN_FATAL;
+          goto End;
+        }
         a = (sum_send + sum_rem)/np_other;
         sp = -1;
         k = 0;
@@ -183,10 +189,11 @@ int Zoltan_RB_Create_Proc_List(
               proclist[i] += proclower;
      }
 
+End:
      /* free memory and return */
      ZOLTAN_FREE(&send);
 
-     return ZOLTAN_OK;
+     return err;
 }
 
 static void Zoltan_RB_Gather(
