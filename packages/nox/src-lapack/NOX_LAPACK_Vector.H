@@ -61,19 +61,15 @@ namespace NOX {
 
       //! Construct an empty vector
       Vector();
-    
+
       //! Construct a zero vector of length n
       Vector(int n);
 
-      //! Construct a zero vector of length n, with allocated length na
-      Vector(int n, int na);
-
       //! Construct a vector of length n from given array
-      Vector(int n, double *v, bool createView = false);
+      Vector(int n, double *v);
     
       //! Copy constructor
-      Vector(const NOX::LAPACK::Vector& source, CopyType type = DeepCopy,
-	     bool createView = false);
+      Vector(const NOX::LAPACK::Vector& source, CopyType type = DeepCopy);
       
       //! Destruct Vector.
       ~Vector();
@@ -171,9 +167,6 @@ namespace NOX {
       // derived
       void print() const;
 
-      //! Returns the allocated length of the vector
-      int lengthAllocated() const;
-
     private:
 
       //! Return the i-th element
@@ -185,14 +178,8 @@ namespace NOX {
       //! The used length of vector
       int n;
 
-      //! The allocated length of vector
-      int na;
-
       //! The vector owned by this object
-      double *x;
-
-      //! Whether this vector is a view
-      bool isView;
+      vector<double> x;
     };
 
   } // namespace LAPACK

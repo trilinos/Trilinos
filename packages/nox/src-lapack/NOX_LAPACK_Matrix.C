@@ -36,25 +36,19 @@ using namespace NOX;
 using namespace NOX::LAPACK;
 
 Matrix::Matrix() :
-  p(0), q(0), pa(0), qa(0),			
+  p(0), q(0),             	
   entries()			
 {
 }
 
 Matrix::Matrix(int m, int n) :
-  p(m), q(n), pa(m), qa(n) ,   	// set the size of the matrix
+  p(m), q(n),             	// set the size of the matrix
   entries(m*n)			// create an array of m*n entries
 {
 }
 
-Matrix::Matrix(int m, int n, int ma, int na) :
-  p(m), q(n), pa(ma), qa(na),	// set the size of the matrix
-  entries(ma*na)       		// create an array of ma*na entries
-{
-}
-
 Matrix::Matrix(const Matrix& a, CopyType type) :
-  p(a.p), q(a.q), pa(a.pa), qa(a.qa), // set the size of the square matrix
+  p(a.p), q(a.q),                      // set the size of the square matrix
   entries(a.entries)		      // create a copy of a
 {
 }
@@ -65,12 +59,12 @@ Matrix::~Matrix()
 
 double& Matrix::operator()(int i, int j)
 {
-  return entries(i + (pa*j));
+  return entries(i + (p*j));
 }
 
 const double& Matrix::operator()(int i, int j) const
 {
-  return entries(i + (pa*j));
+  return entries(i + (p*j));
 }
 
 void Matrix::scale(double value)
@@ -111,12 +105,3 @@ int Matrix::numCols() const
   return q;
 }
 
-int Matrix::numRowsAllocated() const
-{
-  return pa;
-}
-
-int Matrix::numColsAllocated() const
-{
-  return qa;
-}

@@ -67,8 +67,8 @@ LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
 }
 
 LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
-			   int m, int n, int ma, int na, bool hasMassMat) : 
-  NOX::LAPACK::Group(interface, m, n, ma, na), 
+			   int m, int n, bool hasMassMat) : 
+  NOX::LAPACK::Group(interface, m, n), 
   LOCA::Abstract::Group(),
   locaProblemInterface(interface), 
   params(),
@@ -77,13 +77,13 @@ LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
   isValidMass(false)
 {
   if (hasMassMat)
-    massMatrix = NOX::LAPACK::Matrix(m, n, ma, na);
+    massMatrix = NOX::LAPACK::Matrix(m, n);
 }
 
 LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
 			   LOCA::LAPACK::Interface& interface,
-			   int m, int n, int ma, int na, bool hasMassMat) : 
-  NOX::LAPACK::Group(interface, m, n, ma, na), 
+			   int m, int n, bool hasMassMat) : 
+  NOX::LAPACK::Group(interface, m, n), 
   LOCA::Abstract::Group(params),
   locaProblemInterface(interface), 
   params(),
@@ -92,7 +92,7 @@ LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
   isValidMass(false)
 {
   if (hasMassMat)
-    massMatrix = NOX::LAPACK::Matrix(m, n, ma, na);
+    massMatrix = NOX::LAPACK::Matrix(m, n);
 }
 
 LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source, 
@@ -166,7 +166,7 @@ LOCA::LAPACK::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
 
   int m = jacobianMatrix.numRows();
   int n = jacobianMatrix.numCols();
-  int lda = jacobianMatrix.numRowsAllocated();
+  int lda = jacobianMatrix.numRows();
   int info;
 
   // Copy all input vectors into one matrix
@@ -286,8 +286,8 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
   
   // Size of matrix
   int n = jacobianMatrix.numRows();
-  int lda = jacobianMatrix.numRowsAllocated();
-  int ldb = massMatrix.numRowsAllocated();
+  int lda = jacobianMatrix.numRows();
+  int ldb = massMatrix.numRows();
 
   // Space to hold right eigenvectors
   double *vr = new double[n*n];
@@ -431,7 +431,7 @@ LOCA::LAPACK::Group::applyMassMatrix(const NOX::LAPACK::Vector& input,
   // Compute result = M * input
   int m = massMatrix.numRows();
   int n = massMatrix.numCols();
-  int lda = massMatrix.numRowsAllocated();
+  int lda = massMatrix.numRows();
 
   DGEMV_F77("N", &m, &n, &NOX::LAPACK::d_one, &massMatrix(0,0), &lda, 
 	    &input(0), &NOX::LAPACK::i_one, &NOX::LAPACK::d_zero, &result(0), 

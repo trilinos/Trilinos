@@ -49,15 +49,14 @@ NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface):
   resetIsValid();
 }
 
-NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface, int m, int n,
-			  int ma, int na):
+NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface, int m, int n):
   xVector(interface.getInitialGuess()),	// deep copy      
   fVector(xVector, ShapeCopy),	// new vector of same size
   newtonVector(xVector, ShapeCopy),	// new vector of same size
   gradientVector(xVector, ShapeCopy),   // new vector of same size
-  jacobianMatrix(m, n, ma, na),	// create a Jacobian matrix
-  jacobianLUFact(m, n, ma, na),   // create factorization of Jacobian matrix
-  pivots(ma,0),  // create array of pivots
+  jacobianMatrix(m, n),	     // create a Jacobian matrix
+  jacobianLUFact(m, n),      // create factorization of Jacobian matrix
+  pivots(m,0),  // create array of pivots
   problemInterface(interface) // set reference to the problem interface
 {
   normF = 0;
@@ -231,7 +230,7 @@ NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeGradient()
   // Compute Gradient = J' * F
   int m = jacobianMatrix.numRows();
   int n = jacobianMatrix.numCols();
-  int lda = jacobianMatrix.numRowsAllocated();
+  int lda = jacobianMatrix.numRows();
   DGEMV_F77("T", &m, &n, &d_one, &jacobianMatrix(0,0), &lda, &fVector(0),
 	    &i_one, &d_zero, &gradientVector(0), &i_one);
 
@@ -286,7 +285,7 @@ NOX::LAPACK::Group::applyJacobian(const Vector& input, Vector& result) const
   // Compute result = J * input
   int m = jacobianMatrix.numRows();
   int n = jacobianMatrix.numCols();
-  int lda = jacobianMatrix.numRowsAllocated();
+  int lda = jacobianMatrix.numRows();
 
   DGEMV_F77("N", &m, &n, &d_one, &jacobianMatrix(0,0), &lda, &input(0),
 	    &i_one, &d_zero, &result(0), &i_one);
@@ -313,7 +312,7 @@ NOX::LAPACK::Group::applyJacobianTranspose(const Vector& input, Vector& result) 
   // Compute result = J * input
   int m = jacobianMatrix.numRows();
   int n = jacobianMatrix.numCols();
-  int lda = jacobianMatrix.numRowsAllocated();
+  int lda = jacobianMatrix.numRows();
 
   DGEMV_F77("T", &m, &n, &d_one, &jacobianMatrix(0,0), &lda, &input(0),
 	    &i_one, &d_zero, &result(0), &i_one);
@@ -344,8 +343,8 @@ NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p,
 
   int m = jacobianMatrix.numRows();
   int n = jacobianMatrix.numCols();
-  int lda = jacobianMatrix.numRowsAllocated();
-  int ldb = input.lengthAllocated();
+  int lda = jacobianMatrix.numRows();
+  int ldb = input.length();
   int info;
 
   // Compute Jacobian LU factorization if invalid
@@ -424,12 +423,6 @@ void NOX::LAPACK::Group::print() const
   }
   else
     cout << "F(x) has not been computed" << "\n";
-
-  // if (isValidJacobian) {
-  //     cout << "J(x) = " << endl << jacobianMatrix << "\n";
-  //   }
-  //   else
-  //     cout << "J(x) has not been computed" << "\n";
   
   cout << endl;
 }

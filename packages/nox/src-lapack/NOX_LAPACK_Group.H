@@ -59,7 +59,7 @@ namespace NOX {
       Group(Interface& i);
 
       //! Constructor with used and allocated dimensions of matrices
-      Group(Interface& i, int m, int n, int ma, int na);
+      Group(Interface& i, int m, int n);
 
       //! Copy constructor
       Group(const NOX::LAPACK::Group& source, NOX::CopyType type = DeepCopy);

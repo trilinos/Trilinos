@@ -45,14 +45,12 @@ namespace NOX {
     class Matrix {
 
     public:
+
       //! Create an empty matrix
       Matrix();
 
       //! Create a m x n matrix with all entries zero
       Matrix(int m, int n);
-
-      //! Create a m x n matrix that has an allocated dimension of ma x na
-      Matrix(int m, int n, int ma, int na);
 
       //! Copy constructor
       Matrix(const Matrix& a, CopyType type = NOX::DeepCopy);
@@ -84,19 +82,10 @@ namespace NOX {
       //! Returns the number of columns in the matrix
       int numCols() const;
 
-      //! Returns the number of rows allocated in the matrix
-      int numRowsAllocated() const;
-
-      //! Returns the number of columns allocated in the matrix
-      int numColsAllocated() const;
-
     private:
 
       //! This is a p x q matrix
       int p, q;
-
-      //! Allocated dimension is pa x qa
-      int pa, qa;
 
       //! Entries of the matrix
       Vector entries;
