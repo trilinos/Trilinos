@@ -29,15 +29,20 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 					/* ordered like procs_to */
     int      *indices_from_ptr = NULL;	/* where to find items I recv */
 					/* ordered like procs_from */
+    int       var_sizes;        /* items have variable sizes? */
     int       i, j, k;		/* loop counters */
     static char *yo = "LB_Comm_Resize";
 
 
     /* If sizes vary, then I need to compute and communicate message lengths */
+    /* First check if sizes array is NULL on all procs. */
 
     MPI_Comm_rank(plan->comm, &my_proc);
+    i = (sizes != NULL);
+    MPI_Allreduce(&i, &var_sizes, 1, MPI_INT, MPI_LOR, plan->comm);
+    
 
-    if (sizes != NULL && plan->indices_from != NULL) {
+    if (var_sizes && plan->indices_from != NULL) {
         /* Can't do w/o individual item sizes */
 	COMM_ERROR("Non-blocked, variable-sized recvs not supported", yo, my_proc);
 	return(COMM_FATAL);
@@ -55,7 +60,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
     nrecvs = plan->nrecvs;
     self_msg = plan->self_msg;
 
-    if (sizes == NULL) { /* Easy case.  Size = length */
+    if (!var_sizes) { /* Easy case.  Size = length */
 	plan->total_recv_size = 0;
 	for (i = 0; i < nrecvs + self_msg; i++) {
 	    plan->total_recv_size += plan->lengths_from[i];
