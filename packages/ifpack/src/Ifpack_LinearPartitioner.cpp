@@ -3,6 +3,7 @@
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Ifpack_LinearPartitioner.h"
+#include "Epetra_CrsGraph.h"
 
 //==============================================================================
 int Ifpack_LinearPartitioner::ComputePartitions()

@@ -3,6 +3,7 @@
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Ifpack_UserPartitioner.h"
+#include "Epetra_CrsGraph.h"
 #include <vector>
 
 //==============================================================================
