@@ -509,8 +509,8 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
   if( verbose ) {
     cout << "ML_Anasazi : Estimate Lambda Max, ";
     if( IsProblemSymmetric == ML_TRUE ) cout << "problem is symmetric, ";
-    if( UseDiagonalScaling == ML_TRUE ) cout << "diagonal scaling.";
-    cout << endl;
+    if( UseDiagonalScaling == ML_TRUE ) cout << "diagonal scaling, ";
+    cout << " max iters = " << MaxIters << endl;
   }
 
   /* ********************************************************************** */
