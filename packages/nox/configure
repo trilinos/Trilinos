@@ -791,16 +791,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
-
-Optional Packages:
-  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
-  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-cc               Gives the name of the C compiler to use.
-  --with-cxx              Gives the name of the C++ compiler to use.
-  --with-include          Specifies include directories (\"-Idir1 -Idir2 ...\")
-  --with-ldflags          Specifies linker flags (\"-Lpath1 ...\")
-  --with-libs             Specifies libraries (\"-llib1 -llib2 ...\")
-  --with-flags            Specifies CPP flags (\"-Dflag1 -Dflag2 ...\")
+  --disable-trilinos           Do not use TRILINOS
 
 Some influential environment variables:
   CC          C compiler command
@@ -1457,53 +1448,26 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 # Configure command line options
 # ------------------------------------------------------------------------
 
-# Check whether --with-cc or --without-cc was given.
-if test "${with_cc+set}" = set; then
-  withval="$with_cc"
-  CC=$withval
+# Check whether --enable-trilinos or --disable-trilinos was given.
+if test "${enable_trilinos+set}" = set; then
+  enableval="$enable_trilinos"
 
-fi;
+case $enableval in
+  yes)
+    USE_TRILINOS=yes
+  ;;
+  no)
+    USE_TRILINOS=no
+  ;;
+  *)
+    { { echo "$as_me:$LINENO: error: Invalid value for --disable-trilinos ($enableval)" >&5
+echo "$as_me: error: Invalid value for --disable-trilinos ($enableval)" >&2;}
+   { (exit 1); exit 1; }; }
+  ;;
+esac
 
-# Check whether --with-cxx or --without-cxx was given.
-if test "${with_cxx+set}" = set; then
-  withval="$with_cxx"
-  CXX=$withval
-
-fi;
-
-# Check whether --with-include or --without-include was given.
-if test "${with_include+set}" = set; then
-  withval="$with_include"
-
-XTRAINC=$withval
-echo Using extra include directories: $withval
-
-fi;
-
-# Check whether --with-lflags or --without-lflags was given.
-if test "${with_lflags+set}" = set; then
-  withval="$with_lflags"
-
-XTRALDFLAGS=$withval
-echo Using extra linker flags: $withval
-
-fi;
-
-# Check whether --with-libs or --without-libs was given.
-if test "${with_libs+set}" = set; then
-  withval="$with_libs"
-
-XTRALIBS=$withval
-echo Using extra libraries: $withval
-
-fi;
-
-# Check whether --with-flags or --without-flags was given.
-if test "${with_flags+set}" = set; then
-  withval="$with_flags"
-
-XTRAFLAGS=$withval
-echo Using extra flags: $withval
+else
+  USE_TRILINOS=yes
 
 fi;
 
@@ -2985,12 +2949,6 @@ _ACEOF
 fi
 done
 
-# Add extra libraries
-LIBS="${LIBS} ${XTRALIBS}"
-
-# Add extra linking flags
-LDFLAGS="${LDFLAGS} ${XTRALDFLAGS}"
-
 # Check that all libraries will link with C++
 if test ${LIBS}; then
   echo "$as_me:$LINENO: checking whether libraries (${LIBS}) will link" >&5
@@ -3353,7 +3311,80 @@ CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS} ${XTRAINC}"
 # Checks for system services
 # ------------------------------------------------------------------------
 
-# Epetra - Currently a HACK
+# ------------------------------------------------------------------------
+# Checks for MPI/SERIAL status (only affects the examples)
+# ------------------------------------------------------------------------
+
+if test ${USE_TRILINOS} = yes; then
+
+   echo "$as_me:$LINENO: checking whether TRILINOS_HOME is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_HOME is defined... $ECHO_C" >&6
+   if test $TRILINOS_HOME; then
+      echo "$as_me:$LINENO: result: yes (${TRILINOS_HOME})" >&5
+echo "${ECHO_T}yes (${TRILINOS_HOME})" >&6
+   else
+      echo "$as_me:$LINENO: result: no (using default of ${HOME}/Trilinos)" >&5
+echo "${ECHO_T}no (using default of ${HOME}/Trilinos)" >&6
+      TRILINOS_HOME=${HOME}/Trilinos
+   fi
+
+   echo "$as_me:$LINENO: checking whether TRILINOS_HOME is valid" >&5
+echo $ECHO_N "checking whether TRILINOS_HOME is valid... $ECHO_C" >&6
+   if test -d ${TRILINOS_HOME}; then
+      echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+   else
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+      USE_TRILINOS=no
+   fi
+
+   echo "$as_me:$LINENO: checking whether TRILINOS_ARCH is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_ARCH is defined... $ECHO_C" >&6
+   if test ${TRILINOS_ARCH}; then
+      echo "$as_me:$LINENO: result: yes (${TRILINOS_ARCH})" >&5
+echo "${ECHO_T}yes (${TRILINOS_ARCH})" >&6
+   else
+      TRILINOS_ARCH="LINUX"
+      echo "$as_me:$LINENO: result: no (using default of ${TRILINOS_ARCH})" >&5
+echo "${ECHO_T}no (using default of ${TRILINOS_ARCH})" >&6
+   fi
+
+   echo "$as_me:$LINENO: checking whether TRILINOS_COMM is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_COMM is defined... $ECHO_C" >&6
+   if test ${TRILINOS_COMM}; then
+      echo "$as_me:$LINENO: result: yes (${TRILINOS_COMM})" >&5
+echo "${ECHO_T}yes (${TRILINOS_COMM})" >&6
+   else
+      TRILINOS_COMM="SERIAL"
+      echo "$as_me:$LINENO: result: no (using default of ${TRILINOS_COMM})" >&5
+echo "${ECHO_T}no (using default of ${TRILINOS_COMM})" >&6
+   fi
+
+   echo "$as_me:$LINENO: checking whether TRILINOS_ID is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_ID is defined... $ECHO_C" >&6
+   if test ${TRILINOS_ID}; then
+      echo "$as_me:$LINENO: result: yes (${TRILINOS_ID})" >&5
+echo "${ECHO_T}yes (${TRILINOS_ID})" >&6
+   else
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+   fi
+
+   echo "$as_me:$LINENO: checking whether TRILINOS_TARGET is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_TARGET is defined... $ECHO_C" >&6
+   if test ${TRILINOS_TARGET}; then
+      echo "$as_me:$LINENO: result: yes (${TRILINOS_TARGET})" >&5
+echo "${ECHO_T}yes (${TRILINOS_TARGET})" >&6
+   else
+      TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
+      echo "$as_me:$LINENO: result: no (using default of ${TRILINOS_TARGET})" >&5
+echo "${ECHO_T}no (using default of ${TRILINOS_TARGET})" >&6
+   fi
+
+fi
+
+if test ${USE_TRILINOS} = yes; then
 
 if true; then
   BUILD_NOXEPETRA_TRUE=
@@ -3361,6 +3392,16 @@ if true; then
 else
   BUILD_NOXEPETRA_TRUE='#'
   BUILD_NOXEPETRA_FALSE=
+fi
+else
+
+if false; then
+  BUILD_NOXEPETRA_TRUE=
+  BUILD_NOXEPETRA_FALSE='#'
+else
+  BUILD_NOXEPETRA_TRUE='#'
+  BUILD_NOXEPETRA_FALSE=
+fi
 fi
 
 # ------------------------------------------------------------------------
@@ -3371,7 +3412,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile src/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/DS6.5.1/Makefile example/simple_linear/Makefile example/simple_nonlinear/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3850,6 +3891,10 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/DS6.5.1/Makefile" ;;
+  "example/simple_linear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/simple_linear/Makefile" ;;
+  "example/simple_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/simple_nonlinear/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/NOX_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/NOX_Config.h:src/NOX_Config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -3972,6 +4017,11 @@ s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@BUILD_NOXEPETRA_TRUE@,$BUILD_NOXEPETRA_TRUE,;t t
 s,@BUILD_NOXEPETRA_FALSE@,$BUILD_NOXEPETRA_FALSE,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
+s,@TRILINOS_HOME@,$TRILINOS_HOME,;t t
+s,@TRILINOS_ARCH@,$TRILINOS_ARCH,;t t
+s,@TRILINOS_COMM@,$TRILINOS_COMM,;t t
+s,@TRILINOS_ID@,$TRILINOS_ID,;t t
+s,@TRILINOS_TARGET@,$TRILINOS_TARGET,;t t
 CEOF
 
 _ACEOF

@@ -72,46 +72,22 @@ AC_REVISION($Revision$)
 # Configure command line options
 # ------------------------------------------------------------------------
 
-AC_ARG_WITH(cc,
-[[  --with-cc               Gives the name of the C compiler to use.]],
-[CC=$withval]
-)
-
-AC_ARG_WITH(cxx,
-[[  --with-cxx              Gives the name of the C++ compiler to use.]],
-[CXX=$withval]
-)
-
-AC_ARG_WITH(include,
-[[  --with-include          Specifies include directories (\"-Idir1 -Idir2 ...\")]],
+AC_ARG_ENABLE(trilinos,
+[  --disable-trilinos           Do not use TRILINOS],
 [
-XTRAINC=$withval
-echo [Using extra include directories: $withval]
-]
-)
-
-AC_ARG_WITH(lflags,
-[[  --with-ldflags          Specifies linker flags (\"-Lpath1 ...\")]],
-[
-XTRALDFLAGS=$withval
-echo [Using extra linker flags: $withval]
-]
-)
-
-AC_ARG_WITH(libs,
-[[  --with-libs             Specifies libraries (\"-llib1 -llib2 ...\")]],
-[
-XTRALIBS=$withval
-echo [Using extra libraries: $withval]
-]
-)
-
-AC_ARG_WITH(flags,
-[[  --with-flags            Specifies CPP flags (\"-Dflag1 -Dflag2 ...\")]],
-[
-XTRAFLAGS=$withval
-echo [Using extra flags: $withval]
-]
+case $enableval in
+  yes)
+    USE_TRILINOS=yes
+  ;;
+  no)
+    USE_TRILINOS=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --disable-trilinos ($enableval)])
+  ;;
+esac
+],
+[USE_TRILINOS=yes]
 )
 
 # ------------------------------------------------------------------------
@@ -128,12 +104,6 @@ AC_PROG_RANLIB
 
 AC_CHECK_LIB([m],[pow])
 AC_CHECK_FUNCS([pow])
-
-# Add extra libraries
-LIBS="${LIBS} ${XTRALIBS}"
-
-# Add extra linking flags
-LDFLAGS="${LDFLAGS} ${XTRALDFLAGS}"
 
 # Check that all libraries will link with C++
 if test ${LIBS}; then
@@ -179,20 +149,42 @@ CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS} ${XTRAINC}"
 # Checks for system services
 # ------------------------------------------------------------------------
 
-# Epetra - Currently a HACK
-AM_CONDITIONAL(BUILD_NOXEPETRA, true)
+# ------------------------------------------------------------------------
+# Checks for MPI/SERIAL status (only affects the examples)
+# ------------------------------------------------------------------------
+
+AC_TRILINOS
+
+if test ${USE_TRILINOS} = yes; then
+   AM_CONDITIONAL(BUILD_NOXEPETRA, true)
+else
+   AM_CONDITIONAL(BUILD_NOXEPETRA, false)
+fi
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
 
 AC_SUBST(ac_aux_dir)
-AC_SUBST(prefix)
+AC_SUBST(TRILINOS_HOME)
+AC_SUBST(TRILINOS_ARCH)
+AC_SUBST(TRILINOS_COMM)
+AC_SUBST(TRILINOS_ID)
+AC_SUBST(TRILINOS_TARGET)
 
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
 
-AC_CONFIG_FILES(Makefile src/Makefile)
+AC_CONFIG_FILES([
+		Makefile 
+		src/Makefile 
+		example/Makefile 
+		example/DS6.5.1/Makefile
+		example/simple_linear/Makefile
+		example/simple_nonlinear/Makefile
+		])
 
 AC_OUTPUT()
+
+
