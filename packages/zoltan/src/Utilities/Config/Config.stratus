@@ -39,12 +39,12 @@ FARG                    = farg_typical
 MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/usr/lib
 
-PARMETIS_LIBPATH 	= -L/usr/users/kddevin/arch
-PARMETIS_INCPATH 	= -I/usr/users/kddevin/arch
+PARMETIS_LIBPATH 	= -L/paunchy/proj/zoltan/arch/dec/lib/ParMETIS2
+PARMETIS_INCPATH 	= -I/paunchy/proj/zoltan/arch/dec/include/ParMETIS2
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/usr/users/kddevin/arch
-NEMESIS_INCPATH		= -I/usr/users/kddevin/arch
+NEMESIS_LIBPATH		= -L/paunchy/proj/zoltan/arch/dec/lib
+NEMESIS_INCPATH		= -I/paunchy/proj/zoltan/arch/dec/include
