@@ -298,7 +298,7 @@ int LB_Eval (LB *lb, int print_stats,
     nproc = lb->Num_Proc; /* convert to float */
     if (lb->Proc == lb->Debug_Proc){
       printf("\n%s  Statistics for current partitioning/balance:\n", yo2);
-      printf("%s  No. of objects   :  Max = %6d, Min = %6d, "
+      printf("%s  No. of objects   :  Max = %7d, Min = %7d, "
              "Sum = %7d, Imbal. = %5.3f\n",
         yo2, stats[NUM_STATS], 
         stats[3*NUM_STATS],
@@ -308,8 +308,8 @@ int LB_Eval (LB *lb, int print_stats,
               : 1.));
  
       for (i=0; i<lb->Obj_Weight_Dim; i++){
-        printf("%s  Object weight #%1d :  Max = %g, Min = %g, "
-          "Sum = %g, Imbal. = %5.3f\n",
+        printf("%s  Object weight #%1d :  Max =%8.3g, Min =%8.3g, "
+          "Sum =%8.3g, Imbal. = %5.3f\n",
           yo2, i+1, tmp_vwgt[lb->Obj_Weight_Dim+i], 
           tmp_vwgt[3*lb->Obj_Weight_Dim+i], 
           tmp_vwgt[2*lb->Obj_Weight_Dim+i], 
@@ -320,8 +320,8 @@ int LB_Eval (LB *lb, int print_stats,
 
       if (lb->Get_Num_Edges && lb->Get_Edge_List){
         for (i=0; i<lb->Comm_Weight_Dim; i++){
-          printf("%s  Comm. weight  #%1d :  Max = %g, Min = %g, "
-            "Sum = %g, Imbal. = %5.3f\n",
+          printf("%s  Comm. weight  #%1d :  Max =%8.3g, Min =%8.3g, "
+            "Sum =%8.3g, Imbal. = %5.3f\n",
             yo2, i+1, tmp_cutwgt[(lb->Comm_Weight_Dim)+i], 
             tmp_cutwgt[3*(lb->Comm_Weight_Dim)+i], 
             tmp_cutwgt[2*(lb->Comm_Weight_Dim)+i], 
@@ -342,7 +342,7 @@ int LB_Eval (LB *lb, int print_stats,
                    break;
           }
 
-          printf("%s  %s Max = %6d, Min = %6d, Sum = %7d, Imbal. = %5.3f\n",
+          printf("%s  %s Max = %7d, Min = %7d, Sum = %7d, Imbal. = %5.3f\n",
             yo2, msg, stats[NUM_STATS+i], 
             stats[3*NUM_STATS+i],
             stats[2*NUM_STATS+i], 
