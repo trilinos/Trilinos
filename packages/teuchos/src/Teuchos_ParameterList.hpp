@@ -176,12 +176,14 @@ T& ParameterList::getParameter(const string& name)
 {
   ConstIterator i = params_.find(name);
 
-  // This parameter was not found, throw and exception
+  // This parameter was not found or is wrong type, throw an exception
   TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
 	"getParameter ( " << name << " ) failed -- parameter does not exist! " );
-
-  // Return the default value for this type
-  return T();
+  TEST_FOR_EXCEPTION( !isParameterType( name, (T*)NULL ), std::runtime_error,
+	"getParameter ( " << name << " ) failed -- parameter is wrong type! " );
+	 
+  // Return the value.
+  return getValue<T>(entry(i));
 }
 
 template<typename T>
@@ -192,9 +194,11 @@ const T& ParameterList::getParameter(const string& name) const
   // This parameter was not found, throw and exception
   TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
 	"getParameter ( " << name << " ) failed -- parameter does not exist! " );
+  TEST_FOR_EXCEPTION( !isParameterType( name, (T*)NULL ), std::runtime_error,
+	"getParameter ( " << name << " ) failed -- parameter is wrong type! " );
 
   // Return the default value for this type
-  return T();
+  return getValue<T>(entry(i));
 }
 
 template<typename T>
