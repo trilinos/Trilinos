@@ -26,6 +26,7 @@ static PARAM_VARS Key_params[] = {
 	{ "DEBUG_LEVEL", NULL, "INT" },
 	{ "DEBUG_PROCESSOR", NULL, "INT" },
 	{ "DETERMINISTIC", NULL, "INT" },
+	{ "TIMER", NULL, "STRING" },
 	{ NULL, NULL, NULL } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -42,6 +43,7 @@ char *val)			/* value of variable */
     int status;			/* return code */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
+    int tmp;
 
     status = LB_Check_Param(name, val, Key_params, &result, &index);
 
@@ -128,6 +130,13 @@ char *val)			/* value of variable */
 	status = 3;		/* Don't add to Params field of LB */
         break;
 
+      case 7: 		/* Timer */
+	status = LB_Set_Timer_Param(name, val, &tmp);
+        lb->Timer = tmp;
+
+	if (status==0) status = 3;	/* Don't add to Params field of LB */
+        break;
+
       }  /* end switch (index) */
     }
 
@@ -155,4 +164,10 @@ void LB_Print_Key_Params(LB *lb)
          lb->Debug_Proc);
   printf("ZOLTAN Parameter %s = %s\n", Key_params[6].name, 
          (lb->Deterministic ? "TRUE" : "FALSE"));
+  printf("ZOLTAN Parameter %s = %d ", Key_params[7].name, lb->Timer);
+  if (lb->Timer == LB_TIME_WALL)
+     printf("(wall)");
+  else if (lb->Timer == LB_TIME_CPU)
+     printf("(cpu)");
+  printf("\n");
 }
