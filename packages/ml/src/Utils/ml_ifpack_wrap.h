@@ -20,23 +20,6 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS 
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */ 
 
-/*!
- *  \file ml_ifpack_wrap.h
- *
- *  \brief Interface to the Trilinos package IFPACK.
- *
- *  IFPACK can be used to define ILU-type smoothers for ML. At present,
- *  this interface is still incomplete (but working). The choice of 
- *  factorizations and parameters is hardwired in the code. Plans are to move
- *  towards an Teuchos::ParameterList as input for all parameters.
- *  
- *  \note FIXME: replace \c options and \c params with a
- *  Teuchos::ParameterList.
- *  
- *  \date Last update do Doxygen: 22-Jul-04
- *
- */
-
 #ifndef _MLIFPACKWRAP_
 #define _MLIFPACKWRAP_
 
@@ -47,21 +30,7 @@ extern "C" {
 #endif
 
   /** Generates the IFPACK smoother. */
-  /*! This function converts the ML_Operator at current level into an
-   * Epetra_CrsMatrix (heavy-weight conversion). A to-be-improved set of
-   * parameters is supported through the integer and double vector arrays \c
-   * options and \c params. Currently, the user can select the overlap (with
-   * \c options[ML_IFPACK_OVERLAP]) and the level-of-fill (with \c
-   * options[ML_IFPACK_LEVEL_OF_FILL]), and the relaxation value (with \c
-   * params[ML_IFPACK_RELAX_VALUE]). 
-   *
-   * A \c Ifpack_IlukGraph is build, followed by and \c Ifpack_CrsRiluk
-   * factorization. The code prints out the estimated condition number.
-   *
-   * If \c options and \c params are 0, the code will use default values.
-   *
-   */
-  int ML_Ifpack_Gen(ML *ml, int curr_level, int choice, int * options,
+  int ML_Ifpack_Gen(ML *ml, int curr_level, int * options,
 		  double * params, void ** Ifpack_Handle);
   
   /** Solves using IFPACK */
