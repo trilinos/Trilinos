@@ -173,6 +173,10 @@ int main(int argc, char *argv[])
   NOX::Solver::Newton newton(grp, combo2, nlParams);
   NOX::Status::StatusType status = newton.solve();
 
+  // Get the Epetra_Vector with the final solution from the solver
+  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(newton.getSolutionGroup());
+  const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+
   // End Nonlinear Solver **************************************
 
   // Print solution
@@ -181,7 +185,7 @@ int main(int argc, char *argv[])
   (void) sprintf(file_name, "output.%d",MyPID);
   ifp = fopen(file_name, "w");
   for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", StandardMap.MinMyGID()+i, soln[i]);
+    fprintf(ifp, "%d  %E\n", StandardMap.MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
 
   //cout << "Final Solution" << (&soln)[0] <<endl;
