@@ -41,6 +41,7 @@
 #include "NOX_LineSearch_FullStep.H"
 #include "NOX_LineSearch_Backtrack.H"
 #include "NOX_LineSearch_Polynomial.H"
+#include "NOX_LineSearch_Quadratic.H"
 #include "NOX_LineSearch_MoreThuente.H"
 #include "NOX_LineSearch_Secant.H"
 
@@ -76,6 +77,8 @@ bool Manager::reset(Parameter::List& params)
       ptr = new Backtrack(params);
     else if (method == "Polynomial")
       ptr = new Polynomial(params);
+    else if (method == "Quadratic")
+      ptr = new Quadratic(params);
     else if (method == "More'-Thuente")
       ptr = new MoreThuente(params);
     else if (method == "Secant")

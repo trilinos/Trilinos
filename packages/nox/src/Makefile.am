@@ -50,6 +50,7 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H \
+	$(srcdir)/NOX_LineSearch_Quadratic.H \
 	$(srcdir)/NOX_LineSearch_Secant.H 
 
 LINESEARCH = \
@@ -58,6 +59,7 @@ LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C \
+	$(srcdir)/NOX_LineSearch_Quadratic.C \
 	$(srcdir)/NOX_LineSearch_Secant.C 
 
 DIRECTION_H = \

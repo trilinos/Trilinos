@@ -116,11 +116,13 @@ install_sh = @install_sh@
 
 LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
-	$(srcdir)/LOCA_Epetra_Vector.H 
+	$(srcdir)/LOCA_Epetra_Vector.H \
+	$(srcdir)/LOCA_Epetra_Group.H 
 
 
 LOCA_EPETRA = \
-	$(srcdir)/LOCA_Epetra_Vector.C 
+	$(srcdir)/LOCA_Epetra_Vector.C \
+	$(srcdir)/LOCA_Epetra_Group.C 
 
 
 
@@ -178,7 +180,8 @@ LIBRARIES = $(lib_LIBRARIES)
 
 liblocaepetra_a_DEPENDENCIES =
 am_liblocaepetra_a_OBJECTS = \
-	liblocaepetra_a-LOCA_Epetra_Vector.$(OBJEXT)
+	liblocaepetra_a-LOCA_Epetra_Vector.$(OBJEXT) \
+	liblocaepetra_a-LOCA_Epetra_Group.$(OBJEXT)
 liblocaepetra_a_OBJECTS = $(am_liblocaepetra_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -187,7 +190,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Vector.Po
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.Po \
+@AMDEP_TRUE@	$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -246,6 +250,8 @@ clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 liblocaepetra_a-LOCA_Epetra_Vector.$(OBJEXT): \
 	$(srcdir)/LOCA_Epetra_Vector.C
+liblocaepetra_a-LOCA_Epetra_Group.$(OBJEXT): \
+	$(srcdir)/LOCA_Epetra_Group.C
 liblocaepetra.a: $(liblocaepetra_a_OBJECTS) $(liblocaepetra_a_DEPENDENCIES) 
 	-rm -f liblocaepetra.a
 	$(liblocaepetra_a_AR) liblocaepetra.a $(liblocaepetra_a_OBJECTS) $(liblocaepetra_a_LIBADD)
@@ -257,6 +263,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Vector.Po@am__quote@
 
 distclean-depend:
@@ -285,6 +292,18 @@ liblocaepetra_a-LOCA_Epetra_Vector.obj: $(srcdir)/LOCA_Epetra_Vector.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Vector.Po' tmpdepfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocaepetra_a-LOCA_Epetra_Vector.obj `cygpath -w $(srcdir)/LOCA_Epetra_Vector.C`
+
+liblocaepetra_a-LOCA_Epetra_Group.o: $(srcdir)/LOCA_Epetra_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Epetra_Group.C' object='liblocaepetra_a-LOCA_Epetra_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.Po' tmpdepfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocaepetra_a-LOCA_Epetra_Group.o `test -f $(srcdir)/LOCA_Epetra_Group.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Group.C
+
+liblocaepetra_a-LOCA_Epetra_Group.obj: $(srcdir)/LOCA_Epetra_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Epetra_Group.C' object='liblocaepetra_a-LOCA_Epetra_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.Po' tmpdepfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocaepetra_a-LOCA_Epetra_Group.obj `cygpath -w $(srcdir)/LOCA_Epetra_Group.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-pkgincludeHEADERS: $(pkginclude_HEADERS)

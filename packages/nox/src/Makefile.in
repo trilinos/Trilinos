@@ -130,6 +130,7 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H \
+	$(srcdir)/NOX_LineSearch_Quadratic.H \
 	$(srcdir)/NOX_LineSearch_Secant.H 
 
 
@@ -139,6 +140,7 @@ LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C \
+	$(srcdir)/NOX_LineSearch_Quadratic.C \
 	$(srcdir)/NOX_LineSearch_Secant.C 
 
 
@@ -301,6 +303,7 @@ am_libnox_a_OBJECTS = NOX_Abstract_Group.$(OBJEXT) \
 	NOX_LineSearch_Manager.$(OBJEXT) \
 	NOX_LineSearch_MoreThuente.$(OBJEXT) \
 	NOX_LineSearch_Polynomial.$(OBJEXT) \
+	NOX_LineSearch_Quadratic.$(OBJEXT) \
 	NOX_LineSearch_Secant.$(OBJEXT) NOX_Direction_Manager.$(OBJEXT) \
 	NOX_Direction_Newton.$(OBJEXT) \
 	NOX_Direction_NonlinearCG.$(OBJEXT) \
@@ -332,6 +335,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_MoreThuente.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Polynomial.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Quadratic.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Secant.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
@@ -431,6 +435,7 @@ NOX_LineSearch_MoreThuente.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C
 NOX_LineSearch_Polynomial.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_Polynomial.C
+NOX_LineSearch_Quadratic.$(OBJEXT): $(srcdir)/NOX_LineSearch_Quadratic.C
 NOX_LineSearch_Secant.$(OBJEXT): $(srcdir)/NOX_LineSearch_Secant.C
 NOX_Direction_Manager.$(OBJEXT): $(srcdir)/NOX_Direction_Manager.C
 NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
@@ -474,6 +479,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_MoreThuente.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Polynomial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Quadratic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Secant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
@@ -574,6 +580,18 @@ NOX_LineSearch_Polynomial.obj: $(srcdir)/NOX_LineSearch_Polynomial.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Polynomial.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Polynomial.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Polynomial.obj `cygpath -w $(srcdir)/NOX_LineSearch_Polynomial.C`
+
+NOX_LineSearch_Quadratic.o: $(srcdir)/NOX_LineSearch_Quadratic.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Quadratic.C' object='NOX_LineSearch_Quadratic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Quadratic.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Quadratic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Quadratic.o `test -f $(srcdir)/NOX_LineSearch_Quadratic.C || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Quadratic.C
+
+NOX_LineSearch_Quadratic.obj: $(srcdir)/NOX_LineSearch_Quadratic.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Quadratic.C' object='NOX_LineSearch_Quadratic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Quadratic.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Quadratic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Quadratic.obj `cygpath -w $(srcdir)/NOX_LineSearch_Quadratic.C`
 
 NOX_LineSearch_Secant.o: $(srcdir)/NOX_LineSearch_Secant.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Secant.C' object='NOX_LineSearch_Secant.o' libtool=no @AMDEPBACKSLASH@

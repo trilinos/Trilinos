@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
   //searchParams.setParameter("Method", "Interval Halving");
   //searchParams.setParameter("Method", "Polynomial");
   //searchParams.setParameter("Method", "Secant");
+  //searchParams.setParameter("Method", "Quadratic");
   searchParams.setParameter("Max Iters", 15);
   //searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0000);

@@ -251,6 +251,11 @@ public:
   //! Return Newton direction.
   virtual const Vector& getNewton() const = 0;
 
+  //! Return 2-norm of (Js + F) where J is the Jacobian, s is the Newton direction and F is the function evaluation. 
+  /*! This is the error in the linear model for the particular Newton step.
+    In other words, \f[ ||Js + f||_2 \f] */
+  virtual double getNewtonSolveResidual() const;
+
   //@}
 
 

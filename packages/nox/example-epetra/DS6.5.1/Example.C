@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
   //searchParams.setParameter("Full Step", 0.01);
   //searchParams.setParameter("Method", "Interval Halving");
   searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "Quadratic");
   //searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0000);
   //searchParams.setParameter("Recovery Step", 0.0001);

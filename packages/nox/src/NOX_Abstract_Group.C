@@ -85,11 +85,7 @@ bool Group::isNewton() const
   return false;
 }
 
-
-
-
-
-
-
-
-
+double Group::getNewtonSolveResidual() const
+{
+  return false;
+}

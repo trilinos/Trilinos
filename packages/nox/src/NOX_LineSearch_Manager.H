@@ -51,7 +51,9 @@ namespace LineSearch {
    <li> "Full Step" (NOX::LineSearch::FullStep)
    <li> "Backtrack" (NOX::LineSearch::Backtrack)
    <li> "%Polynomial" (NOX::LineSearch::Polynomial)
+   <li> "Quadratic" (NOX::LineSearch::Quadratic)
    <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
+   <li> "Secant" (NOX::LineSearch::Secant)
    </ul>
    </ul>
  */  
