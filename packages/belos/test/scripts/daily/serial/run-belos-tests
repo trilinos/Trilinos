@@ -38,6 +38,7 @@ my $result;       # success=0, failure=nonzero
 #************************************
 # Block CG test
 #************************************
+
 $result = system ('./BlockCG/bl_cg_hb.exe ./BlockCG/bcsstk14.hb');
 if ($result != 0) {
   # If we failed run it again in verbose mode.
@@ -48,6 +49,7 @@ if ($result != 0) {
     "\n*****************************************\n\n";
   system ('./BlockCG/bl_cg_hb.exe ./BlockCG/bcsstk14.hb');
 }
+
 #************************************
 # Preconditioned Block CG test
 #************************************
@@ -68,6 +70,7 @@ if (-e "./BlockCG/test_bl_pcg_hb.exe") {
 #************************************
 # Block GMRES test
 #************************************
+
 $result = system ('./BlockGmres/bl_gmres_hb.exe ./BlockGmres/orsirr1.hb');
 if ($result != 0) {
   # If we failed run it again in verbose mode.
@@ -78,6 +81,7 @@ if ($result != 0) {
     "\n*****************************************\n\n";
   system ('./BlockGmres/bl_gmres_hb.exe ./BlockGmres/orsirr1.hb');
 }
+
 #************************************
 # Preconditioned Block GMRES test
 #************************************
