@@ -32,7 +32,7 @@
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = Doxyfile configure.html
+EXTRA_DIST = Doxyfile
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
