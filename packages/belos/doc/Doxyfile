@@ -1,4 +1,4 @@
-# Doxyfile 1.2.14
+# Doxyfile 1.2.10
 
 # This file describes the settings to be used by the documentation system
 # doxygen (www.doxygen.org) for a project
@@ -17,7 +17,7 @@
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = "Belos: A Block Linear Solvers Package"
+PROJECT_NAME           = "Belos Block Linear Solvers Project"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
@@ -37,7 +37,7 @@ OUTPUT_DIRECTORY       = .
 # information to generate all constant output in the proper language. 
 # The default language is English, other supported languages are: 
 # Brazilian, Chinese, Croatian, Czech, Danish, Dutch, Finnish, French, 
-# German, Greek, Hungarian, Italian, Japanese, Korean, Norwegian, Polish, 
+# German, Hungarian, Italian, Japanese, Korean, Norwegian, Polish, 
 # Portuguese, Romanian, Russian, Slovak, Slovene, Spanish and Swedish.
 
 OUTPUT_LANGUAGE        = English
@@ -52,18 +52,12 @@ EXTRACT_ALL            = NO
 # If the EXTRACT_PRIVATE tag is set to YES all private members of a class 
 # will be included in the documentation.
 
-EXTRACT_PRIVATE        = NO
+EXTRACT_PRIVATE        = YES
 
 # If the EXTRACT_STATIC tag is set to YES all static members of a file 
 # will be included in the documentation.
 
 EXTRACT_STATIC         = YES
-
-# If the EXTRACT_LOCAL_CLASSES tag is set to YES classes (and structs) 
-# defined locally in source files will be included in the documentation. 
-# If set to NO only classes defined in header files are included.
-
-EXTRACT_LOCAL_CLASSES  = YES
 
 # If the HIDE_UNDOC_MEMBERS tag is set to YES, Doxygen will hide all 
 # undocumented members of documented classes, files or namespaces. 
@@ -98,14 +92,7 @@ REPEAT_BRIEF           = YES
 # Doxygen will generate a detailed section even if there is only a brief 
 # description.
 
-ALWAYS_DETAILED_SEC    = NO
-
-# If the INLINE_INHERITED_MEMB tag is set to YES, doxygen will show all inherited 
-# members of a class in the documentation of that class as if those members were 
-# ordinary class members. Constructors, destructors and assignment operators of 
-# the base classes will not be shown.
-
-INLINE_INHERITED_MEMB  = NO
+ALWAYS_DETAILED_SEC    = YES
 
 # If the FULL_PATH_NAMES tag is set to YES then Doxygen will prepend the full 
 # path before files name in the file list and in the header files. If set 
@@ -126,6 +113,22 @@ STRIP_FROM_PATH        =
 # Set it to YES to include the internal documentation.
 
 INTERNAL_DOCS          = NO
+
+# If the CLASS_DIAGRAMS tag is set to YES (the default) Doxygen will 
+# generate a class diagram (in Html and LaTeX) for classes with base or 
+# super classes. Setting the tag to NO turns the diagrams off.
+
+CLASS_DIAGRAMS         = YES
+
+# If the SOURCE_BROWSER tag is set to YES then a list of source files will 
+# be generated. Documented entities will be cross-referenced with these sources.
+
+SOURCE_BROWSER         = YES
+
+# Setting the INLINE_SOURCES tag to YES will include the body 
+# of functions and classes directly in the documentation.
+
+INLINE_SOURCES         = NO
 
 # Setting the STRIP_CODE_COMMENTS tag to YES (the default) will instruct 
 # doxygen to hide any special comment blocks from generated source code 
@@ -189,7 +192,7 @@ INLINE_INFO            = YES
 # alphabetically by member name. If set to NO the members will appear in 
 # declaration order.
 
-SORT_MEMBER_DOCS       = NO
+SORT_MEMBER_DOCS       = YES
 
 # If member grouping is used in the documentation and the DISTRIBUTE_GROUP_DOC 
 # tag is set to YES, then doxygen will reuse the documentation of the first 
@@ -284,7 +287,7 @@ WARN_IF_UNDOCUMENTED   = YES
 # tags, which will be replaced by the file and line number from which the 
 # warning originated and the warning text.
 
-WARN_FORMAT            = "$file:$line: $text"
+WARN_FORMAT            = 
 
 # The WARN_LOGFILE tag can be used to specify a file to which warning 
 # and error messages should be written. If left blank the output is written 
@@ -301,14 +304,12 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = ../src
+INPUT                  = ../src ../utils
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
 # and *.h) to filter out the source-files in the directories. If left 
-# blank the following patterns are tested: 
-# *.c *.cc *.cxx *.cpp *.c++ *.java *.ii *.ixx *.ipp *.i++ *.inl *.h *.hh *.hxx *.hpp 
-# *.h++ *.idl *.odl
+# blank all files are included.
 
 FILE_PATTERNS          = *.hpp *.cpp
 
@@ -323,11 +324,6 @@ RECURSIVE              = YES
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
 EXCLUDE                = 
-
-# The EXCLUDE_SYMLINKS tag can be used select whether or not files or directories 
-# that are symbolic links (a Unix filesystem feature) are excluded from the input.
-
-EXCLUDE_SYMLINKS       = NO
 
 # If the value of the INPUT tag contains directories, you can use the 
 # EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude 
@@ -348,18 +344,11 @@ EXAMPLE_PATH           =
 
 EXAMPLE_PATTERNS       = 
 
-# If the EXAMPLE_RECURSIVE tag is set to YES then subdirectories will be 
-# searched for input files to be used with the \include or \dontinclude 
-# commands irrespective of the value of the RECURSIVE tag. 
-# Possible values are YES and NO. If left blank NO is used.
-
-EXAMPLE_RECURSIVE      = NO
-
 # The IMAGE_PATH tag can be used to specify one or more files or 
 # directories that contain image that are included in the documentation (see 
 # the \image command).
 
-IMAGE_PATH             = 
+IMAGE_PATH             = images
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should 
 # invoke to filter for each input file. Doxygen will invoke the filter program 
@@ -375,32 +364,6 @@ INPUT_FILTER           =
 # files to browse.
 
 FILTER_SOURCE_FILES    = NO
-
-#---------------------------------------------------------------------------
-# configuration options related to source browsing
-#---------------------------------------------------------------------------
-
-# If the SOURCE_BROWSER tag is set to YES then a list of source files will 
-# be generated. Documented entities will be cross-referenced with these sources.
-
-SOURCE_BROWSER         = NO
-
-# Setting the INLINE_SOURCES tag to YES will include the body 
-# of functions and classes directly in the documentation.
-
-INLINE_SOURCES         = NO
-
-# If the REFERENCED_BY_RELATION tag is set to YES (the default) 
-# then for each documented function all documented 
-# functions referencing it will be listed.
-
-REFERENCED_BY_RELATION = YES
-
-# If the REFERENCES_RELATION tag is set to YES (the default) 
-# then for each documented function all documented entities 
-# called/used by that function will be listed.
-
-REFERENCES_RELATION    = YES
 
 #---------------------------------------------------------------------------
 # configuration options related to the alphabetical class index
@@ -438,32 +401,26 @@ GENERATE_HTML          = YES
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
 # put in front of it. If left blank `html' will be used as the default path.
 
-HTML_OUTPUT            = html
-
-# The HTML_FILE_EXTENSION tag can be used to specify the file extension for 
-# each generated HTML page (for example: .htm,.php,.asp). If it is left blank 
-# doxygen will generate files with .html extension.
-
-HTML_FILE_EXTENSION    = .html
+HTML_OUTPUT            = 
 
 # The HTML_HEADER tag can be used to specify a personal HTML header for 
 # each generated HTML page. If it is left blank doxygen will generate a 
 # standard header.
 
-HTML_HEADER            = 
+HTML_HEADER            = includes/header.html
 
 # The HTML_FOOTER tag can be used to specify a personal HTML footer for 
 # each generated HTML page. If it is left blank doxygen will generate a 
 # standard footer.
 
-HTML_FOOTER            = 
+HTML_FOOTER            = includes/footer.html
 
 # The HTML_STYLESHEET tag can be used to specify a user defined cascading 
 # style sheet that is used by each HTML page. It can be used to 
 # fine-tune the look of the HTML output. If the tag is left blank doxygen 
 # will generate a default style sheet
 
-HTML_STYLESHEET        = 
+HTML_STYLESHEET        = includes/stylesheet.css
 
 # If the HTML_ALIGN_MEMBERS tag is set to YES, the members of classes, 
 # files or namespaces will be aligned in HTML using tables. If set to 
@@ -509,10 +466,8 @@ ENUM_VALUES_PER_LINE   = 4
 # If the GENERATE_TREEVIEW tag is set to YES, a side panel will be
 # generated containing a tree-like index structure (just like the one that 
 # is generated for HTML Help). For this to work a browser that supports 
-# JavaScript and frames is required (for instance Mozilla, Netscape 4.0+, 
-# or Internet explorer 4.0+). Note that for large projects the tree generation 
-# can take a very long time. In such cases it is better to disable this feature. 
-# Windows users are probably better off using the HTML help feature.
+# JavaScript and frames is required (for instance Netscape 4.0+ 
+# or Internet explorer 4.0+).
 
 GENERATE_TREEVIEW      = NO
 
@@ -535,7 +490,7 @@ GENERATE_LATEX         = NO
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
 # put in front of it. If left blank `latex' will be used as the default path.
 
-LATEX_OUTPUT           = latex
+LATEX_OUTPUT           = 
 
 # If the COMPACT_LATEX tag is set to YES Doxygen generates more compact 
 # LaTeX documents. This may be useful for small projects and may help to 
@@ -595,7 +550,7 @@ GENERATE_RTF           = NO
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
 # put in front of it. If left blank `rtf' will be used as the default path.
 
-RTF_OUTPUT             = rtf
+RTF_OUTPUT             = 
 
 # If the COMPACT_RTF tag is set to YES Doxygen generates more compact 
 # RTF documents. This may be useful for small projects and may help to 
@@ -636,17 +591,17 @@ GENERATE_MAN           = NO
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
 # put in front of it. If left blank `man' will be used as the default path.
 
-MAN_OUTPUT             = man
+MAN_OUTPUT             = 
 
 # The MAN_EXTENSION tag determines the extension that is added to 
 # the generated man pages (default is the subroutine's section .3)
 
-MAN_EXTENSION          = .3
+MAN_EXTENSION          = 
 
-# If the MAN_LINKS tag is set to YES and Doxygen generates man output, 
-# then it will generate one additional man file for each entity 
-# documented in the real man page(s). These additional files 
-# only source the real man page, but without them the man command 
+# If the MAN_LINKS tag is set to YES and Doxygen generates man output,
+# then it will generate one additional man file for each entity
+# documented in the real man page(s). These additional files
+# only source the real man page, but without them the man command
 # would be unable to find the correct page. The default is NO.
 
 MAN_LINKS              = NO
@@ -662,18 +617,6 @@ MAN_LINKS              = NO
 # moment.
 
 GENERATE_XML           = NO
-
-#---------------------------------------------------------------------------
-# configuration options for the AutoGen Definitions output
-#---------------------------------------------------------------------------
-
-# If the GENERATE_AUTOGEN_DEF tag is set to YES Doxygen will 
-# generate an AutoGen Definitions (see autogen.sf.net) file 
-# that captures the structure of the code including all 
-# documentation. Note that this feature is still experimental 
-# and incomplete at the moment.
-
-GENERATE_AUTOGEN_DEF   = NO
 
 #---------------------------------------------------------------------------
 # Configuration options related to the preprocessor   
@@ -722,7 +665,7 @@ INCLUDE_FILE_PATTERNS  =
 # or name=definition (no spaces). If the definition and the = are 
 # omitted =1 is assumed.
 
-PREDEFINED             = 
+PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS 
 
 # If the MACRO_EXPANSION and EXPAND_PREDEF_ONLY tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
@@ -731,25 +674,18 @@ PREDEFINED             =
 
 EXPAND_AS_DEFINED      = 
 
-# If the SKIP_FUNCTION_MACROS tag is set to YES (the default) then 
-# doxygen's preprocessor will remove all function-like macros that are alone 
-# on a line and do not end with a semicolon. Such function macros are typically 
-# used for boiler-plate code, and will confuse the parser if not removed.
-
-SKIP_FUNCTION_MACROS   = YES
-
 #---------------------------------------------------------------------------
 # Configuration::addtions related to external references   
 #---------------------------------------------------------------------------
 
 # The TAGFILES tag can be used to specify one or more tagfiles.
 
-TAGFILES               = 
+TAGFILES               =
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create 
 # a tag file that is based on the input files it reads.
 
-GENERATE_TAGFILE       = anasazi.tag
+GENERATE_TAGFILE       = belos.tag
 
 # If the ALLEXTERNALS tag is set to YES all external classes will be listed 
 # in the class index. If set to NO only the inherited external classes 
@@ -757,28 +693,14 @@ GENERATE_TAGFILE       = anasazi.tag
 
 ALLEXTERNALS           = NO
 
-# If the EXTERNAL_GROUPS tag is set to YES all external groups will be listed 
-# in the modules index. If set to NO, only the current project's groups will 
-# be listed.
-
-EXTERNAL_GROUPS        = YES
-
 # The PERL_PATH should be the absolute path and name of the perl script 
 # interpreter (i.e. the result of `which perl').
 
-PERL_PATH              = /usr/bin/perl
+PERL_PATH              = 
 
 #---------------------------------------------------------------------------
 # Configuration options related to the dot tool   
 #---------------------------------------------------------------------------
-
-# If the CLASS_DIAGRAMS tag is set to YES (the default) Doxygen will 
-# generate a inheritance diagram (in Html, RTF and LaTeX) for classes with base or 
-# super classes. Setting the tag to NO turns the diagrams off. Note that this 
-# option is superceded by the HAVE_DOT option below. This is only a fallback. It is 
-# recommended to install and use dot, since it yield more powerful graphs.
-
-CLASS_DIAGRAMS         = YES
 
 # If you set the HAVE_DOT tag to YES then doxygen will assume the dot tool is 
 # available from the path. This tool is part of Graphviz, a graph visualization 
@@ -806,12 +728,6 @@ COLLABORATION_GRAPH    = YES
 
 TEMPLATE_RELATIONS     = YES
 
-# If set to YES, the inheritance and collaboration graphs will hide 
-# inheritance and usage relations if the target is undocumented 
-# or is not a class.
-
-HIDE_UNDOC_RELATIONS   = YES
-
 # If the ENABLE_PREPROCESSING, SEARCH_INCLUDES, INCLUDE_GRAPH, and HAVE_DOT 
 # tags are set to YES then doxygen will generate a graph for each documented 
 # file showing the direct and indirect include dependencies of the file with 
@@ -830,12 +746,6 @@ INCLUDED_BY_GRAPH      = YES
 # will graphical hierarchy of all classes instead of a textual one.
 
 GRAPHICAL_HIERARCHY    = YES
-
-# The DOT_IMAGE_FORMAT tag can be used to set the image format of the images 
-# generated by dot. Possible values are gif, jpg, and png
-# If left blank gif will be used.
-
-DOT_IMAGE_FORMAT       = gif
 
 # The tag DOT_PATH can be used to specify the path where the dot tool can be 
 # found. If left blank, it is assumed the dot tool can be found on the path.
@@ -889,7 +799,7 @@ SEARCHENGINE           = NO
 # starts the search engine (doxysearch) with the correct parameters. 
 # A script with this name will be generated by doxygen.
 
-CGI_NAME               =
+CGI_NAME               = 
 
 # The CGI_URL tag should be the absolute URL to the directory where the 
 # cgi binaries are located. See the documentation of your http daemon for 
@@ -912,7 +822,7 @@ DOC_ABSPATH            =
 # The BIN_ABSPATH tag must point to the directory where the doxysearch binary 
 # is installed.
 
-BIN_ABSPATH            =
+BIN_ABSPATH            = 
 
 # The EXT_DOC_PATHS tag can be used to specify one or more paths to 
 # documentation generated for other projects. This allows doxysearch to search 
