@@ -738,10 +738,10 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   
   /* ------------------- that's all folks --------------------------------- */
 
-  ML_free( (void *)xadj2 ) ;
-  ML_free( (void *) adjncy2 );
-  ML_free( (void *) perm );
-  ML_free( (void *) iperm );
+  ML_free( xadj2 ) ;
+  ML_free( adjncy2 );
+  ML_free( perm );
+  ML_free( iperm );
 
   t0 = GetClock() - t0;
 
@@ -1196,7 +1196,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     ML_Compute_AggregateGraphRadius( NrowsMETIS, xadj, adjncy, dep,
 				     radius, &NcenterNodes );
     
-    ML_free( (void *)dep );
+    ML_free( dep );
     
   }
 
@@ -1206,13 +1206,13 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
 
-  if( options != NULL ) ML_free( (void *)options );
-  if( wgtflag != NULL ) ML_free( (void *)wgtflag );
-  if( adjncy != NULL  ) ML_free( (void *)adjncy  );
-  if( xadj != NULL    ) ML_free( (void *)xadj    );
-  if( part != NULL    ) ML_free( (void *)part    );
-  if( perm != NULL    ) ML_free( (void *)perm    );
-  if( nodes_per_aggre != NULL ) ML_free( (void *)nodes_per_aggre );
+  if( options != NULL ) ML_free( options );
+  if( wgtflag != NULL ) ML_free( wgtflag );
+  if( adjncy != NULL  ) ML_free( adjncy  );
+  if( xadj != NULL    ) ML_free( xadj    );
+  if( part != NULL    ) ML_free( part    );
+  if( perm != NULL    ) ML_free( perm    );
+  if( nodes_per_aggre != NULL ) ML_free( nodes_per_aggre );
   
   t0 = GetClock() - t0;
 

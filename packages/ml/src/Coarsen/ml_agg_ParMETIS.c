@@ -413,9 +413,9 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 
   /* ------------------- that's all folks --------------------------------- */
 
-  ML_free( (void *)count );
-  ML_free( (void *)offset );
-  ML_free( (void *)offset2 );
+  ML_free( count );
+  ML_free( offset );
+  ML_free( offset2 );
 
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Exiting `ML_BuildReorderedDecomposition'\n");
@@ -795,11 +795,11 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	}
 
 	if( nodes_per_aggre != NULL ) {
-	  (void)ML_free( nodes_per_aggre  );
+	  ML_free( nodes_per_aggre  );
 	  nodes_per_aggre = NULL;
 	}
 	if( nodes_per_aggre2 != NULL ) {
-	  (void)ML_free( nodes_per_aggre2 );
+	  ML_free( nodes_per_aggre2 );
 	  nodes_per_aggre2 = NULL;
 	}
 	
@@ -821,15 +821,15 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   if( rowi_col != NULL ) ML_free(rowi_col); rowi_col = NULL; 
   if( rowi_val != NULL ) ML_free(rowi_val); rowi_val = NULL;
   allocated = 0; 
-  if( part               != NULL ) ML_free( (void*)part );
-  if( proc_with_parmetis != NULL ) ML_free( (void *)proc_with_parmetis );
-  if( offsets            != NULL ) ML_free( (void *)offsets );
-  if( vtxdist            != NULL ) ML_free( (void *)vtxdist );
-  if( tpwgts             != NULL ) ML_free( (void *)tpwgts );
-  if( wgtflag            != NULL ) ML_free( (void *)wgtflag );
-  if( options            != NULL ) ML_free( (void *)options );
-  if( xadj               != NULL ) ML_free( (void *)xadj );
-  if( adjncy             != NULL ) ML_free( (void *)adjncy );
+  if( part               != NULL ) ML_free( part );
+  if( proc_with_parmetis != NULL ) ML_free( proc_with_parmetis );
+  if( offsets            != NULL ) ML_free( offsets );
+  if( vtxdist            != NULL ) ML_free( vtxdist );
+  if( tpwgts             != NULL ) ML_free( tpwgts );
+  if( wgtflag            != NULL ) ML_free( wgtflag );
+  if( options            != NULL ) ML_free( options );
+  if( xadj               != NULL ) ML_free( xadj );
+  if( adjncy             != NULL ) ML_free( adjncy );
   
   t0 = GetClock() - t0;
 
@@ -1414,11 +1414,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #endif
 
    if( starting_decomposition != NULL ) {
-     ML_free( (void *)starting_decomposition );
+     ML_free( starting_decomposition );
      starting_decomposition = NULL;
    }
    if( reordered_decomposition != NULL ) {
-     ML_free( (void *)reordered_decomposition );
+     ML_free( reordered_decomposition );
      reordered_decomposition = NULL;
    }
    if( starting_amalg_bdry != NULL ) {
@@ -1426,11 +1426,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      starting_amalg_bdry = NULL;
    }
    if( starting_offset != NULL ) {
-     ML_free( (void *)starting_offset );
+     ML_free( starting_offset );
      starting_offset = NULL;
    }
    if( reordered_offset != NULL ) {
-     ML_free( (void *)reordered_offset );
+     ML_free( reordered_offset );
      reordered_offset = NULL;
    }
           
@@ -1484,7 +1484,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
    
    if( nodes_per_aggre != NULL ) {
-     ML_free( (void *)nodes_per_aggre );
+     ML_free( nodes_per_aggre );
      nodes_per_aggre = NULL;
    }
 
@@ -2015,7 +2015,7 @@ static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
     }
   }
 
-  if( count != NULL ) ML_free( (void *)count ); count = NULL;
+  if( count != NULL ) ML_free( count ); count = NULL;
 
   /* ------------------- that's all folks --------------------------------- */
 
