@@ -692,6 +692,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_Create(&ml_,MaxCreationLevels);
     ml_->output_level = OutputLevel;
 
+    // FIXME: should be grabbed from the parameters list
+    // ml_->MinPerProc_repartition = 129;
+    // ml_->LargestMinMaxRatio_repartition = 1.001;
+
     int NumMyRows;
     
     NumMyRows = RowMatrix_->NumMyRows();
@@ -1505,7 +1509,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
        } 
    
        if( CoarsenScheme == "Zoltan" ) {
-         // FIXME: am I still ok?
+         // This copies the coordinates if the aggregation scheme
+         // of at least one level is Zoltan. Coordinates will be
+         // projected for ALL levels independently of the 
+         // aggregation scheme.
 	 double * coord = List_.get(Prefix_ + "aggregation: zoltan coordinates",
 				    (double *)0);
 	 int NumDimensions = List_.get(Prefix_ + "aggregation: zoltan dimensions",
