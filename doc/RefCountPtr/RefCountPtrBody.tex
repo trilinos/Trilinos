@@ -378,6 +378,48 @@ the reference-counted object.
 \subsection{Associating extra data with a \texttt{RefCountPtr<>} object}
 %
 
+There are situations when a single \texttt{RefCountPtr<>} object is
+insufficient to completely handle the dynamic memory for an objects.
+This occurs when trying to use classes that where written without
+dynamic memory allocation in mind.  To demonstrate the uses involved
+assume that the following classes are to be reused in a dynamic
+environment and where the memory management is to be handled using
+\texttt{RefCountPtr<>} objects.
+%
+{\scriptsize\begin{verbatim}
+class F {
+  ...
+};
+
+class G {
+  const F &f_;
+public:
+  G(const F &f) : f_(f) {}
+  ...
+};
+\end{verbatim}}
+%
+\noindent{}Where every \texttt{G} object must have an associated
+\texttt{F} object.  The above class \texttt{G} assumes that an object
+of type \texttt{F} is allocated (presumably on the stack or as a
+global variable) by the client before it is used to construct a type
+\texttt{G} object.  For example, the designers of these classes may
+expect that these classes will be used in a flat program such as:
+%
+{\scriptsize\begin{verbatim}
+int main() {
+  F f;
+  G g(f);
+  ...
+  return 0;
+}
+\end{verbatim}}
+%
+\noindent{}In the above types of programs, 
+
+Now suppose that we wish to wrap objects of type \texttt{G}
+within a \texttt{RefCountPtr<>} object ...
+
 ToDo: Discuss why one would want to associate extra data with a \texttt{RefCountPtr<>}
 object.
 
