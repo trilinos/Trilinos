@@ -997,7 +997,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* check to see which aggregation algorithm to use */
 
    ndofs = Amatrix->outvec_leng;
-   if ( ndofs < 2 ) ndofs = 0; else ndofs = 1;
+   if ( ndofs < 250 ) ndofs = 0; else ndofs = 1;
    ML_gsum_scalar_int(&ndofs, &i, comm);
    /*
    gmin = ML_gmax_double((double) (-1.0 * Amatrix->outvec_leng) , comm);
@@ -1615,25 +1615,6 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 			  int num_PDE_eqns, int Nprocs_ToUse)
 			  
 {
-#ifdef throwaway
-  int    proc_index, *neighbors, oldj;
-  int    *NeighborList, *Nsnds, *Nrcvs, **SndIndices, **RcvIndices, count;
-  int    *the_list, the_length, offset, Nnonzero, Nglobal, oldNnonzero;
-  int    *remote_offsets, Nneighbors, i, j, Nrows, Nghost;
-  int    *permute_array, *itemp, *columns, *rowptr;
-  double *dvec, *d2vec, *values;
-  ML_Operator *perm_mat, *permt_mat, *permuted_Amat, *newpermt, *opermt;
-  ML_CommInfoOP *mat_comm = NULL;
- int *iwork, *ttemp, msgtype, Nprocs_WhoGive_TheirUnPermuted_Rows, fromproc, toproc, MyGlobal_Id;
- int  *GlobalId_Rows_ISend, Nrows_In_Both_Permuted_And_UnPermuted, 
-   *Procs_WhoGet_MyUnpermutedRows, prev, max_per_processor;
- int Nprocs_WhoGet_MyUnpermutedRows, mypid, nprocs;
-
- int *newrowptr, *newcolumns, Nrows_Permuted;
- double *newvalues;
- int *Procs_WhoGive_TheirUnPermuted_Rows, *N_UnPermutedRows_ToSend;
- int GlobalId_RowsStaying_WithMe;
-#endif
  int mypid, nprocs, Nglobal, i, j, the_length;
 #if !defined(HAVE_ML_PARMETIS_2x) && !defined(HAVE_ML_PARMETIS_3x)
  int oldj, *the_list = NULL, offset, Nnonzero, oldNnonzero, *itemp = NULL;
@@ -1678,8 +1659,6 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 			      ML_USEPARMETIS);
    if (num_PDE_eqns != 1)
      ML_Operator_UnAmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
-
-   
 
    dvec = (double *) ML_allocate(sizeof(double)*mat->outvec_leng);
    for (i = 0; i < mat->outvec_leng/num_PDE_eqns; i++) 
@@ -1944,16 +1923,6 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
     ML_free(Procs_WhoGet_MyUnpermutedRows);
   if (request != NULL) ML_free(request);
 
-#ifdef throwaway
-  /* Build a global array containing all the subdomain assignments */
-
-  permute_array = (int *) ML_allocate(sizeof(int)*(Nglobal+1));
-  for (i = 0; i <= Nglobal; i++) permute_array[i] = 0;
-  for (i = 0; i < mat->invec_leng; i++) 
-    permute_array[i+offset] = (int) dvec[i];
-  ML_gsum_vec_int(&permute_array,&itemp,Nglobal,comm);
-  ML_free(itemp);
-#endif
   for (i = 0; i < mat->invec_leng; i++) {
     j = (int) dvec[i];
     j--;
@@ -1964,6 +1933,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
     }
     else dvec[i] = GlobalId_RowsStaying_WithMe++;
   }
+
   if (GlobalId_Rows_ISend != NULL) ML_free(GlobalId_Rows_ISend);
   /* build the new matrix */
   columns = (int *) ML_allocate(sizeof(int)*(mat->invec_leng+1));
@@ -1990,192 +1960,35 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   *permt = ML_Operator_Create(comm);
   ML_back_to_csrlocal(permt_mat, *permt, max_per_processor);
   ML_Operator_Destroy(&permt_mat);
+  ML_Operator_ChangeToChar(*permt);
+#ifdef ML_LOWMEMORY
+  temp = (struct ML_CSR_MSRdata *) (*permt)->data;
+  ML_free(temp->rowptr);
+  temp->rowptr = NULL;
+#endif
+
   perm_mat = ML_Operator_Create(comm);
   ML_Operator_Transpose_byrow(*permt, perm_mat);
+  ML_Operator_ChangeToChar(perm_mat);
+#ifdef ML_LOWMEMORY
+  temp = (struct ML_CSR_MSRdata *) perm_mat->data;
+  ML_free(temp->rowptr);
+  temp->rowptr = NULL;
+#endif
   printf("%d: almost finished %d %d\n",mypid,perm_mat->outvec_leng,
 	 perm_mat->invec_leng);
 
   permuted_Amat = ML_Operator_Create(comm);
 
   ML_rap(perm_mat,mat,*permt,permuted_Amat, ML_CSR_MATRIX);
+  ML_Operator_ImplicitTranspose(perm_mat,*permt, ML_FALSE);
+
   *new_mat = permuted_Amat;
   *permutation = perm_mat;
 
   if (dvec != NULL) ML_free(dvec);
   if (remote_offsets != NULL) ML_free(remote_offsets);
 
-#ifdef throwaway
-
-  /* Count the number of rows assigned to this processor */
-  Nrows = 0;
-  for (i = 0; i < Nglobal; i++) {
-    if (permute_array[i] - 1  == mat->comm->ML_mypid) Nrows++;
-  }
-
-  /* Now build a CSR matrix to represent the permuation */
-  /* along with the communication information.          */
-
-  columns = (int *) ML_allocate(sizeof(int)*Nrows);
-  values  = (double *) ML_allocate(sizeof(double)*Nrows);
-  rowptr = (int *) ML_allocate(sizeof(int)*(Nrows+1));
-  neighbors       = (int *) ML_allocate(sizeof(int)*(Nglobal+1));
-  for (i = 0; i < Nglobal; i++) neighbors[i] = -1;
-  j = 0;	Nghost = 0; proc_index = 0;
-
-
-  /* First determine with which processors do we need to */
-  /* receive information to perform the permutation.     */
-
-  NeighborList =  (int *) ML_allocate(sizeof(int)*
-				      ML_min(Nglobal+1, mat->comm->ML_nprocs));
-  Nneighbors = 0;
-  proc_index = 0;
-  for (i = 0; i <= Nglobal; i++) {
-    if (i != Nglobal) {
-      while (i == remote_offsets[proc_index+1]) {
-	proc_index++;
-      }
-    }
-    if ( (permute_array[i] - 1 == mat->comm->ML_mypid) &&
-	 ( (i < offset) || (i >= offset + mat->invec_leng) )) {
-      if (neighbors[proc_index] == -1) {
-	neighbors[proc_index] = Nneighbors;
-	NeighborList[Nneighbors++] = proc_index;
-      }
-    }
-  }
-	    
-  /* Where (which processors) do we need to send information */
-
-  for (i = offset; i < offset + mat->invec_leng; i++) {
-    if (permute_array[i] - 1 != mat->comm->ML_mypid) {
-      if (neighbors[permute_array[i]-1] == -1) {
-	neighbors[permute_array[i]-1] = Nneighbors;
-	NeighborList[Nneighbors++] = permute_array[i]-1;
-      }
-    }
-  }
-
-  /* Count how much information is sent and received from */
-  /* each processor in the NeighborList.                  */
-
-  Nsnds = (int *) ML_allocate(sizeof(int)*(Nneighbors+1));
-  Nrcvs = (int *) ML_allocate(sizeof(int)*(Nneighbors+1));
-  for (i = 0; i < Nneighbors; i++) Nsnds[i] = 0;
-  for (i = 0; i < Nneighbors; i++) Nrcvs[i] = 0;
-
-  for (i = offset; i < offset + mat->invec_leng; i++) {
-    if (permute_array[i] - 1 != mat->comm->ML_mypid)
-      Nsnds[neighbors[permute_array[i]-1]]++;
-  }
-
-  proc_index = 0;
-  for (i = 0; i <= Nglobal; i++) {
-    if (i != Nglobal) {
-      while (i == remote_offsets[proc_index+1]) proc_index++;
-    }
-    if ( (permute_array[i] - 1 == mat->comm->ML_mypid) &&
-	 ( (i < offset) || (i >= offset + mat->invec_leng) )) {
-      Nrcvs[neighbors[proc_index]]++;
-    }
-  }
-
-  /* Now fill in the indices which must be sent and received */
-  SndIndices = (int **) ML_allocate(sizeof(int)*(Nneighbors+1));
-  RcvIndices = (int **) ML_allocate(sizeof(int)*(Nneighbors+1));
-  for (i = 0; i < Nneighbors; i++) {
-    SndIndices[i] = (int *) ML_allocate(sizeof(int)*(Nsnds[i]+1));
-    RcvIndices[i] = (int *) ML_allocate(sizeof(int)*(Nrcvs[i]+1));
-    Nsnds[i] = 0;
-    Nrcvs[i] = 0;
-  }
-
-  for (i = offset; i < offset + mat->invec_leng; i++) {
-    if (permute_array[i] - 1 != mat->comm->ML_mypid) {
-      j = neighbors[permute_array[i]-1];
-      SndIndices[j][Nsnds[j]] = i - offset;
-      Nsnds[j]++;
-    }
-  }
-
-  count = mat->invec_leng;
-  proc_index = 0;
-  for (i = 0; i <= Nglobal; i++) {
-    if (i != Nglobal) {
-      while (i == remote_offsets[proc_index+1]) proc_index++;
-    }
-    if ( (permute_array[i] - 1 == mat->comm->ML_mypid) &&
-	 ( (i < offset) || (i >= offset + mat->invec_leng) )) {
-      j = neighbors[proc_index];
-      RcvIndices[j][Nrcvs[j]] = count++;
-      Nrcvs[j]++;
-    }
-  }
-  ML_free(remote_offsets);
-  ML_free(neighbors);
-
-
-  ML_CommInfoOP_Set_neighbors(&mat_comm, Nneighbors, 
-			      NeighborList,ML_OVERWRITE, NULL, 0);
-
-
-  for (i = 0; i < Nneighbors; i++) {
-    ML_CommInfoOP_Set_exch_info(mat_comm, NeighborList[i],
-				Nrcvs[i], RcvIndices[i], Nsnds[i], SndIndices[i]);
-    ML_free(SndIndices[i]);
-    ML_free(RcvIndices[i]);
-  }
-  ML_free(NeighborList);
-  ML_free(Nsnds);
-  ML_free(Nrcvs);
-  ML_free(SndIndices);
-  ML_free(RcvIndices);
-
-
-  /* Now put in the CSR data */
-
-  j = 0;	Nghost = 0; proc_index = 0;
-  for (i = 0; i < Nglobal; i++) {
-    if (permute_array[i] - 1 == mat->comm->ML_mypid) {
-      rowptr[j] = j;
-      values[j] = 1.;
-      if ( (i >= offset) && 
-	   (i < offset + mat->invec_leng) ) {
-	/* local row */
-	columns[j] = i - offset;
-      }
-      else {
-	/* remote row */
-	columns[j] = mat->invec_leng + Nghost;
-	Nghost++;
-      }
-      j++;
-    }
-  }
-  ML_free(permute_array);
-  rowptr[Nrows] = Nrows;
-  perm_mat = ML_Operator_Create(mat->comm);
-  temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
-  temp->columns = columns;
-  temp->values = values;
-  temp->rowptr = rowptr;
-
-  ML_Operator_Set_ApplyFuncData(perm_mat,mat->invec_leng,
-				Nrows,ML_EMPTY,temp,mat->invec_leng,NULL,0);
-  ML_Operator_Set_Getrow(perm_mat, Nrows, CSR_getrow);
-  ML_Operator_Set_ApplyFunc( perm_mat, CSR_matvec);
-  perm_mat->getrow->pre_comm = mat_comm;
-  perm_mat->data_destroy = ML_CSR_MSRdata_Destroy;
-  permt_mat = ML_Operator_Create(mat->comm);
-
-  ML_Operator_Transpose_byrow(perm_mat,permt_mat);
-
-  permuted_Amat = ML_Operator_Create(mat->comm);
-  ML_rap(perm_mat,mat,permt_mat,permuted_Amat, ML_CSR_MATRIX);
-  *new_mat = permuted_Amat;
-  *permutation = perm_mat;
-  *permt       = permt_mat;
-#endif
   return 0;
 }
 
@@ -2249,6 +2062,7 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
 #ifndef ML_repartition
   return 0;
 #endif
+
   Amatrix = &(ml->Amat[coarse]);
   Rmat = &(ml->Rmat[fine]);
   Pmat = &(ml->Pmat[coarse]);
@@ -2335,6 +2149,114 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
        printf("   ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]), &(ml->SingleLevel[next]));\n");
        exit(1);
      }
+     ML_Operator_Destroy(&perm);
+     ML_Operator_Destroy(&permt);
+     ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
+   }
+
+  return 0;
+}
+
+/* Repartition Edge matrix */
+int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
+                                ML_Operator *Toldt,
+                                int fine, int coarse,
+                                int R_is_Ptranspose)
+{
+  ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
+  int status, offset1, offset2, j, flag = 0;
+  double *new_null;
+  int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
+
+  /* data structures for handling T */
+  ML_1Level *currlevel;
+  ML_Sm_Hiptmair_Data *dataptr;
+  ML_Operator *Tnew;
+
+#ifndef ML_repartition
+  return 0;
+#endif
+
+  Amatrix = &(ml->Amat[coarse]);
+  Rmat = &(ml->Rmat[fine]);
+  Pmat = &(ml->Pmat[coarse]);
+
+  if ((ml->MinPerProc_repartition == -1) && 
+      (ml->LargestMinMaxRatio_repartition == -1.)) 
+    return 0;
+
+  ml_gmax = ML_gmax_int(Amatrix->invec_leng,ml->comm);
+  ml_gmin = Amatrix->invec_leng;
+  if (ml_gmin == 0) ml_gmin = ml_gmax; /* don't count */
+                                      /* empty processors */
+  ml_gmin = ML_gmin_int(ml_gmin,ml->comm);
+ 
+  if ( (ml->MinPerProc_repartition != -1) &&
+       (ml_gmin < ml->MinPerProc_repartition))
+    flag = 1;
+  else if ((ml->LargestMinMaxRatio_repartition != -1.) &&
+         ((((double) ml_gmax)/((double) ml_gmin)) > 
+          ml->LargestMinMaxRatio_repartition))
+    flag = 1;
+
+  Nprocs_ToUse = ml->comm->ML_nprocs;
+  if ( (flag == 1) && (ml->MinPerProc_repartition != -1)) {
+    /* compute how many processors to use in the repartitioning */
+    ml_gsum = ML_gsum_int(Amatrix->invec_leng,ml->comm);
+    Nprocs_ToUse = ml_gsum/ml->MinPerProc_repartition;
+    if (Nprocs_ToUse > ml->comm->ML_nprocs)
+      Nprocs_ToUse = ml->comm->ML_nprocs;
+    if (Nprocs_ToUse < 1) Nprocs_ToUse = 1;
+  }
+
+  if (flag == 0) return 0;
+
+  currlevel = (ML_1Level *) Rmat->to;
+
+  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs, Nprocs_ToUse);
+   if (status == 0) {
+
+     /* permute T */
+     Tnew = ML_Operator_Create(Told->comm);
+     ML_2matmult(perm, Told, Tnew, ML_CSR_MATRIX); 
+     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Told);
+     /* permute T trans */
+     Tnew = ML_Operator_Create(Toldt->comm);
+     ML_2matmult(Toldt, permt, Tnew, ML_CSR_MATRIX); 
+     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Toldt);
+
+
+     ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
+
+     /* do a mat-mat mult to get the appropriate P for the */
+     /* unpartitioned matrix.                              */
+
+     newP = ML_Operator_Create(Pmat->comm);
+     ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
+     ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
+     
+     if (R_is_Ptranspose == ML_TRUE) {
+       newR = ML_Operator_Create(Rmat->comm);
+       ML_Operator_Transpose(Pmat, newR);
+       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
+     }
+     else if (Rmat->getrow->post_comm == NULL) {
+       newR = ML_Operator_Create(Rmat->comm);
+       ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
+       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
+     }
+     else {
+       printf("ML_repartition_Acoarse: 2matmult does not work properly if\n");
+       printf("   rightmost matrix in multiply is created with an implicit\n");
+       printf("   transpose (e.g. ML_Gen_Restrictor_TransP). If R is P^T,\n");
+       printf("   then invoke as ML_repartition_Acoarse(..., ML_TRUE). If\n");
+       printf("   R is not P^T but an implicit transpose is used, then try\n");
+       printf("   to remove implicit transpose with: \n\n");
+       printf("   ML_Operator_Transpose_byrow( &(ml->Pmat[next]),&(ml->Rmat[level]));\n");
+       printf("   ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]), &(ml->SingleLevel[next]));\n");
+       exit(1);
+     }
+
      ML_Operator_Destroy(&perm);
      ML_Operator_Destroy(&permt);
      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
