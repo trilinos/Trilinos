@@ -1,0 +1,438 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+#@HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#   
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#   
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# 
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov).
+# 
+# ************************************************************************
+#@HEADER
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ../../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMTAR = @AMTAR@
+AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXREPOS = @CXXREPOS@
+DEPDIR = @DEPDIR@
+EXEEXT = @EXEEXT@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
+MAINT = @MAINT@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX = @MPI_CXX@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
+RANLIB = @RANLIB@
+TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
+VERSION = @VERSION@
+WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@PITCHFORK = pitchfork
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@PITCHFORKCONT = pitchforkContinuation
+
+noinst_PROGRAMS = $(PITCHFORK) $(PITCHFORKCONT)
+
+pitchfork_SOURCES = $(srcdir)/Pitchfork.C \
+		$(srcdir)/PitchforkProblemInterface.H \
+		$(srcdir)/PitchforkProblemInterface.C
+
+
+pitchforkContinuation_SOURCES = $(srcdir)/PitchforkContinuation.C \
+		$(srcdir)/PitchforkProblemInterface.H \
+		$(srcdir)/PitchforkProblemInterface.C
+
+
+pitchfork_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+	$(top_builddir)/src-lapack/libnoxlapack.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
+
+
+pitchforkContinuation_DEPENDENCIES = $(pitchfork_DEPENDENCIES)
+
+pitchfork_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+		   -I$(top_srcdir)/src \
+		   -I$(top_srcdir)/src-lapack \
+		   -I$(top_srcdir)/src-loca/src \
+                   -I$(top_srcdir)/src-loca/src-lapack
+
+
+pitchforkContinuation_CXXFLAGS = $(pitchfork_CXXFLAGS)
+
+pitchfork_LDADD = \
+		-L$(top_builddir)/src \
+		-L$(top_builddir)/src-lapack \
+                -L$(top_builddir)/src-loca/src \
+                -L$(top_builddir)/src-loca/src-lapack \
+                -llocalapack -lloca -lnoxlapack -lnox
+
+
+pitchforkContinuation_LDADD = $(pitchfork_LDADD)
+subdir = src-loca/example-lapack/1Dfd_pitchfork
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
+CONFIG_CLEAN_FILES =
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@noinst_PROGRAMS = pitchfork$(EXEEXT) \
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@	pitchforkContinuation$(EXEEXT)
+@BUILD_LOCA_LAPACK_EXAMPLES_FALSE@noinst_PROGRAMS =
+PROGRAMS = $(noinst_PROGRAMS)
+
+am_pitchfork_OBJECTS = pitchfork-Pitchfork.$(OBJEXT) \
+	pitchfork-PitchforkProblemInterface.$(OBJEXT)
+pitchfork_OBJECTS = $(am_pitchfork_OBJECTS)
+pitchfork_LDFLAGS =
+am_pitchforkContinuation_OBJECTS = \
+	pitchforkContinuation-PitchforkContinuation.$(OBJEXT) \
+	pitchforkContinuation-PitchforkProblemInterface.$(OBJEXT)
+pitchforkContinuation_OBJECTS = $(am_pitchforkContinuation_OBJECTS)
+pitchforkContinuation_LDFLAGS =
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/pitchfork-Pitchfork.Po \
+@AMDEP_TRUE@	$(DEPDIR)/pitchfork-PitchforkProblemInterface.Po \
+@AMDEP_TRUE@	$(DEPDIR)/pitchforkContinuation-PitchforkContinuation.Po \
+@AMDEP_TRUE@	$(DEPDIR)/pitchforkContinuation-PitchforkProblemInterface.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+DIST_SOURCES = $(pitchfork_SOURCES) $(pitchforkContinuation_SOURCES)
+DIST_COMMON = Makefile.am Makefile.in
+SOURCES = $(pitchfork_SOURCES) $(pitchforkContinuation_SOURCES)
+
+all: all-am
+
+.SUFFIXES:
+.SUFFIXES: .C .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  src-loca/example-lapack/1Dfd_pitchfork/Makefile
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+pitchfork-Pitchfork.$(OBJEXT): $(srcdir)/Pitchfork.C
+pitchfork-PitchforkProblemInterface.$(OBJEXT): \
+	$(srcdir)/PitchforkProblemInterface.C
+pitchfork$(EXEEXT): $(pitchfork_OBJECTS) $(pitchfork_DEPENDENCIES) 
+	@rm -f pitchfork$(EXEEXT)
+	$(CXXLINK) $(pitchfork_LDFLAGS) $(pitchfork_OBJECTS) $(pitchfork_LDADD) $(LIBS)
+pitchforkContinuation-PitchforkContinuation.$(OBJEXT): \
+	$(srcdir)/PitchforkContinuation.C
+pitchforkContinuation-PitchforkProblemInterface.$(OBJEXT): \
+	$(srcdir)/PitchforkProblemInterface.C
+pitchforkContinuation$(EXEEXT): $(pitchforkContinuation_OBJECTS) $(pitchforkContinuation_DEPENDENCIES) 
+	@rm -f pitchforkContinuation$(EXEEXT)
+	$(CXXLINK) $(pitchforkContinuation_LDFLAGS) $(pitchforkContinuation_OBJECTS) $(pitchforkContinuation_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/pitchfork-Pitchfork.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/pitchfork-PitchforkProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/pitchforkContinuation-PitchforkContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/pitchforkContinuation-PitchforkProblemInterface.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.C.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.C.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+pitchfork-Pitchfork.o: $(srcdir)/Pitchfork.C
+@AMDEP_TRUE@	source='$(srcdir)/Pitchfork.C' object='pitchfork-Pitchfork.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchfork-Pitchfork.Po' tmpdepfile='$(DEPDIR)/pitchfork-Pitchfork.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork-Pitchfork.o `test -f $(srcdir)/Pitchfork.C || echo '$(srcdir)/'`$(srcdir)/Pitchfork.C
+
+pitchfork-Pitchfork.obj: $(srcdir)/Pitchfork.C
+@AMDEP_TRUE@	source='$(srcdir)/Pitchfork.C' object='pitchfork-Pitchfork.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchfork-Pitchfork.Po' tmpdepfile='$(DEPDIR)/pitchfork-Pitchfork.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork-Pitchfork.obj `cygpath -w $(srcdir)/Pitchfork.C`
+
+pitchfork-PitchforkProblemInterface.o: $(srcdir)/PitchforkProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/PitchforkProblemInterface.C' object='pitchfork-PitchforkProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchfork-PitchforkProblemInterface.Po' tmpdepfile='$(DEPDIR)/pitchfork-PitchforkProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork-PitchforkProblemInterface.o `test -f $(srcdir)/PitchforkProblemInterface.C || echo '$(srcdir)/'`$(srcdir)/PitchforkProblemInterface.C
+
+pitchfork-PitchforkProblemInterface.obj: $(srcdir)/PitchforkProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/PitchforkProblemInterface.C' object='pitchfork-PitchforkProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchfork-PitchforkProblemInterface.Po' tmpdepfile='$(DEPDIR)/pitchfork-PitchforkProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork-PitchforkProblemInterface.obj `cygpath -w $(srcdir)/PitchforkProblemInterface.C`
+
+pitchforkContinuation-PitchforkContinuation.o: $(srcdir)/PitchforkContinuation.C
+@AMDEP_TRUE@	source='$(srcdir)/PitchforkContinuation.C' object='pitchforkContinuation-PitchforkContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchforkContinuation-PitchforkContinuation.Po' tmpdepfile='$(DEPDIR)/pitchforkContinuation-PitchforkContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchforkContinuation_CXXFLAGS) $(CXXFLAGS) -c -o pitchforkContinuation-PitchforkContinuation.o `test -f $(srcdir)/PitchforkContinuation.C || echo '$(srcdir)/'`$(srcdir)/PitchforkContinuation.C
+
+pitchforkContinuation-PitchforkContinuation.obj: $(srcdir)/PitchforkContinuation.C
+@AMDEP_TRUE@	source='$(srcdir)/PitchforkContinuation.C' object='pitchforkContinuation-PitchforkContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchforkContinuation-PitchforkContinuation.Po' tmpdepfile='$(DEPDIR)/pitchforkContinuation-PitchforkContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchforkContinuation_CXXFLAGS) $(CXXFLAGS) -c -o pitchforkContinuation-PitchforkContinuation.obj `cygpath -w $(srcdir)/PitchforkContinuation.C`
+
+pitchforkContinuation-PitchforkProblemInterface.o: $(srcdir)/PitchforkProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/PitchforkProblemInterface.C' object='pitchforkContinuation-PitchforkProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchforkContinuation-PitchforkProblemInterface.Po' tmpdepfile='$(DEPDIR)/pitchforkContinuation-PitchforkProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchforkContinuation_CXXFLAGS) $(CXXFLAGS) -c -o pitchforkContinuation-PitchforkProblemInterface.o `test -f $(srcdir)/PitchforkProblemInterface.C || echo '$(srcdir)/'`$(srcdir)/PitchforkProblemInterface.C
+
+pitchforkContinuation-PitchforkProblemInterface.obj: $(srcdir)/PitchforkProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/PitchforkProblemInterface.C' object='pitchforkContinuation-PitchforkProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pitchforkContinuation-PitchforkProblemInterface.Po' tmpdepfile='$(DEPDIR)/pitchforkContinuation-PitchforkProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchforkContinuation_CXXFLAGS) $(CXXFLAGS) -c -o pitchforkContinuation-PitchforkProblemInterface.obj `cygpath -w $(srcdir)/PitchforkProblemInterface.C`
+CXXDEPMODE = @CXXDEPMODE@
+uninstall-info-am:
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ../../..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(PROGRAMS)
+
+installdirs:
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+clean: clean-am
+
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am:
+
+install-exec-am:
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am
+
+.PHONY: GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS distclean distclean-compile \
+	distclean-depend distclean-generic distclean-tags distdir dvi \
+	dvi-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic tags uninstall uninstall-am \
+	uninstall-info-am
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
