@@ -251,13 +251,15 @@ mpiShutdown();
     sub prepareBuildDirs {  
         chdir "$options{'TRILINOS_DIR'}[0]";  
         
-        # delete and recreate mpi dir
-        system "rm -rf $options{'MPI_DIR'}[0]";
-        system "mkdir $options{'MPI_DIR'}[0]";
-        
-        # delete and recreate serial dir
-        system "rm -rf $options{'SERIAL_DIR'}[0]";
-        system "mkdir $options{'SERIAL_DIR'}[0]";
+        if (!$flags{t}) {
+            # delete and recreate mpi dir
+            system "rm -rf $options{'MPI_DIR'}[0]";
+            system "mkdir $options{'MPI_DIR'}[0]";
+            
+            # delete and recreate serial dir
+            system "rm -rf $options{'SERIAL_DIR'}[0]";
+            system "mkdir $options{'SERIAL_DIR'}[0]";
+        }
         
     } # prepareBuildDirs()
 
@@ -285,15 +287,16 @@ mpiShutdown();
         
         # for each build directory =============================================
         for (my $j=0; $j<=$#buildDir; $j++) {
+        
+            my $comm; 
+            if ($buildDir[$j] eq $options{'MPI_DIR'}[0]) {
+                $comm = "mpi";
+            } elsif ($buildDir[$j] eq $options{'SERIAL_DIR'}[0]) {
+                $comm = "serial";
+            } 
 
             # -t (test only) flag is absent...
             if (!$flags{t}) {
-                my $comm; 
-                if ($buildDir[$j] eq $options{'MPI_DIR'}[0]) {
-                    $comm = "mpi";
-                } elsif ($buildDir[$j] eq $options{'SERIAL_DIR'}[0]) {
-                    $comm = "serial";
-                } 
                 
                 # descend into build dir
                 chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";
@@ -328,7 +331,7 @@ mpiShutdown();
                     die " *** file permission wrong - aborting test-harness ***\n";
                 }
                 
-                # should we quit trying (no invoke-configure left)
+                # should we quit trying? (no invoke-configure left)
                 my $quitTrying = 0;
                 
                 # configure --------------------------------------------------------
@@ -419,62 +422,63 @@ mpiShutdown();
             } # if (-t)
             # test -------------------------------------------------------------
             
-            # -n flag passed -- skip tests
-            if ($flags{n}) { return; }
+            # if -n flag absent -- run tests
+            if (!$flags{n}) {
             
-            # locate all test dirs under Trilinos/packages        
-            chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
-            my @testDirs = `find packages/ -name test -print`; 
-            
-    	    # run all tests 
-    	    foreach my $testDir (@testDirs) {
-                $testDir =~ s/\s*$//;  # trim trailing whitespace
-                                
-    	        # exclude unsupported packages and invalid directories
-    	        unless ($testDir =~ m/^\s+$/ || $testDir =~ m/^$/ || 
-    	                $testDir =~ m/tpetra/ || $testDir =~ m/jpetra/ ) {
-    	                
-    	            # descend into test directory
-                    chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/$testDir";
-            
-                    # find potential scripts in test/scripts/<frequency>/<comm>
-                    my $potentialTestDir = "";
-                    $potentialTestDir .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
-                    $potentialTestDir .= "$testDir/scripts/$options{'FREQUENCY'}[0]/$comm";
-                    
-                    if (-d $potentialTestDir) {
-                        my $command = "find $potentialTestDir -type f";
-                        my $output = `$command`;
-                        my @potentialScripts = split (/\s+/, $output);
-                            
-                        # run each test
-                        foreach my $potentialScript (@potentialScripts) {
-                            $potentialScript =~ s/\s*$//;  # trim trailing whitespace
-                            
-                            # if potential script file is executable...
-                            if (-x $potentialScript) {
+                # locate all test dirs under Trilinos/packages        
+                chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
+                my @testDirs = `find packages/ -name test -print`; 
                 
-                                # test
-                                my $testFailed = test($buildDir[$j], $potentialScript);
+        	    # run all tests 
+        	    foreach my $testDir (@testDirs) {
+                    $testDir =~ s/\s*$//;  # trim trailing whitespace
+                                    
+        	        # exclude unsupported packages and invalid directories
+        	        unless ($testDir =~ m/^\s+$/ || $testDir =~ m/^$/ || 
+        	                $testDir =~ m/tpetra/ || $testDir =~ m/jpetra/ ) {
+        	                
+        	            # descend into test directory
+                        chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/$testDir";
+                
+                        # find potential scripts in test/scripts/<frequency>/<comm>
+                        my $potentialTestDir = "";
+                        $potentialTestDir .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                        $potentialTestDir .= "$testDir/scripts/$options{'FREQUENCY'}[0]/$comm";
+                        
+                        if (-d $potentialTestDir) {
+                            my $command = "find $potentialTestDir -type f";
+                            my $output = `$command`;
+                            my @potentialScripts = split (/\s+/, $output);
                                 
-                                # extract test name from path (for printing)
-                                my $testNameOnly = $potentialScript;
-                                $testNameOnly =~ s/.*\///; 
+                            # run each test
+                            foreach my $potentialScript (@potentialScripts) {
+                                $potentialScript =~ s/\s*$//;  # trim trailing whitespace
                                 
-                                if ($testFailed) {                                               
-                                    print "$testNameOnly - Test failed\n";  
-                                    sendMail($TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
-                                } else {                                    
-                                    print "$testNameOnly - Test passed\n";  
-                                    sendMail($TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
-                                }
-                                
-                            } # if (executable)
-                        } # foreach ($potentialScript)  
-                    } # if (-f $potentialTestDir)
-                                      
-                } # unless (unsupported)
-            } # foreach $testDir
+                                # if potential script file is executable...
+                                if (-x $potentialScript) {
+                    
+                                    # test
+                                    my $testFailed = test($buildDir[$j], $potentialScript);
+                                    
+                                    # extract test name from path (for printing)
+                                    my $testNameOnly = $potentialScript;
+                                    $testNameOnly =~ s/.*\///; 
+                                    
+                                    if ($testFailed) {                                               
+                                        print "$testNameOnly - Test failed\n";  
+                                        sendMail($TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
+                                    } else {                                    
+                                        print "$testNameOnly - Test passed\n";  
+                                        sendMail($TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
+                                    }
+                                    
+                                } # if (executable)
+                            } # foreach ($potentialScript)  
+                        } # if (-f $potentialTestDir)
+                                          
+                    } # unless (unsupported)
+                } # foreach $testDir
+            } # if (!-n)
             
         } # for (buildDirs)                   
     } # run()
