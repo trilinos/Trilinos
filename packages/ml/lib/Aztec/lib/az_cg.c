@@ -204,6 +204,9 @@ double *block;
                             data_org, proc_config, &r_avail,r, z, &r_z_dot,
                             convergence_info);
   true_scaled_r = scaled_r_norm;
+#ifdef ML_NEWNORM
+  new_norm(precond,r, &scaled_r_norm);
+#endif
 
   if ((options[AZ_output] != AZ_none) &&
       (options[AZ_output] != AZ_last) &&
@@ -291,6 +294,9 @@ double *block;
                               weight, &rec_residual, &scaled_r_norm, options,
                               data_org, proc_config, &r_avail, r, z, &r_z_dot,
                               convergence_info);
+#ifdef ML_NEWNORM
+    new_norm(precond,r, &scaled_r_norm);
+#endif
 
     if (brkdown_will_occur) {
       AZ_scale_true_residual( x, b, ap,
@@ -335,6 +341,9 @@ double *block;
                              weight, &actual_residual, &true_scaled_r, options,
                              data_org, proc_config, Amat, convergence_info);
 
+#ifdef ML_NEWNORM
+      new_norm(precond,ap, &true_scaled_r);
+#endif
       converged = true_scaled_r < params[AZ_tol];
 
 

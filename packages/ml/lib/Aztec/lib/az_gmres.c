@@ -97,7 +97,11 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
   register int k;
   int          i, i1, k1, mm, ii;
+#ifdef ML_NEWNORM
+  int          N, converged, one = 1, iter = 1, r_avail = AZ_TRUE;
+#else
   int          N, converged, one = 1, iter = 1, r_avail = AZ_FALSE;
+#endif
   int          precond_flag, print_freq, proc, kspace, first_time = AZ_TRUE;
   double     **v, **hh, *c, *s, *rs, *dots, *tmp, *temp;
   double       *res, init_time = 0.0;
@@ -204,6 +208,9 @@ char *T2 = "N";
                             data_org, proc_config, &r_avail, v[0], v[0],
                             &r_2norm, convergence_info);
   true_scaled_r = scaled_r_norm;
+#ifdef ML_NEWNORM
+  new_norm(precond, v[0], &scaled_r_norm);
+#endif
 
   r_2norm   = sqrt(r_2norm);
   converged = scaled_r_norm < epsilon;
@@ -379,6 +386,9 @@ char *T2 = "N";
                                 res, weight, &rec_residual, &scaled_r_norm,
                                 options, data_org, proc_config, &r_avail, dummy,
                                 dummy, dummy, convergence_info);
+#ifdef ML_NEWNORM
+      new_norm(precond, res, &scaled_r_norm);
+#endif
 
       converged = scaled_r_norm < epsilon;
 
