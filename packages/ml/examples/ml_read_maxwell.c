@@ -338,7 +338,8 @@ int main(int argc, char *argv[])
   if (fp == NULL)
   {
     printf("%d: rhsfile file pointer is NULL\n",proc_config[AZ_node]); fflush(stdout);
-    if (proc_config[AZ_node] == 0) printf("taking zero vector for rhs\n");
+    if (proc_config[AZ_node] == 0 && 0.5 < ML_Get_PrintLevel())
+       printf("taking zero vector for rhs\n");
     fflush(stdout);
     rhs = (double *)
 	      ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
@@ -366,10 +367,12 @@ int main(int argc, char *argv[])
 #define ZEROOUTDIRICHLET
 */
 #ifdef ZEROOUTDIRICHLET
-  if (proc_config[AZ_node] == 0) printf("Zeroing out Dirichlet columns\n");
+  if (proc_config[AZ_node] == 0 && 0.5 < ML_Get_PrintLevel() )
+     printf("Zeroing out Dirichlet columns\n");
   AZ_zeroDirichletcolumns(Ke_mat, rhs, proc_config);
 #else
-  if (proc_config[AZ_node] == 0) printf("Not zeroing out Dirichlet columns\n");
+  if (proc_config[AZ_node] == 0 && 0.5 < ML_Get_PrintLevel() )
+     printf("Not zeroing out Dirichlet columns\n");
 #endif
 
   /*******************************************************************/
@@ -504,7 +507,7 @@ int main(int argc, char *argv[])
 
   if (abs(dtemp-dtemp2) > 1e-15)
   {
-     if (proc_config[AZ_node]== 0)
+     if (proc_config[AZ_node]== 0 && 0.5 < ML_Get_PrintLevel())
      {
         printf("\a\n*****************\n"
                        "WARNING: Edge matrix may not be symmetric.\n");
@@ -616,9 +619,9 @@ int main(int argc, char *argv[])
   }
   else
   {
-     if (proc_config[AZ_node]== 0)
+     if (proc_config[AZ_node]== 0 && 0.5 < ML_Get_PrintLevel())
      {
-        printf("\nEdge matrix passed symmetry check.\n\n");
+        printf("Edge matrix passed symmetry check.\n");
         fflush(stdout);
      }
   }
@@ -939,12 +942,12 @@ int main(int argc, char *argv[])
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmatbc,
                                  Tmat_transbc, &Tmat_array, &Tmat_trans_array,
-                                 ML_YES, ML_DDEFAULT);
+                                 ML_NO, ML_DDEFAULT);
   else
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmat,
                                  Tmat_trans, &Tmat_array, &Tmat_trans_array,
-                                 ML_YES, ML_DDEFAULT);
+                                 ML_NO, ML_DDEFAULT);
 
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
@@ -985,10 +988,10 @@ int main(int argc, char *argv[])
           omega = (double) ML_DEFAULT;
           if (level == N_levels-1)
              ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-                    omega,Tmat_array, Tmat_trans_array,Tmatbc,1);
+                    omega,Tmat_array, Tmat_trans_array,Tmatbc);
           else
              ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-                    omega,Tmat_array, Tmat_trans_array, NULL,1);
+                    omega,Tmat_array, Tmat_trans_array, NULL);
 	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -1079,10 +1082,10 @@ int main(int argc, char *argv[])
     omega = (double) ML_DEFAULT;
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-             omega,Tmat_array, Tmat_trans_array, Tmatbc,1);
+             omega,Tmat_array, Tmat_trans_array, Tmatbc);
     else
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-             omega,Tmat_array, Tmat_trans_array, NULL,1);
+             omega,Tmat_array, Tmat_trans_array, NULL);
   }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
     ML_Gen_Smoother_GaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
@@ -1146,11 +1149,11 @@ int main(int argc, char *argv[])
          if (level == N_levels-1)
 	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				        omega,Tmat_array, Tmat_trans_array, Tmat,
-                        Tmat_trans, Tmatbc,1);
+                        Tmat_trans, Tmatbc);
          else
 	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				        omega,Tmat_array, Tmat_trans_array, Tmat,
-                        Tmat_trans, NULL,1);
+                        Tmat_trans, NULL);
      }
   }
   nsmooth   = context->coarse_its;
@@ -1168,10 +1171,10 @@ int main(int argc, char *argv[])
      if (coarsest_level == N_levels-1)
         ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
               nsmooth,omega,Tmat_array, Tmat_trans_array, Tmat, 
-              Tmat_trans, Tmatbc,1);
+              Tmat_trans, Tmatbc);
      else
         ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-              omega,Tmat_array, Tmat_trans_array, Tmat, Tmat_trans, NULL,1);
+              omega,Tmat_array, Tmat_trans_array, Tmat, Tmat_trans, NULL);
   }
   else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0)
   {
@@ -1247,13 +1250,13 @@ int main(int argc, char *argv[])
   AZ_reorder_vec(xxx, Ke_data_org, reordered_glob_edges, NULL);
 
   dtemp = sqrt(ML_gdot(Nlocal_edges, xxx, xxx, ml_edges->comm));
-  if (proc_config[AZ_node]== 0)
+  if (proc_config[AZ_node]== 0 && 5 < ML_Get_PrintLevel() )
   {
     printf("length of initial guess = %d\n",Nlocal_edges);
     printf("||xxx|| = %e\n",dtemp);
   }
   dtemp = sqrt(ML_gdot(Nlocal_edges, rhs, rhs, ml_edges->comm));
-  if (proc_config[AZ_node]== 0)
+  if (proc_config[AZ_node]== 0 && 5 < ML_Get_PrintLevel() )
   {
   printf("||rhs|| = %e\n",dtemp);
   fflush(stdout);
@@ -1335,8 +1338,12 @@ int main(int argc, char *argv[])
     exit(1);
 */
 
-#ifdef CHECKOPERATORS
-/**** check various operators and vectors ****/
+  
+  /**** check various operators and vectors ****/
+  if ( 5 < ML_Get_PrintLevel() )
+  {
+
+    printf("\nChecking various operators...\n\n");
     if (N_levels > 1)
     {
        Amat = &(ml_edges->Rmat[N_levels-1]);
@@ -1344,11 +1351,6 @@ int main(int argc, char *argv[])
        ML_Operator_Apply(Amat, Amat->invec_leng, rhs,Amat->outvec_leng,yyy);
        dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
        printf("||R_e * rhs|| = %20.15e\n",dtemp);
-
-       /*
-       if (Amat->comm->ML_mypid == 0)
-          ML_Operator_Print(Amat,"0:Rmat");
-       */
 
        ML_Operator_Apply(Amat, Amat->invec_leng, xxx,Amat->outvec_leng,yyy);
        dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
@@ -1390,6 +1392,7 @@ int main(int argc, char *argv[])
     }
 
     ML_free(yyy);
+    printf("\nEnd of check.\n\n");
     fflush(stdout);
 /**** end of check ****/
 
@@ -1403,9 +1406,9 @@ int main(int argc, char *argv[])
     free(vvv);
 **** end of check ****/
 
-#endif /*ifdef CHECKOPERATORS*/
+  } /*end of operator check*/
 
-    if (proc_config[AZ_node]== 0)
+    if (proc_config[AZ_node] == 0 && 0.5 < ML_Get_PrintLevel())
     {
        if (mg_cycle_type == ML_MGV)
           printf("Cycle type = MGV\n");
