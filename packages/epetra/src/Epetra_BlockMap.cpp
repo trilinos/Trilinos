@@ -824,7 +824,9 @@ int Epetra_BlockMap::FindLocalElementID(int PointID, int & ElementID, int & Elem
 //==============================================================================
 int Epetra_BlockMap::RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList, int * SizeList) const {
 
-  EPETRA_CHK_ERR(Directory_->GetDirectoryEntries(NumIDs, GIDList, PIDList, LIDList, SizeList));
+  if (Directory_!=0) {
+    EPETRA_CHK_ERR(Directory_->GetDirectoryEntries(NumIDs, GIDList, PIDList, LIDList, SizeList));
+  }
   return(0);
 }
 //==============================================================================
