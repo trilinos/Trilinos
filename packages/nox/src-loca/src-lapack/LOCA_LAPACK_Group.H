@@ -103,6 +103,12 @@ namespace LOCA {
       */
       NOX::Abstract::Group::ReturnType computeJacobian();
 
+      //! applyJacobianInverse for multiple right-hand sides
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseMulti(NOX::Parameter::List& params,
+			   const NOX::Abstract::Vector* const* inputs,
+			   NOX::Abstract::Vector** outputs, int nVecs) const;
+
       //! Set the parameter vector
       void setParams(const LOCA::ParameterVector& p);
 

@@ -31,6 +31,7 @@
 //@HEADER
 
 #include "LOCA_LAPACK_Group.H"	// class definition
+#include "NOX_LAPACK_Wrappers.H"
 
 LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface) : 
   NOX::LAPACK::Group(interface), 
@@ -100,6 +101,59 @@ NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::computeJacobian() {
   locaProblemInterface.setParams(params);
   return NOX::LAPACK::Group::computeJacobian();
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
+			    const NOX::Abstract::Vector* const* inputs,
+			    NOX::Abstract::Vector** outputs, int nVecs) const
+{
+  NOX::Abstract::Group::ReturnType res;
+
+  if (nVecs < 1)
+    return NOX::Abstract::Group::Failed;
+
+  int n = inputs[0]->length();
+  int m = nVecs;
+  int info;
+
+  // Copy all input vectors into one matrix
+  NOX::LAPACK::Matrix B(n,m);
+  const NOX::LAPACK::Vector* constVecPtr;
+  for (int j=0; j<m; j++) {
+    constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(inputs[j]);
+    for (int i=0; i<n; i++)
+      B(i,j) = (*constVecPtr)(i);
+  }
+
+  // Compute Jacobian LU factorization if invalid
+  if (!NOX::LAPACK::Group::isValidJacobianLUFact) {
+    NOX::LAPACK::Group::jacobianLUFact = NOX::LAPACK::Group::jacobianMatrix;
+    DGETRF_F77(&n, &n, &jacobianLUFact(0,0), &n, 
+	       &NOX::LAPACK::Group::pivots[0], &info);
+
+    if (info != 0)
+      return NOX::Abstract::Group::Failed;
+
+    NOX::LAPACK::Group::isValidJacobianLUFact = true;
+  }
+
+  // Backsolve using LU factorization
+  DGETRS_F77("N", &n, &m, &jacobianLUFact(0,0), &n, &pivots[0], 
+  	     &B(0,0), &n, &info);
+
+  if (info != 0)
+      return NOX::Abstract::Group::Failed;
+
+  // Copy result from matrix
+  NOX::LAPACK::Vector* vecPtr;
+  for (int j=0; j<m; j++) {
+    vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(outputs[j]);
+    for (int i=0; i<n; i++)
+      (*vecPtr)(i) = B(i,j);
+  }
+
+  return NOX::Abstract::Group::Ok;
 }
 
 void
