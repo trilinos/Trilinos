@@ -202,7 +202,6 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Aux.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
 $(srcdir)/Utils/ml_RowMatrix.cpp \
 $(srcdir)/Utils/ml_DD_prec.cpp
 

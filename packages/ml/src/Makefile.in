@@ -129,8 +129,7 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Test.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_CLP.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Aux.$(OBJEXT) ml_anasazi.$(OBJEXT) \
-	ml_MultiLevelOperator.$(OBJEXT) \
-	ml_MultiLevelPreconditioner.$(OBJEXT) ml_RowMatrix.$(OBJEXT) \
+	ml_MultiLevelOperator.$(OBJEXT) ml_RowMatrix.$(OBJEXT) \
 	ml_DD_prec.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
@@ -519,7 +518,8 @@ $(srcdir)/MLAPI/MLAPI_Gallery.h              \
 $(srcdir)/MLAPI/MLAPI_InverseOperator.h      \
 $(srcdir)/MLAPI/MLAPI_Krylov.h               \
 $(srcdir)/MLAPI/MLAPI_MATLABStream.h         \
-$(srcdir)/MLAPI/MLAPI_Matrix.h               \
+$(srcdir)/MLAPI/MLAPI_SerialMatrix.h         \
+$(srcdir)/MLAPI/MLAPI_DistributedMatrix.h    \
 $(srcdir)/MLAPI/MLAPI_MultiLevelSA.h         \
 $(srcdir)/MLAPI/MLAPI_MultiVector.h          \
 $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.h    \
@@ -558,7 +558,6 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Aux.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
 $(srcdir)/Utils/ml_RowMatrix.cpp \
 $(srcdir)/Utils/ml_DD_prec.cpp
 
