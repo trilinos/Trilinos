@@ -54,6 +54,11 @@ ZOLTAN_GEOM_FN get_geom;
 ZOLTAN_NUM_EDGES_FN get_num_edges;
 ZOLTAN_EDGE_LIST_FN get_edge_list;
 
+ZOLTAN_NUM_CHILD_FN get_num_child;
+ZOLTAN_CHILD_LIST_FN get_child_elements;
+ZOLTAN_FIRST_COARSE_OBJ_FN get_first_coarse_element;
+ZOLTAN_NEXT_COARSE_OBJ_FN get_next_coarse_element;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -126,7 +131,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-  /* Functions for geometry based algorithms */
+  /* Functions for graph based algorithms */
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
                 (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
@@ -135,6 +140,42 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
                 (void *) mesh)== ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
+  /* Functions for tree-based algorithms */
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_COARSE_OBJ_FN_TYPE,
+                (void (*)()) get_num_elements,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
+  if (Zoltan_Set_Fn(zz, ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE,
+                (void (*)()) get_first_coarse_element,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE,
+                (void (*)()) get_next_coarse_element,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_CHILD_FN_TYPE,
+                (void (*)()) get_num_child,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
+  if (Zoltan_Set_Fn(zz, ZOLTAN_CHILD_LIST_FN_TYPE,
+                (void (*)()) get_child_elements,
+                (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
@@ -553,6 +594,132 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
 
   *ierr = ZOLTAN_OK;
 }
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int get_first_coarse_element(void *data, int num_gid_entries, 
+                      int num_lid_entries,
+                      ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                      int *assigned, int *num_vert, int *vertices,
+                      int *in_order, int *in_vertex, int *out_vertex, int *ierr)
+{
+
+MESH_INFO_PTR mesh;
+ELEM_INFO *elem;
+ELEM_INFO *current_elem;
+int gid = num_gid_entries-1;
+int lid = num_lid_entries-1;
+int idx, i;
+int ok;
+
+  *ierr = ZOLTAN_OK;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+
+
+  /* 
+   * Assumption:  data is same for get_first_coarse_element and 
+   * get_first_element 
+   */
+  ok = get_first_element(data, num_gid_entries, num_lid_entries, 
+                         global_id, local_id, 0, NULL, ierr);
+
+  if (ok) {
+    mesh = (MESH_INFO_PTR) data;
+    elem = mesh->elements;
+    current_elem = (num_lid_entries
+                     ? &elem[local_id[lid]]
+                     : search_by_global_id(mesh, global_id[gid], &idx));
+
+    *assigned = 1;
+    *in_order = 0;
+    *num_vert = mesh->eb_nnodes[current_elem->elem_blk];
+    for (i = 0; i < *num_vert; i++)
+      vertices[i*num_gid_entries + gid] = current_elem->connect[i];
+  }
+  return ok;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int get_next_coarse_element(void *data, int num_gid_entries, 
+                      int num_lid_entries,
+                      ZOLTAN_ID_PTR prev_global_id, ZOLTAN_ID_PTR prev_local_id,
+                      ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                      int *assigned, int *num_vert, int *vertices,
+                      int *in_vertex, int *out_vertex, int *ierr)
+{
+
+MESH_INFO_PTR mesh;
+ELEM_INFO *elem;
+ELEM_INFO *current_elem;
+int gid = num_gid_entries-1;
+int lid = num_lid_entries-1;
+int idx, i;
+int ok;
+
+  *ierr = ZOLTAN_OK;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+
+
+  /* 
+   * Assumption:  data is same for get_first_coarse_element and 
+   * get_first_element 
+   */
+  ok = get_next_element(data, num_gid_entries, num_lid_entries, 
+                        prev_global_id, prev_local_id,
+                        global_id, local_id,
+                        0, NULL, ierr);
+
+  if (ok) {
+    mesh = (MESH_INFO_PTR) data;
+    elem = mesh->elements;
+    current_elem = (num_lid_entries
+                     ? &elem[local_id[lid]]
+                     : search_by_global_id(mesh, global_id[gid], &idx));
+
+    *assigned = 1;
+    *num_vert = mesh->eb_nnodes[current_elem->elem_blk];
+    for (i = 0; i < *num_vert; i++)
+      vertices[i*num_gid_entries + gid] = current_elem->connect[i];
+  }
+  return ok;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_num_child(void *data, int num_gid_entries, int num_lid_entries, 
+                  ZOLTAN_ID_PTR global_id,
+                  ZOLTAN_ID_PTR local_id, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  return 0;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_child_elements(void *data, int num_gid_entries, int num_lid_entries,
+                   ZOLTAN_ID_PTR parent_gid, ZOLTAN_ID_PTR parent_lid, 
+                   ZOLTAN_ID_PTR child_gids, ZOLTAN_ID_PTR child_lids, 
+                   int *assigned, int *num_vert, int *vertices, 
+                   ZOLTAN_REF_TYPE *ref_type,
+                   int *in_vertex, int *out_vertex, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+}
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
