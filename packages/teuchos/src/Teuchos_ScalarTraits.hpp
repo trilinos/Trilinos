@@ -198,7 +198,10 @@ namespace Teuchos {
     static magnitudeType magnitude(mp_real a) { return abs(a); };
     static inline mp_real zero() { mp_real zero = 0.0; return zero; };
     static inline mp_real one() { mp_real one = 1.0; return one; };    
-    static inline void seedrandom(unsigned int s) { mp_srand(s); };
+    static inline void seedrandom(unsigned int s) { 
+      long int seedVal = static_cast<long int>(s);
+      srand48(seedVal);
+    };
     static inline mp_real random() { return mp_rand(); };
     static inline std::string name() { return "mp_real"; };
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
