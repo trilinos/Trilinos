@@ -158,9 +158,9 @@ int main(int argc, char *argv[])
     // `5,5' refers to the number of pre-smoother and post-smoother
     // applications to a random vector.
  
-    MLPrec->AnalyzeSmoothersDense(5,5);
-    MLPrec->AnalyzeMatrixEigenvaluesDense("A");
-    MLPrec->AnalyzeMatrixEigenvaluesDense("P^{-1}A");
+    //MLPrec->AnalyzeSmoothersDense(5,5);
+    //MLPrec->AnalyzeMatrixEigenvaluesDense("A");
+    //MLPrec->AnalyzeMatrixEigenvaluesDense("P^{-1}A");
     
   }
 
