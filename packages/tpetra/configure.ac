@@ -142,7 +142,7 @@ TAC_ARG_CHECK_MPI
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
 AC_CHECK_HEADERS([string string.h map map.h vector vector.h],,,)
-AC_CHECK_HEADERS([algorithm algo.h numeric algo.h],,,)
+AC_CHECK_HEADERS([algorithm algo.h algorithm.h numeric],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Tpetra requires at least one or the other.]])
@@ -180,8 +180,8 @@ if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "
   AC_MSG_ERROR([[Cannot find vector or vector.h.  Tpetra requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find algorithm or algo.h.  Tpetra requires at least one or the other.]])
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find algorithm, algo.h, or algorithm.h.  Tpetra requires at least one of these.]])
 fi
 
 if test "X$ac_cv_header_numeric" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes"; then

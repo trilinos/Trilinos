@@ -17,6 +17,9 @@
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
 
+/* Define to 1 if you have the <algorithm.h> header file. */
+#undef HAVE_ALGORITHM_H
+
 /* Define to 1 if you have the <algo.h> header file. */
 #undef HAVE_ALGO_H
 

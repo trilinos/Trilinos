@@ -123,8 +123,10 @@
 
 #ifdef HAVE_ALGORITHM
 #include <algorithm>
-#else
+#elif defined(HAVE_ALGO_H)
 #include <algo.h>
+#else
+#include <algorithm.h>
 #endif // ifdef HAVE_ALGORITHM
 
 #ifdef HAVE_NUMERIC
