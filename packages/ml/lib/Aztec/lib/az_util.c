@@ -911,6 +911,7 @@ int aligned_str_mem,aligned_j,aligned_size;
 double *dtmp;
 
   /**************************** execution begins ******************************/
+ *status = AZ_OLD_ADDRESS;
   size = (int) input_size;
   current = head;
 
