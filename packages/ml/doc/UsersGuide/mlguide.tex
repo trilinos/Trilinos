@@ -1357,6 +1357,45 @@ Damping factor in the coarse solver.}
   coarse grid solution (only for {\tt
     Amesos-Superludist, Amesos-MUMPS}).}
 
+%%%
+%%%
+%%%
+
+\subsubsection{Load-balancing Options}
+
+\choicebox{\tt repartition: enable}{Enable/disable repartitioning:  true,false}
+
+\choicebox{\tt repartition: partitioner}{Partitioning package to use: Zoltan,
+ParMETIS}
+
+\choicebox{\tt repartition: node min max ratio}{Specifies ratio of maximum
+nodes on a processor to minimum nodes on a processor.   If actual ratio is
+greater than this value, repartitioning occurs.  Otherwise, nothing is done.
+(positive real value)}
+
+\choicebox{\tt repartition: node min per proc}{Specifies the desired minimum number of
+nodes that should be on a processor once repartitioning is done.}
+
+\choicebox{\tt repartition: edge min max ratio}{(Maxwell-specific option.)  Specifies ratio of maximum
+edges on a processor to minimum nodes on a processor.   If actual ratio is
+greater than this value, repartitioning occurs.  Otherwise, nothing is done.
+(positive real value)}
+
+\choicebox{\tt repartition: edge min per proc}{(Maxwell-specific option.)
+Specifies the desired minimum number of
+edges that should be on a processor once repartitioning is done.}
+
+\choicebox{\tt repartition: Zoltan dimensions}{Dimension of the problem: 2 or
+3.}
+
+\choicebox{\tt repartition: Zoltan node coordinates}{Pointer to array of
+double node coordinates.  The array is one-dimensional, containing $x$-,$y$-, and
+$z$- coordinates, in that order.}
+
+\choicebox{\tt repartition: Zoltan edge coordinates}{(Maxwell-specific option.) Pointer to array of
+double edge coordinates.  The array is one-dimensional, containing $x$-,$y$-, and
+$z$- coordinates, in that order.}
+
 %%% ======================= %%%
 %%% Detection of null space %%%
 %%% ======================= %%%
