@@ -7,10 +7,10 @@
 # ************************************************************************
 #
 #            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#                 Copyright (2001,2002,2003) Sandia Corporation
 #
 
-# Copyright (2001) Sandia Corportation. Under the terms of Contract
+# Copyright (2001,2002,2003) Sandia Corportation. Under the terms of Contract
 # DE-AC04-94AL85000, there is a non-exclusive license for use of this
 # work by or on behalf of the U.S. Government.  Export of this program
 # may require a license from the United States Government.
@@ -45,6 +45,10 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ACLOCAL	= aclocal -I config
 
+#
+#       I believe that by switching to AUX_DIR(../../config) one 
+#       could get rid of these.
+#
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
@@ -53,10 +57,17 @@ EXTRA_DIST = bootstrap \
 	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
 	config/depcomp
 
+#
+#       I believe that by switching to AUX_DIR(../../config) one 
+#       could get rid of these.
+#
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
+#
+#  Again, I hope that AUX_DIR(../../config) eliminates these
+#  config/install-sh config/missing config/mkinstalldirs 
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -69,6 +80,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-SUBDIRS = src example test
+#  #np# - Most packages should have an example and a full suite 
+#  of tests.  At present, new_package only offers src and example.
+# SUBDIRS = src example test 
+SUBDIRS = src example
 
 

@@ -13,37 +13,8 @@
 
 @SET_MAKE@
 
-# @HEADER
-# ************************************************************************
-#
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
-#
-
-# Copyright (2001) Sandia Corportation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in ths data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-#
-# ************************************************************************
-# @HEADER
+#@HEADER
+#@HEADER
 
 SHELL = @SHELL@
 
@@ -69,6 +40,8 @@ pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
 top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
 AUTOCONF = @AUTOCONF@
 AUTOMAKE = @AUTOMAKE@
 AUTOHEADER = @AUTOHEADER@
@@ -85,82 +58,151 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
+CC = @CC@
+CXX = @CXX@
 DEPDIR = @DEPDIR@
-EXEEXT = @EXEEXT@
+F77 = @F77@
+FLIBS = @FLIBS@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 MAINT = @MAINT@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
 VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-ACLOCAL = aclocal -I config
+EXEEXT = .exe
 
-AUTOMAKE_OPTIONS = foreign
+noinst_PROGRAMS = hello_test
+
+hello_test_SOURCES = $(srcdir)/cxx_main.cpp
+
+#Specify locations of include files within Trilinos, but outside New_Package
+# REQUIRED CHANGE - Add packages that new_package is dependent on
+# OPTIONAL CHANGE - Remove epetra if new_package does not need it
+#  
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+
+# REQUIRED CHANGE - Change the nam eof the library
+hello_test_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libnew_package.a 
 
 
-#EXTRA_DIST = bootstrap \
-#	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-#	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
+hello_test_CXXFLAGS = -I$(top_srcdir)/src
 
-#AUX_DIST = config/install-sh config/missing config/mkinstalldirs
+# REQUIRED CHANGE - Change the name of the library
+hello_test_LDADD = -L$(top_builddir)/src -lnew_package \
+	-L$(top_builddir)/../epetra/src -lepetra \
+	$(BLAS_LIBS) $(FLIBS)
 
-#MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
-#	configure config.status config.log \
-#	src/common/config-h.in src/common/stamp-h.in \
-#	$(AUX_DIST) 
 
-#SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF epetraext
-@BUILD_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
-
-@BUILD_AMESOS_TRUE@AMESOS_SUBDIR = amesos
-
-@BUILD_NOX_TRUE@NOX_SUBDIR = nox
-
-@BUILD_KOMPLEX_TRUE@KOMPLEX_SUBDIR = komplex
-
-@BUILD_AZTECOO_TRUE@AZTECOO_SUBDIR = aztecoo
-
-@BUILD_IFPACK_TRUE@IFPACK_SUBDIR = ifpack
-
-@BUILD_TRIUTILS_TRUE@TRIUTILS_SUBDIR = triutils
-
-@BUILD_EPETRA_TRUE@EPETRA_SUBDIR = epetra
-
-@BUILD_TSF_TRUE@TSF_SUBDIR = TSF
-
-#Epetra must be listed first due to aztecoo's dependence on Epetra
-SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) $(TSF_SUBDIR) \
-	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR)
-
-subdir = packages
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
-CONFIG_HEADER = $(top_builddir)/Trilinos_config.h
+#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
+#np# For packages whose examples are located in this directory, rather than
+#np# in a subdirectory of this directory, use the Makefile.am located in
+#np# example1/ rather than this file.
+# SUBDIRS = example1
+SUBDIRS = 
+subdir = example
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/src/New_Package_config.h
 CONFIG_CLEAN_FILES =
-DIST_SOURCES =
+noinst_PROGRAMS = hello_test$(EXEEXT)
+PROGRAMS = $(noinst_PROGRAMS)
+
+am_hello_test_OBJECTS = hello_test-cxx_main.$(OBJEXT)
+hello_test_OBJECTS = $(am_hello_test_OBJECTS)
+hello_test_LDFLAGS =
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/hello_test-cxx_main.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+DIST_SOURCES = $(hello_test_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex nox TSF amesos \
-	epetraext
+DIST_SUBDIRS = $(SUBDIRS)
+SOURCES = $(hello_test_SOURCES)
+
 all: all-recursive
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  packages/Makefile
+	  $(AUTOMAKE) --foreign  example/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+hello_test-cxx_main.$(OBJEXT): $(srcdir)/cxx_main.cpp
+hello_test$(EXEEXT): $(hello_test_OBJECTS) $(hello_test_DEPENDENCIES) 
+	@rm -f hello_test$(EXEEXT)
+	$(CXXLINK) $(hello_test_LDFLAGS) $(hello_test_OBJECTS) $(hello_test_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/hello_test-cxx_main.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+hello_test-cxx_main.o: $(srcdir)/cxx_main.cpp
+@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='hello_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/hello_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/hello_test-cxx_main.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hello_test_CXXFLAGS) $(CXXFLAGS) -c -o hello_test-cxx_main.o `test -f $(srcdir)/cxx_main.cpp || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+
+hello_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='hello_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/hello_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/hello_test-cxx_main.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hello_test_CXXFLAGS) $(CXXFLAGS) -c -o hello_test-cxx_main.obj `cygpath -w $(srcdir)/cxx_main.cpp`
+CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -276,7 +318,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	for subdir in $(DIST_SUBDIRS); do \
+	for subdir in $(SUBDIRS); do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \
@@ -291,7 +333,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile
+all-am: Makefile $(PROGRAMS)
 installdirs: installdirs-recursive
 installdirs-am:
 
@@ -320,11 +362,12 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-tags
 
 dvi: dvi-recursive
 
@@ -350,14 +393,15 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 uninstall-am: uninstall-info-am
 
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) GTAGS all all-am check check-am clean \
-	clean-generic clean-recursive distclean distclean-generic \
+	clean-generic clean-noinstPROGRAMS clean-recursive distclean \
+	distclean-compile distclean-depend distclean-generic \
 	distclean-recursive distclean-tags distdir dvi dvi-am \
 	dvi-recursive info info-am info-recursive install install-am \
 	install-data install-data-am install-data-recursive \
@@ -366,10 +410,10 @@ uninstall-info: uninstall-info-recursive
 	install-recursive install-strip installcheck installcheck-am \
 	installdirs installdirs-am installdirs-recursive \
 	maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-recursive tags tags-recursive uninstall \
-	uninstall-am uninstall-info-am uninstall-info-recursive \
-	uninstall-recursive
+	maintainer-clean-recursive mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-recursive tags tags-recursive \
+	uninstall uninstall-am uninstall-info-am \
+	uninstall-info-recursive uninstall-recursive
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -6,6 +6,14 @@ Currently, bootstrapping Trilinos requires Autoconf version 2.53 and Automake
 To check the versions on your machine, type 'autoconf --version'
 ('automake --version').
 
+To check the version of Autoconf used most recently, check the top lines 
+of configure.  (If this does not match the version listed above, either 
+someone used the wrong version, or this file is out-of-date.)
+
+To check the version of Automake used most recently, check the top lines
+of Makefile.in.  (If this does not match the version listed above, either 
+someone used the wrong version, or this file is out-of-date.)
+
 To upgrade, a user must have root access.
 
 Upgrading Autoconf

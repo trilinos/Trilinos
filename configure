@@ -270,6 +270,8 @@ ac_subdirs_all="$ac_subdirs_all packages/komplex"
 ac_subdirs_all="$ac_subdirs_all packages/nox"
 ac_subdirs_all="$ac_subdirs_all packages/TSF"
 ac_subdirs_all="$ac_subdirs_all packages/amesos"
+ac_subdirs_all="$ac_subdirs_all packages/epetraext"
+ac_subdirs_all="$ac_subdirs_all packages/new_package"
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -797,6 +799,7 @@ Optional Features:
   --enable-ifpack         Build ifpack (default is yes)
   --enable-oldifpack      Build ifpack and old ifpack (default is no)
   --enable-triutils       Build triutils (default is yes)
+  --enable-epetraext      Build epetraext (default is no)
   --enable-epetra         Build epetra (default is yes)
 
 Report bugs to <mheroux@cs.sandia.gov>.
@@ -1623,6 +1626,7 @@ else
   BUILD_AMESOS_TRUE='#'
   BUILD_AMESOS_FALSE=
 fi
+
 # After building Nox from the Trilinos level is stabilized, the default should be
 # changed to yes.
 
@@ -1864,6 +1868,54 @@ else
   BUILD_TRIUTILS_FALSE=
 fi
 
+# After building EpetraExt from the Trilinos level is stabilized, the
+#default could be changed to yes.
+
+# Check whether --enable-epetraext or --disable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval="$enable_epetraext"
+  ac_cv_use_epetraext=$enableval
+else
+  ac_cv_use_epetraext=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use epetraext" >&5
+echo $ECHO_N "checking whether to use epetraext... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRAEXT
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  BUILD_EPETRAEXT_TRUE=
+  BUILD_EPETRAEXT_FALSE='#'
+else
+  BUILD_EPETRAEXT_TRUE='#'
+  BUILD_EPETRAEXT_FALSE=
+fi
+
+## #np# - Copy the next four lines,change the name and uncomment them
+## # After building New_Package from the Trilinos level is stabilized, the
+## #default could be changed to yes.
+## TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, no)
+## AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
+
+
+
+## #np# - If your package requires epetra - you should add
+## it to the following list
+##	test "X$ac_cv_use_new_package" != "Xyes" ||
 
 # Check whether --enable-epetra or --disable-epetra was given.
 if test "${enable_epetra+set}" = set; then
@@ -1898,7 +1950,8 @@ if test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
-	test "X$ac_cv_use_komplex" != "Xno"; then
+	test "X$ac_cv_use_komplex" != "Xno" ||
+        test "X$ac_cv_use_epetraext" != "Xyes"; then
   BUILD_EPETRA_TRUE=
   BUILD_EPETRA_FALSE='#'
 else
@@ -1984,6 +2037,22 @@ if test "X$ac_cv_use_amesos" != "Xno"; then
 
 
 subdirs="$subdirs packages/amesos"
+
+fi
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+
+
+subdirs="$subdirs packages/epetraext"
+
+fi
+
+# REQUIRED CHANGE
+# Copy the next three lines change the name
+if test "X$ac_cv_use_new_package" != "Xno"; then
+
+
+subdirs="$subdirs packages/new_package"
 
 fi
 
@@ -2585,6 +2654,8 @@ s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
 s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
 s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t
 s,@BUILD_TRIUTILS_FALSE@,$BUILD_TRIUTILS_FALSE,;t t
+s,@BUILD_EPETRAEXT_TRUE@,$BUILD_EPETRAEXT_TRUE,;t t
+s,@BUILD_EPETRAEXT_FALSE@,$BUILD_EPETRAEXT_FALSE,;t t
 s,@BUILD_EPETRA_TRUE@,$BUILD_EPETRA_TRUE,;t t
 s,@BUILD_EPETRA_FALSE@,$BUILD_EPETRA_FALSE,;t t
 s,@subdirs@,$subdirs,;t t
@@ -3176,3 +3247,4 @@ echo "$as_me: error: $ac_sub_configure failed for $ac_dir" >&2;}
     cd $ac_popdir
   done
 fi
+

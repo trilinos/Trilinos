@@ -1,3 +1,8 @@
+#
+#  Refer to packages/new_package/README for suggestions on 
+#  adding a new package.  
+#
+
 # Process this file with autoconf to produce a configure script.
 AC_INIT(Trilinos, 2.1, mheroux@cs.sandia.gov)
 AC_CONFIG_SRCDIR([packages/epetra/src/Epetra_Object.h])
@@ -73,6 +78,17 @@ AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, no)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
+## #np# - Copy the next four lines,change the name and uncomment them
+## # After building New_Package from the Trilinos level is stabilized, the 
+## #default could be changed to yes.
+## TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, no)
+## AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
+
+
+
+## #np# - If your package requires epetra - you should add
+## it to the following list
+##	test "X$ac_cv_use_new_package" != "Xyes" || 
 TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
@@ -140,6 +156,12 @@ fi
 
 if test "X$ac_cv_use_epetraext" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetraext])
+fi
+
+# REQUIRED CHANGE 
+# Copy the next three lines change the name
+if test "X$ac_cv_use_new_package" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/new_package])
 fi
 
 AC_CONFIG_FILES([

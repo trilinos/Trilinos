@@ -9,6 +9,9 @@
 /* Define if want to build epetra */
 #undef HAVE_EPETRA
 
+/* Define if want to build epetraext */
+#undef HAVE_EPETRAEXT
+
 /* Define if want to build ifpack */
 #undef HAVE_IFPACK
 

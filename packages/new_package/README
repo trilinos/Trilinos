@@ -12,10 +12,39 @@ Useful Terminology:
 			located in Trilinos/packages/np.  
 	autotool'ed
 
+BUGS
+====
+
+make distclean may not work
+the test directory has not been autotool'd
+
+
+CONTENTS of new_package
+=======================
+
+new_package contains both static and dynamic examples of what should
+be included in a new package.  The src and example directories are
+dynamic examples - they can be bootstrapped, configured, compilted and
+run.  And, they demonstrate the use of two switches: 1) --enable-mpi,
+a switch which most packages should support and 2)
+--enable-newp_swahili, a switch used only with new_pacakge.  The test
+directory is a static example.  It demonstrates what a complete
+package should include, but has not yet been autotool'd.  
+
 The Trilinos/packages/new_package package was created as a tool for developers
 wishing to utilize the Autotools configure/build process for a new or existing
 package.  Before beginning this process, approval must be obtained from the
 Trilinos Project Leader.
+
+GETTING STARTED
+===============
+
+To build new_package, uncomment the lines below #np# in
+Trilinos/configure.ac and Trilinos/packages/Makefile.am and follow the 
+instructions in section 2 below.
+
+ADDING A NEW PACKAGE
+====================
 
 There are five general steps that need to be followed to add a new package to
 the Trilinos Autotools configure/build process.  Note that these steps do not
@@ -32,36 +61,84 @@ required to add a packages to the Trilinos Autotools configure/build process
 are located within the new_package directory structure.  Most of these files
 will need to be customized for each new package.  See the individual example 
 files for more details.  Instructions for customizing are listed behind 
-'#np#'.
-(Details for all files not yet available.)  
+'#np#' in the following files:
+     Trilinos/configure.ac
+     Trilinos/packages/Makefile.am
+     Trilinos/packages/np/Makefile.am
+     Trilinos/packages/np/configure.ac  
+     Trilinos/packages/np/src/Makefile.am
+     Trilinos/packages/np/example/Makefile.am
+     Trilinos/packages/np/test/Makfile.am
+     Trilinos/packages/np/test/scripts/Makfile.am
+     Trilinos/packages/np/test/scripts/daily/Makfile.am
 
 2. Create generated Autoconf and Automake files.
 
-Before starting this phase, please see Trilinos/config/AutotoolsVersionInfo
-and obtain the correct version of both Autoconf and Automake.
+Before starting this phase, please see Trilinos/config/AutotoolsVersionInfo,
+obtain the correct version of both Autoconf and Automake.
 
-After customizing the necessary Autoconf and Automake files, cd to the top 
-level of the new package and type 'bootstrap'.  This command will generate
-files necessary for the configure and build processes.  Each of these files
-MUST be added to the repository with a 'cvs add'.  The bootstrap should
-complete without any errors, however, at this time it is not uncommon to have
-the following warnings:
+If you change Trilinos/configure.ac or Trilinos/packages/Makefile.am,
+run bootstrap in the Trilinos directory.  If you change
+Trilinos/packages/np/Makefile.am, Trilinos/packages/np/configure.ac,
+Trilinos/packages/np/src/Makefile.am or 
+Trilinos/packages/np/example/Makefile.am type bootstrap in the 
+Trilinos/packages/np directory.
+
+The bootstrap should complete without any errors, however, at this
+time it is not uncommon to have the following warnings:
 
 configure.ac:63: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
 configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
 
 These warnings will be fixed in the future.
 
-3. Connect the new package to the Trilinos Autotools configure/build process.
-   (Establish build default=no)
+3.  Test/debug your autoconf/automake files
 
-This step involves...
+After you have run bootstrap, run configure in a clean BUILD directory.
+Wehnever I tried to take shortcuts, it ended up costing me time.  
 
-4. Perform tests and request new Mailman lists.
+Do not run configure in the source directory.  If you have done so,
+you will have to claen up the source directory before you can run
+configure in a separate build directoy.  If make distclean doed not
+work (at present it does not work consistently) you may have to start
+from scratch, with a cvs checkout and adding your new source files. 
+
+4.  CVS all files.  
+
+The bootstrap command will generate files necessary for the configure
+and build processes.  Each of these files MUST be added to the
+repository with a 'cvs add'.
+
+For new_package, we added the following non-generated files to the 
+CVS repository:
+   cvs add example/Makefile.am
+   cvs add bootstrap configure.ac Makefile.am
+   cvs add src/Makefile.am
+
+For new_package, we added the following files in the config directory:
+   cvs add ac_cxx_bool.m4 ac_cxx_have_std.m4 ac_cxx_have_stl.m4
+   cvs add ac_cxx_mutable.m4 ac_cxx_namespaces.m4 ac_cxx_new_for_scoping.m4
+   cvs add ac_cxx_reinterpret_cast.m4 ac_cxx_std_ios_base_fmtflags.m4
+   cvs add ac_cxx_std_sprintf.m4 ac_prompt_user.m4 ac_prompt_user_no_define.m4
+   cvs add acx_blas.m4 acx_check_dos_filesys.m4 acx_lapack.m4
+   cvs add acx_pthread.m4 tac_arg_check_mpi.m4 tac_arg_config_mpi.m4
+   cvs add tac_arg_enable_compiler_options.m4 tac_arg_enable_feature.m4
+   cvs add tac_arg_enable_option.m4 tac_arg_with_ar.m4 tac_arg_with_blaslib.m4
+   cvs add tac_arg_with_compiler.m4 tac_arg_with_flags.m4 
+   cvs add tac_arg_with_incdirs.m4 tac_arg_with_lapacklib.m4
+   cvs add tac_arg_with_libdirs.m4 tac_arg_with_package.m4
+
+For new_package, we added the following automake and autoconf generated
+files to the CVS repository
+   cvs add example/Makefile.in 
+   cvs add src/Makefile.in
+   cvs add Makefile.in configure aclocal.m4
+
+5. Perform tests and request new Mailman lists.
 
 
 
-5. Change build default to 'yes'
+6. Change build default to 'yes'
 
 This step requires the separate approval of the Trilinos Project Leader!
 
@@ -69,3 +146,26 @@ Not all Trilinos packages should be configured and built by default.  Consult
 with the Trilinos Project Leader for more information.
 
 If approval to build by default is granted, ...
+
+
+IMPROVING PORTABILITY
+=====================
+
+Make sure that New_Package_config.h is included in all your source
+files, directly or indirectly - unless you don't need
+New_Package_config.h (as you might not if you don't have any package
+specific options, like newp_swahili).  Include New_Package_config.h
+before Epetra_ConfigDefs.h, or PACKAGE will get redefined. Some
+compilers will object to this.
+
+You should also include Epetra_ConfigDefs.h in all your source files.
+(This will happen automatically if you include just about any Epetra.*.h 
+file).  
+
+
+Avoid including <stdio>, <assert> or <stdio.h> or <assert.h>.  These
+are handled nicely in Epetra_ConfigDefs.h.  
+
+Don't use PACKAGE, PACKAGE_TARNAME, PACKAGE_VERSION, VERSION,
+PACKAGE_NAME, PACKAGE_STRING or PACKAGE_BUGREPORT unless you know what
+you are doing.  Epetra_config.h will redefine these.

@@ -73,6 +73,11 @@ if BUILD_AMESOS
 AMESOS_SUBDIR = amesos
 endif
 
+## #np# - Copy the next three lines, uncomment them and change the name
+## if BUILD_NEW_PACKAGE
+## NEW_PACKAGE_SUBDIR = new_package
+## endif
+
 if BUILD_NOX
 NOX_SUBDIR = nox
 endif
@@ -102,7 +107,10 @@ TSF_SUBDIR = TSF
 endif
 
 #Epetra must be listed first due to aztecoo's dependence on Epetra
+## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
+## above, to this list
 SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) $(TSF_SUBDIR) \
-       	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR)
+	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR)
+
 

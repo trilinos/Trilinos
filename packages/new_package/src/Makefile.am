@@ -5,75 +5,49 @@
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside Epetra. The first is
+# might someday be needed by some other code outside New_Package. The first is
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+#
+# There is, at present, no distinction between most of the categories, 
+# other than those which start with EXTRA_.  All categories which do not
+# start with EXTRA_ are included in all builds.  Categories which start
+# with EXTRA_ are included in some builds (typically controlled by 
+# --with-xyz or --without-xyz)
+#
 CORE_H = \
-	$(srcdir)/Epetra_BLAS.h \
-	$(srcdir)/Epetra_LAPACK.h \
-	$(srcdir)/Epetra_BLAS_wrappers.h \
-	$(srcdir)/Epetra_LAPACK_wrappers.h \
-	$(srcdir)/Epetra_Comm.h \
-	$(srcdir)/Epetra_Object.h \
-	$(srcdir)/Epetra_ConfigDefs.h
-
+	$(srcdir)/Newp_Hello.h 
 
 CORE = \
-	$(srcdir)/Epetra_BLAS.cpp \
-	$(srcdir)/Epetra_LAPACK.cpp \
-	$(srcdir)/Epetra_Object.cpp
+	$(srcdir)/Newp_Hello.cpp
 
-UTIL_H = \
-	$(srcdir)/Epetra_Flops.h \
-	$(srcdir)/Epetra_Time.h \
-	$(srcdir)/Epetra_Util.h \
-	$(srcdir)/Epetra_DataAccess.h \
-	$(srcdir)/Epetra_HashTable.h \
-	$(srcdir)/Epetra_RowMatrixTransposer.h
+UTIL_H = 
 
-UTIL = \
-	$(srcdir)/Epetra_Flops.cpp \
-	$(srcdir)/Epetra_Time.cpp \
-	$(srcdir)/Epetra_Util.cpp \
-	$(srcdir)/Epetra_RowMatrixTransposer.cpp
+UTIL = 
 
-ENUM_H = \
-	$(srcdir)/Epetra_CombineMode.h \
-	$(srcdir)/Epetra_DataAccess.h
+ENUM_H = 
 
-UNIPROC_H = \
-	$(srcdir)/Epetra_SerialDenseMatrix.h  \
-	$(srcdir)/Epetra_SerialSpdDenseSolver.h \
-	$(srcdir)/Epetra_SerialDenseSolver.h   \
-	$(srcdir)/Epetra_SerialSymDenseMatrix.h \
-	$(srcdir)/Epetra_SerialDenseVector.h
+UNIPROC_H = 
 
-UNIPROC = \
-	$(srcdir)/Epetra_SerialDenseMatrix.cpp  \
-	$(srcdir)/Epetra_SerialSpdDenseSolver.cpp \
-	$(srcdir)/Epetra_SerialDenseSolver.cpp   \
-	$(srcdir)/Epetra_SerialSymDenseMatrix.cpp \
-	$(srcdir)/Epetra_SerialDenseVector.cpp
+UNIPROC = 
 
-SERIAL_H = \
-	$(srcdir)/Epetra_SerialComm.h  \
-	$(srcdir)/Epetra_SerialDistributor.h
+SERIAL_H = 
 
-SERIAL = \
-	$(srcdir)/Epetra_SerialComm.cpp  \
-	$(srcdir)/Epetra_SerialDistributor.cpp
+SERIAL = 
 
-EXTRA_MPI_H = \
-	$(srcdir)/Epetra_MpiComm.h  \
-	$(srcdir)/Epetra_MpiDistributor.h 
+#
+#  Files which are included in select builds are typically have
+#  names that start with EXTRA
+#
+#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
+#  set up by TAC_ARC_CONFIG_MPI 
+#
+EXTRA_MPI_H =
 
-EXTRA_MPI = \
-	$(srcdir)/Epetra_MpiComm.cpp  \
-	$(srcdir)/Epetra_MpiDistributor.cpp
+EXTRA_MPI = 
 
-if HAVE_MPI
-
+if HAVE_MPI 
 MPI_H = \
 	$(EXTRA_MPI_H)
 MPI = \
@@ -86,103 +60,58 @@ MPI =
 
 endif
 
-EXTRA_MPISMP_H = \
-	$(srcdir)/Epetra_MpiComm.h \
-	$(srcdir)/Epetra_MpiSmpComm.h
+EXTRA_NEWP_SWAHILI_H = \
+	$(srcdir)/Newp_Jambo.h 
 
-EXTRA_MPISMP = \
-	$(srcdir)/Epetra_MpiComm.cpp \
-	$(srcdir)/Epetra_MpiSmpComm.cpp
+EXTRA_NEWP_SWAHILI = \
+	$(srcdir)/Newp_Jambo.cpp
 
-if HAVE_THREADS
+if HAVE_NEWP_SWAHILI
 
-MPISMP_H = \
-	$(EXTRA_MPISMP_H)
-MPISMP = \
-	$(EXTRA_MPISMP)
+NEWP_SWAHILI_H = \
+	$(EXTRA_NEWP_SWAHILI_H)
+NEWP_SWAHILI = \
+	$(EXTRA_NEWP_SWAHILI)
 
 else
 
-MPISMP_H =
-MPISMP =
+NEWP_SWAHILI_H =
+NEWP_SWAHILI =
 
 endif
 
 
 
-USERBASE_H = \
-	$(srcdir)/Epetra_Operator.h \
-	$(srcdir)/Epetra_RowMatrix.h
+
+USERBASE_H = 
 
 
-LANG_WRAPS_H = \
-	$(srcdir)/Epetra_C_wrappers.h \
-	$(srcdir)/Epetra_Fortran_wrappers.h
+LANG_WRAPS_H = 
 
-LANG_WRAPS = \
-	$(srcdir)/Epetra_C_wrappers.cpp \
-	$(srcdir)/Epetra_Fortran_wrappers.cpp
+LANG_WRAPS = 
 
-DIST_H = \
-	$(srcdir)/Epetra_BasicDirectory.h \
-	$(srcdir)/Epetra_BlockMap.h \
-	$(srcdir)/Epetra_CompObject.h \
-	$(srcdir)/Epetra_Directory.h \
-	$(srcdir)/Epetra_DistObject.h \
-	$(srcdir)/Epetra_Distributor.h \
-	$(srcdir)/Epetra_Export.h \
-	$(srcdir)/Epetra_Import.h \
-	$(srcdir)/Epetra_LocalMap.h \
-	$(srcdir)/Epetra_Map.h \
-	$(srcdir)/Epetra_MapColoring.h
+DIST_H = 
 
-DIST = \
-	$(srcdir)/Epetra_BasicDirectory.cpp \
-	$(srcdir)/Epetra_BlockMap.cpp \
-	$(srcdir)/Epetra_CompObject.cpp \
-	$(srcdir)/Epetra_DistObject.cpp \
-	$(srcdir)/Epetra_Export.cpp \
-	$(srcdir)/Epetra_Import.cpp \
-	$(srcdir)/Epetra_LocalMap.cpp \
-	$(srcdir)/Epetra_Map.cpp \
-	$(srcdir)/Epetra_MapColoring.cpp
+DIST = 
+
+COMP_H =
+
+COMP = 
 
 
-COMP_H = \
-	$(srcdir)/Epetra_CompObject.h \
-	$(srcdir)/Epetra_CrsGraph.h \
-	$(srcdir)/Epetra_CrsMatrix.h \
-	$(srcdir)/Epetra_LinearProblem.h \
-	$(srcdir)/Epetra_MultiVector.h \
-	$(srcdir)/Epetra_VbrMatrix.h \
-	$(srcdir)/Epetra_Vector.h \
-	$(srcdir)/Epetra_CrsSingletonFilter.h \
-	$(srcdir)/Epetra_FECrsMatrix.h \
-	$(srcdir)/Epetra_FEVector.h \
-	$(srcdir)/Epetra_IntVector.h
-
-COMP = \
-	$(srcdir)/Epetra_CompObject.cpp \
-	$(srcdir)/Epetra_CrsGraph.cpp \
-	$(srcdir)/Epetra_CrsMatrix.cpp \
-	$(srcdir)/Epetra_LinearProblem.cpp \
-	$(srcdir)/Epetra_MultiVector.cpp \
-	$(srcdir)/Epetra_VbrMatrix.cpp \
-	$(srcdir)/Epetra_Vector.cpp \
-	$(srcdir)/Epetra_CrsSingletonFilter.cpp \
-	$(srcdir)/Epetra_FECrsMatrix.cpp \
-	$(srcdir)/Epetra_FEVector.cpp \
-	$(srcdir)/Epetra_IntVector.cpp
-
-
+#Specify locations of include files within Trilinos, but outside New_Package
+# #np# - Add packages that new_package is dependent on
+#        Remove epetra if new_package does not need it
+#  
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 # ------------------------------------------------------------------------
-# Epetra library specifications
+# New_Package library specifications
 # ------------------------------------------------------------------------
 
-EPETRA_LIB = libepetra.a
+NEW_PACKAGE_LIB = libnew_package.a
 
 
-EPETRA_H = \
+NEW_PACKAGE_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
 	$(ENUM_H) \
@@ -192,9 +121,9 @@ EPETRA_H = \
 	$(DIST_H) \
 	$(COMP_H) \
 	$(MPI_H) \
-	$(MPISMP_H)
+	$(NEWP_SWAHILI_H)
 
-libepetra_a_SOURCES = \
+libnew_package_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
 	$(UNIPROC) \
@@ -202,13 +131,13 @@ libepetra_a_SOURCES = \
 	$(DIST) \
 	$(COMP) \
 	$(MPI) \
-	$(MPISMP)
+	$(NEWP_SWAHILI)
 
-EXTRA_libepetra_a_SOURCES = \
+EXTRA_libnew_package_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) \
-	$(EXTRA_MPISMP) \
-	$(EXTRA_MPISMP_H)
+	$(EXTRA_NEWP_SWAHILI) \
+	$(EXTRA_NEWP_SWAHILI_H)
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
@@ -222,10 +151,10 @@ EXTRA_libepetra_a_SOURCES = \
 
 if USE_ALTERNATE_AR
 
-libepetra_a_AR = $(ALTERNATE_AR)
+libnew_package_a_AR = $(ALTERNATE_AR)
 else
 
-libepetra_a_AR = $(AR) cru
+libnew_package_a_AR = $(AR) cru
 
 endif
 
@@ -234,31 +163,31 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libepetra_a_LIBADD = $(XTRALDADD)
+libnew_package_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
-lib_LIBRARIES = $(EPETRA_LIB)
+lib_LIBRARIES = $(NEW_PACKAGE_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(EPETRA_H) 
+pkginclude_HEADERS = $(NEW_PACKAGE_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(pkgexecincludedir)
 # ------------------------------------------------------------------------
 
-# SPECIAL NOTE: Epetra_config.h is a machine-dependent file, so we need
+# SPECIAL NOTE: New_Package_config.h is a machine-dependent file, so we need
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/epetra
-nodist_pkgexecinclude_HEADERS = Epetra_config.h
+pkgexecincludedir = $(exec_prefix)/include/new_package
+nodist_pkgexecinclude_HEADERS = New_Package_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

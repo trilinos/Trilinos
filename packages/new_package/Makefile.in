@@ -13,14 +13,19 @@
 
 @SET_MAKE@
 
+#np# Typically the only line that needs to be edited in this file is the last 
+#np# line.  Set 'SUBDIRS= (list all subdirectories that are autotool'ed here)'
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
+
 # @HEADER
 # ************************************************************************
 #
 #            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#                 Copyright (2001,2002,2003) Sandia Corporation
 #
 
-# Copyright (2001) Sandia Corportation. Under the terms of Contract
+# Copyright (2001,2002,2003) Sandia Corportation. Under the terms of Contract
 # DE-AC04-94AL85000, there is a non-exclusive license for use of this
 # work by or on behalf of the U.S. Government.  Export of this program
 # may require a license from the United States Government.
@@ -68,7 +73,7 @@ oldincludedir = /usr/include
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ..
+top_builddir = .
 AUTOCONF = @AUTOCONF@
 AUTOMAKE = @AUTOMAKE@
 AUTOHEADER = @AUTOHEADER@
@@ -85,15 +90,26 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
+CC = @CC@
+CXX = @CXX@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
+F77 = @F77@
+FLIBS = @FLIBS@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 MAINT = @MAINT@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
 VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
@@ -102,45 +118,39 @@ ACLOCAL = aclocal -I config
 
 AUTOMAKE_OPTIONS = foreign
 
+#
+#       I believe that by switching to AUX_DIR(../../config) one 
+#       could get rid of these.
+#
+EXTRA_DIST = bootstrap \
+	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
+	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
+	config/depcomp
 
-#EXTRA_DIST = bootstrap \
-#	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-#	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
 
-#AUX_DIST = config/install-sh config/missing config/mkinstalldirs
+#
+#       I believe that by switching to AUX_DIR(../../config) one 
+#       could get rid of these.
+#
+AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 
-#MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
-#	configure config.status config.log \
-#	src/common/config-h.in src/common/stamp-h.in \
-#	$(AUX_DIST) 
+#
+#  Again, I hope that AUX_DIR(../../config) eliminates these
+#  config/install-sh config/missing config/mkinstalldirs 
+MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
+	configure config.status config.log \
+	src/common/config-h.in src/common/stamp-h.in \
+	$(AUX_DIST) 
 
-#SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF epetraext
-@BUILD_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
 
-@BUILD_AMESOS_TRUE@AMESOS_SUBDIR = amesos
-
-@BUILD_NOX_TRUE@NOX_SUBDIR = nox
-
-@BUILD_KOMPLEX_TRUE@KOMPLEX_SUBDIR = komplex
-
-@BUILD_AZTECOO_TRUE@AZTECOO_SUBDIR = aztecoo
-
-@BUILD_IFPACK_TRUE@IFPACK_SUBDIR = ifpack
-
-@BUILD_TRIUTILS_TRUE@TRIUTILS_SUBDIR = triutils
-
-@BUILD_EPETRA_TRUE@EPETRA_SUBDIR = epetra
-
-@BUILD_TSF_TRUE@TSF_SUBDIR = TSF
-
-#Epetra must be listed first due to aztecoo's dependence on Epetra
-SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) $(TSF_SUBDIR) \
-	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR)
-
-subdir = packages
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
-CONFIG_HEADER = $(top_builddir)/Trilinos_config.h
+#  #np# - Most packages should have an example and a full suite 
+#  of tests.  At present, new_package only offers src and example.
+# SUBDIRS = src example test 
+SUBDIRS = src example
+subdir = .
+ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/src/New_Package_config.h
 CONFIG_CLEAN_FILES =
 DIST_SOURCES =
 
@@ -148,19 +158,29 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex nox TSF amesos \
-	epetraext
+DIST_COMMON = README Makefile.am Makefile.in aclocal.m4 \
+	config/config.guess config/config.sub config/depcomp \
+	config/install-sh config/missing config/mkinstalldirs configure \
+	configure.ac
+DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 
 .SUFFIXES:
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  packages/Makefile
+	  $(AUTOMAKE) --foreign  Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
-	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+	  CONFIG_FILES=$@ $(SHELL) ./config.status
+
+$(top_builddir)/config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
+	$(SHELL) ./config.status --recheck
+$(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+	cd $(srcdir) && $(AUTOCONF)
+
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ configure.ac 
+	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -257,10 +277,16 @@ distclean-tags:
 
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
-top_distdir = ..
-distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+top_distdir = .
+# Avoid unsightly `./'.
+distdir = $(PACKAGE)-$(VERSION)
+
+GZIP_ENV = --best
 
 distdir: $(DISTFILES)
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	mkdir $(distdir)
+	$(mkinstalldirs) $(distdir)/config
 	@for file in $(DISTFILES); do \
 	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
@@ -276,7 +302,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	for subdir in $(DIST_SUBDIRS); do \
+	for subdir in $(SUBDIRS); do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \
@@ -289,6 +315,46 @@ distdir: $(DISTFILES)
 	      || exit 1; \
 	  fi; \
 	done
+	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
+	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
+	  ! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
+	|| chmod -R a+r $(distdir)
+dist: distdir
+	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
+# This target untars the dist file and tries a VPATH configuration.  Then
+# it guarantees that the distribution is self-contained by making another
+# tarfile.
+distcheck: dist
+	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf -
+	chmod -R a-w $(distdir); chmod a+w $(distdir)
+	mkdir $(distdir)/=build
+	mkdir $(distdir)/=inst
+	chmod a-w $(distdir)
+	dc_install_base=`CDPATH=: && cd $(distdir)/=inst && pwd` \
+	  && cd $(distdir)/=build \
+	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
+	  && $(MAKE) $(AM_MAKEFLAGS) \
+	  && $(MAKE) $(AM_MAKEFLAGS) dvi \
+	  && $(MAKE) $(AM_MAKEFLAGS) check \
+	  && $(MAKE) $(AM_MAKEFLAGS) install \
+	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
+	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
+	  && (test `find $$dc_install_base -type f -print | wc -l` -le 1 \
+	     || (echo "Error: files left after uninstall" 1>&2; \
+	         exit 1) ) \
+	  && $(MAKE) $(AM_MAKEFLAGS) dist \
+	  && $(MAKE) $(AM_MAKEFLAGS) distclean \
+	  && rm -f $(distdir).tar.gz \
+	  && (test `find . -type f -print | wc -l` -eq 0 \
+	     || (echo "Error: files left after distclean" 1>&2; \
+	         exit 1) )
+	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+	@echo "$(distdir).tar.gz is ready for distribution" | \
+	  sed 'h;s/./=/g;p;x;p;x'
 check-am: all-am
 check: check-recursive
 all-am: Makefile
@@ -318,12 +384,16 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-recursive
 
 clean-am: clean-generic mostlyclean-am
 
+dist-all: distdir
+	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 distclean: distclean-recursive
-
+	-rm -f config.status config.cache config.log
 distclean-am: clean-am distclean-generic distclean-tags
 
 dvi: dvi-recursive
@@ -357,10 +427,10 @@ uninstall-am: uninstall-info-am
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) GTAGS all all-am check check-am clean \
-	clean-generic clean-recursive distclean distclean-generic \
-	distclean-recursive distclean-tags distdir dvi dvi-am \
-	dvi-recursive info info-am info-recursive install install-am \
-	install-data install-data-am install-data-recursive \
+	clean-generic clean-recursive dist dist-all distcheck distclean \
+	distclean-generic distclean-recursive distclean-tags distdir \
+	dvi dvi-am dvi-recursive info info-am info-recursive install \
+	install-am install-data install-data-am install-data-recursive \
 	install-exec install-exec-am install-exec-recursive \
 	install-info install-info-am install-info-recursive install-man \
 	install-recursive install-strip installcheck installcheck-am \
