@@ -182,10 +182,10 @@ class ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
   /*! Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
     \param PartialMaxs In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial maxs computed locally;
+					 using these Partial Maxs, the max across all processors will be computed.
     \param GlobalMaxs Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of maxs computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -196,23 +196,23 @@ class ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
   /*!Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
     \param PartialMaxs In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial maxs computed locally;
+					 using these Partial Maxs, the max across all processors will be computed.
     \param GlobalMaxs Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of maxs computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
   int MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const;
 
   //! ZoltanMpiComm Global Min function.
-  /*! Take list of input values from all processors in the communicator, computes the max and returns the
-    max to all processors.
-    \param PartialMins In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
-    \param GlobalMins Out
-           On exit, contains the list of values summed across all processors.
+  /*! Take list of input values from all processors in the communicator, computes the min and returns the
+    min to all processors.
+   \param PartialMins In
+           On entry, contains the list of values, usually partial mins computed locally;
+					 using these Partial Mins, the min across all processors will be computed.
+   \param GlobalMins Out
+           On exit, contains the list of mins computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -220,13 +220,13 @@ class ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
 
 
   //! ZoltanMpiComm Global Min function.
-  /*!Take list of input values from all processors in the communicator, computes the max and returns the
-    max to all processors.
+  /*!Take list of input values from all processors in the communicator, computes the min and returns the
+    min to all processors.
     \param PartialMins In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial mins computed locally;
+					 using these Partial Mins, the min across all processors will be computed.
     \param GlobalMins Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of mins computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -238,7 +238,7 @@ class ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
   /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
     to all processors such that processor i contains the sum of values from processor 0 up to and including
     processor i.
-    \param MyValss In
+    \param MyVals In
            On entry, contains the list of values to be summed across all processors.
     \param ScanSums Out
            On exit, contains the list of values summed across processors 0 through i.
@@ -252,7 +252,7 @@ class ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
   /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
     to all processors such that processor i contains the sum of values from processor 0 up to and including
     processor i.
-    \param MyValss In
+    \param MyVals In
            On entry, contains the list of values to be summed across all processors.
     \param ScanSums Out
            On exit, contains the list of values summed across processors 0 through i.
