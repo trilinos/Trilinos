@@ -1,0 +1,13 @@
+ParaSails installation
+
+0. Look at the manual: manual.ps
+1. Modify makefile for your local environment.  MPI and LAPACK/BLAS or ESSL 
+   libraries are required.
+2. Type "make"
+3. Type "make driver"
+4. Modify testscript for running parallel programs in your local environment.
+5. Run the testscript.  The testscript compares the computations with 
+   precomputed approximate inverses.  There may be minor differences
+   depending on the arithmetic of your machine.
+
+Send questions, comments, and support requests to Edmond Chow, echow@llnl.gov
