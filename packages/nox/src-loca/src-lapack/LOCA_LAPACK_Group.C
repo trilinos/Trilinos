@@ -131,6 +131,8 @@ LOCA::LAPACK::Group::computeTangent(NOX::Parameter::List& params,
 
   tangentVec.scale(-1.0);
 
+  isValidTangent = true;
+
   delete dfdpVec;
 
   return res;
