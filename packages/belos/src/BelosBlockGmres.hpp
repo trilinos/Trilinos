@@ -24,25 +24,69 @@
 #include "Epetra_LAPACK.h"
 #include "BelosConfigDefs.hpp"
 
+/*!	\class Belos::BlockGmres
+
+	\brief This class implements the Restarted Block GMRES algorithm
+	for solving real nonsymmetric linear systems of equations AX = B,
+	where B is a matrix containing one or more right-hand sides, and 
+	X is the matrix of corresponding solutions.
+
+	\author Teri Barth
+*/
+
 namespace Belos {
-// 
-// BlockGmres base class
-//
+
 template <class TYPE>
 class BlockGmres { 
 public:
+	//@{ \name Constructor/Destructor.
+	//! %Belos::BlockGmres constructor.
 	BlockGmres(AnasaziMatrix<TYPE> & mat, AnasaziPrecondition<TYPE> &precond,
 		AnasaziMultiVec<TYPE>& rhs, 
 		const int numrhs, const TYPE tol=1.0e-6, const int maxits=25, 
 		const int block=1, bool vb = false);
+
+	//! %Belos::BlockGmres destructor.
 	virtual ~BlockGmres();
-	void GetSolutions(AnasaziMultiVec<TYPE>& soln);
-	void SetInitGuess(AnasaziMultiVec<TYPE>& iguess);
-	void SetRestart(const int);
-	void SetDebugLevel(const int);
+	//@}
+
+	//@{ \name Solver application method.
+
+	/*! \brief This method uses the iterative method to compute approximate
+	solutions to the original problem.  This method can return unconverged if the
+	maximum number of iterations is reached, or numerical breakdown is observed.
+	*/
 	void Solve(bool);
+	//@}
+
+	//@{ \name Solution return methods.
+
+	//! This method puts the current solutions in %soln.
+	void GetSolutions(AnasaziMultiVec<TYPE>& soln);
+	
+	//! This method computes the true residuals for the current solutions. 
 	void TrueResiduals(bool);
+	//@}
+
+	//@{ \name Set methods.
+
+	//! This method sets the initial guess to be %iguess.
+	void SetInitGuess(AnasaziMultiVec<TYPE>& iguess);
+
+	//! This method sets the number of allowable restarts.
+	void SetRestart(const int);
+	//@}
+
+	//@{ \name Output methods.
+
+	/*! \brief This method allows the user to set the solver's level of visual output
+		during computations.
+	*/
+	void SetDebugLevel(const int);
+
+	//! This method requests that the solver print out its current residuals.
 	void PrintResids(bool)const;
+	//@}
 private:
 	void SetGmresBlkTols();
 	void SetUpBlocks(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, int);
