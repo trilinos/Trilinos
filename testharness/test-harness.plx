@@ -41,7 +41,7 @@ my $SUMMARY = 8;                      # test-harness summary
 chomp (my $hostOS=`uname`);
 $hostOS =~ s/\s*$//; 
 
-print "\nTEST - UPDATED VERSION 001\n\n";    
+print "\nTEST - UPDATED VERSION 002\n\n";    
 print "\@ARGV: \n@ARGV\n\n\$0: \n$0\n\n";
         
 ################################################################################
@@ -301,10 +301,11 @@ report($SUMMARY);
                 chdir "$options{'TRILINOS_DIR'}[0]/testharness";
                 $command = "";
                 $command .= "perl $0 -u ";
-                foreach my $arg (@ARGV) {
-                    $command .= "$arg ";
+                foreach (@ARGV) {
+                    print "    \$_: $_\n";
+                    $command .= "$_ ";
                 }
-                print $command;
+                print "\$command: $command\n";
                 exec $command;
             }
         }
