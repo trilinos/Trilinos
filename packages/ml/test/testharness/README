@@ -1,27 +1,37 @@
-This directory contains the "elements" for the Trilinos test harness suite.
-The perl executable, $TRILINOS/testharness/test-harness.plx, must be executed
-from the $TRILINOS/testharness subdirectory. Results will be placed in
-$TRILINOS/testharness/results.
+This directory contains a collection of scripts that can be used
+to test ML using the $TRILINOS/testharness/test-herness.plx script.
 
-Each machine should have its `elements-machine' file (for example, linux-csmr02).
+The perl executable requires three `elements', one for the machine,
+the other for MPI, and the last one for the Trilinos options. Files
+placed in $ML/test/testharness should contain a combination of these
+elements, to test ML in a very detail form. (Note, this ML test should
+exercise the ML features that the Trilinos regression is not
+testing.)
 
-Each set of configure options should have its `element-trilinos' file
-(for example, `basic') and the corresponding input file for test-harness.plx
-(for example, `script-basic'). By convention, the test file has the name of the
-element-trilinos file, with the prefix "script-".
-
-Currently available list of configure options:
+Subdirectory $ML/test/testharness should be organized as follows:
+each new machine should have a subdirectory (for example, `marzio-laptop').
+Then, each of these subdirectory should contain a set of elements
+for at least for following configurations:
 - standalone		ML alone, no other Trilinos package is compiled)
+- epetra                ML with epetra, but without AztecOO
 - basic 		ML with Epetra, AztecOO and triutils only (no Teuchos)
 			This is essentially ML with AztecOO support only
-- trilinos		This is the basic usage of ML, using Epetra, AztecOO, triutils,
-			Amesos, Anasazi and Teuchos
+- trilinos		This is the basic usage of ML, using Epetra, 
+                        AztecOO, triutils, Amesos, Anasazi and Teuchos
 - trilinos-parmetis	as `trilinos', but with metis and parmetis
 
-Some more comments can be found in `test.sh'.
+Each subdirectory should also contain a script file (see
+$ML/test/testharness/marzio-laptop/test.sh for an example), which can be
+executed by cron. This script should simply call
+$TRILINOS/testharness/test-harness.plx, which must be executed from the
+$TRILINOS/testharness subdirectory. This script places the results in
+$TRILINOS/testharness/results. (This dictory is wiped out each time the script
+is executed.) See more comments in `test.sh'.
+
 
 Still to do:
+-----------
 - MPI support
-- more machines
+- more machines (mac osx?)
 - send results to developers
 - support for automatic CVS update
