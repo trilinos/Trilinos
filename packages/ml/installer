@@ -129,6 +129,6 @@ grep "=" etc/makefile.${ARCH} \
          | sed 's/=/=\"/' | sed 's/$/\"/' \
          | sed "s/(/{/g"  \
          | sed "s/)/}/g"  >> .arch_env
-echo "install_packages" >> .arch_env
+echo "./install_packages" >> .arch_env
 chmod a+x .arch_env
 sh .arch_env
