@@ -157,7 +157,7 @@ output of the linear solve residual. Takes an integer, or one of the
 AztecOO flags: AZ_none, AZ_last, or AZ_all as a value. Defaults to
 AZ_last.
 
-<li> "Jacobian Operator" - When a constructor does not require a Jacobian operator, the linear system withh create a default operator using:
+<li> "Jacobian Operator" - When a constructor does not require a Jacobian operator, the linear system will create a default operator using:
 
   <ul>
   <li> "Matrix-Free" (default)
@@ -199,7 +199,7 @@ below (See the Aztec 2.1 manual for more information):
   <li> "Graph Fill" - defaults to 0.0
   </ul> 
 
-  <li> "ilut" - iluy preconditioning. This choice allows the following  additional parameters to be specified:
+  <li> "ilut" - ilut preconditioning. This choice allows the following  additional parameters to be specified:
   <ul>
   <li> "Overlap" - defaults to 0.0
   <li> "Fill Factor" - defaults to 1.0

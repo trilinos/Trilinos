@@ -812,6 +812,36 @@ createIfpackPreconditioner(Parameter::List& p) const
     return true;
   }
   
+  // check to see if it is an operator that contains a Crs matrix
+  if (precType == EpetraRowMatrix) {
+
+    // The following checks only for FiniteDiffernce based operators and
+    // further that the underlying matrix is in Crs format......
+    Epetra_CrsMatrix* crs = 0;
+    NOX::EpetraNew::FiniteDifference* FDoperator = 0;
+
+    if (precMatrixSource == UseJacobian)
+      FDoperator = dynamic_cast<NOX::EpetraNew::FiniteDifference*>(jacPtr);
+    else if (precMatrixSource == SeparateMatrix)
+      FDoperator = dynamic_cast<NOX::EpetraNew::FiniteDifference*>(precPtr);
+
+    if (FDoperator != 0)
+      crs = &(FDoperator->getUnderlyingMatrix());
+
+    if (crs == 0)
+      throwError("createIfpackPreconditioner", 
+		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
+
+    ifpackGraphPtr = new Ifpack_IlukGraph(crs->Graph(),
+					  p.getParameter("Fill Factor", 1),
+					  p.getParameter("Overlap", 0));
+    ifpackGraphPtr->ConstructFilledGraph();
+    ifpackPreconditionerPtr = new Ifpack_CrsRiluk(*ifpackGraphPtr);
+    ifpackPreconditionerPtr->InitValues(*crs);
+    ifpackPreconditionerPtr->Factor();
+    return true;
+  }
+  
   // If we made it this far, this routine should not have been called
   // in the first place.  An incorrect prec matrix object was supplied and
   // should have been caught in the checkOperatorValidity() method.
