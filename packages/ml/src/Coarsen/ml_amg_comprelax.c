@@ -20,7 +20,7 @@ int ML_Coarsen_Dynamic(ML *ml, int level, int inc_or_dec)
    res    = (double *) malloc( length * sizeof(double) );
    ML_Smoother_Create( &smoother, &(ml->SingleLevel[level]) );
    fun    = ML_Smoother_SGS;
-   ML_Smoother_Set(smoother, ML_INTERNAL, NULL, fun, NULL, 10, 1.0);
+   ML_Smoother_Set(smoother, ML_INTERNAL, NULL, fun, NULL, 10, 1.0, NULL);
    for ( i = 0; i < length; i++ ) rhs[i] = 0.0;
    for ( i = 0; i < length; i++ ) initsol[i] = sol[i] = 1.0;
 
