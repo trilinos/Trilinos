@@ -39,13 +39,13 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-Group::Group(Epetra_Vector& x, SharedJacobian& sj, Interface& i) :
+Group::Group(Epetra_Vector& x, LinearOperator& lo) :
   xVector(x), // deep copy x     
   RHSVector(x, CopyShape), // new vector of same size
   gradVector(x, CopyShape), // new vector of same size
-  NewtonVector(x, CopyShape),// new vector of same size
-  sharedJacobian(sj), // pass J to SharedJacobian
-  interface(i) // set reference
+  NewtonVector(x, CopyShape), // new vector of same size
+  linearOperator(lo), // set reference
+  sharedJacobian(lo.getSharedJacobian()) // pass J to SharedJacobian
 {
   resetIsValid();
 }
@@ -55,8 +55,8 @@ Group::Group(const Group& source, CopyType type) :
   RHSVector(source.RHSVector.getEpetraVector(), type), 
   gradVector(source.gradVector.getEpetraVector(), type), 
   NewtonVector(source.NewtonVector.getEpetraVector(), type),
-  sharedJacobian(source.sharedJacobian),
-  interface(source.interface)
+  linearOperator(source.linearOperator),
+  sharedJacobian(source.sharedJacobian)
 {
   switch (type) {
     
@@ -164,8 +164,7 @@ bool Group::computeRHS()
     return true;
 
   // Need to add a check here to find out if computing the RHS was successful.
-  interface.computeRHS(xVector.getEpetraVector(), RHSVector.getEpetraVector());
-
+  linearOperator.computeRHS(xVector.getEpetraVector(), RHSVector.getEpetraVector());
   normRHS = RHSVector.norm();
   isValidRHS = true;
   return true;
@@ -182,7 +181,7 @@ bool Group::computeJacobian()
 
   // Fill the Jacobian
   // Need to add a check here to find out if computing the Jacobian was successful.
-  interface.computeJacobian(xVector.getEpetraVector(), Jacobian);
+  linearOperator.computeJacobian(xVector.getEpetraVector(), Jacobian);
 
   // Update status
   isValidJacobian = true;
@@ -234,28 +233,7 @@ bool Group::computeNewton(NOX::Parameter::List& p)
     throw "NOX Error";
   }
   
-  // Get the Jacobian 
-  /* (Have to get non-const version which requires reasserting
-     ownership. This is due to a flaw in Epetra_LinearProblem). */
-  Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian(this);
-
-  // Create Epetra problem to solve for NewtonVector 
-  // (Jacobian * NewtonVector = RHSVector)
-  Epetra_LinearProblem Problem(&Jacobian, 
-			       &(NewtonVector.getEpetraVector()), 
-			       &(RHSVector.getEpetraVector()));
-
-  // For now, set problem level to hard, moderate, or easy
-  Problem.SetPDL(hard);
-
-  // Create aztec problem
-  AztecOO aztec(Problem);
-
-  int maxit = p.getParameter("Max Iterations", 400);
-  double tol = p.getParameter("Tolerance", 1.0e-6);
-
-  // Solve Aztex problem
-  aztec.Iterate(maxit, tol);
+  linearOperator.solveLinearSystem(p,this);
 
   // Scale soln by -1
   NewtonVector.scale(-1.0);

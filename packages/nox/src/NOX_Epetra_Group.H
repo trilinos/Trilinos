@@ -37,6 +37,7 @@
 #include "NOX_Epetra_Vector.H"
 #include "NOX_Epetra_Interface.H"
 #include "NOX_Epetra_SharedJacobian.H"
+#include "NOX_Epetra_LinearOperator.H"
 #include "NOX_Parameter_List.H"
 
 namespace NOX {
@@ -48,7 +49,7 @@ class Group : public Abstract::Group {
 public:
 
   //! Constructor.
-  Group(Epetra_Vector& x, SharedJacobian& sj, Interface& I);
+  Group(Epetra_Vector& x, LinearOperator& lo);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared Jacobian. */
@@ -134,6 +135,8 @@ public:
 
   virtual Abstract::Group* clone(CopyType type = DeepCopy) const;
 
+  friend class LinearOperator;
+
 protected:
 
   //! resets the isValid flags to false
@@ -167,11 +170,11 @@ protected:
   //! Norm of RHS
   double normRHS;
 
+  //! Reference to the LinearOperator
+  LinearOperator& linearOperator;
+
   //! Reference to shared Jacobian matrix 
   SharedJacobian& sharedJacobian;
-
-  //! Reference to interface for filling the RHS (function) and Jacobian
-  Interface& interface;
 
 };
 

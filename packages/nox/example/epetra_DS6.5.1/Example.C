@@ -16,10 +16,9 @@
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 
-// NOX Objects
-#include "NOX_Epetra_Group.H"
-#include "NOX_Solver_Newton.H"
-#include "NOX_Status_All_Tests.H"
+// NOX Library
+#include "NOX.H"
+#include "NOX_Epetra.H"
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
@@ -61,9 +60,8 @@ int main(int argc, char *argv[])
   // function (RHS) and Jacobian evaluation routines.
   DennisSchnabel Problem(NumGlobalElements, Comm);
 
-  // Get the linear objects from the Problem
+  // Get the vector from the Problem
   Epetra_Vector& soln = Problem.getSolution();
-  Epetra_RowMatrix& A = Problem.getJacobian();
 
   // Initialize Solution
   if (MyPID==0) {
@@ -83,11 +81,6 @@ int main(int argc, char *argv[])
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
 
-  // Sublist for linear solver
-  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4); 
-
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   // searchParams.setParameter("Method", "Full Step");
@@ -100,23 +93,42 @@ int main(int argc, char *argv[])
   // This is created by the user using inheritance of the abstract base class:
   // NLS_PetraGroupInterface
   Problem_Interface interface(Problem);
+  
+  // Sublist for linear solver
+  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
+  lsParams.setParameter("Max Iterations", 800);  
+  lsParams.setParameter("Tolerance", 1e-4);
+  lsParams.setParameter("Iteration Output Frequency", 50);    
+  lsParams.setParameter("Preconditioning Matrix Type", "None"); 
 
-  // Create the shared Jacobian
-  NOX::Epetra::SharedJacobian shareda(A);
+  // Create the Epetra_RowMatrix.  Uncomment one of the following:
+  // 1. User supplied
+  Epetra_RowMatrix& A = Problem.getJacobian();
+  // 2. Matrix-Free
+  //NOX::Epetra::MatrixFree A(interface, soln);
+  // 3. Finite Difference
+  //NOX::Epetra::FiniteDifference A(interface, soln);
 
-  // Create the Groups 
-  NOX::Epetra::Group grp(soln, shareda, interface); 
+  // Create the linear operator
+  NOX::Epetra::LinearOperator linearOperator(lsParams, interface, A);
+
+  // Create the Group
+  NOX::Epetra::Group grp(soln, linearOperator); 
   grp.computeRHS();
 
   // Create the convergence tests
   NOX::Status::AbsResid absresid(1.0e-6);
+  NOX::Status::MaxIters maxiters(20);
+  NOX::Status::Combo combo(NOX::Status::Combo::OR);
+  combo.addTest(absresid);
+  combo.addTest(maxiters);
 
   // Create the method
-  NOX::Solver::Newton newton(grp, absresid, nlParams);
-  NOX::Status::StatusType status = newton.solve();
+  NOX::Solver::Manager solver(grp, combo, nlParams);
+  NOX::Status::StatusType status = solver.solve();
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(newton.getSolutionGroup());
+  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************

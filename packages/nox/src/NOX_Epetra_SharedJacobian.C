@@ -39,6 +39,12 @@ SharedJacobian::SharedJacobian(Epetra_RowMatrix& j)
   jacobian = &j;
 }
 
+SharedJacobian::SharedJacobian(Epetra_RowMatrix& j, Epetra_RowMatrix& p)
+{
+  jacobian = &j;
+  prec = &p;
+}
+
 SharedJacobian::~SharedJacobian()
 {
   // Do nothing
@@ -50,14 +56,25 @@ Epetra_RowMatrix& SharedJacobian::getJacobian(const Group* newowner)
   return *jacobian;
 }
 
+const Epetra_RowMatrix& SharedJacobian::getJacobian() const
+{
+  return *jacobian;
+}
+
 bool SharedJacobian::isOwner(const Group* grp) const
 {
   return (owner == grp);
 }
 
-const Epetra_RowMatrix& SharedJacobian::getJacobian() const
+Epetra_RowMatrix& SharedJacobian::getPrec(const Group* newowner)
 {
-  return *jacobian;
+  owner = newowner;
+  return *prec;
+}
+
+const Epetra_RowMatrix& SharedJacobian::getPrec() const
+{
+  return *prec;
 }
 
 

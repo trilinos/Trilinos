@@ -35,7 +35,7 @@ public:
 
   // Evaluates the function (RHS) and/or the Jacobian using the solution 
   // values in solnVector.
-  void evaluate(FillType f, const Epetra_Vector *solnVector, 
+  bool evaluate(FillType f, const Epetra_Vector *solnVector, 
 		Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix);
 
   // Return a reference to the Epetra_Vector with the initial guess
@@ -58,7 +58,6 @@ private:
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;
   Epetra_Vector *initialSolution;
-  Epetra_Vector *soln;
   Epetra_Vector *rhs;
   Epetra_CrsGraph *AA;
   Epetra_CrsMatrix *A;

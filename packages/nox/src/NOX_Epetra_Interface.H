@@ -41,12 +41,14 @@ namespace NOX {
 namespace Epetra {
 
   /*! \brief Used by NOX::Epetra::Group to provide a link to the
-   *  external code for RHS and Jacobian fills. */
-  /*! At a minimum the user should only supply a RHS fill.  Jacobian fills 
-   * and preconditioning options need only be supplied if certain methods 
-   * require it. Therefore the implemetations below are set to throw an
-   * error if not supplied.*/
-
+   *  external code for RHS and Jacobian fills ()if needed. */
+  /*! At a minimum the user must supply a computeRHS().  
+   * If the user is supplying their own Epetra_RowMatrix for the Jacobian,
+   * then they must supply a computeJacobian().  If computeJacobian is
+   * not supplied, a Matrix-Free or Finite Differencing Epetra_RowMatrix
+   * can be used in NOX.  Preconditioning functions are only  needed 
+   * if the user wishes to supply their own preconditioner.  Otherwise
+   * Aztec has built-in preconditioners to use.  */
 class Interface {
 
 public:
@@ -57,17 +59,17 @@ public:
   //! Destructor
   virtual ~Interface() {};
 
-  //! Compute RHS given the specified input vector, x.
-  virtual void computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
+  //! Compute RHS given the specified input vector, x.  Returns true if computation was successful.
+  virtual bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
   
-  //! Compute Jacobian given the specified input vector, x.
-  virtual void computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac) = 0;
+  //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
+  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac) = 0;
 
-  //! Compute the matrix M that will be used as the preconditioner.
-  virtual void computePreconditioner(Epetra_RowMatrix& M) = 0;
+  //! Compute the matrix M that will be used as the preconditioner.  Returns true if computation was successful.
+  virtual bool computePreconditioner(Epetra_RowMatrix& M) = 0;
 
-  //! Return the action of the preconditioner on a vector.
-  virtual void preconditionVector(Epetra_Vector& y) = 0;
+  //! Return the action of the preconditioner on a vector.  Returns true if computation was successful.
+  virtual bool preconditionVector(Epetra_Vector& y) = 0;
 
 };
 } // namespace Epetra

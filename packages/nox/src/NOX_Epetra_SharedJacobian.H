@@ -44,7 +44,14 @@ class Group;			// forward declaration
   /*! \brief Shared Jacobian for NOX::Epetra::Group objects.
    * 
    * Due to the size of the Jacobian, we cannot afford to have
-   * multiple copies. Instead we implement a shared Jacobian. */
+   * multiple copies. Instead we implement a shared Jacobian that
+   * that all groups use. 
+   *
+   * NOTE: I have added a preconditioner Matrix to the SharedJacobian
+   * in anticipation of having a separate Matrix for the Jacobian 
+   * and the Preconditioner.  This option will be in Trilinos by the end 
+   * of Feb 02. 
+   */
 
 class SharedJacobian {
 
@@ -53,22 +60,34 @@ public:
   //! Constructor
   SharedJacobian(Epetra_RowMatrix& j);
 
+  //! Constructor with separate Matrices for the Jacobian and preconditioner 
+  SharedJacobian(Epetra_RowMatrix& j, Epetra_RowMatrix& p);
+
   //! Destructor
   ~SharedJacobian();
 
   //! Get a reference to the Jacobian AND take ownership
   Epetra_RowMatrix& getJacobian(const Group* newowner);
 
+  //! Return a const pointer to the Jacobian
+  const Epetra_RowMatrix& getJacobian() const;
+
   //! Return true if grp is the owner of the Jacobian
   bool isOwner(const Group* grp) const;
 
+  //! Get a reference to the Jacobian AND take ownership
+  Epetra_RowMatrix& getPrec(const Group* newowner);
+
   //! Return a const pointer to the Jacobian
-  const Epetra_RowMatrix& getJacobian() const;
+  const Epetra_RowMatrix& getPrec() const;
 
 protected:
 
   //! Pointer to Epetra Jacobian matrix 
   Epetra_RowMatrix* jacobian;
+
+  //! Pointer to Epetra Preconditioning Matrix 
+  Epetra_RowMatrix* prec;
 
   //! Pointer to const group that owns Jacobian
   const Group* owner;

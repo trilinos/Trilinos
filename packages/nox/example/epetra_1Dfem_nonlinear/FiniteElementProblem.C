@@ -80,8 +80,8 @@ FiniteElementProblem::~FiniteElementProblem()
 }
 
 // Matrix and Residual Fills
-void FiniteElementProblem::evaluate(FillType f, 
-				    const Epetra_Vector* tmp_soln, 
+bool FiniteElementProblem::evaluate(FillType f, 
+				    const Epetra_Vector* soln, 
 				    Epetra_Vector* tmp_rhs, 
 				    Epetra_RowMatrix* tmp_matrix)
 {
@@ -89,25 +89,15 @@ void FiniteElementProblem::evaluate(FillType f,
 
   // Set the incoming linear objects
   if (flag == RHS_ONLY) {
-    soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
   } else if (flag == MATRIX_ONLY) {
-    soln = const_cast <Epetra_Vector*> (tmp_soln);
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else if (flag == ALL) { 
-    soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else {
     cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
     throw;
-  }
-
-  // Apply Essential BC to initial solution vector:  u(0)=1.0
-  // This is why we remove the const from the solution vector that
-  // is passed in.  We must ensure Direchlet BC's are set correctly.
-  if (MyPID==0) {
-    (*soln)[0]=1.0;
   }
 
   // Create the overlapped solution and position vectors
@@ -189,8 +179,8 @@ void FiniteElementProblem::evaluate(FillType f,
   // Insert Boundary Conditions and modify Jacobian and function (RHS)
   // U(0)=1
   if (MyPID==0) {
-    (*soln)[0]=1.0;
-    if ((flag == RHS_ONLY)    || (flag == ALL)) (*rhs)[0]=0.0;
+    if ((flag == RHS_ONLY)    || (flag == ALL)) 
+      (*rhs)[0]= (*soln)[0] - 1.0;
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
       column=0;
       jac=1.0;
@@ -206,7 +196,7 @@ void FiniteElementProblem::evaluate(FillType f,
  
   A->TransformToLocal();
 
-  return ;
+  return true;
 }
 
 Epetra_Vector& FiniteElementProblem::getSolution()

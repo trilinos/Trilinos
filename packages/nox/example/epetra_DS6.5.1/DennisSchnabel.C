@@ -82,24 +82,21 @@ DennisSchnabel::~DennisSchnabel()
 }
 
 // Matrix and Residual Fills
-void DennisSchnabel::evaluate(FillType f, 
-				    const Epetra_Vector* tmp_soln, 
-				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+bool DennisSchnabel::evaluate(FillType f, 
+			      const Epetra_Vector* soln, 
+			      Epetra_Vector* tmp_rhs, 
+			      Epetra_RowMatrix* tmp_matrix)
 {
   flag = f;
 
   // Set the incoming linear objects
   if (flag == RHS_ONLY) {
-    soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
   } 
   else if (flag == MATRIX_ONLY) {
-    soln = const_cast <Epetra_Vector*> (tmp_soln);
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } 
   else if (flag == ALL) { 
-    soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } 
@@ -189,7 +186,7 @@ void DennisSchnabel::evaluate(FillType f,
   // Transform matrix so it can be operated upon.
   A->TransformToLocal();
 
-  return ;
+  return true;
 }
 
 Epetra_Vector& DennisSchnabel::getSolution()

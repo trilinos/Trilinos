@@ -19,9 +19,8 @@
 #include "Epetra_RowMatrix.h"
 
 // NOX Objects
-#include "NOX_Epetra_Group.H"
-#include "NOX_Solver_Newton.H"
-#include "NOX_Status_All_Tests.H"
+#include "NOX.H"
+#include "NOX_Epetra.H"
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
@@ -70,9 +69,8 @@ int main(int argc, char *argv[])
   // function (RHS) and Jacobian evaluation routines.
   FiniteElementProblem Problem(NumGlobalElements, Comm);
 
-  // Get the linear objects from the Problem
+  // Get the vector from the Problem
   Epetra_Vector& soln = Problem.getSolution();
-  Epetra_RowMatrix& A = Problem.getJacobian();
 
   // Initialize Solution
   soln.PutScalar(1.0);
@@ -84,16 +82,9 @@ int main(int argc, char *argv[])
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
 
-  // Sublist for linear solver
-  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
-  lsParams.setParameter("Max Iterations", 400);  
-  lsParams.setParameter("Tolerance", 1e-4); 
-
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  // searchParams.setParameter("Method", "Full Step");
-  // searchParams.setParameter("Method", "Interval Halving");
-  searchParams.setParameter("Method", "Polynomial");
+  searchParams.setParameter("Method", "Full Step");
   searchParams.setParameter("Default Step", 1.0);
 
   // Create the interface between the test problem and the nonlinear solver
@@ -101,28 +92,47 @@ int main(int argc, char *argv[])
   // NLS_PetraGroupInterface
   Problem_Interface interface(Problem);
 
-  // Create the shared Jacobian
-  NOX::Epetra::SharedJacobian shareda(A);
+  // Sublist for linear solver
+  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
+  lsParams.setParameter("Max Iterations", 800);  
+  lsParams.setParameter("Tolerance", 1e-4);
+  lsParams.setParameter("Iteration Output Frequency", 50);   
+  lsParams.setParameter("Preconditioning Matrix Type", "None"); 
 
-  // Create the Groups 
-  NOX::Epetra::Group grp(soln, shareda, interface);  
+  // Create the Epetra_RowMatrix.  Uncomment one of the following:
+  // 1. User supplied
+  Epetra_RowMatrix& A = Problem.getJacobian();
+  // 2. Matrix-Free
+  //NOX::Epetra::MatrixFree A(interface, soln);
+  // 3. Finite Difference
+  //NOX::Epetra::FiniteDifference A(interface, soln);
+
+  // Create the linear operator
+  NOX::Epetra::LinearOperator linearOperator(lsParams, interface, A);
+
+  // Create the Group
+  NOX::Epetra::Group grp(soln, linearOperator); 
   grp.computeRHS();
 
   // Create the convergence tests
   NOX::Status::AbsResid absresid(1.0e-6);
-  NOX::Status::Combo combo1(absresid, NOX::Status::Combo::AND);
   NOX::Status::RelResid relresid(grp.getNormRHS(), 1.0e-2);
-  combo1.addTest(relresid);
+  NOX::Status::Combo converged(NOX::Status::Combo::AND);
+  converged.addTest(absresid);
+  converged.addTest(relresid);
   NOX::Status::MaxResid maxresid(1.0e-10);
-  NOX::Status::Combo combo2(maxresid, NOX::Status::Combo::OR);
-  combo2.addTest(combo1);
+  NOX::Status::MaxIters maxiters(20);
+  NOX::Status::Combo combo(NOX::Status::Combo::OR);
+  combo.addTest(converged);
+  combo.addTest(maxresid);
+  combo.addTest(maxiters);
 
   // Create the method
-  NOX::Solver::Newton newton(grp, combo2, nlParams);
-  NOX::Status::StatusType status = newton.solve();
+  NOX::Solver::Manager solver(grp, combo, nlParams);
+  NOX::Status::StatusType status = solver.solve();
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(newton.getSolutionGroup());
+  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
@@ -136,9 +146,6 @@ int main(int argc, char *argv[])
   for (i=0; i<NumMyElements; i++)
     fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
-
-  //cout << "Final Solution" << (&soln)[0] <<endl;
-  //delete &StandardGraph;
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;

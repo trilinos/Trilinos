@@ -21,16 +21,16 @@ public:
   ~Problem_Interface();
 
   //! Compute and return RHS
-  void computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS);
+  bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS);
 
   //! Compute an explicit Jacobian
-  void computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac);
+  bool computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac);
 
   //! Compute the matrix M that will be used as the preconditioner.
-  void computePreconditioner(Epetra_RowMatrix& M);
+  bool computePreconditioner(Epetra_RowMatrix& M);
 
   //! Return the action of the preconditioner on a vector.
-  void preconditionVector(Epetra_Vector& y);
+  bool preconditionVector(Epetra_Vector& y);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

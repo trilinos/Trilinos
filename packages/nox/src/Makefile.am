@@ -65,9 +65,11 @@ PARAMETER = \
 
 SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
+	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_Newton.H 
 
 SOLVER = \
+	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_Newton.C 
 
 STATUS_H = \
@@ -97,12 +99,18 @@ EPETRA_H = \
 	$(srcdir)/NOX_Epetra_Vector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_SharedJacobian.H \
+        $(srcdir)/NOX_Epetra_LinearOperator.H \
+        $(srcdir)/NOX_Epetra_MatrixFree.H \
+        $(srcdir)/NOX_Epetra_FiniteDifference.H \
 	$(srcdir)/NOX_Epetra_Interface.H 
 
 EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
 	$(srcdir)/NOX_Epetra_Group.C \
-	$(srcdir)/NOX_Epetra_SharedJacobian.C 
+	$(srcdir)/NOX_Epetra_SharedJacobian.C \
+	$(srcdir)/NOX_Epetra_LinearOperator.C \
+        $(srcdir)/NOX_Epetra_MatrixFree.C \
+        $(srcdir)/NOX_Epetra_FiniteDifference.C
 
 # ------------------------------------------------------------------------
 # Nox library specifications

@@ -13,25 +13,25 @@ Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
 Problem_Interface::~Problem_Interface()
 { }
 
-void Problem_Interface::computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS)
+bool Problem_Interface::computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS)
 {
-  problem.evaluate(RHS_ONLY, &x, &RHS, NULL);
+  return problem.evaluate(RHS_ONLY, &x, &RHS, NULL);
 }
 
-void Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac)
+bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac)
 {
-  problem.evaluate(MATRIX_ONLY, &x, NULL, &Jac);
+  return problem.evaluate(MATRIX_ONLY, &x, NULL, &Jac);
 }
 
-void Problem_Interface::computePreconditioner(Epetra_RowMatrix& M)
+bool Problem_Interface::computePreconditioner(Epetra_RowMatrix& M)
 {
   cout << "ERROR: Problem_Interface::computePreconditioner() - Use Explicit Jaciban only for this test problem!" << endl;
-  throw;
+  throw 1;
 }
-void Problem_Interface::preconditionVector(Epetra_Vector& y)
+bool Problem_Interface::preconditionVector(Epetra_Vector& y)
 {
   cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
-  throw;
+  throw 1;
 }
 //-----------------------------------------------------------------------------
 
