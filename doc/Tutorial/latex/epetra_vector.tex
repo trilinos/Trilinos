@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Working with Epetra Vectors}
+\section{Working with Epetra Vectors}
 \label{chap:epetra_vec}
 
 Probably, the first mathematical entities defined by a numerical method
@@ -70,7 +70,7 @@ During the Chapter, the user be introduced to:
 %%%
 %%%
 
-\section{Epetra Communicator Objects}
+\subsection{Epetra Communicator Objects}
 \label{sec:comm}
 
 The Epetra\_Comm class is an interface that encapsulates the general
@@ -134,7 +134,7 @@ the Epetra Class Documentation.
 %%%
 %%%
 
-\section{Defining a Map}
+\subsection{Defining a Map}
 \label{sec:map}
 
 Very often, various distributed objects such as matrices or vectors,
@@ -169,7 +169,7 @@ Epetra_Map Map(-1,NumMyPoints,0,Comm);
 \end{verbatim}
 This will create a vector of size $\sum_{i=0}^{NumProc-1}$
 \verb!NumMyPoints!. Each process will get a contiguous set of elements.
-These two approached are coded in file \TriExe{epetra/ex2.cpp}.
+These two approached are coded in file \newline \TriExe{epetra/ex2.cpp}.
 
 Another, more involved way, to create an Epetra\_Map, is to specify on
 each process both the number of local elements, and the global numbering
@@ -259,7 +259,7 @@ of Epetra\_Maps.
 %%%
 %%%
 
-\section{Creating and Assembling Serial Vectors}
+\subsection{Creating and Assembling Serial Vectors}
 \label{sec:serial_vec}
 
 Within Epetra, it is possible to define {\em sequential} vectors, for
@@ -301,7 +301,7 @@ File \TriExe{epetra/ex4.cpp} shows some basic operations on dense vectors.
 %%%
 %%%
 
-\section{Creating and Assembling a Distributed Vector}
+\subsection{Creating and Assembling a Distributed Vector}
 \label{sec:distr_vec}
 
 To create a distributed vector, the first step is to define a map.
@@ -367,7 +367,8 @@ double *x_values;
 x_values = new double[MyLength];
 x.ExtractCopy( x_values );
 for( int i=0 ; i<MyLength ; ++i ) x_values[i] *= 10;
-for( int i=0 ; i<MyLength ; ++i ) x.ReplaceMyValues( 1, 0, x_values+i, &i );
+for( int i=0 ; i<MyLength ; ++i ) 
+  x.ReplaceMyValues( 1, 0, x_values+i, &i );
 \end{verbatim}
 (The complete source is reported in file \TriExe{epetra/ex5.cpp}.)  It
 is important to note that \verb!ExtractCopy! does not give access to the
@@ -411,7 +412,7 @@ the table.
 
 \begin{table}
 \begin{center}
-\begin{tabular}{ | p{12cm} | }
+\begin{tabular}{ | p{15cm} | }
 \hline
 \verb!int NumMyELement()! \\
 \hspace{1cm} returns the local vector length on the
@@ -451,7 +452,7 @@ multi-vector with constant value \\
 %%%
 %%%
 
-\section{Epetra\_Import and Epetra\_Export}
+\subsection{Epetra\_Import and Epetra\_Export}
 \label{sec:import_export}
 
 Epetra\_Import and Epetra\_Export are two classes meant for efficient

@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Iterative Solution of Linear Systems with AztecOO}
+\section{Iterative Solution of Linear Systems with AztecOO}
 \label{chap:aztecoo}
 
 AztecOO is package which extends the Aztec library~\cite{Aztec2.1}.
@@ -62,7 +62,7 @@ In this Chapter, we  will:
 %%%
 %%%
 
-\section{Theoretical Background}
+\subsection{Theoretical Background}
 \label{aztecoo:theoretical}
 
 Aim of this Section is to briefly present some aspects of the iterative
@@ -150,7 +150,7 @@ respectively.
 %%%
 %%%
 
-\section{Basic Usage of AztecOO}
+\subsection{Basic Usage of AztecOO}
 \label{sec:basic_aztecoo}
 
 To solve a linear system with AztecOO, one must create an
@@ -219,7 +219,7 @@ performed by the linear solver using \verb!Solver.NumIters()!, while
 %%%
 
 
-\section{One-level Domain Decomposition Preconditioners with AztecOO}
+\subsection{One-level Domain Decomposition Preconditioners with AztecOO}
 \label{sec:aztecoo_dd}
 
 In this Section, we will consider preconditioners based on one-level
@@ -276,7 +276,7 @@ Solver.SetAztecOption( AZ_overlap, 1 );
 %%%
 %%%
 
-\section{Use of AztecOO Problems as a Preconditioner for AztecOO}
+\subsection{Use of AztecOO Problems as a Preconditioner for AztecOO}
 \label{sec:prec_aztecoo}
 
 One may wish to use an AztecOO solver in the preconditioning phase, as
@@ -340,7 +340,7 @@ A_Solver.Iterate(Niters, 1.0E-12);
 %%%
 %%%
 
-\section{Concluding Remarks}
+\subsection{Concluding Remarks}
 
 The following methods are often used:
 \begin{itemize}

@@ -1,0 +1,78 @@
+#
+# A sample Makefile for SAND reports using the SANDreport.cls class file
+# Contributed by Mike Heroux and modified by Rolf Riesen
+#
+
+.PHONY:	noTARGET view gv ps pdf print clean realclean
+
+ifndef TARGET
+BASE=__invalid_file_name__
+else
+BASE=$(basename $(TARGET))
+endif
+
+# ------------>----------->---------->--------->-------->------->------>----->---->--->-->->>
+# Make Sure $TARGET is defined
+#
+noTARGET:
+ifndef TARGET
+	@echo
+	@echo "You must set the environment variable TARGET to the"
+	@echo "name of your LaTeX file. For example in bash you would"
+	@echo "    export TARGET=SANDExample.tex"
+	@echo "    make                 # to get a dvi file"
+	@echo "    make ps              # to get a PostScript file"
+	@echo "    make pdf             # to get an Adobe PDF file"
+	@echo "    make view            # to view your file using xdvi"
+	@echo "    make gv              # to view your file using gv"
+	@echo "    make print           # to print to the default printer"
+	@echo "    make clean           # to clean up"
+	@echo "    make realclean       # to remove all generated files"
+	@echo
+else
+	@$(MAKE) $(BASE).dvi
+endif
+
+
+# ------------>----------->---------->--------->-------->------->------>----->---->--->-->->>
+# The phony targets which make sure $TARGET is defined
+#
+ps gv view pdf print:
+ifndef TARGET
+	@$(MAKE) noTARGET
+else
+	@$(MAKE) _my$@
+endif
+
+
+
+# ------------>----------->---------->--------->-------->------->------>----->---->--->-->->>
+# Here is where the real work is done
+#
+$(BASE).dvi: $(BASE).tex
+	latex $(BASE)
+	bibtex $(BASE)
+	latex $(BASE)
+	latex $(BASE)
+
+_myps:	$(BASE).dvi
+	dvips -o $(BASE).ps $(BASE)
+
+_mygv:	_myps
+	gv $(BASE) &
+
+_myview:	$(BASE).dvi
+	xdvi $(BASE) &
+
+_mypdf:	_myps
+	ps2pdf $(BASE).ps $(BASE).pdf
+
+_myprint:	$(BASE).dvi
+	dvips $(BASE)
+
+clean:
+	@rm -f $(BASE).aux $(BASE).toc $(BASE).idx $(BASE).ind $(BASE).ilg $(BASE).log $(BASE).out \
+           $(BASE).bbl $(BASE).blg $(BASE).lof $(BASE).lot *.aux
+
+realclean:	clean
+	@rm -f $(BASE).ps $(BASE).pdf $(BASE).dvi

@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Working with Epetra Matrices}
+\section{Working with Epetra Matrices}
 \label{chap:epetra_mat}
 
 Epetra contains several matrix classes.  Epetra matrices can be
@@ -67,7 +67,7 @@ matrices. During the Chapter, the user be introduced to:
 %%%
 %%%
 
-\section{Serial Dense Matrices}
+\subsection{Serial Dense Matrices}
 \label{sec:dense_mat}
 
 Epetra provides functionalities for sequential dense matrices with the
@@ -162,7 +162,7 @@ will probably use Epetra\_SerialDenseMatrix.
 %%%
 %%%
 
-\section{Distributed Sparse Matrices}
+\subsection{Distributed Sparse Matrices}
 \label{sec:sparse_mat}
 
 Epetra provided an extensive set of methods to create and fill
@@ -252,7 +252,8 @@ The second approach can be coded as follows:
 \begin{verbatim}
 int * NumNz = new int[NumMyElements];
 for( int i=0 ; i<NumMyElements ; i++ )
-if( MyGlobalElements[i]==0 || MyGlobalElements[i] == NumGlobalElements-1)
+if( MyGlobalElements[i]==0 || 
+    MyGlobalElements[i] == NumGlobalElements-1)
   NumNz[i] = 2;
 else
   NumNz[i] = 3;
@@ -441,14 +442,14 @@ A(5,4) = -1;
 A(5,5) = 2;
 \end{verbatim}
   A companion to this
-  example is \TriExe{epetra/ex16.cpp}, which exports an Epetra\_Vector to
+  example is \newline \TriExe{epetra/ex16.cpp}, which exports an Epetra\_Vector to
   MATLAB format.
 \end{itemize}
 %%%
 %%%
 %%%
 
-\section{Creating VBR Matrices}
+\subsection{Creating VBR Matrices}
 \label{sec:sparse_vbr}
 
 The following code shows how to work with VBR matrices. This format has
@@ -538,7 +539,7 @@ Please refer to \TriExe{epetra/ex17.cpp} for the entire source.
 %%%
 
 
-\section{Insert non-local Elements Using FE Matrices}
+\subsection{Insert non-local Elements Using FE Matrices}
 \label{sec:fematrix}
 
 The most important additional feature provided by the

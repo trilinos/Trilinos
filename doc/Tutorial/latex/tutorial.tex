@@ -26,24 +26,33 @@
 % ************************************************************************
 %@HEADER
 
-\documentclass[10pt]{report}
+\documentclass[12pt,relax]{SANDreport}
 \usepackage{graphicx}
 \usepackage{amsmath,amsfonts,amsthm}
 \usepackage{amssymb}
 
 \usepackage{times}
 
-\setlength\oddsidemargin {-0pt}\setlength\evensidemargin{-0pt}
-\setlength{\textwidth}{150mm}\setlength{\textheight}{210mm}
-\headheight=12.45pt
+\newcommand{\TriExe}[1]{{\tt\$\{TRILINOS\_HOME\}/doc/tutorial/#1}}
+\author{Marzio Sala and Michael Heroux \\
+ \\
+Sandia National Laboratories \\
+P.O. Box 5800 \\
+Albuquerque, NM 87185-1110
+}
 
-\newcommand{\TriExe}[1]{{\tt\$\{TRILINOS\_HOME\}/doc/tutorial/ #1}}
-\author{MS, ...}
+\title{Trilinos 3.1 Tutorial}
+\SANDnum{SAND2003-XXXX}
+\SANDauthor{
+Marzio Sala and Michael Heroux \\
+Computational Mathematics and Algorithms Department \\
+ \\
+Sandia National Laboratories \\
+P.O. Box 5800 \\
+Albuquerque, NM 87185-1110}
 
-%%%
-%%% this is me
-%%%
-
+\SANDprintDate{December 2003}
+\SANDreleaseType{Unlimited Release}
 
 \newcommand{\Trilinos}{Trilinos}
 \newcommand{\TrilinosTM}{Trilinos \copyright}
@@ -52,19 +61,9 @@
 
 \begin{document}
 
-\title{Trilinos 3.1 Tutorial, \\ version 0.9}
 \maketitle
 
-% Set to roman page numbers for front matter
-%\pagenumbering{roman}
-
-% Reset the margins for the remainder of the document
-%\setlength{\oddsidemargin}{0.25in}
-%\setlength{\evensidemargin}{0.25in}
-
 \begin{abstract}
-%\abstract*{Abstract}
-%\section{Abstract}
   
   This document introduces the use of \Trilinos{}, version 3.1.
   \Trilinos{} has been written to support, in a rigorous manner, the
@@ -94,8 +93,14 @@
  
 \end{abstract}
 
-\newpage
 \clearpage
+\section*{Acknowledgments}
+The authors would like to acknowledge the support of the ASCI and LDRD programs
+that funded development of Trilinos.
+
+\clearpage
+
+\SANDmain
 
 \tableofcontents
 
@@ -123,9 +128,7 @@
 
 \include{triutils}
 
-\chapter*{Acknowledgments}
-
-\bibliographystyle{alpha}
+\bibliographystyle{plain}
 \bibliography{../../CommonFiles/TrilinosBibliography}
 
 \end{document}

@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Introduction}
+\section{Introduction}
 
 The Trilinos Project is an effort to facilitate the design, development,
 integration and ongoing support of mathematical software libraries. In
@@ -42,7 +42,7 @@ set of concrete classes that implement all abstract interfaces.
 %%%
 %%%
 
-\section{Getting Started with Trilinos}
+\subsection{Getting Started with Trilinos}
 \label{sec:getting}
 
 The Trilinos Project uses a two-level software structure designed around
@@ -120,29 +120,29 @@ accomplished using Trilinos.
     \hline
     {\bf Task} & {\bf Package} \\
     \hline
-    Light-weight interface to BLAS and LAPACK: & Epetra, Teuchos$^\star$ \\
-    Definition of serial dense or sparse matrices: & Epetra \\
-    Definition of distributed sparse matrices:& Epetra \\
+    Light-weight interface to BLAS and LAPACK: & Epetra, Teuchos$^\star$ \\\hline
+    Definition of serial dense or sparse matrices: & Epetra \\\hline
+    Definition of distributed sparse matrices:& Epetra \\\hline
     solve a linear system with preconditioned Krylov accelerators, like
-    CG, GMRES, Bi-CGSTAB, TFQMR:& AztecOO, Belos$^\star$ \\
-    Definition of incomplete factorizations:& AztecOO, IFPACK \\
-    Definition of a multilevel preconditioner:& ML \\
+    CG, GMRES, Bi-CGSTAB, TFQMR:& AztecOO, Belos$^\star$ \\\hline
+    Definition of incomplete factorizations:& AztecOO, \newline IFPACK \\\hline
+    Definition of a multilevel preconditioner:& ML \\\hline
     Definition of a one-level Schwarz preconditioner (overlapping domain
-    decomposition):& AztecOO, IFPACK \\
+    decomposition):& AztecOO, \newline IFPACK \\\hline
     Definition a two-level Schwarz preconditioner, with coarse grid based on
-    aggregation:& AztecOO+ML \\
-    Solution of  systems of nonlinear equations:& NOX \\
+    aggregation:& AztecOO+ML \\\hline
+    Solution of  systems of nonlinear equations:& NOX \\\hline
     interface with various direct solvers, as UMFPACK, MUMPS, SuperLU
-    and others :& Amesos \\
+    and others :& Amesos \\\hline
     Computation of eigenvalue of large, sparse matrices:& Anasazi$^\star$
-    \\
+    \\\hline
     Solution of complex linear equations (using equivalent real formulation):&
-    Komplex$^\star$ \\
+    Komplex$^\star$ \\\hline
     Definition of segregated preconditioners and block preconditioners (for
     instance, for the incompressible Navier-Stokes equations):&
-    Meros$^\star$ \\
+    Meros$^\star$ \\\hline
     Templated interface to BLAS and LAPACK, arbitrary-precision
-    arithmetic, parameter lists:& Teuchos$^\star$ \\
+    arithmetic, parameter lists:& Teuchos$^\star$ \\\hline
     Define abstract interfaces to vectors, linear operators, and solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$    \\
     \hline
   \end{tabular}
@@ -206,7 +206,7 @@ developers, and how to include a new package\footnote{ Trilinos provides
 %%%
 %%%
 
-\section{Installing Trilinos}
+\subsection{Installing Trilinos}
 \label{sec:installing}
 
 To obtain Trilinos, please refers to the instructions reported at the
@@ -276,7 +276,7 @@ $ make install | tee make_install_${TRILINOS_ARCH}.log
 %%%
 %%%
 
-\section{Compiling and Linking a program using Trilinos}
+\subsection{Compiling and Linking a program using Trilinos}
 \label{sec:intro_compiling}
 
 In order to compile and link (part of) the Trilinos library, the use can
@@ -327,7 +327,7 @@ Please check the local MPI documentation for more details.
 %%%
 %%%
 
-\section{Copyright and Licensing of Trilinos}
+\subsection{Copyright and Licensing of Trilinos}
 \label{sec:copyright}
 
 Trilinos is released under the Lesser GPL GNU Licence.
@@ -364,7 +364,7 @@ It is responsibility of the user to understand these requirements.
 %%%
 %%%
 
-\section{Programming Language Used in this Tutorial}
+\subsection{Programming Language Used in this Tutorial}
 \label{sec:language}
 
 Trilinos is written in C++ (for most packages), and in C. Some
@@ -378,7 +378,7 @@ tutorial will be in C++; some packages contains examples in C.
 %%%
 %%%
 
-\section{Referencing Trilinos}
+\subsection{Referencing Trilinos}
 \label{sec:referencing}
 
 The Trilinos project can be referenced by using the following BiBTeX
@@ -427,7 +427,7 @@ http://software.sandia.gov/Trilinos/citing.html
 %%%
 %%%
 
-\section{A Note on Directory Structure}
+\subsection{A Note on Directory Structure}
 \label{sec:into_note}
 
 Each Trilinos package in contained in the subdirectory
@@ -469,27 +469,35 @@ $ make
 %%%
 %%%
 
-\section{(Incomplete) List of Trilinos Developers}
+\subsection{List of Trilinos Developers}
 \label{sec:intro_incomplete}
 
 A list of the Trilinos' developers, updated to December 2003, would
 include the following names (in alphabetical order):
 
 Roscoe A. Bartlett,
+Jason A. Cross,
+David M. Day,
+Robert Heaphy,
+Michael A. Heroux (project leader),
+Russell Hooper,
 Vicki E. Howle,
 Robert J. Hoekstra,
-Michael A. Heroux (project leader),
 Jonathan J. Hu,
 Tamara G. Kolda,
 Richard B. Lehoucq,
+Paul Lin,
 Kevin R. Long,
 Roger P. Pawlowski,
+Michael N. Phenow,
 Eric T. Phipps,
-Andrew G. Salinger,
-Alan Williams,
+Andrew J. Rothfuss,
 Marzio Sala,
+Andrew G. Salinger,
+Paul M. Sexton,
 Kendall S. Stanley,
 Heidi K. Thornquist,
 Ray S. Tuminaro,
-James M. Willenbring.
+James M. Willenbring,
+Alan Williams.
 

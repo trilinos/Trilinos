@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Multilevel Methods with ML}
+\section{Multilevel Methods with ML}
 \label{chap:ml}
 
 The ML package defines a class of preconditioner based on multilevel
@@ -59,7 +59,7 @@ C++ code), then we refer to the ML guide, contained in the
 %%%
 %%%
 
-\section{Theoretical Background}
+\subsection{Theoretical Background}
 \label{ml:theoretical}
 
 Aim of this Section is to briefly present some aspects on multilevel
@@ -110,7 +110,7 @@ prolongator from $k-1$ to $k$.
 %%%
 %%%
 
-\section{ML as a Preconditioner for AztecOO}
+\subsection{ML as a Preconditioner for AztecOO}
 \label{sec:ml_prec}
 
 In order to use ML as a preconditioner, we need to define an
@@ -258,25 +258,25 @@ ML_Aggregate_Coarsen begins
 Aggregation total setup time = 8.903003e-02 seconds
 Smoothed Aggregation : operator complexity = 1.390625e+00.
 
-                *******************************************************
-                ***** Preconditioned CG solution
-                ***** Epetra ML_Operator
-                ***** No scaling
-                *******************************************************
+           *******************************************************
+           ***** Preconditioned CG solution
+           ***** Epetra ML_Operator
+           ***** No scaling
+           *******************************************************
 
-                iter:    0           residual = 1.000000e+00
-                iter:    1           residual = 1.289136e-01
-                iter:    2           residual = 4.710371e-03
-                iter:    3           residual = 7.119470e-05
-                iter:    4           residual = 1.386302e-06
-                iter:    5           residual = 2.477133e-08
-                iter:    6           residual = 6.141025e-10
-                iter:    7           residual = 6.222216e-12
-                iter:    8           residual = 1.277534e-13
+           iter:    0           residual = 1.000000e+00
+           iter:    1           residual = 1.289136e-01
+           iter:    2           residual = 4.710371e-03
+           iter:    3           residual = 7.119470e-05
+           iter:    4           residual = 1.386302e-06
+           iter:    5           residual = 2.477133e-08
+           iter:    6           residual = 6.141025e-10
+           iter:    7           residual = 6.222216e-12
+           iter:    8           residual = 1.277534e-13
 
 
-                Solution time: 0.005845 (sec.)
-                total iterations: 8
+           Solution time: 0.005845 (sec.)
+           total iterations: 8
 Residual    = 6.99704e-13
 \end{verbatim}
 
@@ -285,7 +285,7 @@ Residual    = 6.99704e-13
 %%%
 
 
-\section{Two-level Domain Decomposition Preconditioners with ML}
+\subsection{Two-level Domain Decomposition Preconditioners with ML}
 \label{sec:ml_DD}
 
 In order to use the example reported in this Section, one should compile
@@ -343,7 +343,7 @@ The entire code is reported in \TriExe{ml/ex2.cpp}.
 %%%
 %%%
 
-\section{Concluding Remarks}
+\subsection{Concluding Remarks}
 \label{sec:ml_concluding}
 
 More documentation about ML can be found in

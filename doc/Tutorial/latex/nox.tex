@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Solving Nonlinear Systems with NOX}
+\section{Solving Nonlinear Systems with NOX}
 \label{chap:nox}
 
 NOX is a suite of solution methods for the solution of nonlinear
@@ -124,7 +124,7 @@ techniques and trust region strategies.
 %%%
 %%%
 
-\section{Creating NOX Vectors and Group}
+\subsection{Creating NOX Vectors and Group}
 \label{sec:nox_intro}
 
 NOX is not based on any particular linear algebra package. Users are
@@ -150,7 +150,7 @@ Section~\ref{sec:installing})\footnote{Other two concrete implementation
 %%%
 %%%
 
-\section{Introducing NOX in an Existing Code}
+\subsection{Introducing NOX in an Existing Code}
 \label{sec:nox_introduce}
 
 Two basic steps are required to implement a \verb!NOX::Epetra!
@@ -160,7 +160,8 @@ the following methods:
 \begin{enumerate}
 \item A method to compute $y = F(X)$ for a given $x$. The syntax is
 \begin{verbatim}
-computeF(const Epetra_Vector & x, Epetra_Vector & y, FillType flag)
+computeF(const Epetra_Vector & x, Epetra_Vector & y, 
+         FillType flag)
 \end{verbatim}
 with \verb!x! and \verb!y! two Epetra\_Vectors, and \verb!flag! an
 enumerated type that tells why this method was called. In fact, NOX has
@@ -169,7 +170,8 @@ this case, users may want to compute an inexact (and hopefully cheaper)
 $F$, since it is only used in the Jacobian (or preconditioner).
 \item A function to compute the Jacobian, whose syntax is
 \begin{verbatim}
-computeJacobian(const Epetra_Vector & x, Epetra_Operator * Jac)
+computeJacobian(const Epetra_Vector & x, 
+                Epetra_Operator * Jac)
 \end{verbatim}
   This method is optional optional method. It should be implemented when
   users wish to supply their own evaluation of the Jacobian. If the user
@@ -180,7 +182,8 @@ computeJacobian(const Epetra_Vector & x, Epetra_Operator * Jac)
   solution vector x.
 \item A method which fills a preconditioner matrix, whose syntax is
 \begin{verbatim}
-computePrecMatrix(const Epetra_Vector & x, Epetra_RowMatrix & M)
+computePrecMatrix(const Epetra_Vector & x, 
+                  Epetra_RowMatrix & M)
 \end{verbatim}
   It should only contain an estimate of the Jacobian. If users do not
   wish to supply their own Preconditioning matrix, they should implement
@@ -211,7 +214,8 @@ Epetra_Operator & J = UserProblem.getJacobian(),
 \end{verbatim}
 created as a NOX matrix-free operator,
 \begin{verbatim}
-NOX::Epetra::MatrixFree & J = MatrixFree(userDefinedInterface, solutionVec),
+NOX::Epetra::MatrixFree & J = MatrixFree(userDefinedInterface, 
+                                         solutionVec),
 \end{verbatim}
 or created by NOX using a finite differencing,
 \begin{verbatim}
@@ -233,7 +237,7 @@ NOX::Epetra::Group gourp(printParams, lsParams, interface, FIXME).
 %%%
 %%%
 
-%\section{Stopping Criteria}
+%\subsection{Stopping Criteria}
 %\label{sec:nox_stopping}
 
 %NOX can check the convergence of the nonlinear solver in a variety of
@@ -244,7 +248,7 @@ NOX::Epetra::Group gourp(printParams, lsParams, interface, FIXME).
 %%%
 %%%
 
-\section{A Simple Nonlinear Problem}
+\subsection{A Simple Nonlinear Problem}
 \label{sec:nox_simple}
 
 As an example. define $F : \mathbb{R}^2 \rightarrow \mathbb{R}^2$ by
@@ -269,33 +273,33 @@ with $x_0 = (0.5, 0.5)$ as a starting solution. The output is
 approximatively as follows:
 \begin{verbatim}
 [msala:nox]> mpirun -np 1 ./ex1.exe
-************************************************************************
+*****************************************************
 -- Nonlinear Solver Step 0 --
 f = 5.590e-01  step = 0.000e+00  dx = 0.000e+00
-************************************************************************
+*****************************************************
 
-************************************************************************
+*****************************************************
 -- Nonlinear Solver Step 1 --
 f = 2.102e-01  step = 1.000e+00  dx = 3.953e-01
-************************************************************************
+*****************************************************
 
-************************************************************************
+*****************************************************
 -- Nonlinear Solver Step 2 --
 f = 1.009e-02  step = 1.000e+00  dx = 8.461e-02
-************************************************************************
+*****************************************************
 
-************************************************************************
+*****************************************************
 -- Nonlinear Solver Step 3 --
 f = 2.877e-05  step = 1.000e+00  dx = 4.510e-03 (Converged!)
-************************************************************************
+*****************************************************
 
-************************************************************************
+*****************************************************
 -- Final Status Test Results --
 Converged....OR Combination ->
   Converged....F-Norm = 2.034e-05 < 2.530e-04
                (Length-Scaled Two-Norm, Relative Tolerance)
   ??...........Number of Iterations = -1 < 20
-************************************************************************
+*****************************************************
 
 -- Parameter List From Solver --
 Direction ->
@@ -353,7 +357,7 @@ Epetra::Vector
 %%%
 %%%
 
-\section{A 2D Nonlinear PDE Problem}
+\subsection{A 2D Nonlinear PDE Problem}
 \label{sec:nox_2d}
 
 In this Section, we consider the solution of the following nonlinear PDE
@@ -401,7 +405,7 @@ almost identical to that of the previous Section.
 %%%
 %%%
 
-\section{Jacobian-free Methods}
+\subsection{Jacobian-free Methods}
 \label{sec:nox_jacobian_free}
 
 In Section \ref{sec:nox_2d}, the entries of the Jacobian matrix have
@@ -419,7 +423,7 @@ NOX, to reduce the number of function evaluations.
 %%%
 %%%
 
-\section{Concluding Remarks}
+\subsection{Concluding Remarks}
 \label{sec:local}
 
 The documentation of NOX can be found in \cite{NOX-home-page}.

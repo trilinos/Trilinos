@@ -26,18 +26,19 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{TriUtils}
+\section{TriUtils}
 \label{chap:triutils}
 
-\section{Reading a HB problem}
+\subsection{Reading a HB problem}
 
 It is possible to read matrix, solution and right-hand side, from a file
-written in the Harwell/Boeing format. This is done in
+written in the Harwell/Boeing format. This is done in \newline
 \TriExe{triutils/ex1.cpp}. The key instructions are the following.
 
 First, we define pointers to Epetra\_Vector and Epetra\_Matrix objects:
 \begin{verbatim}
-Epetra_Map * readMap; // Pointers because of Trilinos_Util_ReadHb2Epetra
+// Pointers because of Trilinos_Util_ReadHb2Epetra
+Epetra_Map * readMap;
 Epetra_CrsMatrix * readA; 
 Epetra_Vector * readx; 
 Epetra_Vector * readb;
@@ -84,7 +85,7 @@ delete readMap;
 %%%
 %%%
 
-\section{ShellOptions}
+\subsection{ShellOptions}
 
 ShellOptions is a class to manage the input arguments and shell
 variables.  With this class, it is easy to handle input line arguments

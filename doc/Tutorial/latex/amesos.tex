@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Interfacing Direct Solvers with Amesos}
+\section{Interfacing Direct Solvers with Amesos}
 \label{chap:amesos}
 
 The Amesos package provides an object-oriented interface to several
@@ -68,7 +68,7 @@ Amesos objects, to interface with the following packages:
 %%%
 %%%
 
-\section{Installation of Trilinos third-part Packages}
+\subsection{Installation of Trilinos third-part Packages}
 \label{sec:3pl}
 
 Amesos is an interface to other packages, mainly developed outside the
@@ -103,7 +103,8 @@ $ ./configure --prefix=${TRILINOS_HOME}/LINUX_MPI \
   --enable-mpi --with-mpi-compilers \
   --enable-amesos-umfpack \
   --enable-amesos-superludist \
-  --with-amesos-superludistlib="${TRILINOS_3PL}/SuperLU_DIST_2.0/libsuperlu_LINUX.a"
+  --with-amesos-superludistlib=\
+  "${TRILINOS_3PL}/SuperLU_DIST_2.0/libsuperlu_LINUX.a"
 \end{verbatim}
 (This command is followed by \verb!make! and \verb!make install!, as
 usual.)  This will enable UMFPACK and SuperLUdist, which are the two
@@ -120,7 +121,7 @@ to Amesos documentation.
 %%%
 %%%
 
-\section{UMFPACK}
+\subsection{UMFPACK}
 \label{sec:umfpack}
 
 File \TriExe{amesos/ex1.cpp} shows how to use Amesos to solve a linear
@@ -161,7 +162,7 @@ the linear system, and then broadcast the solution.
 %%%
 %%%
 
-\section{SuperLUdist}
+\subsection{SuperLUdist}
 \label{sec:superludist}
 
 Solving using SuperLUdist\footnote{SuperLU\_DIST is a parallel extension
@@ -184,7 +185,7 @@ SymbolicFactorization() and NumericFactorization().
 \begin{remark}
   We have declared a pointer to and Amesos\_Superludist object because
   the destructor of this object contains some MPI
-  calls. As in example \TriExe{amesos/ex2.cpp} the destructor is called
+  calls. As in example \newline \TriExe{amesos/ex2.cpp} the destructor is called
   at the end of the main function (after a call to
   \verb!MPI_Finalize()!, we have to delete this object using the C++
   statement
@@ -198,7 +199,7 @@ delete SuperludisProblem;
 %%%
 %%%
 
-\section{A Generic Interface to Various Direct Solvers}
+\subsection{A Generic Interface to Various Direct Solvers}
 \label{sec:amesos_generic}
 
 All Amesos objects are derived from the Amesos\_BaseClass object. Using

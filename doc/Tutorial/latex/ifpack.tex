@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\chapter{Incomplete Factorizations with IFPACK}
+\section{Incomplete Factorizations with IFPACK}
 \label{chap:ifpack}
 
 IFPACK provides a suite of object-oriented algebraic preconditioners for
@@ -56,7 +56,7 @@ In this Chapter, we will
 %%%
 %%%
 
-\section{Theoretical Background}
+\subsection{Theoretical Background}
 \label{sec:ifpack_theoretical}
 
 Aim of this Section is to briefly present some aspects on incomplete
@@ -147,7 +147,7 @@ variant which performs pivoting is called ILUTP.
 %%%
 %%%
 
-\section{Incomplete Cholesky Factorizations}
+\subsection{Incomplete Cholesky Factorizations}
 \label{sec:ifpack_chol}
 
 Ifpack\_CrsIct is a class for constructing and using incomplete Cholecky
@@ -196,7 +196,7 @@ incomplete Cholesky factorization.
 %%%
 %%%
 
-\section{ILU  Factorizations}
+\subsection{ILU  Factorizations}
 \label{sec:ifpack_ilut}
 
 IFPACK implements various incomplete factorization for non-symmetric
@@ -252,7 +252,7 @@ Example \TriExe{ifpack/ex2.cpp} shows the use of Ifpack\_CrsIlut class.
 %%%
 %%%
 
-\section{RILU  Factorizations}
+\subsection{RILU  Factorizations}
 \label{sec:ifpack_rilu}
 
 The application of the incomplete factors to a global vector, $z =
@@ -277,7 +277,7 @@ RILU factorizations are defined by the Ifpack\_CrsRiluk class.
 %%%
 
 
-\section{Concluding Remarks}
+\subsection{Concluding Remarks}
 \label{sec:ifpack_concluding}
 
 More documentation on the IFPACK package can be found in
