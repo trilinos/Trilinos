@@ -31,68 +31,64 @@ class Amesos_EpetraRedistributor : public Amesos_EpetraInterface
 {
 
 public:
-  Amesos_EpetraRedistributor(const Epetra_LinearProblem * LinearProblem);
+  Amesos_EpetraRedistributor(const Epetra_LinearProblem & Problem,
+			     const AMESOS::Parameter::List &ParameterList);
   ~Amesos_EpetraRedistributor();
 
-  int CreateSerialMap();
+  int SetRedistributor(const int NumProcs);
+  
+  int CreateTargetMap();
   int CreateImportAndExport();
-
-  inline bool IsLocal() const
+  
+  inline int NumTargetProcs() const
   {
-    return( IsLocal_);
+    return( NumTargetProcs_ );
   }
-
-  inline int SetIsLocal(bool flag) 
+    
+  inline Epetra_Import * ImportFromTarget() const
   {
-    IsLocal_ = flag;
-    return 0;
+    return( ImportFromTarget_ );
   }
   
-  inline Epetra_Import * ImportFromProcZero() 
+  inline Epetra_Import * ImportToTarget() const
   {
-    return( ImportFromProcZero_ );
-  }
-  
-  inline Epetra_Import * ImportToProcZero() 
-  {
-    return( ImportToProcZero_ );
+    return( ImportToTarget_ );
   }
 
-  inline Epetra_Map * SerialMap() 
+  inline Epetra_Map * TargetMap() const
   {
-    return( SerialMap_ );
+    return( TargetMap_ );
   }
   
-  inline Epetra_BlockMap * SerialBlockMap() 
+  inline Epetra_BlockMap * TargetBlockMap() const
   {
-    return( SerialBlockMap_ );
+    return( TargetBlockMap_ );
   }
 
-  inline Epetra_MultiVector * SerialRHS()
+  inline Epetra_MultiVector * TargetRHS() const
   {
-    return( SerialRHS_ );
+    return( TargetRHS_ );
   }
   
-  int CreateSerialRHS(int nrhs);
-  
+  int CreateTargetRHS(int nrhs);
+     
 private:
-  
-   
-  Epetra_MultiVector * SerialRHS_;        // MS // MUMPS required rhs (and then solution)
+
+  int NumTargetProcs_;
+     
+  Epetra_MultiVector * TargetRHS_;        // MS // MUMPS required rhs (and then solution)
                                           // MS // entirely stored on the host, also for
                                           // MS // ICNTL(18) = 3. 
 
-  Epetra_Import * ImportToProcZero_;      // MS // import from distributed to host 
-  Epetra_Import * ImportFromProcZero_;    // MS // (for rhs and sol) 
+  Epetra_Import * ImportToTarget_;      // MS // import from distributed to host 
+  Epetra_Import * ImportFromTarget_;    // MS // (for rhs and sol) 
 
-  Epetra_Map *SerialMap_ ;               //  Points to a Serial Map (unused if IsLocal == 1 ) 
-  Epetra_BlockMap * SerialBlockMap_;
+  Epetra_Map *TargetMap_ ;               //  Points to a target Map (unused if IsLocal == 1 ) 
+  Epetra_BlockMap * TargetBlockMap_;
   
-  bool IsSerialMapOK_;
+  bool IsTargetMapOK_;
   bool IsImportAndExportOK_;
-  bool IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0
-                           //  Note:  Local Problems do not require redistribution of
-                           //  the matrix A or vectors X and B.
+
   
 };
 
