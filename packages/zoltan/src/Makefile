@@ -244,10 +244,10 @@ REFTREE_INC     = reftree_const.h
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_random_io.c \
-                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c  \
-                  zoltan_hg_readfile.c
+                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c  
+ 
 ifdef ZOLTAN_HG
-DR_CSRC        += dr_hypergraph_io.c
+DR_CSRC        += dr_hypergraph_io.c zoltan_hg_readfile.c
 endif
 
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
