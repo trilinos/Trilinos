@@ -65,30 +65,33 @@ int main(int argc, char *argv[])
   // create a parameter list for ML options
   ParameterList MLList;
 
-  MLList.setParameter("max levels",2);
-  MLList.setParameter("increasing or decreasing","decreasing");
+  // to set default values, see user's guide.
 
-  MLList.setParameter("aggregation: type", "METIS");
-  MLList.setParameter("smoother: type","aztec");
-  MLList.setParameter("aggregation: nodes per aggregate", 16);
-  MLList.setParameter("smoother: pre or post", "both");
-  MLList.setParameter("coarse: type","Amesos_KLU");
-  MLList.setParameter("coarse: max processes", 4);
+  MLList.set("max levels",2);
+  MLList.set("increasing or decreasing","decreasing");
+
+  MLList.set("aggregation: type", "METIS");
+  MLList.set("smoother: type","aztec");
+  MLList.set("aggregation: nodes per aggregate", 16);
+  MLList.set("smoother: pre or post", "both");
+  MLList.set("coarse: type","Amesos_KLU");
+  MLList.set("coarse: max processes", 4);
   
-  // Aztec smoother requires some more vectors.
+  // Aztec smoother requires some more vectors. Note: the following options and params
+  // will be used ONLY for the smoother, and will NOT affect the Aztec solver
   int options[AZ_OPTIONS_SIZE];
   double params[AZ_PARAMS_SIZE];
   AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_subdomain_solve] = AZ_icc;
-  MLList.setParameter("smoother: aztec options", options);
-  MLList.setParameter("smoother: aztec params", params);
+  MLList.set("smoother: aztec options", options);
+  MLList.set("smoother: aztec params", params);
 
   // create the preconditioner object and compute hierarchy
-  Epetra_ML_Preconditioner * MLPrec = new Epetra_ML_Preconditioner(*A, MLList, true);
+  Epetra_ML::MultiLevelPreconditioner * MLPrec = new Epetra_ML::MultiLevelPreconditioner(*A, MLList, true);
 
   // verify unused parameters
-  MLPrec->PrintUnused();
+  if( Comm.MyPID() == 0 && ) MLPrec->PrintUnused();
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
