@@ -116,7 +116,6 @@ int LB_inertial2d(
         value[i] = (dotpt[i].X[0] - xcm)*evec[0] +
                    (dotpt[i].X[1] - ycm)*evec[1];
 
-     /* KDDKDD -- Do we need to set cm[0] and cm[1]? */
      cm[0] = xcm;
      cm[1] = ycm;
 
