@@ -475,14 +475,15 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   int nRounds, nCandidates, nTotal;                   /* almost constants */
   int *send, *dest, *size, *rec, *index, *aux;        /* working buffers */
   int nSend, nDest, nSize, nRec, nIndex, nAux;        /* buffer sizes in ints */
-  float *sums, *f, bestsum;                           /* working buffer, float */
+  float *sums, *f, bestsum;                           /* working buffer, float*/
   int *visit, *cmatch, *select, *permute, *edgebuf;   /* fixed usage arrays */
   int nEdgebuf, nPermute;                             /* array size in ints */
   PHGComm *hgc = hg->comm;
   int err = ZOLTAN_OK, old_row, row, col, nPins, nVtx;
-  int *rows[hgc->nProc_y + 1], bestlno, vertex, nselect;
+  int **rows = NULL; 
+  int bestlno, vertex, nselect;
   char *yo = "matching_ipm";
-int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
+  int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   
   /* this restriction will be removed later, but for now NOTE this test */
   if (sizeof(int) != sizeof (float))  {
@@ -531,6 +532,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
    || !(rec    = (int*)   ZOLTAN_MALLOC (nRec         * sizeof (int)))
    || !(index  = (int*)   ZOLTAN_MALLOC (nIndex       * sizeof (int)))
    || !(aux    = (int*)   ZOLTAN_MALLOC (nAux         * sizeof (int)))
+   || !(rows   = (int**)  ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof (int*)))
    || !(master_data = (int*) ZOLTAN_MALLOC (3 * nTotal * sizeof (int)))
    || !(master_procs= (int*) ZOLTAN_MALLOC (nTotal * sizeof (int))))  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
@@ -987,8 +989,8 @@ if (count)
 }
 
 fini:
-  Zoltan_Multifree (__FILE__, __LINE__, 14, &cmatch, &visit, &sums, &send,
-   &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select,
+  Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
+   &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
    &master_data, &master_procs);
   return err;
 }
