@@ -253,8 +253,9 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   msgtag = 32767;
   ierr = LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
       msgtag, lb->Deterministic, &nreceives);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     abort();
   }
 
@@ -269,8 +270,9 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
          (char *) tmp);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     LB_FREE(&tmp);
     abort();
   }
@@ -341,7 +343,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
  * fixes the import tags so that region tags that were previously
  * exported aren't counted when imported back.
  */
-void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
+void LB_fix_tags(LB *lb, LB_GID **import_global_ids, LB_LID **import_local_ids,
                  int **import_procs, int nrectags, pRegion import_regs)
 {
   char *yo = "LB_fix_tags";
@@ -356,13 +358,31 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
 
     /* allocate memory */
 
-    *import_global_ids = (LB_GID *) LB_MALLOC(nrectags * sizeof(LB_GID));
-    *import_local_ids  = (LB_LID *) LB_MALLOC(nrectags * sizeof(LB_LID));
-    *import_procs      = (int *)   LB_MALLOC(nrectags * sizeof(int));
-    if (!(*import_global_ids) || !(*import_local_ids) || !(*import_procs)) {
+/* KDD  -- added calls to Special_Malloc */
+
+    if (!LB_Special_Malloc(lb,(void **)import_global_ids,nrectags,
+                           LB_SPECIAL_MALLOC_GID)) {
+      LB_TRACE_EXIT(lb, yo);
       fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
-      abort();
+      /* return LB_MEMERR; */ abort();
     }
+    if (!LB_Special_Malloc(lb,(void **)import_local_ids,nrectags,
+                           LB_SPECIAL_MALLOC_LID)) {
+      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
+      LB_TRACE_EXIT(lb, yo);
+      fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
+      /* return LB_MEMERR; */ abort();
+    }
+    if (!LB_Special_Malloc(lb,(void **)import_procs,nrectags,
+                           LB_SPECIAL_MALLOC_INT)) {
+      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
+      LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
+      LB_TRACE_EXIT(lb, yo);
+      fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
+      /* return LB_MEMERR; */ abort();
+    }
+
+/* KDD */
 
     /* for each region imported, look at its originating processor */
     for(i=0; i<nrectags; i++) {

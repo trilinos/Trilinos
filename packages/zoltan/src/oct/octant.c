@@ -9,7 +9,6 @@
 #include "lb_const.h"
 #include "octant_const.h"
 #include "oct_util_const.h"
-#include "all_allo_const.h"
 
 /*****************************************************************************/
 static int OCT_count;                /* count of all local octants           */

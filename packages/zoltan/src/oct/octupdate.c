@@ -15,7 +15,6 @@
 #include "octupdate_const.h"
 #include "migreg_const.h"
 #include "migoct_const.h"
-#include "all_allo_const.h"
 #include "params_const.h"
 #include <values.h>
 
@@ -249,7 +248,7 @@ static int lb_oct_init(
 	         &c[2], &c[3], &counters[3], &counters[5]);
 
   *num_import = nrectags;
-  LB_fix_tags(import_global_ids, import_local_ids, import_procs, nrectags, 
+  LB_fix_tags(lb, import_global_ids, import_local_ids, import_procs, nrectags, 
 	      import_regs);
 
   time2 = MPI_Wtime();

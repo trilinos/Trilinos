@@ -10,7 +10,6 @@
 #include "hilbert_const.h"
 #include "comm_const.h"
 #include "dfs_const.h"
-#include "all_allo_const.h"
 
 static void LB_insert_orphan(LB *lb, Region reg);
 static void LB_copy_info(pRegion src, pRegion *dest);
@@ -36,8 +35,9 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   msgtag = 32767;
   ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, 
                  lb->Deterministic, &n_import);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     abort();
   }
   *c2 = n_import;
@@ -54,8 +54,9 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
                    (char *) import_objs);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     LB_FREE(&import_objs);
     abort();
   }

@@ -11,7 +11,6 @@
 #include "oct_util_const.h"
 #include "hilbert_const.h"
 #include "dfs_const.h"
-#include "all_allo_const.h"
 
 /* function prototype */
 static int LB_convert_from_gray(int input);
