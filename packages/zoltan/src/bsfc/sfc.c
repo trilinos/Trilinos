@@ -104,13 +104,13 @@ int LB_sfc(
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
   int max_obj;
-  LB_ID_PTR global_ids;
-  LB_ID_PTR local_ids;
-  float* objs_wgt;
+  LB_ID_PTR global_ids = NULL;
+  LB_ID_PTR local_ids = NULL;
+  float* objs_wgt = NULL;
   int size_of_unsigned;
   unsigned imax;
   float *global_actual_work_allocated = NULL, *total_weight_array = NULL;
-  float *work_percent_array;
+  float *work_percent_array = NULL;
   int balanced_flag;
   SFC_VERTEX_PTR vert_in_cut_ptr = NULL;
   float* wgts_in_cut_ptr = NULL;
@@ -176,13 +176,14 @@ int LB_sfc(
   }
   /*max_objects might need to be more than num_local_objects (max_objects taken from rcg/shared.c)*/
   max_obj = num_local_objects;
-  global_ids = LB_MALLOC_GID_ARRAY(lb, (max_obj));
-  local_ids  = LB_MALLOC_LID_ARRAY(lb, (max_obj));
+  if (max_obj > 0) {
+    global_ids = LB_MALLOC_GID_ARRAY(lb, (max_obj));
+    local_ids  = LB_MALLOC_LID_ARRAY(lb, (max_obj));
 
-  
-  if (!(global_ids) || (lb->Num_LID && !(local_ids))) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    if (!(global_ids) || (lb->Num_LID && !(local_ids))) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      return(LB_MEMERR);
+    }
   }
   
   /*
@@ -212,16 +213,17 @@ int LB_sfc(
     return(ierr);
   }
   /* if object weights are not defined, all object weights are 1.0 */
-  if (num_local_objects > 0 && wgt_dim < 1) {
-    objs_wgt    = (float *) LB_MALLOC((num_local_objects)*sizeof(float));
-    if (!objs_wgt) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+  if (wgt_dim < 1) {
+    if (num_local_objects > 0) {
+      objs_wgt    = (float *) LB_MALLOC((num_local_objects)*sizeof(float));
+      if (!objs_wgt) {
+        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        return(LB_MEMERR);
+      }
+      for (i = 0; i < num_local_objects; i++) objs_wgt[i] = 1.;
     }
-    for (i = 0; i < num_local_objects; i++) objs_wgt[i] = 1.;
     wgt_dim = 1;  /* set object weight dimension to 1 */
   }  
-    
   
   sfc_vert_ptr = (SFC_VERTEX_PTR) LB_MALLOC(num_local_objects * sizeof(SFC_VERTEX));
   if(num_local_objects != 0 && sfc_vert_ptr == NULL) {
@@ -330,12 +332,14 @@ int LB_sfc(
   }
   /* if the objects were moved to different processors, we need to move them back now */
   if(plan != NULL) {
-    SFC_VERTEX_PTR recv_buf;
+    SFC_VERTEX_PTR recv_buf = NULL;
     int counter = 0;
-    recv_buf = (SFC_VERTEX_PTR) LB_MALLOC(sizeof(SFC_VERTEX) * num_vert_sent);
-    if(recv_buf==NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+    if (num_vert_sent > 0) {
+      recv_buf = (SFC_VERTEX_PTR) LB_MALLOC(sizeof(SFC_VERTEX) * num_vert_sent);
+      if(recv_buf==NULL) {
+        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        return(LB_MEMERR);
+      }
     }
     ierr = LB_Comm_Do_Reverse(plan, comm_tag, (char*) vert_in_cut_ptr,
 			      sizeof(SFC_VERTEX), NULL, (char*) recv_buf);
