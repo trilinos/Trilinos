@@ -21,7 +21,6 @@
 #else
 #ifdef DSUPERLU
 #include "mpi.h"
-#include <malloc.h>
 #include "superlu_ddefs.h"
 #endif
 #endif

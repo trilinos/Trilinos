@@ -738,7 +738,12 @@ ML_print_it();
 ******************************************************************************/
 #define ML_NIntStats 6
 #define ML_NDblStats 1
+/* OS X defines malloc in a non-standard place */
+#ifdef HAVE_MALLOC_H
 #include "malloc.h"
+#else
+#include <stdlib.h>
+#endif
 #include "ml_utils.h"
 #include <stdarg.h>
 #ifdef ML_TFLOP

@@ -525,10 +525,10 @@ for (i=0; i<exp_Nrows; i++)
    if ( N_neighbors > 0 )
    {
       nbytes = N_neighbors * sizeof(int);
-      if ( nbytes > 0 ) int_buf = (int *) malloc( nbytes );
+      if ( nbytes > 0 ) int_buf = (int *) ML_allocate( nbytes );
       else              int_buf = NULL;
       nbytes = Ncoarse * sizeof(int);
-      if ( nbytes > 0 ) int_buf2 = (int *) malloc( nbytes );
+      if ( nbytes > 0 ) int_buf2 = (int *) ML_allocate( nbytes );
       else              int_buf2 = NULL;
       for ( i = 0; i < N_neighbors; i++ ) int_buf[i] = 0;
 
@@ -676,7 +676,7 @@ for (i=0; i<exp_Nrows; i++)
 
    for (i = 0; i < aggr_count; i++)
    {
-      rows_in_aggs[i] = (int *) malloc(aggr_cnt_array[i]*sizeof(int));
+      rows_in_aggs[i] = (int *) ML_allocate(aggr_cnt_array[i]*sizeof(int));
       aggr_cnt_array[i] = 0;
       if (rows_in_aggs[i] == NULL)
       {
@@ -770,7 +770,7 @@ for (i=0; i<exp_Nrows; i++)
    else
    {
       nbytes = total_send_leng * sizeof(int);
-      if ( nbytes > 0 ) int_buf = (int *) malloc(nbytes);
+      if ( nbytes > 0 ) int_buf = (int *) ML_allocate(nbytes);
       else              int_buf = NULL;
       count = 0;
       for ( i = 0; i < ml_ag->nvblocks; i++ )
@@ -1178,7 +1178,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       /* ---------------------------------------------------------- */
 
       node_head = NULL;
-      new_node = (ML_Node *) malloc(sizeof(ML_Node));      
+      new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
       new_node->node_id = seed_node;
       node_head = new_node;
       node_tail = new_node;
@@ -1201,7 +1201,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
             if ( jnode < Nrows && node_dist[jnode] == -1 ) 
             {
                node_dist[jnode] = node_dist[inode] + 1;
-               new_node = (ML_Node *) malloc(sizeof(ML_Node));
+               new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));
                new_node->node_id = jnode;
                new_node->next = NULL;
                if ( node_head == NULL ) {node_head = node_tail = new_node;}
@@ -1452,9 +1452,9 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    nbytes = AN_neighbors * sizeof( int );
    if ( nbytes > 0 )
    {
-      Aneighbors = (int *) malloc( nbytes );
-      Arecv_leng = (int *) malloc( nbytes );
-      Asend_leng = (int *) malloc( nbytes );
+      Aneighbors = (int *) ML_allocate( nbytes );
+      Arecv_leng = (int *) ML_allocate( nbytes );
+      Asend_leng = (int *) ML_allocate( nbytes );
    }
    else
    {
@@ -1469,7 +1469,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    total_send_leng = 0;
    for ( i = 0; i < AN_neighbors; i++ ) total_send_leng += Asend_leng[i];
    nbytes = total_send_leng * sizeof( int );
-   if ( nbytes > 0 ) Asend_list = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) Asend_list = (int *) ML_allocate( nbytes );
    else              Asend_list = NULL;
    count = 0;
    for ( i = 0; i < AN_neighbors; i++ )
@@ -1481,7 +1481,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    total_recv_leng = 0;
    for ( i = 0; i < AN_neighbors; i++ ) total_recv_leng += Arecv_leng[i];
    nbytes = total_recv_leng * sizeof( int );
-   if ( nbytes > 0 ) Arecv_list = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) Arecv_list = (int *) ML_allocate( nbytes );
    else              Arecv_list = NULL;
    count = 0;
    for ( i = 0; i < AN_neighbors; i++ )
@@ -1538,7 +1538,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    nbytes = total_send_leng * sizeof( int );
    if ( nbytes > 0 ) ML_memory_alloc((void**) &Lsend_list, nbytes, "AgD");
    else              Lsend_list = NULL;
-   if ( nbytes > 0 ) Lsend_count = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) Lsend_count = (int *) ML_allocate( nbytes );
    else              Lsend_count = NULL;
 
    count = lcount = 0;
@@ -1625,7 +1625,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    /* ------------------------------------------------------------- */
 
    nvblocks = vinfo[N_info-1] + 1;
-   vblock_info = (int *) malloc(nvblocks * sizeof(int));
+   vblock_info = (int *) ML_allocate(nvblocks * sizeof(int));
    for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = 0;
    for ( i = 0; i < N_info; i++ ) vblock_info[vinfo[i]]++; 
   
@@ -1633,7 +1633,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    /* allocate temporary storage for block information              */
    /* ------------------------------------------------------------- */
 
-   vblock_info2 = (int *) malloc(nvblocks * sizeof(int));
+   vblock_info2 = (int *) ML_allocate(nvblocks * sizeof(int));
    vblock_info2[0] = vblock_info[0];
    for ( i = 1; i < nvblocks; i++ )
       vblock_info2[i] = vblock_info2[i-1] + vblock_info[i];
@@ -1647,7 +1647,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    amal_count = nvblk_local + 1;
    amal_mat_indx[0] = amal_count;
    row = 0;
-   col_entered = (char *) malloc(sizeof(char)*(1+ nvblocks) );
+   col_entered = (char *) ML_allocate(sizeof(char)*(1+ nvblocks) );
    if (col_entered == NULL) 
    {
       printf("Not enough space in ML_aggregate\n");
@@ -1749,7 +1749,7 @@ if (flag == 0)
    }
 
    nbytes = N_neighbors * sizeof(USR_REQ);
-   if ( nbytes > 0 ) Request = (USR_REQ *) malloc(nbytes);
+   if ( nbytes > 0 ) Request = (USR_REQ *) ML_allocate(nbytes);
    else              Request = NULL;
    offset = 0;
    msgtype = msgid;
@@ -1796,7 +1796,7 @@ if (flag == 0)
       switch ( datatype ) 
       {
          case ML_CHAR    : nbytes = total_recv_leng * sizeof(char);
-                           char_array = (char *) malloc(nbytes);
+                           char_array = (char *) ML_allocate(nbytes);
                            carray = (char *) recvbuf;
                            for ( i = 0; i < total_recv_leng; i++ )
                               char_array[recv_list[i]-Nrows] = carray[i];
@@ -1805,7 +1805,7 @@ if (flag == 0)
                            free(char_array);
                            break;
          case ML_INT     : nbytes = total_recv_leng * sizeof(int);
-                           int_array = (int *) malloc(nbytes);
+                           int_array = (int *) ML_allocate(nbytes);
                            iarray = (int *) recvbuf;
                            for ( i = 0; i < total_recv_leng; i++ )
                               int_array[recv_list[i]-Nrows] = iarray[i];
@@ -1814,7 +1814,7 @@ if (flag == 0)
                            free(int_array);
                            break;
          case ML_DOUBLE  : nbytes = total_recv_leng * sizeof(double);
-                           dble_array = (double *) malloc(nbytes);
+                           dble_array = (double *) ML_allocate(nbytes);
                            darray = (double *) recvbuf;
                            for ( i = 0; i < total_recv_leng; i++ )
                               dble_array[recv_list[i]-Nrows] = darray[i];
@@ -1851,7 +1851,7 @@ int ML_Aggregate_ComposeVBlockInfo(int Nrows, int exp_Nrows,
    else
    {
       nbytes = exp_Nrows * sizeof(double);
-      dble_buf = (double *) malloc(nbytes);
+      dble_buf = (double *) ML_allocate(nbytes);
       count = 0;
       for ( i = 0; i < ml_ag->nvblocks; i++ )
       {
@@ -2085,7 +2085,7 @@ int ML_Aggregate_ComposeVBlockCommInfo(ML_GetrowFunc *getrow_obj,
    if ( nbytes > 0 ) ML_memory_alloc((void**)&new_recv_leng, nbytes, "RI1");
    else              new_recv_leng = NULL;
    nbytes = N_neighbors * sizeof(USR_REQ);
-   if ( nbytes > 0 ) Request = (USR_REQ *) malloc(nbytes);
+   if ( nbytes > 0 ) Request = (USR_REQ *) ML_allocate(nbytes);
    else              Request = NULL;
    msgtype = 97531;
    for ( i = 0; i < new_N_neighbors; i++ ) 
@@ -2214,8 +2214,8 @@ int ML_Aggregate_ComposeRecvInfo(int nprocs, int mypid, int new_N_send,
       /* compute new_N_rcv                                              */
       /* -------------------------------------------------------------- */
 
-      int_buf  = (int *) malloc(nprocs * sizeof(int));
-      int_buf2 = (int *) malloc(nprocs * sizeof(int));
+      int_buf  = (int *) ML_allocate(nprocs * sizeof(int));
+      int_buf2 = (int *) ML_allocate(nprocs * sizeof(int));
       for (i = 0; i < nprocs; i++) int_buf[i] = 0;
       for (i = 0; i < new_N_send; i++) int_buf[new_send_neighbors[i]] = 1;
       /*ML_Comm_GsumVecInt(comm, int_buf, int_buf2, nprocs);*/
@@ -2235,7 +2235,7 @@ int ML_Aggregate_ComposeRecvInfo(int nprocs, int mypid, int new_N_send,
          ML_memory_alloc((void**)&new_recv_neighbors, nbytes, "AGM");
       } else new_recv_leng = new_recv_neighbors = NULL;
       nbytes = new_N_rcv * sizeof(USR_REQ);
-      if ( nbytes > 0 ) Request = (USR_REQ *) malloc(nbytes);
+      if ( nbytes > 0 ) Request = (USR_REQ *) ML_allocate(nbytes);
       else              Request = NULL;
       msgtype = 97531;
       for ( i = 0; i < new_N_rcv; i++ ) 
@@ -2318,8 +2318,8 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
       if ( aggr_stat[inode] != ML_AGGR_SELECTED ) 
          aggr_stat[inode] = ML_AGGR_READY;
 
-   supernode = (ML_SuperNode *) malloc(sizeof(ML_SuperNode));
-   supernode->list = (int*) malloc(max_row_nnz*sizeof(int));
+   supernode = (ML_SuperNode *) ML_allocate(sizeof(ML_SuperNode));
+   supernode->list = (int*) ML_allocate(max_row_nnz*sizeof(int));
    supernode->maxlength = max_row_nnz;
 
    /* ---------------------------------------------------------------- */
@@ -2372,8 +2372,8 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
          nbytes = total_recv_leng * sizeof(int);
       if ( nbytes > 0 ) 
       {
-         com_buf  = (int *) malloc(nbytes);
-         com_buf2 = (int *) malloc(nbytes);
+         com_buf  = (int *) ML_allocate(nbytes);
+         com_buf2 = (int *) ML_allocate(nbytes);
       } else com_buf = com_buf2 = NULL;
 
       for ( i = 0; i < total_send_leng; i++ )
@@ -2776,7 +2776,7 @@ printf(" %d \n", aggr_cnt_leng);
       nbytes = total_send_leng * sizeof(int);
    else
       nbytes = total_recv_leng * sizeof(int);
-   if ( nbytes > 0 ) com_buf = (int *) malloc(nbytes);
+   if ( nbytes > 0 ) com_buf = (int *) ML_allocate(nbytes);
    else              com_buf = NULL;
 
    for ( i = 0; i < total_send_leng; i++ )
@@ -2906,8 +2906,8 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
          {
             maxcount = 0;
             length = mat_indx[inode+1] - mat_indx[inode];
-            if (length>0) int_array  = (int *) malloc(length * sizeof(int));
-            if (length>0) int_array2 = (int *) malloc(length * sizeof(int));
+            if (length>0) int_array  = (int *) ML_allocate(length * sizeof(int));
+            if (length>0) int_array2 = (int *) ML_allocate(length * sizeof(int));
             for ( i = 0; i < length; i++ ) int_array2[i] = i;
             length = 0;
 
@@ -2959,7 +2959,7 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
    total_send_leng = 0;
    for ( i = 0; i < N_neighbors; i++ ) total_send_leng += send_leng[i];
    nbytes = total_send_leng * sizeof(int);
-   if ( nbytes > 0 ) com_buf  = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) com_buf  = (int *) ML_allocate( nbytes );
    else              com_buf = NULL;
    for ( i = 0; i < total_send_leng; i++ ) 
    {
@@ -3018,9 +3018,9 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
    /* ------------------------------------------------------------- */
 
    nbytes = total_send_leng * sizeof(int);
-   if ( nbytes > 0 ) com_buf  = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) com_buf  = (int *) ML_allocate( nbytes );
    nbytes = total_recv_leng * sizeof(int);
-   if ( nbytes > 0 ) com_buf2 = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) com_buf2 = (int *) ML_allocate( nbytes );
    for ( i = 0; i < total_send_leng; i++ ) 
    {
       com_buf[i] = aggr_index[send_list[i]];

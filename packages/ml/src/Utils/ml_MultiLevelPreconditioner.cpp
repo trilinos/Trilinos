@@ -1691,7 +1691,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     struct ML_Field_Of_Values * field_of_values;
 
     // stick default values (undefined)
-    field_of_values = (struct ML_Field_Of_Values *) malloc( sizeof(struct ML_Field_Of_Values) );
+    field_of_values = (struct ML_Field_Of_Values *) ML_allocate( sizeof(struct ML_Field_Of_Values) );
     field_of_values->eta     = 0.0;
     field_of_values->real_max= -1.0;
     field_of_values->imag_max= -1.0;

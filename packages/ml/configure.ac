@@ -185,6 +185,7 @@ AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([malloc.h],,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
@@ -216,6 +217,13 @@ else
     AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  ml requires at least one or the other.]])
   fi
 fi  
+
+if test "X$ac_cv_header_malloc_h" != "Xyes"; then
+ AC_FUNC_MALLOC
+ #if test "X$ac_cv_func_malloc_works" != "Xyes"; then
+ #  AC_MSG_ERROR([malloc function not working, needed by TriUtils.])
+ #fi
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

@@ -3083,7 +3083,7 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
     tS = GetClock();
 
     N_tot = N_update + Amat->data_org[AZ_N_external];
-    fake_rez = (double *) malloc( sizeof(double) * N_tot );
+    fake_rez = (double *) ML_allocate( sizeof(double) * N_tot );
     for( i=0 ; i<N_tot ; ++i ) fake_rez[i] = sin(1.0*i);
     ML_precondition(fake_rez, options, proc_config, params, Amat, ML_Prec);
     

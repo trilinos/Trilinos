@@ -73,7 +73,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
   /* may need to reshuffle the aggregate ordering */
   if( vector == NULL && str == NULL) {
 
-    reorder = (int *) malloc( sizeof(int) * Naggregates );
+    reorder = (int *) ML_allocate( sizeof(int) * Naggregates );
 
     if( reorder == NULL ) {
       fprintf( stderr,

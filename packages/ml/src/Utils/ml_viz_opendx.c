@@ -27,7 +27,7 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
 
   int i;
   int N_procs = comm->ML_nprocs;
-  int *offsets = (int*)malloc(sizeof(int)*(N_procs+1));
+  int *offsets = (int*)ML_allocate(sizeof(int)*(N_procs+1));
   
   ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs, comm->USR_comm);
 
@@ -47,7 +47,7 @@ int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
 
   int i;
   int N_procs = comm->ML_nprocs;
-  int *offsets = (int*)malloc(sizeof(int)*(N_procs+1));
+  int *offsets = (int*)ML_allocate(sizeof(int)*(N_procs+1));
   
   ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs, comm->USR_comm);
 
@@ -124,7 +124,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   int mypid = comm->ML_mypid;
   int nprocs = comm->ML_nprocs;
   int Nrows = Amatrix->getrow->Nrows;
-  int *Nnz_row = (int*)malloc(sizeof( int ) * Nrows);
+  int *Nnz_row = (int*)ML_allocate(sizeof( int ) * Nrows);
   int N_edges = 0;
   char filename[FILENAME_MAX];
   FILE *fp;
@@ -249,7 +249,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   /* global indices.                                                        */
   /* ********************************************************************** */
 
-  values = (int *) malloc( sizeof(int) * Nrows );
+  values = (int *) ML_allocate( sizeof(int) * Nrows );
   if( values == NULL ) {
     fprintf( stderr,
 	     "*ML*ERR* not enough memory for %d bytes\n"
@@ -282,7 +282,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 
   shuffle = 1;
 
-  reorder = (int *) malloc( sizeof(int) * Naggregates );
+  reorder = (int *) ML_allocate( sizeof(int) * Naggregates );
 
   if( shuffle == 1 ) { /* now always reordering */
     
