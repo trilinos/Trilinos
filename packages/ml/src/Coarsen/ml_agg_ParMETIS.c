@@ -610,6 +610,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 		 __LINE__);
       }
       for( i=0 ; i<Nrows ; i++ ) part[i] = 0;
+      N_parts = 1;
       ok = 1;
       skip_check = 1;
 #endif
@@ -827,6 +828,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    char str[80];
    double * new_nullspace_vect = NULL;
    double * old_nullspace_vect = NULL;
+   int * graph_decomposition = NULL;
    
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -999,12 +1001,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
 
-#ifdef NEIN
    if( ml_ag->aggr_viz_and_stats != NULL ) {
      
-     ML_memory_alloc((void*)&aggr_index,
+     ML_memory_alloc((void*)&graph_decomposition,
 		     sizeof(int)*Nrows,"aggr_index for viz");
-     if( starting_decomposition == NULL ) {
+     if( graph_decomposition == NULL ) {
        fprintf( stderr,
 		"*ML*ERR* Not enough memory for %d bytes\n"
 		"*ML*ERR* (file %s, line %d)\n",
@@ -1014,17 +1015,17 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        exit( EXIT_FAILURE );
      }
 
-     for( i=0 ; i<Nrows ; i++ ) aggr_index[i] = starting_decomposition[i];
+     for( i=0 ; i<Nrows ; i++ )
+       graph_decomposition[i] = starting_decomposition[i];
 
      aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (ml_ag->aggr_viz_and_stats);
-     aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = aggr_index;
+     aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
      aggr_viz_and_stats[ml_ag->cur_level].Nlocal = Nrows;
      aggr_viz_and_stats[ml_ag->cur_level].Naggregates = starting_aggr_count;
      aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_GLOBAL_INDICES;
      aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
      
    }
-#endif
 
    /* ********************************************************************** */
    /* Compute the new distribution, so that `desired_aggre_per_proc' aggre   */
