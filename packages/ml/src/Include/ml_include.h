@@ -31,6 +31,9 @@
 #include "ml_solver.h"
 #include "ml_vec.h"
 #include "ml_aztec_utils.h"
+#include "ml_elementagx.h"
+#include "ml_intlist.h"
+#include "ml_operatoragx.h"
 
 #ifdef __cplusplus
 extern "C"
