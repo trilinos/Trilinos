@@ -162,6 +162,8 @@ int main(int argc, char *argv[])
   }
   else {
     
+#if 0
+    // ANASAZI INTERFACE CURRENTLY BROKEN -- Feb-05
     // on the other hand, "sparse" analysis can be applied to serial and
     // parallel, of any size, but we cannot get the entire spectrum of the
     // operators.
@@ -170,6 +172,7 @@ int main(int argc, char *argv[])
     MLPrec->AnalyzeSmoothersSparse(5,5);
     MLPrec->AnalyzeMatrixEigenvaluesSparse("A");
     MLPrec->AnalyzeMatrixEigenvaluesSparse("P^{-1}A");
+#endif
 
 
   }
