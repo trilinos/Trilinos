@@ -981,11 +981,13 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /* (although, this can be quite expensive for the finest levels)          */
   /* ********************************************************************** */
      
-  bool UseSymmetrize = false;
-  sprintf(parameter,"%saggregation: symmetrize", Prefix_);
-  UseSymmetrize = List_.get(parameter, UseSymmetrize);
-  if( UseSymmetrize == true ) ML_Set_Symmetrize(ml_, ML_YES );
-  else                      ML_Set_Symmetrize(ml_, ML_NO );  
+  if( SolvingMaxwell_ == false ) {
+    bool UseSymmetrize = false;
+    sprintf(parameter,"%saggregation: symmetrize", Prefix_);
+    UseSymmetrize = List_.get(parameter, UseSymmetrize);
+    if( UseSymmetrize == true ) ML_Set_Symmetrize(ml_, ML_YES );
+    else                        ML_Set_Symmetrize(ml_, ML_NO );  
+  }
 
   /* ********************************************************************** */
   /* Define scheme to determine damping parameter in prolongator and        */
