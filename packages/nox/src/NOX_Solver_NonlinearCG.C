@@ -32,19 +32,35 @@
 
 #include "NOX_Solver_NonlinearCG.H"	// class definition
 
+/* Some compilers (in particular the SGI and ASCI Red - TFLOP)
+ * fail to find the max and min function.  Therfore we redefine them
+ * here.
+ */
+#ifdef max
+#undef max
+#endif
+
+#define max(a,b) ((a)>(b)) ? (a) : (b);
+
+#ifdef min
+#undef min
+#endif
+
+#define min(a,b) ((a)<(b)) ? (a) : (b);
+
 using namespace NOX;
 using namespace NOX::Solver;
 
 NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
   solnptr(&xgrp),		// reference to xgrp
-  oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
-  oldsoln(*oldsolnptr),		// reference to just-created pointer
+  oldSolnptr(xgrp.clone(DeepCopy)), // create via clone
+  oldSoln(*oldSolnptr),		// reference to just-created pointer
   dirptr(xgrp.getX().clone(CopyShape)), // create via clone 
   dir(*dirptr),			// reference to just-created pointer
-  olddirptr(xgrp.getX().clone(CopyShape)), // create via clone 
-  olddir(*olddirptr),		// reference to just-created pointer
-  precdirptr(xgrp.getX().clone(CopyShape)), // create via clone 
-  precolddirptr(xgrp.getX().clone(CopyShape)), // create via clone 
+  oldDirptr(xgrp.getX().clone(CopyShape)), // create via clone 
+  oldDir(*oldDirptr),		// reference to just-created pointer
+  preconditionedDirptr(xgrp.getX().clone(CopyShape)), // create via clone 
+  preconditionedOldDirptr(xgrp.getX().clone(CopyShape)), // create via clone 
   diffVector(xgrp.getX().clone(CopyShape)), // create via clone 
   testptr(&t),			// reference to t
   iparams(p),			// copy p
@@ -64,28 +80,38 @@ NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, const Parameter
 // Protected
 void NonlinearCG::init()
 {
+  // Set up utilities (i.e., set print processor, etc)
+  Utils::setUtils(iparams);
+
   // Print out initialization information
   if (Utils::doPrint(Utils::Parameters)) {
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     iparams.print(cout,5);
-    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testptr->print(cout, 5);
-    cout <<"\n" << Utils::fill(72) << "\n";
-
   }
 
   // Compute RHS of initital guess
   solnptr->computeRHS();
+
+  // Test the initial guess
+  status = testptr->operator()(*this);
+
+  if (Utils::doPrint(Utils::Parameters)) {
+    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testptr->print(cout, 5);
+    cout <<"\n" << Utils::fill(72) << "\n";
+  }
+
 }
+
 
 NonlinearCG::~NonlinearCG() 
 {
-  delete oldsolnptr;
+  delete oldSolnptr;
   delete dirptr;
-  delete olddirptr;
-  delete precdirptr;
-  delete precolddirptr;
+  delete oldDirptr;
+  delete preconditionedDirptr;
+  delete preconditionedOldDirptr;
   delete diffVector;
   delete testptr;
 }
@@ -121,11 +147,11 @@ Status::StatusType NonlinearCG::iterate()
   /* NOTE FROM TAMMY: Need to check the return status! */
   //  Two choices available for determining initial descent direction before
   //  orthogonalization: 
-  if(iparams.isParameterEqual("Direction", "Richardson"))
+  if(iparams.isParameterEqual("NLCGdirection", "Richardson"))
   {
     dir = soln.getRHS();  // Richardson direction
     if(niter!=0) 
-      olddescentdirptr = &oldsoln.getRHS();
+      oldDescentDirptr = &oldSoln.getRHS();
   }
   else
   {
@@ -134,26 +160,26 @@ Status::StatusType NonlinearCG::iterate()
     dir = soln.getGrad(); // Steepest Descent direction for 
                           // f = 1/2 Trans(R).R
     if(niter!=0) 
-      olddescentdirptr = &oldsoln.getGrad();
+      oldDescentDirptr = &oldSoln.getGrad();
   }
   dir.scale(-1.0);
 
   // Diagonally precondition if desired
 
-  *precdirptr = dir;
+  *preconditionedDirptr = dir;
   if(iparams.isParameterEqual("Diagonal Precondition", "On")) {
     if(!soln.isJacobian())
       soln.computeJacobian();
-    soln.applyJacobianDiagonalInverse(dir, *precdirptr);
+    soln.applyJacobianDiagonalInverse(dir, *preconditionedDirptr);
   }
 
   // Orthogonalize using previous search direction
 
   if(niter!=0){  
-    *precolddirptr = *olddescentdirptr;
+    *preconditionedOldDirptr = *oldDescentDirptr;
     if(iparams.isParameterEqual("Diagonal Precondition", "On")) 
-      soln.applyJacobianDiagonalInverse(*olddescentdirptr, 
-                                      *precolddirptr);
+      soln.applyJacobianDiagonalInverse(*oldDescentDirptr, 
+                                      *preconditionedOldDirptr);
 
 // Two choices (for now) for orthogonalizing descent direction with previous:
 
@@ -161,10 +187,10 @@ Status::StatusType NonlinearCG::iterate()
     {
 //                     Polak-Ribiere beta
 
-      *diffVector = *precdirptr;
-      diffVector->update(1.0, *precolddirptr, 1.0); 
+      *diffVector = *preconditionedDirptr;
+      diffVector->update(1.0, *preconditionedOldDirptr, 1.0); 
 
-      double denominator = olddescentdirptr->dot(*precolddirptr);
+      double denominator = oldDescentDirptr->dot(*preconditionedOldDirptr);
 
       beta = dir.dot(*diffVector) / denominator;
 
@@ -178,9 +204,9 @@ Status::StatusType NonlinearCG::iterate()
     {
 //                     Fletcher-Reeves beta
 
-      double denominator = olddescentdirptr->dot(*precolddirptr);
+      double denominator = oldDescentDirptr->dot(*preconditionedOldDirptr);
 
-      beta = dir.dot(*precdirptr) / denominator;
+      beta = dir.dot(*preconditionedDirptr) / denominator;
 
     } // End of orthogonalization
 
@@ -195,30 +221,21 @@ Status::StatusType NonlinearCG::iterate()
        beta = 0 ;  // Restart with Steepest Descent direction
     }
 
-    precdirptr->update(beta, olddir, 1.0);
+    preconditionedDirptr->update(beta, oldDir, 1.0);
 
   } // niter != 0
 
 
   // Store direction vector for use in orthogonalization
-  dir = *precdirptr;
-  olddir = dir; 
+  dir = *preconditionedDirptr;
+  oldDir = dir; 
 
   // Copy current soln to the old soln.
-  oldsoln = soln;
+  oldSoln = soln;
 
-//  Debugging,  RH
-//  Check to see if dir is a descent direction and what dir it points to...
-//  if(!oldsoln.isGrad())
-//    oldsoln.computeGrad();
-//  double testInitialSlope = dir.dot(oldsoln.getGrad());
-//  cout << "  Inside NonlinearCG, dginit :" << testInitialSlope << endl;
-//  cin.get();
-  
-  
   // Do line search and compute new soln.
   /* NOTE FROM TAMMY: Need to check the return status! */
-  linesearch(soln, step, oldsoln, dir); // niter needs to be added, RH
+  linesearch(soln, step, oldSoln, dir); // niter needs to be added, RH
 
   // Compute RHS for new current solution.
   soln.computeRHS();
@@ -255,7 +272,7 @@ const Abstract::Group& NonlinearCG::getSolutionGroup() const
 
 const Abstract::Group& NonlinearCG::getPreviousSolutionGroup() const
 {
-  return oldsoln;
+  return oldSoln;
 }
 
 int NonlinearCG::getNumIterations() const
@@ -279,7 +296,7 @@ void NonlinearCG::printUpdate()
   // All processors participate in the computation of these norms...
   if (Utils::doAllPrint(Utils::OuterIteration)) {
     norm_k = solnptr->getNormRHS();
-    norm_update = (niter > 0) ? olddirptr->norm() : 0; 
+    norm_update = (niter > 0) ? oldDirptr->norm() : 0; 
   }
 
   // ...But only the print processors actually prints the result.
