@@ -38,6 +38,7 @@
 
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
+
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #elif ICL
@@ -46,8 +47,6 @@
 #include <sys/time.h>
 #ifndef MINGW
 #include <sys/resource.h>
-#else
-#include <winsock.h>
 #endif
 #endif
 
