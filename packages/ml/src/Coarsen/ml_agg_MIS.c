@@ -155,6 +155,10 @@ int agg_offset, vertex_offset;
       printf(" of num_PDE_eqns.\n");
       exit(1);
    }
+
+    /*= the following two lines are for the solution of elasticity
+     problems on fine grid */
+  
    diff_level = ml_ag->max_levels - ml_ag->cur_level - 1;
    if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
 
@@ -194,6 +198,8 @@ int agg_offset, vertex_offset;
    /* set up the threshold for weight-based coarsening              */
    /* ============================================================= */
 
+   /*= the following four lines define some stuff for dropping */
+
    diff_level = ml_ag->begin_level - ml_ag->cur_level;
    if ( diff_level == 0 ) ml_ag->curr_threshold = ml_ag->threshold;
    epsilon = ml_ag->curr_threshold;
@@ -213,6 +219,8 @@ int agg_offset, vertex_offset;
    sprintf(tlabel,"before amalg %d",comm->ML_mypid);
    ML_CommInfoOP_Print(Amatrix->getrow->pre_comm, tlabel);
 #endif
+   /*= `amalgamate' refers to the conversion from block matrices
+     to point matrices */
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;
 #ifdef CLEAN_DEBUG
@@ -228,6 +236,8 @@ int agg_offset, vertex_offset;
 
    Asqrd    = ML_Operator_Create(comm);
    tmatrix  = ML_Operator_halfClone(Amatrix);
+
+   /*= construction of the square of matrix A */
 
    ML_2matmult(tmatrix, Amatrix, Asqrd, ML_CSR_MATRIX );
    ML_Operator_halfClone_Destroy(tmatrix);
@@ -268,6 +278,7 @@ int agg_offset, vertex_offset;
             exit(0);
          }
          templist[index]++;
+	 /*= templist[j] is the number of processors who need `j' */	 
       }
    }
 
@@ -276,6 +287,7 @@ int agg_offset, vertex_offset;
    /* is a counter of how many processors, followed by a number of   */
    /* processor and index pairs.                                     */
 
+   /*= other stuff needed by MIS */
    proclist = (int **) ML_allocate(Asqrd_ntotal * sizeof( int *));
    for ( i = 0; i < nvertices; i++ ) {
       proclist[i]    = (int *) ML_allocate( (2*templist[i]+1) * sizeof( int ) );
@@ -324,6 +336,7 @@ int agg_offset, vertex_offset;
    exp_Nrows = nvertices + Nghost;
 
    /* record the Dirichlet boundary */
+   /*= amalgamate boundary */
 
    bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
    for (i = Nrows ; i < exp_Nrows; i++) bdry[i] = 'F';
@@ -436,7 +449,8 @@ int agg_offset, vertex_offset;
    }
    count = 0;
    for ( i = 0; i < N_neighbors; i++ ) {
-         for (j = 0; j < send_leng[i]; j++)
+     /*= build one big send list for A */
+     for (j = 0; j < send_leng[i]; j++)
             send_list[count++] = 
                getrow_obj->pre_comm->neighbors[i].send_list[j];
    }
@@ -452,6 +466,7 @@ int agg_offset, vertex_offset;
    count    = 0;
    for (i = 0; i < nvertices; i++) {
       if (aggr_index[i] >= 0) {
+	/*= encode aggregate numbers */
          current = -aggr_index[i]-2;
          aggr_index[i] = current;
          ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
@@ -476,6 +491,7 @@ int agg_offset, vertex_offset;
    }
    else ml_ag->operator_complexity += total_nz;
 
+   /*= decode aggregate numbers */
    for (i = 0; i < exp_Nrows; i++) 
       aggr_index[i] = -aggr_index[i]-2;
 
@@ -490,7 +506,8 @@ int agg_offset, vertex_offset;
    tem2_index = (int *) ML_allocate(sizeof(int)*(1+total_send_leng+total_recv_leng));
    temp_leng  = (int *) ML_allocate(sizeof(int)*(N_neighbors+1));
 
-   ML_aggr_index_communicate(N_neighbors, temp_leng, send_leng, recv_leng, send_list, 
+    /*= update aggregate ghost nodes */
+  ML_aggr_index_communicate(N_neighbors, temp_leng, send_leng, recv_leng, send_list, 
 			     recv_list, nvertices, comm, aggr_index, 1563, tem2_index, 
 			     neighbors, temp_index,1);
 
@@ -562,7 +579,8 @@ int agg_offset, vertex_offset;
 
    ML_free(bdry);
 
-   for (i = exp_Nrows - 1; i >= 0; i-- ) {
+   /*= unamalgamate point matrices to block matrices */
+  for (i = exp_Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
          aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
       }
@@ -612,7 +630,8 @@ int agg_offset, vertex_offset;
    /* I'm not sure if I need most of this 'if' code. I just took it from */
    /* Charles ... but I guess that the majority of it is not needed.     */
 
-   if ( num_PDE_eqns != 1 )
+   /*= recompute send/recv stuff for unamalgamanted matrix */
+  if ( num_PDE_eqns != 1 )
    {
       ML_memory_free((void**) &neighbors);
       ML_memory_free((void**) &recv_leng);
@@ -948,6 +967,8 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       {
          index = int_buf[offset+j];
          if ( index >= 0 ) int_buf2[index]++;
+	 /*= int_blk2[k] = # of pts we own that are in aggregate k
+	   on processor i */
          if (index >= 0 && index > max_count) 
             {printf("int_buf2 error : maxcount\n");exit(1);}
       }
@@ -992,7 +1013,8 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
          {
             k = int_buf[offset+j];
             aggr_index[index] = int_buf2[k] + Ncoarse + m;
-         } 
+ 	    /*= this is the ghost number for remote aggregates */
+        } 
       }
       if (nbytes > 0) ML_memory_free((void **) &int_buf2);
       m += count;
@@ -1006,6 +1028,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    /* check and copy aggr_index                                     */
    /* ------------------------------------------------------------- */
 
+   /*= record aggregates in ml_ag */
    level = ml_ag->cur_level;
    nbytes = Nrows * sizeof( int );
    ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AGl");
@@ -1105,6 +1128,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
                {
                   for ( jj = 0; jj < nullspace_dim; jj++ ) 
                      new_send_list[count++] = j * nullspace_dim + jj;
+		  /*= new_send_list is the processor's send list */
                } 
             } 
          } 
