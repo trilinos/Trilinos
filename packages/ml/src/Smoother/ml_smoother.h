@@ -242,6 +242,9 @@ extern  int ML_Smoother_GaussSeidel(void *, int, double *, int, double *);
 extern  int ML_Smoother_SGSSequential(void *, int,double *, int, double *);
 extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
+extern int ML_BlockScaledApply(ML_Operator *Amat, int inlen, double in[],
+			       int outlen, double out[]);
+
 extern  int ML_Smoother_MLS_Apply(void *, int, double *, int, double *);
 extern int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[]);
 
@@ -297,6 +300,10 @@ extern  int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **, ML_Operator *,int);
 extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*); 
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
+extern struct MLSthing *ML_Smoother_Create_MLS(void);
+extern int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double in[],
+			int outlen, double out[]);
+
 extern void ML_Smoother_Destroy_MLS(void *data);
 extern void **ML_Smoother_Arglist_Create(int nargs);
 extern int ML_Smoother_Arglist_Set(void **arglist, int which_arg, void *ptr);

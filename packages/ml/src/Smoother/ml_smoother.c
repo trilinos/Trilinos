@@ -1929,6 +1929,47 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
 	 
    return 0;
 }
+int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double in[],
+		 int outlen, double out[]) {
+
+  unsigned int   itmp=0;
+  int info, one = 1;
+  int nblocks, **perms, blocksize, i;
+  double **blockdata;
+  char N[2];
+
+  nblocks    = BGS_Data->Nblocks;
+  blockdata  = BGS_Data->blockfacts;
+  perms      = BGS_Data->perms;
+  blocksize = inlen/nblocks;
+  strcpy(N,"N");
+
+  for (i = 0; i < nblocks; i++) {
+	MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
+			  perms[i], &(out[i*blocksize]), 
+			  &blocksize, &info, itmp);
+	if ( info != 0 ) {
+	  printf("dgetrs returns with %d at block %d\n",info,i); 
+	  exit(1);
+	}
+  }
+  return 0;
+}
+#include "ml_mls.h"
+
+int ML_BlockScaledApply(ML_Operator *Amat, int inlen, double in[],
+			int outlen, double out[]) {
+
+  struct MLSthing *widget;
+
+
+  widget     = (struct MLSthing *) Amat->data;
+  ML_Operator_Apply(widget->unscaled_matrix, inlen, in, outlen, out);
+  ML_BlockDinv(widget->block_scaling, inlen, in, outlen, out);
+
+  return 0;
+}
+
 
 /* ************************************************************************* */
 /* Variable size Block Jacobi smoother                                       */
@@ -3455,7 +3496,6 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 /* Function to generate the matrix products needed in the Hiptmair smoother  */
 /* on one level.                                                             */
 /* ************************************************************************ */
-#include "ml_mls.h"
 #include "ml_operator_blockmat.h"
 
 #ifdef MatrixProductHiptmair
@@ -6572,6 +6612,22 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 #endif
    return 0;
 }
+struct MLSthing *ML_Smoother_Create_MLS(void)
+{
+  struct MLSthing *widget;
+
+  widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
+  widget->block_scaling   = NULL;
+  widget->unscaled_matrix = NULL;
+  widget->scaled_matrix   = NULL;
+  widget->mlsBoost = 1.0;
+  widget->mlsOver  = 1.1e0 ;
+  widget->pAux     = NULL;   /* currently reserved */
+  widget->res      = NULL;   /* currently reserved */
+  widget->y        = NULL;   /* currently reserved */
+  return(widget);
+
+}
 
 void ML_Smoother_Destroy_MLS(void *data)
 {
@@ -6582,6 +6638,13 @@ void ML_Smoother_Destroy_MLS(void *data)
    if (widget->y)    ML_free(widget->y   );
    if (widget->res)  ML_free(widget->res );
    if (widget->pAux) ML_free(widget->pAux);
+
+   if (widget->block_scaling) ML_Smoother_Destroy_BGS_Data((void *)
+                                                       widget->block_scaling);
+
+   if(widget->scaled_matrix) ML_Operator_Destroy(&widget->scaled_matrix);
+   /* widget->unscaled_matrix was not create by   */
+   /* MLS it is someone else's job to destroy it  */
 
    ML_free(widget);
 }
@@ -7046,6 +7109,10 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 
    deg    = widget->mlsDeg;
    if (deg == 0) return 0;
+   if (widget->block_scaling != NULL) {
+     Amat = widget->scaled_matrix;
+   }
+
 
    /* This is meant for the case when the matrix is the identity.*/
    if ((Amat->lambda_min == 1.0) && (Amat->lambda_min == Amat->lambda_max)) {

@@ -234,7 +234,10 @@ extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
                      int ntimes, double omega);
 extern int ML_Gen_Smoother_MLS(ML*,int nl,int pre_post, double eig,
                      int degree);
-
+extern int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, 
+					int pre_or_post,
+					double eig_ratio, int deg,
+					int nBlocks, int *blockIndices);
 
 extern int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
                      int ntimes, double omega);

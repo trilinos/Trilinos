@@ -1992,6 +1992,73 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
    return 0;
 
 }
+int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
+					 double eig_ratio, int deg,
+					 int nBlocks, int *blockIndices)
+{
+  double temp;
+  ML_DVector *temp_ptr;
+  ML_Sm_BGS_Data *data;
+  struct MLSthing *widget;
+  ML_Operator *Amat;
+  ML_Operator *blockMat;
+  double *diagonal;
+  int i;
+
+
+  if (deg < 0) {
+    printf("ML_Gen_Smoother_BlockDiagScaledCheby: deg < 0 not allowed\n");
+    return 1;
+  }
+  if (nl == ML_ALL_LEVELS) {
+    printf("ML_Gen_Smoother_BlockDiagScaledCheby: ML_ALL_LEVELS not supported\n");
+    return 1;
+  }
+  Amat = &(ml->Amat[nl]);
+  /* put in bogus values for lambda and the diagonal so that 
+     ML_Gen_Smoother_MLS() does not try to compute them */
+
+  temp = Amat->lambda_max;
+  Amat->lambda_max = 1.;
+  ML_Gen_Smoother_MLS(ml, nl, pre_or_post, eig_ratio, deg);
+  ML_Smoother_Create_BGS_Data(&data);
+  ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
+
+  if (pre_or_post != ML_POSTSMOOTHER)
+    widget = (struct MLSthing *) ml->pre_smoother[nl].smoother->data;
+  else 
+    widget = (struct MLSthing *) ml->post_smoother[nl].smoother->data;
+
+  widget->block_scaling = data;
+  widget->unscaled_matrix = Amat;
+  blockMat = ML_Operator_Create(Amat->comm);
+  ML_Operator_Set_ApplyFuncData(blockMat, Amat->invec_leng, Amat->outvec_leng, 
+				ML_EMPTY,
+				widget,Amat->outvec_leng, NULL,0);
+  ML_Operator_Set_ApplyFunc (blockMat, ML_INTERNAL, 
+			     (int (*)(void*,int,double*,int,double*))
+			     ML_BlockScaledApply);
+  printf("these need to be set properly\n");
+  blockMat->lambda_max = .911;
+  blockMat->lambda_min = blockMat->lambda_max/1.1;
+  diagonal = (double *) ML_allocate(sizeof(double)*Amat->invec_leng);
+  for (i = 0; i < Amat->invec_leng; i++) diagonal[i] = 1.;
+  ML_Operator_Set_Diag(blockMat, blockMat->matvec->Nrows, diagonal);
+
+
+  widget->scaled_matrix = blockMat;
+
+  /* make a new field in Krylov to turn off the diagonal scaling */
+  /* change the matvec so that it does dinv*a */
+  /* store the new lambda */
+
+
+  Amat->lambda_max = temp;
+  Amat->lambda_max = 1.; printf("need to fix this\n");
+
+  return 0;
+
+}
 
 
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
@@ -2087,7 +2154,6 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 
    }
 
-
      /* To avoid division by zero problem. */
      if (Amat->diagonal != NULL)
      {
@@ -2098,15 +2164,8 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 
 
      if (Amat->matvec->ML_id != ML_EMPTY) {
-         widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
-
+         widget = ML_Smoother_Create_MLS();
 	 widget->mlsDeg   = degree;
-	 widget->mlsBoost = 1.0;
-	 widget->mlsOver  = 1.1e0 ;
-	 /* @@@ widget->mlsOm[0] = Amat->lambda_max; */
-	 widget->pAux     = NULL;   /* currently reserved */
-	 widget->res      = NULL;   /* currently reserved */
-	 widget->y        = NULL;   /* currently reserved */
 	 widget->eig_ratio = eig_ratio;
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
