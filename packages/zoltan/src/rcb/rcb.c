@@ -343,11 +343,15 @@ static int rcb_fn(
   /* check that all weights > 0 */
 
   if (check) {
-    j = 0;
-    for (i = 0; i < dotnum; i++) if (dotpt[i].Weight <= 0.0) j++;
+    for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight == 0.0) j++;
+    MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
+    if (k > 0 && proc == 0)
+       fprintf(stderr, "RCB WARNING: %d dot weights are equal to 0\n", k);
+
+    for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight < 0.0) j++;
     MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
     if (k > 0) {
-      if (proc == 0) fprintf(stderr, "RCB ERROR: %d dot weights are <= 0\n",k);
+      if (proc == 0) fprintf(stderr, "RCB ERROR: %d dot weights are < 0\n",k);
       LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
     }
