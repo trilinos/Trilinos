@@ -11,8 +11,8 @@ libinstall:
 	@echo "Building $(CUR_LIB) for the following target:" $(TRILINOS_TARGET)
 	@echo "--------------------------------------------------------------"
 	@echo " "
-	cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)/$(CUR_LIB)/; mkdir -p obj/$(TRILINOS_TARGET)
-	(cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)/$(CUR_LIB)/obj/$(TRILINOS_TARGET); rm -f Makefile *.[fch]*; $(LN)  ../../src/Makefile . ; $(LN)  ../../src/*.[fch]* .; $(MAKE)) 
+	cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/; mkdir -p obj/$(TRILINOS_TARGET)
+	(cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/obj/$(TRILINOS_TARGET); rm -f Makefile *.[fch]*; $(LN)  ../../src/Makefile . ; $(LN)  ../../src/*.[fch]* .; $(MAKE)) 
 
 anasazi:
 	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\
@@ -32,7 +32,7 @@ epetra:
 epetra_esi:
 	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\
 		TRILINOS_ID="$(TRILINOS_ID)"\
-	        libinstall CUR_SRCPATH=../adaptors CUR_LIB=epetra_esi
+	        libinstall CUR_SRCPATH=../adaptors/ CUR_LIB=epetra_esi
 
 ifpack:
 	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\
@@ -71,7 +71,7 @@ objclean:
 	@echo "Removing $(CUR_LIB) object code for the target:" $(TRILINOS_TARGET)
 	@echo "--------------------------------------------------------------"
 	@echo " "
-	rm -rf $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)/$(CUR_LIB)/obj/$(TRILINOS_TARGET)
+	rm -rf $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/obj/$(TRILINOS_TARGET)
 
 clean_aztecoo:
 	$(MAKE) objclean CUR_LIB=aztecoo
@@ -80,7 +80,7 @@ clean_epetra:
 	$(MAKE) objclean CUR_LIB=epetra
 
 clean_epetra_esi:
-	$(MAKE) objclean CUR_SRCPATH=../adaptors CUR_LIB=epetra_esi
+	$(MAKE) objclean CUR_SRCPATH=../adaptors/ CUR_LIB=epetra_esi
 
 clean_ifpack:
 	$(MAKE) objclean CUR_LIB=ifpack
