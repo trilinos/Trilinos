@@ -7,12 +7,11 @@ VBRMATRIX_MSR =
 VBRMATRIX_VBR = -DVBRMATRIX
 
 DEFINES= -D$(TRILINOS_ARCH) $(AZTECOO_ARCH_DEFINES) -D$(AZTECOO_COMM) \
-         -DIFPACK -DSPARSEBLAS  $(VBRMATRIX_$(FORMAT))
+         -DIFPACK $(VBRMATRIX_$(FORMAT))
 
 INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/komplex/src \
            -I$(TRILINOS_HOME)/packages/ifpack/src \
-           -I$(TRILINOS_HOME)/packages/aztecoo/src \
-           -I$(TRILINOS_HOME)/external/spblas
+           -I$(TRILINOS_HOME)/packages/aztecoo/src 
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES)
@@ -20,7 +19,7 @@ CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
 LDFLAGS=$(CXXFLAGS)
 
 LIB_PATHS= $(LIBKOMPLEX) $(LIBAZTECOO) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
-           $(LIBLAPACK) $(LIBSPBLAS) $(LIBBLAS) $(LIBTRILINOS_UTIL)
+           $(LIBLAPACK) $(LIBBLAS) $(LIBTRILINOS_UTIL)
 
 #=======================================================================
 # Komplex test source files
