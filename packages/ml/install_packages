@@ -32,7 +32,15 @@ then
    GOT_BLAS=yes
    PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_BLAS` 
 fi
-
+${echo} -n "Do you want ML and Aztec compiled to read binary data? [no] " | sed "s/-n//"
+read yes_or_no
+yes_or_no=`${echo} ${yes_or_no}s`
+if test `expr $yes_or_no` = 'yess'
+#   test `expr $yes_or_no` = 's'
+then
+   BINARY_DATA=yes
+   PACKAGES=`${echo} $PACKAGES -Dbinary` 
+fi
 ${echo} -n "Do you want to use MPI? [yes] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`

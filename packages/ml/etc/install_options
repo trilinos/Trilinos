@@ -24,6 +24,9 @@ LOCATION OF MPICC                default   # (e.g. /usr/local/mpi/mpicc)
                                            #############################
 USE LAPACK                       no  # [yes, no]
 USE BLAS                         no  # [yes, no]
+BINARY INPUT DATA                no  # [yes, no]
+                                     # whether ML/Aztec read ascii or binary
+                                     # see file ../util/README
 LIBRARY INCLUDE PATH                 # (e.g. /usr/local/mpi/include)
                                      ####################################
 LIBRARY INCLUDE PATH                 # PUT AS MANY INCLUDE, DIRECTORIES,#

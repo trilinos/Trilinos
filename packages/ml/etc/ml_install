@@ -23,6 +23,8 @@ arch=`./get_field "ARCHITECTURE" .input_nocomments`
 echo $arch >> .installer_input
 ./get_field "USE LAPACK" .input_nocomments  >> .installer_input
 ./get_field "USE BLAS" .input_nocomments >> .installer_input
+#JJH
+./get_field "BINARY INPUT DATA" .input_nocomments >> .installer_input
 use_mpi=`./get_field "USE MPI" .input_nocomments`
 echo $use_mpi >> .installer_input
 if test `expr ${use_mpi}` = 'yes'
