@@ -42,7 +42,7 @@ Type of Smoother             = Aggregate
 #                              [Parasails, GaussSeidel, SymGaussSeidel, 
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
 Smoother steps per level     = 1
-Coarse grid solver           = SuperLU
+Coarse grid solver           = KLU
 #                              [Parasails, GaussSeidel, SymGaussSeidel, 
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis,
 #                               SuperLU]
