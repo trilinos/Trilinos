@@ -94,6 +94,10 @@ int Zoltan_Build_Graph(
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
+  if (graph_type != NO_GRAPH){
+      if ((zz->Get_Num_Edges == NULL) || (zz->Get_Edge_List == NULL))
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "A graph query function is not registered.\n");
+  }
   
   *vtxdist = (idxtype *)ZOLTAN_MALLOC((zz->Num_Proc+1)* sizeof(idxtype));
   if (num_obj>0){
