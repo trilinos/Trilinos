@@ -658,6 +658,7 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    /* compute I - omega D^{-1} A                                        */
    /* ----------------------------------------------------------------- */
 #ifdef RST_MODIF
+   if (diag_val == 0.) { row_lengths[0] = 0; return 1; }
    for (i = 0; i < row_lengths[0]; i++) 
       values[i] *= -widget->omega/diag_val;
    values[diag] += 1.;
