@@ -19,6 +19,7 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_viz_opendx.h"
+#include "ml_viz_xyz.h"
 #include "ml_viz_stats.h"
 #include "ml_agg_info.h"
 
