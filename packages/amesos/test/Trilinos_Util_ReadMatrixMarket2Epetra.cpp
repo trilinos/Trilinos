@@ -78,7 +78,8 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
     fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
     bool symmetric = false ; 
     string headerline1 = buffer;
-    if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+    if ( headerline1.find("symmetric") < headerline1.size() ) 
+      symmetric = true; 
 
     //  http://www.yolinux.com/TUTORIALS/LinuxTutorialC++StringClass.html 
     //  says that Var.find() is the function that we want.
@@ -92,12 +93,6 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
       assert( i != -13) ; 
 #if 0
       if ( true ) cout << " i,j = " << i <<  " " << j << " val = " << val << endl ; 
-#else
-      if ( i == j && i%100 == 0 ) cout << " i,j = " << i << " val = " << val << endl ; 
-      if ( i == 1056 ) cout << " i,j = " << i << " " << j << " val = " << val << endl ; 
-      if ( j == 1056 ) cout << " i,j = " << i << " " << j << " val = " << val << endl ; 
-      if ( val > 50049 && val < 50050 ) 
-	 cout << " ############# i,j = " << i << " " << j << " val = " << val << endl ; 
 #endif
       if ( diag || i != j ) { 
 	int iptr = iptrs[i-1] ; 
@@ -133,16 +128,11 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
   if (comm.MyPID()==0)
     for (int i=0; i<N_rows; i++) {
-      if ( i == 1056-1 ) {
-	int num_vals = iptrs[i]-ptrs[i];
-	cout << " i+1 = " << i+1 << "num_vals = " << num_vals << endl ; 
-	for (int j = 0; j < num_vals ; j++ ) 
-	  cout << " inds = " << inds[ptrs[i]+j]+1 << " vals = " <<  vals[ptrs[i]+j] << endl ; 
-      }
       A->InsertGlobalValues(i, iptrs[i]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
     }
   A->TransformToLocal();
 
+#if 0
   Epetra_Vector diagA(*map);
   Epetra_Vector Row1056(*map);
 
@@ -150,7 +140,6 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
   A->ExtractDiagonalCopy( Row1056 ) ; 
 
   comm.Barrier();
-  cout << " diagA = " << diagA  << endl ; 
   comm.Barrier();
 
   vector <int> r1055ptrs[10000];
@@ -164,7 +153,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 
   //  cout << " A = " << *A  << endl ; 
 
-
+#endif
   assert( diag || A->NoDiagonal() ) ;
 
   vector<double> hbx(N_rows);

@@ -368,7 +368,7 @@ int Amesos_Mumps::ConvertToTripletValues()
   }
 
   AddToConvTime(Time.ElapsedTime());  
-  
+ 
   return 0;
 
 }
@@ -489,8 +489,12 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 
   if( IsLocal() ) {
 #ifdef EPETRA_MPI
+#ifndef TFLOP
     MPI_Comm MPIC = MPI_COMM_SELF ;
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MPIC ) ;   // Compiled on cygwin but not on Atlantis
+#else
+    MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
+#endif
 #else
     MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
 #endif

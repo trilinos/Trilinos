@@ -69,13 +69,8 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
     fgets( buffer, BUFSIZE, in_file ) ;
     bool symmetric = false ; 
     string headerline1 = buffer;
-    if ( headerline1.find("symmetric") < headerline1.size() ) symmetric = true; 
-
-    cout << " string::npos " << string::npos  << endl ; 
-    cout << " headerline1.find(symmetric)" << headerline1.find("symmetric")  << endl ; 
-    cout << "  headerline1.size() " <<  headerline1.size()  << endl ; 
-
-    cout << ( symmetric?" symmetic ":" not symmetic " ) << endl ; 
+    if ( headerline1.find("symmetric") < headerline1.size() ) 
+      symmetric = true; 
 
     fgets( buffer, BUFSIZE, in_file ) ;
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
