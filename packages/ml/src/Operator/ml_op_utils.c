@@ -432,7 +432,6 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
   int nmbng = 0, edgecut = -1, n = nLocalNd, np = *nblk;
   double *val = NULL;
   int allocated = 0, row_length, j;
-  /* FILE *fp; */
 
 #if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
    int *map = NULL, itemp1, itemp2, nprocs, myid;
@@ -557,12 +556,14 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     nprocs = matrix->comm->ML_nprocs;
     myid   = matrix->comm->ML_mypid;
     
-    ubvec = 1.05;
+    ubvec = 1.001;
     tpwts   = (idxtype *) ML_allocate(sizeof(idxtype)*ML_max(np,nprocs));
+    j = ML_max(np,nprocs);
     vtxdist = (idxtype *) ML_allocate(sizeof(idxtype)*(nprocs+1));
     for (ii = 0; ii <= nprocs; ii++) vtxdist[ii] = 0;
     vtxdist[myid] = nLocalNd;
     ML_gsum_vec_int(&vtxdist,&tpwts,nprocs,matrix->comm);
+    if (tpwts != NULL) ML_free(tpwts);
 
     itemp1 = 0;
     for (ii = 0; ii < nprocs ; ii++) {
@@ -573,18 +574,19 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     vtxdist[nprocs] = itemp1;
     
     ncon = 1;
-    itr = 1000.;
+    itr = 100000.;
     options[0] = 0;
 
     for (ii = 0; ii < nLocalNd; ii++) pnode_part[ii] = matrix->comm->ML_mypid;
 
    weightflag = 0;
 #if ( defined(HAVE_ML_PARMETIS_3x) )
-   ParMETIS_V3_AdaptiveRepart( vtxdist,xadj,adjncy, NULL,
-				NULL, NULL, &weightflag,
-				&nmbng, &ncon, &np, NULL, &ubvec, 
-				&itr, options, &edgecut, pnode_part,
-				&(matrix->comm->USR_comm));
+   ParMETIS_V3_AdaptiveRepart(vtxdist, xadj, adjncy, NULL, NULL, NULL,
+                &weightflag, &nmbng, &ncon, &np, NULL, &ubvec, &itr, options,
+                &edgecut, pnode_part, &(matrix->comm->USR_comm)); 
+   if (myid < 10) {
+     printf("(pid %d) ParMETIS edge cut = %d\n",myid,edgecut);
+   }
 #else
    /* This routine does not seem to allow having a different number of */
    /* partitions and processors.         
@@ -598,7 +600,6 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
 #endif
     *nblk = np;
     if (vtxdist != NULL) ML_free(vtxdist);
-    if (tpwts   != NULL) ML_free(tpwts);
   }
   if (adjncy  != NULL) ML_free(adjncy);
   if (xadj    != NULL) ML_free(xadj);
