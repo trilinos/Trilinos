@@ -273,12 +273,21 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   /* node numbering so that coloring is (hopefully) improved.             */
   /* ******************************************************************** */
 
-  max_Naggregates = ML_gmax_int( Naggregates, comm);
-  
-  for( i=0 ; i<Nrows ; i++ ) {
-    values[i] = mypid +  nprocs * graph_decomposition[i];
-  }
+  if( local_or_global == ML_LOCAL_INDICES ) {
+    
+    max_Naggregates = ML_gmax_int( Naggregates, comm);
 
+    for( i=0 ; i<Nrows ; i++ ) {
+      values[i] = mypid +  nprocs * graph_decomposition[i];
+    }
+    
+  } else {
+
+    for( i=0 ; i<Nrows ; i++ ) {
+      values[i] = graph_decomposition[i];
+    }
+  }
+  
   
   for( irow=0 ; irow<Nrows ; irow++ ) 
     fprintf( fp,
