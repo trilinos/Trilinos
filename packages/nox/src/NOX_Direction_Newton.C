@@ -265,6 +265,12 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 
   if (Utils::doPrint(Utils::Details)) 
     cout << indent << "Forcing Term: " << eta_k << endl;
+
+  // Tell the linear solver that an adjustable forcing term is being used.
+  // This is required to account for linear solves that are scaled. 
+  if ((method == "Type 1") || (method == "Type 2")) {
+    paramsPtr->sublist("Newton").sublist("Linear Solver").setParameter("Using Adjustable Forcing Term", true);
+  }
   
   return true;
 }
