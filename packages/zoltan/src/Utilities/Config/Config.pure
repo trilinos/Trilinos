@@ -22,19 +22,21 @@
 ##############################################################################
 
 DEFS 			= 
+DEPS			= -xM
 
 RANLIB			= ranlib
 AR			= ar r
 
 # use CFLAGS = $(DBG_FLAGS) with purify.
-CC			= purify -best-effort -follow-child-processes=yes \
-			  -cache-dir=/Net/proj/zoltan/tmp/purify gcc
+CC			= cc
+PURE_CC			= purify -best-effort -follow-child-processes=yes \
+			  -cache-dir=/Net/proj/zoltan/tmp/purify 
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
 			  -I/Net/local/mpi/include \
 			  -I/Net/local/mpi/build/solaris/ch_p4/include
-DBG_FLAGS		= -g -Wall 
+DBG_FLAGS		= -g
 OPT_FLAGS		= -O
 CFLAGS = $(DBG_FLAGS)
 

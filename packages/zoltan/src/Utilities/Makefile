@@ -43,11 +43,11 @@ ifndef ZOLTAN_ARCH
 ZOLTAN_ARCH	= generic
 endif
 
-ifndef CONFIG
-CONFIG = Config/Config.$(ZOLTAN_ARCH)
+ifndef ZOLTAN_CONFIG
+ZOLTAN_CONFIG = Config/Config.$(ZOLTAN_ARCH)
 endif
 
-include $(CONFIG)
+include $(ZOLTAN_CONFIG)
 
 OBJ_DIR = Obj_$(ZOLTAN_ARCH)
 ALL_OBJ_DIRS := $(wildcard Obj_*)
@@ -103,9 +103,9 @@ COMM_DRIVER_LIBS= -L. -l$(COMM_TARGET) -l$(MEM_TARGET) $(MPI_LIBPATH) $(MPI_LIB)
 COMM_DRIVER_DEP = $(COMM_LIB) $(MEM_LIB)
 
 ############################################################################
-# ID UTILITIES
-ID_CSRC		= zoltan_id.c
-ID_INC		= zoltan_id.h
+# UTILITIES
+UTIL_CSRC		= zoltan_id.c zoltan_align.c
+UTIL_INC		= zoltan_id.h
 
   
 ############################################################################
@@ -114,7 +114,7 @@ ID_INC		= zoltan_id.h
 DD_CSRC		= DD_Create.c DD_Destroy.c DD_Find.c DD_Remove.c DD_Update.c \
                   DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c DD_Print.c\
                   DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c \
-		  $(ID_CSRC)
+		  $(UTIL_CSRC)
 DD_INC		= DD_Const.h
 DD_LIB		= libzoltan_dd.a
 DD_TARGET	= zoltan_dd
@@ -203,6 +203,7 @@ $(MEM_LIB):
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=./"
 	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
 	then cp -f $(OBJ_DIR)/$(MEM_LIB) $(LIB_DIR); \
@@ -220,6 +221,7 @@ zdrive_mem mem:
 	"VPATH=$(SUB_VPATH)"			\
 	"OBJ_FILES=$(MEM_DRIVER_CSRC:.c=.o)" 	\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"LNK_LIBS=$(MEM_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(MEM_DRIVER_DEP)"
 
@@ -241,6 +243,7 @@ $(COMM_LIB):
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=./"
 	@if [ $(OBJ_DIR) != $(LIB_DIR) ];                \
 	then cp -f $(OBJ_DIR)/$(COMM_LIB) $(LIB_DIR);    \
@@ -258,6 +261,7 @@ zdrive_comm comm:
 	"VPATH=$(SUB_VPATH)"			\
 	"OBJ_FILES=$(COMM_DRIVER_CSRC:.c=.o)" 	\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"LNK_LIBS=$(COMM_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(COMM_DRIVER_DEP)"
 	
@@ -279,6 +283,7 @@ $(DD_LIB):
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=./"
 	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
 	then cp -f $(OBJ_DIR)/$(DD_LIB) $(LIB_DIR); \
@@ -298,6 +303,7 @@ zdrive_dd dd:
 	"VPATH=$(SUB_VPATH)"			\
 	"OBJ_FILES=$(DD_DRIVER_CSRC:.c=.o)" 	\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"LNK_LIBS=$(DD_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(DD_DRIVER_DEP)"
 
@@ -313,6 +319,7 @@ $(ZOLTAN):
 	"OBJ_FILES=$(DD_CSRC:.c=.o) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o)" \
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=../../$(OBJ_DIR)/"
 
 zscript:
@@ -336,7 +343,7 @@ zscript:
 	@echo ZOLTAN_ARCH='"$${2:-generic}"' >> zoltan_script
 	@echo ZOLTAN_LIB_DIR='"$$3"' >> zoltan_script
 	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$JOSTLE_INCPATH"' >> zoltan_script
-	@echo GDEFINES='"-DDEBUG $$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
+	@echo GDEFINES='"$$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
 	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
 	@echo 'if [ ! -d $$ZOLTAN_OBJ_DIR ]; ' >> zoltan_script
 	@echo 'then mkdir $$ZOLTAN_OBJ_DIR ;' >> zoltan_script

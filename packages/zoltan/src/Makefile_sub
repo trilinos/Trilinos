@@ -15,11 +15,15 @@
 # Dynamic Load Balance Library Makefile for machine dependent directories
 #
 
+include $(ZOLTAN_CONFIG)
+
 ifndef DCC
 DCC=$(CC)
 endif
 
+ifndef DEPS
 DEPS=-M
+endif
 
 include $(OBJ_FILES:.o=.d)
 
@@ -48,7 +52,7 @@ $(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES) $(INC_FORTRAN)
 
 $(TARGET):	$(DEP_LIBS) $(LIB_NAME) $(MAIN_OBJ:.o=.d) $(MAIN_OBJ)
 		@echo "linking driver"
-		@$(CC) $(MAIN_OBJ) -o $(TARGET) $(LNK_LIBS)
+		@$(PURE_CC) $(CC) $(MAIN_OBJ) -o $(TARGET) $(LNK_LIBS)
 
 #		@purify -best_effort -follow-child-processes=yes -cache-dir=/tmp/purify $(CC) $(MAIN_OBJ) -o $(TARGET) $(LNK_LIBS)
 

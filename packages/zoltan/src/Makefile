@@ -66,7 +66,7 @@ endif
 ##############################################################################
 # Process input flags
 ##############################################################################
-GDEFINES	= -DDEBUG
+GDEFINES	= 
 
 # If YES_FORTRAN, compile the Fortran interface into the library.
 ifdef YES_FORTRAN
@@ -309,6 +309,7 @@ zoltan:
 	"SPPR_HEAD=$(SPPR_HEAD)" 		\
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; 		\
 	then cp -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); 	\
@@ -327,6 +328,7 @@ zdrive:
 	"MAIN_OBJ=$(ZDRIVE_OBJ)" 		\
 	"LNK_LIBS=$(ZDRIVE_LIBS)" 		\
 	"DEP_LIBS=$(ZDRIVE_DEPS)"		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
 zfdrive: 
@@ -341,6 +343,7 @@ zfdrive:
         "LNK_LIBS=$(ZDRIVE_LIBS)"		\
 	"DEP_LIBS=$(ZDRIVE_DEPS)"		\
 	"ZOLTAN_ARCH=$(ZOLTAN_ARCH)"		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
 zscript:
@@ -366,7 +369,7 @@ zscript:
 	@echo ZOLTAN_ARCH='"$${2:-generic}"' >> zoltan_script
 	@echo ZOLTAN_LIB_DIR='"$$3"' >> zoltan_script
 	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$JOSTLE_INCPATH"' >> zoltan_script
-	@echo GDEFINES='"-DDEBUG $$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
+	@echo GDEFINES='"$$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
 	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
 	@echo 'if [ ! -d $$ZOLTAN_OBJ_DIR ]; ' >> zoltan_script
 	@echo 'then mkdir $$ZOLTAN_OBJ_DIR ;' >> zoltan_script
