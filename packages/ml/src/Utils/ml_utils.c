@@ -104,6 +104,50 @@ int ML_crude_search(int key, int nlist, int *list)
 /* corresponding to where it would have been stored.                    */
 /* -------------------------------------------------------------------- */
 
+int ML_fastsorted_search(int key, int nlist, int *list, int init_guess) 
+{
+   int  nfirst, nlast, nmid, found, index = 0;
+
+   if (nlist <= 0) return -1;
+   if (list[init_guess] == key) return init_guess;
+   if (list[init_guess] > key ) {
+     nlast = init_guess;
+     nfirst = init_guess - 5;
+     if (nfirst < 0) nfirst = 0;
+     while ( list[nfirst] > key) {
+       nfirst -= 5;
+       if (nfirst < 0) nfirst = 0;
+     }
+   }
+   else {
+     nfirst = init_guess;
+     nlast = init_guess + 5;
+     if (nlast > nlist-1) nlast = nlist-1;
+     while ( list[nlast] < key) {
+       nlast += 5;
+       if (nlast > nlist-1) nlast = nlist-1;
+     }
+   }
+   if (key > list[nlast])  return -(nlast+1);
+   if (key < list[nfirst]) return -(nfirst+1);
+   found = 0;
+   while ((found == 0) && ((nlast-nfirst)>1)) {
+      nmid = (nfirst + nlast) / 2;
+      if (key == list[nmid])     {index  = nmid; found = 1;}
+      else if (key > list[nmid])  nfirst = nmid;
+      else                        nlast  = nmid;
+   }
+   if (found == 1)               return index;
+   else if (key == list[nfirst]) return nfirst;
+   else if (key == list[nlast])  return nlast;
+   else                          return -(nfirst+1);
+}
+/* ******************************************************************** */
+/* Given a sorted list of indices and the key, find the position of the */
+/* key in the list.  If not found, return the index of the position     */
+/* corresponding to where it would have been stored.                    */
+/* -------------------------------------------------------------------- */
+
 int ML_sorted_search(int key, int nlist, int *list) 
 {
    int  nfirst, nlast, nmid, found, index = 0;

@@ -61,6 +61,7 @@
 
    int    ML_crude_search( int, int, int * ); 
    int    ML_sorted_search( int, int, int * ); 
+   int    ML_fastsorted_search( int, int, int * , int); 
    int    ML_sorted_search2( int, int, int *, int, int ** ); 
    int    ML_search_insert_sort( int, int *, int *, int * );
    int    ML_split_dsort(double list[], int N, int *, int);
