@@ -487,8 +487,8 @@ int Epetra_VbrMatrix::EndSubmitEntries() {
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
-
+int Epetra_VbrMatrix::EndReplaceSumIntoValues()
+{
   int j;
   int ierr = 0;
   int Loc;
@@ -500,7 +500,7 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
   for (j=0; j<CurNumBlockEntries_; j++) {
     int BlockIndex = CurBlockIndices_[j];
 
-    int code = 0;
+    bool code = false;
     if (CurIndicesAreLocal_) {
       code =Graph_->FindMyIndexLoc(CurBlockRow_,BlockIndex,j,Loc);
     }
@@ -510,9 +510,10 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
 
     if (code) {
       if (Entries_[CurBlockRow_][Loc]==0) {
-	Entries_[CurBlockRow_][Loc] = new Epetra_SerialDenseMatrix;
-	Entries_[CurBlockRow_][Loc]->Reshape(RowDim, TempEntries_[j]->N());
+	Entries_[CurBlockRow_][Loc] =
+	  new Epetra_SerialDenseMatrix(RowDim, TempEntries_[j]->N());
       }
+
       if (SumInto) {
 	*(Entries_[CurBlockRow_][Loc]) += *(TempEntries_[j]);
       }
@@ -520,7 +521,9 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
 	*(Entries_[CurBlockRow_][Loc]) = *(TempEntries_[j]);
       }
     }
-    else ierr=2; // Block Discarded, Not Found
+    else {
+      ierr=2; // Block Discarded, Not Found
+    }
 
     delete TempEntries_[j];
   }
@@ -530,8 +533,8 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::EndInsertValues() {
-
+int Epetra_VbrMatrix::EndInsertValues()
+{
   int ierr = 0;
   int j;
 
@@ -541,44 +544,44 @@ int Epetra_VbrMatrix::EndInsertValues() {
     
   if( Graph_->HaveColMap() ) { //test and discard indices not in ColMap
     NumValidBlockIndices = 0;
-    if( CurIndicesAreLocal_ ) {
-      for( j = 0; j < CurNumBlockEntries_; ++j ) {
-        if( Graph_->ColMap().MyLID( CurBlockIndices_[j] ) )
-          ValidBlockIndices[ NumValidBlockIndices++ ] = j;
-        else ierr=2; // Discarding a Block not found in ColMap
+    const Epetra_BlockMap& map = Graph_->ColMap();
+
+    for( j = 0; j < CurNumBlockEntries_; ++j ) {
+      bool myID = CurIndicesAreLocal_ ?
+	map.MyLID(CurBlockIndices_[j]) : map.MyGID(CurBlockIndices_[j]);
+
+      if( myID ) {
+	ValidBlockIndices[ NumValidBlockIndices++ ] = j;
       }
-    }
-    else {
-      for( j = 0; j < CurNumBlockEntries_; ++j ) {
-        if( Graph_->ColMap().MyGID( CurBlockIndices_[j] ) )
-          ValidBlockIndices[ NumValidBlockIndices++ ] = j;
-        else ierr=2; // Discarding a Block not found in ColMap
-      }
+      else ierr=2; // Discarding a Block not found in ColMap
     }
   }
 
   int start = NumBlockEntriesPerRow_[CurBlockRow_];
-  //  int stop = start + CurNumBlockEntries_;
   int stop = start + NumValidBlockIndices;
   int NumAllocatedEntries = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
-  if (stop > NumAllocatedEntries){
+
+  if (stop > NumAllocatedEntries) {
     if (NumAllocatedEntries==0) { // BlockRow was never allocated, so do it
       Entries_[CurBlockRow_] = new Epetra_SerialDenseMatrix*[NumValidBlockIndices];
     }
     else {
       ierr = 1; // Out of room.  Must delete and allocate more space...
-      Epetra_SerialDenseMatrix ** tmp_Entries = new Epetra_SerialDenseMatrix*[stop];
+      Epetra_SerialDenseMatrix ** tmp_Entries =
+	new Epetra_SerialDenseMatrix*[stop];
       for (j=0; j< start; j++) {
 	tmp_Entries[j] = Entries_[CurBlockRow_][j]; // Copy existing entries
       }
       delete [] Entries_[CurBlockRow_]; // Delete old storage
-      
+
       Entries_[CurBlockRow_] = tmp_Entries; // Set pointer to new storage
     }
   }
 
   for (j=start; j<stop; j++) {
-    Epetra_SerialDenseMatrix& mat = *(TempEntries_[ValidBlockIndices[j-start]]);
+    Epetra_SerialDenseMatrix& mat =
+      *(TempEntries_[ValidBlockIndices[j-start]]);
+
     Entries_[CurBlockRow_][j] = new Epetra_SerialDenseMatrix(CV_, mat.A(),
 							     mat.LDA(),
 							     mat.M(),
@@ -591,8 +594,9 @@ int Epetra_VbrMatrix::EndInsertValues() {
     delete TempEntries_[j];
   }
 
+  // Update graph
+  EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_));
   EPETRA_CHK_ERR(ierr);
-  EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_)); // Update graph
 
   return(0);
 }
@@ -630,13 +634,19 @@ int Epetra_VbrMatrix::FillComplete() {
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) { 
-  if(!StaticGraph()) 
+int Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap& DomainMap,
+				   const Epetra_BlockMap& RangeMap)
+{
+  if(!StaticGraph()) {
     EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(DomainMap, RangeMap));
+  }
+
   SortEntries();  // Sort column entries from smallest to largest
   MergeRedundantEntries(); // Get rid of any redundant index values
-  if(!StaticGraph()) 
+
+  if(!StaticGraph()) {
     EPETRA_CHK_ERR(Graph_->FillComplete(DomainMap, RangeMap));
+  }
 
   // NumMyCols_ = Graph_->NumMyCols(); // Redefine based on local number of cols
 
@@ -698,7 +708,8 @@ int Epetra_VbrMatrix::SortEntries() {
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::MergeRedundantEntries() {
+int Epetra_VbrMatrix::MergeRedundantEntries()
+{
 
   if (NoRedundancies()) return(0);
   if (!Sorted()) EPETRA_CHK_ERR(-1);  // Must have sorted entries

@@ -44,14 +44,13 @@ class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
-//! Epetra_VbrMatrix: A class for constructing and using real-valued double-precision sparse compressed row matrices.
+/*! Epetra_VbrMatrix: A class for the construction and use of real-valued double-precision
+  variable block-row sparse matrices.
 
-/*! The Epetra_VbrMatrix enable the piecewise construction and use of real-valued double-precision sparse matrices
-    where matrix entries are intended for row access.
-
-    At this time, the primary function provided by Epetra_VbrMatrix is matrix time vector and matrix 
-    times multi-vector multiplication.  It is also possible to extract matrix rows from a constructed matrix.
-
+  At this time, the primary function provided by Epetra_VbrMatrix is matrix times vector
+  and matrix times multi-vector multiplication.  It is also possible to extract matrix
+  rows from a constructed matrix.
+<p>
 <b>Constructing Epetra_VbrMatrix objects</b>
 
 Constructing Epetra_VbrMatrix objects is a multi-step process.  The basic steps are as follows:
@@ -61,23 +60,25 @@ Constructing Epetra_VbrMatrix objects is a multi-step process.  The basic steps 
   <li> Complete construction via FillComplete call.
 </ol>
 
-Note that, even after a matrix is constructed, it is possible to update existing matrix entries.  It is \e not possible to
-create new entries.
-
+Note that, even after FillComplete() has been called, it is possible to update existing matrix
+entries but it is \e not possible to create new entries.
+<p>
 <b> Counting Floating Point Operations </b>
 
-Each Epetra_VbrMatrix object keep track of the number
-of \e serial floating point operations performed using the specified object as the \e this argument
-to the function.  The Flops() function returns this number as a double precision number.  Using this 
-information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
+Each Epetra_VbrMatrix object keeps track of the number of \e serial floating point operations
+performed using the specified object as the \e this argument to the function.  The Flops()
+function returns this number as a double precision number.  Using this information, in
+conjunction with the Epetra_Time class, one can get accurate parallel performance
 numbers.  The ResetFlops() function resets the floating point counter.
 
 \warning A Epetra_BlockMap is required for the Epetra_VbrMatrix constructor.
 
 */    
 
-class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, public Epetra_BLAS, public virtual Epetra_RowMatrix {
-      
+class Epetra_VbrMatrix : public Epetra_DistObject,
+		      public Epetra_CompObject,
+		      public Epetra_BLAS,
+		      public virtual Epetra_RowMatrix {
  public:
 
   //@{ \name Constructors/Destructor.

@@ -30,30 +30,23 @@
 #include "ExecuteTestProblems.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
+#include "Epetra_Map.h"
+#include "Epetra_FEVbrMatrix.h"
 #include <Epetra_FEVector.h>
-  int MatrixTests(const Epetra_Map & Map,
-		  const Epetra_LocalMap & LocalMap,
-		  int NumVectors,
-		  bool verbose)
-  {
-    const Epetra_Comm & Comm = Map.Comm();
-    int ierr = 0;
 
-    /* get ID of this processor */
+#include "../epetra_test_err.h"
 
-    int MyPID   = Comm.MyPID();
-
-
-    Epetra_MultiVector A(LocalMap, NumVectors);
-
-    return(ierr);
-  }
 
 int quad1(const Epetra_Map& map, bool verbose)
 {
   const Epetra_Comm & Comm = map.Comm();
   int numProcs = Comm.NumProc();
   int localProc = Comm.MyPID();
+
+  Comm.Barrier();
+  if (verbose && localProc == 0) {
+    cout << "====================== quad1 =============================="<<endl;
+  }
 
   //Set up a simple finite-element mesh containing 2-D quad elements, 1 per proc.
   //
@@ -72,7 +65,7 @@ int quad1(const Epetra_Map& map, bool verbose)
   //which also owns the last two nodes.
   //
   //There will be 3 degrees-of-freedom per node, so each element-matrix is
-  //of size 12x12.
+  //of size 12x12. (4 nodes per element, X 3 dof per node)
   //
 
   int myFirstNode = localProc*2;
@@ -162,6 +155,8 @@ int quad1(const Epetra_Map& map, bool verbose)
   delete [] myNodes;
   delete [] elemNodes;
 
+  Comm.Barrier();
+
   return(0);
 }
 
@@ -170,6 +165,10 @@ int quad2(const Epetra_Map& map, bool verbose)
   const Epetra_Comm & Comm = map.Comm();
   int numProcs = Comm.NumProc();
   int localProc = Comm.MyPID();
+  Comm.Barrier();
+  if (verbose && localProc == 0) {
+    cout << "====================== quad2 =============================="<<endl;
+  }
 
   //Set up a simple finite-element mesh containing 2-D quad elements, 2 per proc.
   //(This test is similar to quad1() above, except for having 2 elements-per-proc
@@ -284,7 +283,7 @@ int quad2(const Epetra_Map& map, bool verbose)
   }
 
   if (verbose) {
-  A.Print(cout);
+    A.Print(cout);
   }
 
   //now let's make sure that we can perform a matvec...
