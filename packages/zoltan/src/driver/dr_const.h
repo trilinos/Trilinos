@@ -120,8 +120,6 @@ struct Problem_Description
                                         Zoltan.  Parameters are specified as
                                         pairs of strings:
                                           param_str = value_str              */
-  int    gen_graph;                  /* set if method being used needs graph */
-  int    read_coord;                 /* set if method being used needs geom  */
 };
 typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;

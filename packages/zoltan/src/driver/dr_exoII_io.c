@@ -259,24 +259,22 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   }
 
   /* allocate memory for the coordinates */
-  if (prob->read_coord) {
-    xptr = (float *) malloc (Mesh.num_dims * Mesh.num_nodes * sizeof(float));
-    if (!xptr) {
-      Gen_Error(0, "fatal: insufficient memory");
-      return 0;
-    }
-    switch (Mesh.num_dims) {
-      case 3:
-        zptr = xptr + 2 * Mesh.num_nodes;
-        /* FALLTHRU */
-      case 2:
-        yptr = xptr + Mesh.num_nodes;
-    }
+  xptr = (float *) malloc (Mesh.num_dims * Mesh.num_nodes * sizeof(float));
+  if (!xptr) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+  switch (Mesh.num_dims) {
+    case 3:
+      zptr = xptr + 2 * Mesh.num_nodes;
+      /* FALLTHRU */
+    case 2:
+      yptr = xptr + Mesh.num_nodes;
+  }
 
-    if (ex_get_coord(pexoid, xptr, yptr, zptr) < 0) {
-      Gen_Error(0, "fatal: Error returned from ex_get_coord");
-      return 0;
-    }
+  if (ex_get_coord(pexoid, xptr, yptr, zptr) < 0) {
+    Gen_Error(0, "fatal: Error returned from ex_get_coord");
+    return 0;
   }
 
   /*
@@ -325,16 +323,12 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
           return 0;
         }
 
-        if (prob->read_coord) {
-          elements[iplace].coord = (float **) malloc(Mesh.eb_nnodes[iblk] *
-                                                     sizeof(float *));
-          if (!(elements[iplace].coord)) {
-            Gen_Error(0, "fatal: insufficient memory");
-            return 0;
-          }
+        elements[iplace].coord = (float **) malloc(Mesh.eb_nnodes[iblk] *
+                                                   sizeof(float *));
+        if (!(elements[iplace].coord)) {
+          Gen_Error(0, "fatal: insufficient memory");
+          return 0;
         }
-        else
-          elements[iplace].coord = NULL;
 
         /* save the connect table as local numbers for the moment */
         for (inode = 0; inode < Mesh.eb_nnodes[iblk]; inode++) {
@@ -342,24 +336,22 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
           elements[iplace].connect[inode] = lnode;
           cnode++;
 
-          if (prob->read_coord) {
-            elements[iplace].coord[inode] = (float *) malloc(Mesh.num_dims *
-                                                             sizeof(float));
-            if (!(elements[iplace].coord[inode])) {
-              Gen_Error(0, "fatal: insufficient memory");
-              return 0;
-            }
+          elements[iplace].coord[inode] = (float *) malloc(Mesh.num_dims *
+                                                           sizeof(float));
+          if (!(elements[iplace].coord[inode])) {
+            Gen_Error(0, "fatal: insufficient memory");
+            return 0;
+          }
 
-            switch (Mesh.num_dims) {
-              case 3:
-                elements[iplace].coord[inode][2] = zptr[lnode];
-                /* FALLTHRU */
-              case 2:
-                elements[iplace].coord[inode][1] = yptr[lnode];
-                /* FALLTHRU */
-              case 1:
-                elements[iplace].coord[inode][0] = xptr[lnode];
-            }
+          switch (Mesh.num_dims) {
+            case 3:
+              elements[iplace].coord[inode][2] = zptr[lnode];
+              /* FALLTHRU */
+            case 2:
+              elements[iplace].coord[inode][1] = yptr[lnode];
+              /* FALLTHRU */
+            case 1:
+              elements[iplace].coord[inode][0] = xptr[lnode];
           }
         } /* End: "for (inode = 0; inode < Mesh.eb_nnodes[iblk]; inode++)" */
 
@@ -371,53 +363,51 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 
   /* free some memory */
   free(connect);
-  if (prob->read_coord) free(xptr);
+  free(xptr);
 
-  if (prob->gen_graph) {
-    /*************************************************************************/
-    /* Find the adjacency list for each element                              */
-    /*	Part one: find the surrounding elements for each node                */
-    /*************************************************************************/
-    sur_elem = (int **) malloc(Mesh.num_nodes * sizeof(int *));
-    if (!sur_elem) {
-      Gen_Error(0, "fatal: insufficient memory");
-      return 0;
-    }
-    nsurnd = (int *) malloc(Mesh.num_nodes * sizeof(int));
-    if (!nsurnd) {
-      Gen_Error(0, "fatal: insufficient memory");
-      return 0;
-    }
-
-    if (!find_surnd_elem(elements, sur_elem, nsurnd, &max_nsur)) {
-      Gen_Error(0, "fatal: Error returned from find_surnd_elems");
-      return 0;
-    }
-
-    /*************************************************************************/
-    /*	Part two: Find the adjacencies on this processor                     */
-    /*		and get the edge weights                                     */ 
-    /*************************************************************************/
-    if (!find_adjacency(Proc, elements, sur_elem, nsurnd, max_nsur)) {
-      Gen_Error(0, "fatal: Error returned from find_adjacency");
-      return 0;
-    }
-
-    /*
-     * convert the node numbers in the connect lists to Global IDs
-     * since they will be much easier to work with
-     */
-    for (ielem = 0; ielem < Mesh.num_elems; ielem++) {
-      iblk = elements[ielem].elem_blk;
-      for (inode = 0; inode < Mesh.eb_nnodes[iblk]; inode++) {
-        elements[ielem].connect[inode] = nmap[elements[ielem].connect[inode]];
-      }
-    }
-
-    for (inode = 0; inode < Mesh.num_nodes; inode++) free(sur_elem[inode]);
-    free(sur_elem);
-    free(nsurnd);
+  /*************************************************************************/
+  /* Find the adjacency list for each element                              */
+  /*	Part one: find the surrounding elements for each node                */
+  /*************************************************************************/
+  sur_elem = (int **) malloc(Mesh.num_nodes * sizeof(int *));
+  if (!sur_elem) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
   }
+  nsurnd = (int *) malloc(Mesh.num_nodes * sizeof(int));
+  if (!nsurnd) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+
+  if (!find_surnd_elem(elements, sur_elem, nsurnd, &max_nsur)) {
+    Gen_Error(0, "fatal: Error returned from find_surnd_elems");
+    return 0;
+  }
+
+  /*************************************************************************/
+  /*	Part two: Find the adjacencies on this processor                     */
+  /*		and get the edge weights                                     */ 
+  /*************************************************************************/
+  if (!find_adjacency(Proc, elements, sur_elem, nsurnd, max_nsur)) {
+    Gen_Error(0, "fatal: Error returned from find_adjacency");
+    return 0;
+  }
+
+  /*
+   * convert the node numbers in the connect lists to Global IDs
+   * since they will be much easier to work with
+   */
+  for (ielem = 0; ielem < Mesh.num_elems; ielem++) {
+    iblk = elements[ielem].elem_blk;
+    for (inode = 0; inode < Mesh.eb_nnodes[iblk]; inode++) {
+      elements[ielem].connect[inode] = nmap[elements[ielem].connect[inode]];
+    }
+  }
+
+  for (inode = 0; inode < Mesh.num_nodes; inode++) free(sur_elem[inode]);
+  free(sur_elem);
+  free(nsurnd);
 
   free(nmap);
 
@@ -701,15 +691,6 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 
   MPI_Status status;
 /***************************** BEGIN EXECUTION ******************************/
-
-  /*
-   * Currently, the communication map information is only used to
-   * determine the graph for this mesh. So, if this method does not
-   * need a graph generated, return from this function. In the future
-   * communication map information will probably be needed for other
-   * things.
-   */
-  if (!prob->gen_graph) return 1;
 
   if (ne_get_loadbal_param(pexoid, &nnodei, &nnodeb, &nnodee,
                            &nelemi, &nelemb, &nncmap, &necmap, Proc) < 0) {

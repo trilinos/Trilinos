@@ -125,8 +125,6 @@ int main(int argc, char *argv[])
   prob.method[0]		= '\0';
   prob.num_params		= 0;
   prob.params			= NULL;
-  prob.read_coord		= 0;
-  prob.gen_graph		= 0;
 
   /* Read in the ascii input file */
   if(Proc == 0) {
@@ -248,16 +246,6 @@ int i;
   fprintf(fp, "\tParameters:\n");
   for (i = 0; i < prob->num_params; i++)
     fprintf(fp, "\t\t%s %s\n", prob->params[i][0], prob->params[i][1]);
-
-  if (prob->gen_graph)
-    fprintf(fp, "\tGenerating graph.\n");
-  else
-    fprintf(fp, "\tNot generating graph.\n");
-
-  if (prob->read_coord)
-    fprintf(fp, "\tReading coordinates.\n");
-  else
-    fprintf(fp, "\tNot reading coordinates.\n");
 
   fprintf(fp, "##########################################################\n");
 }

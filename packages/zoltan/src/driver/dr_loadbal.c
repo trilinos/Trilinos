@@ -126,33 +126,29 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   }
 
   /* functions for geometry based algorithms */
-  if (prob->read_coord) {
-    if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
-                  NULL) == LB_FATAL) {
-      Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-      return 0;
-    }
+  if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
+                NULL) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
+  }
 
-    if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, (void *) get_geom,
-                  (void *) *elements) == LB_FATAL) {
-      Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-      return 0;
-    }
+  if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, (void *) get_geom,
+                (void *) *elements) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
   }
 
   /* functions for geometry based algorithms */
-  if (prob->gen_graph) {
-    if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
-                  (void *) *elements) == LB_FATAL) {
-      Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-      return 0;
-    }
+  if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
+                (void *) *elements) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
+  }
 
-    if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
-                  (void *) *elements) == LB_FATAL) {
-      Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-      return 0;
-    }
+  if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
+                (void *) *elements) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
   }
 
   /* Evaluate the old balance */
@@ -296,9 +292,15 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
     *ierr = LB_FATAL;
     return;
   }
-  
+
   elem = (ELEM_INFO *) data;
 
+  if (Mesh.eb_nnodes[elem[local_id].elem_blk] == 0) {
+    /* No geometry info was read. */
+    *ierr = LB_FATAL;
+    return;
+  }
+  
   /*
    * calculate the geometry of the element by averaging
    * the coordinates of the nodes in its connect table

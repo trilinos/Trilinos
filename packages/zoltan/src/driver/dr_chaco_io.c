@@ -91,17 +91,16 @@ int read_chaco_mesh(int Proc,
 
     fclose (fp);
 
-    /* If method requires coordinate info, read Chaco geometry file. */
-    if (prob->read_coord) {
-      sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);
-      fp = fopen(chaco_fname, "r");
-      if (fp == NULL) {
-        sprintf(cmesg, "fatal:  Could not open Chaco geometry file %s",
-                chaco_fname);
-        Gen_Error(0, cmesg);
-        return 0;
-      }
-
+    /* Read Chaco geometry file, if provided. */
+    sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);
+    fp = fopen(chaco_fname, "r");
+    if (fp == NULL) {
+      sprintf(cmesg, "warning:  Could not open Chaco geometry file %s; "
+              "no geometry data will be read",
+              chaco_fname);
+      Gen_Error(0, cmesg);
+    }
+    else {
       /* read the coordinates in on processor 0 */
       if (chaco_input_geom(fp, chaco_fname, nvtxs, &ndim, &x, &y, &z) != 0) {
         Gen_Error(0, "fatal: Error returned from chaco_input_geom");
@@ -138,10 +137,16 @@ int read_chaco_mesh(int Proc,
     return 0;
   }
 
-  /* Each element has only one set of coordinates (i.e., node). */
   Mesh.eb_ids[0] = 1;
   Mesh.eb_cnts[0] = nvtxs;
-  Mesh.eb_nnodes[0] = 1;
+  /*
+   * Each element has one set of coordinates (i.e., node) if a coords file
+   * was provided; zero otherwise. 
+   */
+  if (x != NULL)
+    Mesh.eb_nnodes[0] = 1;
+  else
+    Mesh.eb_nnodes[0] = 0;
   Mesh.eb_nattrs[0] = 0;
   Mesh.eb_names[0] = "chaco";
 

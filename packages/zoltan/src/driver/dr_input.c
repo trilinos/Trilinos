@@ -450,35 +450,10 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /*                 Check the Zoltan specifications                           */
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*
-   * check the method being used, and determine what needs to
-   * be read in and generated to support it
-   *
-   * A new section needs to be added for every new load balancing
-   * algorithm added to Zoltan.
+   * Make sure a load-balancing method was provided.
    */
   if (strlen(prob->method) == 0) {
     Gen_Error(0, "fatal: load balance method must be specified");
-    return 0;
-  }
-
-  if (strcasecmp(prob->method, "RCB") == 0) {
-    prob->read_coord = 1;
-    prob->gen_graph = 0;
-  }
-  else if (strcasecmp(prob->method, "OCTPART") == 0) {
-    prob->read_coord = 1;
-    prob->gen_graph = 0;
-  }
-  else if (strcasecmp(prob->method, "PARMETIS") == 0) {
-    prob->read_coord = 0; /* Check param to decide whether to read coords. */
-    prob->gen_graph = 1;
-  }
-  /*
-   * Add information about new methods here
-   */
-  else {
-    sprintf(cmesg, "fatal: unknown loadbalance method, %s", prob->method);
-    Gen_Error(0, cmesg);
     return 0;
   }
 

@@ -64,36 +64,32 @@ int elem;
     printf("\tAttrib Per Element: %d\n", Mesh.eb_nattrs[i]);
   }
 
-  if (prob->read_coord) {
-    printf("\nElement connect table, weights and coordinates:\n");
-    for (i = 0; i < Mesh.num_elems; i++) {
-      printf("%d:\n", elements[i].globalID);
-      for (j = 0; j < Mesh.eb_nnodes[elements[i].elem_blk]; j++) {
-        printf("\t%d (%f)|", elements[i].connect[j], elements[i].cpu_wgt);
-        for (k = 0; k < Mesh.num_dims; k++) {
-          printf(" %f", elements[i].coord[j][k]);
-        }
-        printf("\n");
-      }
-    }
-  }
-
-  if (prob->gen_graph) {
-    /* now print the adjacencies */
-    printf("\nElement adjacencies:\n");
-    printf("elem\tnadj\tadj,proc\n");
-    for (i = 0; i < Mesh.num_elems; i++) {
-      printf("%d\t", elements[i].globalID);
-      printf("%d\t", elements[i].nadj);
-      for (j = 0; j < elements[i].nadj; j++) {
-        if (elements[i].adj_proc[j] == Proc)
-          elem = elements[elements[i].adj[j]].globalID;
-        else
-          elem = elements[i].adj[j];
-        printf("%d,%d ", elem, elements[i].adj_proc[j]);
+  printf("\nElement connect table, weights and coordinates:\n");
+  for (i = 0; i < Mesh.num_elems; i++) {
+    printf("%d (%f):\n", elements[i].globalID, elements[i].cpu_wgt);
+    for (j = 0; j < Mesh.eb_nnodes[elements[i].elem_blk]; j++) {
+      printf("\t%d |", elements[i].connect[j]);
+      for (k = 0; k < Mesh.num_dims; k++) {
+        printf(" %f", elements[i].coord[j][k]);
       }
       printf("\n");
     }
+  }
+
+  /* now print the adjacencies */
+  printf("\nElement adjacencies:\n");
+  printf("elem\tnadj\tadj,proc\n");
+  for (i = 0; i < Mesh.num_elems; i++) {
+    printf("%d\t", elements[i].globalID);
+    printf("%d\t", elements[i].nadj);
+    for (j = 0; j < elements[i].nadj; j++) {
+      if (elements[i].adj_proc[j] == Proc)
+        elem = elements[elements[i].adj[j]].globalID;
+      else
+        elem = elements[i].adj[j];
+      printf("%d,%d ", elem, elements[i].adj_proc[j]);
+    }
+    printf("\n");
   }
 
   print_sync_end(Proc, Num_Proc, 1);
