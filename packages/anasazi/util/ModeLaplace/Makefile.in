@@ -80,7 +80,8 @@ CONFIG_CLEAN_FILES =
 AR = ar
 ARFLAGS = cru
 LIBRARIES = $(noinst_LIBRARIES)
-libModeLaplace_a_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+libModeLaplace_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = BlockPCGSolver.$(OBJEXT) CheckingTools.$(OBJEXT) \
 	ModeLaplace1DQ1.$(OBJEXT) ModeLaplace1DQ2.$(OBJEXT) \
 	ModeLaplace2DQ1.$(OBJEXT) ModeLaplace2DQ2.$(OBJEXT) \
@@ -192,6 +193,7 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
@@ -314,7 +316,7 @@ COMP =
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
 	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/src/ModalAnalysisSolvers
+	-I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
 
 
 #np# The following section can be duplicated for building multiple libraries -
@@ -378,7 +380,7 @@ EXTRA_libModeLaplace_a_SOURCES = \
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libModeLaplace_a_LIBADD = $(XTRALDADD)
+libModeLaplace_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

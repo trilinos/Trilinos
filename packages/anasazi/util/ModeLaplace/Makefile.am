@@ -105,7 +105,7 @@ COMP =
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
 	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/src/ModalAnalysisSolvers
+	-I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
@@ -170,7 +170,7 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libModeLaplace_a_LIBADD = $(XTRALDADD)
+libModeLaplace_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

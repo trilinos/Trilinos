@@ -29,7 +29,7 @@
 #ifndef ANASAZI_SORTING_TOOLS_H
 #define ANASAZI_SORTING_TOOLS_H
 
-#include <cstring>
+#include "AnasaziConfigDefs.hpp"
 using std::memcpy;
 
 class SortingTools {
