@@ -42,6 +42,7 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
+    gradientVec(g.getX(), 0.0),
     prevXVec(g.getX(), g.getParam(paramID)),
     derivResidualParamPtr(g.getX().clone(NOX::ShapeCopy)),
     arclengthStep(0.0),
@@ -64,6 +65,7 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
+    gradientVec(g.getX(), 0.0),
     prevXVec(g.getX(), g.getParam(paramID)),
     derivResidualParamPtr(g.getX().clone(NOX::ShapeCopy)),
     arclengthStep(0.0),
@@ -85,6 +87,7 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
     xVec(source.xVec, type),
     fVec(source.fVec, type),
     newtonVec(source.newtonVec, type),
+    gradientVec(source.gradientVec, type),
     prevXVec(source.prevXVec, type),
     derivResidualParamPtr(source.derivResidualParamPtr->clone(type)),
     arclengthStep(source.arclengthStep),
@@ -136,6 +139,7 @@ LOCA::Continuation::ArcLengthGroup::operator=(
     xVec = source.xVec;
     fVec = source.fVec;
     newtonVec = source.newtonVec;
+    gradientVec = source.gradientVec;
     prevXVec = source.prevXVec;
     arclengthStep = source.arclengthStep;
     *derivResidualParamPtr = *source.derivResidualParamPtr;
@@ -168,6 +172,7 @@ LOCA::Continuation::ArcLengthGroup::setStepSize(double deltaS)
   // Arclength Step appears on RHS but not in Jacobian
   isValidF = false;
   isValidNewton = false;
+  isValidGradient = false;
 }
 
 double
@@ -207,6 +212,7 @@ LOCA::Continuation::ArcLengthGroup::setPrevX(
 
   isValidF = false; // Previous vector part of residual equation
   isValidNewton = false;
+  isValidGradient = false;
   isValidPrevXVec = true;
 }
 
@@ -251,25 +257,26 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = "LOCA::Continuation::NaturalGroup::computeF()";
-  NOX::Abstract::Group::ReturnType finalStatus;
+  string callingFunction = "LOCA::Continuation::ArcLengthGroup::computeF()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
-  finalStatus = grpPtr->computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
-  
+  // make sure predictor is valid
+  if (!isPredictorDirection()) {
+    LOCA::ErrorCheck::throwError(callingFunction, 
+				 "Called with invalid predictor vector.");
+  }
+
+  // Compute underlying F
+  if (!grpPtr->isF()) {
+    finalStatus = grpPtr->computeF();
+    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  }
   fVec.getXVec() = grpPtr->getF();
   
   // Compute xVec-prevXVec;
   LOCA::Continuation::ExtendedVector *tmpVec =
     dynamic_cast<LOCA::Continuation::ExtendedVector*>(xVec.clone(NOX::DeepCopy));
   tmpVec->update(-1.0, prevXVec, 1.0);
-
-  if (!isPredictorDirection()) {
-    LOCA::ErrorCheck::printWarning(
-		       "LOCA::Continuation::ArcLengthGroup::computeF()", 
-		       "Called with invalid predictor vector.");
-    return NOX::Abstract::Group::Failed;
-  }
   
   fVec.getParam() =  
     computeScaledDotProduct(predictorVec, *tmpVec) - arclengthStep;
@@ -288,16 +295,23 @@ LOCA::Continuation::ArcLengthGroup::computeJacobian()
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::Continuation::NaturalGroup::computeJacobian()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+    "LOCA::Continuation::ArcLengthGroup::computeJacobian()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
 
-  finalStatus = grpPtr->computeJacobian();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
-  
+  // Compute underlying df/dp (may invalidate underlying data)
   status = grpPtr->computeDfDp(conParamID, *derivResidualParamPtr);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
+
+  // Compute underlying Jacobian
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   isValidJacobian = true;
 
@@ -307,7 +321,44 @@ LOCA::Continuation::ArcLengthGroup::computeJacobian()
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::ArcLengthGroup::computeGradient() 
 {
-  return NOX::Abstract::Group::NotDefined;
+  if (isValidGradient)
+    return NOX::Abstract::Group::Ok;
+
+  string callingFunction = 
+    "LOCA::Continuation::ArcLengthGroup::computeGradient()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  // Make sure F is valid
+  if (!isF()) {
+    status = computeF();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+  
+  // Make sure Jacobian is valid
+  if (!isJacobian()) {
+    status = computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+  
+  // Compute underlying gradient
+  if (!grpPtr->isGradient()) {
+    status = grpPtr->computeGradient();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+  gradientVec.getXVec() = grpPtr->getGradient();
+  gradientVec.getParam() = derivResidualParamPtr->dot(fVec.getXVec());
+  gradientVec.update(fVec.getParam(), predictorVec, 1.0);
+
+  isValidGradient = true;
+
+  return finalStatus;
 }
    
 NOX::Abstract::Group::ReturnType
@@ -318,16 +369,25 @@ LOCA::Continuation::ArcLengthGroup::computeNewton(
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::Continuation::NaturalGroup::computeNewton()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+    "LOCA::Continuation::ArcLengthGroup::computeNewton()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
 
-  finalStatus = computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  // Make sure F is valid
+  if (!isF()) {
+    status = computeF();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
   
-  status = computeJacobian();
-  finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+  // Make sure Jacobian is valid
+  if (!isJacobian()) {
+    status = computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   // zero out newton vec -- used as initial guess for some linear solvers
   newtonVec.init(0.0);
@@ -350,8 +410,20 @@ LOCA::Continuation::ArcLengthGroup::applyJacobian(
 					  NOX::Abstract::Vector& result) const 
 {
   string callingFunction = 
-    "LOCA::Continuation::NaturalGroup::applyJacobian()";
-  NOX::Abstract::Group::ReturnType finalStatus;
+    "LOCA::Continuation::ArcLengthGroup::applyJacobian()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
+
+  // make sure predictor is valid
+  if (!isPredictorDirection()) {
+    LOCA::ErrorCheck::throwError(callingFunction, 
+				 "Called with invalid predictor vector.");
+  }
 
   // Cast inputs to continuation vectors
   const LOCA::Continuation::ExtendedVector& c_input = 
@@ -367,21 +439,22 @@ LOCA::Continuation::ArcLengthGroup::applyJacobian(
   NOX::Abstract::Vector& result_x = c_result.getXVec();
   double& result_param = c_result.getParam();
 
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
   // compute J*x
-  finalStatus = grpPtr->applyJacobian(input_x, result_x);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  status = grpPtr->applyJacobian(input_x, result_x);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // compute J*x + p*dR/dp
   result_x.update(input_param, *derivResidualParamPtr, 1.0);
-
-  // if tangent vector hasn't been computed, we are stuck since this is
-  // a const method
-  if (!isPredictorDirection()) {
-    LOCA::ErrorCheck::printWarning(
-		       "LOCA::Continuation::ArcLengthGroup::applyJacobian()", 
-		       "Called with invalid predictor vector.");
-    return NOX::Abstract::Group::Failed;
-  }
 
   // compute dx/ds x + dp/ds p
   result_param = computeScaledDotProduct(predictorVec, c_input);
@@ -394,7 +467,58 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianTranspose(
 					  const NOX::Abstract::Vector& input, 
 					  NOX::Abstract::Vector& result) const 
 {
-  return NOX::Abstract::Group::NotDefined;
+
+  string callingFunction = 
+    "LOCA::Continuation::ArcLengthGroup::applyJacobianTranspose()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
+
+  // make sure predictor is valid
+  if (!isPredictorDirection()) {
+    LOCA::ErrorCheck::throwError(callingFunction, 
+				 "Called with invalid predictor vector.");
+  }
+
+  // Cast inputs to continuation vectors
+  const LOCA::Continuation::ExtendedVector& c_input = 
+    dynamic_cast<const LOCA::Continuation::ExtendedVector&>(input);
+  LOCA::Continuation::ExtendedVector& c_result = 
+    dynamic_cast<LOCA::Continuation::ExtendedVector&>(result);
+
+  // Get x, param componenets of input vector
+  const NOX::Abstract::Vector& input_x = c_input.getXVec();
+  double input_param = c_input.getParam();
+
+  // Get references to x, param components of result vector
+  NOX::Abstract::Vector& result_x = c_result.getXVec();
+  double& result_param = c_result.getParam();
+  
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
+  // compute J^T*x
+  status = grpPtr->applyJacobianTranspose(input_x, result_x);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
+  // compute df/dp^T x
+  result_param = derivResidualParamPtr->dot(input_x);
+
+  // compute [J^T x; df/dp^T x] + input_p * [dx/ds; dp/ds]
+  c_result.update(input_param, predictorVec, 1.0);
+
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -404,8 +528,20 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(
 					  NOX::Abstract::Vector& result) const 
 {
   string callingFunction = 
-    "LOCA::Continuation::NaturalGroup::applyJacobianInverse()";
-  NOX::Abstract::Group::ReturnType finalStatus;
+    "LOCA::Continuation::ArcLengthGroup::applyJacobianInverse()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
+
+  // make sure predictor is valid
+  if (!isPredictorDirection()) {
+    LOCA::ErrorCheck::throwError(callingFunction, 
+				 "Called with invalid predictor vector.");
+  }
 
   // Cast inputs to continuation vectors
   const LOCA::Continuation::ExtendedVector& c_input = 
@@ -428,9 +564,19 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(
   lhs[0] = input_x.clone(NOX::ShapeCopy);
   lhs[1] = input_x.clone(NOX::ShapeCopy);
 
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
   // Solve J*lhs = rhs
-  finalStatus = grpPtr->applyJacobianInverseMulti(params, rhs, lhs, 2);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  status = grpPtr->applyJacobianInverseMulti(params, rhs, lhs, 2);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Get x, param components of predictor vector
   const NOX::Abstract::Vector& tanX = predictorVec.getXVec();
@@ -468,7 +614,7 @@ LOCA::Continuation::ArcLengthGroup::isJacobian() const
 bool
 LOCA::Continuation::ArcLengthGroup::isGradient() const 
 {
-  return false;
+  return isValidGradient;
 }
 
 bool
@@ -498,7 +644,7 @@ LOCA::Continuation::ArcLengthGroup::getNormF() const
 const NOX::Abstract::Vector&
 LOCA::Continuation::ArcLengthGroup::getGradient() const 
 {
-  return getNewton();
+  return gradientVec;
 }
 
 const NOX::Abstract::Vector&
@@ -511,7 +657,7 @@ double
 LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual() const 
 {
   string callingFunction = 
-    "LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual()";
+    "LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::Continuation::ExtendedVector residual = fVec;
   
@@ -536,6 +682,7 @@ LOCA::Continuation::ArcLengthGroup::resetIsValid() {
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidGradient = false;
 }
 
 void

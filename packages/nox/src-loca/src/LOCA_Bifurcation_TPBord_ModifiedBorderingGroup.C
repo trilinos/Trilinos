@@ -129,7 +129,13 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
 {
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
 
   // cast vectors to turning point vectors
   const LOCA::Bifurcation::TPBord::ExtendedVector& tp_input = 
@@ -153,7 +159,9 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   NOX::Abstract::Vector* c = input_x.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector* d = input_x.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector* e = input_x.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector* tmp = input_x.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector* tmp1 = input_x.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector* tmp2 = input_x.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector* tmp3 = input_x.clone(NOX::ShapeCopy);
   double aa, bb, cc, dd, ee;
 
   // Get reference to null vector, Jn vectors
@@ -164,6 +172,14 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   double s = Jv.norm(NOX::Abstract::Vector::TwoNorm);
   NOX::Abstract::Vector *u = Jv.clone(NOX::DeepCopy);
   u->scale(1.0/s);
+
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   // Compute a
   finalStatus = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, 
@@ -179,41 +195,49 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
 						 callingFunction);
 
   // Compute input_y - (dJv/dx)*a
-  status = grpPtr->computeDJnDxa(v, *a, Jv, *tmp);
+  status = grpPtr->computeDJnDxa(v, *a, Jv, *tmp1);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
-  tmp->update(1.0, input_y, -1.0);
+  tmp1->update(1.0, input_y, -1.0);
+
+  // Compute d(Jv)/dp - (dJv/dx)*b
+  status = grpPtr->computeDJnDxa(v, *b, Jv, *tmp2);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  tmp2->update(1.0, *derivNullResidualParamPtr, -1.0);
+
+  // Compute (dJv/dx)*v
+  status = grpPtr->computeDJnDxa(v, v, Jv, *tmp3);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   // Compute c
-  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp1, 
 						0.0, *c, cc);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
 
-  // Compute d(Jv)/dp - (dJv/dx)*b
-  status = grpPtr->computeDJnDxa(v, *b, Jv, *tmp);
-  finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
-  tmp->update(1.0, *derivNullResidualParamPtr, -1.0);
-
   // Compute d
-  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp2, 
 						0.0, *d, dd);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
 
-  // Compute (dJv/dx)*v
-  status = grpPtr->computeDJnDxa(v, v, Jv, *tmp);
-  finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
-
   // Compute e
-  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp3, 
 						0.0, *e, ee);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
@@ -253,7 +277,9 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   delete c;
   delete d;
   delete e;
-  delete tmp;
+  delete tmp1;
+  delete tmp2;
+  delete tmp3;
   delete u;
  
   return NOX::Abstract::Group::Ok;
@@ -267,7 +293,13 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
 {
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
 
   // Number of input vectors
   int m = nVecs; 
@@ -328,6 +360,14 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
   zeros[m+1] = 0.0;
   scalars_null[m+1] = 0.0;
 
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
   // Solve J*tmp1 = inputs_x
   finalStatus = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,
 							  inputs_x, zeros, 
@@ -345,6 +385,14 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
     if (i < m+1)
       tmp2[i]->update(1.0, *inputs_null[i], -1.0);
   } 
+
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   // Solve J*tmp3 = tmp2
   status = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,

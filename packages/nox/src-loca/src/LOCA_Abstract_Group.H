@@ -194,6 +194,12 @@ namespace LOCA {
       applyMassMatrix(const NOX::Abstract::Vector& input,
 		      NOX::Abstract::Vector& result) const;
 
+      //! Is mass matrix valid
+      /*!
+       * Implementation here returns false.
+       */
+      virtual bool isMassMatrix() const;
+
       //@}
 
       /*! 

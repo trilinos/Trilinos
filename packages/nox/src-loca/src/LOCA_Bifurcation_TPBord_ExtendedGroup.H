@@ -476,7 +476,7 @@ namespace LOCA {
       protected:
 
 	//! Initializes group
-	void init();
+	void init(bool perturbSoln = false, double perturbSize = 0.0);
 
 	//! Set bifurcation parameter
 	void setBifParam(double param);

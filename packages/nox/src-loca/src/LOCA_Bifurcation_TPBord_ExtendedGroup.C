@@ -78,12 +78,17 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
   const NOX::Abstract::Vector* nullVecPtr = 
     bifParamList.getAnyConstPtrParameter<NOX::Abstract::Vector>("Initial Null Vector");
 
+  bool perturbSoln = bifParamList.getParameter("Perturb Initial Solution", 
+					       false);
+  double perturbSize = bifParamList.getParameter("Relative Perturbation Size", 
+						 1.0e-3);
+
   lengthVecPtr = lenVecPtr->clone(NOX::DeepCopy);
   derivResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
   derivNullResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
   tpXVec.getNullVec() = *nullVecPtr;
 
-  init();
+  init(perturbSoln, perturbSize);
 }
 
 LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
@@ -255,15 +260,20 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeDfDp(int paramID,
 {
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ExtendedGroup::computeDfDp()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
 
   // Cast result to TP vector
   LOCA::Bifurcation::TPBord::ExtendedVector& tp_result = 
     dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedVector&>(result);
 
-  // Compute f, J, J*n
-  finalStatus = computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  // Make sure F is valid
+  if (!isF()) {
+    status = computeF();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   // Compute df/dp
   status = grpPtr->computeDfDp(paramID, tp_result.getXVec());
@@ -353,24 +363,34 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeF()
 
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ExtendedGroup::computeF()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
 
-  finalStatus = grpPtr->computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
-  
+  // Compute underlying F
+  if (!grpPtr->isF()) {
+    status = grpPtr->computeF();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
   tpFVec.getXVec() = grpPtr->getF();
   
-  status = grpPtr->computeJacobian();
-  finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+  // Compute underlying Jacobian
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
+  // Compute J*n
   status = grpPtr->applyJacobian(tpXVec.getNullVec(), 
 				 tpFVec.getNullVec());
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
   
+  // Compute phi^T*n
   tpFVec.getBifParam() = lTransNorm(tpXVec.getNullVec()) - 1.0;
   
   isValidF = true;
@@ -386,21 +406,25 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeJacobian()
 
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ExtendedGroup::computeJacobian()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
 
-  finalStatus = computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  // We need data from computeF() here, so make sure it's valid
+  if (!isF()) {
+    status = computeF();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
-  status = grpPtr->computeJacobian();
-  finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
-
+  // Compute underlying df/dp (may invalidate underlying data)
   status = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
+  
 
+  // Compute underlying dJn/dp
   status = grpPtr->computeDJnDp(tpXVec.getNullVec(), 
 				bifParamId,
 				tpFVec.getNullVec(), 
@@ -408,6 +432,14 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeJacobian()
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
+
+  // Compute underlying Jacobian
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   isValidJacobian = true;
 
@@ -429,15 +461,24 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeNewton(
 
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ExtendedGroup::computeNewton()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
 
-  finalStatus = computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  // Make sure F is valid
+  if (!isF()) {
+    status = computeF();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
   
-  status = computeJacobian();
-  finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+  // Make sure Jacobian is valid
+  if (!isJacobian()) {
+    status = computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   // zero out newton vec -- used as initial guess for some linear solvers
   tpNewtonVec.init(0.0);
@@ -460,7 +501,13 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
 {
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
 
   // Cast vectors to TPBordVectors
   const LOCA::Bifurcation::TPBord::ExtendedVector& tp_input = 
@@ -481,9 +528,19 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
   // Temporary vector
   NOX::Abstract::Vector *tmp = input_null.clone(NOX::ShapeCopy);
 
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
   // compute J*x
-  finalStatus = grpPtr->applyJacobian(input_x, result_x);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  status = grpPtr->applyJacobian(input_x, result_x);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // compute J*x + p*dR/dp
   result_x.update(input_param, *derivResidualParamPtr, 1.0);
@@ -554,7 +611,13 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyRightPreconditioning(
 
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ExtendedGroup::applyRightPreconditioning()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
 
   // cast vectors to turning point vectors
   const LOCA::Bifurcation::TPBord::ExtendedVector& tp_input = 
@@ -643,7 +706,13 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
 
   string callingFunction = 
     "LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  if (!isJacobian()) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
 
   // Number of input vectors
   int m = nVecs; 
@@ -680,17 +749,27 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
   tmp2[m] = inputs_x[m]->clone(NOX::ShapeCopy);
   tmp3[m] = inputs_x[m]->clone(NOX::ShapeCopy);
 
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
   // Solve J*tmp1 = inputs_x
-  finalStatus = grpPtr->applySingularJacobianInverseMulti(params, inputs_x, 
-							  tpXVec.getNullVec(),
-							  tpFVec.getNullVec(),
-							  tmp1, m+1);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  status = grpPtr->applySingularJacobianInverseMulti(params, inputs_x, 
+						     tpXVec.getNullVec(),
+						     tpFVec.getNullVec(),
+						     tmp1, m+1);
+  finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
 
   // Compute tmp2 = (dJy/dx)*tmp1 - inputs_null
   for (int i=0; i<m+1; i++) {
     status = grpPtr->computeDJnDxa(tpXVec.getNullVec(), *tmp1[i],
-				tpFVec.getNullVec(), *tmp2[i]);
+				   tpFVec.getNullVec(), *tmp2[i]);
 
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
@@ -698,6 +777,14 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
 
     tmp2[i]->update(-1.0, *inputs_null[i], 1.0);
   } 
+
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
 
   // Solve J*tmp3 = tmp2
   status = grpPtr->applySingularJacobianInverseMulti(params, tmp2, 
@@ -847,7 +934,8 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::getUnderlyingGroup()
 }
 
 void
-LOCA::Bifurcation::TPBord::ExtendedGroup::init()
+LOCA::Bifurcation::TPBord::ExtendedGroup::init(bool perturbSoln, 
+					       double perturbSize)
 {
   tpXVec.getBifParam() = getBifParam();
 
@@ -864,6 +952,18 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::init()
 	 << LOCA::Utils::sci(1.0 / lVecDotNullVec) << endl;
   }
   tpXVec.getNullVec().scale(1.0/lVecDotNullVec);
+
+  if (perturbSoln) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tIn LOCA::Bifurcation::TPBord::ExtendedGroup::init(), applying random perturbation to initial solution of size:" 
+	 << LOCA::Utils::sci(perturbSize) << endl;
+    }
+    NOX::Abstract::Vector *perturb = tpXVec.getXVec().clone(NOX::ShapeCopy);
+    perturb->random();
+    perturb->scale(tpXVec.getXVec());
+    tpXVec.getXVec().update(perturbSize, *perturb, 1.0);
+    delete perturb;
+  }
 }
 
 double

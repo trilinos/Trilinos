@@ -35,6 +35,12 @@
 
 #include "NOX_Abstract_Group.H" // For CopyType
 
+namespace NOX {
+  namespace Abstract {
+    class MultiVector;
+  }
+}
+
 namespace LOCA {
   namespace Continuation {
     class AbstractGroup;
@@ -81,20 +87,20 @@ public:
 
   //! Compute derivative of f with respect to parameter, identified by param_id
   virtual NOX::Abstract::Group::ReturnType 
-  computeDfDp(LOCA::Continuation::AbstractGroup& grp, const int param_id,
+  computeDfDp(LOCA::Continuation::AbstractGroup& grp, int param_id,
 	      NOX::Abstract::Vector& result) const;
 
   //! Compute derivative of Jn with respect to particular parameter param_id
   virtual NOX::Abstract::Group::ReturnType 
   computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 	       const NOX::Abstract::Vector& nullVector,
-	       const int param_id, NOX::Abstract::Vector& result) const;
+	       int param_id, NOX::Abstract::Vector& result) const;
 
   //! Compute derivative of Jn with respect to parameter, given JnVector
   virtual NOX::Abstract::Group::ReturnType 
   computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 	       const NOX::Abstract::Vector& nullVector,
-	       const int param_id,
+	       int param_id,
 	       const NOX::Abstract::Vector& JnVector,
 	       NOX::Abstract::Vector& result) const;
 
@@ -113,13 +119,20 @@ public:
 		const NOX::Abstract::Vector& JnVector,
 		NOX::Abstract::Vector& result) const;
 
-  //! Compute vector (Jn)_{x}a+(Jn)_p given vector a, param_id 
+  //! Compute vector (Jn)_{x}a  given multi-vector a
   virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDxaDp(LOCA::Continuation::AbstractGroup& grp,
-		  const NOX::Abstract::Vector& nullVector,
-		  const NOX::Abstract::Vector& aVector,
-		  const int param_id,
-		  NOX::Abstract::Vector& result) const;
+  computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
+		const NOX::Abstract::Vector& nullVector,
+		const NOX::Abstract::MultiVector& aVector,
+		NOX::Abstract::MultiVector& result) const;
+  
+  //! Compute vector (Jn)_{x}a  given multi-vector a, given JnVector
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
+		const NOX::Abstract::Vector& nullVector,
+		const NOX::Abstract::MultiVector& aVector,
+		const NOX::Abstract::Vector& JnVector,
+		NOX::Abstract::MultiVector& result) const;
 
   //! Compute derivative of (J+iwB)(y+iz) with respect to particular 
   //! parameter param_id
@@ -168,33 +181,45 @@ public:
 		NOX::Abstract::Vector& result_real,
 		NOX::Abstract::Vector& result_imag) const;
 
+  //! Compute vector (J+iwB)(y+iz))_{x}a  given multi-vector a
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+		const NOX::Abstract::Vector& yVector,
+		const NOX::Abstract::Vector& zVector,
+		double w,
+		const NOX::Abstract::MultiVector& aVector,
+		NOX::Abstract::MultiVector& result_real,
+		NOX::Abstract::MultiVector& result_imag) const;
+  
+  //! Compute vector (J+iwB)(y+iz))_{x}a  given multi-vector a, given 
+  //! (J+iwB)(y+iz) vector
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+		const NOX::Abstract::Vector& yVector,
+		const NOX::Abstract::Vector& zVector,
+		double w,
+		const NOX::Abstract::MultiVector& aVector,
+		const NOX::Abstract::Vector& Ce_real,
+		const NOX::Abstract::Vector& Ce_imag,
+		NOX::Abstract::MultiVector& result_real,
+		NOX::Abstract::MultiVector& result_imag) const;
+
 protected:
-
-  //! Given 2 vectors and a perturbation, return differenced vector. 
-  /*! The first argument (perturbedVector) is modified.  */
-  virtual NOX::Abstract::Vector& doDifference(
-                                NOX::Abstract::Vector& perturbedVector,
-                                const NOX::Abstract::Vector& baseVector,
-                                const double eps) const;
-
-  //! Given 2 vectors and a perturbation, compute differenced vector. 
-  /*! The first argument (perturbedVector) is overwritten.  */
-  virtual void doDifference2(NOX::Abstract::Vector& perturbedVector,
-			     const NOX::Abstract::Vector& baseVector,
-			     const double eps) const;
 
   //! Perturb parameter param_id in the group's parameter vector,
   //! and return perturbation size
-  virtual double perturbParam(LOCA::Continuation::AbstractGroup& grpPerturbed,
-                              const int param_id) const;
+  virtual double perturbParam(LOCA::Continuation::AbstractGroup& grp,
+			      double& param,
+                              int param_id) const;
 
   //! Perturb group's solution vector in direction of aVector,
   //! and return perturbation size
-  virtual double perturbXVec(LOCA::Continuation::AbstractGroup& grpPerturbed,
+  virtual double perturbXVec(LOCA::Continuation::AbstractGroup& grp,
+			     const NOX::Abstract::Vector& xVector,
                              const NOX::Abstract::Vector& aVector) const;
 
   //! Return perturbation for finite differencing around given double variable
-  virtual double epsScalar(const double p) const;
+  virtual double epsScalar(double p) const;
 
   //! Return perturbation for directional derivatives around first vector
   //! in direction of second vector

@@ -102,12 +102,22 @@ LOCA::Bifurcation::TPBord::FiniteDifferenceGroup::computeDJnDxa(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::TPBord::FiniteDifferenceGroup::computeDJnDxaDp(
-				      const NOX::Abstract::Vector& nullVector,
-				      const NOX::Abstract::Vector& aVector,
-				      const int param_id,
-				      NOX::Abstract::Vector& result)
+LOCA::Bifurcation::TPBord::FiniteDifferenceGroup::computeDJnDxa(
+				    const NOX::Abstract::Vector& nullVector,
+				    const NOX::Abstract::MultiVector& aVector, 
+				    NOX::Abstract::MultiVector& result)
 {
   return LOCA::Continuation::FiniteDifferenceGroup::derivPtr->
-    computeDJnDxaDp(*this, nullVector, aVector, param_id, result);
+    computeDJnDxa(*this, nullVector, aVector, result);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::FiniteDifferenceGroup::computeDJnDxa(
+				    const NOX::Abstract::Vector& nullVector,
+				    const NOX::Abstract::MultiVector& aVector, 
+				    const NOX::Abstract::Vector& JnVector,
+				    NOX::Abstract::MultiVector& result)
+{
+  return LOCA::Continuation::FiniteDifferenceGroup::derivPtr->
+    computeDJnDxa(*this, nullVector, aVector, JnVector, result);
 }

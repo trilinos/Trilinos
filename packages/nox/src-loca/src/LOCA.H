@@ -60,3 +60,6 @@
 #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 #include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"
 #include "LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H"
+#include "LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.H"
+#include "LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H"
+#include "LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H"

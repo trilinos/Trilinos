@@ -46,7 +46,7 @@ LOCA::Continuation::AbstractGroup::applyJacobianMultiVector(
   finalStatus = NOX::Abstract::Group::Ok;
   
   for (int i=0; i<input.numVectors(); i++) {
-    status = applyJacobian(*(input[i]), *(result[i]));
+    status = applyJacobian(input[i], result[i]);
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
@@ -67,7 +67,7 @@ LOCA::Continuation::AbstractGroup::applyJacobianInverseMultiVector(
   finalStatus = NOX::Abstract::Group::Ok;
   
   for (int i=0; i<input.numVectors(); i++) {
-    status = applyJacobianInverse(params, *(input[i]), *(result[i]));
+    status = applyJacobianInverse(params, input[i], result[i]);
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);

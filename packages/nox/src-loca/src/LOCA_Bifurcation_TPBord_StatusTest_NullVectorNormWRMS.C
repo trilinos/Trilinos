@@ -84,14 +84,6 @@ LOCA::Bifurcation::TPBord::StatusTest::NullVectorNormWRMS::checkStatus(
   // temporary vectors
   NOX::Abstract::Vector *u = y.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector *v = yold.clone(NOX::ShapeCopy);
-
-  u->init(1.0);
-  v->abs(yold);
-  u->update(rtol, *v, atol);
-  v->reciprocal(*u);
-  u->update(1.0, y, -1.0, yold, 0.0);
-  u->scale(*v);
-  normWRMS = u->norm() / sqrt(static_cast<double>(u->length()));
   
   // On the first iteration, the old and current solution are the same so
   // we should return the test as unconverged until there is a valid 
@@ -107,22 +99,22 @@ LOCA::Bifurcation::TPBord::StatusTest::NullVectorNormWRMS::checkStatus(
   // Fill vector with 1's
   u->init(1.0);
 
-  // Compute |yold|
-  v->abs(yold);
+  // Compute |y|
+  v->abs(y);
   
-  // Overwrite u with rtol*|yold| + atol
+  // Overwrite u with rtol*|y| + atol
   u->update(rtol, *v, atol);
 
-  // Overwrite v with 1/(rtol*|yold| + atol)
+  // Overwrite v with 1/(rtol*|y| + atol)
   v->reciprocal(*u);
 
   // Overwrite u with y-yold
   u->update(1.0, y, -1.0, yold, 0.0);
 
-  // Overwrite u with (y-yold)/(rtol*|yold| + atol)
+  // Overwrite u with (y-yold)/(rtol*|y| + atol)
   u->scale(*v);
 
-  // Compute sqrt( (y-yold)/(rtol*|yold| + atol) ) / sqrt(N)
+  // Compute sqrt( (y-yold)/(rtol*|y| + atol) ) / sqrt(N)
   normWRMS = u->norm() / sqrt(static_cast<double>(u->length()));
 
   if (normWRMS < tol) 

@@ -170,6 +170,12 @@ LOCA::Abstract::Group::applyComplexInverse(
   return NOX::Abstract::Group::NotDefined;
 }
 
+bool
+LOCA::Abstract::Group::isMassMatrix() const
+{
+  return false;
+}
+
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyBorderedJacobianInverse(bool trans,
 				     NOX::Parameter::List& params,

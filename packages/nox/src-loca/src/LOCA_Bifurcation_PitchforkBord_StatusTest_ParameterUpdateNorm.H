@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BIFURCATION_TPBORD_STATUSTEST_PARAMETERUPDATENORM_H
-#define LOCA_BIFURCATION_TPBORD_STATUSTEST_PARAMETERUPDATENORM_H
+#ifndef LOCA_BIFURCATION_PITCHFORKBORD_STATUSTEST_PARAMETERUPDATENORM_H
+#define LOCA_BIFURCATION_PITCHFORKBORD_STATUSTEST_PARAMETERUPDATENORM_H
 
 #include "NOX_StatusTest_Generic.H"	// base class
 
@@ -39,18 +39,19 @@ namespace LOCA {
   
   namespace Bifurcation {
     
-    namespace TPBord {
+    namespace PitchforkBord {
       
-      //! Convergence tests relating to turning point groups
+      //! Convergence tests relating to pitchfork groups
       namespace StatusTest {
 
 	/*!
 	 * \brief A convergence test based on the update of the parameter 
-	 * component for turning point location.
+	 * component for pitchfork location.
 	 */
 	/*!
-	 * Let \f$p\f$ be the turning point parameter (see 
-	 * LOCA::Bifurcation::TPBord::ExtendedGroup).  This convergence test
+	 * Let \f$p\f$ be the pitchfork parameter (see 
+	 * LOCA::Bifurcation::PitchforkBord::ExtendedGroup).  This 
+	 * convergence test
 	 * defines convergence for the parameter when the following is true
 	 * \f[ 
 	 \frac{|p-p_0|}{\epsilon_r|p| + \epsilon_a} < \tau
@@ -62,17 +63,18 @@ namespace LOCA {
 	 * \f$\tau = 1\f$).
 	 *
 	 * Note that this status test deals only with the parameter component
-	 * of the turning point equations.  This status test should be combined
+	 * of the pitchfork equations.  This status test should be combined
 	 * with other status tests for the solution and null vector components
 	 * (using NOX::StatusTest::Combo and LOCA::StatusTest::Wrapper) to 
 	 * build a composite status test for the entire system.
 	 *
 	 * Also note that if the group returned by the getSolutionGroup()
 	 * method of the solver supplied in checkStatus() is not a 
-	 * turning point group (i.e., not derived from 
-	 * LOCA::Bifurcation::TPBord::ExtendedGroup), checkStatus() returns 
+	 * pitchfork group (i.e., not derived from 
+	 * LOCA::Bifurcation::Pitchforkbord::ExtendedGroup), checkStatus() 
+	 * returns 
 	 * NOX::StatusTest::Converged.  This allows the status test to 
-	 * be used in situations other than turning point tracking, e.g., 
+	 * be used in situations other than pitchfork tracking, e.g., 
 	 * steady-state solves, without raising error conditions.
 	 */
 	class ParameterUpdateNorm : public NOX::StatusTest::Generic {
@@ -139,7 +141,7 @@ namespace LOCA {
 	  NOX::StatusTest::StatusType status;
 	};
       } // namespace StatusTest
-    } // namespace TPBord
+    } // namespace PitchforkBord
   } // namespace Bifurcation
 } // namespace LOCA
 

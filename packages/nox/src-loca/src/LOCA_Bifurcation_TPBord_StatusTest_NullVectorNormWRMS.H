@@ -54,7 +54,7 @@ namespace LOCA {
 	 * This convergence test defines convergence for the null vector when 
 	 * the following is true
 	 * \f[ 
-	 \sqrt{\frac{1}{N}\sum_{i=1}^N\left(\frac{|n_i-(n_0)_i|}{\epsilon_r|(n_0)_i| + \epsilon_a}\right)} < \tau
+	 \sqrt{\frac{1}{N}\sum_{i=1}^N\left(\frac{|n_i-(n_0)_i|}{\epsilon_r|n_i| + \epsilon_a}\right)} < \tau
 	 * \f]
 	 * where \f$n_0\f$ is the previous approximation to the null vector, 
 	 * \f$N\f$ is the length of \f$n\f$, \f$\epsilon_r\f$

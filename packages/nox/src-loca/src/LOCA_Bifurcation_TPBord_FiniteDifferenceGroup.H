@@ -137,19 +137,35 @@ namespace LOCA {
 		      NOX::Abstract::Vector& result);
 
 	/*! 
-	 * \brief Computes the  derivative 
-	 * \f$\frac{\partial Jn}{\partial p} + \frac{\partial Jn}{\partial x} a\f$.
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. 
 	 */
 	/*! 
 	 * The calculation is implemented by calling the corresponding
-	 * LOCA::DerivUtils::computeDJnDxaDp() method of the passed 
+	 * LOCA::DerivUtils::computeDJnDxa() method of the passed 
 	 * LOCA::DerivUtils object.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDJnDxaDp(const NOX::Abstract::Vector& nullVector,
-			const NOX::Abstract::Vector& aVector,
-			const int param_id,
-			NOX::Abstract::Vector& result);
+	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
+		      const NOX::Abstract::MultiVector& aVector,
+		      NOX::Abstract::MultiVector& result);
+  
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. The argument \b JnVector stores \f$Jn\f$.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDJnDxa() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
+		      const NOX::Abstract::MultiVector& aVector,
+		      const NOX::Abstract::Vector& JnVector,
+		      NOX::Abstract::MultiVector& result);
       };
     } // namespace TPBord
   } // namespace Bifurcation

@@ -284,13 +284,16 @@ namespace LOCA {
       protected:
 
 	//! Initializes group
-	void init();
+	void init(bool perturbSoln = false, double perturbSize = 0.0);
 
 	//! Get bifurcation parameter
 	double getBifParam() const;
 
 	//! Set bifurcation parameter
 	void setBifParam(double param);
+
+	//! Defines null vector normalization \f$l^Tn\f$
+	double lTransNorm(const NOX::Abstract::Vector& n) const;
 
       protected:
 

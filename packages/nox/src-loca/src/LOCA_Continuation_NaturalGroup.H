@@ -236,6 +236,9 @@ namespace LOCA {
       //! Stores the continuation Newton vector
       LOCA::Continuation::ExtendedVector newtonVec;
 
+      //! Stores the arclength gradient vector
+      LOCA::Continuation::ExtendedVector gradientVec;
+
       //! Stores the previous arclength solution vector
       LOCA::Continuation::ExtendedVector prevXVec;
 
@@ -253,6 +256,9 @@ namespace LOCA {
 
       //! Is Newton vector valid
       bool isValidNewton;
+
+      //! Is Gradient vector valid
+      bool isValidGradient;
 
       //! Is previous solution vector valid
       bool isValidPrevXVec;

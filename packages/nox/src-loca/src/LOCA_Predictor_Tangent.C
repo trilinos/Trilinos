@@ -76,20 +76,20 @@ LOCA::Predictor::Tangent::compute(bool baseOnSecant, double stepSize,
   // Get continuation parameter ID
   int conParamID = curGroup.getContinuationParameterID();
 
-  // Compute Jacobian
-  finalStatus = underlyingGroup.computeJacobian();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
-
   // Compute derivative of residual w.r.t. parameter
   if (dfdpVecPtr == NULL)
     dfdpVecPtr = tanX.clone(NOX::ShapeCopy);
-  status = underlyingGroup.computeDfDp(conParamID, *dfdpVecPtr);
-  finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+  finalStatus = underlyingGroup.computeDfDp(conParamID, *dfdpVecPtr);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Scale dfdp by -1.0
   dfdpVecPtr->scale(-1.0);
+
+  // Compute Jacobian
+  status = underlyingGroup.computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
   // Solve J*tanX = -df/dp
   NOX::Parameter::List& linearSolverParams = 

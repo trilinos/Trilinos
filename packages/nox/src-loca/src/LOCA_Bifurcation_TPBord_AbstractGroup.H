@@ -160,14 +160,25 @@ namespace LOCA {
 		      NOX::Abstract::Vector& result) = 0;
 
 	/*! 
-	 * \brief Computes the  derivative 
-	 * \f$\frac{\partial Jn}{\partial p} + \frac{\partial Jn}{\partial x} a\f$.
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. 
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDJnDxaDp(const NOX::Abstract::Vector& nullVector,
-			const NOX::Abstract::Vector& aVector,
-			const int param_id,
-			NOX::Abstract::Vector& result) = 0;
+	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
+		      const NOX::Abstract::MultiVector& aVector,
+		      NOX::Abstract::MultiVector& result) = 0;
+  
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. The argument \b JnVector stores \f$Jn\f$.
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
+		      const NOX::Abstract::MultiVector& aVector,
+		      const NOX::Abstract::Vector& JnVector,
+		      NOX::Abstract::MultiVector& result) = 0;
 
 	//@}
 

@@ -30,49 +30,49 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H" 
-#include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
+#include "LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H" 
+#include "LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::ParameterUpdateNorm(double rtol_, double atol_, double tol_) :
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::SlackUpdateNorm(double rtol_, double atol_, double tol_) :
   rtol(rtol_),
   atol(atol_),
   tol(tol_),
-  paramUpdateNorm(0.0),
+  slackUpdateNorm(0.0),
   status(NOX::StatusTest::Unconverged)
 {
 }
 
 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::~ParameterUpdateNorm()
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::~SlackUpdateNorm()
 {
 }
 
 NOX::StatusTest::StatusType 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::checkStatus(
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::checkStatus(
 					 const NOX::Solver::Generic& problem)
 {
   // Get solution groups from solver
   const NOX::Abstract::Group& soln = problem.getSolutionGroup();
   const NOX::Abstract::Group& oldsoln = problem.getPreviousSolutionGroup();
 
-  // Cast soln group to turning point group
-  const LOCA::Bifurcation::TPBord::ExtendedGroup* tpGroupPtr = 
-    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedGroup*>(&soln);
+  // Cast soln group to pitchfork group
+  const LOCA::Bifurcation::PitchforkBord::ExtendedGroup* pfGroupPtr = 
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedGroup*>(&soln);
 
-  // Check that group is a turning point group, return converged if not
-  if (tpGroupPtr == NULL) {
-    paramUpdateNorm = 0.0;
+  // Check that group is a pitchfork group, return converged if not
+  if (pfGroupPtr == NULL) {
+    slackUpdateNorm = 0.0;
     return NOX::StatusTest::Converged;
   }
 
   // Get solution vectors
-  const LOCA::Bifurcation::TPBord::ExtendedVector& x = 
-    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(soln.getX());
-  const LOCA::Bifurcation::TPBord::ExtendedVector& xold = 
-    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(oldsoln.getX());
+  const LOCA::Bifurcation::PitchforkBord::ExtendedVector& x = 
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(soln.getX());
+  const LOCA::Bifurcation::PitchforkBord::ExtendedVector& xold = 
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(oldsoln.getX());
   
   // On the first iteration, the old and current solution are the same so
   // we should return the test as unconverged until there is a valid 
@@ -80,15 +80,15 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::checkStatus(
   int niters = problem.getNumIterations();
   if (niters == 0) 
   {
-    paramUpdateNorm = 1.0e+12;
+    slackUpdateNorm = 1.0e+12;
     status = NOX::StatusTest::Unconverged;
     return status;
   } 
 
-  paramUpdateNorm = 
-    fabs(x.getBifParam() - xold.getBifParam()) / (rtol*fabs(x.getBifParam()) + atol);
+  slackUpdateNorm = 
+    fabs(x.getSlackVar() - xold.getSlackVar()) / (rtol*fabs(x.getSlackVar()) + atol);
 
-  if (paramUpdateNorm < tol) 
+  if (slackUpdateNorm < tol) 
     status = NOX::StatusTest::Converged;
   else
     status = NOX::StatusTest::Unconverged;
@@ -97,22 +97,22 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::checkStatus(
 }
 
 NOX::StatusTest::StatusType 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getStatus() const
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::getStatus() const
 {
   return status;
 }
 
 
 ostream& 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::print(
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::print(
 							    ostream& stream, 
 							    int indent) const
 {
   for (int j = 0; j < indent; j++)
     stream << ' ';
   stream << status;
-  stream << "Turning Point Scaled Parameter Update = " 
-	 << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
+  stream << "Pitchfork Scaled Slack Variable Update = " 
+	 << NOX::Utils::sciformat(slackUpdateNorm, 3) << " < " << tol;
   stream << endl;
 
   return stream;
@@ -120,25 +120,25 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::print(
 
 
 double 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getParameterUpdateNorm() const
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::getSlackUpdateNorm() const
 {
-  return paramUpdateNorm;
+  return slackUpdateNorm;
 }   
 
 double 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getRTOL() const
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::getRTOL() const
 {
   return rtol;
 }
 
 double 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getATOL() const
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::getATOL() const
 {
   return atol;
 }
 
 double 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getTOL() const
+LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::getTOL() const
 {
   return tol;
 }
