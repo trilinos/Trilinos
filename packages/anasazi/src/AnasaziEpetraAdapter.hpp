@@ -411,12 +411,13 @@ namespace Anasazi {
   //--------template class AnasaziEpetraSymOp---------------------
   class EpetraSymOp : public virtual Operator<double> {
   public:
-    EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op );
+    EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, const bool isTrans = false );
     ~EpetraSymOp();
     ReturnType Apply ( const MultiVec<double>& x, 
 		       MultiVec<double>& y ) const;
   private:
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
+    bool isTrans_;
   };
   //-------------------------------------------------------------
   //
@@ -426,8 +427,8 @@ namespace Anasazi {
   //
   // AnasaziOperator constructors
   //
-  EpetraSymOp::EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op) 
-    : Epetra_Op(Op)
+  EpetraSymOp::EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, const bool isTrans) 
+    : Epetra_Op(Op), isTrans_(isTrans)
   {
   }
   
@@ -444,33 +445,113 @@ namespace Anasazi {
     MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
     Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
     Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-    Epetra_MultiVector temp_vec( Epetra_Op->OperatorRangeMap(), vec_x->NumVectors() );
+    Epetra_MultiVector* temp_vec = new Epetra_MultiVector( 
+							  (isTrans_) ? Epetra_Op->OperatorDomainMap() 
+							  : Epetra_Op->OperatorRangeMap(), 
+							  vec_x->NumVectors() );
     
-    assert( vec_x!=NULL && vec_y!=NULL );
+    assert( vec_x!=NULL && vec_y!=NULL && temp_vec!=NULL );
     //
     // Need to cast away constness because the member function Apply
     // is not declared const.
     //
-    // Compute A*x
-    info = Epetra_Op->Apply( *vec_x, temp_vec );
-    if (info!=0) { return Failed; }
+    // Transpose the operator (if isTrans_ = true)
+    if (isTrans_) {
+      info=Epetra_Op->SetUseTranspose( isTrans_ );
+      if (info!=0) { delete temp_vec; return Failed; }
+    }
+    //
+    // Compute A*x or A'*x 
+    //
+    info=Epetra_Op->Apply( *vec_x, *temp_vec );
+    if (info!=0) { delete temp_vec; return Failed; }
+    //
+    // Transpose/Un-transpose the operator based on value of isTrans_
+    info=Epetra_Op->SetUseTranspose( !isTrans_ );
+    if (info!=0) { delete temp_vec; return Failed; }
     
-    // Transpose the operator
-    info = Epetra_Op->SetUseTranspose( true );
-    if (info!=0) { return Failed; }
-    
-    // Compute A^T*(A*x)
-    info = Epetra_Op->Apply( temp_vec, *vec_y );
-    if (info!=0) { return Failed; }
+    // Compute A^T*(A*x) or A*A^T
+    info=Epetra_Op->Apply( *temp_vec, *vec_y );
+    if (info!=0) { delete temp_vec; return Failed; }
     
     // Un-transpose the operator
-    info = Epetra_Op->SetUseTranspose( false );
+    info=Epetra_Op->SetUseTranspose( false );
+    delete temp_vec;
     
     if (info==0)
       return Ok; 
     else
       return Failed; 
   }
+  
+
+  ///////////////////////////////////////////////////////////////
+  //--------template class AnasaziEpetraSymMVOp---------------------
+  class EpetraSymMVOp : public virtual Operator<double> {
+  public:
+    EpetraSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, const bool isTrans = false );
+    ~EpetraSymMVOp();
+    ReturnType Apply ( const MultiVec<double>& x, 
+		       MultiVec<double>& y ) const;
+  private:
+    Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_MV;
+    bool isTrans_;
+  };
+  //-------------------------------------------------------------
+  //
+  // implementation of the Anasazi::EpetraSymMVOp class.
+  //
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Anasazi::Operator constructors
+  //
+  EpetraSymMVOp::EpetraSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, const bool isTrans) 
+    : Epetra_MV(MV), isTrans_(isTrans)
+  {
+  }
+  
+  EpetraSymMVOp::~EpetraSymMVOp() 
+  {
+  }
+  //
+  // AnasaziOperator applications
+  //
+  ReturnType EpetraSymMVOp::Apply ( const MultiVec<double>& x, 
+				    MultiVec<double>& y ) const 
+  {
+    int info=0;
+    MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
+    Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+    Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+    
+    if (isTrans_) {
+      const int izero=0;
+      Epetra_LocalMap localMap( Epetra_MV->NumVectors(), 0, Epetra_MV->Map().Comm() );
+      Epetra_MultiVector Pvec( localMap, temp_x.GetNumberVecs() );
+      
+      /* A'*x */
+      info = Pvec.Multiply( 'T', 'N', 1.0, *Epetra_MV, *vec_x, 0.0 );
+      
+      /* A*(A'*x) */
+      info = vec_y->Multiply( 'N', 'N', 1.0, *Epetra_MV, Pvec, 0.0 );
+      
+    } 
+    else {
+      Epetra_MultiVector temp( Epetra_MV->Map(), temp_x.GetNumberVecs() );
+      
+      /* A*x */
+      info = temp.Multiply( 'N', 'N', 1.0, *Epetra_MV, *vec_x, 0.0 );
+      
+      /* A'*(A*x) */
+      info = vec_y->Multiply( 'T', 'N', 1.0, *Epetra_MV, temp, 0.0 );
+    }
+    
+    if (info==0)
+      return Ok; 
+    else
+      return Failed; 
+  }
+  
   
   ////////////////////////////////////////////////////////////////////
   //
