@@ -137,11 +137,12 @@ endif
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 ## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
 ## above, to this list
-SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) \
+SUBDIRS = $(TEUCHOS_SUBDIR) $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) \
+	  $(IFPACK_SUBDIR) \
+	  $(AZTECOO_SUBDIR) $(ML_SUBDIR) $(KOMPLEX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
 	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) $(ANASAZI_SUBDIR) \
-          $(NOX_SUBDIR) $(TEUCHOS_SUBDIR) $(ML_SUBDIR)
+          $(NOX_SUBDIR)
 
 

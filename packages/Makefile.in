@@ -157,12 +157,13 @@ AUTOMAKE_OPTIONS = foreign
 @BUILD_ML_TRUE@ML_SUBDIR = ml
 
 #Epetra must be listed first due to aztecoo's dependence on Epetra
-SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) \
+SUBDIRS = $(TEUCHOS_SUBDIR) $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) \
+	  $(IFPACK_SUBDIR) \
+	  $(AZTECOO_SUBDIR) $(ML_SUBDIR) $(KOMPLEX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
 	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) $(ANASAZI_SUBDIR) \
-          $(NOX_SUBDIR) $(TEUCHOS_SUBDIR) $(ML_SUBDIR)
+          $(NOX_SUBDIR)
 
 subdir = packages
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -175,9 +176,9 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex TSFCoreUtils \
-	TSFCore TSF amesos epetraext belos meros new_package anasazi \
-	nox teuchos ml
+DIST_SUBDIRS = teuchos epetra triutils ifpack aztecoo ml komplex \
+	TSFCoreUtils TSFCore TSF amesos epetraext belos meros \
+	new_package anasazi nox
 all: all-recursive
 
 .SUFFIXES:
