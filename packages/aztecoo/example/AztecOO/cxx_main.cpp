@@ -153,13 +153,13 @@ int main(int argc, char *argv[])
   //problem->SetPDL(easy);
 
   //solver.SetAztecOption(AZ_precond, AZ_none);
-  solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+  //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
-  //solver.SetAztecOption(AZ_precond, AZ_ls);
+  solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
   //solver.SetAztecOption(AZ_scaling, 8);
-  //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu); 
-  //solver.SetAztecOption(AZ_output, 0);
-  //solver.SetAztecOption(AZ_graph_fill, 2);
+  solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu); 
+  solver.SetAztecOption(AZ_output, 1);
+  solver.SetAztecOption(AZ_graph_fill, 0);
   //solver.SetAztecOption(AZ_overlap, 1);
   //solver.SetAztecOption(AZ_poly_ord, 9);
   //solver.SetAztecParam(AZ_ilut_fill, 1.0);
@@ -181,17 +181,26 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_kspace, 40);
   AztecOO_StatusTestMaxIters maxItersTest1(100);
 
-  AztecOO_StatusTestResNorm restest1(A, x, bb, 1.0E-12);
+  AztecOO_StatusTestResNorm restest1(A, x, bb, 1.0E-10);
+  solver.SetStatusTest(&restest1);
   restest1.DefineResForm(AztecOO_StatusTestResNorm::Explicit, AztecOO_StatusTestResNorm::OneNorm);
   restest1.DefineScaleForm(AztecOO_StatusTestResNorm::NormOfRHS, AztecOO_StatusTestResNorm::OneNorm);
 
-  AztecOO_StatusTestResNorm restest2(A, x, bb, 1.0E-14);
-  restest2.DefineResForm(AztecOO_StatusTestResNorm::Explicit, AztecOO_StatusTestResNorm::InfNorm);
+  AztecOO_StatusTestResNorm restest2(A, x, bb, 1.0E-12);
+  restest2.DefineResForm(AztecOO_StatusTestResNorm::Explicit, AztecOO_StatusTestResNorm::InfNorm); 
   restest2.DefineScaleForm(AztecOO_StatusTestResNorm::NormOfRHS, AztecOO_StatusTestResNorm::InfNorm);
 
   AztecOO_StatusTestCombo comboTest1(AztecOO_StatusTestCombo::OR, maxItersTest1, restest1);
-  AztecOO_StatusTestCombo comboTest2(AztecOO_StatusTestCombo::AND, comboTest1, restest2);
-  //solver.SetStatusTest(&comboTest2);
+  AztecOO_StatusTestCombo comboTest2(AztecOO_StatusTestCombo::SEQ, comboTest1, restest2);
+
+  Epetra_Vector rowsumsA(bb.Map());
+  A.InvRowSums(rowsumsA);
+  rowsumsA.Reciprocal(rowsumsA);
+  AztecOO_StatusTestResNorm restest3(A, x, bb, 1.0E-12);
+  restest3.DefineResForm(AztecOO_StatusTestResNorm::Explicit, AztecOO_StatusTestResNorm::InfNorm, &rowsumsA); 
+  restest3.DefineScaleForm(AztecOO_StatusTestResNorm::NormOfRHS, AztecOO_StatusTestResNorm::InfNorm, &rowsumsA);
+
+  comboTest2.AddStatusTest(restest3);
   solver.SetStatusTest(&comboTest2);
    
   double norminf = A.NormInf();
