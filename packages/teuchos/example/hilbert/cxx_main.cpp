@@ -58,12 +58,19 @@
 // Timing analysis still remains to be done for this example, which should be
 // easily accomplished with the timing mechanisms native to Teuchos.
 
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_Version.hpp"
+#include <typeinfo>
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
+#endif
+
+#ifdef HAVE_TEUCHOS_GNU_MP
+#include "gmp.h"
+#include "gmpxx.h"
 #endif
 
 using namespace std;
@@ -71,7 +78,8 @@ using namespace Teuchos;
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #define SType1	   mp_real
-#define PRECISION  32
+#elif defined(HAVE_TEUCHOS_GNU_MP)
+#define SType1     mpf_class
 #else
 #define SType1     double
 #endif
@@ -84,11 +92,17 @@ void ConstructHilbertMatrix(TYPE*, int);
 template<typename TYPE>
 void ConstructHilbertSumVector(TYPE*, int);
 
+template<typename TYPE1, typename TYPE2>
+void ConvertHilbertMatrix(TYPE1*, TYPE2*, int);
+
+template<typename TYPE1, typename TYPE2>
+void ConvertHilbertSumVector(TYPE1*, TYPE2*, int);
+
 template<typename TYPE>
 bool Cholesky(TYPE*, int);
 
 template<typename TYPE>
-TYPE Solve(int, TYPE);
+bool Solve(int, TYPE*, TYPE*, TYPE*);
 
 template<typename TYPE>
 void PrintArrayAsVector(TYPE*, int);
@@ -106,29 +120,131 @@ void PrintArrayAsMatrix(mp_real*, int, int);
 
 int main(int argc, char *argv[]) {
 
-cout << Teuchos::Teuchos_Version() << endl << endl;
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+  //
+  // Create command line processor. 
+  //
+  Teuchos::CommandLineProcessor hilbertCLP(true, false);
+  //
+  // Set option for precision and verbosity  
+  int precision = 32;
+  hilbertCLP.setOption("precision", &precision, "Arbitrary precision");
+  bool verbose = false;
+  hilbertCLP.setOption("verbose", "quiet", &verbose, "Verbosity of example");
+  //
+  // Parse command line.
+  hilbertCLP.parse( argc, argv );
 
 #ifdef HAVE_TEUCHOS_ARPREC
-  mp::mp_init(PRECISION);
+  mp::mp_init( precision );
 #endif
 
-  cout << "SType2: " << endl;
-  int n = 2;
-  SType2 dummy2 = ScalarTraits<SType2>::zero();
-  SType2 result2 = Solve(2, dummy2);
-  while(result2 != 10000.0) {
-    cout << n << ": " << result2 << endl;
+#ifdef HAVE_TEUCHOS_GNU_MP
+  mpf_set_default_prec( precision );
+  cout<< "The precision of the GNU MP variable is (in bits) : "<< mpf_get_default_prec() << endl;
+#endif
+  //
+  // Booleans to keep track of valid datatypes
+  //
+  bool compSType1 = true;  // Perform cholesky factorization of matrices of SType1
+  bool compSType2 = true;  // Perform cholesky factorization of matrices of SType2
+  bool convSType1 = true;  // Perform cholesky factorization of matrices of SType1 (that were converted from SType2)
+
+  int n = 2;  // Initial dimension of hilbert matrix.
+  //
+  // Error in solution.
+  //
+  SType1 result1, result2_1;
+  SType2 result2;
+  //
+  // Create pointers to necessary matrices/vectors.
+  //
+  SType1 *H1=0, *b1=0;
+  SType2 *H2=0, *b2=0;
+  //
+  while ( compSType1 || compSType2 || convSType1 ) {
+    
+    if (compSType1) {
+      H1 = new SType1[ n*n ];
+      b1 = new SType1[ n ];
+      //
+      // Construct problem.
+      //
+      ConstructHilbertMatrix(H1, n);
+      ConstructHilbertSumVector(b1, n);
+      //
+      // Try to solve it.
+      //
+      compSType1 = Solve(n, H1, b1, &result1);
+      //
+      // Clean up always;
+      delete [] H1; H1 = 0;
+      delete [] b1; b1 = 0;
+    }
+    if (compSType2) {
+      H2 = new SType2[ n*n ];
+      b2 = new SType2[ n ];
+      //
+      // Construct problem.
+      //
+      ConstructHilbertMatrix(H2, n);
+      ConstructHilbertSumVector(b2, n);
+      //
+      // Try to solve it.
+      //
+      compSType2 = Solve(n, H2, b2, &result2);
+      //
+      // Clean up always.
+      delete [] H2; H2 = 0;
+      delete [] b2; b2 = 0;      
+    }
+    if (convSType1) {
+      //
+      // Create and construct the problem in lower precision
+      //
+      if (!H2) H2 = new SType2[ n*n ];
+      if (!b2) b2 = new SType2[ n ];
+      ConstructHilbertMatrix(H2, n);
+      ConstructHilbertSumVector(b2, n);
+      //
+      if (!H1) H1 = new SType1[ n*n ];
+      if (!b1) b1 = new SType1[ n ];
+      //
+      // Convert the problem from SType2 to SType1 ( which should be of higher precision )
+      //
+      ConvertHilbertMatrix(H2, H1, n);
+      ConvertHilbertSumVector(b2, b1, n);
+      //
+      // Try to solve it.
+      //
+      convSType1 = Solve(n, H1, b1, &result2_1);
+      //
+      // Clean up
+      //
+      delete [] H1;
+      delete [] H2;
+      delete [] b1;
+      delete [] b2;
+    }
+    if (verbose && (compSType1 || compSType2 || convSType1) ) {
+      cout << "****************************************" << endl;
+      cout << "Dimension of Hilbert Matrix : "<< n << endl;
+      cout << "****************************************" << endl;
+      cout << "Absolute solution error || x_hat - x ||"<< endl;
+      cout << "****************************************" << endl;
+    }    
+    if (compSType1 && verbose)
+      cout << typeid( result1 ).name() << "\t : "<< result1 << endl;
+    
+    if (convSType1 && verbose)
+      cout << typeid( result2_1 ).name() <<"(converted) : "<< result2_1 << endl;
+
+    if (compSType2 && verbose) 
+      cout << typeid( result2 ).name() << "\t : "<< result2 << endl;
+    //
+    // Increment counter.
+    //
     n++;
-    result2 = Solve(n, dummy2);
-  }
-  cout << endl << endl << "SType1:" << endl;
-  n = 2;
-  SType1 dummy1 = ScalarTraits<SType1>::zero();
-  SType1 result1 = Solve(2, dummy1);
-  while(result1 != 10000.0) {
-    cout << n << ": " << result1 << endl;
-    n++;
-    result1 = Solve(n, dummy1);
   }
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -161,6 +277,26 @@ void ConstructHilbertSumVector(TYPE* x, int n) {
   }  
 }
 
+template<typename TYPE1, typename TYPE2>
+void ConvertHilbertMatrix(TYPE1* A, TYPE2* B, int n) {
+  TYPE2 zero = Teuchos::ScalarTraits<TYPE2>::zero();
+  for( int i = 0; i < n; i++ ) {
+    for( int j = 0; j < n; j++ ) {
+      B[i + (j * n)] = zero;
+      B[i + (j * n)] = A[ i + (j * n)];
+    }
+  }
+}
+
+template<typename TYPE1, typename TYPE2>
+void ConvertHilbertSumVector(TYPE1* x, TYPE2* y, int n) {
+  TYPE2 zero = ScalarTraits<TYPE2>::zero();
+  for( int j = 0; j < n; j++ ) {
+    y[j] = zero;
+    y[j] = x[j];
+  }
+}
+
 template<typename TYPE>
 bool Cholesky(TYPE* A, int n) {
   TYPE scal0 = ScalarTraits<TYPE>::zero();
@@ -183,33 +319,28 @@ bool Cholesky(TYPE* A, int n) {
 }
 
 template<typename TYPE>
-TYPE Solve(int n, TYPE dummy) {
+bool Solve(int n, TYPE* H, TYPE* b, TYPE* err) {
   TYPE scal0 = ScalarTraits<TYPE>::zero();
   TYPE scal1 = ScalarTraits<TYPE>::one();
   TYPE scalNeg1 = scal0 - scal1;
   TYPE result = scal0;
   BLAS<int, TYPE> blasObj;
-  TYPE* H = new TYPE[n*n];
-  TYPE* b = new TYPE[n];
   TYPE* x = new TYPE[n];
   for(int i = 0; i < n; i++) {
     x[i] = scal1;
   }
-  ConstructHilbertMatrix(H, n);
   bool choleskySuccessful = Cholesky(H, n);
   if(!choleskySuccessful) {
-    return 10000.0;
+    return false;
   }
   else {
-    ConstructHilbertSumVector(b, n);
     blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::NON_UNIT_DIAG, n, 1, scal1, H, n, b, n);
     blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, n, 1, scal1, H, n, b, n);
     blasObj.AXPY(n, scalNeg1, x, 1, b, 1);
-    result = blasObj.NRM2(n, b, 1);
-    delete[] H;
-    delete[] b;
+    *err = blasObj.NRM2(n, b, 1);
+
     delete[] x;
-    return result;
+    return true;
   }
 }
 
