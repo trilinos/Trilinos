@@ -39,7 +39,8 @@
 
 LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
-	$(srcdir)/LOCA_Epetra_Group.H 
+	$(srcdir)/LOCA_Epetra_Group.H \
+	$(srcdir)/LOCA_Epetra_Interface.H
 
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C 

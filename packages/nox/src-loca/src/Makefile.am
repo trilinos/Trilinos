@@ -117,6 +117,7 @@ LOCA_DERIVUTILS = \
         $(srcdir)/LOCA_DerivUtils.C
 
 LOCA_H = \
+        $(srcdir)/LOCA.H \
         $(LOCA_ABSTRACT_H) \
 	$(LOCA_UTILS_H) \
 	$(LOCA_PARAMETER_VECTOR_H) \
