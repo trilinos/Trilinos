@@ -8216,7 +8216,25 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # -- DEC CXX --
 
 
+  TRILINOS_TEMPLATE_OBJS  template object file location - often needed on DEC
+                          - try 'cxx_repository/*.o'
+echo "$as_me:$LINENO: checking for template-specific object files to be linked" >&5
+echo $ECHO_N "checking for template-specific object files to be linked... $ECHO_C" >&6
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+ echo "$as_me:$LINENO: result: $TRILINOS_TEMPLATE_OBJS" >&5
+echo "${ECHO_T}$TRILINOS_TEMPLATE_OBJS" >&6
+fi
 
+
+
+if test "X$EPETRA_TEMPLATE_OBJS" != "X"; then
+ { { echo "$as_me:$LINENO: error: EPETRA_TEMPLATE_OBJS is obsolete, use TRILINOS_TEMPLATE_OBJS" >&5
+echo "$as_me: error: EPETRA_TEMPLATE_OBJS is obsolete, use TRILINOS_TEMPLATE_OBJS" >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 # ------------------------------------------------------------------------
 # Checks for library functions
@@ -8903,7 +8921,7 @@ s,@HAVE_THREADS_FALSE@,$HAVE_THREADS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
-s,@EPETRA_TEMPLATE_OBJS@,$EPETRA_TEMPLATE_OBJS,;t t
+s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
 s,@XTRALDADD@,$XTRALDADD,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 CEOF

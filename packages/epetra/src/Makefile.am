@@ -236,7 +236,7 @@ endif
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
 
-libepetra_a_LIBADD = $(EPETRA_TEMPLATE_OBJS) $(XTRALDADD)
+libepetra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

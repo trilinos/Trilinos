@@ -72,7 +72,6 @@ BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CXX = @CXX@
 DEPDIR = @DEPDIR@
-EPETRA_TEMPLATE_OBJS = @EPETRA_TEMPLATE_OBJS@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FLIBS = @FLIBS@
@@ -85,6 +84,7 @@ MPI_F77_EXISTS = @MPI_F77_EXISTS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
+TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
 XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
@@ -319,7 +319,7 @@ EXTRA_libepetra_a_SOURCES = \
 # be sure to include these, and this is the hack to do it.
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
-libepetra_a_LIBADD = $(EPETRA_TEMPLATE_OBJS) $(XTRALDADD)
+libepetra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------
