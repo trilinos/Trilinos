@@ -181,8 +181,8 @@ DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
 		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h
 
-CH_CSRC		= ch_dist_graph.c ch_input_geom.c ch_input_graph.c \
-                  ch_input_read.c ch_init_dist.c
+CH_CSRC		= ch_dist_graph.c ch_input_assign.c ch_input_geom.c \
+		  ch_input_graph.c ch_input_read.c ch_init_dist.c
 
 CH_INC		= ch_input_const.h ch_init_dist_const.h
 
