@@ -6520,33 +6520,36 @@ echo "${ECHO_T}${BUILD_LOCA_ANASAZI_SUPPORT}" >&6
 # Check for MPI library
 # ------------------------------------------------------------------------
 
-if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${ADDON_epetra_EXAMPLES} = Xyes; then
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
 
-  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
-    MPI_LIBDIR="${MPI_DIR}/lib"
-  fi
+  if  test X${ADDON_epetra_TESTS} = Xyes ||
+      test X${ADDON_epetra_EXAMPLES} = Xyes; then
 
-  if test -n "${MPI_LIBDIR}"; then
-    LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
-  fi
+    if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
+      MPI_LIBDIR="${MPI_DIR}/lib"
+    fi
 
-  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
-    MPI_LIBS="-lmpi"
-  fi
+    if test -n "${MPI_LIBDIR}"; then
+      LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
+    fi
 
-  if test -n "${MPI_LIBS}"; then
-    LIBS="${MPI_LIBS} ${LIBS}"
-  fi
+    if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
+      MPI_LIBS="-lmpi"
+    fi
 
-  ac_ext=cc
+    if test -n "${MPI_LIBS}"; then
+      LIBS="${MPI_LIBS} ${LIBS}"
+    fi
+
+    ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  echo "$as_me:$LINENO: checking whether MPI will link using C++ compiler" >&5
+    echo "$as_me:$LINENO: checking whether MPI will link using C++ compiler" >&5
 echo $ECHO_N "checking whether MPI will link using C++ compiler... $ECHO_C" >&6
-  cat >conftest.$ac_ext <<_ACEOF
+    cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -6591,20 +6594,20 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-   echo "-----"
-   echo "Cannot link simple MPI program."
-   echo "Try --with-mpi-cxx to specify MPI C++ compile script."
-   echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
-   echo "to specify all the specific MPI compile options."
-   echo "-----"
-   { { echo "$as_me:$LINENO: error: MPI cannot link" >&5
+     echo "-----"
+     echo "Cannot link simple MPI program."
+     echo "Try --with-mpi-cxx to specify MPI C++ compile script."
+     echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
+     echo "to specify all the specific MPI compile options."
+     echo "-----"
+     { { echo "$as_me:$LINENO: error: MPI cannot link" >&5
 echo "$as_me: error: MPI cannot link" >&2;}
    { (exit 1); exit 1; }; }
 
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-
+  fi
 fi
 
 # ------------------------------------------------------------------------
@@ -6898,7 +6901,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6901: \"$ac_link\") >&5
+(eval echo $as_me:6904: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6976,7 +6979,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6979: \"$ac_link\") >&5
+(eval echo $as_me:6982: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
