@@ -23,7 +23,7 @@
 %
 
 \title{\center
-{\Huge\bf RefCountPtr}\\[1.5ex]
+{\Huge\bf Teuchos::RefCountPtr}\\[1.5ex]
 A Smart Reference-Counted Pointer Class for Automatic Dynamic
 Memory Management in C++.
 }
@@ -40,7 +40,7 @@ under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
 % Set some things we need for SAND reports. These are mandatory
 %
 \SANDnum{SAND2003-xxx}
-\SANDprintDate{October 2003}
+\SANDprintDate{December 2003}
 \SANDauthor{
 Roscoe A. Bartlett \\ Optimization/Uncertainty Estim
 }
@@ -78,12 +78,16 @@ difficulty and errors for amateur and expert C++ developers alike.
 The improper use of \texttt{new} and \texttt{delete} is arguably the
 most common cause (followed by indexing past array bounds) of
 incorrect program behavior and segmentation faults in C++ programs.
-Here we describe a very simple templated concrete C++ class called
-\texttt{RefCountPtr<>} the combines the concepts of smart pointers and
-reference counting to build a low-overhead but effective means for
-simplifying dynamic memory management in C++.  We discuss the proper
-use of this new data type and how it relates to builtin C++ data types
-and other user-defined data types.
+Here we describe a very simple templated concrete C++ class
+\texttt{Teuchos::RefCountPtr<>}, which is part of the
+Trilinos tools package \texttt{Teuchos}, that combines the concepts of
+smart pointers and reference counting to build a low-overhead but
+effective means for simplifying dynamic memory management in C++.  We
+discuss the proper use of this new data type and how it relates to
+builtin C++ data types and other user-defined data types.  A variety
+of other issues related to \texttt{Teuchos::RefCountPtr<>} are also
+discussed and much of this material is contained in the included
+appendix.
 %
 \end{abstract}
 %
@@ -108,7 +112,7 @@ in~\cite{Sand98-0730}.
 \clearpage
 \tableofcontents
 \listoffigures
-%\listoftables
+\listoftables
 
 % ---------------------------------------------------------------------- %
 % An optional preface or Foreword
@@ -159,8 +163,10 @@ in~\cite{Sand98-0730}.
 % one appendix, put \setcounter{secnumdepth}{0} after \appendix
 %
 \appendix
-%\input{apdx_RefCountPtrDecl}
 \input{apdx_RefCountPtrQuickStart}
+\input{apdx_RefCountPtrPassingArgs}
+\input{apdx_SeperateConstructAndInitialize}
+\input{apdx_RefCountPtrDesign}
 \input{apdx_RefCountPtrMIVBC}
 
 \begin{SANDdistribution}
@@ -176,8 +182,8 @@ in~\cite{Sand98-0730}.
 6100 S. Main Street\\Houston, TX 77005-1892
 \SANDdistExternal{1}{} Mark Gockenbach \\ Department of Mathematical Sciences\\Michigan Technological University\\ 
 1400 Townsend Drive\\Houghton, Michigan 49931-1295, U.S.A.
-\SANDdistExternal{1}{} George Biros \\ Department of Applied Mechanics and Mechanical Engineering\\University of Pennsylvania\\
-220 Towne Building 220 S. 33rd St.\\Philadelphia, PA 19104-6315, USA 
+%\SANDdistExternal{1}{} George Biros \\ Department of Applied Mechanics and Mechanical Engineering\\University of Pennsylvania\\
+%220 Towne Building 220 S. 33rd St.\\Philadelphia, PA 19104-6315, USA 
 % Sandia Line
 %\SANDdistInternal{1}{0847}{Bill Camp}{9200}
 %\SANDdistInternal{1}{0847}{Sudip Dosanjh}{9233}
@@ -187,9 +193,9 @@ in~\cite{Sand98-0730}.
 \SANDdistInternal{1}{1110}{Scott Collis}{9211}
 \SANDdistInternal{1}{0847}{Bart van Bloemen Waanders}{9211}
 \SANDdistInternal{1}{0847}{Mike Eldred}{9211}
-\SANDdistInternal{1}{0819}{Tim Trucano}{9211}
-\SANDdistInternal{1}{0847}{Tony Giunta}{9211}
-\SANDdistInternal{1}{0947}{Laura Swiler}{9211}
+%\SANDdistInternal{1}{0819}{Tim Trucano}{9211}
+%\SANDdistInternal{1}{0847}{Tony Giunta}{9211}
+%\SANDdistInternal{1}{0947}{Laura Swiler}{9211}
 % 9214
 \SANDdistInternal{1}{9217}{Mark Adams}{9214}
 \SANDdistInternal{1}{1110}{Pavel Bochev}{9214}
@@ -217,10 +223,11 @@ in~\cite{Sand98-0730}.
 \SANDdistInternal{1}{9217}{Victoria Howle}{8962}
 % Sandia Misc
 \SANDdistInternal{1}{1110}{William Hart}{9215}
-\SANDdistInternal{1}{0847}{Steve Wojtkiewicz}{9124}
+%\SANDdistInternal{1}{0847}{Steve Wojtkiewicz}{9124}
 % Xyce developers
 \SANDdistInternal{1}{0316}{Eric Keiter}{9233}
 \SANDdistInternal{1}{0316}{Scott Hutchinson}{9233}
+\SANDdistInternal{1}{0316}{Robert Hoekstra}{9233}
 % Premo developers
 \SANDdistInternal{1}{0316}{Curt Ober}{9233}
 \SANDdistInternal{1}{0316}{Tom Smith}{9233}
@@ -230,7 +237,6 @@ in~\cite{Sand98-0730}.
 % Main Nevada developers
 \SANDdistInternal{1}{0819}{Ricard Drake}{9231}
 % NOX/LOCA developers
-\SANDdistInternal{1}{0316}{Robert Hoekstra}{9233}
 \SANDdistInternal{1}{0316}{Roger Pawlowski}{9233}
 \SANDdistInternal{1}{1110}{Eric Phipps}{9233}
 \SANDdistInternal{1}{1110}{Andrew Salinger}{9233}

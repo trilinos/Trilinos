@@ -1,0 +1,104 @@
+%
+\section{Design of \texttt{RefCountPtr<>}}
+\label{rcp:apdx:design}
+%
+
+{\bsinglespace
+\begin{figure}
+\begin{center}
+%\fbox{
+\includegraphics*[bb= 0.0in 0.0in 4.1in 4.9in,scale=1.0
+]{RefCountPtrClassDiagram}
+%}%fbox
+\end{center}
+{}\caption{ {}\label{rcp:fig:rcp-class-diagram} UML class diagram :
+This shows the basic design of {}\texttt{RefCountPtr<>} with its
+reference-count node classes.  }
+\end{figure}
+\esinglespace}
+
+Here we describe the basics of the C++ design of
+{}\texttt{RefCountPtr<>} and describes what goes on under the hood for
+interested readers.  Figure {}\ref{rcp:fig:rcp-class-diagram} shows a
+UML class diagram for this design.  The templated class
+{}\texttt{RefCountPtr<T>} is the user-level type that this document
+describes.  Reference count information is managed though an abstract
+non-templated shared {}\texttt{RefCountPtr\-\_node} object which has
+has a doubly templated subtype
+{}\texttt{RefCountPtr\-\_node<ConcreteT,Dealloc\_T>}.
+
+Every {}\texttt{RefCountPtr<T>} object maintains a typed pointer to
+the reference-counted object through a private data member
+{}\texttt{ptr} which is shown in the UML diagram as the association
+between {}\texttt{RefCountPtr<T>} and {}\texttt{ConcreteT} (the actual
+concrete type of the object being reference counted).  Here, the type
+{}\texttt{T} must be a supported interface (i.e.~base class) for the
+concrete type {}\texttt{RefCountPtr<ConcreteT>} and this is shown by
+the lollipop interface {}\texttt{T} connected to the type
+{}\texttt{RefCountPtr<ConcreteT>}.  It is through this private data
+member that the functions {}\texttt{get()}, {}\texttt{operator*()} and
+{}\texttt{operator->()} are implemented.
+
+Every {}\texttt{RefCountPtr<T>} object also maintains a pointer to a
+shared non-templated {}\texttt{RefCountPtr\-\_node} object which is
+called {}\texttt{node}.  The {}\texttt{RefCountPtr\-\_node} node
+object maintains a reference count {}\texttt{count} for the number of
+{}\texttt{RefCountPtr<>} objects pointing to itself.  It also
+maintains an ownership flag {}\texttt{has\-\_ownership} that
+determines if the deallocator will be used to deallocate the shared
+object when the reference count goes to zero (this is described
+below).
+
+When a {}\texttt{RefCountPtr<T>} object is constructed to
+{}\texttt{NULL}, its {}\texttt{ptr} and {}\texttt{node} private
+pointer data members are set to {}\texttt{NULL}.  This case is
+indicated in the UML diagram in Figure
+{}\ref{rcp:fig:rcp-class-diagram} by the multiplicity indicators 0..1
+where the 0 multiplicity is for the case where the object is in the
+{}\texttt{NULL} state.
+
+The reference-count functions {}\texttt{incr\_count()} and
+{}\texttt{deincr\_count()} on the {}\texttt{RefCountPtr\-\_node}
+object {}\texttt{node} are called by {}\texttt{RefCountPtr}'s
+constructors, destructors and assignment operators in order to
+maintain the proper count.
+
+Figure {}\ref{rcp:fig:rcp-object-diagram} shows a UML
+object diagram for the following fragment of user code.
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<A>   a_ptr1 = rcp(new C);
+RefCountPtr<A>   a_ptr2 = a_ptr1;
+RefCountPtr<B1>  b1_ptr = rcp_dynamic_cast<B1>(a_ptr1);
+RefCountPtr<B2>  b2_ptr = rcp_dynamic_cast<B2>(a_ptr1);
+\end{verbatim}}
+
+{\bsinglespace
+\begin{figure}
+\begin{center}
+%\fbox{
+\includegraphics*[bb= 0.0in 0.0in 4.8in 1.8in,scale=1.0
+]{RefCountPtrObjectDiagram1}
+%}%fbox
+\end{center}
+{}\caption{ {}\label{rcp:fig:rcp-object-diagram} UML object diagram :
+Example of the sharing of the reference-count node by four
+{}\texttt{RefCountPtr<>} objects.  }
+\end{figure}
+\esinglespace}
+
+The concrete template types {}\texttt{C} and {}\texttt{DeallocFree<C>}
+on the concrete reference-count node object of type
+{}\texttt{RefCountPtr\-\_node<C,DeallocFree<C> >} are specifed by first
+statement 
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<A>   a_ptr1 = rcp(new C);
+\end{verbatim}}
+%
+{}\noindent{}when the reference-counted object is first created.
+
+ToDo: Discuss how \texttt{ConcreteT} is related to the issue of multiple inheritance
+and virtual base classes discussed in the next section.
+
+ToDo: Mention extra data and the \texttt{any} class.
