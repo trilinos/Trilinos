@@ -134,8 +134,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
         return false;
       }
     tmpVec = dir;
-    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Nonlinear CG").sublist("Linear Solver"),
-                                        tmpVec, dir);
+    ok = soln.applyRightPreconditioning(false, paramsPtr->sublist("Nonlinear CG").sublist("Linear Solver"), tmpVec, dir);
     if (ok != Abstract::Group::Ok) {
       if (utils.isPrintProcessAndType(Utils::Warning))
         cout << "NOX::Direction::NonlinearCG::compute - "

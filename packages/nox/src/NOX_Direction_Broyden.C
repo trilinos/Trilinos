@@ -231,7 +231,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   
   if (doRightPreconditioning)	// d = - M * F
   {
-    status = soln.applyRightPreconditioning(*precParamsPtr, soln.getF(), dir);
+    status = soln.applyRightPreconditioning(false, *precParamsPtr, soln.getF(), dir);
     if (status != NOX::Abstract::Group::Ok) 
       throwError("compute", "Unable to apply right preconditioning");
     dir.scale(-1.0);

@@ -470,11 +470,15 @@ public:
     const;
 
   virtual NOX::Abstract::Group::ReturnType 
-  applyRightPreconditioning(NOX::Parameter::List& params, const NOX::Epetra::Vector& input, 
+  applyRightPreconditioning(bool useTranspose,
+			    NOX::Parameter::List& params, 
+			    const NOX::Epetra::Vector& input, 
 			    NOX::Epetra::Vector& result) const;
 
   virtual NOX::Abstract::Group::ReturnType 
-  applyRightPreconditioning(NOX::Parameter::List& params, const NOX::Abstract::Vector& input, 
+  applyRightPreconditioning(bool useTranspose, 
+			    NOX::Parameter::List& params, 
+			    const NOX::Abstract::Vector& input, 
 			    NOX::Abstract::Vector& result) const;
 
   //@}

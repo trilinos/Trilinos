@@ -353,7 +353,8 @@
      "Direction" sublist that is passed to solver during construction.
    */
    virtual NOX::Abstract::Group::ReturnType 
-   applyRightPreconditioning(NOX::Parameter::List& params,
+   applyRightPreconditioning(bool useTranspose,
+			     NOX::Parameter::List& params,
 			     const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
   //@}

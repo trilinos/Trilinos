@@ -72,9 +72,11 @@ NOX::Abstract::Group::applyJacobianInverse(NOX::Parameter::List& params,
 }
 
 NOX::Abstract::Group::ReturnType 
-NOX::Abstract::Group::applyRightPreconditioning(NOX::Parameter::List& params, 
+NOX::Abstract::Group::applyRightPreconditioning(bool useTranspose,
+						NOX::Parameter::List& params, 
 						const NOX::Abstract::Vector& input, 
-						NOX::Abstract::Vector& result) const
+						NOX::Abstract::Vector& result
+						) const
 {
   return NOX::Abstract::Group::NotDefined;
 }

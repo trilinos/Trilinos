@@ -805,19 +805,23 @@ Abstract::Group::ReturnType Group::applyJacobianTranspose(const Vector& input, V
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType Group::applyRightPreconditioning(Parameter::List& params,
+Abstract::Group::ReturnType Group::applyRightPreconditioning(
+				      bool useTranspose,
+				      Parameter::List& params,
 				      const Abstract::Vector& input, 
 				      Abstract::Vector& result) const
 {
   const Vector& epetraInput = dynamic_cast<const Vector&>(input);
   Vector& epetraResult = dynamic_cast<Vector&>(result);
   
-  return applyRightPreconditioning(params, epetraInput, epetraResult);
+  return applyRightPreconditioning(useTranspose, params, epetraInput, epetraResult);
 }
 
-Abstract::Group::ReturnType Group::applyRightPreconditioning(Parameter::List& params,
-				      const Vector& input, 
-				      Vector& result) const
+Abstract::Group::ReturnType Group::applyRightPreconditioning(
+				       bool useTranspose, 
+				       Parameter::List& params,
+				       const Vector& input, 
+				       Vector& result) const
 {
   int errorCode = 1;
 
@@ -887,8 +891,14 @@ Abstract::Group::ReturnType Group::applyRightPreconditioning(Parameter::List& pa
     if (!isPreconditioner())
       createPreconditioner(ExplicitConstruction, params);
 
+    if (useTranspose)
+      ifpackPreconditioner->SetUseTranspose(useTranspose);
+
     errorCode = ifpackPreconditioner->ApplyInverse(input.getEpetraVector(), 
 						   result.getEpetraVector());
+    // Unset the transpose call
+    if (useTranspose)
+      ifpackPreconditioner->SetUseTranspose(false);    
 
   }
   else if (preconditioner == "User Supplied Preconditioner") {

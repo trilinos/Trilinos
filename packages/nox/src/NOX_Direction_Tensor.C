@@ -410,7 +410,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 
   // Compute the error tolerance, tol*||Fc||  or  tol*||Minv*Fc||
   if (precondition == Left) {
-      status = soln.applyRightPreconditioning(*localParamsPtr, 
+      status = soln.applyRightPreconditioning(false, *localParamsPtr, 
 					      soln.getF(), *vecw);
       if (status != NOX::Abstract::Group::Ok)
 	NOX::Direction::Tensor::throwError("compute",
@@ -562,7 +562,7 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
     for (int i=0; i<leftPreListSize;i++) {
       int indx = leftPreList[i];
       *vecw = *basisVptr[indx];
-      status = soln.applyRightPreconditioning(*localParamsPtr, 
+      status = soln.applyRightPreconditioning(false, *localParamsPtr, 
 					      *vecw, *basisVptr[indx]);
       if (status != NOX::Abstract::Group::Ok)
 	NOX::Direction::Tensor::throwError("compute",
@@ -573,26 +573,22 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
 
     // Continue processing the vector sc for right preconditioning....
     *vecw = *basisVptr[0];
-    localParamsPtr->setParameter("PreconditionerTranspose", true);
-    status = soln.applyRightPreconditioning(*localParamsPtr,
+    status = soln.applyRightPreconditioning(true, *localParamsPtr,
 					    *vecw, *basisVptr[0]);
     if (status != NOX::Abstract::Group::Ok)
       NOX::Direction::Tensor::throwError("compute",
 					 "Unable to apply preconditioner.");
-    localParamsPtr->setParameter("PreconditionerTranspose", false);
   }
   else if (requestedStep == TensorStep2  &&
 	   precondition == Right  && isMinvTransAvailable) {
 
     // Continue processing the vector sc for right preconditioning....
     *vecw = *scPtr;
-    localParamsPtr->setParameter("PreconditionerTranspose", true);
-    status = soln.applyRightPreconditioning(*localParamsPtr,
+    status = soln.applyRightPreconditioning(true, *localParamsPtr,
 					    *vecw, *mtinvscPtr);
     if (status != NOX::Abstract::Group::Ok)
       NOX::Direction::Tensor::throwError("compute",
 					 "Unable to apply preconditioner.");
-    localParamsPtr->setParameter("PreconditionerTranspose", false);
   }
   delete [] leftPreList;
 
@@ -743,14 +739,14 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
 	NOX::Direction::Tensor::throwError("compute",
 					   "Unable to apply Jacobian.");
       
-      status = soln.applyRightPreconditioning(*localParamsPtr,
+      status = soln.applyRightPreconditioning(false, *localParamsPtr,
 					      *vecw, *basisVptr[k+p]);
       if (status != NOX::Abstract::Group::Ok)
 	NOX::Direction::Tensor::throwError("compute",
 					   "Unable to apply preconditioner.");
     }
     else if (precondition == Right) {
-      status = soln.applyRightPreconditioning(*localParamsPtr,
+      status = soln.applyRightPreconditioning(false, *localParamsPtr,
 					      *basisVptr[k], *vecw);
       if (status != NOX::Abstract::Group::Ok)
 	NOX::Direction::Tensor::throwError("compute",
@@ -834,7 +830,7 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
       if (precondition == Right  &&  isMinvTransAvailable) 
 	vkts = basisVptr[k]->dot(*mtinvscPtr);
       else if (precondition == Right) {
-	status = soln.applyRightPreconditioning(*localParamsPtr, 
+	status = soln.applyRightPreconditioning(false, *localParamsPtr, 
 						*basisVptr[k], *vecw);
 	if (status != NOX::Abstract::Group::Ok)
 	  NOX::Direction::Tensor::throwError("compute",
@@ -1108,7 +1104,7 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
     dNewton->update(-yn[i], *basisVptr[i], 1);
   if (precondition == Right) {
     *vecw = *dNewton;
-    status = soln.applyRightPreconditioning(*localParamsPtr,
+    status = soln.applyRightPreconditioning(false, *localParamsPtr,
 					    *vecw, *dNewton);
     if (status != NOX::Abstract::Group::Ok)
       NOX::Direction::Tensor::throwError("compute",
@@ -1216,7 +1212,7 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
       dTensor->update(yt[i], *basisVptr[i], 1);
     if (precondition == Right) {
       *vecw = *dTensor;
-      status = soln.applyRightPreconditioning(*localParamsPtr,
+      status = soln.applyRightPreconditioning(false, *localParamsPtr,
 					      *vecw, *dTensor);
       if (status != NOX::Abstract::Group::Ok)
 	NOX::Direction::Tensor::throwError("compute",
@@ -1288,7 +1284,7 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
     if (precondition == Left) {
       *vecw = *aPtr;
       printf("  left preconditioning FP\n");
-      status = soln.applyRightPreconditioning(*localParamsPtr, *vecw, *aPtr);
+      status = soln.applyRightPreconditioning(false, *localParamsPtr, *vecw, *aPtr);
       if (status != NOX::Abstract::Group::Ok)
 	NOX::Direction::Tensor::throwError("compute",
 					   "Unable to apply preconditioner.");
@@ -1296,12 +1292,10 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
     if (precondition == Right) {
       *vecw = *sPtr;
       printf("  right preconditioning FP\n");
-      localParamsPtr->setParameter("PreconditionerTranspose", true);
-      status = soln.applyRightPreconditioning(*localParamsPtr, *vecw, *sPtr);
+      status = soln.applyRightPreconditioning(true, *localParamsPtr, *vecw, *sPtr);
       if (status != NOX::Abstract::Group::Ok)
 	NOX::Direction::Tensor::throwError("compute",
 					   "Unable to apply preconditioner.");
-      localParamsPtr->setParameter("PreconditionerTranspose", false);
     }
 
 
@@ -1352,7 +1346,7 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
 	dTensor->update(yt[i], *basisVptr[i], 1);
       if (precondition == Right) {
 	*vecw = *dTensor;
-	status = soln.applyRightPreconditioning(*localParamsPtr,
+	status = soln.applyRightPreconditioning(false, *localParamsPtr,
 						*vecw, *dTensor);
 	if (status != NOX::Abstract::Group::Ok)
 	  NOX::Direction::Tensor::throwError("compute",
@@ -1373,7 +1367,8 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
       soln.applyJacobian(dir, *vecw);
       if (precondition == Left) {
 	*dTensor = *vecw;  // temporary vector
-	status = soln.applyRightPreconditioning(*localParamsPtr, *dTensor,
+	status = soln.applyRightPreconditioning(false, *localParamsPtr, 
+						*dTensor,
 						*vecw);
 	if (status != NOX::Abstract::Group::Ok)
 	  NOX::Direction::Tensor::throwError("compute",
@@ -1409,8 +1404,8 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
       *bPtr = soln.getF();
       if (precondition == Left) {
 	*dTensor = *bPtr;  // temporary vector
-	status = soln.applyRightPreconditioning(*localParamsPtr, *dTensor,
-						*bPtr);
+	status = soln.applyRightPreconditioning(false, *localParamsPtr, 
+						*dTensor, *bPtr);
 	if (status != NOX::Abstract::Group::Ok)
 	  NOX::Direction::Tensor::throwError("compute",
 			     "Unable to apply preconditioner.");
@@ -1491,7 +1486,7 @@ bool NOX::Direction::Tensor::compute_step(NOX::Abstract::Vector& dir,
 	dTensor->update(yt[i], *basisVptr[i], 1);
       if (precondition == Right) {
 	*vecw = *dTensor;
-	status = soln.applyRightPreconditioning(*localParamsPtr,
+	status = soln.applyRightPreconditioning(false, *localParamsPtr,
 						*vecw, *dTensor);
 	if (status != NOX::Abstract::Group::Ok)
 	  NOX::Direction::Tensor::throwError("compute",
@@ -1599,7 +1594,7 @@ bool NOX::Direction::Tensor::computeCurvilinearStep(NOX::Abstract::Vector& dir,
       // Precondition the answer, if preconditioning from the right...
       if (precondition == Right) {
 	*vecw = *dTLambda;
-	status = soln.applyRightPreconditioning(*localParamsPtr,
+	status = soln.applyRightPreconditioning(false, *localParamsPtr,
 						*vecw, *dTLambda);
 	if (status != NOX::Abstract::Group::Ok)
 	  NOX::Direction::Tensor::throwError("compute",
@@ -1952,8 +1947,8 @@ void NOX::Direction::Tensor::applyHouseholder(const double* z, double* a,
 
 double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
 					     double& qval, double& lambdaBar,
-					     double dir0xsc = 0,
-					     double normS = 1)
+					     double dir0xsc,
+					     double normS)
 {
   double beta = 0;
   double discriminant = qb*qb - 4*qa*qc;
@@ -2028,7 +2023,7 @@ double NOX::Direction::Tensor::getNormModelResidual(
     NOX::Abstract::Vector* tmpPtr = soln.getF().clone(ShapeCopy);
     *tmpPtr = *residualPtr;
     NOX::Abstract::Group::ReturnType status =
-      soln.applyRightPreconditioning(*localParamsPtr,
+      soln.applyRightPreconditioning(false, *localParamsPtr,
 				     *tmpPtr, *residualPtr);
     if (status != NOX::Abstract::Group::Ok)
       NOX::Direction::Tensor::throwError("compute",
@@ -2055,8 +2050,8 @@ double NOX::Direction::Tensor::getDirectionalDerivative(
 
 
 double* NOX::Direction::Tensor::backsolve(double** U, double* b, int* perm,
-					  int n, int dim=0,
-					  bool isTranspose=false)
+					  int n, int dim,
+					  bool isTranspose)
      /* This function solves the triangular system Ux=b when provided
       * an upper triangular matrix U. The array "perm" is a
       * permutation array.  The pointer returned is the newly created
