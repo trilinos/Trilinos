@@ -314,7 +314,7 @@ solve iterations performed by groups that have used this input list
 
  */
 
-class Group : public virtual Abstract::Group {
+class Group : public virtual NOX::Abstract::Group {
 
 protected:
   /*! 
