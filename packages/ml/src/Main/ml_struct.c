@@ -2728,7 +2728,7 @@ scales = NULL;
    ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
                 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
-   free(din_temp);
+   ML_free(din_temp);
    return 0;
 }
 /*****************************************************************************/

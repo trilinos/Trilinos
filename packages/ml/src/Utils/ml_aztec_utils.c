@@ -1265,7 +1265,7 @@ void AZ_mlcomm2data_org(ML_CommInfoOP *comm_info, int *data_org[])
              exit(1);
           }
           start_rcv[i] = itemp[0];
-          free(itemp);
+          ML_free(itemp);
       }
       total_send += ML_CommInfoOP_Get_Nsendlist(comm_info,neighbors[i]);
    }
@@ -1294,11 +1294,11 @@ void AZ_mlcomm2data_org(ML_CommInfoOP *comm_info, int *data_org[])
         itemp = ML_CommInfoOP_Get_sendlist(comm_info, neighbors[i]);
         for (j = 0; j < (*data_org)[AZ_send_length+i]; j++)
            (*data_org)[count++] = itemp[j];
-        free(itemp);
+        ML_free(itemp);
         count2 += (*data_org)[AZ_rec_length+i];
    }
    (*data_org)[AZ_N_external] = count2;
-   free(neighbors);
+   ML_free(neighbors);
 }
 
 #ifdef out
