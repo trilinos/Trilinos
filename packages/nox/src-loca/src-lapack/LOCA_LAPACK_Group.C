@@ -358,15 +358,17 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
     return NOX::Abstract::Group::Failed;
 
   // Print out eigenvalues
-  if (hasMassMatrix) {
-    cout << "Generalized eigenvalues: " << endl;
-    for (int i=0; i<n; i++)
-      cout << alphar[i]/beta[i] << " + i" << alphai[i]/beta[i] << endl;
-  }
-  else {
-    cout << "Eigenvalues: " << endl;
-    for (int i=0; i<n; i++)
-      cout << alphar[i] << " + i" << alphai[i] << endl;
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+    if (hasMassMatrix) {
+      cout << "Generalized eigenvalues: " << endl;
+      for (int i=0; i<n; i++)
+	cout << "\t" << LOCA::Utils::sci(alphar[i]/beta[i]) << " + i" << LOCA::Utils::sci(alphai[i]/beta[i]) << endl;
+    }
+    else {
+      cout << "Eigenvalues: " << endl;
+      for (int i=0; i<n; i++)
+	cout << "\t" << LOCA::Utils::sci(alphar[i]) << " + i" << LOCA::Utils::sci(alphai[i]) << endl;
+    }
   }
 
   delete [] alphar;

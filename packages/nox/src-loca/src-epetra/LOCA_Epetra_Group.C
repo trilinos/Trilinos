@@ -39,6 +39,7 @@
 #include "NOX_Epetra_SharedOperator.H"
 #include "Epetra_Vector.h"
 #include "LOCA_Utils.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
 			   NOX::Parameter::List& par, 
@@ -236,10 +237,7 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   }
 
   // Otherwise this alg won't work
-  cout << "ERROR: LOCA::Epetra::Group::augmentJacobianForHomotopy() - "
-       << "the Jacobian must be either an Epetra_CrsMatrix or an "
-       << "Epetra_VbrMatrix!" << endl;
-  throw "LOCA Error";
+  LOCA::ErrorCheck::throwError("LOCA::Epetra::Group::augmentJacobianForHomotopy()","the Jacobian must be either an Epetra_CrsMatrix or an Epetra_VbrMatrix!");
 
   return LOCA::Abstract::Group::Ok;
 }
@@ -334,20 +332,18 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
     imagpart = r_evec.dot(tempveci)-i_evec.dot(tempvecr);
 
     if (Utils::doPrint(Utils::StepperIteration)) {
-      cout.precision(7);
       double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
-      cout<<"Eigenvalue "<<i<<" : "<<evalr[i]/mag<<"  "<<-evali[i]/mag<<" i    :  RQresid "
-          << fabs(evalr[i]/mag - realpart) <<"  "<< fabs(-evali[i]/mag - imagpart)<<" i"<<endl;
+      cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(evalr[i]/mag)<<"  "<<LOCA::Utils::sci(-evali[i]/mag)<<" i    :  RQresid "
+          << LOCA::Utils::sci(fabs(evalr[i]/mag - realpart)) <<"  "<< LOCA::Utils::sci(fabs(-evali[i]/mag - imagpart))<<" i"<<endl;
     }  
   }
 
   // Print out remaining eigenvalue approximations from nev to final arnoldi size
   if (Utils::doPrint(Utils::StepperIteration) && narn>nev) {
-    cout.precision(7);
     cout << "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" << endl;
     for (int i=nev; i<narn; i++) {
         double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
-        cout<<"Eigenvalue "<<i<<" : "<<evalr[i]/mag<<"  "<<-evali[i]/mag<<" i"<<endl;
+        cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(evalr[i]/mag)<<"  "<<LOCA::Utils::sci(-evali[i]/mag)<<" i"<<endl;
     }
   }
 
