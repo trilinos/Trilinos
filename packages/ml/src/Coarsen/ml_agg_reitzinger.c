@@ -157,6 +157,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	   }
 	 }
        }
+       else if ( (row_length == 1) && (temp_val[0] == 0.)) row_length--;
        if (row_length == 1) {
 	 if      (temp_val[0] ==  1.) encoded_dir_node[i] = (1 + temp_bindx[0]);
 	 else if (temp_val[0] == -1.) encoded_dir_node[i] = -(1 + temp_bindx[0]);
