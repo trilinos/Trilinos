@@ -1,0 +1,12 @@
+# This builds Trilinos on Paul Sexton's Quicksilver G4.
+# NOTE: You will need to have Fink installed (as well as 
+# the g77 package) for this script to work properly.
+
+../configure \
+    --disable-default-packages --enable-tpetra \
+    CC=gcc CXX=g++ F77=g77 \
+    FLIBS="-L/sw/lib/ -lg2c" \
+    LDFLAGS="-framework vecLib" 
+
+# The LDFLAGS line tells it to use Apple's Altivec-optimized versions of BLAS and LAPACK.
+# This is customized for my work on Tpetra, so I have most packages turned off.

@@ -1,0 +1,6 @@
+.././configure --with-cxxflags="-DMPI_NO_CPPBIND" \
+--enable-nox-epetra \
+--enable-loca --enable-belos --enable-anasazi \
+--enable-amesos --enable-amesos-umfpack \
+--with-trilinos3pldir=/usr/users/jmwille/Trilinos3PL \
+--enable-komplex

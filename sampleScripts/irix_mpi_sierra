@@ -1,0 +1,17 @@
+../configure \
+	--with-blas=-lscs \
+	--with-lapack=-lscs \
+        --with-libdirs="-L/usr/lib64/mips4" \
+	--enable-referencey12m \
+	CXXFLAGS="-64 -g -ptused -LANG:std -DMPI_NO_CPPBIND" \
+	CPPFLAGS="-64 -g -ptused -LANG:std -DMPI_NO_CPPBIND" \
+        --with-fflags=-64 \
+	--enable-mpi CXX=CC \
+        --enable-nox --enable-nox-epetra \
+        --with-mpi-incdir=. \
+	CC=cc F77=f77 \
+        --with-mpi-incdir=. \
+        --with-mpi-libdir="/usr/lib64 -L/usr/lib64/mips4"\
+        --with-mpi-libs="-lmpi -lmpi++" \
+        LDFLAGS="-64 -L/usr/lib64/mips4 -L/usr/lib64"
+

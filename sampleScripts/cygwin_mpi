@@ -1,0 +1,3 @@
+../configure --enable-mpi --with-mpi=/usr/MPICH/SDK.gcc \
+             --with-mpi-cxx=g++ --with-mpi-cc=gcc --with-mpi-f77=g77 \
+             --with-mpi-libs=-lmpich

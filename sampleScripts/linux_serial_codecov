@@ -1,0 +1,2 @@
+../configure CXX="cov++ -skip /usr/ -skip \
+/uv/home/jmwille/test/Trilinos/test -EXT .cpp .c++"

@@ -1,0 +1,12 @@
+../configure --host=powerpc-ibm-aix5.1.0.0 \
+     --with-blas="-lessl -L/home/jmwille/ -llapack" \
+     --with-lapack="/home/jmwille/liblapack.a" \
+     CXX=mpCC CC=mpcc F77=mpxlf \
+     CXXFLAGS="-g" \
+     --with-cflags="-DML_MATCHED" \
+     --enable-mpi --enable-belos \
+        --enable-nox --enable-nox-epetra --enable-nox-epetra-examples \
+	--enable-nox-lapack --enable-nox-lapack-examples --enable-loca\
+        --with-mpi-incdir=. \
+     --with-mpi-libdir=.
+

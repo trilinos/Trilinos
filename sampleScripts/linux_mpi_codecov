@@ -1,0 +1,5 @@
+../configure CXX="cov++ -skip /usr/ -skip \
+/uv/home/jmwille/test/Trilinos/test -EXT .cpp .c++" \
+--disable-komplex \
+--disable-aztecoo --with-mpi=/usr/ --with-mpi-libs="-lmpi -llam" \
+CC=mpicc F77=mpif77

@@ -1,0 +1,10 @@
+../configure --host=i686-pc-linux \
+    --enable-referencey12m \
+    --with-blas="-L/usr/local/lib -lblas" \
+    --with-lapack="-L/usr/local/lib -llapack" \
+    --with-mpi-libs="-lmpich -lpmpich" --enable-mpi \
+    --with-mpi-incdir=/usr/local/mpich/1.2.4/ip/smp/gcc-3.1/ssh/include \
+    --with-mpi-libdir=/usr/local/mpich/1.2.4/ip/smp/gcc-3.1/ssh/lib \
+    --enable-nox --enable-nox-epetra CXX=g++ CC=gcc F77=g77 \
+    CXXFLAGS="-g" CPPFLAGS=" " \
+    LDFLAGS=" "
