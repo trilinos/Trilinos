@@ -144,6 +144,7 @@ int flag;
 
   lb->Migrate.Help_Migrate = FALSE;
   lb->Migrate.Pre_Process = NULL;
+  lb->Migrate.Post_Process = NULL;
   lb->Migrate.Pack_Obj = NULL;
   lb->Migrate.Unpack_Obj = NULL;
   lb->Migrate.Get_Obj_Size = NULL;
@@ -248,6 +249,10 @@ char *yo = "LB_Set_Fn";
   case LB_PRE_MIGRATE_FN_TYPE:
     lb->Migrate.Pre_Process = (LB_PRE_MIGRATE_FN *) fn;
     lb->Migrate.Pre_Process_Data = data;
+    break;
+  case LB_POST_MIGRATE_FN_TYPE:
+    lb->Migrate.Post_Process = (LB_POST_MIGRATE_FN *) fn;
+    lb->Migrate.Post_Process_Data = data;
     break;
   case LB_OBJ_SIZE_FN_TYPE:
     lb->Migrate.Get_Obj_Size = (LB_OBJ_SIZE_FN *) fn;
@@ -954,6 +959,23 @@ int ierr = 0;
   }
 
   LB_FREE(&import_buf);
+
+  if (lb->Migrate.Post_Process != NULL) {
+    lb->Migrate.Post_Process(lb->Migrate.Post_Process_Data,
+                            num_import, import_global_ids,
+                            import_local_ids, import_procs,
+                            num_export, export_global_ids,
+                            export_local_ids, export_procs, &ierr);
+    if (ierr) {
+      fprintf(stderr, "[%d] %s: Error returned from user defined "
+                      "Migrate.Post_Process function.\n", lb->Proc, yo);
+      return (LB_FATAL);
+    }
+
+    if (lb->Debug > 5)
+      printf("LBLIB %d %s Done Post-Process\n", lb->Proc, yo);
+  }
+
   if (lb->Debug > 4)
     printf("LBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
@@ -1185,15 +1207,19 @@ void LB_Eval (LB *lb, int mode,
   
   /* Global reduction */
   if (vwgt_dim>0){
-    MPI_Allreduce(sum_wgt, &obj_wgt[0], vwgt_dim, MPI_FLOAT, MPI_MAX, lb->Communicator);
-    MPI_Allreduce(sum_wgt, &obj_wgt[vwgt_dim], vwgt_dim, MPI_FLOAT, MPI_SUM, lb->Communicator);
+    MPI_Allreduce(sum_wgt, &obj_wgt[0], vwgt_dim, MPI_FLOAT, MPI_MAX, 
+                  lb->Communicator);
+    MPI_Allreduce(sum_wgt, &obj_wgt[vwgt_dim], vwgt_dim, MPI_FLOAT, MPI_SUM, 
+                  lb->Communicator);
   }
   stats[0] = num_obj;
   stats[1] = cut_wgt;
   stats[2] = nboundary;
   stats[3] = nadj;
-  MPI_Allreduce(stats, &graph_stats[0], NUM_GSTATS, MPI_INT, MPI_MAX, lb->Communicator);
-  MPI_Allreduce(stats, &graph_stats[NUM_GSTATS], NUM_GSTATS, MPI_INT, MPI_SUM, lb->Communicator);
+  MPI_Allreduce(stats, &graph_stats[0], NUM_GSTATS, MPI_INT, MPI_MAX, 
+                lb->Communicator);
+  MPI_Allreduce(stats, &graph_stats[NUM_GSTATS], NUM_GSTATS, MPI_INT, MPI_SUM, 
+                lb->Communicator);
 
   /* Print results */
   if (mode>1){
@@ -1204,14 +1230,18 @@ void LB_Eval (LB *lb, int mode,
         printf("  Object weight %1d  :  Max = %6.1f, Sum = %7.1f, Balance = %5.3f\n",
           i+1, obj_wgt[i], obj_wgt[vwgt_dim+i], obj_wgt[i]*nproc/obj_wgt[vwgt_dim+i]);
       printf("  No. of objects   :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
-        graph_stats[0], graph_stats[NUM_GSTATS], graph_stats[0]*nproc/graph_stats[NUM_GSTATS]);
+        graph_stats[0], graph_stats[NUM_GSTATS], 
+        graph_stats[0]*nproc/graph_stats[NUM_GSTATS]);
       if (lb->Get_Num_Edges != NULL){
         printf("  Cut weight       :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
-          graph_stats[1], graph_stats[NUM_GSTATS+1], graph_stats[1]*nproc/graph_stats[NUM_GSTATS+1]);
+          graph_stats[1], graph_stats[NUM_GSTATS+1], 
+          graph_stats[1]*nproc/graph_stats[NUM_GSTATS+1]);
         printf("  Boundary objects :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
-          graph_stats[2], graph_stats[NUM_GSTATS+2], graph_stats[2]*nproc/graph_stats[NUM_GSTATS+2]);
+          graph_stats[2], graph_stats[NUM_GSTATS+2], 
+          graph_stats[2]*nproc/graph_stats[NUM_GSTATS+2]);
         printf("  Adjacent procs   :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
-          graph_stats[3], graph_stats[NUM_GSTATS+3], graph_stats[3]*nproc/graph_stats[NUM_GSTATS+3]);
+          graph_stats[3], graph_stats[NUM_GSTATS+3], 
+          graph_stats[3]*nproc/graph_stats[NUM_GSTATS+3]);
       }
       printf("\n");
     }
