@@ -31,22 +31,9 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseMatrix.h"
 
-int MatrixTests(const Epetra_Map & Map, const Epetra_LocalMap & LocalMap,
-		int NumVectors, bool verbose)
-  {
-    const Epetra_Comm & Comm = Map.Comm();
-    int ierr = 0;
-
-    /* get ID of this processor */
-
-    int MyPID   = Comm.MyPID();
-
-
-    Epetra_MultiVector A(LocalMap, NumVectors);
-
-    return(ierr);
-  }
 
 int Drumm1(const Epetra_Map& map, bool verbose)
 {
@@ -529,19 +516,22 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   }
 
   int format = Epetra_FECrsMatrix::ROW_MAJOR;
+  Epetra_IntSerialDenseVector epetra_nodes(View, nodes, numNodesPerElem);
+  Epetra_SerialDenseMatrix epetra_values(View, values_1d, numNodesPerElem,
+					 numNodesPerElem, numNodesPerElem);
 
   for(i=0; i<numElems; ++i) {
     switch(i) {
     case 0:
       nodes[0] = 0; nodes[1] = 1; nodes[2] = 4; nodes[3] = 3;
       if (preconstruct_graph) {
-	err = A->SumIntoGlobalValues(numNodesPerElem, nodes,
-					       values_1d, format);
+	err = A->SumIntoGlobalValues(epetra_nodes,
+				     epetra_values, format);
 	if (err<0) return(err);
       }
       else {
-	err = A->InsertGlobalValues(numNodesPerElem, nodes,
-					       values_1d, format);
+	err = A->InsertGlobalValues(epetra_nodes,
+				    epetra_values, format);
 	if (err<0) return(err);
       }
       break;
@@ -550,12 +540,12 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
       nodes[0] = 1; nodes[1] = 2; nodes[2] = 5; nodes[3] = 4;
       if (preconstruct_graph) {
 	err = A->SumIntoGlobalValues(numNodesPerElem, nodes,
-					       values_2d, format);
+				     values_2d, format);
 	if (err<0) return(err);
       }
       else {
 	err = A->InsertGlobalValues(numNodesPerElem, nodes,
-					       values_2d, format);
+				    values_2d, format);
 	if (err<0) return(err);
       }
       break;
@@ -564,14 +554,14 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
       nodes[0] = 3; nodes[1] = 4; nodes[2] = 7; nodes[3] = 6;
       if (preconstruct_graph) {
 	err = A->SumIntoGlobalValues(numNodesPerElem, nodes,
-					       numNodesPerElem, nodes,
-					       values_1d, format);
+				     numNodesPerElem, nodes,
+				     values_1d, format);
 	if (err<0) return(err);
       }
       else {
 	err = A->InsertGlobalValues(numNodesPerElem, nodes,
-					      numNodesPerElem, nodes,
-					       values_1d, format);
+				    numNodesPerElem, nodes,
+				    values_1d, format);
 	if (err<0) return(err);
       }
       break;
@@ -580,14 +570,14 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
       nodes[0] = 4; nodes[1] = 5; nodes[2] = 8; nodes[3] = 7;
       if (preconstruct_graph) {
 	err = A->SumIntoGlobalValues(numNodesPerElem, nodes,
-					       numNodesPerElem, nodes,
-					       values_2d, format);
+				     numNodesPerElem, nodes,
+				     values_2d, format);
 	if (err<0) return(err);
       }
       else {
 	err = A->InsertGlobalValues(numNodesPerElem, nodes,
-					      numNodesPerElem, nodes,
-					       values_2d, format);
+				    numNodesPerElem, nodes,
+				    values_2d, format);
 	if (err<0) return(err);
       }
       break;

@@ -30,24 +30,8 @@
 #include "ExecuteTestProblems.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
-  int MatrixTests(const Epetra_BlockMap & Map, const Epetra_LocalMap & LocalMap, int NumVectors,
-		      bool verbose)
-  {
-    const Epetra_Comm & Comm = Map.Comm();
-    int ierr = 0;
-    double *residual = new double[NumVectors];
-
-    /* get ID of this processor */
-
-    int MyPID   = Comm.MyPID();
-
-
-    Epetra_MultiVector A(LocalMap, NumVectors);
-
-    delete [] residual;
-    
-    return(ierr);
-  }
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseVector.h"
 
 int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 {
@@ -78,6 +62,9 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   int* ptIndices = new int[numGlobalIDs];
   double* ptCoefs = new double[numGlobalIDs];
 
+  Epetra_IntSerialDenseVector epetra_indices(View, ptIndices, numGlobalIDs);
+  Epetra_SerialDenseVector epetra_coefs(View, ptCoefs, numGlobalIDs);
+
   {for(int i=0; i<numGlobalIDs; ++i) {
     ptIndices[i] = minGID+i;
     ptCoefs[i] = 1.0;
@@ -87,6 +74,11 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
     cout << "calling A.SumIntoGlobalValues with " << numGlobalIDs << " values"<<endl;
   }
   EPETRA_TEST_ERR( A.SumIntoGlobalValues(numGlobalIDs, ptIndices, ptCoefs), ierr);
+
+  if (verbose&&MyPID==0) {
+    cout << "calling A.SumIntoGlobalValues with " << numGlobalIDs << " values"<<endl;
+  }
+  EPETRA_TEST_ERR( A.SumIntoGlobalValues(epetra_indices, epetra_coefs), ierr);
 
   if (verbose&&MyPID==0) {
     cout << "calling A.GlobalAssemble()" << endl;

@@ -81,6 +81,51 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 		     int NumBlockEntriesPerRow,
 		     bool ignoreNonLocalEntries=false);
 
+  //! Epetra_FEVbrMatrix constuctor with variable number of indices per row.
+  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - A Epetra_BlockMap listing the block rows that this processor
+	   will contribute to.
+    \param In 
+           ColMap - A Epetra_BlockMap listing the block columns to be contained
+	   on this processor.
+    \param In
+           NumBlockEntriesPerRow - An integer array of length NumRows
+	   such that NumBlockEntriesPerRow[i] indicates the (approximate)
+	   number of Block entries in the ith row.
+  */
+  Epetra_FEVbrMatrix(Epetra_DataAccess CV,
+		     const Epetra_BlockMap& RowMap,
+		     const Epetra_BlockMap& ColMap,
+		     int *NumBlockEntriesPerRow,
+		     bool ignoreNonLocalEntries=false);
+  
+  //! Epetra_FEVbrMatrix constuctor with fixed number of indices per row.
+  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - An Epetra_BlockMap listing the block rows that this
+	   processor will contribute to.
+    \param In 
+           ColMap - An Epetra_BlockMap listing the block columns to be contained
+	   on this processor.
+    \param In
+           NumBlockEntriesPerRow - An integer that indicates the (approximate)
+	   number of Block entries in the each Block row.
+	   Note that it is possible to use 0 for this value and let fill occur
+	   during the insertion phase.
+  */
+  Epetra_FEVbrMatrix(Epetra_DataAccess CV,
+		     const Epetra_BlockMap& RowMap,
+		     const Epetra_BlockMap& ColMap,
+		     int NumBlockEntriesPerRow,
+		     bool ignoreNonLocalEntries=false);
+
   /** Constructor with pre-constructed Graph.
    */
   Epetra_FEVbrMatrix(Epetra_DataAccess CV,

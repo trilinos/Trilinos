@@ -82,6 +82,50 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
+				       const Epetra_BlockMap& RowMap,
+				       const Epetra_BlockMap& ColMap,
+				       int *NumBlockEntriesPerRow,
+				       bool ignoreNonLocalEntries) 
+  : Epetra_VbrMatrix(CV, RowMap, ColMap, NumBlockEntriesPerRow),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries),
+    numNonlocalBlockRows_(0),
+    nonlocalBlockRows_(NULL),
+    nonlocalBlockRowLengths_(NULL),
+    nonlocalBlockRowAllocLengths_(NULL),
+    nonlocalBlockCols_(NULL),
+    nonlocalCoefs_(NULL),
+    curRowOffset_(-1),
+    curColOffset_(-1),
+    curNumCols_(0),
+    curCols_(NULL),
+    curMode_(Add)
+{
+}
+
+//----------------------------------------------------------------------------
+Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
+				       const Epetra_BlockMap& RowMap,
+				       const Epetra_BlockMap& ColMap,
+				       int NumBlockEntriesPerRow,
+				       bool ignoreNonLocalEntries) 
+  : Epetra_VbrMatrix(CV, RowMap, ColMap, NumBlockEntriesPerRow),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries),
+    numNonlocalBlockRows_(0),
+    nonlocalBlockRows_(NULL),
+    nonlocalBlockRowLengths_(NULL),
+    nonlocalBlockRowAllocLengths_(NULL),
+    nonlocalBlockCols_(NULL),
+    nonlocalCoefs_(NULL),
+    curRowOffset_(-1),
+    curColOffset_(0),
+    curNumCols_(0),
+    curCols_(NULL),
+    curMode_(Add)
+{
+}
+
+//----------------------------------------------------------------------------
+Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 				       const Epetra_CrsGraph& Graph,
 				       bool ignoreNonLocalEntries) 
   : Epetra_VbrMatrix(CV, Graph),

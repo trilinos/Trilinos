@@ -94,12 +94,6 @@ int main(int argc, char *argv[]) {
   int NumGlobalElements = NumMyElements*NumProc;
   int IndexBase = 0;
   int ElementSize = 1;
-  
-  if (verbose) {
-    cout << "\n*********************************************************"<<endl;
-    cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
-    cout << "*********************************************************" << endl;
-  }
 
   Epetra_BlockMap BlockMap(NumGlobalElements, NumMyElements,
                            ElementSize, IndexBase, Comm);

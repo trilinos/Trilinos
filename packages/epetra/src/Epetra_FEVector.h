@@ -32,6 +32,8 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
+class Epetra_IntSerialDenseVector;
+class Epetra_SerialDenseVector;
 
 /** Epetra Finite-Element Vector. This class inherits Epetra_MultiVector
   and thus provides all Epetra_MultiVector functionality, with one
@@ -71,10 +73,34 @@ class Epetra_FEVector : public Epetra_MultiVector {
    */
    int SumIntoGlobalValues(int numIDs, const int* GIDs, const double* values);
 
+   /** Accumulate values into the vector, adding them to any values that
+       already exist for the specified GIDs.
+
+       @param GIDs List of global ids. Must be the same length as the
+       accompanying list of values.
+
+       @param values List of coefficient values. Must be the same length as
+       the accompanying list of GIDs.
+   */
+   int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
+			   const Epetra_SerialDenseVector& values);
+
    /** Copy values into the vector overwriting any values that already exist
         for the specified indices.
     */
    int ReplaceGlobalValues(int numIDs, const int* GIDs, const double* values);
+
+   /** Copy values into the vector, replacing any values that
+       already exist for the specified GIDs.
+
+       @param GIDs List of global ids. Must be the same length as the
+       accompanying list of values.
+
+       @param values List of coefficient values. Must be the same length as
+       the accompanying list of GIDs.
+   */
+   int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
+			   const Epetra_SerialDenseVector& values);
 
    int SumIntoGlobalValues(int numIDs, const int* GIDs,
 			   const int* numValuesPerID,

@@ -87,6 +87,58 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
+				       const Epetra_Map& RowMap,
+				       const Epetra_Map& ColMap,
+				       int* NumEntriesPerRow,
+				       bool ignoreNonLocalEntries)
+  : Epetra_CrsMatrix(CV, RowMap, ColMap, NumEntriesPerRow),
+    myFirstRow_(0),
+    myNumRows_(0),
+    numNonlocalRows_(0),
+    nonlocalRows_(NULL),
+    nonlocalRowLengths_(NULL),
+    nonlocalRowAllocLengths_(NULL),
+    nonlocalCols_(NULL),
+    nonlocalCoefs_(NULL),
+    workData_(NULL),
+    workDataLength_(0),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
+{
+  myFirstRow_ = RowMap.MinMyGID();
+  myNumRows_ = RowMap.NumMyElements();
+
+  workData_ = new double[128];
+  workDataLength_ = 128;
+}
+
+//----------------------------------------------------------------------------
+Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
+				       const Epetra_Map& RowMap,
+				       const Epetra_Map& ColMap,
+				       int NumEntriesPerRow,
+				       bool ignoreNonLocalEntries)
+  : Epetra_CrsMatrix(CV, RowMap, ColMap, NumEntriesPerRow),
+    myFirstRow_(0),
+    myNumRows_(0),
+    numNonlocalRows_(0),
+    nonlocalRows_(NULL),
+    nonlocalRowLengths_(NULL),
+    nonlocalRowAllocLengths_(NULL),
+    nonlocalCols_(NULL),
+    nonlocalCoefs_(NULL),
+    workData_(NULL),
+    workDataLength_(0),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
+{
+  myFirstRow_ = RowMap.MinMyGID();
+  myNumRows_ = RowMap.NumMyElements();
+
+  workData_ = new double[128];
+  workDataLength_ = 128;
+}
+
+//----------------------------------------------------------------------------
+Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 				       const Epetra_CrsGraph& Graph,
 				       bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, Graph),

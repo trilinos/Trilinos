@@ -35,6 +35,8 @@
 #include <Epetra_Import.h>
 #include <Epetra_Export.h>
 #include <Epetra_Util.h>
+#include <Epetra_IntSerialDenseVector.h>
+#include <Epetra_SerialDenseVector.h>
 
 //
 //Initial implementation of Epetra_FEVector. At this point it is
@@ -87,6 +89,17 @@ int Epetra_FEVector::SumIntoGlobalValues(int numIDs, const int* GIDs,
 }
 
 //----------------------------------------------------------------------------
+int Epetra_FEVector::SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
+			                 const Epetra_SerialDenseVector& values)
+{
+  if (GIDs.Length() != values.Length()) {
+    return(-1);
+  }
+
+  return( inputValues( GIDs.Length(), GIDs.Values(), values.Values(), true) );
+}
+
+//----------------------------------------------------------------------------
 int Epetra_FEVector::SumIntoGlobalValues(int numIDs, const int* GIDs,
 					 const int* numValuesPerID,
 			                 const double* values)
@@ -99,6 +112,17 @@ int Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int* GIDs,
 			                 const double* values)
 {
   return( inputValues( numIDs, GIDs, values, false) );
+}
+
+//----------------------------------------------------------------------------
+int Epetra_FEVector::ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
+			                 const Epetra_SerialDenseVector& values)
+{
+  if (GIDs.Length() != values.Length()) {
+    return(-1);
+  }
+
+  return( inputValues( GIDs.Length(), GIDs.Values(), values.Values(), false) );
 }
 
 //----------------------------------------------------------------------------

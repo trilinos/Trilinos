@@ -100,6 +100,20 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 		      int NumEntriesPerRow,
 		      bool ignoreNonLocalEntries=false);
 
+  /** Constructor. */
+   Epetra_FECrsMatrix(Epetra_DataAccess CV,
+		      const Epetra_Map& RowMap,
+		      const Epetra_Map& ColMap,
+		      int* NumEntriesPerRow,
+		      bool ignoreNonLocalEntries=false);
+
+   /** Constructor. */
+   Epetra_FECrsMatrix(Epetra_DataAccess CV,
+		      const Epetra_Map& RowMap,
+		      const Epetra_Map& ColMap,
+		      int NumEntriesPerRow,
+		      bool ignoreNonLocalEntries=false);
+
    /** Constructor. */
    Epetra_FECrsMatrix(Epetra_DataAccess CV,
 		      const Epetra_CrsGraph& Graph,
