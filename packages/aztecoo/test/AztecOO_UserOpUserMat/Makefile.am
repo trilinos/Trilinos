@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+EXTRA_DIST=referencelog
+
 EXEEXT = .exe
 # Nothing should be done for an mpi build
 noinst_PROGRAMS = Ex_AztecOO_UserOpUserMat
