@@ -259,24 +259,33 @@ LOCA::Bifurcation::PitchforkBordGroup::computeF()
 
   NOX::Abstract::Group::ReturnType res;
 
+  const NOX::Abstract::Vector& x_x = pfXVec.getXVec();
+  const NOX::Abstract::Vector& x_null = pfXVec.getNullVec();
+  double x_slack = pfXVec.getSlackVar();
+  double x_param = pfXVec.getBifParam();
+
+  NOX::Abstract::Vector& f_x = pfFVec.getXVec();
+  NOX::Abstract::Vector& f_null = pfFVec.getNullVec();
+  double& f_slack = pfFVec.getSlackVar();
+  double& f_param = pfFVec.getBifParam();
+
   res = grpPtr->computeF();
   if (res != NOX::Abstract::Group::Ok)
     return res;
   
-  pfFVec.getXVec() = grpPtr->getF();
+  f_x.update(1.0, grpPtr->getF(), x_slack, *asymVecPtr, 0.0);
   
   res = grpPtr->computeJacobian();
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  res = grpPtr->applyJacobian(pfXVec.getNullVec(), 
-			      pfFVec.getNullVec());
+  res = grpPtr->applyJacobian(x_null, f_null);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  pfFVec.getSlackVar() = grpPtr->innerProduct(pfXVec.getXVec(), *asymVecPtr);
+  f_slack = grpPtr->innerProduct(x_x, *asymVecPtr);
   
-  pfFVec.getBifParam() = pfXVec.getNullVec().dot(*lengthVecPtr) - 1.0;
+  f_param = x_null.dot(*lengthVecPtr) - 1.0;
   
   isValidF = true;
 
@@ -382,7 +391,7 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobian(
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  // compute J*x + sigm*psi + p*dR/dp
+  // compute J*x + sigma*psi + p*dR/dp
   result_x.update(bifParam, *derivResidualParamPtr, input_slack, *asymVecPtr,
 		  1.0);
 
@@ -504,6 +513,7 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
 							results_x, m+2);
   if (res != NOX::Abstract::Group::Ok)
     return res;
+  
 
   // Compute tmp = inputs_null - (dJy/dx)*results_x
   for (int i=0; i<m+2; i++) {
@@ -531,8 +541,6 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
   // Compute and set results
   double ipb = grpPtr->innerProduct(*results_x[m],   *asymVecPtr);
   double ipc = grpPtr->innerProduct(*results_x[m+1], *asymVecPtr);
-  double ipe = grpPtr->innerProduct(*results_null[m],   *asymVecPtr);
-  double ipf = grpPtr->innerProduct(*results_null[m+1], *asymVecPtr);
   double lte = lengthVecPtr->dot(*results_null[m]);
   double ltf = lengthVecPtr->dot(*results_null[m+1]);
   double denom_slack = lte*ipc - ltf*ipb;
@@ -543,13 +551,13 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
     ltd = lengthVecPtr->dot(*results_null[i]);
     *results_slacks[i] = (lte*(ipa - inputs_slacks[i]) - 
 			 ipb*(ltd - inputs_params[i])) / denom_slack;
-    *results_params[i] = (ltd - inputs_params[i] - ipf*(*results_slacks[i]))
-      /ipe;
+    *results_params[i] = (ltd - inputs_params[i] - ltf*(*results_slacks[i]))
+      /lte;
 
     results_x[i]->update(-*results_params[i], *results_x[m], 
-			 -*results_slacks[i], *results_x[m+1]);
+			 -*results_slacks[i], *results_x[m+1], 1.0);
     results_null[i]->update(-*results_params[i], *results_null[m], 
-			    -*results_slacks[i], *results_null[m+1]);
+			    -*results_slacks[i], *results_null[m+1], 1.0);
 
     delete tmp[i];
   }
@@ -725,9 +733,9 @@ LOCA::Bifurcation::PitchforkBordGroup::applyRightPreconditioning(
 
   result_param = (ltd - input_param - ltf*result_slack) / lte;
 
-  result_x.update(-result_param, *b, -result_slack, *c);
+  result_x.update(-result_param, *b, -result_slack, *c, 1.0);
 
-  result_null.update(-result_param, *e, -result_slack, *f);
+  result_null.update(-result_param, *e, -result_slack, *f, 1.0);
 
   // Clean up memory
   delete b;

@@ -278,5 +278,5 @@ LOCA::DerivUtils::epsVector(const NOX::Abstract::Vector& xVector,
 			    const NOX::Abstract::Vector& aVector) const
 {
    return perturb * (perturb + xVector.norm(NOX::Abstract::Vector::TwoNorm)
-                               / aVector.norm(NOX::Abstract::Vector::TwoNorm));
+                               / (aVector.norm(NOX::Abstract::Vector::TwoNorm) + perturb));
 }
