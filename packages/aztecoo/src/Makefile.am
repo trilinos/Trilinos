@@ -64,7 +64,9 @@ CORE = \
 ### Making this optional is one step toward removing the current
 ### dependency on Epetra when only Aztec is needed
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)../ifpack/src
+	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+
 WITH_CPP_H = \
 	$(srcdir)/AztecOO.h \
 	$(srcdir)/AztecOO_Operator.h \
