@@ -803,7 +803,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
                         widget.Amat->outvec_leng, ML_EXTERNAL,&widget,
                         widget.Amat->matvec->Nrows, NULL, 0);
-     ML_Operator_Set_Getrow(AGGsmoother, ML_EXTERNAL,
+     ML_Operator_Set_Getrow(AGGsmoother, ML_INTERNAL,
                           widget.Amat->getrow->Nrows, 
                           ML_AGG_JacobiSmoother_Getrows);
      ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
@@ -958,8 +958,10 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    ML_GetrowFunc  *getrow_obj;
    int            info, diag = -1, i, j /*, *aggr_info */;
    double         diag_val = 1.0, dropped, threshold = 0.0;
+   ML_Operator    *mat_in;
 
-   widget = (struct ML_AGG_Matrix_Context *) data;
+   mat_in = (ML_Operator *) data;
+   widget = (struct ML_AGG_Matrix_Context *) ML_Get_MyGetrowData(mat_in);
    if (widget->near_bdry != NULL) {
      if (widget->near_bdry[requested_rows[0]] == 'T') {
        if (allocated_space < 1) return(0);
