@@ -14,8 +14,12 @@ This code cannot be compiled without mpi.h.
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Util.h"
 #include <vector>
+#define USE_STL_SORT_NOT
+#ifdef USE_STL_SORT
 #include <algorithm>
+#endif
 
 //  #define DEBUG
 #ifdef DEBUG
@@ -56,6 +60,7 @@ bool operator< (pair<int, double> const &p1, pair<int, double> const &p2)
 {
   return p1.first < p2.first;
 }
+
 
 
 //=============================================================================
@@ -395,6 +400,7 @@ int DscpackOO::Solve(bool factor) {
 				    typedef pair<int, double> Data;
 
 				    vector<Data> sort_array(NumGlobalCols);  // This is a gross 
+				    vector<int>  sort_indices(NumGlobalCols);  // This is a gross 
 				    // over-estimate of the max size of this array.  Ken work Fix this GXX
 
 
@@ -426,16 +432,39 @@ int DscpackOO::Solve(bool factor) {
 				      for ( int j = 0; j < num_entries_this_row; j++ ) { 
 #ifdef USE_LOCAL
 					sort_array[j].first = GlobalStructNewColNum[ DscMat.GCID( col_indices[j])] ; 
+					sort_indices[j] =  GlobalStructNewColNum[ DscMat.GCID( col_indices[j])] ; 
 #else
 					sort_array[j].first = GlobalStructNewColNum[ col_indices[j] ]; 
 #endif
 					sort_array[j].second = mat_values[j] ; 
 				      }
+#ifdef USE_STL_SORT
 				      sort(&sort_array[0], &sort_array[num_entries_this_row]);
+#else
+				      double **DoubleCompanions = new double*[2] ;
+				      *DoubleCompanions = &mat_values[0] ; 
+				      Epetra_Util sorter;
+				      cout << " sort_indices = " << sort_indices[0] << " " << 
+					sort_indices[1] << " " <<  sort_indices[2] << endl ; 
+				      cout << " mat_values = " <<  mat_values[0] << " " <<
+					mat_values[1] << " " << mat_values[2] << endl ; 
+                                      sorter.Sort( true, num_entries_this_row, &sort_indices[0],
+						   1, DoubleCompanions, 0, 0 ) ;
+				      delete[] DoubleCompanions; 
+				      cout << "NOW  sort_indices = " << sort_indices[0] << " " <<
+					sort_indices[1] << " " << sort_indices[2] << endl ; 
+				      cout << " mat_values = " <<  mat_values[0] << " " <<
+					mat_values[1] << " " << mat_values[2] << endl ; 
+#endif
 
 				      for ( int j = 0; j < num_entries_this_row; j++ ) { 
+#ifdef USE_STL_SORT
 					int NewColNumber = sort_array[j].first ; 
 					if ( NewRowNumber <= NewColNumber ) MyANonZ[ NonZIndex++ ] = sort_array[j].second ; 
+#else
+					int NewColNumber = sort_indices[j] ; 
+					if ( NewRowNumber <= NewColNumber ) MyANonZ[ NonZIndex++ ] = mat_values[j] ; 
+#endif
 					assert( NonZIndex <= NumLocalNonz );
 				      }
 				    }

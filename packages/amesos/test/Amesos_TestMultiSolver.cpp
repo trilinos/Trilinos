@@ -17,6 +17,9 @@
 #ifdef HAVE_AMESOS_SLUD2
 #include "Superludist2_OO.h"
 #endif
+#ifdef HAVE_AMESOS_DSCPACK
+#include "DscpackOO.h"
+#endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
 #endif
@@ -190,6 +193,13 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     
     kundert.SetTrans( transpose ) ; 
     kundert.Solve() ; 
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
+  } else if ( SparseSolver == DSCPACK ) { 
+    DscpackOO dscpack( Problem ) ; 
+    
+    dscpack.SetTrans( transpose ) ; 
+    dscpack.Solve( true ) ; 
 #endif
 #ifdef TEST_SPOOLESSERIAL 
   } else if ( SparseSolver == SPOOLESSERIAL ) { 

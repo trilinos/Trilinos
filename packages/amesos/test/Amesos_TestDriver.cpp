@@ -167,7 +167,11 @@ main(int argc, char **argv)
   char *LongOutputFileName = (char *) "SST.log" ;
 
   bool summary = MyPID == 0 ;
+#ifdef AMESOS_TEST_VERBOSE
+  bool verbose = ( MyPID == 0 ) && true ; 
+#else
   bool verbose = ( MyPID == 0 ) && false ; 
+#endif
   bool log = MyPID == 0 ; 
 #ifdef SOLARIS
   //  log = false ;                                     // On Solaris mpich, the second ofstream.open fails 

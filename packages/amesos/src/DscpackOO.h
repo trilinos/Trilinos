@@ -21,6 +21,8 @@
  * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+#ifndef _DSCPACKOO_H_
+#define _DSCPACKOO_H_
 
 #include "Amesos_ConfigDefs.h"
 #include "Epetra_MpiComm.h"
@@ -28,9 +30,6 @@
 extern "C" {
 #include "dscmain.h"
 }
-
-#ifndef _DSCPACKOO_H_
-#define _DSCPACKOO_H_
 
 class Epetra_Comm;
 class Epetra_BlockMap;

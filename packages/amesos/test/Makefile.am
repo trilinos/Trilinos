@@ -16,19 +16,48 @@ EXEEXT = .exe
 #  run configure from a separate build directory.
 #
 
-noinst_PROGRAMS = amesos_test AmesosShellScript
+noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort \
+	AmesosShortSuperLU AmesosShortKundert AmesosDistScript AmesosShortScript \
+	AmesosJanusScript SpoolesJanusScript SpoolesScript 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
+AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
+AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
+AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
+AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
+AmesosShortScript_SOURCES = $(srcdir)/AmesosShortScript
+AmesosJanusScript_SOURCES = $(srcdir)/AmesosJanusScript
+SpoolesJanusScript_SOURCES = $(srcdir)/SpoolesJanusScript
+SpoolesScript_SOURCES = $(srcdir)/SpoolesScript
 
 AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
-	cp  $(srcdir)/AmesosDscpack  AmesosDscpack$(EXEEXT)
-	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
 	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
+
+AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
+	cp  $(srcdir)/AmesosDscpack  AmesosDscpack$(EXEEXT)
+
+AmesosDscpackShort$(EXEEXT): $(srcdir)/AmesosDscpackShort
+	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
+
+AmesosShortSuperLU$(EXEEXT): $(srcdir)/AmesosShortSuperLU
 	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)
+
+AmesosShortKundert$(EXEEXT): $(srcdir)/AmesosShortKundert
+	cp  $(srcdir)/AmesosShortKundert  AmesosShortKundert$(EXEEXT)
+
+AmesosDistScript$(EXEEXT): $(srcdir)/AmesosDistScript
 	cp  $(srcdir)/AmesosDistScript  AmesosDistScript$(EXEEXT)
+
+AmesosShortScript$(EXEEXT): $(srcdir)/AmesosShortScript
 	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
+
+AmesosJanusScript$(EXEEXT): $(srcdir)/AmesosJanusScript
 	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)
+
+SpoolesJanusScript$(EXEEXT): $(srcdir)/SpoolesJanusScript
 	cp  $(srcdir)/SpoolesJanusScript  SpoolesJanusScript$(EXEEXT)
+
+SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/SpoolesScript  SpoolesScript$(EXEEXT)
 	cp  $(srcdir)/In_ImpcolA.rua  ImpcolA.rua
 	cp  $(srcdir)/In_ImpcolB.rua  ImpcolB.rua
@@ -43,7 +72,7 @@ AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/In_K5000.triS  K5000.triS
 	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU
 	cp  $(srcdir)/In_Khead.triS  Khead.triS
-	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx 
+	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx
 	cp  $(srcdir)/In_bcsstk02.mtx bcsstk02.mtx 
 	cp  $(srcdir)/In_bcsstk04.mtx bcsstk04.mtx 
 	cp  $(srcdir)/In_bcsstk08.mtx bcsstk08.mtx 
