@@ -30,10 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef WITH_PRERELEASE
-
-#ifndef NOX_MORETHUENTE2_H
-#define NOX_MORETHUENTE2_H
+#ifndef NOX_LINESEARCH_MORETHUENTE2_H
+#define NOX_LINESEARCH_MORETHUENTE2_H
 
 #include "NOX_LineSearch_Generic.H" // base class
 
@@ -161,8 +159,18 @@ namespace LineSearch {
 
   - "Default Step" - starting step length (defaults to 1.0)
 
-  - "Recovery Step" - step to take when the line search fails
-    (defaults to value for "Default Step")
+  - "Recovery Step Type" - Determines the step size to take when the 
+    line search fails.  Choices are:
+
+     <ul>
+     <li> "Constant" [default] - Uses a constant value set in "Recovery Step".
+     <li> "Last Computed Step" - Uses the last value computed by the 
+                                 line search algorithm. 
+     </ul>
+
+  - "Recovery Step" - The value of the step to take when the line 
+    search fails. Only used if the "Recovery Step Type" is set to 
+    "Constant". Defaults to value for "Default Step".
 
   <B> Output Parameters </B> <br>
 A sublist for output parameters will be created called "Output" in the parameter list used to instantiate or reset the class.  Valid output parameters are:
@@ -456,6 +464,17 @@ private:
   //! Maximum number of function evaluations
   int maxfev;
 
+  //! Type of recovery step to use
+  enum RecoveryStepType {
+    //! Use a constant value
+    Constant,
+    //! Use the last value computed in the line search algorithm
+    LastComputedStep
+  };
+
+  //! Choice of the recovery step type; uses "Recovery Step Type" parameter 
+  RecoveryStepType recoveryStepType;
+
   //! Default step length
   double defaultstep;
   //! Recovery step if linesearch fails
@@ -485,6 +504,4 @@ private:
 };
 } // namespace LineSearch
 } // namespace NOX
-#endif
-
 #endif

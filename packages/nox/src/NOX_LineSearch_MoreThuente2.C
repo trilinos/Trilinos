@@ -30,8 +30,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef WITH_PRERELEASE
-
 #include "NOX_LineSearch_MoreThuente2.H"	// class definition
 
 #include "NOX_Abstract_Vector.H"
@@ -91,6 +89,19 @@ bool NOX::LineSearch::MoreThuente2::reset(Parameter::List& params)
 	 << "\"Sufficient Decrease Condition\" is invalid." << endl;
     throw "NOX Error";
   }
+
+  choice = p.getParameter("Recovery Step Type", "Constant");
+  if (choice == "Constant")
+    recoveryStepType = Constant;
+  else if (choice == "Last Computed Step") {
+    recoveryStepType = LastComputedStep;
+  }
+  else {
+    cout << "NOX::LineSearch::MoreThuente2::reset - Invalid "
+	 << "\"Recovery Step Type\"" << endl;
+    throw "NOX Error";
+  }
+
   useOptimizedSlopeCalc = p.getParameter("Optimize Slope Calculation", false);
 
   // Check for a user supplied norm
@@ -346,8 +357,10 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
       {
 	// RPP add
 	counter.incrementNumFailedLineSearches();
+	
+	if (recoveryStepType == Constant)
+	  stp = recoverystep;
 
-	stp = recoverystep;
 	newgrp.computeX(oldgrp, dir, stp);
 	
 	message = "(USING RECOVERY STEP!)";
@@ -657,7 +670,5 @@ double NOX::LineSearch::MoreThuente2::absmax(double a, double b, double c)
   else
     return (b > c) ? b : c;
 }
-
-#endif 
 
 

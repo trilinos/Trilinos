@@ -43,11 +43,10 @@
 #include "NOX_LineSearch_Backtrack.H"
 #include "NOX_LineSearch_Polynomial.H"
 #include "NOX_LineSearch_MoreThuente.H"
+#include "NOX_LineSearch_MoreThuente2.H"
 #ifdef WITH_PRERELEASE
 #include "NOX_LineSearch_NonlinearCG.H"
-#include "NOX_LineSearch_Quadratic.H"
 #include "NOX_LineSearch_PolynomialWalker.H"
-#include "NOX_LineSearch_MoreThuente2.H"
 #endif
 
 NOX::LineSearch::Manager::Manager(const NOX::Utils& u, NOX::Parameter::List& params) :
@@ -85,15 +84,13 @@ bool NOX::LineSearch::Manager::reset(Parameter::List& params)
     ptr = new Polynomial(utils, params);
   else if (method == "More'-Thuente")
     ptr = new MoreThuente(utils, params);
+  else if (method == "More'-Thuente2")
+    ptr = new MoreThuente2(utils, params);
 #ifdef WITH_PRERELEASE
   else if (method == "NonlinearCG")
     ptr = new NonlinearCG(utils, params);
-  else if (method == "Quadratic")
-    ptr = new Quadratic(utils, params);
   else if (method == "PolynomialWalker")
     ptr = new PolynomialWalker(utils, params);
-  else if (method == "More'-Thuente2")
-    ptr = new MoreThuente2(utils, params);
 #endif
   else if (method == "User Defined")
   {
