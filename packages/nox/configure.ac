@@ -1415,13 +1415,15 @@ else
 fi
 
 # -- DEC CXX --
-case $target in
-  alpha*)
-    if test $CXX = cxx; then
-      CXXREPOS="cxx_repository/*.o"
-    fi
-  ;;
-esac
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+  case $target in
+    alpha*)
+      if test $CXX = cxx; then
+        CXXREPOS="cxx_repository/*.o"
+      fi
+    ;;
+  esac
+fi
 
 AC_MSG_CHECKING([for C++ repository files])
 if test X$CXXREPOS = X; then
