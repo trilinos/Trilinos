@@ -3162,7 +3162,7 @@ extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
   else /* If GGB cycle is second */
     {
 
-      //#ifdef GGBcycSecond
+      /* # ifdef GGBcycSecond */
        /* We need to compute the following coarse grid correction:  
         *	  u = u + Q*(Ac)^(-1) *Q'A*r =
 	*           = u + Q*(Ac)^(-1) *(Qtilde*u - Q'*b)	  
