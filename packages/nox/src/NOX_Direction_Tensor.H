@@ -19,8 +19,13 @@ namespace Direction {
   To use this direction, specify that the "Method" is "Tensor" in the
   "Direction" sublist of the parameters that are passed to the solver
   (see NOX::Direction::Manager for more information on choosing the
-  search direction).
-*/  
+  search direction).  Be aware that the tensor step is not guaranteed
+  to be a descent direction on the function.  Thus, not all "basic"
+  line search approaches would be appropriate.  Instead, use the
+  NOX::Solver::TensorBased solver, which approriately handles these
+  considerations.
+
+*/
 
 class Tensor : public Generic {
 
@@ -38,6 +43,9 @@ public:
   // derived
   virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
 			  const Solver::Generic& solver);
+
+  bool computeCurvilinearStep(Abstract::Vector& dir, Abstract::Group& grp, 
+			      const Solver::Generic& solver, double lambda);
 
 
 protected:
@@ -66,10 +74,10 @@ private:
   //! Types of preconditioning 
   enum preconditioningType {None, Left, Right};
 
-  //! Types of preconditioning 
+  //! Types of reorthogonalization
   enum reorthogonalizeType {Never, AsNeeded, Always};
 
-  //! Flag for type of preconditioning
+  //! Flag for type of preconditioning (left/right)
   preconditioningType precondition;
 
   //! Flag for reorthogonalizing basis after first pass of Gram-Schmidt
@@ -81,11 +89,25 @@ private:
   //! Vector containing the predicted RHS
   Abstract::Vector* predf;
 
+  //! Temporary storage vectors
+  Abstract::Vector* vecw;
+
+  //! 3 steps needed for computing the curvilinear step
+  Abstract::Vector* dTensor;
+  Abstract::Vector* dTLambda;
+  Abstract::Vector* dNewton;  // maybe get rid of this once dn gets into group
+
   //! Array of orthonormal basis vectors
   Abstract::Vector** basisVptr;
 
   //! Flag for "continuing" with reset() inside compute() where n is known
   bool isFreshlyReset;
+
+  //! Flag for noting whether dt has been calculated
+  bool isTensorCalculated;
+
+  //! Flag for noting whether dt(lambdaBar) and params have been calculated
+  bool isCLParamsCalculated;
 
   //! Problem size
   int n;
@@ -93,8 +115,11 @@ private:
   //! Maximum number of Krylov iterations (kmax <= n)
   int kmax;
 
-  //! Number of starting vectors in initial basis
-  int p;
+  //! Maximum number of starting vectors in initial basis
+  int maxp;
+
+  //! Frequency for printing iteration history
+  int outputFreq;
 
   //! Maximum dimension of data structures (maxDim = kmax + p)
   int maxDim;
@@ -116,9 +141,34 @@ private:
   double* vecg;
   double* vecq;
 
+  //! Temporary working vector
+  double* vecz;
+
   //! Vector for calculating the residual error
   double* terrvec; 
-    
+
+  //! Number of Arnoldi iterations for last solve
+  int iterations;
+
+  //! Counter for the number of total Arnoldi iterations since reset
+  int arnoldiIters;
+
+  //! Threshold for a real root in quadratic equation
+  double lambdaBar;
+
+  //! Parameters for the curvilinear linesearch
+  double stJinvF;
+  double stJinvA;
+
+  //! Norm of previous step direction, s = xp - xc
+  double normS;
+
+  //! Approximate value of s'*dt
+  double beta;
+
+  //! Smallest magnitude root/minimizer of quadratic equation
+  double y1;
+
 };
 } // namespace Direction
 } // namespace NOX
