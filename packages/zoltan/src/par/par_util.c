@@ -104,7 +104,7 @@ int LB_find_median(
 
   if (dotnum > 0) {
     /* allocate memory */
-    dotlist = (int *) LB_array_alloc (__FILE__, __LINE__, 1, dotnum,
+    dotlist = (int *) LB_Array_Alloc (__FILE__, __LINE__, 1, dotnum,
                                       sizeof(int));
     if (!dotlist) {
       fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
@@ -121,12 +121,12 @@ int LB_find_median(
     wtflag = 0;
     if (!wgts) {
       wtflag = 1;
-      wgts = (double *) LB_array_alloc (__FILE__, __LINE__, 1, dotnum,
+      wgts = (double *) LB_Array_Alloc (__FILE__, __LINE__, 1, dotnum,
                                         sizeof(double));
       if (!wgts) {
         fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
                 proc, yo);
-        LB_safe_free((void **) &dotlist);
+        LB_Free((void **) &dotlist);
         return 0;
       }
     }
@@ -367,8 +367,8 @@ int LB_find_median(
   *valuehalf = tmp_half;
 
   /* free all memory */
-  LB_safe_free ((void **) &dotlist);
-  if (wtflag) LB_safe_free ((void **) &wgts);
+  LB_Free ((void **) &dotlist);
+  if (wtflag) LB_Free ((void **) &wgts);
 
   MPI_Type_free(&med_type);
   MPI_Op_free(&med_op);
