@@ -334,6 +334,8 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 			    Ke->comm, 2*Ke->invec_leng, 2*Nghost);
 
   }
+  else blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
+
   blockmat->data_destroy = ML_Operator_blockmatdata_Destroy;
 
   if (M != NULL) {
