@@ -370,10 +370,14 @@ int cCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    row            = *requested_rows;
    input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
    rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
-
-
+   if (rowptr != NULL) {
+     itemp = rowptr[row];
+     *row_lengths = rowptr[row+1] - itemp;
+   }
+   else {
+     itemp = row;
+     *row_lengths = 1;
+   }
    if (*row_lengths > allocated_space) {
     ML_avoid_unused_param( (void *) &N_requested_rows);
     return(0);
@@ -790,11 +794,20 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
      ap2 = ap;
      for (i = 0; i < olen; i++) ap2[i] = 0.;
    }
-
-   for (i = 0; i < ilen; i++) {
-     for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
-     {
-        ap2[bindx[k]] += (sgn[(int) val[k]]) * p2[i];
+   if (row_ptr != NULL) {
+     for (i = 0; i < ilen; i++) {
+       for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+	 {
+	   ap2[bindx[k]] += (sgn[(int) val[k]]) * p2[i];
+	 }
+     }
+   }
+   else {
+     for (i = 0; i < ilen; i++) {
+       for (k = i; k < i+1; k++)
+	 {
+	   ap2[bindx[k]] += (sgn[(int) val[k]]) * p2[i];
+	 }
      }
    }
 
@@ -938,14 +951,27 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
    }
    else ap2 = ap;
 
-   for (i = 0; i < Nstored; i++) {
-     sum = 0;
-     for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
-     {
-        sum  += ( sgn[(int) val[ k]]) * p2[bindx[k]];
+   if (row_ptr != NULL) {
+     for (i = 0; i < Nstored; i++) {
+       sum = 0;
+       for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+	 {
+	   sum  += ( sgn[(int) val[ k]]) * p2[bindx[k]];
+	 }
+       
+       ap2[i] = sum;
      }
-
-     ap2[i] = sum;
+   }
+   else {
+     for (i = 0; i < Nstored; i++) {
+       sum = 0;
+       for (k = i; k < i+1; k++)
+	 {
+	   sum  += ( sgn[(int) val[ k]]) * p2[bindx[k]];
+	 }
+       
+       ap2[i] = sum;
+     }
    }
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
