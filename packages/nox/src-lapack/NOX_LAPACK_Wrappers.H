@@ -40,12 +40,20 @@ extern "C" {
 #endif
 
 #define DGESV_F77 F77_FUNC(dgesv,DGESV)
+#define ZGESV_F77 F77_FUNC(zgesv,ZGESV)
 #define DGETRF_F77 F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77 F77_FUNC(dgetrs,DGETRS)
+#define DGEEV_F77 F77_FUNC(dgeev,DGEEV)
+#define DGGEV_F77 F77_FUNC(dggev,DGGEV)
 
 /* B <- A \ B, A <- [L,U], piv <- P where P*A = L*U */
 void DGESV_F77(const int *n, const int *nrhs, double *A, const int *lda, 
 	       int *piv, double *B, const int *ldb, int *info);
+
+/* B <- A \ B, A <- [L,U], piv <- P where P*A = L*U, A, B Complex*16 */
+void ZGESV_F77(const int *n, const int *nrhs, double *A, const int *lda, 
+	       int *piv, double *B, const int *ldb, int *info);
+
 /* A <- [L,U], piv <- P where P*A = L*U */
 void DGETRF_F77(const int *m, const int *n, double *A, const int *lda, 
 		int *piv, int *info);
@@ -54,6 +62,19 @@ void DGETRF_F77(const int *m, const int *n, double *A, const int *lda,
 void DGETRS_F77(const char *trans, const int *n, const int *nrhs, 
 		const double *A, const int *lda, const int *piv,
 		double *B, const int *ldb, int *info);
+
+/* Compute left/right eigenvectors, eigenvalues */
+void DGEEV_F77(const char *jobvl, const char *jobvr, const int *n,
+	       const double *A, const int *lda, double *wr, double *wi,
+	       double *vl, const int *ldvl, double *vr, const int *ldvr,
+	       double *work, const int *lwork, int *info);
+
+/* Compute left/right generalized eigenvectors, eigenvalues */
+void DGGEV_F77(const char *jobvl, const char *jobvr, const int *n,
+	       const double *A, const int *lda, const double *B, 
+	       const int *ldb, double *alphar, double *alphai,
+	       double *beta, double *vl, const int *ldvl, double *vr, 
+	       const int *ldvr, double *work, const int *lwork, int *info);
 
 #ifdef __cplusplus
 }
