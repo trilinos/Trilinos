@@ -65,7 +65,11 @@ Anasazi (New)
 
 AztecOO
 
-- No release notes submitted. 
+- Robust support for multiple simultaneous instances of AztecOO objects.
+  Prior releases had a very fragile memory management approach that require
+  user intervention.
+- Support (optional dependence on Teuchos) for ParameterList-driven use 
+  of AztecOO via Teuchos ParameterList objects.
 
 --------------------------------------------------------------------------------
 
