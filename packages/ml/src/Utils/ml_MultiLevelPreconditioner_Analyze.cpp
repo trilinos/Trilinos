@@ -173,8 +173,9 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixCheap()
 #include "ml_anasazi.h"
 #include "float.h"
 #include <fstream>
-int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* MatVec,
-									bool IsSymmetric)
+int ML_Epetra::
+MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(const char* MatVec,
+                                                         const bool IsSymmetric)
 {
 
   // sanity checks
@@ -397,8 +398,8 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
 #endif
 
 int ML_Epetra::MultiLevelPreconditioner::
-AnalyzeMatrixEigenvaluesDense(char* MatVec,
-			      bool IsSymmetric)
+AnalyzeMatrixEigenvaluesDense(const char* MatVec,
+			      const bool IsSymmetric)
 {
 
   // sanity checks
@@ -658,8 +659,9 @@ AnalyzeMatrixEigenvaluesDense(char* MatVec,
 
 // ============================================================================
 // date: Aug-17
-int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersSparse(int NumPreCycles,
-								int NumPostCycles)
+int ML_Epetra::
+MultiLevelPreconditioner::AnalyzeSmoothersSparse(const int NumPreCycles,
+                                                 const int NumPostCycles)
 {
 
   // sanity checks
@@ -820,7 +822,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersSparse(int NumPreCycles
 // ============================================================================
 // run ML cycle on a random vector
 // date: Aug-17
-int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
 {
 
   // sanity checks
@@ -893,9 +895,10 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
 
 // ============================================================================
 // date: Aug-17
-int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersDense(int NumPreCycles,
-							       int NumPostCycles,
-							       int MaxSize)
+int ML_Epetra::
+MultiLevelPreconditioner::AnalyzeSmoothersDense(const int NumPreCycles,
+                                                const int NumPostCycles,
+                                                const int MaxSize)
 {
 
   // sanity checks

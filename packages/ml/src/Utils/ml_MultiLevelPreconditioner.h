@@ -464,10 +464,10 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   int AnalyzeMatrixCheap();
 
   //! Compute the lowest and largest magniture eigenvalues of fine-level matrix.
-  int AnalyzeMatrixEigenvaluesSparse(char* MatVec, bool IsSymmetric = false);
+  int AnalyzeMatrixEigenvaluesSparse(const char* MatVec, const bool IsSymmetric = false);
 
   //! Compute the lowest and largest magniture eigenvalues of fine-level matrix.
-  int AnalyzeMatrixEigenvaluesDense(char* MatVec, bool IsSymmetric = false);
+  int AnalyzeMatrixEigenvaluesDense(const char* MatVec, const bool IsSymmetric = false);
 
   //! Analyze the effect of the ML cycle on a random vector.
   int AnalyzeCycle(const int NumCycles = 1);
