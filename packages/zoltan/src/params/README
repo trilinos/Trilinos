@@ -1,0 +1,22 @@
+
+PARAMS DIRECTORY -- Routines for setting parameter values
+----------------------------------------------------------------
+
+Files compiled into Zoltan:
+
+params_const.h      -- Prototypes for parameter functions.
+
+assign_param_vals.c -- Contains LB_Assign_Param_Vals which loops over the set
+		       of new parameters/values associated with an LB object
+		       and sets those which are appropriate.
+
+check_param.c       -- Routine LB_Check_Param compares a string against a list
+		       of valid parameter names & checks the type for correctness.
+
+key_params.c        -- Set parameter values for variables in LB object.
+
+print_params.c      -- Debugging routine to print out the parameter settings.
+
+set_param.c         -- Routine LB_Set_Param calls domain-specific routines
+		       to identify a parameter being set & usually adds it to
+		       list of modified parameters & values.

@@ -42,6 +42,7 @@ typedef struct Param_Utype {
 
 extern void LB_Assign_Param_Vals(LB_PARAM *, PARAM_VARS *);
 extern int LB_Set_Param(LB *, char *, char *);
+extern int LB_Set_Key_Param(LB *, char *, char *);
 extern int LB_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
 

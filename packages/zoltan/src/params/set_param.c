@@ -6,6 +6,7 @@
 #include "params_const.h"
 #include "all_allo_const.h"
 #include "rcb_const.h"
+#include "parmetis_const.h"
 
 static int add_param(LB *, char *, char *);
 static int clean_string(char *, char **);
@@ -49,16 +50,17 @@ char *val1)			/* value to set this parameter to */
     /* Now call all the parameter setting routines. */
     /* New parameter routines should be added here. */
 
-    status = 1;
+    status = LB_Set_Key_Param(lb, name, val);
+
 
     if (status == 1)
-        status = LB_Malloc_Set_Param(name, val);
+        status = LB_Set_Malloc_Param(name, val);
 
     if (status == 1)
-        status = LB_RCB_Set_Param(name, val);
+        status = LB_Set_RCB_Param(name, val);
 
     if (status == 1)
-        status = LB_ParMetis_Set_Param(name, val);
+        status = LB_Set_ParMetis_Param(name, val);
 
 /*
     if (status == 1)
