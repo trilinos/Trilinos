@@ -52,15 +52,12 @@ type(ELEM_INFO), pointer :: elements(:)
                                              ! for nodes to be exported.
   integer(LB_INT) :: num_imported !/* Number of nodes to be imported.
   integer(LB_INT) :: num_exported !/* Number of nodes to be exported.
-  integer(LB_INT) :: new_decomp   !/* Flag indicating whether the decomposition
-                                 !   has changed
+  logical :: new_decomp           !/* Flag indicating whether the decomposition
+                                  !   has changed
 
   integer(LB_INT) :: i            !/* Loop index
   integer(LB_INT) :: ierr         !   Return code
   type(LB_User_Data_1) :: elements_wrapper ! wrapper to pass elements to query
-
-  integer(LB_INT) :: idum1, idum2, idum3, idum4, idum5 ! dummies for LB_Eval
-  real(LB_FLOAT) :: rdumarray(1)
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -155,7 +152,7 @@ type(ELEM_INFO), pointer :: elements(:)
        print *,"BEFORE load balancing"
     endif
 !    driver_eval();
-    call LB_Eval(lb_obj, .true., idum1, rdumarray, idum2, idum3, idum4, idum5)
+    call LB_Eval(lb_obj, .true., ierr = ierr)
 !  }
 
 !  /*
@@ -172,7 +169,7 @@ type(ELEM_INFO), pointer :: elements(:)
 !  /*
 !   * Call another routine to perform the migration
 !   */
-  if (new_decomp /= 0) then
+  if (new_decomp) then
     if (.not.migrate_elements(Proc,elements,lb_obj,num_imported,import_gids, &
                           import_lids,import_procs,num_exported,export_gids, &
                           export_lids,export_procs)) then
@@ -188,7 +185,7 @@ type(ELEM_INFO), pointer :: elements(:)
       print *,"AFTER load balancing"
     endif
 !    driver_eval();
-    call LB_Eval(lb_obj, .true., idum1, rdumarray, idum2, idum3, idum4, idum5)
+    call LB_Eval(lb_obj, .true., ierr = ierr)
 !  }
 
 !  /* Clean up */
