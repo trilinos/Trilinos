@@ -462,7 +462,6 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    /* set up                                                            */
    /* ----------------------------------------------------------------- */
 
-   printf("Entering GS\n");
 
    Amat = smooth_ptr->my_level->Amat;
    comm = smooth_ptr->my_level->comm;
@@ -800,6 +799,9 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #endif
 
    smooth_ptr = (ML_Smoother *) sm;
+#ifdef out
+   smooth_ptr->omega = 1.;
+#endif
 
    Amat = smooth_ptr->my_level->Amat;
    comm = smooth_ptr->my_level->comm;
