@@ -122,13 +122,24 @@ int main(int argc, char *argv[])
 
   if (verbose && comm.MyPID()!=0) verbose = false;
 
-
+  /*
   // Generate a 5-point 2D Finite Difference matrix
   int npoints = 5;
   Epetra_IntSerialDenseVector Xoff(5);
   Epetra_IntSerialDenseVector Yoff(5);
   Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
   Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
+  */
+  // Generate a 9-point 2D Finite Difference matrix
+  int npoints = 9;
+  Epetra_IntSerialDenseVector Xoff(9);
+  Epetra_IntSerialDenseVector Yoff(9);
+  Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1; 
+  Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1; 
+  Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1; 
+  Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0; 
+  Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1; 
+  Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1; 
 
   Epetra_Map * map;
   Epetra_CrsMatrix * A;
