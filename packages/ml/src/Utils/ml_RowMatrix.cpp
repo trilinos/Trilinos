@@ -6,6 +6,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
+#include "Epetra_MultiVector.h"
 #include "ml_RowMatrix.h"
 
 //==============================================================================
@@ -30,6 +31,9 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
  
   Op_ = Op;
 
+  Label_ = new char[80];
+  sprintf(Label_,"ML_Epetra::RowMatrix");
+
   NumMyRows_ = Op->outvec_leng;
   NumMyCols_ = Op->invec_leng;
  
@@ -49,11 +53,8 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   // and of the output vector are consistent with what I have here
   RowMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm_);
 
-  if (NumGlobalRows_ != RowMap_->NumMyElements())
+  if (NumGlobalRows_ != RowMap_->NumGlobalElements())
     ML_CHK_ERRV(-3); // something went wrong
-
-  // FIXME: use or delete ColMap!
-
 
   // need to perform a getrow() on all lines to setup some
   // parameters. This should not be too expensive
@@ -68,7 +69,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   int MaxMyNumEntries;
   double MyNormInf = -1.0;
 
-  for (int i = 0; i < NumMyCols() ; i++) {
+  for (int i = 0; i < NumMyCols() ; ++i) {
 
     int ierr = ML_Operator_Getrow(Op_,1,&i,Allocated_,
 				  &Indices_[0],&Values_[0],&ncnt);
@@ -112,6 +113,51 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   Comm_.MaxAll(&MaxMyNumEntries,&MaxNumEntries_,1);
   Comm_.MaxAll(&MyNormInf,&NormInf_,1);
 
+  // build a list of global indices for columns
+
+  int Nghost;
+  int Ncols;
+  int Ncols_offset;
+
+  if (Op->getrow->pre_comm == NULL)
+    Nghost = 0;
+  else {
+    if (Op->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Op->getrow->pre_comm);
+    Nghost = Op->getrow->pre_comm->total_rcv_length;
+  }
+
+  Ncols = Op->invec_leng;
+
+  Comm_.ScanSum(&Ncols,&Ncols_offset,1); 
+  Ncols_offset -= Ncols;
+
+  vector<double> global_col_id; 
+  global_col_id.resize(Ncols + Nghost + 1);
+
+  vector<int> global_col_id_as_int; 
+  global_col_id_as_int.resize(Ncols + Nghost + 1);
+
+  for (int i = 0 ; i < Ncols ; ++i) {
+    global_col_id[i] = (double) (Ncols_offset + i);
+    global_col_id_as_int[i] = Ncols_offset + i;
+  }
+
+  for (int i = 0 ; i < Nghost; i++) 
+    global_col_id[i + Ncols] = -1;
+
+  ML_exchange_bdry(&global_col_id[0],Op->getrow->pre_comm,
+                 Op->invec_leng,Op->comm,ML_OVERWRITE,NULL);
+
+  for (int j = 0; j < Ncols + Nghost; ++j) {
+    global_col_id_as_int[j] = (int) global_col_id[j];
+  }
+
+  // create the column map
+
+  ColMap_ = new Epetra_Map(-1,Ncols + Nghost,
+			  &global_col_id_as_int[0],0,Comm_);
+
   return;
 }
       
@@ -121,12 +167,18 @@ ML_Epetra::RowMatrix::~RowMatrix()
   if (RowMap_) 
     delete RowMap_;
 
+  if (ColMap_)
+    delete ColMap_;
+
+  if (Label_)
+    delete [] Label_;
+
   return;
 
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumMyRowEntries(int MyRow, int & NumEntries)
+int ML_Epetra::RowMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const
 {
   
   if (MyRow < 0 || MyRow >= NumMyRows())
@@ -139,7 +191,7 @@ int ML_Epetra::RowMatrix::NumMyRowEntries(int MyRow, int & NumEntries)
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::MaxNumEntries()
+int ML_Epetra::RowMatrix::MaxNumEntries() const
 {
   return(MaxNumEntries_);
 }
@@ -147,7 +199,7 @@ int ML_Epetra::RowMatrix::MaxNumEntries()
 //==============================================================================
 int ML_Epetra::RowMatrix::
 ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
-		 double *Values, int * Indices)
+		 double *Values, int * Indices) const
 {
 
   if (MyRow < 0 || MyRow >= NumMyRows())
@@ -165,12 +217,19 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   if (NumEntries != NumMyRowEntries_[MyRow])
     ML_CHK_ERR(-4); // something went wrong
 
+  // need to convert from local (ML) indices to global indices
+  for (int i = 0 ; i < NumEntries ; ++i) {
+    int GCID = ColMap_->GID(Indices[i]);
+    assert (GCID != -1);
+    Indices[i] = GCID;
+  }
+
   return(0);
 
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal)
+int ML_Epetra::RowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
   if (Diagonal.Map().SameAs(*RowMap_) != true)
     ML_CHK_ERR(-1); // incompatible maps
@@ -186,7 +245,7 @@ int ML_Epetra::RowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal)
 // FIXME: some problems with ghost nodes here ??
 int ML_Epetra::RowMatrix::Multiply(bool TransA, 
 				   const Epetra_MultiVector& X, 
-				   Epetra_MultiVector& Y)
+				   Epetra_MultiVector& Y) const
 {
 
   if (TransA == true)
@@ -200,15 +259,18 @@ int ML_Epetra::RowMatrix::Multiply(bool TransA,
 
   int ierr;
 
-  ierr = ML_Operator_Apply(Op_,X.MyLength(),X.Values(),
-			   Y.MyLength(), Y.Values());
+  for (int i = 0 ; i < X.NumVectors() ; ++i) {
+    ierr = ML_Operator_Apply(Op_,X.MyLength(),X[i],
+			     Y.MyLength(), Y[i]);
+    ML_CHK_ERR(ierr);
+  }
 
-  ML_RETURN(ierr);
+  return(0);
 }
 
 
 //==============================================================================
-double ML_Epetra::RowMatrix::NormInf()
+double ML_Epetra::RowMatrix::NormInf() const
 {
 
  
@@ -217,63 +279,63 @@ double ML_Epetra::RowMatrix::NormInf()
 
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalNonzeros()
+int ML_Epetra::RowMatrix::NumGlobalNonzeros() const
 {
   return(NumGlobalNonzeros_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalRows()
+int ML_Epetra::RowMatrix::NumGlobalRows() const
 {
   return(NumGlobalRows_);
 }
 
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalCols()
+int ML_Epetra::RowMatrix::NumGlobalCols() const
 {
   return(NumGlobalCols_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalDiagonals()
+int ML_Epetra::RowMatrix::NumGlobalDiagonals() const
 {
   return(NumGlobalDiagonals_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumMyNonzeros()
+int ML_Epetra::RowMatrix::NumMyNonzeros() const
 {
   return(NumMyNonzeros_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumMyRows() 
+int ML_Epetra::RowMatrix::NumMyRows() const
 {
   return(NumMyRows_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumMyCols() {
-
+int ML_Epetra::RowMatrix::NumMyCols() const
+{
   return(NumMyCols_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumMyDiagonals()
+int ML_Epetra::RowMatrix::NumMyDiagonals() const
 {
   return(NumMyDiagonals_);
 }
 
 //==============================================================================
-bool ML_Epetra::RowMatrix::LowerTriangular()
+bool ML_Epetra::RowMatrix::LowerTriangular() const
 {
   // FIXME ???
   return(false);
 }
 
 //==============================================================================
-bool ML_Epetra::RowMatrix::UpperTriangular()
+bool ML_Epetra::RowMatrix::UpperTriangular() const
 {
   // FIXME ???
 
@@ -282,20 +344,19 @@ bool ML_Epetra::RowMatrix::UpperTriangular()
 }
 
 //==============================================================================
-const Epetra_Map& ML_Epetra::RowMatrix::RowMatrixRowMap(){
-
+const Epetra_Map& ML_Epetra::RowMatrix::RowMatrixRowMap() const
+{
   return(*RowMap_);
 }
 
 //==============================================================================
-const Epetra_Map& ML_Epetra::RowMatrix::RowMatrixColMap()
+const Epetra_Map& ML_Epetra::RowMatrix::RowMatrixColMap() const
 {
-  ML_EXIT(-1); // still to fix
   return(*ColMap_);
 }
 
 //==============================================================================
-const Epetra_Import* ML_Epetra::RowMatrix::RowMatrixImporter()
+const Epetra_Import* ML_Epetra::RowMatrix::RowMatrixImporter() const
 {
 
   return(Importer_);

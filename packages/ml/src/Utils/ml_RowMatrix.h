@@ -8,6 +8,8 @@
 #include <vector>
 #include "Epetra_Comm.h"
 #include "ml_epetra.h"
+#include "Epetra_Operator.h"
+class Epetra_MultiVector;
 #include "Epetra_RowMatrix.h"
 
 class Epetra_Vector;
@@ -15,7 +17,7 @@ class Epetra_Importer;
 
 namespace ML_Epetra {
 
-class RowMatrix : public Epetra_RowMatrix {
+class RowMatrix : public virtual Epetra_RowMatrix {
       
  public:
   //@{ \name Constructor.
@@ -40,11 +42,11 @@ class RowMatrix : public Epetra_RowMatrix {
 	  
     \return Integer error code, set to 0 if successful.
   */
-    virtual int NumMyRowEntries(int MyRow, int & NumEntries); 
+    virtual int NumMyRowEntries(int MyRow, int & NumEntries) const; 
 
 
     //! Returns the maximum of NumMyRowEntries() over all rows.
-    virtual int MaxNumEntries();
+    virtual int MaxNumEntries() const;
 
     //! Returns a copy of the specified local row in user-provided arrays.
     /*! 
@@ -61,7 +63,7 @@ class RowMatrix : public Epetra_RowMatrix {
 	  
     \return Integer error code, set to 0 if successful.
   */
-    virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices);
+    virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
 
     //! Returns a copy of the main diagonal in a user-provided vector.
     /*! 
@@ -70,7 +72,7 @@ class RowMatrix : public Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal);
+    virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
   //@}
   
   //@{ \name Mathematical functions.
@@ -86,7 +88,7 @@ class RowMatrix : public Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y);
+    virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Returns result of a local-only solve using a triangular Epetra_RowMatrix with Epetra_MultiVectors X and Y.
     /*! This method will perform a triangular solve independently on each processor of the parallel machine.
@@ -105,11 +107,22 @@ class RowMatrix : public Epetra_RowMatrix {
     \return Integer error code, set to 0 if successful.
   */
     virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
-		      Epetra_MultiVector& Y)
+		      Epetra_MultiVector& Y) const
     {
       ML_RETURN(-1); // not implemented 
     }
 
+    virtual int Apply(const Epetra_MultiVector& X,
+		      Epetra_MultiVector& Y) const
+    {
+      ML_RETURN(Multiply(false,X,Y));
+    }
+
+    virtual int ApplyInverse(const Epetra_MultiVector& X,
+			     Epetra_MultiVector& Y) const
+    {
+      ML_RETURN(-1);
+    }
     //! Computes the sum of absolute values of the rows of the Epetra_RowMatrix, results returned in x.
     /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
         \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
@@ -121,7 +134,7 @@ class RowMatrix : public Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int InvRowSums(Epetra_Vector& x)
+    virtual int InvRowSums(Epetra_Vector& x) const
     {
       ML_RETURN(-1); // not implemented
     }
@@ -150,7 +163,7 @@ class RowMatrix : public Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int InvColSums(Epetra_Vector& x)
+    virtual int InvColSums(Epetra_Vector& x) const
     {
       ML_RETURN(-1); // not implemented
     }
@@ -164,7 +177,7 @@ class RowMatrix : public Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int RightScale(const Epetra_Vector& x)
+    virtual int RightScale(const Epetra_Vector& x) 
     {
       ML_RETURN(-1); // not implemented
     }
@@ -174,7 +187,7 @@ class RowMatrix : public Epetra_RowMatrix {
   //@{ \name Atribute access functions
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
-    virtual bool Filled()
+    virtual bool Filled() const
     {
       return true;
     }
@@ -183,58 +196,100 @@ class RowMatrix : public Epetra_RowMatrix {
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
        \f[\| A \|_\infty = \max_{1\lei\len} \sum_{i=1}^m |a_{ij}| \f].
     */ 
-    virtual double NormInf();
+    virtual double NormInf() const;
 
     //! Returns the one norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_1\f$ such that
        \f[\| A \|_1= \max_{1\lej\len} \sum_{j=1}^n |a_{ij}| \f].
     */ 
-    virtual double NormOne()
+    virtual double NormOne() const
     {
       ML_RETURN(-1.0);
     }
 
     //! Returns the number of nonzero entries in the global matrix.
-    virtual int NumGlobalNonzeros();
+    virtual int NumGlobalNonzeros() const;
 
     //! Returns the number of global matrix rows.
-    virtual int NumGlobalRows();
+    virtual int NumGlobalRows() const;
 
     //! Returns the number of global matrix columns.
-    virtual int NumGlobalCols();
+    virtual int NumGlobalCols() const;
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-    virtual int NumGlobalDiagonals();
+    virtual int NumGlobalDiagonals() const;
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
-    virtual int NumMyNonzeros();
+    virtual int NumMyNonzeros() const;
 
     //! Returns the number of matrix rows owned by the calling processor.
-    virtual int NumMyRows();
+    virtual int NumMyRows() const;
 
     //! Returns the number of matrix columns owned by the calling processor.
-    virtual int NumMyCols();
+    virtual int NumMyCols() const;
 
     //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
-    virtual int NumMyDiagonals();
+    virtual int NumMyDiagonals() const;
 
     //! If matrix is lower triangular in local index space, this query returns true, otherwise it returns false.
-    virtual bool LowerTriangular();
+    virtual bool LowerTriangular() const;
 
     //! If matrix is upper triangular in local index space, this query returns true, otherwise it returns false.
-    virtual bool UpperTriangular();
+    virtual bool UpperTriangular() const;
 
     //! Returns the Epetra_Map object associated with the rows of this matrix.
-    virtual const Epetra_Map & RowMatrixRowMap();
+    virtual const Epetra_Map & RowMatrixRowMap() const;
 
     //! Returns the Epetra_Map object associated with the columns of this matrix.
-    virtual const Epetra_Map & RowMatrixColMap();
+    virtual const Epetra_Map & RowMatrixColMap() const;
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
-    virtual const Epetra_Import * RowMatrixImporter();
+    virtual const Epetra_Import * RowMatrixImporter() const;
   //@}
   
+  // following functions are required to derive Epetra_RowMatrix objects.
+
+  //! Sets ownership.
+  int SetOwnership(bool ownership){return(-1);};
+
+  //! Sets use transpose (not implemented).
+  int SetUseTranspose(bool UseTranspose){return(-1);}
+
+  //! Returns the current UseTranspose setting.
+  bool UseTranspose() const {return(false);};
+  
+  //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
+  bool HasNormInf() const{return(false);};
+  
+  //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
+  const Epetra_Comm & Comm() const{return(Comm_);};
+  
+  //! Returns the Epetra_Map object associated with the domain of this operator.
+  const Epetra_Map & OperatorDomainMap() const {return(*ColMap_);};
+  
+  //! Returns the Epetra_Map object associated with the range of this operator.
+  const Epetra_Map & OperatorRangeMap() const {return(*RowMap_);};
+  //@}
+
+  char* Label() const{
+    return(Label_);
+  };
+
+  //!  Returns a reference to RowMatrix->Map().
+  const Epetra_BlockMap & Map() const
+  {
+    return *ColMap_;
+  }
+
 private:
+
+#ifdef NEIN
+  RowMatrix(const ML_Epetra::RowMatrix&) :
+    Comm_(RowMatrix->Comm())
+  {
+    // empty
+  }
+#endif
 
   // FIXME: I still do not support rows != cols
   ML_Operator* Op_;
@@ -260,7 +315,8 @@ private:
   int NumGlobalDiagonals_;
 
   Epetra_Import* Importer_;
-    
+  
+  char* Label_;
 };
 
 } // namespace ML_Epetra
