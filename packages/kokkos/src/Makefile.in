@@ -105,7 +105,7 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libkokkos_a_DEPENDENCIES =
 am__objects_1 =
-am__objects_2 = Kokkos_Version.$(OBJEXT)
+am__objects_2 = Kokkos_Version.$(OBJEXT) Kokkos_dcrsmv.$(OBJEXT)
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_1)
 am_libkokkos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
@@ -120,6 +120,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
+F77LD = $(F77)
+F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
+	$@
 SOURCES = $(libkokkos_a_SOURCES) $(EXTRA_libkokkos_a_SOURCES)
 DIST_SOURCES = $(libkokkos_a_SOURCES) $(EXTRA_libkokkos_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -257,10 +261,13 @@ CORE_H = \
 CORE = 
 UTIL_H = \
 	$(srcdir)/Kokkos_Flops.hpp \
-	$(srcdir)/Kokkos_Time.hpp
+	$(srcdir)/Kokkos_Time.hpp \
+	$(srcdir)/Kokkos_Fortran_wrappers.hpp \
+	$(srcdir)/Kokkos_f77func.hpp 
 
 UTIL = \
-	$(srcdir)/Kokkos_Version.cpp
+	$(srcdir)/Kokkos_Version.cpp \
+	$(srcdir)/Kokkos_dcrsmv.f 
 
 ENUM_H = 
 SERIAL_H = 
@@ -379,7 +386,7 @@ all: Kokkos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .cpp .f .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -499,6 +506,18 @@ Kokkos_Version.obj: $(srcdir)/Kokkos_Version.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Kokkos_Version.Po' tmpdepfile='$(DEPDIR)/Kokkos_Version.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Kokkos_Version.obj `if test -f '$(srcdir)/Kokkos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Kokkos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Kokkos_Version.cpp'; fi`
+
+.f.o:
+	$(F77COMPILE) -c -o $@ $<
+
+.f.obj:
+	$(F77COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Kokkos_dcrsmv.o: $(srcdir)/Kokkos_dcrsmv.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Kokkos_dcrsmv.o `test -f '$(srcdir)/Kokkos_dcrsmv.f' || echo '$(srcdir)/'`$(srcdir)/Kokkos_dcrsmv.f
+
+Kokkos_dcrsmv.obj: $(srcdir)/Kokkos_dcrsmv.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Kokkos_dcrsmv.obj `if test -f '$(srcdir)/Kokkos_dcrsmv.f'; then $(CYGPATH_W) '$(srcdir)/Kokkos_dcrsmv.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Kokkos_dcrsmv.f'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
