@@ -24,6 +24,7 @@ extern "C" {
 #include "phg_hypergraph.h"
 #include "phg_util.h"
 #include "params_const.h"
+#include "zoltan_comm.h"
 
 /********************************************************************
  * Data structure for Zoltan's base hypergraph. Includes Zoltan IDs 
@@ -228,6 +229,14 @@ int  Zoltan_PHG_heap_make         (HEAP*);
 int  Zoltan_PHG_heap_change_value (HEAP*, int, float);
 int  Zoltan_PHG_heap_extract_max  (HEAP*);
 int  Zoltan_PHG_heap_extract      (HEAP*, int);
+
+/*****************/
+/* Communication */
+/*****************/
+extern int Zoltan_PHG_gather_slice_root(
+        int, int, int, int, int, char*, int*, char**, MPI_Comm*, int);
+extern int Zoltan_PHG_gather_slice(
+        int, int, int, int, int, char*, int*, char**, MPI_Comm*, int);
 
 /*****************************/
 /* Other Function Prototypes */
