@@ -4181,17 +4181,10 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
 
    dataptr->Nblocks = Nblocks;
    if ( Nblocks < 0 || Nblocks > Nrows )
-   {
-      printf("ML_Gen_VBGSFacts : invalid blocking information.\n");
-      printf("ML_Gen_VBGSFacts : Nblocks = %d.\n", Nblocks);
-      exit(1);
-   }
+      pr_error("ML_Gen_VBGSFacts : invalid blocking information.\n                   Nblocks = %d.\n", Nblocks);
 
    if ( blockIndices == NULL )
-   { 
-      printf("ML_Gen_VBGSFacts : blocking information not available.\n");
-      exit(1);
-   }
+      pr_error("ML_Gen_VBGSFacts : blocking information not available.\n");
    dataptr->blockmap = (int *) ML_allocate( (Nrows+1) * sizeof(int));
    if (dataptr->blockmap == NULL) 
       pr_error("ML_Smoother_Gen_VBGSFacts: out of space\n");
@@ -4213,11 +4206,8 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
       if ( blockIndices[i] < 0 || blockIndices[i] >= Nblocks )
       {
          if ( blockIndices[i] != -1 )
-         {
-            printf("ML_Gen_VBGSFacts : block index not valid %d. %d\n",
+            pr_error("ML_Gen_VBGSFacts : block index not valid %d. %d\n",
                                        blockIndices[i],i);
-            exit(1);
-         }
       } else
          block_sizes[blockIndices[i]]++;
    }
