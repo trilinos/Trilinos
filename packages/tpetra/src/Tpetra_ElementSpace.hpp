@@ -1,12 +1,13 @@
 #ifndef _TPETRA_ELEMENTSPACE_HPP_
 #define _TPETRA_ELEMENTSPACE_HPP_
 
-#include "Tpetra_Object.hpp"
-#include "Tpetra_Directory.hpp"
-#include "Tpetra_ConfigDefs.hpp" // for STL map
 #include <Teuchos_RefCountPtr.hpp>
-#include "Tpetra_ElementSpaceData.hpp"
+#include <Teuchos_OrdinalTraits.hpp>
+#include "Tpetra_ConfigDefs.hpp" // for STL map
+#include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
+#include "Tpetra_Directory.hpp"
+#include "Tpetra_ElementSpaceData.hpp"
 
 namespace Tpetra {
 
@@ -17,7 +18,7 @@ template<typename PacketType, typename OrdinalType> class Comm;
 /*! ElementSpace objects are defined to have an element size of 1. Variable element sizes are implemented 
 	in Tpetra::BlockElementSpace. Some ElementSpace methods throw exceptions, and should be enclosed 
 	in a try/catch block. All Tpetra_ElementSpace objects require a Tpetra_Platform object. 
-	Local IDs (LIDs) are always in the range 0 to numMyElements - 1.
+	Local IDs (LIDs) are always in the range [0, numMyElements).
 
 	ElementSpace error codes (positive for non-fatal, negative for fatal):
   <ol>
@@ -107,7 +108,7 @@ OrdinalType getNumGlobalElements() const {return(ElementSpaceData_->numGlobalEle
 //! Returns the number of elements belonging to the calling image.
 OrdinalType getNumMyElements() const {return(ElementSpaceData_->numMyElements_);};
 
-//! Puts list of global elements on this processor into the user-provided array.
+//! Puts list of global elements on this image into the user-provided array.
 void getMyGlobalElements(OrdinalType* elementList) const;
 
 //! Returns the Index base for this ElementSpace. Normally 0 for C/C++ or 1 for Fortran, but can be anything.
@@ -158,7 +159,6 @@ Teuchos::RefCountPtr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuc
 
 // private functions
 void directorySetup();
-OrdinalType getZero() const {return(ElementSpaceData_->zero_);};
 
 }; // ElementSpace class
 
@@ -340,9 +340,9 @@ ElementSpace<OrdinalType>::~ElementSpace() {}
 template<typename OrdinalType>
 OrdinalType ElementSpace<OrdinalType>::getLID (OrdinalType GID) const {
   if(!isMyGID(GID)) 
-    throw reportError("Global ID " + toString(GID) + " was not found on this processor.", 1);
+    throw reportError("Global ID " + toString(GID) + " was not found on this image.", 1);
   else if(isContiguous()) 
-    return(GID - getMinMyGID() + getZero()); //compute with offset
+    return(GID - getMinMyGID()); //compute with offset
   else {
     return((ElementSpaceData_->glMap_.find(GID))->second);
 	}
@@ -352,7 +352,7 @@ OrdinalType ElementSpace<OrdinalType>::getLID (OrdinalType GID) const {
 template<typename OrdinalType>
 OrdinalType ElementSpace<OrdinalType>::getGID (OrdinalType LID) const {
   if(!isMyLID(LID))
-    throw reportError("Local ID " + toString(LID) + " was not found on this processor.", 2);
+    throw reportError("Local ID " + toString(LID) + " was not found on this image.", 2);
   else if(isContiguous()) 
     return(LID + getMinMyGID()); //compute with offset
   else {
@@ -430,7 +430,7 @@ bool ElementSpace<OrdinalType>::isSameAs (ElementSpace<OrdinalType> const& Eleme
     return(false);
 
   // If we get this far, we need to check local properties and then check across
-  // all processors to see if local properties are all true
+  // all images to see if local properties are all true
 	
   int mySameSpace = 1;
   if(getNumMyElements() != ElementSpace.getNumMyElements()) 
@@ -440,7 +440,7 @@ bool ElementSpace<OrdinalType>::isSameAs (ElementSpace<OrdinalType> const& Eleme
     if(ElementSpaceData_->lgMap_ != ElementSpace.ElementSpaceData_->lgMap_)
       mySameSpace=0;
 
-  // Now get min of mySameSpace across all processors
+  // Now get min of mySameSpace across all images
   int globalSameSpace = 0;
   comm().minAll(&mySameSpace, &globalSameSpace, 1);
   return(globalSameSpace==1);

@@ -1,16 +1,17 @@
 #ifndef _TPETRA_BLOCKELEMENTSPACE_HPP_
 #define _TPETRA_BLOCKELEMENTSPACE_HPP_
 
+#include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
-#include <Teuchos_RefCountPtr.hpp>
 
 namespace Tpetra {
 
+// forward declaration of BESData
 template<typename OrdinalType> class BlockElementSpaceData;
 
 //! Tpetra::BlockElementSpace: A class for constructing and using template<OrdinalType> BlockElementSpaces.
-/*! BlockElementSpace objects can have variable element sizes. (If variable element sizes are not needed, an ElementSpace object should probably be used instead.) Some BlockElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All BlockElementSpace objects require an ElementSpace object, which requires a Comm object.  
+/*! BlockElementSpace objects can have variable element sizes. (If variable element sizes are not needed, an ElementSpace object should probably be used instead.) Some BlockElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All BlockElementSpace objects require an ElementSpace object, which requires a Comm object. Point IDs are always in the range of [0, elementSize).
 
 BlockElementSpace error codes (positive for non-fatal, negative for fatal):
   <ol>
@@ -136,7 +137,6 @@ Teuchos::RefCountPtr< BlockElementSpaceData<OrdinalType> > BlockElementSpaceData
 
 #include "Tpetra_BlockElementSpaceData.hpp"
 
-
 // begin Tpetra_BlockElementSpace.cpp
 //=======================================================================
 
@@ -253,9 +253,9 @@ void BlockElementSpace<OrdinalType>::getRemoteIDList(OrdinalType numIDs, Ordinal
 //=======================================================================
 template<typename OrdinalType>
 void BlockElementSpace<OrdinalType>::getLocalElementID(OrdinalType pointID, OrdinalType& elementID, OrdinalType& elementOffset) const {
-  pointID -= elementSpace().getIndexBase(); // convert from indexBase-based to zero-based counting.
+  ///pointID -= elementSpace().getIndexBase(); // convert from indexBase-based to zero-based counting.
   if(pointID < 0 || pointID > getNumMyPoints())
-    throw reportError("PointID " + toString(pointID) + " was not found on this processor.", 1);
+    throw reportError("PointID " + toString(pointID) + " was not found on this image.", 1);
   if(isConstantSize()) {
     elementID = pointID / getElementSize();
     elementOffset = pointID % getElementSize();
@@ -281,11 +281,11 @@ OrdinalType BlockElementSpace<OrdinalType>::getElementSize() const {
 template<typename OrdinalType>
 OrdinalType BlockElementSpace<OrdinalType>::getElementSize(OrdinalType LID) const {
   if(elementSpace().isMyLID(LID) == false)
-    throw reportError("Local ID " + toString(LID) + " was not found on this processor.", 2);
+    throw reportError("Local ID " + toString(LID) + " was not found on this image.", 2);
   if(isConstantSize())
     return(getElementSize());
   else {
-    LID -= elementSpace().getIndexBase(); // convert to zero-based counting.
+    ///LID -= elementSpace().getIndexBase(); // convert to zero-based counting.
     return(BlockElementSpaceData_->elementSizeList_[LID]);
   }
 }
@@ -349,8 +349,9 @@ template<typename OrdinalType>
 void BlockElementSpace<OrdinalType>::getFirstPointInElementList(OrdinalType* firstPointInElementList) const {
 	if(firstPointInElementList == 0) 
     throw reportError("This pointer does not have a child allocated.", 4);
-  OrdinalType iB = elementSpace().getIndexBase();
-	firstPointInElementList[0] = iB;
+  ///OrdinalType iB = elementSpace().getIndexBase();
+	///firstPointInElementList[0] = iB;
+	firstPointInElementList[0] = 0;
 	OrdinalType nME = elementSpace().getNumMyElements();
 	for(OrdinalType i = 1; i < nME; i++)
 		firstPointInElementList[i] = firstPointInElementList[i-1] + BlockElementSpaceData_->elementSizeList_[i-1];
@@ -378,7 +379,8 @@ void BlockElementSpace<OrdinalType>::getPointToElementList(OrdinalType* pointToE
     throw reportError("This pointer does not have a child allocated.", 4);
 	OrdinalType currPos = 0;
 	OrdinalType nME = elementSpace().getNumMyElements();
-	OrdinalType currLID = elementSpace().getIndexBase();
+	///OrdinalType currLID = elementSpace().getIndexBase();
+  OrdinalType currLID = 0;
 	OrdinalType currSize;
 	for(OrdinalType i = 0; i < nME; i++) {
 		currSize = BlockElementSpaceData_->elementSizeList_[i];
