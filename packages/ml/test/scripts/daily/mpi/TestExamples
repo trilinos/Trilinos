@@ -28,6 +28,11 @@
 ## NOTE: Those wishing to cusomize this script to run test exe's
 ## that have already been autotool'ed should read lines beginning with '##'
 
+## IMPORTANT: Specify the script owner(s) on the following line
+## For one owner type "owner@abc.com", for multiple owners
+## "owner1@abc.com, owner2@def.com"
+set OWNERS = "jhu@sandia.gov, msala@sandia.gov, rstumin@sandia.gov, mwgee@sandia.gov"
+
 # $1 - Used only for automated testing.  No action required by script owner.
 #      This parameter names the subdirectory from which the script is being
 #      run.  This assists a developer in figuring out which tests failed.
@@ -48,10 +53,7 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     #'file' is a shorter log that is retained even if all tests pass.
     set file = ../../../../log`eval uname`.txt
     rm -f $file
-## IMPORTANT: Specify the script owner(s) on the following line
-## For one owner type "owner@abc.com", for multiple owners
-## "owner1@abc.com, owner2@def.com"
-    echo "msala@sandia.gov, jhu@sandia.gov, rstumin@sandia.gov" >>& $file
+    echo "${OWNERS}" >>& $file
     echo "Script owner(s) is listed on the previous line." >>& $file
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: ML  " >>& $file
