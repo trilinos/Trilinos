@@ -4,35 +4,35 @@
 
 # @HEADER
 # ************************************************************************
-# 
+#
 #            NOX: An Object-Oriented Nonlinear Solver Package
 #                 Copyright (2002) Sandia Corporation
-# 
+#
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2, or (at your option)
 # any later version.
-#   
+#
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-#   
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-# 
+#
 # Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 # (rppawlo@sandia.gov).
-# 
+#
 # ************************************************************************
 # @HEADER
 
 # ------------------------------------------------------------------------
-# Initialization 
+# Initialization
 # ------------------------------------------------------------------------
 
 # This must be the first line in configure.ac.
@@ -61,7 +61,7 @@ AM_CONFIG_HEADER(src/NOX_Config.h:src/NOX_Config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.
-                                                                                
+
 AC_ARG_WITH(install,
  [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
  [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
@@ -263,7 +263,7 @@ AC_MSG_RESULT([${HAVE_PKG_MPI}])
 
 if test -n "${MPI_CXX}"; then
 
-  if test -f ${MPI_CXX}; then   
+  if test -f ${MPI_CXX}; then
     MPI_CXX_EXISTS=yes
   else
     AC_CHECK_PROG(MPI_CXX_EXISTS, ${MPI_CXX}, yes, no)
@@ -374,7 +374,7 @@ case $target in
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
 
     case $CXX in
-      xlC* ) 
+      xlC* )
       CXXFLAGS_MISC="-qnolm -qrtti"
       ;;
     esac
@@ -382,22 +382,22 @@ case $target in
   ;;
 
   # SGI/IRIX test
-  mips-sgi-irix* ) 
+  mips-sgi-irix* )
 
     if test "${CXX}" = "CC"; then
      CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
      F77_MISC=f77
      FFLAGS_MISC="-64"
-     SPECIAL_AR="CC -ar -W,l -W,s -o"    
+     SPECIAL_AR="CC -ar -W,l -W,s -o"
     fi
 
   ;;
 
   # Solaris test
-  sparc-sun-solaris* ) 
+  sparc-sun-solaris* )
 
     if test "${CXX}" = "CC"; then
-     SPECIAL_AR="CC -xar -o"    
+     SPECIAL_AR="CC -xar -o"
     fi
 
   ;;
@@ -431,7 +431,7 @@ else
   # Add on any additional automatically determined flags
   if test -n "${CXXFLAGS_MISC}"; then
     CXXFLAGS="${CXXFLAGS} ${CXXFLAGS_MISC}"
-  fi			  
+  fi
 
   # Print the result
   AC_MSG_RESULT([${CXXFLAGS}])
@@ -450,7 +450,7 @@ else
 
   if test -n "${CFLAGS_MISC}"; then
     CFLAGS="${CFLAGS} ${CFLAGS_MISC}"
-  fi			  
+  fi
 
   AC_MSG_RESULT([${CFLAGS}])
 
@@ -460,7 +460,7 @@ fi
 if test "X${USERDEF_F77}" != "Xyes"; then
   if test -n "${F77_MISC}"; then
     F77="${F77_MISC}"
-  fi			  
+  fi
 fi
 
 # Test for user-defined FFLAGS flags
@@ -475,7 +475,7 @@ else
 
   if test -n "${FFLAGS_MISC}"; then
     FFLAGS="${FFLAGS} ${FFLAGS_MISC}"
-  fi			  
+  fi
 
   AC_MSG_RESULT([${FFLAGS}])
 
@@ -529,7 +529,7 @@ fi
 # STL bug on solaris.
 # Solaris requires a const argument in constructing maps. This is wrong
 # according to the standard!  DEC on the other hand fails if it is const
-# so we have to wrap multimap construction with: 
+# so we have to wrap multimap construction with:
 ###      ifdef MUST_CONST_STL_MAP_KEY
 # for compiling on both solaris and DEC platforms.
 # The following call will set this flag if needed.
@@ -568,15 +568,15 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     CPPFLAGS="${CPPFLAGS} -I${MPI_INC}"
   fi
 
-  AC_LANG([C++]) 
+  AC_LANG([C++])
   AC_MSG_CHECKING(for mpi.h)
   AC_PREPROC_IFELSE(
   [AC_LANG_SOURCE([[#include "mpi.h"]])],
-  [ 
+  [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_MPI,,[define that mpi is being used])
   ],[
-    AC_MSG_RESULT(no)  
+    AC_MSG_RESULT(no)
     echo "---"
     echo "Cannot find header file mpi.h."
     echo "Either compile without mpi (no --with-mpi directives)"
@@ -599,35 +599,35 @@ fi
 # ------------------------------------------------------------------------
 
 #iostream
-AC_LANG([C++]) 
+AC_LANG([C++])
 AC_CHECK_HEADERS(
-[iostream iostream.h], 
-break, 
+[iostream iostream.h],
+break,
 AC_MSG_NOTICE([You do not appear to have iostream nor iostream.h!!]))
 
 #iomanip
-AC_LANG([C++]) 
+AC_LANG([C++])
 AC_CHECK_HEADERS(
 [iomanip iomanip.h],
 break,
 AC_MSG_NOTICE([You do not appear to have iomanip nor iomanip.h!!]))
 
 #cmath
-AC_LANG([C++]) 
+AC_LANG([C++])
 AC_CHECK_HEADERS(
 [cmath math.h],
 break,
 AC_MSG_NOTICE([You do not appear to have cmath nor math.h!!]))
 
 #cstdlib
-AC_LANG([C++]) 
+AC_LANG([C++])
 AC_CHECK_HEADERS(
 [cstdlib stdlib.h],
 break,
 AC_MSG_NOTICE([You do not appear to have cstdlib nor stdlib.h!!]))
 
 # can we say using std::ostream?
-AC_LANG([C++]) 
+AC_LANG([C++])
 AC_MSG_CHECKING(whether "using std::ostream" is okay)
 AC_COMPILE_IFELSE(
 [
@@ -638,17 +638,17 @@ AC_COMPILE_IFELSE(
 #elif defined(HAVE_IOSTREAM_H)
 #include <iostream.h>
 #endif
-  ]], 
+  ]],
   [[using std::ostream;]])
 ],
 [AC_MSG_RESULT(yes)],
 [
-  AC_MSG_RESULT(no)  
+  AC_MSG_RESULT(no)
   AC_DEFINE(NO_USING_STD_OSTREAM,1,[define if "using std::ostream" is not okay])
 ])
 
 # ------------------------------------------------------------------------
-# Determine if nox is being built as part of Trilinos or as a stand-alone 
+# Determine if nox is being built as part of Trilinos or as a stand-alone
 # package.  This will affect the default settings such as building loca.
 # ------------------------------------------------------------------------
 AC_ARG_WITH(trilinos,
@@ -667,20 +667,12 @@ BUILD_ANY_EXAMPLES=no
 
 AC_DEFUN([NOX_INTERFACE],
 [
-  # Set the default value by checking if other trilinos
-  # libraries are being built.
-  AC_ARG_ENABLE($1,
-  [AC_HELP_STRING([--enable-$1],[compile $1 interface libraries])],
-  [DEFAULT_ADDON_$1=$enableval],
-  [DEFAULT_ADDON_$1=no]
-  )
-
   AC_ARG_ENABLE(nox-$1,
   [AC_HELP_STRING([--enable-nox-$1],[compile $1 interface libraries])],
   [ADDON_$1=$enableval],
-  [ADDON_$1=${DEFAULT_ADDON_$1}]
+  [ADDON_$1=no]
   )
-  
+
   AC_ARG_ENABLE(nox-$1-examples,
   [AC_HELP_STRING([--enable-nox-$1-examples],[compile $1 interface examples])],
   [ADDON_$1_EXAMPLES=${enableval}],
@@ -747,7 +739,7 @@ AM_CONDITIONAL(BUILD_BELOS_EXAMPLES, test X${ADDON_belos_EXAMPLES} = Xyes)
 # ------------------------------------------------------------------------
 # If inside trilinos, the default is to build loca.  If not,
 # the default is not to build it.
-# We also must turn off loca builds if inside trilinos and 
+# We also must turn off loca builds if inside trilinos and
 # --disable-default-packages is set.
 AC_ARG_ENABLE([default-packages],
 AC_HELP_STRING([--enable-default-packages, flag in trilinos to Turn off default packages including nox and loca]),
@@ -929,7 +921,7 @@ else
 fi
 
 # ------------------------------------------------------------------------
-# Checks for building loca lapack examples 
+# Checks for building loca lapack examples
 # ------------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether we should build the loca-lapack examples)
@@ -955,7 +947,7 @@ else
 fi
 
 # ------------------------------------------------------------------------
-# Checks for building loca epetra examples 
+# Checks for building loca epetra examples
 # ------------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether we should build the loca-epetra examples)
@@ -980,9 +972,9 @@ fi
 
       AC_MSG_CHECKING(whether we should build the loca $1 regression tests)
       if test X${BUILD_LIBLOCA} = Xyes; then
-	ADDON_loca_$1_TESTS=yes	
+	ADDON_loca_$1_TESTS=yes
         AC_MSG_RESULT(yes)
-      else 
+      else
 	ADDON_loca_$1_TESTS=no
         AC_MSG_RESULT(no)
       fi
@@ -993,7 +985,7 @@ fi
       AC_MSG_CHECKING(whether we should build the loca $1 regression tests)
       AC_MSG_RESULT(no)
       ADDON_loca_$1_TESTS=no
-    fi  
+    fi
 
     if test X${ADDON_$1_TESTS} = Xyes; then
       BUILD_ANY_EXAMPLES=yes
@@ -1002,12 +994,12 @@ fi
   ])
 
   # See if testing is enabled
-  # We 
+  # We
   AC_MSG_CHECKING(whether we should build the regression tests)
   AC_ARG_ENABLE(nox-tests,
   [AC_HELP_STRING([--enable-nox-tests],[compile regression tests, over-rides the trilinos flag "--enable-tests" so that nox tests can be built separately from other trilinos package tests])],
   [ADDON_TESTS=$enableval],
-  [  
+  [
      AC_ARG_ENABLE(tests,
      [AC_HELP_STRING([--enable-tests],[compile regression tests, will be ignored if "--enable-nox-tests" is specified])],
      [ADDON_TESTS=$enableval],
@@ -1023,7 +1015,7 @@ fi
   AM_CONDITIONAL(BUILD_LOCA_LAPACK_TESTS, test X${ADDON_loca_lapack_TESTS} = Xyes)
   AC_SUBST(ADDON_lapack_TESTS)
   AC_SUBST(ADDON_loca_lapack_TESTS)
- 
+
   # epetra testing
   NOX_TESTING(epetra)
   AM_CONDITIONAL(BUILD_EPETRA_TESTS, test X${ADDON_epetra_TESTS} = Xyes)
@@ -1075,9 +1067,9 @@ AM_CONDITIONAL(BUILD_LIBLOCAMF, test X${BUILD_LOCA_MF_SUPPORT} = Xyes)
 # Check for MPI library
 # ------------------------------------------------------------------------
 
-if test "X${HAVE_PKG_MPI}" = "Xyes"; then 
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
 
-  if  test X${ADDON_epetra_TESTS} = Xyes || 
+  if  test X${ADDON_epetra_TESTS} = Xyes ||
       test X${ADDON_epetra_EXAMPLES} = Xyes; then
 
     if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
@@ -1096,12 +1088,12 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
       LIBS="${MPI_LIBS} ${LIBS}"
     fi
 
-    AC_LANG([C++]) 
+    AC_LANG([C++])
     AC_MSG_CHECKING(whether MPI will link using C++ compiler)
     AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([[#include <mpi.h>]], [[int c; char** v; MPI_Init(&c,&v);]])],
     [AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)  
+    [AC_MSG_RESULT(no)
      echo "-----"
      echo "Cannot link simple MPI program."
      echo "Try --with-mpi-cxx to specify MPI C++ compile script."
@@ -1245,9 +1237,9 @@ ABS_TRILINOS_CPPFLAGS=
 
 # Determine if anything needs to be added to REL/ABS_TRILINOS_FLAGS.
 # Does not modify CPPFLAGS.
-# TRILINOS_HEADER now takes three arguments: 
+# TRILINOS_HEADER now takes three arguments:
 # TRILINOS_HEADER(<library name>,<file name>,<subdirectory>)
-# This is needed for multiple libraries being supplied by the 
+# This is needed for multiple libraries being supplied by the
 # same trilinos package (anasazi).
 AC_DEFUN([TRILINOS_HEADER],
 [
@@ -1287,7 +1279,7 @@ AC_DEFUN([TRILINOS_HEADER],
       ABS_TRILINOS_CPPFLAGS="-I${$1_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
     ],[])
     CPPFLAGS=$save_CPPFLAGS
-  fi   
+  fi
 
   # Next try the Trilinos build dir
   if test $done = no; then
@@ -1307,7 +1299,7 @@ AC_DEFUN([TRILINOS_HEADER],
       ABS_TRILINOS_CPPFLAGS="-I../$1/$3 ${ABS_TRILINOS_CPPFLAGS}"
     ],[])
     CPPFLAGS=$save_CPPFLAGS
-  fi   
+  fi
 
   # Next try the Trilinos source dir
   if test $done = no && test -n "$srcdir"; then
@@ -1325,9 +1317,9 @@ AC_DEFUN([TRILINOS_HEADER],
   ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../$1/$3 ${REL_TRILINOS_CPPFLAGS}"
       ABS_TRILINOS_CPPFLAGS="-I$srcdir/../$1/$3 ${ABS_TRILINOS_CPPFLAGS}"
-    ],[])					       
+    ],[])
     CPPFLAGS=$save_CPPFLAGS
-  fi   
+  fi
 
   if test $done = no; then
     echo "------"
@@ -1336,7 +1328,7 @@ AC_DEFUN([TRILINOS_HEADER],
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
     AC_MSG_ERROR([Cannot find $1 include directory containing $2])
-  fi 
+  fi
 ])
 
 if test X${ADDON_epetra} = Xyes; then
@@ -1349,6 +1341,8 @@ if test X${ADDON_epetra} = Xyes; then
   TRILINOS_HEADER(aztecoo,AztecOO_StatusType.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_config.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h,src)
+
+  REQUIRE_TEUCHOS=yes
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
@@ -1373,8 +1367,6 @@ if test X${ADDON_epetra} = Xyes; then
     TRILINOS_HEADER(ml,ml_solver.h,src/Smoother)
     TRILINOS_HEADER(ml,ml_viz_stats.h,src/Main)
     TRILINOS_HEADER(ml,ml_krylov.h,src/Krylov)
-    TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
-    TRILINOS_HEADER(teuchos,Teuchos_Flops.hpp,src)
     TRILINOS_HEADER(triutils,Trilinos_Util_CommandLineParser.h,src)
     TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
   fi
@@ -1398,7 +1390,7 @@ fi
 if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
   TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
   TRILINOS_HEADER(anasazi,AnasaziReturnType.hpp,src)
-  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"	
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 fi
 
 AC_SUBST(MF_INCDIR)
@@ -1409,9 +1401,9 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # Checks for Trilinos libraries
 # ------------------------------------------------------------------------
 
-# TRILINOS_LIB_CHECK now takes three arguments: 
+# TRILINOS_LIB_CHECK now takes three arguments:
 # TRILINOS_LIB_CHECK(<library name>,<package name>,<subdirectory>)
-# This is needed for multiple libraries being supplied by the 
+# This is needed for multiple libraries being supplied by the
 # same trilinos package (anasazi).
 AC_DEFUN([TRILINOS_LIB_CHECK],
 [
@@ -1419,8 +1411,8 @@ AC_DEFUN([TRILINOS_LIB_CHECK],
   save_LDFLAGS=$LDFLAGS
   done=no
 
-  # First, see if we're inside Trilinos. 
-  # If so, just assume the libraries will be built later. 
+  # First, see if we're inside Trilinos.
+  # If so, just assume the libraries will be built later.
   if test X$INSIDE_TRILINOS = Xyes; then
     PWD=`pwd`
     LDFLAGS="-L$PWD/../$2/$3 $save_LDFLAGS"
@@ -1438,17 +1430,17 @@ AC_DEFUN([TRILINOS_LIB_CHECK],
    if test $done = no && test -n "${$1_LIBDIR}"; then
      LDFLAGS="-L${$1_LIBDIR} $save_LDFLAGS"
      AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
-   fi   
+   fi
 
   # Next try the Trilinos build dir
    if test $done = no; then
     PWD=`pwd`
     LDFLAGS="-L$PWD/../$2/$3 $save_LDFLAGS"
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
-   fi   
+   fi
 
   AC_MSG_CHECKING([for $1 library])
-  
+
   if test $done = auto; then
     AC_MSG_RESULT(no check - assuming library will be built by Trilinos)
   elif test $done = yes; then
@@ -1461,18 +1453,20 @@ AC_DEFUN([TRILINOS_LIB_CHECK],
     echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
     echo "------"
     AC_MSG_ERROR([Cannot find $1 library.])
-  fi 
+  fi
 
 ])
 
 #
 # We have to be careful about the order we do these checks in, since this
-# determins the order in which the libraries appear on the link line.
+# determines the order in which the libraries appear on the link line.
 # TRILINOS_LIB_CHECK prepends each library to LIBS, so we have to do the
 # checks in the opposite order
 #
 
-if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
+if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes ||
+   test X${ADDON_epetra_EXAMPLES} = Xyes ||
+   test X${ADDON_epetra_TESTS} = Xyes; then
   REQUIRE_TEUCHOS=yes
 fi
 
@@ -1591,14 +1585,14 @@ AC_DEFUN([PETSC_LIB_CHECK],
      AC_MSG_RESULT([yes (${PETSC_BOPT})])
   else
      AC_MSG_ERROR([Cannot find PETSC_BOPT environment variable. Please define.])  fi
-  
+
   AC_MSG_CHECKING(whether PETSC_DIR is defined)
   if test -n "${PETSC_DIR}"; then
      AC_MSG_RESULT([yes (${PETSC_DIR})])
   else
      AC_MSG_ERROR([Cannot find PETSC_DIR environment variable. Please define.])
   fi
-  
+
   AC_MSG_CHECKING(for $1)
   if test -n "${$1_LIBDIR}" && test -f ${$1_LIBDIR}/lib$1.a; then
     LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
@@ -1609,15 +1603,15 @@ AC_DEFUN([PETSC_LIB_CHECK],
   else
     AC_MSG_RESULT(no)
     AC_MSG_ERROR([Cannot find $1 library])
-  fi   
+  fi
 
   LIBS="-l$1 ${LIBS}"
-    
+
 ])
-    
+
 if test X${ADDON_petsc_EXAMPLES} = Xyes ||
    test X${ADDON_petsc_TESTS} = Xyes; then
-  
+
   # Check for petsc
   PETSC_LIB_CHECK(petsc)
 
@@ -1644,10 +1638,10 @@ fi
 # ------------------------------------------------------------------------
 
 ## RPP: 5/23/2003 - CXXREPOS is not standard.  All of Trilinos uses
-##                  the flag TRILINOS_TEMPLATE_OBJECTS instead 
-##                  of CXXREPOS.  I added the check for 
+##                  the flag TRILINOS_TEMPLATE_OBJECTS instead
+##                  of CXXREPOS.  I added the check for
 ##                  TRILINOS_TEMPLATE_OBJECTS to be consistent
-##                  with the rest of trilinos (otherwise trilinos 
+##                  with the rest of trilinos (otherwise trilinos
 ##                  users must set redundant flags when configuring).
 AC_MSG_CHECKING([for trilinos template-specific object files to be linked])
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
@@ -1725,7 +1719,7 @@ AC_SUBST(MPI_LIBS)
 # ------------------------------------------------------------------------
 
 AC_CONFIG_FILES([
-		Makefile 
+		Makefile
 		doc/Makefile
 		doc/Doxyfile
 		src/Makefile
@@ -1733,8 +1727,8 @@ AC_CONFIG_FILES([
 		example-lapack/Makefile
 		src-tsf/Makefile
 		example-tsf/Makefile
-		src-epetra/Makefile 
-		example-epetra/Makefile 
+		src-epetra/Makefile
+		example-epetra/Makefile
 		example-epetra/DS6.5.1/Makefile
 		example-epetra/1Dfem_linear/Makefile
 		example-epetra/1Dfem_nonlinear/Makefile
