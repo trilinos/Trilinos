@@ -64,10 +64,10 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 <li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
 
 <li> Zoltan Tools: Primarily tools for generation of repartitioned Epetra objects using
-     the Zoltan library..
+     the Zoltan library.
      
-<li> Matlab: Allows the export of Epetra objects to Matlab and allows commands to be sent to Matlab
-     to operate on those objects within the Matlab workspace.
+<li> Matlab: Communication interface between Epetra and Matlab.  Exports Epetra objects to Matlab and imports objects from Matlab.
+     Sends user specified Matlab commands to the Matlab engine to modify the Matlab workspace which provides user interaction with the Matlab engine.
 
 </ul>
      
