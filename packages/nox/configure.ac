@@ -535,6 +535,36 @@ AC_TRY_COMPILE(
 ]
 )
 
+#cstdlib
+
+# Note that the check for cmath had to be changed from AC_TRY_CPP to
+# AC_TRY_COMPILE to accomodate the TFLOPS cross-compilation.
+
+AC_LANG_CPLUSPLUS 
+AC_MSG_CHECKING(for cstdlib)
+AC_TRY_COMPILE(
+[#include <cstdlib>],
+[],
+[
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_CSTDLIB,,[define if we can include <cstdlib>])
+], 
+[
+  AC_MSG_RESULT(no)
+  AC_MSG_CHECKING([for stdlib.h])
+  AC_TRY_CPP([#include "stdlib.h"],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_STDLIB_H,,[define if we can include <stdlib.h>])
+  ], 
+  [
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([You do not appear to have cstdlib nor stdlib.h!!])
+  ]
+  )
+]
+)
+
 # can we say using std::ostream?
 AC_LANG_CPLUSPLUS 
 AC_MSG_CHECKING(whether "using std::ostream" is okay)

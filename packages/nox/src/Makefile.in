@@ -284,11 +284,13 @@ STATUSTEST = \
 
 
 UTILS_H = \
-	$(srcdir)/NOX_Utils.H 
+	$(srcdir)/NOX_Utils.H \
+	$(srcdir)/NOX_Random.H
 
 
 UTILS = \
-	$(srcdir)/NOX_Utils.C
+	$(srcdir)/NOX_Utils.C \
+	$(srcdir)/NOX_Random.C
 
 
 
@@ -347,7 +349,8 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 	NOX_StatusTest_NormUpdate.$(OBJEXT) \
 	NOX_StatusTest_Combo.$(OBJEXT) \
 	NOX_StatusTest_MaxIters.$(OBJEXT) \
-	NOX_StatusTest_NormWRMS.$(OBJEXT) NOX_Utils.$(OBJEXT)
+	NOX_StatusTest_NormWRMS.$(OBJEXT) NOX_Utils.$(OBJEXT) \
+	NOX_Random.$(OBJEXT)
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_OBJECTS = \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_Tensor.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Solver_TensorBased.$(OBJEXT) \
@@ -383,6 +386,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Secant.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Random.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_LineSearchBased.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_TensorBased.Po \
@@ -507,6 +511,7 @@ NOX_StatusTest_Combo.$(OBJEXT): $(srcdir)/NOX_StatusTest_Combo.C
 NOX_StatusTest_MaxIters.$(OBJEXT): $(srcdir)/NOX_StatusTest_MaxIters.C
 NOX_StatusTest_NormWRMS.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormWRMS.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
+NOX_Random.$(OBJEXT): $(srcdir)/NOX_Random.C
 NOX_Direction_Tensor.$(OBJEXT): $(srcdir)/NOX_Direction_Tensor.C
 NOX_Solver_TensorBased.$(OBJEXT): $(srcdir)/NOX_Solver_TensorBased.C
 NOX_LineSearch_Quadratic.$(OBJEXT): $(srcdir)/NOX_LineSearch_Quadratic.C
@@ -545,6 +550,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Secant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_LineSearchBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_TensorBased.Po@am__quote@
@@ -883,6 +889,18 @@ NOX_Utils.obj: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Utils.Po' tmpdepfile='$(DEPDIR)/NOX_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Utils.obj `cygpath -w $(srcdir)/NOX_Utils.C`
+
+NOX_Random.o: $(srcdir)/NOX_Random.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Random.C' object='NOX_Random.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Random.Po' tmpdepfile='$(DEPDIR)/NOX_Random.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Random.o `test -f $(srcdir)/NOX_Random.C || echo '$(srcdir)/'`$(srcdir)/NOX_Random.C
+
+NOX_Random.obj: $(srcdir)/NOX_Random.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Random.C' object='NOX_Random.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Random.Po' tmpdepfile='$(DEPDIR)/NOX_Random.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Random.obj `cygpath -w $(srcdir)/NOX_Random.C`
 
 NOX_Direction_Tensor.o: $(srcdir)/NOX_Direction_Tensor.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Tensor.C' object='NOX_Direction_Tensor.o' libtool=no @AMDEPBACKSLASH@

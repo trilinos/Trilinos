@@ -31,6 +31,21 @@
 //@HEADER
 
 #include "NOX_Abstract_Vector.H"
+#include "NOX_Common.H"
+
+NOX::Abstract::Vector& NOX::Abstract::Vector::random() 
+{
+  cerr << "NOX::Abstract::Vector::random() function not implemented" << endl;
+  throw "NOX Error";
+  return *this;
+}
+
+NOX::Abstract::Vector& NOX::Abstract::Vector::setSeed(double s) 
+{
+  cerr << "NOX::Abstract::Vector::setSeed() function not implemented" << endl;
+  throw "NOX Error";
+  return *this;
+}
 
 void NOX::Abstract::Vector::print() const
 {

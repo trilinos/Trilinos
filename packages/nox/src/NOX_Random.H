@@ -30,65 +30,51 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_COMMON_H
-#define NOX_COMMON_H
+#ifndef NOX_RANDOM_H
+#define NOX_RANDOM_H
 
-#ifdef HAVE_CONFIG_H
-#include "NOX_Config.h"
-#endif
+namespace NOX {
 
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#elif defined(HAVE_IOSTREAM_H)
-#include <iostream.h>
-#else
-// Try to include it anyway
-#include <iostream>
-#endif
+  /*!
+    \brief A class to compute uniformly distributed random numbers in (-1,1).
+  */
+  /*!
+    The %Random class computes pseudo-random (double precision) numbers 
+    uniformly distributed between -1.0 and 1.0 using a multiplicative
+    congruential generator with modulus 2^31-1.
+  */
+  class Random {
+  public:
+    //! Initialize random number generator with a random seed.
+    /*! The random seed is computed using the POSIX rand() function. */
+    Random();
 
-#ifdef HAVE_IOMANIP
-#include <iomanip>
-#elif defined(HAVE_IOMANIP_H)
-#include <iomanip.h>
-#else
-// Try to include it anyway
-#include <iomanip>
-#endif
+    //! Initialize random number generator with the given seed
+    Random(double s);
 
-#ifdef HAVE_CMATH
-#include <cmath>
-#elif defined(HAVE_MATH_H)
-#include <math.h>
-#else
-// Try to include it anyway
-#include <math.h>
-#endif
+    //! Set the seed to s
+    void setSeed(double s);
+      
+    //! Compute a random number
+    double operator() ();
 
-#ifdef HAVE_CSTDLIB
-#include <cstdlib>
-#elif defined(HAVE_STDLIB_H)
-#include <stdlib.h>
-#else
-// Try to include it anyway
-#include <stdlib.h>
-#endif
+  protected:
+      
+    //! Seed value
+    double seed;
 
-#include <string>
-#include <vector>
-#include <map>
-#include <deque>
-#include <algorithm>
+    //! Quantity used by random number generator
+    static const double a = 16807.0;
 
-using namespace std;
+    //! Quantity used by random number generator
+    static const double bigInt = 2147483647.0;
 
-// Some compilers don't like this - particularly DEC!
-// Others require it - particularily AIX!
-#ifndef NO_USING_STD_OSTREAM
-using std::ostream;
-#endif
+    //! Quantity used by random number generator
+    static const double dbleOne = 1.0;
 
-using std::map;
-using std::vector;
+    //! Quantity used by random number generator
+    static const double dbleTwo = 2.0;
+  };
 
-
+}
 #endif

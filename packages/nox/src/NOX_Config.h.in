@@ -17,6 +17,9 @@
 /* define if we can include <cmath> */
 #undef HAVE_CMATH
 
+/* define if we can include <cstdlib> */
+#undef HAVE_CSTDLIB
+
 /* define if we can include <iomanip> */
 #undef HAVE_IOMANIP
 
@@ -37,6 +40,9 @@
 
 /* define that mpi is being used */
 #undef HAVE_MPI
+
+/* define if we can include <stdlib.h> */
+#undef HAVE_STDLIB_H
 
 /* define if "using std::ostream" is okay */
 #undef NO_USING_STD_OSTREAM

@@ -30,65 +30,26 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_COMMON_H
-#define NOX_COMMON_H
+#include "NOX_Random.H"
+#include "NOX_Common.H"
 
-#ifdef HAVE_CONFIG_H
-#include "NOX_Config.h"
-#endif
+NOX::Random::Random() 
+{
+  seed = rand();
+}
 
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#elif defined(HAVE_IOSTREAM_H)
-#include <iostream.h>
-#else
-// Try to include it anyway
-#include <iostream>
-#endif
+NOX::Random::Random(double s) :
+  seed(s)
+{
+}
 
-#ifdef HAVE_IOMANIP
-#include <iomanip>
-#elif defined(HAVE_IOMANIP_H)
-#include <iomanip.h>
-#else
-// Try to include it anyway
-#include <iomanip>
-#endif
+void NOX::Random::setSeed(double s)
+{
+  seed = s;
+}
 
-#ifdef HAVE_CMATH
-#include <cmath>
-#elif defined(HAVE_MATH_H)
-#include <math.h>
-#else
-// Try to include it anyway
-#include <math.h>
-#endif
-
-#ifdef HAVE_CSTDLIB
-#include <cstdlib>
-#elif defined(HAVE_STDLIB_H)
-#include <stdlib.h>
-#else
-// Try to include it anyway
-#include <stdlib.h>
-#endif
-
-#include <string>
-#include <vector>
-#include <map>
-#include <deque>
-#include <algorithm>
-
-using namespace std;
-
-// Some compilers don't like this - particularly DEC!
-// Others require it - particularily AIX!
-#ifndef NO_USING_STD_OSTREAM
-using std::ostream;
-#endif
-
-using std::map;
-using std::vector;
-
-
-#endif
+double NOX::Random::operator() ()
+{
+  seed = fmod(a*seed, bigInt);
+  return dbleTwo*(seed/bigInt)-dbleOne;
+}

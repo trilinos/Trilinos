@@ -195,10 +195,12 @@ STATUSTEST = \
         $(srcdir)/NOX_StatusTest_NormWRMS.C
 
 UTILS_H = \
-	$(srcdir)/NOX_Utils.H 
+	$(srcdir)/NOX_Utils.H \
+	$(srcdir)/NOX_Random.H
 
 UTILS = \
-	$(srcdir)/NOX_Utils.C
+	$(srcdir)/NOX_Utils.C \
+	$(srcdir)/NOX_Random.C
 
 
 # ------------------------------------------------------------------------

@@ -85,6 +85,12 @@ public:
   /*! \f[ x_i = \alpha \quad \mbox{for } i=1,\dots,n \f] */
   virtual NOX::Abstract::Vector& init(double gamma) = 0;
 
+  //! Initialize every element of this vector with random values
+  virtual NOX::Abstract::Vector& random();
+
+  //! Set seed for random number generator
+  virtual NOX::Abstract::Vector& setSeed(double s);
+
   //! Put element-wise absolute values of source vector \c y into this vector.
   /*! \f[ x_i = | y_i | \quad \mbox{for } i=1,\dots,n \f] */
   virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y) = 0;
