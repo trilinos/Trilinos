@@ -128,8 +128,8 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 
   // Get the linear solve tolerance if doing ared/pred
   if (convCriteria == AredPred) {
-    double eta_original = p.sublist("Direction").sublist("Linear Solver").getParameter("Tolerance", -1.0);
-    double eta = eta_original;
+    eta_original = p.sublist("Direction").sublist("Linear Solver").getParameter("Tolerance", -1.0);
+    eta = eta_original;
   }
 
   // Compute the convergence criteria for the line search 
