@@ -64,18 +64,21 @@ public:
   /** @name "Compute" functions. */
   //@{
 
-  virtual const Abstract::Vector& computeX(const Group& grp, const Vector& d, double step);
+  virtual bool computeX(const Group& grp, 
+			const Vector& d, 
+			double step);
   //! See above.
-  virtual const Abstract::Vector& computeX(const Abstract::Group& grp,
-					   const Abstract::Vector& d, double step);
+  virtual bool computeX(const Abstract::Group& grp,
+			const Abstract::Vector& d, 
+			double step);
 
-  virtual const Abstract::Vector& computeRHS();
+  virtual bool computeRHS();
 
-  virtual void computeJacobian();
+  virtual bool computeJacobian();
 
-  virtual const Abstract::Vector& computeGrad();
+  virtual bool computeGrad();
 
-  virtual const Abstract::Vector& computeNewton(Parameter::List& params);
+  virtual bool computeNewton(Parameter::List& params);
 
   //@}
 

@@ -66,21 +66,21 @@ public:
   //@{ \name "Compute" functions.
 
   //! Compute and return solution vector, x, where this.x = grp.x() + step * d.
-  virtual const Vector& computeX(const Group& grp, const Vector& d, double step) = 0;
-
-  //! Compute Jacobian.
-  virtual void computeJacobian() = 0;
+  virtual bool computeX(const Group& grp, const Vector& d, double step) = 0;
 
   //! Compute and return RHS. (Usually also computes and stores norm of RHS.)
-  virtual const Vector& computeRHS() = 0;
+  virtual bool computeRHS() = 0;
+
+  //! Compute Jacobian.
+  virtual bool computeJacobian() = 0;
 
   //! Compute and return gradient.
   //! Throws an error if RHS and Jacobian have not been computed.
-  virtual const Vector& computeGrad() = 0;
+  virtual bool computeGrad() = 0;
 
   //! Compute and return Newton direction, using parameters for nonlinear solve.
   //! Throws an error if RHS and Jacobian have not been computed.
-  virtual const Vector& computeNewton(Parameter::List& params) = 0;
+  virtual bool computeNewton(Parameter::List& params) = 0;
 
   //@}
 

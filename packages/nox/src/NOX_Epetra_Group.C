@@ -80,7 +80,7 @@ Group::Group(const Group& source, CopyType type) :
 
   default:
     cerr << "ERROR: Invalid ConstructorType for group copy constructor." << endl;
-    throw;
+    throw "NOX Error";
   }
 
 }
@@ -141,7 +141,7 @@ Abstract::Group& Group::operator=(const Group& source)
   return *this;
 }
 
-const Abstract::Vector& Group::computeX(const Abstract::Group& grp, 
+bool Group::computeX(const Abstract::Group& grp, 
 					const Abstract::Vector& d, 
 					double step) 
 {
@@ -151,53 +151,58 @@ const Abstract::Vector& Group::computeX(const Abstract::Group& grp,
   return computeX(epetragrp, epetrad, step); 
 }
 
-const Abstract::Vector& Group::computeX(const Group& grp, const Vector& d, double step) 
+bool Group::computeX(const Group& grp, const Vector& d, double step) 
 {
   resetIsValid();
   xVector.update(1.0, grp.xVector, step, d);
-  return xVector;
+  return true;
 }
 
-const Abstract::Vector& Group::computeRHS() 
+bool Group::computeRHS() 
 {
   if (isRHS())
-    return RHSVector;
+    return true;
 
+  // Need to add a check here to find out if computing the RHS was successful.
   interface.computeRHS(xVector.getEpetraVector(), RHSVector.getEpetraVector());
+
   normRHS = RHSVector.norm();
   isValidRHS = true;
-  return RHSVector;
+  return true;
 }
 
-void Group::computeJacobian() 
+bool Group::computeJacobian() 
 {
   // Skip if the Jacobian is already valid
   if (isJacobian())
-    return;
+    return true;
 
   // Take ownership of the Jacobian and get a reference
   Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian(this);
 
   // Fill the Jacobian
+  // Need to add a check here to find out if computing the Jacobian was successful.
   interface.computeJacobian(xVector.getEpetraVector(), Jacobian);
 
   // Update status
   isValidJacobian = true;
+
+  return true;
 }
 
-const Abstract::Vector& Group::computeGrad() 
+bool Group::computeGrad() 
 {
   if (isGrad())
-    return gradVector;
+    return true;
   
   if (!isRHS()) {
-    cout << "ERROR: Group::computeGrad() - RHS is out of date wrt X!" << endl;
-    throw;
+    cerr << "ERROR: NOX::Epetra::Group::computeGrad() - RHS is out of date wrt X!" << endl;
+    throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cout << "ERROR: Group::computeGrad() - Jacobian is out of date wrt X!" << endl;
-    throw;
+    cerr << "ERROR: NOX::Epetra::Group::computeGrad() - Jacobian is out of date wrt X!" << endl;
+    throw "NOX Error";
   }
   
   // Get a reference to the Jacobian (it's validity was checked above)
@@ -211,22 +216,22 @@ const Abstract::Vector& Group::computeGrad()
   isValidGrad = true;
 
   // Return result
-  return gradVector;
+  return true;
 }
 
-const Abstract::Vector& Group::computeNewton(NOX::Parameter::List& p) 
+bool Group::computeNewton(NOX::Parameter::List& p) 
 {
   if (isNewton())
-    return NewtonVector;
+    return true;
 
   if (!isRHS()) {
-    cout << "ERROR: computeNewton() - RHS is out of date wrt X!" << endl;
-    throw;
+    cerr << "ERROR: NOX::Epetra::Group::computeNewton() - invalid RHS" << endl;
+    throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cout << "ERROR: computeNewton() - Jacobian is out of date wrt X!" << endl;
-    throw;
+    cerr << "ERROR: NOX::Epetra::Group::computeNewton() - invalid Jacobian" << endl;
+    throw "NOX Error";
   }
   
   // Get the Jacobian 
@@ -259,7 +264,7 @@ const Abstract::Vector& Group::computeNewton(NOX::Parameter::List& p)
   isValidNewton = true;
 
   // Return solution
-  return NewtonVector;
+  return true;
 }
 
 bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
@@ -338,21 +343,41 @@ const Abstract::Vector& Group::getX() const
 
 const Abstract::Vector& Group::getRHS() const 
 {  
+  if (!isRHS()) {
+    cerr << "ERROR: NOX::Epetra::Group::getRHS() - invalid RHS" << endl;
+    throw "NOX Error";
+  }
+    
   return RHSVector;
 }
 
 double Group::getNormRHS() const
 {
+  if (!isRHS()) {
+    cerr << "ERROR: NOX::Epetra::Group::getNormRHS() - invalid RHS" << endl;
+    throw "NOX Error";
+  }
+    
   return normRHS;
 }
 
 const Abstract::Vector& Group::getGrad() const 
 { 
+  if (!isGrad()) {
+    cerr << "ERROR: NOX::Epetra::Group::getGrad() - invalid gradient" << endl;
+    throw "NOX Error";
+  }
+    
   return gradVector;
 }
 
 const Abstract::Vector& Group::getNewton() const 
 {
+  if (!isNewton()) {
+    cerr << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << endl;
+    throw "NOX Error";
+  }
+    
   return NewtonVector;
 }
 
