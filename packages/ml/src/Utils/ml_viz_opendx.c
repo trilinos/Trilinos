@@ -35,7 +35,7 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] += offsets[comm->ML_mypid];
   
-  return;
+  return 0;
   
 } /* ML_DecomposeGraph_LocalToGlobal */
 
@@ -52,7 +52,7 @@ int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
 
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] -= offsets[comm->ML_mypid];
-  return;
+  return 0;
   
 } /* ML_DecomposeGraph_LocalToGlobal */
 
@@ -91,7 +91,7 @@ int ML_DecomposeGraph_ConvertToDouble(ML_Operator *Amatrix,
 				     graph_decomposition );
   }
 
-  return;
+  return 0;
   
 } /* ML_DecomposeGraph_ConvertToDouble */
 
@@ -314,6 +314,6 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
   
-  return;
+  return 0;
   
 } /* ML_VisualizeWithOpenDX */
