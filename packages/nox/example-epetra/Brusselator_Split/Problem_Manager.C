@@ -133,13 +133,20 @@ bool Problem_Manager::solve()
 
   // Now do the decoupled solve
   int iter = 0;
+  NOX::StatusTest::StatusType status;
 
   while( normSum > 1.e-5 ) // Hard-coded convergence criterion for now.
   {
     iter++;
 
     solverA.reset(grpA, *statusTest, *nlParams);
-    solverA.solve();
+    status = solverA.solve();
+    if( status != NOX::StatusTest::Converged )
+    { 
+      if (MyPID==0)
+        cout << "\nRegistered Problem A failed to converge !!"  << endl;
+      exit(0);
+    }
 
     // Extract and use final solution
     const NOX::Epetra::Group& finalGroupA =
@@ -149,7 +156,13 @@ bool Problem_Manager::solve()
 
     problemB.setAuxillarySolution(finalSolutionA);
     solverB.reset(grpB, *statusTest, *nlParams);
-    solverB.solve();
+    status = solverB.solve();
+    if( status != NOX::StatusTest::Converged )
+    { 
+      if (MyPID==0)
+        cout << "\nRegistered Problem B failed to converge !!"  << endl;
+      exit(0);
+    }
 
     // Extract and use final solution
     const NOX::Epetra::Group& finalGroupB =
@@ -266,10 +279,12 @@ bool Problem_Manager::solveMF()
 
   NOX::Solver::Manager solver(grp, *statusTest, *nlParams);
   NOX::StatusTest::StatusType status = solver.solve();
-
-  if (status != NOX::StatusTest::Converged)
+  if( status != NOX::StatusTest::Converged )
+  { 
     if (MyPID==0)
-      cout << "Nonlinear solver failed to converge!" << endl;
+      cout << "\nMatrix-Free coupled Problem failed to converge !!"  << endl;
+    exit(0);
+  }
 
   // Extract and use final solutions
   const NOX::Epetra::Group& finalGroup =
