@@ -35,8 +35,25 @@ struct LB_hash_node {
 
 /* Function prototypes */
 
-void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
+void LB_ParMETIS_Part(LB *lb, int *num_imp, LB_GID** imp_gids,
                        LB_LID** imp_lids, int **imp_procs);
 int LB_hashf(LB_GID key, int n);
 int LB_hash_lookup (struct LB_hash_node **hashtab, int n, LB_GID key);
+
+
+/* ParMETIS data types. Must be consistent with the definitions
+   in ParMetis/ParMETISlib.
+*/
+
+/* Undefine the following #define in order to use short int as the idxtype */
+#define IDXTYPE_INT
+
+/* Indexes are as long as integers for now */
+#ifdef IDXTYPE_INT
+typedef int idxtype;
+#define IDX_DATATYPE    MPI_INT
+#else
+typedef short idxtype;
+#define IDX_DATATYPE    MPI_SHORT
+#endif
 

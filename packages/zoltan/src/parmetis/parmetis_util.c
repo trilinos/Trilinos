@@ -44,7 +44,7 @@ int LB_hash_lookup (struct LB_hash_node **hashtab, int n, LB_GID key)
   int i;
   struct LB_hash_node *ptr;
 
-  i = hashf(key, n);
+  i = LB_hashf(key, n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
     if (LB_EQ_GID(ptr->gid, key))
       return (ptr->gno);
