@@ -1111,7 +1111,7 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 }
 
 template<class TYPE>
-void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
+void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 	int i=0,j=0;
 	int m = _jstart*_block, n=_jstart*_block;
 	int mm1 = (_jstart-1)*_block;
@@ -1425,7 +1425,7 @@ void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H,
 	int *bwork = new int[ n ];
 	char * jobvs = "V";
 	char * sort = "N";
-	lapack.GEES( *jobvs, *sort, select, n, ptr_h, ldh, sdim,_evalr,
+	lapack.GEES( *jobvs, *sort, select, n, ptr_h, ldh, &sdim,_evalr,
 		     _evali, ptr_q, ldq, work, lwork, bwork, &info );
 	assert(info==0);
 	//
