@@ -91,13 +91,24 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   int         allocated_space, row_length;
   ML_Comm     *comm;
   int Nghost;
-  int rcv_list_exists = 0, count;
+  int rcv_list_exists = 0, count = 0;
 
   /**************************** execution begins ****************************/
 
   comm        = Pmatrix->comm;
   Nrows       = Pmatrix->getrow->Nrows;
   Nneighbors  = comm_info->N_neighbors; 
+  if (Pmatrix->getrow->pre_comm != NULL) {
+    ML_CommInfoOP_Compute_TotalRcvLength(Pmatrix->getrow->pre_comm);
+
+    if (Pmatrix->N_total_cols_est < Pmatrix->invec_leng + 
+	Pmatrix->getrow->pre_comm->total_rcv_length) {
+      Pmatrix->N_total_cols_est = Pmatrix->invec_leng + 
+	Pmatrix->getrow->pre_comm->total_rcv_length;
+    }
+  }
+
+
 
   /* compute the total number of rows to send and receive */
 
@@ -326,7 +337,24 @@ example (with nonutilized ghost variables still works
   temp->columns       = cols_new;
   temp->values        = vals_new;
   temp->rowptr        = rowptr_new;
+
   *Pappended = ML_Operator_Create(comm);
+
+  /* Estimate the total number of columns in Pappended  */
+  /* This is done by taking the total number of columns */
+  /* in Pmatrix and adding 1/4 the number of nonzeros   */
+  /* received in the expanded matrix. This is a total   */
+  /* guess.                                             */
+
+  if (Pmatrix->N_total_cols_est != -1) 
+    (*Pappended)->N_total_cols_est = Pmatrix->N_total_cols_est;
+  else
+    (*Pappended)->N_total_cols_est = Pmatrix->invec_leng;
+
+  printf("count is %d\n",count);
+
+  (*Pappended)->N_total_cols_est += count/4;
+
   ML_Operator_Set_1Levels(*Pappended, Pmatrix->from, Pmatrix->to);
   ML_Operator_Set_ApplyFuncData(*Pappended,Pmatrix->invec_leng, 
                              /* Nrows+Nrows_new, */ Nrows+Nrows_new,
@@ -337,6 +365,7 @@ example (with nonutilized ghost variables still works
   (*Pappended)->max_nz_per_row = max_per_row;
   if (Pmatrix->N_nonzeros >= 0) 
      (*Pappended)->N_nonzeros     = Pmatrix->N_nonzeros + rowptr_new[Nrows_new];
+
 
   (*Pappended)->sub_matrix = Pmatrix; 
 
