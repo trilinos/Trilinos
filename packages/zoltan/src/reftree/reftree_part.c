@@ -57,6 +57,8 @@ char *yo = "LB_Reftree_Part";
 int ierr;       /* error code returned by called routines */
 int final_ierr; /* error code returned by this routine */
 
+  /* Initializations in case of early exit. */
+  *num_export = -1;
   *num_import = -1;
   final_ierr = LB_OK;
 
@@ -1044,8 +1046,11 @@ float eps;            /* allowed deviation from average partition size */
    * if no exports, we're done
    */
 
-  if (num_exp == 0) {
-    *num_export = num_exp;
+  if (lb->Return_Lists == LB_NO_LISTS) {
+    return(LB_OK);
+  }
+  else if (num_exp == 0) {
+    *num_export = 0;
     return(LB_OK);
   }
 
