@@ -1745,6 +1745,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    int          j_max;
    double       x_max;
    ML_Krylov   *kdata;
+   ML_Operator *t3;
 
    ML_Smoother *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator *Amat = smooth_ptr->my_level->Amat;
