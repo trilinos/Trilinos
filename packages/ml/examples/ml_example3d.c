@@ -44,6 +44,8 @@ double parasails_loadbal    = 0.;
 /* init_matrix_vector_structures().                                          */
 /*****************************************************************************/
 int coarse_iterations = 0, use_cg = 0, num_levels = 2; 
+  int    *update = NULL, *external = NULL;
+  int    *update_index = NULL, *extern_index = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -58,8 +60,6 @@ int main(int argc, char *argv[])
 
   /* data structure for matrix corresponding to the fine grid */
 
-  int    *update = NULL, *external = NULL;
-  int    *update_index = NULL, *extern_index = NULL;
   int    *rpntr = NULL,*cpntr = NULL, *indx = NULL, *bpntr = NULL;
   int    proc_factor;
 
@@ -405,6 +405,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
     /* initialization and set up scheme */
 
     ML_Create(&ml, N_levels);
+    ML_Set_PrintLevel(3);
     (*ml_ptr) = ml;
 
     /* set up processor information */
