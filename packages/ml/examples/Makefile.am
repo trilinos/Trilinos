@@ -24,6 +24,7 @@ if ML_BENCHMARKING
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
                   ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+		  mlaz_example \
 		  ml_two_level_DD \
                   ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa ml_read_maxwell
@@ -31,6 +32,7 @@ else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
                   ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+		  mlaz_example \
 		  ml_two_level_DD \
 		          ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa
@@ -39,6 +41,7 @@ else
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
                   ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+                  mlaz_example \
 		  ml_two_level_DD \
 		  ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa
@@ -56,6 +59,7 @@ if !ML_STANDALONE_MODE
 ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
 ml_aztec_simple_METIS_SOURCES = $(srcdir)/ml_aztec_simple_METIS.c
 ml_aztec_simple_ParMETIS_SOURCES = $(srcdir)/ml_aztec_simple_ParMETIS.c
+mlaz_example_SOURCES = $(srcdir)/mlaz_example.c
 ml_two_level_DD_SOURCES = $(srcdir)/ml_two_level_DD.c
 ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
 ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
@@ -166,6 +170,10 @@ ml_aztec_simple_METIS_LINK = ${mllink}
 ml_aztec_simple_ParMETIS_CFLAGS = ${ml_common_include_locations}
 ml_aztec_simple_ParMETIS_LDADD = ${ml_libs}
 ml_aztec_simple_ParMETIS_LINK = ${mllink}
+
+mlaz_example_CFLAGS = ${ml_common_include_locations}
+mlaz_example_LDADD = ${ml_libs}
+mlaz_example_LINK = ${mllink}
 
 ml_two_level_DD_CFLAGS = ${ml_common_include_locations}
 ml_two_level_DD_LDADD = ${ml_libs}
