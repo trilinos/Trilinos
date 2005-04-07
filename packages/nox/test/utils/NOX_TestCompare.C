@@ -92,3 +92,60 @@ int NOX::TestCompare::testValue(double value,
   else
     return 1;
 }
+
+int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec, 
+				 const NOX::Abstract::Vector& vec_expected, 
+				 double rtol, double atol, 
+				 const std::string& name)
+{
+  bool passed;
+  double testValue;
+
+  // Compute atol + rtol*|vec_expected|
+  NOX::Abstract::Vector *tmp1 = vec.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector *tmp2 = vec.clone(NOX::ShapeCopy);
+  tmp1->init(atol);
+  tmp2->abs(vec_expected);
+  tmp1->update(rtol, *tmp2, 1.0);
+
+  // Compute 1/(atol + rtol*|vec_expected|)
+  tmp2->reciprocal(*tmp1);
+
+  // Compute |vec - vec_expected|
+  tmp1->update(1.0, vec, -1.0, vec_expected, 0.0);
+  tmp1->abs(*tmp1);
+
+  // Compute |vec - vec_expected|/(atol + rtol*|vec_expected|)
+  tmp1->scale(*tmp2);
+
+  double inf_norm = tmp1->norm(NOX::Abstract::Vector::MaxNorm);
+
+  if (inf_norm < 1)
+    passed = true;
+  else
+    passed = false;
+
+  delete tmp1;
+  delete tmp2;
+
+  if (utils.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+    os << std::endl
+	 << "\tChecking " << name << ":  ";
+    if (passed)
+      os << "Passed." << std::endl;
+    else
+      os << "Failed." <<std:: endl;
+    os << "\t\tComputed norm:        " << utils.sciformat(inf_norm) 
+       << std::endl
+       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
+       << std::endl
+       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol) 
+       << std::endl;
+  }
+
+  if (passed)
+    return 0;
+  else
+    return 1;
+}
+

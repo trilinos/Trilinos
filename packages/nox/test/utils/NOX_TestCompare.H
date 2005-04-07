@@ -35,6 +35,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
+#include "NOX_Abstract_Vector.H"
 
 namespace NOX {
 
@@ -77,6 +78,23 @@ namespace NOX {
     int testValue(double value, double value_expected, 
 		  double tolerance, const std::string& name, 
 		  NOX::TestCompare::CompareType compareType);
+
+    //! Compare two vectors
+    /*!
+     * @param \c vec [in] Computed vector
+     * @param \c vec_expected [in] Vector to be compared to
+     * @param \c rtol [in] Relative tolerance \f$\epsilon_r\f$
+     * @param \c atol [in] Absolute tolerance \f$\epsilon_a\f$
+     * @param \c name [in] Name for this test when printing details
+     * @return Returns 0 if
+     * \f[
+     *     \frac{|vec_i - vec_expected_i|}{\epsilon_a + \epsilon_r|vec_expected_i|} < 1
+     * \f]
+     * for each $i$, and 1 otherwise.
+     */
+    int testVector(const NOX::Abstract::Vector& vec, 
+		   const NOX::Abstract::Vector& vec_expected, 
+		   double rtol, double atol, const std::string& name);
 
   protected:
 
