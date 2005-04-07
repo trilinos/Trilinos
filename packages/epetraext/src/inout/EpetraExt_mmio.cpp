@@ -6,7 +6,15 @@
 *
 */
 
-#include <Epetra_ConfigDefs.h>
+/* JW - This is essentially a C file that was "converted" to C++, but still
+   contains C function calls.  Since it is independent of the rest of
+   the package, we will not include the central ConfigDefs file, but
+   will rather #include the C headers that we need.  This should fix the
+   build problem on sass2889.
+#include <Epetra_ConfigDefs.h> */
+#include <string.h>
+#include <stdio.h>
+#include <ctype.h>
 #include "EpetraExt_mmio.h"
 
 using namespace EpetraExt;
