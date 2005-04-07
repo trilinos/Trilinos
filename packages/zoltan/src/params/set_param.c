@@ -39,7 +39,7 @@ extern "C" {
 #include "phg_const.h"
 #endif
 
-static int add_param(ZZ *, char *, char *, int);
+static int add_param(ZZ *, char **, char **, int);
 static int remove_param(ZZ *, char *, int);
 
 /* List of set_parameter functions to be called */
@@ -140,7 +140,7 @@ int index			/* index of vector parameter; -1 if scalar */
     	    ZOLTAN_FREE(&val);
         }
         else if (status == 0){		/* Parameter OK */
-    	    add_param(zz, name, val, index); 	/* Add parameter to list */
+    	    add_param(zz, &name, &val, index); 	/* Add parameter to list */
         }
         else { 				/* Parameter not OK. Don't add.  */
     	    ZOLTAN_FREE(&name);             /* (It may be used to set values */
@@ -161,8 +161,8 @@ int index			/* index of vector parameter; -1 if scalar */
 
 static int add_param(
 ZZ *zz,				/* Zoltan structure */
-char *name,			/* parameter name */
-char *val,			/* value to set this parameter to */
+char **name,			/* parameter name */
+char **val,			/* value to set this parameter to */
 int index			/* index of vector parameter; -1 if scalar */
 )
 {
@@ -175,14 +175,15 @@ int index			/* index of vector parameter; -1 if scalar */
     PARAM_LIST *param;		/* parameter entry in list */
 
     /* printf("Debug: Adding parameter %s with value %s and index %d\n",
-      name, val, index); */
+      *name, *val, index); */
 
     ptr = zz->Params;
     while (ptr != NULL) {
-	if ((!strcmp(name, ptr->name)) && (index == ptr->index)){	
+	if ((!strcmp(*name, ptr->name)) && (index == ptr->index)){	
 	    /* string and index match */
+	    ZOLTAN_FREE(name);
 	    ZOLTAN_FREE(&(ptr->new_val));
-	    ptr->new_val = val;
+	    ptr->new_val = *val;
 	    return (ZOLTAN_OK);
 	}
 	ptr = ptr->next;
@@ -191,16 +192,16 @@ int index			/* index of vector parameter; -1 if scalar */
     /* This is a new parameter, add it to list. */
     param = (PARAM_LIST *) ZOLTAN_MALLOC(sizeof(PARAM_LIST));
     if (param == NULL) {
-	ZOLTAN_FREE(&name);
-	ZOLTAN_FREE(&val);
+	ZOLTAN_FREE(name);
+	ZOLTAN_FREE(val);
 	return (ZOLTAN_MEMERR);
     }
     ptr = zz->Params;
     zz->Params = param;
     param->next = ptr;
-    param->name = name;
+    param->name = *name;
     param->index = index;
-    param->new_val = val;
+    param->new_val = *val;
 
     return (ZOLTAN_OK);
 }
