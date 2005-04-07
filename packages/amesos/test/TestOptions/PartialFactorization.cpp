@@ -152,14 +152,16 @@ int PartialFactorization( const char* AmesosClass,
 			  Epetra_CrsMatrix *& Amat, 
 			  double Rcond ) {
 
-#if 1
   for( int i =0 ; i < MaxNumSteps ; i ++ ) {
     string AC = AmesosClass ; 
 
-
+    //
+    //  I have turned this test back on because it no longer seems to fail.
+    //
     //  Amesos_Dscpack dies if SymbolicFactorization() is called twice in a row - Bug #1237 
     //  Hence we do not test Amesos_Dscpack with 3 or more steps here.
-    if ( AC != "Amesos_Dscpack" || i < 3 ) { 
+    //    if ( AC != "Amesos_Dscpack" || i < 3 ) { 
+    {
       PartialFactorizationOneStep( AmesosClass,
 				   Comm, 
 				   transpose, 
@@ -170,6 +172,5 @@ int PartialFactorization( const char* AmesosClass,
 				   i ) ;
     }
   }
-#endif
   return(0);
 }
