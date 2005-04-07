@@ -46,7 +46,8 @@ LOCA::Factory::Factory(
   factory(),
   haveFactory(false),
   sublistParser(global_data),
-  eigensolverFactory(global_data)
+  eigensolverFactory(global_data),
+  eigenvalueSortFactory(global_data)
 {
   reset(topLevelParams);
 
@@ -62,15 +63,16 @@ LOCA::Factory::Factory(
   factory(userFactory),
   haveFactory(true),
   sublistParser(global_data),
-  eigensolverFactory(global_data)
+  eigensolverFactory(global_data),
+  eigenvalueSortFactory(global_data)
 {
+  // Initialize user-defined factory
+  factory->init(globalData);
+
   reset(topLevelParams);
   
   // Set the factory member of the global data
   globalData->locaFactory = Teuchos::rcp(this, false);
-
-  // Initialize user-defined factory
-  factory->init(globalData);
 }
 
 LOCA::Factory::~Factory()
@@ -94,15 +96,15 @@ LOCA::Factory::reset(
 }
 
 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
-LOCA::Factory::createEigensolver()
+LOCA::Factory::createEigensolverStrategy()
 {
-  string methodName = "LOCA::Factory::createEigensolver()";
+  string methodName = "LOCA::Factory::createEigensolverStrategy()";
   Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createEigensolver(strategy);
+    bool created = factory->createEigensolverStrategy(strategy);
     if (created)
       return strategy;
   }
@@ -114,6 +116,29 @@ LOCA::Factory::createEigensolver()
     sublistParser.getSublist("Linear Solver");
 
   strategy = eigensolverFactory.create(eigenParams, solverParams);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
+LOCA::Factory::createEigenvalueSortStrategy()
+{
+  string methodName = "LOCA::Factory::createEigenvalueSortStrategy()";
+  Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    bool created = factory->createEigenvalueSortStrategy(strategy);
+    if (created)
+      return strategy;
+  }
+
+  // Get parameter lists
+  Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams = 
+    sublistParser.getSublist("Eigensolver");
+
+  strategy = eigenvalueSortFactory.create(eigenParams);
 
   return strategy;
 }

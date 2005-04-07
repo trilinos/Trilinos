@@ -39,6 +39,7 @@
 
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_Eigensolver_Factory.H"
+#include "LOCA_EigenvalueSort_Factory.H"
 
 // Forward declarations
 namespace NOX {
@@ -118,7 +119,16 @@ namespace LOCA {
      * description of available strategies.
      */
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
-    createEigensolver();
+    createEigensolverStrategy();
+
+    //! Create eigenvalue sort strategy
+    /*!
+     * Instantiates an eigenvalue sorting strategy based on the 
+     * "Sorting Method" parameter of the "Eigensolver" sublist.  See 
+     * LOCA::EigenvalueSort::Factory for a description of available strategies.
+     */
+    Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
+    createEigenvalueSortStrategy();
 
     //@}
 
@@ -146,6 +156,9 @@ namespace LOCA {
 
     //! Eigensolver factory
     LOCA::Eigensolver::Factory eigensolverFactory;
+
+    //! EigenvalueSort factory
+    LOCA::EigenvalueSort::Factory eigenvalueSortFactory;
     
   }; // Class Factory
 

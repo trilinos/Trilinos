@@ -49,6 +49,9 @@ int main(int argc, char *argv[])
   double beta = 0.0;
   double scale = 1.0;
   int ierr = 0;
+  int nev = 10;
+  int narn = 20;
+  double arntol = 1.0e-12;
 
   alpha = alpha / scale;
 
@@ -78,10 +81,11 @@ int main(int argc, char *argv[])
     grp.computeJacobian();
 
     // Create parameter list
-    NOX::Parameter::List paramList;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
+      Teuchos::rcp(new NOX::Parameter::List);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
@@ -91,13 +95,13 @@ int main(int argc, char *argv[])
     aList.setParameter("Method", "Anasazi");
     aList.setParameter("Operator", "Jacobian Inverse");
     aList.setParameter("Block Size", 1);
-    aList.setParameter("Arnoldi Size", 10);
-    aList.setParameter("NEV", 3);
-    aList.setParameter("Tol", 2.0e-7);
+    aList.setParameter("Arnoldi Size", narn);
+    aList.setParameter("NEV", nev);
+    aList.setParameter("Tol", arntol);
     aList.setParameter("Convergence Check", 1);
     aList.setParameter("Restarts",2);
     aList.setParameter("Sorting Order","LM");
-    aList.setParameter("Debug Level",1);
+    aList.setParameter("Debug Level",0);
 
     // Set the LOCA Utilities
     NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
@@ -115,8 +119,7 @@ int main(int argc, char *argv[])
       locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
-    nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     if (verbose)
@@ -133,7 +136,7 @@ int main(int argc, char *argv[])
     // Create printing utils
     Teuchos::RefCountPtr<LOCA::Utils> locaUtils =
       Teuchos::rcp(new LOCA::Utils);
-    locaUtils->setUtils(paramList);
+    locaUtils->setUtils(*paramList);
 
     // Create error check
     Teuchos::RefCountPtr<LOCA::ErrorCheck> locaErrorCheck = 
@@ -147,27 +150,72 @@ int main(int argc, char *argv[])
 					locaErrorCheck, 
 					locaFactory));
 
+    // Create LAPACK factory
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
     // Create factory
     locaFactory = Teuchos::rcp(new LOCA::Factory(locaGlobalData, 
-						 Teuchos::rcp(&paramList,
-							      false)));
+						 paramList,
+						 lapackFactory));
 
-    // Creat eigensolver
+    // Create Anasazi eigensolver
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> anasaziStrategy
-      = locaFactory->createEigensolver();
+      = locaFactory->createEigensolverStrategy();
 
+    Teuchos::RefCountPtr< std::vector<double> > anasazi_evals_r;
+    Teuchos::RefCountPtr< std::vector<double> > anasazi_evals_i;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > anasazi_evecs_r;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > anasazi_evecs_i;
     NOX::Abstract::Group::ReturnType anasaziStatus = 
-      anasaziStrategy->computeEigenvalues(grp);
+      anasaziStrategy->computeEigenvalues(grp, 
+					  anasazi_evals_r, 
+					  anasazi_evals_i,
+					  anasazi_evecs_r,
+					  anasazi_evecs_i);
 
     if (anasaziStatus != NOX::Abstract::Group::Ok)
-      ierr = 1;
+      ++ierr;
+
+    // Change strategy to DGGEV
+    aList.setParameter("Method", "DGGEV");
+    aList.setParameter("Sorting Order","SM");
+    locaFactory->reset(paramList);
+
+    // Create DGGEV eigensolver
+    Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> dggevStrategy
+      = locaFactory->createEigensolverStrategy();
+
+    Teuchos::RefCountPtr< std::vector<double> > dggev_evals_r;
+    Teuchos::RefCountPtr< std::vector<double> > dggev_evals_i;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > dggev_evecs_r;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > dggev_evecs_i;
+    NOX::Abstract::Group::ReturnType dggevStatus = 
+      dggevStrategy->computeEigenvalues(grp, 
+					dggev_evals_r, 
+					dggev_evals_i,
+					dggev_evecs_r,
+					dggev_evecs_i);
+
+    if (dggevStatus != NOX::Abstract::Group::Ok)
+      ++ierr = 1;
 
     // Check some statistics on the solution
     NOX::Utils utils(nlPrintParams);
     NOX::TestCompare testCompare(cout, utils);
 
     if (utils.isPrintProcessAndType(NOX::Utils::TestDetails))
-      cout << endl << "***** Checking solutions statistics *****" << endl;
+      cout << endl << "***** Checking solution statistics *****" << endl;
+
+    // Check eigenvalues
+    for (int i=0; i<nev; i++) {
+      stringstream sstr;
+      sstr << "Eigenvalue " << i;
+      ierr += testCompare.testValue((*anasazi_evals_r)[i], 
+				    (*dggev_evals_r)[i], arntol*1e3,
+				    sstr.str(),
+				    NOX::TestCompare::Relative);
+    }
 
     if (ierr == 0)
       cout << "All tests passed!" << endl;
@@ -177,12 +225,15 @@ int main(int argc, char *argv[])
 
   catch (string& s) {
     cout << s << endl;
+    ierr = 1;
   }
   catch (char *s) {
     cout << s << endl;
+    ierr = 1;
   }
   catch (...) {
     cout << "Caught unknown exception!" << endl;
+    ierr = 1;
   }
 
   return ierr;

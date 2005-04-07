@@ -1,0 +1,119 @@
+// $Id$
+// $Source$
+
+//@HEADER
+// ************************************************************************
+//
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
+// ************************************************************************
+//@HEADER
+
+#include "NOX_Parameter_List.H"
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
+
+#include "LOCA_EigenvalueSort_Factory.H"
+#include "LOCA_EigenvalueSort_Strategies.H"
+
+LOCA::EigenvalueSort::Factory::Factory(
+	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+  globalData(global_data)
+{
+}
+
+LOCA::EigenvalueSort::Factory::~Factory()
+{
+}
+
+Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
+LOCA::EigenvalueSort::Factory::create(
+	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+{
+  string methodName = "LOCA::EigenvalueSort::Factory::create()";
+  Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
+
+  // Get name of strategy
+  string name = eigenParams->getParameter("Sorting Order", "LM");
+
+  if (name == "LM")
+    strategy = 
+      Teuchos::rcp(new LOCA::EigenvalueSort::LargestMagnitude(globalData,
+							      eigenParams));
+
+  else if (name == "LR")
+    strategy = 
+      Teuchos::rcp(new LOCA::EigenvalueSort::LargestReal(globalData,
+							 eigenParams));
+
+  else if (name == "LI")
+    strategy = 
+      Teuchos::rcp(new LOCA::EigenvalueSort::LargestImaginary(globalData,
+							      eigenParams));
+
+  else if (name == "SM")
+    strategy = 
+      Teuchos::rcp(new LOCA::EigenvalueSort::SmallestMagnitude(globalData,
+							       eigenParams));
+
+  else if (name == "SR")
+    strategy = 
+      Teuchos::rcp(new LOCA::EigenvalueSort::SmallestReal(globalData,
+							  eigenParams));
+
+  else if (name == "SI")
+    strategy = 
+      Teuchos::rcp(new LOCA::EigenvalueSort::SmallestImaginary(globalData,
+							       eigenParams));
+
+  else if (name == "CA")
+    strategy = 
+      Teuchos::rcp(new LOCA::EigenvalueSort::LargestRealInverseCayley(
+							       globalData,
+							       eigenParams));
+  
+  else if (name == "User-Defined") {
+
+    // Get name of user-defined strategy
+    string userDefinedName = 
+      eigenParams->getParameter("User-Defined Sorting Method Name",
+				"???");
+    if (eigenParams->
+	  isParameterRcp<LOCA::EigenvalueSort::AbstractStrategy>(userDefinedName))
+      strategy = eigenParams->
+	getRcpParameter<LOCA::EigenvalueSort::AbstractStrategy>(userDefinedName);
+    else
+       globalData->locaErrorCheck->throwError(
+			     methodName,
+			     "Cannot find user-defined sorting strategy: " + 
+			     userDefinedName);
+  }
+  else
+    globalData->locaErrorCheck->throwError(
+				      methodName,
+				      "Invalid sorting strategy: " + 
+				      name);
+
+  return strategy;
+}

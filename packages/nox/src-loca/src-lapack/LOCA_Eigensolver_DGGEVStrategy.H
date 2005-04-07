@@ -69,7 +69,12 @@ namespace LOCA {
 
       //! Compute eigenvalues/eigenvectors
       virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(NOX::Abstract::Group& group);
+      computeEigenvalues(
+	      NOX::Abstract::Group& group,
+	      Teuchos::RefCountPtr< std::vector<double> >& evals_r,
+	      Teuchos::RefCountPtr< std::vector<double> >& evals_i,
+	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
+	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i);
 
     private:
 
@@ -83,6 +88,15 @@ namespace LOCA {
 
       //! Global data
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+      //! Eigensolver parameter list
+      Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams;
+
+      //! The number of requested eigenvalues
+      int nev;
+
+      //! Which eigenvalues are of interest
+      string which;
 
     }; // Class DGGEVStrategy
 

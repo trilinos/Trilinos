@@ -73,7 +73,7 @@ namespace LOCA {
 
       //! Create eigensolver strategy
       virtual bool
-      createEigensolver(
+      createEigensolverStrategy(
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
 
       //@}

@@ -104,4 +104,4 @@ namespace LOCA {
 
 } // Namespace LOCA
 
-#endif
+#endif // LOCA_EIGENSOLVER_FACTORY_H

@@ -110,7 +110,12 @@ namespace LOCA {
        * BlockKrylovSchur solver for computing eigenvalues.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(NOX::Abstract::Group& group);
+      computeEigenvalues(
+	      NOX::Abstract::Group& group,
+	      Teuchos::RefCountPtr< std::vector<double> >& evals_r,
+	      Teuchos::RefCountPtr< std::vector<double> >& evals_i,
+	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
+	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i);
 
     private:
 

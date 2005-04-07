@@ -47,7 +47,11 @@ LOCA::Eigensolver::DefaultStrategy::~DefaultStrategy()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Eigensolver::DefaultStrategy::computeEigenvalues(
-						 NOX::Abstract::Group& group)
+		 NOX::Abstract::Group& group,
+		 Teuchos::RefCountPtr< std::vector<double> >& evals_r,
+		 Teuchos::RefCountPtr< std::vector<double> >& evals_i,
+		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
+	         Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i)
 {
   return NOX::Abstract::Group::Ok;
 }

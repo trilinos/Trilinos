@@ -33,8 +33,15 @@
 #include "LOCA_Abstract_Factory.H"
 
 bool
-LOCA::Abstract::Factory::createEigensolver(
+LOCA::Abstract::Factory::createEigensolverStrategy(
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
+{
+  return false;
+}
+
+bool
+LOCA::Abstract::Factory::createEigenvalueSortStrategy(
+	Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy)
 {
   return false;
 }

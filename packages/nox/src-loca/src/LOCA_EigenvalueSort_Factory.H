@@ -30,12 +30,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_EIGENSOLVER_DEFAULTSTRATEGY_H
-#define LOCA_EIGENSOLVER_DEFAULTSTRATEGY_H
+#ifndef LOCA_EIGENVALUESORT_FACTORY_H
+#define LOCA_EIGENVALUESORT_FACTORY_H
 
-#include "LOCA_Eigensolver_AbstractStrategy.H" // base class
+#include "Teuchos_RefCountPtr.hpp"
 
-// Forward declarations
+// forward declarations
 namespace NOX {
   namespace Parameter {
     class List;
@@ -43,60 +43,67 @@ namespace NOX {
 }
 namespace LOCA {
   class GlobalData;
+  namespace EigenvalueSort {
+    class AbstractStrategy;
+  }
 }
 
 namespace LOCA {
 
-  namespace Eigensolver {
+  namespace EigenvalueSort {
 
-    //! Default eigensolver strategy
+    //! Factory for creating %EigenvalueSort strategy objects
     /*!
-     * This class implements a default eigensolver strategy that does 
-     * not compute any eigenvalues.
+     * The parameters passed to the create() through the \c eigenParams
+     * argument method should specify the sorting method "Sorting Method" 
+     * as described below, as well as any additional parameters
+     * for the particular strategy.
+     * <ul>
+     * <li> "Sorting Order" - Name of the sorting method. Valid choices are
+     *   <ul>
+     *   <li> "LM" (LOCA::EigenvalueSort::LargestMagnitude) [Default]
+     *   <li> "LR" (LOCA::EigenvalueSort::LargestReal)
+     *   <li> "LI" (LOCA::EigenvalueSort::LargestImaginary)
+     *   <li> "SM" (LOCA::EigenvalueSort::SmallestMagnitude)
+     *   <li> "SR" (LOCA::EigenvalueSort::SmallestReal)
+     *   <li> "SI" (LOCA::EigenvalueSort::SmallestImaginary)
+     *   <li> "CA" (LOCA::EigenvalueSort::LargestRealInverseCayley)
+     *   </ul>
+     * </ul>
      */
-    class DefaultStrategy : public LOCA::Eigensolver::AbstractStrategy {
+    class Factory {
 
     public:
 
       //! Constructor
-      DefaultStrategy(
-	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
-      
-      //! Destructor
-      virtual ~DefaultStrategy();
+      Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
 
-      //! Compute eigenvalues/eigenvectors
+      //! Destructor
+      virtual ~Factory();
+
+      //! Create sorting strategy
       /*!
-       * The implementation here does nothing and always returns
-       * NOX::Abstract::Group::Ok.  Note that this implies the returned
-       * ref-count pointers are null.
+       * \param eigenParams [in] %Eigensolver parameters as described above
        */
-      virtual NOX::Abstract::Group::ReturnType 
-      computeEigenvalues(
-	      NOX::Abstract::Group& group,
-	      Teuchos::RefCountPtr< std::vector<double> >& evals_r,
-	      Teuchos::RefCountPtr< std::vector<double> >& evals_i,
-	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
-	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i);
+      Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
+      create(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
 
     private:
 
       //! Private to prohibit copying
-      DefaultStrategy(const DefaultStrategy&);
+      Factory(const Factory&);
 
       //! Private to prohibit copying
-      DefaultStrategy& operator = (const DefaultStrategy&);
+      Factory& operator = (const Factory&);
 
     protected:
 
       //! Global data
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
-    }; // Class DefaultStrategy
+    }; // Class Factory
 
-  } // Namespace Eigensolver
+  } // Namespace EigenvalueSort
 
 } // Namespace LOCA
 

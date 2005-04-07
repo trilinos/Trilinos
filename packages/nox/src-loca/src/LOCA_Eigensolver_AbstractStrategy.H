@@ -35,7 +35,7 @@
 
 #include "Teuchos_RefCountPtr.hpp" 
 
-#include "NOX_Abstract_Group.H" 
+#include "NOX_Abstract_Group.H" // for ReturnType
 
 namespace LOCA {
 
@@ -44,7 +44,7 @@ namespace LOCA {
     
     //! Abstract interface class for Eigensolver strategies
     /*!
-     * AbstractStragey defines an abstract interface for eigensolver 
+     * AbstractStrategy defines an abstract interface for eigensolver 
      * strategies. It is used by LOCA::Stepper to compute eigenvalues of 
      * the steady-state solution after each continuation step.  
      *
@@ -57,13 +57,15 @@ namespace LOCA {
      * class Derived : public AbstractStrategy {
      * public:
      *   Derived(
+     *      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
      *      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
      *      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
      *   ...
      * };
      * \endcode
      *
-     * where \c eigenParams is a parameter list of eigensolver parameters
+     * where \c global_data is the LOCA global data object, \c eigenParams 
+     * is a parameter list of eigensolver parameters
      * and \c solverParams is a parameter list of linear solver parametes.
      *
      * This class and its children follow the Strategy pattern as defined
@@ -83,10 +85,19 @@ namespace LOCA {
       //! Compute eigenvalues/eigenvectors in group \c group
       /*!
        * \param group [in] NOX Group to compute eigenvalues of
+       * \param evals_r [out] Real eigenvalues
+       * \param evals_i [out] Imaginary eigenvalues
+       * \param evecs_r [out] Real eigenvectors
+       * \param evecs_i [out] Imaginary eigenvectors
        * \returns ReturnType code indicating success or failure
        */
       virtual NOX::Abstract::Group::ReturnType 
-      computeEigenvalues(NOX::Abstract::Group& group) = 0;
+      computeEigenvalues(
+	      NOX::Abstract::Group& group,
+	      Teuchos::RefCountPtr< std::vector<double> >& evals_r,
+	      Teuchos::RefCountPtr< std::vector<double> >& evals_i,
+	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
+	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i) = 0;
 
     }; // Class AbstractStrategy
 
@@ -94,4 +105,4 @@ namespace LOCA {
 
 } // Namespace LOCA
 
-#endif
+#endif // LOCA_EIGENSOLVER_ABSTRACTSTRATEGY_H

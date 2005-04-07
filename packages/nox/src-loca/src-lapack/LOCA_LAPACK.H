@@ -29,7 +29,8 @@
 // 
 // ************************************************************************
 //@HEADER
-//LOCA::BLAS Objects
+//LOCA::LAPACK Objects
 #include "NOX_LAPACK.H"
 #include "LOCA_LAPACK_Group.H"
 #include "LOCA_LAPACK_Interface.H"
+#include "LOCA_LAPACK_Factory.H"

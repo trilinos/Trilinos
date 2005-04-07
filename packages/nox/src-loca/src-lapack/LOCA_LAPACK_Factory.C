@@ -65,7 +65,7 @@ LOCA::LAPACK::Factory::reset(
 }
 
 bool
-LOCA::LAPACK::Factory::createEigensolver(
+LOCA::LAPACK::Factory::createEigensolverStrategy(
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
 {
   // Get parameter lists

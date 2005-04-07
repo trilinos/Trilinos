@@ -30,6 +30,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "NOX_Abstract_MultiVector.H"
 #include "NOX_Parameter_List.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Utils.H"
@@ -102,7 +103,11 @@ LOCA::Eigensolver::AnasaziStrategy::~AnasaziStrategy()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
-						  NOX::Abstract::Group& group)
+		 NOX::Abstract::Group& group,
+		 Teuchos::RefCountPtr< std::vector<double> >& evals_r,
+		 Teuchos::RefCountPtr< std::vector<double> >& evals_i,
+		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
+		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i)
 {
 #ifdef HAVE_LOCA_ANASAZI
   if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
@@ -151,7 +156,14 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   // stored in the first "narn" entries of "evals", the imaginary part is 
   // stored in the second "narn" entries of "evals".
   int narn = LOCABlockKrylovSchur.GetKrylovFactLength();
-  std::vector<double> evals( *(LOCABlockKrylovSchur.GetRitzValues()) );
+  Teuchos::RefCountPtr< const std::vector<double> > evals = 
+    LOCABlockKrylovSchur.GetRitzValues();
+  // Copy first narn values into evals_r
+  evals_r = 
+    Teuchos::rcp(new std::vector<double>(evals->begin(),evals->begin()+narn));
+  // Copy second narn values in evals_i
+  evals_i = 
+    Teuchos::rcp(new std::vector<double>(evals->begin()+narn, evals->end()));
 
   if (globalData->locaUtils->doPrint(Utils::StepperIteration)) 
     cout << "Untransformed eigenvalues (since the operator was " 
@@ -160,9 +172,24 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   // Obtain the eigenvectors
   // The real part is stored in the first "nev" vectors and the imaginary 
   // in the second "nev" vectors.
-  Anasazi::LOCAMultiVec 
-    evecs( *dynamic_cast<Anasazi::LOCAMultiVec *>(LOCAProblem->GetEvecs().
-						    get()) );
+  Teuchos::RefCountPtr<MV> evecs = LOCAProblem->GetEvecs();
+  std::vector<int> index_r(nev);
+  std::vector<int> index_i(nev);
+  for (int i=0; i<nev; i++) {
+    index_r[i] = i;
+    index_i[i] = nev+i;
+  }
+  Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> a_evecs_r = 
+    Teuchos::rcp(dynamic_cast<Anasazi::LOCAMultiVec*>(evecs->CloneCopy(index_r)));
+  Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> a_evecs_i = 
+    Teuchos::rcp(dynamic_cast<Anasazi::LOCAMultiVec*>(evecs->CloneCopy(index_i)));
+  NOX::Abstract::Vector& tmp = a_evecs_r->GetNOXVector(0);
+  evecs_r = Teuchos::rcp(tmp.createMultiVector(nev, NOX::ShapeCopy));
+  evecs_i = Teuchos::rcp(tmp.createMultiVector(nev, NOX::ShapeCopy));
+  for (int i=0; i<nev; i++) {
+    (*evecs_r)[i] = a_evecs_r->GetNOXVector(i);
+    (*evecs_i)[i] = a_evecs_i->GetNOXVector(i);
+  }
 
   // Real & imaginary components of Rayleigh quotient
   double rq_r, rq_i;
@@ -170,20 +197,20 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   for (int i=0; i<nev; i++) {
 
     // Un-transform eigenvalues
-    anasaziOperator.transformEigenvalue(evals[i], evals[narn+i]);
+    anasaziOperator.transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
 
     // Compute Rayleigh quotient
-    anasaziOperator.rayleighQuotient(evecs.GetNOXVector(i),
-				     evecs.GetNOXVector(nev+i), 
+    anasaziOperator.rayleighQuotient(a_evecs_r->GetNOXVector(i),
+				     a_evecs_i->GetNOXVector(i), 
 				     rq_r, rq_i);
 
     // Print out untransformed eigenvalues and Rayleigh quotient residual
     if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
       cout << "Eigenvalue " << i << " : " 
-	   << globalData->locaUtils->sci(evals[i]) <<"  "
-	   << globalData->locaUtils->sci(evals[narn+i]) << " i    :  RQresid "
-	   << globalData->locaUtils->sci(fabs(evals[i] - rq_r)) << "  "
-	   << globalData->locaUtils->sci(fabs(evals[narn+i] - rq_i)) 
+	   << globalData->locaUtils->sci((*evals_r)[i]) <<"  "
+	   << globalData->locaUtils->sci((*evals_i)[i]) << " i    :  RQresid "
+	   << globalData->locaUtils->sci(fabs((*evals_r)[i] - rq_r)) << "  "
+	   << globalData->locaUtils->sci(fabs((*evals_i)[i] - rq_i)) 
 	   << " i" << endl;
     }
 
@@ -198,13 +225,13 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   for (int i=nev; i<narn; i++) {
 
       // Un-transform eigenvalues
-      anasaziOperator.transformEigenvalue(evals[i], evals[narn+i]);
+    anasaziOperator.transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
 
       if (globalData->locaUtils->doPrint(Utils::StepperIteration) && 
 	  narn>nev) {
 	cout << "Eigenvalue " << i << " : " 
-	     << globalData->locaUtils->sci(evals[i]) << "  "
-	     << globalData->locaUtils->sci(evals[narn+i]) << " i" <<endl;
+	     << globalData->locaUtils->sci((*evals_r)[i]) << "  "
+	     << globalData->locaUtils->sci((*evals_i)[i]) << " i" <<endl;
       }
 
   }

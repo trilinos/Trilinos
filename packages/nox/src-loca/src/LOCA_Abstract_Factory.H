@@ -48,6 +48,9 @@ namespace LOCA {
   namespace Eigensolver {
     class AbstractStrategy;
   }
+  namespace EigenvalueSort {
+    class AbstractStrategy;
+  }
 }
 
 namespace LOCA {
@@ -106,8 +109,13 @@ namespace LOCA {
 
       //! Create eigensolver strategy
       virtual bool
-      createEigensolver(
+      createEigensolverStrategy(
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
+
+      //! Create eigenvalue sorting strategy
+      virtual bool
+      createEigenvalueSortStrategy(
+       Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
 
       //@}
     
