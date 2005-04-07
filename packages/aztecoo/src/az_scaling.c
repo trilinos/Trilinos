@@ -126,7 +126,16 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
   if ( (options[AZ_scaling] != AZ_none) && 
        (Amat->data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
        (Amat->data_org[AZ_matrix_type] != AZ_VBR_MATRIX)  ) {
-    options[AZ_scaling] = AZ_none;
+    if (scaling->scale != 0) {
+      int err = scaling->scale(action, Amat, options, b, x, proc_config);
+      if (err != 0) {
+        printf("AZ_scale_f ERROR, code %d returned from user-scaling function\n",
+               err);
+      }
+    }
+    else {
+      options[AZ_scaling] = AZ_none;
+    }
   }
 
   if ( (options[AZ_ignore_scaling] == AZ_TRUE) && (options[AZ_pre_calc] <= AZ_recalc) 

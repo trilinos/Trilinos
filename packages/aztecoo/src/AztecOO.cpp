@@ -412,7 +412,7 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
   if (UserMatrix == 0 && inConstructor_ == true) return(0);
   if (UserMatrix == 0) EPETRA_CHK_ERR(-1);
 
-	if (UserMatrixData_!=0) delete UserMatrixData_;
+  if (UserMatrixData_!=0) delete UserMatrixData_;
   UserMatrixData_ = new MatrixData(UserMatrix); // Initialize user matrix data
 
   SetProcConfig(UserMatrix->Comm());

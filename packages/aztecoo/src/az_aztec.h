@@ -338,12 +338,23 @@ struct context {                       /* This structure is used to  */
 /*****************************************************************************/
 /*****************************************************************************/
 
-struct AZ_SCALING {  /* Left and right matrices to to scale    */
-                     /* the problem                            */
+struct AZ_SCALING {  /* Left and right matrices to scale    */
+                     /* the problem                         */
   int    action;
   double A_norm;
   int    mat_name;
   int    scaling_opt;
+
+  /* Define a function pointer that can be called to perform
+     scalings for user-defined matrices that can't be scaled
+     by Aztec's AZ_scale_f function.
+  */
+  int (*scale)(int action,
+               AZ_MATRIX* Amat,
+               int options[],
+               double b[],
+               double x[],
+               int proc_config[]);
 };
 
 /*****************************************************************************/
