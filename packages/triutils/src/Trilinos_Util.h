@@ -98,6 +98,14 @@ using std::rand;
 
 #ifdef HAVE_CSTDIO
 #include <cstdio>
+using std::fopen;
+using std::fclose;
+using std::FILE;
+using std::fprintf;
+using std::fscanf;
+using std::printf;
+using std::perror;
+using std::feof;
 #else
 #include <stdio.h>
 #endif
