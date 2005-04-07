@@ -69,4 +69,4 @@ testExample:   $(srcdir)/testExample.py   $(srcdir)/setpath.py
 # All the test scripts use the same copy-then-run logic
 test%:
 	cp $^ .
-	./$@.py
+	$(PYTHON) $@.py

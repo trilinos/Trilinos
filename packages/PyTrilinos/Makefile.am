@@ -124,28 +124,30 @@ wrappers:
 
 setup.txt:
 	@echo "{"                        	            >  $@
+	@echo "  'top_srcdir'      : '$(top_srcdir)',"      >> $@
 	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
 	@echo "  'LDFLAGS'         : '$(LDFLAGS)',"         >> $@
+	@echo "  'LAPACK_LIBS' 	   : '$(LAPACK_LIBS)',"     >> $@
+	@echo "  'BLAS_LIBS'   	   : '$(BLAS_LIBS)',"       >> $@
 	@echo "  'FLIBS'           : '$(FLIBS)',"           >> $@
 	@echo "  'LIBS'            : '$(LIBS)',"            >> $@
-	@echo "  'BUILD_EPETRA'    : '$(BUILD_EPETRA)',"    >> $@
-	@echo "  'BUILD_EPETRAEXT' : '$(BUILD_EPETRAEXT)'," >> $@
-	@echo "  'BUILD_NOX'       : '$(BUILD_NOX)'"        >> $@
+	@echo "  'PYTHON'          : '$(PYTHON)',"          >> $@
 	@echo "}"                                           >> $@
 
 $(tempdir):
 	mkdir -p $@
 
 build: wrappers setup.txt $(tempdir)
-	$(srcdir)/setup.py build
+	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
-	$(srcdir)/setup.py install
+	$(PYTHON) $(srcdir)/setup.py install
 
 clean:
-	$(srcdir)/setup.py clean
-	rm -f $(srcdir)/src/*_wrap.cxx
-	rm -f $(srcdir)/src/NOX/*_wrap.cxx
+	$(PYTHON) $(srcdir)/setup.py clean
+	$(RM) setup.txt
+	$(RM) $(srcdir)/src/*_wrap.cxx
+	$(RM) $(srcdir)/src/NOX/*_wrap.cxx
 
 test:
 	cd test && make test

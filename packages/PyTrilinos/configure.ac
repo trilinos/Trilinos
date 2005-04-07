@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(pytrilinos, 4.0, wfspotz@sandia.gov)
+AC_INIT(pytrilinos, 1.0, wfspotz@sandia.gov)
 
 # Hello World!
 #  #np# - package name below
@@ -222,53 +222,6 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# #np# newp_swahili is an example of a package feature which requires both
-# a cpp #define command and one or more source or header files  - ie 
-# conditional compilation which requires a change to the makefile.
-# If configure is called with "--enable-newp_swahili", it will place 
-# a #define HAVE_NEWP_SWAHILI in PyTrilinos_config.h and add source 
-# and header files as specified in Makefile.am 
-#
-# To add an option to your package, you will need to modify this file
-# (i.e. configure.ac), and src/Makefile.am.  A bootstrap is also required.
-# Look for SWAHILI in both files listed above.
-#
-# TAC_ARG_ENABLE_OPTION performs several tasks, including:
-#   1)  Setting a help string
-#   2)  Printing a message to standard out
-#   3)  Defining HAVE_NEWP_SWAHILI (For use in PyTrilinos_config.h)
-#
-# AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
-# ------------------------------------------------------------------------
-#
-TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
-AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
-
-# ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
-
-#
-#  #np# - These options are specific to Epetra and are left only as examples.
-#         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
-#         in the (package)_config.h file.  Developers should use a 
-#         more specific name such as 'pytrilinos-fatal_messages', rather
-#         than 'fatal_messages'.
-#TAC_ARG_ENABLE_OPTION(fatal_messages, [enable printing of fatal error messages], 
-#                   FATAL_MESSAGES, yes)
-#TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messages], 
-#                   WARNING_MESSAGES, no)
-#TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
-#                   FORMAT_IO, yes)
-
-#  #np# - These are specific to Epetra and are left only as examples.
-#         If uncommented, the following line would define HAVE_ZOLTAN in
-#         the (package)_config.h file.  Developers should use a more
-#         specific name such as 'pytrilinos-zoltan', rather than 'zoltan'.
-# TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
-# TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
-
-# ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
@@ -282,6 +235,81 @@ TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not 
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+
+# ------------------------------------------------------------------------
+# Configure python
+# ------------------------------------------------------------------------
+AZ_PYTHON_WITH( )     # Check for --with-python, --without-python
+az_python_use=true
+AM_CONDITIONAL(PYTHON_USE, test x"$az_python_use" = x"true")
+
+AC_PATH_PROG([PYTHON], python)
+
+if test -z "$PYTHON"; then
+   AC_MSG_ERROR(no path to python found)
+fi
+AZ_PYTHON_PREFIX( )
+
+# Ensure that we have python version 2.2 or greater (for distutils)
+AZ_PYTHON_VERSION_ENSURE( [2.2] )
+
+# Python compiler and linker flags
+AZ_PYTHON_CSPEC
+AZ_PYTHON_LSPEC
+
+# Check that Python.h is available
+save_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="$save_CPPFLAGS $PYTHON_CSPEC"
+AC_LANG([C++])
+AC_CHECK_HEADER(
+	[Python.h],
+	break,
+	AC_MSG_ERROR([You must have Python.h in order to build the Python support!!]))
+CPPFLAGS="$save_CPPFLAGS"
+
+# Check for Numeric
+AC_PYTHON_MODULE(Numeric,yes)
+
+# If user specifies prefix, use it for the PYTHON_PREFIX
+if test @prefix@ != $ac_default_prefix; then
+    PYTHON_PREFIX=@prefix@
+fi
+if test @exec_prefix@ != $ac_default_prefix; then
+    PYTHON_EXECPREFIX=@exec_prefix@
+fi
+
+# ------------------------------------------------------------------------
+# Configure SWIG
+# ------------------------------------------------------------------------
+
+# Check for --with-swig[=path]
+AC_MSG_CHECKING(for --with-swig)
+AC_ARG_WITH(swig,
+            [AC_HELP_STRING([--with-swig@<:@=SWIG@:>@],
+                            [enable swig and set swig binary])],
+            [AC_MSG_RESULT(yes)
+             WITH_SWIG=yes
+             if test X${withval} != Xyes ; then
+               SWIG=$withval
+             fi],
+            [AC_MSG_RESULT(no)
+             AC_CHECK_PROG(WITH_SWIG,swig,yes,no)])
+
+# Report error if no swig found
+if test ${WITH_SWIG} = no; then
+   AC_MSG_ERROR(
+   [Python wrappers require swig (Simple Wrapper Interface Generator).
+    See http://www.swig.org])
+fi
+
+# SWIG configuration
+AC_PROG_SWIG(1.3.23)
+SWIG_ENABLE_CXX
+SWIG_MULTI_MODULE_SUPPORT
+SWIG_PYTHON
+
+AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
+AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
 
 # ------------------------------------------------------------------------
 # Specify other directories 
