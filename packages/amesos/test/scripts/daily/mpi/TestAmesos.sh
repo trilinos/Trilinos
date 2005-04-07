@@ -109,6 +109,7 @@ echo `uname -a` >>& $file
 #       independently of the return status of the executable.
 #
 # FIXME: Test_MultipleSolves is not passed on all machines!
+setenv MPI_GROUP_MAX 128
 foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
   cd $f
   set exefiles = (*.exe)
