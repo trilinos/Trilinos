@@ -274,6 +274,7 @@ int main(int argc, char *argv[])
       int i, j;
       float tmp;
       float twiddle = 0.01;
+      char str[4];
       /* Perturb coordinates of mesh */
       if (mesh.data_type == ZOLTAN_GRAPH)
         for (i = 0; i < mesh.num_elems; i++) {
@@ -284,6 +285,9 @@ int main(int argc, char *argv[])
             mesh.elements[i].avg_coord[j] = mesh.elements[i].coord[0][j];
           }
         }
+      /* change the ParMETIS Seed */
+      sprintf(str, "%d", iteration%10000);
+      Zoltan_Set_Param(zz, "PARMETIS_SEED", str);
     }
 
   } /* End of loop over read and balance */
