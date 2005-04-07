@@ -77,6 +77,7 @@ WITH_CPP_H = \
 	$(srcdir)/Epetra_MsrMatrix.h \
 	$(srcdir)/Aztec2Petra.h \
 	$(srcdir)/AZOO_iterate.h \
+        $(srcdir)/AztecOO_Scaling.h \
         $(srcdir)/AztecOO_StatusTest.h \
         $(srcdir)/AztecOO_StatusType.h \
         $(srcdir)/AztecOO_StatusTestCombo.h \
@@ -91,6 +92,7 @@ WITH_CPP = \
 	$(srcdir)/Epetra_MsrMatrix.cpp \
 	$(srcdir)/Aztec2Petra.cpp \
 	$(srcdir)/AZOO_iterate.cpp \
+        $(srcdir)/AztecOO_Scaling.cpp \
         $(srcdir)/AztecOO_StatusTestCombo.cpp \
         $(srcdir)/AztecOO_StatusTestMaxIters.cpp \
         $(srcdir)/AztecOO_StatusTestResNorm.cpp
@@ -313,9 +315,4 @@ nodist_execinclude_HEADERS = AztecOO_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-
-
-
-
 
