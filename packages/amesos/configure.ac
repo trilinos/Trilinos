@@ -437,12 +437,13 @@ AC_LANG_PUSH([C])
 
 # Fix libraries 
 
-LIBS="${BLAS_LIBS} ${LIBS} ${FLIBS}"
-#
-#  Ken Stanley commented these three lines out because they make no sense 
-#  (why include MPI_LIBS while throwing out BLAS_LIBS and FLIBS when mpi is
-#  enabled?).  It seems that this causes problems on atlantis in serial mode.
-#
+# Put LIBS before BLAS_LIBS instead of after because 3PL's tend to need to
+# link to the BLAS (ex UMFPACK), and any other libs needed to link to the BLAS
+# should be included in the --with-blas value.
+LIBS="${LIBS} ${BLAS_LIBS} ${FLIBS}"
+# TAC_ARG_CONFIG_MPI takes care of this.  TAC_ARG_CHECK_MPI makes sure that
+# this is taken care of before this point.  This was also causing a problem
+# on Atlantis because of the spaces on either side of LIBS.
 # if test "X${HAVE_PKG_MPI}" != "Xyes"; then
 #   LIBS = "${LIBS} ${MPI_LIBS}"
 # fi
