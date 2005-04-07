@@ -176,7 +176,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   for (i=0; (i<num_obj) && (flag==0); i++){
     for (ii=xadj[i]; ii<xadj[i+1]-1; ii++){
       if (adjncy[ii] > adjncy[ii+1]){
-        flag = i; /* Not sorted. */
+        flag = 1; /* Not sorted. */
         break; 
       }
     }
