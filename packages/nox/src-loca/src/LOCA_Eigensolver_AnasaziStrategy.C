@@ -34,7 +34,9 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Utils.H"
+#include "LOCA_Factory.H"
 #include "LOCA_Eigensolver_AnasaziStrategy.H"
+#include "LOCA_EigenvalueSort_Strategies.H"
 
 #ifdef HAVE_LOCA_ANASAZI
 #include "Anasazi_LOCA_MultiVec.H"
@@ -90,10 +92,10 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
   LOCA_OM->SetVerbosity( debug );  
 
   // Create a sorting manager to handle the sorting of eigenvalues 
+  Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> sortingStrategy
+    = globalData->locaFactory->createEigenvalueSortStrategy();
   LOCASort =
-    Teuchos::rcp(new Anasazi::LOCASort<double, MV, OP>(which, 
-						       cayleyPole,
-						       cayleyZero));
+    Teuchos::rcp(new Anasazi::LOCASort(sortingStrategy));
 #endif
 }
 

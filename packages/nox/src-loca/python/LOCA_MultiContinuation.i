@@ -9,7 +9,6 @@
 
 // Extra includes due to importing Continuation.i below
 #include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_AnasaziGroup.H"
 %}
 
 // Ignore/renames

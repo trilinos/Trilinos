@@ -1078,20 +1078,21 @@ SWIG_Python_LookupTypePointer(swig_type_info ***type_list_handle) {
 #define  SWIGTYPE_std__size_t swig_types[1] 
 #define  SWIGTYPE_size_t swig_types[2] 
 #define  SWIGTYPE_p_double swig_types[3] 
-#define  SWIGTYPE_p_NOX__Parameter__List swig_types[4] 
-#define  SWIGTYPE_p_vectorTdouble_t swig_types[5] 
-#define  SWIGTYPE_p_char swig_types[6] 
-#define  SWIGTYPE_p_LOCA__Continuation__AbstractGroup swig_types[7] 
-#define  SWIGTYPE_p_ostream swig_types[8] 
-#define  SWIGTYPE_std__ptrdiff_t swig_types[9] 
-#define  SWIGTYPE_ptrdiff_t swig_types[10] 
-#define  SWIGTYPE_p_vectorTstd__string_t swig_types[11] 
-#define  SWIGTYPE_p_Utils swig_types[12] 
-#define  SWIGTYPE_p_NOX__Solver__Generic swig_types[13] 
-#define  SWIGTYPE_p_LOCA__Stepper swig_types[14] 
-#define  SWIGTYPE_p_NOX__StatusTest__Generic swig_types[15] 
-#define  SWIGTYPE_p_LOCA__Abstract__Iterator swig_types[16] 
-static swig_type_info *swig_types[18];
+#define  SWIGTYPE_p_Teuchos__RefCountPtrTLOCA__Abstract__Factory_t swig_types[4] 
+#define  SWIGTYPE_p_NOX__Parameter__List swig_types[5] 
+#define  SWIGTYPE_p_vectorTdouble_t swig_types[6] 
+#define  SWIGTYPE_p_char swig_types[7] 
+#define  SWIGTYPE_p_LOCA__Continuation__AbstractGroup swig_types[8] 
+#define  SWIGTYPE_p_ostream swig_types[9] 
+#define  SWIGTYPE_std__ptrdiff_t swig_types[10] 
+#define  SWIGTYPE_ptrdiff_t swig_types[11] 
+#define  SWIGTYPE_p_vectorTstd__string_t swig_types[12] 
+#define  SWIGTYPE_p_Utils swig_types[13] 
+#define  SWIGTYPE_p_NOX__Solver__Generic swig_types[14] 
+#define  SWIGTYPE_p_LOCA__Stepper swig_types[15] 
+#define  SWIGTYPE_p_NOX__StatusTest__Generic swig_types[16] 
+#define  SWIGTYPE_p_LOCA__Abstract__Iterator swig_types[17] 
+static swig_type_info *swig_types[19];
 
 /* -------- TYPES TABLE (END) -------- */
 
@@ -1503,7 +1504,7 @@ static PyObject * Iterator_swigregister(PyObject *, PyObject *args) {
     Py_INCREF(obj);
     return Py_BuildValue((char *)"");
 }
-static PyObject *_wrap_new_Stepper(PyObject *, PyObject *args) {
+static PyObject *_wrap_new_Stepper__SWIG_0(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::Continuation::AbstractGroup *arg1 = 0 ;
     NOX::StatusTest::Generic *arg2 = 0 ;
@@ -1543,6 +1544,160 @@ static PyObject *_wrap_new_Stepper(PyObject *, PyObject *args) {
     resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_LOCA__Stepper, 1);
     return resultobj;
     fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_new_Stepper__SWIG_1(PyObject *, PyObject *args) {
+    PyObject *resultobj;
+    LOCA::Continuation::AbstractGroup *arg1 = 0 ;
+    NOX::StatusTest::Generic *arg2 = 0 ;
+    NOX::Parameter::List *arg3 = 0 ;
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory > *arg4 = 0 ;
+    LOCA::Stepper *result;
+    PyObject * obj0 = 0 ;
+    PyObject * obj1 = 0 ;
+    PyObject * obj2 = 0 ;
+    PyObject * obj3 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"OOOO:new_Stepper",&obj0,&obj1,&obj2,&obj3)) goto fail;
+    {
+        SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__Continuation__AbstractGroup, SWIG_POINTER_EXCEPTION | 0);
+        if (SWIG_arg_fail(1)) SWIG_fail;
+        if (arg1 == NULL) {
+            SWIG_null_ref("LOCA::Continuation::AbstractGroup");
+        }
+        if (SWIG_arg_fail(1)) SWIG_fail;
+    }
+    {
+        SWIG_Python_ConvertPtr(obj1, (void **)&arg2, SWIGTYPE_p_NOX__StatusTest__Generic, SWIG_POINTER_EXCEPTION | 0);
+        if (SWIG_arg_fail(2)) SWIG_fail;
+        if (arg2 == NULL) {
+            SWIG_null_ref("NOX::StatusTest::Generic");
+        }
+        if (SWIG_arg_fail(2)) SWIG_fail;
+    }
+    {
+        SWIG_Python_ConvertPtr(obj2, (void **)&arg3, SWIGTYPE_p_NOX__Parameter__List, SWIG_POINTER_EXCEPTION | 0);
+        if (SWIG_arg_fail(3)) SWIG_fail;
+        if (arg3 == NULL) {
+            SWIG_null_ref("NOX::Parameter::List");
+        }
+        if (SWIG_arg_fail(3)) SWIG_fail;
+    }
+    {
+        SWIG_Python_ConvertPtr(obj3, (void **)&arg4, SWIGTYPE_p_Teuchos__RefCountPtrTLOCA__Abstract__Factory_t, SWIG_POINTER_EXCEPTION | 0);
+        if (SWIG_arg_fail(4)) SWIG_fail;
+        if (arg4 == NULL) {
+            SWIG_null_ref("Teuchos::RefCountPtr<LOCA::Abstract::Factory >");
+        }
+        if (SWIG_arg_fail(4)) SWIG_fail;
+    }
+    result = (LOCA::Stepper *)new LOCA::Stepper(*arg1,*arg2,*arg3,(Teuchos::RefCountPtr<LOCA::Abstract::Factory > const &)*arg4);
+    
+    resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_LOCA__Stepper, 1);
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_new_Stepper(PyObject *self, PyObject *args) {
+    int argc;
+    PyObject *argv[5];
+    int ii;
+    
+    argc = PyObject_Length(args);
+    for (ii = 0; (ii < argc) && (ii < 4); ii++) {
+        argv[ii] = PyTuple_GetItem(args,ii);
+    }
+    if (argc == 3) {
+        int _v;
+        {
+            void *ptr = 0;
+            if (SWIG_ConvertPtr(argv[0], &ptr, SWIGTYPE_p_LOCA__Continuation__AbstractGroup, 0) == -1) {
+                _v = 0;
+                PyErr_Clear();
+            } else {
+                _v = (ptr != 0);
+            }
+        }
+        if (_v) {
+            {
+                void *ptr = 0;
+                if (SWIG_ConvertPtr(argv[1], &ptr, SWIGTYPE_p_NOX__StatusTest__Generic, 0) == -1) {
+                    _v = 0;
+                    PyErr_Clear();
+                } else {
+                    _v = (ptr != 0);
+                }
+            }
+            if (_v) {
+                {
+                    void *ptr = 0;
+                    if (SWIG_ConvertPtr(argv[2], &ptr, SWIGTYPE_p_NOX__Parameter__List, 0) == -1) {
+                        _v = 0;
+                        PyErr_Clear();
+                    } else {
+                        _v = (ptr != 0);
+                    }
+                }
+                if (_v) {
+                    return _wrap_new_Stepper__SWIG_0(self,args);
+                }
+            }
+        }
+    }
+    if (argc == 4) {
+        int _v;
+        {
+            void *ptr = 0;
+            if (SWIG_ConvertPtr(argv[0], &ptr, SWIGTYPE_p_LOCA__Continuation__AbstractGroup, 0) == -1) {
+                _v = 0;
+                PyErr_Clear();
+            } else {
+                _v = (ptr != 0);
+            }
+        }
+        if (_v) {
+            {
+                void *ptr = 0;
+                if (SWIG_ConvertPtr(argv[1], &ptr, SWIGTYPE_p_NOX__StatusTest__Generic, 0) == -1) {
+                    _v = 0;
+                    PyErr_Clear();
+                } else {
+                    _v = (ptr != 0);
+                }
+            }
+            if (_v) {
+                {
+                    void *ptr = 0;
+                    if (SWIG_ConvertPtr(argv[2], &ptr, SWIGTYPE_p_NOX__Parameter__List, 0) == -1) {
+                        _v = 0;
+                        PyErr_Clear();
+                    } else {
+                        _v = (ptr != 0);
+                    }
+                }
+                if (_v) {
+                    {
+                        void *ptr = 0;
+                        if (SWIG_ConvertPtr(argv[3], &ptr, SWIGTYPE_p_Teuchos__RefCountPtrTLOCA__Abstract__Factory_t, 0) == -1) {
+                            _v = 0;
+                            PyErr_Clear();
+                        } else {
+                            _v = (ptr != 0);
+                        }
+                    }
+                    if (_v) {
+                        return _wrap_new_Stepper__SWIG_1(self,args);
+                    }
+                }
+            }
+        }
+    }
+    
+    PyErr_SetString(PyExc_NotImplementedError,"No matching function for overloaded 'new_Stepper'");
     return NULL;
 }
 
@@ -2659,6 +2814,7 @@ static swig_type_info _swigt__p_LOCA__ParameterVector[] = {{"_p_LOCA__ParameterV
 static swig_type_info _swigt__std__size_t[] = {{"_std__size_t", 0, "std::size_t", 0, 0, 0, 0},{"_std__size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__size_t[] = {{"_size_t", 0, "size_t", 0, 0, 0, 0},{"_size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_double[] = {{"_p_double", 0, "double *", 0, 0, 0, 0},{"_p_double", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_Teuchos__RefCountPtrTLOCA__Abstract__Factory_t[] = {{"_p_Teuchos__RefCountPtrTLOCA__Abstract__Factory_t", 0, "Teuchos::RefCountPtr<LOCA::Abstract::Factory > *", 0, 0, 0, 0},{"_p_Teuchos__RefCountPtrTLOCA__Abstract__Factory_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Parameter__List[] = {{"_p_NOX__Parameter__List", 0, "NOX::Parameter::List *", 0, 0, 0, 0},{"_p_NOX__Parameter__List", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_vectorTdouble_t[] = {{"_p_vectorTdouble_t", 0, "vector<double > *", 0, 0, 0, 0},{"_p_vectorTdouble_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_char[] = {{"_p_char", 0, "char *", 0, 0, 0, 0},{"_p_char", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
@@ -2678,6 +2834,7 @@ _swigt__p_LOCA__ParameterVector,
 _swigt__std__size_t, 
 _swigt__size_t, 
 _swigt__p_double, 
+_swigt__p_Teuchos__RefCountPtrTLOCA__Abstract__Factory_t, 
 _swigt__p_NOX__Parameter__List, 
 _swigt__p_vectorTdouble_t, 
 _swigt__p_char, 

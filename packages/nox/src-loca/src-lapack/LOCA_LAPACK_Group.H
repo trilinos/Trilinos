@@ -200,10 +200,6 @@ namespace LOCA {
 			   const NOX::Abstract::Vector* const* inputs,
 			   NOX::Abstract::Vector** outputs, int nVecs) const;
 
-      //! Compute eigenvalues/eigenvectors
-      virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(NOX::Parameter::List& params);
-
       //! Print out the solution vector and continuation parameter
       void printSolution(const double conParam) const;
 

@@ -152,8 +152,6 @@ int main()
     outFile.close();
 
     cout << "beta = " << grp.getParam("beta") << endl;
-
-    grp.computeEigenvalues(solverParameters);
   }
 
   catch (char *s) {

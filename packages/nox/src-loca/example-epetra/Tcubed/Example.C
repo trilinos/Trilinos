@@ -146,8 +146,9 @@ int main(int argc, char *argv[])
     bifurcationList.setParameter("Method", "None");
 
   // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
-  locaStepperList.setParameter("Compute Eigenvalues",false);
-  NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
+  locaStepperList.setParameter("Compute Eigenvalues",true);
+  NOX::Parameter::List& aList = locaStepperList.sublist("Eigensolver");
+  aList.setParameter("Method", "Anasazi");
   aList.setParameter("Block Size", 1);
   aList.setParameter("Arnoldi Size", 10);
   aList.setParameter("NEV", 3);

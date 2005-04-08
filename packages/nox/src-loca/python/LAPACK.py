@@ -100,7 +100,6 @@ class Group(NOX.LAPACK.Group,Abstract.Group):
     def computeScaledDotProduct(*args): return _LAPACK.Group_computeScaledDotProduct(*args)
     def scaleVector(*args): return _LAPACK.Group_scaleVector(*args)
     def applyJacobianInverseMulti(*args): return _LAPACK.Group_applyJacobianInverseMulti(*args)
-    def computeEigenvalues(*args): return _LAPACK.Group_computeEigenvalues(*args)
     def projectToDraw(*args): return _LAPACK.Group_projectToDraw(*args)
     def projectToDrawDimension(*args): return _LAPACK.Group_projectToDrawDimension(*args)
     def applyBorderedJacobianInverse(*args): return _LAPACK.Group_applyBorderedJacobianInverse(*args)

@@ -33,7 +33,11 @@
 #ifndef LOCA_STEPPER_H
 #define LOCA_STEPPER_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "LOCA_Abstract_Iterator.H"    // base class
+#include "LOCA_GlobalData.H"           // class data element
+#include "LOCA_Abstract_Factory.H"     // class data element
 #include "NOX_Parameter_List.H"	       // class data element
 #include "NOX_Solver_Manager.H"	       // class data element
 #include "LOCA_Bifurcation_Manager.H"  // class data element
@@ -72,6 +76,12 @@ namespace LOCA {
 	    NOX::StatusTest::Generic& t,
 	    NOX::Parameter::List& p);
 
+    //! Constructor with user-provided factory
+    Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
+	    NOX::StatusTest::Generic& t,
+	    NOX::Parameter::List& p,
+	    const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory);
+
     //! Destructor
     virtual ~Stepper();
 
@@ -101,9 +111,6 @@ namespace LOCA {
     virtual const NOX::Solver::Generic& getSolver() const;
 
   protected:
-
-    //! Copy Constructor: Not implemented, but put here to prevent compiler form generating one
-    Stepper(const Stepper& s);
 
     //! Intialize iterator
     virtual LOCA::Abstract::Iterator::IteratorStatus start();
@@ -148,7 +155,27 @@ namespace LOCA {
     //! Checks to see if continuation parameter is within threshold of bound
     virtual bool withinThreshold();
 
+  private:
+    
+    //! Private to prohibit copying
+    Stepper(const Stepper&);
+
+    //! Private to prohibit copying
+    Stepper& operator = (const Stepper&);
+
   protected:
+
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+    //! User-provided factory
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory> factory;
+
+    //! Flag indicating whether we have a user-provided factory
+    bool haveFactory;
+
+    //! Eigensolver for computing eigenvalues after each continuation
+    Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> eigensolver;
 
     //! Bifurcation group manager
     LOCA::Bifurcation::Manager* bifGroupManagerPtr;
@@ -169,7 +196,7 @@ namespace LOCA {
     NOX::StatusTest::Generic* statusTestPtr;
 
     //! Pointer to parameter list passed in constructor/reset method
-    NOX::Parameter::List* paramListPtr;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramListPtr;
 
     //! Solver (a.k.a corrector)
     NOX::Solver::Manager* solverPtr;

@@ -161,7 +161,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_LOCA_ANASAZI
     // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
     locaStepperList.setParameter("Compute Eigenvalues",true);
-    NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
+    NOX::Parameter::List& aList = locaStepperList.sublist("Eigensolver");
+    aList.setParameter("Method", "Anasazi");
     aList.setParameter("Block Size", 1);
     aList.setParameter("Arnoldi Size", 10);
     aList.setParameter("NEV", 3);

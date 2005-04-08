@@ -127,8 +127,9 @@ void LOCA::Utils::initializeSublistMap(NOX::Parameter::List& p) {
   sublistMap["Stepper"] = &stepperSublist;
 
   // Anasazi sublist
-  NOX::Parameter::List& anasaziSublist = stepperSublist.sublist("Anasazi");
-  sublistMap["Anasazi"] = &anasaziSublist;
+  NOX::Parameter::List& eigensolverSublist = 
+    stepperSublist.sublist("Eigensolver");
+  sublistMap["Anasazi"] = &eigensolverSublist;
 
   // Bifurcation sublist
   NOX::Parameter::List& bifurcationSublist = 

@@ -65,16 +65,6 @@ LOCA::Continuation::AbstractGroup::computeScaledDotProduct(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AbstractGroup::computeEigenvalues(
-					        NOX::Parameter::List& params)
-{
- LOCA::ErrorCheck::throwError(
-		       "LOCA::Continuation::AbstractGroup::computeEigenvalues",
-		       "No eigensolver defined for group");
-  return NOX::Abstract::Group::Failed;
-}
-
-NOX::Abstract::Group::ReturnType
 LOCA::Continuation::AbstractGroup::applyHouseholderJacobianInverse(
 				         NOX::Parameter::List& params,
 					 const NOX::Abstract::Vector& f,

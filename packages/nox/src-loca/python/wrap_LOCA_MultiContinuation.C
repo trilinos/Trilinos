@@ -1106,7 +1106,6 @@ static swig_type_info *swig_types[15];
 
 // Extra includes due to importing Continuation.i below
 #include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_AnasaziGroup.H"
 
 
 #include <limits.h>
@@ -1483,9 +1482,6 @@ static PyMethodDef SwigMethods[] = {
 static void *_p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__MultiContinuation__AbstractGroup(void *x) {
     return (void *)((LOCA::MultiContinuation::AbstractGroup *)  ((LOCA::MultiContinuation::FiniteDifferenceGroup *) x));
 }
-static void *_p_LOCA__Continuation__AnasaziGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
-    return (void *)((LOCA::Continuation::AbstractGroup *)  ((LOCA::Continuation::AnasaziGroup *) x));
-}
 static void *_p_LOCA__MultiContinuation__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
     return (void *)((LOCA::Continuation::AbstractGroup *)  ((LOCA::MultiContinuation::AbstractGroup *) x));
 }
@@ -1498,9 +1494,6 @@ static void *_p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__Continu
 static void *_p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *)  ((LOCA::Continuation::AbstractGroup *) x));
 }
-static void *_p_LOCA__Continuation__AnasaziGroupTo_p_NOX__Abstract__Group(void *x) {
-    return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *) ((LOCA::Continuation::AnasaziGroup *) x));
-}
 static void *_p_LOCA__MultiContinuation__AbstractGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *) ((LOCA::MultiContinuation::AbstractGroup *) x));
 }
@@ -1510,14 +1503,14 @@ static void *_p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Gro
 static void *_p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *)(LOCA::MultiContinuation::AbstractGroup *) ((LOCA::MultiContinuation::FiniteDifferenceGroup *) x));
 }
-static swig_type_info _swigt__p_NOX__Abstract__Group[] = {{"_p_NOX__Abstract__Group", 0, "NOX::Abstract::Group *", 0, 0, 0, 0},{"_p_NOX__Abstract__Group", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", _p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", _p_LOCA__Continuation__AnasaziGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_NOX__Abstract__Group[] = {{"_p_NOX__Abstract__Group", 0, "NOX::Abstract::Group *", 0, 0, 0, 0},{"_p_NOX__Abstract__Group", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", _p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__std__size_t[] = {{"_std__size_t", 0, "std::size_t", 0, 0, 0, 0},{"_std__size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__size_t[] = {{"_size_t", 0, "size_t", 0, 0, 0, 0},{"_size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_double[] = {{"_p_double", 0, "double *", 0, 0, 0, 0},{"_p_double", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_vectorTint_t[] = {{"_p_vectorTint_t", 0, "vector<int > *", 0, 0, 0, 0},{"_p_vectorTint_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_char[] = {{"_p_char", 0, "char *", 0, 0, 0, 0},{"_p_char", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__MultiContinuation__AbstractGroup[] = {{"_p_LOCA__MultiContinuation__AbstractGroup", 0, "LOCA::MultiContinuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__MultiContinuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
-static swig_type_info _swigt__p_LOCA__Continuation__AbstractGroup[] = {{"_p_LOCA__Continuation__AbstractGroup", 0, "LOCA::Continuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", _p_LOCA__Continuation__AnasaziGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_LOCA__Continuation__AbstractGroup[] = {{"_p_LOCA__Continuation__AbstractGroup", 0, "LOCA::Continuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Abstract__MultiVector__DenseMatrix[] = {{"_p_NOX__Abstract__MultiVector__DenseMatrix", 0, "NOX::Abstract::MultiVector::DenseMatrix *", 0, 0, 0, 0},{"_p_NOX__Abstract__MultiVector__DenseMatrix", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__MultiContinuation__FiniteDifferenceGroup[] = {{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", 0, "LOCA::MultiContinuation::FiniteDifferenceGroup *", 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__std__ptrdiff_t[] = {{"_std__ptrdiff_t", 0, "std::ptrdiff_t", 0, 0, 0, 0},{"_std__ptrdiff_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};

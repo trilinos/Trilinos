@@ -43,12 +43,12 @@ import MultiContinuation
 import Homotopy
 import TimeDependent
 import Bifurcation
-class Group(Continuation.AnasaziGroup,Bifurcation.HopfBordFiniteDifferenceGroup,Bifurcation.TPBordSingularSolveGroup,Homotopy.AbstractGroup,MultiContinuation.FiniteDifferenceGroup):
+class Group(Bifurcation.HopfBordFiniteDifferenceGroup,Bifurcation.TPBordSingularSolveGroup,Homotopy.AbstractGroup,MultiContinuation.FiniteDifferenceGroup):
     __swig_setmethods__ = {}
-    for _s in [Continuation.AnasaziGroup,Bifurcation.HopfBordFiniteDifferenceGroup,Bifurcation.TPBordSingularSolveGroup,Homotopy.AbstractGroup,MultiContinuation.FiniteDifferenceGroup]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    for _s in [Bifurcation.HopfBordFiniteDifferenceGroup,Bifurcation.TPBordSingularSolveGroup,Homotopy.AbstractGroup,MultiContinuation.FiniteDifferenceGroup]: __swig_setmethods__.update(_s.__swig_setmethods__)
     __setattr__ = lambda self, name, value: _swig_setattr(self, Group, name, value)
     __swig_getmethods__ = {}
-    for _s in [Continuation.AnasaziGroup,Bifurcation.HopfBordFiniteDifferenceGroup,Bifurcation.TPBordSingularSolveGroup,Homotopy.AbstractGroup,MultiContinuation.FiniteDifferenceGroup]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    for _s in [Bifurcation.HopfBordFiniteDifferenceGroup,Bifurcation.TPBordSingularSolveGroup,Homotopy.AbstractGroup,MultiContinuation.FiniteDifferenceGroup]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, Group, name)
     def __init__(self): raise RuntimeError, "No constructor defined"
     def __repr__(self):

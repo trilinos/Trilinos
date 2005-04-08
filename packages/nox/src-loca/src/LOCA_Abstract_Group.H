@@ -33,7 +33,6 @@
 #ifndef LOCA_ABSTRACT_GROUP_H
 #define LOCA_ABSTRACT_GROUP_H
 
-#include "LOCA_Continuation_AnasaziGroup.H"                   // base class
 #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
 #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
 #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
@@ -58,7 +57,6 @@ namespace LOCA {
      * future.
      */
     class Group : 
-      public LOCA::Continuation::AnasaziGroup,
       public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
       public virtual LOCA::Homotopy::AbstractGroup,
@@ -94,17 +92,6 @@ namespace LOCA {
       //! Assignment operator
       virtual LOCA::Continuation::AbstractGroup& 
       operator=(const LOCA::Continuation::AbstractGroup& source);
-
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Continuation::AnasaziGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::Continuation::AnasaziGroup& 
-      operator=(const LOCA::Continuation::AnasaziGroup& source);
 
       //@}
 

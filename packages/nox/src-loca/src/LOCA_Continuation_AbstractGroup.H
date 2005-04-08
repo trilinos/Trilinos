@@ -153,14 +153,6 @@ namespace LOCA {
        */
       //@{
 
-      //! Compute eigenvalues/eigenvectors
-      /*! 
-       * Default implementation prints an error message and throws an 
-       * error string.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(NOX::Parameter::List& params);
-
       //! Function to print out solution and parameter after successful step
       /*! 
        * Empty default definition. 

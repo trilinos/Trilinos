@@ -1091,9 +1091,8 @@ SWIG_Python_LookupTypePointer(swig_type_info ***type_list_handle) {
 #define  SWIGTYPE_p_NOX__StatusTest__Generic swig_types[14] 
 #define  SWIGTYPE_p_LOCA__Continuation__StatusTest__ParameterResidualNorm swig_types[15] 
 #define  SWIGTYPE_p_NOX__Solver__Generic swig_types[16] 
-#define  SWIGTYPE_p_LOCA__Continuation__AnasaziGroup swig_types[17] 
-#define  SWIGTYPE_p_LOCA__Continuation__StatusTest__ParameterUpdateNorm swig_types[18] 
-static swig_type_info *swig_types[20];
+#define  SWIGTYPE_p_LOCA__Continuation__StatusTest__ParameterUpdateNorm swig_types[17] 
+static swig_type_info *swig_types[19];
 
 /* -------- TYPES TABLE (END) -------- */
 
@@ -1108,7 +1107,6 @@ static swig_type_info *swig_types[20];
 // LOCA includes
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_AnasaziGroup.H"
 #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 
@@ -1712,34 +1710,6 @@ static PyObject *_wrap_AbstractGroup_computeScaledDotProduct(PyObject *, PyObjec
 }
 
 
-static PyObject *_wrap_AbstractGroup_computeEigenvalues(PyObject *, PyObject *args) {
-    PyObject *resultobj;
-    LOCA::Continuation::AbstractGroup *arg1 = (LOCA::Continuation::AbstractGroup *) 0 ;
-    NOX::Parameter::List *arg2 = 0 ;
-    int result;
-    PyObject * obj0 = 0 ;
-    PyObject * obj1 = 0 ;
-    
-    if(!PyArg_ParseTuple(args,(char *)"OO:AbstractGroup_computeEigenvalues",&obj0,&obj1)) goto fail;
-    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__Continuation__AbstractGroup, SWIG_POINTER_EXCEPTION | 0);
-    if (SWIG_arg_fail(1)) SWIG_fail;
-    {
-        SWIG_Python_ConvertPtr(obj1, (void **)&arg2, SWIGTYPE_p_NOX__Parameter__List, SWIG_POINTER_EXCEPTION | 0);
-        if (SWIG_arg_fail(2)) SWIG_fail;
-        if (arg2 == NULL) {
-            SWIG_null_ref("NOX::Parameter::List");
-        }
-        if (SWIG_arg_fail(2)) SWIG_fail;
-    }
-    result = (int)(arg1)->computeEigenvalues(*arg2);
-    
-    resultobj = SWIG_From_int((result));
-    return resultobj;
-    fail:
-    return NULL;
-}
-
-
 static PyObject *_wrap_AbstractGroup_printSolution__SWIG_0(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::Continuation::AbstractGroup *arg1 = (LOCA::Continuation::AbstractGroup *) 0 ;
@@ -2037,58 +2007,6 @@ static PyObject * FiniteDifferenceGroup_swigregister(PyObject *, PyObject *args)
     PyObject *obj;
     if (!PyArg_ParseTuple(args,(char*)"O", &obj)) return NULL;
     SWIG_TypeClientData(SWIGTYPE_p_LOCA__Continuation__FiniteDifferenceGroup, obj);
-    Py_INCREF(obj);
-    return Py_BuildValue((char *)"");
-}
-static PyObject *_wrap_delete_AnasaziGroup(PyObject *, PyObject *args) {
-    PyObject *resultobj;
-    LOCA::Continuation::AnasaziGroup *arg1 = (LOCA::Continuation::AnasaziGroup *) 0 ;
-    PyObject * obj0 = 0 ;
-    
-    if(!PyArg_ParseTuple(args,(char *)"O:delete_AnasaziGroup",&obj0)) goto fail;
-    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__Continuation__AnasaziGroup, SWIG_POINTER_EXCEPTION | 0);
-    if (SWIG_arg_fail(1)) SWIG_fail;
-    delete arg1;
-    
-    Py_INCREF(Py_None); resultobj = Py_None;
-    return resultobj;
-    fail:
-    return NULL;
-}
-
-
-static PyObject *_wrap_AnasaziGroup_computeEigenvalues(PyObject *, PyObject *args) {
-    PyObject *resultobj;
-    LOCA::Continuation::AnasaziGroup *arg1 = (LOCA::Continuation::AnasaziGroup *) 0 ;
-    NOX::Parameter::List *arg2 = 0 ;
-    int result;
-    PyObject * obj0 = 0 ;
-    PyObject * obj1 = 0 ;
-    
-    if(!PyArg_ParseTuple(args,(char *)"OO:AnasaziGroup_computeEigenvalues",&obj0,&obj1)) goto fail;
-    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__Continuation__AnasaziGroup, SWIG_POINTER_EXCEPTION | 0);
-    if (SWIG_arg_fail(1)) SWIG_fail;
-    {
-        SWIG_Python_ConvertPtr(obj1, (void **)&arg2, SWIGTYPE_p_NOX__Parameter__List, SWIG_POINTER_EXCEPTION | 0);
-        if (SWIG_arg_fail(2)) SWIG_fail;
-        if (arg2 == NULL) {
-            SWIG_null_ref("NOX::Parameter::List");
-        }
-        if (SWIG_arg_fail(2)) SWIG_fail;
-    }
-    result = (int)(arg1)->computeEigenvalues(*arg2);
-    
-    resultobj = SWIG_From_int((result));
-    return resultobj;
-    fail:
-    return NULL;
-}
-
-
-static PyObject * AnasaziGroup_swigregister(PyObject *, PyObject *args) {
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args,(char*)"O", &obj)) return NULL;
-    SWIG_TypeClientData(SWIGTYPE_p_LOCA__Continuation__AnasaziGroup, obj);
     Py_INCREF(obj);
     return Py_BuildValue((char *)"");
 }
@@ -2465,7 +2383,6 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"AbstractGroup_computeDfDp", _wrap_AbstractGroup_computeDfDp, METH_VARARGS, NULL},
 	 { (char *)"AbstractGroup_applyJacobianInverseMulti", _wrap_AbstractGroup_applyJacobianInverseMulti, METH_VARARGS, NULL},
 	 { (char *)"AbstractGroup_computeScaledDotProduct", _wrap_AbstractGroup_computeScaledDotProduct, METH_VARARGS, NULL},
-	 { (char *)"AbstractGroup_computeEigenvalues", _wrap_AbstractGroup_computeEigenvalues, METH_VARARGS, NULL},
 	 { (char *)"AbstractGroup_printSolution", _wrap_AbstractGroup_printSolution, METH_VARARGS, NULL},
 	 { (char *)"AbstractGroup_applyHouseholderJacobianInverse", _wrap_AbstractGroup_applyHouseholderJacobianInverse, METH_VARARGS, NULL},
 	 { (char *)"AbstractGroup_scaleVector", _wrap_AbstractGroup_scaleVector, METH_VARARGS, NULL},
@@ -2473,9 +2390,6 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_FiniteDifferenceGroup", _wrap_delete_FiniteDifferenceGroup, METH_VARARGS, NULL},
 	 { (char *)"FiniteDifferenceGroup_computeDfDp", _wrap_FiniteDifferenceGroup_computeDfDp, METH_VARARGS, NULL},
 	 { (char *)"FiniteDifferenceGroup_swigregister", FiniteDifferenceGroup_swigregister, METH_VARARGS, NULL},
-	 { (char *)"delete_AnasaziGroup", _wrap_delete_AnasaziGroup, METH_VARARGS, NULL},
-	 { (char *)"AnasaziGroup_computeEigenvalues", _wrap_AnasaziGroup_computeEigenvalues, METH_VARARGS, NULL},
-	 { (char *)"AnasaziGroup_swigregister", AnasaziGroup_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_ParameterResidualNorm", _wrap_new_ParameterResidualNorm, METH_VARARGS, NULL},
 	 { (char *)"delete_ParameterResidualNorm", _wrap_delete_ParameterResidualNorm, METH_VARARGS, NULL},
 	 { (char *)"ParameterResidualNorm_checkStatus", _wrap_ParameterResidualNorm_checkStatus, METH_VARARGS, NULL},
@@ -2500,9 +2414,6 @@ static PyMethodDef SwigMethods[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static void *_p_LOCA__Continuation__AnasaziGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
-    return (void *)((LOCA::Continuation::AbstractGroup *)  ((LOCA::Continuation::AnasaziGroup *) x));
-}
 static void *_p_LOCA__Continuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
     return (void *)((LOCA::Continuation::AbstractGroup *)  ((LOCA::Continuation::FiniteDifferenceGroup *) x));
 }
@@ -2536,20 +2447,17 @@ static void *_p_NOX__StatusTest__NormUpdateTo_p_NOX__StatusTest__Generic(void *x
 static void *_p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *)  ((LOCA::Continuation::AbstractGroup *) x));
 }
-static void *_p_LOCA__Continuation__AnasaziGroupTo_p_NOX__Abstract__Group(void *x) {
-    return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *) ((LOCA::Continuation::AnasaziGroup *) x));
-}
 static void *_p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *) ((LOCA::Continuation::FiniteDifferenceGroup *) x));
 }
-static swig_type_info _swigt__p_NOX__Abstract__Group[] = {{"_p_NOX__Abstract__Group", 0, "NOX::Abstract::Group *", 0, 0, 0, 0},{"_p_NOX__Abstract__Group", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", _p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", _p_LOCA__Continuation__AnasaziGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_NOX__Abstract__Group[] = {{"_p_NOX__Abstract__Group", 0, "NOX::Abstract::Group *", 0, 0, 0, 0},{"_p_NOX__Abstract__Group", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", _p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__ParameterVector[] = {{"_p_LOCA__ParameterVector", 0, "LOCA::ParameterVector *", 0, 0, 0, 0},{"_p_LOCA__ParameterVector", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__std__size_t[] = {{"_std__size_t", 0, "std::size_t", 0, 0, 0, 0},{"_std__size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__size_t[] = {{"_size_t", 0, "size_t", 0, 0, 0, 0},{"_size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_double[] = {{"_p_double", 0, "double *", 0, 0, 0, 0},{"_p_double", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Parameter__List[] = {{"_p_NOX__Parameter__List", 0, "NOX::Parameter::List *", 0, 0, 0, 0},{"_p_NOX__Parameter__List", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_char[] = {{"_p_char", 0, "char *", 0, 0, 0, 0},{"_p_char", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
-static swig_type_info _swigt__p_LOCA__Continuation__AbstractGroup[] = {{"_p_LOCA__Continuation__AbstractGroup", 0, "LOCA::Continuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", _p_LOCA__Continuation__AnasaziGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_LOCA__Continuation__AbstractGroup[] = {{"_p_LOCA__Continuation__AbstractGroup", 0, "LOCA::Continuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_string[] = {{"_p_string", 0, "string *", 0, 0, 0, 0},{"_p_string", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__std__ptrdiff_t[] = {{"_std__ptrdiff_t", 0, "std::ptrdiff_t", 0, 0, 0, 0},{"_std__ptrdiff_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__ptrdiff_t[] = {{"_ptrdiff_t", 0, "ptrdiff_t", 0, 0, 0, 0},{"_ptrdiff_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
@@ -2559,7 +2467,6 @@ static swig_type_info _swigt__p_NOX__Abstract__Vector[] = {{"_p_NOX__Abstract__V
 static swig_type_info _swigt__p_NOX__StatusTest__Generic[] = {{"_p_NOX__StatusTest__Generic", 0, "NOX::StatusTest::Generic *", 0, 0, 0, 0},{"_p_NOX__StatusTest__NormF", _p_NOX__StatusTest__NormFTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__StatusTest__ParameterResidualNorm", _p_LOCA__Continuation__StatusTest__ParameterResidualNormTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_NOX__StatusTest__NormWRMS", _p_NOX__StatusTest__NormWRMSTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_NOX__StatusTest__Stagnation", _p_NOX__StatusTest__StagnationTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_NOX__StatusTest__Generic", 0, 0, 0, 0, 0, 0},{"_p_NOX__StatusTest__MaxIters", _p_NOX__StatusTest__MaxItersTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__StatusTest__ParameterUpdateNorm", _p_LOCA__Continuation__StatusTest__ParameterUpdateNormTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_NOX__StatusTest__FiniteValue", _p_NOX__StatusTest__FiniteValueTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_NOX__StatusTest__Combo", _p_NOX__StatusTest__ComboTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{"_p_NOX__StatusTest__NormUpdate", _p_NOX__StatusTest__NormUpdateTo_p_NOX__StatusTest__Generic, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__Continuation__StatusTest__ParameterResidualNorm[] = {{"_p_LOCA__Continuation__StatusTest__ParameterResidualNorm", 0, "LOCA::Continuation::StatusTest::ParameterResidualNorm *", 0, 0, 0, 0},{"_p_LOCA__Continuation__StatusTest__ParameterResidualNorm", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Solver__Generic[] = {{"_p_NOX__Solver__Generic", 0, "NOX::Solver::Generic *", 0, 0, 0, 0},{"_p_NOX__Solver__Generic", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
-static swig_type_info _swigt__p_LOCA__Continuation__AnasaziGroup[] = {{"_p_LOCA__Continuation__AnasaziGroup", 0, "LOCA::Continuation::AnasaziGroup *", 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__Continuation__StatusTest__ParameterUpdateNorm[] = {{"_p_LOCA__Continuation__StatusTest__ParameterUpdateNorm", 0, "LOCA::Continuation::StatusTest::ParameterUpdateNorm *", 0, 0, 0, 0},{"_p_LOCA__Continuation__StatusTest__ParameterUpdateNorm", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 
 static swig_type_info *swig_types_initial[] = {
@@ -2580,7 +2487,6 @@ _swigt__p_NOX__Abstract__Vector,
 _swigt__p_NOX__StatusTest__Generic, 
 _swigt__p_LOCA__Continuation__StatusTest__ParameterResidualNorm, 
 _swigt__p_NOX__Solver__Generic, 
-_swigt__p_LOCA__Continuation__AnasaziGroup, 
 _swigt__p_LOCA__Continuation__StatusTest__ParameterUpdateNorm, 
 0
 };

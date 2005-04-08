@@ -1087,9 +1087,9 @@ SWIG_Python_LookupTypePointer(swig_type_info ***type_list_handle) {
 #define  SWIGTYPE_p_LOCA__MultiContinuation__AbstractGroup swig_types[10] 
 #define  SWIGTYPE_p_LOCA__Homotopy__AbstractGroup swig_types[11] 
 #define  SWIGTYPE_p_LOCA__TimeDependent__AbstractGroup swig_types[12] 
-#define  SWIGTYPE_p_LOCA__Bifurcation__TPBord__AbstractGroup swig_types[13] 
-#define  SWIGTYPE_p_LOCA__Bifurcation__HopfBord__AbstractGroup swig_types[14] 
-#define  SWIGTYPE_p_LOCA__Continuation__AbstractGroup swig_types[15] 
+#define  SWIGTYPE_p_LOCA__Continuation__AbstractGroup swig_types[13] 
+#define  SWIGTYPE_p_LOCA__Bifurcation__TPBord__AbstractGroup swig_types[14] 
+#define  SWIGTYPE_p_LOCA__Bifurcation__HopfBord__AbstractGroup swig_types[15] 
 #define  SWIGTYPE_p_LOCA__Bifurcation__TPBord__SingularSolveGroup swig_types[16] 
 #define  SWIGTYPE_p_NOX__Abstract__MultiVector__DenseMatrix swig_types[17] 
 #define  SWIGTYPE_p_LOCA__MultiContinuation__FiniteDifferenceGroup swig_types[18] 
@@ -1097,8 +1097,7 @@ SWIG_Python_LookupTypePointer(swig_type_info ***type_list_handle) {
 #define  SWIGTYPE_ptrdiff_t swig_types[20] 
 #define  SWIGTYPE_std__ptrdiff_t swig_types[21] 
 #define  SWIGTYPE_p_NOX__Abstract__Vector swig_types[22] 
-#define  SWIGTYPE_p_LOCA__Continuation__AnasaziGroup swig_types[23] 
-static swig_type_info *swig_types[25];
+static swig_type_info *swig_types[24];
 
 /* -------- TYPES TABLE (END) -------- */
 
@@ -1632,35 +1631,11 @@ static void *_p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_LOCA__TimeDepende
 static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__TimeDependent__AbstractGroup(void *x) {
     return (void *)((LOCA::TimeDependent::AbstractGroup *) (LOCA::Bifurcation::HopfBord::AbstractGroup *) ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
 }
-static void *_p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
-    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *)  ((LOCA::Bifurcation::TPBord::SingularSolveGroup *) x));
-}
-static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
-    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *) (LOCA::Bifurcation::HopfBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) ((LOCA::Abstract::Group *) x));
-}
-static void *_p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
-    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *)  ((LOCA::Bifurcation::HopfBord::AbstractGroup *) x));
-}
-static void *_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
-    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *)  ((LOCA::Bifurcation::TPBord::FiniteDifferenceGroup *) x));
-}
-static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
-    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *) (LOCA::Bifurcation::HopfBord::AbstractGroup *) ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
-}
-static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__HopfBord__AbstractGroup(void *x) {
-    return (void *)((LOCA::Bifurcation::HopfBord::AbstractGroup *) (LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) ((LOCA::Abstract::Group *) x));
-}
-static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__HopfBord__AbstractGroup(void *x) {
-    return (void *)((LOCA::Bifurcation::HopfBord::AbstractGroup *)  ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
-}
 static void *_p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
     return (void *)((LOCA::Continuation::AbstractGroup *) (LOCA::Bifurcation::TPBord::AbstractGroup *) ((LOCA::Bifurcation::TPBord::SingularSolveGroup *) x));
 }
 static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
-    return (void *)((LOCA::Continuation::AbstractGroup *) (LOCA::Continuation::AnasaziGroup *) ((LOCA::Abstract::Group *) x));
-}
-static void *_p_LOCA__Continuation__AnasaziGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
-    return (void *)((LOCA::Continuation::AbstractGroup *)  ((LOCA::Continuation::AnasaziGroup *) x));
+    return (void *)((LOCA::Continuation::AbstractGroup *) (LOCA::Bifurcation::TPBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) ((LOCA::Abstract::Group *) x));
 }
 static void *_p_LOCA__MultiContinuation__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
     return (void *)((LOCA::Continuation::AbstractGroup *)  ((LOCA::MultiContinuation::AbstractGroup *) x));
@@ -1689,6 +1664,27 @@ static void *_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_LOCA__Conti
 static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup(void *x) {
     return (void *)((LOCA::Continuation::AbstractGroup *) (LOCA::Bifurcation::TPBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::AbstractGroup *) ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
 }
+static void *_p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
+    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *)  ((LOCA::Bifurcation::TPBord::SingularSolveGroup *) x));
+}
+static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
+    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *) (LOCA::Bifurcation::HopfBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) ((LOCA::Abstract::Group *) x));
+}
+static void *_p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
+    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *)  ((LOCA::Bifurcation::HopfBord::AbstractGroup *) x));
+}
+static void *_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
+    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *)  ((LOCA::Bifurcation::TPBord::FiniteDifferenceGroup *) x));
+}
+static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup(void *x) {
+    return (void *)((LOCA::Bifurcation::TPBord::AbstractGroup *) (LOCA::Bifurcation::HopfBord::AbstractGroup *) ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
+}
+static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__HopfBord__AbstractGroup(void *x) {
+    return (void *)((LOCA::Bifurcation::HopfBord::AbstractGroup *) (LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) ((LOCA::Abstract::Group *) x));
+}
+static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__HopfBord__AbstractGroup(void *x) {
+    return (void *)((LOCA::Bifurcation::HopfBord::AbstractGroup *)  ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
+}
 static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__TPBord__SingularSolveGroup(void *x) {
     return (void *)((LOCA::Bifurcation::TPBord::SingularSolveGroup *)  ((LOCA::Abstract::Group *) x));
 }
@@ -1710,20 +1706,14 @@ static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__TPBord__FiniteDiffe
 static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroup(void *x) {
     return (void *)((LOCA::Bifurcation::TPBord::FiniteDifferenceGroup *)  ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
 }
-static void *_p_LOCA__Abstract__GroupTo_p_LOCA__Continuation__AnasaziGroup(void *x) {
-    return (void *)((LOCA::Continuation::AnasaziGroup *)  ((LOCA::Abstract::Group *) x));
-}
 static void *_p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *)(LOCA::Bifurcation::TPBord::AbstractGroup *) ((LOCA::Bifurcation::TPBord::SingularSolveGroup *) x));
 }
 static void *_p_LOCA__Abstract__GroupTo_p_NOX__Abstract__Group(void *x) {
-    return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *)(LOCA::Continuation::AnasaziGroup *) ((LOCA::Abstract::Group *) x));
+    return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *)(LOCA::Bifurcation::TPBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) ((LOCA::Abstract::Group *) x));
 }
 static void *_p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *)  ((LOCA::Continuation::AbstractGroup *) x));
-}
-static void *_p_LOCA__Continuation__AnasaziGroupTo_p_NOX__Abstract__Group(void *x) {
-    return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *) ((LOCA::Continuation::AnasaziGroup *) x));
 }
 static void *_p_LOCA__MultiContinuation__AbstractGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *) ((LOCA::MultiContinuation::AbstractGroup *) x));
@@ -1752,7 +1742,7 @@ static void *_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_NOX__Abstra
 static void *_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_NOX__Abstract__Group(void *x) {
     return (void *)((NOX::Abstract::Group *) (LOCA::Continuation::AbstractGroup *)(LOCA::Bifurcation::TPBord::AbstractGroup *)(LOCA::Bifurcation::HopfBord::AbstractGroup *) ((LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup *) x));
 }
-static swig_type_info _swigt__p_NOX__Abstract__Group[] = {{"_p_NOX__Abstract__Group", 0, "NOX::Abstract::Group *", 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_NOX__Abstract__Group", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", _p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Homotopy__AbstractGroup", _p_LOCA__Homotopy__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__TimeDependent__AbstractGroup", _p_LOCA__TimeDependent__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__AbstractGroup", _p_LOCA__Bifurcation__TPBord__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", _p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__SingularSolveGroup", _p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", _p_LOCA__Continuation__AnasaziGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_NOX__Abstract__Group[] = {{"_p_NOX__Abstract__Group", 0, "NOX::Abstract::Group *", 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__SingularSolveGroup", _p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_NOX__Abstract__Group", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", _p_LOCA__Continuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Homotopy__AbstractGroup", _p_LOCA__Homotopy__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__TimeDependent__AbstractGroup", _p_LOCA__TimeDependent__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", _p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__AbstractGroup", _p_LOCA__Bifurcation__TPBord__AbstractGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__Abstract__Group[] = {{"_p_LOCA__Abstract__Group", 0, "LOCA::Abstract::Group *", 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__size_t[] = {{"_size_t", 0, "size_t", 0, 0, 0, 0},{"_size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__std__size_t[] = {{"_std__size_t", 0, "std::size_t", 0, 0, 0, 0},{"_std__size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
@@ -1765,9 +1755,9 @@ static swig_type_info _swigt__p_char[] = {{"_p_char", 0, "char *", 0, 0, 0, 0},{
 static swig_type_info _swigt__p_LOCA__MultiContinuation__AbstractGroup[] = {{"_p_LOCA__MultiContinuation__AbstractGroup", 0, "LOCA::MultiContinuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__MultiContinuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__MultiContinuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__Homotopy__AbstractGroup[] = {{"_p_LOCA__Homotopy__AbstractGroup", 0, "LOCA::Homotopy::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Homotopy__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__Homotopy__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__TimeDependent__AbstractGroup[] = {{"_p_LOCA__TimeDependent__AbstractGroup", 0, "LOCA::TimeDependent::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__TimeDependent__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__TimeDependent__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", _p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_LOCA__TimeDependent__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__TimeDependent__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_LOCA__Continuation__AbstractGroup[] = {{"_p_LOCA__Continuation__AbstractGroup", 0, "LOCA::Continuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__SingularSolveGroup", _p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Homotopy__AbstractGroup", _p_LOCA__Homotopy__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__TimeDependent__AbstractGroup", _p_LOCA__TimeDependent__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", _p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__AbstractGroup", _p_LOCA__Bifurcation__TPBord__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__Bifurcation__TPBord__AbstractGroup[] = {{"_p_LOCA__Bifurcation__TPBord__AbstractGroup", 0, "LOCA::Bifurcation::TPBord::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__SingularSolveGroup", _p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", _p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__TPBord__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__Bifurcation__HopfBord__AbstractGroup[] = {{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", 0, "LOCA::Bifurcation::HopfBord::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__HopfBord__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Bifurcation__HopfBord__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
-static swig_type_info _swigt__p_LOCA__Continuation__AbstractGroup[] = {{"_p_LOCA__Continuation__AbstractGroup", 0, "LOCA::Continuation::AbstractGroup *", 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__SingularSolveGroup", _p_LOCA__Bifurcation__TPBord__SingularSolveGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AbstractGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", _p_LOCA__Continuation__AnasaziGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__AbstractGroup", _p_LOCA__MultiContinuation__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Homotopy__AbstractGroup", _p_LOCA__Homotopy__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__TimeDependent__AbstractGroup", _p_LOCA__TimeDependent__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__AbstractGroup", _p_LOCA__Bifurcation__HopfBord__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__AbstractGroup", _p_LOCA__Bifurcation__TPBord__AbstractGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__HopfBord__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroup", _p_LOCA__Bifurcation__TPBord__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", _p_LOCA__MultiContinuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{"_p_LOCA__Continuation__FiniteDifferenceGroup", _p_LOCA__Continuation__FiniteDifferenceGroupTo_p_LOCA__Continuation__AbstractGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__Bifurcation__TPBord__SingularSolveGroup[] = {{"_p_LOCA__Bifurcation__TPBord__SingularSolveGroup", 0, "LOCA::Bifurcation::TPBord::SingularSolveGroup *", 0, 0, 0, 0},{"_p_LOCA__Bifurcation__TPBord__SingularSolveGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__Bifurcation__TPBord__SingularSolveGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Abstract__MultiVector__DenseMatrix[] = {{"_p_NOX__Abstract__MultiVector__DenseMatrix", 0, "NOX::Abstract::MultiVector::DenseMatrix *", 0, 0, 0, 0},{"_p_NOX__Abstract__MultiVector__DenseMatrix", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_LOCA__MultiContinuation__FiniteDifferenceGroup[] = {{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", 0, "LOCA::MultiContinuation::FiniteDifferenceGroup *", 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__MultiContinuation__FiniteDifferenceGroup, 0, 0, 0, 0, 0},{"_p_LOCA__MultiContinuation__FiniteDifferenceGroup", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
@@ -1775,7 +1765,6 @@ static swig_type_info _swigt__p_LOCA__Continuation__FiniteDifferenceGroup[] = {{
 static swig_type_info _swigt__ptrdiff_t[] = {{"_ptrdiff_t", 0, "ptrdiff_t", 0, 0, 0, 0},{"_ptrdiff_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__std__ptrdiff_t[] = {{"_std__ptrdiff_t", 0, "std::ptrdiff_t", 0, 0, 0, 0},{"_std__ptrdiff_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Abstract__Vector[] = {{"_p_NOX__Abstract__Vector", 0, "NOX::Abstract::Vector *", 0, 0, 0, 0},{"_p_NOX__Abstract__Vector", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
-static swig_type_info _swigt__p_LOCA__Continuation__AnasaziGroup[] = {{"_p_LOCA__Continuation__AnasaziGroup", 0, "LOCA::Continuation::AnasaziGroup *", 0, 0, 0, 0},{"_p_LOCA__Continuation__AnasaziGroup", 0, 0, 0, 0, 0, 0},{"_p_LOCA__Abstract__Group", _p_LOCA__Abstract__GroupTo_p_LOCA__Continuation__AnasaziGroup, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 
 static swig_type_info *swig_types_initial[] = {
 _swigt__p_NOX__Abstract__Group, 
@@ -1791,9 +1780,9 @@ _swigt__p_char,
 _swigt__p_LOCA__MultiContinuation__AbstractGroup, 
 _swigt__p_LOCA__Homotopy__AbstractGroup, 
 _swigt__p_LOCA__TimeDependent__AbstractGroup, 
+_swigt__p_LOCA__Continuation__AbstractGroup, 
 _swigt__p_LOCA__Bifurcation__TPBord__AbstractGroup, 
 _swigt__p_LOCA__Bifurcation__HopfBord__AbstractGroup, 
-_swigt__p_LOCA__Continuation__AbstractGroup, 
 _swigt__p_LOCA__Bifurcation__TPBord__SingularSolveGroup, 
 _swigt__p_NOX__Abstract__MultiVector__DenseMatrix, 
 _swigt__p_LOCA__MultiContinuation__FiniteDifferenceGroup, 
@@ -1801,7 +1790,6 @@ _swigt__p_LOCA__Continuation__FiniteDifferenceGroup,
 _swigt__ptrdiff_t, 
 _swigt__std__ptrdiff_t, 
 _swigt__p_NOX__Abstract__Vector, 
-_swigt__p_LOCA__Continuation__AnasaziGroup, 
 0
 };
 

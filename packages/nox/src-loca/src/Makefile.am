@@ -70,7 +70,6 @@ LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
-	$(srcdir)/LOCA_Continuation_AnasaziGroup.H \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
 	$(srcdir)/LOCA_Continuation_Manager.H \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
@@ -80,7 +79,6 @@ LOCA_CONTINUATION_H = \
 LOCA_CONTINUATION = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
-	$(srcdir)/LOCA_Continuation_AnasaziGroup.C \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.C \
 	$(srcdir)/LOCA_Continuation_Manager.C \
@@ -291,7 +289,8 @@ LOCA_ANASAZI = \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
 	$(srcdir)/LOCA_AnasaziOperator_Manager.C \
 	$(srcdir)/Anasazi_LOCA_MultiVec.C \
-	$(srcdir)/Anasazi_LOCA_Matrix.C 
+	$(srcdir)/Anasazi_LOCA_Matrix.C \
+	$(srcdir)/Anasazi_LOCA_Sort.C
 
 else
 

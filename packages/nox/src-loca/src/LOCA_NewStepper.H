@@ -33,7 +33,11 @@
 #ifndef LOCA_NEWSTEPPER_H
 #define LOCA_NEWSTEPPER_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "LOCA_Abstract_Iterator.H"    // base class
+#include "LOCA_GlobalData.H"           // class data element
+#include "LOCA_Abstract_Factory.H"     // class data element
 #include "NOX_Parameter_List.H"	       // class data element
 #include "NOX_Solver_Manager.H"	       // class data element
 #include "LOCA_Bifurcation_Manager.H"  // class data element
@@ -71,6 +75,13 @@ namespace LOCA {
 	       NOX::StatusTest::Generic& t,
 	       NOX::Parameter::List& p);
 
+    //! Constructor with user-provided factory
+    NewStepper(
+	    LOCA::MultiContinuation::AbstractGroup& initialGuess,
+	    NOX::StatusTest::Generic& t,
+	    NOX::Parameter::List& p,
+	    const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory);
+
     //! Destructor
     virtual ~NewStepper();
 
@@ -82,6 +93,14 @@ namespace LOCA {
     //! Return the current solution group.
     virtual LOCA::MultiContinuation::AbstractGroup& getSolutionGroup();
 
+    //! Return the current bifurcation group.
+    /*!
+     * If the current bifurcation method is "None", then the returned group
+     * is the same as getSolutionGroup(), otherwise this method returns the
+     * current bifurcation group (e.g., a turning point group).
+     */
+    virtual LOCA::MultiContinuation::AbstractGroup& getBifurcationGroup();
+
     //! Return the output parameters from the stepper algorithm.
     virtual const NOX::Parameter::List& getParameterList() const;
 
@@ -92,9 +111,6 @@ namespace LOCA {
     virtual const NOX::Solver::Generic& getSolver() const;
 
   protected:
-
-    //! Copy Constructor: Not implemented, but put here to prevent compiler form generating one
-    NewStepper(const NewStepper& s);
 
     //! Intialize iterator
     virtual LOCA::Abstract::Iterator::IteratorStatus start();
@@ -139,7 +155,27 @@ namespace LOCA {
     //! Checks to see if continuation parameter is within threshold of bound
     virtual bool withinThreshold();
 
+  private:
+    
+    //! Private to prohibit copying
+    NewStepper(const NewStepper&);
+
+    //! Private to prohibit copying
+    NewStepper& operator = (const NewStepper&);
+
   protected:
+
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+    //! User-provided factory
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory> factory;
+
+    //! Flag indicating whether we have a user-provided factory
+    bool haveFactory;
+
+    //! Eigensolver for computing eigenvalues after each continuation
+    Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> eigensolver;
 
     //! Bifurcation group manager
     LOCA::Bifurcation::Manager* bifGroupManagerPtr;
@@ -160,7 +196,7 @@ namespace LOCA {
     NOX::StatusTest::Generic* statusTestPtr;
 
     //! Pointer to parameter list passed in constructor/reset method
-    NOX::Parameter::List* paramListPtr;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramListPtr;
 
     //! Solver (a.k.a corrector)
     NOX::Solver::Manager* solverPtr;

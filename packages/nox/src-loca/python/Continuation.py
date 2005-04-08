@@ -60,7 +60,6 @@ class AbstractGroup(NOX.Abstract.Group):
     def computeDfDp(*args): return _Continuation.AbstractGroup_computeDfDp(*args)
     def applyJacobianInverseMulti(*args): return _Continuation.AbstractGroup_applyJacobianInverseMulti(*args)
     def computeScaledDotProduct(*args): return _Continuation.AbstractGroup_computeScaledDotProduct(*args)
-    def computeEigenvalues(*args): return _Continuation.AbstractGroup_computeEigenvalues(*args)
     def printSolution(*args): return _Continuation.AbstractGroup_printSolution(*args)
     def applyHouseholderJacobianInverse(*args): return _Continuation.AbstractGroup_applyHouseholderJacobianInverse(*args)
     def scaleVector(*args): return _Continuation.AbstractGroup_scaleVector(*args)
@@ -95,30 +94,6 @@ class FiniteDifferenceGroupPtr(FiniteDifferenceGroup):
         if not hasattr(self,"thisown"): _swig_setattr(self, FiniteDifferenceGroup, 'thisown', 0)
         _swig_setattr(self, FiniteDifferenceGroup,self.__class__,FiniteDifferenceGroup)
 _Continuation.FiniteDifferenceGroup_swigregister(FiniteDifferenceGroupPtr)
-
-class AnasaziGroup(AbstractGroup):
-    __swig_setmethods__ = {}
-    for _s in [AbstractGroup]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, AnasaziGroup, name, value)
-    __swig_getmethods__ = {}
-    for _s in [AbstractGroup]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, AnasaziGroup, name)
-    def __init__(self): raise RuntimeError, "No constructor defined"
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ LOCA::Continuation::AnasaziGroup instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __del__(self, destroy=_Continuation.delete_AnasaziGroup):
-        try:
-            if self.thisown: destroy(self)
-        except: pass
-
-    def computeEigenvalues(*args): return _Continuation.AnasaziGroup_computeEigenvalues(*args)
-
-class AnasaziGroupPtr(AnasaziGroup):
-    def __init__(self, this):
-        _swig_setattr(self, AnasaziGroup, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, AnasaziGroup, 'thisown', 0)
-        _swig_setattr(self, AnasaziGroup,self.__class__,AnasaziGroup)
-_Continuation.AnasaziGroup_swigregister(AnasaziGroupPtr)
 
 class ParameterResidualNorm(NOX.StatusTest.Generic):
     __swig_setmethods__ = {}

@@ -37,6 +37,8 @@
 // LOCA Includes
 #include "LOCA_Utils.H"		                // for static function doPrint
 #include "LOCA_ErrorCheck.H"                    // for error checking methods
+#include "LOCA_Factory.H"
+#include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_AbstractGroup.H"   // class data element
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
 #include "LOCA_MultiContinuation_NaturalGroup.H"
@@ -46,13 +48,17 @@ LOCA::NewStepper::NewStepper(
 		       NOX::StatusTest::Generic& t,
 		       NOX::Parameter::List& p) :
   LOCA::Abstract::Iterator(),
+  globalData(),
+  factory(),
+  haveFactory(false),
+  eigensolver(),
   bifGroupManagerPtr(NULL),
   bifGroupPtr(NULL),
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
   statusTestPtr(NULL),
-  paramListPtr(NULL),
+  paramListPtr(),
   solverPtr(NULL),
   curPredictorPtr(NULL),
   prevPredictorPtr(NULL),
@@ -62,50 +68,30 @@ LOCA::NewStepper::NewStepper(
   reset(initialGuess, t, p);
 }
 
-LOCA::NewStepper::NewStepper(const LOCA::NewStepper& s) :
-  LOCA::Abstract::Iterator(s),
+LOCA::NewStepper::NewStepper(
+	   LOCA::MultiContinuation::AbstractGroup& initialGuess,
+	   NOX::StatusTest::Generic& t,
+	   NOX::Parameter::List& p,
+	   const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory) :
+  LOCA::Abstract::Iterator(),
+  globalData(),
+  factory(),
+  haveFactory(true),
+  eigensolver(),
   bifGroupManagerPtr(NULL),
   bifGroupPtr(NULL),
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
-  statusTestPtr(s.statusTestPtr),
-  paramListPtr(s.paramListPtr),
+  statusTestPtr(NULL),
+  paramListPtr(),
   solverPtr(NULL),
   curPredictorPtr(NULL),
   prevPredictorPtr(NULL),
-  stepSizeManagerPtr(NULL),
-  startValue(s.startValue),
-  maxValue(s.maxValue),
-  minValue(s.minValue),
-  stepSize(s.stepSize),
-  maxNonlinearSteps(s.maxNonlinearSteps),
-  targetValue(s.targetValue),
-  isTargetStep(s.isTargetStep),
-  doTangentFactorScaling(s.doTangentFactorScaling),
-  tangentFactor(s.tangentFactor),
-  minTangentFactor(s.minTangentFactor),
-  tangentFactorExponent(s.tangentFactorExponent),
-  calcEigenvalues(s.calcEigenvalues)
-{
-  bifGroupManagerPtr =
-    new LOCA::Bifurcation::Manager(*s.bifGroupManagerPtr);
-  bifGroupPtr =
-    dynamic_cast<LOCA::MultiContinuation::AbstractGroup*>(s.bifGroupPtr->clone());
-  conGroupManagerPtr =
-    new LOCA::MultiContinuation::Manager(*s.conGroupManagerPtr);
-  curGroupPtr =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedGroup*>(s.curGroupPtr->clone());
-  prevGroupPtr =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedGroup*>(s.prevGroupPtr->clone());
-  curPredictorPtr =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(s.curPredictorPtr->clone());
-  prevPredictorPtr =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(s.prevPredictorPtr->clone());
-  stepSizeManagerPtr =
-    new LOCA::StepSize::Manager(*s.stepSizeManagerPtr);
+  stepSizeManagerPtr(NULL)
 
-  // Right now this doesn't work because we can't copy the solver
+{
+  reset(initialGuess, t, p);
 }
 
 LOCA::NewStepper::~NewStepper()
@@ -136,8 +122,36 @@ LOCA::NewStepper::reset(LOCA::MultiContinuation::AbstractGroup& initialGuess,
   delete stepSizeManagerPtr;
   delete solverPtr;
 
-  paramListPtr = &p;
+  paramListPtr = Teuchos::rcp(&p, false);
   statusTestPtr = &t;
+
+  // Create printing utils
+  Teuchos::RefCountPtr<LOCA::Utils> locaUtils =
+    Teuchos::rcp(new LOCA::Utils);
+  locaUtils->setUtils(*paramListPtr);
+
+  // Create error check
+  Teuchos::RefCountPtr<LOCA::ErrorCheck> locaErrorCheck = 
+    Teuchos::rcp(new LOCA::ErrorCheck);
+
+  Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
+
+  // Create global data object
+  globalData = Teuchos::rcp(new LOCA::GlobalData(locaUtils, 
+						 locaErrorCheck, 
+						 locaFactory));
+
+  // Create factory
+  if (haveFactory)
+    locaFactory = Teuchos::rcp(new LOCA::Factory(globalData, 
+						 paramListPtr,
+						 factory));
+  else
+    locaFactory = Teuchos::rcp(new LOCA::Factory(globalData, 
+						 paramListPtr));
+
+  // Create eigensolver
+  eigensolver = locaFactory->createEigensolverStrategy();
 
   // Initialize the utilities
   LOCA::Utils::setUtils(*paramListPtr);
@@ -282,7 +296,18 @@ LOCA::NewStepper::start() {
   if (solverStatus != NOX::StatusTest::Converged)
     return LOCA::Abstract::Iterator::Failed;
 
+  // Save initial solution
   curGroupPtr->printSolution();
+
+  // Compute eigenvalues/eigenvectors if requested
+  if (calcEigenvalues) {
+    Teuchos::RefCountPtr< std::vector<double> > evals_r;
+    Teuchos::RefCountPtr< std::vector<double> > evals_i;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_r;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
+    eigensolver->computeEigenvalues(curGroupPtr->getBaseLevelUnderlyingGroup(),
+				    evals_r, evals_i, evecs_r, evecs_i);
+  }
 
   // Compute predictor direction
   NOX::Abstract::Group::ReturnType predictorStatus =
@@ -329,9 +354,9 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus
     // Save previous successful step information
     *prevGroupPtr = *curGroupPtr;
 
-    // Get underyling solution group
+    // Get bifurcation group if there is one, or solution group if not
     LOCA::MultiContinuation::AbstractGroup& underlyingGroup
-      = dynamic_cast<LOCA::MultiContinuation::AbstractGroup&>(getSolutionGroup());
+      = dynamic_cast<LOCA::MultiContinuation::AbstractGroup&>(getBifurcationGroup());
 
     // Make a copy of the parameter list, change continuation method to
     // natural
@@ -465,11 +490,6 @@ LOCA::NewStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful)
     return stepStatus;
 
-  // Compute eigenvalues/eigenvectors
-  if (calcEigenvalues) {
-    curGroupPtr->getBaseLevelUnderlyingGroup().computeEigenvalues(*paramListPtr);
-  }
-
   // Notify continuation group step is completed
   curGroupPtr->notifyCompletedStep();
 
@@ -502,6 +522,16 @@ LOCA::NewStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Print (save) solution
   curGroupPtr->printSolution();
+
+  // Compute eigenvalues/eigenvectors
+  if (calcEigenvalues) {
+    Teuchos::RefCountPtr< std::vector<double> > evals_r;
+    Teuchos::RefCountPtr< std::vector<double> > evals_i;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_r;
+    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
+    eigensolver->computeEigenvalues(curGroupPtr->getBaseLevelUnderlyingGroup(),
+				    evals_r, evals_i, evecs_r, evecs_i);
+  }
 
   return stepStatus;
 }
@@ -604,6 +634,12 @@ LOCA::NewStepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatu
 
 LOCA::MultiContinuation::AbstractGroup&
 LOCA::NewStepper::getSolutionGroup()
+{
+  return dynamic_cast<LOCA::MultiContinuation::AbstractGroup&>(curGroupPtr->getBaseLevelUnderlyingGroup());
+}
+
+LOCA::MultiContinuation::AbstractGroup&
+LOCA::NewStepper::getBifurcationGroup()
 {
   return dynamic_cast<LOCA::MultiContinuation::AbstractGroup&>(curGroupPtr->getUnderlyingGroup());
 }

@@ -51,8 +51,7 @@ LOCA::Abstract::Group::Group(NOX::Parameter::List& params,
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
 			     NOX::CopyType type)
-  : LOCA::Continuation::AnasaziGroup(source, type),
-    LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(source, type),
+  : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(source, type),
     LOCA::Bifurcation::TPBord::SingularSolveGroup(source, type),
     LOCA::MultiContinuation::FiniteDifferenceGroup(source, type)
 {
@@ -66,13 +65,6 @@ LOCA::Abstract::Group::~Group()
 LOCA::Continuation::AbstractGroup&
 LOCA::Abstract::Group::operator=(
 			    const LOCA::Continuation::AbstractGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
-
-LOCA::Continuation::AnasaziGroup&
-LOCA::Abstract::Group::operator=(
-			    const LOCA::Continuation::AnasaziGroup& source)
 {
   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
 }
@@ -138,7 +130,6 @@ LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
 {
 
   // Copy parent classes
-  LOCA::Continuation::AnasaziGroup::operator=(source);
   LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup::operator=(source);
   LOCA::Bifurcation::TPBord::SingularSolveGroup::operator=(source);
   

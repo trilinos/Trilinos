@@ -17,7 +17,6 @@
 
 // Extra includes due to importing Continuation.i below
 #include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_AnasaziGroup.H"
 #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 
