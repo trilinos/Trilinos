@@ -34,16 +34,9 @@
 # Initialization 
 # ------------------------------------------------------------------------
 
-
-
-# This must be the first line in configure.ac.
-# Optional 3rd argument is email address for bugs.
-
-#  #np# - package name, version number, and e-mail address below
 AC_INIT(pytrilinos, 1.0, wfspotz@sandia.gov)
 
 # Hello World!
-#  #np# - package name below
 echo "----------------------------------------"
 echo "Running PyTrilinos Configure Script"
 echo "----------------------------------------"
@@ -52,20 +45,13 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-# #np# - file name below
 AC_CONFIG_SRCDIR(/src/Epetra_NumPyVector.cxx)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
 
-#
-# #np# This is a subdirectory of Trilinos/packages/pytrilinos that contains
-# #np# a number of useful m4 files.  Any package that uses these m4 files
-# #np# will have to add them to the repository.  The m4 files perform various
-# #np# common checks and set common variable values to minimize redundant work.
-#
 AC_CONFIG_AUX_DIR(config)
-#  #np# - Change file names in next line 
+
 # Configure should create src/PyTrilinos_config.h from src/PyTrilinos_config.h.in
 
 AM_CONFIG_HEADER(src/PyTrilinos_config.h:src/PyTrilinos_config.h.in)
@@ -100,7 +86,6 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-#  #np# - Required version of automake.
 AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
@@ -125,8 +110,8 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
-AC_PROG_F77(f77 g77 f90 xlf90)
-AC_PROG_RANLIB
+#AC_PROG_F77(f77 g77 f90 xlf90)
+#AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -225,9 +210,6 @@ AC_CXX_STD_SPRINTF
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-#  #np# - These options can disable the tests and examples of a package.
-#  #np# - Packages that do not have tests or examples should #-out the 
-#  #np# - option(s) that does (do) not apply.
 #TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
@@ -372,43 +354,6 @@ fi
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
 
-
-#  ----------------------------------------------------
-#  Needs this because Dec handles templates differently
-#  ----------------------------------------------------
-#  #np# - Only uncomment the following lines if the package
-#         creates a subdirectory called cxx_repository for
-#         template object files on DEC.  (HINT: try to build on 
-#         DEC/CPLANT and see if template-related errors occur)
-
-# -- DEC CXX --
-#if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
-#  case $target in
-#    alpha*)
-#      if test $CXX = cxx; then
-#        TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
-#      fi
-#    ;;
-#  esac
-#fi
-                                                                  
-#AC_MSG_CHECKING([for template-specific object files to be linked])if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
-# AC_MSG_RESULT(none)
-#else
-# AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
-#fi
-                                                                  
-#AC_SUBST(TRILINOS_TEMPLATE_OBJS)
-
-# ------------------------------------------------------------------------
-# Checks for library functions
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for system services
-# ------------------------------------------------------------------------
-
-
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
@@ -418,11 +363,7 @@ AC_SUBST(ac_aux_dir)
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
-##
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  New package comes only with src and example.
-#  You will need to change AC_CONFIG_FILES below and Makefile.am
-#  to add a new directory.
+
 AC_CONFIG_FILES([
 		Makefile 
 		src/.deps/dummy
@@ -437,7 +378,6 @@ AC_CONFIG_FILES([
 AC_OUTPUT()
 
 # Bye World!
-#  #np# change package name
 echo "--------------------------------------------"
 echo "Finished Running PyTrilinos Configure Script"
 echo "--------------------------------------------"

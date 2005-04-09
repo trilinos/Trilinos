@@ -27,20 +27,6 @@
 # @HEADER
 
 ## #######################################################################
-## Options to automake (rarely used - don't worry about it)
-## #######################################################################
-#AUTOMAKE_OPTIONS = foreign
-
-## #######################################################################
-## Aclocal command (rarely used - don't worry about it)
-## #######################################################################
-#ACLOCAL	= aclocal -I config
-
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
-## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 # We will list some source files here because we don't compile them in the
@@ -66,8 +52,7 @@
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
 ## #######################################################################
-#MAINTAINERCLEANFILES = Makefile.in \
-#	$(AUX_DIST) 
+MAINTAINERCLEANFILES = Makefile.in
 
 # Include paths
 EPETRA_INC    = -I$(top_srcdir)/../epetra/src

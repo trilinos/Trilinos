@@ -36,11 +36,6 @@ import os
 import string
 import sys
 
-# Build the python library directory name and library name.  These will be used
-# when the linker is invoked to create the python extensions.
-# pythonDir = [sysconfig.get_config_var('LIBPL'  )      ]
-# pythonLib = [sysconfig.get_config_var('LIBRARY')[3:-2]]
-
 # Any information that needs to be transferred from the autotooled Makefile is
 # written to file setup.txt using python syntax to define a dictionary.  The
 # keys of this 'makeInfo' dictionary are variable names and the corresponding

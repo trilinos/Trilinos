@@ -197,7 +197,6 @@ PYTHON_LSPEC = @PYTHON_LSPEC@
 PYTHON_PREFIX = @PYTHON_PREFIX@
 PYTHON_USE_FALSE = @PYTHON_USE_FALSE@
 PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
-RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -213,7 +212,6 @@ ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
-ac_ct_RANLIB = @ac_ct_RANLIB@
 ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
@@ -707,43 +705,6 @@ uninstall-info: uninstall-info-recursive
 
 all-local:
 	@echo "Trilinos package PyTrilinos built successfully"
-
-#tempdir = $(shell $(srcdir)/pyLocate --temp)
-
-#all-recursive: build
-
-#wrappers:
-#	cd src && make
-
-#setup.txt:
-#	@echo "{"                        	            >  $@
-#	@echo "  'top_srcdir'      : '$(top_srcdir)',"      >> $@
-#	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
-#	@echo "  'LDFLAGS'         : '$(LDFLAGS)',"         >> $@
-#	@echo "  'LAPACK_LIBS' 	   : '$(LAPACK_LIBS)',"     >> $@
-#	@echo "  'BLAS_LIBS'   	   : '$(BLAS_LIBS)',"       >> $@
-#	@echo "  'FLIBS'           : '$(FLIBS)',"           >> $@
-#	@echo "  'LIBS'            : '$(LIBS)',"            >> $@
-#	@echo "  'PYTHON'          : '$(PYTHON)',"          >> $@
-#	@echo "}"                                           >> $@
-
-#$(tempdir):
-#	mkdir -p $@
-
-#build: wrappers setup.txt $(tempdir)
-#	$(PYTHON) $(srcdir)/setup.py build
-
-#install: build
-#	$(PYTHON) $(srcdir)/setup.py install
-
-#clean:
-#	$(PYTHON) $(srcdir)/setup.py clean
-#	$(RM) setup.txt
-#	$(RM) $(srcdir)/src/*_wrap.cxx
-#	$(RM) $(srcdir)/src/NOX/*_wrap.cxx
-
-#test:
-#	cd test && make test
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
