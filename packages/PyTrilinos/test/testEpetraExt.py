@@ -28,14 +28,17 @@
 # ************************************************************************
 # @HEADER
 
-# System imports
+# Imports.  Users importing an installed version of PyTrilinos should use the
+# "from PyTrilinos import ..." syntax.  Here, the setpath module adds the build
+# directory, including "PyTrilinos", to the front of the search path.  We thus
+# use "import ..." for Trilinos modules.  This prevents us from accidentally
+# picking up a system-installed version and ensures that we are testing the
+# build module.
+import setpath
+import Epetra
+import EpetraExt
 from   Numeric  import *
 import unittest
-
-# Local imports
-import setpath
-from   PyTrilinos import Epetra
-from   PyTrilinos import EpetraExt
 
 
 class EpetraExtTestCase(unittest.TestCase):

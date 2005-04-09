@@ -54,7 +54,7 @@ if status != 0:
     raise RuntimeError, "\n\tUNIX command '%s' gives\n\t%s" % (cmd,output)
 
 # Get the path to the build directory
-libDir = os.path.join("..", "src", output)
+libDir = os.path.join("..", "src", output, "PyTrilinos")
 
 # Insert the library directory name at the beginning of
 # the python search path
