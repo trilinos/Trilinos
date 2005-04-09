@@ -53,20 +53,17 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = Makefile.in
 
 ## #######################################################################
-## Subdirectories to be make'd recursively
+## Files to be cleaned by 'make clean'
 ## #######################################################################
+CLEANFILES = $(patsubst %, %.py, $(TEST_SUITE)) setpath.py setpath.pyc
 
-# Define the suite of tests
+## #######################################################################
+## Define the suite of tests
+## #######################################################################
 TEST_SUITE = testEpetra testEpetraExt testNOX testExample
 check-am: $(TEST_SUITE)
 
-# Set the target dependencies for each test script
-testEpetra:    $(srcdir)/testEpetra.py    $(srcdir)/setpath.py
-testEpetraExt: $(srcdir)/testEpetraExt.py $(srcdir)/setpath.py
-testNOX:       $(srcdir)/testNOX.py       $(srcdir)/setpath.py
-testExample:   $(srcdir)/testExample.py   $(srcdir)/setpath.py
-
-# All the test scripts use the same copy-then-run logic
-test%:
+# Run the test script
+test%: $(srcdir)/test%.py $(srcdir)/setpath.py
 	cp $^ .
 	$(PYTHON) $@.py

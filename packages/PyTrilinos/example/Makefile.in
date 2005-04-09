@@ -94,7 +94,7 @@ CONFIG_CLEAN_FILES =
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = aclocal -I config
+ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -221,17 +221,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-AUTOMAKE_OPTIONS = foreign
-
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
-#EXTRA_DIST = \
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
 MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
@@ -384,10 +373,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
 	uninstall-info-am
 
-
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

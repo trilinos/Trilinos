@@ -64,43 +64,44 @@ AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 MAINTAINERCLEANFILES = Makefile.in \
 	$(AUX_DIST) 
 
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
-
-SWIG       = swig
-SWIG_FLAGS = -I$(top_srcdir)/src/NOX -Wall -python -c++
+# SWIG       = swig
+# SWIG_FLAGS = -I$(top_srcdir)/src/NOX -Wall -python -c++
 
 EPETRA_INC    = -I$(top_srcdir)/../epetra/src
 NOX_INC       = -I$(top_srcdir)/../nox/src
 NOXEPETRA_INC = -I$(top_srcdir)/../nox/src-epetra
 
-INTERFACES = Abstract.i Epetra.i Parameter.i Solver.i StatusTest.i
-WRAPPERS   = $(patsubst %.i, %_wrap.cxx, $(INTERFACES))
-
 TARGET     = $(WRAPPERS)
 
 all-am: $(TARGET)
 
-# Generate the Abstract C++ wrapper and proxy file from the Abstract SWIG interface
-Abstract_wrap.cxx Abstract.py: Abstract.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+# Include swig rules
+include $(top_srcdir)/config/swig.am
+SWIG_CXXFLAGS = $(EPETRA_INC) $(NOX_INC) $(NOXEPETRA_INC) -I$(srcdir)
 
-# Generate the Epetra C++ wrapper and proxy file from the Epetra SWIG interface
-Epetra_wrap.cxx Epetra.py: Epetra.i
-	$(SWIG) $(EPETRA_INC) $(NOX_INC) $(NOXEPETRA_INC) $(SWIG_FLAGS) $<
+# Default make target
+all-am: build
 
-# Generate the Parameter C++ wrapper and proxy file from the Parameter SWIG interface
-Parameter_wrap.cxx Parameter.py: Parameter.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+# Currently, this temporary directory is required to be present for the
+# setup.py script to work correctly
+tempdir = $(shell $(PYTHON) $(top_srcdir)/pyLocate --temp)
 
-# Generate the Solver C++ wrapper and proxy file from the Solver SWIG interface
-Solver_wrap.cxx Solver.py: Solver.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+$(tempdir):
+	@echo "Creating directory $@"
+	mkdir -p $@
 
-# Generate the StatusTest C++ wrapper and proxy file from the StatusTest SWIG interface
-StatusTest_wrap.cxx StatusTest.py: StatusTest.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+# Define the SWIG interface files and the resulting wrapper files
+INTERFACES = Abstract.i Epetra.i Parameter.i Solver.i StatusTest.i
+WRAPPERS   = $(INTERFACES:.i=_wrap.cxx)
+PROXIES    = $(INTERFACES:.i=.py      )
+
+build: $(WRAPPERS) $(tempdir)
+	$(PYTHON) $(srcdir)/setup.py build
+
+install: build
+	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
+
+clean:
+	$(PYTHON) $(srcdir)/setup.py clean
+	$(RM) $(WRAPPERS)
+	$(RM) $(PROXIES)

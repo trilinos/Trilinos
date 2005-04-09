@@ -426,7 +426,8 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
-		src/NOX/Makefile
+		src/__init__.py
+		src/NOX/__init__.py
 		example/Makefile
 		test/Makefile
 		])

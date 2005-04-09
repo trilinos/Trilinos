@@ -10225,7 +10225,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                  ac_config_files="$ac_config_files Makefile src/Makefile src/NOX/Makefile example/Makefile test/Makefile"
+                                                            ac_config_files="$ac_config_files Makefile src/Makefile src/__init__.py src/NOX/__init__.py example/Makefile test/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10870,7 +10870,8 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-  "src/NOX/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/NOX/Makefile" ;;
+  "src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES src/__init__.py" ;;
+  "src/NOX/__init__.py" ) CONFIG_FILES="$CONFIG_FILES src/NOX/__init__.py" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;

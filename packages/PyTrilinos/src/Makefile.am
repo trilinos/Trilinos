@@ -29,12 +29,12 @@
 ## #######################################################################
 ## Options to automake (rarely used - don't worry about it)
 ## #######################################################################
-AUTOMAKE_OPTIONS = foreign
+#AUTOMAKE_OPTIONS = foreign
 
 ## #######################################################################
 ## Aclocal command (rarely used - don't worry about it)
 ## #######################################################################
-ACLOCAL	= aclocal -I config
+#ACLOCAL	= aclocal -I config
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -45,20 +45,20 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 # We will list some source files here because we don't compile them in the
 # usual way.
-EXTRA_DIST = \
-	Epetra_VectorHelper.h  NumPyArray.cxx \
-	__init__.py            NumPyArray.h \
-	EpetraExt.i            NumPyWrapper.cxx \
-	Epetra_NumPyVector.cxx NumPyWrapper.h \
-	Epetra_NumPyVector.h \
-	Epetra.py              PyTrilinos.h \
-	Epetra_VectorHelper.cxx \
-	numeric_include.h      RawEpetra.i
+#EXTRA_DIST = \
+#	Epetra_VectorHelper.h  NumPyArray.cxx \
+#	__init__.py            NumPyArray.h \
+#	EpetraExt.i            NumPyWrapper.cxx \
+#	Epetra_NumPyVector.cxx NumPyWrapper.h \
+#	Epetra_NumPyVector.h \
+#	Epetra.py              PyTrilinos.h \
+#	Epetra_VectorHelper.cxx \
+#	numeric_include.h      RawEpetra.i
 
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
-AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
+#AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 #
 #  Again, I hope that AUX_DIR(../../config) eliminates these
 #  config/install-sh config/missing config/mkinstalldirs 
@@ -66,38 +66,65 @@ AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
 ## #######################################################################
-MAINTAINERCLEANFILES = Makefile.in \
-	$(AUX_DIST) 
+#MAINTAINERCLEANFILES = Makefile.in \
+#	$(AUX_DIST) 
 
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
-
-NOX_SUBDIR=NOX
-
-SUBDIRS = $(NOX_SUBDIR)
-
-SWIG       = swig
-SWIG_FLAGS = -I$(top_srcdir)/src -Wall -python -c++
-
+# Include paths
 EPETRA_INC    = -I$(top_srcdir)/../epetra/src
 EPETRAEXT_INC = -I$(top_srcdir)/../epetraext/src/transform \
                 -I$(top_srcdir)/../epetraext/src/coloring
+NOX_INC       = -I$(top_srcdir)/../nox/src
+NOXEPETRA_INC = -I$(top_srcdir)/../nox/src-epetra
 
-INTERFACES = RawEpetra.i EpetraExt.i
-WRAPPERS   = $(patsubst %.i, %_wrap.cxx, $(INTERFACES))
+# Include swig rules
+include $(top_srcdir)/config/swig.am
+SWIG_CXXFLAGS = \
+	$(EPETRA_INC)    \
+	$(EPETRAEXT_INC) \
+	$(NOX_INC)       \
+	$(NOXEPETRA_INC) \
+	-I$(srcdir)
 
-TARGET     = $(WRAPPERS) NOX_Wrappers
+# Default make target
+all-am: build
 
-all-recursive: $(TARGET)
+# Currently, this temporary directory is required to be present for the
+# setup.py script to work correctly
+tempdir = $(shell $(PYTHON) $(top_srcdir)/pyLocate --temp)
 
-NOX_Wrappers:
-	cd NOX && make
+$(tempdir):
+	@echo "Creating directory $@"
+	mkdir -p $@
 
-# Generate the RawEpetra C++ wrapper and proxy file from the RawEpetra SWIG interface
-RawEpetra_wrap.cxx RawEpetra.py: RawEpetra.i
-	$(SWIG) $(EPETRA_INC) $(SWIG_FLAGS) $<
+# Define the SWIG interface files and the resulting wrapper files
+INTERFACES = Epetra.i EpetraExt.i NOX/Abstract.i NOX/Epetra.i NOX/Parameter.i \
+	     NOX/Solver.i NOX/StatusTest.i
+WRAPPERS   = $(INTERFACES:.i=_wrap.cxx)
+PROXIES    = $(INTERFACES:.i=.py      )
 
-# Generate the EpetraExt C++ wrapper and proxy file from the EpetraExt SWIG interface
-EpetraExt_wrap.cxx EpetraExt.py: EpetraExt.i
-	$(SWIG) $(EPETRA_INC) $(EPETRAEXT_INC) $(SWIG_FLAGS) $<
+# File setup.txt is a way to transfer make variables to the setup.py
+# python script
+setup.txt: $(srcdir)/Makefile.am
+	@echo "creating $@"
+	@echo "{"                                   >  $@
+	@echo "  'top_srcdir'  : '$(top_srcdir)',"  >> $@
+	@echo "  'srcdir'      : '$(srcdir)',"      >> $@
+	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"     >> $@
+	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)'," >> $@
+	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
+	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
+	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
+	@echo "  'PYTHON'      : '$(PYTHON)'"       >> $@
+	@echo "}"                                   >> $@
+
+build: $(WRAPPERS) setup.txt $(tempdir)
+	$(PYTHON) $(srcdir)/setup.py build
+
+install: build
+	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
+
+CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+
+clean-local:
+	$(PYTHON) $(srcdir)/setup.py clean
+	$(RM) -r ../../packages

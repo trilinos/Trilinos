@@ -28,7 +28,16 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") RawEpetra
+%define DOCSTRING
+"The Epetra module allows access to The Trilinos package Epetra.  Note
+that the 'Epetra_' prefix has been stripped from all Epetra objects,
+but that if imported with 'from PyTrilinos import Epetra', these
+objects exist in the 'Epetra' python namespace.  Use the python help()
+facility for local documentation on classes and methods, or see the
+on-line documentation for more in-depth information."
+%enddef
+
+%module(package="PyTrilinos", docstring=DOCSTRING) Epetra
 
 %{
 // System includes
@@ -37,6 +46,7 @@
 #include <vector>
 
 // Epetra includes
+#include "Epetra_Version.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
@@ -121,6 +131,7 @@
 %ignore NumPyArrayBase::getArrayObject() const;
 
 // Rename directives
+%rename(Version             ) Epetra_Version;
 %rename(Object              ) Epetra_Object;
 %rename(Comm                ) Epetra_Comm;
 %rename(SerialComm          ) Epetra_SerialComm;
@@ -146,6 +157,9 @@
 %rename(SerialDenseVector   ) Epetra_SerialDenseVector;
 %rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
 %rename(NumPyVector         ) Epetra_NumPyVector;
+
+// Auto-documentation feature
+%feature("autodoc", "1");
 
 // Typemap directives
 %typemap(in) (int * Indices)
@@ -177,6 +191,8 @@
 %include "exception.i"
 
 // Epetra interface includes
+using namespace std;
+%include "Epetra_Version.h"
 %include "Epetra_Object.h"
 %include "Epetra_Comm.h"
 %include "Epetra_SerialComm.h"
@@ -210,7 +226,6 @@
 
 // Extensions
 %extend Epetra_Object {
-  using namespace std;
   string __str__() {
     stringstream os;
     self->Print(os);                  // Put the output in os
@@ -226,6 +241,51 @@
 
   void Print() {
     self->Print(cout);
+  }
+
+  PyObject * Norm1() {
+    int n = self->NumVectors();
+    double result[n];
+    int numVectors[1] = {n};
+    int status        = self->Norm1(result);
+    PyObject * output;
+    if (n == 1) {
+      output = Py_BuildValue("(id)", status, result[0]);
+    } else {
+      output = Py_BuildValue("(iO)", status, PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
+								     (char *)result));
+    }
+    return output;
+  }
+
+  PyObject * Norm2() {
+    int n = self->NumVectors();
+    double result[n];
+    int numVectors[1] = {n};
+    int status        = self->Norm2(result);
+    PyObject * output;
+    if (n == 1) {
+      output = Py_BuildValue("(id)", status, result[0]);
+    } else {
+      output = Py_BuildValue("(iO)", status, PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
+								     (char *)result));
+    }
+    return output;
+  }
+
+  PyObject * NormInf() {
+    int n = self->NumVectors();
+    double result[n];
+    int numVectors[1] = {n};
+    int status        = self->NormInf(result);
+    PyObject * output;
+    if (n == 1) {
+      output = Py_BuildValue("(id)", status, result[0]);
+    } else {
+      output = Py_BuildValue("(iO)", status, PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
+								     (char *)result));
+    }
+    return output;
   }
 }
 
@@ -308,3 +368,19 @@
     return s.substr(0,s.length()-1);  // Return the string minus trailing \n
   }
 }
+
+// Python code.  Here we declare classes that inherit both from Epetra
+// objects and UserArrays, to give users additional functionality.
+%pythoncode %{
+
+__version__ = Version()
+
+from UserArray import *
+
+class Vector(UserArray,NumPyVector):
+    def __init__(self, *args):
+        NumPyVector.__init__(self, *args)
+        UserArray.__init__(self,self.getArray(),'d',0,1)
+    def __str__(self):
+        return str(self.array)
+%}

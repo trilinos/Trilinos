@@ -232,8 +232,7 @@ EXTRA_DIST = \
 	testNOX.py
 
 MAINTAINERCLEANFILES = Makefile.in
-
-# Define the suite of tests
+CLEANFILES = $(patsubst %, %.py, $(TEST_SUITE)) setpath.py setpath.pyc
 TEST_SUITE = testEpetra testEpetraExt testNOX testExample
 all: all-am
 
@@ -323,6 +322,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -388,14 +388,8 @@ uninstall-am: uninstall-info-am
 
 check-am: $(TEST_SUITE)
 
-# Set the target dependencies for each test script
-testEpetra:    $(srcdir)/testEpetra.py    $(srcdir)/setpath.py
-testEpetraExt: $(srcdir)/testEpetraExt.py $(srcdir)/setpath.py
-testNOX:       $(srcdir)/testNOX.py       $(srcdir)/setpath.py
-testExample:   $(srcdir)/testExample.py   $(srcdir)/setpath.py
-
-# All the test scripts use the same copy-then-run logic
-test%:
+# Run the test script
+test%: $(srcdir)/test%.py $(srcdir)/setpath.py
 	cp $^ .
 	$(PYTHON) $@.py
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

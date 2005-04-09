@@ -36,16 +36,25 @@ import string
 import sys
 
 # Obtain the dictionary of make information
-f = open("../setup.txt")
-makeInfo = f.readlines()
-f.close()
-makeInfo = eval(string.join(makeInfo))
+setup_filename = "../src/setup.txt"
+try:
+    f = open(setup_filename)
+    makeInfo = f.readlines()
+    f.close()
+    makeInfo = eval(string.join(makeInfo))
+except IOError:
+    print "WARNING: %s not found" % setup_filename
+    makeInfo = { }
 
 # Build the command to get the build library name
-cmd = "../%s/pyLocate --build" % makeInfo["srcdir"]
+cmd = "%s %s/pyLocate --build" % (makeInfo.get("PYTHON"    ,""),
+                                  makeInfo.get("top_srcdir",""))
+(status,output) = commands.getstatusoutput(cmd)
+if status != 0:
+    raise RuntimeError, "\n\tUNIX command '%s' gives\n\t%s" % (cmd,output)
 
 # Get the path to the build directory
-libDir = os.path.join("..", commands.getoutput(cmd))
+libDir = os.path.join("..", "src", output)
 
 # Insert the library directory name at the beginning of
 # the python search path

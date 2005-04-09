@@ -38,25 +38,28 @@ import sys
 
 # Build the python library directory name and library name.  These will be used
 # when the linker is invoked to create the python extensions.
-pythonDir = [sysconfig.get_config_var('LIBPL'  )      ]
-pythonLib = [sysconfig.get_config_var('LIBRARY')[3:-2]]
+# pythonDir = [sysconfig.get_config_var('LIBPL'  )      ]
+# pythonLib = [sysconfig.get_config_var('LIBRARY')[3:-2]]
 
 # Any information that needs to be transferred from the autotooled Makefile is
 # written to file setup.txt using python syntax to define a dictionary.  The
 # keys of this 'makeInfo' dictionary are variable names and the corresponding
 # values represent the data that will be needed by this setup.py script.
-f = open("setup.txt")
-makeInfo = f.readlines()
-f.close()
-makeInfo = eval(string.join(makeInfo))
+try:
+    f = open("setup.txt")
+    makeInfo = f.readlines()
+    f.close()
+    makeInfo = eval(string.join(makeInfo))
+except IOError:
+    makeInfo = { }
 
 # Certain directory paths are needed by setup.py.  pyTDir is the path for the
 # PyTrilinos package, pakDir is the path for the Trilinos package directory,
 # srcDir is the PyTrilinos source directory path, and noxDir is the PyTrilinos
 # NOX source directory path.
-pyTDir = makeInfo['srcdir']
+pyTDir = makeInfo.get("top_srcdir","")
+srcDir = makeInfo.get("srcdir"    ,"")
 pakDir = os.path.split(pyTDir      )[0]
-srcDir = os.path.join( pyTDir,"src")
 noxDir = os.path.join( srcDir,"NOX")
 
 # Define the include paths required by various packages.  Each of these is
@@ -72,13 +75,13 @@ noxEpetraInc = [os.path.join(pakDir, "nox",       "src-epetra"      )  ]
 # Define the library search directories needed to link to various package
 # libraries.  Each of these is defined as a list of a single string.  Thus they
 # can be added together to yield a list of multiple strings.
-epetraLibDir    = [os.path.join("..", "epetra",    "src"       )]
-epetraExtLibDir = [os.path.join("..", "epetraext", "src"       )]
-noxLibDir       = [os.path.join("..", "nox",       "src"       )]
-noxEpetraLibDir = [os.path.join("..", "nox",       "src-epetra")]
-aztecLibDir     = [os.path.join("..", "aztecoo",   "src"       )]
-ifpackLibDir    = [os.path.join("..", "ifpack",    "src"       )]
-teuchosLibDir   = [os.path.join("..", "teuchos",   "src"       )]
+epetraLibDir    = [os.path.join("..", "..", "epetra",    "src"       )]
+epetraExtLibDir = [os.path.join("..", "..", "epetraext", "src"       )]
+noxLibDir       = [os.path.join("..", "..", "nox",       "src"       )]
+noxEpetraLibDir = [os.path.join("..", "..", "nox",       "src-epetra")]
+aztecLibDir     = [os.path.join("..", "..", "aztecoo",   "src"       )]
+ifpackLibDir    = [os.path.join("..", "..", "ifpack",    "src"       )]
+teuchosLibDir   = [os.path.join("..", "..", "teuchos",   "src"       )]
 
 # Define the library names for various packages.  Each of these is defined as a
 # list of a single string.  Thus they can be added together to yield a list of
@@ -91,21 +94,22 @@ aztecLib     = ["aztecoo"  ]
 ifpackLib    = ["ifpack"   ]
 teuchosLib   = ["teuchos"   ]
 
-# Get the UNIX system name
-sysName = os.uname()[0]
-
 # Standard libraries.  This is currently a hack.  The library "stdc++" is added
 # to the standard library list for a case where we know it needs it.
+stdLibs = [ ]
+sysName = os.uname()[0]
 if sysName == "Linux":
-    stdLibs = ["stdc++"]
-else:
-    stdLibs = [ ]
+    stdLibs.append("stdc++")
 
 # Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in FLIB and adding them to the
 # appropriate list.
 extraArgs = [ ]
-libs = makeInfo['LDFLAGS'].split() + makeInfo['FLIBS'].split() + makeInfo['LIBS'].split()
+libs = makeInfo.get("LDFLAGS"    ,"").split() + \
+       makeInfo.get("BLAS_LIBS"  ,"").split() + \
+       makeInfo.get("LAPACK_LIBS","").split() + \
+       makeInfo.get("FLIBS"      ,"").split() + \
+       makeInfo.get("LIBS"       ,"").split()
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
@@ -115,13 +119,13 @@ for lib in libs:
 # Define the strings that refer to the specified source files.  These should be
 # combined together as needed in a list as the second argument to the Extension
 # constructor.
-rawEpetraWrap      = os.path.join(srcDir,"RawEpetra_wrap.cxx"     )
-epetraExtWrap      = os.path.join(srcDir,"EpetraExt_wrap.cxx"     )
-noxAbstractWrap    = os.path.join(noxDir,"Abstract_wrap.cxx"      )
-noxEpetraWrap      = os.path.join(noxDir,"Epetra_wrap.cxx"        )
-noxParameterWrap   = os.path.join(noxDir,"Parameter_wrap.cxx"     )
-noxSolverWrap      = os.path.join(noxDir,"Solver_wrap.cxx"        )
-noxStatusTestWrap  = os.path.join(noxDir,"StatusTest_wrap.cxx"    )
+epetraWrap         = "Epetra_wrap.cxx"
+epetraExtWrap      = "EpetraExt_wrap.cxx"
+noxAbstractWrap    = os.path.join("NOX", "Abstract_wrap.cxx"      )
+noxEpetraWrap      = os.path.join("NOX", "Epetra_wrap.cxx"        )
+noxParameterWrap   = os.path.join("NOX", "Parameter_wrap.cxx"     )
+noxSolverWrap      = os.path.join("NOX", "Solver_wrap.cxx"        )
+noxStatusTestWrap  = os.path.join("NOX", "StatusTest_wrap.cxx"    )
 epetraNumPyVector  = os.path.join(srcDir,"Epetra_NumPyVector.cxx" )
 epetraVectorHelper = os.path.join(srcDir,"Epetra_VectorHelper.cxx")
 numPyArray         = os.path.join(srcDir,"NumPyArray.cxx"         )
@@ -130,26 +134,24 @@ noxCallback        = os.path.join(noxDir,"Callback.cxx"           )
 noxPyInterface     = os.path.join(noxDir,"PyInterface.cxx"        )
 
 # Epetra extension module
-RawEpetra = Extension("PyTrilinos._RawEpetra",
-                      [rawEpetraWrap,
-                       epetraNumPyVector,
-                       epetraVectorHelper,
-                       numPyArray,
-                       numPyWrapper],
-                      include_dirs    = epetraInc,
-                      library_dirs    = epetraLibDir + teuchosLibDir + pythonDir,
-                      libraries       = epetraLib + teuchosLib + stdLibs + pythonLib,
-                      extra_link_args = extraArgs
-                      )
+Epetra = Extension("PyTrilinos._Epetra",
+                   [epetraWrap,
+                    epetraNumPyVector,
+                    epetraVectorHelper,
+                    numPyArray,
+                    numPyWrapper],
+                   include_dirs    = epetraInc + [srcDir],
+                   library_dirs    = epetraLibDir + teuchosLibDir,
+                   libraries       = epetraLib + teuchosLib + stdLibs,
+                   extra_link_args = extraArgs
+                   )
 
 # EpetraExt extension module
 EpetraExt = Extension("PyTrilinos._EpetraExt",
                       [epetraExtWrap],
                       include_dirs    = epetraInc + epetraExtInc,
-                      library_dirs    = epetraLibDir + epetraExtLibDir + teuchosLibDir + \
-                                        pythonDir,
-                      libraries       = epetraExtLib + epetraLib + teuchosLib  + stdLibs + \
-                                        pythonLib,
+                      library_dirs    = epetraLibDir + epetraExtLibDir + teuchosLibDir,
+                      libraries       = epetraExtLib + epetraLib + teuchosLib  + stdLibs,
                       extra_link_args = extraArgs
                       )
 
@@ -161,7 +163,8 @@ NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
                         numPyWrapper,
                         noxCallback,
                         noxPyInterface],
-                       include_dirs    = epetraInc + noxInc + noxEpetraInc,
+                       include_dirs    = epetraInc + noxInc + noxEpetraInc + \
+                                         [srcDir, noxDir],
                        library_dirs    = epetraLibDir + noxLibDir + noxEpetraLibDir + \
                                          aztecLibDir + ifpackLibDir + teuchosLibDir,
                        libraries       = noxEpetraLib + noxLib  + \
@@ -212,9 +215,9 @@ setup(name         = "PyTrilinos",
       description  = "Python Trilinos Interface",
       author       = "Bill Spotz",
       author_email = "wfspotz@sandia.gov",
-      package_dir  = {"PyTrilinos" : srcDir},
+      package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos", "PyTrilinos.NOX"],
-      ext_modules  = [ RawEpetra,    EpetraExt,     NOX_Epetra,
+      ext_modules  = [ Epetra,       EpetraExt,     NOX_Epetra,
                        NOX_Abstract, NOX_Parameter, NOX_Solver,
                        NOX_StatusTest                          ]
       )

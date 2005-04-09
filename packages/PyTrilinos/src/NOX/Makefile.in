@@ -41,6 +41,40 @@
 # 
 # ************************************************************************
 # @HEADER
+
+# @HEADER
+# ************************************************************************
+# 
+#               Epetra: Linear Algebra Services Package 
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#                                                                                 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA                                                                                
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov), Sandia National Laboratories.
+# 
+# ************************************************************************
+# @HEADER
+
+# ------------------------------------------------------------------------
+# Rules for building python interface files using swig.  Automatic 
+# dependency tracking for swig interface files is implemented.
+# ------------------------------------------------------------------------
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -62,8 +96,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/__init__.py.in $(top_srcdir)/config/swig.am
 subdir = src/NOX
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -90,7 +125,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/PyTrilinos_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = __init__.py
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -168,11 +203,7 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
-SWIG = swig
+SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
@@ -243,17 +274,31 @@ AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 MAINTAINERCLEANFILES = Makefile.in \
 	$(AUX_DIST) 
 
-SWIG_FLAGS = -I$(top_srcdir)/src/NOX -Wall -python -c++
+
+# SWIG       = swig
+# SWIG_FLAGS = -I$(top_srcdir)/src/NOX -Wall -python -c++
 EPETRA_INC = -I$(top_srcdir)/../epetra/src
 NOX_INC = -I$(top_srcdir)/../nox/src
 NOXEPETRA_INC = -I$(top_srcdir)/../nox/src-epetra
-INTERFACES = Abstract.i Epetra.i Parameter.i Solver.i StatusTest.i
-WRAPPERS = $(patsubst %.i, %_wrap.cxx, $(INTERFACES))
 TARGET = $(WRAPPERS)
+CLEANFILES = $(DEPDIR)/*.Pi
+@HAVE_SWIG_TRUE@SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
+
+# Include swig rules
+SWIG_CXXFLAGS = $(EPETRA_INC) $(NOX_INC) $(NOXEPETRA_INC) -I$(srcdir)
+
+# Currently, this temporary directory is required to be present for the
+# setup.py script to work correctly
+tempdir = $(shell $(PYTHON) $(top_srcdir)/pyLocate --temp)
+
+# Define the SWIG interface files and the resulting wrapper files
+INTERFACES = Abstract.i Epetra.i Parameter.i Solver.i StatusTest.i
+WRAPPERS = $(INTERFACES:.i=_wrap.cxx)
+PROXIES = $(INTERFACES:.i=.py      )
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/swig.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -282,6 +327,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+__init__.py: $(top_builddir)/config.status $(srcdir)/__init__.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 tags: TAGS
 TAGS:
@@ -291,6 +338,7 @@ CTAGS:
 
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -321,7 +369,6 @@ check-am: all-am
 check: check-am
 all-am: Makefile
 installdirs:
-install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -338,6 +385,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -346,8 +394,6 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
-clean: clean-am
-
 clean-am: clean-generic mostlyclean-am
 
 distclean: distclean-am
@@ -404,25 +450,41 @@ uninstall-am: uninstall-info-am
 
 all-am: $(TARGET)
 
-# Generate the Abstract C++ wrapper and proxy file from the Abstract SWIG interface
-Abstract_wrap.cxx Abstract.py: Abstract.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+%.py: %_wrap.cxx
 
-# Generate the Epetra C++ wrapper and proxy file from the Epetra SWIG interface
-Epetra_wrap.cxx Epetra.py: Epetra.i
-	$(SWIG) $(EPETRA_INC) $(NOX_INC) $(NOXEPETRA_INC) $(SWIG_FLAGS) $<
+@HAVE_SWIG_TRUE@$(DEPDIR):
+@HAVE_SWIG_TRUE@	mkdir -p $@
 
-# Generate the Parameter C++ wrapper and proxy file from the Parameter SWIG interface
-Parameter_wrap.cxx Parameter.py: Parameter.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+@HAVE_SWIG_TRUE@%_wrap.cxx: $(srcdir)/%.i $(DEPDIR)
+@HAVE_SWIG_TRUE@	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
+@HAVE_SWIG_TRUE@	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
-# Generate the Solver C++ wrapper and proxy file from the Solver SWIG interface
-Solver_wrap.cxx Solver.py: Solver.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+@HAVE_SWIG_FALSE@%_wrap.cxx: $(srcdir)/%.i 
+@HAVE_SWIG_FALSE@	@echo 'Error swig is not enabled and'
+@HAVE_SWIG_FALSE@	@echo '$@ is out-of-date with respect to $<.'
+@HAVE_SWIG_FALSE@	@echo 'Rerun configure with --with-swig=[path-to-swig].'
+@HAVE_SWIG_FALSE@	@exit 1
 
-# Generate the StatusTest C++ wrapper and proxy file from the StatusTest SWIG interface
-StatusTest_wrap.cxx StatusTest.py: StatusTest.i
-	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+swigclean:
+	rm -f $(srcdir)/src/wrap_* $(WRAPPERS) 
+
+# Default make target
+all-am: build
+
+$(tempdir):
+	@echo "Creating directory $@"
+	mkdir -p $@
+
+build: $(WRAPPERS) $(tempdir)
+	$(PYTHON) $(srcdir)/setup.py build
+
+install: build
+	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
+
+clean:
+	$(PYTHON) $(srcdir)/setup.py clean
+	$(RM) $(WRAPPERS)
+	$(RM) $(PROXIES)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

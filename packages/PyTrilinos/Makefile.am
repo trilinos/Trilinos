@@ -101,9 +101,6 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 
 if BUILD_TESTS
 TEST_SUBDIR=test
@@ -113,42 +110,41 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
-tempdir = $(shell $(srcdir)/pyLocate --temp)
+#tempdir = $(shell $(srcdir)/pyLocate --temp)
 
-all-recursive: build
+#all-recursive: build
 
-wrappers:
-	cd src && make
+#wrappers:
+#	cd src && make
 
-setup.txt:
-	@echo "{"                        	            >  $@
-	@echo "  'top_srcdir'      : '$(top_srcdir)',"      >> $@
-	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
-	@echo "  'LDFLAGS'         : '$(LDFLAGS)',"         >> $@
-	@echo "  'LAPACK_LIBS' 	   : '$(LAPACK_LIBS)',"     >> $@
-	@echo "  'BLAS_LIBS'   	   : '$(BLAS_LIBS)',"       >> $@
-	@echo "  'FLIBS'           : '$(FLIBS)',"           >> $@
-	@echo "  'LIBS'            : '$(LIBS)',"            >> $@
-	@echo "  'PYTHON'          : '$(PYTHON)',"          >> $@
-	@echo "}"                                           >> $@
+#setup.txt:
+#	@echo "{"                        	            >  $@
+#	@echo "  'top_srcdir'      : '$(top_srcdir)',"      >> $@
+#	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
+#	@echo "  'LDFLAGS'         : '$(LDFLAGS)',"         >> $@
+#	@echo "  'LAPACK_LIBS' 	   : '$(LAPACK_LIBS)',"     >> $@
+#	@echo "  'BLAS_LIBS'   	   : '$(BLAS_LIBS)',"       >> $@
+#	@echo "  'FLIBS'           : '$(FLIBS)',"           >> $@
+#	@echo "  'LIBS'            : '$(LIBS)',"            >> $@
+#	@echo "  'PYTHON'          : '$(PYTHON)',"          >> $@
+#	@echo "}"                                           >> $@
 
-$(tempdir):
-	mkdir -p $@
+#$(tempdir):
+#	mkdir -p $@
 
-build: wrappers setup.txt $(tempdir)
-	$(PYTHON) $(srcdir)/setup.py build
+#build: wrappers setup.txt $(tempdir)
+#	$(PYTHON) $(srcdir)/setup.py build
 
-install: build
-	$(PYTHON) $(srcdir)/setup.py install
+#install: build
+#	$(PYTHON) $(srcdir)/setup.py install
 
-clean:
-	$(PYTHON) $(srcdir)/setup.py clean
-	$(RM) setup.txt
-	$(RM) $(srcdir)/src/*_wrap.cxx
-	$(RM) $(srcdir)/src/NOX/*_wrap.cxx
+#clean:
+#	$(PYTHON) $(srcdir)/setup.py clean
+#	$(RM) setup.txt
+#	$(RM) $(srcdir)/src/*_wrap.cxx
+#	$(RM) $(srcdir)/src/NOX/*_wrap.cxx
 
-test:
-	cd test && make test
-
+#test:
+#	cd test && make test

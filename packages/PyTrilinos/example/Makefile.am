@@ -27,36 +27,6 @@
 # @HEADER
 
 ## #######################################################################
-## Options to automake (rarely used - don't worry about it)
-## #######################################################################
-AUTOMAKE_OPTIONS = foreign
-
-## #######################################################################
-## Aclocal command (rarely used - don't worry about it)
-## #######################################################################
-ACLOCAL	= aclocal -I config
-
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
-## #######################################################################
-## Additional files to be included in distribution for 'make dist'
-## #######################################################################
-#EXTRA_DIST = \
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
-
-## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
 ## #######################################################################
 MAINTAINERCLEANFILES = Makefile.in
-
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
