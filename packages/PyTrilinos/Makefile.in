@@ -69,6 +69,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
+	$(top_srcdir)/src/.deps/NOX/dummy.in \
+	$(top_srcdir)/src/.deps/dummy.in \
 	$(top_srcdir)/src/NOX/__init__.py.in INSTALL \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing config/mkinstalldirs
@@ -101,7 +103,8 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/PyTrilinos_config.h
-CONFIG_CLEAN_FILES = src/NOX/__init__.py
+CONFIG_CLEAN_FILES = src/.deps/dummy src/.deps/NOX/dummy \
+	src/NOX/__init__.py
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -335,6 +338,10 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/src/.deps/dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/.deps/NOX/dummy: $(top_builddir)/config.status $(top_srcdir)/src/.deps/NOX/dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/NOX/__init__.py: $(top_builddir)/config.status $(top_srcdir)/src/NOX/__init__.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
@@ -462,7 +469,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config $(distdir)/src $(distdir)/src/NOX
+	$(mkdir_p) $(distdir)/config $(distdir)/src $(distdir)/src/.deps $(distdir)/src/.deps/NOX $(distdir)/src/NOX
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

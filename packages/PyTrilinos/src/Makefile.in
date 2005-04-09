@@ -293,7 +293,8 @@ EPETRAEXT_INC = -I$(top_srcdir)/../epetraext/src/transform \
 
 NOX_INC = -I$(top_srcdir)/../nox/src
 NOXEPETRA_INC = -I$(top_srcdir)/../nox/src-epetra
-CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
+DEPFILES = $(DEPDIR)/*.Pi $(DEPDIR)/NOX/*.Pi
+CLEANFILES = $(DEPFILES) setup.txt $(WRAPPERS) $(PROXIES)
 @HAVE_SWIG_TRUE@SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
@@ -487,18 +488,17 @@ uninstall-am: uninstall-info-am
 	pdf-am ps ps-am uninstall uninstall-am uninstall-info-am
 
 
+include $(DEPDIR)/dummy $(DEPFILES)
+
 %.py: %_wrap.cxx
 NOX/%.py: NOX/%_wrap.cxx
 
-@HAVE_SWIG_TRUE@$(DEPDIR):
-@HAVE_SWIG_TRUE@	mkdir -p $@ $@/NOX
-
-@HAVE_SWIG_TRUE@NOX/%_wrap.cxx: $(srcdir)/NOX/%.i $(DEPDIR)
+@HAVE_SWIG_TRUE@NOX/%_wrap.cxx: $(srcdir)/NOX/%.i
 @HAVE_SWIG_TRUE@	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/NOX/$*.Tpi" -o $@ $<; \
 @HAVE_SWIG_TRUE@	then mv -f "$(DEPDIR)/NOX/$*.Tpi" "$(DEPDIR)/NOX/$*.Pi";    \
 @HAVE_SWIG_TRUE@	else rm -f "$(DEPDIR)/NOX/$*.Tpi"; exit 1; fi
 
-@HAVE_SWIG_TRUE@%_wrap.cxx: $(srcdir)/%.i $(DEPDIR)
+@HAVE_SWIG_TRUE@%_wrap.cxx: $(srcdir)/%.i
 @HAVE_SWIG_TRUE@	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 @HAVE_SWIG_TRUE@	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
@@ -507,9 +507,6 @@ NOX/%.py: NOX/%_wrap.cxx
 @HAVE_SWIG_FALSE@	@echo '$@ is out-of-date with respect to $<.'
 @HAVE_SWIG_FALSE@	@echo 'Rerun configure with --with-swig=[path-to-swig].'
 @HAVE_SWIG_FALSE@	@exit 1
-
-swigclean:
-	rm -f $(srcdir)/src/wrap_* $(WRAPPERS) 
 
 # Default make target
 all-am: build

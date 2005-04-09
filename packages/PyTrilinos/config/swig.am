@@ -32,7 +32,10 @@
 # dependency tracking for swig interface files is implemented.
 # ------------------------------------------------------------------------
 
-CLEANFILES = $(DEPDIR)/*.Pi
+DEPFILES = $(DEPDIR)/*.Pi $(DEPDIR)/NOX/*.Pi
+CLEANFILES = $(DEPFILES)
+
+include $(DEPDIR)/dummy $(DEPFILES)
 
 %.py: %_wrap.cxx
 NOX/%.py: NOX/%_wrap.cxx
@@ -41,15 +44,12 @@ if HAVE_SWIG
 
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
-$(DEPDIR):
-	mkdir -p $@ $@/NOX
-
-NOX/%_wrap.cxx: $(srcdir)/NOX/%.i $(DEPDIR)
+NOX/%_wrap.cxx: $(srcdir)/NOX/%.i
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/NOX/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/NOX/$*.Tpi" "$(DEPDIR)/NOX/$*.Pi";    \
 	else rm -f "$(DEPDIR)/NOX/$*.Tpi"; exit 1; fi
 
-%_wrap.cxx: $(srcdir)/%.i $(DEPDIR)
+%_wrap.cxx: $(srcdir)/%.i
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
@@ -62,6 +62,3 @@ else
 	@exit 1
 
 endif
-
-swigclean:
-	rm -f $(srcdir)/src/wrap_* $(WRAPPERS) 

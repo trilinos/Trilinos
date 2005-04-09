@@ -425,6 +425,8 @@ AC_SUBST(ac_aux_dir)
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
+		src/.deps/dummy
+		src/.deps/NOX/dummy
 		src/Makefile
 		src/__init__.py
 		src/NOX/__init__.py
