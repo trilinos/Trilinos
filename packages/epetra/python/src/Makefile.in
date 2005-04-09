@@ -272,7 +272,7 @@ DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null)
 
 # Clean target.  Put the generated dependency files in the list of files to
 # be removed with a "make clean"
-CLEANFILES = $(DEPDIR)/*.Pi
+CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
 
 # Define the SWIGCOMPILE macro
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
@@ -386,7 +386,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean-am: clean-generic mostlyclean-am
+clean: clean-am
+
+clean-am: clean-generic clean-local mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -430,14 +432,14 @@ ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: all all-am check check-am clean clean-generic distclean \
-	distclean-generic distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-info-am
+.PHONY: all all-am check check-am clean clean-generic clean-local \
+	distclean distclean-generic distdir dvi dvi-am html html-am \
+	info info-am install install-am install-data install-data-am \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
+	uninstall-am uninstall-info-am
 
 include $(DEPDIR)/dummy $(DEPFILES)
 
@@ -476,11 +478,9 @@ build: $(WRAPPERS) setup.txt $(tempdir)
 install: build
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
-clean:
+clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
-	$(RM) setup.txt
-	$(RM) $(WRAPPERS)
-	$(RM) $(PROXIES)
+	$(RM) -r ../../packages
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

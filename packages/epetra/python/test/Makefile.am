@@ -64,6 +64,4 @@ test%: $(srcdir)/test%.py $(srcdir)/setpath.py
 	$(PYTHON) $@.py
 
 # Clean target
-clean:
-	$(RM) $(patsubst %, %.py, $(TEST_SUITE))
-	$(RM) setpath.py setpath.pyc
+CLEANFILES = $(patsubst %, %.py, $(TEST_SUITE)) setpath.py setpath.pyc

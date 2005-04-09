@@ -67,8 +67,8 @@ build: $(WRAPPERS) setup.txt $(tempdir)
 install: build
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
-clean:
+clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
-	$(RM) setup.txt
-	$(RM) $(WRAPPERS)
-	$(RM) $(PROXIES)
+	$(RM) -r ../../packages
+
+CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
