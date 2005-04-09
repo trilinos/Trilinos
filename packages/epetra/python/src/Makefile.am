@@ -72,6 +72,3 @@ clean:
 	$(RM) setup.txt
 	$(RM) $(WRAPPERS)
 	$(RM) $(PROXIES)
-
-test:
-	cd test && make test

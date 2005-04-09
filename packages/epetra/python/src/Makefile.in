@@ -65,16 +65,11 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA                                                                                
-# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-# (rppawlo@sandia.gov), Sandia National Laboratories.
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov), Sandia National
+# Laboratories.
 # 
 # ************************************************************************
 # @HEADER
-
-# ------------------------------------------------------------------------
-# Rules for building python interface files using swig.  Automatic 
-# dependency tracking for swig interface files is implemented.
-# ------------------------------------------------------------------------
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -269,8 +264,18 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+
+# Dependencies.  Obtain the list of dependencies by executing ls.  This could
+# be empty, so when we include the dependency files, we also include 'dummy',
+# an empty file used to trick configure into making the dependency directory.
+DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null)
+
+# Clean target.  Put the generated dependency files in the list of files to
+# be removed with a "make clean"
 CLEANFILES = $(DEPDIR)/*.Pi
-@HAVE_SWIG_TRUE@SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
+
+# Define the SWIGCOMPILE macro
+SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
 SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)
@@ -434,24 +439,14 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
 	uninstall-info-am
 
+include $(DEPDIR)/dummy $(DEPFILES)
 
+# Wrapper and proxy targets
 %.py: %_wrap.cpp
 
-@HAVE_SWIG_TRUE@$(DEPDIR):
-@HAVE_SWIG_TRUE@	mkdir -p $@
-
-@HAVE_SWIG_TRUE@%_wrap.cpp: $(srcdir)/%.i $(DEPDIR)
-@HAVE_SWIG_TRUE@	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
-@HAVE_SWIG_TRUE@	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
-
-@HAVE_SWIG_FALSE@%_wrap.cpp: $(srcdir)/%.i 
-@HAVE_SWIG_FALSE@	@echo 'Error swig is not enabled and'
-@HAVE_SWIG_FALSE@	@echo '$@ is out-of-date with respect to $<.'
-@HAVE_SWIG_FALSE@	@echo 'Rerun configure with --with-swig=[path-to-swig].'
-@HAVE_SWIG_FALSE@	@exit 1
-
-swigclean:
-	rm -f $(srcdir)/src/wrap_* $(WRAPPERS) 
+%_wrap.cpp: $(srcdir)/%.i
+	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
+	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
 # Default make target
 all-am: build
@@ -486,9 +481,6 @@ clean:
 	$(RM) setup.txt
 	$(RM) $(WRAPPERS)
 	$(RM) $(PROXIES)
-
-test:
-	cd test && make test
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
