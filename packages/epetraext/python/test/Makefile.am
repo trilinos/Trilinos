@@ -1,8 +1,8 @@
 # @HEADER
 # ************************************************************************
 # 
-#     EpetraExt: Epetra Extended - Linear Algebra Services Package 
-#                 Copyright (2001) Sandia Corporation
+#           PyTrilinos.EpetraExt: Python Interface to EpetraExt
+#                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -36,43 +36,30 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ACLOCAL	= aclocal -I config
 
+#
+#       I believe that by switching to AUX_DIR(../../config) one 
+#       could get rid of these.
+#
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-#EXTRA_DIST =
-
-## #######################################################################
-## Tools in the auxillary directory 
-## #######################################################################
-AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
+EXTRA_DIST = \
+	setpath.py testColoring.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
 ## #######################################################################
-MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
-	configure config.status config.log \
-	src/common/config-h.in src/common/stamp-h.in \
-	$(AUX_DIST) 
+MAINTAINERCLEANFILES = Makefile.in
 
-#The following line helps the test harness recover from build errors.
-                                                                                
-all-local:
-	@echo "Trilinos package epetraext built successfully"
+# Define the suite of tests
+TEST_SUITE = testColoring
 
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
+check-am: $(TEST_SUITE)
 
-if BUILD_TESTS
-TEST_SUBDIR=test
-endif
+# Run the test script
+test%: $(srcdir)/test%.py $(srcdir)/setpath.py
+	cp $^ .
+	$(PYTHON) $@.py
 
-if BUILD_EXAMPLES
-EXAMPLE_SUBDIR=example
-endif
-
-if PYTHON_USE
-PYTHON_SUBDIR=python
-endif
-
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+# Clean target
+CLEANFILES = $(patsubst %, %.py, $(TEST_SUITE)) setpath.py setpath.pyc
