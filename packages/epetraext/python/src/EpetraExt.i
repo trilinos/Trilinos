@@ -84,8 +84,7 @@
 %include "EpetraExt_MapColoring.h"
 %include "EpetraExt_MapColoringIndex.h"
 
-// Python code.  Here we declare classes that inherit both from Epetra
-// objects and UserArrays, to give users additional functionality.
+// Python code.
 %pythoncode %{
 
 __version__ = EpetraExt_Version()
