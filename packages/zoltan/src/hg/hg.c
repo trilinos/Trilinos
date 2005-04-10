@@ -182,7 +182,7 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
       ZOLTAN_TIMER_START(zz->ZTime, timer_patoh, zz->Communicator);
     }
     ierr = Zoltan_HG_PaToH(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
-                           output_parts);
+                           output_parts, &hgp);
     if (ierr != ZOLTAN_OK) 
       goto End;
     if (hgp.use_timers > 1)

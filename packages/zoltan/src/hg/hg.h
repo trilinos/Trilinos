@@ -104,8 +104,6 @@ struct HGPartParamsStruct {
   int use_timers;       /* Flag indicating whether to time the HG code. */
 
                                            
-int rthflag;
-
   int orphan_flag;            /* indicates orphans have been removed */
 
 
@@ -191,7 +189,7 @@ extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int, float, int, int *,
 extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, Partition, FILE*);
 extern int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,
   ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
-extern int Zoltan_HG_PaToH(ZZ *, HGraph *, int, int *);
+extern int Zoltan_HG_PaToH(ZZ *, HGraph *, int, int *, HGPartParams*);
 
 
 #ifdef __cplusplus

@@ -34,7 +34,8 @@ int Zoltan_HG_PaToH(
   ZZ *zz,
   HGraph *hg,
   int nparts,           /* # of desired partitions */
-  int *partvec          /* Output:  partition assignment vector */
+  int *partvec,         /* Output:  partition assignment vector */
+  HGPartParams *hgp     /* Input: hypergraph parameters */
 )
 {
 char *yo = "Zoltan_HG_PaToH";
@@ -74,6 +75,10 @@ char *yo = "Zoltan_HG_PaToH";
   PaToH_Initialize_Parameters(&pargs, PATOH_CONPART, PATOH_SUGPARAM_DEFAULT);
 
   pargs._k = nparts;
+    /* set the same imbalanace ratio to the required one */
+  pargs.init_imbal = pargs.final_imbal = hgp->bal_tol-1.0;
+
+    
   PaToH_Alloc(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim, 
               ivwgts, iewgts, hg->hindex, hg->hvertex);
 
