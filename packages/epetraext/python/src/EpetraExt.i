@@ -43,6 +43,7 @@
 #include "Epetra_MapColoring.h"
 
 // EpetraExt includes
+#include "EpetraExt_Version.h"
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 %}
@@ -66,9 +67,11 @@
 %import "Epetra_MapColoring.h"
 
 // C++ STL support
+%include "std_string.i"
 %include "std_vector.i"
 
 // EpetraExt interface includes
+%include "EpetraExt_Version.h"
 %include "EpetraExt_Transform.h"
 %template () std::vector<Epetra_IntVector>;
 %template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
@@ -80,3 +83,11 @@
 
 %include "EpetraExt_MapColoring.h"
 %include "EpetraExt_MapColoringIndex.h"
+
+// Python code.  Here we declare classes that inherit both from Epetra
+// objects and UserArrays, to give users additional functionality.
+%pythoncode %{
+
+__version__ = EpetraExt_Version()
+
+%}
