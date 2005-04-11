@@ -54,7 +54,8 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_COARSE_ITERATIONS",           NULL,  "INT",    0},    
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
   {"USE_TIMERS",                      NULL,  "INT",    0},    
-  {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",    0},    
+  {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",  0},
+  {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -103,6 +104,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
                                       declared static so that, over multiple
                                       runs, can accumulate times.  */
   static int timer_retlist=-1;
+  static int timer_parkway=-1;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -149,52 +151,63 @@ int **exp_to_part )         /* list of partitions to which exported objs
   uprintf(zoltan_hg->HG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
 
-  /* UVC: if it is bisection anyways; no need to create vmap etc; 
-     rdivide is going to call Zoltan_PHG_Partition anyways... */
-  if (hgp.kway || zz->LB.Num_Global_Parts == 2) {/* call main V cycle routine */
-    err = Zoltan_PHG_Partition(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
-     hgp.part_sizes, parts, &hgp, 0);
-    if (err != ZOLTAN_OK) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-      goto End;
+
+  if (zz->LB.Method == PARKWAY) {
+    if (hgp.use_timers > 1) {
+      if (timer_parkway < 0)
+        timer_parkway = Zoltan_Timer_Init(zz->ZTime, 0, "PHG_ParKway");
+      ZOLTAN_TIMER_START(zz->ZTime, timer_parkway, zz->Communicator);
     }
+    err = Zoltan_PHG_ParKway(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+                             parts, &hgp);
+    if (err != ZOLTAN_OK) 
+        goto End;
+    if (hgp.use_timers > 1)
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
+  } else { /* it must be PHG */
+      /* UVC: if it is bisection anyways; no need to create vmap etc; 
+         rdivide is going to call Zoltan_PHG_Partition anyways... */
+      if (hgp.kway || zz->LB.Num_Global_Parts == 2) {/* call main V cycle routine */
+          err = Zoltan_PHG_Partition(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+                                     hgp.part_sizes, parts, &hgp, 0);
+          if (err != ZOLTAN_OK) {
+              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+              goto End;
+          }
+      }
+      else {
+          int i, p=zz->LB.Num_Global_Parts;
+          HGraph *hg = &zoltan_hg->HG;
+          
+          /* vmap associates original vertices to sub hypergraphs */
+          if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
+              err = ZOLTAN_MEMERR;
+              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+              goto End;
+          }
+          for (i = 0; i < hg->nVtx; ++i)
+              hg->vmap[i] = i;
+          
+          /* tighten balance tolerance for recursive bisection process */
+          hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
+          
+          /* partition hypergraph */
+          err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
+
+          if (hgp.output_level >= PHG_DEBUG_LIST)     
+              uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
+                      "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
+                      hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
+                      Zoltan_PHG_Compute_Balance(zz, hg, p, parts),
+                      Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
+          
+          if (err != ZOLTAN_OK)  {
+              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+              goto End;
+          }
+          ZOLTAN_FREE (&zoltan_hg->HG.vmap);
+      }  
   }
-  else {
-    int i, p=zz->LB.Num_Global_Parts;
-    HGraph *hg = &zoltan_hg->HG;
-
-    /* vmap associates original vertices to sub hypergraphs */
-    if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
-      err = ZOLTAN_MEMERR;
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      goto End;
-    }
-    for (i = 0; i < hg->nVtx; ++i)
-      hg->vmap[i] = i;
-
-    /* tighten balance tolerance for recursive bisection process */
-    hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
-
-    /* partition hypergraph */
-    err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
-    for (i = 0; i < hg->nVtx; ++i)
-        if (parts[i]<0 || parts[i]>=p)
-            errexit("invalid partvec[%d]=%d", i, parts[i]);
-
-    if (hgp.output_level >= PHG_DEBUG_LIST)     
-      uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
-       "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
-       hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
-       Zoltan_PHG_Compute_Balance(zz, hg, p, parts),
-       Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
-        
-    if (err != ZOLTAN_OK)  {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-      goto End;
-    }
-    ZOLTAN_FREE (&zoltan_hg->HG.vmap);
-  }  
-  
         
   if (hgp.use_timers > 1) {
     if (timer_retlist < 0) 
@@ -302,6 +315,7 @@ static int Zoltan_PHG_Initialize_Params(
 )
 {
   int err;
+  char *yo = "Zoltan_PHG_Initialize_Params";
   
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
@@ -337,11 +351,15 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "EDGE_SIZE_THRESHOLD",
                                  (void*) &hgp->EdgeSizeThreshold);  
 
+  Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
+                    hgp->parkway_serpart);  
+  
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->redmo_str,           "no",    MAX_PARAM_STRING_LEN);  
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
+  strncpy(hgp->parkway_serpart,     "patoh", MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
   hgp->proc_split = 1;
@@ -370,6 +388,15 @@ static int Zoltan_PHG_Initialize_Params(
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
+
+  if (zz->LB.Method == PARKWAY) {
+      if (hgp->nProc_x_req>1) {
+          err = ZOLTAN_FATAL;
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParKway only works nProc_x=1 (or -1).");
+              goto End;
+      }
+      hgp->nProc_x_req = 1;
+  }
 
   err = Zoltan_PHG_Set_2D_Proc_Distrib(zz, zz->Communicator, zz->Proc, 
                                        zz->Num_Proc, hgp->nProc_x_req, 

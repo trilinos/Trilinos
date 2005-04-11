@@ -139,6 +139,7 @@ struct PHGPartParamsStruct {
   int use_timers;       /* Flag indicating whether to time the PHG code. */
   float EdgeSizeThreshold;  /* % of global vtxs beyond which an edge is 
                                considered to be dense. */
+  char parkway_serpart[MAX_PARAM_STRING_LEN];  /* SerialPartitioner for parKway. */    
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;
@@ -221,6 +222,8 @@ extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZHG**, Partition*, PHGPartParams*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
+extern int Zoltan_PHG_ParKway(ZZ *, HGraph *, int, Partition, PHGPartParams* );
+    
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

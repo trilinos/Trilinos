@@ -132,6 +132,17 @@ ifdef PATOH_LIBPATH
   THIRD_PARTY_INCPATH += $(PATOH_INCPATH)
 endif
 
+# If PARKWAY_LIBPATH is defined, compile the ParKway interface and 
+# link ParKway into zdrive.
+# KDD -- does not work with zscript yet.
+ifdef PARKWAY_LIBPATH
+  GDEFINES     += -DZOLTAN_PARKWAY
+  THIRD_PARTY_LIBS += -lparkway -lmpi++ -lstdc++
+  THIRD_PARTY_LIBPATH += $(PARKWAY_LIBPATH)
+  THIRD_PARTY_INCPATH += $(PARKWAY_INCPATH)
+endif
+
+
 # If NEMESIS_LIBPATH is defined, link Nemesis, Exodus and Netcdf into zdrive.
 ifdef NEMESIS_LIBPATH
   GDEFINES += -DZOLTAN_NEMESIS
@@ -221,7 +232,7 @@ PHG_CSRC 	= phg.c phg_build.c  \
 		  phg_match.c phg_plot.c \
 		  phg_refinement.c phg_serialpartition.c \
 		  phg_Vcycle.c phg_rdivide.c phg_util.c \
-		  phg_scale.c phg_comm.c phg_order.c
+		  phg_scale.c phg_comm.c phg_order.c phg_parkway.c
 PHG_INC 	= phg.h phg_util.h
 
 GDEFINES       += -DZOLTAN_HG

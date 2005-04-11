@@ -20,6 +20,7 @@ extern "C" {
 
 #ifdef ZOLTAN_PARKWAY
 
+    
 void Zoltan_ParaPartKway(int numVertices, int numHedges, const int *vWeights, const int *hEdgeWts, const int *pinList, const int *offsets, int numParts, double constraint, int *k_1cut, const int *options, int *pVector, const char *outFile, MPI_Comm comm);    
     
 static int scale_round_weights(float *, int *, int, int, int);
@@ -56,6 +57,7 @@ int Zoltan_PHG_ParKway(
     int i, anVtx, nVtx;                   /* counter and local vertex cnt (for first k-1 parts)*/
     PHGComm *hgc=hg->comm;
     int *disp=NULL, *recv_size=NULL;      /* for allgatherv */
+    static int seed=1;
     
     /* ParKway expects integer weights; convert if weights are provided. */
     ivwgts = (int *) ZOLTAN_MALLOC(hg->nVtx  * sizeof(int));
@@ -87,7 +89,6 @@ int Zoltan_PHG_ParKway(
     
     anVtx = hg->nVtx / hgc->nProc;
     nVtx = (hgc->myProc==hgc->nProc-1) ? hg->nVtx-(anVtx*(hgc->nProc-1)) : anVtx;
-    uprintf(hgc, "anVtx=%d nVtx=%d nProc=%d\n", anVtx, nVtx, hgc->nProc);
 
     pvector = (int *) ZOLTAN_MALLOC(nVtx * sizeof(int));
     disp = (int *) ZOLTAN_MALLOC(hgc->nProc * sizeof(int));
@@ -98,7 +99,7 @@ int Zoltan_PHG_ParKway(
 
     /* ----- Set ParKway's options --------------- */
     options[0] = 1; /*0 -> all options use default, else user define*/
-    options[1] = 0; /*0 -> use default seed (or if using SPRNG, it chooses seed), else use options[1] as seed*/
+    options[1] = seed++; /*0 -> use default seed (or if using SPRNG, it chooses seed), else use options[1] as seed*/
     options[2] = 2; /*0 -> no disp info, 1 -> some, 2 -> lots*/
     options[3] = 0; /*0 -> do not write partition to disk, 1 -> do write*/
     options[4] = 1; /*number of parallel runs*/
@@ -116,6 +117,17 @@ int Zoltan_PHG_ParKway(
         options[13] = 5;
     else if (!strcasecmp(hgp->parkway_serpart, "hmetis"))
         options[13] = 4;
+    else if (!strcasecmp(hgp->parkway_serpart, "generic"))
+        options[13] = 1;
+    else if (!strcasecmp(hgp->parkway_serpart, "genericv"))
+        options[13] = 2;
+    else if (!strcasecmp(hgp->parkway_serpart, "genericmv"))
+        options[13] = 3;
+    else {
+        ZOLTAN_PARKWAY_ERROR("Invalid ParKway serial partitioner. It should be one of; generic, genericv, genericmv, hmetis, patoh.", ZOLTAN_FATAL);
+    }
+
+    /* uprintf(hgc, "ParKway serpart='%s'  options[13]=%d\n", hgp->parkway_serpart, options[13]); */
 
     options[14] = 2; /*serial coarsening algorithm (only if [13] = RB, see manual)*/
     options[15] = 2; /*num bisection runs in RB (only if [13] = RB, see manual)*/
@@ -132,77 +144,29 @@ int Zoltan_PHG_ParKway(
     
     constraint = hgp->bal_tol-1.0;
 
-    Zoltan_Print_Sync_Start (zz->Communicator, 1);
-    uprintf(hgc, "nVtx=%d nEdge=%d nparts=%d constrain=%.3lf\n", nVtx, hg->nEdge, nparts, constraint);
-    for (i=0; i<hg->nEdge; ++i) {
-        int j;
-
-        uprintf(hgc, "%d (%d): ", i, iewgts[i]);
-        for (j=hg->hindex[i]; j<hg->hindex[i+1]; ++j)
-            printf("%d (%d), ", hg->hvertex[j], ivwgts[hg->hvertex[j]]);
-        printf("\n");
-    }
-    
-    Zoltan_Print_Sync_End(zz->Communicator, 1);
       
     Zoltan_ParaPartKway(nVtx, hg->nEdge, &ivwgts[hgc->myProc*anVtx], iewgts,
                  hg->hindex, hg->hvertex, nparts,
-                 constraint, &cut, options, pvector, NULL, zz->Communicator);
+                 constraint, &cut, options, pvector, NULL, hgc->Communicator);
 
-    Zoltan_Print_Sync_Start (zz->Communicator, 1);    
-    uprintf(hgc, "ParaPartKway cut=%d\n pvector:\n", cut);
+    uprintf(hgc, "ParaPartKway cut=%d\n", cut);
 
-
-    for (i=0; i<nVtx; ++i) {
-        uprintf(hgc, "%d -> %d\n", i, pvector[i]);
-        if (pvector[i]<0 || pvector[i]>=nparts)
-            errexit("parkway: invalid pvector[%d]=%d", i, pvector[i]); 
-    }
-    Zoltan_Print_Sync_End(zz->Communicator, 1);
     
     /* after partitioning Zoltan needs partvec exist on all procs for nProc_x=1 */       
     disp[0] = 0; 
     for (i = 1; i < hgc->nProc; ++i)
         disp[i] = disp[i-1] + anVtx;
 
-    memset(partvec, 0xff, sizeof(int)*hg->nVtx);
+    MPI_Allgather (&nVtx, 1, MPI_INT, recv_size, 1, MPI_INT, hgc->Communicator);    
+    MPI_Allgatherv(pvector, nVtx, MPI_INT, 
+                  partvec, recv_size, disp, MPI_INT, hgc->Communicator);
 
-    
-    MPI_Allgatherv(pvector, 1, MPI_INT, 
-                  partvec, recv_size, disp, MPI_INT, zz->Communicator);
-
-    /*
-    for (i = 0; i < hgc->nProc; ++i)
-        if (recv_size[i]!=anVtx) {
-            errexit("recv_size[%d]=%d but anVtx=%d\n", i, recv_size[i], anVtx);
-        }
-    if (recv_size[i]!=nVtx) {
-        errexit("recv_size[%d]=%d but nVtx=%d\n", i, recv_size[i], nVtx);
-    }
-    */
-
-    Zoltan_Print_Sync_Start (zz->Communicator, 1);    
-    uprintf(hgc, "partvec:\n");
-
-
-    for (i=0; i<hg->nVtx; ++i) {
-        uprintf(hgc, "%d -> %d\n", i, partvec[i]);
-        if (partvec[i]<0 || partvec[i]>=nparts)
-            errexit("parkway: invalid partvec[%d]=%d", i, partvec[i]);
-    }
-
-    Zoltan_Print_Sync_End(zz->Communicator, 1);
-    
-    for (i=0; i<hg->nVtx; ++i)
-        partvec[i] = 0;
-            
     
   /* HERE:  Check whether imbalance criteria were met. */
 
 End:
 
     Zoltan_Multifree(__FILE__,__LINE__, 5, &ivwgts, &iewgts, &pvector, &disp, &recv_size);
-    uprintf(hgc, "Terminating parKway...\n");
     
 #endif
   return ierr;

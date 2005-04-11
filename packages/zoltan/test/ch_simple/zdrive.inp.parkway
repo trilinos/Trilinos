@@ -1,5 +1,5 @@
 Decomposition Method 	= parkway
-Zoltan Parameters	= debug_level=3
+Zoltan Parameters	= debug_level=1
 Zoltan Parameters       = parkway_serpart=patoh
 Zoltan Parameters	= num_global_partitions=2
 File Type		= hypergraph

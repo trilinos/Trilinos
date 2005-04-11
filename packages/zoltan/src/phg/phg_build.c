@@ -272,6 +272,8 @@ float *tmpwgts = NULL;
   app.vtxdist[0] = 0;
   app.GnVtx = app.vtxdist[nProc];
 
+
+
   /* 
    * Correlate GIDs in edge_verts with local indexing in zhg to build the
    * input HG.
@@ -364,6 +366,7 @@ float *tmpwgts = NULL;
   app.edgedist[0] = 0;
   app.GnEdge = app.edgedist[nProc];
 
+  
   /* Assign global numbers to edges. */
   /* KDDKDD  For different (e.g., randomized) initial 2D distributions, 
    * KDDKDD  change the way edge_gno values are assigned. */
