@@ -145,13 +145,13 @@ foreach f ( ${TEST_SUBDIRS} )
 
             # certain OS's don't search the PWD for scripts, so prepend "./"
             set g = "./"${gg}
-		    $mpigo 1 $g >>& ../$file4
+		    $g >>& ../$file4
 		    if(! -z ../$file4 ) then
             # If file4 is not empty, then a test failed.
 			  set AnError = True
 			  #echo "  ******** Test failed ********" >>& ../$file
 			  #echo "############" $g "##############" >>& ../$file2
-			  $mpigo 1 $g -v >>& ../$file2
+			  $g -v >>& ../$file2
 			  cat ../$file4 >> ../$file
 			  rm -f ../$file4
 		    else
@@ -160,7 +160,7 @@ foreach f ( ${TEST_SUBDIRS} )
 		    endif
 		else
 		# This is not an automated test.
-		    $mpigo 1 $g -v >>& ../$file
+		    $g -v >>& ../$file
 		endif
 	end
 	cd ..
