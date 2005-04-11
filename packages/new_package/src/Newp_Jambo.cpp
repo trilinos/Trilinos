@@ -32,6 +32,9 @@
 //=============================================================================
 Newp_Jambo::Newp_Jambo(const Epetra_Comm& Comm):Comm_(Comm) {} 
 
+//=============================================================================
+Newp_Jambo::Newp_Jambo(const Newp_Jambo& Source):Comm_(Source.Comm_) {} 
+
 //=======================================================================
 void Newp_Jambo::Print(ostream& os) const {
   int MyPID = Comm_.MyPID();

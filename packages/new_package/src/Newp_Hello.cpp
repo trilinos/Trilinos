@@ -32,6 +32,9 @@
 //=============================================================================
 Newp_Hello::Newp_Hello(const Epetra_Comm& Comm):Comm_(Comm) {} 
 
+//=============================================================================
+Newp_Hello::Newp_Hello(const Newp_Hello& Source):Comm_(Source.Comm_) {} 
+
 //=======================================================================
 void Newp_Hello::Print(ostream& os) const {
   int MyPID = Comm_.MyPID();
