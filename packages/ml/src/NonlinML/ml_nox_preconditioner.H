@@ -251,13 +251,14 @@ public:
   //! Set dimensions for the PDE and the Nullspace.
   /*! 
    Set dimensions for the PDE and the Nullspace. 
-   \param numPDE (In) : Number of PDE equations, normally number of dofs per node.
-   \param dimNS (In)  : Dimension of the nullspace. The preconditioner will ask for 
-                        the Nullspace through the fine level interface. If know
-                        Nullspace is supplied there, the default Nullspace is used 
-                        and a warning is printed.
+   \param spatialDimension (In) : spatial dimension of the problem.
+   \param numPDE           (In) : Number of PDE equations, normally number of dofs per node.
+   \param dimNS           (In)  : Dimension of the nullspace. The preconditioner will ask for 
+                                  the Nullspace through the fine level interface. If know
+                                  Nullspace is supplied there, the default Nullspace is used 
+                                  and a warning is printed.
    */
-  bool SetDimensions(int numPDE, int dimNS);
+  bool SetDimensions(int spatialDimension, int numPDE, int dimNS);
 
   //! Set convergence criteria for nonlinear preconditioner.
   /*! 
@@ -477,6 +478,7 @@ private:
   ML_Aggregate*                         ag_;               // the aggregate handle
   int                                   ml_N_levels_;      // max. number of levels
   int                                   ml_printlevel_;    // ML's printlevel (0 - 10)
+  int                                   ml_spatialDimension_; // spatial dimension of the problem
   int                                   ml_numPDE_;        // number of pdes per node
   int                                   ml_dim_nullsp_;    // dimension of nullspace
   string                                ml_coarsentype_;   // type of coarsening algorithm: Uncoupled MIS METIS VBMETIS

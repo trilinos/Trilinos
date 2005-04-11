@@ -108,8 +108,18 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
       int numPDE    = 0;
       if (i==0) 
          numPDE = ml_numPDE_;
-      else
+      else if (ml_spatialDimension_==1)
+         numPDE = 1;
+      else if (ml_spatialDimension_==2)
+         numPDE = 3;
+      else if (ml_spatialDimension_==3)
          numPDE = 6;
+      else
+      {
+          cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditioner:\n"
+               << "**ERR**: spatialDimension=" << ml_spatialDimension_ << " unknown\n"
+               << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+      }
       if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
@@ -265,8 +275,18 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       int numPDE    = 0;
       if (i==0) 
          numPDE = ml_numPDE_;
-      else
+      else if (ml_spatialDimension_==1)
+         numPDE = 1;
+      else if (ml_spatialDimension_==2)
+         numPDE = 3;
+      else if (ml_spatialDimension_==3)
          numPDE = 6;
+      else
+      {
+          cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditioner:\n"
+               << "**ERR**: spatialDimension=" << ml_spatialDimension_ << " unknown\n"
+               << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+      }
       if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,

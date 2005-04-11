@@ -250,8 +250,18 @@ bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset)
 /*----------------------------------------------------------------------*
  |  Set methods for flags/data (public)                      m.gee 03/05|
  *----------------------------------------------------------------------*/
-bool ML_NOX::ML_Nox_Preconditioner::SetDimensions(int numPDE, int dimNS)
+bool ML_NOX::ML_Nox_Preconditioner::SetDimensions(int spatialDimension, 
+                                                  int numPDE, int dimNS)
 { 
+  if (spatialDimension<1 || spatialDimension>3)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetDimensions:\n"
+         << "**ERR**: spatialDimension out of range, using previous one\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+  }
+  else
+     ml_spatialDimension_ = spatialDimension;
+  
   if (numPDE<1)
   {
     cout << "**ERR**: ML_Nox_Preconditioner::SetDimensions:\n"
@@ -533,6 +543,10 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
 {
   int i;
 
+  // when matfreelev0_==true, set ismatrixfree_=true as well
+  if (matfreelev0_) 
+     ismatrixfree_=true;
+  
   // build hierarchy with given Jacobian
   if (ismatrixfree_ == false)
   {
@@ -1011,7 +1025,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
 }
 
 /*----------------------------------------------------------------------*
- |  apply inverse of operator (public)                       m.gee 11/04|
+ |  compute Jacobian on fine level (private)                 m.gee 04/05|
  *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian(
                                                   const Epetra_Vector& x)
