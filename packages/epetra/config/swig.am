@@ -21,41 +21,33 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA                                                                                
-# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-# (rppawlo@sandia.gov), Sandia National Laboratories.
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov), Sandia National
+# Laboratories.
 # 
 # ************************************************************************
 # @HEADER
 
-# ------------------------------------------------------------------------
-# Rules for building python interface files using swig.  Automatic 
-# dependency tracking for swig interface files is implemented.
-# ------------------------------------------------------------------------
+## #################################################################
+## Rules for building python interface files using swig.  Automatic
+## dependency tracking for swig interface files is implemented.
+## #################################################################
 
+# Dependencies.  Obtain the list of dependencies by executing ls.  This could
+# be empty, so when we include the dependency files, we also include 'dummy',
+# an empty file used to trick configure into making the dependency directory.
+DEPFILES   = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null)
+include $(DEPDIR)/dummy $(DEPFILES)
+
+# Clean target.  Put the generated dependency files in the list of files to
+# be removed with a "make clean"
 CLEANFILES = $(DEPDIR)/*.Pi
 
-%.py: %_wrap.cpp
-
-if HAVE_SWIG
-
+# Define the SWIGCOMPILE macro
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
-$(DEPDIR):
-	mkdir -p $@
+# Wrapper and proxy targets
+%.py: %_wrap.cpp
 
-%_wrap.cpp: $(srcdir)/%.i $(DEPDIR)
+%_wrap.cpp: $(srcdir)/%.i
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
-
-else
-
-%_wrap.cpp: $(srcdir)/%.i 
-	@echo 'Error swig is not enabled and'
-	@echo '$@ is out-of-date with respect to $<.'
-	@echo 'Rerun configure with --with-swig=[path-to-swig].'
-	@exit 1
-
-endif
-
-swigclean:
-	rm -f $(srcdir)/src/wrap_* $(WRAPPERS) 
