@@ -342,13 +342,13 @@ LOCA::BorderedSystem::Bordering::applyInverse(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous(
-			      NOX::Parameter::List& params,
-			      const NOX::Abstract::MultiVector* A,
-			      const NOX::Abstract::MultiVector::DenseMatrix* C,
-			      const NOX::Abstract::MultiVector* F,
-			      const NOX::Abstract::MultiVector::DenseMatrix* G,
-			      NOX::Abstract::MultiVector& X,
-			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
+			    NOX::Parameter::List& params,
+			    const NOX::Abstract::MultiVector* AA,
+			    const NOX::Abstract::MultiVector::DenseMatrix* CC,
+			    const NOX::Abstract::MultiVector* F,
+			    const NOX::Abstract::MultiVector::DenseMatrix* G,
+			    NOX::Abstract::MultiVector& X,
+			    NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
     "LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous()";
@@ -372,14 +372,14 @@ LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous(
     if (!isZeroF)
       RHS = F->clone(NOX::DeepCopy);
     else
-      RHS = A->clone(Y.numCols());
+      RHS = AA->clone(Y.numCols());
   }
     
 
   // Solve Y = C^-1 * G
   if (!isZeroY) {
     Y.assign(*G);
-    M = new NOX::Abstract::MultiVector::DenseMatrix(*C);
+    M = new NOX::Abstract::MultiVector::DenseMatrix(*CC);
     ipiv = new int[M->numRows()];
     L.GESV(M->numRows(), Y.numCols(), M->values(), M->stride(), ipiv, 
 	   Y.values(), Y.stride(), &info);
@@ -394,9 +394,9 @@ LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous(
 
     // compute F - A*Y
     if (!isZeroF && !isZeroA)
-      RHS->update(Teuchos::NO_TRANS, -1.0, *A, Y, 1.0);
+      RHS->update(Teuchos::NO_TRANS, -1.0, *AA, Y, 1.0);
     else if (!isZeroA)
-      RHS->update(Teuchos::NO_TRANS, -1.0, *A, Y, 0.0);
+      RHS->update(Teuchos::NO_TRANS, -1.0, *AA, Y, 0.0);
 
   }
 
@@ -414,14 +414,14 @@ LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous(
-			      NOX::Parameter::List& params,
-			      const NOX::Abstract::MultiVector* A,
-			      const NOX::Abstract::MultiVector* B,
-			      const NOX::Abstract::MultiVector::DenseMatrix* C,
-			      const NOX::Abstract::MultiVector* F,
-			      const NOX::Abstract::MultiVector::DenseMatrix* G,
-			      NOX::Abstract::MultiVector& X,
-			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
+			   NOX::Parameter::List& params,
+			   const NOX::Abstract::MultiVector* AA,
+			   const NOX::Abstract::MultiVector* BB,
+			   const NOX::Abstract::MultiVector::DenseMatrix* CC,
+			   const NOX::Abstract::MultiVector* F,
+			   const NOX::Abstract::MultiVector::DenseMatrix* G,
+			   NOX::Abstract::MultiVector& X,
+			   NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
     "LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous()";
@@ -450,8 +450,8 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous(
 
     // compute X2 = J^-1*A
     if (!isZeroA && !isZeroY) {
-      X2 = A->clone(NOX::ShapeCopy);
-      status = grp->applyJacobianInverseMultiVector(params, *A, *X2);
+      X2 = AA->clone(NOX::ShapeCopy);
+      status = grp->applyJacobianInverseMultiVector(params, *AA, *X2);
       finalStatus = 
 	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						     callingFunction);
@@ -463,14 +463,14 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous(
 
     // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
     if (!isZeroT1) {
-      X.multiply(-1.0, *B, Y);
+      X.multiply(-1.0, *BB, Y);
     }
 
     // compute t2 = -B^T*X2
     if (!isZeroT2) {
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(B->numVectors(),
+      t2 = new NOX::Abstract::MultiVector::DenseMatrix(BB->numVectors(),
 						       X2->numVectors());
-      X2->multiply(-1.0, *B, *t2);
+      X2->multiply(-1.0, *BB, *t2);
     }
 
     // compute G - B^T*X1
@@ -481,9 +481,9 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous(
     
     // compute C - B^T*X2
     if (!isZeroC && !isZeroT2)
-      *t2 += *C;
+      *t2 += *CC;
     else if (!isZeroC)
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(*C);
+      t2 = new NOX::Abstract::MultiVector::DenseMatrix(*CC);
       
     // Note that C and T2 cannot both be zero
 
@@ -526,16 +526,16 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSystem::Bordering::solveBNonZeroContiguous(
-			      NOX::Parameter::List& params,
-			      const NOX::Abstract::MultiVector* A,
-			      const NOX::Abstract::MultiVector* B,
-			      const NOX::Abstract::MultiVector::DenseMatrix* C,
-			      vector<int>& indexF,
-			      vector<int>& indexA,
-			      const NOX::Abstract::MultiVector* F,
-			      const NOX::Abstract::MultiVector::DenseMatrix* G,
-			      NOX::Abstract::MultiVector& X,
-			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
+			   NOX::Parameter::List& params,
+			   const NOX::Abstract::MultiVector* AA,
+			   const NOX::Abstract::MultiVector* BB,
+			   const NOX::Abstract::MultiVector::DenseMatrix* CC,
+			   vector<int>& indexF,
+			   vector<int>& indexA,
+			   const NOX::Abstract::MultiVector* F,
+			   const NOX::Abstract::MultiVector::DenseMatrix* G,
+			   NOX::Abstract::MultiVector& X,
+			   NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
     "LOCA::BorderedSystem::Bordering::solveBZeroContiguous()";
@@ -571,12 +571,12 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroContiguous(
     if (!isZeroB) {
 
       // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
-      X1->multiply(-1.0, *B, Y);
+      X1->multiply(-1.0, *BB, Y);
       
       // compute t2 = -B^T*X2
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(B->numVectors(),
+      t2 = new NOX::Abstract::MultiVector::DenseMatrix(BB->numVectors(),
 						       X2->numVectors());
-      X2->multiply(-1.0, *B, *t2);
+      X2->multiply(-1.0, *BB, *t2);
 
     }
 
@@ -588,9 +588,9 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroContiguous(
     
     // compute C - B^T*X2
     if (!isZeroC && !isZeroB)
-      *t2 += *C;
+      *t2 += *CC;
     else if (!isZeroC)
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(*C);
+      t2 = new NOX::Abstract::MultiVector::DenseMatrix(*CC);
       
     // Note that C and B cannot both be zero
 
@@ -598,7 +598,7 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroContiguous(
     Teuchos::LAPACK<int,double> L;
     int *ipiv = new int[t2->numRows()];
     int info;
-    L.GESV(C->numRows(), Y.numCols(), t2->values(), t2->stride(), ipiv, 
+    L.GESV(CC->numRows(), Y.numCols(), t2->values(), t2->stride(), ipiv, 
 	   Y.values(), Y.stride(), &info);
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;

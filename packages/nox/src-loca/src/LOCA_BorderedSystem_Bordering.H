@@ -196,8 +196,8 @@ namespace LOCA {
       NOX::Abstract::Group::ReturnType  
       solveBZeroNoncontiguous(
 			   NOX::Parameter::List& params,
-			   const NOX::Abstract::MultiVector* A,
-			   const NOX::Abstract::MultiVector::DenseMatrix* C,
+			   const NOX::Abstract::MultiVector* AA,
+			   const NOX::Abstract::MultiVector::DenseMatrix* CC,
 			   const NOX::Abstract::MultiVector* F,
 			   const NOX::Abstract::MultiVector::DenseMatrix* G,
 			   NOX::Abstract::MultiVector& X,
@@ -210,9 +210,9 @@ namespace LOCA {
       NOX::Abstract::Group::ReturnType  
       solveBNonZeroNoncontiguous(
 			   NOX::Parameter::List& params,
-			   const NOX::Abstract::MultiVector* A,
-			   const NOX::Abstract::MultiVector* B,
-			   const NOX::Abstract::MultiVector::DenseMatrix* C,
+			   const NOX::Abstract::MultiVector* AA,
+			   const NOX::Abstract::MultiVector* BB,
+			   const NOX::Abstract::MultiVector::DenseMatrix* CC,
 			   const NOX::Abstract::MultiVector* F,
 			   const NOX::Abstract::MultiVector::DenseMatrix* G,
 			   NOX::Abstract::MultiVector& X,
@@ -225,9 +225,9 @@ namespace LOCA {
       NOX::Abstract::Group::ReturnType  
       solveBNonZeroContiguous(
 			  NOX::Parameter::List& params,
-			  const NOX::Abstract::MultiVector* A,
-			  const NOX::Abstract::MultiVector* B,
-			  const NOX::Abstract::MultiVector::DenseMatrix* C,
+			  const NOX::Abstract::MultiVector* AA,
+			  const NOX::Abstract::MultiVector* BB,
+			  const NOX::Abstract::MultiVector::DenseMatrix* CC,
 			  vector<int>& indexF,
 			  vector<int>& indexA,
 			  const NOX::Abstract::MultiVector* F,

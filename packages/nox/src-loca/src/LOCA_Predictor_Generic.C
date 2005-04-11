@@ -103,13 +103,13 @@ LOCA::Predictor::Generic::setPredictorOrientation(
     return;
   }
 
-  LOCA::MultiContinuation::ExtendedVector* secantVecPtr = 
+  LOCA::MultiContinuation::ExtendedVector* secant = 
     dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(xMultiVec[0].clone(NOX::DeepCopy));
-  secantVecPtr->update(-1.0, prevXMultiVec[0], 1.0);
+  secant->update(-1.0, prevXMultiVec[0], 1.0);
 
   for (int i=0; i<result.numVectors(); i++)
-    if (secantVecPtr->dot(result[i])*stepSize[i] < 0.0)
+    if (secant->dot(result[i])*stepSize[i] < 0.0)
       result[i].scale(-1.0);
 
-  delete secantVecPtr;
+  delete secant;
 }

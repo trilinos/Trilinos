@@ -106,7 +106,7 @@ namespace LOCA {
       virtual ~Iterator();
 
       //! Reset the iterator to start a new iteration
-      virtual bool reset(NOX::Parameter::List& p);
+      virtual bool resetIterator(NOX::Parameter::List& p);
 
       //! Return the status of the iterator
       virtual IteratorStatus getIteratorStatus() const;

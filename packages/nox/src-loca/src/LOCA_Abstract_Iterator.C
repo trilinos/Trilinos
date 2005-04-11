@@ -38,7 +38,7 @@ LOCA::Abstract::Iterator::Iterator()
 
 LOCA::Abstract::Iterator::Iterator(NOX::Parameter::List& p)
 {
-  reset(p);
+  resetIterator(p);
 }
 
 LOCA::Abstract::Iterator::Iterator(const LOCA::Abstract::Iterator& it) :
@@ -52,7 +52,7 @@ LOCA::Abstract::Iterator::Iterator(const LOCA::Abstract::Iterator& it) :
 LOCA::Abstract::Iterator::~Iterator() {}
 
 bool 
-LOCA::Abstract::Iterator::reset(NOX::Parameter::List& p) 
+LOCA::Abstract::Iterator::resetIterator(NOX::Parameter::List& p) 
 {
   stepNumber = 0;
   numFailedSteps = 0;

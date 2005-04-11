@@ -995,6 +995,36 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::printSolution(const double conParam)
 			hopfXVec.getFrequency());
 }
 
+void
+LOCA::Bifurcation::HopfBord::ExtendedGroup::printSolution(
+					     const NOX::Abstract::Vector& x_,
+					     const double conParam) const 
+{
+  const LOCA::Bifurcation::HopfBord::ExtendedVector& hopf_x = 
+    dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedVector&>(x_);
+  
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "LOCA::Bifurcation::HopfBord::ExtendedGroup::printSolution\n";
+
+    cout << "\tPrinting Solution Vector for conParam = " 
+	 << LOCA::Utils::sci(conParam) << endl;
+  }
+  grpPtr->printSolution(hopf_x.getXVec(), conParam);
+
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tPrinting Real Component of Eigenvector for bif param = " 
+	 << LOCA::Utils::sci(hopf_x.getBifParam()) << endl;
+  }
+
+  grpPtr->printSolution(hopf_x.getRealEigenVec(), hopf_x.getBifParam());
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tPrinting Imaginary Component of Eigenvector for frequency = " 
+	 << LOCA::Utils::sci(hopf_x.getFrequency()) << endl;
+  }
+  grpPtr->printSolution(hopf_x.getImagEigenVec(), 
+			hopf_x.getFrequency());
+}
+
 const LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::getUnderlyingGroup() const
 {

@@ -163,7 +163,7 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   NOX::Parameter::List& stepperList = LOCA::Utils::getSublist("Stepper");
 
   // Reset base class
-  LOCA::Abstract::Iterator::reset(stepperList);
+  LOCA::Abstract::Iterator::resetIterator(stepperList);
 
   // Reset group, predictor, step-size managers
   bifGroupManagerPtr =
@@ -334,7 +334,7 @@ LOCA::Stepper::start() {
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
+LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 {
   string callingFunction = "LOCA::Stepper::finish()";
 
@@ -348,8 +348,8 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
   *curGroupPtr = solverPtr->getSolutionGroup();
 
   // Return if iteration failed (reached max number of steps)
-  if (iteratorStatus == LOCA::Abstract::Iterator::Failed)
-    return iteratorStatus;
+  if (itStatus == LOCA::Abstract::Iterator::Failed)
+    return itStatus;
 
   // Do one additional step using natural continuation to hit target value
   double value = curGroupPtr->getContinuationParameter();
@@ -600,11 +600,11 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
 LOCA::Abstract::Iterator::StepStatus
 LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
-			       double& stepSize)
+			       double& stepSz)
 {
   NOX::Abstract::Group::ReturnType res =
     stepSizeManagerPtr->compute(*curGroupPtr, *curPredictorPtr, *solverPtr,
-				stepStatus, *this, stepSize);
+				stepStatus, *this, stepSz);
 
   if (res == NOX::Abstract::Group::Failed)
     return LOCA::Abstract::Iterator::Provisional;
@@ -616,19 +616,19 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
 	   << endl;
     }
 
-    stepSize *= pow(fabs(tangentFactor), tangentFactorExponent);
+    stepSz *= pow(fabs(tangentFactor), tangentFactorExponent);
   }
 
   // Cap the con parameter so we don't go past bounds
   double prevValue = curGroupPtr->getContinuationParameter();
   double dpds = curPredictorPtr->getParam();
-  if ( (prevValue+stepSize*dpds > maxValue*(1.0 - 1.0e-15)) ) {
-    stepSize = (maxValue - prevValue)/dpds;
+  if ( (prevValue+stepSz*dpds > maxValue*(1.0 - 1.0e-15)) ) {
+    stepSz = (maxValue - prevValue)/dpds;
     targetValue = maxValue;
     setLastIteration();
   }
-  if ( (prevValue+stepSize*dpds < minValue*(1.0 + 1.0e-15)) ) {
-    stepSize = (minValue - prevValue)/dpds;
+  if ( (prevValue+stepSz*dpds < minValue*(1.0 + 1.0e-15)) ) {
+    stepSz = (minValue - prevValue)/dpds;
     targetValue = minValue;
     setLastIteration();
   }

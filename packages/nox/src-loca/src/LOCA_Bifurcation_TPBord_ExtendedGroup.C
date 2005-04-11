@@ -1003,6 +1003,33 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution(const double conParam) c
   grpPtr->printSolution(tpXVec.getNullVec(), tpXVec.getBifParam());
 }
 
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution(
+					     const NOX::Abstract::Vector& x_,
+					     const double conParam) const 
+{
+  const LOCA::Bifurcation::TPBord::ExtendedVector& tp_x = 
+    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(x_);
+
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution\n";
+
+    cout << "Turning Point located at: " << LOCA::Utils::sci(conParam) 
+	 << "   " 
+	 << LOCA::Utils::sci(tp_x.getBifParam())
+	 << endl;
+
+    cout << "\tPrinting Solution Vector for conParam = " 
+	 << LOCA::Utils::sci(conParam) << endl;
+  }
+  grpPtr->printSolution(tp_x.getXVec(), conParam);
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tPrinting Null Vector for bif param = " 
+	 << LOCA::Utils::sci(tp_x.getBifParam()) << endl;
+  }
+  grpPtr->printSolution(tp_x.getNullVec(), tp_x.getBifParam());
+}
+
 const LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::TPBord::ExtendedGroup::getUnderlyingGroup() const
 {

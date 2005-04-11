@@ -273,6 +273,10 @@ namespace LOCA {
 	//! Calls groups print function for solution vector null vec, and params 
 	virtual void printSolution(const double conParam) const;
 
+	//! Calls groups print function for solution vector null vec, and params 
+	virtual void printSolution(const NOX::Abstract::Vector& x_,
+				   const double conParam) const;
+
 	//! Return underlying group
 	virtual const LOCA::Continuation::AbstractGroup& 
 	getUnderlyingGroup() const;

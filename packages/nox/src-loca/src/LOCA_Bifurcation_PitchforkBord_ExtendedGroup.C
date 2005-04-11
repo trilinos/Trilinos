@@ -883,6 +883,31 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution(const double conP
   grpPtr->printSolution(pfXVec.getNullVec(), pfXVec.getBifParam());
 }
 
+void
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution(
+					   const NOX::Abstract::Vector& x_,
+					   const double conParam) const 
+{
+  const LOCA::Bifurcation::PitchforkBord::ExtendedVector& pf_x = 
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(x_);
+
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << endl
+	 << "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution\n";
+    cout << "\tSlack variable sigma = " 
+	 << LOCA::Utils::sci(pf_x.getSlackVar()) << endl;
+    cout << "\tPrinting Solution Vector for conParam = " 
+	 << LOCA::Utils::sci(conParam) << endl;
+  }
+  grpPtr->printSolution(pf_x.getXVec(), conParam);
+
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tPrinting Null Vector for bif param = " 
+	 << LOCA::Utils::sci(pf_x.getBifParam()) << endl;
+  }
+  grpPtr->printSolution(pf_x.getNullVec(), pf_x.getBifParam());
+}
+
 const  LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getUnderlyingGroup() const
 {

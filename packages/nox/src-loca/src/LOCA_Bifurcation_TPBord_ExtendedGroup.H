@@ -459,6 +459,18 @@ namespace LOCA {
 	 */
 	virtual void printSolution(const double conParam) const;
 
+	/*! 
+	 * \brief Function to print out extended solution and continuation 
+	 * parameter after successful continuation step.
+	 */
+	/*!
+	 * This method prints the solution, null-vector, and parameter 
+	 * components of the extended solution vector using the printSolution
+	 * method of the underlying group.
+	 */
+	 virtual void printSolution(const NOX::Abstract::Vector& x_,
+				    const double conParam) const;
+
 	//@}
 
 	/*! 

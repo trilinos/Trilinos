@@ -521,7 +521,18 @@ LOCA::Homotopy::Group::getNewton() const
 }
 
 void
-LOCA::Homotopy::Group::printSolution(const double conParam) const 
+LOCA::Homotopy::Group::printSolution(const double conParm) const 
+{
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "LOCA::Homotopy::Group::printSolution\n";
+    cout << "Nothing to print at this time!";
+  }
+  return;
+}
+
+void
+LOCA::Homotopy::Group::printSolution(const NOX::Abstract::Vector& x_,
+				     const double conParm) const 
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
     cout << "LOCA::Homotopy::Group::printSolution\n";
