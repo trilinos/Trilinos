@@ -195,6 +195,7 @@ $mpigo 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 -1 0 1e-11 5e-12  >>SST.s
 #  either the upper or lower triangular part.
 #
 $mpigo 1 amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+# COMMENT fails on atlantis $mpigo 1 amesos_test.exe SUPERLUDIST Dense.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 # COMMENT fails on herouxsmp $mpigo 3 amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
 #

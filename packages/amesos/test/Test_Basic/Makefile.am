@@ -73,6 +73,7 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_ImpcolD.rua  ImpcolD.rua                               
 	cp  $(srcdir)/In_ImpcolE.rua  ImpcolE.rua                               
 	cp  $(srcdir)/In_fidapm05.rua  fidapm05.rua                             
+	cp  $(srcdir)/In_Dense.triU  Dense.triU                               
 	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU                               
 	cp  $(srcdir)/In_SuperLU.rua  SuperLU.rua                               
 	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx                              
@@ -145,6 +146,7 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
         $(srcdir)/In_ImpcolE.rua \
         $(srcdir)/In_fidapm05.rua \
         $(srcdir)/In_SuperLU.rua \
+        $(srcdir)/In_Dense.triU \
         $(srcdir)/In_SuperLU.triU \
         $(srcdir)/In_bcsstk01.mtx \
         $(srcdir)/In_bcsstk02.mtx \
@@ -173,6 +175,7 @@ clean:  clean-am
         ImpcolE.rua \
         fidapm05.rua \
         SuperLU.rua \
+        Dense.triU \
         SuperLU.triU \
         bcsstk01.mtx \
         bcsstk02.mtx \
