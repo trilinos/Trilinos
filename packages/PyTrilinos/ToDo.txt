@@ -1,3 +1,5 @@
+PyTrilinos To Do List
+
 [Done] Convert to use distutils
     [Done] Check local installation
     [Done] Update CVS repository
@@ -16,6 +18,55 @@
 
 [Done] Change code to properly define PY_ARRAY_UNIQUE_SYMBOL and
        NO_IMPORT_ARRAY, according to NumPy standards
+
+[Done] Change test scripts to use unittest python module
+    [Done] testNonContiguous.py
+    [Done] testSerialDense.py
+    [Done] testParameter.py
+    [Done] testStatusTest.py
+    [Done] testEpetraExt.py
+
+[Done] Change -c swig option to -noruntime
+
+[Done] Re-wrap Epetra_MultiVector::Print() method
+
+[Done] Get rid of NOX_Parameter_List warnings
+
+[Done] Move NOX_Epetra into NOX directory
+    [Done] NOX_Epetra.i -> NOX/Epetra.i
+    [Done] Callback.{cxx,h}
+    [Done] PyInterface.{cxx,h}
+
+[Done] Inside setup.py, change NOX Extensions to have NOX_ prefix
+
+[Done] Upgrade PyTrilinos to become a Trilinos package
+    [Done] Copy to Trilinos repository
+    [Done] Create configure.ac
+    [Done] Create Makefile.am's
+    [Done] Change to recognize separate source and build directories
+    [Done] Change SWIG invocations to use local Trilinos include
+           directories
+    [Done] Change setup.py to look in local Trilinos source
+           directories for libraries
+    [Done] Get test scripts to work from build directory
+    [Done] Check for presence and version of python
+    [Done] Check for presence and version of Numeric
+    [Done] Check for presence and version of SWIG
+    [Done] Put in hooks for enabling and disabling modules
+    [Done] Have Makefile create setup.txt with python dictionary
+    [Done] Change setup.py to use FLIBS configure variable
+
+[Done] Move individual package modules to corresponding directories
+    [Done] Prototype with new_package
+    [Done] Epetra
+    [Done] EpetraExt
+    [Done] NOX (Eric)
+
+****** Have PyTrilinos package install a correct __init__.py
+
+****** Wrap Epetra_Flops class
+
+****** Parallelization (wrap Epetra_MpiComm)
 
 ****** Clean up interface between Numeric arrays, double *'s and Epetra
        objects.
@@ -36,6 +87,11 @@
     ------ Use typemaps to change (double *) or (int *) arguments to
            Numeric arrays
 
+****** Treat int arrays the same way as double arrays.  That is, convert
+       int NumPy arrays to int * the same way double NumPy arrays are
+       converted to double *.
+    ------ Clean up %typemap(in) (int * Indices)
+
 ****** Get rid of extraneous C++ code
     [Done] CallbackVectorLoadTest
     [Done] PyObjectHolder
@@ -43,64 +99,10 @@
     ------ NumPyWrapper
     ------ NumPyArray
 
-[Done] Change test scripts to use unittest python module
-    [Done] testNonContiguous.py
-    [Done] testSerialDense.py
-    [Done] testParameter.py
-    [Done] testStatusTest.py
-    [Done] testEpetraExt.py
-
-****** Make testEpetra more extensive for Epetra.Vector
-
-[Done] Change -c swig option to -noruntime
-
-[Done] Re-wrap Epetra_MultiVector::Print() method
-
-[Done] Get rid of NOX_Parameter_List warnings
-
-[Done] Move NOX_Epetra into NOX directory
-    [Done] NOX_Epetra.i -> NOX/Epetra.i
-    [Done] Callback.{cxx,h}
-    [Done] PyInterface.{cxx,h}
-
-[Done] Inside setup.py, change NOX Extensions to have NOX_ prefix
-
-****** Wrap Epetra_Flops class
+****** Make testVector more extensive
 
 ****** Have PyInterface automatically set the associated attribute in the
        Problem class, or come up with a cleaner solution.
-
-****** Treat int arrays the same way as double arrays.  That is, convert
-       int NumPy arrays to int * the same way double NumPy arrays are
-       converted to double *.
-    ------ Clean up %typemap(in) (int * Indices)
-
-****** Upgrade PyTrilinos to become a Trilinos package
-    [Done] Copy to Trilinos repository
-    [Done] Create configure.ac
-    [Done] Create Makefile.am's
-    [Done] Change to recognize separate source and build directories
-    [Done] Change SWIG invocations to use local Trilinos include
-           directories
-    [Done] Change setup.py to look in local Trilinos source
-           directories for libraries
-    [Done] Get test scripts to work from build directory
-    ------ Check for presence and version of python
-    ------ Check for presence and version of Numeric
-    ------ Check for presence and version of SWIG
-    ------ Check for MPI/serial
-    ------ Put in hooks for enabling and disabling modules
-    [Done] Have Makefile create setup.txt with python dictionary
-    [Done] Change setup.py to use FLIBS configure variable
-
-****** Remove SWIG requirement for distribution
-    ------ Save *_wrap.cxx files in repository
-
-****** Move individual package modules to corresponding directories
-    ------ Prototype with new_package
-    [Done] Epetra
-    ------ EpetraExt
-    [Done] NOX
 
 ==================================================
 Summer, 2005, List of Project Tasks (Tentative)
@@ -110,31 +112,23 @@ Summer, 2005, List of Project Tasks (Tentative)
   - Other classes
   - Interfacing with python Numeric
   - Unit tests
-
-* Move python modules to package directories
-  - new_package
-  - epetraext
+  - Examples
 
 * Documentation
   - Manual: differences in C++/python implementations
-  - Automatic: moving doxygen comments to python source
-
-* Autotools
-  - Check for python
-  - Check for swig
-  - Check for Numeric
-  - Check for MPI/serial
-  - Make swig a requirement for developers only
+  - Automatic: can we use doxygen with interface files?
+  - Users Manual
 
 * Software quality
-  - Dependencies
   - Unit/regression tests on different platforms
   - Trilinos test harness
 
 * Complete wrapping other modules
   - EpetraExt
   - NOX
+  - LOCA (with Eric Phipps)
   - Unit tests
+  - Examples
 
 * Start wrapping new modules
   - Teuchos
@@ -142,7 +136,6 @@ Summer, 2005, List of Project Tasks (Tentative)
   - Anasazi
   - Ifpack
   - ML
-  - LOCA (with Eric Phipps)
   - etc.
 
 ==================================================
