@@ -821,7 +821,7 @@ int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
                                                           int **block_pde)
 {
    struct aggr_vblock* temp = NULL;
-   int i;
+   int i,start;
 
    if ( ag->ML_id != ML_ID_AGGRE ) 
    {
@@ -883,9 +883,10 @@ int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
                         "%s:%d\n",__FILE__,__LINE__);
          fflush(stderr); exit(EXIT_FAILURE);
       }
+      start = temp->blocks[0];
       for (i=0; i<temp->block_dim; i++)
       {
-         (*blocks)[i] = temp->blocks[i];
+         (*blocks)[i] = temp->blocks[i]-start;
          (*block_pde)[i] = temp->block_pde[i];
       }
    }
