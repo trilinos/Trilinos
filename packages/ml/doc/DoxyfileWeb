@@ -59,6 +59,7 @@ INPUT                 += ../../../../Trilinos/packages/ml/src/Coarsen
 INPUT                 += ../../../../Trilinos/packages/ml/src/Main
 INPUT                 += ../../../../Trilinos/packages/ml/src/MLAPI
 INPUT                 += ../../../../Trilinos/packages/ml/src/NonlinML
+INPUT                 += ../../../../Trilinos/packages/ml/examples/FiniteElements
 
 FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
 FILE_PATTERNS         += ml_epetra_utils.h 
@@ -77,6 +78,12 @@ FILE_PATTERNS         += ml_Epetra_wrap_CrsGraph_as_RowMatrix.H
 FILE_PATTERNS         += ml_nox_preconditioner.H
 FILE_PATTERNS         += ml_nox_preconditioner*.cpp
 FILE_PATTERNS         += ml_nox_fineinterface.H
+FILE_PATTERNS         += ml_Abstract*.h 
+FILE_PATTERNS         += ml_*Grid*.h 
+FILE_PATTERNS         += ml_*Quadrature*.h
+FILE_PATTERNS         += ml_*Problem*.h
+FILE_PATTERNS         += ml_*Variational*.h
+FILE_PATTERNS         += ml_Workspace.h
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples/BasicExamples 
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Advanced 
@@ -86,6 +93,7 @@ EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Maxwell
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/MatrixReading 
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/StandAlone
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/MLAPI
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/FiniteElements
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/
 
 IMAGE_PATH             = ../../../../Trilinos/packages/ml/doc
