@@ -77,7 +77,8 @@ epetraLibDir = os.path.join("..", "..", "..", "epetra", "src")
 epetraLib    = "epetra"
 
 # Define the new_package include path, library directory and library name
-newPackageInc    = os.path.join(pakDir, "src")
+newPackageInc    = [os.path.join(pakDir, "src"),
+                    os.path.join("..","..","src")]
 newPackageLibDir = os.path.join("..", "..", "src")
 newPackageLib    = "new_package"
 
@@ -114,7 +115,7 @@ newPackageWrap = "New_Package_wrap.cpp"
 # _New_Package extension module
 _New_Package = Extension("PyTrilinos._New_Package",
                          [newPackageWrap],
-                         include_dirs       = [newPackageInc, epetraInc, srcDir],
+                         include_dirs       = newPackageInc + [epetraInc, srcDir],
                          library_dirs       = [newPackageLibDir, epetraLibDir],
                          libraries          = [newPackageLib, epetraLib] + stdLibs,
                          extra_compile_args = extraCompileArgs,
