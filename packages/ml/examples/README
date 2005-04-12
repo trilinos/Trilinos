@@ -26,6 +26,11 @@ Visualization/              Using ML's visualization capabilities
 MultipleRHS/                Solving systems with multiple right-hand-sides
 Advanced/                   Advanced usage:  filtering, preconditioner analysis
 Other/                      Examples that don't fit into other categories
+MLAPI/                      Shows how to write MATLAB-like codes using the
+                            MLAPI, the Application Program Interface of ML.
+FiniteElements/             A simple finite element code for scalar, second 
+                            order symmetric and non-symmetric (SUPG) PDEs, for
+                            borh serial and parallel runs.
 README                      this file
 README.AddingExamples       (for developers) instructions on adding examples
 
@@ -141,3 +146,27 @@ The example defines a 3D Laplacian on a structured Cartesian grid; the
 problem is discretized using a classical 7-point formula, but the values
 of the matrix are not stored, and the rows are created "on-the-fly" at
 each call to getrow().
+
+===============================================================================
+
+files in ml/examples/FiniteElements
+
+*) Laplacian3D.cpp 
+
+This example describes how to solve the Laplace equation in
+a unitary cube, discretized using finite elements on hexahedral
+elements. After solution, the norm of the numerical solution, exact 
+solution and error is computed, and the numerical solution is visualized 
+using MEDIT.
+
+*) AdvDiff2D.cpp
+
+This example describes how to solve an advection-diffusion problem
+in a 2D domain, using SUPG.
+
+*) MLAPI.cpp
+
+This example shows how to interface with the MLAPI classes.
+
+More details about this simple finite element code can be found in
+the Doxygen documentation, in the ML_FiniteElements namespace.
