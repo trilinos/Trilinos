@@ -32,8 +32,22 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
+Apr 2005
+
+	* Added a simple finite element code, that can be used to test
+	  ML and MLAPI preconditioners. The code offers a pure Galerkin and
+	  a SUPG discretization for second order PDEs, in 2D and 3D, using
+	  triangles, quads, tets, and hexahedra. L2 and H1 norms of the
+	  computed solution and error can be computed. Results can be
+	  visualized using MEDIT.
+
+------------------------------------------------------------------------------
+	
 Mar 2005
 
+        * In the MLAPI namspace, added class MultiLevelAdaptiveSA, which
+          implements the \alpha SA algorithm (computation of slow
+          converging modes for problems with non-smooth kernels).
         * Added a class, Ifpack_ML, that wraps an MultiLevelPreconditioner
           as Ifpack_Preconditioner, so that ML can be used as local
           solver in a domain decomposition preconditioner.

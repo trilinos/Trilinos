@@ -661,6 +661,7 @@ AC_CONFIG_FILES([
                 examples/Visualization/Makefile
                 examples/MultipleRHS/Makefile
                 examples/MLAPI/Makefile
+                examples/FiniteElements/Makefile
                 examples/NonlinML/Makefile
                 examples/Other/Makefile
                 test/Makefile
