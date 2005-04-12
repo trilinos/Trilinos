@@ -7,7 +7,6 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
 #include "ml_AbstractGrid.h"
-#include "MLAPI_Error.h"
 
 namespace ML_FiniteElements {
 
@@ -87,7 +86,7 @@ public:
         }
         break;
       default:
-        ML_THROW("value not supported", -1);
+        throw(-1);
       }
 
       medit.close();
@@ -113,7 +112,10 @@ public:
           else if (type == "ML_HEX")
             medit << "Hexahedra " << data.NumGlobalElements() << endl;
           else
-            ML_THROW("incorrect element", -1);
+          {
+            cerr << "Incorrect element type (" << type << ")" << endl;
+            throw(-1);
+          }
         }
 
         for (int i = 0 ; i < data.NumMyElements() ; ++i) {
