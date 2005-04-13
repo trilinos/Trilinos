@@ -385,13 +385,86 @@ Enable make rules and dependencies not useful (and sometimes confusing) to
 the casual installer.
 \end{itemize}
 
-\subsection{Building Trilinos}
+\subsection{Building and Installing Trilinos}
 
 If the configure stage completed successfully, just type \DisplayCommand{make}
  and then, if 
 \InlineCommand{--prefix} was specified, \DisplayCommand{make install}
 
-\subsection{Tips for Making the Configure, Build, and Install Processes More Efficient}
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+
+Note that any code that links to Trilinos libraries must define
+\InlineCommand{HAVE\_CONFIG\_H}.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+... any code that links to Trilinos libraries must define
+\InlineCommand{HAVE\_CONFIG\_H}.
+}\end{minipage}}
+\end{minipage}
+
+\subsection{Configure, Make and Install: Common Problems}
+
+\begin{minipage}[c]{\textwidth}
+                                                                                
+\begin{minipage}[l]{.6\textwidth}
+Provided below is a list of common problems associated with configuring,
+building and installing Trilinos.  A more complete FAQ list may be found online at
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+A more complete FAQ list may be found online...
+}\end{minipage}}
+\end{minipage}
+
+\InlineCommand{http://software.sandia.gov/Trilinos/faq.html}.
+
+\begin{itemize}
+
+\item Any code that links to Trilinos libraries must define
+\InlineCommand{HAVE\_CONFIG\_H}.
+
+\item Do not attempt to specify optimization flags using the
+\InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, or
+\InlineCommand{--with-fflags} options.   Use \InlineCommand{CXXFLAGS},
+\InlineCommand{CFLAGS} and \InlineCommand{FFLAGS} instead.  Use
+\InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, and
+\InlineCommand{--with-fflags} to specify flags that are to be used in
+addition to the default optimization flags.
+                                                                                
+\item When creating a configure invocation script, be sure to use
+line continuation characters properly.  The characters should be at the
+end of every line, except the last line, and should not be followed by any
+spaces.
+                                                                                
+\item To verify that the entire configure invocation script has been parsed by
+Autoconf, open the \InlineDirectory{config.status} file in the top level of
+the build tree and grep for the string "with options".  Here you will find all
+of the options that Autoconf pulled from the invoke configure script.
+                                                                                
+\item Autoconf cannot detect most
+spelling mistakes in configure invocation scripts.
+
+\item When experiencing problems during the make phase, it is often useful to
+\InlineCommand{make clean} before attempting to \InlineCommand{make} again.
+Sometimes it even helps to blow away the entire build tree and start over.
+                                                                                
+\item When building with LAM under RH9 Linux, configure complains that it
+cannot find mpi++.h.  The message in the config.log file is:
+\begin{verbatim}
+/usr/include/mpi.h:1064:19: mpi++.h: No such file or directory
+\end{verbatim}
+The following modified configure invocation works:
+\DisplayCommand{../configure --enable-mpi CXX="mpiCC -DLAM\_BUILDING"}
+                                                                                
+\item The build process will fail on OSX if ``DropZip'' is used to
+unzip the Trilinos tarball.  This utility truncates long file names.
+
+\end{itemize}
+
+\subsection{Tips for Making the Configure, Make, and Install Processes More Efficient}
 
 Trilinos has grown to become a large piece of software.  Not surprisingly,
 it can take a very long time to configure and build all of Trilinos.  Below 
@@ -453,63 +526,6 @@ When used in this way, the number of jobs created is unlimited.  For machines
 with a large number of processors this appears to work in some situations, but
 machines with fewer than four processors tend to get bogged down with 
 overhead.
-
-\end{itemize}
-
-Other important notes about the configure, build, and install process:
-\begin{itemize}
-\begin{minipage}[c]{\textwidth}
-                                                                                
-\begin{minipage}[l]{.6\textwidth}
-                                                                                
-\item Any code that links to Trilinos must define
-\InlineCommand{HAVE\_CONFIG\_H}.
-\end{minipage}\hfill
-\framebox{\begin{minipage}[r]{.35\textwidth}{
-{\bf Key Point:}
-Any code that links to Trilinos must define
-\InlineCommand{HAVE\_CONFIG\_H}.
-}\end{minipage}}
-\end{minipage}
-
-\item Do not attempt to specify optimization flags using the 
-\InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, or 
-\InlineCommand{--with-fflags} options.   Use \InlineCommand{CXXFLAGS}, 
-\InlineCommand{CFLAGS} and \InlineCommand{FFLAGS} instead.  Use 
-\InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, and 
-\InlineCommand{--with-fflags} to specify flags that are to be used in 
-addition to the default optimization flags. 
-
-\item When creating a configure invocation script, be sure to use 
-line continuation characters properly.  The characters should be at the 
-end of every line, except the last line, and should not be followed by any 
-spaces.
-
-\item To verify that the entire configure invocation script has been parsed by 
-Autoconf, open the \InlineDirectory{config.status} file in the top level of 
-the build tree and grep for the string "with options".  Here you will find all 
-of the options that Autoconf pulled from the invoke configure script.
-
-\item Autoconf cannot detect most 
-spelling mistakes in configure invocation scripts.
-
-\item When experiencing problems during the make phase, it is often useful to 
-\InlineCommand{make clean} before attempting to \InlineCommand{make} again.  
-Sometimes it even helps to blow away the entire build tree and start over. 
-
-\item When building with LAM under RH9 Linux, configure complains that it 
-cannot find mpi++.h.  The message in the config.log file is:
-\begin{verbatim}
-/usr/include/mpi.h:1064:19: mpi++.h: No such file or directory
-\end{verbatim}
-The following modified configure invocation works:
-\DisplayCommand{../configure --enable-mpi CXX="mpiCC -DLAM\_BUILDING"}
-
-\item The build process will fail on OSX if ``DropZip'' is used to 
-unzip the Trilinos tarball.  This utility truncates long file names.
-
-\item A list of FAQ's for the Trilinos build process can be found online at
-\newline\InlineCommand{http://software.sandia.gov/Trilinos/faq.html}.
 
 \end{itemize}
 
