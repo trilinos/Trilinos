@@ -38,6 +38,23 @@
  *
  * subject to @ x=0, u=1
  */
+// see documentation for the ml-class ML_NOX::ML_Nox_Preconditioner.
+// compiling and running this example requires a bunch of packages:
+// --enable-nox --enable-prerelease
+// --enable-nox-epetra
+// --enable-epetra
+// --enable-epetraext
+// --enable-teuchos
+// --enable-ml --with-ml_nox
+// --enable-aztecoo
+// --enable-amesos
+// due to cross-dependencies with nox, it is necessary to 
+// configure Trilinos and make install WITHOUT the --with-ml_nox option, then 
+// configure Trilinos and make install WITH the --with-ml_nox option again.
+// The example should now work, if not, contact Michael Gee mwgee@sandia.gov.
+// usage:
+// ml_nox_1Delasticity_example.exe <number_of_elements>
+
 // ml objects
 #include "ml_common.h"
 
@@ -65,8 +82,8 @@
 #include "AztecOO.h"
 
 // User's application specific files 
-#include "Problem_Interface.H" // Interface file to ML_NOX
-#include "FiniteElementProblem.H"              
+#include "Problem_Interface.H"    // Interface to application
+#include "FiniteElementProblem.H" // the application            
 
 using namespace std;
 
@@ -116,7 +133,7 @@ int main(int argc, char *argv[])
   // Initialize Solution
   soln.PutScalar(1.0);
   
-  // evaluate the nonlinear function once
+  // evaluate the nonlinear function once to be safe
   {
      Epetra_Vector* rhs = new Epetra_Vector(Copy,soln,0);
      nlnproblem.evaluate(ALL,&soln,rhs,NULL);
@@ -126,7 +143,7 @@ int main(int argc, char *argv[])
   
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
-  // NOX_Epetra_Interface
+  // Ml_Nox_Fineinterface (which inherits from NOX::EpetraNew:: - interfaces)
   Problem_Interface fineinterface(nlnproblem);
 
   // Begin Nonlinear Solver ************************************
@@ -140,10 +157,6 @@ int main(int argc, char *argv[])
    printParams.setParameter("Output Processor", 0);
    printParams.setParameter("Output Information", 
   			    NOX::Utils::OuterIteration + 
-			    //NOX::Utils::OuterIterationStatusTest + 
-			    //NOX::Utils::InnerIteration +
-			    //NOX::Utils::Parameters + 
-			    //NOX::Utils::Details + 
 			    NOX::Utils::Warning
                             );
 
@@ -232,8 +245,8 @@ int main(int argc, char *argv[])
   // Begin Preconditioner ************************************
 
    bool        islinearPrec       = false;       // preconditioner is linear MG-operator      
-   bool        matrixfree         = false;       // use Finite Diffeencing for operators      
-   bool        matfreelev0        = false;       // use FD on fine level only      
+   bool        matrixfree         = true;       // use Finite Diffeencing for operators      
+   bool        matfreelev0        = true;       // use FD on fine level only      
    bool        nlnCG              = true;        // use nlnCG or mod. Newton's method             
    int         nitersCG           = 2000;          // # iterations of lin. CG in mod. Newton's method 
    double      fd_alpha           = 1.0e-07;     // FD-parameter alpha (see NOX manual)
@@ -292,7 +305,7 @@ int main(int argc, char *argv[])
    if (islinearPrec==false)
    {
       double t0 = GetClock();
-      notconverged = Prec.solve();
+      int notconverged = Prec.solve();
       double t1 = GetClock();
       if (ml_printlevel>0 && Comm.MyPID()==0)
          cout << "NOX/ML :============solve time incl. setup : " << (t1-t0) << " sec\n";
@@ -396,27 +409,11 @@ int main(int argc, char *argv[])
    if (status != NOX::StatusTest::Converged) 
    {
       if (Comm.MyPID()==0)
-         cout << "***WRN***: NOX not converged!";
+         cout << "***WRN***: ML/NOX not converged!";
       return(1);
    }
    else
       return(0);
-
-  // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
-  const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-
-  // End Nonlinear Solver **************************************
-
-  // Print solution
-  char file_name[25];
-  FILE *ifp;
-  int NumMyElements = soln.Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d",MyPID);
-  ifp = fopen(file_name, "w");
-  for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
-  fclose(ifp);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
@@ -437,7 +434,7 @@ int main(int argc, char *argv[])
 {
   cout << "running ml_nox_1Delasticity_example.exe needs: \n"
        << "defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)\n"
-       << "see documentatation for the ml-class ML_NOX::ML_Nox_Preconditioner\n";
+       << "see documentation for the ml-class ML_NOX::ML_Nox_Preconditioner\n";
   fflush(stdout);
   return 0;
 }
