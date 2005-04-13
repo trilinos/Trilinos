@@ -338,7 +338,7 @@ ZTIMER_TS *ts;
   TESTINDEX(zt, ts_idx, yo);
   ts = &(zt->Times[ts_idx]);
 
-  fprintf(fp, "%3d ZOLTAN_TIMER %3d %23s:  ProcTime %e  GlobalTime %e\n", 
+  fprintf(fp, "%3d ZOLTAN_TIMER %3d %23s:  ProcTime %7.4lf  GlobalTime %7.4lf\n", 
          proc, ts_idx, ts->Name, ts->My_Tot_Time, ts->Global_Tot_Time);
   return ZOLTAN_OK;
 }
