@@ -423,4 +423,4 @@ int main(int argc, char *argv[])
 */
 return ierr ;
 }
-#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) 
+#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)

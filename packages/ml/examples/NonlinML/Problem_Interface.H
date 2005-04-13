@@ -34,6 +34,7 @@
 
 // ML headers
 #include "ml_common.h"
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
 #include "ml_include.h"
 #include "ml_nox_fineinterface.H"
 // ---------- Standard Includes ----------
@@ -117,5 +118,5 @@ public:
   FiniteElementProblem& problem;
 };
 
+#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
 #endif
-

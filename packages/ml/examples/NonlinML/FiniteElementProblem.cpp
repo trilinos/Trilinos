@@ -27,7 +27,9 @@
 // ************************************************************************
 //@HEADER
                                                                                 
+// ml objects
 #include "ml_common.h"
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
 //#include "NOX_Common.H"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -273,3 +275,4 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
 //   AA.RemoveRedundantIndices();
   return AA;
 }
+#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)

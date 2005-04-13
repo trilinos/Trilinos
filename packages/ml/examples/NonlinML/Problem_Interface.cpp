@@ -27,6 +27,10 @@
 // ************************************************************************
 //@HEADER
                                                                                 
+// ml objects
+#include "ml_common.h"
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
+
 // ----------   Includes   ----------
 #include <iostream>
 #include "Problem_Interface.H"
@@ -81,4 +85,5 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Ope
   throw 1;
 }
 //-----------------------------------------------------------------------------
+#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
 

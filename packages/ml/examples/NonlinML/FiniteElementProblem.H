@@ -41,6 +41,10 @@
 #ifndef _NOX_EXAMPLE_EPETRA_NONLINEAR_FINITEELEMENTPROBLEM_H
 #define _NOX_EXAMPLE_EPETRA_NONLINEAR_FINITEELEMENTPROBLEM_H
 
+// ml objects
+#include "ml_common.h"
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
+
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map; 
@@ -124,6 +128,7 @@ private:
   int NumGlobalElements;  // Total Number of elements
 
 };
+#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
 #endif
 
 

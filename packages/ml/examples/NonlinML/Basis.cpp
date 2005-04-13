@@ -29,6 +29,7 @@
 
 #include <math.h>
 #include "ml_common.h"
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
 //#include "NOX_Common.H"
 #include "Basis.H"
 
@@ -69,3 +70,4 @@ void Basis::getBasis(int gp, double *x, double *u) {
 
   return;
 }
+#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
