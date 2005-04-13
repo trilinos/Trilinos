@@ -63,7 +63,8 @@ int sub_main( bool verbose, Epetra_Comm &Comm ) {
   //  Allow destruction of the Amesos class(es) before the
   //  call to MPI_Finalize()
 
-  int NumGlobalElements = 100;   // kludge  see bug #1142
+  int NumGlobalElements = 1000;   // kludge  see bug #1142 - when set to 7, and Min_jGlobal is set to zero, 
+                               // Test_SuperLU_DIST.exe dies during Amesos_Superludist destruction
   int NumVectors = 7;
   
   // =================== //
@@ -117,17 +118,19 @@ int sub_main( bool verbose, Epetra_Comm &Comm ) {
 
   for (int i = 0 ; i < NumMyElements ; ++i) {
     int iGlobal = MyGlobalElements[i];
-    for (int jGlobal = 0 ; jGlobal < NumGlobalElements ; ++jGlobal) {
+    const int MakeNotDense = 1;  // kludge  see bug #1142 - set to zero to demonstrate bug #1142 on atlantis
+    int Min_jGlobal = min(i,MakeNotDense );
+    for (int jGlobal = Min_jGlobal ; jGlobal < NumGlobalElements ; ++jGlobal) {
       if (iGlobal == jGlobal) 
-	Values[jGlobal] = 1.0 * (NumGlobalElements + 1 ) *
+	Values[jGlobal-Min_jGlobal] = 1.0 * (NumGlobalElements + 1 ) *
 	  (NumGlobalElements + 1);
       else if (iGlobal > jGlobal)
-	Values[jGlobal] = -1.0*(jGlobal+1);
+	Values[jGlobal-Min_jGlobal] = -1.0*(jGlobal+1);
       else
-	Values[jGlobal] = 1.0*(iGlobal+1);
+	Values[jGlobal-Min_jGlobal] = 1.0*(iGlobal+1);
     }
     Matrix.InsertGlobalValues(MyGlobalElements[i],
-                              NumGlobalElements, Values, Indices);
+                              NumGlobalElements-MakeNotDense, Values, &Indices[Min_jGlobal]);
 
   }
 
@@ -155,7 +158,11 @@ int sub_main( bool verbose, Epetra_Comm &Comm ) {
   Epetra_LinearProblem Problem;
   Amesos_Superludist Solver(Problem);
 
+#if 1
   Problem.SetOperator(&A);
+#else
+  Problem.SetOperator(&Matrix);
+#endif
   Problem.SetLHS(&x);
   Problem.SetRHS(&b);
 
@@ -196,6 +203,14 @@ int main(int argc, char *argv[]) {
 
   bool verbose = true ; 
   if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) verbose = false ; 
+
+#if 0
+  if ( Comm.MyPID() == 0 ) { 
+    char yo;
+    cout << " Tyoe a char:" ;
+    cin >> yo ;
+  }
+#endif
 
   int retvalue = sub_main(verbose, Comm) ; 
 

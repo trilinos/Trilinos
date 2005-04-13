@@ -97,6 +97,8 @@ int TestOtherClasses( const char* AmesosClass,
 					relerror, 
 					relresidual ) ; 
       
+    if ( verbose ) cout << " Test 2) no fail down here " << endl ; 
+
     if (Errors < 0 ) {
       if (verbose ) cout << AmesosClass << " not built in this executable " << endl ; 
       return 0 ; 

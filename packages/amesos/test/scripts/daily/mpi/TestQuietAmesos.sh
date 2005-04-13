@@ -108,7 +108,8 @@ echo `uname -a` >>& $file
 # FIXME: Test_MultipleSolves is not passed on all machines!
 # foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
 #  Set MPI_GROUP_MAX to allow this test to pass desipte bug #1210
-setenv MPI_GROUP_MAX 128
+setenv MPI_COMM_MAX 1024
+setenv MPI_GROUP_MAX 1024
 foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
   cd $f
   set exefiles = (*.exe)

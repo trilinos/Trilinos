@@ -352,7 +352,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
   }
 
   DscMap_ = new Epetra_Map(numrows, NumLocalCols, LocalStructOldNum, 0, Comm());
-  AMESOS_CHK_ERR( ( (int) DscMap_ == 0 ) ) ; 
+  AMESOS_CHK_ERR( ( DscMap_ == 0 ) ) ; 
   
   //
   //  Import from the CrsMatrix
