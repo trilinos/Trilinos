@@ -41,20 +41,36 @@
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
   problem(Problem)
-{ return; }
+{ 
+  isnewJacobian_   = false;
+  numJacobian_     = 0; 
+  t_               = 0.;
+  ncalls_computeF_ = 0;
+  return; 
+}
 
 Problem_Interface::~Problem_Interface()
 { }
 
 bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType flag)
 {
-  return problem.evaluate(F_ONLY, &x, &FVec, NULL);
+  double t0 = GetClock();
+  bool ok = problem.evaluate(F_ONLY, &x, &FVec, NULL);
+  double t1 = GetClock();
+  ncalls_computeF_++;
+  t_ += (t1-t0);
+  return ok;
 }
 
 //derived method
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x)
 {
+  cout << "ML (level 0): Fineinterface::computeJacobian called!!!!!!!!!\n";
+  double t0 = GetClock();
    bool ok = problem.evaluate(MATRIX_ONLY, &x, NULL, NULL);
+  double t1 = GetClock();
+  ncalls_computeF_++;
+  t_ += (t1-t0);
    return ok;
 }
 
@@ -64,7 +80,7 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator&
   if (Jacobian == NULL) {
     cout << "ERROR: Problem_Interface::computeJacobian() - The supplied"
 	 << "Epetra_Operator is NOT an Epetra_RowMatrix!" << endl;
-    throw;
+    throw -1;
   }
   return problem.evaluate(MATRIX_ONLY, &x, NULL, Jacobian);
 }

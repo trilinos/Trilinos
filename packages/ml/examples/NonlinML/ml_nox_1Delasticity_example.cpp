@@ -1,31 +1,33 @@
-//@HEADER
-// ************************************************************************
-// 
-//            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2002) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//                                                                                 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
-// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-// (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
-// ************************************************************************
-//@HEADER
+/*
+#@HEADER
+# ************************************************************************
+#
+#               ML: A Multilevel Preconditioner Package
+#                 Copyright (2002) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro 
+# (rstumin@sandia.gov).
+#
+# ************************************************************************
+#@HEADER
+*/
                                                                                 
 // 1D Finite Element Test Problem
 /* Solves the nonlinear equation:
@@ -232,32 +234,33 @@ int main(int argc, char *argv[])
    bool        islinearPrec       = false;       // preconditioner is linear MG-operator      
    bool        matrixfree         = false;       // use Finite Diffeencing for operators      
    bool        matfreelev0        = false;       // use FD on fine level only      
+   bool        nlnCG              = true;        // use nlnCG or mod. Newton's method             
+   int         nitersCG           = 2000;          // # iterations of lin. CG in mod. Newton's method 
    double      fd_alpha           = 1.0e-07;     // FD-parameter alpha (see NOX manual)
    double      fd_beta            = 1.0e-06;     // FD-parameter beta (see NOX manual)
    bool        fd_centered        = false;       // use centered or forward finite differencing
-   bool        nlnCG              = true;        // use nlnCG or mod. Newton's method             
-   int         nitersCG           = 2000;          // # iterations of lin. CG in mod. Newton's method 
-   int         offset             = 3;         // every offset this preconditioner is recomputed             
+   int         offset             = 50;         // every offset this preconditioner is recomputed             
    int         ml_printlevel      = 9;           // ML-output-level (0-10)
    int         numPDE             = 1;           // dof per node
    int         dimNS              = 1;           // dimension of nullspace
    int         dimension          = 1;           // spatial dimension of problem
-   int         maxlevel           = 3;           // max. # levels (minimum = 2 !)
+   int         maxlevel           = 5;           // max. # levels (minimum = 2 !)
    string      coarsentype        = "Uncoupled"; // Uncoupled METIS VBMETIS
-   int         maxcoarsesize      = 1;           // the size ML stops generating coarser levels
-   int         nnodeperagg        = 9;           // # nodes per agg for coarsening METIS and VBMETIS
-   string      fsmoothertype      = "SGS";       // SGS Jacobi AmesosKLU
-   string      smoothertype       = "SGS";       // SGS Jacobi AmesosKLU
-   string      coarsesolve        = "AmesosKLU"; // SGS Jacobi AmesosKLU
+   int         maxcoarsesize      = 200;           // the size ML stops generating coarser levels
+   int         nnodeperagg        = 3;           // # nodes per agg for coarsening METIS and VBMETIS
+   string      fsmoothertype      = "Bcheby";       // SGS BSGS Jacobi MLS Bcheby AmesosKLU
+   string      smoothertype       = "Bcheby";       // SGS BSGS Jacobi MLS Bcheby AmesosKLU
+   string      coarsesolve        = "AmesosKLU"; // SGS BSGS Jacobi MLS Bcheby AmesosKLU
    int* nsmooth = new int[maxlevel];             // # smoothing sweeps each level
    for (i=0; i<maxlevel; i++) nsmooth[i] = 1;
-               nsmooth[0]         = 3;
-               nsmooth[1]         = 3;
+               nsmooth[0]         = 1;
+               nsmooth[1]         = 1;
    double      FAS_normF          = 1.0e-07;     // convergence criteria
    double      FAS_nupdate        = 1.0e-06;     // minimum step size length
    int         FAS_prefinesmooth  = 0;           // # presmooth iterations on fine level
    int         FAS_presmooth      = 0;           // # presmooth iterations
-   int         FAS_postsmooth     = 5;           // # postsmooth iterations
+   int         FAS_coarsesmooth   = 20;          // # smoothing iterations on coarse level  
+   int         FAS_postsmooth     = 3;           // # postsmooth iterations
    int         FAS_postfinesmooth = 3;           // # postsmooth iterations on fine level
    int         FAS_maxcycle       = 250;         // max. # of FAS-cycles before we give up
                
@@ -268,7 +271,7 @@ int main(int argc, char *argv[])
    ML_NOX::ML_Nox_Preconditioner Prec(fineinterface,map,map,Comm);
 
    // set parameters
-   Prec.SetNonlinearMethod(islinearPrec,nlnCG,matrixfree,matfreelev0); 
+   Prec.SetNonlinearMethod(islinearPrec,nlnCG,nitersCG,matrixfree,matfreelev0); 
    Prec.SetPrintLevel(ml_printlevel); 
    Prec.SetCoarsenType(coarsentype,maxlevel,maxcoarsesize,nnodeperagg); 
    Prec.SetDimensions(dimension,numPDE,dimNS); 
@@ -277,7 +280,7 @@ int main(int argc, char *argv[])
    delete [] nsmooth; nsmooth = 0;
    Prec.SetRecomputeOffset(offset);
    Prec.SetConvergenceCriteria((FAS_normF/10.),FAS_nupdate);
-   Prec.SetFAScycle(FAS_prefinesmooth,FAS_presmooth,FAS_postsmooth,FAS_postfinesmooth,FAS_maxcycle);
+   Prec.SetFAScycle(FAS_prefinesmooth,FAS_presmooth,FAS_coarsesmooth,FAS_postsmooth,FAS_postfinesmooth,FAS_maxcycle);
    Prec.SetFiniteDifferencing(fd_centered,fd_alpha,fd_beta);
 
   // End Preconditioner **************************************
@@ -383,7 +386,7 @@ int main(int argc, char *argv[])
    double appltime = fineinterface.getsumtime();
    if (ml_printlevel>0 && Comm.MyPID()==0)
    {
-      cout << "NOX/ML :===========of which time in ccarat : " << appltime << " sec\n";
+      cout << "NOX/ML :===========of which time in application : " << appltime << " sec\n";
       cout << "NOX/ML :======number calls to computeF in this solve : " 
            << fineinterface.getnumcallscomputeF() << "\n\n\n";
    }
@@ -423,4 +426,19 @@ int main(int argc, char *argv[])
 */
 return ierr ;
 }
-#endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
+
+
+
+
+#else  
+// ml objects
+#include "ml_common.h"
+int main(int argc, char *argv[])
+{
+  cout << "running ml_nox_1Delasticity_example.exe needs: \n"
+       << "defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)\n"
+       << "see documentatation for the ml-class ML_NOX::ML_Nox_Preconditioner\n";
+  fflush(stdout);
+  return 0;
+}
+#endif 
