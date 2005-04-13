@@ -34,6 +34,8 @@
 /* ******************************************************************** */
 // ML-headers
 #include "ml_common.h"
+#include "ml_include.h"
+#include "ml_agg_VBMETIS.h"
 
 #if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) 
 
@@ -186,62 +188,15 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
    
-   // set the preconditioner
+   // set the smoother
    if (level_==0)
-   {
-      if (fsmoothertype == "SGS")
-         ML_Gen_Smoother_SymGaussSeidel(thislevel_ml_,0,ML_BOTH,
-                                        nsmooth[level_],0.6);
-      else if (fsmoothertype == "Jacobi")
-         ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
-                                nsmooth[level_],0.25);
-      else if (fsmoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
-      else
-      {
-         cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
-              << "**ERR**: unknown type of fine smoother: " <<  fsmoothertype << " on level " << level_ << "\n" 
-              << "**ERR**: implemented are 'SGS' 'Jacobi' 'AmesosKLU'\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-   }
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,fsmoothertype,nsmooth[level_]);
+
    else if (level_ != nlevel_-1) // set the smoother from the input
-   {
-      if (smoothertype == "SGS")
-         ML_Gen_Smoother_SymGaussSeidel(thislevel_ml_,0,ML_BOTH,
-                                        nsmooth[level_],0.6);
-      else if (smoothertype == "Jacobi")
-         ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
-                                nsmooth[level_],0.25);
-      else if (smoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
-      else
-      {
-         cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
-              << "**ERR**: unknown type of smoother: " <<  smoothertype << " on level " << level_ << "\n" 
-              << "**ERR**: implemented are 'SGS' 'Jacobi' 'AmesosKLU'\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-   }
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,smoothertype,nsmooth[level_]);
+
    else // set the coarse solver from the input
-   {
-      if (coarsesolvetype == "SGS")
-         ML_Gen_Smoother_SymGaussSeidel(thislevel_ml_,0,ML_BOTH,
-                                        nsmooth[level_],0.6);
-      else if (coarsesolvetype == "Jacobi")
-         ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
-                                nsmooth[level_],.25);
-      else if (coarsesolvetype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
-      else
-      {
-         cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
-              << "**ERR**: unknown type of coarsesolve: " <<  coarsesolvetype << " on level " << level_ << "\n" 
-              << "**ERR**: implemented are 'SGS' 'Jacobi' 'AmesosKLU'\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-   }
-   
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth[level_]);
   
    // create this level's preconditioner class
    thislevel_prec_ = new ML_Epetra::MultiLevelOperator(
@@ -510,63 +465,16 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
    
-   // set the preconditioner
-   if (level_==0)
-   {
-      if (fsmoothertype == "SGS")
-         ML_Gen_Smoother_SymGaussSeidel(thislevel_ml_,0,ML_BOTH,
-                                        nsmooth[level_],1.);
-      else if (fsmoothertype == "Jacobi")
-         ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
-                                nsmooth[level_],0.6);
-      else if (fsmoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
-      else
-      {
-         cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
-              << "**ERR**: unknown type of fine smoother: " <<  fsmoothertype << " on level " << level_ << "\n" 
-              << "**ERR**: implemented are 'SGS' 'Jacobi' 'AmesosKLU'\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-   }
-   else if (level_ != nlevel_-1) // set the smoother from the input
-   {
-      if (smoothertype == "SGS")
-         ML_Gen_Smoother_SymGaussSeidel(thislevel_ml_,0,ML_BOTH,
-                                        nsmooth[level_],1.);
-      else if (smoothertype == "Jacobi")
-         ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
-                                nsmooth[level_],0.6);
-      else if (smoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
-      else
-      {
-         cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
-              << "**ERR**: unknown type of smoother: " <<  smoothertype << " on level " << level_ << "\n" 
-              << "**ERR**: implemented are 'SGS' 'Jacobi' 'AmesosKLU'\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-      
-   }
-   else // set the coarse solver from the input
-   {
-      if (coarsesolvetype == "SGS")
-         ML_Gen_Smoother_SymGaussSeidel(thislevel_ml_,0,ML_BOTH,
-                                        nsmooth[level_],1.);
-      else if (coarsesolvetype == "Jacobi")
-         ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
-                                nsmooth[level_],.6);
-      else if (coarsesolvetype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
-      else
-      {
-         cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
-              << "**ERR**: unknown type of coarsesolve: " <<  coarsesolvetype << " on level " << level_ << "\n" 
-              << "**ERR**: implemented are 'SGS' 'Jacobi' 'AmesosKLU'\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-   }
    
+   // set the smoother
+   if (level_==0)
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,fsmoothertype,nsmooth[level_]);
+
+   else if (level_ != nlevel_-1) // set the smoother from the input
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,smoothertype,nsmooth[level_]);
+
+   else // set the coarse solver from the input
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth[level_]);
   
    // create this level's preconditioner class
    thislevel_prec_ = new ML_Epetra::MultiLevelOperator(thislevel_ml_,comm_,
@@ -955,6 +863,85 @@ bool ML_NOX::ML_Nox_NonlinearLevel::applySmoother(Epetra_Vector* f, Epetra_Vecto
       computeF(*x,*f,NOX::EpetraNew::Interface::Required::Residual);
    }
       
+   return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  (private)                                                m.gee 04/05|
+ | set the smoother on this nonlinear level                             |
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_NonlinearLevel::Set_Smoother(ML*           ml, 
+                                                 ML_Aggregate* ag, 
+                                                 int           level,
+                                                 int           nlevel,
+                                                 ML*           thislevel_ml,
+                                                 ML_Aggregate* thislevel_ag, 
+                                                 string        smoothertype, 
+                                                 int           nsmooth)
+{
+   if (smoothertype == "SGS")
+      ML_Gen_Smoother_SymGaussSeidel(thislevel_ml,0,ML_BOTH,nsmooth,1.0);
+   else if (smoothertype == "Jacobi")
+      ML_Gen_Smoother_Jacobi(thislevel_ml,0,ML_BOTH,nsmooth,0.25);
+   else if (smoothertype == "AmesosKLU")
+      ML_Gen_Smoother_Amesos(thislevel_ml,0,ML_AMESOS_KLU,-1,0.0);
+   else if (smoothertype == "MLS")
+      ML_Gen_Smoother_MLS(thislevel_ml,0,ML_BOTH,30.,nsmooth);
+   else if (smoothertype == "BSGS")
+   {
+      int  nblocks  = 0;
+      int* blocks   = NULL;
+      int* blockpde = NULL;
+      bool needfree = false;
+
+      // try to get nodal blocks from the VBMETIS aggregation scheme
+      ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag,level,nlevel,
+                                                  &nblocks,&blocks,&blockpde);
+
+      if (nblocks && blocks)
+         needfree=true;
+      else
+         ML_Gen_Blocks_Aggregates(ag,level,&nblocks,&blocks);
+
+      ML_Gen_Smoother_VBlockSymGaussSeidel(thislevel_ml,0,ML_BOTH,nsmooth,1.,
+                                           nblocks,blocks);
+      if (needfree)
+      {
+         ML_free(blocks); 
+         ML_free(blockpde);
+      }
+   }
+   else if (smoothertype == "Bcheby")
+   {
+      int  nblocks  = 0;
+      int* blocks   = NULL;
+      int* blockpde = NULL;
+      bool needfree = false;
+
+      // try to get nodal blocks from the VBMETIS aggregation scheme
+      ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag,level,nlevel,
+                                                  &nblocks,&blocks,&blockpde);
+
+      if (nblocks && blocks)
+         needfree=true;
+      else
+         ML_Gen_Blocks_Aggregates(ag,level,&nblocks,&blocks);
+
+      ML_Gen_Smoother_BlockDiagScaledCheby(thislevel_ml,0,ML_BOTH,30.,nsmooth,
+                                           nblocks,blocks);
+      if (needfree)
+      {
+         ML_free(blocks); 
+         ML_free(blockpde);
+      }
+   }
+   else
+   {
+      cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::Setsmoother:\n"
+           << "**ERR**: unknown type of smoother: " <<  smoothertype << "\n" 
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+   }
+   
    return true;
 }
 

@@ -177,6 +177,11 @@ private:
   // create a NOX convergence test
   bool create_Nox_Convergencetest(double conv_normF, double conv_nupdate, int conv_maxiter);
 
+  // set the smoother for one nonlinear level
+  bool Set_Smoother(ML* ml, ML_Aggregate* ag, int level, int nlevel,
+                    ML* thislevel_ml, ML_Aggregate* thislevel_ag, 
+                    string smoothertype, int nsmooth);
+
   // iterate on this level's nln problem numiter times or until NOX converged
   bool applySmoother(Epetra_Vector* f, Epetra_Vector* x, int numiter); 
   

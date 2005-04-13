@@ -477,7 +477,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
       nlnLevel_[level]->computeF(*xbar,*fxbar,NOX::EpetraNew::Interface::Required::Residual);
       nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
       // iterate on the FAS-problem
-      *converged = nlnLevel_[level]->iterate(f,x,FAS_postsmooth_);
+      *converged = nlnLevel_[level]->iterate(f,x,FAS_coarsesmooth_);
       // calculate the correction
       x->Update(-1.0,*xbar,1.0);
       // reset the system
@@ -576,7 +576,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle1(Epetra_Vector* f, Epetra_V
       nlnLevel_[level]->computeF(*xbar,*fxbar,NOX::EpetraNew::Interface::Required::Residual);
       nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
       // iterate on the FAS-problem
-      *converged = nlnLevel_[level]->iterate(f,x,FAS_postsmooth_);
+      *converged = nlnLevel_[level]->iterate(f,x,FAS_coarsesmooth_);
       // calculate the correction
       x->Update(-1.0,*xbar,1.0);
       // reset the system

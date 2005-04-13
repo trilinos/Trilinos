@@ -105,10 +105,11 @@ comm_(comm)
   fd_centered_         = false;
   FAS_normF_           = 1.0e-05;
   FAS_nupdate_         = 1.0e-05;
-  FAS_prefinesmooth_   = 2;
-  FAS_presmooth_       = 2;
-  FAS_postsmooth_      = 2;
-  FAS_postfinesmooth_  = 2;
+  FAS_prefinesmooth_   = 3;
+  FAS_presmooth_       = 3;
+  FAS_coarsesmooth_    = 5; 
+  FAS_postsmooth_      = 3;
+  FAS_postfinesmooth_  = 3;
   FAS_maxcycle_        = 250;
   noxsolver_           = 0;
   nitersCG_            = 80;
@@ -133,7 +134,7 @@ comm_(comm)
   ml_coarsesolve_   = "AmesosKLU";
   ml_maxcoarsesize_ = 50;
   ml_nsmooth_       = new int[ml_N_levels_];
-  for (int i=0; i<ml_N_levels_; i++) ml_nsmooth_[i] = 3;
+  for (int i=0; i<ml_N_levels_; i++) ml_nsmooth_[i] = 1;
 
   return;
 }
@@ -180,7 +181,10 @@ bool ML_NOX::ML_Nox_Preconditioner::SetSmoothers(string finesmoothertype,
 {
   if (smoothertype != "SGS" && 
       smoothertype != "Jacobi" &&
-      smoothertype != "AmesosKLU")
+      smoothertype != "AmesosKLU" &&
+      smoothertype != "BSGS" &&
+      smoothertype != "Bcheby" &&
+      smoothertype != "MLS")
   {
     cout << "**ERR**: ML_Nox_Preconditioner::SetSmoothers:\n"
          << "**ERR**: smoother type: " << smoothertype << " not recognized!\n"
@@ -192,7 +196,10 @@ bool ML_NOX::ML_Nox_Preconditioner::SetSmoothers(string finesmoothertype,
 
   if (finesmoothertype != "SGS" && 
       finesmoothertype != "Jacobi" &&
-      finesmoothertype != "AmesosKLU")
+      finesmoothertype != "AmesosKLU" &&
+      finesmoothertype != "BSGS" &&
+      finesmoothertype != "Bcheby" &&
+      finesmoothertype != "MLS")
   {
     cout << "**ERR**: ML_Nox_Preconditioner::SetSmoothers:\n"
          << "**ERR**: fine level smoother type: " << finesmoothertype << " not recognized!\n"
@@ -204,7 +211,10 @@ bool ML_NOX::ML_Nox_Preconditioner::SetSmoothers(string finesmoothertype,
   
   if (coarsesolve != "SGS" && 
       coarsesolve != "Jacobi" && 
-      coarsesolve != "AmesosKLU")
+      coarsesolve != "AmesosKLU" &&
+      coarsesolve != "BSGS" &&
+      coarsesolve != "Bcheby" &&
+      coarsesolve != "MLS")
   {
     cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
          << "**ERR**: coarse solver: " << coarsesolve << " not recognized!\n"
@@ -337,12 +347,13 @@ bool ML_NOX::ML_Nox_Preconditioner::SetFiniteDifferencing(bool centered,
 /*----------------------------------------------------------------------*
  |  Set methods for flags/data (public)                      m.gee 03/05|
  *----------------------------------------------------------------------*/
-bool ML_NOX::ML_Nox_Preconditioner::SetFAScycle(int prefsmooth,int presmooth,
-                                                int postsmooth,int postfsmooth,
-                                                int maxcycle)
+bool ML_NOX::ML_Nox_Preconditioner::SetFAScycle(int prefsmooth,int presmooth, 
+                                                int coarsesmooth,int postsmooth,
+                                                int postfsmooth,int maxcycle)
 { 
   FAS_prefinesmooth_    = prefsmooth;
   FAS_presmooth_        = presmooth;
+  FAS_coarsesmooth_     = coarsesmooth;
   FAS_postsmooth_       = postsmooth;
   FAS_postfinesmooth_   = postfsmooth;
   FAS_maxcycle_         = maxcycle;
@@ -353,7 +364,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetFAScycle(int prefsmooth,int presmooth,
  |  Set methods for flags/data (public)                      m.gee 03/05|
  *----------------------------------------------------------------------*/
 bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool islinPrec, 
-                                                       bool isnlnCG, 
+                                                       bool isnlnCG, int nitersCG, 
                                                        bool ismatrixfree, 
                                                        bool ismatfreelev0)
 { 
@@ -361,6 +372,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool islinPrec,
   ismatrixfree_ = ismatrixfree;
   matfreelev0_  = ismatfreelev0;
   isnlnCG_      = isnlnCG;
+  nitersCG_     = nitersCG;
   if (islinPrec && ismatrixfree && !ismatfreelev0 &&
       (ml_fsmoothertype_== "Jacobi" || 
        ml_smoothertype_ == "Jacobi" ||
@@ -706,7 +718,7 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
      ML_Aggregate_Set_NullSpace(ag_,ml_numPDE_,ml_dim_nullsp_,NULL,i);
   }
   // keep the aggregation information
-  ag_->keep_agg_information = 0;
+  ag_->keep_agg_information = 1;
   
   // build hierarchy
   ml_nlevel_ = ML_Gen_MGHierarchy_UsingAggregation(ml_,0,ML_INCREASING,ag_);
@@ -770,60 +782,8 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner
 {
    int i;
 
-   // choose some smoothers on level ==0
-   if (ml_fsmoothertype_ == "SGS")
-      ML_Gen_Smoother_SymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.);
-   if (ml_fsmoothertype_ == "Jacobi")
-   {
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_PRESMOOTHER, ml_nsmooth_[0],.6);
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_POSTSMOOTHER,ml_nsmooth_[0],.6);
-   }
-   if (ml_fsmoothertype_ == "BSGS")
-   {
-     ML_Gen_Blocks_Aggregates(ag_,0,&ml_nblocks_,&ml_blocks_);
-     ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.,ml_nblocks_,ml_blocks_);
-   }
-   if (ml_fsmoothertype_ == "AmesosKLU")
-     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
-   
-   // choose some smoothers on level > 0
-   for (i=1; i<ml_coarsestlev_; i++)
-   {
-      if (ml_smoothertype_ == "SGS")
-      {
-         ML_Gen_Smoother_SymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.);
-         continue;
-      }
-      if (ml_smoothertype_ == "Jacobi")
-      {
-         ML_Gen_Smoother_Jacobi(ml_,i,ML_PRESMOOTHER, ml_nsmooth_[i],.4);
-         ML_Gen_Smoother_Jacobi(ml_,i,ML_POSTSMOOTHER,ml_nsmooth_[i],.4);
-         continue;
-      }
-      if (ml_smoothertype_ == "BSGS")
-      {
-        ML_Gen_Blocks_Aggregates(ag_,i,&ml_nblocks_,&ml_blocks_);
-        ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.,ml_nblocks_,ml_blocks_);
-         continue;
-      }
-      if (ml_smoothertype_ == "AmesosKLU")
-        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
-   }
-   // choose a coarse grid solver
-   if (ml_coarsesolve_ == "AmesosKLU")
-      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0);
-   if (ml_coarsesolve_ == "SGS")
-      ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.);
-   if (ml_coarsesolve_ == "Jacobi")
-   {
-      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_PRESMOOTHER, ml_nsmooth_[ml_coarsestlev_],.4);
-      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_POSTSMOOTHER,ml_nsmooth_[ml_coarsestlev_],.4);
-   }   
-   if (ml_coarsesolve_ == "BSGS")
-   {
-      ML_Gen_Blocks_Aggregates(ag_,ml_coarsestlev_,&ml_nblocks_,&ml_blocks_);
-      ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.,ml_nblocks_,ml_blocks_);
-   }
+   // choose some smoothers
+   bool ok = Set_Smoothers();
 
    // build the ML_MultilevelOperator
    ml_linPrec_ = new ML_Epetra::MultiLevelOperator(ml_,comm_,DomainMap_,RangeMap_);
@@ -960,62 +920,9 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
 
    // the hierarchy is done, so set smoothers 
 
-   // choose some smoothers on level ==0
-   if (ml_fsmoothertype_ == "SGS")
-      ML_Gen_Smoother_SymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.);
-   if (ml_fsmoothertype_ == "Jacobi")
-   {
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_PRESMOOTHER, ml_nsmooth_[0],.4);
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_POSTSMOOTHER,ml_nsmooth_[0],.4);
-   }
-   if (ml_fsmoothertype_ == "BSGS")
-   {
-     ML_Gen_Blocks_Aggregates(ag_,0,&ml_nblocks_,&ml_blocks_);
-     ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.,ml_nblocks_,ml_blocks_);
-   }
-   if (ml_fsmoothertype_ == "AmesosKLU")
-     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
-   
-   // choose some smoothers on level > 0
-   for (i=1; i<ml_coarsestlev_; i++)
-   {
-      if (ml_smoothertype_ == "SGS")
-      {
-         ML_Gen_Smoother_SymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.);
-         continue;
-      }
-      if (ml_smoothertype_ == "Jacobi")
-      {
-         ML_Gen_Smoother_Jacobi(ml_,i,ML_PRESMOOTHER, ml_nsmooth_[i],.4);
-         ML_Gen_Smoother_Jacobi(ml_,i,ML_POSTSMOOTHER,ml_nsmooth_[i],.4);
-         continue;
-      }
-      if (ml_smoothertype_ == "BSGS")
-      {
-        ML_Gen_Blocks_Aggregates(ag_,i,&ml_nblocks_,&ml_blocks_);
-        ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.,ml_nblocks_,ml_blocks_);
-         continue;
-      }
-      if (ml_smoothertype_ == "AmesosKLU")
-        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
-   }
-   
-   // choose a coarse solver
-   if (ml_coarsesolve_ == "AmesosKLU")
-      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0);
-   if (ml_coarsesolve_ == "SGS")
-      ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.);
-   if (ml_coarsesolve_ == "Jacobi")
-   {
-      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_PRESMOOTHER, ml_nsmooth_[ml_coarsestlev_],.4);
-      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_POSTSMOOTHER,ml_nsmooth_[ml_coarsestlev_],.4);
-   }   
-   if (ml_coarsesolve_ == "BSGS")
-   {
-      ML_Gen_Blocks_Aggregates(ag_,ml_coarsestlev_,&ml_nblocks_,&ml_blocks_);
-      ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.,ml_nblocks_,ml_blocks_);
-   }
-   
+   // choose some smoothers
+   bool ok = Set_Smoothers();
+
    // build the ML_MultilevelOperator
    if (ml_linPrec_) 
       delete ml_linPrec_;
@@ -1199,5 +1106,207 @@ Epetra_CrsGraph* ML_NOX::ML_Nox_Preconditioner::deepcopy_graph(const Epetra_CrsG
    return graph;
 }                                                     
 
+/*----------------------------------------------------------------------*
+ |  set smoothers to hierarchy                               m.gee 04/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
+{
+   // choose some smoothers on level ==0
+   if (ml_fsmoothertype_ == "SGS")
+      ML_Gen_Smoother_SymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.);
+   else if (ml_fsmoothertype_ == "Jacobi")
+   {
+      ML_Gen_Smoother_Jacobi(ml_,0,ML_PRESMOOTHER, ml_nsmooth_[0],.4);
+      ML_Gen_Smoother_Jacobi(ml_,0,ML_POSTSMOOTHER,ml_nsmooth_[0],.4);
+   }
+   else if (ml_fsmoothertype_ == "BSGS")
+   {
+     int  nblocks  = 0;
+     int* blocks   = NULL;
+     int* blockpde = NULL;
+     bool needfree = false;
+     // try to get nodal blocks from the VBMETIS aggregation scheme
+     ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag_,0,ml_N_levels_,
+                                                    &nblocks,&blocks,&blockpde);
+     if (nblocks && blocks)
+        needfree=true;
+     else
+        ML_Gen_Blocks_Aggregates(ag_,0,&nblocks,&blocks);
+        
+     ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.,
+                                          nblocks,blocks);
+     if (needfree)
+     {
+        ML_free(blocks); 
+        ML_free(blockpde);
+     }
+   }
+   else if (ml_fsmoothertype_ == "Bcheby")
+   {
+     int  nblocks  = 0;
+     int* blocks   = NULL;
+     int* blockpde = NULL;
+     bool needfree = false;
+     // try to get nodal blocks from the VBMETIS aggregation scheme
+     ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag_,0,ml_N_levels_,
+                                                    &nblocks,&blocks,&blockpde);
+     if (nblocks && blocks)
+        needfree=true;
+     else
+        ML_Gen_Blocks_Aggregates(ag_,0,&nblocks,&blocks);
+        
+     ML_Gen_Smoother_BlockDiagScaledCheby(ml_,0,ML_BOTH,30.,ml_nsmooth_[0],
+                                          nblocks,blocks);
+     if (needfree)
+     {
+        ML_free(blocks); 
+        ML_free(blockpde);
+     }
+   }
+   else if (ml_fsmoothertype_ == "MLS")
+     ML_Gen_Smoother_MLS(ml_,0,ML_BOTH,30.,ml_nsmooth_[0]);
+   else if (ml_fsmoothertype_ == "AmesosKLU")
+     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
+   else
+   {
+     cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner:\n"
+          << "**ERR**: smoother " << ml_fsmoothertype_ << " not recognized\n"
+          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+   }
+   
+   // choose some smoothers on level > 0
+   for (int i=1; i<ml_coarsestlev_; i++)
+   {
+      if (ml_smoothertype_ == "SGS")
+      {
+         ML_Gen_Smoother_SymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.);
+         continue;
+      }
+      else if (ml_smoothertype_ == "Jacobi")
+      {
+         ML_Gen_Smoother_Jacobi(ml_,i,ML_PRESMOOTHER, ml_nsmooth_[i],.4);
+         ML_Gen_Smoother_Jacobi(ml_,i,ML_POSTSMOOTHER,ml_nsmooth_[i],.4);
+         continue;
+      }
+      else if (ml_smoothertype_ == "BSGS")
+      {
+        int  nblocks  = 0;
+        int* blocks   = NULL;
+        int* blockpde = NULL;
+        bool needfree = false;
+        // try to get nodal blocks from the VBMETIS aggregation scheme
+        ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag_,i,ml_N_levels_,
+                                                    &nblocks,&blocks,&blockpde);
+        if (nblocks && blocks)
+           needfree=true;
+        else
+           ML_Gen_Blocks_Aggregates(ag_,i,&nblocks,&blocks);
+
+        ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.,nblocks,blocks);
+        if (needfree)
+        {
+           ML_free(blocks); 
+           ML_free(blockpde);
+        }
+        continue;
+      }
+      else if (ml_smoothertype_ == "Bcheby")
+      {
+        int  nblocks  = 0;
+        int* blocks   = NULL;
+        int* blockpde = NULL;
+        bool needfree = false;
+        // try to get nodal blocks from the VBMETIS aggregation scheme
+        ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag_,i,ml_N_levels_,
+                                                       &nblocks,&blocks,&blockpde);
+        if (nblocks && blocks)
+           needfree=true;
+        else
+           ML_Gen_Blocks_Aggregates(ag_,i,&nblocks,&blocks);
+           
+        ML_Gen_Smoother_BlockDiagScaledCheby(ml_,i,ML_BOTH,30.,ml_nsmooth_[i],
+                                             nblocks,blocks);
+        if (needfree)
+        {
+           ML_free(blocks); 
+           ML_free(blockpde);
+        }
+      }
+      else if (ml_smoothertype_ == "MLS")
+        ML_Gen_Smoother_MLS(ml_,i,ML_BOTH,30.,ml_nsmooth_[i]);
+      else if (ml_smoothertype_ == "AmesosKLU")
+        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
+      else
+      {
+        cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner:\n"
+             << "**ERR**: smoother " << ml_smoothertype_ << " not recognized\n"
+             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+      }
+   }
+   // choose a coarse grid solver
+   if (ml_coarsesolve_ == "AmesosKLU")
+      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0);
+   else if (ml_coarsesolve_ == "SGS")
+      ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.);
+   else if (ml_coarsesolve_ == "Jacobi")
+   {
+      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_PRESMOOTHER, ml_nsmooth_[ml_coarsestlev_],.4);
+      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_POSTSMOOTHER,ml_nsmooth_[ml_coarsestlev_],.4);
+   }   
+   else if (ml_coarsesolve_ == "BSGS")
+   {
+      int  nblocks  = 0;
+      int* blocks   = NULL;
+      int* blockpde = NULL;
+      bool needfree = false;
+      // try to get nodal blocks from the VBMETIS aggregation scheme
+      ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag_,ml_coarsestlev_,ml_N_levels_,
+                                                  &nblocks,&blocks,&blockpde);
+      if (nblocks && blocks)
+         needfree=true;
+      else
+         ML_Gen_Blocks_Aggregates(ag_,ml_coarsestlev_,&nblocks,&blocks);
+
+      ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,
+                                           ml_nsmooth_[ml_coarsestlev_],
+                                           1.,nblocks,blocks);
+      if (needfree)
+      {
+         ML_free(blocks); 
+         ML_free(blockpde);
+      }
+   }
+   else if (ml_coarsesolve_ == "Bcheby")
+   {
+     int  nblocks  = 0;
+     int* blocks   = NULL;
+     int* blockpde = NULL;
+     bool needfree = false;
+     // try to get nodal blocks from the VBMETIS aggregation scheme
+     ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS(ag_,ml_coarsestlev_,ml_N_levels_,
+                                                    &nblocks,&blocks,&blockpde);
+     if (nblocks && blocks)
+        needfree=true;
+     else
+        ML_Gen_Blocks_Aggregates(ag_,ml_coarsestlev_,&nblocks,&blocks);
+        
+     ML_Gen_Smoother_BlockDiagScaledCheby(ml_,ml_coarsestlev_,ML_BOTH,30.,
+                                          ml_nsmooth_[ml_coarsestlev_],nblocks,blocks);
+     if (needfree)
+     {
+        ML_free(blocks); 
+        ML_free(blockpde);
+     }
+   }
+   else if (ml_smoothertype_ == "MLS")
+      ML_Gen_Smoother_MLS(ml_,ml_coarsestlev_,ML_BOTH,30.,ml_nsmooth_[ml_coarsestlev_]);
+   else
+   {
+     cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner:\n"
+          << "**ERR**: smoother " << ml_coarsesolve_ << " not recognized\n"
+          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+   }
+  return true;
+}                                                     
 
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) 

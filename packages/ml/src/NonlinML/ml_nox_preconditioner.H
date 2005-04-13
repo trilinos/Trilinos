@@ -125,11 +125,14 @@ namespace ML_NOX
     - \c --enable-aztecoo
     - \c --enable-amesos
     
-   \note
+   \warning
     Currently, using this class makes it necessary to configure and make install
     of Trilinos WITHOUT the --with-ml_nox, and then repeating the configure
     and make install process WITH the --with-ml_nox option to be able to resolve the
     dependencies of this class on NOX header files
+    
+    \note
+    an example is given in the directory ml/examples/NonlinML
 
     \author Michael Gee, SNL 9214
 */  
@@ -188,7 +191,7 @@ public:
                                Coarse level operators will be Galerkin. Option has no effect when
                                ismatrixfree==false.
    */
-  bool SetNonlinearMethod(bool islinPrec, bool isnlnCG, bool ismatrixfree, bool ismatfreelev0);
+  bool SetNonlinearMethod(bool islinPrec, bool isnlnCG, int nitersCG, bool ismatrixfree, bool ismatfreelev0);
 
   //! Set type of coarsening algorithm to be used.
   /*! 
@@ -279,6 +282,8 @@ public:
                              as a presmoothing step on finest level
    \param presmooth (In)  : maximum number of nonlinear iterations to take 
                              as a presmoothing step on coarse levels
+   \param coarsesmooth (In)  : maximum number of nonlinear iterations to take 
+                             on coarsest level
    \param postsmooth (In)  : maximum number of nonlinear iterations to take 
                              as a postsmoothing step on coarse levels
    \param postfsmooth (In)  : maximum number of nonlinear iterations to take 
@@ -287,8 +292,8 @@ public:
                            before we give up
    */
 
-  bool SetFAScycle(int prefsmooth,int presmooth,int postsmooth,int postfsmooth,
-                   int maxcycle);
+  bool SetFAScycle(int prefsmooth,int presmooth,int coarsesmooth, int postsmooth,
+                   int postfsmooth,int maxcycle);
 
   //! Set finite differencing method.
   /*! 
@@ -438,6 +443,7 @@ private:
 
   // utils
   Epetra_CrsGraph* deepcopy_graph(const Epetra_CrsGraph* oldgraph);
+  bool             Set_Smoothers();
   
   // ApplyInverse functions, 
   // depending on type of preconditioner
@@ -514,6 +520,7 @@ private:
   int                                   FAS_maxiter_;
   int                                   FAS_prefinesmooth_;
   int                                   FAS_presmooth_;
+  int                                   FAS_coarsesmooth_;
   int                                   FAS_postsmooth_;
   int                                   FAS_postfinesmooth_;
   int                                   FAS_maxcycle_; 
