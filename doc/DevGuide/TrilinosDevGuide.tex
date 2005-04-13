@@ -425,8 +425,8 @@ Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and Libtool~\cite{Libtool}
 provide a robust, full-featured set of tools for building software across a 
 broad set of platforms (see also the ``Goat Book''~\cite{GoatBook}).  Although 
 these tools are not official standards, they are commonly used in many 
-packages.  Many existing Trilinos packages use Autoconf and Automake (and will 
-use Libtool in the future).  However, use of these tools is not required.
+packages.  Most existing Trilinos packages use Autoconf and Automake (and 
+some use Libtool).  However, use of these tools is not required.
 
 Package developers who are not currently using autotools, but would like
 to, can get a jump start by using a Trilinos package called 
@@ -647,10 +647,10 @@ provide a large repository of robust, high-performance mathematical
 software for serial and shared memory parallel dense linear algebra
 computations.  However, the BLAS and LAPACK interfaces are Fortran
 specifications, and the mechanism for calling Fortran interfaces from
-C and C++ varies across computing platforms.  Epetra (and Tpetra)
-provide a set of simple, portable interfaces to the BLAS and LAPACK
-that provide uniform access to the BLAS and LAPACK across a broad
-set of platforms.  These interfaces are accessible to
+C and C++ varies across computing platforms.  Epetra, Tpetra, and 
+Teuchos each provide a set of simple, portable interfaces to the BLAS 
+and LAPACK that provide uniform access to the BLAS and LAPACK across 
+a broad set of platforms.  These interfaces are accessible to
 other packages.
 
 \section{Trilinos Package Requirements}
