@@ -2148,7 +2148,7 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
 {
   int ierr;
   int i, j, count, mod;
-  int BlockCol, BlockRow;
+  int BlockCol, ColMod, BlockRow, RowMod;
   double DiagValue = 0.0;
   int DiagID, ok;
   int* Filter;
@@ -2166,11 +2166,12 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
   }
 
   /* new part */
-  mod = data->invec_leng / data->aux_data->filter_size;
-  BlockRow = requested_rows[0] / mod;
-  Filter = data->aux_data->filter[BlockRow];
-  count = 0;
-  DiagID = -1;
+  mod       = data->invec_leng / data->aux_data->filter_size;
+  BlockRow  = requested_rows[0] / mod;
+  RowMod    = requested_rows[0] % mod;
+  Filter    = data->aux_data->filter[BlockRow];
+  count     = 0;
+  DiagID    = -1;
   DiagValue = 0.0;
 
   for (i = 0 ; i < row_lengths[0] ; ++i)
@@ -2186,11 +2187,15 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
 
     ok = 1;
     BlockCol = columns[i] / mod;
+    ColMod   = columns[i] % mod;
     for (j = 0 ; j < Filter[0] ; ++j)
     {
+      /* look for elements to discard */
       if (Filter[j + 1] == BlockCol)
       {
-        DiagValue += values[i];
+        /* Add discarded elements the diagonal, only if they
+         * belong to the same equation */
+        if (RowMod == ColMod) DiagValue += values[i];
         ok = 0;
         break;
       }
