@@ -2148,9 +2148,9 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
 {
   int ierr;
   int i, j, count, mod;
-  int BlockCol, ColMod, BlockRow, RowMod;
+  int BlockCol, BlockRow, RowMod;
   double DiagValue = 0.0;
-  int DiagID, ok;
+  int DiagID;
   int* Filter;
 
   ierr = (*(data->aux_data->aux_func_ptr))(data, N_requested_rows, requested_rows,
@@ -2159,7 +2159,7 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
     return(0);
  
   if (N_requested_rows != 1) {
-    fprintf(stderr, "ML_Aux_Getrow() works only is N_requested_rows == 1\n"
+    fprintf(stderr, "ML_Aux_Getrow() works only if N_requested_rows == 1\n"
             "(file %s, line %d)\n",
             __FILE__, __LINE__);
     exit(EXIT_FAILURE);
@@ -2176,36 +2176,34 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
 
   for (i = 0 ; i < row_lengths[0] ; ++i)
   {
+    /* different equation */
+    if ((columns[i] % mod) != RowMod) goto after;
+
+    /* same block col and same equation */
     if (requested_rows[0] == columns[i])
     {
-      DiagID = i;
+      DiagID = count;
       columns[count] = columns[i];
       values[count] = values[i];
       ++count;
-      continue;
+      goto after;
     }
 
-    ok = 1;
+    /* different block col, same equation */
     BlockCol = columns[i] / mod;
-    ColMod   = columns[i] % mod;
     for (j = 0 ; j < Filter[0] ; ++j)
     {
       /* look for elements to discard */
       if (Filter[j + 1] == BlockCol)
       {
-        /* Add discarded elements the diagonal, only if they
-         * belong to the same equation */
-        if (RowMod == ColMod) DiagValue += values[i];
-        ok = 0;
-        break;
+        DiagValue += values[i];
+        goto after;
       }
     }
-    if (ok == 1)
-    {
-      columns[count] = columns[i];
-      values[count] = values[i];
-      ++count;
-    }
+    columns[count] = columns[i];
+    values[count] = values[i];
+    ++count;
+after:
   }
 
   if (DiagID == -1)
@@ -2217,7 +2215,6 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
   row_lengths[0] = count;
 
   return(ierr);
-
 }
 
 void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
