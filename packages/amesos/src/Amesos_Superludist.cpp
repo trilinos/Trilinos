@@ -508,6 +508,7 @@ int Amesos_Superludist::Factor( ) {
       EPETRA_CHK_ERR( SuperluCrs->
 		      ExtractMyRowView( MyRow, NzThisRow, RowValues, 
 					ColIndices ) != 0 ) ;
+
     }
     else {
       EPETRA_CHK_ERR( SuperluMat_->

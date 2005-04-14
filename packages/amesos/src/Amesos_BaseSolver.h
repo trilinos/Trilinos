@@ -207,8 +207,17 @@ class Epetra_Comm;
 
      <H1>Robustness requirements</H1>
 
-     <p>Failures should be caught either by EPETRA_CHK_ERR() or through calls
-     to assert.  
+     <p>Failures should be caught by AEMSOS_CHK_ERR().  The following error codes should be used:
+<ul>
+<li>1:&nbsp&nbsp Singular matrix 
+</li>
+<li>2:&nbsp&nbsp Non-symmetric matrix 
+</li>
+<li>3:&nbsp&nbsp Matrix is not positive definite
+</li>
+<li>4:&nbsp&nbsp Insufficient memory 
+</li>
+</ul>
 
      <p>Because we do not check to see if a matrix has changed
      between the call to SymbolicFactorization() and the call to
