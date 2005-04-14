@@ -43,25 +43,33 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 
-int AZOO_Scale_Jacobi(int action,
-                      Epetra_RowMatrix* A,
-                      double b[],
-                      double x[]);
+int AZOO_Scale_Jacobi_or_row_sum(int action,
+                                 Epetra_RowMatrix* A,
+                                 double b[],
+                                 double x[],
+                                 int options[],
+                                 AZ_SCALING* scaling);
+
+Epetra_Vector* AZOO_create_scaling_vector(Epetra_RowMatrix* A,
+                                          int scaling_type);
 
 int AztecOO_scale_epetra(int action,
                          AZ_MATRIX* Amat,
                          int options[],
                          double b[],
                          double x[],
-                         int proc_config[])
+                         int proc_config[],
+                         AZ_SCALING* scaling)
 {
   AztecOO::MatrixData* Data = (AztecOO::MatrixData*)AZ_get_matvec_data(Amat);
   Epetra_RowMatrix* A = (Epetra_RowMatrix*)(Data->A);
 
   int returnValue = 0;
 
-  if (options[AZ_scaling] == AZ_Jacobi) {
-    AZOO_Scale_Jacobi(action, A, b, x);
+  if (options[AZ_scaling] == AZ_Jacobi ||
+      options[AZ_scaling] == AZ_row_sum) {
+    returnValue = AZOO_Scale_Jacobi_or_row_sum(action, A, b, x,
+                                               options, scaling);
   }
   else {
     returnValue = -1;
@@ -70,51 +78,123 @@ int AztecOO_scale_epetra(int action,
   return(returnValue);
 }
 
-int AZOO_Scale_Jacobi(int action,
-                      Epetra_RowMatrix* A,
-                      double b[],
-                      double x[])
+int AZOO_Scale_Jacobi_or_row_sum(int action,
+                                 Epetra_RowMatrix* A,
+                                 double b[],
+                                 double x[],
+                                 int options[],
+                                 AZ_SCALING* scaling)
 {
   if (action == AZ_INVSCALE_SOL || action == AZ_SCALE_SOL) return(0);
+
+  if (action == AZ_DESTROY_SCALING_DATA) {
+    if (scaling->scaling_data != 0) {
+      Epetra_Vector* vec = (Epetra_Vector*)(scaling->scaling_data);
+      delete vec;
+      scaling->scaling_data = 0;
+    }
+  }
 
   int numMyRows = A->NumMyRows();
 
   const Epetra_Map& rowmap = A->RowMatrixRowMap();
 
-  //TEMPORARY: we're getting the diagonal vector every time. remember to
-  //implement a way to save the vector for reuse.
-  Epetra_Vector vec(rowmap);
-  int err = A->ExtractDiagonalCopy(vec);
-  if (err != 0) {
-    return(err);
+  Epetra_Vector* vec = NULL;
+
+  if (options[AZ_pre_calc] == AZ_reuse) {
+    if (scaling->scaling_data == NULL) {
+      if (options[AZ_output] != AZ_none) {
+        cerr << "AZOO_Scale_Jacobi ERROR, AZ_reuse requested, but"
+           << " scaling->scaling_data==NULL"<<endl;
+      }
+      return(-1);
+    }
+
+    vec = (Epetra_Vector*)(scaling->scaling_data);
+  }
+  else {
+    vec = AZOO_create_scaling_vector(A, options[AZ_scaling]);
+    if (vec == NULL) {
+      if (options[AZ_output] != AZ_none) {
+        cerr << "AZOO_create_scaling_vector ERROR"<<endl;
+      }
+      return(-1);
+    }
   }
 
   double* vec_vals = NULL;
-  vec.ExtractView(&vec_vals);
-
-  //now invert each entry of the diagonal vector...
-  int i;
-  for(i=0; i<numMyRows; ++i) {
-    if (fabs(vec_vals[i]) > 1.e-20) vec_vals[i] = 1.0 / vec_vals[i];
-    else                             vec_vals[i] = 1.0;
-  }
+  vec->ExtractView(&vec_vals);
 
   if (action == AZ_SCALE_MAT_RHS_SOL) {
-    A->LeftScale(vec);
+    A->LeftScale(*vec);
   }
 
   if (action == AZ_SCALE_MAT_RHS_SOL || action == AZ_SCALE_RHS) {
-    for(i=0; i<numMyRows; ++i) {
+    for(int i=0; i<numMyRows; ++i) {
       b[i] *= vec_vals[i];
     }
   }
 
   if (action == AZ_INVSCALE_RHS) {
-    for(i=0; i<numMyRows; ++i) {
+    for(int i=0; i<numMyRows; ++i) {
       b[i] /= vec_vals[i];
     }
   }
 
+  if (options[AZ_keep_info] == 1) {
+    scaling->scaling_data = (void*)vec;
+  }
+  else {
+    delete vec;
+    scaling->scaling_data = 0;
+  }
+
   return(0);
+}
+
+Epetra_Vector* AZOO_create_scaling_vector(Epetra_RowMatrix* A,
+                                          int scaling_type)
+{
+  Epetra_Vector* vec = new Epetra_Vector(A->RowMatrixRowMap());
+
+  if (scaling_type == AZ_Jacobi) {
+    int err = A->ExtractDiagonalCopy(*vec);
+    if (err != 0) {
+      delete vec; vec = 0;
+      return(vec);
+    }
+
+    double* vec_vals = NULL;
+    vec->ExtractView(&vec_vals);
+
+    //now invert each entry of the diagonal vector
+    for(int i=0; i<A->RowMatrixRowMap().NumMyElements(); ++i) {
+      if (fabs(vec_vals[i]) > Epetra_MinDouble) {
+        vec_vals[i] = 1.0/vec_vals[i];
+      }
+      else {
+        vec_vals[i] = 1.0;
+      }
+    }
+  }
+  else if (scaling_type == AZ_row_sum) {
+    int err = A->InvRowSums(*vec);
+    if (err != 0) {
+      if (err == 1) {
+        //err==1 indicates a zero row-sum was found. What should
+        //we do in this case? For now, ignore it...
+      }
+      else {
+        delete vec; vec = 0;
+        return(vec);
+      }
+    }
+  }
+  else {
+    delete vec;
+    vec = 0;
+  }
+
+  return(vec);
 }
 

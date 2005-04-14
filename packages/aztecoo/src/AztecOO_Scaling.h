@@ -45,7 +45,8 @@ extern "C" int AztecOO_scale_epetra(int action,
                                     int options[],
                                     double b[],
                                     double x[],
-                                    int proc_config[]);
+                                    int proc_config[],
+                                    AZ_SCALING* scaling);
 
 #endif
 

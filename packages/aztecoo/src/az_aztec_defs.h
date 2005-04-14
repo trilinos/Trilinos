@@ -627,7 +627,7 @@
 #define AZ_INVSCALE_RHS        2
 #define AZ_SCALE_SOL           3
 #define AZ_INVSCALE_SOL        4
-
+#define AZ_DESTROY_SCALING_DATA 5
 
 /*******************************************************************************
  *

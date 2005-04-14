@@ -39,6 +39,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MsrMatrix.h"
+#include "AztecOO_Scaling.h"
 #include "AztecOO_StatusTestMaxIters.h"
 #include "AztecOO_StatusTestResNorm.h"
 #include "AztecOO_StatusTestCombo.h"
@@ -62,6 +63,11 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
                         Epetra_Vector& x,
                         Epetra_Vector& b,
                         bool verbose);
+
+int test_azoo_scaling(Epetra_CrsMatrix& A,
+                      Epetra_Vector& x,
+                      Epetra_Vector& b,
+                      bool verbose);
 
 int call_AZ_iterate(AZ_MATRIX* Amat,
                     AZ_PRECOND* P,
@@ -171,6 +177,11 @@ int main(int argc, char *argv[])
   if (err != 0) {
     cout << "test_azoo_with_ilut err, test FAILED."<<endl;
     return(err);
+  }
+
+  err = test_azoo_scaling(A, x, b, verbose);
+  if (err != 0) {
+    cout << "test_azoo_scaling err="<<err<<", test FAILED."<<endl;
   }
 
   int* options = new int[AZ_OPTIONS_SIZE];
@@ -396,6 +407,126 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
   return(0);
 }
 
+int test_azoo_scaling(Epetra_CrsMatrix& A,
+                      Epetra_Vector& x,
+                      Epetra_Vector& b,
+                      bool verbose)
+{
+  Epetra_CrsMatrix Atmp(A);
+  Epetra_Vector vec1(x);
+  Epetra_Vector vec2(x);
+  Epetra_Vector diag(x);
+  Epetra_Vector vec3(x);
+  Epetra_Vector vec4(x);
+
+  vec1.PutScalar(1.0);
+
+  Atmp.Multiply(false, vec1, vec2);
+
+  Atmp.ExtractDiagonalCopy(diag);
+
+  double* diag_vals = NULL;
+  diag.ExtractView(&diag_vals);
+
+  int* options = new int[AZ_OPTIONS_SIZE];
+  double* params = new double[AZ_PARAMS_SIZE];
+  AZ_defaults(options, params);
+
+  options[AZ_output] = verbose ? 1 : AZ_none;
+
+  options[AZ_scaling] = AZ_Jacobi;
+  AztecOO::MatrixData mdata(&Atmp);
+  AZ_MATRIX* Amat = AZ_matrix_create(vec1.Map().NumMyElements());
+  AZ_set_MATFREE(Amat, (void*)(&mdata), Epetra_Aztec_matvec);
+
+  AZ_SCALING* scaling = AZ_scaling_create();
+
+  double* xvals = NULL, *bvals = NULL;
+  x.ExtractView(&xvals);
+  b.ExtractView(&bvals);
+
+  int err = AztecOO_scale_epetra(AZ_SCALE_MAT_RHS_SOL, Amat,
+                                 options, bvals, xvals, NULL, scaling);
+  if (err != 0) {
+    if (verbose) {
+      cout << "AztecOO_scale_epetra returned err="<<err<<endl;
+    }
+    return(err);
+  }
+
+  Atmp.Multiply(false, vec1, vec3);
+
+  vec4.Multiply(1.0, diag, vec3, 0.0);
+
+  double vec2nrm, vec4nrm;
+
+  vec2.Norm2(&vec2nrm);
+  vec4.Norm2(&vec4nrm);
+
+  if (vec2nrm != vec4nrm) {
+    return(-1);
+  }
+
+  AztecOO azoo(&A, &x, &b);
+
+  azoo.SetAztecOption(AZ_scaling, AZ_Jacobi);
+  if (verbose) {
+    azoo.SetAztecOption(AZ_output, 1);
+  }
+  else {
+    azoo.SetAztecOption(AZ_output, AZ_none);
+  }
+
+  azoo.Iterate(100, 1.e-6);
+
+  x.PutScalar(0.0);
+
+  azoo.SetAztecOption(AZ_scaling, AZ_row_sum);
+
+  azoo.Iterate(100, 1.e-6);
+
+  options[AZ_pre_calc] = AZ_reuse;
+
+  err = AztecOO_scale_epetra(AZ_SCALE_MAT_RHS_SOL, Amat,
+                             options, bvals, xvals, NULL, scaling);
+  if (err == 0) {
+    if (verbose) {
+      cerr << "AztecOO_scale_epetra failed to return err when"
+        << " asked to reuse non-existent scaling data."<<endl;
+    }
+    return(-1);
+  }
+
+  options[AZ_keep_info] = 1;
+  options[AZ_pre_calc] = AZ_calc;
+  err = AztecOO_scale_epetra(AZ_SCALE_MAT_RHS_SOL, Amat,
+                             options, bvals, xvals, NULL, scaling);
+  if (err != 0) {
+    if (verbose) {
+      cerr << "AztecOO_scale_epetra returned err=="<<err<<endl;
+    }
+    return(err);
+  }
+
+  options[AZ_keep_info] = 0;
+  options[AZ_pre_calc] = AZ_reuse;
+  err = AztecOO_scale_epetra(AZ_SCALE_MAT_RHS_SOL, Amat,
+                             options, bvals, xvals, NULL, scaling);
+  if (err != 0) {
+    if (verbose) {
+      cerr << "AztecOO_scale_epetra returned err=="<<err
+          <<"when asked to reuse scaling data"<<endl;
+    }
+    return(err);
+  }
+
+  AZ_matrix_destroy(&Amat);
+  delete [] options; 
+  delete [] params;
+  AZ_scaling_destroy(&scaling);
+
+  return(0);
+}
 
 int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
                                          int* options,

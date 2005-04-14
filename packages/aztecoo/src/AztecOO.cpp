@@ -41,6 +41,7 @@
 #include "Epetra_Import.h"
 
 #include <AztecOO_string_maps.h>
+#include <AztecOO_Scaling.h>
 
 #ifdef HAVE_AZTECOO_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
@@ -175,6 +176,10 @@ void AztecOO::DeleteMemory() {
   if (PrecMatrixData_!=0) {delete PrecMatrixData_; PrecMatrixData_ = 0;}
   if (ResidualVector_!=0) {delete ResidualVector_; ResidualVector_ = 0;}
   if (conv_info_!=0) {AZ_converge_destroy(&conv_info_); conv_info_ = 0;}
+  if (Scaling_created_ == true) {
+    AZ_scaling_destroy(&Scaling_);
+    Scaling_ = 0;
+  }
 }
 
 //=============================================================================
@@ -324,6 +329,7 @@ int AztecOO::SetAztecDefaults() {
   Pmat_ = 0;
   Prec_ = 0;
   Scaling_ = 0;
+  Scaling_created_ = false;
   StatusTest_ = 0;
   conv_info_ = 0;
   
@@ -755,6 +761,12 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
     }
   }
 
+  if (Scaling_ == 0 && options_[AZ_scaling] != AZ_none) {
+    Scaling_ = AZ_scaling_create();
+    Scaling_->scale = AztecOO_scale_epetra;
+    Scaling_created_ = true;
+  }
+
   AZ_iterate(x_, b_, options_, params_, status_, proc_config_,
 	     Amat_, Prec_, Scaling_);
 
@@ -764,6 +776,11 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
     prec_allocated = 0;
   }
   
+  if (options_[AZ_keep_info] != 1 &&
+      Scaling_ != 0 && Scaling_->scale != 0) {
+    Scaling_->scale(AZ_DESTROY_SCALING_DATA, Amat_, options_, x_, b_,
+                    proc_config_, Scaling_);
+  }
 
   // Determine end status
 

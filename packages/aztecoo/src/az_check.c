@@ -701,15 +701,6 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_none:
     break;
   case AZ_Jacobi:
-    if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
-        (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
-      if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Jacobi scaling can only be "
-                       "with MSR or VBR\n                 matrices. "
-                       "Turning off scaling.\n\n", yo);
-      }
-    }
-
     if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
       if (az_proc == 0) {
         (void) fprintf(stderr, "%sWARNING: Jacobi scaling for VBR matrices "
@@ -753,15 +744,6 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     break;
 
   case AZ_row_sum:
-    if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
-        (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
-      if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: left row-sum scaling can only be "
-                       "with MSR or VBR\n                  matrices. "
-                       "Turning off.\n\n", yo);
-      }
-    }
-
     if (options[AZ_solver] == AZ_cg) {
       if (az_proc == 0) {
         (void) fprintf(stderr, "%sWARNING: row sum scaling may make matrix "

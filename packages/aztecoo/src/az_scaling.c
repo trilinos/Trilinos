@@ -127,13 +127,15 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
        (Amat->data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
        (Amat->data_org[AZ_matrix_type] != AZ_VBR_MATRIX)  ) {
     if (scaling->scale != 0) {
-      int err = scaling->scale(action, Amat, options, b, x, proc_config);
+      int err = scaling->scale(action, Amat, options, b, x, proc_config, scaling);
       if (err != 0) {
         printf("AZ_scale_f ERROR, code %d returned from user-scaling function\n",
                err);
       }
+      return;
     }
     else {
+      printf("AZ_scale_f WARNING: have user-matrix, but scaling struct contains null 'scale' callback. Turning off scaling.\n");
       options[AZ_scaling] = AZ_none;
     }
   }
@@ -2294,6 +2296,8 @@ struct AZ_SCALING *AZ_scaling_create()
    temp->action = AZ_none;
    temp->mat_name = 0;
    temp->scaling_opt = AZ_none;
+   temp->scale = 0;
+   temp->scaling_data = 0;
    return temp;
 } /* AZ_scaling_create() */
 

@@ -354,7 +354,12 @@ struct AZ_SCALING {  /* Left and right matrices to scale    */
                int options[],
                double b[],
                double x[],
-               int proc_config[]);
+               int proc_config[],
+               struct AZ_SCALING* scaling);
+
+  /* A void pointer that can be used to store data for later reuse.
+  */
+  void* scaling_data;
 };
 
 /*****************************************************************************/

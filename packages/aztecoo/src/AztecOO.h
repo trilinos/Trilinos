@@ -544,6 +544,7 @@ class AztecOO {
   AZ_MATRIX *Pmat_;
   AZ_PRECOND *Prec_;
   struct AZ_SCALING * Scaling_;
+  bool Scaling_created_;
   AztecOO_StatusTest * StatusTest_;
   struct AZ_CONVERGE_STRUCT *conv_info_;
 
