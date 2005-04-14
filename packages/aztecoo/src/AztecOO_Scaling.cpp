@@ -43,6 +43,10 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 
+//---------------------------------------------------------------
+//Prototypes for utility functions that are used internally by
+//AztecOO_scale_epetra.
+
 int AZOO_Scale_Jacobi_or_row_sum(int action,
                                  Epetra_RowMatrix* A,
                                  double b[],
@@ -52,6 +56,10 @@ int AZOO_Scale_Jacobi_or_row_sum(int action,
 
 Epetra_Vector* AZOO_create_scaling_vector(Epetra_RowMatrix* A,
                                           int scaling_type);
+
+//---------------------------------------------------------------
+//Scaling function which the AztecOO class registers on the
+//AZ_SCALING struct as a call-back before calling AZ_iterate.
 
 int AztecOO_scale_epetra(int action,
                          AZ_MATRIX* Amat,
@@ -85,6 +93,11 @@ int AZOO_Scale_Jacobi_or_row_sum(int action,
                                  int options[],
                                  AZ_SCALING* scaling)
 {
+  //This function performs either Jacobi or row-sum scaling, and
+  //basically mirrors the functionality provided by the
+  //functions AZ_block_diagonal_scaling and AZ_row_sum_scaling
+  //in the file az_scaling.c.
+
   if (action == AZ_INVSCALE_SOL || action == AZ_SCALE_SOL) return(0);
 
   if (action == AZ_DESTROY_SCALING_DATA) {
@@ -100,6 +113,10 @@ int AZOO_Scale_Jacobi_or_row_sum(int action,
   const Epetra_Map& rowmap = A->RowMatrixRowMap();
 
   Epetra_Vector* vec = NULL;
+
+  //Either get the data stored in scaling->scaling_data, or
+  //create a new scaling vector, depending on the value of
+  //options[AZ_pre_calc].
 
   if (options[AZ_pre_calc] == AZ_reuse) {
     if (scaling->scaling_data == NULL) {
@@ -141,6 +158,15 @@ int AZOO_Scale_Jacobi_or_row_sum(int action,
     }
   }
 
+  //if options[AZ_keep_info]==1, store the scaling vector
+  //in the scaling->scaling_data pointer for later reuse.
+  //
+  //(What should we do if AZ_keep_info==1 and the
+  //scaling->scaling_data pointer already contains data?
+  //For now we'll assume that if that's the case, then the
+  //scaling vector we're about to store is the same one that's
+  //already there...)
+
   if (options[AZ_keep_info] == 1) {
     scaling->scaling_data = (void*)vec;
   }
@@ -155,6 +181,10 @@ int AZOO_Scale_Jacobi_or_row_sum(int action,
 Epetra_Vector* AZOO_create_scaling_vector(Epetra_RowMatrix* A,
                                           int scaling_type)
 {
+  //This function creates a new Epetra_Vector, and fills it
+  //with the inverse of A's diagonal elements or row-sums,
+  //depending on the value of scaling_type.
+
   Epetra_Vector* vec = new Epetra_Vector(A->RowMatrixRowMap());
 
   if (scaling_type == AZ_Jacobi) {
