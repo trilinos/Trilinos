@@ -130,9 +130,9 @@ int Aztec2Petra(int * proc_config,
 	EPETRA_CHK_ERR(ierr);
       }
     }}  
-    int ierr=AA->TransformToLocal();    
+    int ierr=AA->FillComplete();    
     if (ierr!=0) {
-      cerr <<"Error in Epetra_VbrMatrix TransformToLocal" << ierr << endl;
+      cerr <<"Error in Epetra_VbrMatrix FillComplete" << ierr << endl;
       EPETRA_CHK_ERR(ierr);
     }
     
@@ -170,9 +170,9 @@ int Aztec2Petra(int * proc_config,
       }
     }
 
-    int ierr=AA->TransformToLocal();
+    int ierr=AA->FillComplete();
     if (ierr!=0) {
-      cerr << "Error in Epetra_CrsMatrix_TransformToLocal" << endl;
+      cerr << "Error in Epetra_CrsMatrix_FillComplete" << endl;
       EPETRA_CHK_ERR(ierr);
     }
     A = dynamic_cast<Epetra_RowMatrix *> (AA); // cast CRS pointer to RowMatrix pointer

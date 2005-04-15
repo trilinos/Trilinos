@@ -202,7 +202,7 @@ Epetra_CrsMatrix * Poisson2dOperator::GeneratePrecMatrix() const {
   }
 
   // Finish up
-  A->TransformToLocal();
+  A->FillComplete();
 
   return(A);
 }

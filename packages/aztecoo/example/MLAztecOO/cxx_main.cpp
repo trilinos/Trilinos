@@ -146,8 +146,8 @@ int main(int argc, char *argv[])
        perror1("Error putting  diagonal",ierr);
     }
   
-  if ((ierr=A.TransformToLocal()))    
-    perror1("Error in Epetra_CrsMatrix_TransformToLocal",ierr);
+  if ((ierr=A.FillComplete()))    
+    perror1("Error in Epetra_CrsMatrix_FillComplete",ierr);
   
   Epetra_Vector xx(Copy, map, xexact);
 

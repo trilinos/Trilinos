@@ -160,8 +160,8 @@ int main(int argc, char *argv[])
       abort();
     }
   }  
-  int ierr=A.TransformToLocal();    
-  if (ierr!=0) perror1("Error in Epetra_VbrMatrix TransformToLocal",ierr);
+  int ierr=A.FillComplete();    
+  if (ierr!=0) perror1("Error in Epetra_VbrMatrix FillComplete",ierr);
   
   //cout << A<< endl;
   double * xexactt = xexact;

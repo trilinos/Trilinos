@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
       assert(A.InsertGlobalValues(update[row], 1, val+row, update+row)==0);
     }
   
-  assert(A.TransformToLocal()==0);   
+  assert(A.FillComplete()==0);   
   
   Epetra_Vector xx(Copy, map, xexact);
 
