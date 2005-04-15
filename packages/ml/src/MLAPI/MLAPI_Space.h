@@ -53,6 +53,13 @@ public:
     Reshape(NumGlobalElements, NumMyElements);
   }
 
+  //! Constructor with specified Epetra_Map
+  Space(const Epetra_Map& Map)
+  {
+    Reshape(Map.NumGlobalElements(), Map.NumMyElements(),
+            Map.MyGlobalElements());
+  }
+
   //! Constructor for non-linear distributions
   /*! 
     \param NumGlobalElements - (In) number of global elements. Set to
