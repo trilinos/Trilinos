@@ -702,7 +702,7 @@ void ReadSAMISMatrix(const char *filen, Operator& A, int& NumPDEEqns)
     VbrMatrix->EndSubmitEntries();
   }
 
-  VbrMatrix->TransformToLocal();
+  VbrMatrix->FillComplete();
 
   Space MatrixSpace(nf * n);
 
