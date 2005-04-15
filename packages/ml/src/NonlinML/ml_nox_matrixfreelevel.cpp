@@ -480,7 +480,7 @@ Epetra_CrsGraph* ML_NOX::ML_Nox_MatrixfreeLevel::deepcopy_graph(const Epetra_Crs
       ierr = graph->InsertMyIndices(i,numIndices,Indices);
    }
 
-   graph->TransformToLocal();
+   graph->FillComplete();
    return graph;
 }                                                     
 

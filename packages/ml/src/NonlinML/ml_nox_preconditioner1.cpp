@@ -1102,7 +1102,7 @@ Epetra_CrsGraph* ML_NOX::ML_Nox_Preconditioner::deepcopy_graph(const Epetra_CrsG
       ierr = graph->InsertMyIndices(i,numIndices,Indices);
    }
 
-   graph->TransformToLocal();
+   graph->FillComplete();
    return graph;
 }                                                     
 
