@@ -423,7 +423,7 @@ int Komplex_LinearProblem::ConstructKomplexProblem(Epetra_LinearProblem * Proble
   }
 
   // Now convert to local indexing.
-  EPETRA_CHK_ERR(KomplexMatrix()->TransformToLocal(KomplexMatrixDomainMap(), KomplexMatrixRangeMap()));
+  EPETRA_CHK_ERR(KomplexMatrix()->FillComplete(KomplexMatrixDomainMap(), KomplexMatrixRangeMap()));
 
   // Construct Komplex LHS (Puts any initial guess values into reduced system)
 
