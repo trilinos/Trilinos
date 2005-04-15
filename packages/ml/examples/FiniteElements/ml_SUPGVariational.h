@@ -114,7 +114,10 @@ public:
       // using the coth formula
       double Norm = ConvNorm(xq, yq, zq);
       double Pe = 0.5 * Norm * h / diff(xq, yq, zq);
-      tau_ = 0.5 * (h / Norm) * (cosh(Pe) / sinh(Pe) - 1.0 / Pe);
+      if (Norm == 0.0)
+        tau_ = 0.0;
+      else
+        tau_ = 0.5 * (h / Norm) * (cosh(Pe) / sinh(Pe) - 1.0 / Pe);
 
       for (int i = 0 ; i < NumPhiFunctions() ; ++i) 
       {
