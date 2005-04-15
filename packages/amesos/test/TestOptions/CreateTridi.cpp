@@ -95,7 +95,7 @@ int CreateTridi(Epetra_CrsMatrix& A)
     }
   
   // Finish up
-  assert(A.TransformToLocal()==0);
+  assert(A.FillComplete()==0);
 
 
   delete[] MyGlobalElements;
@@ -162,7 +162,7 @@ int CreateTridiPlus(Epetra_CrsMatrix& A)
     }
   
   // Finish up
-  assert(A.TransformToLocal()==0);
+  assert(A.FillComplete()==0);
 
 
   delete[] MyGlobalElements;

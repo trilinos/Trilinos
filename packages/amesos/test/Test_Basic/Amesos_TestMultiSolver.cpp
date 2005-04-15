@@ -212,7 +212,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     A.Export(*serialA, exporter, Add);
     Comm.Barrier();
 
-    assert(A.TransformToLocal()==0);    
+    assert(A.FillComplete()==0);    
     Comm.Barrier();
 
     passA = &A; 

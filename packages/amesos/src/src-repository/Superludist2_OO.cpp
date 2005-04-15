@@ -285,7 +285,7 @@ int Superludist2_OO::Solve(bool factor) {
 
     DistCrsMatrixA.Export( *Phase2Mat, export_to_dist, Add ); 
     
-    DistCrsMatrixA.TransformToLocal() ; 
+    DistCrsMatrixA.FillComplete() ; 
     Phase3Mat = &DistCrsMatrixA ;
 
     

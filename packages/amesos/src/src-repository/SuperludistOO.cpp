@@ -255,7 +255,7 @@ int SuperludistOO::Solve(bool factor) {
 
     SerialCrsMatrixA.Export( *Phase2Mat, export_to_serial, Add ); 
     
-    SerialCrsMatrixA.TransformToLocal() ; 
+    SerialCrsMatrixA.FillComplete() ; 
     Phase3Mat = &SerialCrsMatrixA ;
 
   }
@@ -299,7 +299,7 @@ int SuperludistOO::Solve(bool factor) {
 
   Epetra_CrsMatrix Phase5Mat(Copy, ReplicatedMap, 0);
   EPETRA_CHK_ERR( Phase5Mat.Import( *Phase4Mat, importer, Insert) );
-  EPETRA_CHK_ERR( Phase5Mat.TransformToLocal() ) ; 
+  EPETRA_CHK_ERR( Phase5Mat.FillComplete() ) ; 
 
   assert( Phase5Mat.NumMyRows() == Phase4Mat->NumGlobalRows() ) ;
 
