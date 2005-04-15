@@ -114,8 +114,8 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
       abort();
     }
   }}
-  int ierr=A->TransformToLocal();    
-  if (ierr!=0) cerr << "Error in Epetra_VbrMatrix TransformToLocal ierr = " << ierr << endl;
+  int ierr=A->FillComplete();    
+  if (ierr!=0) cerr << "Error in Epetra_VbrMatrix FillComplete ierr = " << ierr << endl;
   
   xexact = new Epetra_Vector(Copy, *map, xexact_in);
   x = new Epetra_Vector(Copy, *map, x_in);

@@ -209,7 +209,7 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
   if (comm.MyPID()==0)
     for (int i=0; i<numGlobalEquations; i++)
       A->InsertGlobalValues(i, pntr1[i+1]-pntr1[i], val1+pntr1[i], indx1+pntr1[i]);
-  A->TransformToLocal();
+  A->FillComplete();
   
   x = new Epetra_Vector(Copy, *map, hbx);
   b = new Epetra_Vector(Copy, *map, hbb);

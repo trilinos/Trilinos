@@ -142,7 +142,7 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 	 <<" Max global row "<< map->MaxMyGID() <<endl
 	 <<" and "<<A->NumMyNonzeros()<<" nonzeros."<<endl;
 
-  A->TransformToLocal();
+  A->FillComplete();
   
 
   Epetra_Vector bcomp(*map);

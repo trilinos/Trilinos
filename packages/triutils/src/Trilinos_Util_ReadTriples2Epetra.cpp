@@ -135,7 +135,7 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
     for (int i=0; i<N_rows; i++) {
       if ( ptrs[i+1]>ptrs[i]) A->InsertGlobalValues(i, ptrs[i+1]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
     }
-  A->TransformToLocal();
+  A->FillComplete();
 
   vector<double> hbx(N_rows);
   vector<double> hbb(N_rows);

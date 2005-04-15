@@ -161,7 +161,7 @@ void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, i
 
 	delete [] indices;
 
-  A->TransformToLocal();
+  A->FillComplete();
 
 	// Compute the InvRowSums of the matrix rows
 	Epetra_Vector invRowSums(A->RowMap());

@@ -129,7 +129,7 @@ void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, i
 	delete [] indices;
 	delete [] values;
 
-  A->TransformToLocal();
+  A->FillComplete();
 
 	if (nrhs<=1) {  
 		x = new Epetra_Vector(*map);

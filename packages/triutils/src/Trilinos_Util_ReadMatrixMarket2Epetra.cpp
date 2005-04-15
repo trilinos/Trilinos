@@ -132,7 +132,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
     for (int i=0; i<N_rows; i++) {
       A->InsertGlobalValues(i, iptrs[i]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
     }
-  A->TransformToLocal();
+  A->FillComplete();
 
   Epetra_Vector diagA(*map);
 
