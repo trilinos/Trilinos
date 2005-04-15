@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 	//
 	// Finish up
 	//
-	assert(A.get()->TransformToLocal()==0);
+	assert(A.get()->FillComplete()==0);
 	assert(A.get()->OptimizeStorage()==0);
 	//
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks

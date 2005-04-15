@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 	//
 	// Finish up
 	//
-	assert(A.TransformToLocal()==0);
+	assert(A.FillComplete()==0);
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
