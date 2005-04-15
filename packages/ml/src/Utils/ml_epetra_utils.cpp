@@ -456,8 +456,8 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
 					       row_length, val,
 					       bindx);
   }
-  int ierr=Result_epet->FillComplete(&(Mat1_epet->OperatorRangeMap()),
-				    &(Mat2_epet->OperatorDomainMap()));
+  int ierr=Result_epet->FillComplete(Mat1_epet->OperatorRangeMap(),
+				    Mat2_epet->OperatorDomainMap());
 
   if (bindx != NULL) ML_free(bindx);
   if (val != NULL) ML_free(val);
@@ -521,8 +521,9 @@ Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt
 					    B_crs->RowMatrixColMap(), 0);
   BBt_ml->data = (void *) BBt_crs;
   ML_Operator_Add(B_ml, Bt_ml, BBt_ml, ML_EpetraCRS_MATRIX, scalar);
-  BBt_crs->FillComplete(&(B_crs->OperatorRangeMap()),
-                        &(B_crs->OperatorDomainMap()));
+
+  BBt_crs->FillComplete(B_crs->OperatorRangeMap(),
+                        B_crs->OperatorDomainMap());
 
   ML_Comm_Destroy(&comm);
   global_comm = temp;
