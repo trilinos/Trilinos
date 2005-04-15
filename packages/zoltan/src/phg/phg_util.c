@@ -33,7 +33,7 @@ char *Zoltan_PHG_uMe(PHGComm *hgc)
 {
     static char msg[1024];
 
-    sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", hgc->zz->Proc, hgc->zz->Num_Proc, hgc->myProc_x, hgc->myProc_y, hgc->nProc_x, hgc->nProc_y);
+    sprintf(msg, "<%2d/%2d>: (%2d,%2d)/[%2d,%2d] ->", hgc->zz->Proc, hgc->zz->Num_Proc, hgc->myProc_x, hgc->myProc_y, hgc->nProc_x, hgc->nProc_y);
     return msg;
 }
 
