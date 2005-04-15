@@ -40,6 +40,7 @@ extern "C" {
 
 
 
+
 /*
   #define _DEBUG1
   #define _DEBUG2
@@ -125,6 +126,88 @@ static void uqsorti(int n, int *arr)
     }
 }
 
+#define SWAP3(key1, key2, ids, x, y) \
+{ temp1=key1[x]; key1[x]= key1[y]; key1[y]=temp1; \
+  temp2=key2[x]; key2[x]= key2[y]; key1[y]=temp2; \
+  tempid=ids[x]; ids[x]= ids[y]; ids[y]=tempid; }
+
+
+#define LESSEQ(key1, key2, i, a1, a2) ((key1[i] < a1) || (key1[i] == a1 && key2[i] <=a2))
+#define GREATER(key1, key2, x, y) ((key1[x] > key1[y]) || (key1[x] == key1[y] && key2[x] > key2[y]))
+#define LESS(key1, key2, i, a1, a2) ((key1[i] < a1) || (key1[i] == a1 && key2[i] <a2))
+#define GREATERV(key1, key2, i, a1, a2) ((key1[i] > a1) || (key1[i] == a1 && key2[i] >a2))
+
+/* UVC TODO BUGBUG: uqsort_ptr_uint_int is UNTESTED!!! */
+static void uqsort_ptr_uint_int(int n, unsigned int *key1, int *key2, int *ids)
+{
+    int         i, ir=n, j, k, l=1;
+    int         jstack=0, istack[NSTACK];
+    int         a1, temp1;
+    int         a2, id, temp2, tempid;
+    
+    --key1; --key2;
+    for (;;) {
+        if (ir-l < M) {
+            for (j=l+1;j<=ir;j++) {
+                a1=key1[j]; a2=key2[j]; id=ids[j];
+                for (i=j-1;i>=1;i--) {
+                    if (LESSEQ(key1, key2, i, a1, a2))
+                        break;
+                    key1[i+1] = key1[i];
+                    key2[i+1] = key2[i];
+                    ids[i+1] = ids[i];
+                }
+                key1[i+1]=a1;
+                key2[i+1]=a2;
+                ids[i]=id;
+            }
+            if (jstack == 0) 
+                break;
+            ir=istack[jstack--];
+            l=istack[jstack--];
+        } else {
+            k=(l+ir) >> 1;
+            SWAP3(key1, key2, ids, k, l+1);
+            if (GREATER(key1, key2, l+1, ir))
+                SWAP3(key1, key2, ids, l+1, ir);
+            if (GREATER(key1, key2, l, ir)) 
+                SWAP3(key1, key2, ids, l, ir);
+            if (GREATER(key1, key2, l+1, l))
+                SWAP3(key1, key2, ids, l+1, l);
+            i=l+1;
+            j=ir;
+            a1=key1[l]; a2=key2[l]; id=ids[l];
+            for (;;) {
+                do i++; while (LESS(key1, key2, i, a1, a2));
+                do j--; while (GREATERV(key1, key2, i, a1, a2));
+                if (j < i) break;
+                SWAP3(key1, key2, ids, i, j);
+            }
+            key1[l] = key1[j]; key2[l] = key2[j]; ids[l] = ids[j];
+            key1[j] = a1; key2[j] = a2; ids[j] = id;
+            jstack += 2;
+            if (jstack > NSTACK) 
+                errexit("uqsort: NSTACK too small in sort.");
+            if (ir-i+1 >= j-l) {
+                istack[jstack]=ir;
+                istack[jstack-1]=i;
+                ir=j-1;
+            } else {
+                istack[jstack]=j-1;
+                istack[jstack-1]=l;
+                l=i;
+            }
+        }
+    }
+}
+
+#undef SWAP3
+#undef LESSEQ
+#undef LESS
+#undef GREATER
+#undef GREATERV
+
+
 #undef M
 #undef NSTACK
 #undef SWAP
@@ -180,6 +263,8 @@ void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
 }
 
 
+
+
 #ifndef COARSEN_WITH_NET_SHUFFLING
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
@@ -216,6 +301,9 @@ int Zoltan_PHG_Coarsening
   int    totiden, totsize1;
   double starttime=MPI_Wtime();
 
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
   uprintf(hgc, "In Coarsening....\n");
 #endif
 
@@ -437,6 +525,9 @@ int Zoltan_PHG_Coarsening
 
 
 #ifdef _DEBUG1
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
   uprintf(hgc, "In Coarsening..Starting removing identical nets. ElapT=%.3lf\n", MPI_Wtime()-starttime);
 #endif
   for (i=0; i < c_hg->nEdge; ++i) { /* compute size and hashvalue */
@@ -471,6 +562,9 @@ int Zoltan_PHG_Coarsening
               ++me;
       }
   }
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
   uprintf(hgc, "BEFORE identical nets are removed there are %d same hash-val pairs but %d doesn't have same sizes\n", idx, me);
 #endif
   
@@ -631,6 +725,9 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
 
 #ifdef _DEBUG1
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
   uprintf(hgc, "Reconstructing coarsen hygr.... ElapT= %.3lf\n", MPI_Wtime()-starttime);
 #endif  
   
@@ -671,6 +768,9 @@ int Zoltan_PHG_Coarsening
                     &c_hindex, &c_hvertex, &c_ewgt
                     );
 #ifdef _DEBUG1  
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
   uprintf(hgc, "Terminating Coarsening ... ElapT=%.3lf\n", MPI_Wtime()-starttime);
 #endif
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -713,9 +813,17 @@ int Zoltan_PHG_Coarsening
   MPI_Op                 idenOp;
 #ifdef _DEBUG1
   int    totiden, totsize1;  
-  double starttime=MPI_Wtime();
+  double t_all, t_coarse, t_redhash, t_redsize, t_userredop, t_suffle, t_sort, t_iden, t_shrink, t_mirror, t_cur;
 
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
   uprintf(hgc, "In Coarsening....\n");
+
+
+  MPI_Barrier(hgc->Communicator);
+  t_all=MPI_Wtime();
+  t_coarse = -t_all;
 #endif
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -931,10 +1039,11 @@ int Zoltan_PHG_Coarsening
   }
   c_hg->hindex[hg->nEdge] = c_hg->nPins = idx;
   Zoltan_Multifree(__FILE__, __LINE__, 3, &vmark, &ahvertex, &ahindex);
-
-
 #ifdef _DEBUG1
-  uprintf(hgc, "In Coarsening..Starting removing identical nets. ElapT=%.3lf\n", MPI_Wtime()-starttime);
+  MPI_Barrier(hgc->Communicator);
+  t_cur = MPI_Wtime();
+  t_coarse += t_cur;
+  t_redhash = -t_cur;
 #endif
   for (i=0; i < c_hg->nEdge; ++i) { /* compute size and hashvalue */
       hlsize[i] = c_hg->hindex[i+1]-c_hg->hindex[i];
@@ -943,8 +1052,31 @@ int Zoltan_PHG_Coarsening
 
   /* UVC TODO to compute global hash; right now we'll use SUM (UVC TODO: try:bitwise xor);
      we need to check if this is good, if not we need to find a better way */
-  if (c_hg->nEdge)
+
+
+  if (c_hg->nEdge) {
+#ifdef REDUCE_VIA_SCATTER_GATHER
+      int *recvcnts=NULL;
+
+
+      if (!(recvcnts = (int *) ZOLTAN_MALLOC(hgc->nProc_x * sizeof(int))))
+          MEMORY_ERROR;
+      for (i=0; i<hgc->nProc_x-1; ++i)
+          recvcnts[i] = c_hg->nEdge / hgc->nProc_x;
+      recvcnts[i] = c_hg->nEdge - (c_hg->nEdge / hgc->nProc_x) * (hgc->nProc_x-1);
+
+      MPI_Reduce_scatter(lhash, hash, recvcnts, MPI_INT, MPI_SUM, hgc->row_comm);
+      ZOLTAN_FREE(&recvcnts); 
+#else
       MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+#endif
+  }
+#ifdef _DEBUG1
+  MPI_Barrier(hgc->Communicator);
+  t_cur =  MPI_Wtime();
+  t_redhash += t_cur;
+  t_suffle = -t_cur;
+#endif
 
   for (i=0; i < c_hg->nEdge; ++i)  /* decide where to send */
       listproc[i] = (int) (hash[i] % hgc->nProc_y);
@@ -983,14 +1115,23 @@ int Zoltan_PHG_Coarsening
 
   Zoltan_Comm_Do(plan, PLAN_TAG+14, (char *) c_hg->hvertex, sizeof(int), (char *) ahvertex);
   Zoltan_Comm_Destroy (&plan);
+#ifdef _DEBUG1
+  MPI_Barrier(hgc->Communicator);
+  t_cur = MPI_Wtime();
+  t_suffle += t_cur;
+  t_redsize = -t_cur;
+#endif
 
   ZOLTAN_FREE(&hlsize);    hlsize=ip;
+
   if (size) 
       MPI_Allreduce(hlsize, hsize, size, MPI_INT, MPI_SUM, hgc->row_comm);
 #ifdef _DEBUG1
-  uprintf(hgc, "Nets has been reshuffled....H(%d, %d, %d)  ElapT= %.3lf\n", c_hg->nVtx, size, idx, MPI_Wtime()-starttime);
+  MPI_Barrier(hgc->Communicator);
+  t_cur = MPI_Wtime();
+  t_redsize += t_cur;
+  t_sort = -t_cur;
 #endif
-
 
 
   /* in order to find identical nets; we're going to sort hash values and compare them */
@@ -1003,12 +1144,21 @@ int Zoltan_PHG_Coarsening
   }
 
   /* lhash is actually global hash */
-  Zoltan_quicksort_pointer_inc_int_int (ids, (int *)lhash, hsize, 0, size-1);
+  Zoltan_quicksort_pointer_inc_int_int (ids, (int *)lhash, hsize, 0, size-1); 
+/*  uqsort_ptr_uint_int(size, lhash, hsize, ids); */
 
+#ifdef _DEBUG1
+  MPI_Barrier(hgc->Communicator);
+  t_cur = MPI_Wtime();
+  t_sort += t_cur;
+  t_iden = -t_cur;
+#endif
+
+  
   iden = listproc; /* just better variable name */
   for (j=0; j<size; ++j)
       iden[j] = (hlsize[j]) ? 0 : -1; /* if no local pins iden is -1 */
-#ifdef _DEBUG2  
+#ifdef _DEBUG1  
   count = idx = me = 0;
   for (j=0; j<size; ++j)
       if (iden[j]==-1)
@@ -1022,7 +1172,7 @@ int Zoltan_PHG_Coarsening
           for (i = j+1; i<size && lhash[n1] == lhash[ids[i]] && hsize[n1]==hsize[ids[i]]; ++i) {
               int n2=ids[i];
               
-#ifdef _DEBUG2
+#ifdef _DEBUG1
               ++idx;
 #endif
               if (!iden[n2] && hlsize[n1]==hlsize[n2]
@@ -1031,7 +1181,7 @@ int Zoltan_PHG_Coarsening
                   iden[n2] = last; /* n2 is potentially identical to n1 */
                   last = 1+n2;
                   minv = (last<minv) ? last : minv;
-#ifdef _DEBUG2
+#ifdef _DEBUG1
                   ++count;
 #endif
               }                  
@@ -1053,9 +1203,17 @@ int Zoltan_PHG_Coarsening
       if (iden[i]==1+i) /* original net; clear iden */
           iden[i] = 0;
   ZOLTAN_FREE(&ids); 
-  
-#ifdef _DEBUG2
-  uprintf(hgc, "#Loc.Iden= %7d   (Computed= %d)   #Comp.PerNet= %.2lf     ElapT= %.3lf\n", count+me, count, (double) idx / (double) size, MPI_Wtime()-starttime);
+
+#ifdef _DEBUG1
+  MPI_Barrier(hgc->Communicator);
+  t_cur = MPI_Wtime();
+  t_iden += t_cur;
+  t_userredop = -t_cur;
+
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
+  uprintf(hgc, "#Loc.Iden= %7d   (Computed= %d)   #Comp.PerNet= %.2lf     ElapT= %.3lf\n", count+me, count, (double) idx / (double) size, MPI_Wtime()-t_all);
   count += me;
 #endif
   
@@ -1069,9 +1227,12 @@ int Zoltan_PHG_Coarsening
       MPI_Op_free(&idenOp);
       ZOLTAN_FREE(&idenOperandBuf);
   }
-
-
 #ifdef _DEBUG1  
+  MPI_Barrier(hgc->Communicator);
+  t_cur = MPI_Wtime();
+  t_userredop +=  t_cur;
+  t_shrink = -t_cur;
+
   me = idx = 0;
 #endif
   
@@ -1107,14 +1268,17 @@ int Zoltan_PHG_Coarsening
 #endif          
       }
   }
+
 #ifdef _DEBUG1
+
+  t_cur = MPI_Wtime()-t_all;
 #ifdef _DEBUG2
-  uprintf(hgc, "#GlobIden= %7d    SuccessRate= %.1lf%%    ElapT= %.3lf\n", idx, 100.0 * idx / (double) count, MPI_Wtime()-starttime);
+  uprintf(hgc, "#GlobIden= %7d    SuccessRate= %.1lf%%    ElapT= %.3lf HashOpT=%.3lf (%.1lf%%)\n", idx, 100.0 * idx / (double) count, t_cur, t_userredop, 100.0*t_userredop/t_cur);
 #endif
   MPI_Allreduce(&idx, &totiden, 1, MPI_INT, MPI_SUM, hgc->col_comm);
   MPI_Allreduce(&me, &totsize1, 1, MPI_INT, MPI_SUM, hgc->col_comm);
   if (!hgc->myProc)
-      uprintf(hgc, "Level %d - Orig #Nets=%d    Iden=%d    Size-0/1=%d\n", hg->info, hg->dist_y[hgc->nProc_y], totiden, totsize1);  
+      uprintf(hgc, "Level %d - Orig #Nets=%d    Iden=%d    Size-0/1=%d CurT=%.3lf user-def redopT=%.3lf\n", hg->info, hg->dist_y[hgc->nProc_y], totiden, totsize1, t_cur, t_userredop);  
 #endif
 
   Zoltan_Multifree(__FILE__, __LINE__, 3, &c_hg->hindex, &c_hg->hvertex, &c_hg->ewgt);
@@ -1128,7 +1292,10 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
 
 #ifdef _DEBUG1  
-  uprintf(hgc, "Reconstructing coarsen hygr.... ElapT= %.3lf\n", MPI_Wtime()-starttime);
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
+  uprintf(hgc, "Reconstructing coarsen hygr.... ElapT= %.3lf\n", MPI_Wtime()-t_all);
 #endif  
   
   for (idx=ni=i=0; i<size; ++i)
@@ -1141,7 +1308,14 @@ int Zoltan_PHG_Coarsening
       }
   c_hg->hindex[c_hg->nEdge] = idx;
 
+
 #ifdef _DEBUG1
+  MPI_Barrier(hgc->Communicator);  
+  t_cur = MPI_Wtime();
+  t_shrink += t_cur;
+  t_mirror = -t_cur;
+
+
   if (idx!=c_hg->nPins || ni!=c_hg->nEdge)
       errexit("idx(%d)!=c_hg->nPins(%d) || ni(%d)!=c_hg->nEdge(%d)", idx, c_hg->nPins, ni, c_hg->nEdge);
 #endif
@@ -1161,14 +1335,29 @@ int Zoltan_PHG_Coarsening
   c_hg->dist_y[0] = 0;  
 
   ierr = Zoltan_HG_Create_Mirror(zz, c_hg);
+#ifdef _DEBUG1
+  MPI_Barrier(hgc->Communicator);  
+  t_mirror += MPI_Wtime();
+#endif
  End:
+#ifdef _DEBUG1
+  t_mirror -= MPI_Wtime();
+#endif
   Zoltan_Multifree (__FILE__, __LINE__, 14,
                     &listgno, &listlno, &listproc, &msg_size,
                     &buffer, &rbuffer, &ahindex, &ahvertex, &vmark,
                     &hlsize, &hsize, &lhash, &hash, &c_ewgt 
                     );
 #ifdef _DEBUG1
-  uprintf(hgc, "Terminating Coarsening ... ElapT=%.3lf\n", MPI_Wtime()-starttime);
+
+  MPI_Barrier(hgc->Communicator);  
+  t_cur = MPI_Wtime();
+  t_mirror += t_cur;
+  t_all = t_cur-t_all;
+#ifndef _DEBUG2
+  if (!hgc->myProc)
+#endif
+  uprintf(hgc, "Terminating Coarsening ... ElapT= %.3lf Coar= %.3lf ( %.1lf%% ) RedHash= %.3lf ( %.1lf%% ) RedSize= %.3lf ( %.1lf%% ) RedIden= %.3lf ( %.1lf%% ) Suffle= %.3lf ( %.1lf%% ) Sort= %.3lf ( %.1lf%% ) Iden= %.3lf ( %.1lf%% ) Shrink= %.3lf ( %.1lf%% )  Mirror= %.3lf ( %.1lf%% ) Rest= %.3lf ( %.1lf%% )\n", t_all, t_coarse, 100.0*t_coarse/t_all, t_redhash, 100.0*t_redhash/t_all, t_redsize, 100.0*t_redsize/t_all, t_userredop, 100.0*t_userredop/t_all, t_suffle, 100.0*t_suffle/t_all, t_sort, 100.0*t_sort/t_all, t_iden, 100.0*t_iden/t_all, t_shrink, 100.0*t_shrink/t_all, t_mirror, 100.0*t_mirror/t_all, t_all-(t_coarse+t_redhash+t_redsize+t_userredop+t_suffle+t_sort+t_iden+t_shrink+t_mirror), 100.0*(t_all-(t_coarse+t_redhash+t_redsize+t_userredop+t_suffle+t_sort+t_iden+t_shrink+t_mirror))/t_all);
 #endif
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
