@@ -2176,32 +2176,30 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
 
   for (i = 0 ; i < row_lengths[0] ; ++i)
   {
-    /* different equation */
-    if ((columns[i] % mod) != RowMod) goto after;
+    BlockCol = columns[i] / mod;
 
-    /* same block col and same equation */
-    if (requested_rows[0] == columns[i])
+    if (BlockCol ==  BlockRow) 
     {
-      DiagID = count;
       columns[count] = columns[i];
-      values[count] = values[i];
+      values[count]  = values[i];
+      if (requested_rows[0] == columns[i]) DiagID = count;
       ++count;
       goto after;
     }
 
     /* different block col, same equation */
-    BlockCol = columns[i] / mod;
     for (j = 0 ; j < Filter[0] ; ++j)
     {
       /* look for elements to discard */
       if (Filter[j + 1] == BlockCol)
       {
-        DiagValue += values[i];
+        if (columns[i] % mod == RowMod) 
+          DiagValue += values[i];
         goto after;
       }
     }
     columns[count] = columns[i];
-    values[count] = values[i];
+    values[count]  = values[i];
     ++count;
 after:
   }
