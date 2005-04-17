@@ -12,20 +12,28 @@ use strict;
 
 # Variable Declarations ========================================================
 
-# command line arguments:
+# Command line arguments:
 
 my $trilinosdir;        # Trilinos directory        (required argument) 
 my $comm;               # comm                      (required argument) 
 my $builddir;           # build directory           (required argument) 
 my $category;           # test category             (required argument) 
-my $mpistart;           # mpi startup command       (default: lamboot)
-my $mpistop;            # mpi shutdown command      (default: lamhalt)
+my $maxproc;            # maximum processors        (default: 4)
+my $mpistart;           # mpi startup command       (default: NONE)
+my $mpistop;            # mpi shutdown command      (default: NONE)
 my $mpigo;              # mpigo command             (default: mpigo -np )
 my $outputdir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
 my $logverbosity;       # log file verbosity level  (default: 0)
 
-my $startTime;          # start time string
+my @testListAoH;        # test list array of hash
+                        #   'package'       =>  package
+                        #   'definitionDir' =>  package/test/
+                        #   'directory'     =>  vector/
+                        #   'type'          =>  MPI/
+                        #   'name'          =>  test.exe
+                        #   'command'       =>  mpigo -np16 ./vector/test.exe myVector
+
 my $resultsDir;         # absolute path to results directory
 
 # Constants
@@ -67,6 +75,7 @@ cleanUp();
                     "comm=s" => \$comm,
                     "builddir=s" => \$builddir,
                     "category=s" => \$category,
+                    "maxproc=i" => \$maxproc,
                     "mpistart=s" => \$mpistart,
                     "mpistop=s" => \$mpistop,
                     "mpigo=s" => \$mpigo,
@@ -76,14 +85,15 @@ cleanUp();
                     "quiet" => \$quiet,
                     "help" => \$help );
         
-        # print help and exit
+        # Print help and exit.
         if ($help) { 
             printHelp();
             exit;
         }
         
-        # enforce and/or prepare arguments
+        # Enforce and/or prepare arguments.
         
+        # check for existance of trilinosdir argument and actual directory
         if (!$trilinosdir) {
             die "trilinosdir value required, see --help for more information\n"; 
         } else {
@@ -93,6 +103,7 @@ cleanUp();
             }
         }
         
+        # Check for existance and acceptable value of comm.
         if (!$comm) {
             die "comm value required, see --help for more information\n";
         } else {
@@ -101,6 +112,7 @@ cleanUp();
             }
         }
         
+        # Check for existance of builddir argument and actual directory.
         if (!$builddir) {
             die "builddir value required, see --help for more information\n"; 
         } else {
@@ -111,12 +123,37 @@ cleanUp();
             }
         }
         
+        # Check for existance and acceptable value of category argument.
         if (!$category) {
             die "category value required, see --help for more information\n"; 
+        } else {
+            if (!(  $category eq "FRAMEWORK" ||
+                    $category eq "CHECKIN" ||
+                    $category eq "PERFORMANCE" ||
+                    $category eq "SCALABILITY" ||
+                    $category eq "COVERAGE" ||
+                    $category eq "MEMORYLEAK" ||
+                    $category eq "MEMORYUSAGE" ||
+                    $category eq "ALL")) 
+            {
+                die "invalid category value: $category\n";        
+            }
         }
         
+        # Check for existance of maxproc.
+        if (!$maxproc) {
+            $maxproc = 4;   # reasonable guess?
+        } else {
+            if ($maxproc < 1) {
+                die "maxproc value must be at least 1\n";
+            }
+        }
+        
+        # Check for valid mpistart command.
         if ($mpistart) { 
-            `which $mpistart`;
+            $mpistart =~ m/^(\w*)/;
+            my $mpiStartProg = $1;
+            `which $mpiStartProg`;
             if ($?) {
                 die "cannot find mpistart command: $mpistart\n";
             }
@@ -124,8 +161,11 @@ cleanUp();
             $mpistart = ""; 
         }
         
+        # Check for valid mpistop command.
         if ($mpistop) {
-            `which $mpistop`;
+            $mpistop =~ m/^(\w*)/;
+            my $mpiStopProg = $1;
+            `which $mpiStopProg`;
             if ($?) {
                 die "cannot find mpistop command: $mpistop\n";
             }
@@ -133,17 +173,22 @@ cleanUp();
             $mpistop = ""; 
         }
         
+        # Check for valid mpigo command, set mpigo environment variable.
         if (!$mpigo) { 
             $mpigo = "mpirun -np "; 
         }
         if ($comm eq "mpi") {
-            if (system("which $mpigo")) {
+            $mpigo =~ m/^(\w*)/;
+            my $mpiGoProg = $1;
+            `which $mpiGoProg`;
+            if ($?) {
                 die "cannot find mpigo command: $mpigo\n";
             } else {
                 $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpigo;
             }
         }
         
+        # Check for existance of output directory.
         if (!$outputdir) {
             $outputdir = "./"; 
         } else {
@@ -153,6 +198,7 @@ cleanUp();
             }
         }
         
+        # Set verbosity level to corresponding constant.
         if ($verbosity) {
             if      ($verbosity == 0) { $verbosity = $v0; }
             elsif   ($verbosity == 1) { $verbosity = $v1; }
@@ -162,6 +208,7 @@ cleanUp();
             $verbosity = $v1; 
         }
         
+        # Set log verbosity level to corresponding constant.
         if ($logverbosity) {
             if      ($logverbosity == 0) { $logverbosity = $v0; }
             elsif   ($logverbosity == 1) { $logverbosity = $v1; }
@@ -171,6 +218,7 @@ cleanUp();
             $logverbosity = $v0; 
         }
         
+        # Set quiet mode.
         if ($quiet) {
             $verbosity = $v0; 
         }            
@@ -189,7 +237,7 @@ cleanUp();
 
     sub init {
            
-        # capture and format start time
+        # Capture and format start time.
         (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
         $yr = sprintf("%02d", $yr % 100);
         $mo = sprintf("%02d", $mo+1);
@@ -197,31 +245,32 @@ cleanUp();
         $hr = sprintf("%02d", $hr);
         $mn = sprintf("%02d", $mn);
         $se = sprintf("%02d", $se);
-        $startTime = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        my $startTime = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
         
-        # create results directory
+        # Create results directory.
         $resultsDir = $trilinosdir;
         $resultsDir .= "commonTools/test/utilities/";
         $resultsDir .= $outputdir;
         $resultsDir .= "test_$startTime/";
         mkdir($resultsDir);
         
-        # print list of variables for debugging
+        # Print list of variables for debugging.
         my $message = "";
-        $message .= "\n";
         $message .= "init():\n";
-        $message .= "\$trilinosdir = $trilinosdir\n";
-        $message .= "\$comm = $comm\n";
-        $message .= "\$builddir = $builddir\n";
-        $message .= "\$category = $category\n";
-        $message .= "\$mpistart = $mpistart\n";
-        $message .= "\$mpistop = $mpistop\n";
-        $message .= "\$mpigo = $mpigo\n";
-        $message .= "\$outputdir = $outputdir\n";
-        $message .= "\$verbosity = $verbosity\n";
-        $message .= "\$logverbosity = $logverbosity\n";
-        $message .= "\$startTime = $startTime\n";
-        $message .= "\$resultsDir = $resultsDir\n";
+        $message .= "  \$trilinosdir = $trilinosdir\n";
+        $message .= "  \$comm = $comm\n";
+        $message .= "  \$builddir = $builddir\n";
+        $message .= "  \$category = $category\n";
+        $message .= "  \$maxproc = $maxproc\n";
+        $message .= "  \$mpistart = $mpistart\n";
+        $message .= "  \$mpistop = $mpistop\n";
+        $message .= "  \$mpigo = $mpigo\n";
+        $message .= "  \$outputdir = $outputdir\n";
+        $message .= "  \$verbosity = $verbosity\n";
+        $message .= "  \$logverbosity = $logverbosity\n";
+        $message .= "  \$startTime = $startTime\n";
+        $message .= "  \$resultsDir = $resultsDir\n";
+        $message .= "  \n";
         printMessage($message, $v3);
         
     } # init()
@@ -229,7 +278,8 @@ cleanUp();
     ############################################################################
     # run()
     #
-    # Run tests
+    # Moves into builddir/packages, looks for files and runs tests based on
+    # @testListAoH compiled by compileTestList.
     #
     #   - args:     NONE
     #
@@ -238,9 +288,592 @@ cleanUp();
 
     sub run {
         
+        # cd to packages directory in build directory.
         chdir $builddir or die "cannot chdir to $builddir, died";
+        chdir "packages/" or die "cannot chdir to packages/, died";
         
-    } # run()
+        # Compile list of test definition files (using File::Find instead
+        # of `find` to improve portability).
+        # This will automatically chdir to File::Find::dir.
+        use File::Find;
+        find(\&compileTestList, ".");
+                
+        # print @testListAoH
+        my $message = "";
+        $message .= "run():\n";
+        $message .= "  \@testListAoH:\n";
+        for my $i (0 .. $#testListAoH) {
+            $message .= "    test $i:\n";
+            foreach my $key (keys %{ $testListAoH[$i] }) { 
+                $message .= "      $key: ".$testListAoH[$i]{$key}."\n";                
+            }
+        }
+        $message .= "\n";
+        printMessage($message, $v3);
+        
+        # Grab general information values for inclusion in test results files.        
+        chomp (my $hostName=`uname -n`);
+        chomp (my $dnsName=`hostname -d`);
+        chomp (my $ipAddress=`hostname -i`);
+        chomp (my $operatingSystem=`uname -o`);
+        chomp (my $kernelName=`uname -s`);
+        chomp (my $kernelRelease=`uname -r`);
+        chomp (my $kernelVersion=`uname -v`);
+        chomp (my $processor=`uname -p`);
+        chomp (my $machineHardware=`uname -m`);
+        chomp (my $hardwarePlatform=`uname -i`);
+        
+        # grab the repository branch tag
+        my $branchTag = "";
+        my $homeDirContents = `ls $trilinosdir`;
+        if ($homeDirContents =~ m/CVS/) {
+            my $cvsDirContents = `ls $trilinosdir/CVS`;
+            if ($cvsDirContents =~ m/Tag/) {
+                $branchTag = `cat $trilinosdir/CVS/Tag`;
+            } else {
+                $branchTag = "development";
+            }      
+        } else {
+            $branchTag = "unknown";
+        }    
+                
+        # Use global @testListAoH array of hash to run tests and report results
+        
+        # Start MPI
+        if ($comm eq "mpi" && $mpistart) { system("$mpistart 1>/dev/null 2>/dev/null"); }
+        
+        # For each test entry...
+        for my $i (0 .. $#testListAoH) {
+        
+            # Capture and format test start time.
+            (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+            $yr = sprintf("%02d", $yr % 100);
+            $mo = sprintf("%02d", $mo+1);
+            $da = sprintf("%02d", $da);
+            $hr = sprintf("%02d", $hr);
+            $mn = sprintf("%02d", $mn);
+            $se = sprintf("%02d", $se);
+            my $testStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+            my $testStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+            my $startSeconds = time();
+        
+            chdir $testListAoH[$i]{'definitionDir'} 
+                or die "cannot chdir to ".$testListAoH[$i]{'definitionDir'}.", died";
+            my $testOutput = `$testListAoH[$i]{'command'}`;
+            my $testExitStatus = $?;
+        
+            # Capture and format test stop time.
+            ($se, $mn, $hr, $da, $mo, $yr) = (localtime)[0..5];
+            $yr = sprintf("%02d", $yr % 100);
+            $mo = sprintf("%02d", $mo+1);
+            $da = sprintf("%02d", $da);
+            $hr = sprintf("%02d", $hr);
+            $mn = sprintf("%02d", $mn);
+            $se = sprintf("%02d", $se);
+            my $testStopTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+            my $stopSeconds = time();
+            
+            my $runSeconds = $stopSeconds - $startSeconds;
+            
+            # Create results file.
+            my $resultsFile = $resultsDir;
+            $resultsFile .= $testListAoH[$i]{'package'}."_";
+            $resultsFile .= $testListAoH[$i]{'name'}."_";
+            $resultsFile .= $testStartTimeForFilename.".txt";
+            open (RESULTS, ">$resultsFile") 
+                or die "can't open test result file $resultsFile for writing, died";
+                
+            my $resultsString = "";
+            
+            $resultsString .= "HOST_NAME            = $hostName\n";
+            $resultsString .= "DNS_NAME             = $dnsName\n";
+            $resultsString .= "IP_ADDRESS           = $ipAddress\n";
+            $resultsString .= "OPERATING_SYSTEM     = $operatingSystem\n";
+            $resultsString .= "KERNEL_NAME          = $kernelName\n";
+            $resultsString .= "KERNEL_RELEASE       = $kernelRelease\n";
+            $resultsString .= "KERNEL_VERSION       = $kernelVersion\n";
+            $resultsString .= "PROCESSOR            = $processor\n";
+            $resultsString .= "MACHINE_HARDWARE     = $machineHardware\n";
+            $resultsString .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";
+            $resultsString .= "\n";
+            $resultsString .= "TRILINOS_DIR         = $trilinosdir\n";
+            $resultsString .= "BRANCH_TAG           = $branchTag\n";
+            $resultsString .= "\n";
+            $resultsString .= "BUILD_DIR            = $builddir\n";
+            $resultsString .= "COMM                 = $comm\n";
+            $resultsString .= "\n";
+            $resultsString .= "PACKAGE_TEST_DIR     = ".$testListAoH[$i]{'definitionDir'}."\n";
+            $resultsString .= "PACKAGE              = ".$testListAoH[$i]{'package'}."\n";
+            $resultsString .= "\n";
+            $resultsString .= "TEST_DIR             = ".$testListAoH[$i]{'directory'}."\n";
+            $resultsString .= "TEST_NAME            = ".$testListAoH[$i]{'name'}."\n";
+            $resultsString .= "TYPE                 = ".$testListAoH[$i]{'type'}."\n";
+            $resultsString .= "COMMAND              = ".$testListAoH[$i]{'command'}."\n";
+            $resultsString .= "\n";
+            $resultsString .= "START_TIME           = $testStartTime\n";
+            $resultsString .= "STOP_TIME            = $testStopTime\n";
+            $resultsString .= "RUN_TIME             = $runSeconds seconds\n";
+            $resultsString .= "\n";
+            $resultsString .= "EXIT_STATUS          = $testExitStatus\n";
+            $resultsString .= "RESULT               = ".($testExitStatus==0?"pass":"fail")."\n";
+            $resultsString .= "\n";
+            $resultsString .= "BEGIN_TEST_OUTPUT\n";
+            $resultsString .= "\n";
+            $resultsString .= "$testOutput\n";
+            $resultsString .= "\n";
+            $resultsString .= "END_TEST_OUTPUT\n";
+            $resultsString .= "\n";
+            
+            print RESULTS $resultsString;
+            
+            close RESULTS;
+        }
+        
+        # Stop MPI
+        if ($comm eq "mpi" && $mpistop) { system("$mpistop 1>/dev/null 2>/dev/null"); }
+        
+    }
+    
+    ############################################################################
+    # compileTestList()
+    #
+    # If File::Find::dir is a test directory and File::Find::name is a 
+    # definition file, parse it, and fill global @testListAoH.  Note that we are 
+    # automatically 'chdir'-ed to File::Find::dir.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub compileTestList {
+    
+        # Is this file in a 'test' directory?
+        # Is this file named 'definition'?
+        if ($File::Find::dir =~ m/test$/ && $File::Find::name =~ m/definition$/) {
+            
+            # Figure out package name for reporting's sake.
+            (my $package = $File::Find::dir) =~ m/\.\/(.*?)\/.*test/;
+            $package = $1;
+            
+            # Parse definition file into array of hashes of arrays.
+            my @definitionAoHoA;
+            (my $failures, my @result) = parseDefinition();
+            
+            if (!$failures) {
+                @definitionAoHoA = @result;            
+            } else {
+                my $message = "";
+                $message .= "! $failures error".($failures>1?"s":"")." parsing ";
+                $message .= "$package definition file:\n";
+                $message .= $result[0];
+                printMessage($message, $v1+$v2+$v3);
+                return;
+            }
+            
+            # For each test group...
+            for my $i (0 .. $#definitionAoHoA) {
+            
+                # Should we skip this group?
+                # At this point, this decision should be made purely on the
+                # meaning contained within the properties, not on well-formedness.
+                # Well-formedness decisions ought to have been made in
+                # parseDefinition() and parseTestGroup().
+                my $skipThisGroup = 0;
+            
+                # Is this OS excluded?
+                if (!$skipThisGroup) {
+                    my $os = `uname -o`;
+                    foreach my $x_os (@{ $definitionAoHoA[$i]{'X-OS'} }) {
+                        if ($x_os =~ m/$os/) { $skipThisGroup = 1; }
+                    } 
+                }
+            
+                # Is this architecture excluded?
+                if (!$skipThisGroup) {
+                    my $arch = `uname -m`;
+                    foreach my $x_arch (@{ $definitionAoHoA[$i]{'X-ARCH'} }) {
+                        if ($x_arch =~ m/$arch/) { $skipThisGroup = 1; }
+                    }
+                } 
+            
+                # Is this host excluded?
+                if (!$skipThisGroup) {
+                    my $host = `uname -n`;
+                    foreach my $x_host (@{ $definitionAoHoA[$i]{'X-HOST'} }) {
+                        if ($x_host =~ m/$host/) { $skipThisGroup = 1; }
+                    }
+                } 
+            
+                # Does this group define tests for this comm?
+                if (!$skipThisGroup) {
+                    my $foundMatch = 0;
+                    foreach my $item (@{ $definitionAoHoA[$i]{'COMM'} }) {
+                        if ($item =~ m/$comm/i) { $foundMatch = 1; }
+                    }
+                    if (!$foundMatch) { $skipThisGroup = 1; }
+                }
+            
+                # Does this group apply to this category?
+                if (!$skipThisGroup) {
+                    my $foundMatch = 0;
+                    foreach my $item (@{ $definitionAoHoA[$i]{'CATEGORIES'} }) {
+                        if ($item =~ m/$category/i) { $foundMatch = 1; }
+                    }
+                    if (!$foundMatch) { $skipThisGroup = 1; }
+                }
+                
+                # This OS, architecture, and host are not excluded from this
+                # test group and this test group defines tests for this comm.
+                # Using TESTS, DIRS, ARGS, and COMM, add a completed hash entry
+                # to the global @testListAoH array of hashes for every test.
+                if (!$skipThisGroup) {
+                    
+                    # If no args are specified, we need a blank one to get into
+                    # the foreach loop and avoid using an uninitialized value
+                    # concatenating the arg to the command string.
+                    if (!defined @{ $definitionAoHoA[$i]{'ARGS'} }) {
+                        ${ @{ $definitionAoHoA[$i]{'ARGS'} } }[0] = ("");
+                    }
+                    
+                    # Since a user of this test utility can only specify a comm
+                    # of 'serial' or 'mpi' and since a package developer can
+                    # only specify a custom or non-custom comm in any given test
+                    # group, we can determine exactly which of the four is
+                    # applicable for this run and this test group.
+                    my $isCustom = 0;
+                    foreach my $item (@{ $definitionAoHoA[$i]{'COMM'} }) {
+                        if ($item =~ m/CUSTOM/i) { $isCustom = 1; }
+                    }                   
+                    
+                    # Add a complete hash entry for each executable file found
+                    # in the directories listed in DIRS.
+                    foreach my $dir (@{ $definitionAoHoA[$i]{'DIRS'} }) {
+                        if (!opendir(DIR, $dir)) {
+                            my $message = "";
+                            $message .= "! Error opening $dir, skipping $package tests.";
+                            printMessage($message, $v1+$v2+$v3);
+                            return;
+                        } 
+                        while (defined (my $file = readdir(DIR))) {
+                            my $filename = "$dir/$file";
+                            if (    (-x $filename) &&
+                                    ($file !~ m/^\.$/) &&
+                                    ($file !~ m/^\.\.$/) &&
+                                    ($file !~ m/^\.deps$/)
+                            ) {
+                                push( @{ $definitionAoHoA[$i]{'TESTS'} }, $filename);
+                            }
+                        }
+                        closedir(DIR);
+                    }
+                    
+                    # Add a complete hash entry for each test listed in TESTS.
+                    foreach my $test (@{ $definitionAoHoA[$i]{'TESTS'} }) {
+                        
+                        # Each argument specified gets its own test run.
+                        foreach my $arg (@{ $definitionAoHoA[$i]{'ARGS'} }) {
+                        
+                            # Prepare the hash entry for this test that will
+                            # end up in @testListAoH.
+                            my %testEntry = ();                            
+                            $testEntry{'package'} = $package;
+                            
+                            use File::Basename;        
+                            my $testDir = dirname($test);
+                            my $testName = basename($test);
+                            
+                            $testEntry{'definitionDir'} = $File::Find::dir;
+                            $testEntry{'directory'} = $testDir;
+                            $testEntry{'name'} = $testName;
+                        
+                            # I'm not sure if there really needs to be a
+                            # CUSTOM-SERIAL value for comm.  I don't know how
+                            # it would be treated differently.  For now,
+                            # CUSTOM-SERIAL will be treated the same as SERIAL.
+                            # For that matter, it appears that CUSTOM-MPI is
+                            # the same as SERIAL and CUSTOM-SERIAL.
+                            if ($comm eq "serial") {
+                                if ($isCustom) {
+                                    $testEntry{'type'} = "CUSTOM-SERIAL";
+                                    $testEntry{'command'} = "./$test ".$arg;
+                                    push(@testListAoH, { %testEntry });
+                                } else {
+                                    $testEntry{'type'} = "SERIAL";
+                                    $testEntry{'command'} = "./$test ".$arg;
+                                    push(@testListAoH, { %testEntry });
+                                }
+                                
+                            } elsif ($comm eq "mpi") {
+                                if ($isCustom) {
+                                    $testEntry{'type'} = "CUSTOM-MPI";
+                                    $testEntry{'command'} = "./$test ".$arg;
+                                    push(@testListAoH, { %testEntry });
+                                } else {
+                                    $testEntry{'type'} = "MPI";
+                                    
+                                    # Make decisions about the number of 
+                                    # prcessors to run on.
+                                    
+                                    my $mpiString = "";
+                                    foreach my $arg (@{ $definitionAoHoA[$i]{'COMM'} }) {
+                                        if ($arg =~ m/MPI/i) { $mpiString = $arg; }
+                                    }
+                                    
+                                    # optional () present
+                                    if ($mpiString =~ m/MPI\((.*?\))/i) { 
+                        
+                                        my $rangeString = $1;
+                                        my @rangeList = $rangeString =~ m/(.*?)[ )]/g;
+                                        
+                                        foreach my $range (@rangeList) {
+                                        
+                                            my $rangeMin = 1;
+                                            my $rangeMax = 1;
+                                            my $numProc = 1;
+                                            
+                                            if ($range =~ m/-/) {
+                                                $range =~ m/(\d*)-(\S*)/;
+                                                $rangeMin = $1;
+                                                $rangeMax = $2;
+                                                if ($rangeMax eq "*") { $rangeMax = $maxproc; }
+                                                if ($rangeMin <= $maxproc) { 
+                                                    if ($rangeMax <= $maxproc) { 
+                                                        $numProc = $rangeMax;
+                                                    } elsif ($rangeMax > $maxproc) {
+                                                        $numProc = $maxproc;
+                                                    }                                                        
+                                                    $testEntry{'command'} = "$mpigo"."$numProc ./$test ".$arg;
+                                                    push(@testListAoH, { %testEntry });
+                                                }
+                                            } else {
+                                                if ($range eq "*") { $range = $maxproc; }
+                                                $numProc = $range;
+                                                if ($numProc <= $maxproc) { 
+                                                    $testEntry{'command'} = "$mpigo"."$numProc ./$test ".$arg;
+                                                    push(@testListAoH, { %testEntry });
+                                                }
+                                            }                                        
+                                        }
+                                        
+                                    # no optional () present
+                                    } else { 
+                                        
+                                        my $numProc = $maxproc;
+                                        $testEntry{'command'} = "$mpigo"."$numProc ./$test ".$arg;
+                                        push(@testListAoH, { %testEntry });
+                                    
+                                    }
+                                    
+                                } # non-CUSTOM MPI
+                                
+                            } # $comm eq MPI
+                                                    
+                        } # foreach $arg
+                        
+                    } # foreach $test
+                
+                } # if !$skipThisGroup
+                
+            } # foreach test group
+            
+        } # if 'test/' and 'definition'
+        
+    } # compileTestList()
+    
+    ############################################################################
+    # parseDefinition()
+    #
+    # Assuming we have been placed in a 'test/' directory containing a 
+    # 'definition' file, break that file into raw (.*){.*} string for parsing
+    # by parseTestGroup().  No global decision-making takes place about whether 
+    # or not to run any tests defined here.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  $definitionAoHoA    (array of test groups, which contains...
+    #                                    hashes of property names, which contain...
+    #                                    arrays of property values.)
+    #
+
+    sub parseDefinition {
+        my $status = 0;
+        my $errorString = "";
+    
+        # Array of hashs of arrays that will be returned when all is said and done.
+        my @definitionAoHoA = ();
+        
+        # Open definition file for reading.
+        if (!open (DEFINITION, "<definition")) {
+            $status++;
+            $errorString .= "! Can't open definition file.\n";
+        }
+            
+        # Read definition file into one string.
+        undef $/;               # undefine input record separator
+        my $file=<DEFINITION>;  # copy entire file
+        $/ = "\n";              # restore it to default newline
+        close DEFINITION;
+        
+        # Clean up file.
+        $file =~ s/#.*$//mg;        # remove everything after any #
+        $file =~ s/\n\s*\n/\n/g;    # remove any blank lines
+        $file =~ s/^\s*//mg;        # remove leading spaces
+        $file =~ s/\s*$//mg;        # remove trailing spaces
+        $file =~ s/\n//g;           # remove all newlines (force ourselves
+                                    # to avoid making assumptions about formatting)
+        
+        # Split definition file into groups.
+        # This gives us an array of strings of the essential form (.*){.*}.
+        my @rawTestGroups = $file =~ m/(\(.*?\)\s*\{.*?\})/g;
+        
+        # Step through the list of raw testGroups, parsing each with
+        # parseTestGroup() and adding to the array.
+        foreach my $rawTestGroup (@rawTestGroups) {
+            (my $failures, my %result) = parseTestGroup($rawTestGroup);
+            if (!$failures) {
+                push(@definitionAoHoA, { %result });
+            } else {
+                $status += $failures;
+                $errorString .= $result{"errorString"};
+            }
+        }
+        
+        # print @definitionAoHoA
+        my $message = "";
+        $message .= "parseDefinition():\n";
+        $message .= "  \@definitionAoHoA:\n";
+        for my $i (0 .. $#definitionAoHoA) {
+            $message .= "    test group $i:\n";
+            foreach my $key (keys %{ $definitionAoHoA[$i] }) { 
+                $message .= "      $key\n";
+                foreach my $item (@{ $definitionAoHoA[$i]{$key} }) {
+                    $message .= "        '$item'\n";
+                }
+            }
+        }
+        $message .= "\n";
+        printMessage($message, $v3);
+        
+        if (!$status) {         # Return properly parsed definition file.
+            return ($status, @definitionAoHoA);
+        } else {                # Return $errorString string.
+            return ($status, ($errorString));
+        }
+    
+    } # parseDefinition()
+    
+    ############################################################################
+    # parseTestGroup()
+    #
+    # Given a raw (.*){.*} string, parse it into a hash of arrays.
+    #
+    #   - args:     $rawGroupString     (raw (.*){.*} string)
+    #
+    #   - returns:  $status             (success(0)/failure(!0) status)
+    #               %testGroupHoA       (hash of property names, which contains...
+    #                                    arrays of property values.)
+    #               $errorString        (record of malformed group error messages)
+    #
+
+    sub parseTestGroup {
+        my $rawGroupString = $_[0];
+        my $status = 0;
+        my $errorString = "";
+    
+        # Hash of arrays that will be returned when all is said and done.
+        my %testGroupHoA = ();
+        
+        # Break raw string into category (.*) and property {.*} sections
+        my $categoryString = "";
+        if ($rawGroupString =~ m/\((.+?\))/) {
+            $categoryString = $1;
+        } else {
+            $status++;
+            $errorString .= "! Malformed test group:  bad category list.\n";
+        }
+        
+        my $propertyListString = "";
+        if ($rawGroupString =~ m/\{(.+?)\}/) {
+            $propertyListString = $1;
+        } else {
+            $status++;
+            $errorString .= "! Malformed test group:  bad property list.\n";
+        }
+        
+        # Category section (.*):       
+        my @categories = $categoryString =~ m/\s*(\w+?)\s*[,)]\s*/g;
+        $testGroupHoA{'CATEGORIES'} = [ @categories ];
+        
+        # Property section {.*}:       
+        # Grap each raw 'PROPERTY = VALUE-1, VALUE-N;' string.
+        my @rawPropertyStrings = $propertyListString =~ m/(.+?;)/g;        
+        foreach my $propertyString (@rawPropertyStrings) {
+            
+            # Grab property name.
+            my $key = "";
+            if ($propertyString =~ m/\s*(\w+?)\s*=.*?;/) {
+                $key = $1;
+            } else {
+                $status++;
+                $errorString .= "! Malformed test group:  bad property list.\n";
+            }
+            
+            # Grab the raw values list string.
+            my $valuesString = "";
+            if ($propertyString =~ m/\s*\w+?\s*=\s*(.*?;)/) {
+                $valuesString = $1;
+            } else {
+                $status++;
+                $errorString .= "! Malformed test group:  bad property list.\n";
+            }
+            
+            # Break raw values list string into array of values.
+            my @valueList = $valuesString =~ m/\s*(.+?)\s*[,;]/g;
+            
+            # Add new key=>(values) entry in array.
+            $testGroupHoA{$key} = [ @valueList ];
+        }
+        
+        # Validate test group:
+        
+        # Enforce existance of COMM property.
+        if (!$testGroupHoA{'COMM'}) {
+            $status++;            
+            $errorString .= "! Malformed test group:  no COMM property.\n";
+        }
+        
+        # Enforce existance of TESTS or DIRS properties.
+        if (!($testGroupHoA{'TESTS'} || $testGroupHoA{'DIRS'})) {
+            $status++;
+            $errorString .= "! Malformed test group:  no TESTS or DIRS properties.\n";
+        }
+        
+        # Enforce either all 'custom' or no 'custom'.
+        my $foundCustom = 0;
+        my $foundNonCustom = 0;
+        foreach my $item (@{$testGroupHoA{'COMM'}}) {
+            if ($item =~ m/CUSTOM/i) {
+                $foundCustom = 1;
+            } else {
+                $foundNonCustom = 1;
+            }
+        }
+        if ($foundCustom && $foundNonCustom) {
+            $status++;
+            $errorString .= "! Malformed test group:  cannot have both CUSTOM and non-CUSTOM\n";
+            $errorString .= "  comms listed in the same test group.\n";        
+        }
+        
+        # Add more validations as necessary to catch errors sooner...
+        
+        if (!$status) {         # Return properly parsed test group.
+            return ($status, %testGroupHoA);
+        } else {                # Return $errorString string.
+            return ($status, ("errorString", $errorString));
+        }
+    
+    } # parseTestGroup()
     
     ############################################################################
     # cleanUp()
@@ -253,7 +886,9 @@ cleanUp();
     #
 
     sub cleanUp {
-        delete $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'};    
+    
+        delete $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'}; 
+           
     } # cleanUp()
     
     ############################################################################
@@ -275,13 +910,13 @@ cleanUp();
             print $message;
         }
         
-        if ($logverbosity & $level) {       
+        if ($logverbosity & $level) {
             my $log = $resultsDir."log.txt";
             open (LOG, ">>$log")
-                or die "can't open $log";            
+                or die "can't open $log";
             print LOG $message;
-            close LOG;       
-        }            
+            close LOG;
+        }
     } # printMessage()
 
     ############################################################################
@@ -319,6 +954,10 @@ cleanUp();
         print "                         one of the predefined tests types:  FRAMEWORK,\n";
         print "                         CHECKIN, PERFORMANCE, SCALABILITY, or ALL.  See\n";
         print "                         README-definition for more information.\n";
+        print "                         REQUIRED.\n";
+        print "\n";
+        print "  --maxproc=N            Specify the maximum number of processors on which to\n";
+        print "                         run a test.\n";
         print "                         REQUIRED.\n";
         print "\n";
         print "  --mpistart=COMMAND     Specify the mpi startup command for this system.\n";

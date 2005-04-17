@@ -20,21 +20,22 @@ I.  Prerequisites
   
     3. Each package should have a well-formed definition file in 
        BUILD_DIR/packages/PACKAGE/test.
+       (See Trilinos/commonTools/test/utilities/README-definition for more
+       information)
        
 -------------------------------------------------------------------------------
 II.  Execution
 
   To execute the Trilinos test utility, simply type:
   
-    cd /PATH/TO/Trilinos/test/
-    runtests COMM BUILDDIR CATEGORY OUTPUTDIR
-    
+    cd /PATH/TO/Trilinos/commonTools/test/utilities/
+    perl runtests --trilinosdir=DIR --comm=COMM --builddir=BUILDDIR 
+        --category=CATEGORY
+            
   where /PATH/TO/ is the absolute path to your top-level Trilinos directory, 
   COMM is "serial" or "mpi", BUILDDIR is the build directory, CATEGORY is the
-  category of tests you would like run, and OUTPUTDIR is the directory in which
-  the test results directory will be created (if this is omitted, . is
-  assumed).  It is assumed that your build directory resides in your Trilinos
-  directory.
+  category of tests you would like run.  It is assumed that your build
+  directory resides in your Trilinos directory.
     
 -------------------------------------------------------------------------------
 III.  Test Results Directory
@@ -58,69 +59,48 @@ IV.  Test Results Files
   The test results files will consist of the following:
   
   +---------------------------------------------------------------------------+
-  |HOST_NAME        = herouxsmp
-  |DNS_NAME         = cs.csbsju.edu
-  |HOST_OS          = linux
+  |HOST_NAME            = beowulf
+  |DNS_NAME             = cs.csbsju.edu
+  |IP_ADDRESS           = 127.0.0.1 
+  |OPERATING_SYSTEM     = GNU/Linux
+  |KERNEL_NAME          = Linux
+  |KERNEL_RELEASE       = 2.6.10-beowulf
+  |KERNEL_VERSION       = #1 Sat Jan 22 23:03:17 CST 2005
+  |PROCESSOR            = AMD Athlon(tm) 
+  |MACHINE_HARDWARE     = i686
+  |HARDWARE_PLATFORM    = AuthenticAMD
   |
-  |TRILINOS_DIR     = /u/TrilinosTestHarness/TrilinosRelease5.0/Trilinos/
-  |BRANCH           = trilinos-release-5-0-branch
+  |TRILINOS_DIR         = /common/TrilinosTestHarness/runtests/Trilinos/
+  |BRANCH_TAG           = development
   |
-  |BUILD_DIR        = SERIAL2/
-  |COMM             = serial
+  |BUILD_DIR            = /common/TrilinosTestHarness/runtests/Trilinos/MPI/
+  |COMM                 = mpi
   |
-  |PACKAGE_DIR      = packages/epetra/
-  |PACKAGE          = epetra
+  |PACKAGE_TEST_DIR     = ./epetra/test
+  |PACKAGE              = epetra
   |
-  |TEST_DIR         = Vector/
-  |TEST             = ExecuteTestProblems.exe
-  |TEST_REVISION    = 1.45
-  |ARGUMENTS        = matrix1
+  |TEST_DIR             = Vector
+  |TEST_NAME            = Vector_test.exe
+  |TYPE                 = MPI
+  |COMMAND              = mpirun -np 16 ./Vector/Vector_test.exe -v
   |
-  |START_TIME       = 2005-03-31 16:40:23
-  |END_TIME         = 2005-03-31 16:40:25
-  |RUN_TIME         = 00:00:02
+  |START_TIME           = 05-04-16 20:33:26
+  |STOP_TIME            = 05-04-16 20:33:29
+  |RUN_TIME             = 3 seconds
   |
-  |EXIT_STATUS      = 0
-  |RESULT           = pass
+  |EXIT_STATUS          = 0
+  |RESULT               = pass
   |
   |BEGIN_TEST_OUTPUT
   |
-  |  Hello, World.
-  |  *** test passed ***
+  |Epetra::MpiComm
+  |Epetra Version 3.4d - 03/01/2005
+  |
+  |Epetra::MpiComm
+  |  Processor 0 of 16 total processors
+  |
+  |...
   |
   |END_TEST_OUTPUT
   |
   +---------------------------------------------------------------------------+
-
--------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
