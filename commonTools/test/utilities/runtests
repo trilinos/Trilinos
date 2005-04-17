@@ -338,6 +338,10 @@ cleanUp();
                 
         # Use global @testListAoH array of hash to run tests and report results
         
+        my $testsTotal = 0;
+        my $testsPassed = 0;
+        my $testsFailed = 0;
+        
         # Start MPI
         if ($comm eq "mpi" && $mpistart) { system("$mpistart 1>/dev/null 2>/dev/null"); }
         
@@ -365,10 +369,16 @@ cleanUp();
             my $testStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
             my $startSeconds = time();
         
+            # Run test
             chdir $testListAoH[$i]{'definitionDir'} 
                 or die "cannot chdir to ".$testListAoH[$i]{'definitionDir'}.", died";
             my $testOutput = `$testListAoH[$i]{'command'} 2>&1`;
             my $testExitStatus = $?;
+            
+            # Tally result
+            $testsTotal++;
+            if ($testExitStatus) { $testsFailed++; }
+            else { $testsPassed++; }
         
             # Capture and format test stop time.
             ($se, $mn, $hr, $da, $mo, $yr) = (localtime)[0..5];
@@ -439,7 +449,15 @@ cleanUp();
             print RESULTS $resultsString;
             
             close RESULTS;
-        }
+            
+        } # foreach @testListAoH
+        
+        $message = "\n";
+        $message .= " Tests Passed:  $testsPassed\n";
+        $message .= " Tests Failed:  $testsFailed\n";
+        $message .= "-------------------\n";
+        $message .= " Tests Total:   $testsTotal\n\n";
+        printMessage($message, $v1+$v2+$v3);
         
         # Stop MPI
         if ($comm eq "mpi" && $mpistop) { system("$mpistop 1>/dev/null 2>/dev/null"); }
@@ -563,7 +581,7 @@ cleanUp();
                     foreach my $dir (@{ $definitionAoHoA[$i]{'DIRS'} }) {
                         if (!opendir(DIR, $dir)) {
                             my $message = "";
-                            $message .= "! Error opening $dir, skipping $package tests.";
+                            $message .= "! Error opening $dir, skipping $package tests.\n";
                             printMessage($message, $v1+$v2+$v3);
                             return;
                         } 
