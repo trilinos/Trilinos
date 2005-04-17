@@ -294,11 +294,10 @@ cleanUp();
         
         # Compile list of test definition files (using File::Find instead
         # of `find` to improve portability).
-        # This will automatically chdir to File::Find::dir.
         use File::Find;
         find(\&compileTestList, ".");
                 
-        # print @testListAoH
+        # Print @testListAoH
         my $message = "";
         $message .= "run():\n";
         $message .= "  \@testListAoH:\n";
@@ -323,7 +322,7 @@ cleanUp();
         chomp (my $machineHardware=`uname -m`);
         chomp (my $hardwarePlatform=`uname -i`);
         
-        # grab the repository branch tag
+        # Grab the repository branch tag
         my $branchTag = "";
         my $homeDirContents = `ls $trilinosdir`;
         if ($homeDirContents =~ m/CVS/) {
@@ -345,6 +344,15 @@ cleanUp();
         # For each test entry...
         for my $i (0 .. $#testListAoH) {
         
+            # cd to packages directory in build directory.
+            chdir $builddir or die "cannot chdir to $builddir, died";
+            chdir "packages/" or die "cannot chdir to packages/, died";
+                
+            # Print "Running test: " message.
+            my $string = $testListAoH[$i]{'package'}." - ".$testListAoH[$i]{'name'}."...";
+            $message = sprintf("%-50s", $string);
+            printMessage($message, $v1+$v2+$v3);
+        
             # Capture and format test start time.
             (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
             $yr = sprintf("%02d", $yr % 100);
@@ -359,7 +367,7 @@ cleanUp();
         
             chdir $testListAoH[$i]{'definitionDir'} 
                 or die "cannot chdir to ".$testListAoH[$i]{'definitionDir'}.", died";
-            my $testOutput = `$testListAoH[$i]{'command'}`;
+            my $testOutput = `$testListAoH[$i]{'command'} 2>&1`;
             my $testExitStatus = $?;
         
             # Capture and format test stop time.
@@ -371,9 +379,13 @@ cleanUp();
             $mn = sprintf("%02d", $mn);
             $se = sprintf("%02d", $se);
             my $testStopTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
-            my $stopSeconds = time();
-            
+            my $stopSeconds = time();            
             my $runSeconds = $stopSeconds - $startSeconds;
+                            
+            # Print pass/fail message.
+            $message = ($testExitStatus==0?"  passed":"! FAILED");
+            $message .= " - ".($runSeconds==0?"<1":$runSeconds)." seconds\n";
+            printMessage($message, $v1+$v2+$v3);
             
             # Create results file.
             my $resultsFile = $resultsDir;
@@ -412,7 +424,7 @@ cleanUp();
             $resultsString .= "\n";
             $resultsString .= "START_TIME           = $testStartTime\n";
             $resultsString .= "STOP_TIME            = $testStopTime\n";
-            $resultsString .= "RUN_TIME             = $runSeconds seconds\n";
+            $resultsString .= "RUN_TIME             = ".($runSeconds==0?"<1":$runSeconds)." seconds\n";
             $resultsString .= "\n";
             $resultsString .= "EXIT_STATUS          = $testExitStatus\n";
             $resultsString .= "RESULT               = ".($testExitStatus==0?"pass":"fail")."\n";
@@ -930,7 +942,7 @@ cleanUp();
     #
 
     sub printHelp {
-        print "Trilinos Test Harness\n";
+        print "runtests - The Trilinos Test Utility\n";
         print "\n";
         print "Usage:  perl runtests --trilinosdir=/home/user --comm=mpi --buildir=MPI\n";
         print "        --category=all\n";
@@ -958,13 +970,13 @@ cleanUp();
         print "\n";
         print "  --maxproc=N            Specify the maximum number of processors on which to\n";
         print "                         run a test.\n";
-        print "                         REQUIRED.\n";
+        print "                         Default: 4\n";
         print "\n";
         print "  --mpistart=COMMAND     Specify the mpi startup command for this system.\n";
-        print "                         Default: \"lamboot\"\n";
+        print "                         Default: NONE\n";
         print "\n";
         print "  --mpistop=COMMAND      Specify the mpi shutdown command for this system.\n";
-        print "                         Default: \"lamhalt\"\n";
+        print "                         Default: NONE\n";
         print "\n";
         print "  --mpigo=COMMAND        Specify the mpigo command for this system.\n";
         print "                         Default: \"mpigo -np \"\n";
@@ -989,7 +1001,8 @@ cleanUp();
         print "  --help                 Print this help output and exit.\n";
         print "\n";
         print "Notes:\n";
-        print "  - For more information, see README-runtests in Trilinos/testharness\n";
+        print "  - For more information, see README-runtests in\n";
+        print "    Trilinos/commonTools/test/utilities/\n";
         print "    or visit http://software.sandia.gov/trilinos/developer/\n";
         print "\n";
     } # printHelp()
