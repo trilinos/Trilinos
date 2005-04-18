@@ -429,10 +429,11 @@ return ierr ;
 
 #else  
 // ml objects
+#include <iostream>
 #include "ml_common.h"
 int main(int argc, char *argv[])
 {
-  cout << "running ml_nox_1Delasticity_example.exe needs: \n"
+  std::cout << "running ml_nox_1Delasticity_example.exe needs: \n"
        << "defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)\n"
        << "see documentation for the ml-class ML_NOX::ML_Nox_Preconditioner\n";
   fflush(stdout);
