@@ -100,7 +100,7 @@ int Zoltan_PHG_ParKway(
     /* ----- Set ParKway's options --------------- */
     options[0] = 1; /*0 -> all options use default, else user define*/
     options[1] = seed++; /*0 -> use default seed (or if using SPRNG, it chooses seed), else use options[1] as seed*/
-    options[2] = 2; /*0 -> no disp info, 1 -> some, 2 -> lots*/
+    options[2] = 0; /*0 -> no disp info, 1 -> some, 2 -> lots*/
     options[3] = 0; /*0 -> do not write partition to disk, 1 -> do write*/
     options[4] = 1; /*number of parallel runs*/
     options[5] = 0; /*perform random vertex shuffle: 0 -> no, 1 -> yes*/
