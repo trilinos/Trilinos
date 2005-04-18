@@ -233,8 +233,11 @@ int main(int argc, char *argv[])
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);
 
+  // Make this explicit
+  bool doOffBlocks = true;
+
   // Create the Problem Manager
-  Problem_Manager problemManager(Comm, false);
+  Problem_Manager problemManager(Comm, doOffBlocks);
 
   // Note that each problem could contain its own nlParams list as well as
   // its own convergence test(s). 
@@ -253,7 +256,7 @@ int main(int argc, char *argv[])
     Equation_B ProblemB(Comm, NumGlobalNodes, "Species");
   //  Equation_B ProblemB2(Comm, 11);
   //  Equation_B ProblemB3(Comm, 501);
-    Burgers burgers(Comm, 10*NumGlobalNodes, "Burgers");
+    Burgers burgers(Comm, 5*NumGlobalNodes, "Burgers");
   
     // An interesting note: the order of solving each problem is based on the
     // order of adding.  For this decoupled problem, problem B is linear
@@ -286,7 +289,7 @@ int main(int argc, char *argv[])
     problemManager.outputStatus();
   
     // Initialize time integration parameters
-    int maxTimeSteps = 100;
+    int maxTimeSteps = 3;
     int timeStep = 0;
     double time = 0.;
     double dt = 0.100;
@@ -304,13 +307,14 @@ int main(int argc, char *argv[])
                                    xMesh[i], ProblemA.getSolution()[i], 
                                    ProblemB.getSolution()[i]);
     fclose(ifp);
-    Epetra_Vector& burgersX = burgers.getMesh();
-    (void) sprintf(file_name, "burgers.%d_%d",MyPID,timeStep);
-    ifp = fopen(file_name, "w");
-    for (int i = 0; i < 10*NumMyNodes; ++i)
-      fprintf(ifp, "%d  %E  %E\n", burgersX.Map().MinMyGID()+i, 
-                                   burgersX[i], burgers.getSolution()[i]);
-    fclose(ifp);
+    //FILE *ifp2;
+    //Epetra_Vector& burgersX = burgers.getMesh();
+    //(void) sprintf(file_name, "burgers.%d_%d",MyPID,timeStep);
+    //ifp2 = fopen(file_name, "w");
+    //for (int i = 0; i < 10*NumMyNodes; ++i)
+    //  fprintf(ifp2, "%d  %E  %E\n", burgersX.Map().MinMyGID()+i, 
+    //                               burgersX[i], burgers.getSolution()[i]);
+    //fclose(ifp2);
     
     
     // Time integration loop

@@ -92,47 +92,31 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
 
 Problem_Manager::~Problem_Manager()
 {
-  delete AA; AA = 0;
-  delete A; A = 0;
+  delete compositeProblemInterface; compositeProblemInterface = 0;
 
   // Iterate over each problem and destroy/free the necessary objects
 
-  map<int, GenericEpetraProblem*>::iterator iter = Problems.begin();
-  map<int, GenericEpetraProblem*>::iterator last = Problems.end();
-
-  map<int, NOX::EpetraNew::Group*>::iterator GroupsIter = Groups.begin();   
-  map<int, NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
-
-#ifdef HAVE_NOX_EPETRAEXT
-#ifdef USE_FD
-  map<int, EpetraExt::CrsGraph_MapColoring*>::iterator 
-	  TmpMapColoringsIter = TmpMapColorings.begin();
-  map<int, Epetra_MapColoring*>::iterator 
-	  ColorMapsIter = ColorMaps.begin();
-  map<int, EpetraExt::CrsGraph_MapColoringIndex*>::iterator 
-	  ColorMapIndexSetsIter = ColorMapIndexSets.begin();
-  //map<int, vector<Epetra_IntVector>*>::iterator 
-  //	  ColumnsSetsIter = ColumnsSets.begin();
-  map<int, Epetra_Operator*>::iterator 
-	  MatrixOperatorsIter = MatrixOperators.begin();
-#endif
-#endif
-
-  while( iter != last)
+  for( unsigned int i = 0; i < Problems.size(); ++i )
   {
-    delete (*(SolversIter++)).second;
-    delete (*(GroupsIter++)).second;
+    delete ProblemToCompositeIndices [i];
+    delete Interfaces                [i];
+    delete Solvers                   [i];
+    delete Groups                    [i];
+    delete LinearSystems             [i];
+
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef USE_FD
-    delete (*(MatrixOperatorsIter++)).second;
-  delete (*(TmpMapColoringsIter++)).second;
-  delete (*(ColorMapsIter++)).second;
-  delete (*(ColorMapIndexSetsIter++)).second;
+    delete MatrixOperators           [i];
+    delete TmpMapColorings           [i];
+    delete ColorMaps                 [i];
+    delete ColorMapIndexSets         [i];
     //delete *ColumnsSetsIter++;
 #endif
 #endif
-    iter++; // Problems are owned by the app driver (Example.C)
   }
+
+  delete compositeSoln; compositeSoln = 0;
+  delete compositeMap ; compositeMap  = 0;
 }
 
 void Problem_Manager::addProblem(GenericEpetraProblem& problem)
@@ -356,10 +340,15 @@ void Problem_Manager::registerComplete()
 
     EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
       EpetraExt::CrsGraph_MapColoring::GREEDY;
-    TmpMapColorings[probId] = new EpetraExt::CrsGraph_MapColoring(algType);
-    ColorMaps[probId] = &((*(*(TmpMapColorings.find(probId))).second)(problem.getGraph()) );
-    ColorMapIndexSets[probId] = new EpetraExt::CrsGraph_MapColoringIndex(*(*(ColorMaps.find(probId))).second );
-    ColumnsSets[probId] = &(*(*(ColorMapIndexSets.find(probId))).second)(problem.getGraph() );
+    int reordering = 0;
+    bool useParallel = true;
+    bool distance1 = false;
+    int verbose = 0;
+
+    TmpMapColorings[probId] = new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose);
+    ColorMaps[probId] = &( (*(TmpMapColorings[probId]))(problem.getGraph()) );
+    ColorMapIndexSets[probId] = new EpetraExt::CrsGraph_MapColoringIndex( *(ColorMaps[probId]) );
+    ColumnsSets[probId] = & (*(ColorMapIndexSets[probId]))( problem.getGraph() );
 
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
@@ -865,7 +854,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
 #endif
     }
   }
-#ifdef DEBUG
+#ifdef DEBUG_PROBLEM_MANAGER
     compositeMatrix.Print(cout);
 #endif
 }
@@ -1146,7 +1135,7 @@ bool Problem_Manager::evaluate(
 
     Matrix->TransformToLocal();
 
-#ifdef DEBUG
+#ifdef DEBUG_PROBLEM_MANAGER
     Matrix->Print(cout);
 #endif
   }
@@ -1309,7 +1298,7 @@ void Problem_Manager::generateGraph()
         delete [] dependentColIndices; dependentColIndices = 0;
 
 	offGraph.TransformToLocal();
-#ifdef DEBUG
+#ifdef DEBUG_PROBLEM_MANAGER
 	offGraph.Print(cout);
 #endif
         OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
@@ -1325,7 +1314,7 @@ void Problem_Manager::generateGraph()
 
   AA->TransformToLocal();
 
-#ifdef DEBUG
+#ifdef DEBUG_PROBLEM_MANAGER
   AA->Print(cout);
 #endif
 

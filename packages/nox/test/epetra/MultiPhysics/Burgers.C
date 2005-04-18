@@ -44,7 +44,7 @@
 Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xFactor(5.0),
-  viscosity(0.010),
+  viscosity(0.100),
   xmin(0.0),
   xmax(1.0)
 {
@@ -58,8 +58,6 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   }
 
   // Create extra vector needed for this transient problem
-  oldSolution = new Epetra_Vector(*StandardMap);
-
   oldSolution = new Epetra_Vector(*StandardMap);
   exactSolution = new Epetra_Vector(*StandardMap);
 
@@ -290,6 +288,10 @@ bool Burgers::evaluate(
  
   if ((flag == MATRIX_ONLY) || (flag == ALL))
     A->TransformToLocal();
+
+  // Cleanup
+  for( int i = 0; i<numDep; i++)
+    delete ddep[i];
 
   return true;
 }

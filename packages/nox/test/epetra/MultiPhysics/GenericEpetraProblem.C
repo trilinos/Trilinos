@@ -144,6 +144,12 @@ GenericEpetraProblem::~GenericEpetraProblem()
   delete Importer; Importer = 0;
   delete OverlapMap; OverlapMap = 0;
   delete StandardMap; StandardMap = 0;
+  
+  for( map<int, Epetra_Vector*>::iterator iter = depSolutions.begin();
+         iter != depSolutions.end(); delete (*iter).second, ++iter );
+  for( map<int, XferOp*>::iterator iter = xferOperators.begin();
+         iter != xferOperators.end(); delete (*iter).second, ++iter );
+
 }
 
 void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver, 
@@ -246,8 +252,7 @@ void GenericEpetraProblem::createDependentVectors()
     cout << "For problem : " << myId << "  Creating DepVec for problem : "
          << depProblems[i] << endl;
 #endif
-    depSolutions.insert( pair<int, Epetra_Vector*>(depProblems[i],
-			    new Epetra_Vector(*initialSolution)) );
+    depSolutions[ depProblems[i] ] = new Epetra_Vector(*initialSolution);
   }
 }
 
@@ -265,8 +270,7 @@ void GenericEpetraProblem::addProblemDependence(
 void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
 {
   // Add a transfer operator to get fields from another problem
-  xferOperators.insert(pair<int, XferOp*>(problemB.getId(), 
-			  new XferOp(*this, problemB)));
+  xferOperators[problemB.getId()] = new XferOp(*this, problemB);
 }
 
 void GenericEpetraProblem::doTransfer()

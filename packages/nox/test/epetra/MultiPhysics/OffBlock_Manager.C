@@ -97,6 +97,15 @@ OffBlock_Manager::~OffBlock_Manager()
   delete AA; AA = 0;
   delete A; A = 0;
 
+  delete mapColoring; mapColoring = 0;
+  delete mapColoring   ; mapColoring    = 0;
+  delete colorMap      ; colorMap       = 0;
+  delete colorMapIndex ; colorMapIndex  = 0;
+  delete columnSet     ; columnSet      = 0;
+  delete matrixOperator; matrixOperator = 0;
+  delete linearSystem  ; linearSystem   = 0;
+  delete group         ; group          = 0;
+
   // Iterate over each problem and destroy/free the necessary objects
 
   /*
@@ -203,6 +212,10 @@ void OffBlock_Manager::createFDCobjects()
   Epetra_Time colorTime(*Comm);
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
     EpetraExt::CrsGraph_MapColoring::GREEDY;
+  int reordering = 0;
+  bool useParallel = true;
+  bool distance1 = false;
+  int verbose = 0;
 
   Epetra_CrsGraph &graph = *AA;
 
@@ -211,7 +224,7 @@ void OffBlock_Manager::createFDCobjects()
   // Just a dummy for now, but needs to be hooked up correctly.
   Epetra_Vector &compositeVec = myManager.getCompositeSoln();
 
-  mapColoring = new EpetraExt::CrsGraph_MapColoring(algType);
+  mapColoring = new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose);
   colorMap = &(*mapColoring)(graph);
   colorMapIndex = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
   columnSet = &(*colorMapIndex)(graph);

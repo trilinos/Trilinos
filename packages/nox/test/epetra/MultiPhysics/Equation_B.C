@@ -240,21 +240,6 @@ bool Equation_B::evaluate(
   if ( fillMatrix ) A->PutScalar(0.0);
   if ( fillF ) rhs->PutScalar(0.0);
 
-  //
-  id_ptr = nameToMyIndex.find("Burgers");
-  if( id_ptr == nameToMyIndex.end() ) {
-    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
-         << "vector for problem \"Burgers\" !!" << endl;
-    throw "Equation_A (Species) ERROR";
-  }
-  else
-    id_vel = id_ptr->second;
-    //
-
-  // Zero out the objects that will be filled
-  if ( fillMatrix ) A->PutScalar(0.0);
-  if ( fillF ) rhs->PutScalar(0.0);
-
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
     
@@ -354,6 +339,10 @@ bool Equation_B::evaluate(
   }
 
 #endif
+
+  // Cleanup
+  for( int i = 0; i<numDep; i++)
+    delete ddep[i];
 
   return true;
 }

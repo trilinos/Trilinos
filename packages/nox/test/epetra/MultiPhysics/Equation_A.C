@@ -236,17 +236,6 @@ bool Equation_A::evaluate(
     id_vel = (*id_ptr).second;
     //
   
-  //
-  id_ptr = nameToMyIndex.find("Burgers");
-  if( id_ptr == nameToMyIndex.end() ) {
-    cout << "WARNING: Equation_A (\"" << myName << "\") could not get "
-         << "vector for problem \"Burgers\" !!" << endl;
-    throw "Equation_A (Species) ERROR";
-  }
-  else
-    id_vel = id_ptr->second;
-    //
-  
   // Zero out the objects that will be filled
   if ( fillMatrix ) A->PutScalar(0.0);
   if ( fillF ) rhs->PutScalar(0.0);
@@ -350,6 +339,10 @@ bool Equation_A::evaluate(
   }
 
 #endif
+
+  // Cleanup
+  for( int i = 0; i<numDep; i++)
+    delete ddep[i];
 
   return true;
 }
