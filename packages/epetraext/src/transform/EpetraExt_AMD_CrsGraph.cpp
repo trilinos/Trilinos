@@ -153,7 +153,7 @@ operator()( OriginalTypeRef orig )
   NewGraph_ = new Epetra_CrsGraph( Copy, *NewMap_, 0 );
   Epetra_Import Importer( *NewMap_, OldMap );
   NewGraph_->Import( orig, Importer, Insert );
-  NewGraph_->TransformToLocal();
+  NewGraph_->FillComplete();
 
   if( verbose_ )
   {

@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   index = 1;
   Graph.InsertGlobalIndices( 2, 1, &index );
 
-  Graph.TransformToLocal();
+  Graph.FillComplete();
   cout << Graph << endl;
 
   EpetraExt::CrsGraph_BTF BTFTransform;

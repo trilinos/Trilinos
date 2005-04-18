@@ -101,7 +101,7 @@ operator()( OriginalTypeRef orig  )
           if( Indices[j] >= nRows )
             base->InsertMyIndices( Indices[j], 1, &i );
       } 
-      base->TransformToLocal();
+      base->FillComplete();
     }
 
     if( verbosity_ > 1 ) cout << "Base Graph:\n" << *base << endl;
@@ -148,7 +148,7 @@ operator()( OriginalTypeRef orig  )
         for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
         Adj2->InsertMyIndices( i, nCols2, &ColVec[0] );
       }
-      Adj2->TransformToLocal();
+      Adj2->FillComplete();
 
       if( verbosity_ > 1 ) cout << "Adjacency 2 Graph!\n" << *Adj2;
 
@@ -357,7 +357,7 @@ operator()( OriginalTypeRef orig  )
         for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
         Adj2->InsertMyIndices( i, nCols2, &ColVec[0] );
       }
-      assert( Adj2->TransformToLocal() == 0 );
+      assert( Adj2->FillComplete() == 0 );
       RowMap.Comm().Barrier();
       if( verbosity_ > 1 ) cout << "Adjacency 2 Graph!\n" << *Adj2;
     }
@@ -409,7 +409,7 @@ operator()( OriginalTypeRef orig  )
       Epetra_CrsGraph LocalBoundaryGraph( Copy, LocalBoundaryMap, LocalBoundaryMap, 0 );
       Epetra_Import LocalBoundaryImport( LocalBoundaryMap, Adj2->RowMap() );
       LocalBoundaryGraph.Import( *Adj2, LocalBoundaryImport, Insert );
-      LocalBoundaryGraph.TransformToLocal();
+      LocalBoundaryGraph.FillComplete();
       if( verbosity_ > 1 ) cout << "LocalBoundaryGraph:\n " << LocalBoundaryGraph;
 
       EpetraExt::CrsGraph_MapColoring BoundaryTrans( GREEDY, reordering_, distance1_, verbosity_ );
@@ -440,7 +440,7 @@ operator()( OriginalTypeRef orig  )
       Epetra_CrsGraph BoundaryGraph( Copy, BoundaryMap, BoundaryColMap, 0 );
       Epetra_Import BoundaryImport( BoundaryMap, Adj2->RowMap() );
       BoundaryGraph.Import( *Adj2, BoundaryImport, Insert );
-      BoundaryGraph.TransformToLocal();
+      BoundaryGraph.FillComplete();
       if( verbosity_ > 1) cout << "BoundaryGraph:\n" << BoundaryGraph;
 
       Epetra_Import ReverseOverlapBoundaryImport( BoundaryMap, BoundaryColMap );

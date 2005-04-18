@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
   } // end i loop
 
   // Finish up graph construction
-  assert(A.TransformToLocal() == 0);
+  assert(A.FillComplete() == 0);
 
   EpetraExt::CrsGraph_MapColoring
     Greedy0MapColoringTransform( EpetraExt::CrsGraph_MapColoring::GREEDY,

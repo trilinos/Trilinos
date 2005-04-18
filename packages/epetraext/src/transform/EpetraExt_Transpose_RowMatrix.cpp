@@ -172,9 +172,9 @@ operator()( OriginalTypeRef orig )
       assert(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
                      TransNumNz_[i], TransValues_[i], TransIndices_[i])>=0);
  
-  // Note: The following call to TransformToLocal is currently necessary because
+  // Note: The following call to FillComplete is currently necessary because
   //      some global constants that are needed by the Export () are computed in this routine
-  assert(TempTransA1.TransformToLocal(&(orig.OperatorRangeMap()),TransposeRowMap_)==0);
+  assert(TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_)==0);
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
@@ -188,7 +188,7 @@ operator()( OriginalTypeRef orig )
 
   assert(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add)==0);
   
-  assert(TransposeMatrix_->TransformToLocal(&(orig.OperatorRangeMap()),TransposeRowMap_)==0);
+  assert(TransposeMatrix_->FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_)==0);
 
   if (MakeDataContiguous_)
     assert(TransposeMatrix_->MakeDataContiguous()==0);
@@ -238,9 +238,9 @@ bool EpetraExt::RowMatrix_Transpose::fwd()
       EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
                      TransNumNz_[i], TransValues_[i], TransIndices_[i]));
  
-  // Note: The following call to TransformToLocal is currently necessary because
+  // Note: The following call to FillComplete is currently necessary because
   //     some global constants that are needed by the Export () are computed in this routine
-  EPETRA_CHK_ERR(TempTransA1.TransformToLocal());
+  EPETRA_CHK_ERR(TempTransA1.FillComplete());
 
   // Now that transpose matrix with shared rows is entered, update values of target transpose matrix
   TransposeMatrix_->PutScalar(0.0);  // Zero out all values of the matrix

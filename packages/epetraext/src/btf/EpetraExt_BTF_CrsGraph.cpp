@@ -225,7 +225,7 @@ cout << i << "\t" << rowperm_t[i] << "\t" << colperm[i] << "\t" << myElements[i]
   NewGraph_ = new Epetra_CrsGraph( Copy, *NewRowMap_, 0 );
   Epetra_Import Importer( *NewRowMap_, OldMap );
   NewGraph_->Import( orig, Importer, Insert );
-  NewGraph_->TransformToLocal( NewDomainMap_, NewRowMap_ );
+  NewGraph_->FillComplete( *NewDomainMap_, *NewRowMap_ );
 
 #ifdef BTF_VERBOSE
   cout << "New CrsGraph\n";

@@ -217,12 +217,12 @@ operator()( OriginalTypeRef orig )
 
   NewGraph_ = new Epetra_CrsGraph( Copy, *NewRowMap_, *NewColMap_, 0 );
   NewGraph_->Export( *OldGraph_, *Exporter_, Insert );
-  NewGraph_->TransformToLocal();
+  NewGraph_->FillComplete();
   cout << "Permuted Graph:\n" << *NewGraph_;
 
   NewMatrix_ = new Epetra_CrsMatrix( Copy, *NewGraph_ );
   NewMatrix_->Export( *OldMatrix_, *Exporter_, Insert );
-  NewMatrix_->TransformToLocal();
+  NewMatrix_->FillComplete();
   cout << "Permuted Matrix:\n" << *NewMatrix_;
 
   UExporter_ = new Epetra_Export( *OldRowMap_, *UMap_ );
@@ -258,62 +258,62 @@ cout << "LExporter:\n" << *LExporter_;
 
   UUGraph_ = new Epetra_CrsGraph( Copy, *UMap_, *LMap_, 0 );
   UUGraph_->Export( *OldGraph_, *UExporter_, Insert );
-  UUGraph_->TransformToLocal( LMap_, UMap_ );
+  UUGraph_->FillComplete( LMap_, UMap_ );
   cout << "UUGraph:\n" << *UUGraph_;
 
   UUMatrix_ = new Epetra_CrsMatrix( Copy, *UUGraph_ );
   UUMatrix_->Export( *OldMatrix_, *UExporter_, Insert );
-  UUMatrix_->TransformToLocal();
+  UUMatrix_->FillComplete();
   cout << "UUMatrix:\n" << *UUMatrix_;
 
   URGraph_ = new Epetra_CrsGraph( Copy, *UMap_, *RMap_, 0 );
   URGraph_->Export( *OldGraph_, *UExporter_, Insert );
-  URGraph_->TransformToLocal( RMap_, UMap_ );
+  URGraph_->FillComplete( RMap_, UMap_ );
   cout << "URGraph:\n" << *URGraph_;
 
   URMatrix_ = new Epetra_CrsMatrix( Copy, *URGraph_ );
   URMatrix_->Export( *OldMatrix_, *UExporter_, Insert );
-  URMatrix_->TransformToLocal();
+  URMatrix_->FillComplete();
   cout << "URMatrix:\n" << *URMatrix_;
 
   ULGraph_ = new Epetra_CrsGraph( Copy, *UMap_, *UMap_, 0 );
   ULGraph_->Export( *OldGraph_, *UExporter_, Insert );
-  ULGraph_->TransformToLocal();
+  ULGraph_->FillComplete();
   cout << "ULGraph:\n" << *ULGraph_;
 
   ULMatrix_ = new Epetra_CrsMatrix( Copy, *ULGraph_ );
   ULMatrix_->Export( *OldMatrix_, *UExporter_, Insert );
-  ULMatrix_->TransformToLocal();
+  ULMatrix_->FillComplete();
   cout << "ULMatrix:\n" << *ULMatrix_;
 
   RRGraph_ = new Epetra_CrsGraph( Copy, *RMap_, *RMap_, 0 );
   RRGraph_->Export( *OldGraph_, *RExporter_, Insert );
-  RRGraph_->TransformToLocal();
+  RRGraph_->FillComplete();
   cout << "RRGraph:\n" << *RRGraph_;
 
   RRMatrix_ = new Epetra_CrsMatrix( Copy, *RRGraph_ );
   RRMatrix_->Export( *OldMatrix_, *RExporter_, Insert );
-  RRMatrix_->TransformToLocal();
+  RRMatrix_->FillComplete();
   cout << "RRMatrix:\n" << *RRMatrix_;
 
   RLGraph_ = new Epetra_CrsGraph( Copy, *RMap_, *UMap_, 0 );
   RLGraph_->Export( *OldGraph_, *RExporter_, Insert );
-  RLGraph_->TransformToLocal( UMap_, RMap_ );
+  RLGraph_->FillComplete( UMap_, RMap_ );
   cout << "RLGraph:\n" << *RLGraph_;
 
   RLMatrix_ = new Epetra_CrsMatrix( Copy, *RLGraph_ );
   RLMatrix_->Export( *OldMatrix_, *RExporter_, Insert );
-  RLMatrix_->TransformToLocal();
+  RLMatrix_->FillComplete();
   cout << "RLMatrix:\n" << *RLMatrix_;
 
   LLGraph_ = new Epetra_CrsGraph( Copy, *LMap_, *UMap_, 0 );
   LLGraph_->Export( *OldGraph_, *LExporter_, Insert );
-  LLGraph_->TransformToLocal( UMap_, LMap_ );
+  LLGraph_->FillComplete( UMap_, LMap_ );
   cout << "LLGraph:\n" << *LLGraph_;
 
   LLMatrix_ = new Epetra_CrsMatrix( Copy, *LLGraph_ );
   LLMatrix_->Export( *OldMatrix_, *LExporter_, Insert );
-  LLMatrix_->TransformToLocal();
+  LLMatrix_->FillComplete();
   cout << "LLMatrix:\n" << *LLMatrix_;
 
   if( verbose_ )

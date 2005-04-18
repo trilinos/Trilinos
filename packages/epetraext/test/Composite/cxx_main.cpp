@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   index = PIDFac+1;
   Graph.InsertGlobalIndices( PIDFac+2, 1, &index );
 
-  Graph.TransformToLocal();
+  Graph.FillComplete();
   if( verbose1 ) cout << Graph << endl << flush;
 
   EpetraExt::Transform_Composite<Epetra_LinearProblem> CompTrans;

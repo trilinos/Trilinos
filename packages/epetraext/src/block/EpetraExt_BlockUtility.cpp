@@ -95,7 +95,7 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
     }
   }
 
-  GlobalGraph->TransformToLocal();
+  GlobalGraph->FillComplete();
 
   return GlobalGraph;
 }
@@ -164,7 +164,7 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
     }
   }
 
-  GlobalGraph->TransformToLocal();
+  GlobalGraph->FillComplete();
 
   return GlobalGraph;
 }

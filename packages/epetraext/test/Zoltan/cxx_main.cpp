@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
     if( ierr ) { perror1("Error Putting Diag: ",ierr); }
   }
 
-  ierr = A.TransformToLocal();
-  if( ierr ) perror1("Error in TransformToLocal",ierr);
+  ierr = A.FillComplete();
+  if( ierr ) perror1("Error in FillComplete",ierr);
 
   Epetra_Vector XX(Copy,Map,X);
   Epetra_Vector BB(Copy,Map,B);

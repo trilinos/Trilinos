@@ -107,7 +107,7 @@ operator()( OriginalTypeRef orig )
     strippedGraph.InsertMyIndices( i, new_cnt, &ja[ ia[i] ] );
   }
   nnz = ia[n];
-  strippedGraph.TransformToLocal();
+  strippedGraph.FillComplete();
 
   if( verbose_ )
   {
@@ -281,7 +281,7 @@ operator()( OriginalTypeRef orig )
   NewGraph_ = new Epetra_CrsGraph( Copy, *NewRowMap_, *NewColMap_, 0 );
   Importer_ = new Epetra_Import( *NewRowMap_, OldRowMap );
   NewGraph_->Import( strippedGraph, *Importer_, Insert );
-  NewGraph_->TransformToLocal();
+  NewGraph_->FillComplete();
   if( verbose_ )
   {
     cout << "NewGraph\n";
@@ -290,7 +290,7 @@ operator()( OriginalTypeRef orig )
 
   NewMatrix_ = new Epetra_CrsMatrix( Copy, *NewGraph_ );
   NewMatrix_->Import( orig, *Importer_, Insert );
-  NewMatrix_->TransformToLocal();
+  NewMatrix_->FillComplete();
 
   if( verbose_ )
   {

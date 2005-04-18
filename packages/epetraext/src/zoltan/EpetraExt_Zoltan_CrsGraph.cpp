@@ -140,7 +140,7 @@ operator()( OriginalTypeRef orig )
   //Create New Graph
   Epetra_CrsGraph * NewGraph = new Epetra_CrsGraph( Copy, *NewRowMap_, 0 );
   NewGraph->Import( orig, Importer, Insert );
-  NewGraph->TransformToLocal();
+  NewGraph->FillComplete();
 
   Zoltan::LoadBalance LB2( 0, &dummy, &version );
   err = LB2.Create( dynamic_cast<const Epetra_MpiComm&>(orig.Comm()).Comm() );

@@ -87,12 +87,12 @@ operator()( OriginalTypeRef orig )
     Epetra_CrsGraph SharedTransGraph( View, orig.ImportMap(), RowMap, &TransNumNZ[0] );
     for( int i = 0; i < nCols; ++i )
       if( TransNumNZ[i] ) SharedTransGraph.InsertMyIndices( i, TransNumNZ[i], &TransIndices[i][0] );
-    SharedTransGraph.TransformToLocal();
+    SharedTransGraph.FillComplete();
 
     TransposeGraph = new Epetra_CrsGraph( Copy, RowMap, 0 );
     Epetra_Export Exporter( orig.ImportMap(), RowMap ); 
     TransposeGraph->Export( SharedTransGraph, Exporter, Add );
-    TransposeGraph->TransformToLocal();
+    TransposeGraph->FillComplete();
   }
   else
   {
@@ -124,7 +124,7 @@ operator()( OriginalTypeRef orig )
     for( int i = 0; i < nRows; ++i )
       if( TransNumNZ[i] ) TransposeGraph->InsertMyIndices( i, TransNumNZ[i], &TransIndices[i][0] );
 
-    TransposeGraph->TransformToLocal();
+    TransposeGraph->FillComplete();
   }
 
   newObj_ = TransposeGraph;

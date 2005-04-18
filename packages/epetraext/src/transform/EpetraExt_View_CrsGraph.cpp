@@ -93,7 +93,7 @@ operator()( OriginalTypeRef orig )
   for( int i = 0; i < nNumRows; ++i )
     newGraph->InsertMyIndices( i, numIndices[i], indices[i] );
 
-  newGraph->TransformToLocal();
+  newGraph->FillComplete();
 
   newObj_ = newGraph;
 

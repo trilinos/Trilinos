@@ -162,7 +162,7 @@ operator()( OriginalTypeRef orig )
     strippedGraph.InsertMyIndices( i, new_cnt, &ja[ ia[i] ] );
   }
   nnz = ia[n];
-  strippedGraph.TransformToLocal();
+  strippedGraph.FillComplete();
 
   if( verbose_ > 2 )
   {
@@ -456,7 +456,7 @@ operator()( OriginalTypeRef orig )
       NewMatrix_->SubmitBlockEntry( *(Blocks_[i][j]) );
     NewMatrix_->EndSubmitEntries();
   }
-  NewMatrix_->TransformToLocal();
+  NewMatrix_->FillComplete();
 
   if( verbose_ > 2 )
   {

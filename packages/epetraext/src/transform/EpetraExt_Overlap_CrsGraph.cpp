@@ -74,7 +74,7 @@ operator()( OriginalTypeRef orig )
         OverlapGraph = new Epetra_CrsGraph( Copy, *OverlapMap_, 0 );
 
       OverlapGraph->Import( *OldGraph, OverlapImporter, Insert );
-      OverlapGraph->TransformToLocal( DomainMap, RangeMap );
+      OverlapGraph->FillComplete( *DomainMap, *RangeMap );
 
       delete OldGraph;
       delete OldRowMap;

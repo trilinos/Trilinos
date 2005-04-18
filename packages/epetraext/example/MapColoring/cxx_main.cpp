@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   EpetraExt::MatrixMarketFileToCrsMatrix( filename1.c_str(), *Map, A_Matrix);
   if(verbose1) cout << " Done." << endl;
 
-  A_Matrix->TransformToLocal();
+  A_Matrix->FillComplete();
 
   if(verbose) cout << Comm << endl << flush;
   Comm.Barrier();
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   Epetra_CrsGraph & A = const_cast<Epetra_CrsGraph&>(constA);
 
   // Finish up graph construction
-  assert(A.TransformToLocal() == 0);
+  assert(A.FillComplete() == 0);
 
   EpetraExt::CrsGraph_MapColoring
     Greedy0MapColoringTransform( EpetraExt::CrsGraph_MapColoring::GREEDY,

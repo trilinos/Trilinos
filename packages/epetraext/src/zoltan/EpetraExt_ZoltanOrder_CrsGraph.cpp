@@ -126,7 +126,7 @@ cout << "------------------------------\n";
   //Create New Graph
   Epetra_CrsGraph * NewGraph( new Epetra_CrsGraph( Copy, *NewRowMap_, 0 ) );
   NewGraph->Import( orig, Importer, Insert );
-  NewGraph->TransformToLocal( true );
+  NewGraph->FillComplete( true );
   
   newObj_ = NewGraph;
 

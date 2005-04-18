@@ -74,7 +74,7 @@ operator()( OriginalTypeRef orig )
     newMatrix->InsertMyValues( i, newIndicesCnt, myValues, myIndices );
   }
 
-  newMatrix->TransformToLocal();
+  newMatrix->FillComplete();
 
   newObj_ = newMatrix;
 

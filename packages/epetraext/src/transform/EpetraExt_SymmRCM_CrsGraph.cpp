@@ -219,7 +219,7 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
   Epetra_Import Importer( *RCMMap_, orig.RowMap() );
   Epetra_CrsGraph * RCMGraph = new Epetra_CrsGraph( Copy, *RCMMap_, *RCMColMap_, 0 );
   RCMGraph->Import( orig, Importer, Insert );
-  RCMGraph->TransformToLocal();
+  RCMGraph->FillComplete();
 
 /*
   cout << "origGraph\n";

@@ -115,7 +115,7 @@ operator()( OriginalTypeRef orig )
       orig.Graph().ExtractGlobalRowCopy( RowGID, MaxNumEntries, NumEntries, &Indices[0] );
       NewGraph_->InsertGlobalIndices( RowGID, NumEntries, &Indices[0] );
     }
-    NewGraph_->TransformToLocal();
+    NewGraph_->FillComplete();
 
 //    cout << *NewGraph_;
 
@@ -135,7 +135,7 @@ operator()( OriginalTypeRef orig )
       NewMatrix->InsertMyValues( i, indicesCnt, myValues, myIndices );
     }
 
-    NewMatrix->TransformToLocal();
+    NewMatrix->FillComplete();
 
     newObj_ = NewMatrix;
   }
