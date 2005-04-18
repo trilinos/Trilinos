@@ -149,7 +149,9 @@ int Zoltan_PHG_ParKway(
                  hg->hindex, hg->hvertex, nparts,
                  constraint, &cut, options, pvector, NULL, hgc->Communicator);
 
+/* KDDKDD
     uprintf(hgc, "ParaPartKway cut=%d\n", cut);
+*/
 
     
     /* after partitioning Zoltan needs partvec exist on all procs for nProc_x=1 */       
