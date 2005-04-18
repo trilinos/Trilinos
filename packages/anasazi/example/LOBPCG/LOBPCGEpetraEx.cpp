@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Finish up
-	info = A->TransformToLocal();
+	info = A->FillComplete();
 	assert( info==0 );
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 

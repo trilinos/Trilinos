@@ -158,10 +158,10 @@ int main(int argc, char *argv[]) {
         }
          
         // Finish up
-        assert(A->TransformToLocal()==0);
+        assert(A->FillComplete()==0);
 	assert(A->OptimizeStorage()==0);
         A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-        assert(B->TransformToLocal()==0);
+        assert(B->FillComplete()==0);
 	assert(B->OptimizeStorage()==0);
         B->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 

@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Finish up
-	assert(A->TransformToLocal(&ColMap, &RowMap)==0);
+	assert(A->FillComplete(ColMap, RowMap)==0);
 	assert(A->OptimizeStorage()==0);
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 

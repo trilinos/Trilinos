@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Finish up
-	info = A->TransformToLocal(&ColMap, &RowMap);
+	info = A->FillComplete(ColMap, RowMap);
 	assert( info==0 );
 	info = A->OptimizeStorage();
 	assert( info==0 );

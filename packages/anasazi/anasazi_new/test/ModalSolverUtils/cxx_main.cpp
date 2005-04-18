@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
     diag[i] = Teuchos::ScalarTraits<double>::random() + 2;
     MM.InsertGlobalValues( MyGlobalElements[i], 1, &diag[i], &MyGlobalElements[i] );
   }
-  assert(MM.TransformToLocal()==0);
+  assert(MM.FillComplete()==0);
   MM.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
   // create a multivector that is the random matrix times the mass matrix
