@@ -29,13 +29,9 @@ II.  Execution
   To execute the Trilinos test utility, simply type:
   
     cd /PATH/TO/Trilinos/commonTools/test/utilities/
-    perl runtests --trilinosdir=DIR --comm=COMM --builddir=BUILDDIR 
-        --category=CATEGORY
+    perl runtests --help
             
-  where /PATH/TO/ is the absolute path to your top-level Trilinos directory, 
-  COMM is "serial" or "mpi", BUILDDIR is the build directory, CATEGORY is the
-  category of tests you would like run.  It is assumed that your build
-  directory resides in your Trilinos directory.
+  for information on required and optional arguments.
     
 -------------------------------------------------------------------------------
 III.  Test Results Directory

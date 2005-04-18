@@ -21,14 +21,10 @@ II.  Execution
 
   To execute the Trilinos make utility, simply type:
   
-    cd /PATH/TO/Trilinos/test/
-    runmake BUILDDIR OUTPUTDIR
-    
-  where /PATH/TO/ is the absolute path to your top-level Trilinos directory, 
-  BUILDDIR is the name of the build directory, and OUTPUTDIR is the directory
-  in which the make results file will be created (if this is omitted, . is
-  assumed).  It is assumed that your build directory resides in your
-  Trilinos directory.
+    cd /PATH/TO/Trilinos/commonTools/test/utilities/
+    runmake --help
+            
+  for information on required and optional arguments.
   
 -------------------------------------------------------------------------------
 IV.  Make Results File
