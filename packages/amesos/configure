@@ -10564,8 +10564,8 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=/home/username/lib/libumfpack.a, or use --with-libs=-lumfpack --with-ldflags=-L/home/username/lib)." >&5
-echo "$as_me: error: Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=/home/username/lib/libumfpack.a, or use --with-libs=-lumfpack --with-ldflags=-L/home/username/lib)." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=\"/home/username/lib/libumfpack.a /home/username/lib/libamd.a\", or use --with-libs=\"-lumfpack -lamd\" --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=\"/home/username/lib/libumfpack.a /home/username/lib/libamd.a\", or use --with-libs=\"-lumfpack -lamd\" --with-ldflags=-L/home/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \

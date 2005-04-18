@@ -466,7 +466,7 @@ fi
 if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
 
   AC_TRY_LINK_FUNC(umfdi_local_search,,
-  AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=/home/username/lib/libumfpack.a, or use --with-libs=-lumfpack --with-ldflags=-L/home/username/lib).]]))
+  AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs="/home/username/lib/libumfpack.a /home/username/lib/libamd.a", or use --with-libs="-lumfpack -lamd" --with-ldflags=-L/home/username/lib).]]))
 
   AC_CHECK_HEADER([umfpack.h],,AC_MSG_ERROR([[Cannot find header files for UMFPACK (umfpack.h), specify a location using --with-incdirs (ex. --with-incdirs=-I/home/username/include).]]))
 
