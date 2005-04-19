@@ -194,6 +194,16 @@ MUMPS_H =
 MUMPS =
 endif
 
+if HAVE_AMESOS_SCALAPACK
+SCALAPACK_H = \
+	$(srcdir)/Amesos_Scalapack.h
+SCALAPACK = \
+	$(srcdir)/Amesos_Scalapack.cpp
+else
+SCALAPACK_H =
+SCALAPACK =
+endif
+
 
 
 
@@ -302,6 +312,7 @@ AMESOS_H = \
 	$(UMFPACK_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
+	$(SCALAPACK_H) \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
 	$(SUPERLUDIST_H) \
@@ -319,6 +330,7 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
+	$(SCALAPACK) \
 	$(FACTORY) \
 	$(SUPERLU) \
 	$(SUPERLUDIST) \
