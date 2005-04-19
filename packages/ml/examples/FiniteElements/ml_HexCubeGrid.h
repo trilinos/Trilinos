@@ -297,6 +297,11 @@ public:
     return(NumMyElementsY_);
   }
 
+  inline int NumMyElementsXY() const
+  {
+    return(NumMyElementsX_ * NumMyElementsY_);
+  }
+
   inline int NumMyElementsZ() const
   {
     return(NumMyElementsZ_);
@@ -310,6 +315,11 @@ public:
   inline int NumMyVerticesY() const
   {
     return(NumMyVerticesY_);
+  }
+
+  inline int NumMyVerticesXY() const
+  {
+    return(NumMyVerticesX_ * NumMyVerticesY_);
   }
 
   inline int NumMyVerticesZ() const
@@ -327,6 +337,11 @@ public:
     return(ny_);
   }
 
+  inline int NumGlobalElementsXY() const
+  {
+    return(nx_ * ny_);
+  }
+
   inline int NumGlobalElementsZ() const
   {
     return(nz_);
@@ -340,6 +355,11 @@ public:
   inline int NumGlobalVerticesY() const
   {
     return(ny_ + 1);
+  }
+
+  inline int NumGlobalVerticesXY() const
+  {
+    return((nx_ + 1) * (ny_ + 1));
   }
 
   inline int NumGlobalVerticesZ() const
@@ -446,25 +466,24 @@ private:
 
   inline void GetVertexXYZ(const int& GlobalID, int& ix, int& iy, int& iz) const
   {
-    // FIXME: add NumGlobalVerticesXY();
-    int ixy = GlobalID % (NumGlobalVerticesX() * NumGlobalVerticesY());
-    iz = GlobalID / (NumGlobalVerticesX() * NumGlobalVerticesY());
+    int ixy = GlobalID % NumGlobalVerticesXY();
+    iz = GlobalID / NumGlobalVerticesXY();
     iy = ixy / NumGlobalVerticesX();
     ix = ixy % NumGlobalVerticesX();
   }
 
   inline void GetElementXYZ(const int& GlobalID, int& ix, int& iy, int& iz) const
   {
-    int ixy = GlobalID % (NumGlobalElementsX() * NumGlobalElementsY());
-    iz = GlobalID / (NumGlobalElementsX() * NumGlobalElementsY());
+    int ixy = GlobalID % NumGlobalElementsXY();
+    iz = GlobalID / NumGlobalElementsXY();
     iy = ixy / NumGlobalElementsX();
     ix = ixy % NumGlobalElementsX();
   }
 
   inline void GetLocalElementXYZ(const int& MyID, int& ix, int& iy, int& iz) const
   {
-    int ixy = MyID % (NumMyElementsX() * NumMyElementsY());
-    iz = MyID / (NumMyElementsX() * NumMyElementsY());
+    int ixy = MyID % NumMyElementsXY();
+    iz = MyID / NumMyElementsXY();
     iy = ixy / NumMyElementsX();
     ix = ixy % NumMyElementsX();
   }
@@ -482,17 +501,16 @@ private:
   {
     int ix, iy, iz;
     GetLocalElementXYZ(LocalID, ix, iy, iz);
-    int nx = NumMyVerticesX();
-    int ny = NumMyVerticesY();
-    int nz = NumMyVerticesZ();
-    elements[0] = (ix + iy * nx          ) + nx * ny * iz;
-    elements[1] = (ix + iy * nx + 1      ) + nx * ny * iz;
-    elements[2] = (ix + (iy + 1) * nx + 1) + nx * ny * iz;
-    elements[3] = (ix + (iy + 1) * nx    ) + nx * ny * iz;
-    elements[4] = elements[0] + nx * ny;
-    elements[5] = elements[1] + nx * ny;
-    elements[6] = elements[2] + nx * ny;
-    elements[7] = elements[3] + nx * ny;
+
+    elements[0] = ix + iy * NumMyVerticesX()     + NumMyVerticesXY() * iz;
+    elements[1] = ix + iy * NumMyVerticesX() + 1 + NumMyVerticesXY() * iz;
+    elements[2] = elements[1] + NumMyVerticesX();
+    elements[3] = elements[0] + NumMyVerticesX();
+
+    elements[4] = elements[0] + NumMyVerticesXY();
+    elements[5] = elements[1] + NumMyVerticesXY();
+    elements[6] = elements[2] + NumMyVerticesXY();
+    elements[7] = elements[3] + NumMyVerticesXY();
   }
 
   void CreateElementMap()
@@ -556,10 +574,10 @@ private:
       {
         for (int ix = 0 ; ix < NumMyElementsX() ; ix++) 
         {
-          BF_(count,0) = ix + iy*nx;
-          BF_(count,1) = ix + iy*nx+1;
-          BF_(count,2) = ix + (iy+1)*nx + 1;
-          BF_(count,3) = ix + (iy+1)*nx;
+          BF_(count,0) = ix + iy * nx;
+          BF_(count,1) = ix + iy * nx + 1;
+          BF_(count,2) = ix + (iy + 1) * nx + 1;
+          BF_(count,3) = ix + (iy + 1) * nx;
           BF_(count,4) = ML_BOTTOM;
           ++count;
         }
@@ -570,15 +588,15 @@ private:
 
     if (pz == mz_ - 1)
     {
-      offset = nx*ny*(nz-1);
+      offset = nx * ny * (nz - 1);
       for (int iy = 0 ; iy < NumMyElementsY() ; iy++) 
       {
         for (int ix = 0 ; ix < NumMyElementsX() ; ix++) 
         {
-          BF_(count,0) = offset + ix + iy*nx;
-          BF_(count,1) = offset + ix + iy*nx+1;
-          BF_(count,2) = offset + ix + (iy+1)*nx + 1;
-          BF_(count,3) = offset + ix + (iy+1)*nx;
+          BF_(count,0) = offset + ix + iy * nx;
+          BF_(count,1) = offset + ix + iy * nx + 1;
+          BF_(count,2) = offset + ix + (iy+1) * nx + 1;
+          BF_(count,3) = offset + ix + (iy+1) * nx;
           BF_(count,4) = ML_TOP;
           ++count;
         }
@@ -591,13 +609,13 @@ private:
     {
       for (int iz = 0 ; iz < NumMyElementsZ() ; iz++) 
       {
-        offset = nx*ny*iz;
+        offset = nx * ny * iz;
         for (int ix = 0 ; ix < NumMyElementsX() ; ix++) 
         {
           BF_(count,0) = ix + offset;
           BF_(count,1) = ix + offset + 1;
-          BF_(count,2) = ix + offset + nx*ny + 1;
-          BF_(count,3) = ix + offset + nx*ny;
+          BF_(count,2) = ix + offset + nx * ny + 1;
+          BF_(count,3) = ix + offset + nx * ny;
           BF_(count,4) = ML_FRONT;
           ++count;
         }
@@ -616,8 +634,8 @@ private:
 
           BF_(count,0) = offset;
           BF_(count,1) = offset + nx;
-          BF_(count,2) = offset + nx + nx*ny;
-          BF_(count,3) = offset + nx*ny;
+          BF_(count,2) = offset + nx + nx * ny;
+          BF_(count,3) = offset + nx * ny;
           BF_(count,4) = ML_RIGHT;
           ++count;
         }
@@ -653,10 +671,10 @@ private:
         for (int iy = 0 ; iy < NumMyElementsY() ; iy++) 
         {
           offset = nx*ny*iz;
-          BF_(count,0) = offset + iy*nx;
-          BF_(count,1) = offset + (iy+1)*nx;
-          BF_(count,2) = offset + iy*nx + nx*ny;
-          BF_(count,3) = offset + (iy+1)*ny + nx*ny;
+          BF_(count,0) = offset + iy * nx;
+          BF_(count,1) = offset + (iy + 1) * nx;
+          BF_(count,2) = offset + iy * nx + nx * ny;
+          BF_(count,3) = offset + (iy + 1) * nx + nx * ny;
           BF_(count,4) = ML_LEFT;
           ++count;
         }
@@ -681,6 +699,7 @@ private:
     int count = 0;
     int px, py, pz;
     GetProcessorXYZ(px, py, pz);
+
     int startx = px * (NumGlobalElementsX() / mx_);
     int starty = py * (NumGlobalElementsY() / my_);
     int startz = pz * (NumGlobalElementsZ() / mz_);
@@ -694,8 +713,8 @@ private:
       {
         for (int ix = startx ; ix < endx ; ++ix)
         {
-          itmp[count++] = ix + iy * NumGlobalVerticesY() + 
-            iz * NumGlobalVerticesX() * NumGlobalVerticesY();
+          itmp[count++] = ix + iy * NumGlobalVerticesX() + 
+            iz * NumGlobalVerticesXY();
         }
       }
     }
@@ -726,8 +745,8 @@ private:
       {
         for (int ix = startx ; ix < endx ; ++ix)
         {
-          itmp[count++] = ix + iy * NumGlobalVerticesY() + 
-            iz * NumGlobalVerticesX() * NumGlobalVerticesY();
+          itmp[count++] = ix + iy * NumGlobalVerticesX() + 
+            iz * NumGlobalVerticesXY();
         }
       }
     }

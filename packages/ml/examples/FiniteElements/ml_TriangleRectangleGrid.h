@@ -505,8 +505,8 @@ private:
     {
       for (int ix = 0 ; ix < NumMyElementsX() ; ix++)
       {
-        BF_(count, 0) = nx*(ny-1) + ix;
-        BF_(count, 1) = nx*(ny-1) + ix+1;
+        BF_(count, 0) = nx * (ny - 1) + ix;
+        BF_(count, 1) = nx * (ny - 1) + ix + 1;
         ++count;
       }
     }
@@ -516,8 +516,8 @@ private:
     {
       for (int iy = 0 ; iy < NumMyElementsY() ; iy++) 
       {
-        BF_(count, 0) = (iy)*nx;
-        BF_(count, 1) = (iy+1)*nx;
+        BF_(count, 0) = iy * nx;
+        BF_(count, 1) = iy + 1 * nx;
         ++count;
       }
     }
@@ -538,10 +538,10 @@ private:
     vector<int> itmp(NumMyVertices());
 
     int count = 0;
-    int px, py, pz;
+    int px, py;
     GetProcessorXY(px, py);
-    int startx = px * (NumGlobalElementsX() / mx_);
-    int starty = py * (NumGlobalElementsY() / my_);
+    int startx = px * (NumGlobalElementsX() / NumDomainsX());
+    int starty = py * (NumGlobalElementsY() / NumDomainsY());
     int endx = startx + NumMyVerticesX();
     int endy = starty + NumMyVerticesY();
 
@@ -549,7 +549,7 @@ private:
     {
       for (int ix = startx ; ix < endx ; ++ix)
       {
-        itmp[count++] = ix + iy * NumGlobalVerticesY();
+        itmp[count++] = ix + iy * NumGlobalVerticesX();
       }
     }
     assert (count == NumMyVertices());
@@ -561,24 +561,34 @@ private:
 
   void CreateRowMap()
   {
-    vector<int> itmp(NumMyVertices());
+    int modx = NumGlobalVerticesX() / NumDomainsX(); 
+    int resx = NumGlobalVerticesX() % NumDomainsX();
+    int mody = NumGlobalVerticesY() / NumDomainsY(); 
+    int resy = NumGlobalVerticesY() % NumDomainsY();
+
+    int startx, starty, endx, endy;
+    int xpid = Comm().MyPID() % NumDomainsX();
+    int ypid = Comm().MyPID() / NumDomainsX();
+
+    startx = xpid * modx;
+    endx   = (xpid + 1) * modx;
+    if (xpid == NumDomainsX() - 1) endx += resx;
+
+    starty = ypid * mody;
+    endy   = (ypid + 1) * mody;
+    if (ypid == NumDomainsY() - 1) endy += resy;
+
+    int size = (endx - startx) * (endy - starty);
 
     int count = 0;
-    int px, py;
-    GetProcessorXY(px, py);
-    int startx = px * (NumGlobalVerticesX() / mx_);
-    int starty = py * (NumGlobalVerticesY() / my_);
-    int endx = startx + NumMyVerticesX() - (px == mx_ - 1 ? 0 : 1);
-    int endy = starty + NumMyVerticesY() - (py == my_ - 1 ? 0 : 1);
-
-    for (int iy = starty ; iy < endy ; ++iy)
+    vector<int> itmp(size);
+    for (int j = starty ; j < endy ; ++j) 
     {
-      for (int ix = startx ; ix < endx ; ++ix)
+      for (int i = startx ; i < endx ; ++i) 
       {
-        itmp[count++] = ix + iy * NumGlobalVerticesY();
+        itmp[count++] = i + j * NumGlobalVerticesX();
       }
     }
-    assert (count <= NumMyVertices());
 
     RowMap_ = rcp(new Epetra_Map(-1, count, &itmp[0], 0, Comm()));
 

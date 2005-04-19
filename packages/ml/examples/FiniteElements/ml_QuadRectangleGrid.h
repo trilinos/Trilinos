@@ -10,6 +10,7 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "ml_AbstractGrid.h"
+#include "ml_Workspace.h"
 #include <vector>
 #include <algorithm>
 
@@ -264,34 +265,35 @@ public:
 
   virtual void FaceVertices(const int LocalFace, int& tag, int* IDs) const
   {
+    // FIXME: the tag is not correct for parallel runs
     int face = BoundaryFaceMap_->GID(LocalFace);
 
     if (face < NumGlobalElementsX())
     {
       IDs[0] = face;
       IDs[1] = face + 1;
-      tag = 0;
+      tag = ML_BOTTOM;
     }
     else if (face < NumGlobalElementsX() + NumGlobalElementsY())
     {
       int mod = face - NumGlobalElementsX();
       IDs[0] = (mod + 1) * NumGlobalVerticesX() - 1;
       IDs[1] = IDs[0] + NumGlobalVerticesX();
-      tag = 1;
+      tag = ML_RIGHT;
     }
     else if (face < 2 * NumGlobalElementsX() + NumGlobalElementsY())
     {
       int mod = face - NumGlobalElementsX() - NumGlobalElementsY();
       IDs[0] = NumGlobalVerticesX() * (NumGlobalVerticesY() - 1) + mod;
       IDs[1] = IDs[0] + 1;
-      tag = 2;
+      tag = ML_TOP;
     }
     else 
     {
       int mod = face - 2 * NumGlobalElementsX() - NumGlobalElementsY();
       IDs[0] = NumGlobalVerticesX() * mod;
       IDs[1] = IDs[0] + NumGlobalVerticesX();
-      tag = 3;
+      tag = ML_LEFT;
     }
 
     IDs[0] = VertexMap_->LID(IDs[0]);
@@ -299,7 +301,9 @@ public:
 
     if (IDs[0] == -1 || IDs[1] == 0)
     {
-      cerr << "Internal error" << endl;
+      cerr << "Internal error in FaceVertices() for face " << LocalFace << endl;
+      cerr << "IDs[0] = " << IDs[0] << ", IDs[1] = " << IDs[1] << endl;
+      cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
       throw(-1);
     }
   }
@@ -470,8 +474,8 @@ private:
     int resy = NumGlobalVerticesY() % NumDomainsY();
 
     int startx, starty, endx, endy;
-    int xpid = Comm().MyPID() / NumDomainsX();
-    int ypid = Comm().MyPID() % NumDomainsY();
+    int xpid = Comm().MyPID() % NumDomainsX();
+    int ypid = Comm().MyPID() / NumDomainsX();
 
     startx = xpid * modx;
     endx   = (xpid + 1) * modx;
@@ -558,14 +562,15 @@ private:
 
     if (ypid == 0)
     {
-      int offset = xpid * NumGlobalElementsX() / NumDomainsX();
+      int offset = xpid * (NumGlobalElementsX() / NumDomainsX());
       for (int i = 0 ; i < NumMyElementsX() ; ++i)
         itmp[count++] = offset + i;
     }
 
     if (xpid == NumDomainsX() - 1)
     {
-      int offset = ypid * NumMyElementsY() + NumGlobalElementsX();
+      int offset = ypid * (NumGlobalElementsY() / NumDomainsY())
+        + NumGlobalElementsX();
       for (int i = 0 ; i < NumMyElementsY() ; ++i)
         itmp[count++] = offset + i;
     }
@@ -573,7 +578,7 @@ private:
     if (ypid == NumDomainsY() - 1)
     {
       int offset = NumGlobalElementsX() + NumGlobalElementsY() + 
-        xpid * NumGlobalElementsX() / NumDomainsX();
+        xpid * (NumGlobalElementsX() / NumDomainsX());
 
       for (int i = 0 ; i < NumMyElementsX() ; ++i)
         itmp[count++] = offset + i;
@@ -581,17 +586,23 @@ private:
 
     if (xpid == 0)
     {
-      int offset = ypid * NumMyElementsY() + 2 * NumGlobalElementsX()
-        + NumGlobalElementsY();
-      for (int i = 0 ; i < NumMyElementsX() ; ++i)
+      int offset = ypid * (NumGlobalElementsY() / NumDomainsY())
+        + 2 * NumGlobalElementsX() + NumGlobalElementsY();
+      for (int i = 0 ; i < NumMyElementsY() ; ++i)
         itmp[count++] = offset + i;
     }
 
     BoundaryFaceMap_ = rcp(new Epetra_Map(-1, count, &itmp[0], 0, Comm()));
 
-    NumMyBoundaryFaces_ = count;
-    NumGlobalBoundaryFaces_ = BoundaryFaceMap_->NumGlobalElements();
+    if (NumMyBoundaryFaces_ != count)
+    {
+      cerr << "Internal error, NumMyBoundaryFaces_ != count,";
+      cerr << NumMyBoundaryFaces_ << " vs. " << count << endl;
+      cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+      throw(-1);
+    }
 
+    NumGlobalBoundaryFaces_ = BoundaryFaceMap_->NumGlobalElements();
     return;
   }
 
