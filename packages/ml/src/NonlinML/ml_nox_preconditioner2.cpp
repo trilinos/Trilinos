@@ -124,8 +124,8 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
                                      interface_,comm_,xfine,ismatrixfree_,
-                                     matfreelev0_,isnlnCG_,nitersCG_,
-                                     fineJac_,ml_fsmoothertype_,
+                                     matfreelev0_,isnlnCG_[i],nitersCG_[i],
+                                     useBroyden_,fineJac_,ml_fsmoothertype_,
                                      ml_smoothertype_,ml_coarsesolve_,
                                      ml_nsmooth_,FAS_normF_,FAS_nupdate_,
                                      3000,numPDE,nullspdim);
@@ -230,6 +230,8 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       if (comm_.MyPID()==0 && ml_printlevel_ > 5 )
          cout << "ML (level " << i << "): Entering FD-coarselevel (re)construction\n"; fflush(stdout);
       bool isJacobismoother=false;
+      
+      // for Jacobi smoothing, compute main diagonal only
       if (i==0 && ml_fsmoothertype_ == "Jacobi")
          isJacobismoother=true;
       else if (i<ml_coarsestlev_ && ml_smoothertype_ == "Jacobi")
@@ -238,7 +240,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
          isJacobismoother=false;
       if (i==ml_coarsestlev_ && ml_coarsesolve_ == "Jacobi")
          isJacobismoother=true;
-
+      
+      // when using Newton's method, compute complete Jacobian
+      if (isnlnCG_==false)
+         isJacobismoother=false;
+      
       if (!(ml_matfreelevel_[i])) // create a new matrixfree level   
          ml_matfreelevel_[i] = new ML_NOX::ML_Nox_MatrixfreeLevel(
                                            i,ml_nlevel_,ml_printlevel_,ml_,
@@ -290,10 +296,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
-                                     interface_,comm_,xfine,ismatrixfree_, isnlnCG_,
-                                     nitersCG_,ml_fsmoothertype_,ml_smoothertype_,
-                                     ml_coarsesolve_,ml_nsmooth_,FAS_normF_,FAS_nupdate_,
-                                     3000,numPDE,nullspdim,tmpMat,
+                                     interface_,comm_,xfine,ismatrixfree_, 
+                                     isnlnCG_[i],nitersCG_[i],useBroyden_,
+                                     ml_fsmoothertype_,ml_smoothertype_,
+                                     ml_coarsesolve_,ml_nsmooth_,FAS_normF_,
+                                     FAS_nupdate_,3000,numPDE,nullspdim,tmpMat,
                                      coarseinterface);
       else
       {

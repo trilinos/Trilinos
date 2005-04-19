@@ -173,8 +173,16 @@ public:
    Set the type of nonlinear method to be used on each level of the hierarchy
    \param islinPrec (In) :     if true, compute a linear multigrid operator,
                                if false, create a FAS multilevel hierarchy
-   \param isnlnCG   (In) :     if true, use precond. nlnCG on all levels as smoother,
-                               if false, use quasi-Newton method as smoother.
+   \param isnlnCG   (In) :     vector of length maxlevel.
+                               If isnlnCG[level]==true, use precond. nlnCG on that level 
+                               as smoother, if false, use quasi-Newton method.
+   \param useBroyden   (In) :  if true and isnlnCG=false, use a Broyden update
+                               to the Jacobian, if false, do not update the Jacobian
+                               at all.
+   \param nitersCG   (In) :    vector of length maxlevel.
+                               nitersCG[level] == max. number of PCG-iterations in 1 Newton step
+                               on level level.
+   \param maxlevel   (In) :    maximum number of levels.
    \param ismatrixfree (In) :  if true, use Finite Differencing to construct the Jacobians
                                on all levels. In this case, the preconditioner will
                                ask for a Epetra_CrsGraph through the fine level interface
@@ -191,7 +199,9 @@ public:
                                Coarse level operators will be Galerkin. Option has no effect when
                                ismatrixfree==false.
    */
-  bool SetNonlinearMethod(bool islinPrec, bool isnlnCG, int nitersCG, bool ismatrixfree, bool ismatfreelev0);
+  bool SetNonlinearMethod(bool islinPrec, bool* isnlnCG, bool useBroyden, 
+                          int* nitersCG, int maxlevel, bool ismatrixfree, 
+                          bool ismatfreelev0);
 
   //! Set type of coarsening algorithm to be used.
   /*! 
@@ -469,7 +479,6 @@ private:
   bool                                  ismatrixfree_;     // use Graph or Jacobian in building the preconditioner
   bool                                  matfreelev0_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
-  bool                                  isnlnCG_;          // switch between nlnCG and Newton's method
   Epetra_Map                            DomainMap_;        // the operators domain map
   Epetra_Map                            RangeMap_;         // the operators range map
   Epetra_Comm&                          comm_;             // the communicator;
@@ -525,7 +534,9 @@ private:
   int                                   FAS_postfinesmooth_;
   int                                   FAS_maxcycle_; 
   NOX::Solver::Manager*                 noxsolver_;
-  int                                   nitersCG_;
+  bool                                  useBroyden_;       // use Broyden update for Newton's method
+  bool*                                 isnlnCG_;          // switch between nlnCG and Newton's method
+  int*                                  nitersCG_;
 }; // class  ML_Nox_Preconditioner : public virtual Epetra_Operator
 }  // namespace ML_NOX
 

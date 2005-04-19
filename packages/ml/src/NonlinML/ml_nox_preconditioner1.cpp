@@ -84,7 +84,6 @@ comm_(comm)
   ismatrixfree_ = true;
   matfreelev0_  = true;
   islinearPrec_ = false;
-  isnlnCG_      = true;
 
   // set some default values
   // default values (some of them derived and not supported)
@@ -112,7 +111,7 @@ comm_(comm)
   FAS_postfinesmooth_  = 3;
   FAS_maxcycle_        = 250;
   noxsolver_           = 0;
-  nitersCG_            = 80;
+  useBroyden_          = false;
   offset_newPrec_      = 100;
 
   // ML stuff
@@ -135,6 +134,15 @@ comm_(comm)
   ml_maxcoarsesize_ = 50;
   ml_nsmooth_       = new int[ml_N_levels_];
   for (int i=0; i<ml_N_levels_; i++) ml_nsmooth_[i] = 1;
+
+  isnlnCG_          = new bool[ml_N_levels_];
+  nitersCG_         = new int[ml_N_levels_];
+  for (int i=0; i<ml_N_levels_; i++)
+  {
+    isnlnCG_[i]  = true;
+    nitersCG_[i] = 0;
+  }
+
 
   return;
 }
@@ -363,16 +371,29 @@ bool ML_NOX::ML_Nox_Preconditioner::SetFAScycle(int prefsmooth,int presmooth,
 /*----------------------------------------------------------------------*
  |  Set methods for flags/data (public)                      m.gee 03/05|
  *----------------------------------------------------------------------*/
-bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool islinPrec, 
-                                                       bool isnlnCG, int nitersCG, 
-                                                       bool ismatrixfree, 
-                                                       bool ismatfreelev0)
+bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool  islinPrec, 
+                                                       bool* isnlnCG,
+                                                       bool  useBroyden, 
+                                                       int*  nitersCG, 
+                                                       int   maxlevel,
+                                                       bool  ismatrixfree, 
+                                                       bool  ismatfreelev0)
 { 
   islinearPrec_ = islinPrec;
   ismatrixfree_ = ismatrixfree;
   matfreelev0_  = ismatfreelev0;
-  isnlnCG_      = isnlnCG;
-  nitersCG_     = nitersCG;
+  ml_N_levels_  = maxlevel,
+  useBroyden_   = useBroyden;
+  if (isnlnCG_)  delete [] isnlnCG_;
+  if (nitersCG_) delete [] nitersCG_;
+  isnlnCG_  = new bool[ml_N_levels_];
+  nitersCG_ = new int[ml_N_levels_];
+  for (int i=0; i<ml_N_levels_; i++)
+  {
+     isnlnCG_[i]  = isnlnCG[i];
+     nitersCG_[i] = nitersCG[i];
+  }
+  
   if (islinPrec && ismatrixfree && !ismatfreelev0 &&
       (ml_fsmoothertype_== "Jacobi" || 
        ml_smoothertype_ == "Jacobi" ||
@@ -441,6 +462,14 @@ ML_NOX::ML_Nox_Preconditioner::~ML_Nox_Preconditioner()
   if (destroyfineJac_ && fineJac_)
      delete fineJac_;
   fineJac_ = 0;
+  
+  if (isnlnCG_) 
+     delete [] isnlnCG_;
+  isnlnCG_ = 0;
+  
+  if (nitersCG_)
+     delete [] nitersCG_;
+  nitersCG_ = 0;
 
   return;
 }
