@@ -207,7 +207,7 @@ Petra_RDP_CRS_Matrix* readMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 		}
 
   // Finish up
-  assert(M.TransformToLocal()==0);
+  assert(M.FillComplete()==0);
 
 	cout << "nonzeros = " << M.NumGlobalNonzeros() << endl;
 	cout << "rows = " << M.NumGlobalRows() << endl;
@@ -311,7 +311,7 @@ Petra_RDP_CRS_Matrix* readRectMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 		}
 
   // Finish up
-  assert(M.TransformToLocal(&ColMap, &Map)==0);
+  assert(M.FillComplete(ColMap, Map)==0);
 
 	cout << "nonzeros = " << M.NumGlobalNonzeros() << endl;
 	cout << "rows = " << M.NumGlobalRows() << endl;

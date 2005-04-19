@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
     }
    
   // Finish up
-  ierr = A.TransformToLocal();
+  ierr = A.FillComplete();
   assert(ierr==0);
 
   // Create vectors for Power method

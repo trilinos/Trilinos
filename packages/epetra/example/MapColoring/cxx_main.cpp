@@ -158,7 +158,7 @@ int main(int argc, char * argv[]) {
   // Finish up matrix construction
   delete [] Values;
   delete [] Indices;
-  assert(A.TransformToLocal() == 0);
+  assert(A.FillComplete() == 0);
   // cout << endl << A << endl;
 
   // Create the local distance-1 adjancency graph

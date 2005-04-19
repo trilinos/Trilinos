@@ -182,14 +182,14 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(forierr,ierr);
 
 
-  EPETRA_TEST_ERR(!(ATAssembly.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(ATAssembly.FillComplete()==0),ierr);
   // Gather AT values from ATAssembly matrix
   Epetra_Export Exporter(ATAssemblyMap, XMap);
   EPETRA_TEST_ERR(!(AT.Export(ATAssembly, Exporter, Add)==0),ierr);
 
   // Finish up
-  EPETRA_TEST_ERR(!(A.TransformToLocal(&XMap, &YMap)==0),ierr);
-  EPETRA_TEST_ERR(!(AT.TransformToLocal(&YMap, &XMap)==0),ierr);
+  EPETRA_TEST_ERR(!(A.FillComplete(XMap, YMap)==0),ierr);
+  EPETRA_TEST_ERR(!(AT.FillComplete(YMap, XMap)==0),ierr);
 
 
   if (verbose1 && NumGlobalEquations<20) { 
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(forierr,ierr);
 
   // Finish up
-  EPETRA_TEST_ERR(!(B.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(B.FillComplete()==0),ierr);
   if (verbose && NumGlobalEquations<20) cout << "\n\nMatrix B \n" << endl;
   if (verbose1 && NumGlobalEquations<20) cout << B << endl;
 

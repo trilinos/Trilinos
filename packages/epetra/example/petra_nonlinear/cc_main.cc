@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 
   Comm.Barrier();
 
-  assert(A.TransformToLocal()==0);
+  assert(A.FillComplete()==0);
 
   /*
   // Print Matrix

@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
   
   // Finish up
   assert(StandardGraph.IndicesAreGlobal());
-  assert(StandardGraph.TransformToLocal()==0);
+  assert(StandardGraph.FillComplete()==0);
   assert(StandardGraph.IndicesAreLocal());
   assert(!StandardGraph.StorageOptimized());
   StandardGraph.OptimizeStorage();
@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
   
   // Finish up
   assert(StandardMatrix.IndicesAreLocal());
-  assert(StandardMatrix.TransformToLocal()==0);
+  assert(StandardMatrix.FillComplete()==0);
   assert(StandardMatrix.IndicesAreLocal());
   assert(StandardMatrix.StorageOptimized());
   assert(!StandardMatrix.UpperTriangular());
@@ -384,14 +384,14 @@ int main(int argc, char *argv[])
     assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
   }
     
-  assert(OverlapMatrix.TransformToLocal()==0);
+  assert(OverlapMatrix.FillComplete()==0);
 
   // Make a gathered matrix from OverlapMatrix.  It should be identical to StandardMatrix
 
   Petra_RDP_CRS_Matrix& GatheredMatrix = *new Petra_RDP_CRS_Matrix(Copy, StandardGraph);
   Petra_Export & Exporter = *new Petra_Export(OverlapMap, StandardMap);
   assert(GatheredMatrix.Export(OverlapMatrix, Exporter, Add)==0);
-  assert(GatheredMatrix.TransformToLocal()==0);
+  assert(GatheredMatrix.FillComplete()==0);
 
   // Check if entries of StandardMatrix and GatheredMatrix are identical
 

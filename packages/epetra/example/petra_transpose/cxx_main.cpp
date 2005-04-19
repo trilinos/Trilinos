@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
      assert(A.InsertGlobalValues(MyGlobalEquations[i], 1, val+i, MyGlobalEquations+i)==0);
     }
   
-  assert(A.TransformToLocal()==0);
+  assert(A.FillComplete()==0);
   
   if (verbose) cout << "\nTime to construct A                = " << timer.ElapsedTime() - start << endl;
   double * xexactt = xexact;
@@ -228,9 +228,9 @@ int main(int argc, char *argv[])
 				      TransNumNz[i], TransValues[i], TransIndices[i])==0);
     }
  
-  // Note: The following call to TransformToLocal is currently necessary because
+  // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
-  assert(TempTransA1.TransformToLocal()==0);
+  assert(TempTransA1.FillComplete()==0);
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 
   assert(TransA1.Export(TempTransA1, Export, Add)==0);
   
-  assert(TransA1.TransformToLocal()==0);
+  assert(TransA1.FillComplete()==0);
 
 
   if (verbose) cout << "\nTime to construct TransA1          = " << timer.ElapsedTime() - start << endl;
@@ -294,9 +294,9 @@ int main(int argc, char *argv[])
 
 
   
-  // Note: The following call to TransformToLocal is currently necessary because
+  // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
-  assert(TempTransA2.TransformToLocal()==0);
+  assert(TempTransA2.FillComplete()==0);
 
   if (verbose) cout << "\nTime to construct TransA2          = " << timer.ElapsedTime() - start << endl;
 
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
 
   assert(TransA2.Export(TempTransA2, Export, Add)==0);
   
-  assert(TransA2.TransformToLocal()==0);
+  assert(TransA2.FillComplete()==0);
 
   // Now compute b = A' * x using the transpose option on Multiply and using 
   // created transpose matrix
