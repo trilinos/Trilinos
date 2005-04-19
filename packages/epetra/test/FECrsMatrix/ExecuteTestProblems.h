@@ -41,3 +41,6 @@ int Drumm3(const Epetra_Map& map, bool verbose);
 int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose);
 
 int submatrix_formats(const Epetra_Comm& Comm, bool verbose);
+
+int rectangular(const Epetra_Comm& Comm, bool verbose);
+

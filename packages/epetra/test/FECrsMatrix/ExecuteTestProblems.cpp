@@ -747,3 +747,70 @@ int submatrix_formats(const Epetra_Comm& Comm, bool verbose)
 
   return(0);
 }
+
+int rectangular(const Epetra_Comm& Comm, bool verbose)
+{
+  int numprocs = Comm.NumProc();
+  int localproc = Comm.MyPID();
+  int numMyRows = 2;
+  int numGlobalRows = numprocs*numMyRows;
+  int* myrows = new int[numMyRows];
+
+  int myFirstRow = localproc*numMyRows;
+  int i;
+  for(i=0; i<numMyRows; ++i) {
+    myrows[i] = myFirstRow+i;
+  }
+
+  Epetra_Map map(numGlobalRows, numMyRows, myrows, 0, Comm);
+
+  Epetra_FECrsMatrix A(Copy, map, 30);
+
+  int numcols = 20;
+  int* cols = new int[numcols];
+  for(i=0; i<numcols; ++i) {
+    cols[i] = i;
+  }
+
+  double* coefs = new double[numGlobalRows*numcols];
+  int offset = 0;
+  for(int j=0; j<numcols; ++j) {
+    for(i=0; i<numGlobalRows; ++i) {
+      coefs[offset++] = 1.0*i;
+    }
+  }
+
+  int* globalRows = new int[numGlobalRows];
+  for(i=0; i<numGlobalRows; ++i) globalRows[i] = i;
+
+  EPETRA_CHK_ERR( A.InsertGlobalValues(numGlobalRows, globalRows,
+                                       numcols, cols, coefs));
+
+  //Since the matrix is rectangular, we need to call FillComplete with
+  //a domain-map and a range-map before we call GlobalAssemble. Otherwise,
+  //GlobalAssemble has no way of knowing what the domain-map and range-map
+  //should be.
+  //We'll use a linear distribution of the columns for a domain-map, and
+  //our original row-map for the range-map.
+  int numMyCols = numcols/numprocs;
+  int rem = numcols%numprocs;
+  if (localproc<rem) ++numMyCols;
+  Epetra_Map domainmap(numcols, numMyCols, 0, Comm);
+
+  EPETRA_CHK_ERR( A.FillComplete(domainmap, map) );
+
+  EPETRA_CHK_ERR( A.GlobalAssemble() );
+
+  int numGlobalCols = A.NumGlobalCols();
+  int numGlobalNNZ = A.NumGlobalNonzeros();
+
+  if (numGlobalCols != numcols ||
+      numGlobalNNZ != numGlobalRows*numcols) {
+    return(-1);
+  }
+
+  delete [] cols;
+  delete [] myrows;
+  return(0);
+}
+

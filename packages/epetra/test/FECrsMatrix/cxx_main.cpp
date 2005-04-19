@@ -106,6 +106,8 @@ int main(int argc, char *argv[]) {
 
   EPETRA_TEST_ERR( submatrix_formats(Comm, verbose), ierr);
 
+  EPETRA_TEST_ERR( rectangular(Comm, verbose), ierr);
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif

@@ -466,7 +466,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
 {
   if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
     if (callFillComplete) {
-      EPETRA_CHK_ERR( FillComplete() );
+      EPETRA_CHK_ERR( FillComplete(DomainMap(), RangeMap()) );
     }
     return(0);
   }
@@ -545,14 +545,14 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
   //Now we need to call FillComplete on our temp matrix. We need to
   //pass a DomainMap and RangeMap, which are not the same as the RowMap
   //and ColMap that we constructed the matrix with.
-  EPETRA_CHK_ERR(tempMat->FillComplete(RowMap(), *sourceMap));
+  EPETRA_CHK_ERR(tempMat->FillComplete(DomainMap(), RangeMap()));
 
   Epetra_Export* exporter = new Epetra_Export(*sourceMap, RowMap());
 
   EPETRA_CHK_ERR(Export(*tempMat, *exporter, Add));
 
   if(callFillComplete) {
-    EPETRA_CHK_ERR(FillComplete());
+    EPETRA_CHK_ERR(FillComplete(DomainMap(), RangeMap()));
   }
 
   //now reset the values in our nonlocal data
@@ -658,11 +658,14 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
 					  const double* values,
 					  int format, int mode)
 {
-  const double** values_2d = new const double*[numRows];
+  int first_dim = format==COLUMN_MAJOR ? numCols : numRows;
+  int second_dim = format==COLUMN_MAJOR ? numRows : numCols;
+
+  const double** values_2d = new const double*[first_dim];
   int offset = 0;
-  for(int i=0; i<numRows; ++i) {
+  for(int i=0; i<first_dim; ++i) {
     values_2d[i] = &(values[offset]);
-    offset += numCols;
+    offset += second_dim;
   }
 
   int err = InputGlobalValues(numRows, rows, numCols, cols,

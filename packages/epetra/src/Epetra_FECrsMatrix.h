@@ -55,6 +55,12 @@ class Epetra_SerialDenseMatrix;
     optional argument which determines whether GlobalAssemble() in turn calls
     FillComplete() after the data-exchange has occurred. If not explicitly
     supplied, this argument defaults to true.
+    ***NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
+    arguments 'DomainMap()' and 'RangeMap()', which are the map attributes
+    held by the base-class CrsMatrix and its graph. If a rectangular matrix
+    is being assembled, the domain-map and range-map must be first given to
+    the matrix via a separate call to FillComplete. Otherwise, GlobalAssemble()
+    has no way of knowing what these maps should really be.
     </ul>
 
     Sub-matrix data, which is assumed to be a rectangular 'table' of
@@ -470,6 +476,14 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
       with a "sumInto" or accumulate operation.
       This is a collective method -- every processor must enter it before any
       will complete it.
+
+      ***NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
+      arguments 'DomainMap()' and 'RangeMap()', which are the map attributes
+      held by the base-class CrsMatrix and its graph. If a rectangular matrix
+      is being assembled, the domain-map and range-map must be first given to
+      the matrix via a separate call to FillComplete. Otherwise, GlobalAssemble()
+      has no way of knowing what these maps should really be.
+
 
       @param callFillComplete option argument, defaults to true.
         Determines whether GlobalAssemble() internally calls the
