@@ -58,8 +58,8 @@ class Epetra_SerialDenseMatrix;
     ***NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
     arguments 'DomainMap()' and 'RangeMap()', which are the map attributes
     held by the base-class CrsMatrix and its graph. If a rectangular matrix
-    is being assembled, the domain-map and range-map must be first given to
-    the matrix via a separate call to FillComplete. Otherwise, GlobalAssemble()
+    is being assembled, the correct domain-map and range-map must be passed to
+    GlobalAssemble (there are two overloadings of this method) -- otherwise, it
     has no way of knowing what these maps should really be.
     </ul>
 
@@ -480,8 +480,8 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
       ***NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
       arguments 'DomainMap()' and 'RangeMap()', which are the map attributes
       held by the base-class CrsMatrix and its graph. If a rectangular matrix
-      is being assembled, the domain-map and range-map must be first given to
-      the matrix via a separate call to FillComplete. Otherwise, GlobalAssemble()
+      is being assembled, the domain-map and range-map must be specified by
+      calling the other overloading of this method. Otherwise, GlobalAssemble()
       has no way of knowing what these maps should really be.
 
 
@@ -492,6 +492,35 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
       @return error-code 0 if successful, non-zero if some error occurs
    */
    int GlobalAssemble(bool callFillComplete=true);
+
+   /** Gather any overlapping/shared data into the non-overlapping partitioning
+      defined by the Map that was passed to this matrix at construction time.
+      Data imported from other processors is stored on the owning processor
+      with a "sumInto" or accumulate operation.
+      This is a collective method -- every processor must enter it before any
+      will complete it.
+
+      ***NOTE***: When GlobalAssemble() (the other overloading of this method)
+      calls FillComplete(), it passes the arguments 'DomainMap()' and
+      'RangeMap()', which are the map attributes already held by the base-class
+      CrsMatrix and its graph. If a rectangular matrix is being assembled, the
+      domain-map and range-map must be specified. Otherwise, GlobalAssemble()
+      has no way of knowing what these maps should really be.
+
+
+      @param domain_map user-supplied domain map for this matrix
+
+      @param range_map user-supplied range map for this matrix
+
+      @param callFillComplete option argument, defaults to true.
+        Determines whether GlobalAssemble() internally calls the
+        FillComplete() method on this matrix.
+
+      @return error-code 0 if successful, non-zero if some error occurs
+   */
+   int GlobalAssemble(const Epetra_Map& domain_map,
+                      const Epetra_Map& range_map,
+                      bool callFillComplete=true);
 
    /** Set whether or not non-local data values should be ignored. By default,
        non-local data values are NOT ignored.
