@@ -71,6 +71,7 @@
 #include "NOX_EpetraNew_FiniteDifference.H"
 #include "NOX_EpetraNew_FiniteDifferenceColoring.H"
 #include "NOX_EpetraNew_LinearSystemAztecOO.H"
+#include "NOX_EpetraNew_BroydenOperator.H"
 
 // ML-headers
 #include "ml_common.h"
@@ -115,8 +116,8 @@ public:
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
        Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree,
-       bool matfreelev0, bool isnlnCG, int nitersCG, Epetra_CrsMatrix* Jac,
-       string fsmoothertype, string smoothertype, 
+       bool matfreelev0, bool isnlnCG, int nitersCG, bool broyden, 
+       Epetra_CrsMatrix* Jac, string fsmoothertype, string smoothertype, 
        string coarsesolvetype, int *nsmooth, double conv_normF, 
        double conv_nupdate, int conv_maxiter, int numPDE, int nullspdim);
 
@@ -125,7 +126,7 @@ public:
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
        Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree, 
-       bool isnlnCG, int nitersCG, 
+       bool isnlnCG, int nitersCG, bool broyden, 
        string fsmoothertype, string smoothertype, string coarsesolvetype, 
        int *nsmooth, double conv_normF, double conv_nupdate, int conv_maxiter,
        int numPDE, int nullspdim, Epetra_CrsMatrix* Mat, 
@@ -223,8 +224,10 @@ private:
   // -- for the Newton method
   bool                                         isnlnCG_;          // flag to switch nlnCG/Neweton's method
   int                                          nitersCG_;         // number of Aztec-CG iterations as linear solve in mod. Newton's method
+  bool                                         broyden_;          // use Broyden update for jacobian in case of Newton's method
   NOX::EpetraNew::LinearSystemAztecOO*         azlinSys_;         // the aztec linear system to be used with mod. Newton's method  
   Epetra_Vector*                               clone_;
+  NOX::EpetraNew::BroydenOperator*             Broyd_;            // Broyden operator
 }; // class  ML_Nox_NonlinearLevel 
 }  // namespace ML_NOX
 

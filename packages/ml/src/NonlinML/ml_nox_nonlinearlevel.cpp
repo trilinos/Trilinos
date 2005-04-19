@@ -68,7 +68,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
                           ML_NOX::Ml_Nox_Fineinterface& interface,
                           Epetra_Comm& comm,  const Epetra_Vector& xfine, 
                           bool ismatrixfree, bool matfreelev0, bool isnlnCG,
-                          int nitersCG, Epetra_CrsMatrix* Jac, 
+                          int nitersCG, bool broyden, Epetra_CrsMatrix* Jac, 
                           string fsmoothertype, string smoothertype, 
                           string coarsesolvetype, int *nsmooth, 
                           double conv_normF, double conv_nupdate, 
@@ -107,6 +107,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    azlinSys_         = 0;
    clone_            = 0;
    nitersCG_         = nitersCG;
+   broyden_          = broyden;
+   Broyd_            = 0;
 
    if (ismatrixfree_==true)
    {
@@ -326,20 +328,42 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   }
   else // Modified Newton's method
   {
-     // create the necessary interfaces   
-     iPrec = this; 
-     iReq  = coarseinterface_;
-     iJac  = this;
+     if (!broyden_)
+     {
+       // create the necessary interfaces   
+       iPrec = this; 
+       iReq  = coarseinterface_;
+       iJac  = this;
      
-     // create the initial guess vector
-     clone_  = new Epetra_Vector(*xthis_);
+       // create the initial guess vector
+       clone_  = new Epetra_Vector(*xthis_);
 
-     // create the linear system 
-     azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(printParams,*lsParamsptr,
-                                                         *iJac,*SmootherA_,*iPrec,
-                                                         *thislevel_prec_,*clone_);
+       // create the linear system 
+       azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(
+                                                      printParams,*lsParamsptr,
+                                                      *iJac,*SmootherA_,*iPrec,
+                                                      *thislevel_prec_,*clone_);
+     }
+     else // use a Broyden update for the Jacobian
+     {
+       // create the initial guess vector
+       clone_  = new Epetra_Vector(*xthis_);
+
+       // create the necessary interfaces   
+       iPrec  = this; 
+       iReq   = coarseinterface_;
+       Broyd_ = new NOX::EpetraNew::BroydenOperator(*nlParams_,*clone_,
+                                                    *SmootherA_,false);
+     
+       // create the linear system 
+       azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(
+                                                   printParams,*lsParamsptr,
+                                                   *Broyd_,*SmootherA_,*iPrec,
+                                                   *thislevel_prec_,*clone_);
+     }
      // create the group
-     group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,*azlinSys_);
+     group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,
+                                        *azlinSys_);
   }
 
   // create convergence test
@@ -363,7 +387,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
                           ML_Aggregate* ag,Epetra_CrsMatrix** P, 
                           ML_NOX::Ml_Nox_Fineinterface& interface,
                           Epetra_Comm& comm,  const Epetra_Vector& xfine, 
-                          bool ismatrixfree, bool isnlnCG, int nitersCG,
+                          bool ismatrixfree, bool isnlnCG, int nitersCG, bool broyden,
                           string fsmoothertype, string smoothertype, string coarsesolvetype, 
                           int *nsmooth, double conv_normF, 
                           double conv_nupdate, int conv_maxiter,
@@ -404,7 +428,10 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    azlinSys_         = 0;
    clone_            = 0;
    nitersCG_         = nitersCG;
-   
+   broyden_          = broyden;
+   Broyd_            = 0;
+
+#if 0   
    if (isnlnCG_==false && 
       (fsmoothertype   == "Jacobi" || 
        smoothertype    == "Jacobi" || 
@@ -416,6 +443,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
            << "**ERR**: because no full Jacobian exists!\n"
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
+#endif   
    if (ismatrixfree_==false)
    {
       cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -607,18 +635,39 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   }
   else // Modified Newton's method
   {
-     // create the necessary interfaces   
-     iPrec = this; 
-     iReq  = coarseinterface_;
-     iJac  = this;
+     if (!broyden_)
+     {
+       // create the necessary interfaces   
+       iPrec = this; 
+       iReq  = coarseinterface_;
+       iJac  = this;
      
-     // create the initial guess vector
-     clone_  = new Epetra_Vector(*xthis_);
+       // create the initial guess vector
+       clone_  = new Epetra_Vector(*xthis_);
 
-     // create the linear system 
-     azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(printParams,*lsParamsptr,
-                                                         *iJac,*SmootherA_,*iPrec,
-                                                         *thislevel_prec_,*clone_);
+       // create the linear system 
+       azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(
+                                                      printParams,*lsParamsptr,
+                                                      *iJac,*SmootherA_,*iPrec,
+                                                      *thislevel_prec_,*clone_);
+     }
+     else
+     {
+       // create the initial guess vector
+       clone_  = new Epetra_Vector(*xthis_);
+
+       // create the necessary interfaces   
+       iPrec = this; 
+       iReq  = coarseinterface_;
+       Broyd_ = new NOX::EpetraNew::BroydenOperator(*nlParams_,*clone_,
+                                                    *SmootherA_,false);
+     
+       // create the linear system 
+       azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(
+                                                   printParams,*lsParamsptr,
+                                                   *Broyd_,*SmootherA_,*iPrec,
+                                                   *thislevel_prec_,*clone_);
+     }
      // create the group
      group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,*azlinSys_);
   }
@@ -747,6 +796,10 @@ ML_NOX::ML_Nox_NonlinearLevel::~ML_Nox_NonlinearLevel()
    if (solver_)
       delete solver_;
    solver_ = 0;
+   
+   if (Broyd_)
+      delete Broyd_;
+   Broyd_ = 0;
  
    return;
 }
