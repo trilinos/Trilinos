@@ -134,12 +134,12 @@ int Ifpack_OverlapGraph::ConstructOverlapGraph(const Epetra_CrsGraph * UserMatri
 
     EPETRA_CHK_ERR(OverlapGraph_->Import( *UserMatrixGraph, *OverlapImporter_, Insert));
     if (level<OverlapLevel_) {
-      EPETRA_CHK_ERR(OverlapGraph_->TransformToLocal(DomainMap, RangeMap));
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
     }
     else {
       // Copy last OverlapImporter because we will use it later
       OverlapImporter_ = new Epetra_Import(*OverlapRowMap_, *DomainMap);
-      EPETRA_CHK_ERR(OverlapGraph_->TransformToLocal(DomainMap, RangeMap));
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
     }
 
     if (level>1) {

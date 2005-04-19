@@ -204,7 +204,7 @@ int Ifpack_CrsRick::InitValues() {
   if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) delete OverlapA;
 
 
-  U_->TransformToLocal();
+  U_->FillComplete();
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
 

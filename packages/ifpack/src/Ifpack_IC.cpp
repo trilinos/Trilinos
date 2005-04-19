@@ -203,8 +203,8 @@ int Ifpack_IC::ComputeSetup()
   delete [] InI;
   delete [] InV;
 
-  U_->TransformToLocal(&Matrix().OperatorDomainMap(), 
-		       &Matrix().OperatorRangeMap());
+  U_->FillComplete(Matrix().OperatorDomainMap(), 
+		       Matrix().OperatorRangeMap());
 
   int ierr1 = 0;
   if (NumNonzeroDiags<U_->NumMyRows()) ierr1 = 1;
@@ -276,7 +276,7 @@ int Ifpack_IC::Compute() {
     U_->InsertMyValues(i, NumEntries, Values, Indices);
   }
 
-  U_->TransformToLocal(&(A_.OperatorDomainMap()), &(A_.OperatorRangeMap()));
+  U_->FillComplete(A_.OperatorDomainMap(), A_.OperatorRangeMap());
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
  
   double current_flops = 2 * nz; // Just an estimate

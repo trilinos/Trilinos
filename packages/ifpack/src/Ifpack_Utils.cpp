@@ -97,10 +97,10 @@ Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(const Epetra_RowMatrix* Matr
 
     OverlappingMatrix->Import(*OldMatrix, *OverlappingImporter, Insert);
     if (level < OverlappingLevel) {
-      OverlappingMatrix->TransformToLocal(DomainMap, RangeMap);
+      OverlappingMatrix->FillComplete(*DomainMap, *RangeMap);
     }
     else {
-      OverlappingMatrix->TransformToLocal(DomainMap, RangeMap);
+      OverlappingMatrix->FillComplete(*DomainMap, *RangeMap);
     }
 
     delete OverlappingMap;
@@ -155,11 +155,11 @@ Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(const Epetra_CrsGraph* Graph,
 
     OverlappingGraph->Import(*OldGraph, *OverlappingImporter, Insert);
     if (level < OverlappingLevel) 
-      OverlappingGraph->TransformToLocal(DomainMap, RangeMap);
+      OverlappingGraph->FillComplete(*DomainMap, *RangeMap);
     else {
       // Copy last OverlapImporter because we will use it later
       OverlappingImporter = new Epetra_Import(*OverlappingMap, *DomainMap);
-      OverlappingGraph->TransformToLocal(DomainMap, RangeMap);
+      OverlappingGraph->FillComplete(*DomainMap, *RangeMap);
     }
 
     if (level > 1) {

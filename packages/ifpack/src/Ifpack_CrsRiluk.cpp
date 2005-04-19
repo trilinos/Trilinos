@@ -175,8 +175,8 @@ int Ifpack_CrsRiluk::AllocateVbr() {
     EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.L_Graph(), *L_Graph_, false));
     EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.U_Graph(), *U_Graph_, true));
     
-    L_Graph_->TransformToLocal(IlukRowMap_, IlukRangeMap_);
-    U_Graph_->TransformToLocal(IlukDomainMap_, IlukRowMap_);
+    L_Graph_->FillComplete(*IlukRowMap_, *IlukRangeMap_);
+    U_Graph_->FillComplete(*IlukDomainMap_, *IlukRowMap_);
 
     L_ = new Epetra_CrsMatrix(Copy, *L_Graph_);
     U_ = new Epetra_CrsMatrix(Copy, *U_Graph_);
@@ -229,7 +229,7 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
   
     OverlapA = new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph());
     EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
-    EPETRA_CHK_ERR(OverlapA->TransformToLocal());
+    EPETRA_CHK_ERR(OverlapA->FillComplete());
   }
   
   // Get Maximun Row length
@@ -270,7 +270,7 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
   
     OverlapA = new Epetra_VbrMatrix(Copy, *Graph_.OverlapGraph());
     EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
-    EPETRA_CHK_ERR(OverlapA->TransformToLocal());
+    EPETRA_CHK_ERR(OverlapA->FillComplete());
   }
   
   //cout << "Overlap Matrix " << endl << *OverlapA << endl << flush;
@@ -391,8 +391,8 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
     // The domain of U and the range of L must be the same as those of the original matrix,
     // However if the original matrix is a VbrMatrix, these two latter maps are translation from
     // a block map to a point map.
-    EPETRA_CHK_ERR(L_->TransformToLocal(&(L_->RowMatrixColMap()), L_RangeMap_));
-    EPETRA_CHK_ERR(U_->TransformToLocal(U_DomainMap_, &(U_->RowMatrixRowMap())));
+    EPETRA_CHK_ERR(L_->FillComplete(L_->RowMatrixColMap(), *L_RangeMap_));
+    EPETRA_CHK_ERR(U_->FillComplete(*U_DomainMap_, U_->RowMatrixRowMap()));
   }
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
@@ -656,7 +656,7 @@ int Ifpack_CrsRiluk::Condest(bool Trans, double & ConditionNumberEstimate) const
 //==============================================================================
 int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper) {
 
-  if (!BG.IndicesAreLocal()) {EPETRA_CHK_ERR(-1);} // Must have done TransformToLocal on BG
+  if (!BG.IndicesAreLocal()) {EPETRA_CHK_ERR(-1);} // Must have done FillComplete on BG
 
   int * ColFirstPointInElementList = BG.RowMap().FirstPointInElementList();
   int * ColElementSizeList = BG.RowMap().ElementSizeList();

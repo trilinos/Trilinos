@@ -237,8 +237,8 @@ int main(int argc, char *argv[])
        }
     }
   
-  if ((ierr=A.TransformToLocal()))
-      perror1("Error in DVBR_Matrix_TransformToLocal:",ierr);
+  if ((ierr=A.FillComplete()))
+      perror1("Error in DVBR_Matrix_FillComplete:",ierr);
 
 #else
   /* Make numNzBlks - number of block entries in each block row */
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
     }
    Comm.Barrier();
    double FillTime = FillTimer.ElapsedTime();
-    if ((ierr=A.TransformToLocal()))    
+    if ((ierr=A.FillComplete()))    
     perror1("Error in Petra_RDP_Vector_fillComplete",ierr);
    double FillCompleteTime = FillTimer.ElapsedTime() - FillTime;
    if (Comm.MyPID()==0)	{

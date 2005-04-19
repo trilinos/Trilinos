@@ -179,7 +179,7 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
     EPETRA_CHK_ERR(-1); // Not implemented yet
     //OverlapA = new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph());
     //EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
-    //EPETRA_CHK_ERR(OverlapA->TransformToLocal());
+    //EPETRA_CHK_ERR(OverlapA->FillComplete());
   }
   // Get Maximun Row length
   int MaxNumEntries = OverlapA->MaxNumEntries();
@@ -238,7 +238,7 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
   if (LevelOverlap_>0 && U().DistributedGlobal()) delete OverlapA;
 
 
-  U_->TransformToLocal(&A_.OperatorDomainMap(), &A_.OperatorRangeMap());
+  U_->FillComplete(A_.OperatorDomainMap(), A_.OperatorRangeMap());
   SetValuesInitialized(true);
   SetFactored(false);
 
@@ -316,7 +316,7 @@ int Ifpack_CrsIct::Factor() {
     U_->InsertMyValues(i, NumEntries, Values, Indices);
   }
 
-  U_->TransformToLocal(&(A_.OperatorDomainMap()), &(A_.OperatorRangeMap()));
+  U_->FillComplete(A_.OperatorDomainMap(), A_.OperatorRangeMap());
   
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
   // Add up flops

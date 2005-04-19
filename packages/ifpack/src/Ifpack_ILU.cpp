@@ -230,8 +230,8 @@ int Ifpack_ILU::ComputeSetup()
     // The domain of U and the range of L must be the same as those of the original matrix,
     // However if the original matrix is a VbrMatrix, these two latter maps are translation from
     // a block map to a point map.
-    IFPACK_CHK_ERR(L_->TransformToLocal(&(L_->RowMatrixColMap()), L_RangeMap_));
-    IFPACK_CHK_ERR(U_->TransformToLocal(U_DomainMap_, &(U_->RowMatrixRowMap())));
+    IFPACK_CHK_ERR(L_->FillComplete((L_->RowMatrixColMap()), *L_RangeMap_));
+    IFPACK_CHK_ERR(U_->FillComplete(*U_DomainMap_, U_->RowMatrixRowMap()));
   }
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D

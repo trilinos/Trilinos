@@ -158,12 +158,12 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
 
     EPETRA_CHK_ERR(OverlapGraph_->Import( Graph_, *OverlapImporter_, Insert));
     if (level<LevelOverlap_) {
-      EPETRA_CHK_ERR(OverlapGraph_->TransformToLocal(DomainMap, RangeMap));
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
     }
     else {
       // Copy last OverlapImporter because we will use it later
       OverlapImporter_ = new Epetra_Import(*OverlapRowMap_, *DomainMap);
-      EPETRA_CHK_ERR(OverlapGraph_->TransformToLocal(DomainMap, RangeMap));
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
     }
 
     if (OldGraph!=&Graph_) delete OldGraph;
@@ -250,8 +250,8 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     Epetra_BlockMap * L_RangeMap = (Epetra_BlockMap *) &Graph_.RangeMap();
     Epetra_BlockMap * U_DomainMap = (Epetra_BlockMap *) &Graph_.DomainMap();
     Epetra_BlockMap * U_RangeMap = (Epetra_BlockMap *) &OverlapGraph_->RowMap();
-    EPETRA_CHK_ERR(L_Graph_->TransformToLocal(L_DomainMap, L_RangeMap));
-    EPETRA_CHK_ERR(U_Graph_->TransformToLocal(U_DomainMap, U_RangeMap));
+    EPETRA_CHK_ERR(L_Graph_->FillComplete(*L_DomainMap, *L_RangeMap));
+    EPETRA_CHK_ERR(U_Graph_->FillComplete(*U_DomainMap, *U_RangeMap));
 
     // At this point L_Graph and U_Graph are filled with the pattern of input graph, 
     // sorted and have redundant indices (if any) removed.  Indices are zero based.
@@ -405,12 +405,12 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   }
 
   // Complete Fill steps
-  Epetra_BlockMap * L_DomainMap = (Epetra_BlockMap *) &OverlapGraph_->RowMap();
-  Epetra_BlockMap * L_RangeMap = (Epetra_BlockMap *) &Graph_.RangeMap();
-  Epetra_BlockMap * U_DomainMap = (Epetra_BlockMap *) &Graph_.DomainMap();
-  Epetra_BlockMap * U_RangeMap = (Epetra_BlockMap *) &OverlapGraph_->RowMap();
-  EPETRA_CHK_ERR(L_Graph_->TransformToLocal(L_DomainMap, L_RangeMap));
-  EPETRA_CHK_ERR(U_Graph_->TransformToLocal(U_DomainMap, U_RangeMap));
+  Epetra_BlockMap L_DomainMap = (Epetra_BlockMap) OverlapGraph_->RowMap();
+  Epetra_BlockMap L_RangeMap = (Epetra_BlockMap) Graph_.RangeMap();
+  Epetra_BlockMap U_DomainMap = (Epetra_BlockMap) Graph_.DomainMap();
+  Epetra_BlockMap U_RangeMap = (Epetra_BlockMap) OverlapGraph_->RowMap();
+  EPETRA_CHK_ERR(L_Graph_->FillComplete(L_DomainMap, L_RangeMap));
+  EPETRA_CHK_ERR(U_Graph_->FillComplete(U_DomainMap, U_RangeMap));
       
   // Optimize graph storage
   

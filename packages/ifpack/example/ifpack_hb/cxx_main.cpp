@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   A.Export(*readA, exporter, Add);
   Comm.Barrier();
   double matrixRedistributeTime = FillTimer.ElapsedTime() - vectorRedistributeTime;
-  assert(A.TransformToLocal()==0);    
+  assert(A.FillComplete()==0);    
   Comm.Barrier();
   double fillCompleteTime = FillTimer.ElapsedTime() - matrixRedistributeTime;
   if (Comm.MyPID()==0)	{

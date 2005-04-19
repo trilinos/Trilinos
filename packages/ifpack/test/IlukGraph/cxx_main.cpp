@@ -216,19 +216,19 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 
   // Finish up
   if (verbose) cout << "\n\nCompleting A" << endl<< endl;
-  assert(A.TransformToLocal()==0);
+  assert(A.FillComplete()==0);
   if (verbose) cout << "\n\nCompleting L0" << endl<< endl;
-  assert(L0.TransformToLocal()==0);
+  assert(L0.FillComplete()==0);
   if (verbose) cout << "\n\nCompleting U0" << endl<< endl;
-  assert(U0.TransformToLocal()==0);
+  assert(U0.FillComplete()==0);
   if (verbose) cout << "\n\nCompleting L1" << endl<< endl;
-  assert(L1.TransformToLocal()==0);
+  assert(L1.FillComplete()==0);
   if (verbose) cout << "\n\nCompleting U1" << endl<< endl;
-  assert(U1.TransformToLocal()==0);
+  assert(U1.FillComplete()==0);
   if (verbose) cout << "\n\nCompleting L2" << endl<< endl;
-  assert(L2.TransformToLocal()==0);
+  assert(L2.FillComplete()==0);
   if (verbose) cout << "\n\nCompleting U2" << endl<< endl;
-  assert(U2.TransformToLocal()==0);
+  assert(U2.FillComplete()==0);
 
   if (verbose) cout << "\n\n*****Testing ILU(0) constructor on A" << endl<< endl;
 
@@ -335,7 +335,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
       }
     
     // Finish up
-    assert(A1.TransformToLocal()==0);
+    assert(A1.FillComplete()==0);
     
     if (verbose) cout << "\n\nPrint out tridiagonal matrix with IndexBase = 1.\n\n" << endl;
     cout << A1 << endl;

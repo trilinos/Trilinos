@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
     }
   
   // Finish up
-  A.TransformToLocal();
+  A.FillComplete();
 
   // Create vectors for Power method
 
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
       }
     
     // Finish up
-    A1.TransformToLocal();
+    A1.FillComplete();
     
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;
