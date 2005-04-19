@@ -378,7 +378,7 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   // Now convert to local indexing.  We have constructed things so that the domain and range of the
   // matrix will have the same map.  If the reduced matrix domain and range maps were not the same, the
   // differences were addressed in the ConstructRedistributeExporter() method
-  EPETRA_CHK_ERR(ReducedMatrix()->TransformToLocal(ReducedMatrixDomainMap(), ReducedMatrixRangeMap()));
+  EPETRA_CHK_ERR(ReducedMatrix()->FillComplete(*ReducedMatrixDomainMap(), *ReducedMatrixRangeMap()));
 
   // Construct Reduced LHS (Puts any initial guess values into reduced system)
 

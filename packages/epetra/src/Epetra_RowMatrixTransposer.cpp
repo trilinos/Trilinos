@@ -226,9 +226,9 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 						    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
     }
  
-  // Note: The following call to TransformToLocal is currently necessary because
+  // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
-  EPETRA_CHK_ERR(TempTransA1.TransformToLocal());
+  EPETRA_CHK_ERR(TempTransA1.FillComplete());
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
@@ -241,7 +241,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 
   EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
   
-  EPETRA_CHK_ERR(TransposeMatrix_->TransformToLocal());
+  EPETRA_CHK_ERR(TransposeMatrix_->FillComplete());
 
   if (MakeDataContiguous) {
     EPETRA_CHK_ERR(TransposeMatrix_->MakeDataContiguous());
@@ -313,9 +313,9 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
 						    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
     }
  
-  // Note: The following call to TransformToLocal is currently necessary because
+  // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
-  EPETRA_CHK_ERR(TempTransA1.TransformToLocal());
+  EPETRA_CHK_ERR(TempTransA1.FillComplete());
 
   // Now that transpose matrix with shared rows is entered, update values of target transpose matrix
 

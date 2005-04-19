@@ -195,7 +195,7 @@ int Epetra_LinearProblemRedistor::CreateRedistProblem(const bool ConstructTransp
 		// need to do this next step until we generalize the Import/Export ops for CrsMatrix
 		Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix); 
 		EPETRA_CHK_ERR(RedistMatrix->Export(*OrigCrsMatrix, *RedistExporter_, Add));
-		EPETRA_CHK_ERR(RedistMatrix->TransformToLocal());
+		EPETRA_CHK_ERR(RedistMatrix->FillComplete());
 	}
 
 	RedistProblem_->SetOperator(RedistMatrix);

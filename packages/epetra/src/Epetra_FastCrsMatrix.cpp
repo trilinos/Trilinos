@@ -47,7 +47,7 @@ Epetra_FastCrsMatrix::Epetra_FastCrsMatrix(const Epetra_CrsMatrix & Matrix, bool
     ExportVector_(0),
     CV_(Copy)
 {
-  if (!CrsMatrix_.Filled()) throw CrsMatrix_.ReportError("Input matrix must have called TransformToLocal()", -1);
+  if (!CrsMatrix_.Filled()) throw CrsMatrix_.ReportError("Input matrix must have called FillComplete()", -1);
   Allocate(UseFloats);
 }
 

@@ -427,7 +427,7 @@ information.  Lines 53--54 are a call to ReplaceGlobalValues(), which
 will replace existing values in our matrix with the new values we submit.
 \paragraph{Line 57}
 After all values are submitted to our matrix, we finally call the
-method TransformToLocal().  This method performs all of the analysis
+method FillComplete().  This method performs all of the analysis
 on our matrix required for efficient execution on a parallel
 computer.  Part of the procces involves changing the index values of
 the matrix to a local index system on each processor.  This will be

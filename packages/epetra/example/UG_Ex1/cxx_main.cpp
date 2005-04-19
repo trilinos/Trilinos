@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 			DiagVal.Values(), ColIndices.Values());
   }
   // Finish up
- A.TransformToLocal();
+ A.FillComplete();
   // Iterate
   double lambda = power_method(A);
   if (Comm.MyPID()==0) 

@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
   Epetra_CrsMatrix A(Copy, map, 0);
 
   A.Export(*readA, exporter, Add);
-  assert(A.TransformToLocal()==0);
+  assert(A.FillComplete()==0);
 
   delete readA;
   delete readMap;
