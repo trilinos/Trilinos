@@ -110,7 +110,7 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   jacobian = new Epetra_CrsMatrix (Copy, *Graph);
 
   // Clean-up 
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 
   // Create the nodal coordinates
   xptr = new Epetra_Vector(*StandardMap);
@@ -283,7 +283,7 @@ bool Interface::evaluate(NOX::EpetraNew::Interface::Required::FillType flag,
   // Sync up processors to be safe
   Comm->Barrier();
  
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 
   return true;
 }
@@ -338,7 +338,7 @@ bool Interface::createGraph()
       } 	
     }
   }
-  Graph->TransformToLocal();
+  Graph->FillComplete();
   return true;
 }
 

@@ -386,7 +386,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     cout << endl;
   }
 
-  jac.TransformToLocal();
+  jac.FillComplete();
 
   return true;
 }

@@ -69,10 +69,10 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   generateGraph();
 
   // Create a second matrix using graph of first matrix - this creates a 
-  // static graph so we can refill the new matirx after TransformToLocal()
+  // static graph so we can refill the new matirx after FillComplete()
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
-  A->TransformToLocal();
+  A->FillComplete();
 
   // Create the Importer needed for FD coloring
   ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
@@ -287,7 +287,7 @@ bool Burgers::evaluate(
   Comm->Barrier();
  
   if ((flag == MATRIX_ONLY) || (flag == ALL))
-    A->TransformToLocal();
+    A->FillComplete();
 
   // Cleanup
   for( int i = 0; i<numDep; i++)
@@ -345,5 +345,5 @@ void Burgers::generateGraph()
       } 	
     }
   }
-  AA->TransformToLocal();
+  AA->FillComplete();
 }

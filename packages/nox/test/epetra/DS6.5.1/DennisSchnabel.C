@@ -93,7 +93,7 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
 
   // Transform the global matrix coordinates to local so the matrix can 
   // be operated upon.
-  A->TransformToLocal();
+  A->FillComplete();
 }
 
 // Destructor
@@ -196,7 +196,7 @@ bool DennisSchnabel::evaluate(
   Comm->Barrier();
  
   // Transform matrix so it can be operated upon.
-  A->TransformToLocal();
+  A->FillComplete();
 
   return true;
 }
@@ -234,7 +234,7 @@ Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA)
   
   delete [] index;
   
-  AA.TransformToLocal();
+  AA.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
   return AA;

@@ -78,7 +78,7 @@ Epetra_MapColoring* CrsGraph_MapColoring::operator()( const Epetra_CrsGraph & or
       assert( Adj2.InsertMyIndices( i, NumLocalIndices, Indices ) >= 0 );
     }
   }
-  assert( Adj2.TransformToLocal() == 0 );
+  assert( Adj2.FillComplete() == 0 );
   if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
 
   vector<int> rowOrder( nRows );

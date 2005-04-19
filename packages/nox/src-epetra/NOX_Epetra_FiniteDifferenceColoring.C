@@ -245,7 +245,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   // Use a barrier to be safe
   x.Comm().Barrier();
 
-  jac.TransformToLocal();
+  jac.FillComplete();
 
   return true;
 }

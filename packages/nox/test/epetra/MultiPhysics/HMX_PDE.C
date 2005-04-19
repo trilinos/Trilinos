@@ -89,10 +89,10 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
 #endif
 
   // Create a matrix using the graph just created - this creates a
-  // static graph so we can refill the new matirx after TransformToLocal()
+  // static graph so we can refill the new matirx after FillComplete()
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
-  A->TransformToLocal();
+  A->FillComplete();
 
   // Create the Importer needed for FD coloring
   ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
@@ -366,7 +366,7 @@ bool HMX_PDE::evaluate(
   // Sync up processors to be safe
   Comm->Barrier();
  
-  A->TransformToLocal();
+  A->FillComplete();
 
 #ifdef DEBUG
   A->Print(cout);
@@ -428,7 +428,7 @@ void HMX_PDE::generateGraph()
       }
     }
   }
-  AA->TransformToLocal();
+  AA->FillComplete();
   
   return;
 }

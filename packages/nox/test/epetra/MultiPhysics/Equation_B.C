@@ -75,10 +75,10 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
 #endif
 
   // Create a matrix using the graph just created - this creates a
-  // static graph so we can refill the new matirx after TransformToLocal()
+  // static graph so we can refill the new matirx after FillComplete()
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
-  A->TransformToLocal();
+  A->FillComplete();
 
   // Create the Importer needed for FD coloring
   ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
@@ -325,7 +325,7 @@ bool Equation_B::evaluate(
   // Sync up processors to be safe
   Comm->Barrier();
  
-  A->TransformToLocal();
+  A->FillComplete();
 
 #ifdef DEBUG
   A->Print(cout);
@@ -386,7 +386,7 @@ void Equation_B::generateGraph()
       }
     }
   }
-  AA->TransformToLocal();
+  AA->FillComplete();
   
   return;
 }

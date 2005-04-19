@@ -101,10 +101,10 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   generateGraph(*AA);
 
   // Create a second matrix using graph of first matrix - this creates a 
-  // static graph so we can refill the new matirx after TransformToLocal()
+  // static graph so we can refill the new matirx after FillComplete()
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
-  A->TransformToLocal();
+  A->FillComplete();
 
   OverlapNumMyElements = OverlapMap->NumMyElements();
   int OverlapMinMyGID;
@@ -277,7 +277,7 @@ bool FiniteElementProblem::evaluate(
   Comm->Barrier();
  
   if ((flag == MATRIX_ONLY) || (flag == ALL))
-    A->TransformToLocal();
+    A->FillComplete();
 
   return true;
 }
@@ -346,7 +346,7 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
       } 	
     }
   }
-  AA.TransformToLocal();
+  AA.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
   return AA;

@@ -270,7 +270,7 @@ public:
     // Sync up processors to be safe
     Comm->Barrier();
    
-    jacobian->TransformToLocal();
+    jacobian->FillComplete();
   
     return true;
   }

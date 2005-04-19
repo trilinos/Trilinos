@@ -401,9 +401,9 @@ bool Problem_Manager::solveMF()
 
   // Create a preconditioning matrix using the graph just created - this 
   // creates a static graph so we can refill the new matirx after
-  // TransformToLocal()  is called.  
+  // FillComplete()  is called.  
   A = new Epetra_CrsMatrix(Copy, *AA); 
-  A->TransformToLocal();
+  A->FillComplete();
 
   // Create the Matrix-Free Jacobian Operator
   NOX::Epetra::MatrixFree Jac(interface, compositeSoln);
@@ -596,7 +596,7 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
     // Sync up processors to be safe
     Comm->Barrier();
   
-    Matrix->TransformToLocal();
+    Matrix->FillComplete();
 
     //matrixA.Print(cout);
     //matrixB.Print(cout);
@@ -638,7 +638,7 @@ void Problem_Manager::generateGraph()
   }
   delete [] indices; indices = 0;
 
-  AA->TransformToLocal();
+  AA->FillComplete();
 //   AA->SortIndices();
 //   AA->RemoveRedundantIndices();
 

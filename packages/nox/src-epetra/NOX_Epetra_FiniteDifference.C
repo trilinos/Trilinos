@@ -104,7 +104,7 @@ FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const E
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 }
 
 FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const Epetra_CrsGraph& userGraph, const Epetra_Vector& beta_, double alpha_) :
@@ -127,7 +127,7 @@ FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const E
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 }
 
 FiniteDifference::~FiniteDifference()
@@ -417,7 +417,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
   }
 
-  jac.TransformToLocal();
+  jac.FillComplete();
 
   return true;
 }
@@ -478,11 +478,11 @@ Epetra_CrsMatrix*  FiniteDifference::createGraphAndJacobian(Interface& i,
 
   }
 
-  graph->TransformToLocal();
+  graph->FillComplete();
    // No-ops because graph is already sorted (maherou) graph->SortIndices();
    // No-ops because graph is already sorted (maherou) graph->RemoveRedundantIndices();
   jacobian = new Epetra_CrsMatrix(Copy, *graph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 
   return jacobian;
 

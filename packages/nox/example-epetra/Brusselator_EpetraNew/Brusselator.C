@@ -215,7 +215,7 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   if( overlapType == ELEMENTS ) {
     ColumnToOverlapImporter = new Epetra_Import(AA->ColMap(),*OverlapMap);
     A = new Epetra_CrsMatrix (Copy, *AA);
-    A->TransformToLocal();
+    A->FillComplete();
   }
 
   // Create the nodal coordinates
@@ -563,7 +563,7 @@ Epetra_CrsGraph& Brusselator::generateGraphUsingNodes(Epetra_CrsGraph& AA)
     }  
   }
 
-  AA.TransformToLocal();
+  AA.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
   return AA;
@@ -607,7 +607,7 @@ Epetra_CrsGraph& Brusselator::generateGraphUsingElements(Epetra_CrsGraph& AA)
       }
     }
   }
-  AA.TransformToLocal();
+  AA.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
   return AA;

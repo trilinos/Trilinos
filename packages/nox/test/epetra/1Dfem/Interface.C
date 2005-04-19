@@ -104,7 +104,7 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm) :
   Jacobian = new Epetra_CrsMatrix (Copy, *Graph);
 
   // Clean-up 
-  Jacobian->TransformToLocal();
+  Jacobian->FillComplete();
 }
 
 // Destructor
@@ -290,7 +290,7 @@ bool Interface::evaluate(NOX::Epetra::Interface::FillType flag,
   // Sync up processors to be safe
   Comm->Barrier();
  
-  Jacobian->TransformToLocal();
+  Jacobian->FillComplete();
 
   return true;
 }
@@ -340,7 +340,7 @@ bool Interface::createGraph()
       } 	
     }
   }
-  Graph->TransformToLocal();
+  Graph->FillComplete();
   return true;
 }
 

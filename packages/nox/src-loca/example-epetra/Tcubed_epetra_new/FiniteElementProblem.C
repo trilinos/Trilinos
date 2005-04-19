@@ -97,10 +97,10 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements,
   generateGraph(*AA);
 
   // Create a second matrix using graph of first matrix - this creates a 
-  // static graph so we can refill the new matirx after TransformToLocal()
+  // static graph so we can refill the new matirx after FillComplete()
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
-  A->TransformToLocal();
+  A->FillComplete();
 
   // Set default bifurcation values
   factor = 0.1;
@@ -247,7 +247,7 @@ bool FiniteElementProblem::evaluate(FillType f,
   // Sync up processors to be safe
   Comm->Barrier();
  
-  A->TransformToLocal();
+  A->FillComplete();
 
   return true;
 }
@@ -310,7 +310,7 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)
       } 	
     }
   }
-  AAA.TransformToLocal();
+  AAA.FillComplete();
 //   AAA.SortIndices();
 //   AAA.RemoveRedundantIndices();
   return AAA;

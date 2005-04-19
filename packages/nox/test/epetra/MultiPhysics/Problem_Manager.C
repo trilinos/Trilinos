@@ -1033,9 +1033,9 @@ bool Problem_Manager::solveMF()
 
   // Create a preconditioning matrix using the graph just created - this 
   // creates a static graph so we can refill the new matirx after
-  // TransformToLocal()  is called.  
+  // FillComplete()  is called.  
   A = new Epetra_CrsMatrix(Copy, *AA); 
-  A->TransformToLocal();
+  A->FillComplete();
 
   //NOX::EpetraNew::Interface::Required& reqInt = 
   //  dynamic_cast<NOX::EpetraNew::Interface::Required&>(interface);
@@ -1133,7 +1133,7 @@ bool Problem_Manager::evaluate(
 
     copyProblemJacobiansToComposite();
 
-    Matrix->TransformToLocal();
+    Matrix->FillComplete();
 
 #ifdef DEBUG_PROBLEM_MANAGER
     Matrix->Print(cout);
@@ -1297,7 +1297,7 @@ void Problem_Manager::generateGraph()
         delete [] columnIndices; columnIndices = 0;
         delete [] dependentColIndices; dependentColIndices = 0;
 
-	offGraph.TransformToLocal();
+	offGraph.FillComplete();
 #ifdef DEBUG_PROBLEM_MANAGER
 	offGraph.Print(cout);
 #endif
@@ -1312,7 +1312,7 @@ void Problem_Manager::generateGraph()
 #endif
   } // end doOffBlocks
 
-  AA->TransformToLocal();
+  AA->FillComplete();
 
 #ifdef DEBUG_PROBLEM_MANAGER
   AA->Print(cout);

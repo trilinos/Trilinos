@@ -187,7 +187,7 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 }
 
 FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
@@ -218,7 +218,7 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 }
 
 FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
@@ -250,7 +250,7 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 }
 
 FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
@@ -281,7 +281,7 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 }
 
 FiniteDifference::~FiniteDifference()
@@ -572,7 +572,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
   }
 
-  jac.TransformToLocal();
+  jac.FillComplete();
 
   return true;
 }
@@ -639,9 +639,9 @@ createGraphAndJacobian(Interface::Required& i,
 
   }
 
-  graph->TransformToLocal();
+  graph->FillComplete();
   jacobian = new Epetra_CrsMatrix(Copy, *graph);
-  jacobian->TransformToLocal();
+  jacobian->FillComplete();
 
   return jacobian;
 
