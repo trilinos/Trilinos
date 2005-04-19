@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_PERFORMANCE_TRUE HAVE_PERFORMANCE_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE HAVE_COVERAGE_TRUE HAVE_COVERAGE_FALSE HAVE_AMESOS_EPETRAEXT_TRUE HAVE_AMESOS_EPETRAEXT_FALSE HAVE_AMESOS_TRIUTILS_TRUE HAVE_AMESOS_TRIUTILS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS tac_with_trilinosdatadir HAVE_AMESOS_LAPACK_TRUE HAVE_AMESOS_LAPACK_FALSE NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE CPP HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SMUMPS_TRUE HAVE_AMESOS_SMUMPS_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_PERFORMANCE_TRUE HAVE_PERFORMANCE_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE HAVE_COVERAGE_TRUE HAVE_COVERAGE_FALSE HAVE_AMESOS_EPETRAEXT_TRUE HAVE_AMESOS_EPETRAEXT_FALSE HAVE_AMESOS_TRIUTILS_TRUE HAVE_AMESOS_TRIUTILS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS tac_with_trilinosdatadir HAVE_AMESOS_LAPACK_TRUE HAVE_AMESOS_LAPACK_FALSE NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE CPP HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SMUMPS_TRUE HAVE_AMESOS_SMUMPS_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -915,6 +915,9 @@ Optional Features:
                           (default is no)
   --enable-amesos-dscpack Enable Amesos interface support for DSCPACK (default
                           is no)
+  --enable-amesos-scalapack
+                          Enable Amesos interface support for SCALAPACK
+                          (default is no)
   --enable-amesos-umfpack Enable Amesos interface support for UMFPACK (default
                           is no)
   --enable-amesos-superlu Enable Amesos interface support for SUPERLU (default
@@ -3854,7 +3857,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3857:" \
+echo "$as_me:3860:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7522,7 +7525,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7525: \"$ac_link\") >&5
+(eval echo $as_me:7528: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7600,7 +7603,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7603: \"$ac_link\") >&5
+(eval echo $as_me:7606: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10240,8 +10243,31 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-#TAC_ARG_ENABLE_FEATURE_SUB( amesos, scalapack, [Enable Amesos interface support for SCALAPACK],
-#		AMESOS_SCALAPACK, no)
+
+# Check whether --enable-amesos-scalapack or --disable-amesos-scalapack was given.
+if test "${enable_amesos_scalapack+set}" = set; then
+  enableval="$enable_amesos_scalapack"
+  ac_cv_use_amesos_scalapack=$enableval
+else
+  ac_cv_use_amesos_scalapack=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos-scalapack" >&5
+echo $ECHO_N "checking whether to use amesos-scalapack... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_SCALAPACK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
 
 #TAC_ARG_ENABLE_FEATURE_SUB( amesos, merikos, [Enable Amesos interface support for MERIKOS],
 #		AMESOS_MERIKOS, no)
@@ -11818,9 +11844,9 @@ fi
 #  B L A C S  #
 #  =========  #
 
-#if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
-#   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+#if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
+   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -11986,18 +12012,122 @@ fi
 #  S C A L A P A C K  #
 #  =================  #
 
-#if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
-#
-#  AC_F77_FUNC(pdgetrf)
-#
-#  AC_TRY_LINK_FUNC($pdgetrf,,
-#  AC_MSG_ERROR([[Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib).]]))
-#
-#  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true )
-#  AM_CONDITIONAL(NEED_PARAMETER_LIST, true )
-#else
-#  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false )
-#fi
+
+if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
+  ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+case $ac_cv_f77_mangling in
+  upper*) ac_val="PDGETRF" ;;
+  lower*) ac_val="pdgetrf" ;;
+  *)      ac_val="unknown" ;;
+esac
+case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
+
+pdgetrf="$ac_val"
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char $pdgetrf ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+$pdgetrf ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+{ { echo "$as_me:$LINENO: error: Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib)." >&5
+echo "$as_me: error: Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib)." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
+
+if true ; then
+  HAVE_AMESOS_SCALAPACK_TRUE=
+  HAVE_AMESOS_SCALAPACK_FALSE='#'
+else
+  HAVE_AMESOS_SCALAPACK_TRUE='#'
+  HAVE_AMESOS_SCALAPACK_FALSE=
+fi
+
+
+
+if true ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
+else
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
+fi
+
+else
+
+
+if false ; then
+  HAVE_AMESOS_SCALAPACK_TRUE=
+  HAVE_AMESOS_SCALAPACK_FALSE='#'
+else
+  HAVE_AMESOS_SCALAPACK_TRUE='#'
+  HAVE_AMESOS_SCALAPACK_FALSE=
+fi
+
+fi
 
 #  =========  #
 #  M U M P S  #
@@ -12741,7 +12871,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12744: \"$ac_link\") >&5
+(eval echo $as_me:12874: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12819,7 +12949,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12822: \"$ac_link\") >&5
+(eval echo $as_me:12952: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13348,6 +13478,27 @@ if test -z "${HAVE_AMESOS_DSCPACK_TRUE}" && test -z "${HAVE_AMESOS_DSCPACK_FALSE
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SCALAPACK_TRUE}" && test -z "${HAVE_AMESOS_SCALAPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SCALAPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SCALAPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SCALAPACK_TRUE}" && test -z "${HAVE_AMESOS_SCALAPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SCALAPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SCALAPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14092,6 +14243,8 @@ s,@HAVE_AMESOS_SUPERLUDIST_TRUE@,$HAVE_AMESOS_SUPERLUDIST_TRUE,;t t
 s,@HAVE_AMESOS_SUPERLUDIST_FALSE@,$HAVE_AMESOS_SUPERLUDIST_FALSE,;t t
 s,@HAVE_AMESOS_DSCPACK_TRUE@,$HAVE_AMESOS_DSCPACK_TRUE,;t t
 s,@HAVE_AMESOS_DSCPACK_FALSE@,$HAVE_AMESOS_DSCPACK_FALSE,;t t
+s,@HAVE_AMESOS_SCALAPACK_TRUE@,$HAVE_AMESOS_SCALAPACK_TRUE,;t t
+s,@HAVE_AMESOS_SCALAPACK_FALSE@,$HAVE_AMESOS_SCALAPACK_FALSE,;t t
 s,@HAVE_AMESOS_MUMPS_TRUE@,$HAVE_AMESOS_MUMPS_TRUE,;t t
 s,@HAVE_AMESOS_MUMPS_FALSE@,$HAVE_AMESOS_MUMPS_FALSE,;t t
 s,@HAVE_AMESOS_SMUMPS_TRUE@,$HAVE_AMESOS_SMUMPS_TRUE,;t t

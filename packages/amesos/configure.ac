@@ -378,8 +378,8 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, superludist, [Enable Amesos interface suppor
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
 		AMESOS_DSCPACK, no)
 
-#TAC_ARG_ENABLE_FEATURE_SUB( amesos, scalapack, [Enable Amesos interface support for SCALAPACK], 
-#		AMESOS_SCALAPACK, no)
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, scalapack, [Enable Amesos interface support for SCALAPACK], 
+		AMESOS_SCALAPACK, no)
 
 #TAC_ARG_ENABLE_FEATURE_SUB( amesos, merikos, [Enable Amesos interface support for MERIKOS], 
 #		AMESOS_MERIKOS, no)
@@ -544,9 +544,9 @@ fi
 #  B L A C S  #
 #  =========  #
 
-#if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
-#   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+#if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
+   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
   AC_F77_FUNC(dgebs2d)
 
@@ -572,18 +572,16 @@ fi
 #  S C A L A P A C K  #
 #  =================  #
 
-#if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
-#
-#  AC_F77_FUNC(pdgetrf)
-#
-#  AC_TRY_LINK_FUNC($pdgetrf,,
-#  AC_MSG_ERROR([[Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib).]]))  
-#
-#  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
-#  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-#else
-#  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
-#fi
+
+if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
+  AC_F77_FUNC(pdgetrf)
+  AC_TRY_LINK_FUNC($pdgetrf,,
+  AC_MSG_ERROR([[Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib).]]))  
+  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
+fi
 
 #  =========  #
 #  M U M P S  #
