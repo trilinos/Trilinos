@@ -488,7 +488,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
   //skip most of this function.
   if (sourceMap->NumGlobalElements() < 1) {
     if (callFillComplete) {
-      EPETRA_CHK_ERR( FillComplete() );
+      EPETRA_CHK_ERR( FillComplete(DomainMap(), RangeMap()) );
     }
     delete sourceMap;
     return(0);
