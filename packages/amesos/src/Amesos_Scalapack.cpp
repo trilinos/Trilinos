@@ -1008,7 +1008,7 @@ int Amesos_Scalapack::Solve() {
     Comm().Broadcast( Ierr, 1, 0 ) ; 
 
   // MS // compute vector norms
-  if( ComputeVectorNorms_ == false || verbose_ == 2 ) {
+  if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<nrhs ; ++i ) {
       assert((*vecX)(i)->Norm2(&NormLHS)==0);
@@ -1021,7 +1021,7 @@ int Amesos_Scalapack::Solve() {
   }
   
   // MS // compute true residual
-  if( ComputeTrueResidual_ == false || verbose_ == 2  ) {
+  if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
     double Norm;
     Epetra_MultiVector Ax(vecB->Map(),nrhs);
     for( int i=0 ; i<nrhs ; ++i ) {

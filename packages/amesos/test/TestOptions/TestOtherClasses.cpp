@@ -25,6 +25,7 @@ int TestOtherClasses( const char* AmesosClass,
 
   {
     Teuchos::ParameterList ParamList ;
+    ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     ParamList.set( "Redistribute", true );
     ParamList.set( "AddZeroToDiag", true );
     ParamList.set( "MaxProcs", 100000 );

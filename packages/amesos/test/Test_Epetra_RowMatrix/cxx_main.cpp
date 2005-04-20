@@ -143,6 +143,7 @@ int sub_main( bool verbose, Epetra_Comm &Comm ) {
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
+  SolverType.push_back("Amesos_Scalapack");
 //  SolverType.push_back("Amesos_Dscpack");
 
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {

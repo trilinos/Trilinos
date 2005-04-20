@@ -76,6 +76,9 @@
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
 #endif
+#ifdef HAVE_AMESOS_SCALAPACK
+#include "Amesos_Scalapack.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
@@ -306,6 +309,19 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( A_dscpack.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( A_dscpack.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
+#endif
+#ifdef HAVE_AMESOS_SCALAPACK
+    } else if ( SparseSolver == SCALAPACK ) {
+
+      Teuchos::ParameterList ParamList ;
+      Amesos_Scalapack A_scalapack( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_scalapack.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_scalapack.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_scalapack.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_scalapack.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_scalapack.Solve(  ) ); 
+
 #endif
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) {

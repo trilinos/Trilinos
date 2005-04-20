@@ -65,6 +65,9 @@
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
+#ifdef HAVE_AMESOS_SCALAPACK
+#include "Amesos_Scalapack.h"
+#endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
 #include "Amesos_Superludist.h"
 #endif
@@ -365,7 +368,21 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( mumps.SetParameters( ParamList ) ); 
       EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
     
+      EPETRA_CHK_ERR( mumps.SymbolicFactorization( ) ); 
+      EPETRA_CHK_ERR( mumps.NumericFactorization( ) ); 
       EPETRA_CHK_ERR( mumps.Solve( ) ); 
+#endif
+#ifdef HAVE_AMESOS_SCALAPACK
+    } else if ( SparseSolver == SCALAPACK ) { 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Scalapack scalapack( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( scalapack.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( scalapack.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( scalapack.SymbolicFactorization( ) ); 
+      EPETRA_CHK_ERR( scalapack.NumericFactorization( ) ); 
+      EPETRA_CHK_ERR( scalapack.Solve( ) ); 
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) { 

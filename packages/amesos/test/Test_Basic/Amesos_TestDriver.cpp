@@ -249,8 +249,8 @@ int main(int argc, char **argv)
   int special = atoi( argv[4] ) ; 
   int numsolves = atoi( argv[5] ) ; 
   int transpose =  atoi( argv[6] ) ; 
-  double maxerror = atof( argv[7] ) * 10 ;    //  Bumped up the error margin for the release 
-  double maxresid = atof( argv[8] ) * 10 ;    //  Bumped up the error margin for the release 
+  double maxerror = atof( argv[7] ) ;    //  Bump up the error margin for the release (but keep it lower for the dev branch )
+  double maxresid = atof( argv[8] ) ;    //  Bump up the error margin for the release (but keep it lower for the dev branch )
 
   if  ( Sprogram == "LAPACK" ) 
     SparseSolver = LAPACK ; 

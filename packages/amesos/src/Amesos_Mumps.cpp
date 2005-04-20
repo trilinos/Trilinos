@@ -63,6 +63,7 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   Problem_(&prob),
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false),
+  NoDestroy_(false),
   MaxProcs_(-1),
   RedistrMap_(0),
   RedistrMatrix_(0),
@@ -121,57 +122,59 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
 
 void Amesos_Mumps::Destroy()
 {
-  
-  // destroy instance of the package
-  MDS.job = -2;
-  
-  if (Comm().MyPID() < MaxProcs_) 
-    MUMPS_INTERFACE(&MDS);
+
+  if ( ! NoDestroy_ ) { 
+    // destroy instance of the package
+    MDS.job = -2;
     
-  if (RedistrMap_) {
-    delete RedistrMap_;
-    RedistrMap_ = 0;
-  }
-
-  if (RedistrMatrix_) {
-    delete RedistrMatrix_;
-    RedistrMatrix_ = 0;
-  }
-
-  if (RedistrImporter_) {
-    delete RedistrImporter_;
-    RedistrImporter_ = 0;
-  }
-
-  if (SerialMap_) {
-    delete SerialMap_;
-    SerialMap_ = 0;
-  }
-
-  if (SerialImporter_) {
-    delete SerialImporter_;
-    SerialImporter_ = 0;
-  }
-
-  if (IsComputeSchurComplementOK_ && (Comm().MyPID() == 0)
-      && MDS.schur) {
-    delete [] MDS.schur;
-    MDS.schur = 0;
-  }
-
-  if (MUMPSComm_) {
-    MPI_Comm_free( &MUMPSComm_ );
-    MUMPSComm_ = 0;
-  }
-
-  if( (verbose_ && PrintTiming_) || verbose_ == 2) 
-    PrintTiming();
-  if( (verbose_ && PrintStatus_) || verbose_ == 2) 
-    PrintStatus();
-
-  if (Time_) { 
-    delete Time_; 
-    Time_ = 0; 
+    if (Comm().MyPID() < MaxProcs_) 
+      MUMPS_INTERFACE(&MDS);
+    
+    if (RedistrMap_) {
+      delete RedistrMap_;
+      RedistrMap_ = 0;
+    }
+    
+    if (RedistrMatrix_) {
+      delete RedistrMatrix_;
+      RedistrMatrix_ = 0;
+    }
+    
+    if (RedistrImporter_) {
+      delete RedistrImporter_;
+      RedistrImporter_ = 0;
+    }
+    
+    if (SerialMap_) {
+      delete SerialMap_;
+      SerialMap_ = 0;
+    }
+    
+    if (SerialImporter_) {
+      delete SerialImporter_;
+      SerialImporter_ = 0;
+    }
+    
+    if (IsComputeSchurComplementOK_ && (Comm().MyPID() == 0)
+	&& MDS.schur) {
+      delete [] MDS.schur;
+      MDS.schur = 0;
+    }
+    
+    if (MUMPSComm_) {
+      MPI_Comm_free( &MUMPSComm_ );
+      MUMPSComm_ = 0;
+    }
+    
+    if( (verbose_ && PrintTiming_) || verbose_ == 2) 
+      PrintTiming();
+    if( (verbose_ && PrintStatus_) || verbose_ == 2) 
+      PrintStatus();
+    
+    if (Time_) { 
+      delete Time_; 
+      Time_ = 0; 
+    }
   }
      
   return;
@@ -364,6 +367,9 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 
   if( ParameterList.isParameter("PrintTiming") )
     PrintTiming_ = ParameterList.get("PrintTiming", false);
+  
+  if( ParameterList.isParameter("NoDestroy") )
+    NoDestroy_ = ParameterList.get("NoDestroy", false);
   
   // print some statistics (on process 0). Do not include timing
   if( ParameterList.isParameter("PrintStatus") )

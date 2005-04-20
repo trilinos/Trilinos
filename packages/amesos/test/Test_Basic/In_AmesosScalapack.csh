@@ -207,7 +207,7 @@ $mpigo 3 amesos_test.exe SCALAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 # COMMENT fails on linux box $mpigo 6 amesos_test.exe SCALAPACK K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
 # COMMENT fails on linux box $mpigo 6 amesos_test.exe SCALAPACK K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
 
-$mpigo 1 amesos_test.exe SCALAPACK Khead.triS 0 1 1 0 2e-13 1e-13 >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK Khead.triS 0 1 1 0 2e-13 1e-10 >>SST.stdout
 
 #
 #  A couple more matrices

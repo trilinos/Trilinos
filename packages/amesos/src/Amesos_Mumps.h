@@ -423,6 +423,9 @@ protected:
   //! \c true if the Schur complement has been computed (need to free memory)
   bool IsComputeSchurComplementOK_;
 
+
+  bool NoDestroy_ ;  // Set true to prevent memory freeing
+
 #ifndef HAVE_AMESOS_SMUMPS  
   //! Mumps data structure for double-precision
   DMUMPS_STRUC_C MDS;
