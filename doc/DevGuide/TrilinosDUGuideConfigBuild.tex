@@ -510,10 +510,12 @@ many test results that can be used by all subsequent packages.  If it is
 later necessary to reconfigure with a different set of packages, all packages
 (including the first) can use these cached values.  If configure options are
 changed that are associated with configure test results that have already 
-been cached, it is necessary to remove the
+been cached, or a relevant environment variable is changed, it is necessary 
+to remove the
 \InlineCommand{config.cache} file before reconfiguring.  Failing to do so
-can cause the new options to be ignored.  
-When configuring even a moderate number of 
+can cause the changes to be ignored.  
+
+When configuring even a handful of 
 packages, during the first configure a speedup of greater
 than two is attainable and a speedup of greater than three is possible for 
 subsequent configures.
