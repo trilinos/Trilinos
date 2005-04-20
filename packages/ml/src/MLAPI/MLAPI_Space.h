@@ -2,11 +2,13 @@
 #define ML_SPACE_H
 
 #include "ml_include.h"
+#ifdef HAVE_ML_MLAPI
 #include "ml_comm.h"
 #include "MLAPI_Error.h"
 #include "MLAPI_Workspace.h"
 #include "MLAPI_BaseObject.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Epetra_Map.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include <iomanip>
 
@@ -336,4 +338,5 @@ private:
 
 } // namespace MLAPI
 
+#endif
 #endif
