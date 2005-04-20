@@ -119,6 +119,15 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #endif
   } 
   
+  if ((CT == "Amesos_Scalapack") || (CT == "Scalapack")) { 
+#ifdef HAVE_AMESOS_SCALAPACK
+    return new Amesos_Scalapack(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Scalapack is not implemented" << endl ; 
+    return(0); 
+#endif
+  } 
+  
   if ((CT == "Amesos_Dscpack") || (CT == "Dscpack")) { 
 #ifdef HAVE_AMESOS_DSCPACK
     return new Amesos_Dscpack(LinearProblem); 
@@ -185,6 +194,14 @@ bool Amesos::Query(const string CT)
 
   if ((CT == "Amesos_Mumps") || (CT == "Mumps")) { 
 #ifdef HAVE_AMESOS_MUMPS
+    return true;
+#else
+    return false;
+#endif
+  } 
+
+  if ((CT == "Amesos_Scalapack") || (CT == "Scalapack")) { 
+#ifdef HAVE_AMESOS_SCALAPACK
     return true;
 #else
     return false;

@@ -266,6 +266,8 @@ int main(int argc, char **argv)
     SparseSolver = DSCPACK ; 
   else if  ( Sprogram == "MUMPS" ) 
     SparseSolver = MUMPS ; 
+  else if  ( Sprogram == "SCALAPACK" ) 
+    SparseSolver = SCALAPACK ; 
   else {
     if (( MyPID == 0 ) ) cerr << "Unknown program: " << Sprogram << endl ; 
     exit( -1 ) ; 
@@ -300,6 +302,12 @@ int main(int argc, char **argv)
 #ifndef HAVE_AMESOS_MUMPS
   if (SparseSolver == MUMPS) {
     cerr << "MUMPS is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_SCALAPACK
+  if (SparseSolver == SCALAPACK) {
+    cerr << "SCALAPACK is not installed..." << endl;
     exit(EXIT_SUCCESS);
   }
 #endif
@@ -356,9 +364,10 @@ int main(int argc, char **argv)
        SparseSolver != UMFPACK  && 
        SparseSolver != KLU && 
        SparseSolver != MUMPS  && 
+       SparseSolver != SCALAPACK  && 
        SparseSolver != SUPERLU ) {
     if ( ( MyPID == 0 )  ) 
-      cerr << "Only LAPACK, SUPERLUDIST, UMFPACK, MUMPS, KLU and DSCPACK support MRHS and BRHS" << endl ;
+      cerr << "Only LAPACK, SUPERLUDIST, UMFPACK, MUMPS, SCALAPACK, KLU and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
     
