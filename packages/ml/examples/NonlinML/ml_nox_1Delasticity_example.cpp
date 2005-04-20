@@ -61,8 +61,7 @@
 // ml objects
 #include "ml_common.h"
 
-#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
-
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 // ml objects
 #include "ml_nox_preconditioner.H"
 
@@ -446,7 +445,7 @@ return ierr ;
 int main(int argc, char *argv[])
 {
   std::cout << "running ml_nox_1Delasticity_example.exe needs: \n"
-       << "defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)\n"
+       << "defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)\n"
        << "see documentation for the ml-class ML_NOX::ML_Nox_Preconditioner\n";
   fflush(stdout);
   return 0;
