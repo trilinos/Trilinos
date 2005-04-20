@@ -40,7 +40,7 @@
  * \date Last update do Doxygen: 31-Mar-05
  *
  */
-#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA)
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 
 #ifndef ML_NOX_FINEINTERFACE_H
 #define ML_NOX_FINEINTERFACE_H
