@@ -77,6 +77,10 @@ char *yo = "Zoltan_HG_PaToH";
   pargs._k = nparts;
     /* set the same imbalanace ratio to the required one */
   pargs.init_imbal = pargs.final_imbal = hgp->bal_tol-1.0;
+  if (hgp->patoh_alloc_pool0>0)
+    pargs.MemMul_CellNet = hgp->patoh_alloc_pool0; 
+  if (hgp->patoh_alloc_pool1>0)
+    pargs.MemMul_Pins = hgp->patoh_alloc_pool1; 
 
     
   PaToH_Alloc(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim, 

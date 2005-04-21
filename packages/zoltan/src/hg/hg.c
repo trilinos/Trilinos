@@ -45,6 +45,8 @@ static PARAM_VARS HG_params[] = {
  { "EDGE_SIZE_THRESHOLD",            NULL, "FLOAT", 0 },
  { "HG_USE_TIMERS",                  NULL, "INT", 0},
  { "USE_TIMERS",                     NULL, "INT", 0},
+ { "PATOH_ALLOC_POOL0",              NULL, "INT", 0},
+ { "PATOH_ALLOC_POOL1",              NULL, "INT", 0}, 
  { NULL, NULL, NULL, 0 } };
 
 /* prototypes for static functions: */
@@ -461,6 +463,10 @@ static int Zoltan_HG_Initialize_Params(
                               (void*) &hgp->use_timers);
   Zoltan_Bind_Param(HG_params,"EDGE_SIZE_THRESHOLD",
                               (void*) &hgp->EdgeSizeThreshold);
+  Zoltan_Bind_Param(HG_params,"PATOH_ALLOC_POOL0",
+                              (void*) &hgp->patoh_alloc_pool0);
+  Zoltan_Bind_Param(HG_params,"PATOH_ALLOC_POOL1",
+                              (void*) &hgp->patoh_alloc_pool1);
 
   /* Set default values */
   strncpy(hgp->redm_str,   "ipm",  MAX_PARAM_STRING_LEN);
@@ -475,6 +481,8 @@ static int Zoltan_HG_Initialize_Params(
   hgp->EdgeSizeThreshold = 1.0;   /* Default (for now) -- keep all edges. */
   hgp->final_output = 1;
   hgp->use_timers = 0;
+  hgp->patoh_alloc_pool0 = 0;
+  hgp->patoh_alloc_pool1 = 0;
 
 hgp->fmswitch        = -1;
 hgp->noimprove_limit = 0.25;

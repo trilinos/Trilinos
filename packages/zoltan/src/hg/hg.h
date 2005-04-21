@@ -124,6 +124,8 @@ struct HGPartParamsStruct {
                                  2 -> move to lighter weight partition on tie */
   float EdgeSizeThreshold;    /* %-age of vtx beyond which an edge is 
                                  considered to be dense. */
+  int patoh_alloc_pool0,    /* to adjust patoh's memory pre-allocation amount */
+      patoh_alloc_pool1;
 };
 typedef struct HGPartParamsStruct HGPartParams;
 
