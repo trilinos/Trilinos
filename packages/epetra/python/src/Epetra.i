@@ -76,7 +76,6 @@ on-line documentation for more in-depth information."
 
 // Local includes
 #include "Epetra_NumPyVector.h"
-#include "Epetra_VectorHelper.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
 %}

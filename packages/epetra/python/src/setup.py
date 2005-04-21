@@ -102,7 +102,6 @@ for lib in libs:
 # Define the strings that refer to the required source files.
 wrapEpetra         = "Epetra_wrap.cpp"
 epetraNumPyVector  = os.path.join(srcDir,"Epetra_NumPyVector.cpp" )
-epetraVectorHelper = os.path.join(srcDir,"Epetra_VectorHelper.cpp")
 numPyArray         = os.path.join(srcDir,"NumPyArray.cpp"         )
 numPyWrapper       = os.path.join(srcDir,"NumPyWrapper.cpp"       )
 
@@ -110,7 +109,6 @@ numPyWrapper       = os.path.join(srcDir,"NumPyWrapper.cpp"       )
 _Epetra = Extension("PyTrilinos._Epetra",
                     [wrapEpetra,
                      epetraNumPyVector,
-                     epetraVectorHelper,
                      numPyArray,
                      numPyWrapper      ],
                     include_dirs    = [epetraInc, srcDir],
