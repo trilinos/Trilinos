@@ -343,15 +343,14 @@ int SubMain( Epetra_Comm &Comm ) {
   SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
-  SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
-//  SolverType.push_back("Amesos_Dscpack");
+  // NOTE: DSCPACK does not support Epetra_RowMatrix's
 
   Amesos Factory;
   bool TestPassed = true;
 
-  for (int i = 0 ; i < SolverType.size() ; ++i) {
+  for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
     if (Factory.Query((char*)Solver.c_str())) {
       bool ok = Test((char*)Solver.c_str(),
@@ -363,12 +362,6 @@ int SubMain( Epetra_Comm &Comm ) {
     else
       cout << "Solver " << Solver << " not available" << endl;
   }
-#if 0
-  //  this does not seem to help
-  delete RowA;
-  delete RowB;
-  delete RowC;
-#endif
 
   if (TestPassed) {
     if (Comm.MyPID() == 0)
