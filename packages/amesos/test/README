@@ -1,5 +1,5 @@
 Organization of Amesos tests:
-(M. Sala, SNL 9214, Nov-04)
+(M. Sala, SNL 9214, Apr-05)
 
 - Test_Basic
   ==========
@@ -12,36 +12,31 @@ Organization of Amesos tests:
   =====================
 
   The linear system matrix is an Epetra_RowMatrix object, 
-  that is not derived from either Epetra_CrsMatrix or Epetra_VbrMatrix. 
+  that is not derived from the Epetra_CrsMatrix class. The linear
+  system matrix is non-symmetric (recirc_2d) and small (64).
   Multiple RHS are tested.
 
   Tests for default options only, with matrix and its transpose.
 
-  Amesos_Descpack is NOT tested.
+  Amesos_Dscpack is NOT tested since the solver currently does not
+  support Epetra_RowMatrix's.
 
 
 - Test_Epetra_CrsMatrix
   =====================
 
   The linear system matrix is an Epetra_CrsMatrix.
-  Multiple RHS are tested.
+  Multiple RHS are tested. The linear system matrix is symmetric 
+  (laplace_2d) and small (64).
 
   Tests for default options only, with matrix and its transpose.
-
-- Test_Epetra_VbrMatrix
-  The linear system matrix is an Epetra_CrsMatrix.
-  Multiple RHS are tested.
-
-  Tests for default options only, with matrix and its transpose.
-
-  Amesos_Descpack is NOT tested.
 
 
 - Test_Detailed
   =============
 
   The linear system matrix is an Epetra_RowMatrix object, 
-  that is not derived from either Epetra_CrsMatrix or Epetra_VbrMatrix. 
+  that is not derived from the Epetra_CrsMatrix class.
   Transpose it NOT tested.
   Multiple RHS are tested.
 
@@ -49,7 +44,7 @@ Organization of Amesos tests:
   and Solve(). For a given problem, the matrix, RHS and solution are
   changed in several ways (values and underlying maps).
 
-  Amesos_Descpack is NOT tested.
+  Amesos_Dscpack is NOT tested.
 
 
 - Test_MultipleSolves

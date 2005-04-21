@@ -760,7 +760,6 @@ AC_CONFIG_FILES([
 		test/Test_Performance/Makefile
 		test/Test_Epetra_RowMatrix/Makefile
 		test/Test_Epetra_CrsMatrix/Makefile
-		test/Test_Epetra_VbrMatrix/Makefile
 		test/Test_MultipleSolves/Makefile
 		test/Test_Detailed/Makefile
 		test/Test_LAPACK/Makefile

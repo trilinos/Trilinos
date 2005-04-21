@@ -104,10 +104,10 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = scripts Test_Basic Test_Epetra_RowMatrix \
-	Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix \
-	Test_MultipleSolves Test_Detailed Test_LAPACK Test_KLU \
-	Test_UMFPACK Test_SuperLU Test_SuperLU_DIST Test_MUMPS \
-	Test_DSCPACK TestOptions Test_Performance
+	Test_Epetra_CrsMatrix Test_MultipleSolves Test_Detailed \
+	Test_LAPACK Test_KLU Test_UMFPACK Test_SuperLU \
+	Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions \
+	Test_Performance
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -265,7 +265,7 @@ target_vendor = @target_vendor@
 SUBDIRS = scripts \
 	  Test_Basic \
 	  Test_Epetra_RowMatrix Test_Epetra_CrsMatrix \
-	  Test_Epetra_VbrMatrix Test_MultipleSolves \
+	  Test_MultipleSolves \
 	  Test_Detailed \
 	  Test_LAPACK \
 	  Test_KLU \

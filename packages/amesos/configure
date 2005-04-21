@@ -13170,7 +13170,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 #
-                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_Epetra_VbrMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile"
+                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -14032,7 +14032,6 @@ do
   "test/Test_Performance/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_Performance/Makefile" ;;
   "test/Test_Epetra_RowMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_Epetra_RowMatrix/Makefile" ;;
   "test/Test_Epetra_CrsMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_Epetra_CrsMatrix/Makefile" ;;
-  "test/Test_Epetra_VbrMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_Epetra_VbrMatrix/Makefile" ;;
   "test/Test_MultipleSolves/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_MultipleSolves/Makefile" ;;
   "test/Test_Detailed/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_Detailed/Makefile" ;;
   "test/Test_LAPACK/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_LAPACK/Makefile" ;;
