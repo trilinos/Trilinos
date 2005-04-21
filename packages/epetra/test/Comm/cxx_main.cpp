@@ -808,7 +808,7 @@ int checkDistributor(Epetra_Distributor* distr,
   if (len_imports > 0) {
     delete [] imports;
   }
- 
+
   return(err);
 }
 
