@@ -33,6 +33,7 @@ from   distutils.core import *
 from   distutils      import sysconfig
 import commands
 import os
+import re
 import string
 import sys
 
@@ -52,6 +53,24 @@ except IOError:
 # epetra package directory, and srcDir is the path for the python source directory
 pakDir = makeInfo.get("top_srcdir","")
 srcDir = makeInfo.get("srcdir"    ,"")
+
+# Obtain the version from the package version function, using regular
+# expressions.  This assumes that the function returns a string constant of the
+# form "PackageName Version xxx - mm/dd/yyyy" and extracts the xxx (which does
+# not have to be three characters long).
+version       = "??"
+versionRE     = re.compile(r"return.*Version\s+(.*)\s+-\s+\d")
+versionHeader = os.path.join(pakDir,"src","New_Package_Version.h")
+try:
+    header = open(versionHeader)
+    lines  = header.readlines()
+    header.close()
+    for line in lines:
+        match = versionRE.search(line)
+        if match:
+            version = match.group(1)
+except IOError:
+    pass
 
 # Define the epetra include path, library directory and library name
 epetraInc    = os.path.join(pakDir, "src")
@@ -102,7 +121,7 @@ _Epetra = Extension("PyTrilinos._Epetra",
 
 # PyTrilinos.Epetra setup
 setup(name         = "PyTrilinos.Epetra",
-      version      = "1.0",
+      version      = version,
       description  = "Python Interface to Trilinos Package Epetra",
       author       = "Bill Spotz",
       author_email = "wfspotz@sandia.gov",

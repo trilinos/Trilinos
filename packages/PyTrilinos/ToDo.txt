@@ -61,6 +61,9 @@ PyTrilinos To Do List
     [Done] Epetra
     [Done] EpetraExt
     [Done] NOX (Eric)
+    [Done] LOCA (Eric)
+
+****** Improve package documentation strings
 
 ****** Have PyTrilinos package install a correct __init__.py
 
@@ -99,7 +102,7 @@ PyTrilinos To Do List
     ------ NumPyWrapper
     ------ NumPyArray
 
-****** Make testVector more extensive
+****** Make testVector.py unit test more extensive
 
 ****** Have PyInterface automatically set the associated attribute in the
        Problem class, or come up with a cleaner solution.

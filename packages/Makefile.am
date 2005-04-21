@@ -109,7 +109,7 @@ endif
 if BUILD_PLIRIS
 PLIRIS_SUBDIR = pliris
 endif
-                                                                                                    
+
 if BUILD_TPETRA
 TPETRA_SUBDIR = tpetra
 endif
