@@ -49,7 +49,9 @@ TestBasic_SOURCES = $(srcdir)/In_TestBasic.csh
 TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.csh  \
 	$(srcdir)/In_AmesosDscpack.csh Matrices $(srcdir)/In_AmesosUmfpack.csh \
 	$(srcdir)/In_AmesosKlu.csh $(srcdir)/In_AmesosSuperlu.csh \
-	 $(srcdir)/In_AmesosScalapack.csh   $(srcdir)/In_AmesosMumps.csh \
+	 $(srcdir)/In_AmesosScalapack.csh \
+	 $(srcdir)/In_AmesosLapack.csh \
+	  $(srcdir)/In_AmesosMumps.csh \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
 	$(srcdir)/In_AmesosUmfpackSerial.csh 
 	cp  $(srcdir)/In_TestBasic.csh TestBasic.csh
@@ -59,6 +61,7 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	cp  $(srcdir)/In_AmesosKlu.csh AmesosKlu.csh 
 	cp  $(srcdir)/In_AmesosSuperlu.csh AmesosSuperlu.csh 
 	cp  $(srcdir)/In_AmesosScalapack.csh AmesosScalapack.csh 
+	cp  $(srcdir)/In_AmesosLapack.csh AmesosLapack.csh 
 	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
 	cp  $(srcdir)/In_AmesosKluSerial.csh AmesosKluSerial.csh 
 	cp  $(srcdir)/In_AmesosSuperluSerial.csh AmesosSuperluSerial.csh 
@@ -161,7 +164,9 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_AmesosSuperludist.csh  \
 	$(srcdir)/In_AmesosDscpack.csh $(srcdir)/In_AmesosUmfpack.csh \
 	$(srcdir)/In_AmesosKlu.csh $(srcdir)/In_AmesosSuperlu.csh \
-	$(srcdir)/In_AmesosScalapack.csh   $(srcdir)/In_AmesosMumps.csh \
+	$(srcdir)/In_AmesosScalapack.csh \
+	$(srcdir)/In_AmesosLapack.csh \
+	$(srcdir)/In_AmesosMumps.csh \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
 	$(srcdir)/In_AmesosUmfpackSerial.csh \
 	$(srcdir)/In_Suppressions
@@ -191,7 +196,9 @@ clean:  clean-am
 	TestBasic.csh  \
 	AmesosDscpack.csh AmesosUmfpack.csh \
 	AmesosKlu.csh AmesosSuperlu.csh \
-	AmesosScalapack.csh   AmesosMumps.csh \
+	AmesosScalapack.csh \
+	AmesosLapack.csh \
+	AmesosMumps.csh \
 	AmesosKluSerial.csh  AmesosSuperluSerial.csh \
 	AmesosUmfpackSerial.csh \
 	Suppressions \
