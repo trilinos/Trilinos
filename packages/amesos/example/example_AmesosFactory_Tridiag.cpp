@@ -54,19 +54,15 @@
 // 6.- Call Solve().
 //
 // This example is intended to show the required data
-// for each phase. Phase at point (2) requires matrix
-// structure only. Phase at point (4) requires matrix
-// structure (supposed unchanged from point (2)) and
-// matrix data. Phase (6) requires RHS and solution vector.
+// for each phase. Phase (2) requires the matrix structure only. 
+// Phase (4) requires the matrix structure (supposed unchanged 
+// from phase (2)) and the matrix data. Phase (6) requires the 
+// RHS and solution vector.
 //
-// NOTE: this example can be run with one or more processes.
-//
-// NOTE2: More details about Amesos can be found in
-// example file example_AmesosFactory.cpp and the
-// Amesos users' guide.
+// This example can be run with any number of processors.
 //
 // Author: Marzio Sala, SNL 9214
-// Last modified: Nov-04
+// Last modified: Apr-05.
 
 int main(int argc, char *argv[]) 
 {
@@ -84,46 +80,48 @@ int main(int argc, char *argv[])
   // B E G I N N I N G   O F   M A T R I X   C R E A T I O N //
   // ======================================================= //
  
-  // Construct a Map that puts approximately the same number of 
-  // equations on each processor.
+  // Construct a Map that puts approximatively the same number of 
+  // equations on each processor. `0' is the index base (that is,
+  // numbering starts from 0.
   Epetra_Map Map(NumGlobalElements, 0, Comm);
 
   // Create an empty EpetraCrsMatrix 
   Epetra_CrsMatrix A(Copy, Map, 0);
 
   // Create the structure of the matrix (tridiagonal)
-
-  if (Comm.MyPID() == 0)
-    cout << "Defining nonzero structure of the matrix..." << endl;
   int NumMyElements = Map.NumMyElements();
 
   // Add  rows one-at-a-time
   // Need some vectors to help
-  // Off diagonal Values will always be -1
 
-  double *Values = new double[3];
+  double Values[3];
+  // Right now, we put zeros only in the matrix.
   Values[0] = 0.0;
   Values[1] = 0.0;
   Values[2] = 0.0;
-  int *Indices = new int[3];
+  int Indices[3];
   int NumEntries;
   /// global ID's of local ID's
   int* MyGlobalElements = Map.MyGlobalElements();
 
   // At this point we simply set the nonzero structure of A.
   // Actual values will be inserted later (now all zeros)
-  for (int i=0; i<NumMyElements; i++) {
-
-    if (MyGlobalElements[i] == 0) {
-      Indices[0] = 0; Indices[1] = 1;
+  for (int i = 0; i < NumMyElements; i++) 
+  {
+    if (MyGlobalElements[i] == 0) 
+    {
+      Indices[0] = 0; 
+      Indices[1] = 1;
       NumEntries = 2;
     }
-    else if (MyGlobalElements[i] == NumGlobalElements-1) {
+    else if (MyGlobalElements[i] == NumGlobalElements-1) 
+    {
       Indices[0] = NumGlobalElements-1;
       Indices[1] = NumGlobalElements-2;
       NumEntries = 2;
     }
-    else {
+    else 
+    {
       Indices[0] = MyGlobalElements[i]-1;
       Indices[1] = MyGlobalElements[i];
       Indices[2] = MyGlobalElements[i]+1;
@@ -134,26 +132,30 @@ int main(int argc, char *argv[])
 					NumEntries, Values, Indices));
   }
 
+  // Finish up.
   A.FillComplete();
-
-  // Finish up. Now the matrix STRUCTURE is set. We cannot add
-  // new nonzero elements, but we can still change the
-  // numerical values of all inserted elements (as we will
-  // do later).
 
   // =========================================== //
   // E N D   O F   M A T R I X   C R E A T I O N //
   // =========================================== //
 
+  // Now the matrix STRUCTURE is set. We cannot add
+  // new nonzero elements, but we can still change the
+  // numerical values of all inserted elements (as we will
+  // do later).
+
   // ===================================================== //
   // B E G I N N I N G   O F  T H E   AM E S O S   P A R T //
   // ===================================================== //
 
+  // For comments on the commands in this section, please
+  // see file example_AmesosFactory.cpp.
+  
   Epetra_LinearProblem Problem;
 
   Problem.SetOperator(&A);
 
-  // initialize Amesos solver. Here we solve with Amesos_Klu.
+  // Initializes Amesos solver. Here we solve with Amesos_Klu.
 
   Amesos_BaseSolver * Solver;
   Amesos Factory;
@@ -165,43 +167,51 @@ int main(int argc, char *argv[])
   if (Solver == 0) {
     cerr << "Selected solver is not available" << endl;
     // return ok not to break the test harness
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     exit(EXIT_SUCCESS);
   }
 
   // At this point we can perform the numeric factorization.
   // Note that the matrix contains 0's only.
 
-  if (Comm.MyPID() == 0)
-    cout << "Inserting values in the matrix..." << endl;
-
   Solver->SymbolicFactorization();
 
   // Now, we repopulate the matrix with entries corresponding
   // to a 1D Laplacian. LHS and RHS are still untouched.
 
-  for (int i=0; i<NumMyElements; i++) {
-
-    if (MyGlobalElements[i] == 0) {
-      Indices[0] = 0; Indices[1] = 1;
-      Values[0]  = 2.0; Values[1]  = -1.0;
+  for (int i = 0; i < NumMyElements; i++) 
+  {
+    if (MyGlobalElements[i] == 0) 
+    {
+      Indices[0] = 0;   
+      Indices[1] = 1;
+      Values[0]  = 2.0; 
+      Values[1]  = -1.0;
       NumEntries = 2;
     }
-    else if (MyGlobalElements[i] == NumGlobalElements-1) {
-      Indices[0] = NumGlobalElements-1;
-      Indices[1] = NumGlobalElements-2;
-      Values[0]  = 2.0; Values[1]  = -1.0;
+    else if (MyGlobalElements[i] == NumGlobalElements-1) 
+    {
+      Indices[0] = NumGlobalElements - 1;
+      Indices[1] = NumGlobalElements - 2;
+      Values[0]  = 2.0; 
+      Values[1]  = -1.0;
       NumEntries = 2;
     }
-    else {
-      Indices[0] = MyGlobalElements[i]-1;
+    else 
+    {
+      Indices[0] = MyGlobalElements[i] - 1;
       Indices[1] = MyGlobalElements[i];
-      Indices[2] = MyGlobalElements[i]+1;
-      Values[0] = -1.0; Values[1] = 2.0; Values[2] = -1.0;
+      Indices[2] = MyGlobalElements[i] + 1;
+      Values[0] = -1.0; 
+      Values[1] = 2.0; 
+      Values[2] = -1.0;
       NumEntries = 3;
     }
 
     AMESOS_CHK_ERR(A.ReplaceGlobalValues(MyGlobalElements[i], 
-					NumEntries, Values, Indices));
+                                         NumEntries, Values, Indices));
   }
 
   // ... and we can compute the numeric factorization.
@@ -233,15 +243,12 @@ int main(int argc, char *argv[])
   Ax.Update(1.0, b, -1.0);
   Ax.Norm2(&residual);
 
-  if( Comm.MyPID() == 0 ) {
+  if (!Comm.MyPID())
     cout << "After AMESOS solution, ||b-Ax||_2 = " << residual << endl;
-  }
 
   // delete Solver. Do this before MPI_Finalize()
   // as MPI calls can occur in the destructor.
   delete Solver;
-  delete [] Values;
-  delete [] Indices;
     
   if (residual > 1e-5)
     return(EXIT_FAILURE);
@@ -249,8 +256,6 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-
   return(EXIT_SUCCESS);
 
 } // end of main()
-

@@ -27,16 +27,15 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Epetra_config.h"
+#include "Amesos_ConfigDefs.h"
+// This example needs triutils to generate the linear system.
+#ifdef HAVE_AMESOS_TRIUTILS
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Amesos_ConfigDefs.h"
-// This example needs triutils to generate the linear system.
-#ifdef HAVE_AMESOS_TRIUTILS
 #include "Amesos.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Import.h"
@@ -59,13 +58,10 @@
 // 4.- create an Amesos_BaseSolver object
 // 5.- solve the linear problem.
 //
-// For more details about Amesos, the user is referred to
-// example_AmesosFactory.cpp, and the Amesos users' guide.
-//
-// NOTE: this example can be run with one or more processors.
+// This example can be run with any number of processors.
 //
 // Author: Marzio Sala, SNL 2914
-// Last modified: Nov-04
+// Last modified: Apr-05
 
 int main(int argc, char *argv[]) 
 {
@@ -84,7 +80,7 @@ int main(int argc, char *argv[])
   // ================= //
   // reading HB matrix //
   // ================= //
-  //
+  
   // HB files are for serial matrices. Hence, only
   // process 0 reads this matrix (and if present
   // solution and RHS). Then, this matrix will be redistributed
@@ -98,8 +94,8 @@ int main(int argc, char *argv[])
   Epetra_Vector* readxexact;
   
   // Call routine to read in HB problem
-  Trilinos_Util_ReadHb2Epetra((char*)matrix_file.c_str(), Comm, readMap, readA, readx, 
-			      readb, readxexact);
+  Trilinos_Util_ReadHb2Epetra((char*)matrix_file.c_str(), Comm, readMap, 
+                              readA, readx, readb, readxexact);
 
   // Create uniform distributed map.
   // Note that linear map are used for simplicity only!
@@ -119,13 +115,14 @@ int main(int argc, char *argv[])
   Epetra_Vector b(map);          // distributed rhs
   Epetra_Vector xexact(map);     // distributed exact solution
 
+  // Exports from data defined on processor 0 to distributed.
   x.Export(*readx, exporter, Add);
   b.Export(*readb, exporter, Add);
   xexact.Export(*readxexact, exporter, Add);
   A.Export(*readA, exporter, Add);
   A.FillComplete();
     
-  // create an epetra linear problem, contaning matrix
+  // Creates an epetra linear problem, contaning matrix
   // A, solution x and rhs b.
   Epetra_LinearProblem Problem(&A,&x,&b);
   
@@ -133,6 +130,9 @@ int main(int argc, char *argv[])
   // B E G I N N I N G   O F   T H E   A M E S O S   P A R T //
   // ======================================================= //
 
+  // For comments on the commands in this section, please
+  // see file example_AmesosFactory.cpp.
+  
   string SolverType = "Klu";
   Amesos_BaseSolver* Solver = 0;
   Amesos Factory;
@@ -148,31 +148,6 @@ int main(int argc, char *argv[])
     return(EXIT_SUCCESS);
   }
 
-  // Parameters for all Amesos solvers are set through
-  // a call to SetParameters(List). List is a Teuchos
-  // parameter list (Amesos requires Teuchos to compile).
-  // In most cases, users can proceed without calling
-  // SetParameters(). Please refer to the Amesos guide
-  // for more details.
-  //
-  // Parameters in the list are set using
-  // List.set("parameter-name", ParameterValue);
-  // In this example, we specify that we want more output.
-
-  Teuchos::ParameterList List;
-  List.set("PrintTiminig", true);
-  List.set("PrintStatus", true);
-
-  Solver->SetParameters(List);
-
-  // Now we are ready to solve. Generally, users will
-  // call SymbolicFactorization(), then NumericFactorization(),
-  // and finally Solve(). Note that:
-  // - the numerical values of the linear system matrix
-  //   are *not* required before NumericFactorization();
-  // - solution and rhs are *not* required before
-  //   Solve().
-
   Solver->SymbolicFactorization();
   Solver->NumericFactorization();
   Solver->Solve();
@@ -181,9 +156,7 @@ int main(int argc, char *argv[])
   // E N D   O F   T H E   A M E S O S   P A R T //
   // =========================================== //
 
-  // ================== //
-  // compute ||Ax - b|| //
-  // ================== //
+  // Computes ||Ax - b|| //
 
   double residual;
 
@@ -192,9 +165,8 @@ int main(int argc, char *argv[])
   Ax.Update(1.0, b, -1.0);
   Ax.Norm2(&residual);
 
-  if( Comm.MyPID() == 0 ) {
+  if (!Comm.MyPID()) 
     cout << "After AMESOS solution, ||b-Ax||_2 = " << residual << endl;
-  }
 
   // delete Solver. Do this before calling MPI_Finalize() because
   // MPI calls can occur.
@@ -217,14 +189,23 @@ int main(int argc, char *argv[])
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure AMESOS with --enable-triutils");
-  puts("to run this example");
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
+  puts("Please configure Amesos with:");
+  puts("--enable-triutils");
   
-  return 0;
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return(EXIT_SUCCESS);
 }
 
 #endif
-

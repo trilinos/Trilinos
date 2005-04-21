@@ -57,10 +57,10 @@ using namespace Trilinos_Util;
 // The example can be run in serial and in parallel.
 //
 // Author: Marzio Sala, SNL 9214
-// Last modified: Nov-04
+// Last modified: Apr-05.
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[]) 
+{
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -111,11 +111,11 @@ int main(int argc, char *argv[]) {
 
   // Cycle over all solvers.
   // Only installed solvers will be tested.
-  for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
-
+  for (unsigned int i = 0 ; i < SolverType.size() ; ++i) 
+  {
     // Check whether the solver is available or not
-    if (Factory.Query(SolverType[i])) {
- 
+    if (Factory.Query(SolverType[i])) 
+    {
       // 1.- set exact solution (constant vector)
       lhs->PutScalar(1.0);
  
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  exit(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 } // end of main()
 
 #else
@@ -186,14 +186,23 @@ int main(int argc, char *argv[]) {
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure AMESOS with --enable-triutils");
-  puts("to run this example");
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
+  puts("Please configure Amesos with:");
+  puts("--enable-triutils");
   
-  return 0;
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return(EXIT_SUCCESS);
 }
 
 #endif
-

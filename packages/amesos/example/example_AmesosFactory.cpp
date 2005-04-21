@@ -1,4 +1,3 @@
-
 // @HEADER
 // ***********************************************************************
 // 
@@ -51,10 +50,10 @@ using namespace Trilinos_Util;
 // ==================== //
 //
 // This example will:
-// 1.- create a linear system, stored as
+// 1.- create a linear system, stored as an
 //     Epetra_LinearProblem. The matrix corresponds
 //     to a 5pt Laplacian (2D on Cartesian grid).
-//     The user can change the size of the problem 
+//     The user can change the global size of the problem 
 //     by modifying variable NumGlobalRows.
 // 2.- The linear system matrix, solution and rhs
 //     are distributed among the available processors,
@@ -62,7 +61,7 @@ using namespace Trilinos_Util;
 //     simplicity only! Amesos can support any Epetra_Map.
 // 3.- Once the linear problem is created, we
 //     create an Amesos Factory object.
-// 4.- With the Factory, we create the required Amesos_BaseSolver
+// 4.- Using the Factory, we create the required Amesos_BaseSolver
 //     solver. Any supported (and compiled) Amesos
 //     solver can be used. If the selected solver
 //     is not available (that is, if Amesos has *not*
@@ -71,7 +70,7 @@ using namespace Trilinos_Util;
 //     is always available.
 // 5.- At this point we can factorize the matrix,
 //     and solve the linear system. Only three methods
-//     should be used for an Amesos_BaseSolver object:
+//     should be used for any Amesos_BaseSolver object:
 //     1.- NumericFactorization();
 //     2.- SymbolicFactorization();
 //     3.- Solve();
@@ -79,10 +78,10 @@ using namespace Trilinos_Util;
 //     libraries are *not* required in this file. They are
 //     actually needed to compile the Amesos library only.
 //
-// NOTE: this example can be run with one or more processors.
+// NOTE: this example can be run with any number of processors.
 //
-// Author: Marzio Sala, 9214
-// Last modified: Nov-04
+// Author: Marzio Sala, SNL 9214
+// Last modified: Apr-05.
 
 int main(int argc, char *argv[]) 
 {
@@ -100,20 +99,18 @@ int main(int argc, char *argv[])
                              // supports single or
 			     // multiple RHS.
 
-  // initialize an Gallery object.
+  // Initializes an Gallery object.
   // NOTE: this example uses the Trilinos package triutils
   // to define in an easy way the linear system matrix.
-  // The user can easily change the matrix type;
-  // consult the Trilinos tutorial on the triutils
-  // chapter for more details.
-  //
-  // Amesos itself is INDEPENDENT of triutils.
+  // The user can easily change the matrix type; consult the 
+  // Trilinos tutorial on the triutils chapter for more details.
+  // Note that Amesos itself is INDEPENDENT of triutils.
   //
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", NumGlobalRows);
   Gallery.Set("num_vectors", NumVectors);
 
-  // get pointers to Gallery's objects. Matrix, LHS and
+  // Gets pointers to Gallery's objects. Matrix, LHS and
   // RHS are constructed by Gallery. The matrix is actually
   // stored as Epetra_CrsMatrix.
   // `Problem' will be used in the Amesos contruction.
@@ -129,31 +126,29 @@ int main(int argc, char *argv[])
   // B E G I N N I N G   O F  T H E   AM E S O S   P A R T //
   // ===================================================== //
 
-  // initialize Amesos solver. This is the base class for
+  // Initializes the Amesos solver. This is the base class for
   // Amesos. It is a pure virtual class (hence objects of this
   // class cannot be allocated, and can exist only as pointers 
   // or references).
   //
-  Amesos_BaseSolver * Solver;
+  Amesos_BaseSolver* Solver;
 
-  // initialize the Factory. Factory is a function class (a
+  // Initializes the Factory. Factory is a function class (a
   // class that contains methods only, no data). Factory
-  // will be used to create Amesos_BaseSolver derived
-  // objects.
+  // will be used to create Amesos_BaseSolver derived objects.
   //
   Amesos Factory;
 
-  // solver can assume one of the following values:
-  // - Lapack: LAPACK (dense) solver
-  // - Klu: for KLU solver
-  // - Superlu: for SuperLU
-  // - Superludist: for SuperLU_DIST 2.0 or later
-  // - Mumps: for MUMPS 4.3.2 or later
-  // - Dscpack: for DSCPACK (only symmetric matrices)
+  // Specifies the solver. String ``SolverType'' can assume one 
+  // of the following values:
+  // - Lapack
+  // - Klu
+  // - Umfpack
+  // - Superlu
+  // - Superludist
+  // - Mumps
+  // - Dscpack
   // 
-  // Note that users can change solver simply changing
-  // this parameter!
-  //
   string SolverType = "Klu";
   Solver = Factory.Create(SolverType, *Problem);
 
@@ -164,6 +159,9 @@ int main(int argc, char *argv[])
     cerr << "Specified solver is not available" << endl;
     // return ok not to break test harness even if
     // the solver is not available
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return(EXIT_SUCCESS);
   }
 
@@ -213,7 +211,8 @@ int main(int argc, char *argv[])
 
   Gallery.ComputeResidual(&residual[0]);
 
-  if( Comm.MyPID() == 0 ) {
+  if (!Comm.MyPID()) 
+  {
     for (int i = 0 ; i < NumVectors ; ++i)
       cout << "After AMESOS solution, for vector " << i << ", ||b-Ax||_2 = " << residual[i] << endl;
   }
@@ -238,13 +237,23 @@ int main(int argc, char *argv[])
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure AMESOS with --enable-triutils");
-  puts("to run this example");
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
+  puts("Please configure Amesos with:");
+  puts("--enable-triutils");
   
-  return 0;
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return(EXIT_SUCCESS);
 }
 
 #endif
