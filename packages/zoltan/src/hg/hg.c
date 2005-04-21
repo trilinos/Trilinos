@@ -104,7 +104,6 @@ static int timer_retlist=-1;
     goto End;
   }
 
-printf ("RTHRTH: starting\n");
 
   /* Initialization of return arguments. */
   *num_imp   = *num_exp   = -1;
