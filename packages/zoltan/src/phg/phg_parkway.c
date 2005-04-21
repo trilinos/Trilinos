@@ -49,7 +49,7 @@ int Zoltan_PHG_ParKway(
     return ZOLTAN_FATAL;
 #else
 
-    int options[26];                      /* ParKway options */
+    int options[29];                      /* ParKway options */
     int *ivwgts = NULL, *iewgts = NULL;   /* ParKway expects integer weights. */
     int *pvector=NULL;                    /* partvec for "local" vertices */
     int cut;                              /* Diagnostics from ParKway */
@@ -98,67 +98,71 @@ int Zoltan_PHG_ParKway(
 
 
     /* ----- Set ParKway's options --------------- */
-    options[0] = 1; /*0 -> all options use default, else user define*/
-    options[1] = seed++; /*0 -> use default seed (or if using SPRNG, it chooses seed), else use options[1] as seed*/
-    options[2] = 0; /*0 -> no disp info, 1 -> some, 2 -> lots*/
-    options[3] = 0; /*0 -> do not write partition to disk, 1 -> do write*/
-    options[4] = 1; /*number of parallel runs*/
-    options[5] = 0; /*perform random vertex shuffle: 0 -> no, 1 -> yes*/
-    options[6] = 200; /*numParts*options[5] -> min number of vertices in coarse hypergraph*/
-    options[7] = 7; /*[7] and [8] specify reduction ratio in parallel coasrsening*/
-    options[8] = 4; /*r = [7]/[8]*/
-    options[9] = 3; /*vertex visit order: 3 -> random, 1/2 inc/dec by vertex id, 4/5 inc/dec by vertex wt*/
-    options[10] = 1; /*use cluster weight to determine connectivity: 0 -> no, 1 -> yes  */
-    options[11] = 3; /*matching request resolution order: 3 -> random, 2 -> as they arrive */
-    options[12] = 1; /*number serial partitioning runs*/
-
-    options[13] = 1; /* serial partitioning routine, 1-3 RB, 4 khmetis, 5 patoh, see manual*/
+    options[0] = 1;//0 -> all options use default, else user define
+    options[1] = seed++;//0 -> seed chosen by sprng, else use options[1] as seed
+    options[2] = 0;//0 -> no disp info, 1 -> some, 2 -> lots
+    options[3] = 1;//0 -> do not write partition to disk, 1 -> do write
+    options[4] = 1;//number of parallel runs
+    options[5] = 0;//vertex to processor allocation: 0 -> as read in, 1 -> random 2 -> as prescribed in partition file 
+    options[6] = 100;//hyperedge length percentile for approx para coarsening and refinement
+    options[7] = 1;//increment in percentile options[6]
+    options[8] = 200;//numParts*options[5] -> min number of vertices in coarse hypergraph
+    options[9] = 7;//[9] and [10] specify reduction ratio in parallel coarsening
+    options[10] = 4;//r = [9]/[10]
+    options[11] = 3;//vertex visit order: 3 -> random, 1/2 inc/dec by vertex id, 4/5 inc/dec by vertex wt
+    options[12] = 3;//divide connectivity by cluster weight/hyperedge length: 0-neither, 1-only cluster, 2-only hedge len, 3-both   
+    options[13] = 3;//matching request resolution order: 3 -> random, 2 -> as they arrive 
+    options[14] = 1;//number serial partitioning runs
+    
+    options[15] = 5;//serial partitioning routine, 1-3 RB, 4 khmetis, 5 patoh, see manual
+    
     if (!strcasecmp(hgp->parkway_serpart, "patoh"))
-        options[13] = 5;
+        options[15] = 5;
     else if (!strcasecmp(hgp->parkway_serpart, "hmetis"))
-        options[13] = 4;
+        options[15] = 4;
     else if (!strcasecmp(hgp->parkway_serpart, "generic"))
-        options[13] = 1;
+        options[15] = 1;
     else if (!strcasecmp(hgp->parkway_serpart, "genericv"))
-        options[13] = 2;
+        options[15] = 2;
     else if (!strcasecmp(hgp->parkway_serpart, "genericmv"))
-        options[13] = 3;
+        options[15] = 3;
     else {
         ZOLTAN_PARKWAY_ERROR("Invalid ParKway serial partitioner. It should be one of; generic, genericv, genericmv, hmetis, patoh.", ZOLTAN_FATAL);
     }
-
+    
     /* uprintf(hgc, "ParKway serpart='%s'  options[13]=%d\n", hgp->parkway_serpart, options[13]); */
-
-    options[14] = 2; /*serial coarsening algorithm (only if [13] = RB, see manual)*/
-    options[15] = 2; /*num bisection runs in RB (only if [13] = RB, see manual)*/
-    options[16] = 10; /*num initial partitioning runs in RB (only if [13] = RB, see manual)*/
-    options[17] = 2; /*hmetis_PartKway coarsening option, vals 1-5, see manual (only if [13] = 4)  */ 
-    options[18] = 2; /*hmetis_PartKway refinement option, vals 0-3, see manual (only if [13] = 4)*/
-    options[19] = 1; /*patoh_partition parameter settings, vals 1-3, see manual (only if [13] = 5)*/
-    options[20] = 1; /*parallel uncoarsening algorithm, 1 simple, 2 only final V-Cycle, 3 all V-Cycle*/
-    options[21] = 1000; /*limit on number of V-Cycle iterations (only if [21] = 2/3)*/
-    options[22] = 0; /*min allowed gain for V-Cycle (percentage, see manual, only if [21] = 2/3) */
-    options[23] = 70; /*percentage threshold used to reject partitions from a number of runs (see manual) */
-    options[24] = 70; /*reduction in [23] as partitions propagate by factor [24]/100 (see manual) */
-    options[25] = 100; /*early exit criterion in parallel refinement, will exit if see ([25]*num vert)/100 consecutive -ve moves */
+    
+    options[16] = 2;//serial coarsening algorithm (only if [15] = RB, see manual)
+    options[17] = 2;//num bisection runs in RB (only if [15] = RB, see manual)
+    options[18] = 10;//num initial partitioning runs in RB (only if [13] = RB, see manual)
+    options[19] = 2;//hmetis_PartKway coarsening option, vals 1-5, see manual (only if [15] = 4)   
+    options[20] = 2;//hmetis_PartKway refinement option, vals 0-3, see manual (only if [15] = 4)
+    options[21] = 3;//patoh_partition parameter settings, vals 1-3, see manual (only if [15] = 5)
+    options[22] = 1;//parallel uncoarsening algorithm, 1 simple, 2 only final V-Cycle, 3 all V-Cycle
+    options[23] = 5;//limit on number of V-Cycle iterations (only if [22] = 2/3)
+    options[24] = 0;//min allowed gain for V-Cycle (percentage, see manual, only if [21] = 2/3)
+    options[25] = 0;//percentage threshold used to reject partitions from a number of runs (see manual)
+    options[26] = 0;//reduction in [23] as partitions propagate by factor [24]/100 (see manual)
+    options[27] = 100;//early exit criterion in parallel refinement, will exit if see ([25]*num vert)/100 consecutive -ve moves 
+    options[28] = 0;//parallel refinement 0->basic, 1->use approx 2->use early exit 3->use approx and early exit  
     
     constraint = hgp->bal_tol-1.0;
-
-      
+    
+    
     Zoltan_ParaPartKway(nVtx, hg->nEdge, &ivwgts[hgc->myProc*anVtx], iewgts,
-                 hg->hindex, hg->hvertex, nparts,
-                 constraint, &cut, options, pvector, NULL, hgc->Communicator);
-
+                        hg->hindex, hg->hvertex, nparts,
+                        constraint, &cut, options, pvector, NULL, hgc->Communicator);
+    
 /* KDDKDD
-    uprintf(hgc, "ParaPartKway cut=%d\n", cut);
+   uprintf(hgc, "ParaPartKway cut=%d\n", cut);
 */
-
+    
     
     /* after partitioning Zoltan needs partvec exist on all procs for nProc_x=1 */       
     disp[0] = 0; 
     for (i = 1; i < hgc->nProc; ++i)
         disp[i] = disp[i-1] + anVtx;
-
+    
     MPI_Allgather (&nVtx, 1, MPI_INT, recv_size, 1, MPI_INT, hgc->Communicator);    
     MPI_Allgatherv(pvector, nVtx, MPI_INT, 
                   partvec, recv_size, disp, MPI_INT, hgc->Communicator);
