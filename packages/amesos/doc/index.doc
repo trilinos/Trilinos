@@ -55,26 +55,20 @@ for details.
 
 \section am_comparison  Quick comparison of the Amesos classes
 
-The following table reports an overview of the Amesos classes.
+The following tables reports an overview of the Amesos classes.
 
 <table>
 <tr>
-<td>Features</td>
+<td><B>Features</B></td>
 <td>Amesos_Lapack</td>
 <td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
 <td>Amesos_Superlu</td>
-<td>Amesos_Superludist</td>
-<td>Amesos_Mumps</td>
-<td>Amesos_Dscpack</td>
 </tr>
 <tr>
 <td>Default behavior</td>
 <td>Enabled</td>
 <td>Enabled</td>
-<td>Disabled</td>
-<td>Disabled</td>
-<td>Disabled</td>
 <td>Disabled</td>
 <td>Disabled</td>
 </tr>
@@ -84,9 +78,6 @@ The following table reports an overview of the Amesos classes.
 <td>C</td>
 <td>C</td>
 <td>C</td>
-<td>C</td>
-<td>FORTRAN90</td>
-<td>C</td>
 </tr>
 <tr>
 <td>Communicator</td>
@@ -94,9 +85,6 @@ The following table reports an overview of the Amesos classes.
 <td>none</td>
 <td>none</td>
 <td>none</td>
-<td>MPI</td>
-<td>FORTRAN MPI</td>
-<td>MPI</td>
 </tr>
 <tr>
 <td>Processes used for Factorization/Solve</td>
@@ -104,15 +92,9 @@ The following table reports an overview of the Amesos classes.
 <td>Process 0</td>
 <td>Process 0</td>
 <td>Process 0</td>
-<td>Any</td>
-<td>Any (*)</td>
-<td>Any (**)</td>
 </tr>
 <tr>
 <td>Distributed input matrix</td>
-<td>Yes </td>
-<td>Yes </td>
-<td>Yes </td>
 <td>Yes </td>
 <td>Yes </td>
 <td>Yes </td>
@@ -124,15 +106,9 @@ The following table reports an overview of the Amesos classes.
 <td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>No</td>
 </tr>
 <tr>
 <td>Requires BLAS</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
@@ -144,18 +120,12 @@ The following table reports an overview of the Amesos classes.
 <td>No</td>
 <td>No</td>
 <td>No</td>
-<td>No</td>
-<td>No</td>
-<td>No</td>
 </tr>
 <tr>
 <td>Requires BLACS</td>
 <td>No</td>
 <td>No</td>
 <td>No</td>
-<td>No</td>
-<td>No</td>
-<td>Yes</td>
 <td>No</td>
 </tr>
 <tr>
@@ -164,6 +134,72 @@ The following table reports an overview of the Amesos classes.
 <td>No</td>
 <td>No</td>
 <td>No</td>
+</tr>
+</table> 
+
+<table>
+<tr>
+<td><B>Features</B></td>
+<td>Amesos_Superludist</td>
+<td>Amesos_Mumps</td>
+<td>Amesos_Dscpack</td>
+</tr>
+<tr>
+<td>Default behavior</td>
+<td>Disabled</td>
+<td>Disabled</td>
+<td>Disabled</td>
+</tr>
+<tr>
+<td>Package is written in</td>
+<td>C</td>
+<td>FORTRAN90</td>
+<td>C</td>
+</tr>
+<tr>
+<td>Communicator</td>
+<td>MPI</td>
+<td>FORTRAN MPI</td>
+<td>MPI</td>
+</tr>
+<tr>
+<td>Processes used for Factorization/Solve</td>
+<td>Any</td>
+<td>Any (*)</td>
+<td>Any (**)</td>
+</tr>
+<tr>
+<td>Distributed input matrix</td>
+<td>Yes </td>
+<td>Yes </td>
+<td>Yes </td>
+</tr>
+<tr>
+<td>Unsymmetric matrices</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Requires BLAS</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Requires LAPACK</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Requires BLACS</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Requires ScaLAPACK</td>
 <td>No</td>
 <td>Yes</td>
 <td>No</td>
@@ -189,9 +225,6 @@ The following table details the supported matrix formats for each class.
 <td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
 <td>Amesos_Superlu</td>
-<td>Amesos_Superludist</td>
-<td>Amesos_Mumps</td>
-<td>Amesos_Dscpack</td>
 </tr>
 <tr>
 <td>Epetra_RowMatrix</td>
@@ -199,15 +232,9 @@ The following table details the supported matrix formats for each class.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
-<td>yes</td>
-<td>yes</td>
-<td>no</td>
 </tr>
 <tr>
 <td>Epetra_CrsMatrix</td>
-<td>yes</td>
-<td>yes</td>
-<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
@@ -219,6 +246,30 @@ The following table details the supported matrix formats for each class.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td> </td>
+<td>Amesos_Superludist</td>
+<td>Amesos_Mumps</td>
+<td>Amesos_Dscpack</td>
+</tr>
+<tr>
+<td>Epetra_RowMatrix</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Epetra_CrsMatrix</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Epetra_VbrMatrix</td>
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
@@ -228,13 +279,14 @@ The following table details the supported matrix formats for each class.
 \section am_install  Installing Amesos 
 
 Each of the Amesos classes provides an interface to a third
-party direct sparse solver code.  In order to install a particular
+party direct sparse solver code. (Exception is KLU, whose sources are
+distributed within Amesos.)  In order to install a particular
 class, you must first install the underlying direct sparse solver
 code. 
 
 <P>Amesos is distributed through the Trilinos project, and can be
 downloaded from the web site
-http://software.sandia.gov/trilinos/packages/amesos.
+http://software.sandia.gov/trilinos/downloads.
 
 <P>As all other Trilinos packages,
 Amesos is configured and built using the GNU autoconf
@@ -277,9 +329,6 @@ architectures and compilers tested with Amesos.
 <td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
 <td>Amesos_Superlu</td>
-<td>Amesos_Superludist</td>
-<td>Amesos_Mumps</td>
-<td>Amesos_Dscpack</td>
 </tr>
 <tr>
 <td>LINUX (GNU), SERIAL</td>
@@ -287,17 +336,11 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
-<td>yes</td>
-<td>no</td>
-<td>yes</td>
 </tr>
 <tr>
 <td>LINUX (Intel), MPI</td>
 <td>yes</td>
 <td>yes</td>
-<td>yes</td>
-<td>no</td>
-<td>no</td>
 <td>yes</td>
 <td>no</td>
 </tr>
@@ -307,17 +350,11 @@ architectures and compilers tested with Amesos.
 <td>yes </td>
 <td>yes </td>
 <td>yes </td>
-<td>yes </td>
-<td>no </td>
-<td>yes </td>
 </tr>
 <tr>
 <td>SGI 64, MPI</td>
 <td>yes </td>
 <td>yes </td>
-<td>yes </td>
-<td>no </td>
-<td>no</td>
 <td>yes </td>
 <td>no </td>
 </tr>
@@ -327,18 +364,12 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
-<td>no</td>
-<td>no</td>
-<td>no</td>
 </tr>
 <tr>
 <td>MAC OSX, SERIAL</td>
 <td>no</td>
 <td>yes</td>
 <td>yes</td>
-<td>no</td>
-<td>no</td>
-<td>no</td>
 <td>no</td>
 </tr>
 <tr>
@@ -347,9 +378,6 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
-<td>yes</td>
-<td>no</td>
-<td>no</td>
 </tr>
 <tr>
 <td>Sandia ASCI Red, MPI</td>
@@ -357,11 +385,64 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td>architecture</td>
+<td>Amesos_Superludist</td>
+<td>Amesos_Mumps</td>
+<td>Amesos_Dscpack</td>
+</tr>
+<tr>
+<td>LINUX (GNU), SERIAL</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>LINUX (Intel), MPI</td>
+<td>no</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>LINUX (GNU), MPI</td>
+<td>yes </td>
+<td>no </td>
+<td>yes </td>
+</tr>
+<tr>
+<td>SGI 64, MPI</td>
+<td>no</td>
+<td>yes </td>
+<td>no </td>
+</tr>
+<tr>
+<td>DEC/Alpha MPI</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>MAC OSX, SERIAL</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Sandia Cplant, MPI</td>
 <td>yes</td>
 <td>no</td>
 <td>no</td>
 </tr>
-
+<tr>
+<td>Sandia ASCI Red, MPI</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
 </table>
 
 Once Amesos has been compiled, it can be tested using the test harness. A
@@ -491,15 +572,17 @@ are still defined with the same \c Epetra_Map.
 
 Depending on the version of SuperLU and SuperLU_DIST, you may or may not
 configure Amesos with support for both. This is due to conflicts in the header
-files.
+files of SuperLU/SuperLU_DIST.
 
 You may encounter problems while trying to use the SuperLU/SuperLU_DIST
-classes with KLU enables. This is due to a conflict in the colamd algorithm.
+classes when KLU is enabled. This is due to a conflict in the colamd algorithm.
 The version of colamd which is distributed within Amesos is not compatible
-with the version distributed with SuperLU. This cause the code to crash. You
+with the version distributed with SuperLU (the SuperLU one being older). 
+Depending on the version of SuperLU/SuperLU_DIST, 
+this causes the code to crash. You
 might need to disable KLU to use SuperLU/SuperLU_DIST.
 
-DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix. DSCPACK has memory leaks.  A fix is
+DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix's. DSCPACK has memory leaks.  A fix is
 under development for both of these issues.
 
 Amesos has an incomplete interface to ScaLAPACK under development.
@@ -507,7 +590,7 @@ Amesos has an incomplete interface to ScaLAPACK under development.
 \section am_final Final Remarks
 
 <P>This page is maintained by Marzio Sala, SNL 9214.
-<p>This page last updated 04-Nov-2004.
+<p>This page last updated 21-Apr-05.
 
 */
 
