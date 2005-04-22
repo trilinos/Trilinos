@@ -29,7 +29,6 @@
 #include "Amesos_Klu.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
-#include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
@@ -164,19 +163,32 @@ int Amesos_Klu::ConvertToSerial() {
     delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0;
   }
   if (IsLocal_ == 1) {
-     SerialMatrix_ = RowMatrixA ;
+     SerialMatrix_ = RowMatrixA;
   } else {
-    if ( SerialMap_ ) delete SerialMap_ ;
-    SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
+    if ( SerialMap_ ) delete SerialMap_;
+    SerialMap_ = new Epetra_Map(NumGlobalElements_, NumMyElements_, 0, Comm());
 
-    // FIXME: can I be ImportToSerial??
-    Epetra_Export export_to_serial(OriginalMap, *SerialMap_);
+    // check whether the stored ImportToSerial_ (if allocated) 
+    // is still valid or not.
+    if (ImportToSerial_ != 0) {
+      if (!(OriginalMap.SameAs(ImportToSerial_->TargetMap()))) {
+	delete SerialMap_;
+	AMESOS_CHK_ERR(CreateSerialMap());
+	delete ImportToSerial_;
+	ImportToSerial_ = 0;
+      }
+    }
+
+    if (ImportToSerial_ == 0) {
+      ImportToSerial_ = new Epetra_Import(*SerialMap_,OriginalMap);
+      assert (ImportToSerial_ != 0);
+    }
 
     if (SerialCrsMatrixA_) 
       delete SerialCrsMatrixA_ ;
     SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-    AMESOS_CHK_ERR(SerialCrsMatrixA_->Export(*RowMatrixA, 
-					     export_to_serial, Add));
+    AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*RowMatrixA, 
+					     *ImportToSerial_, Add));
 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
     SerialMatrix_ = SerialCrsMatrixA_ ;
@@ -303,9 +315,6 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 
 //=============================================================================
 int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
-
-  //  Some compilers reject the following cast:
-  //  if( &ParameterList == 0 ) return 0;
 
   // ========================================= //
   // retrive KLU's parameters from list.       //
