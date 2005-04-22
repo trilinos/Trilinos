@@ -224,9 +224,9 @@ report($SUMMARY);
         system "rm -f $tempDir/invoke-configure-serial";
         system "rm -f $tempDir/invoke-configure-serial-original";
         system "rm -f $tempDir/invoke-configure-serial-final";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/log$hostOS.txt";            
+        #system "rm -f $options{'BASE_BUILD_DIR'}[0]/logErrors.txt";
+        #system "rm -f $options{'BASE_BUILD_DIR'}[0]/logMpiErrors.txt";
+        #system "rm -f $options{'BASE_BUILD_DIR'}[0]/log$hostOS.txt";            
         
     } # prepareVariables()
 
@@ -392,7 +392,7 @@ report($SUMMARY);
     #   - returns: 
 
     sub prepareBuildDirs {  
-        chdir "$options{'TRILINOS_DIR'}[0]";  
+        chdir "$options{'BASE_BUILD_DIR'}[0]";  
         
         if (!$flags{t}) {
             # delete and recreate mpi dir
@@ -450,12 +450,12 @@ report($SUMMARY);
             if (!$flags{t}) {
                 
                 # descend into build dir
-                chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";
+                chdir"$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]";
                 
                 # test for existence of invoke-configure
                 if (!-f "invoke-configure") {
                     my $message = "";
-                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be present\n";
                     report($FILE_SYSTEM_ERROR, $message, $comm);
                     printEvent($message);
@@ -465,7 +465,7 @@ report($SUMMARY);
                 # test for read permissions on invoke-configure
                 if (!-r "invoke-configure") {
                     my $message = "";
-                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be readable\n";
                     report($FILE_SYSTEM_ERROR, $message, $comm);
                     printEvent($message);
@@ -475,7 +475,7 @@ report($SUMMARY);
                 # test for executable permission on invoke-configure
                 if (!-x "invoke-configure") {
                     my $message = "";
-                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be executable\n";
                     report($FILE_SYSTEM_ERROR, $message, $comm);
                     printEvent($message);
@@ -501,18 +501,18 @@ report($SUMMARY);
                         
                         # fix invoke configure
                         my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log_$hostOS.txt";
-                        my $invokeConfigure = "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
-                        my $packagesMakefile = "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/Makefile";
+                        my $invokeConfigure = "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/invoke-configure";
+                        my $packagesMakefile = "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/packages/Makefile";
                         (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $packagesMakefile, $comm);
                         
                         if ($fixFailed == $SUCCESS || $fixFailed == $IC_FIX_FAIL_NO_CHANGE) {
                             
-                            if (-f "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log") {                
+                            if (-f "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log") {                
                                 # rename config.log (and move to testharness/temp) so 
                                 # developers don't have to rename each file they get 
                                 # from each OS and comm.
                                 my $command = "";
-                                $command .= "mv $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log ";
+                                $command .= "mv $options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log ";
                                 $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
                                 $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log 2>&1";
                                 system $command;
@@ -520,7 +520,7 @@ report($SUMMARY);
                         
                             # remove broken package (in recover mode only)
                             if ($flags{r}) {                            
-                                system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                                system "rm -rf $options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
                             }
                         }
 
@@ -576,8 +576,8 @@ report($SUMMARY);
                                        
                             # fix invoke configure         
                             my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log_$hostOS.txt";
-                            my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
-                            my $packagesMakefile = "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/Makefile";
+                            my $invokeConfigure ="$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/invoke-configure";
+                            my $packagesMakefile = "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/packages/Makefile";
                             (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $packagesMakefile, $comm);
                             
                             my $command = "";
@@ -589,7 +589,7 @@ report($SUMMARY);
                                 
                             # remove broken package (in recover mode only)
                             if ($flags{r}) {                            
-                                system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                                system "rm -rf $options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
                             }
                             
                             # quit if error fixing invoke-configure
@@ -642,7 +642,7 @@ report($SUMMARY);
             if (!$flags{n}) {
             
                 # locate all test dirs under Trilinos/packages        
-                chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
+                chdir "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]";        
                 my @testDirs = `find packages/ -name test -print`;
  
                 # run all tests 
@@ -654,11 +654,11 @@ report($SUMMARY);
                             $testDir =~ m/jpetra/ ) {
                             
                         # descend into test directory
-                        chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/$testDir";
+                        chdir "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/$testDir";
                 
                         # find potential scripts in test/scripts/<frequency>/<comm>
                         my $potentialTestDir = "";
-                        $potentialTestDir .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                        $potentialTestDir .= "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/";
                         $potentialTestDir .= "$testDir/scripts/$options{'FREQUENCY'}[0]/$comm";
                         
                         if (-d $potentialTestDir) {
@@ -674,7 +674,7 @@ report($SUMMARY);
                                 # multiple test scripts for a package and 
                                 # not all of the scripts finish executing
                                 # in the same directory that execution begins in 
-                                chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/$testDir";
+                                chdir "$options{'BASE_BUILD_DIR'}[0]/$buildDir[$j]/$testDir";
  
                                 # if potential script file is executable...
                                 if (-x $potentialScript) {
@@ -805,18 +805,18 @@ report($SUMMARY);
             # open INVOKE_CONFIGURE_MPI for writing
             open (INVOKE_CONFIGURE_MPI, ">$options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-mpi")
                 or die "$! error trying to open file";
-            print INVOKE_CONFIGURE_MPI ".././configure ";
+            print INVOKE_CONFIGURE_MPI "$options{'TRILINOS_DIR'}[0]/./configure ";
             print INVOKE_CONFIGURE_MPI $rawInvokeConfigureMPI;
             close INVOKE_CONFIGURE_MPI;
             
             # move invoke-configure file into place
             my $command;                     
             $command = "cp $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-mpi ";
-            $command .= "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]/invoke-configure";
+            $command .= "$options{'BASE_BUILD_DIR'}[0]/$options{'MPI_DIR'}[0]/invoke-configure";
             system $command;
             
             # set invoke-configure permissions
-            system "chmod a+rx $options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]/invoke-configure";
+            system "chmod a+rx $options{'BASE_BUILD_DIR'}[0]/$options{'MPI_DIR'}[0]/invoke-configure";
         }
         
         # create and copy SERIAL invoke configure
@@ -824,18 +824,18 @@ report($SUMMARY);
             # open INVOKE_CONFIGURE_SERIAL for writing
             open (INVOKE_CONFIGURE_SERIAL, ">$options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-serial")
                 or die "$! error trying to open file";
-            print INVOKE_CONFIGURE_SERIAL ".././configure \\\n";
+            print INVOKE_CONFIGURE_SERIAL "$options{'TRILINOS_DIR'}[0]/./configure \\\n";
             print INVOKE_CONFIGURE_SERIAL $rawInvokeConfigureSERIAL;
             close INVOKE_CONFIGURE_SERIAL;
             
             # move invoke-configure file into place
             my $command;                     
             $command = "cp $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-serial ";
-            $command .= "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]/invoke-configure";
+            $command .= "$options{'BASE_BUILD_DIR'}[0]/$options{'SERIAL_DIR'}[0]/invoke-configure";
             system $command;
             
             # set invoke-configure permissions
-            system "chmod a+rx $options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]/invoke-configure";
+            system "chmod a+rx $options{'BASE_BUILD_DIR'}[0]/$options{'SERIAL_DIR'}[0]/invoke-configure";
         }
         
     } # prepareInvokeConfigure()
@@ -1035,7 +1035,7 @@ report($SUMMARY);
     sub configure {   
         my $buildDir = $_[0];    
                     
-        chdir"$options{'TRILINOS_DIR'}[0]/$buildDir";    
+        chdir"$options{'BASE_BUILD_DIR'}[0]/$buildDir";    
             
         my $command = "";
         $command .= "./invoke-configure >> $options{'TRILINOS_DIR'}[0]";
@@ -1056,7 +1056,7 @@ report($SUMMARY);
     sub build { 
         my $buildDir = $_[0];  
                     
-        chdir"$options{'TRILINOS_DIR'}[0]/$buildDir";     
+        chdir"$options{'BASE_BUILD_DIR'}[0]/$buildDir";     
     
         my $command = "";
         if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
@@ -1228,9 +1228,9 @@ report($SUMMARY);
                     # (note: the name "log$hostOS.txt" is functional--it is written to 
                     # by the test scripts.
                     my $scriptOwner = "";
-                    if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
+                    if (-f "$options{'BASE_BUILD_DIR'}[0]/log$hostOS.txt") {
                         open 
-                        (OWNER, "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") 
+                        (OWNER, "$options{'BASE_BUILD_DIR'}[0]/log$hostOS.txt") 
                             or die "$! error trying to open file";
                         $scriptOwner=<OWNER>;   # read first line (email of script owner is on first line)
                         chomp $scriptOwner;     # trim newline
@@ -1384,7 +1384,10 @@ report($SUMMARY);
             $body .= "Branch Tag:       $tag\n";}
         if (defined $options{'TRILINOS_DIR'}[0]) {
             $body .= "\n";
-            $body .= "Directory:        $options{'TRILINOS_DIR'}[0]\n";}
+            $body .= "Trilinos Dir:     $options{'TRILINOS_DIR'}[0]\n";}
+        if (defined $options{'TRILINOS_DIR'}[0]) {
+            $body .= "\n";
+            $body .= "Build Dir:        $options{'BASE_BUILD_DIR'}[0]\n";}
         if (defined $comm) {
             $body .= "\n";
             $body .= "Comm:             $comm\n";}
@@ -1609,7 +1612,7 @@ report($SUMMARY);
         if (-f "$options{'TRILINOS_DIR'}[0]/logMpiErrors.txt") {   
             $attachmentsExist = 1;
             my $log = "logMpiErrors.txt";     
-            my $logPath = "$options{'TRILINOS_DIR'}[0]/$log";
+            my $logPath = "$options{'BASE_BUILD_DIR'}[0]/$log";
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
                 $attachmentText .= "    $log\n";
                 $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
@@ -1622,7 +1625,7 @@ report($SUMMARY);
         if (-f "$options{'TRILINOS_DIR'}[0]/logErrors.txt") {
             $attachmentsExist = 1;
             my $log = "logErrors.txt";     
-            my $logPath = "$options{'TRILINOS_DIR'}[0]/$log";       
+            my $logPath = "$options{'BASE_BUILD_DIR'}[0]/$log";       
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
                 $attachmentText .= "    $log\n";
                 $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
@@ -1635,7 +1638,7 @@ report($SUMMARY);
         if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
             $attachmentsExist = 1;
             my $log = "log$hostOS.txt";     
-            my $logPath = "$options{'TRILINOS_DIR'}[0]/$log";       
+            my $logPath = "$options{'BASE_BUILD_DIR'}[0]/$log";       
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
                 $attachmentText .= "    $log\n";
                 $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
@@ -1664,7 +1667,7 @@ report($SUMMARY);
         
             # mpi invoke-configures
             if (defined $options{'MPI_DIR'}[0]) {
-                my $buildPath = "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]";
+                my $buildPath = "$options{'BASE_BUILD_DIR'}[0]/$options{'MPI_DIR'}[0]";
             
                 # at least one configure/build error
                 if (-f "$buildPath/invoke-configure-broken" 
@@ -1709,7 +1712,7 @@ report($SUMMARY);
             
             # serial invoke-configures
             if (defined $options{'SERIAL_DIR'}[0]) {
-                my $buildPath = "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]";
+                my $buildPath = "$options{'BASE_BUILD_DIR'}[0]/$options{'SERIAL_DIR'}[0]";
             
                 # at least one configure/build error
                 if (-f "$buildPath/invoke-configure-broken" 
@@ -1762,7 +1765,7 @@ report($SUMMARY);
             my $buildDir = "";
             if ($comm eq "mpi") { $buildDir = $options{'MPI_DIR'}[0]; }
             if ($comm eq "serial") { $buildDir = $options{'SERIAL_DIR'}[0]; }
-            my $invokeConfigure = "$options{'TRILINOS_DIR'}[0]/$buildDir/invoke-configure";
+            my $invokeConfigure = "$options{'BASE_BUILD_DIR'}[0]/$buildDir/invoke-configure";
             
             # configure/build failed--attach broken invoke-configure
             if (($code == $CONFIGURE_ERROR || $code == $BUILD_ERROR ||
@@ -1851,9 +1854,9 @@ report($SUMMARY);
         system "rm -f trilinos_build_log_$hostOS.txt";
         system "rm -f trilinos_build_log_$hostOS.txt.gz";
         system "rm -f test_compile_log.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/log$hostOS.txt";
+        system "rm -f $options{'BASE_BUILD_DIR'}[0]/logErrors.txt";
+        system "rm -f $options{'BASE_BUILD_DIR'}[0]/logMpiErrors.txt";
+        system "rm -f $options{'BASE_BUILD_DIR'}[0]/log$hostOS.txt";
         if ($code == $SUMMARY) {
             system "rm -f event_log.txt";
             system "rm -f invoke-configure-mpi";
@@ -2350,6 +2353,22 @@ report($SUMMARY);
             $configError = 1;
         }
         
+        # BASE_BUILD_DIR -------------------------------------------------------
+                
+        # enforce only one BASE_BUILD_DIR
+        if (defined $options{'BASE_BUILD_DIR'}[1]) {
+            my $message = "";
+            $message .= "only one BASE_BUILD_DIR allowed\n";
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # if no BASE_BUILD_DIR, use TRILINOS_DIR
+        if ((!defined $options{'BASE_BUILD_DIR'} || !defined $options{'BASE_BUILD_DIR'}[0])) {
+            push (@{$options{'BASE_BUILD_DIR'}}, $options{'TRILINOS_DIR'}[0]);
+        }
+        
         # HOST_FILE ------------------------------------------------------------
                 
         # enforce only one HOST_FILE
@@ -2711,7 +2730,7 @@ report($SUMMARY);
             print outFile "#-------------------------------------------------------------------------------\n";
             print outFile "# Provide the name of the serial build directory that should be configured,\n";
             print outFile "# compiled and tested by the test harness, or leave blank to indicate that there\n";
-            print outFile "# should be no serial build. Directory must be a subdirectory of 'Trilinos/'.\n"; 
+            print outFile "# should be no serial build. Directory must be a subdirectory of BASE_BUILD_DIR.\n"; 
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
             print outFile "# - value required: NO (unless MPI_DIR is omitted)\n";
@@ -2726,7 +2745,7 @@ report($SUMMARY);
             print outFile "#-------------------------------------------------------------------------------\n"; 
             print outFile "# Provide the name of the mpi build directory that should be configured,\n";
             print outFile "# compiled and tested by the test harness, or leave blank to indicate that there\n";
-            print outFile "# should be no mpi build. Directory must be a subdirectory of 'Trilinos/'.\n"; 
+            print outFile "# should be no mpi build. Directory must be a subdirectory of BASE_BUILD_DIR.\n"; 
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
             print outFile "# - value required: NO (unless SERIAL_DIR is omitted\n";        
@@ -2735,6 +2754,21 @@ report($SUMMARY);
         
         push (@optionsOrder, "MPI_DIR");
         if (!$silent) { print outFile "MPI_DIR                         = MPI\n"; }
+        
+        if (!$short) {    
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n"; 
+            print outFile "# Provide the absolute path to the parent directory of your build directories\n";
+            print outFile "# (SERIAL_DIR and/or MPI_DIR).  If left blank, this will default to your top-\n";
+            print outFile "# level Trilinos directory.\n"; 
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO\n";        
+            print outFile "\n";
+        }
+        
+        push (@optionsOrder, "BASE_BUILD_DIR");
+        if (!$silent) { print outFile "BASE_BUILD_DIR                  = \n"; }
         
         if (!$short) {    
             print outFile "\n";  
