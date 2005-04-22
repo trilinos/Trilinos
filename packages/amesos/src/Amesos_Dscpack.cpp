@@ -252,23 +252,22 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
 
   // fix the value of MaxProcs
 
-  switch( MaxProcs_ ) {
+  switch (MaxProcs_) 
+  {
   case -1:
-    MaxProcs_ = OptNumProcs1;
+    MaxProcs_ = EPETRA_MIN(OptNumProcs1, Comm().NumProc());
     break;
   case -2:
-    MaxProcs_ = OptNumProcs2;
+    MaxProcs_ = EPETRA_MIN(OptNumProcs2, Comm().NumProc());
     break;
   case -3:
     MaxProcs_ = Comm().NumProc();
     break;
   }
-    MaxProcs_ = EPETRA_MIN( MaxProcs_, Comm().NumProc());
-
 
 #if 0
-  if ( MyDscRank>=0 && A_and_LU_built ) { 
-			     DSC_ReFactorInitialize(MyDSCObject);
+  if (MyDscRank>=0 && A_and_LU_built) { 
+    DSC_ReFactorInitialize(MyDSCObject);
   }
 #endif
   //  if ( ! A_and_LU_built ) { 
