@@ -70,7 +70,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
                           bool ismatrixfree, bool matfreelev0, bool isnlnCG,
                           int nitersCG, bool broyden, Epetra_CrsMatrix* Jac, 
                           string fsmoothertype, string smoothertype, 
-                          string coarsesolvetype, int *nsmooth, 
+                          string coarsesolvetype, 
+                          int nsmooth_fine, int nsmooth, int nsmooth_coarse,  
                           double conv_normF, double conv_nupdate, 
                           int conv_maxiter,int numPDE, int nullspdim) 
 : fineinterface_(interface),
@@ -192,13 +193,13 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    
    // set the smoother
    if (level_==0)
-      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,fsmoothertype,nsmooth[level_]);
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,fsmoothertype,nsmooth_fine);
 
    else if (level_ != nlevel_-1) // set the smoother from the input
-      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,smoothertype,nsmooth[level_]);
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,smoothertype,nsmooth);
 
    else // set the coarse solver from the input
-      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth[level_]);
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth_coarse);
   
    // create this level's preconditioner class
    thislevel_prec_ = new ML_Epetra::MultiLevelOperator(
@@ -389,7 +390,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
                           Epetra_Comm& comm,  const Epetra_Vector& xfine, 
                           bool ismatrixfree, bool isnlnCG, int nitersCG, bool broyden,
                           string fsmoothertype, string smoothertype, string coarsesolvetype, 
-                          int *nsmooth, double conv_normF, 
+                          int nsmooth_fine, int nsmooth, int nsmooth_coarse,  
+                          double conv_normF, 
                           double conv_nupdate, int conv_maxiter,
                           int numPDE, int nullspdim, Epetra_CrsMatrix* Mat,
                           ML_NOX::Nox_CoarseProblem_Interface* coarseinterface) 
@@ -496,13 +498,13 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    
    // set the smoother
    if (level_==0)
-      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,fsmoothertype,nsmooth[level_]);
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,fsmoothertype,nsmooth_fine);
 
    else if (level_ != nlevel_-1) // set the smoother from the input
-      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,smoothertype,nsmooth[level_]);
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,smoothertype,nsmooth);
 
    else // set the coarse solver from the input
-      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth[level_]);
+      Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth_coarse);
   
    // create this level's preconditioner class
    thislevel_prec_ = new ML_Epetra::MultiLevelOperator(thislevel_ml_,comm_,

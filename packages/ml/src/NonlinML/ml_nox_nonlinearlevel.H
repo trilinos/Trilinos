@@ -118,7 +118,9 @@ public:
        Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree,
        bool matfreelev0, bool isnlnCG, int nitersCG, bool broyden, 
        Epetra_CrsMatrix* Jac, string fsmoothertype, string smoothertype, 
-       string coarsesolvetype, int *nsmooth, double conv_normF, 
+       string coarsesolvetype, 
+       int nsmooth_fine, int nsmooth, int nsmooth_coarse, 
+       double conv_normF, 
        double conv_nupdate, int conv_maxiter, int numPDE, int nullspdim);
 
   // constructor for case ismatrixfree==true
@@ -128,7 +130,8 @@ public:
        Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree, 
        bool isnlnCG, int nitersCG, bool broyden, 
        string fsmoothertype, string smoothertype, string coarsesolvetype, 
-       int *nsmooth, double conv_normF, double conv_nupdate, int conv_maxiter,
+       int nsmooth_fine, int nsmooth, int nsmooth_coarse,  
+       double conv_normF, double conv_nupdate, int conv_maxiter,
        int numPDE, int nullspdim, Epetra_CrsMatrix* Mat, 
        ML_NOX::Nox_CoarseProblem_Interface* coarseinterface);
 

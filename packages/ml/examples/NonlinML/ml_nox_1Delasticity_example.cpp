@@ -56,7 +56,7 @@
 // usage:
 // ml_nox_1Delasticity_example.exe <number_of_elements>
 // Try a large number (otherwise You don't get several levels), let's say
-// at least 30000
+// at least 50000
 
 // ml objects
 #include "ml_common.h"
@@ -246,62 +246,70 @@ int main(int argc, char *argv[])
 
   // Begin Preconditioner ************************************
 
-   int         maxlevel           = 5;           // max. # levels (minimum = 2 !)
+   int         maxlevel           = 6;           // max. # levels (minimum = 2 !)
+   int         maxcoarsesize      = 3000;           // the size ML stops generating coarser levels
    bool        islinearPrec       = false;       // preconditioner is linear MG-operator      
    bool        matrixfree         = false;       // use Finite Diffeencing for operators      
    bool        matfreelev0        = false;       // use FD on fine level only      
-   bool*       nlnCG = new bool[maxlevel];       // use nlnCG or mod. Newton's method             
-   for (i=0; i<maxlevel; i++) nlnCG[i] = true;
-               nlnCG[maxlevel-2]  = false;
-               nlnCG[maxlevel-1]  = false;
-   int*        nitersCG = new int[maxlevel];     // # iterations of lin. CG in mod. Newton's method 
-   for (i=0; i<maxlevel; i++) nitersCG[i] = 200;
-               nitersCG[maxlevel-1] = 2000;
-   bool        useBroyden         = true;        // in case of Newton's method, use a Broyden update of the Jacobian
-   double      fd_alpha           = 1.0e-07;     // FD-parameter alpha (see NOX manual)
-   double      fd_beta            = 1.0e-06;     // FD-parameter beta (see NOX manual)
-   bool        fd_centered        = false;       // use centered or forward finite differencing
-   int         offset             = 50;         // every offset this preconditioner is recomputed             
+   int         offset             = 5;         // every offset this preconditioner is recomputed             
    int         ml_printlevel      = 9;           // ML-output-level (0-10)
+
    int         numPDE             = 1;           // dof per node
    int         dimNS              = 1;           // dimension of nullspace
    int         dimension          = 1;           // spatial dimension of problem
    string      coarsentype        = "Uncoupled"; // Uncoupled METIS VBMETIS
-   int         maxcoarsesize      = 10;           // the size ML stops generating coarser levels
    int         nnodeperagg        = 3;           // # nodes per agg for coarsening METIS and VBMETIS
+
+   bool        usenlnCG_fine      = true;        // use nlnCG or mod. Newton's method             
+   bool        usenlnCG           = true;
+   bool        usenlnCG_coarse    = true;
+
+   int         nitersCG_fine      = 10;          // # iterations of lin. CG in mod. Newton's method 
+   int         nitersCG           = 50;          
+   int         nitersCG_coarse    = 500;          
+   
+   bool        useBroyden         = true;        // in case of Newton's method, use a Broyden update of the Jacobian
+
+   double      fd_alpha           = 1.0e-07;     // FD-parameter alpha (see NOX manual)
+   double      fd_beta            = 1.0e-06;     // FD-parameter beta (see NOX manual)
+   bool        fd_centered        = false;       // use centered or forward finite differencing
+
    string      fsmoothertype      = "MLS";       // SGS BSGS Jacobi MLS Bcheby AmesosKLU
    string      smoothertype       = "MLS";       // SGS BSGS Jacobi MLS Bcheby AmesosKLU
    string      coarsesolve        = "AmesosKLU"; // SGS BSGS Jacobi MLS Bcheby AmesosKLU
-   int* nsmooth = new int[maxlevel];             // # smoothing sweeps each level
-   for (i=0; i<maxlevel; i++) nsmooth[i] = 3;
-               nsmooth[0]         = 3;
-               nsmooth[1]         = 3;
-   double      FAS_normF          = 1.0e-07;     // convergence criteria
-   double      FAS_nupdate        = 1.0e-06;     // minimum step size length
-   int         FAS_prefinesmooth  = 3;           // # presmooth iterations on fine level
+   int         nsmooth_fine       = 5;
+   int         nsmooth            = 4;
+   int         nsmooth_coarse     = 1;
+
+   double      FAS_normF          = 1.0e-06;     // convergence criteria
+   double      FAS_nupdate        = 1.0e-07;     // minimum step size length
+
+   int         FAS_prefinesmooth  = 0;           // # presmooth iterations on fine level
    int         FAS_presmooth      = 0;           // # presmooth iterations
-   int         FAS_coarsesmooth   = 5;          // # smoothing iterations on coarse level  
-   int         FAS_postsmooth     = 3;           // # postsmooth iterations
+   int         FAS_coarsesmooth   = 6;          // # smoothing iterations on coarse level  
+   int         FAS_postsmooth     = 2;           // # postsmooth iterations
    int         FAS_postfinesmooth = 3;           // # postsmooth iterations on fine level
+
    int         FAS_maxcycle       = 250;         // max. # of FAS-cycles before we give up
                
-   //Epetra_Map& map = nlnproblem.getMap();
    Epetra_Map map(nlnproblem.getMap());
 
    // create the preconditioner
    ML_NOX::ML_Nox_Preconditioner Prec(fineinterface,map,map,Comm);
 
    // set parameters
-   Prec.SetNonlinearMethod(islinearPrec,nlnCG,useBroyden,nitersCG,maxlevel,
+   Prec.SetNonlinearMethod(islinearPrec,maxlevel,
                            matrixfree,matfreelev0); 
-   delete [] nlnCG;    nlnCG    = 0;
-   delete [] nitersCG; nitersCG = 0;
+
+   Prec.SetNonlinearSolvers(usenlnCG_fine,usenlnCG,usenlnCG_coarse,useBroyden,
+                            nitersCG_fine,nitersCG,nitersCG_coarse);
+   
    Prec.SetPrintLevel(ml_printlevel); 
+
    Prec.SetCoarsenType(coarsentype,maxlevel,maxcoarsesize,nnodeperagg); 
    Prec.SetDimensions(dimension,numPDE,dimNS); 
    Prec.SetSmoothers(fsmoothertype,smoothertype,coarsesolve);  
-   Prec.SetSmootherSweeps(nsmooth);                  
-   delete [] nsmooth; nsmooth = 0;
+   Prec.SetSmootherSweeps(nsmooth_fine,nsmooth,nsmooth_coarse);                  
    Prec.SetRecomputeOffset(offset);
    Prec.SetConvergenceCriteria((FAS_normF),FAS_nupdate);
    Prec.SetFAScycle(FAS_prefinesmooth,FAS_presmooth,FAS_coarsesmooth,FAS_postsmooth,FAS_postfinesmooth,FAS_maxcycle);

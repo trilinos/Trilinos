@@ -102,6 +102,8 @@ comm_(comm)
   fd_alpha_            = 1.0e-07;
   fd_beta_             = 1.0e-06;
   fd_centered_         = false;
+  offset_newPrec_      = 100;
+
   FAS_normF_           = 1.0e-05;
   FAS_nupdate_         = 1.0e-05;
   FAS_prefinesmooth_   = 3;
@@ -112,9 +114,13 @@ comm_(comm)
   FAS_maxcycle_        = 250;
   noxsolver_           = 0;
   useBroyden_          = false;
-  offset_newPrec_      = 100;
+  usenlnCG_fine_       = true;
+  usenlnCG_            = true; 
+  usenlnCG_coarse_     = true;
+  nitersCG_fine_       = 0; 
+  nitersCG_            = 0; 
+  nitersCG_coarse_     = 0;
 
-  // ML stuff
   ml_               = 0;
   ag_               = 0;
   ml_coarsestlev_   = 0;
@@ -128,22 +134,13 @@ comm_(comm)
   ml_coarsentype_   = "Uncoupled";
   ml_printlevel_    = 8;
   ml_nnodeperagg_   = 9;
+  ml_maxcoarsesize_ = 50;
   ml_smoothertype_  = "SGS";
   ml_fsmoothertype_ = "SGS";
   ml_coarsesolve_   = "AmesosKLU";
-  ml_maxcoarsesize_ = 50;
-  ml_nsmooth_       = new int[ml_N_levels_];
-  for (int i=0; i<ml_N_levels_; i++) ml_nsmooth_[i] = 1;
-
-  isnlnCG_          = new bool[ml_N_levels_];
-  nitersCG_         = new int[ml_N_levels_];
-  for (int i=0; i<ml_N_levels_; i++)
-  {
-    isnlnCG_[i]  = true;
-    nitersCG_[i] = 0;
-  }
-
-
+  nsmooth_fine_     = 3;  
+  nsmooth_          = 3;       
+  nsmooth_coarse_   = 1;
   return;
 }
 
@@ -310,21 +307,13 @@ bool ML_NOX::ML_Nox_Preconditioner::SetDimensions(int spatialDimension,
 /*----------------------------------------------------------------------*
  |  Set methods for flags/data (public)                      m.gee 03/05|
  *----------------------------------------------------------------------*/
-bool ML_NOX::ML_Nox_Preconditioner::SetSmootherSweeps(int* nsmooth)
+bool ML_NOX::ML_Nox_Preconditioner::SetSmootherSweeps(int nsmooth_fine, 
+                                                      int nsmooth, 
+                                                      int nsmooth_coarse)
 { 
-  for (int i=0; i<ml_N_levels_; i++)
-  if (nsmooth[i]<0)
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::SetSmootherSweeps:\n"
-         << "**ERR**: nsmooth[i]<0 out of range, using nsmooth[i]=0\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
-    nsmooth[i] = 0;
-  }
-  if (ml_nsmooth_) delete [] ml_nsmooth_;
-  ml_nsmooth_ = new int[ml_N_levels_];
-  for (int i=0; i<ml_N_levels_; i++)
-     ml_nsmooth_[i] = nsmooth[i];
-     
+  nsmooth_fine_    = nsmooth_fine;  
+  nsmooth_         = nsmooth;       
+  nsmooth_coarse_  = nsmooth_coarse;
   return true;
 }                              
 
@@ -372,9 +361,6 @@ bool ML_NOX::ML_Nox_Preconditioner::SetFAScycle(int prefsmooth,int presmooth,
  |  Set methods for flags/data (public)                      m.gee 03/05|
  *----------------------------------------------------------------------*/
 bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool  islinPrec, 
-                                                       bool* isnlnCG,
-                                                       bool  useBroyden, 
-                                                       int*  nitersCG, 
                                                        int   maxlevel,
                                                        bool  ismatrixfree, 
                                                        bool  ismatfreelev0)
@@ -382,17 +368,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool  islinPrec,
   islinearPrec_ = islinPrec;
   ismatrixfree_ = ismatrixfree;
   matfreelev0_  = ismatfreelev0;
-  ml_N_levels_  = maxlevel,
-  useBroyden_   = useBroyden;
-  if (isnlnCG_)  delete [] isnlnCG_;
-  if (nitersCG_) delete [] nitersCG_;
-  isnlnCG_  = new bool[ml_N_levels_];
-  nitersCG_ = new int[ml_N_levels_];
-  for (int i=0; i<ml_N_levels_; i++)
-  {
-     isnlnCG_[i]  = isnlnCG[i];
-     nitersCG_[i] = nitersCG[i];
-  }
+  ml_N_levels_  = maxlevel;
   
   if (islinPrec && ismatrixfree && !ismatfreelev0 &&
       (ml_fsmoothertype_== "Jacobi" || 
@@ -403,16 +379,29 @@ bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool  islinPrec,
          << "**ERR**: linearPrec && matrixfree & Jacobi smoother doesn't work!\n"
          << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
   }
-  if (!islinPrec && !isnlnCG && ismatrixfree && !ismatfreelev0 &&
-      (ml_fsmoothertype_== "Jacobi" || 
-       ml_smoothertype_ == "Jacobi" ||
-       ml_coarsesolve_  == "Jacobi"))
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::SetNonlinearMethod:\n"
-         << "**ERR**: NonlinPrec && matrixfree & Newton smoother && Jacobi doesn't work!\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-  }
-     
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set nonlinear solvers (public)                           m.gee 04/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearSolvers(bool usenlnCG_fine, 
+                                                        bool usenlnCG, 
+                                                        bool usenlnCG_coarse,
+                                                        bool useBroyden, 
+                                                        int  nitersCG_fine, 
+                                                        int  nitersCG, 
+                                                        int  nitersCG_coarse)
+{ 
+  usenlnCG_fine_    = usenlnCG_fine; 
+  usenlnCG_         = usenlnCG;
+  usenlnCG_coarse_  = usenlnCG_coarse;
+
+  useBroyden_       = useBroyden;
+
+  nitersCG_fine_    = nitersCG_fine; 
+  nitersCG_         = nitersCG;
+  nitersCG_coarse_  = nitersCG_coarse;
   return true;
 }                              
 
@@ -425,10 +414,6 @@ ML_NOX::ML_Nox_Preconditioner::~ML_Nox_Preconditioner()
      delete ml_linPrec_;
   ml_linPrec_ = 0;
   
-  if (ml_nsmooth_)
-    delete [] ml_nsmooth_;
-  ml_nsmooth_ = 0;
-
   if (ml_graphwrap_)
     delete ml_graphwrap_;
   ml_graphwrap_ = 0;
@@ -463,14 +448,6 @@ ML_NOX::ML_Nox_Preconditioner::~ML_Nox_Preconditioner()
      delete fineJac_;
   fineJac_ = 0;
   
-  if (isnlnCG_) 
-     delete [] isnlnCG_;
-  isnlnCG_ = 0;
-  
-  if (nitersCG_)
-     delete [] nitersCG_;
-  nitersCG_ = 0;
-
   return;
 }
 
@@ -1142,11 +1119,11 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
 {
    // choose some smoothers on level ==0
    if (ml_fsmoothertype_ == "SGS")
-      ML_Gen_Smoother_SymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.);
+      ML_Gen_Smoother_SymGaussSeidel(ml_,0,ML_BOTH,nsmooth_fine_,1.);
    else if (ml_fsmoothertype_ == "Jacobi")
    {
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_PRESMOOTHER, ml_nsmooth_[0],.4);
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_POSTSMOOTHER,ml_nsmooth_[0],.4);
+      ML_Gen_Smoother_Jacobi(ml_,0,ML_PRESMOOTHER, nsmooth_fine_,.4);
+      ML_Gen_Smoother_Jacobi(ml_,0,ML_POSTSMOOTHER,nsmooth_fine_,.4);
    }
    else if (ml_fsmoothertype_ == "BSGS")
    {
@@ -1162,7 +1139,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
      else
         ML_Gen_Blocks_Aggregates(ag_,0,&nblocks,&blocks);
         
-     ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.,
+     ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,0,ML_BOTH,nsmooth_fine_,1.,
                                           nblocks,blocks);
      if (needfree)
      {
@@ -1184,7 +1161,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
      else
         ML_Gen_Blocks_Aggregates(ag_,0,&nblocks,&blocks);
         
-     ML_Gen_Smoother_BlockDiagScaledCheby(ml_,0,ML_BOTH,30.,ml_nsmooth_[0],
+     ML_Gen_Smoother_BlockDiagScaledCheby(ml_,0,ML_BOTH,30.,nsmooth_fine_,
                                           nblocks,blocks);
      if (needfree)
      {
@@ -1193,7 +1170,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
      }
    }
    else if (ml_fsmoothertype_ == "MLS")
-     ML_Gen_Smoother_MLS(ml_,0,ML_BOTH,30.,ml_nsmooth_[0]);
+     ML_Gen_Smoother_MLS(ml_,0,ML_BOTH,30.,nsmooth_fine_);
    else if (ml_fsmoothertype_ == "AmesosKLU")
      ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
    else
@@ -1208,13 +1185,13 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
    {
       if (ml_smoothertype_ == "SGS")
       {
-         ML_Gen_Smoother_SymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.);
+         ML_Gen_Smoother_SymGaussSeidel(ml_,i,ML_BOTH,nsmooth_,1.);
          continue;
       }
       else if (ml_smoothertype_ == "Jacobi")
       {
-         ML_Gen_Smoother_Jacobi(ml_,i,ML_PRESMOOTHER, ml_nsmooth_[i],.4);
-         ML_Gen_Smoother_Jacobi(ml_,i,ML_POSTSMOOTHER,ml_nsmooth_[i],.4);
+         ML_Gen_Smoother_Jacobi(ml_,i,ML_PRESMOOTHER, nsmooth_,.4);
+         ML_Gen_Smoother_Jacobi(ml_,i,ML_POSTSMOOTHER,nsmooth_,.4);
          continue;
       }
       else if (ml_smoothertype_ == "BSGS")
@@ -1231,7 +1208,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
         else
            ML_Gen_Blocks_Aggregates(ag_,i,&nblocks,&blocks);
 
-        ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,i,ML_BOTH,ml_nsmooth_[i],1.,nblocks,blocks);
+        ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,i,ML_BOTH,nsmooth_,1.,nblocks,blocks);
         if (needfree)
         {
            ML_free(blocks); 
@@ -1253,7 +1230,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
         else
            ML_Gen_Blocks_Aggregates(ag_,i,&nblocks,&blocks);
            
-        ML_Gen_Smoother_BlockDiagScaledCheby(ml_,i,ML_BOTH,30.,ml_nsmooth_[i],
+        ML_Gen_Smoother_BlockDiagScaledCheby(ml_,i,ML_BOTH,30.,nsmooth_,
                                              nblocks,blocks);
         if (needfree)
         {
@@ -1262,7 +1239,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
         }
       }
       else if (ml_smoothertype_ == "MLS")
-        ML_Gen_Smoother_MLS(ml_,i,ML_BOTH,30.,ml_nsmooth_[i]);
+        ML_Gen_Smoother_MLS(ml_,i,ML_BOTH,30.,nsmooth_);
       else if (ml_smoothertype_ == "AmesosKLU")
         ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
       else
@@ -1276,11 +1253,11 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
    if (ml_coarsesolve_ == "AmesosKLU")
       ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0);
    else if (ml_coarsesolve_ == "SGS")
-      ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.);
+      ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,nsmooth_coarse_,1.);
    else if (ml_coarsesolve_ == "Jacobi")
    {
-      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_PRESMOOTHER, ml_nsmooth_[ml_coarsestlev_],.4);
-      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_POSTSMOOTHER,ml_nsmooth_[ml_coarsestlev_],.4);
+      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_PRESMOOTHER, nsmooth_coarse_,.4);
+      ML_Gen_Smoother_Jacobi(ml_,ml_coarsestlev_,ML_POSTSMOOTHER,nsmooth_coarse_,.4);
    }   
    else if (ml_coarsesolve_ == "BSGS")
    {
@@ -1297,7 +1274,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
          ML_Gen_Blocks_Aggregates(ag_,ml_coarsestlev_,&nblocks,&blocks);
 
       ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,
-                                           ml_nsmooth_[ml_coarsestlev_],
+                                           nsmooth_coarse_,
                                            1.,nblocks,blocks);
       if (needfree)
       {
@@ -1320,7 +1297,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
         ML_Gen_Blocks_Aggregates(ag_,ml_coarsestlev_,&nblocks,&blocks);
         
      ML_Gen_Smoother_BlockDiagScaledCheby(ml_,ml_coarsestlev_,ML_BOTH,30.,
-                                          ml_nsmooth_[ml_coarsestlev_],nblocks,blocks);
+                                          nsmooth_coarse_,nblocks,blocks);
      if (needfree)
      {
         ML_free(blocks); 
@@ -1328,7 +1305,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
      }
    }
    else if (ml_smoothertype_ == "MLS")
-      ML_Gen_Smoother_MLS(ml_,ml_coarsestlev_,ML_BOTH,30.,ml_nsmooth_[ml_coarsestlev_]);
+      ML_Gen_Smoother_MLS(ml_,ml_coarsestlev_,ML_BOTH,30.,nsmooth_coarse_);
    else
    {
      cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner:\n"

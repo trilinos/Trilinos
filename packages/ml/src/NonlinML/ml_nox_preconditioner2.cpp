@@ -104,6 +104,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
    // loop all levels and create the nonlinear level class
    for (i=0; i<n_nlnlevel_; i++)
    {
+      // choose a blocks size
       int nullspdim = ml_dim_nullsp_;
       int numPDE    = 0;
       if (i==0) 
@@ -120,14 +121,36 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
                << "**ERR**: spatialDimension=" << ml_spatialDimension_ << " unknown\n"
                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
-      if (!nlnLevel_[i]) // create new nonlinear level   
+      
+      // choose the nonlinear solver
+      bool isnlnCG  = true;
+      int  nitersCG = 100;
+      if (i==0)
+      {
+         isnlnCG  = usenlnCG_fine_;
+         nitersCG = nitersCG_fine_;
+      }
+      else if (i == n_nlnlevel_-1)
+      {
+         isnlnCG  = usenlnCG_coarse_;
+         nitersCG = nitersCG_coarse_;
+      }
+      else
+      {
+         isnlnCG  = usenlnCG_;
+         nitersCG = nitersCG_;
+      }
+      
+      // create new nonlinear level  
+      if (!nlnLevel_[i])  
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
                                      interface_,comm_,xfine,ismatrixfree_,
-                                     matfreelev0_,isnlnCG_[i],nitersCG_[i],
+                                     matfreelev0_,isnlnCG,nitersCG,
                                      useBroyden_,fineJac_,ml_fsmoothertype_,
                                      ml_smoothertype_,ml_coarsesolve_,
-                                     ml_nsmooth_,FAS_normF_,FAS_nupdate_,
+                                     nsmooth_fine_,nsmooth_,nsmooth_coarse_,
+                                     FAS_normF_,FAS_nupdate_,
                                      3000,numPDE,nullspdim);
       else
       {
@@ -242,7 +265,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
          isJacobismoother=true;
       
       // when using Newton's method, compute complete Jacobian
-      if (isnlnCG_==false)
+      if (i==0 && usenlnCG_fine_==false)
+         isJacobismoother=false;
+      if (i==n_nlnlevel_-1 && usenlnCG_coarse_==false)
+         isJacobismoother=false;
+      if (i!=0 && i!=n_nlnlevel_-1 && usenlnCG_==false)
          isJacobismoother=false;
       
       if (!(ml_matfreelevel_[i])) // create a new matrixfree level   
@@ -276,7 +303,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
               << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
       
-      // create the nonlinear level
+      // choose a blocks size
       int nullspdim = ml_dim_nullsp_;
       int numPDE    = 0;
       if (i==0) 
@@ -293,13 +320,36 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
                << "**ERR**: spatialDimension=" << ml_spatialDimension_ << " unknown\n"
                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
+      
+      // choose the nonlinear solver
+      bool isnlnCG  = true;
+      int  nitersCG = 100;
+      if (i==0)
+      {
+         isnlnCG  = usenlnCG_fine_;
+         nitersCG = nitersCG_fine_;
+      }
+      else if (i == n_nlnlevel_-1)
+      {
+         isnlnCG  = usenlnCG_coarse_;
+         nitersCG = nitersCG_coarse_;
+      }
+      else
+      {
+         isnlnCG  = usenlnCG_;
+         nitersCG = nitersCG_;
+      }
+      
+      // create new nonlinear level  
       if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
                                      interface_,comm_,xfine,ismatrixfree_, 
-                                     isnlnCG_[i],nitersCG_[i],useBroyden_,
+                                     isnlnCG,nitersCG,useBroyden_,
                                      ml_fsmoothertype_,ml_smoothertype_,
-                                     ml_coarsesolve_,ml_nsmooth_,FAS_normF_,
+                                     ml_coarsesolve_,
+                                     nsmooth_fine_,nsmooth_,nsmooth_coarse_,
+                                     FAS_normF_,
                                      FAS_nupdate_,3000,numPDE,nullspdim,tmpMat,
                                      coarseinterface);
       else
