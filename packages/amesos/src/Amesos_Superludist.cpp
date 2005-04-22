@@ -26,7 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-
 // TO DO: use Stat structure to print statistics???
 // allow users to specify usermap ???
 
@@ -93,12 +92,11 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
   PrintStatus_(false),     // Overwritten by call to SetParameters below
   PrintTiming_(false),     // Overwritten by call to SetParameters below - WAS false
   verbose_(1),             // Set here and nowhere else
-  debug_(0),               // Overwritten by call to SetParameters below
   NumTime_(0.0),
   SolTime_(0.0),
-  ConTime_(0.0),
   VecTime_(0.0),
   MatTime_(0.0),
+  ConTime_(0.0),
   Time_(0),
   NumNumericFact_(0),
   NumSolve_(0),
@@ -153,20 +151,8 @@ Amesos_Superludist::~Amesos_Superludist(void) {
 //       MaxProcesses_, Redistribute_, AddZeroToDiag_, FactOption_ and 
 //       ReuseSymbolic_ set according to ParameterList_ values.
 //
-int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
-
-  if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
-  
-  debug_ = 0 ; 
-  // debug level:
-  // 0 - no debug output
-  // 1 - some output
-  if( ParameterList.isParameter("DebugLevel") )
-    debug_ = ParameterList.get("DebugLevel", 0);
-
-  //  Some compilers reject the following cast:
-  //  if( (int) &ParameterList == 0 ) return 0;
-
+int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) 
+{
   if (ParameterList.isSublist("Superludist") ) {
     Teuchos::ParameterList SuperludistParams = ParameterList.sublist("Superludist") ;
   }  
@@ -198,40 +184,38 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   PrintTiming_ = false ; 
   AddZeroToDiag_ = 0.0;
   
-  // Ken, I modified so that parameters are not added to the list if not present.
-  // Is it fine for you ????
-  
   // parameters for all packages
 
-  if( ParameterList.isParameter("Redistribute") )
+  if (ParameterList.isParameter("Redistribute"))
     Redistribute_ = ParameterList.get("Redistribute",Redistribute_);  
 
-  if( ParameterList.isParameter("AddZeroToDiag") )
+  if (ParameterList.isParameter("AddZeroToDiag"))
     AddZeroToDiag_ = ParameterList.get("AddZeroToDiag",AddZeroToDiag_); 
 
-  if( ParameterList.isParameter("AddToDiag") )
+  if (ParameterList.isParameter("AddToDiag"))
     AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
 
   // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
+  if (ParameterList.isParameter("PrintStatus"))
     PrintStatus_ = ParameterList.get("PrintStatus", false);
 
   // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintTiming") )
+  if (ParameterList.isParameter("PrintTiming"))
     PrintTiming_ = ParameterList.get("PrintTiming", false);
 
-  if( ParameterList.isParameter("MaxProcs") ) 
+  if (ParameterList.isParameter("MaxProcs")) 
     MaxProcesses_ = ParameterList.get("MaxProcs",MaxProcesses_);
 
-  if( ParameterList.isParameter("ComputeTrueResidual") )
+  if (ParameterList.isParameter("ComputeTrueResidual"))
     ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
 
-  if( ParameterList.isParameter("ComputeVectorNorms") )
+  if (ParameterList.isParameter("ComputeVectorNorms") )
     ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
 
   // parameters for Superludist only
   
-  if (ParameterList.isSublist("Superludist") ) {
+  if (ParameterList.isSublist("Superludist") ) 
+  {
     Teuchos::ParameterList SuperludistParams = ParameterList.sublist("Superludist") ;
     if( SuperludistParams.isParameter("ReuseSymbolic") )
       ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
@@ -256,43 +240,34 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
     else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;
     else if( FactOption == "FACTORED" ) FactOption_ = FACTORED;
 
-    /* Ken, should we support these too ?? 
-    if( SuperludistParams.isParameter("nprow") )
-      nprow_ = SuperludistParams.get("nprow",MaxProcesses_);
-    if( SuperludistParams.isParameter("npcol") ) 
-      npcol_ = SuperludistParams.get("npcol",MaxProcesses_);
-    */
-    
-    if(  SuperludistParams.isParameter("Equil") )
+    if (SuperludistParams.isParameter("Equil"))
       Equil_ = SuperludistParams.get("Equil",Equil_);
 
-    if( SuperludistParams.isParameter("ColPerm") )
+    if (SuperludistParams.isParameter("ColPerm"))
       ColPerm_ = SuperludistParams.get("ColPerm",ColPerm_);
 
-    if( ColPerm_ == "MY_PERMC" ) {
-      if( SuperludistParams.isParameter("perm_c") )
+    if (ColPerm_ == "MY_PERMC")
+      if( SuperludistParams.isParameter("perm_c"))
 	perm_c_ = SuperludistParams.get("perm_c",perm_c_);
-    }
 
-    if( SuperludistParams.isParameter("RowPerm") )
+    if (SuperludistParams.isParameter("RowPerm"))
       RowPerm_ = SuperludistParams.get("RowPerm",RowPerm_);
     if( RowPerm_ == "MY_PERMR" ) {
-      if( SuperludistParams.isParameter("perm_r") )
+      if (SuperludistParams.isParameter("perm_r"))
 	perm_r_ = SuperludistParams.get("perm_r",perm_r_);
     }
 
-    if( SuperludistParams.isParameter("IterRefine") )
+    if (SuperludistParams.isParameter("IterRefine"))
       IterRefine_ = SuperludistParams.get("IterRefine",IterRefine_);
 
-    if( SuperludistParams.isParameter("ReplaceTinyPivot") )
+    if (SuperludistParams.isParameter("ReplaceTinyPivot"))
       ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",ReplaceTinyPivot_);
 
-    if( SuperludistParams.isParameter("PrintNonzeros") )
+    if (SuperludistParams.isParameter("PrintNonzeros"))
       PrintNonzeros_ = SuperludistParams.get("PrintNonzeros",PrintNonzeros_);
-
   }
   
-  return 0;
+  return(0);
 }
 
 //
@@ -307,10 +282,8 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 //       UniformMatrix_
 //       ExportToDist_
 //
-int Amesos_Superludist::RedistributeA( ) {
-
-  if( debug_ == 1 ) cout << "Entering `RedistributeA()' ..." << endl;
-
+int Amesos_Superludist::RedistributeA( ) 
+{
   Time_->ResetStartTime();
   
   // Ken, I added two more options to what you did.
@@ -434,10 +407,8 @@ int Amesos_Superludist::RedistributeA( ) {
 //         LUstructInit_
 //
 //   
-int Amesos_Superludist::Factor( ) {
-
-  if( debug_ == 1 ) cout << "Entering `Factor()' ..." << endl;
-  
+int Amesos_Superludist::Factor( ) 
+{
   Time_->ResetStartTime();
 
   //
@@ -631,8 +602,10 @@ int Amesos_Superludist::Factor( ) {
     else if( IterRefine_ == "DOUBLE" ) options_.IterRefine = DOUBLE;
     else if( IterRefine_ == "EXTRA" ) options_.IterRefine = EXTRA;
 
+#if 0
     if( PrintNonzeros_ ) options_.PrintStat = (yes_no_t)YES;
     else                 options_.PrintStat = NO;
+#endif
     
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
@@ -690,10 +663,8 @@ int Amesos_Superludist::Factor( ) {
 //     Return codes:
 //       -4 if we detect a change to the non-zero structure of the matrix.
 //
-int Amesos_Superludist::ReFactor( ) {
-  
-    if( debug_ == 1 ) cout << "Entering `ReFactor()' ..." << endl;
-  
+int Amesos_Superludist::ReFactor( ) 
+{
     Time_->ResetStartTime();
     
     //
@@ -773,8 +744,9 @@ int Amesos_Superludist::ReFactor( ) {
     return 0;
 }
 
-bool Amesos_Superludist::MatrixShapeOK() const { 
-  bool OK ;
+bool Amesos_Superludist::MatrixShapeOK() const 
+{ 
+  bool OK = true;
 
   if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
        GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
@@ -782,19 +754,17 @@ bool Amesos_Superludist::MatrixShapeOK() const {
 }
 
 
-int Amesos_Superludist::SymbolicFactorization() {
-
-  if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()' ..." << endl;
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+int Amesos_Superludist::SymbolicFactorization() 
+{
+  if (Time_ == 0) Time_ = new Epetra_Time(Comm());
   
   FactorizationOK_ = false ; 
 
-  return 0;
+  return(0);
 }
 
-int Amesos_Superludist::NumericFactorization() {
-  
-  if( debug_ == 1 ) cout << "Entering `NumericFactorizationA()' ..." << endl;
+int Amesos_Superludist::NumericFactorization() 
+{
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
  
   NumNumericFact_++;
@@ -818,10 +788,9 @@ int Amesos_Superludist::NumericFactorization() {
 }
 
 
-int Amesos_Superludist::Solve() { 
-
-  if( debug_ == 1 ) cout << "Entering `Solve()' ..." << endl;
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+int Amesos_Superludist::Solve() 
+{
+  if (Time_ == 0) Time_ = new Epetra_Time(Comm());
   
   NumSolve_++;
   

@@ -261,6 +261,7 @@ revert to their default values.
   //
   //  These are used to determine what needs to be cleaned up.
   //
+  const Epetra_LinearProblem * Problem_;
   int GridCreated_ ; 
   int FactorizationDone_ ; 
 
@@ -290,8 +291,8 @@ revert to their default values.
   vector <int> Ai_;
   vector <double> Aval_;
 
-  Epetra_MultiVector *vecXdistributed_; 
   Epetra_MultiVector *vecBdistributed_; 
+  Epetra_MultiVector *vecXdistributed_; 
 
   vector<int>ColIndicesV_;
   vector<double>RowValuesV_;
@@ -313,9 +314,9 @@ revert to their default values.
 
   bool PrintNonzeros_;
   string ColPerm_;
-  int * perm_c_;
   string RowPerm_;
-  int * perm_r_;
+  int* perm_c_;
+  int* perm_r_;
   string IterRefine_;
   bool ReplaceTinyPivot_;
   bool Equil_;
@@ -325,13 +326,11 @@ revert to their default values.
                                     // latest call to SymbolicFactorization()
 
   bool UseTranspose_;      // Set by SetUseTranpose() 
-  const Epetra_LinearProblem * Problem_;
   bool PrintStatus_;            // print some information in the destruction phase
                                     // (defaulted to false)
   bool PrintTiming_;
   
   int verbose_;
-  int debug_;
   
   // timing variables
   // some timing internal to MUMPS
