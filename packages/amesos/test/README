@@ -56,3 +56,18 @@ Organization of Amesos tests:
 
   Test multiple successive solutions with different rhs, to
   solve A^3 x = b.
+
+
+- Test_KLU, Test_UMFPACK, Test_SuperLU, Test_SuperLU_DIST, Test_MUMPS
+  ==================================================================
+
+  The linear system matrix in an Epetra_RowMatrix object, that is not
+  derived from the Epetra_CrsMatrix class. The linear system matrix
+  has moderate size (10000), and 7 vectors are used. The map is
+  built randomly.
+
+
+- Test_DSCPACK
+  ============
+
+  The linear system matrix is an Epetra_CrsMatrix.

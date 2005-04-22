@@ -13,14 +13,12 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Time.h"
 #include "Epetra_Util.h"
+#include "Epetra_CrsMatrix.h"
 #include "Amesos_Dscpack.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
-using namespace Trilinos_Util;
 
 //=============================================================================
 bool CheckError(const Epetra_RowMatrix& A,
@@ -112,40 +110,49 @@ int main(int argc, char *argv[]) {
 
   delete [] part;
 
-  // ===================== //
-  // Create a dense matrix //
-  // ===================== //
+  // =========================== //
+  // Create a tridiagonal matrix //
+  // =========================== //
  
-  Epetra_CrsMatrix Matrix(Copy,Map,NumGlobalElements);
+  double Values[3];
+  // Right now, we put zeros only in the matrix.
+  Values[0] = 0.0;
+  Values[1] = 0.0;
+  Values[2] = 0.0;
+  int Indices[3];
+  int NumEntries;
 
-  int* Indices = new int[NumGlobalElements];
-  double* Values = new double[NumGlobalElements];
-
-  for (int i = 0 ; i < NumGlobalElements ; ++i) 
-    Indices[i] = i;
-
-  for (int i = 0 ; i < NumMyElements ; ++i) {
-    int iGlobal = MyGlobalElements[i];
-    for (int jGlobal = 0 ; jGlobal < NumGlobalElements ; ++jGlobal) {
-      if (iGlobal == jGlobal) 
-	Values[jGlobal] = 1.0 * (NumGlobalElements + 1 ) *
-	  (NumGlobalElements + 1);
-      else if (iGlobal > jGlobal)
-	Values[jGlobal] = 1.0*(jGlobal+1);
-      else
-	Values[jGlobal] = 1.0*(iGlobal+1);
+  // At this point we simply set the nonzero structure of A.
+  // Actual values will be inserted later (now all zeros)
+  for (int i = 0; i < NumMyElements; i++)
+  {
+    if (MyGlobalElements[i] == 0)
+    {
+      Indices[0] = 0;
+      Indices[1] = 1;
+      NumEntries = 2;
     }
-    Matrix.InsertGlobalValues(MyGlobalElements[i],
-                              NumGlobalElements, Values, Indices);
+    else if (MyGlobalElements[i] == NumGlobalElements-1)
+    {
+      Indices[0] = NumGlobalElements-1;
+      Indices[1] = NumGlobalElements-2;
+      NumEntries = 2;
+    }
+    else
+    {
+      Indices[0] = MyGlobalElements[i]-1;
+      Indices[1] = MyGlobalElements[i];
+      Indices[2] = MyGlobalElements[i]+1;
+      NumEntries = 3;
+    }
 
+    AMESOS_CHK_ERR(Matrix.InsertGlobalValues(MyGlobalElements[i],
+                                             NumEntries, Values, Indices));
   }
 
+  // Finish up.
   Matrix.FillComplete();
 
-  delete [] MyGlobalElements;
-  delete [] Indices;
-  delete [] Values;
- 
   // ======================== //
   // other data for this test //
   // ======================== //
@@ -161,38 +168,34 @@ int main(int argc, char *argv[]) {
   // AMESOS PART //
   // =========== //
 
-  Epetra_LinearProblem Problem;
-  Amesos_Dscpack Solver(Problem);
+  Epetra_LinearProblem Problem(&Matrix, &x, &b);
+  Amesos_Dscpack* Solver = new Amesos_Dscpack(Problem);
 
-  Problem.SetOperator(&Matrix);
-  Problem.SetLHS(&x);
-  Problem.SetRHS(&b);
+  Teuchos::ParameterList ParamList;
+  ParamList.set("MaxProcs", Comm.NumProc());
+  ParamList.set("PrintStatus", true);
 
-  Teuchos::ParameterList ParamList ;
-  ParamList.set( "MaxProcs", -3 );
-  EPETRA_CHK_ERR( Solver.SetParameters( ParamList ) ); 
+  EPETRA_CHK_ERR(Solver->SetParameters(ParamList)); 
 
-  AMESOS_CHK_ERR(Solver.SymbolicFactorization());
-  AMESOS_CHK_ERR(Solver.NumericFactorization());
-  AMESOS_CHK_ERR(Solver.Solve());
+  AMESOS_CHK_ERR(Solver->SymbolicFactorization());
+  AMESOS_CHK_ERR(Solver->NumericFactorization());
+  AMESOS_CHK_ERR(Solver->Solve());
 
-  bool TestPassed = true;
+  if (!CheckError(Matrix,x,b,x_exact))
+    AMESOS_CHK_ERR(-1);
 
-  TestPassed = TestPassed &&
-    CheckError(Matrix,x,b,x_exact);
-
-  AMESOS_CHK_ERR( ! TestPassed ) ; 
+  delete Solver;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  return 0;
+  return(EXIT_SUCCESS);
 }
 
 #else
 
-// Triutils is not available. Sorry, we have to give up.
+// DSCPACK is not available. Sorry, we have to give up.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -207,15 +210,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  puts("Please configure AMESOS with --enable-amesos-dscpack");
-  puts("to run this example");
+  puts("Please configure Amesos with:");
+  puts("--enable-amesos-dscpack");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return(0);
+  return(EXIT_SUCCESS);
 }
-
 #endif
-
-

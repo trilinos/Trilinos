@@ -9,14 +9,11 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Time.h"
 #include "Epetra_Util.h"
 #include "Amesos_Klu.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
-using namespace Trilinos_Util;
 
 //=============================================================================
 bool CheckError(const Epetra_RowMatrix& A,
@@ -58,7 +55,10 @@ bool CheckError(const Epetra_RowMatrix& A,
   return(TestPassed);
 }
 
-//=============================================================================
+//============ //
+// main driver //
+//============ //
+
 int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MPI
@@ -77,10 +77,12 @@ int main(int argc, char *argv[]) {
  
   int* part = new int[NumGlobalElements];
 
-  if (Comm.MyPID() == 0) {
+  if (Comm.MyPID() == 0) 
+  {
     Epetra_Util Util;
 
-    for( int i=0 ; i<NumGlobalElements ; ++i ) {
+    for (int i = 0 ; i < NumGlobalElements ; ++i) 
+    {
       unsigned int r = Util.RandomInt();	
       part[i] = r%(Comm.NumProc());
     }
@@ -90,7 +92,8 @@ int main(int argc, char *argv[]) {
 
   // count the elements assigned to this proc
   int NumMyElements = 0;
-  for (int i = 0 ; i < NumGlobalElements ; ++i) {
+  for (int i = 0 ; i < NumGlobalElements ; ++i) 
+  {
     if (part[i] == Comm.MyPID()) 
       NumMyElements++;
   }
@@ -98,15 +101,16 @@ int main(int argc, char *argv[]) {
   // get the loc2global list
   int* MyGlobalElements = new int[NumMyElements];
   int count = 0;
-  for (int i = 0 ; i < NumGlobalElements ; ++i) {
-    if (part[i] == Comm.MyPID() ) 
+  for (int i = 0 ; i < NumGlobalElements ; ++i) 
+  {
+    if (part[i] == Comm.MyPID()) 
       MyGlobalElements[count++] = i;
   }
 
   Epetra_Map Map(NumGlobalElements,NumMyElements,MyGlobalElements,
 		 0,Comm);
 
-  delete [] part;
+  delete[] part;
 
   // ===================== //
   // Create a dense matrix //
@@ -120,24 +124,25 @@ int main(int argc, char *argv[]) {
   for (int i = 0 ; i < NumGlobalElements ; ++i) 
     Indices[i] = i;
 
-  for (int i = 0 ; i < NumMyElements ; ++i) {
+  for (int i = 0 ; i < NumMyElements ; ++i) 
+  {
     int iGlobal = MyGlobalElements[i];
-    for (int jGlobal = 0 ; jGlobal < NumGlobalElements ; ++jGlobal) {
+    for (int jGlobal = 0 ; jGlobal < NumGlobalElements ; ++jGlobal) 
+    {
       if (iGlobal >= jGlobal) 
 	Values[jGlobal] = 1.0*(jGlobal+1);
       else
 	Values[jGlobal] = 1.0*(iGlobal+1);
     }
-   Matrix.InsertGlobalValues(MyGlobalElements[i],
-                             NumGlobalElements, Values, Indices);
-
+    Matrix.InsertGlobalValues(MyGlobalElements[i],
+                              NumGlobalElements, Values, Indices);
   }
 
   Matrix.FillComplete();
 
-  delete [] MyGlobalElements;
-  delete [] Indices;
-  delete [] Values;
+  delete[] MyGlobalElements;
+  delete[] Indices;
+  delete[] Values;
  
   // ======================== //
   // other data for this test //
@@ -154,35 +159,25 @@ int main(int argc, char *argv[]) {
   // AMESOS PART //
   // =========== //
 
-  Epetra_LinearProblem Problem;
+  Epetra_LinearProblem Problem(&A, &x, &b);
   Amesos_Klu Solver(Problem);
-
-  Problem.SetOperator(&A);
-  Problem.SetLHS(&x);
-  Problem.SetRHS(&b);
 
   AMESOS_CHK_ERR(Solver.SymbolicFactorization());
   AMESOS_CHK_ERR(Solver.NumericFactorization());
   AMESOS_CHK_ERR(Solver.Solve());
 
-  bool TestPassed = true;
-
-  TestPassed = TestPassed &&
-    CheckError(A,x,b,x_exact);
-
-  AMESOS_CHK_ERR( ! TestPassed ) ; 
+  if (!CheckError(A,x,b,x_exact)) AMESOS_CHK_ERR(-1);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
   return(EXIT_SUCCESS);
-
 }
 
 #else
 
-// Triutils is not available. Sorry, we have to give up.
+// KLU is not available. Sorry, we have to give up.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -197,15 +192,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  puts("Please configure AMESOS with --enable-amesos-klu");
-  puts("to run this example");
+  puts("Please configure Amesos with");
+  puts("--enable-amesos-klu");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return(0);
+  return(EXIT_SUCCESS);
 }
-
 #endif
-
-

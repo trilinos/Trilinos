@@ -9,7 +9,6 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Time.h"
 #include "Epetra_Util.h"
 #include "Amesos_Umfpack.h"
 #include "Amesos_TestRowMatrix.h"
@@ -77,10 +76,12 @@ int main(int argc, char *argv[]) {
  
   int* part = new int[NumGlobalElements];
 
-  if (Comm.MyPID() == 0) {
+  if (Comm.MyPID() == 0) 
+  {
     Epetra_Util Util;
 
-    for( int i=0 ; i<NumGlobalElements ; ++i ) {
+    for( int i=0 ; i<NumGlobalElements ; ++i ) 
+    {
       unsigned int r = Util.RandomInt();	
       part[i] = r%(Comm.NumProc());
     }
@@ -90,7 +91,8 @@ int main(int argc, char *argv[]) {
 
   // count the elements assigned to this proc
   int NumMyElements = 0;
-  for (int i = 0 ; i < NumGlobalElements ; ++i) {
+  for (int i = 0 ; i < NumGlobalElements ; ++i) 
+  {
     if (part[i] == Comm.MyPID()) 
       NumMyElements++;
   }
@@ -98,7 +100,8 @@ int main(int argc, char *argv[]) {
   // get the loc2global list
   int* MyGlobalElements = new int[NumMyElements];
   int count = 0;
-  for (int i = 0 ; i < NumGlobalElements ; ++i) {
+  for (int i = 0 ; i < NumGlobalElements ; ++i) 
+  {
     if (part[i] == Comm.MyPID() ) 
       MyGlobalElements[count++] = i;
   }
@@ -138,9 +141,9 @@ int main(int argc, char *argv[]) {
 
   Matrix.FillComplete();
 
-  delete [] MyGlobalElements;
-  delete [] Indices;
-  delete [] Values;
+  delete[] MyGlobalElements;
+  delete[] Indices;
+  delete[] Values;
  
   // ======================== //
   // other data for this test //
@@ -157,31 +160,15 @@ int main(int argc, char *argv[]) {
   // AMESOS PART //
   // =========== //
 
-  Epetra_LinearProblem Problem;
+  Epetra_LinearProblem Problem(&A, &x, &b);
   Amesos_Umfpack Solver(Problem);
-
-  Problem.SetOperator(&A);
-  Problem.SetLHS(&x);
-  Problem.SetRHS(&b);
 
   AMESOS_CHK_ERR(Solver.SymbolicFactorization());
   AMESOS_CHK_ERR(Solver.NumericFactorization());
   AMESOS_CHK_ERR(Solver.Solve());
 
-  bool TestPassed = true;
-
-  TestPassed = TestPassed &&
-    CheckError(A,x,b,x_exact);
-
-  if (TestPassed) {
-    if (Comm.MyPID() == 0)
-      cout << endl << "TEST PASSED" << endl << endl;
-  }
-  else {
-    if (Comm.MyPID() == 0)
-      cout << endl << "TEST FAILED" << endl << endl;
-  }
-  AMESOS_CHK_ERR( ! TestPassed ) ; 
+  if (!CheckError(A,x,b,x_exact))
+    AMESOS_CHK_ERR(-1);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -191,7 +178,7 @@ int main(int argc, char *argv[]) {
 
 #else
 
-// Triutils is not available. Sorry, we have to give up.
+// UMFPACK is not available. Sorry, we have to give up.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -206,15 +193,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  puts("Please configure AMESOS with --enable-amesos-umfpack");
-  puts("to run this example");
+  puts("Please configure AMESOS with:");
+  puts("--enable-amesos-umfpack");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return(0);
+  return(EXIT_SUCCESS);
 }
-
 #endif
-
-

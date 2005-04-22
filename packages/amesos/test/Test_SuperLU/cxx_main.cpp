@@ -9,14 +9,12 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Time.h"
 #include "Epetra_Util.h"
+#include "Epetra_CrsMatrix.h"
 #include "Amesos_Superlu.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
-using namespace Trilinos_Util;
 
 //=============================================================================
 bool CheckError(const Epetra_RowMatrix& A,
@@ -59,8 +57,8 @@ bool CheckError(const Epetra_RowMatrix& A,
 }
 
 //=============================================================================
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[]) 
+{
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -186,7 +184,7 @@ int main(int argc, char *argv[]) {
 
 #else
 
-// Triutils is not available. Sorry, we have to give up.
+// SuperLU is not available. Sorry, we have to give up.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -201,15 +199,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  puts("Please configure AMESOS with --enable-amesos-superlu");
-  puts("to run this example");
+  puts("Please configure AMESOS with:");
+  puts("--enable-amesos-superlu");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return(0);
+  return(EXIT_SUCCESS);
 }
-
 #endif
-
-
