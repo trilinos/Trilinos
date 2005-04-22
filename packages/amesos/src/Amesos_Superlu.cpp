@@ -60,10 +60,10 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
   FactorizationOK_(false),
   UseTranspose_(false),
   iam_(-1),
+  IsLocal_(0),
   SerialMap_(0), 
   SerialCrsMatrixA_(0), 
-  SerialMatrix_(0),
-  IsLocal_(0)
+  SerialMatrix_(0)
 {
 
   using namespace SLU;

@@ -29,7 +29,6 @@
 #include "Amesos_Lapack.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
-#include "Epetra_Export.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
@@ -90,11 +89,8 @@ Amesos_Lapack::~Amesos_Lapack(void) {
 
 
 //=============================================================================
-int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
-
-  //  Some compilers reject the following cast:
-  //  if( &ParameterList == 0 ) return 0;
-
+int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) 
+{
   // ========================================= //
   // retrive parameters from list.             //
   // default values defined in the constructor //
@@ -142,7 +138,7 @@ int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   bool Equilibrate = true;
   if (ParameterList.isSublist("Lapack") ) {
     Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
-    bool Equilibrate = LAPACKParams.get("Equilibrate", true);
+    Equilibrate = LAPACKParams.get("Equilibrate", true);
   }
   DenseSolver_.FactorWithEquilibration(Equilibrate);
 
