@@ -102,14 +102,14 @@ public:
   // constructor
   explicit ML_Nox_MatrixfreeLevel(int level, int nlevel, int plevel, ML* ml, ML_Aggregate* ag, 
                                   Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface, 
-                                  Epetra_Comm& comm, const Epetra_Vector& xfine,
+                                  const Epetra_Comm& comm, const Epetra_Vector& xfine,
                                   double fd_alpha, double fd_beta, bool fd_centered, 
                                   bool isDiagonalOnly);
 
   // a reconstructor
   bool recreateLevel(int level, int nlevel, int plevel, ML* ml, ML_Aggregate* ag,
                      Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
-                     Epetra_Comm& comm, const Epetra_Vector& xfine);
+                     const Epetra_Comm& comm, const Epetra_Vector& xfine);
   // destructor
   ~ML_Nox_MatrixfreeLevel();
   
@@ -144,7 +144,7 @@ private:
   int                                       ml_printlevel_;
   ML*                                       ml_;
   ML_Aggregate*                             ag_;
-  Epetra_Comm&                              comm_;
+  const Epetra_Comm&                        comm_;
   ML_NOX::Ml_Nox_Fineinterface&             fineinterface_;
   ML_NOX::Nox_CoarseProblem_Interface*      coarseinterface_;
   Epetra_CrsGraph*                          graph_;

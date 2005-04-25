@@ -94,9 +94,9 @@ namespace ML_NOX
 
     \author Michael Gee, SNL 9214
 */  
-class  Ml_Nox_Fineinterface : public NOX::EpetraNew::Interface::Required,
-                              public NOX::EpetraNew::Interface::Jacobian,
-                              public NOX::EpetraNew::Interface::Preconditioner
+class  Ml_Nox_Fineinterface : public virtual NOX::EpetraNew::Interface::Required,
+                              public virtual NOX::EpetraNew::Interface::Jacobian,
+                              public virtual NOX::EpetraNew::Interface::Preconditioner
 {
 public:
 

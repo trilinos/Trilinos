@@ -61,7 +61,7 @@
  *----------------------------------------------------------------------*/
 ML_NOX::ML_Nox_MatrixfreeLevel::ML_Nox_MatrixfreeLevel(int level, int nlevel, int plevel, 
                                  ML* ml, ML_Aggregate* ag, Epetra_CrsMatrix** P,
-                                 ML_NOX::Ml_Nox_Fineinterface& interface, Epetra_Comm& comm,
+                                 ML_NOX::Ml_Nox_Fineinterface& interface, const Epetra_Comm& comm,
                                  const Epetra_Vector& xfine, double fd_alpha, double fd_beta,
                                  bool fd_centered, bool isDiagonalOnly) 
 : fineinterface_(interface),
@@ -227,7 +227,7 @@ comm_(comm)
 bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int plevel, 
                                                    ML* ml, ML_Aggregate* ag, Epetra_CrsMatrix** P,
                                                    ML_NOX::Ml_Nox_Fineinterface& interface, 
-                                                   Epetra_Comm& comm, const Epetra_Vector& xfine) 
+                                                   const Epetra_Comm& comm, const Epetra_Vector& xfine) 
 {
    // make some tests
    if (level != level_)

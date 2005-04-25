@@ -156,7 +156,7 @@ public:
   explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
                                  Epetra_Map&                   dm,
                                  Epetra_Map&                   rm,
-                                 Epetra_Comm&                  comm);
+                                 const Epetra_Comm&            comm);
 
   
 
@@ -509,7 +509,7 @@ private:
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
   Epetra_Map                            DomainMap_;        // the operators domain map
   Epetra_Map                            RangeMap_;         // the operators range map
-  Epetra_Comm&                          comm_;             // the communicator;
+  const Epetra_Comm&                    comm_;             // the communicator;
   ML_NOX::Ml_Nox_Fineinterface&         interface_;        // the user interface
   bool                                  destroyfineJac_;   // flag to indicate this class destroys the fineJac_
   Epetra_CrsMatrix*                     fineJac_;          // fine grid matrix (only used when ismatrixfree_=false)

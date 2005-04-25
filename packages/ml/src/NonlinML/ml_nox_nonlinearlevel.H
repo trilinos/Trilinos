@@ -115,7 +115,7 @@ public:
   explicit ML_Nox_NonlinearLevel(
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
-       Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree,
+       const Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree,
        bool matfreelev0, bool isnlnCG, int nitersCG, bool broyden, 
        Epetra_CrsMatrix* Jac, string fsmoothertype, string smoothertype, 
        string coarsesolvetype, 
@@ -127,7 +127,7 @@ public:
   explicit ML_Nox_NonlinearLevel(
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
-       Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree, 
+       const Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree, 
        bool isnlnCG, int nitersCG, bool broyden, 
        string fsmoothertype, string smoothertype, string coarsesolvetype, 
        int nsmooth_fine, int nsmooth, int nsmooth_coarse,  
@@ -195,7 +195,7 @@ private:
   ML*                                          ml_;               // the overall ML-hierarchy
   ML_Aggregate*                                ag_;               // the overall ML-hierarchy
   Epetra_CrsMatrix*                            SmootherA_;        // this level's preconditioner to this level's nlnCG
-  Epetra_Comm&                                 comm_;             // Epetra_Comm
+  const Epetra_Comm&                           comm_;             // Epetra_Comm
   ML_NOX::Ml_Nox_Fineinterface&                fineinterface_;    // the fineinterface
   ML_NOX::Nox_CoarseProblem_Interface*         coarseinterface_;  // this level's coarse interface
   ML*                                          thislevel_ml_;     // this level's 1-Level ML as a smoother to this level's nlnCG

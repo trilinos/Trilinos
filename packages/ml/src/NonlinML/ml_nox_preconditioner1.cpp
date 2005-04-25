@@ -71,7 +71,7 @@ ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
                               ML_NOX::Ml_Nox_Fineinterface&    interface,
                               Epetra_Map&                      dm, 
                               Epetra_Map&                      rm, 
-                              Epetra_Comm&                     comm):
+                              const Epetra_Comm&               comm):
 interface_(interface),
 DomainMap_(dm),
 RangeMap_(rm),
