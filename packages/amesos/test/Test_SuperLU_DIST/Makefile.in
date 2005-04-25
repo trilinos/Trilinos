@@ -50,8 +50,11 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
+	$(top_srcdir)/config/ac_pkg_swig.m4 \
+	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
@@ -66,6 +69,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -76,8 +80,7 @@ am__EXEEXT_1 = Test_SuperLU_DIST$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Test_SuperLU_DIST_OBJECTS = Test_SuperLU_DIST-cxx_main.$(OBJEXT)
 Test_SuperLU_DIST_OBJECTS = $(am_Test_SuperLU_DIST_OBJECTS)
-@HAVE_AMESOS_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_2 =
+am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -104,6 +107,8 @@ AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
+BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
+BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
@@ -126,6 +131,7 @@ EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_AMESOS_DSCPACK_FALSE = @HAVE_AMESOS_DSCPACK_FALSE@
 HAVE_AMESOS_DSCPACK_TRUE = @HAVE_AMESOS_DSCPACK_TRUE@
 HAVE_AMESOS_EPETRAEXT_FALSE = @HAVE_AMESOS_EPETRAEXT_FALSE@
@@ -158,6 +164,8 @@ HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERFORMANCE_FALSE = @HAVE_PERFORMANCE_FALSE@
 HAVE_PERFORMANCE_TRUE = @HAVE_PERFORMANCE_TRUE@
+HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
+HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 HAVE_VALGRIND_FALSE = @HAVE_VALGRIND_FALSE@
 HAVE_VALGRIND_TRUE = @HAVE_VALGRIND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -188,14 +196,26 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PYTHON = @PYTHON@
+PYTHON_CSPEC = @PYTHON_CSPEC@
+PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
+PYTHON_LSPEC = @PYTHON_LSPEC@
+PYTHON_PREFIX = @PYTHON_PREFIX@
+PYTHON_USE_FALSE = @PYTHON_USE_FALSE@
+PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
+WITH_SWIG = @WITH_SWIG@
 XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -244,13 +264,9 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TEST = Test_SuperLU_DIST
-@HAVE_AMESOS_TRIUTILS_FALSE@TRIUTILS_INCDIR = 
-@HAVE_AMESOS_TRIUTILS_TRUE@TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
-@HAVE_AMESOS_TRIUTILS_FALSE@TRIUTILS_LIBS = 
-@HAVE_AMESOS_TRIUTILS_TRUE@TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
 
 #Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = $(TRIUTILS_INCDIR) \
+AM_CPPFLAGS = \
 	-I$(top_builddir)/../epetra/src  -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
@@ -258,8 +274,7 @@ Test_SuperLU_DIST_SOURCES = $(srcdir)/cxx_main.cpp
 Test_SuperLU_DIST_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(TRIUTILS_LIBS)
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
 Test_SuperLU_DIST_CXXFLAGS = -I$(top_srcdir)/src
 
@@ -268,7 +283,6 @@ Test_SuperLU_DIST_CXXFLAGS = -I$(top_srcdir)/src
 #
 Test_SuperLU_DIST_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(TRIUTILS_LIBS) \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(AMESOS_LIBS) \
 	$(top_builddir)/src/libamesos.a \
