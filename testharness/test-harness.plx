@@ -680,7 +680,7 @@ report($SUMMARY);
                                 if (-x $potentialScript) {
                     
                                     # test
-                                    my $testFailed = test($buildDir[$j], $potentialScript);
+                                    my $testFailed = test($buildDir[$j], $potentialScript, 0);
                                     
                                     # extract test name from path (for printing)
                                     my $testNameOnly = $potentialScript;
@@ -705,6 +705,37 @@ report($SUMMARY);
                                     }
                                     
                                 } # if (executable)
+                                
+                                # perl script
+                                elsif ($potentialScript =~ m/\.plx?$/) {  
+                                
+                                    # test
+                                    my $testFailed = test($buildDir[$j], $potentialScript, 1);
+                                    
+                                    # extract test name from path (for printing)
+                                    my $testNameOnly = $potentialScript;
+                                    $testNameOnly =~ s/.*\///; 
+                                    
+                                    if ($testFailed) {                                               
+                                        printEvent("$testNameOnly - Test failed\n");  
+                                        report($TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
+                                                
+                                        # running in short-circuit mode
+                                        # test failed, exit with non-zero exit code
+                                        if (!$flags{r}) {
+                                            printEvent("short-circuit mode: test failure, quitting.\n");
+                                            report($SUMMARY);
+                                            cleanUp();
+                                            exit 1;
+                                        }
+                                        
+                                    } else {                                    
+                                        printEvent("$testNameOnly - Test passed\n");  
+                                        report($TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
+                                    }
+                                
+                                } # if (perl)
+                                
                             } # foreach ($potentialScript)  
                         } # if (-f $potentialTestDir)
                                           
@@ -1082,13 +1113,20 @@ report($SUMMARY);
 
     sub test {    
         my $buildDir = $_[0];   
-        my $script = $_[1];
+        my $script = $_[1];  
+        my $isPerl = $_[2];
  
-        # run test script
-        my $command = "";
-        $command .= "$script $buildDir True >> $options{'TRILINOS_DIR'}[0]";
-        $command .= "/testharness/temp/test_compile_log.txt 2>&1";
-        return system $command;
+        if (!$isPerl) { 
+            my $command = "";
+            $command .= "$script $buildDir True >> $options{'TRILINOS_DIR'}[0]";
+            $command .= "/testharness/temp/test_compile_log.txt 2>&1";
+            return system $command;
+        } else {
+            my $command = "";
+            $command .= "perl $script >> $options{'TRILINOS_DIR'}[0]";
+            $command .= "/testharness/temp/test_compile_log.txt 2>&1";
+            return system $command;
+        }
         
     } # test()
     
