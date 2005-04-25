@@ -154,8 +154,8 @@ public:
    \param comm      (In) : the Epetra_Comm to be used
    */
   explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
-                                 Epetra_Map&                   dm,
-                                 Epetra_Map&                   rm,
+                                 const Epetra_Map&             dm,
+                                 const Epetra_Map&             rm,
                                  const Epetra_Comm&            comm);
 
   
