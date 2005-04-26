@@ -313,7 +313,8 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 
   int* bcols = iwork+iworklen;
   int* bgids = Bview.colMap->MyGlobalElements();
-  double* bvals = new double[maxlen];
+  double* bvals = new double[maxlen*2];
+  double* avals = bvals+maxlen;
 
   //bcols will hold the GIDs from B's column-map for fast access
   //during the computations below
@@ -347,7 +348,10 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 
     for(k=0; k<A_len_i; ++k) {
       Aind[k] = Aview.colMap->GID(Aindices_i[k]);
+      avals[k] = Aval_i[k];
     }
+
+    util.Sort(true, A_len_i, Aind, 1, &avals, 0, NULL);
 
     int global_row = Aview.rowMap->GID(i);
 
@@ -371,14 +375,13 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
         util.Sort(true, Bview.numEntriesPerRow[j], Bind, 1, &bvals, 0, NULL);
       }
 
-      double C_ij = sparsedot(Aval_i, Aind, A_len_i,
+      double C_ij = sparsedot(avals, Aind, A_len_i,
 			      bvals, Bind,
 			      Bview.numEntriesPerRow[j]);
 
       if (C_ij == 0.0) {
 	continue;
       }
-
       int global_col = Bview.rowMap->GID(j);
 
       int err = C.SumIntoGlobalValues(global_row, 1, &C_ij, &global_col);
@@ -1011,6 +1014,12 @@ Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
 
   cols[0] = numCols;
   colmap->MyGlobalElements( &(cols[1]) );
+
+  //cols are not necessarily sorted at this point, so we'll make sure
+  //they are sorted.
+  Epetra_Util util;
+  util.Sort(true, numCols, &(cols[1]), 0, NULL, 0, NULL);
+
   int* all_proc_cols = NULL;
   
   int max_num_cols;

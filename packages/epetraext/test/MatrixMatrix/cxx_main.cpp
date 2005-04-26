@@ -66,6 +66,9 @@ int run_test(Epetra_Comm& Comm, const char* filename,
              bool result_mtx_to_file=false,
              bool verbose=false);
 
+int two_proc_test(Epetra_Comm& Comm,
+                  bool verbose=false);
+
 int test_find_rows(Epetra_Comm& Comm);
 
 int main(int argc, char** argv) {
@@ -99,6 +102,12 @@ int main(int argc, char** argv) {
   if (write) write_result_mtx = true;
 #endif
 
+  int err = two_proc_test(Comm, verbose);
+  if (err != 0) {
+    std::cout << "two_proc_test returned err=="<<err<<std::endl;
+    return(err);
+  }
+
   if (!input_file_specified) {
     input_file = new char[16];
     sprintf(input_file, "./infiles");
@@ -108,7 +117,7 @@ int main(int argc, char** argv) {
   int numfiles = 0;
   int numfilenames_allocated = 0;
 
-  int err = read_input_file(Comm, input_file,
+  err = read_input_file(Comm, input_file,
                             filenames, numfiles, numfilenames_allocated);
   if (err != 0) {
     std::cout << "read_input_file returned err=="<<err<<std::endl;
@@ -160,9 +169,11 @@ int test_find_rows(Epetra_Comm& Comm)
     vals[j] = 1.0;
   }
 
+  Epetra_Map colmap(-1, numglobalrows, cols, 0, Comm);
+
   for(int i=0; i<numlocalrows; ++i) {
     int row = localproc*numlocalrows+i;
-    err = matrix.InsertGlobalValues(row, numglobalrows, vals, cols);
+    err = matrix.InsertGlobalValues(row, 1, &(vals[i]), &row);
     if (err != 0) {
       return(err);
     }
@@ -174,7 +185,7 @@ int test_find_rows(Epetra_Comm& Comm)
   }
 
   Epetra_Map* map_rows = EpetraExt::find_rows_containing_cols(matrix,
-							      &(matrix.ColMap()));
+							      &colmap);
 
   if (map_rows->NumMyElements() != numglobalrows) {
     return(-1);
@@ -364,6 +375,7 @@ int run_test(Epetra_Comm& Comm, const char* filename,
     return(err);
   }
 
+//  std::cout << "A: " << *A << std::endl << "B: "<<*B<<std::endl<<"C: "<<*C<<std::endl;
   if (result_mtx_to_file) {
     EpetraExt::RowMatrixToMatrixMarketFile("result.mtx", *C);
   }
@@ -537,6 +549,76 @@ int read_matrix(const char* filename,
 {
   int err = EpetraExt::MatrixMarketFileToCrsMatrix(filename, *rowmap, *colmap,
                                                    *rangemap, *domainmap, mat);
+
+  return(err);
+}
+
+int two_proc_test(Epetra_Comm& Comm,
+                  bool verbose)
+{
+  int thisproc = Comm.MyPID();
+  int numprocs = Comm.NumProc();
+
+  //only run this test on 2 procs
+  if (numprocs != 2) return(0);
+
+  //set up a row-map with 2 global elements,
+  //1 on each proc.
+  int numGlobalRows = 2;
+  int numMyRows = 1;
+  int myrow = 3;
+  if (thisproc == 1) myrow = 7;
+  Epetra_Map rowmap(numGlobalRows, numMyRows, &myrow, 0, Comm);
+
+  //set up a domain-map with columns 0 - 4 on proc 0,
+  //and columns 5 - 9 on proc 1.
+  int numGlobalCols = 10;
+  int numMyCols = 5;
+  int* mycols = new int[numGlobalCols];
+  int myFirstCol = thisproc*5;
+  int i;
+  for(i=0; i<numGlobalCols; ++i) {
+    mycols[i] = i;
+  }
+
+  Epetra_Map domainmap(numGlobalCols, numMyCols, &(mycols[thisproc*numMyCols]),
+                       0, Comm);
+
+  //now create matrices A, B and C with rowmap.
+  Epetra_CrsMatrix A(Copy, rowmap, 10);
+  Epetra_CrsMatrix B(Copy, rowmap, 10);
+  Epetra_CrsMatrix C(Copy, rowmap, 10);
+
+  double* coefs = new double[numGlobalCols];
+  for(i=0; i<numGlobalCols; ++i) {
+    coefs[i] = 1.0*i;
+  }
+
+  int err = A.InsertGlobalValues(myrow, numGlobalCols, coefs, mycols);
+
+  err += B.InsertGlobalValues(myrow, numMyCols, &(coefs[thisproc*numMyCols]),
+                       &(mycols[thisproc*numMyCols]));
+
+  err += A.FillComplete(domainmap, rowmap);
+  err += B.FillComplete(domainmap, rowmap);
+
+  err += EpetraExt::MatrixMatrix::Multiply(A, false, B, true, C);
+
+  //cout << "two_proc_test, A: "<<endl;
+  //cout << A << endl;
+
+  //cout << "two_proc_test, B: "<<endl;
+  //cout << B << endl;
+
+  //cout << "two_proc_test, C: "<<endl;
+  //cout << C << endl;
+
+  if (C.NumGlobalNonzeros() != 4) {
+    err += 1;
+  }
+
+  delete [] coefs;
+  delete [] mycols;
 
   return(err);
 }
