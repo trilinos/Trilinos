@@ -92,6 +92,8 @@ teuchos = \
 --enable-belos \
 --enable-amesos \
 --with-ml_amesos \
+--enable-nox-epetra \
+--enable-nox-epetra-examples \
 --enable-anasazi \
 --with-loca-anasazi
 
