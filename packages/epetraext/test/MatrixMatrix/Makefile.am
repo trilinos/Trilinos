@@ -80,7 +80,12 @@ EXTRA_DIST = \
 	src_roman \
 	src_roman2 \
 	src_romancase \
-	src_romancase2
+	src_romancase2 \
+	src_cdt \
+	src_cdt_case \
+	src_cdt_d.mtx \
+	src_cdt_m.mtx \
+	src_cdt_tce.mtx
 
 copyfiles$(EXEEXT): $(copyfiles_SOURCES)
 	cp $(top_srcdir)/test/MatrixMatrix/src_infileAB $(top_builddir)/test/MatrixMatrix/infileAB
@@ -110,4 +115,9 @@ copyfiles$(EXEEXT): $(copyfiles_SOURCES)
 	cp $(top_srcdir)/test/MatrixMatrix/src_roman2 $(top_builddir)/test/MatrixMatrix/roman2
 	cp $(top_srcdir)/test/MatrixMatrix/src_romancase $(top_builddir)/test/MatrixMatrix/romancase
 	cp $(top_srcdir)/test/MatrixMatrix/src_romancase2 $(top_builddir)/test/MatrixMatrix/romancase2
+	cp $(top_srcdir)/test/MatrixMatrix/src_cdt $(top_builddir)/test/MatrixMatrix/cdt
+	cp $(top_srcdir)/test/MatrixMatrix/src_cdt_case $(top_builddir)/test/MatrixMatrix/cdt_case
+	cp $(top_srcdir)/test/MatrixMatrix/src_cdt_d.mtx $(top_builddir)/test/MatrixMatrix/cdt_d.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_cdt_m.mtx $(top_builddir)/test/MatrixMatrix/cdt_m.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_cdt_tce.mtx $(top_builddir)/test/MatrixMatrix/cdt_tce.mtx
 

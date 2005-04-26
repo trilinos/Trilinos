@@ -213,6 +213,9 @@ int expand_name_list(const char* newname,
     delete [] names;
     names = newlist;
     alloc_len += alloc_increment;
+    for(int i=offset; i<alloc_len+alloc_increment; ++i) {
+      names[i] = NULL;
+    }
   }
 
   names[offset] = newname;
@@ -287,6 +290,7 @@ int read_input_file(Epetra_Comm& Comm,
     MPI_Bcast(&numfiles, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
     filenames = new const char*[numfiles];
+    numfilenames_allocated = numfiles;
     for(int i=0; i<numfiles; ++i) {
       broadcast_name(Comm, filenames[i]);
     }
