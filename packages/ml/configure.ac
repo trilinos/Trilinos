@@ -508,6 +508,11 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_ml_tests" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
+# Enable optional python wrappers
+# ------------------------------------------------------------------------
+TAC_ENABLE_PYTHON
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -684,6 +689,11 @@ AC_CONFIG_FILES([
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
                 test/scripts/daily/serial/Makefile
+                python/Makefile
+                python/src/Makefile
+                python/src/__init__.py
+                python/src/.deps/dummy
+                python/example/Makefile
                 ])
 
 AC_OUTPUT()
