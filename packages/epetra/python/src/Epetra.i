@@ -72,6 +72,7 @@ on-line documentation for more in-depth information."
 #include "Epetra_SerialDenseOperator.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
+#include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_LinearProblem.h"
 
@@ -124,6 +125,16 @@ on-line documentation for more in-depth information."
 %ignore Epetra_SerialDenseVector::operator[](int) const;
 %ignore Epetra_SerialDenseVector::operator()(int);
 %ignore Epetra_SerialDenseVector::operator()(int) const;
+%ignore Epetra_IntSerialDenseMatrix::operator=(const Epetra_IntSerialDenseMatrix &);
+%ignore Epetra_IntSerialDenseMatrix::operator[](int);
+%ignore Epetra_IntSerialDenseMatrix::operator[](int) const;
+%ignore Epetra_IntSerialDenseMatrix::operator()(int,int) const;
+%ignore Epetra_IntSerialDenseMatrix::A() const;
+%ignore Epetra_IntSerialDenseVector::operator=(const Epetra_IntSerialDenseVector &);
+%ignore Epetra_IntSerialDenseVector::operator[](int);
+%ignore Epetra_IntSerialDenseVector::operator[](int) const;
+%ignore Epetra_IntSerialDenseVector::operator()(int);
+%ignore Epetra_IntSerialDenseVector::operator()(int) const;
 %ignore NumPyArrayBase::print(std::ostream &) const;       // faciltated by __str__
 %ignore NumPyArray::print(std::ostream &) const;           // faciltated by __str__
 %ignore NumPyArrayContiguous::print(std::ostream &) const; // faciltated by __str__
@@ -156,6 +167,8 @@ on-line documentation for more in-depth information."
 %rename(SerialDenseOperator ) Epetra_SerialDenseOperator;
 %rename(SerialDenseMatrix   ) Epetra_SerialDenseMatrix;
 %rename(SerialDenseVector   ) Epetra_SerialDenseVector;
+%rename(IntSerialDenseMatrix) Epetra_IntSerialDenseMatrix;
+%rename(IntSerialDenseVector) Epetra_IntSerialDenseVector;
 %rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
 %rename(LinearProblem       ) Epetra_LinearProblem;
 %rename(NumPyVector         ) Epetra_NumPyVector;
@@ -222,6 +235,8 @@ using namespace std;
 %include "Epetra_SerialDenseMatrix.h"
 %include "Epetra_SerialDenseVector.h"
 %include "Epetra_SerialSymDenseMatrix.h"
+%include "Epetra_IntSerialDenseMatrix.h"
+%include "Epetra_IntSerialDenseVector.h"
 %include "Epetra_LinearProblem.h"
 
 // Local interface includes
@@ -315,6 +330,12 @@ using namespace std;
   double * __getitem__(int i) {
     return self->operator[](i);
   }
+  int InsertGlobalValues(const int Row, const int Size, 
+                         const Epetra_SerialDenseVector& Values,
+                         const Epetra_IntSerialDenseVector& Entries)
+  {
+    return self->InsertGlobalValues(Row, Size, Values.Values(), (int*)Entries.Values());
+  }
 }
 
 %extend Epetra_SerialDenseMatrix {
@@ -359,6 +380,22 @@ using namespace std;
 
   void __setitem__(int i, const double val) {
     double * column = self->Values();
+    column[i] = val;
+  }
+}
+
+%extend Epetra_IntSerialDenseVector {
+
+  int __call__(int i) {
+    return self->operator()(i);
+  }
+
+  int __getitem__(int i) {
+    return self->operator[](i);
+  }
+
+  void __setitem__(int i, const int val) {
+    int * column = self->Values();
     column[i] = val;
   }
 }
