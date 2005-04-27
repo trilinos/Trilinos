@@ -63,6 +63,8 @@ PyTrilinos To Do List
     [Done] NOX (Eric)
     [Done] LOCA (Eric)
 
+****** Handle conversion between C++ iostreams and python files
+
 ****** Improve package documentation strings
 
 ****** Have PyTrilinos package install a correct __init__.py

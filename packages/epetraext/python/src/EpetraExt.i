@@ -87,6 +87,6 @@
 // Python code.
 %pythoncode %{
 
-__version__ = EpetraExt_Version()
+  __version__ = EpetraExt_Version().split()[2]
 
 %}

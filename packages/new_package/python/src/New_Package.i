@@ -124,6 +124,6 @@ using namespace std;
 // New_Package_Version function.
 %pythoncode %{
 
-__version__ = New_Package_Version()
+  __version__ = New_Package_Version().split()[2]
 
 %}

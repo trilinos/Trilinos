@@ -45,8 +45,9 @@
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_NumPyVector.h"
 
-// Amesos includes
+// AztecOO includes
 #include "AztecOO.h"
+#include "AztecOO_Version.h"
 %}
 
 // Auto-documentation feature
@@ -58,4 +59,12 @@ using namespace std;
 
 // Amesos interface includes
 %include "AztecOO.h"
+%include "AztecOO_Version.h"
 %include "az_aztec_defs.h"
+
+// Python code.
+%pythoncode %{
+
+  __version__ = AztecOO_Version().split()[2]
+
+%}

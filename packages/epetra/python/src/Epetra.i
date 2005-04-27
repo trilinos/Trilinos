@@ -77,6 +77,7 @@ on-line documentation for more in-depth information."
 #include "Epetra_LinearProblem.h"
 
 // Local includes
+#include "FileStream.h"
 #include "Epetra_NumPyVector.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
@@ -245,21 +246,38 @@ using namespace std;
 
 // Extensions
 %extend Epetra_Object {
+
+  // Define the __str__() method, used by the python str() operator on any
+  // object given to the python print command.
   string __str__() {
     stringstream os;
     self->Print(os);                  // Put the output in os
     string s = os.str();              // Extract the string from os
     return s.substr(0,s.length()-1);  // Return the string minus trailing \n
   }
+
+  // The Epetra_Object::Print(ostream) method is ignored and replaced by a
+  // Print() method here that takes a python file as its argument.  If no
+  // argument is given, then output is to standard out.
+  PyObject * Print(PyObject*pf=NULL) const {
+    if (pf == NULL) {
+      self->Print(std::cout);
+    } else {
+      if (!PyFile_Check(pf)) return NULL;
+
+      std::FILE*   f = PyFile_AsFile(pf);
+      FileStream   buffer(f);
+      std::ostream os(&buffer);
+      self->Print(os);
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
 }
 
 %extend Epetra_MultiVector {
   double * & __getitem__(int i) {
     return self->operator[](i);
-  }
-
-  void Print() {
-    self->Print(cout);
   }
 
   PyObject * Norm1() {
@@ -414,7 +432,7 @@ using namespace std;
 // objects and UserArrays, to give users additional functionality.
 %pythoncode %{
 
-__version__ = Version()
+  __version__ = Version().split()[2]
 
 from UserArray import *
 
