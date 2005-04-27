@@ -314,6 +314,13 @@ TAC_ARG_ENABLE_FEATURE_SUB( epetraext, block, [Enable EpetraExt Block subpkg], B
 AM_CONDITIONAL(BUILD_BLOCK, [test "X$ac_cv_use_epetraext_block" != "Xno"])
 
 # ------------------------------------------------------------------------
+# Interfaces to other Trilinos packages
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Build examples and tests which use Triutils], EPETRAEXT_TRIUTILS, no)
+AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+# ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
 

@@ -29,15 +29,15 @@
 if BUILD_EXAMPLES
 
 if BUILD_INOUT
-
+if BUILD_TRIUTILS
 INOUT_SUBDIRS = inout
-
+endif
 endif
 
 if BUILD_ZOLTAN
-
+if BUILD_TRIUTILS
 ZOLTAN_SUBDIRS = zoltan
-
+endif
 endif
 
 if BUILD_MATLAB
