@@ -192,29 +192,29 @@ SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
 # Configuration::additions related to external references   
 #---------------------------------------------------------------------------
-TAGFILES = ../../common/tag_files/dev/amesos.tag=../../../amesos/doc/html \
-           ../../common/tag_files/dev/aztecoo.tag=../../../aztecoo/doc/html \
-           ../../common/tag_files/dev/anasazi.tag=../../../anasazi/doc/html \
-           ../../common/tag_files/dev/belos.tag=../../../belos/doc/html \
-           ../../common/tag_files/dev/epetra.tag=../../../epetra/doc/html \
-           ../../common/tag_files/dev/epetraext.tag=../../../epetraext/doc/html \
-           ../../common/tag_files/dev/ifpack.tag=../../../ifpack/doc/html \
-           ../../common/tag_files/dev/jpetra.tag=../../../jpetra/doc/html \
-           ../../common/tag_files/dev/kokkos.tag=../../../kokkos/doc/html \
-           ../../common/tag_files/dev/komplex.tag=../../../komplex/doc/html \
-           ../../common/tag_files/dev/loca.tag=../../../loca/doc/html \
-           ../../common/tag_files/dev/meros.tag=../../../meros/doc/html \
-           ../../common/tag_files/dev/ml.tag=../../../ml/doc/html \
-           ../../common/tag_files/dev/new_package.tag=../../../new_package/doc/html \
-           ../../common/tag_files/dev/nox.tag=../../../nox/doc/html \
-           ../../common/tag_files/dev/pliris.tag=../../../pliris/doc/html \
-           ../../common/tag_files/dev/teuchos.tag=../../../teuchos/doc/html \
-           ../../common/tag_files/dev/tpetra.tag=../../../tpetra/doc/html \
-           ../../common/tag_files/dev/triutils.tag=../../../triutils/doc/html \
-           ../../common/tag_files/dev/TSF.tag=../../../TSF/doc/html \
-           ../../common/tag_files/dev/TSFCore.tag=../../../TSFCore/doc/html \
-           ../../common/tag_files/dev/TSFCoreUtils.tag=../../../TSFCoreUtils/doc/html \
-           ../../common/tag_files/dev/TSFExtended.tag=../../../TSFExtended/doc/html \
+TAGFILES = ../../common/tag_files/amesos.tag=../../../amesos/doc/html \
+           ../../common/tag_files/aztecoo.tag=../../../aztecoo/doc/html \
+           ../../common/tag_files/anasazi.tag=../../../anasazi/doc/html \
+           ../../common/tag_files/belos.tag=../../../belos/doc/html \
+           ../../common/tag_files/epetra.tag=../../../epetra/doc/html \
+           ../../common/tag_files/epetraext.tag=../../../epetraext/doc/html \
+           ../../common/tag_files/ifpack.tag=../../../ifpack/doc/html \
+           ../../common/tag_files/jpetra.tag=../../../jpetra/doc/html \
+           ../../common/tag_files/kokkos.tag=../../../kokkos/doc/html \
+           ../../common/tag_files/komplex.tag=../../../komplex/doc/html \
+           ../../common/tag_files/loca.tag=../../../loca/doc/html \
+           ../../common/tag_files/meros.tag=../../../meros/doc/html \
+           ../../common/tag_files/ml.tag=../../../ml/doc/html \
+           ../../common/tag_files/new_package.tag=../../../new_package/doc/html \
+           ../../common/tag_files/nox.tag=../../../nox/doc/html \
+           ../../common/tag_files/pliris.tag=../../../pliris/doc/html \
+           ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html \
+           ../../common/tag_files/tpetra.tag=../../../tpetra/doc/html \
+           ../../common/tag_files/triutils.tag=../../../triutils/doc/html \
+           ../../common/tag_files/TSF.tag=../../../TSF/doc/html \
+           ../../common/tag_files/TSFCore.tag=../../../TSFCore/doc/html \
+           ../../common/tag_files/TSFCoreUtils.tag=../../../TSFCoreUtils/doc/html \
+           ../../common/tag_files/TSFExtended.tag=../../../TSFExtended/doc/html \
            END_OF_TAGFILES_LIST
 GENERATE_TAGFILE       = 
 ALLEXTERNALS           = NO
