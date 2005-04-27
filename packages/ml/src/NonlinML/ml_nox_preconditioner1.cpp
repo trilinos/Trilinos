@@ -786,10 +786,8 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
 bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner(
                                                    const Epetra_Vector& x)
 {
-   int i;
-
    // choose some smoothers
-   bool ok = Set_Smoothers();
+   Set_Smoothers();
 
    // build the ML_MultilevelOperator
    ml_linPrec_ = new ML_Epetra::MultiLevelOperator(ml_,comm_,DomainMap_,RangeMap_);
@@ -845,7 +843,6 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
                                                  const Epetra_Vector& xfine)
 {
    int i;
-   int j;
    
    // extract the Prolongators from the ml-hierarchy and create Epetra_CrsMatrices from them
    // NOTE: as we are doing the linear preconditioner here, we keep the P's in the hierarchy
@@ -927,7 +924,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
    // the hierarchy is done, so set smoothers 
 
    // choose some smoothers
-   bool ok = Set_Smoothers();
+   Set_Smoothers();
 
    // build the ML_MultilevelOperator
    if (ml_linPrec_) 
@@ -1061,7 +1058,7 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_Linear(
                                               const Epetra_MultiVector& X, 
                                               Epetra_MultiVector& Y) const
 {
-   int i,err;
+   int err;
    if (ml_linPrec_==NULL)
    {
      cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_ApplyInverse_Linear:\n";
@@ -1089,7 +1086,7 @@ int ML_NOX::ML_Nox_Preconditioner::SetUseTranspose(bool UseTranspose)
  *----------------------------------------------------------------------*/
 Epetra_CrsGraph* ML_NOX::ML_Nox_Preconditioner::deepcopy_graph(const Epetra_CrsGraph* oldgraph)
 {
-   int  i,j,ierr;
+   int  i,ierr;
    int  nrows = oldgraph->NumMyRows();
    int* nIndicesperRow = new int[nrows];
 

@@ -415,7 +415,7 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear(
       cout << "\n\n\nML :============Entering FAS-V-cycle============\n";
    bool converged = false;
    double t3 = GetClock();
-   bool   status = ML_Nox_FAS_cycle(f,x,0,&converged); 
+   ML_Nox_FAS_cycle(f,x,0,&converged); 
    double t4 = GetClock();
    if (ml_printlevel_>0 && comm_.MyPID()==0)
       cout << "ML :============V-cycle time is : " << (t4-t3) << " sec\n";

@@ -507,10 +507,10 @@ private:
   bool                                  ismatrixfree_;     // use Graph or Jacobian in building the preconditioner
   bool                                  matfreelev0_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
+  ML_NOX::Ml_Nox_Fineinterface&         interface_;        // the user interface
   Epetra_Map                            DomainMap_;        // the operators domain map
   Epetra_Map                            RangeMap_;         // the operators range map
   const Epetra_Comm&                    comm_;             // the communicator;
-  ML_NOX::Ml_Nox_Fineinterface&         interface_;        // the user interface
   bool                                  destroyfineJac_;   // flag to indicate this class destroys the fineJac_
   Epetra_CrsMatrix*                     fineJac_;          // fine grid matrix (only used when ismatrixfree_=false)
   int                                   offset_newPrec_;   // how often to recompute the precond from scratch

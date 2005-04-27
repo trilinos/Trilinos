@@ -144,8 +144,8 @@ private:
   int                                       ml_printlevel_;
   ML*                                       ml_;
   ML_Aggregate*                             ag_;
-  const Epetra_Comm&                        comm_;
   ML_NOX::Ml_Nox_Fineinterface&             fineinterface_;
+  const Epetra_Comm&                        comm_;
   ML_NOX::Nox_CoarseProblem_Interface*      coarseinterface_;
   Epetra_CrsGraph*                          graph_;
   Epetra_CrsMatrix*                         A_;

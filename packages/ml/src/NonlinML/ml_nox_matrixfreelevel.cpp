@@ -461,7 +461,7 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::compare_graphs(const Epetra_CrsGraph* newgr
  *----------------------------------------------------------------------*/
 Epetra_CrsGraph* ML_NOX::ML_Nox_MatrixfreeLevel::deepcopy_graph(const Epetra_CrsGraph* oldgraph)
 {
-   int  i,j,ierr;
+   int  i,ierr;
    int  nrows = oldgraph->NumMyRows();
    int* nIndicesperRow = new int[nrows];
 

@@ -195,8 +195,8 @@ private:
   ML*                                          ml_;               // the overall ML-hierarchy
   ML_Aggregate*                                ag_;               // the overall ML-hierarchy
   Epetra_CrsMatrix*                            SmootherA_;        // this level's preconditioner to this level's nlnCG
-  const Epetra_Comm&                           comm_;             // Epetra_Comm
   ML_NOX::Ml_Nox_Fineinterface&                fineinterface_;    // the fineinterface
+  const Epetra_Comm&                           comm_;             // Epetra_Comm
   ML_NOX::Nox_CoarseProblem_Interface*         coarseinterface_;  // this level's coarse interface
   ML*                                          thislevel_ml_;     // this level's 1-Level ML as a smoother to this level's nlnCG
   ML_Aggregate*                                thislevel_ag_;     // this level's 1-Level ML as a smoother to this level's nlnCG
