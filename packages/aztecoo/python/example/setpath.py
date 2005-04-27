@@ -55,8 +55,14 @@ if status != 0:
 
 # Get the path to the build directory
 libDir = os.path.join("..", "src", output, "PyTrilinos")
+epetraLibDir = os.path.join("..", "..", "..", "epetra", "python", "src",
+                            output, "PyTrilinos")
+triutilsLibDir = os.path.join("..", "..", "..", "triutils", "python", "src",
+                              output, "PyTrilinos")
 
 # Insert the library directory name at the beginning of
 # the python search path
 if libDir:
-    sys.path.insert(0,libDir)
+    sys.path.insert(0,libDir        )
+    sys.path.insert(1,epetraLibDir  )
+    sys.path.insert(2,triutilsLibDir)
