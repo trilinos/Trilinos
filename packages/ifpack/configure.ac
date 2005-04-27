@@ -304,6 +304,11 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_ifpack_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
+# Enable optional python wrappers
+# ------------------------------------------------------------------------
+TAC_ENABLE_PYTHON
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -431,14 +436,19 @@ AC_CONFIG_FILES([
 		test/ILU/Makefile.include
 		test/IC/Makefile
 		test/IC/Makefile.include
-		test/scripts/Makefile
-          test/scripts/daily/Makefile
-          test/scripts/daily/mpi/Makefile
-          test/scripts/daily/serial/Makefile
-          test/scripts/weekly/Makefile
-          test/scripts/weekly/mpi/Makefile
-          test/scripts/weekly/serial/Makefile
-		])
+                test/scripts/Makefile
+                test/scripts/daily/Makefile
+                test/scripts/daily/mpi/Makefile
+                test/scripts/daily/serial/Makefile
+                test/scripts/weekly/Makefile
+                test/scripts/weekly/mpi/Makefile
+                test/scripts/weekly/serial/Makefile
+                python/Makefile
+                python/src/Makefile
+                python/src/__init__.py
+                python/src/.deps/dummy
+                python/example/Makefile
+                ])
 
 AC_OUTPUT()
 
