@@ -29,6 +29,6 @@
 #
 ############################################################################
 
-GENERATE_TAGFILE       = ../../common/tag_files/dev/YOUR_PACKAGE_NAME.tag
+GENERATE_TAGFILE       = ../../common/tag_files/YOUR_PACKAGE_NAME.tag
 
 INPUT                  = src
