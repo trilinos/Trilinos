@@ -8,7 +8,8 @@
 #
 # Author : Heidi Thornquist
 # Date : April 7, 2003
-#
+# Revised : March 31, 2005
+# Note:  This script was updated to be compatable with Intel v8 compilers.
 
 $output = "";
 $i = 0;
@@ -34,7 +35,44 @@ while ($i < $numinputs) {
 			$wherebeg = $where + 1;
 		}
 		$output = $output . $newfilename . " ";
-	# Otherwise, just pass the argument through unchanged.
+	# Fix the -l problem
+	} elsif (index($ARGV[$i],"-l")==0) {
+		$output = $output . "/link " . " " . $ARGV[$i+1] . " ";
+		$i++; 
+	# Fix the -g problem
+	} elsif (index($ARGV[$i],"-g")==0) {
+		#Do nothing for now -g only generates debugging information for GDB
+	# Fix the problem when absolute cygwin paths are used (-I/cygdrive/c/...)
+	} elsif (index($ARGV[$i],"/cygdrive")>=0) {
+		#Grab the part of the argument before "cygdrive" and preserve it.
+		$wherebeg=index($ARGV[$i],"/cygdrive");
+		$newpathname=substr($ARGV[$i],0,$wherebeg);
+		
+		# Grab the name of the disk, which is expected to be the next directory
+		# after cygdrive (ex. /cygdrive/c/Trilinos/..., "c" is the disk name)
+		$part = "";
+		$where=index($ARGV[$i],"/",$wherebeg+10);
+		$newpathname=$newpathname . substr($ARGV[$i], $wherebeg+10, $where-$wherebeg-10);
+		$wherebeg=$where + 1;
+		
+		# Add colon and backslashes before appending directories
+		$newpathname= $newpathname . ":\\\\";
+
+		# Find directories and insert in windows' style path
+		while ($where >=0) {
+			$where = index($ARGV[$i],"/",$wherebeg);
+			if ($where < 0) {
+				$part = substr($ARGV[$i], $wherebeg, 100);
+				$newpathname = $newpathname . $part;
+			} else {
+				$part = substr($ARGV[$i], $wherebeg, $where-$wherebeg);
+				$newpathname = $newpathname . $part . "\\\\";
+			}
+			$wherebeg = $where + 1;
+		}		
+		$output = $output . $newpathname . " ";
+		#print("$ARGV[$i]","\t","$newpathname","\n");
+	#Otherwise, just pass the argument through unchanged.
 	} else {
 		$output = $output . $ARGV[$i] . " ";
 	}
