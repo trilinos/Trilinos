@@ -73,6 +73,7 @@ on-line documentation for more in-depth information."
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialSymDenseMatrix.h"
+#include "Epetra_LinearProblem.h"
 
 // Local includes
 #include "Epetra_NumPyVector.h"
@@ -128,6 +129,7 @@ on-line documentation for more in-depth information."
 %ignore NumPyArrayContiguous::print(std::ostream &) const; // faciltated by __str__
 %ignore NumPyArrayBase::getDataArray() const;
 %ignore NumPyArrayBase::getArrayObject() const;
+%ignore Epetra_LinearProblem::SetOperator()(int) const;
 
 // Rename directives
 %rename(Version             ) Epetra_Version;
@@ -155,6 +157,7 @@ on-line documentation for more in-depth information."
 %rename(SerialDenseMatrix   ) Epetra_SerialDenseMatrix;
 %rename(SerialDenseVector   ) Epetra_SerialDenseVector;
 %rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
+%rename(LinearProblem       ) Epetra_LinearProblem;
 %rename(NumPyVector         ) Epetra_NumPyVector;
 
 // Auto-documentation feature
@@ -219,6 +222,7 @@ using namespace std;
 %include "Epetra_SerialDenseMatrix.h"
 %include "Epetra_SerialDenseVector.h"
 %include "Epetra_SerialSymDenseMatrix.h"
+%include "Epetra_LinearProblem.h"
 
 // Local interface includes
 %include "NumPyArray.h"
