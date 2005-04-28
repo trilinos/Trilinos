@@ -1,6 +1,6 @@
 # Doxyfile 1.3.9.1
 
-@INCLUDE               = ../../../../Trilinos/packages/common/Doxyfile
+@INCLUDE               = ../../../packages/common/Doxyfile
 
 ############################################################################
 # TRILINOS PACKAGE DEVELOPERS:
@@ -11,6 +11,10 @@
 # @INCLUDE. To modify the default behavior, simply include below the
 # option you would like to overwrite (or use += to append more to the
 # default). 
+#
+# To prevent path problems, please use relative paths that ascend to the
+# parent directory of "packages/" and then descend to the resource in
+# question.  This is necessary for the tag files to work correctly.
 #
 # - To view the explanation of an option, run 
 #
@@ -30,14 +34,17 @@
 #
 ############################################################################
 
+PROJECT_NAME           = ML
+PROJECT_NUMBER         = Development
+
 INPUT                  = mainpage.doxygen 
-INPUT                 += ../src/Operator 
-INPUT                 += ../src/Utils 
-INPUT                 += ../src/Coarsen 
-INPUT                 += ../src/Main
-INPUT                 += ../src/MLAPI
-INPUT                 += ../src/NonlinML
-INPUT                 += ../examples/FiniteElements
+INPUT                 += ../../../packages/ml/src/Operator 
+INPUT                 += ../../../packages/ml/src/Utils 
+INPUT                 += ../../../packages/ml/src/Coarsen 
+INPUT                 += ../../../packages/ml/src/Main
+INPUT                 += ../../../packages/ml/src/MLAPI
+INPUT                 += ../../../packages/ml/src/NonlinML
+INPUT                 += ../../../packages/ml/examples/FiniteElements
 
 FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
 FILE_PATTERNS         += ml_epetra_utils.h 
@@ -63,18 +70,18 @@ FILE_PATTERNS         += ml_*Problem*.h
 FILE_PATTERNS         += ml_*Variational*.h
 FILE_PATTERNS         += ml_Workspace.h
 
-EXAMPLE_PATH           = ../examples/BasicExamples 
-EXAMPLE_PATH          += ../examples/Advanced 
-EXAMPLE_PATH          += ../examples/TwoLevelDD 
-EXAMPLE_PATH          += ../examples/Visualization 
-EXAMPLE_PATH          += ../examples/Maxwell 
-EXAMPLE_PATH          += ../examples/MatrixReading 
-EXAMPLE_PATH          += ../examples/StandAlone
-EXAMPLE_PATH          += ../examples/MLAPI
-EXAMPLE_PATH          += ../examples/FiniteElements
-EXAMPLE_PATH          += ..
+EXAMPLE_PATH           = ../../../packages/ml/examples/BasicExamples 
+EXAMPLE_PATH          += ../../../packages/ml/examples/Advanced 
+EXAMPLE_PATH          += ../../../packages/ml/examples/TwoLevelDD 
+EXAMPLE_PATH          += ../../../packages/ml/examples/Visualization 
+EXAMPLE_PATH          += ../../../packages/ml/examples/Maxwell 
+EXAMPLE_PATH          += ../../../packages/ml/examples/MatrixReading 
+EXAMPLE_PATH          += ../../../packages/ml/examples/StandAlone
+EXAMPLE_PATH          += ../../../packages/ml/examples/MLAPI
+EXAMPLE_PATH          += ../../../packages/ml/examples/FiniteElements
+EXAMPLE_PATH          += ../../../packages/ml
 
-IMAGE_PATH             = .
+IMAGE_PATH             = ../../../packages/ml/doc
 
 PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_IFPACK
 PREDEFINED            += HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS 
@@ -83,4 +90,4 @@ PREDEFINED            += HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
 PREDEFINED            += HAVE_ML_MLAPI
 PREDEFINED            += HAVE_ML_NOX
 
-GENERATE_TAGFILE       = ../../common/tag_files/ml.tag
+GENERATE_TAGFILE       = ../../../packages/common/tag_files/ml.tag

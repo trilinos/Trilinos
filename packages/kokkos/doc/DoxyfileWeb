@@ -1,6 +1,6 @@
 # Doxyfile 1.3.9.1
 
-@INCLUDE               = ../../../../Trilinos/packages/common/Doxyfile
+@INCLUDE               = ../../../packages/common/Doxyfile
 
 ############################################################################
 # TRILINOS PACKAGE DEVELOPERS:
@@ -11,6 +11,10 @@
 # @INCLUDE. To modify the default behavior, simply include below the
 # option you would like to overwrite (or use += to append more to the
 # default). 
+#
+# To prevent path problems, please use relative paths that ascend to the
+# parent directory of "packages/" and then descend to the resource in
+# question.  This is necessary for the tag files to work correctly.
 #
 # - To view the explanation of an option, run 
 #
@@ -30,8 +34,12 @@
 #
 ############################################################################
 
-INPUT                  = ../src index.doc
+PROJECT_NAME           = Kokkos
+PROJECT_NUMBER         = Development
 
-EXAMPLE_PATH           = ../example
+INPUT                  = ../../../packages/kokkos/src
+INPUT                 += ../../../packages/kokkos/doc/index.doc
 
-GENERATE_TAGFILE       = ../../common/tag_files/kokkos.tag
+EXAMPLE_PATH           = ../../../packages/kokkos/example
+
+GENERATE_TAGFILE       = ../../../packages/common/tag_files/kokkos.tag

@@ -1,7 +1,7 @@
 #
 # Include the global look and feel options
 #
-@INCLUDE               = ../../../../Trilinos/packages/common/Doxyfile
+@INCLUDE               = ../../../packages/common/Doxyfile
 #
 # Package options
 #
@@ -47,18 +47,18 @@ WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc \
                          ../src
-#INPUT                  = ../../../../Trilinos/packages/teuchos/doc/index.doc
+#INPUT                  = ../../../packages/teuchos/doc/index.doc
 FILE_PATTERNS          = *.h *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           =  ../example/BLAS/cxx_main.cpp \
-                          ../example/CommandLineProcessor/cxx_main.cpp \
-                          ../example/LAPACK/cxx_main.cpp \
-                          ../example/ParameterList/cxx_main.cpp \
-                          ../example/RefCountPtr/cxx_main.cpp \
-                          ../example/DenseMatrix/cxx_main.cpp \
-                          ../example/TimeMonitor/cxx_main.cpp
+EXAMPLE_PATH           =  ../../../packages/teuchos/example/BLAS/cxx_main.cpp \
+                          ../../../packages/teuchos/example/CommandLineProcessor/cxx_main.cpp \
+                          ../../../packages/teuchos/example/LAPACK/cxx_main.cpp \
+                          ../../../packages/teuchos/example/ParameterList/cxx_main.cpp \
+                          ../../../packages/teuchos/example/RefCountPtr/cxx_main.cpp \
+                          ../../../packages/teuchos/example/DenseMatrix/cxx_main.cpp \
+                          ../../../packages/teuchos/example/TimeMonitor/cxx_main.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 
@@ -89,7 +89,7 @@ EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
 TAGFILES               = 
 
-GENERATE_TAGFILE       = ../../common/tag_files/teuchos.tag
+GENERATE_TAGFILE       = ../../../packages/common/tag_files/teuchos.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
 #
