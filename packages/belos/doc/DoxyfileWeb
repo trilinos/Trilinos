@@ -1,6 +1,6 @@
 # Doxyfile 1.3.9.1
 
-@INCLUDE               = ../../../packages/common/Doxyfile
+@INCLUDE               = ../../common/Doxyfile
 
 ############################################################################
 # TRILINOS PACKAGE DEVELOPERS:
@@ -12,9 +12,15 @@
 # option you would like to overwrite (or use += to append more to the
 # default). 
 #
-# To prevent path problems, please use relative paths that ascend to the
-# parent directory of "packages/" and then descend to the resource in
-# question.  This is necessary for the tag files to work correctly.
+# To reference the documentation of another package with a doxygen tag
+# file, include something like the following:
+#
+# TAGFILES  = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
+#
+# (Note that the first path must be the relative path from your Doxyfile
+# to the tag file in question and the second path must be the relative
+# path from your Doxyfile to the "html/" directory corresponding to that
+# tag file.)
 #
 # - To view the explanation of an option, run 
 #
@@ -37,7 +43,9 @@
 PROJECT_NAME           = Belos
 PROJECT_NUMBER         = Development
 
-INPUT                  = ../../../packages/belos/src
-INPUT                 += ../../../packages/belos/doc/index.doc
+INPUT                  = ../src index.doc
 
-GENERATE_TAGFILE       = ../../../packages/common/tag_files/belos.tag
+TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
+TAGFILES              += ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
+
+GENERATE_TAGFILE       = ../../common/tag_files/belos.tag

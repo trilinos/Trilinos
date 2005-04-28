@@ -113,9 +113,9 @@ IGNORE_PREFIX          =
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
-HTML_HEADER            = ../../../packages/common/header.html
-HTML_FOOTER            = ../../../packages/common/footer.html
-HTML_STYLESHEET        = ../../../packages/common/styles.css
+HTML_HEADER            = ../../common/header.html
+HTML_FOOTER            = ../../common/footer.html
+HTML_STYLESHEET        = ../../common/styles.css
 HTML_ALIGN_MEMBERS     = YES
 GENERATE_HTMLHELP      = NO
 CHM_FILE               = 
@@ -192,30 +192,7 @@ SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
 # Configuration::additions related to external references   
 #---------------------------------------------------------------------------
-TAGFILES = ../../common/tag_files/amesos.tag=../../../amesos/doc/html \
-           ../../common/tag_files/aztecoo.tag=../../../aztecoo/doc/html \
-           ../../common/tag_files/anasazi.tag=../../../anasazi/doc/html \
-           ../../common/tag_files/belos.tag=../../../belos/doc/html \
-           ../../common/tag_files/epetra.tag=../../../epetra/doc/html \
-           ../../common/tag_files/epetraext.tag=../../../epetraext/doc/html \
-           ../../common/tag_files/ifpack.tag=../../../ifpack/doc/html \
-           ../../common/tag_files/jpetra.tag=../../../jpetra/doc/html \
-           ../../common/tag_files/kokkos.tag=../../../kokkos/doc/html \
-           ../../common/tag_files/komplex.tag=../../../komplex/doc/html \
-           ../../common/tag_files/loca.tag=../../../loca/doc/html \
-           ../../common/tag_files/meros.tag=../../../meros/doc/html \
-           ../../common/tag_files/ml.tag=../../../ml/doc/html \
-           ../../common/tag_files/new_package.tag=../../../new_package/doc/html \
-           ../../common/tag_files/nox.tag=../../../nox/doc/html \
-           ../../common/tag_files/pliris.tag=../../../pliris/doc/html \
-           ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html \
-           ../../common/tag_files/tpetra.tag=../../../tpetra/doc/html \
-           ../../common/tag_files/triutils.tag=../../../triutils/doc/html \
-           ../../common/tag_files/TSF.tag=../../../TSF/doc/html \
-           ../../common/tag_files/TSFCore.tag=../../../TSFCore/doc/html \
-           ../../common/tag_files/TSFCoreUtils.tag=../../../TSFCoreUtils/doc/html \
-           ../../common/tag_files/TSFExtended.tag=../../../TSFExtended/doc/html \
-           END_OF_TAGFILES_LIST
+TAGFILES               = 
 GENERATE_TAGFILE       = 
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
