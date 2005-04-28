@@ -213,7 +213,7 @@ int expand_name_list(const char* newname,
     delete [] names;
     names = newlist;
     alloc_len += alloc_increment;
-    for(int i=offset; i<alloc_len+alloc_increment; ++i) {
+    for(int i=offset; i<alloc_len; ++i) {
       names[i] = NULL;
     }
   }
