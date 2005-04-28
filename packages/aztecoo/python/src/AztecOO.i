@@ -30,15 +30,13 @@
 
 %module(package="PyTrilinos") AztecOO
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-
 %{
 // System includes
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include "AztecOO_config.h"
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
@@ -52,6 +50,8 @@
 
 // Auto-documentation feature
 %feature("autodoc", "1");
+
+%include "AztecOO_config.h"
 
 // Epetra interface includes
 using namespace std;

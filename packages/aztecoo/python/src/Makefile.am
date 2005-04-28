@@ -26,19 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# basic definitions for AztecOO
+include  $(top_builddir)/Makefile.export
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = -I$(srcdir) \
-                -I$(top_srcdir)/src \
-                -I$(top_builddir)/src \
-                -I$(top_srcdir)/../teuchos/src \
-                -I$(top_builddir)/../teuchos/src \
-                -I$(top_srcdir)/../epetra/src \
-                -I$(top_builddir)/../epetra/src \
-                -I$(top_srcdir)/../triutils/src \
-                -I$(top_builddir)/../triutils/src \
+SWIG_CXXFLAGS = $(AZTECOO_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
-
 
 # Default make target
 all-am: build
@@ -58,6 +52,9 @@ PROXIES    = $(INTERFACES:.i=.py      )
 
 # File setup.txt is a way to transfer make variables to the setup.py
 # python script
+@HAVE_AZTECOO_TEUCHOS_TRUE@AZTECOO_TEUCHOS="True"
+@HAVE_AZTECOO_TEUCHOS_FALSE@AZTECOO_TEUCHOS="False"
+
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
 	@echo "{"                                   >  $@
@@ -69,9 +66,10 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@
 	@echo "  'FLIBS'        : '$(FLIBS)',"       >> $@
 	@echo "  'LIBS'         : '$(LIBS)',"        >> $@
-	@echo "  'AMESOS_LIBS'  : '$(AMESOS_LIBS)',"        >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)'"       >> $@
-	@echo "}"                                   >> $@
+	@echo "  'PYTHON'       : '$(PYTHON)',"      >> $@
+	@echo "  'AZTECOO_LIBS'     : '$(AZTECOO_LIBS)',"   >> $@
+	@echo "  'AZTECOO_INCLUDES' : '$(AZTECOO_INCLUDES)',"   >> $@
+	@echo "}"                                               >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
