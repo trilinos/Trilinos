@@ -45,11 +45,11 @@
 #  More detailed logging information can be found in SST.log
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT      $mpigo  1 amesos_test.exe KLU SuperLU.rua 0 1 1 0 1e-14 1e-13
+#COMMENT       $mpigo 1 amesos_test.exe LAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
-#     KLU SuperLU.rua - The solver to use and the matrix to solve
+#     LAPACK SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
-    #     1e-14 1e-13             - max error, max residual
+#     1e-14 1e-14             - max residual, max error 
 #
 #
 #   MatType = 0 means serial (all stored on process 0) 
@@ -58,6 +58,7 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
+
 # Some machines use a command different than mpirun to run mpi jobs.  The
 # test-harness.plx script sets the following environment variable
 #  We test for this value below.  If not set, we set it to a default value.
@@ -72,8 +73,8 @@ endif
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start AmesosLapack.exe, the Direct Sparse Solver Regresion Test" > SST.summary 
-echo "COMMENT The values printed in columns 11 and 12 are relative." >> SST.summary
-echo "COMMENT We test against absolute errors."   >> SST.summary
+echo "COMMENT The values printed in columns 11 and 12 are relative." >> SST.summary 
+echo "COMMENT We test against absolute errors."   >> SST.summary 
 echo "COMMENT column 1 - machine name " >> SST.summary 
 echo "COMMENT column 2 - solver name " >> SST.summary 
 echo "COMMENT column 3 - timestamp" >> SST.summary 
@@ -94,127 +95,125 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 
 
 #
-#  Test one process, three processes and three processes transpose, tiny serial matrix, on KLU
+#  Test one process, three processes and three processes transpose, tiny serial matrix, on LAPACK
 #
-$mpigo  1 amesos_test.exe KLU SuperLU.rua 0 1 1 0 1e-14 1e-13 >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    $mpigo  3 amesos_test.exe KLU SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    $mpigo  3 amesos_test.exe KLU SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+#  COMMENT fails on atlantis, sometimes janus    $mpigo 3 amesos_test.exe LAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
+#  COMMENT fails on atlantis, sometimes janus    $mpigo 3 amesos_test.exe LAPACK SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
 #
-#  Test one process, three processes and three processes transposes, tiny distributed matrix, on KLU
+#  Test one process, three processes and three processes transposes, tiny distributed matrix, on LAPACK
 #
-$mpigo  1 amesos_test.exe KLU   fidapm05.rua 0 1 1 0   1000000000000000 1e-1 >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   fidapm05.rua 1 1 1 0   1000000000000000 1e-1 >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1   1000000000000000 1e-1 >>SST.stdout
-$mpigo  2 amesos_test.exe KLU   fidapm05.rua 1 1 4 1   1000000000000000 1e-1 >>SST.stdout
-$mpigo  4 amesos_test.exe KLU   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1 >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   fidapm05.rua 0 1 1 0  10000 1e-13 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 0  10000 1e-13   >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
+$mpigo 2 amesos_test.exe LAPACK   fidapm05.rua 1 1 4 1   10000 1e-13  >>SST.stdout
+$mpigo 4 amesos_test.exe LAPACK   fidapm05.rua 1 1 -3 1   10000 1e-13   >>SST.stdout
 #
 #  Test some more small matrices
 #
-$mpigo  1 amesos_test.exe KLU   ImpcolA.rua 0 1 1 0  1e-9  1e-11  >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolA.rua 0 0 1 0  1e-9  1e-11  >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolA.rua 0 1 1 1  1e-9  1e-11  >>SST.stdout
-$mpigo  1 amesos_test.exe KLU   ImpcolB.rua 0 1 1 0  1e-9  1e-12  >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolB.rua 0 1 1 0  1e-9  1e-12  >>SST.stdout
-$mpigo  1 amesos_test.exe KLU   ImpcolC.rua 0 1 1 0  1e-12 1e-13  >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolC.rua 0 0 1 0  1e-12 1e-13  >>SST.stdout
-$mpigo  1 amesos_test.exe KLU   ImpcolD.rua 0 1 1 0  1e-11 5e-13  >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolD.rua 0 1 1 0  1e-11 5e-13  >>SST.stdout
-$mpigo  1 amesos_test.exe KLU   ImpcolE.rua 0 1 1 0  1e-8  1e-9   >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolE.rua 0 1 1 0  1e-8  1e-9   >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolE.rua 0 1 3 1  1e-7  1e-9   >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolE.rua 0 1 -3 1 1e-7  1e-9   >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolD.rua 0 1 1 0 1e-12 5e-13 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolD.rua 0 1 1 0 1e-12 5e-13  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolE.rua 0 1 3 1 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolE.rua 0 1 -3 1 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
 #
-# COMMENT # COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe LAPACK   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe LAPACK   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe LAPACK   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
 #
-$mpigo  4 amesos_test.exe KLU   ImpcolB.rua 0 1 1 1  1e-9 1e-12  >>SST.stdout
-$mpigo  4 amesos_test.exe KLU   ImpcolA.rua 1 1 1 1  1e-9 1e-11  >>SST.stdout
-$mpigo  4 amesos_test.exe KLU   ImpcolA.rua 1 1 3 1  1e-9 1e-11  >>SST.stdout
-$mpigo  4 amesos_test.exe KLU   ImpcolA.rua 1 1 -2 1 1e-9 1e-11  >>SST.stdout
+$mpigo 4 amesos_test.exe LAPACK   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
+$mpigo 4 amesos_test.exe LAPACK   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
+$mpigo 4 amesos_test.exe LAPACK   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
+$mpigo 4 amesos_test.exe LAPACK   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
 
 
 #
 #  Test blocked right hand sides
 #
-$mpigo  1 amesos_test.exe KLU   ImpcolA.rua 0 1 2 0 1e-9  1e-11  >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolB.rua 0 1 4 0 1e-9  1e-12  >>SST.stdout
-$mpigo  2 amesos_test.exe KLU   ImpcolE.rua 0 1 6 0 1e-7  1e-9   >>SST.stdout
-$mpigo  2 amesos_test.exe KLU   ImpcolE.rua 0 1 6 1 1e-7  1e-9   >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
+$mpigo 5 amesos_test.exe LAPACK   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
+$mpigo 2 amesos_test.exe LAPACK   ImpcolE.rua 0 1 6 0 1e-9  1e-11  >>SST.stdout
+$mpigo 2 amesos_test.exe LAPACK   ImpcolE.rua 0 1 6 1 1e-9  1e-11  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe LAPACK   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-$mpigo  1 amesos_test.exe KLU   ImpcolC.rua 0 1 -1 0 1e-12 1e-13  >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolD.rua 0 1 -2 0 1e-11 5e-13  >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolD.rua 0 1 -2 1 1e-11 5e-13  >>SST.stdout
-$mpigo  2 amesos_test.exe KLU   ImpcolE.rua 0 1 -3 0 1e-7  1e-9   >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 5 amesos_test.exe LAPACK   ImpcolD.rua 0 1 -2 0 1e-12 5e-13  >>SST.stdout
+$mpigo 5 amesos_test.exe LAPACK   ImpcolD.rua 0 1 -2 1 1e-12 5e-13  >>SST.stdout
+$mpigo 2 amesos_test.exe LAPACK   ImpcolE.rua 0 1 -3 0 1e-9  1e-11  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe LAPACK   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test blocked right hand sides with distributed matrix input
 #
-$mpigo  1 amesos_test.exe KLU   ImpcolA.rua 1 1 2 0 1e-9  1e-11  >>SST.stdout
-$mpigo  1 amesos_test.exe KLU   ImpcolA.rua 1 1 2 1 1e-9  1e-11  >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolB.rua 1 1 4 0 1e-9  1e-12  >>SST.stdout
-$mpigo  2 amesos_test.exe KLU   ImpcolE.rua 1 1 6 0 1e-7  1e-9   >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolA.rua 1 1 2 1 1e-9  1e-11 >>SST.stdout
+$mpigo 5 amesos_test.exe LAPACK   ImpcolB.rua 1 1 4 0 1e-10 1e-12  >>SST.stdout
+$mpigo 2 amesos_test.exe LAPACK   ImpcolE.rua 1 1 6 0 1e-9  1e-11  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe LAPACK   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test multiple right hand sides with distributed matrix input
 #
-$mpigo  1 amesos_test.exe KLU   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolD.rua 1 1 -3 1 1e-11 5e-13  >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolD.rua 1 1 -3 0 1e-11 5e-13  >>SST.stdout
-$mpigo  2 amesos_test.exe KLU   ImpcolE.rua 1 1 -1 0 1e-7  1e-10  >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
+$mpigo 5 amesos_test.exe LAPACK   ImpcolD.rua 1 1 -3 1 1e-12 5e-13  >>SST.stdout
+$mpigo 5 amesos_test.exe LAPACK   ImpcolD.rua 1 1 -3 0 1e-12 5e-13  >>SST.stdout
+$mpigo 2 amesos_test.exe LAPACK   ImpcolE.rua 1 1 -1 0 1e-9  1e-11  >>SST.stdout
+# COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
+# COMMENT fails on linux box # COMMENT $mpigo 1 amesos_test.exe LAPACK   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT fails on linux box # COMMENT $mpigo 4 amesos_test.exe LAPACK   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
+
 
 #
 #  Test some triplet files
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-#
-#  K4989.tris and K5000.triS are too large to keep here
-#
-$mpigo  1 amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-13  >>SST.stdout
-$mpigo  3 amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-13  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT $mpigo  1 amesos_test.exe KLU K4989.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
-# COMMENT $mpigo  2 amesos_test.exe KLU K4989.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
+# COMMENT fails on linux box $mpigo 1 amesos_test.exe LAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
+# COMMENT fails on linux box $mpigo 2 amesos_test.exe LAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
 
-# COMMENT $mpigo  1 amesos_test.exe KLU K5000.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
-# COMMENT $mpigo  6 amesos_test.exe KLU K5000.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
+# COMMENT fails on linux box $mpigo 1 amesos_test.exe LAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
+# COMMENT fails on linux box $mpigo 6 amesos_test.exe LAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
 
-# COMMENT $mpigo  6 amesos_test.exe KLU K5000.triS 0 1 1 1   1e-10 1e-8   >>SST.stdout
-# COMMENT $mpigo  6 amesos_test.exe KLU K5000.triS 1 1 1 1   1e-10 1e-8   >>SST.stdout
+# COMMENT fails on linux box $mpigo 6 amesos_test.exe LAPACK K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
+# COMMENT fails on linux box $mpigo 6 amesos_test.exe LAPACK K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
 
-$mpigo  1 amesos_test.exe KLU Khead.triS 0 1 1 0   1e-13 1e-8   >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK Khead.triS 0 1 1 0 2e-13 1e- >>SST.stdout
 
 #
 #  A couple more matrices
 #
-$mpigo  1 amesos_test.exe KLU 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
-# COMMENT $mpigo  1 amesos_test.exe KLU meg1_out.rua 0 1 3 0 1e-04 1e-03 >>SST.stdout 
+$mpigo 1 amesos_test.exe LAPACK 662_bus_out.rsa 0 1 3 0 1e-10 1e-11 >>SST.stdout 
+# COMMENT $mpigo 1 amesos_test.exe LAPACK meg1_out.rua 0 1 3 0 1e-08 1e-08 >>SST.stdout 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosLapack.exe" >> SST.summary 
 
