@@ -54,6 +54,7 @@ buildDir   = makeInfo.get("top_builddir","")
 pakDir     = makeInfo.get("top_srcdir","")
 srcDir     = makeInfo.get("srcdir","")
 solverLibs = makeInfo.get("LIBS", "");
+if len(solverLibs) == 0: solverLibs = "amesos";
 
 # Define the teuchos include path, library directory and library name
 teuchosSrcDir   = os.path.join(pakDir, "../teuchos", "src")
@@ -72,6 +73,7 @@ epetraSrcDir   = os.path.join(pakDir, "../epetra", "src")
 epetraBuildDir = os.path.join(buildDir, "../epetra", "src")
 epetraLibDir   = os.path.join("..", "../../epetra", "src")
 epetraLib      = "epetra"
+PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
 
 # Define the amesos include path, library directory and library name
 amesosSrcDir   = os.path.join(pakDir, "src")
@@ -112,7 +114,8 @@ _Amesos = Extension("PyTrilinos._Amesos",
                     include_dirs    = [epetraSrcDir, epetraBuildDir, 
                                        teuchosSrcDir, teuchosBuildDir, 
                                        amesosSrcDir, amesosBuildDir, srcDir,
-                                       triutilsSrcDir, triutilsBuildDir],
+                                       triutilsSrcDir, triutilsBuildDir,
+                                       PyEpetraDir],
                     library_dirs    = [amesosLibDir, teuchosLibDir, 
                                        epetraLibDir, triutilsLibDir],
                     libraries       = [amesosLib, teuchosLib, 

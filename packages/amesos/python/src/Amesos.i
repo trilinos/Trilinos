@@ -53,6 +53,16 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_DataAccess.h"
+  // Local includes
+#include "Epetra_NumPyVector.h"
+#include "NumPyArray.h"
+#include "NumPyWrapper.h"
+
+#include "Teuchos_ParameterList.hpp"
+void CheckList(Teuchos::ParameterList& List)
+{
+  cout << List;
+}
 
 // Amesos includes
 #include "Amesos_ConfigDefs.h"
@@ -78,17 +88,8 @@
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-// Rename directives for Epetra
-%rename(Object              ) Epetra_Object;
-%rename(Comm                ) Epetra_Comm;
-%rename(SerialComm          ) Epetra_SerialComm;
-%rename(BlockMap            ) Epetra_BlockMap;
-%rename(Map                 ) Epetra_Map;
-%rename(LinearProblem       ) Epetra_LinearProblem;
-%rename(MultiVector         ) Epetra_MultiVector;
-%rename(Operator            ) Epetra_Operator ;
-%rename(RowMatrix           ) Epetra_RowMatrix;
-%rename(CrsMatrix           ) Epetra_CrsMatrix;
+// Epetra
+%import "Epetra.i"
 
 // Rename directives for Amesos
 %rename(BaseSolver          ) Amesos_BaseSolver;
@@ -104,21 +105,70 @@
 // SWIG library includes
 %include "std_string.i"
 
-// Epetra interface includes
-using namespace std;
-%include "Epetra_Object.h"
-%include "Epetra_DistObject.h"
-%include "Epetra_Comm.h"
-%include "Epetra_SerialComm.h"
-%include "Epetra_BlockMap.h"
-%include "Epetra_Map.h"
-%include "Epetra_MultiVector.h"
-%include "Epetra_Operator.h"
-%include "Epetra_RowMatrix.h"
-%include "Epetra_CrsMatrix.h"
-%include "Epetra_LinearProblem.h"
-%include "Epetra_DataAccess.h"
+// typemaps
+%typemap(in) (Teuchos::ParameterList& ParameterList)
+{
+  int i;
+  if (!PyDict_Check($input)) {
+    PyErr_SetString(PyExc_ValueError, "Expecting a dictionary");
+    return NULL;
+  }
+  $1 = new Teuchos::ParameterList;
 
+  int size = PyDict_Size($input);
+  PyObject* Keys = PyDict_Keys($input);
+  PyObject* Values = PyDict_Values($input);
+
+  for (i = 0; i < size ; i++) {
+    PyObject *s = PyList_GetItem(Keys,i);
+    PyObject *t = PyList_GetItem(Values,i);
+    if (!PyString_Check(s)) {
+        PyErr_SetString(PyExc_ValueError, "Dictionary keys must be strings");
+        return NULL;
+    }
+    if (!PyTuple_Check(t)) {
+        PyErr_SetString(PyExc_ValueError, "Dictionary values must be tuples");
+        return NULL;
+    }
+    if (!PyString_Check(PyTuple_GetItem(t, 0)) ||
+        !PyString_Check(PyTuple_GetItem(t, 1))) {
+        PyErr_SetString(PyExc_ValueError, "tuples must contain strings");
+        return NULL;
+    }
+    string ParameterName = PyString_AsString(s);
+    string ParameterType = PyString_AsString(PyTuple_GetItem(t, 0));
+    string ParameterValue = PyString_AsString(PyTuple_GetItem(t, 1));
+    if (ParameterType == "bool") 
+    {
+      if (ParameterValue == "true")
+        $1->set(ParameterName, true);
+      else
+        $1->set(ParameterName, false);
+    }
+    else if (ParameterType == "int") 
+    {
+      $1->set(ParameterName, (int)atoi(ParameterValue.c_str()));
+    }
+    else if (ParameterType == "double") 
+    {
+      $1->set(ParameterName, (double)atof(ParameterValue.c_str()));
+    }
+    else if (ParameterType == "string") 
+    {
+      $1->set(ParameterName, string(ParameterValue));
+    }
+    else 
+    {
+      cout << "Parameter type not recognized" << endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+}
+
+%typemap(freearg) (Teuchos::ParameterList& ParameterList)
+{
+   if ($1) delete($1);
+}
 // Amesos interface includes
 %include "Amesos_config.h"
 %include "Amesos.h"
@@ -142,81 +192,9 @@ using namespace std;
 %include "Amesos_Mumps.h"
 #endif
 
-// Extensions for Epetra
-%extend Epetra_Object {
-  string __str__() {
-    stringstream os;
-    self->Print(os);                  // Put the output in os
-    string s = os.str();              // Extract the string from os
-    return s.substr(0,s.length()-1);  // Return the string minus trailing \n
-  }
-}
-
-%extend Epetra_CrsMatrix 
-{
-  int InsertGlobalValue(int i, int j, double val) {
-    double val2 = val;
-    int j2 = j;
-    return self->InsertGlobalValues(i, 1, &val2, &j2);
-  }
-
-  int ReplaceGlobalValue(int i, int j, double val) {
-    double val2 = val;
-    int j2 = j;
-    return self->ReplaceGlobalValues(i, 1, &val2, &j2);
-  }
-
-  int ReplaceMyValue(int i, int j, double val) {
-    double val2 = val;
-    int j2 = j;
-    return self->ReplaceMyValues(i, 1, &val2, &j2);
-  }
-}
-
-%extend Epetra_MultiVector
-{
-  void Set(const int vector, const int element, const double value)
-  {
-    (*self)[vector][element] = value;
-  }
-
-  double Get(const int vector, const int element)
-  {
-    return((*self)[vector][element]);
-  }
-}
-
 // Extensions for Amesos
 %extend Amesos_BaseSolver 
 {
-  void SetInt(char* Name, int value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, (int)value);
-    self->SetParameters(List);
-  }
-
-  void SetBool(char* Name, bool value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, (bool)value);
-    self->SetParameters(List);
-  }
-
-  void SetDouble(char* Name, double value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, (double)value);
-    self->SetParameters(List);
-  }
-
-  void SetString(char* Name, char* value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, value);
-    self->SetParameters(List);
-  }
-
   string __str__() {
     stringstream os;
     os << "*** Amesos_BaseSolver ***";
@@ -228,3 +206,5 @@ using namespace std;
     delete self;
   }
 }
+
+
