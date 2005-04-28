@@ -785,7 +785,6 @@ AC_CONFIG_FILES([
 		python/src/Makefile
 		python/src/__init__.py
 		python/src/.deps/dummy
-		python/test/Makefile
 		python/example/Makefile
 		])
 

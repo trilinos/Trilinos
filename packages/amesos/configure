@@ -14108,7 +14108,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 #
-                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -15074,7 +15074,6 @@ do
   "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
   "python/src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/__init__.py" ;;
   "python/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src/.deps/dummy" ;;
-  "python/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test/Makefile" ;;
   "python/example/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Amesos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Amesos_config.h:src/Amesos_config.h.in" ;;
