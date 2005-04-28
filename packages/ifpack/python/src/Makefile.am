@@ -26,20 +26,14 @@
 # ************************************************************************
 # @HEADER
 
+# basic definitions for IFPACK
+include  $(top_builddir)/Makefile.export
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = -I$(srcdir) \
-                -I$(top_srcdir)/src \
-                -I$(top_builddir)/src \
-                -I$(top_srcdir)/../teuchos/src \
-                -I$(top_builddir)/../teuchos/src \
-                -I$(top_srcdir)/../epetra/src \
-                -I$(top_builddir)/../epetra/src \
-                -I$(top_srcdir)/../aztecoo/src \
-                -I$(top_builddir)/../aztecoo/src \
-                -I$(top_srcdir)/../epetra/python/src \
-                -I$(top_srcdir)/../aztecoo/python/src
-
+                $(IFPACK_INCLUDES) \
+                -I$(top_srcdir)/../epetra/python/src
 
 # Default make target
 all-am: build
@@ -61,18 +55,19 @@ PROXIES    = $(INTERFACES:.i=.py      )
 # python script
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
-	@echo "{"                                   >  $@
-	@echo "  'top_builddir' : '$(top_builddir)',"  >> $@
-	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
-	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
-	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
-	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'FLIBS'        : '$(FLIBS)',"       >> $@
-	@echo "  'LIBS'         : '$(LIBS)',"        >> $@
-	@echo "  'AMESOS_LIBS'  : '$(AMESOS_LIBS)',"        >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)'"       >> $@
-	@echo "}"                                   >> $@
+	@echo "{"                                           >  $@
+	@echo "  'top_builddir'    : '$(top_builddir)',"    >> $@
+	@echo "  'top_srcdir'      : '$(top_srcdir)',"      >> $@
+	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
+	@echo "  'LDFLAGS'         : '$(LDFLAGS)',"         >> $@
+	@echo "  'LAPACK_LIBS'     : '$(LAPACK_LIBS)',"     >> $@
+	@echo "  'BLAS_LIBS'       : '$(BLAS_LIBS)',"       >> $@
+	@echo "  'FLIBS'           : '$(FLIBS)',"           >> $@
+	@echo "  'LIBS'            : '$(LIBS)',"            >> $@
+	@echo "  'IFPACK_LIBS'     : '$(IFPACK_LIBS)',"     >> $@
+	@echo "  'IFPACK_INCLUDES' : '$(IFPACK_INCLUDES)'," >> $@
+	@echo "  'PYTHON'          : '$(PYTHON)'"           >> $@
+	@echo "}"                                           >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build

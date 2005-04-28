@@ -30,13 +30,13 @@
 
 %module(package="PyTrilinos") IFPACK
 
-#define HAVE_IFPACK_TEUCHOS 
-
 %{
 // System includes
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include "Ifpack_ConfigDefs.h"
 
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_NumPyVector.h"
@@ -48,13 +48,31 @@
 #include "Ifpack.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Preconditioner.h"
+#include "Ifpack_IC.h"
+#include "Ifpack_ICT.h"
+#include "Ifpack_ILU.h"
+#include "Ifpack_ILUT.h"
+#include "Ifpack_PointRelaxation.h"
 %}
 
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-%rename(Factory) Ifpack;
-%rename(ILU    ) Ifpack_ILU;
+%rename(Factory               ) Ifpack;
+%rename(Preconditioner        ) Ifpack_Preconditioner;
+%rename(IC                    ) Ifpack_IC;
+%rename(ICT                   ) Ifpack_ICT;
+%rename(ILU                   ) Ifpack_ILU;
+%rename(ILUT                  ) Ifpack_ILUT;
+%rename(Amesos                ) Ifpack_Amesos;
+%rename(PointRelaxation       ) Ifpack_PointRelaxation;
+%rename(AnalyzeMatrix         ) Ifpack_Analyze;
+%rename(AnalyzeMatrixElements ) Ifpack_AnalyzeMatrixElements;
+%rename(AnalyzeVectorElements ) Ifpack_AnalyzeVectorElements;
+%rename(PrintSparsity         ) Ifpack_PrintSparsity;
+
+%include "Ifpack_config.h"
+%include "Ifpack_ConfigDefs.h"
 
 // typemaps
 %typemap(in) Teuchos::ParameterList& List
@@ -125,12 +143,16 @@ using namespace std;
 
 // Epetra interface includes
 %import "Epetra.i"
-%import "AztecOO.i"
 
-// Amesos interface includes
+// IFPACK interface includes
 %include "Ifpack.h"
 %include "Ifpack_Utils.h"
 %include "Ifpack_Preconditioner.h"
+%include "Ifpack_IC.h"
+%include "Ifpack_ICT.h"
+%include "Ifpack_ILU.h"
+%include "Ifpack_ILUT.h"
+%include "Ifpack_PointRelaxation.h"
 
 %extend Ifpack_Preconditioner
 {
