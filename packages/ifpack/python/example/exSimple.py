@@ -1,29 +1,32 @@
 #! /usr/bin/env python
 from PyTrilinos import Triutils, IFPACK, AztecOO, Epetra
-nx = 20;
-ny = 20;
-nz = 20;
-Comm = Epetra.SerialComm();
-Gallery = Triutils.CrsMatrixGallery("laplace_3d", Comm)
-Gallery.Set("nx", nx);
-Gallery.Set("ny", ny);
-Gallery.Set("nz", nz);
-Matrix = Gallery.GetMatrix();
-LHS = Gallery.GetStartingSolution();
-RHS = Gallery.GetRHS();
 
+# read the matrix from file, here `bcsstk01.rsa' in HB format
+Comm = Epetra.SerialComm();
+Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB("bcsstk01.rsa", Comm);
+
+# Creates the IFPACK preconditioner, in this case an incomplete
+# Cholesky factorization, with fill-in of 5
 Factory = IFPACK.Factory();
 Prec = Factory.Create("IC", Matrix);
-Prec.SetInt("fact: level-of-fill", 5);
+IFPACKList = {
+  "fact: level-of-fill": ("int", "5")
+}
+Prec.SetParameters(IFPACKList);
 Prec.Initialize();
 Prec.Compute();
 
+# Creates the AztecOO solver, using GMRES and IFPACK as preconditioner
 Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
 Solver = AztecOO.AztecOO(Problem);
-
 Solver.SetPrecOperator(Prec)
-Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
+Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
 Solver.SetAztecOption(AztecOO.AZ_output, 16);
 Solver.Iterate(1550, 1e-5)
 
 print Prec
+
+# Computes the 2-norm of the true residual
+LHS.Update(1.0, Exact, -1.0);
+print "After solution of the linear system:"
+print "||x - x_exact||_2 / ||b||_2 = ", LHS.Norm2()[1] / RHS.Norm2()[1]

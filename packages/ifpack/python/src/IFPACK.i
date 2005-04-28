@@ -30,6 +30,8 @@
 
 %module(package="PyTrilinos") IFPACK
 
+#define HAVE_IFPACK_TEUCHOS 
+
 %{
 // System includes
 #include <iostream>
@@ -51,8 +53,73 @@
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-%rename (Factory) Ifpack;
-%rename (ILU) Ifpack_ILU;
+%rename(Factory) Ifpack;
+%rename(ILU    ) Ifpack_ILU;
+
+// typemaps
+%typemap(in) Teuchos::ParameterList& List
+{
+  int i;
+  if (!PyDict_Check($input)) {
+    PyErr_SetString(PyExc_ValueError, "Expecting a dictionary");
+    return NULL;
+  }
+  $1 = new Teuchos::ParameterList;
+
+  int size = PyDict_Size($input);
+  PyObject* Keys = PyDict_Keys($input);
+  PyObject* Values = PyDict_Values($input);
+
+  for (i = 0; i < size ; i++) {
+    PyObject *s = PyList_GetItem(Keys,i);
+    PyObject *t = PyList_GetItem(Values,i);
+    if (!PyString_Check(s)) {
+        PyErr_SetString(PyExc_ValueError, "Dictionary keys must be strings");
+        return NULL;
+    }
+    if (!PyTuple_Check(t)) {
+        PyErr_SetString(PyExc_ValueError, "Dictionary values must be tuples");
+        return NULL;
+    }
+    if (!PyString_Check(PyTuple_GetItem(t, 0)) ||
+        !PyString_Check(PyTuple_GetItem(t, 1))) {
+        PyErr_SetString(PyExc_ValueError, "tuples must contain strings");
+        return NULL;
+    }
+    string ParameterName = PyString_AsString(s);
+    string ParameterType = PyString_AsString(PyTuple_GetItem(t, 0));
+    string ParameterValue = PyString_AsString(PyTuple_GetItem(t, 1));
+    if (ParameterType == "bool") 
+    {
+      if (ParameterValue == "true")
+        $1->set(ParameterName, true);
+      else
+        $1->set(ParameterName, false);
+    }
+    else if (ParameterType == "int") 
+    {
+      $1->set(ParameterName, (int)atoi(ParameterValue.c_str()));
+    }
+    else if (ParameterType == "double") 
+    {
+      $1->set(ParameterName, (double)atof(ParameterValue.c_str()));
+    }
+    else if (ParameterType == "string") 
+    {
+      $1->set(ParameterName, string(ParameterValue));
+    }
+    else 
+    {
+      cout << "Parameter type not recognized" << endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+}
+
+%typemap(freearg) Teuchos::ParameterList& List
+{
+  delete($1);
+}
 
 using namespace std;
 
@@ -65,37 +132,8 @@ using namespace std;
 %include "Ifpack_Utils.h"
 %include "Ifpack_Preconditioner.h"
 
-// Extensions for Ifpack
 %extend Ifpack_Preconditioner
 {
-  void SetInt(char* Name, int value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, (int)value);
-    self->SetParameters(List);
-  }
-
-  void SetBool(char* Name, bool value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, (bool)value);
-    self->SetParameters(List);
-  }
-
-  void SetDouble(char* Name, double value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, (double)value);
-    self->SetParameters(List);
-  }
-
-  void SetString(char* Name, char* value)
-  {
-    Teuchos::ParameterList List;
-    List.set(Name, value);
-    self->SetParameters(List);
-  }
-
   string __str__() {
     stringstream os;
     os << *self;
