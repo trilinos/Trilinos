@@ -10,14 +10,6 @@
 
 use strict;
 
-my $PAGE;
-open(PAGE, ">index.html") or die "can't open index.html, died";
-
-print PAGE "<html><head><title>Trilinos Documentation</title></head><body>\n";
-print PAGE "<h3>Trilinos Documentation</h3>\n";
-print PAGE "<h4>Package Documentation:</h4>\n";
-print PAGE "<ul>\n";
-
 my $trilinosDir = `pwd`;
 chomp($trilinosDir);
 $trilinosDir =~ s/\/doc$//;
@@ -28,6 +20,13 @@ use File::Find;
 use File::Basename;
 find (\&buildDocs, $trilinosDir);
 find (\&fillIndexList, $trilinosDir);
+
+open(PAGE, ">index.html") or die "can't open index.html, died";
+
+print PAGE "<html><head><title>Trilinos Documentation</title></head><body>\n";
+print PAGE "<h3>Trilinos Documentation</h3>\n";
+print PAGE "<h4>Package Documentation:</h4>\n";
+print PAGE "<ul>\n";
 
 foreach my $item (sort { lc($a) cmp lc($b) } @indexList) {
     print PAGE $item;
