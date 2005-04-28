@@ -34,7 +34,7 @@ def PrintHelp():
   print 'Amesos_Umfpack, Amesos_Superlu'
 
 def main():
-  from PyTrilinos import Amesos
+  from PyTrilinos import Amesos, Epetra
 
   import sys
 
@@ -46,28 +46,37 @@ def main():
     Type = args[0];
 
   n = 10;
-  Comm = Amesos.SerialComm();
-  Map = Amesos.Map(n, 0, Comm);
-  LHS_exact = Amesos.MultiVector(Map, 1);
-  LHS = Amesos.MultiVector(Map, 1);
-  RHS = Amesos.MultiVector(Map, 1);
-  Matrix = Amesos.CrsMatrix(Amesos.Copy, Map, 0);
+  Comm = Epetra.SerialComm();
+  Map = Epetra.Map(n, 0, Comm);
+  LHS_exact = Epetra.MultiVector(Map, 1);
+  LHS = Epetra.MultiVector(Map, 1);
+  RHS = Epetra.MultiVector(Map, 1);
+  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
+  Indices = Epetra.IntSerialDenseVector(3);
+  Values = Epetra.SerialDenseVector(3);
+  Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0;
 
   # Builds the matrix (1D Laplacian)
   for i in range(0, n):
-    if i != 0:
-      Matrix.InsertGlobalValue(i, i - 1, -1.0);
-    if i != n - 1:
-      Matrix.InsertGlobalValue(i, i + 1, -1.0);
-    Matrix.InsertGlobalValue(i, i, 2.0);
+    Indices[0] = i;
+    if i == 0:
+      NumEntries = 2;
+      Indices[1] = i + 1;
+    elif i == n - 1:
+      NumEntries = 2;
+      Indices[1] = i - 1;
+    else:
+      NumEntries = 3;
+      Indices[1] = i - 1;
+      Indices[2] = i + 1;
+    Matrix.InsertGlobalValues(i, NumEntries, Values, Indices);
   ierr = Matrix.FillComplete();
 
-  # Builds a random solution
   LHS_exact.Random();
   Matrix.Multiply(False, LHS_exact, RHS);
   LHS.PutScalar(1.0);
 
-  Problem = Amesos.LinearProblem(Matrix, LHS, RHS);
+  Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
 
   if Type == "Amesos_Lapack":
     Solver = Amesos.Lapack(Problem);
@@ -88,16 +97,15 @@ def main():
     PrintHelp();
     sys.exit(-2);
   
-  Solver.SetBool("PrintTiming", True);
-  Solver.SetBool("PrintStatus", True);
-
+  AmesosList = {
+    "PrintOutput": ("bool", "true"), 
+    "PrintTiming": ("bool", "true"),
+  };
+  Solver.SetParameters(AmesosList);
   Solver.SymbolicFactorization();
   Solver.NumericFactorization();
   Solver.Solve();
-  error = 0;
-  for i in range(0, n):
-    error = error + abs(LHS.Get(0, i) - LHS_exact.Get(0, i));
-  print 'Using %s, ||x - x_exact||_1 = %e' % (Type, error)
+  del Solver
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

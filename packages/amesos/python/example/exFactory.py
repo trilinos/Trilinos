@@ -29,34 +29,42 @@
 # @header
 
 def main(Type):
-  from PyTrilinos import Amesos
+  from PyTrilinos import Amesos, Epetra
 
   n = 10;
-  Comm = Amesos.SerialComm();
-  Map = Amesos.Map(n, 0, Comm);
-  LHS = Amesos.MultiVector(Map, 1);
-  RHS = Amesos.MultiVector(Map, 1);
-  Matrix = Amesos.CrsMatrix(Amesos.Copy, Map, 0);
+  Comm = Epetra.SerialComm();
+  Map = Epetra.Map(n, 0, Comm);
+  LHS_exact = Epetra.Vector(Map);
+  LHS = Epetra.Vector(Map);
+  RHS = Epetra.Vector(Map);
+  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
+  Indices = Epetra.IntSerialDenseVector(3);
+  Values = Epetra.SerialDenseVector(3);
+  Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0;
 
-  # Builds the matrix (1D Laplacian)
   for i in range(0, n):
-    if i != 0:
-      Matrix.InsertGlobalValue(i, i - 1, -1.0);
-    if i != n - 1:
-      Matrix.InsertGlobalValue(i, i + 1, -1.0);
-    Matrix.InsertGlobalValue(i, i, 2.0);
+    Indices[0] = i;
+    if i == 0:
+      NumEntries = 2;
+      Indices[1] = i + 1;
+    elif i == n - 1:
+      NumEntries = 2;
+      Indices[1] = i - 1;
+    else:
+      NumEntries = 3;
+      Indices[1] = i - 1;
+      Indices[2] = i + 1;
+    Matrix.InsertGlobalValues(i, NumEntries, Values, Indices);
   ierr = Matrix.FillComplete();
 
   # Builds a solution that is `i' at node `i', then the
   # corresponding right-hand side, then set the solution to 0
   for i in range(0, n):
-    LHS.Set(0, i, 1.0 * i);
+    LHS[i] = i;
   Matrix.Multiply(False, LHS, RHS);
   LHS.PutScalar(0.0);
 
-  # Creates an Epetra_LinearProblem
-  Problem = Amesos.LinearProblem(Matrix, LHS, RHS);
-
+  Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
   Factory = Amesos.Factory();
 
   if Factory.Query(Type) == False:
@@ -64,13 +72,17 @@ def main(Type):
     return;
 
   Solver = Factory.Create(Type, Problem);
-  ierr = Solver.SetBool("PrintTiming", True);
+  AmesosList = {
+    "PrintTiming": ("bool", "true"),
+    "PrintStatus": ("bool", "true")
+  }
+  Solver.SetParameters(AmesosList);
   ierr = Solver.Solve();
-  del Solver;
+  del Solver
 
   error = 0.0;
   for i in range(0, n):
-    error = error + abs(LHS.Get(0, i) - i);
+    error = error + abs(LHS[i] - i);
   print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
 
 # This is a standard Python construct.  Put the code to be executed in a
@@ -79,4 +91,4 @@ def main(Type):
 # line.  This also allows, for example, this file to be imported from a python
 # debugger and main() called from there.
 if __name__ == "__main__":
-    main("Amesos_Lapack")
+    main("Amesos_Klu")
