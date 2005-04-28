@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = Tpetra
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src index.doc
 

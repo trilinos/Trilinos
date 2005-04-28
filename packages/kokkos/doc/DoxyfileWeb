@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = Kokkos
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src index.doc
 

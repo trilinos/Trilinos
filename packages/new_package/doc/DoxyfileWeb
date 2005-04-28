@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = New_Package
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src index.doc
 

@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = NOX
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src
 INPUT                 += ../src-loca

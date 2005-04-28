@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = PyTrilinos
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src
 

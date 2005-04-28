@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = IFPACK
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src index.doc
 

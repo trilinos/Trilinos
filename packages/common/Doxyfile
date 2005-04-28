@@ -15,7 +15,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = 
-PROJECT_NUMBER         = 
+PROJECT_NUMBER         = "Development"
 OUTPUT_DIRECTORY       = 
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English

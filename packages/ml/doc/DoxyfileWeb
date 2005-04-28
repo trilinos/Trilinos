@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = ML
-PROJECT_NUMBER         = Development
 
 INPUT                  = mainpage.doxygen 
 INPUT                 += ../src/Operator 

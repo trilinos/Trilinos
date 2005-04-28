@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = Anasazi
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src index.doc
 

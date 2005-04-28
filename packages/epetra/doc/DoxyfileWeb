@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = Epetra
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src ../../aztecoo/src index.doc
 

@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = TriUtils
-PROJECT_NUMBER         = Development
 
 INPUT                  = ../src
 EXTRACT_ALL            = YES

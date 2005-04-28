@@ -41,9 +41,8 @@
 ############################################################################
 
 PROJECT_NAME           = Pliris
-PROJECT_NUMBER         = Development
 
-INPUT                  = ../pliris/src index_my.doc
+INPUT                  = ../src index_my.doc
 
 IMAGE_PATH             = .
 

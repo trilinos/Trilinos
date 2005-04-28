@@ -41,7 +41,6 @@
 ############################################################################
 
 PROJECT_NAME           = YOUR_PACKAGE_NAME
-PROJECT_NUMBER         = BRANCH_NAME
 
 INPUT                  = ../src
 
