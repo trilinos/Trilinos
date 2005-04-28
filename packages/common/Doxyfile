@@ -79,16 +79,16 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = src
+INPUT                  = ../src index.doc
 FILE_PATTERNS          = 
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = example
+EXAMPLE_PATH           = ../example ../examples
 EXAMPLE_PATTERNS       = 
 EXAMPLE_RECURSIVE      = YES
-IMAGE_PATH             = 
+IMAGE_PATH             = .
 INPUT_FILTER           = 
 FILTER_PATTERNS        = 
 FILTER_SOURCE_FILES    = NO

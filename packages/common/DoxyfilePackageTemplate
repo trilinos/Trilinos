@@ -6,10 +6,11 @@
 # TRILINOS PACKAGE DEVELOPERS:
 #
 # Use this Doxyfile in Trilinos/packages/YOUR_PACKAGE/doc to control the
-# way in which your documentation is generated. Do not modify the @INCLUDE
-# line above--that provides you with default behavior. To modify the
-# default behavior, simply include (below) the option you would like to
-# overwrite (or use += to append more to the default). 
+# way in which your documentation is generated.  If you would like to be
+# provided with reasonable default behavior, leave intact the above
+# @INCLUDE. To modify the default behavior, simply include below the
+# option you would like to overwrite (or use += to append more to the
+# default). 
 #
 # - To view the explanation of an option, run 
 #
@@ -30,5 +31,3 @@
 ############################################################################
 
 GENERATE_TAGFILE       = ../../common/tag_files/YOUR_PACKAGE_NAME.tag
-
-INPUT                  = src

@@ -1,4 +1,4 @@
-# Doxyfile 1.3.5
+# Doxyfile 1.3.9.1
 
 @INCLUDE               = ../../../../Trilinos/packages/common/Doxyfile
 
@@ -6,31 +6,11 @@
 # TRILINOS PACKAGE DEVELOPERS:
 #
 # Use this Doxyfile in Trilinos/packages/YOUR_PACKAGE/doc to control the
-# way in which your documentation is generated. Do not modify the @INCLUDE
-# line above--that provides you with default behavior. To modify the
-# default behavior, simply include (below) the option you would like to
-# overwrite (or use += to append more to the default). 
-#
-# There are essentially two types of configuration options: 
-#
-#   1) those that you can overwrite completely, and
-#   2) those that you can overwrite for local generation, but that are 
-#      automatically overwritten by TrilinosWeb before being posted online
-#
-# Both are present in Trilinos/packages/common/Doxyfile. The first type are 
-# simply present without note, while the second type are noted as such.
-#
-# - IN ORDER FOR TrilinosWeb TO FIND YOUR RESOURCES, you must give all paths 
-#   up to Trilinos' parent and back down to your resource (see the @INCLUDE
-#   above for an example). This should ALWAYS be:
-#
-#       ../../../../Trilinos/YOUR_RESOURCE...
-#
-#   and will usually be:
-#
-#       ../../../../Trilinos/packages/YOUR_PACKAGE/YOUR_RESOURCE...
-#
-#   IF YOU DON'T DO THIS, DOXYGEN WILL NOT BE ABLE TO LOCATE YOUR RESOURCES!
+# way in which your documentation is generated.  If you would like to be
+# provided with reasonable default behavior, leave intact the above
+# @INCLUDE. To modify the default behavior, simply include below the
+# option you would like to overwrite (or use += to append more to the
+# default). 
 #
 # - To view the explanation of an option, run 
 #
@@ -42,24 +22,22 @@
 # - To use this Doxyfile locally to generate your documentation and 
 #   iteratively develop it:
 #
+#     (document your source)
 #     cd Trilinos/packages/YOUR_PACKAGE/doc
-#     (modify this Doxyfile accordingly)
-#     doxygen
+#     (modify this Doxyfile as needed)
+#     doxygen DoxyfileWeb 
 #     (open Trilinos/packages/YOUR_PACKAGE/doc/html/index.html)
-#     rinse, repeat.
-#
-# - At the very least, you will need to overwrite the INPUT option.
 #
 ############################################################################
 
-INPUT                  = ../../../../Trilinos/packages/ml/doc/mainpage.doxygen 
-INPUT                 += ../../../../Trilinos/packages/ml/src/Operator 
-INPUT                 += ../../../../Trilinos/packages/ml/src/Utils 
-INPUT                 += ../../../../Trilinos/packages/ml/src/Coarsen 
-INPUT                 += ../../../../Trilinos/packages/ml/src/Main
-INPUT                 += ../../../../Trilinos/packages/ml/src/MLAPI
-INPUT                 += ../../../../Trilinos/packages/ml/src/NonlinML
-INPUT                 += ../../../../Trilinos/packages/ml/examples/FiniteElements
+INPUT                  = mainpage.doxygen 
+INPUT                 += ../src/Operator 
+INPUT                 += ../src/Utils 
+INPUT                 += ../src/Coarsen 
+INPUT                 += ../src/Main
+INPUT                 += ../src/MLAPI
+INPUT                 += ../src/NonlinML
+INPUT                 += ../examples/FiniteElements
 
 FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
 FILE_PATTERNS         += ml_epetra_utils.h 
@@ -85,18 +63,18 @@ FILE_PATTERNS         += ml_*Problem*.h
 FILE_PATTERNS         += ml_*Variational*.h
 FILE_PATTERNS         += ml_Workspace.h
 
-EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples/BasicExamples 
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Advanced 
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/TwoLevelDD 
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Visualization 
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Maxwell 
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/MatrixReading 
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/StandAlone
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/MLAPI
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/FiniteElements
-EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/
+EXAMPLE_PATH           = ../examples/BasicExamples 
+EXAMPLE_PATH          += ../examples/Advanced 
+EXAMPLE_PATH          += ../examples/TwoLevelDD 
+EXAMPLE_PATH          += ../examples/Visualization 
+EXAMPLE_PATH          += ../examples/Maxwell 
+EXAMPLE_PATH          += ../examples/MatrixReading 
+EXAMPLE_PATH          += ../examples/StandAlone
+EXAMPLE_PATH          += ../examples/MLAPI
+EXAMPLE_PATH          += ../examples/FiniteElements
+EXAMPLE_PATH          += ..
 
-IMAGE_PATH             = ../../../../Trilinos/packages/ml/doc
+IMAGE_PATH             = .
 
 PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_IFPACK
 PREDEFINED            += HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS 
@@ -104,3 +82,5 @@ PREDEFINED            += HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X
 PREDEFINED            += HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
 PREDEFINED            += HAVE_ML_MLAPI
 PREDEFINED            += HAVE_ML_NOX
+
+GENERATE_TAGFILE       = ../../common/tag_files/ml.tag
