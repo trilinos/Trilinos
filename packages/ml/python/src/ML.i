@@ -30,23 +30,13 @@
 
 %module(package="PyTrilinos") ML
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-
-#ifndef HAVE_ML_EPETRA
-#define HAVE_ML_EPETRA
-#endif
-
-#ifndef HAVE_ML_TEUCHOS
-#define HAVE_ML_TEUCHOS
-#endif
-
 %{
 // System includes
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include "ml_config.h"
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
@@ -57,6 +47,8 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
 %}
+
+%include "ml_config.h"
 
 // Auto-documentation feature
 %feature("autodoc", "1");
