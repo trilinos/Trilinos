@@ -119,6 +119,7 @@ int main(int argc, char *argv[]) {
   Values[0] = 0.0;
   Values[1] = 0.0;
   Values[2] = 0.0;
+  Epetra_CrsMatrix Matrix(Copy,Map,NumGlobalElements);
   int Indices[3];
   int NumEntries;
 

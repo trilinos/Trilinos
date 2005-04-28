@@ -18,7 +18,8 @@
 #include <vector>
 
 //=============================================================================
-bool CheckError(const Epetra_RowMatrix& A,
+bool CheckError(bool verbose,
+		const Epetra_RowMatrix& A,
 		const Epetra_MultiVector& x,
 		const Epetra_MultiVector& b,
 		const Epetra_MultiVector& x_exact)
@@ -35,7 +36,7 @@ bool CheckError(const Epetra_RowMatrix& A,
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm[i];
   }
-  if (A.Comm().MyPID() == 0)
+  if (verbose && A.Comm().MyPID() == 0)
     cout << "||Ax - b||  = " << TotalNorm << endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
@@ -47,7 +48,7 @@ bool CheckError(const Epetra_RowMatrix& A,
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm[i];
   }
-  if (A.Comm().MyPID() == 0)
+  if (verbose && A.Comm().MyPID() == 0)
     cout << "||Ax - b||  = " << TotalNorm << endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
@@ -72,6 +73,9 @@ int main(int argc, char *argv[]) {
                                // Test_SuperLU_DIST.exe dies during Amesos_Superludist destruction
   int NumVectors = 7;
   
+  bool verbose = true ;  
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) verbose = false ;
+
   // =================== //
   // create a random map //
   // =================== //
@@ -173,7 +177,7 @@ int main(int argc, char *argv[]) {
   AMESOS_CHK_ERR(Solver->NumericFactorization());
   AMESOS_CHK_ERR(Solver->Solve());
 
-  if (!CheckError(A,x,b,x_exact))
+  if (!CheckError(verbose,A,x,b,x_exact))
     AMESOS_CHK_ERR(-1);
 
   delete Solver;
@@ -200,9 +204,14 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
-
-  puts("Please configure Amesos with");
-  puts("--enable-amesos-superludist");
+  //
+  //  The -q switch allows us to test that Amesos_SuperLU_DIST is quiet.
+  bool verbose = true ;  
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) verbose = false ;
+  if ( verbose ) {
+    puts("Please configure Amesos with");
+    puts("--enable-amesos-superludist");
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();

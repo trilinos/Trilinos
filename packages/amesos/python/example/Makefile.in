@@ -275,12 +275,12 @@ AUTOMAKE_OPTIONS = foreign
 #       could get rid of these.
 #
 EXTRA_DIST = \
-	setpath.py exSimple.py
+	setpath.py exSolvers.py exFactory.py
 
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exSimple
+EXAMPLE_SUITE = exSolver exFactory
 
 # Clean target
 CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc

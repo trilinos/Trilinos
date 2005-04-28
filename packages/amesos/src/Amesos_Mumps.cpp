@@ -242,7 +242,7 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
     }
   }
 
-  ConTime_ == Time_->ElapsedTime(); 
+  ConTime_ = Time_->ElapsedTime(); 
   
   assert (count <= ptr->NumMyNonzeros());
 

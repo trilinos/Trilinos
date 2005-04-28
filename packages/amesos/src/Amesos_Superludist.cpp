@@ -602,7 +602,9 @@ int Amesos_Superludist::Factor( )
     else if( IterRefine_ == "DOUBLE" ) options_.IterRefine = DOUBLE;
     else if( IterRefine_ == "EXTRA" ) options_.IterRefine = EXTRA;
 
-#if 0
+    //  Without the following two lines, SuperLU_DIST cannot be made
+    //  quiet.
+#if 1
     if( PrintNonzeros_ ) options_.PrintStat = (yes_no_t)YES;
     else                 options_.PrintStat = NO;
 #endif
