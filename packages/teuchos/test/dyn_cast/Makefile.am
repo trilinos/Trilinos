@@ -36,5 +36,5 @@ dyn_cast_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
 dyn_cast_test_CXXFLAGS = -I$(top_srcdir)/src
 
-dyn_cast_test_LDADD = -L$(top_builddir)/src \
+dyn_cast_test_LDADD = \
 	$(top_builddir)/src/libteuchos.a $(FLIBS)

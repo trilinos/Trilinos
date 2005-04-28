@@ -52,15 +52,26 @@ static Time& exceptTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTime
 
 int main(int argc, char* argv[])
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  bool verbose = 0;
+  int procRank = 0;
+  int FailedTests = 1; // This will be set to 0, if the exception is caught!
+
+  // Check for verbose flag.
+  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+
+  if (verbose)
+    cout << Teuchos::Teuchos_Version() << endl << endl;
+
+#ifdef HAVE_MPI 
+  /* initialize MPI if we are running in parallel */
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+#endif      
+  
+  verbose = verbose && (procRank==0);
 
   try
     {
-#ifdef HAVE_MPI 
-      /* initialize MPI if we are running in parallel */
-      MPI_Init(&argc, &argv);
-#endif
-
       double sqrtFunc();
       double factFunc(int x);
       double exceptFunc();
@@ -87,18 +98,23 @@ int main(int argc, char* argv[])
     }
   catch(std::exception& e)
     {
-      cerr << "caught exception " << e.what() << endl;
+      if (verbose)
+	cerr << "caught exception " << e.what() << endl;
+
+      // Return 0 since we caught the exception
+      FailedTests = 0;
     }
 
-  /* summarize timings. This must be done before finalizing MPI  */
-  TimeMonitor::summarize();
+  /* Summarize timings. This must be done before finalizing MPI  */
+  if (verbose)
+    TimeMonitor::summarize();
 
 #ifdef HAVE_MPI
   /* clean up MPI if we are running in parallel*/
   MPI_Finalize();
 #endif
-
-  return 0;
+  
+  return FailedTests;
 }
 
 /* sum sqrt(x), x=[0, 10000). */

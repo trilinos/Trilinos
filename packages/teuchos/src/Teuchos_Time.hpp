@@ -38,6 +38,18 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
+#include <time.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#else
+#ifndef ICL
+#include <sys/time.h>
+#ifndef MINGW
+#include <sys/resource.h>
+#endif
+#endif
+#endif
+
 namespace Teuchos 
 {
 

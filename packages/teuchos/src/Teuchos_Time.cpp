@@ -31,16 +31,6 @@
 
 #include "Teuchos_Time.hpp"
 
-#include <time.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#include <sys/time.h>
-#ifndef MINGW
-#include <sys/resource.h>
-#endif
-#endif
-
 using namespace Teuchos;
 
 //=============================================================================
