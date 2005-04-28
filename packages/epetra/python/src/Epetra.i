@@ -295,6 +295,14 @@ using namespace std;
     return output;
   }
 
+  void Set(const int vector, const int element, const double value) {
+    (*self)[vector][element] = value;
+  }
+
+  double Get(const int vector, const int element) {
+    return((*self)[vector][element]);
+  }
+
   PyObject * Norm2() {
     int n = self->NumVectors();
     double result[n];
@@ -348,11 +356,18 @@ using namespace std;
   double * __getitem__(int i) {
     return self->operator[](i);
   }
+
   int InsertGlobalValues(const int Row, const int Size, 
                          const Epetra_SerialDenseVector& Values,
                          const Epetra_IntSerialDenseVector& Entries)
   {
     return self->InsertGlobalValues(Row, Size, Values.Values(), (int*)Entries.Values());
+  }
+
+  int InsertGlobalValue(int i, int j, double val) {
+    double val2 = val;
+    int j2 = j;
+    return self->InsertGlobalValues(i, 1, &val2, &j2);
   }
 }
 
@@ -432,7 +447,7 @@ using namespace std;
 // objects and UserArrays, to give users additional functionality.
 %pythoncode %{
 
-  __version__ = Version().split()[2]
+__version__ = Version().split()[2]
 
 from UserArray import *
 
