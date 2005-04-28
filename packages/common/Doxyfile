@@ -218,7 +218,7 @@ TAGFILES = ../../common/tag_files/amesos.tag=../../../amesos/doc/html \
            END_OF_TAGFILES_LIST
 GENERATE_TAGFILE       = 
 ALLEXTERNALS           = NO
-EXTERNAL_GROUPS        = YES
+EXTERNAL_GROUPS        = NO
 PERL_PATH              = /usr/bin/perl
 #---------------------------------------------------------------------------
 # Configuration options related to the dot tool   

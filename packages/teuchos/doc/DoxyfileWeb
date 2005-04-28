@@ -89,7 +89,7 @@ EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
 TAGFILES               = 
 
-GENERATE_TAGFILE       = ../../common/tag_files/teuchos.tag teuchos.tag
+GENERATE_TAGFILE       = ../../common/tag_files/teuchos.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
 #

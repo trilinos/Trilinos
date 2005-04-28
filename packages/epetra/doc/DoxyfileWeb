@@ -36,4 +36,4 @@ FILE_PATTERNS          = E*.h
 
 EXAMPLE_PATH           = ../example/petra_power_method
 
-GENERATE_TAGFILE       = ../../common/tag_files/epetra.tag epetra.tag
+GENERATE_TAGFILE       = ../../common/tag_files/epetra.tag
