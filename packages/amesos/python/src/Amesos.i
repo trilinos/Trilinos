@@ -30,15 +30,13 @@
 
 %module(package="PyTrilinos") Amesos
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-
 %{
 // System includes
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include "Amesos_ConfigDefs.h"
 
 // Epetra includes
 #include "Epetra_Object.h"
@@ -53,16 +51,14 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_DataAccess.h"
-  // Local includes
+
+// Local includes
 #include "Epetra_NumPyVector.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
 
+// Teuchos includes
 #include "Teuchos_ParameterList.hpp"
-void CheckList(Teuchos::ParameterList& List)
-{
-  cout << List;
-}
 
 // Amesos includes
 #include "Amesos_ConfigDefs.h"
@@ -87,6 +83,9 @@ void CheckList(Teuchos::ParameterList& List)
 
 // Auto-documentation feature
 %feature("autodoc", "1");
+
+%include "Amesos_config.h"
+%include "Amesos_ConfigDefs.h"
 
 // Epetra
 %import "Epetra.i"

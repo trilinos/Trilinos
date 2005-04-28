@@ -35,8 +35,6 @@ SWIG_CXXFLAGS = -I$(srcdir) \
                 -I$(top_builddir)/../teuchos/src \
                 -I$(top_srcdir)/../epetra/src \
                 -I$(top_builddir)/../epetra/src \
-                -I$(top_srcdir)/../triutils/src \
-                -I$(top_builddir)/../triutils/src \
                 -I$(top_srcdir)/../epetra/python/src
 
 
@@ -69,7 +67,6 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@
 	@echo "  'FLIBS'        : '$(FLIBS)',"       >> $@
 	@echo "  'LIBS'         : '$(LIBS)',"        >> $@
-	@echo "  'AMESOS_LIBS'  : '$(AMESOS_LIBS)',"        >> $@
 	@echo "  'PYTHON'       : '$(PYTHON)'"       >> $@
 	@echo "}"                                   >> $@
 

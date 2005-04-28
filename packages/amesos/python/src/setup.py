@@ -62,12 +62,6 @@ teuchosBuildDir = os.path.join(buildDir, "../teuchos", "src")
 teuchosLibDir   = os.path.join("..", "../../teuchos", "src")
 teuchosLib      = "teuchos"
 
-# Define the teuchos include path, library directory and library name
-triutilsSrcDir   = os.path.join(pakDir, "../triutils", "src")
-triutilsBuildDir = os.path.join(buildDir, "../triutils", "src")
-triutilsLibDir   = os.path.join("..", "../../triutils", "src")
-triutilsLib      = "triutils"
-
 # Define the epetra include path, library directory and library name
 epetraSrcDir   = os.path.join(pakDir, "../epetra", "src")
 epetraBuildDir = os.path.join(buildDir, "../epetra", "src")
@@ -81,28 +75,38 @@ amesosBuildDir = os.path.join(buildDir, "src")
 amesosLibDir   = os.path.join("..", "..", "src")
 amesosLib      = "amesos"
 
-# Standard libraries.  This is currently a hack.  The library "stdc++" is added
-# to the standard library list for a case where we know it needs it.
-stdLibs = [ ]
-sysName = os.uname()[0]
-if sysName == "Linux":
-    stdLibs.append("stdc++")
+# Standard libraries.  
+stdLibs = []
+stdLibraryLibs = []
+extraArgs      = []
 
 # Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
-extraArgs = []
 libs = makeInfo.get("LDFLAGS"    ,"").split() + \
        makeInfo.get("BLAS_LIBS"  ,"").split() + \
        makeInfo.get("LAPACK_LIBS","").split() + \
-       makeInfo.get("FLIBS"      ,"").split() + \
-       makeInfo.get("LIBS"       ,"").split()
+       makeInfo.get("FLIBS"      ,"").split();
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     else:
         extraArgs.append(lib)
+
+# load libraries specified by the user last
+for lib in makeInfo.get("LIBS","").split():
+  if lib[:2] == "-L":
+    stdLibraryLibs.append(lib[2:])
+  else:
+    extraArgs.append(lib)
+
+# might be required, if KLU is used, to load AMD        
 extraArgs.append("-lamesos");
+
+# this is a hack. 
+sysName = os.uname()[0]
+if sysName == "Linux":
+    stdLibs.append("stdc++")
 
 # Define the strings that refer to the required source files.
 wrapAmesos          = "Amesos_wrap.cpp"
@@ -114,12 +118,11 @@ _Amesos = Extension("PyTrilinos._Amesos",
                     include_dirs    = [epetraSrcDir, epetraBuildDir, 
                                        teuchosSrcDir, teuchosBuildDir, 
                                        amesosSrcDir, amesosBuildDir, srcDir,
-                                       triutilsSrcDir, triutilsBuildDir,
                                        PyEpetraDir],
                     library_dirs    = [amesosLibDir, teuchosLibDir, 
-                                       epetraLibDir, triutilsLibDir],
+                                       epetraLibDir],
                     libraries       = [amesosLib, teuchosLib, 
-                                       epetraLib, triutilsLib, solverLibs] 
+                                       epetraLib, solverLibs] 
                                        + stdLibs,
                     extra_link_args = extraArgs
                     )
