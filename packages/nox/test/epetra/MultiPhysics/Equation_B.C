@@ -44,7 +44,8 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
                                            string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
-  xmax(1.0)
+  xmax(1.0),
+  dt(1.0e-3)
 {
 
   // Create mesh and solution vectors

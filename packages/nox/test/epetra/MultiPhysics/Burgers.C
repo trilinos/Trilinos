@@ -46,7 +46,8 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   xFactor(5.0),
   viscosity(0.100),
   xmin(0.0),
-  xmax(1.0)
+  xmax(1.0),
+  dt(1.0e-3)
 {
 
   // Create the nodal coordinates
