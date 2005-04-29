@@ -36,5 +36,5 @@
 --enable-ifpack
 --enable-komplex
 --enable-nox
---enable-pytrilinos
+--enable-python
 --disable-default-packages
