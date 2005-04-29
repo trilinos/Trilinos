@@ -104,7 +104,7 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
 }
 
 // Destructor
-XferOp::~XferOp() { };
+XferOp::~XferOp() { }
 
 void XferOp::transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom)
 {
