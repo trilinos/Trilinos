@@ -26,13 +26,13 @@
 # ************************************************************************
 # @HEADER
 
-# basic definitions for AztecOO
-include  $(top_builddir)/Makefile.export
-
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(AZTECOO_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
+
+# basic definitions for AztecOO
+include  $(top_builddir)/Makefile.export
 
 # Default make target
 all-am: build

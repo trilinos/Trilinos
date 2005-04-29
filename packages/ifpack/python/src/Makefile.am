@@ -26,14 +26,14 @@
 # ************************************************************************
 # @HEADER
 
-# basic definitions for IFPACK
-include  $(top_builddir)/Makefile.export
-
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = -I$(srcdir) \
                 $(IFPACK_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
+
+# basic definitions for IFPACK
+include  $(top_builddir)/Makefile.export
 
 # Default make target
 all-am: build
