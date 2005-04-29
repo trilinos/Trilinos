@@ -1210,7 +1210,7 @@ void Problem_Manager::generateGraph()
 
   // Two things are achieved here: 1) The composite Graph is augmented to
   // accommodate off-diagonal blocks and 2) these blocks are packaged as
-  // individual NOX::EpetreNew::Group's owneed by the manager.
+  // individual NOX::EpetreNew::Group's owned by the manager.
 
   if( doOffBlocks ) {
 #ifdef HAVE_NOX_EPETRAEXT
@@ -1240,7 +1240,7 @@ void Problem_Manager::generateGraph()
       int problemRow, compositeRow, numCols, numDepCols;
   
       // Loop over each problem on which this one depends
-      for( unsigned int k = 0; k<problem.depProblems.size(); k++) {
+      for( unsigned int k = 0; k < problem.depProblems.size(); ++k) {
 
         // Create the off-block graph to be constructed for this 
         // problem-problem coupling
@@ -1254,10 +1254,10 @@ void Problem_Manager::generateGraph()
 //	Epetra_CrsGraph &offGraph = *offGraphs.back();
 
         // Get the needed objects for the depend problem
-        GenericEpetraProblem &dependProblem = 
+        GenericEpetraProblem & dependProblem = 
           *((*(Problems.find(problem.depProblems[k]))).second);
         int dependId = dependProblem.getId();
-        XferOp *xferOpPtr = (*(problem.xferOperators.find(dependId))).second;
+        XferOp * xferOpPtr = (*(problem.xferOperators.find(dependId))).second;
 	if( !xferOpPtr ) {
           cout << "ERROR: Unable to get Xfer_Operator for dependence of "
                << "problem \"" << problem.getName() << "\" on problem "

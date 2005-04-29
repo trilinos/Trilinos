@@ -86,7 +86,7 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   offBlockInterface = new Problem_Interface(*this);
 
   // Use our graph to create FDC objects needed for off-diagonal block fills
-  createFDCobjects();
+  createFDobjects();
 
   // Reset number of dofs (overwrites base constructor assignment)
   NumMyNodes = 0;
@@ -205,74 +205,137 @@ Epetra_CrsMatrix& OffBlock_Manager::getMatrix()
   return( matrixOperator->getUnderlyingMatrix() );
 }
 
-void OffBlock_Manager::createFDCobjects()
+void OffBlock_Manager::createFDobjects( bool useColoring )
 {
-#ifdef HAVE_NOX_EPETRAEXT
-  // Create a timer for performance
-  Epetra_Time colorTime(*Comm);
-  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
-    EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
-  int reordering = 0;
-  bool useParallel = true;
-  bool distance1 = false;
-  int verbose = 0;
-
   Epetra_CrsGraph &graph = *AA;
 
-  colorTime.ResetStartTime();
+  // Debugging ..... RWH
+  cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n"
+       << graph << endl;
 
-  // Just a dummy for now, but needs to be hooked up correctly.
-  Epetra_Vector &compositeVec = myManager.getCompositeSoln();
+  if( !useColoring )
+  {
+    // Note: We use a vector corresponding to compositeSoln
+    Epetra_Vector & compositeVec = myManager.getCompositeSoln();
 
-  mapColoring = new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose);
-  colorMap = &(*mapColoring)(graph);
-  colorMapIndex = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-  columnSet = &(*colorMapIndex)(graph);
-
-  if (MyPID == 0) {
-    printf("\n\tTime to color Jacobian # %d (%d) --> %e sec. \n",
-                problemEqId,problemVarId,colorTime.ElapsedTime());
-    cout << "\nUsing " << colorMap->NumColors() << " colors for "
-         << graph.NumMyRows() << " unknowns\n" << endl;
+    // Now setup each FD Jacobian as its own group/linearsystem
+    matrixOperator = new NOX::EpetraNew::FiniteDifference(
+      	*offBlockInterface, 
+  	compositeVec, 
+  	graph);
+  
+    NOX::EpetraNew::Interface::Required& reqInt = 
+      dynamic_cast<NOX::EpetraNew::Interface::Required&>(*offBlockInterface);
+    NOX::EpetraNew::Interface::Jacobian& jacInt = 
+      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*matrixOperator);
+  
+    // Here we create a linear system solely for the sake of filling an
+    // off-diagonal block Jacobian contribution using FDC.  The nlParams and
+    // statusTest are irrelevant and so are taken as that of the overall
+    // Problem_Manager object.
+    NOX::EpetraNew::LinearSystemAztecOO* tmpLinSys = 
+      new NOX::EpetraNew::LinearSystemAztecOO(
+        myManager.nlParams->sublist("Printing"),
+        myManager.nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
+        reqInt,
+        jacInt,
+        *matrixOperator,
+        compositeVec );
+  
+    NOX::Epetra::Vector tmpNOXVec(compositeVec);
+  
+    group = new NOX::EpetraNew::Group(
+      myManager.nlParams->sublist("Printing"),
+      reqInt,
+      tmpNOXVec,
+      *tmpLinSys);
   }
 
-  // Now setup each FDC Jacobian as its own group/linearsystem
-  matrixOperator = new NOX::EpetraNew::FiniteDifferenceColoring(
-    *offBlockInterface, compositeVec, graph, *colorMap, *columnSet );
+  else // use FDC
+  {
 
-  NOX::EpetraNew::Interface::Required& reqInt = 
-    dynamic_cast<NOX::EpetraNew::Interface::Required&>(*offBlockInterface);
-  NOX::EpetraNew::Interface::Jacobian& jacInt = 
-    dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*matrixOperator);
-
-  // Here we create a linear system solely for the sake of filling an
-  // off-diagonal block Jacobian contribution using FDC.  The nlParams and
-  // statusTest are irrelevant and so are taken as that of the overall
-  // Problem_Manager object.
-  NOX::EpetraNew::LinearSystemAztecOO* tmpLinSys = 
-    new NOX::EpetraNew::LinearSystemAztecOO(
+#ifdef HAVE_NOX_EPETRAEXT
+    // Create a timer for performance
+    Epetra_Time colorTime(*Comm);
+    EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
+      EpetraExt::CrsGraph_MapColoring::GREEDY;
+    int reordering = 0;
+    bool useParallel = false;
+    bool distance1 = false;
+    int verbose = 0;
+  
+    Epetra_CrsGraph & graph2 = shiftedIndexGraph(*AA);
+  
+    // Debugging ..... RWH
+    cout << "OffBlock_Manager::createFDCobjects() : incoming graph --> \n"
+         << graph << endl;
+  
+    colorTime.ResetStartTime();
+  
+    // Just a dummy for now, but needs to be hooked up correctly.
+    Epetra_Vector &compositeVec = myManager.getCompositeSoln();
+  
+    mapColoring = new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose);
+    colorMap = &(*mapColoring)(graph);
+    colorMapIndex = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
+    columnSet = &(*colorMapIndex)(graph);
+  
+    if (MyPID == 0) {
+      printf("\n\tTime to color Jacobian # %d (%d) --> %e sec. \n",
+                  problemEqId,problemVarId,colorTime.ElapsedTime());
+      cout << "\nUsing " << colorMap->NumColors() << " colors for "
+           << graph.NumMyRows() << " unknowns\n" << endl;
+    }
+  
+    // Now setup each FDC Jacobian as its own group/linearsystem
+    matrixOperator = new NOX::EpetraNew::FiniteDifferenceColoring(
+      	*offBlockInterface, 
+  	compositeVec, 
+  	graph, 
+  	*colorMap, 
+  	*columnSet,
+  	useParallel,
+  	distance1 );
+  
+    NOX::EpetraNew::Interface::Required& reqInt = 
+      dynamic_cast<NOX::EpetraNew::Interface::Required&>(*offBlockInterface);
+    NOX::EpetraNew::Interface::Jacobian& jacInt = 
+      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*matrixOperator);
+  
+    // Here we create a linear system solely for the sake of filling an
+    // off-diagonal block Jacobian contribution using FDC.  The nlParams and
+    // statusTest are irrelevant and so are taken as that of the overall
+    // Problem_Manager object.
+    NOX::EpetraNew::LinearSystemAztecOO* tmpLinSys = 
+      new NOX::EpetraNew::LinearSystemAztecOO(
+        myManager.nlParams->sublist("Printing"),
+        myManager.nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
+        reqInt,
+        jacInt,
+        *matrixOperator,
+        compositeVec );
+  
+    NOX::Epetra::Vector tmpNOXVec(compositeVec);
+  
+    group = new NOX::EpetraNew::Group(
       myManager.nlParams->sublist("Printing"),
-      myManager.nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
-      jacInt,
-      *matrixOperator,
-      compositeVec );
-
-  NOX::Epetra::Vector tmpNOXVec(compositeVec);
-
-  group = new NOX::EpetraNew::Group(
-    myManager.nlParams->sublist("Printing"),
-    reqInt,
-    tmpNOXVec,
-    *tmpLinSys);
-
-//    cout << "\n\t\tHERE IS THE GRAPH ----:" << endl;
-//    graph.Print(cout);
+      tmpNOXVec,
+      *tmpLinSys);
 #else
-    if(MyPID==0)
-      cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
-    exit(0);
+      if(MyPID==0)
+        cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
+      exit(0);
 #endif
+  }
+}
+
+Epetra_CrsGraph & OffBlock_Manager::shiftedIndexGraph(Epetra_CrsGraph &)
+{
+
+  // here we simply go through the graph and assign contiguous indices for
+  // all unique and meaningful entries
+ 
 }
 
 #endif 

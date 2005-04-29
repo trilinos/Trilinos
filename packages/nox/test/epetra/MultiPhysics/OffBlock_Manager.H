@@ -78,8 +78,11 @@ public:
 
 private:
 
-  // Creates the extra objects needed to fill off-diagoanl blocks using FDC
-  void createFDCobjects();
+  // Creates the extra objects needed to fill off-diagoanl blocks using FD
+  void createFDobjects( bool useColoring = false );
+
+  // Creates a graph with indices shifted as needed for coloring
+  Epetra_CrsGraph & shiftedIndexGraph(Epetra_CrsGraph &);
 
 private:
 
@@ -97,7 +100,7 @@ private:
   Epetra_MapColoring* colorMap;
   EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex;
   vector<Epetra_IntVector>* columnSet;
-  NOX::EpetraNew::FiniteDifferenceColoring *matrixOperator;
+  NOX::EpetraNew::FiniteDifference * matrixOperator;
   NOX::EpetraNew::LinearSystemAztecOO* linearSystem;
   NOX::EpetraNew::Group* group;    
 };

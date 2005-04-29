@@ -47,7 +47,6 @@ class Basis {
                 vector<double*>& dep);
 
  public:
-  int NumSpecies;
   // Variables that are calculated at the gauss point
   double *phi, *dphide; 
   double xx, eta, wt;
