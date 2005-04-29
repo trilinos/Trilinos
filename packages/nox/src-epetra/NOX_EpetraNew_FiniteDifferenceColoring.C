@@ -418,4 +418,7 @@ void FiniteDifferenceColoring::createColorContainers()
   for( int i = 0; i < numColors; i++ )
     colorToNumMap[ colorList[i] ] =  i;
 
+  // Cleanup
+  delete [] myColorList;
+  delete [] allColorList;
 }
