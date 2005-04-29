@@ -50,28 +50,40 @@ except IOError:
 
 # Certain directory paths are needed by setup.py.  pakDir is the path for the
 # epetra package directory, and srcDir is the path for the python source directory
-buildDir   = makeInfo.get("top_builddir","")
-pakDir     = makeInfo.get("top_srcdir","")
-srcDir     = makeInfo.get("srcdir","")
+buildDir = makeInfo.get("top_builddir","")
+pakDir   = makeInfo.get("top_srcdir","")
+srcDir   = makeInfo.get("srcdir","")
+#solverLibs = makeInfo.get("LIBS", "");
+#if len(solverLibs) == 0: solverLibs = "amesos";
 
 # Define the teuchos include path, library directory and library name
-teuchosSrcDir   = os.path.join(pakDir, "../teuchos", "src")
-teuchosBuildDir = os.path.join(buildDir, "../teuchos", "src")
-teuchosLibDir   = os.path.join("..", "../../teuchos", "src")
-teuchosLib      = "teuchos"
+#teuchosSrcDir   = os.path.join(pakDir, "..", "teuchos", "src")
+#teuchosBuildDir = os.path.join(buildDir, "..", "teuchos", "src")
+teuchosIncDir = os.path.join(pakDir, "..", "teuchos", "src")
+teuchosLibDir = os.path.join("..", "..", "..", "teuchos", "src")
+teuchosLib    = "teuchos"
+
+# Define the triutils include path, library directory and library name
+#triutilsSrcDir   = os.path.join(pakDir, "..", "triutils", "src")
+#triutilsBuildDir = os.path.join(buildDir, "..", "triutils", "src")
+triutilsIncDir = os.path.join(pakDir, "..", "triutils", "src")
+triutilsLibDir = os.path.join("..", "..", "..", "triutils", "src")
+triutilsLib    = "triutils"
 
 # Define the epetra include path, library directory and library name
-epetraSrcDir   = os.path.join(pakDir, "../epetra", "src")
-epetraBuildDir = os.path.join(buildDir, "../epetra", "src")
-epetraLibDir   = os.path.join("..", "../../epetra", "src")
-epetraLib      = "epetra"
-PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
+#epetraSrcDir   = os.path.join(pakDir, "..", "epetra", "src")
+#epetraBuildDir = os.path.join(buildDir, "..", "epetra", "src")
+epetraIncDir = os.path.join(pakDir, "src")
+epetraLibDir = os.path.join("..", "..", "..", "epetra", "src")
+epetraLib    = "epetra"
+PyEpetraDir  = os.path.join(pakDir, "..", "epetra", "python", "src")
 
 # Define the amesos include path, library directory and library name
-amesosSrcDir   = os.path.join(pakDir, "src")
-amesosBuildDir = os.path.join(buildDir, "src")
-amesosLibDir   = os.path.join("..", "..", "src")
-amesosLib      = "amesos"
+#amesosSrcDir   = os.path.join(pakDir, "src")
+#amesosBuildDir = os.path.join(buildDir, "src")
+amesosIncDir = os.path.join(pakDir, "src")
+amesosLibDir = os.path.join("..", "..", "src")
+amesosLib    = "amesos"
 
 # Standard libraries.  
 stdLibs = []
@@ -84,12 +96,13 @@ extraArgs      = []
 libs = makeInfo.get("LDFLAGS"    ,"").split() + \
        makeInfo.get("BLAS_LIBS"  ,"").split() + \
        makeInfo.get("LAPACK_LIBS","").split() + \
-       makeInfo.get("FLIBS"      ,"").split();
+       makeInfo.get("FLIBS"      ,"").split()
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     else:
         extraArgs.append(lib)
+#extraArgs.append("-lamesos");
 
 # load libraries specified by the user last
 for lib in makeInfo.get("LIBS","").split():
@@ -98,30 +111,44 @@ for lib in makeInfo.get("LIBS","").split():
   else:
     extraArgs.append(lib)
 
-# might be required, if KLU is used, to load AMD        
-extraArgs.append("-lamesos");
-
-# this is a hack. 
+# Standard libraries.  This is currently a hack.  The library "stdc++" is added
+# to the standard library list for a case where we know it needs it.
+stdLibs = [ ]
 sysName = os.uname()[0]
 if sysName == "Linux":
     stdLibs.append("stdc++")
 
+# Create the extra arguments list and complete the standard libraries list.  This
+# is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
+# adding them to the appropriate list.
+extraArgs = []
+libs = makeInfo.get("LDFLAGS"    ,"").split() + \
+       makeInfo.get("BLAS_LIBS"  ,"").split() + \
+       makeInfo.get("LAPACK_LIBS","").split() + \
+       makeInfo.get("FLIBS"      ,"").split() + \
+       makeInfo.get("LIBS"       ,"").split()
+for lib in libs:
+    if lib[:2] == "-l":
+        stdLibs.append(lib[2:])
+    else:
+        extraArgs.append(lib)
+
 # Define the strings that refer to the required source files.
-wrapAmesos          = "Amesos_wrap.cpp"
+amesosWrap = "Amesos_wrap.cpp"
 
 # _Amesos extension module
 _Amesos = Extension("PyTrilinos._Amesos",
-                    [wrapAmesos],
+                    [amesosWrap],
                     define_macros=[('HAVE_CONFIG_H', '1')],
-                    include_dirs    = [epetraSrcDir, epetraBuildDir, 
-                                       teuchosSrcDir, teuchosBuildDir, 
-                                       amesosSrcDir, amesosBuildDir, srcDir,
+                    include_dirs    = [amesosIncDir,
+                                       epetraIncDir,
+                                       teuchosIncDir,
+                                       triutilsIncDir,
                                        PyEpetraDir],
                     library_dirs    = [amesosLibDir, teuchosLibDir, 
                                        epetraLibDir],
                     libraries       = [amesosLib, teuchosLib, 
-                                       epetraLib] 
-                                       + stdLibs,
+                                       epetraLib] + stdLibs,
                     extra_link_args = extraArgs
                     )
 
@@ -133,5 +160,5 @@ setup(name         = "PyTrilinos.Amesos",
       author_email = "msala@sandia.gov",
       package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
-      ext_modules  = [ _Amesos  ],
+      ext_modules  = [ _Amesos ],
       )
