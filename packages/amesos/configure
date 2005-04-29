@@ -13750,6 +13750,29 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 # ------------------------------------------------------------------------
+# Checks options
+# ------------------------------------------------------------------------
+
+if (test "X$ac_cv_use_amesos_klu" != "Xno" || \
+    test "X$ac_cv_use_amesos_umfpack" != "Xno") && \
+   (test "$ac_cv_use_amesos_superlu" != "Xno" || test \
+    "$ac_cv_use_amesos_superludist" != "Xno"); then
+  { { echo "$as_me:$LINENO: error:
+Due to non-compatible versions of COLAMD, the configure options
+  --enable-amesos-klu and/or --enable-amesos-umfpack
+are not compatible with
+  --enable-amesos-superlu and/or --enable-amesos-superludist.
+Please either enable KLU and/or UMFPACK, or SuperLU and/or SuperLU_DIST." >&5
+echo "$as_me: error:
+Due to non-compatible versions of COLAMD, the configure options
+  --enable-amesos-klu and/or --enable-amesos-umfpack
+are not compatible with
+  --enable-amesos-superlu and/or --enable-amesos-superludist.
+Please either enable KLU and/or UMFPACK, or SuperLU and/or SuperLU_DIST." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+# ------------------------------------------------------------------------
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
 
@@ -13809,7 +13832,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13812: \"$ac_link\") >&5
+(eval echo $as_me:13835: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13887,7 +13910,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13890: \"$ac_link\") >&5
+(eval echo $as_me:13913: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
