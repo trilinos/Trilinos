@@ -63,30 +63,27 @@
 //       FIRST PASS - assert( false ) 
 //    
 
-
 #ifndef _AMESOS_SUPERLU_H_
 #define _AMESOS_SUPERLU_H_
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
-#include "Epetra_LinearProblem.h"
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_Comm.h"
-#endif
-#include "Epetra_CrsGraph.h"
+#include "Teuchos_RefCountPtr.hpp"
 
+class Epetra_Time;
 class SLUData;
+class Epetra_Comm;
+class Epetra_CrsMatrix;
+class Epetra_LinearProblem;
 
-//! Amesos_Superlu:  Amesos interface to Xioye Li's SuperLU serial code.  
-/*!  Amesos_Superlu, an object-oriented wrapper for Superlu, will solve a linear systems of equations: <TT>A X = B</TT>
-   using Epetra objects and the Superlu solver library, where
-  <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
-  Epetra_MultiVector objects.
-    
+//! Amesos_Superlu:  Amesos interface to Xioye Li's SuperLU 3.0 serial code.
+/*! 
+ * Class Amesos_Superlu solves the linear systems of equations <TT>A X = B</TT>,
+ * where A is defined as an Epetra_RowMatrix, and X and B are two 
+ * Epetra_MultiVector's.
+ *
+ * \date Last updated on 28-Apr-05.
 */
-
 
 class Amesos_Superlu: public Amesos_BaseSolver { 
 
@@ -104,269 +101,159 @@ public:
   Amesos_Superlu(const Epetra_LinearProblem& LinearProblem );
 
   //! Amesos_Superlu Destructor.
-  /*! Completely deletes an Amesos_Superlu object.  
-  */
-  ~Amesos_Superlu(void);
+  ~Amesos_Superlu();
+
   //@}
 
   //@{ \name Mathematical functions.
 
-    //! Performs SymbolicFactorization on the matrix A.
-    /*! 
-      In addition to performing symbolic factorization on the matrix A, 
-      the call to SymbolicFactorization() implies that no change will
-      be made to the non-zero structure of the underlying matrix without 
-      a subsequent call to SymbolicFactorization().
-      
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      </ul>
+  //! Performs the symbolic factorization on the matrix A (do-nothing for this solver).
+  int SymbolicFactorization();
 
-      postconditions:<ul>
-      <li>Symbolic Factorization will be performed (or marked to be performed) 
-      allowing NumericFactorization() and Solve() to be called.
-      </ul>
-
-    \return Integer error code, set to 0 if successful.
-  */
-    int SymbolicFactorization() ;
-
-    //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
+  //! Performs the numeric factorization on the matrix A.
+  /*! In addition to performing numeric factorization (and symbolic
       factorization if necessary) on the matrix A, the call to
       NumericFactorization() implies that no change will be made to
       the underlying matrix without a subsequent call to
       NumericFactorization().  
 
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().  
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      </ul>
-
-      postconditions:<ul>
-      <li>Numeric Factorization will be performed (or marked to be performed) 
-      allowing Solve() to be performed correctly despite a potential change in 
-      in the matrix values (though not in the non-zero structure).
-      </ul>
-
      \return Integer error code, set to 0 if successful.
   */
-    int NumericFactorization() ;
+  int NumericFactorization();
 
-    //! Solves A X = B (or A<SUP>T</SUP> X = B) 
-    /*! 
-
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      <li>The matrix should not have changed
-          since the last call to NumericFactorization().
-      </ul>
-
-      postconditions:<ul> 
-      <li>X will be set such that A X = B (or
-      A<SUP>T</SUP> X = B), within the limits of the accuracy of the
-      underlying solver.  
-      </ul>
-
-     \return Integer error code, set to 0 if successful.
-  */
-    int Solve();
+  //! Solves A X = B (or A<SUP>T</SUP> X = B) 
+  /*! 
+   * Solves the linear system, after calling NumericFactorization()
+   * if not yet done by the user.
+   * \return Integer error code, set to 0 if successful.
+   */
+  int Solve();
 
   //@}
   
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //@{ \name Additional methods
 
-#if 0
-  //! Returns a character string describing the operator
-  char * Label() const {return(Epetra_Object::Label());};
-#endif
-    
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Returns true if SUPERLU can handle this matrix shape 
-  /*! Returns true if the matrix shape is one that SUPERLU can
-    handle. SUPERLU only works with square matrices.  
-  */
+  //! Returns true if the matrix is square.
   bool MatrixShapeOK() const ;
 
-  //! SetUseTranpose(true) is more efficient in Amesos_Superlu
-  /*! 
-<ul>
-  <li>If SetUseTranspose() is set to true, 
-    <ul>
-       <li><p class="code">A<sup>T</sup> X = B</p> is computed</li>
-       <li>(This is the more efficient operation)</li>
-    </ul></li>
-  <li>else
-    <ul>
-       <li><p class="code">A X = B</p> is computed</li>
-       <li>(This requires a matrix transpose)</li>
-    </ul></li>
-</ul>
-  */  
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  //! Specifies to solve the problem with A or its transpose.
+  int SetUseTranspose(bool UseTranspose) {
+    UseTranspose_ = UseTranspose; return(0);
+  }
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
-  const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
+  const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //!  Updates internal variables. 
-  /*!  
-      <br \>Preconditions:<ul>
-      <li>None.</li>
-      </ul>
-
-      <br \>Postconditions:<ul> 
-      <li>Internal variables controlling the factorization and solve will
-      be updated and take effect on all subsequent calls to NumericFactorization() 
-      and Solve().</li>
-      <li>All parameters whose value are to differ from the default values must 
-be included in ParameterList.  Parameters not specified in ParameterList 
-revert to their default values.
-      </ul>
-
-    Amesos_Superlu accepts the following parameters:
-    <ul>
-      <li>"Verbose" - boolean:false - If true prints out some debug information
-      <li>"Superlu" - list containing the following parameters:
-      <ul>
-        <li>"FactOption" - string:["SamePattern"] "SamePattern-SameRowPerm"
-	<li>"ColPerm" - string:["COLAMD"] "..."
-	<li>"Equil" - boolean:true 
-        <li>"fill_fac" - int:-1
-        <li>"panel_size" - int:-1
-        <li>"relax" - int:-1
-	<li>"pivot_thresh" - double:-1
-	<li>"Iter_Refine" - string:["DOUBLE"] "NOREFINE" 
-      </ul>
-    </ul>
-
-    
-    \return Integer error code, set to 0 if successful. 
-
-   */
+  //! Sets the parameters as specified by the input list.
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
+
+  //! Prints timing information.
+  void PrintTiming() const;
+
+  //! Prints status information.
+  void PrintStatus() const;
 
   //@}
 
- private:  
+private:  
 
+  //! Factors the matrix, no previous factorization available.
   int Factor();
+  //! Re-factors the matrix.
   int ReFactor();
 
-  /*
-  ConvertToSerial - Convert matrix to a serial Epetra_CrsMatrix
-    Preconditions:
-      Problem_ must be set 
-      SerialMap and SerialCrsMatrix must either be 0 or be pointers to 
-        appropriatly allocate objects.  If they are non-zero, those objects
-	will be deleted (and possibly recreated).  
-	
-    Postconditions:
-      IsLocal is set to 1 if the input matrix is entirely stored on process 0
-      SerialMap points to a serial map if IsLocal==1
-      SerialCrsMatrix contains a serial version of the matrix A if IsLocal==1
-      SerialMatrix points to a serial copy of the matrix
-      NumGlobalElements_   is set to the number of rows in the matrix
-      numentries_ is set to the number of non-zeroes in the matrix 
-   */
+  //! Sets up the matrix on processor 0.
   int ConvertToSerial();
 
-  /*
-    PerformNumericFactorization - Call Superlu to perform numeric factorization
-    Preconditions:
-      IsLocal must be set 
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
-      Symbolic must be set
-    Postconditions:
-      Numeric points to an SUPERLU internal opaque object containing the
-        numeric factorization and accompanying information.  
-      NumericFactorizationOK_ = true; 
-    Note:  All action is performed on process 0
-  */
+  //!  PerformNumericFactorization - Call Superlu to perform numeric factorization
+  // Note:  All action is performed on process 0
   int PerformNumericFactorization(); 
 
- protected:
+  //! Returns a reference to the serial map.
+  // Note: this method is delicate!
+  const Epetra_Map& SerialMap() const
+  {
+    return(*(SerialMap_.get()));
+  }
 
-  SLUData * data_;
-  double *DummyArray;
+  //! Returns a reference to the importer.
+  // Note: this method is delicate!
+  const Epetra_Import& ImportToSerial() const
+  {
+    return(*(ImportToSerial_.get()));
+  }
 
+  void PrintLine() const
+  {
+    cout << "----------------------------------------------------------------------------" << endl;
+  }
 
-  //
-  //  Ap, Ai, Aval form the compressed row storage used by Superlu
-  //
-  //  #define NOVEC
-#ifdef NOVEC
-  int* Ap_;
-  int* Ai_;
-  double* Aval_;
-#else
-  vector <int> Ap_;
-  vector <int> Ai_;
-  vector <double> Aval_;
-#endif
-
-  bool FactorizationDone_ ; 
-  bool FactorizationOK_ ; 
-  bool ReuseSymbolic_ ;
-  bool UseTranspose_;      
-
-  int iam_;                 //  Process number (i.e. Comm().MyPID() 
-  
-  int IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0
-                           //  Note:  Local Problems do not require redistribution of
-                           //  the matrix A or vectors X and B.
-  int numentries_;         //  Number of non-zero entries in Problem_->GetOperator()
-  int NumGlobalElements_;  //  Number of rows and columns in the Problem_->GetOperator()
-
-  Epetra_Map *SerialMap_ ;               //  Points to a Serial Map (unused if IsLocal == 1 ) 
-  Epetra_CrsMatrix *SerialCrsMatrixA_ ;  //  Points to a Serial Copy of A (unused if IsLocal==1)
-  Epetra_CrsMatrix *SerialMatrix_ ;      //  Points to a Serial Copy of A 
-                                         //  IsLocal==1 - Points to the original matix 
-                                         //  IsLocal==0 - Points to SerialCrsMatrixA
-  const Epetra_LinearProblem * Problem_;
-
-#ifdef NOVEC
-  int* ColIndicesV_;
-  double* RowValuesV_;
-  //  int* Global_Columns_; 
-  double* berr_;
-  double* ferr_;
-
-  int* perm_r_;
-  int* perm_c_;
-  int* etree_;
-  double* R_;
-  double* C_;
-#else
-  vector<int> ColIndicesV_;
-  vector<double> RowValuesV_;
-  //  vector<int> Global_Columns_; 
+  //! Main structure for SuperLU.
+  SLUData* data_;
   vector<double> berr_;
   vector<double> ferr_;
-
   vector<int> perm_r_;
   vector<int> perm_c_;
   vector<int> etree_;
   vector<double> R_;
   vector<double> C_;
-#endif
   char equed_;
-  bool DestroyBandX_ ; 
+  // no idea of the following.
+  double* DummyArray;
+
+  //!< stores the matrix in SuperLU format.
+  vector <int> Ap_;
+  //!< stores the matrix in SuperLU format.
+  vector <int> Ai_;
+  //!< stores the matrix in SuperLU format.
+  vector <double> Aval_; 
+  //! Global size of the matrix.
+  int NumGlobalRows_; 
+  //! Global number of nonzeros in the matrix.
+  int NumGlobalNonzeros_; 
+  //! If \c true, solve the linear system with the transpose of the matrix.
+  bool UseTranspose_;      
+  //! If \c true, the factorization has been successfully computed.
+  bool FactorizationDone_; 
+  bool FactorizationOK_; 
+  bool ReuseSymbolic_;
+  //! Process number (i.e. Comm().MyPID() 
+  int iam_;
+  //! Contains a map with all elements assigned to processor 0.
+  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
+  //! Contains a matrix with all rows assigned to processor 0.
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
+  //! Importer from distributed to SerialMap_.
+  Teuchos::RefCountPtr<Epetra_Import> ImportToSerial_;
+  //! For parallel runs, stores the matrix defined on SerialMap_.
+  Epetra_RowMatrix* SerialMatrix_ ;
+  //! Pointer to the user's defined linear problem.
+  const Epetra_LinearProblem* Problem_;
+  //! Pointer to the linear system matrix.
+  Epetra_RowMatrix* RowMatrixA_;
+  //! If \c true, the destructor prints out some status information.
+  bool PrintStatus_;
+  //! If \c true, the destructor prints out some timing information.
+  bool PrintTiming_;
+  //! Time spent in all calls to NumericFactorization().
+  double NumTime_;
+  //! Time spent in all calls to Solve().
+  double SolTime_;
+  Teuchos::RefCountPtr<Epetra_Time> Time_;
+  //! Number of calls to NumericFactorization().
+  int NumNumericFact_;
+  //! Number of calls to Solve().
+  int NumSolve_;
+  //! If \c true, computes the norm of the true residual after solution.
+  bool ComputeTrueResidual_;
+  //! If \c true, computes the norm of the right-hand side and solution.
+  bool ComputeVectorNorms_;
 
 };  // End of  class Amesos_Superlu  
 #endif /* _AMESOS_SUPERLU_H_ */

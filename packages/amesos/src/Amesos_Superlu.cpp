@@ -29,11 +29,13 @@
 #include "Amesos_Superlu.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
-#include "Epetra_Export.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
-//  #define USE_DGSTRF
+#include "Epetra_Time.h"
+#include "Epetra_Comm.h"
+#include "Epetra_LinearProblem.h"
 
 namespace SLU
 {
@@ -52,26 +54,37 @@ struct SLUData
   SLU::fact_t refactor_option ;         //  SamePattern or SamePattern_SameRowPerm 
 };
 
-
+using namespace SLU;
+using namespace Teuchos;
 
 //=============================================================================
 Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
+  NumGlobalRows_(-1),
+  NumGlobalNonzeros_(-1),
+  UseTranspose_(false),
   FactorizationDone_(false),
   FactorizationOK_(false),
-  UseTranspose_(false),
-  iam_(-1),
-  IsLocal_(0),
-  SerialMap_(0), 
-  SerialCrsMatrixA_(0), 
-  SerialMatrix_(0)
+  iam_(0),
+  SerialMap_(Teuchos::null), 
+  SerialCrsMatrixA_(Teuchos::null), 
+  ImportToSerial_(Teuchos::null),
+  SerialMatrix_(0),
+  RowMatrixA_(0),
+  PrintStatus_(false),
+  PrintTiming_(false),
+  NumTime_(0.0),
+  SolTime_(0.0),
+  Time_(Teuchos::null),
+  NumNumericFact_(0),
+  NumSolve_(0),
+  ComputeTrueResidual_(false),
+  ComputeVectorNorms_(false)
 {
-
-  using namespace SLU;
-
   data_ = new SLUData();
+  ferr_.resize(1);
+  berr_.resize(1);
 
   Problem_ = &prob ; 
-  DestroyBandX_ = true;
 
   dCreate_Dense_Matrix( &(data_->X), 
 			0, 
@@ -86,24 +99,17 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
 			&DummyArray[0],
 			0, 
 			SLU_DN, SLU_D, SLU_GE);
-    
-
-  Teuchos::ParameterList ParamList ;
-  SetParameters( ParamList ) ; 
-
 }
 
 //=============================================================================
 Amesos_Superlu::~Amesos_Superlu(void) 
 {
-
-  using namespace SLU;
-
-  if (SerialMap_) delete SerialMap_ ; 
-  if (SerialCrsMatrixA_) delete SerialCrsMatrixA_ ; 
+  if (PrintTiming_) PrintTiming();
+  if (PrintStatus_) PrintStatus();
 
   Destroy_SuperMatrix_Store(&data_->B);
   Destroy_SuperMatrix_Store(&data_->X);
+
   if (iam_ == 0) { 
     if (FactorizationDone_) { 
       Destroy_SuperMatrix_Store(&data_->A);
@@ -113,143 +119,107 @@ Amesos_Superlu::~Amesos_Superlu(void)
   }
 
   delete data_; 
-
 }
 
-// ======================================================================
-int Amesos_Superlu::ConvertToSerial() { 
-  
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
+// ====================================================================== 
+int Amesos_Superlu::SetParameters(Teuchos::ParameterList &ParameterList) 
+{
+  // print some statistics (on process 0). Do not include timing
+  if (ParameterList.isParameter("PrintStatus"))
+    PrintStatus_ = ParameterList.get("PrintStatus", PrintStatus_);
 
-  iam_ = Comm().MyPID() ;
+  // print some statistics (on process 0). Do not include timing
+  if (ParameterList.isParameter("PrintTiming"))
+    PrintTiming_ = ParameterList.get("PrintTiming", PrintTiming_);
 
-  const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap() ; 
+  if (ParameterList.isParameter("ComputeTrueResidual"))
+    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
 
-  NumGlobalElements_ = RowMatrixA->NumGlobalRows();
-  numentries_ = RowMatrixA->NumGlobalNonzeros();
-  assert( NumGlobalElements_ == RowMatrixA->NumGlobalCols() );
+  if (ParameterList.isParameter("ComputeVectorNorms"))
+    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
 
-  //
-  //  Create a serial matrix 
-  //
-  assert( NumGlobalElements_ == OriginalMap.NumGlobalElements() ) ;
-  int NumMyElements_ = 0 ;
-  if (iam_==0) NumMyElements_ = NumGlobalElements_;
-
-
-  IsLocal_ = ( OriginalMap.NumMyElements() == 
-	       OriginalMap.NumGlobalElements() )?1:0;
-  Comm().Broadcast( &IsLocal_, 1, 0 ) ; 
-
-  //
-  //  Convert Original Matrix to Serial (if it is not already) 
-  //
-  if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
-  if (SerialCrsMatrixA_) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; } 
-  if ( false && IsLocal_==1 ) {  //FIXME - remove the false here
-//     SerialMatrix_ = CastCrsMatrixA ;
-  } else {
-    assert( SerialMap_ == 0 ) ; 
-    SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
-
-    Epetra_Export export_to_serial( OriginalMap, *SerialMap_);
-
-    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
-    SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-    SerialCrsMatrixA_->Export( *RowMatrixA, export_to_serial, Add ); 
-    
-    double zero = 0.0;
-    SerialCrsMatrixA_->SetTracebackMode(0);
-    for ( int i = 0 ; i < NumGlobalElements_; i++ ) {
-      if ( SerialCrsMatrixA_->LRID(i) >= 0 ) 
-	SerialCrsMatrixA_->InsertGlobalValues( i, 1, &zero, &i ) ;
-      SerialCrsMatrixA_->SetTracebackMode(1);
-    }
-
-    SerialCrsMatrixA_->FillComplete();
-    SerialMatrix_ = SerialCrsMatrixA_ ;
-  }
-  
+  /* the list is empty now
+  if (ParameterList.isSublist("Superlu") ) {
+    Teuchos::ParameterList SuperluParams = ParameterList.sublist("Superlu") ;
+  }  
+  */
   return 0;
 }
 
 // ====================================================================== 
-int Amesos_Superlu::ReFactor(){
-  
-  using namespace SLU;
-  //
-  //  Convert matrix to the form that Superlu expects (Ap, Ai, Aval) 
-  //
+bool Amesos_Superlu::MatrixShapeOK() const 
+{ 
+  if (GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
+      GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints()) 
+    return(false);
 
-  if ( iam_==0 ) {
-    assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
-    assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
-    assert( NumGlobalElements_ == SerialMatrix_->NumMyRows());
-    assert( NumGlobalElements_ == SerialMatrix_->NumMyCols());
-
-    //    assert( numentries_ == SerialMatrix_->NumGlobalNonzeros());
-    numentries_ = SerialMatrix_->NumGlobalNonzeros();
-    Ap_.resize( NumGlobalElements_+1 );
-    Ai_.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-    Aval_.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-
-
-    int NzThisRow ;
-    int Ai_index = 0 ; 
-    int MyRow;
-    double *RowValues;
-    int *ColIndices;
-    int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
-
-    Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
-    if ( SuperluCrs == 0 ) {
-      ColIndicesV_.resize(MaxNumEntries_);
-      RowValuesV_.resize(MaxNumEntries_);
-    }
-    for ( MyRow = 0; MyRow < NumGlobalElements_ ; MyRow++ ) {
-      if ( SuperluCrs != 0 ) {
-	EPETRA_CHK_ERR( SuperluCrs->
-			ExtractMyRowView( MyRow, NzThisRow, RowValues, 
-					  ColIndices ) != 0 ) ;
-      }
-      else {
-	EPETRA_CHK_ERR( SerialMatrix_->
-			ExtractMyRowCopy( MyRow, MaxNumEntries_, 
-					  NzThisRow, &RowValuesV_[0], 
-					  &ColIndicesV_[0] ) != 0 );
-	RowValues =  &RowValuesV_[0];
-	ColIndices = &ColIndicesV_[0];
-      }
-      if ( Ap_[MyRow] != Ai_index ) EPETRA_CHK_ERR(-4);
-      for ( int j = 0; j < NzThisRow; j++ ) { 
-	assert( Ai_[Ai_index] == ColIndices[j] ) ;   // FIXME this may not work.   
-	Aval_[Ai_index] = RowValues[j] ; 
-	Ai_index++;
-      }
-    }
-    assert( NumGlobalElements_ == MyRow );
-    Ap_[ NumGlobalElements_ ] = Ai_index ; 
-    
-    
-    assert ( FactorizationDone_ ) ; 
-    Destroy_SuperMatrix_Store(&data_->A);
-    Destroy_SuperNode_Matrix(&data_->L);
-    Destroy_CompCol_Matrix(&data_->U);
-
-    /* Create matrix A in the format expected by SuperLU. */
-    dCreate_CompCol_Matrix( &(data_->A), NumGlobalElements_, NumGlobalElements_,
-			    numentries_, &Aval_[0],
-			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
-  }
-  return 0;
+  return(true);
 }
+
+// ======================================================================
+int Amesos_Superlu::ConvertToSerial() 
+{ 
+  RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
+  if (RowMatrixA_ == 0)
+    AMESOS_CHK_ERR(-1); // cannot cast to RowMatrix
+
+  iam_ = Comm().MyPID() ;
+
+  const Epetra_Map &OriginalMap = RowMatrixA_->RowMatrixRowMap() ; 
+
+  NumGlobalRows_ = RowMatrixA_->NumGlobalRows();
+  NumGlobalNonzeros_ = RowMatrixA_->NumGlobalNonzeros();
+  if (NumGlobalRows_ != RowMatrixA_->NumGlobalCols())
+    AMESOS_CHK_ERR(-1); // only square matrices
+  if (NumGlobalNonzeros_ <= 0)
+    AMESOS_CHK_ERR(-2); // empty matrix
+
+  int NumMyElements_ = 0;
+  if (iam_ == 0) NumMyElements_ = NumGlobalRows_;
+
+  // If the matrix is distributed, then brings it to processor zero.
+  // This also requires the construction of a serial map, and
+  // the exporter from distributed to serial.
+  // Otherwise, simply take the pointer of RowMatrixA_ and
+  // set it to SerialMatrix_.
+
+  if (Comm().NumProc() == 1) 
+  { 
+     SerialMatrix_ = RowMatrixA_;
+  } 
+  else 
+  {
+    SerialMap_ = rcp(new Epetra_Map(NumGlobalRows_, NumMyElements_, 0, Comm()));
+
+    ImportToSerial_ = rcp(new Epetra_Import(SerialMap(), OriginalMap));
+
+    SerialCrsMatrixA_ = rcp(new Epetra_CrsMatrix(Copy, SerialMap(), 0));
+    SerialCrsMatrixA_->Import(*RowMatrixA_, ImportToSerial(), Add); 
+    
+    // MS // Set zero element if not present, possibly add
+    // MS // something to the diagonal
+    double AddToDiag = 0.0;
+    if (iam_ == 0)
+    {
+      for (int i = 0 ; i < NumGlobalRows_; i++ ) {
+        if (SerialCrsMatrixA_->InsertGlobalValues(i, 1, &AddToDiag, &i))
+          SerialCrsMatrixA_->SumIntoGlobalValues(i, 1, &AddToDiag, &i);
+      }
+    }
+
+    SerialCrsMatrixA_->FillComplete();
+    SerialMatrix_ = SerialCrsMatrixA_.get();
+  }
+  
+  return(0);
+}
+
 //
 //  See also pre and post conditions in Amesos_Superlu.h
 //  Preconditions:  
 //    SerialMatrix_ points to the matrix to be factored and solved
-//    NumGlobalElements_ has been set to the dimension of the matrix
-//    numentries_ has been set to the number of non-zeros in the matrix
+//    NumGlobalRows_ has been set to the dimension of the matrix
+//    NumGlobalNonzeros_ has been set to the number of non-zeros in the matrix
 //      (i.e. ConvertToSerial() has been called) 
 //    FactorizationDone_ and FactorizationOK_  must be accurate
 //
@@ -262,49 +232,41 @@ int Amesos_Superlu::ReFactor(){
 //
 int Amesos_Superlu::Factor()
 {
-  
-  using namespace SLU;
-  //
-  //  Convert matrix to the form that Superlu expects (Ap, Ai, Aval) 
-  //
+  // Convert matrix to the form that Superlu expects (Ap, Ai, Aval) 
+  // I suppose that the matrix has already been formed on processor 0
+  // as SerialMatrix_.
 
-  if ( iam_==0 ) {
-    assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
-    assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
-    assert( NumGlobalElements_ == SerialMatrix_->NumMyRows());
-    assert( NumGlobalElements_ == SerialMatrix_->NumMyCols());
+  if (iam_ == 0) 
+  {
+    if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
+        NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
+        NumGlobalRows_ != SerialMatrix_->NumMyRows() ||
+        NumGlobalRows_ != SerialMatrix_->NumMyCols() ||
+        NumGlobalNonzeros_ != SerialMatrix_->NumGlobalNonzeros())
+    {
+      AMESOS_CHK_ERR(-1); // something fishy here
+    }
 
-    //    assert( numentries_ == SerialMatrix_->NumGlobalNonzeros());
-    numentries_ = SerialMatrix_->NumGlobalNonzeros();
-#ifdef NOVEC
-    Ap_= new int[ NumGlobalElements_+1 ];
-    int EMAX = EPETRA_MAX( NumGlobalElements_, numentries_) ; 
-    Ai_= new int[ EMAX ];
-    Aval_= new double[ EMAX ] ; 
-#else
-    Ap_.resize( NumGlobalElements_+1 );
-    Ai_.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-    Aval_.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-#endif
+    NumGlobalNonzeros_ = SerialMatrix_->NumGlobalNonzeros();
+    Ap_.resize(NumGlobalRows_ + 1);
+    Ai_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_)); 
+    Aval_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_)); 
 
     int NzThisRow ;
     int Ai_index = 0 ; 
     int MyRow;
     double *RowValues;
     int *ColIndices;
+    vector<int> ColIndicesV_;
+    vector<double> RowValuesV_;
     int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
 
     Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
     if ( SuperluCrs == 0 ) {
-#ifdef NOVEC
-      ColIndicesV_= new int[MaxNumEntries_];
-      RowValuesV_= new double[MaxNumEntries_];
-#else
       ColIndicesV_.resize(MaxNumEntries_);
       RowValuesV_.resize(MaxNumEntries_);
-#endif
     }
-    for ( MyRow = 0; MyRow < NumGlobalElements_ ; MyRow++ ) {
+    for ( MyRow = 0; MyRow < NumGlobalRows_ ; MyRow++ ) {
       if ( SuperluCrs != 0 ) {
 	EPETRA_CHK_ERR( SuperluCrs->
 			ExtractMyRowView( MyRow, NzThisRow, RowValues, 
@@ -325,8 +287,8 @@ int Amesos_Superlu::Factor()
 	Ai_index++;
       }
     }
-    assert( NumGlobalElements_ == MyRow );
-    Ap_[ NumGlobalElements_ ] = Ai_index ; 
+    assert( NumGlobalRows_ == MyRow );
+    Ap_[ NumGlobalRows_ ] = Ai_index ; 
 
     if ( FactorizationDone_ ) { 
       Destroy_SuperMatrix_Store(&data_->A);
@@ -335,94 +297,126 @@ int Amesos_Superlu::Factor()
     }
       
     /* Create matrix A in the format expected by SuperLU. */
-    dCreate_CompCol_Matrix( &(data_->A), NumGlobalElements_, NumGlobalElements_,
-			    numentries_, &Aval_[0],
+    dCreate_CompCol_Matrix( &(data_->A), NumGlobalRows_, NumGlobalRows_,
+			    NumGlobalNonzeros_, &Aval_[0],
 			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
   }
   return 0;
 }   
 
 // ====================================================================== 
-int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList ) 
+int Amesos_Superlu::ReFactor()
 {
+  // Convert matrix to the form that Superlu expects (Ap, Ai, Aval) 
+  // I suppose that ConvertToSerial() has already been called, 
+  // there I have SerialMatrix_ stored at it should. 
+  // Only processor 0 does something useful here.
 
-  /* the list is empty now
-  if (ParameterList.isSublist("Superlu") ) {
-    Teuchos::ParameterList SuperluParams = ParameterList.sublist("Superlu") ;
-  }  
-  */
+  if (iam_ == 0) 
+  {
+    if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
+        NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
+        NumGlobalRows_ != SerialMatrix_->NumMyRows() ||
+        NumGlobalRows_ != SerialMatrix_->NumMyCols() ||
+        NumGlobalNonzeros_ != SerialMatrix_->NumGlobalNonzeros())
+    {
+      AMESOS_CHK_ERR(-1);
+    }
+
+    Ap_.resize(NumGlobalRows_+ 1);
+    Ai_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_)); 
+    Aval_.resize(EPETRA_MAX(NumGlobalRows_, NumGlobalNonzeros_)); 
+
+    int NzThisRow ;
+    int Ai_index = 0 ; 
+    int MyRow;
+    double *RowValues;
+    int *ColIndices;
+    vector<int> ColIndicesV_;
+    vector<double> RowValuesV_;
+    int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
+
+    Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
+    if ( SuperluCrs == 0 ) {
+      ColIndicesV_.resize(MaxNumEntries_);
+      RowValuesV_.resize(MaxNumEntries_);
+    }
+    for ( MyRow = 0; MyRow < NumGlobalRows_ ; MyRow++ ) {
+      if ( SuperluCrs != 0 ) {
+	EPETRA_CHK_ERR( SuperluCrs->
+			ExtractMyRowView( MyRow, NzThisRow, RowValues, 
+					  ColIndices ) != 0 ) ;
+      }
+      else {
+	EPETRA_CHK_ERR( SerialMatrix_->
+			ExtractMyRowCopy( MyRow, MaxNumEntries_, 
+					  NzThisRow, &RowValuesV_[0], 
+					  &ColIndicesV_[0] ) != 0 );
+	RowValues =  &RowValuesV_[0];
+	ColIndices = &ColIndicesV_[0];
+      }
+
+      if (Ap_[MyRow] != Ai_index) 
+        AMESOS_CHK_ERR(-4);
+
+      for (int j = 0; j < NzThisRow; j++) { 
+	assert(Ai_[Ai_index] == ColIndices[j]) ;   // FIXME this may not work.   
+	Aval_[Ai_index] = RowValues[j] ; 
+	Ai_index++;
+      }
+    }
+    assert( NumGlobalRows_ == MyRow );
+    Ap_[ NumGlobalRows_ ] = Ai_index ; 
+    
+    assert ( FactorizationDone_ ) ; 
+    Destroy_SuperMatrix_Store(&data_->A);
+    Destroy_SuperNode_Matrix(&data_->L);
+    Destroy_CompCol_Matrix(&data_->U);
+
+    /* Create matrix A in the format expected by SuperLU. */
+    dCreate_CompCol_Matrix( &(data_->A), NumGlobalRows_, NumGlobalRows_,
+			    NumGlobalNonzeros_, &Aval_[0],
+			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
+  }
   return 0;
 }
-
+//
 // ====================================================================== 
-bool Amesos_Superlu::MatrixShapeOK() const 
-{ 
-  bool OK = true;
-
-  if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
-       GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
-  return OK; 
-}
-
-// ====================================================================== 
-int Amesos_Superlu::SymbolicFactorization() {
-
-  FactorizationOK_ = false ; 
+int Amesos_Superlu::SymbolicFactorization() 
+{
+  // nothing happens here, all it is done in NumericFactorization()
+  FactorizationOK_ = false; 
   return 0;
 }
 
 // ======================================================================
-int Amesos_Superlu::NumericFactorization() {
-  
-  if (SerialMap_) {
-    delete SerialMap_ ; 
-    SerialMap_ = 0;
-  }
-  if (SerialCrsMatrixA_) {
-    delete SerialCrsMatrixA_ ; 
-    SerialCrsMatrixA_ = 0;
-  }
+int Amesos_Superlu::NumericFactorization() 
+{
+  Time_ = rcp(new Epetra_Time(Comm()));
+  Time_->ResetStartTime();
 
-  using namespace SLU;
+  ConvertToSerial(); 
 
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  assert( RowMatrixA != 0 ) ;
-  NumGlobalElements_ = RowMatrixA->NumGlobalRows();
-
-#ifdef NOVEC
-  perm_r_= new int[ NumGlobalElements_ ];
-  perm_c_= new int[ NumGlobalElements_ ];
-  etree_= new int[ NumGlobalElements_ ];
-  R_= new double[ NumGlobalElements_ ];
-  C_= new double[ NumGlobalElements_ ];
-#else    
-  perm_r_.resize( NumGlobalElements_ );
-  perm_c_.resize( NumGlobalElements_ );
-  etree_.resize( NumGlobalElements_ );
-  R_.resize( NumGlobalElements_ );
-  C_.resize( NumGlobalElements_ );
-#endif    
-  ConvertToSerial() ; 
+  perm_r_.resize(NumGlobalRows_);
+  perm_c_.resize(NumGlobalRows_);
+  etree_.resize(NumGlobalRows_);
+  R_.resize(NumGlobalRows_);
+  C_.resize(NumGlobalRows_);
 
   SLU::superlu_options_t& SLUopt =  data_->SLU_options ; 
 
-  //  set_default_options( &(data_->SLU_options) ) ; 
   set_default_options( &SLUopt ) ; 
-  if ( FactorizationOK_ ) {
+  if (FactorizationOK_) {
     ReFactor() ; 
     SLUopt.Fact = data_->refactor_option ;
   }  else { 
     Factor() ; 
-    FactorizationOK_ =true ;
-    SLUopt.Fact = DOFACT ;
+    FactorizationOK_ = true;
+    SLUopt.Fact = DOFACT;
   }
 
   int Ierr[1];
   if ( iam_ == 0 ) { 
-#if 0
-    vector<double> DummyArray( NumGlobalElements_ );
-    for ( int i=0; i <NumGlobalElements_; i++ ) DummyArray[i] = 1.0; // FIXME
-#endif
     double rpg, rcond;
     equed_ = 'N';
 
@@ -446,26 +440,15 @@ int Amesos_Superlu::NumericFactorization() {
     cout << " SLUopt.ColPerm  = " << SLUopt.ColPerm  << endl ; 
 #endif
 
-#ifdef NOVEC
-    ferr_ = new double[1];
-    berr_ = new double[1];
-#else
-    if ( 1 > ferr_.size() ) {
-      ferr_.resize( 1 ) ; 
-      berr_.resize( 1 ) ; 
-    }
-#endif
-
-
-    data_->B.nrow = NumGlobalElements_; 
+    data_->B.nrow = NumGlobalRows_; 
     data_->B.ncol = 0;
     SLU::DNformat* Bstore = (SLU::DNformat *) (data_->B.Store) ; 
-    Bstore->lda = NumGlobalElements_; 
+    Bstore->lda = NumGlobalRows_; 
     Bstore->nzval = &DummyArray[0];
-    data_->X.nrow = NumGlobalElements_; 
+    data_->X.nrow = NumGlobalRows_; 
     data_->X.ncol = 0;
     SLU::DNformat* Xstore = (SLU::DNformat *) (data_->X.Store) ; 
-    Xstore->lda = NumGlobalElements_; 
+    Xstore->lda = NumGlobalRows_; 
     Xstore->nzval = &DummyArray[0];
 
     SuperLUStat_t SLU_stat ;
@@ -478,129 +461,94 @@ int Amesos_Superlu::NumericFactorization() {
 	    &berr_[0], &(data_->mem_usage), &SLU_stat,
 	    &Ierr[0] );
     StatFree( &SLU_stat ) ; 
-#if 0
-    if (m<200) dPrint_CompCol_Matrix("A", &(data_->A));
-    if (m<200) dPrint_CompCol_Matrix("U", &(data_->U));
-    if (m<200) dPrint_SuperNode_Matrix("L", &(data_->L));
-#endif
-
-
   }
-  FactorizationDone_ = true ; 
 
-  return 0;
+  FactorizationDone_ = true; 
+  NumTime_ += Time_->ElapsedTime();
+  ++NumNumericFact_;
+
+  return(0);
 }
 
 // ====================================================================== 
 int Amesos_Superlu::Solve() 
 { 
-
   if (!FactorizationDone_) {
     FactorizationOK_ = false;
     AMESOS_CHK_ERR(NumericFactorization());
   }
 
-  using namespace SLU;
+  Time_->ResetStartTime();
 
-  Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
-  Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
-  int Ierr[1];
+  Epetra_MultiVector* vecX = Problem_->GetLHS(); 
+  Epetra_MultiVector* vecB = Problem_->GetRHS(); 
+  const Epetra_Map& OriginalMap = RowMatrixA_->RowMatrixRowMap();
+  int Ierr;
 
-  //
-  //  Compute the number of right hands sides (and check that X and B have the same shape) 
-  //
-  int nrhs; 
-  if ( vecX == 0 ) { 
-    nrhs = 0 ;
-    EPETRA_CHK_ERR( vecB != 0 ) ; 
-  } else { 
-    nrhs = vecX->NumVectors() ; 
-    EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ; 
-  }
+  if (vecX == 0 || vecB == 0)  
+    AMESOS_CHK_ERR(-1); // vectors not set
 
-  Epetra_MultiVector *SerialB =0;
-  Epetra_MultiVector *SerialX =0;
-  //
-  //  Extract Serial versions of X and B 
-  //
+  int nrhs = vecX->NumVectors(); 
+  if (nrhs != vecB->NumVectors())
+    AMESOS_CHK_ERR(-2); // vectors not compatible
+
+  ferr_.resize(nrhs); 
+  berr_.resize(nrhs); 
+
+  Epetra_MultiVector* SerialB = 0;
+  Epetra_MultiVector* SerialX = 0;
+
   double *SerialXvalues ;
   double *SerialBvalues ;
 
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  Epetra_MultiVector *SerialXextract = 0;
-  Epetra_MultiVector *SerialBextract = 0;
-    
-  Epetra_MultiVector CopyB = *vecB ; 
+  if (Comm().NumProc() == 1) 
+  { 
+    SerialB = vecB; 
+    SerialX = vecX; 
+  } 
+  else 
+  { 
+    SerialX = new Epetra_MultiVector(SerialMap(), nrhs); 
+    SerialB = new Epetra_MultiVector(SerialMap(), nrhs); 
 
-  //
-  //  Copy B to the serial version of B
-  //
-  if ( IsLocal_ ==1 ) { 
-    SerialB = &CopyB ; 
-    SerialX = vecX ; 
-  } else { 
-    assert( IsLocal_ == 0 ) ;
-    const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap();
-    Epetra_MultiVector *SerialXextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
-    Epetra_MultiVector *SerialBextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
-
-    Epetra_Import ImportToSerial( *SerialMap_, OriginalMap );
-    SerialBextract->Import( *vecB, ImportToSerial, Insert ) ;
-    SerialB = SerialBextract ; 
-    SerialX = SerialXextract ; 
+    SerialB->Import(*vecB, ImportToSerial(), Insert);
+    SerialB = SerialB; 
+    SerialX = SerialX; 
   } 
 
-  //
-  //  Call SUPERLU's dgssvx to perform the solve
-  //
-
+  // Call SUPERLU's dgssvx to perform the solve
+  // At this point I have, on processor 0, the solution vector
+  // in SerialX and the right-hand side in SerialB
   
-  int SerialXlda ; 
-  int SerialBlda ; 
+  if (iam_ == 0) 
+  {
+    int SerialXlda;
+    int SerialBlda;
 
-  if ( iam_ == 0 ) {
     int ierr;
     ierr = SerialX->ExtractView(&SerialXvalues, &SerialXlda);
     assert (ierr == 0);
-    assert (SerialXlda == NumGlobalElements_ ) ; 
+    assert (SerialXlda == NumGlobalRows_ ) ; 
 
     ierr = SerialB->ExtractView(&SerialBvalues, &SerialBlda);
     assert (ierr == 0);
-    assert (SerialBlda == NumGlobalElements_ ) ; 
+    assert (SerialBlda == NumGlobalRows_ ) ; 
     
     SLU::SuperMatrix& dataX = (data_->X) ;
-    dataX.nrow =   NumGlobalElements_; 
+    dataX.nrow =   NumGlobalRows_; 
     dataX.ncol =   nrhs ; 
-    data_->X.nrow = NumGlobalElements_; 
+    data_->X.nrow = NumGlobalRows_; 
     SLU::DNformat* Xstore = (SLU::DNformat *) (data_->X.Store) ; 
     Xstore->lda = SerialXlda; 
     Xstore->nzval = &SerialXvalues[0]; 
 
     SLU::SuperMatrix& dataB = (data_->B) ;
-    dataB.nrow =   NumGlobalElements_; 
+    dataB.nrow =   NumGlobalRows_; 
     dataB.ncol =   nrhs ; 
-    data_->B.nrow = NumGlobalElements_; 
+    data_->B.nrow = NumGlobalRows_; 
     SLU::DNformat* Bstore = (SLU::DNformat *) (data_->B.Store) ; 
     Bstore->lda = SerialBlda; 
     Bstore->nzval = &SerialBvalues[0]; 
-
-
-
-#if 0
-    dCreate_Dense_Matrix( &(data_->X), 
-			  NumGlobalElements_, 
-			  nrhs, 
-			  &SerialXvalues[0], 
-			  SerialXlda, 
-			  SLU_DN, SLU_D, SLU_GE);
-
-    dCreate_Dense_Matrix( &(data_->B), 
-			  NumGlobalElements_, 
-			  nrhs, 
-			  &SerialBvalues[0], 
-			  SerialBlda, 
-			  SLU_DN, SLU_D, SLU_GE);
-#endif
 
     double rpg, rcond;
 #if 0
@@ -609,16 +557,6 @@ int Amesos_Superlu::Solve()
     refact = 'N';
     trans = 'N' ;    //  This will allow us to try trans and not trans - see if either works.
     //    equed = 'N';
-#endif
-#ifdef NOVEC
-    ferr_ = new double[ nrhs ] ; 
-    berr_ = new double[ nrhs ] ; 
-#else
-    assert( berr_.size() == ferr_.size());
-    if ( true || nrhs > (int)ferr_.size() ) {
-      ferr_.resize( nrhs ) ; 
-      berr_.resize( nrhs ) ; 
-    }
 #endif
 #if 0
     dgssvx( &fact, &trans, &refact, &(data_->A), &(data_->iparam), &perm_c_[0],
@@ -631,11 +569,10 @@ int Amesos_Superlu::Solve()
     StatInit( &SLU_stat ) ;//    Copy the scheme used in dgssvx1.c 
     data_->SLU_options.Fact = FACTORED ; 
     SLU::superlu_options_t& SLUopt =  data_->SLU_options ; 
-    if ( UseTranspose() ) 
+    if (UseTranspose()) 
       SLUopt.Trans = TRANS; 
     else
-      assert( SLUopt.Trans == NOTRANS ); 
-
+      SLUopt.Trans = NOTRANS; 
 
     //#ifdef USE_DGSTRF
     //    assert( equed_ == 'N' ) ; 
@@ -644,38 +581,102 @@ int Amesos_Superlu::Solve()
 	    &C_[0], &(data_->L), &(data_->U), NULL, 0, 
 	    &(data_->B), &(data_->X), &rpg, &rcond, &ferr_[0], 
 	    &berr_[0], &(data_->mem_usage), &SLU_stat,
-	    &Ierr[0] );
+	    &Ierr);
     //    assert( equed_ == 'N' ) ; 
     StatFree( &SLU_stat ) ; 
-
-#if 0
-    CopyB.Update( -1.0, *SerialB, 1.0 ) ; 
-    double difference;
-    CopyB.Norm2( &difference ); 
-    assert( difference == 0.0 ) ; 
-#endif
-
-
   }
+
   //
   //  Copy X back to the original vector
   // 
-
-  if ( IsLocal_ == 0 ) { 
-    const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap() ; 
-    Epetra_Import ImportFromSerial( OriginalMap, *SerialMap_ );
-    vecX->Import( *SerialX, ImportFromSerial, Insert ) ;
-    delete SerialBextract ;
-    delete SerialXextract ;
-  } else {
-    assert( SerialBextract == 0 ) ;
-    assert( SerialXextract == 0 ) ;
-  }  
+  if (Comm().NumProc() != 1) 
+  { 
+    vecX->Export(*SerialX, ImportToSerial(), Insert);
+    delete SerialB;
+    delete SerialX;
+  } 
 
   //  All processes should return the same error code
-  if ( 1 < Comm().NumProc() ) {
-    Comm().Broadcast( Ierr, 1, 0 ) ; 
-  }
+  if (Comm().NumProc() != 1)
+    Comm().Broadcast(&Ierr, 1, 0); 
 
-  return Ierr[0];
+  // MS // compute vector norms, as done in Amesos_Mumps
+  if (ComputeVectorNorms_ == true) 
+  {
+    double NormLHS, NormRHS;
+    for (int i = 0 ; i < nrhs ; ++i) 
+    {
+      AMESOS_CHK_ERR((*vecX)(i)->Norm2(&NormLHS));
+      AMESOS_CHK_ERR((*vecB)(i)->Norm2(&NormRHS));
+      if (Comm().MyPID() == 0) 
+      {
+	cout << "Amesos_Superlu : vector " << i << ", ||x|| = " << NormLHS
+	     << ", ||b|| = " << NormRHS << endl;
+      }
+    }
+  }
+  
+  // MS // add compute true residual, as done in Amesos_Mumps
+  if (ComputeTrueResidual_) 
+  {
+    double Norm;
+    Epetra_MultiVector Ax(vecB->Map(),nrhs);
+    for (int i = 0 ; i < nrhs ; ++i) 
+    {
+      (RowMatrixA_->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
+      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
+      (Ax.Norm2(&Norm));
+      
+      if (Comm().MyPID() == 0) 
+      {
+	cout << "Amesos_Superlu : vector " << i << ", ||Ax - b|| = " << Norm << endl;
+      }
+    }
+  }
+  
+  SolTime_+= Time_->ElapsedTime();
+  ++NumSolve_;
+
+  return(Ierr);
+}
+
+// ================================================ ====== ==== ==== == =
+void Amesos_Superlu::PrintStatus() const
+{
+  if (iam_) return;
+  
+  PrintLine();
+  cout << "Amesos_Superlu : Matrix has " << NumGlobalRows_ << " rows"
+       << " and " << NumGlobalNonzeros_ << " nonzeros" << endl;
+  cout << "Amesos_Superlu : Nonzero elements per row = "
+       << 1.0 * NumGlobalNonzeros_ / NumGlobalRows_ << endl;
+  cout << "Amesos_Superlu : Percentage of nonzero elements = "
+       << 100.0 * NumGlobalNonzeros_ /pow(NumGlobalRows_, 2.0) << endl;
+  cout << "Amesos_Superlu : Use transpose = " << UseTranspose_ << endl;
+  PrintLine();
+}
+
+// ================================================ ====== ==== ==== == =
+void Amesos_Superlu::PrintTiming() const
+{
+  if (iam_) return;
+  
+  double NumTime = 0.0, SolTime = 0.0;
+
+  if (NumNumericFact_)
+    NumTime =  NumTime_ / NumNumericFact_;
+
+  if (NumSolve_)
+    SolTime = SolTime_ / NumSolve_;
+
+  PrintLine();
+  cout << "Amesos_Superlu : Number of numeric factorizations = "
+       << NumNumericFact_ << endl;
+  cout << "Amesos_Superlu : Time for num fact = "
+       << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
+  cout << "Amesos_Superludist : Number of solve phases = "
+       << NumSolve_ << endl;
+  cout << "Amesos_Superlu : Time for solve = "
+       << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;  
+  PrintLine();
 }
