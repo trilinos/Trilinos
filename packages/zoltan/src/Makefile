@@ -137,7 +137,7 @@ endif
 # KDD -- does not work with zscript yet.
 ifdef PARKWAY_LIBPATH
   GDEFINES     += -DZOLTAN_PARKWAY
-  THIRD_PARTY_LIBS += -lparkway -lmpi++ -lstdc++
+  THIRD_PARTY_LIBS += -lparkway -lmpich++ -lstdc++
   THIRD_PARTY_LIBPATH += $(PARKWAY_LIBPATH)
   THIRD_PARTY_INCPATH += $(PARKWAY_INCPATH)
 endif
@@ -245,6 +245,8 @@ HG_CSRC 	= hg.c hg_build.c hg_build_calls.c hg_coarse.c hg_global.c \
 		  hg_part.c hg_plot.c hg_hypergraph.c hg_patoh.c
 HG_INC 		= hg.h hg_hypergraph.h 
 GDEFINES       += -DZOLTAN_HG
+else
+HG_CSRC		= hg_hypergraph.c
 endif
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
