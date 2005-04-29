@@ -59,6 +59,7 @@
 
 // Teuchos includes
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 // Amesos includes
 #include "Amesos_ConfigDefs.h"
