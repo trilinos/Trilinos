@@ -138,7 +138,9 @@ bool Burgers::evaluate(
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector> dep(numDep, Epetra_Vector(*OverlapMap));
+  vector<Epetra_Vector*> dep(numDep);
+  for( int i = 0; i<numDep; i++)
+    dep[i] = new Epetra_Vector(*OverlapMap);
   Epetra_Vector xvec(*OverlapMap);
 
   // Export Solution to Overlap vector
@@ -151,7 +153,7 @@ bool Burgers::evaluate(
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
   {
-    dep[i].Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
+    dep[i]->Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
     //cout << "depSoln[" << i << "] :" << dep[i] << endl;
   }
@@ -211,8 +213,8 @@ bool Burgers::evaluate(
       uuold[0]=uold[ne];
       uuold[1]=uold[ne+1];
       for( int i = 0; i<numDep; i++ ) {
-        ddep[i][0] = dep[i][ne];
-        ddep[i][1] = dep[i][ne+1];
+        ddep[i][0] = (*dep[i])[ne];
+        ddep[i][1] = (*dep[i])[ne+1];
       }
       // Calculate the basis function at the gauss point
       basis.getBasis(gp, xx, uu, uuold, ddep);
@@ -291,7 +293,10 @@ bool Burgers::evaluate(
 
   // Cleanup
   for( int i = 0; i<numDep; i++)
-    delete ddep[i];
+  {
+    delete [] ddep[i];
+    delete    dep[i];
+  }
 
   return true;
 }

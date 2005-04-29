@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   combo.addStatusTest(maxiters);
 
   // Make this explicit
-  bool doOffBlocks = true;
+  bool doOffBlocks = false;
 
   // Create the Problem Manager
   Problem_Manager problemManager(Comm, doOffBlocks);

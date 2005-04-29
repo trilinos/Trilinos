@@ -300,6 +300,12 @@ void Problem_Manager::registerComplete()
   // Do second pass to setup each problem
   iter = Problems.begin();
 
+  // Now that all problems have created vectors to receive fields from
+  // problems on which they depend, sync everyone so that the subsequent
+  // call to computeF below will use the correct values transferred from
+  // each dependent problem.
+  syncAllProblems();
+
   while( iter != last)
   {
     // Get a convenient reference to the current problem
@@ -339,7 +345,8 @@ void Problem_Manager::registerComplete()
     Epetra_Time fillTime(*Comm);
 
     EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
-      EpetraExt::CrsGraph_MapColoring::GREEDY;
+      EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
+    // NOTE: GREEDY causes a core dump????
     int reordering = 0;
     bool useParallel = true;
     bool distance1 = false;
@@ -354,9 +361,13 @@ void Problem_Manager::registerComplete()
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
     MatrixOperators[probId] = new NOX::EpetraNew::FiniteDifferenceColoring(
-	*(*(Interfaces.find(probId))).second, 
-        problem.getSolution(), problem.getGraph(), *(*(ColorMaps.find(probId))).second, 
-        *(*(ColumnsSets.find(probId))).second );
+		*(*(Interfaces.find(probId))).second, 
+	        problem.getSolution(), 
+	        problem.getGraph(), 
+	        *(*(ColorMaps.find(probId))).second, 
+	        *(*(ColumnsSets.find(probId))).second,
+    		useParallel,
+		distance1);
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*(*(MatrixOperators.find(probId))).second);
     LinearSystems[probId] = new NOX::EpetraNew::LinearSystemAztecOO(

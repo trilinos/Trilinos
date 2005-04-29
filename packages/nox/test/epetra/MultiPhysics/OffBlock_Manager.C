@@ -211,7 +211,7 @@ void OffBlock_Manager::createFDCobjects()
   // Create a timer for performance
   Epetra_Time colorTime(*Comm);
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
-    EpetraExt::CrsGraph_MapColoring::GREEDY;
+    EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
   int reordering = 0;
   bool useParallel = true;
   bool distance1 = false;
