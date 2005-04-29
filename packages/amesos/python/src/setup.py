@@ -53,8 +53,6 @@ except IOError:
 buildDir   = makeInfo.get("top_builddir","")
 pakDir     = makeInfo.get("top_srcdir","")
 srcDir     = makeInfo.get("srcdir","")
-solverLibs = makeInfo.get("LIBS", "");
-if len(solverLibs) == 0: solverLibs = "amesos";
 
 # Define the teuchos include path, library directory and library name
 teuchosSrcDir   = os.path.join(pakDir, "../teuchos", "src")
@@ -95,8 +93,8 @@ for lib in libs:
 
 # load libraries specified by the user last
 for lib in makeInfo.get("LIBS","").split():
-  if lib[:2] == "-L":
-    stdLibraryLibs.append(lib[2:])
+  if lib[:2] == "-l":
+    stdLibs.append(lib[2:])
   else:
     extraArgs.append(lib)
 
@@ -122,7 +120,7 @@ _Amesos = Extension("PyTrilinos._Amesos",
                     library_dirs    = [amesosLibDir, teuchosLibDir, 
                                        epetraLibDir],
                     libraries       = [amesosLib, teuchosLib, 
-                                       epetraLib, solverLibs] 
+                                       epetraLib] 
                                        + stdLibs,
                     extra_link_args = extraArgs
                     )
