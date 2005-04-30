@@ -80,7 +80,9 @@ epetraLib    = "epetra"
 # Define the epetraext include path, library directory and library name
 epetraExtInc    = [os.path.join(pakDir, "src"),
                    os.path.join(pakDir, "src", "coloring"),
-                   os.path.join(pakDir, "src", "transform")]
+                   os.path.join(pakDir, "src", "transform"),
+                   os.path.join(pakDir, "src", "inout"),
+                   os.path.join(pakDir, "../epetra/python", "src")]
 epetraExtLibDir = os.path.join("..", "..", "src")
 epetraExtLib    = "epetraext"
 

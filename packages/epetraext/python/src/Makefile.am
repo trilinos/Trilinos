@@ -32,7 +32,9 @@ SWIG_CXXFLAGS = \
 	-I$(top_srcdir)/src           \
 	-I$(top_srcdir)/src/coloring  \
 	-I$(top_srcdir)/src/transform \
+	-I$(top_srcdir)/src/inout \
 	-I$(top_srcdir)/../epetra/src \
+	-I$(top_srcdir)/../epetra/python/src \
         -I$(srcdir)
 
 # Default make target
