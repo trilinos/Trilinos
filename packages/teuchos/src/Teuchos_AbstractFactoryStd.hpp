@@ -39,7 +39,7 @@ namespace Teuchos {
 template<class T_impl>
 class PostModNothing {
 public:
-	///
+	/** \brief . */
 	void initialize(T_impl* p) const {} // required!
 };
 
@@ -49,9 +49,9 @@ public:
 template<class T_impl>
 class AllocatorNew {
 public:
-  ///
+  /** \brief . */
   typedef Teuchos::RefCountPtr<T_impl>  ptr_t;                         // required!
-  ///
+  /** \brief . */
   const ptr_t allocate() const { return Teuchos::rcp(new T_impl()); }  // required!
 };
 
@@ -138,12 +138,12 @@ public:
 #endif
 */
 
-  ///
+  /** \brief . */
   AbstractFactoryStd( const T_PostMod& post_mod = T_PostMod(), const T_Allocator& alloc = T_Allocator() );
 
   /** @name Overriden from AbstractFactory */
   //@{
-  ///
+  /** \brief . */
   obj_ptr_t create() const;
   //@}
 
@@ -153,7 +153,7 @@ private:
 
 }; // end class AbstractFactorStd
 
-///
+/** \brief . */
 template<class T_itfc, class T_impl, class T_Allocator >
 const Teuchos::RefCountPtr<const AbstractFactory<T_itfc> >
 abstract_factory_std_alloc(

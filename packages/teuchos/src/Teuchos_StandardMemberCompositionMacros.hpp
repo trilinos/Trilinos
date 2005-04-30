@@ -38,8 +38,7 @@
 */
 #include "Teuchos_ConfigDefs.hpp"
 
-///
-/** Macro that adds <<std member comp>> attributes to any class
+/** \brief Macro that adds <<std member comp>> attributes to any class
  * 
  * For example, if you want to include a <<std member comp>> attribute
  * as a member object of type MyClass with the name my_attribute you
@@ -70,10 +69,10 @@
  * operations you can just implement the member functions by hand.
  */
 #define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME )\
+  void NAME ( const TYPE & NAME ) { NAME ## _ = NAME ; }\
+  const TYPE& NAME() const { return NAME ## _; }\
 private:\
   TYPE NAME ## _;\
-public:\
-  void NAME ( const TYPE & NAME ) { NAME ## _ = NAME ; }\
-  const TYPE& NAME() const { return NAME ## _; }
+public:
 
 #endif	// TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H

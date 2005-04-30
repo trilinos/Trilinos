@@ -339,11 +339,11 @@ public:
 	void free( T* ptr ) { if(ptr) delete [] ptr; }
 };
 
-///
+/** \brief . */
 template<class T>
 class RefCountPtr {
 public:
-	///
+	/** \brief . */
 	typedef T	element_type;
 	/** \brief Initialize <tt>RefCountPtr<T></tt> to NULL.
 	 *
@@ -435,7 +435,6 @@ public:
 	 * </ul>
 	 */
 	T& operator*() const;
-	///
     /** \brief Get the raw C++ pointer to the underlying object.
 	 */
 	T* get() const;
@@ -792,6 +791,53 @@ T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
  */
 template<class T1, class T2>
 const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
+
+/** \brief Get a non-const pointer to extra data (if it exists) associated
+ * with a <tt>RefCountPtr</tt> object.
+ *
+ * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  name [in] Name of the extra data.
+ *
+ * @return Returns a non-const pointer to the extra_data object.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
+ *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>)
+        then <tt>return !=NULL</tt> and otherwise <tt>return == NULL</tt>.
+ * </ul>
+ *
+ * Note, this function must be a non-member function since the client
+ * must manually select the first template argument.
+ */
+template<class T1, class T2>
+T1* get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name );
+
+/** \brief Get a const pointer to extra data (if it exists) associated with a <tt>RefCountPtr</tt> object.
+ *
+ * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  name [in] Name of the extra data.
+ *
+ * @return Returns a const pointer to the extra_data object if it exists.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
+ *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>)
+        then <tt>return !=NULL</tt> and otherwise <tt>return == NULL</tt>.
+ * </ul>
+ *
+ * Note, this function must be a non-member function since the client
+ * must manually select the first template argument.
+ *
+ * Also note that this const version is a false sense of security
+ * since a client can always copy a const <tt>RefCountPtr</tt> object
+ * into a non-const object and then use the non-const version to
+ * change the data.  However, its presence will help to avoid some
+ * types of accidental changes to this extra data.
+ */
+template<class T1, class T2>
+const T1* get_optional_extra_data( const RefCountPtr<T2>& p, const std::string& name );
 
 /** \brief Return a non-<tt>const</tt> reference to the underlying deallocator object.
  *

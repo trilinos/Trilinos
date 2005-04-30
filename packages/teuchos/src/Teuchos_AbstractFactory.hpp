@@ -49,15 +49,14 @@ class AbstractFactory {
 public:
 
 #ifndef DOXYGEN_COMPILE
-	///
+	/** \brief . */
 	typedef Teuchos::RefCountPtr<T>   obj_ptr_t;
 #endif
 
-	///
+	/** \brief . */
 	virtual ~AbstractFactory() {}
 
-	///
-	/** Create an object of type T returned as a smart reference
+	/** \brief Create an object of type T returned as a smart reference
 	 * counting pointer object.
 	 */
 	virtual obj_ptr_t create() const = 0;

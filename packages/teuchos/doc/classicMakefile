@@ -1,6 +1,6 @@
 
 always-build:
-	doxygen DoxyfileWeb
+	./build_docs
 
 clean:
 	rm -rf html

@@ -33,10 +33,9 @@
 
 namespace Teuchos {
 
-///
-/** We create this class so that we may throw a bad_cast when appropriate
-	and still use the TEST_FOR_EXCEPTION macro.  
-	We recommend users try to catch a bad_cast.
+/** We create this class so that we may throw a bad_cast when appropriate and
+	still use the TEST_FOR_EXCEPTION macro.  We recommend users try to catch a
+	bad_cast.
 */
 class m_bad_cast : public std::bad_cast {
 	std::string msg;
@@ -49,8 +48,7 @@ public:
 // Throw the exception <tt>std::invalid_argument</tt> for below functions
 void dyn_cast_throw_exception( const char type_from_name[], const char type_from_concr_name[], const char type_to_name[] );
 
-///
-/** Dynamic casting utility function meant to replace
+/** \brief Dynamic casting utility function meant to replace
  * <tt>dynamic_cast<T&></tt> by throwing a better documented error
  * message.
  *

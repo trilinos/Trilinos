@@ -84,6 +84,10 @@ public:
 	const any& get_extra_data( const std::string& type_name, const std::string& name ) const {
 		return const_cast<RefCountPtr_node*>(this)->get_extra_data(type_name,name);
 	}
+	any* get_optional_extra_data( const std::string& type_name, const std::string& name );
+	const any* get_optional_extra_data( const std::string& type_name, const std::string& name ) const {
+		return const_cast<RefCountPtr_node*>(this)->get_optional_extra_data(type_name,name);
+	}
 protected:
   void pre_delete_extra_data() {
     if(extra_data_map_) impl_pre_delete_extra_data();
@@ -394,7 +398,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, bool force_unique, EPrePostDestruction destroy_when )
 {
-	*(*p); // Assert not NULL
+	p->assert_not_null();
 	p->access_node()->set_extra_data( extra_data, name, force_unique, destroy_when );
 }
 
@@ -402,7 +406,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 T1& Teuchos::get_extra_data( RefCountPtr<T2>& p, const std::string& name )
 {
-	*p; // Assert not NULL
+	p.assert_not_null();
 	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
 }
 
@@ -410,8 +414,28 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 const T1& Teuchos::get_extra_data( const RefCountPtr<T2>& p, const std::string& name )
 {
-	*p; // Assert not NULL
+	p.assert_not_null();
 	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
+}
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+T1* Teuchos::get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name )
+{
+	p.assert_not_null();
+  any *extra_data = p.access_node()->get_optional_extra_data(typeid(T1).name(),name);
+  if( extra_data ) return &any_cast<T1>(*extra_data);
+  return NULL;
+}
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+const T1* Teuchos::get_optional_extra_data( const RefCountPtr<T2>& p, const std::string& name )
+{
+	p.assert_not_null();
+  any *extra_data = p.access_node()->get_optional_extra_data(typeid(T1).name(),name);
+  if( extra_data ) return &any_cast<T1>(*extra_data);
+  return NULL;
 }
 
 template<class Dealloc_T, class T>
@@ -419,7 +443,7 @@ REFCOUNTPTR_INLINE
 Dealloc_T&
 Teuchos::get_dealloc( RefCountPtr<T>& p )
 {
-	*p; // Assert not NULL
+	p.assert_not_null();
 	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
 		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
 	TEST_FOR_EXCEPTION(

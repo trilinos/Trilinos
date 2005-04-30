@@ -83,6 +83,8 @@ TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos], PYTRILINOS, no)
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 
+TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra], THYRA, no)
+
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
@@ -118,6 +120,17 @@ else
   BUILD_TEUCHOS=no
 fi
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$BUILD_TEUCHOS" != "Xno")
+
+if test "X$ac_cv_use_thyra" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/thyra])
+  BUILD_THYRA=yes
+  if test "X$ac_cv_use_thyra_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-thyra"
+  fi
+else
+  BUILD_THYRA=no
+fi
+AM_CONDITIONAL(BUILD_THYRA, test "X$BUILD_THYRA" != "Xno")
 
 if test "X$ac_cv_use_kokkos" != "Xno" ||
   	test "X$ac_cv_use_tpetra" != "Xno"; then

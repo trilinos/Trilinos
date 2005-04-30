@@ -48,7 +48,7 @@ std::ostream& Describable::describe(
 	,const std::string          indentSpacer
 	) const
 {
-	return out << leadingIndent << this->describe() << std::endl;
+	return out << leadingIndent << indentSpacer << this->describe() << std::endl;
 }
 
 } // namespace Teuchos

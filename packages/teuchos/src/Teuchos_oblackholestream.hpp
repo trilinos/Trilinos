@@ -26,9 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// ////////////////////////////////////////////////////////////////////
-// Teuchos_oblackholestream.hpp
-
 #ifndef TEUCHOS_O_BLACK_HOLE_STREAM_H
 #define TEUCHOS_O_BLACK_HOLE_STREAM_H
 

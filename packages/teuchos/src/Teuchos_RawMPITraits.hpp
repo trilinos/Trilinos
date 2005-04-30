@@ -40,7 +40,6 @@
 
 namespace Teuchos {
 
-///
 /** \brief Templated class that returns raw MPI data types.
  *
  * \note 
@@ -58,48 +57,43 @@ public:
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-///
-/** Specialization of <tt>RawMPITraits</tt> for <tt>char</tt>
+/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>char</tt>
  */
 template <> class RawMPITraits<char> {
 public:
-	///
+	/** \brief . */
 	static MPI_Datatype type() { return MPI_CHAR; }
 };
 
-///
-/** Specialization of <tt>RawMPITraits</tt> for <tt>int</tt>
+/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>int</tt>
  */
 template <> class RawMPITraits<int> {
 public:
-	///
+	/** \brief . */
 	static MPI_Datatype type() { return MPI_INT; }
 };
 
-///
-/** Specialization of <tt>RawMPITraits</tt> for <tt>float</tt>
+/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>float</tt>
  */
 template <> class RawMPITraits<float> {
 public:
-	///
+	/** \brief . */
 	static MPI_Datatype type() { return MPI_FLOAT; }
 };
 
-///
-/** Specialization of <tt>RawMPITraits</tt> for <tt>double</tt>
+/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>double</tt>
  */
 template <> class RawMPITraits<double> {
 public:
-	///
+	/** \brief . */
 	static MPI_Datatype type() { return MPI_DOUBLE; }
 };
 
-///
-/** Partial specialization of <tt>RawMPITraits</tt> for <tt>std::complex<T></tt>
+/** \brief Partial specialization of <tt>RawMPITraits</tt> for <tt>std::complex<T></tt>
  */
 template <class T> class RawMPITraits<std::complex<T> > {
 public:
-	///
+	/** \brief . */
 	static MPI_Datatype type() { buildType(); return type_; }
 private:
 	static void buildType() {

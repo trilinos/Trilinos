@@ -245,7 +245,9 @@ TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messag
 TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
                    FORMAT_IO, yes)
 TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
-TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetra, thyra, [enable Epetra's adapters implementing Thyra interfaces], EPETRA_THYRA, no)
+AM_CONDITIONAL(HAVE_EPETRA_THYRA, [test "X$ac_cv_use_epetra_thyra" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -360,6 +362,8 @@ AC_SUBST(EPETRA_BUILD_DIRECTORY)
 AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export
+		Makefile.export.epetra
+		Makefile.export.epetra.thyra
 		src/Makefile
 		test/Makefile
 		test/BasicPerfTest/Makefile
@@ -412,7 +416,9 @@ AC_CONFIG_FILES([
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile
+		test/scripts/daily/mpi/run_epetra_thyra_tests.pl
 		test/scripts/daily/serial/Makefile
+		test/scripts/daily/serial/run_epetra_thyra_tests.pl
 		test/scripts/weekly/Makefile
 		test/scripts/weekly/mpi/Makefile
 		test/scripts/weekly/serial/Makefile
@@ -422,6 +428,10 @@ AC_CONFIG_FILES([
 		python/src/.deps/dummy
 		python/test/Makefile
 		python/example/Makefile
+    thyra/Makefile
+    thyra/src/Makefile
+    thyra/example/Makefile
+    thyra/test/Makefile
 		])
 
 AC_OUTPUT()

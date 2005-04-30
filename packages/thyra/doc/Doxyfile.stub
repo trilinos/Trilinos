@@ -1,0 +1,28 @@
+#
+# Package options
+#
+PROJECT_NAME           = "Thyra"
+PROJECT_NUMBER         = "Version of the Day"
+OUTPUT_DIRECTORY       = .
+#
+# What and how documentation is extracted
+#
+INPUT                  = ./index.doc
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATTERNS       =
+EXAMPLE_PATH           = ../example
+IMAGE_PATH             = ./images
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+TAGFILES               = ../../common/tag_files/ThyraUtils.tag=../../src/utils/doc/html
+#                         ../../../../Trilinos/packages/thyra/src/ana/rtop/doc/ThyraRTOp.tag=../../../../../Trilinos/packages/thyra/src/ana/rtop/doc/html \
+#                         ../../../../Trilinos/packages/thyra/src/ana/operator_vector/doc/ThyraOperatorVector.tag=../../../../../Trilinos/packages/thyra/src/ana/operator_vector/doc/html
+ALLEXTERNALS           = YES
+EXTERNAL_GROUPS        = YES

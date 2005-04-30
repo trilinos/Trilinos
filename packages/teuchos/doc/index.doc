@@ -1,11 +1,11 @@
 /*! \mainpage Teuchos:  The Trilinos Tools Library
 
-\section intro Introduction
+\section Teuchos_intro Introduction
 
 Teuchos provides a suite of common tools for Trilinos for developers to use.  These tools 
 include BLAS/LAPACK wrappers, smart pointers, parameter lists, XML parsers, etc. 
 
-\section contributors Teuchos Contributors
+\section Teuchos_contributors Teuchos Contributors
 
 The following people have contributed to the development of Teuchos:
 
@@ -18,7 +18,7 @@ The following people have contributed to the development of Teuchos:
 	<li> Heidi Thornquist (Package Lead), Sandia National Labs, hkthorn@sandia.gov
 </ul>
 
-\section startup Overview of Teuchos
+\section Teuchos_startup Overview of Teuchos
 
 Teuchos contains a number of classes.  These classes have been divided 
 between a "standard" build and an "extended" build.  The "standard" build has shown to be 
@@ -32,7 +32,7 @@ not recommended for production builds.</b>  To enable complex arithmetic in the 
 Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
 
-\subsection sclasses Teuchos "Standard" Classes
+\subsection Teuchos_sclasses Teuchos "Standard" Classes
 
 <ul>
 
@@ -163,7 +163,7 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
 </ul>
 
-\subsection eclasses Teuchos "Extended" Classes
+\subsection Teuchos_eclasses Teuchos "Extended" Classes
 
 <ul>
 

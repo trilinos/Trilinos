@@ -45,7 +45,6 @@
 
 namespace Teuchos {
 
-///
 /** \brief A templated traits class for decomposing object into an
  * array of primitive objects.
  *
@@ -58,11 +57,11 @@ namespace Teuchos {
  */
 template <class T> class PrimitiveTypeTraits {
 public:
-  ///
+  /** \brief . */
   typedef T  primitiveType;
-  ///
+  /** \brief . */
   static int numPrimitiveObjs() { return 1; }
-  ///
+  /** \brief . */
   static void extractPrimitiveObjs(
     const T                &obj
     ,const int             numPrimitiveObjs
@@ -74,7 +73,7 @@ public:
 #endif
       primitiveObjs[0] = obj;
     }
-  ///
+  /** \brief . */
   static void loadPrimitiveObjs(
     const int              numPrimitiveObjs
     ,const primitiveType   primitiveObjs[]
@@ -90,16 +89,15 @@ public:
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
-///
-/** Partial specialization of <tt>PrimitiveTypeTraits</tt> for <tt>std::complex</tt>.
+/** \brief Partial specialization of <tt>PrimitiveTypeTraits</tt> for <tt>std::complex</tt>.
  */
 template <class T> class PrimitiveTypeTraits< std::complex<T> > {
 public:
-  ///
+  /** \brief . */
   typedef T  primitiveType;
-  ///
+  /** \brief . */
   static int numPrimitiveObjs() { return 2; }
-  ///
+  /** \brief . */
   static void extractPrimitiveObjs(
     const std::complex<T>  &obj
     ,const int             numPrimitiveObjs
@@ -112,7 +110,7 @@ public:
       primitiveObjs[0] = obj.real();
       primitiveObjs[1] = obj.imag();
     }
-  ///
+  /** \brief . */
   static void loadPrimitiveObjs(
     const int              numPrimitiveObjs
     ,const primitiveType   primitiveObjs[]
@@ -130,18 +128,17 @@ public:
 
 #ifdef HAVE_TEUCHOS_GNU_MP
 
-///
-/** Full specialization of <tt>PrimitiveTypeTraits</tt> for <tt>mpf_class</tt>.
+/** \brief Full specialization of <tt>PrimitiveTypeTraits</tt> for <tt>mpf_class</tt>.
  *
  * Note: This class is not complete yet!
  */
 template <> class PrimitiveTypeTraits<mpf_class> {
 public:
-  ///
+  /** \brief . */
   typedef double  primitiveType; // Just a guess!
-  ///
+  /** \brief . */
   static int numPrimitiveObjs() { return 10; } // Just a guess!
-  ///
+  /** \brief . */
   static void extractPrimitiveObjs(
     const mpf_class        &obj
     ,const int             numPrimitiveObjs
@@ -153,7 +150,7 @@ public:
 #endif
 			TEST_FOR_EXCEPT(true); // ToDo: Implement
     }
-  ///
+  /** \brief . */
   static void loadPrimitiveObjs(
     const int              numPrimitiveObjs
     ,const primitiveType   primitiveObjs[]

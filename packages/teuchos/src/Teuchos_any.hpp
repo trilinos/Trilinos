@@ -1,6 +1,3 @@
-// /////////////////////////////////////////////////////////////
-// Teuchos_any.hpp
-
 #ifndef TEUCHOS_ANY_HPP
 #define TEUCHOS_ANY_HPP
 
@@ -39,8 +36,7 @@
 
 namespace Teuchos {
 
-///
-/**  \brief Modified boost::any class, which is a container for a templated value.
+/** \brief  \brief Modified boost::any class, which is a container for a templated value.
  */
 // ToDo: Finish documentation!
 
@@ -113,39 +109,39 @@ public:
 	/** @name Private??? types */
 	//@{
 
-	///
+	/** \brief . */
 	class placeholder
 	{
 	public:
-		///
+		/** \brief . */
 		virtual ~placeholder() {}
-		///
+		/** \brief . */
 		virtual const std::type_info & type() const = 0;
-		///
+		/** \brief . */
 		virtual placeholder * clone() const = 0;
-                ///
+                /** \brief . */
                 virtual void print(std::ostream & os) const = 0;
 	};
 	
-	///
+	/** \brief . */
 	template<typename ValueType>
 	class holder : public placeholder
 	{
 	public:
-		///
+		/** \brief . */
 		holder(const ValueType & value)
 			: held(value)
 			{}
-		///
+		/** \brief . */
 		virtual const std::type_info & type() const
 			{ return typeid(ValueType); }
-		///
+		/** \brief . */
 		virtual placeholder * clone() const
 			{ return new holder(held); }
-                ///
+                /** \brief . */
                 virtual void print(std::ostream & os) const
                         { os << held; }
-		///
+		/** \brief . */
 		ValueType held;
 	};
 

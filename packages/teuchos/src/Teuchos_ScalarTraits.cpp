@@ -28,16 +28,12 @@
 
 #include "Teuchos_ScalarTraits.hpp"
 
-namespace Teuchos {
-
 #ifdef HAVE_TEUCHOS_GNU_MP
-gmp_randclass gmp_rng ( gmp_randinit_default );
+gmp_randclass Teuchos::gmp_rng ( gmp_randinit_default );
 #endif
 
-  // This is an intentional computation of NaN.
-  float  flt_nan = +0.0/sin(0.0);
-  double dbl_nan = +0.0/sin(0.0);
-
-} // Teuchos namespace
-
-
+#ifndef __sun
+// This is an intentional computation of NaN.
+const float  Teuchos::flt_nan = +0.0/sin(0.0);
+const double Teuchos::dbl_nan = +0.0/sin(0.0);
+#endif

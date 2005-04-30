@@ -7,3 +7,5 @@ aclocal -I config
 autoheader 
 automake --foreign --add-missing --copy
 autoconf
+# Install the build scripts
+../../commonTools/buildTools/install-package-scripts.sh ../../commonTools

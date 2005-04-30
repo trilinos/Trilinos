@@ -42,7 +42,6 @@
 /// The only purpose for this function is to set a breakpoint.
 void TestForException_break();
 
-///
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *
  * @param  throw_exception_test
@@ -118,7 +117,6 @@ void TestForException_break();
     } \
 }
 
-///
 /** \brief This macro is designed to be a short version of
  * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
  *

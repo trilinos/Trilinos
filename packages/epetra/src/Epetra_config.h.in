@@ -44,6 +44,9 @@
 /* Define if want to build epetra-tests */
 #undef HAVE_EPETRA_TESTS
 
+/* Define if want to build epetra-thyra */
+#undef HAVE_EPETRA_THYRA
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
@@ -91,9 +94,6 @@
 
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
-
-/* Define if want to build with rtop enabled */
-#undef HAVE_RTOP
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

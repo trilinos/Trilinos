@@ -33,7 +33,6 @@
 
 namespace Teuchos {
 
-///
 /** \brief Return a constant reference to an object given a non-const reference.
  *
  * This function just provides a shorthand notation for

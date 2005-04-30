@@ -186,8 +186,6 @@ MPI =
 
 endif
 
-
-
 # -------------------------------------------------------------
 # Enable compilation of experimental code if feature is enabled
 # -------------------------------------------------------------
@@ -219,13 +217,6 @@ COMP_H =
 
 COMP = 
 
-#np# List locations of include files within Trilinos but outside of this 
-#np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-#AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-AM_CPPFLAGS = 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
 #np# replace teuchos with the name of the package being autotool'ed here
@@ -267,8 +258,6 @@ EXTRA_libteuchos_a_SOURCES = \
 	$(EXTRA_ARPREC) \
 	$(EXTRA_ARPREC_H) 
 
-#We need the following to support separate build directories
-#AM_CPPFLAGS=-I$(builddir)/src
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
@@ -322,10 +311,3 @@ nodist_execinclude_HEADERS = Teuchos_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Create the makeoptions file
-# ------------------------------------------------------------------------
-
-install-exec-hook:	
-	perl $(top_srcdir)/.generate-makeoptions.pl $(top_builddir)/src/Makefile > $(exec_prefix)/include/trilinos_make_macros.mak

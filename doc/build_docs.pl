@@ -3,6 +3,7 @@
 ###############################################################################
 # Trilinos/doc/build_docs.pl
 #
+# - You must run this script from this directoy!
 # - Run any build_docs in any doc directory
 # - Create html file with links to each set of documentation
 #
@@ -23,12 +24,15 @@ my @indexList = ();
 use File::Find;
 use File::Basename;
 print "\n";
+print "\nGenerating package documentation ...\n";
 find (\&buildDocs, $trilinosDir);
-find (\&fillIndexList, $trilinosDir);
-print "\n";
+print "\nGenerating list of documentation directories ...\n";
+find (\&fillIndexList, "$trilinosDir/packages");
 
 #==============================================================================
 # Generate links file
+
+print "\nGenerating Trilinos PDF files ...\n";
 
 # Open index.html for list of links to generated documentation
 open(PAGE, ">index.html") or die "can't open index.html, died";
@@ -49,31 +53,31 @@ print "Trilinos Overview...\n";
 chdir("$trilinosDir/doc/OverviewSANDreport");
 $output = `make -f classicMakefile pdf 2>&1`;
 $failed = $?;
-if (!$failed) { print PAGE "<li><a href=\"$trilinosDir/doc/OverviewSANDreport/TrilinosOverview.pdf\">Trilinos Overview (.pdf)</a></li>\n"; }
+if (!$failed) { print PAGE "<li><a href=\"./OverviewSANDreport/TrilinosOverview.pdf\">Trilinos Overview (.pdf)</a></li>\n"; }
 
 # Trilinos User Guide
 print "Trilinos User Guide...\n";
 chdir("$trilinosDir/doc/UserGuide");
 $output = `make -f classicMakefile pdf 2>&1`;
 $failed = $?;
-if (!$failed) { print PAGE "<li><a href=\"$trilinosDir/doc/UserGuide/TrilinosUserGuide.pdf\">Trilinos User Guide (.pdf)</a></li>\n"; }
+if (!$failed) { print PAGE "<li><a href=\"./UserGuide/TrilinosUserGuide.pdf\">Trilinos User Guide (.pdf)</a></li>\n"; }
 
 # Trilinos Tutorial
 print "Trilinos Tutorial...\n";
 chdir("$trilinosDir/packages/didasko/doc");
-if (stat("tutorial.pdf")) { print PAGE "<li><a href=\"$trilinosDir/packages/didasko/doc/tutorial.pdf\">Trilinos Tutorial (.pdf)</a></li>\n"; }
+if (stat("tutorial.pdf")) { print PAGE "<li><a href=\"../packages/didasko/doc/tutorial.pdf\">Trilinos Tutorial (.pdf)</a></li>\n"; }
 
 # Trilinos Epetra Performance Optimization Guide
 print "Trilinos Overview...\n";
-chdir("$trilinosDir/packages/epetra/doc/PerfOptGuide");
-if (stat("EpetraPerformanceGuide.pdf")) { print PAGE "<li><a href=\"$trilinosDir/packages/epetra/doc/PerfOptGuide/EpetraPerformanceGuide.pdf\">Epetra Performance Guide (.pdf)</a></li>\n"; }
+chdir("./packages/epetra/doc/PerfOptGuide");
+if (stat("EpetraPerformanceGuide.pdf")) { print PAGE "<li><a href=\"./packages/epetra/doc/PerfOptGuide/EpetraPerformanceGuide.pdf\">Epetra Performance Guide (.pdf)</a></li>\n"; }
 
 # Trilinos Developer Guide
 print "Trilinos Developer Guide...\n";
 chdir("$trilinosDir/doc/DevGuide");
 $output = `make -f classicMakefile pdf 2>&1`;
 $failed = $?;
-if (!$failed) { print PAGE "<li><a href=\"$trilinosDir/doc/DevGuide/TrilinosDevGuide.pdf\">Trilinos Developers Guide (.pdf)</a></li>\n"; }
+if (!$failed) { print PAGE "<li><a href=\"./DevGuide/TrilinosDevGuide.pdf\">Trilinos Developers Guide (.pdf)</a></li>\n"; }
 
 # Package documentation section
 print PAGE "</ul>\n";
@@ -138,8 +142,9 @@ sub fillIndexList {
         my $shortDir = $absFile;
         $shortDir =~ m/.*\/packages\/(.*)\/doc.*/;
         $shortDir = $1;
-        
-        push(@indexList, "<li><a href=\"$absFile\">$shortDir</a></li>\n");
+        if($shortDir ne "") {
+          push(@indexList, "<li><a href=\"../packages/$shortDir/doc/html/index.html\">$shortDir</a></li>\n");
+        }
     
     }    
     

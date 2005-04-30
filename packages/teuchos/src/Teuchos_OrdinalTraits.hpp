@@ -49,11 +49,9 @@
     \note The defined specializations for OrdinalTraits are: \c int and \c long \c int.
 */
 
-/*! \struct Teuchos::UndefinedOrdinalTraits
-    \brief This is the default structure used by OrdinalTraits<T> to produce a compile time
+/* This is the default structure used by OrdinalTraits<T> to produce a compile time
 	error when the specialization does not exist for type <tt>T</tt>.
 */
-
 namespace Teuchos {
 
   template<class T>

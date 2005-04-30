@@ -26,9 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// /////////////////////////////////////////////////////////////
-// Teuchos_arrayArg.hpp
-
 #ifndef TEUCHOS_ARRAY_ARG_HPP
 #define TEUCHOS_ARRAY_ARG_HPP
 
@@ -159,7 +156,6 @@ arguments.  If more elements are needed, then more overrides are easy to add.
 
 */
 
-///
 /** \brief Utility class that allows arrays to be passed into argument list.
  *
  * \ingroup Teuchos_Array_Arguments
@@ -180,7 +176,6 @@ private:
   T array_[N]; //  Can't be a const array!
 }; // class Array1DArg
 
-///
 /** \brief Return an array with 1 member.
  *
  * \ingroup Teuchos_Array_Arguments
@@ -192,7 +187,6 @@ inline ArrayArg<1,T> arrayArg( T t1 )
   return ArrayArg<1,T>(array);
 }
 
-///
 /** \brief Return an array with 2 members.
  *
  * \ingroup Teuchos_Array_Arguments
@@ -204,7 +198,6 @@ inline ArrayArg<2,T> arrayArg( T t1, T t2 )
   return ArrayArg<2,T>(array);
 }
 
-///
 /** \brief Return an array with 3 members.
  *
  * \ingroup Teuchos_Array_Arguments
@@ -216,7 +209,6 @@ inline ArrayArg<3,T> arrayArg( T t1, T t2, T t3 )
   return ArrayArg<3,T>(array);
 }
 
-///
 /** \brief Return an array with 4 members.
  *
  * \ingroup Teuchos_Array_Arguments
@@ -228,7 +220,6 @@ inline ArrayArg<4,T> arrayArg( T t1, T t2, T t3, T t4 )
   return ArrayArg<4,T>(array);
 }
 
-///
 /** \brief Return an array with 5 members.
  *
  * \ingroup Teuchos_Array_Arguments
@@ -240,7 +231,6 @@ inline ArrayArg<5,T> arrayArg( T t1, T t2, T t3, T t4, T t5 )
   return ArrayArg<5,T>(array);
 }
 
-///
 /** \brief Return an array with 6 members.
  *
  * \ingroup Teuchos_Array_Arguments

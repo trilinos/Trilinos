@@ -28,15 +28,17 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = LAPACK_test
+include $(top_builddir)/Makefile.export.teuchos
+
+bin_PROGRAMS = LAPACK_test
 
 LAPACK_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-LAPACK_test_DEPENDENCIES =
+LAPACK_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
-LAPACK_test_CXXFLAGS = -I$(top_srcdir)/src
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 
-LAPACK_test_LDADD = \
-	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+LAPACK_test_LDADD = $(TEUCHOS_LIBS)
 
-
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =

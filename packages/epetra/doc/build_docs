@@ -1,3 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
 doxygen DoxyfileWeb
+
+cd ../thyra/doc ; ./generate_Doxyfile ; cd ../../doc
+doxygen ../thyra/doc/Doxyfile

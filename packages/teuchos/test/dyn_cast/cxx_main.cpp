@@ -31,35 +31,59 @@
 #include "Teuchos_Version.hpp"
 
 class A { public: virtual ~A(){} };
-class B : public A { public: void f() { std::cout << "\nB::f() called!\n"; } };
+class B : public A { public: void f(bool verbose) { if(verbose) std::cout << "\nB::f() called!\n"; } };
 class C : public A {};
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char* argv[] )
+{
 
-  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
+  using Teuchos::CommandLineProcessor;
 
-  std::cout
-    << "\n*******************************************"
-    << "\n*** Basic test of Teuchos::dyn_cast<>() ***"
-    << "\n*******************************************\n";
-  B b;
-  A &a = b;
+  bool verbose = true;
+
   try {
-    std::cout << "\nTrying: dynamic_cast<C&>(a); [Should throw a std::bad_cast exception with very bad error message]\n";
-    dynamic_cast<C&>(a);
+
+    // Read options from the commandline
+    CommandLineProcessor  clp(false); // Don't throw exceptions
+    clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
+    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
+    if(verbose) std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
+
+    if(verbose) std::cout
+      << "\n*******************************************"
+      << "\n*** Basic test of Teuchos::dyn_cast<>() ***"
+      << "\n*******************************************\n";
+    B b;
+    A &a = b;
+    try {
+      if(verbose) std::cout << "\nTrying: dynamic_cast<C&>(a); [Should throw a std::bad_cast exception with very bad error message]\n";
+      dynamic_cast<C&>(a);
+    }
+    catch( const std::bad_cast &e ) {
+      if(verbose) std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
+    }
+    try {
+      if(verbose) std::cout << "\nTrying: Teuchos::dyn_cast<C>(a); [Should throw a std::bad_cast exception with a very good error message]\n";
+      Teuchos::dyn_cast<C>(a);
+    }
+    catch( const std::bad_cast &e ) {
+      if(verbose) std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
+    }
+    if(verbose) std::cout << "\nTrying:  Teuchos::dyn_cast<B>(a).f(); [Should succeed and print \"B::f() called\"]\n";
+    Teuchos::dyn_cast<B>(a).f(verbose);
+    if(verbose) std::cout << "\nAll tests check out!\n";
   }
-  catch( const std::bad_cast &e ) {
-    std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
+  catch( const std::exception &excpt ) {
+    if(verbose)
+      std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+    return 1;
   }
-  try {
-    std::cout << "\nTrying: Teuchos::dyn_cast<C>(a); [Should throw a std::bad_cast exception with a very good error message]\n";
-    Teuchos::dyn_cast<C>(a);
+  catch( ... ) {
+    if(verbose)
+      std::cerr << "*** Caught an unknown exception\n";
+    return 1;
   }
-  catch( const std::bad_cast &e ) {
-    std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
-  }
-	std::cout << "\nTrying:  Teuchos::dyn_cast<B>(a).f(); [Should succeed and print \"B::f() called\"]\n";
-	Teuchos::dyn_cast<B>(a).f();
-	std::cout << "\nAll tests check out!\n";
 	return 0;
 }

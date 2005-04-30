@@ -88,3 +88,15 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 SUBDIRS = packages
+
+## #######################################################################
+## Install the perl scrpts used for external makefiles
+## #######################################################################
+
+install-exec-hook:	
+	cp $(top_srcdir)/commonTools/buildTools/strip_dup_incl_paths.pl $(exec_prefix)/include/. ;
+	cp $(top_srcdir)/commonTools/buildTools/strip_dup_libs.pl $(exec_prefix)/include/.
+
+uninstall-hook:
+	rm -f $(exec_prefix)/include/strip_dup_incl_paths.pl
+	rm -f $(exec_prefix)/include/strip_dup_incl_paths.pl

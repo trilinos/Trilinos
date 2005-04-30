@@ -1,0 +1,11 @@
+
+include @abs_top_builddir@/../thyra/Makefile.export.thyra
+include @abs_top_builddir@/Makefile.export.epetra
+
+EPETRA_THYRA_INCLUDES = \
+	-I@abs_top_srcdir@/thyra/src \
+	-I@abs_top_builddir@/thyra/src \
+	$(EPETRA_INCLUDES) \
+	$(THYRA_INCLUDES)
+
+EPETRA_THYRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/thyra/src -lEpetraThyra $(EPETRA_LIBS) $(THYRA_LIBS) @LIBS@ @FLIBS@ 

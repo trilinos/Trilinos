@@ -1,0 +1,217 @@
+/*! \mainpage Thyra : Interfaces and Support code for the Interoperability of Abstract Numerical Algorithms
+
+The %Thyra package contains a set of interfaces and supporting code that
+defines basic interoperability mechanisms between different types of numerical
+software.  The foundation of all of these interfaces are the mathematical
+concepts of vectors, vector spaces, and linear operators.  All other
+interfaces and support software is built on the basic operator/vector
+interfaces.
+
+This main page provides the starting point for all of the documentation for
+%Thyra interfaces and software.  The following is an outline of the sections
+on this main page:
+
+<ul>
+<li> \ref thyra_software_sec provides a roadmap to the various types
+of software in the %Thyra pacakge %Thyra-related software in other packages.
+<li> \ref thyra_dependencies_sec describes what other Trilinos packages that
+the %Thyra package needs to build and link against.
+<li> \ref thyra_configuration_sec mentions some of the more important
+configuation options that affect the %Thyra package and what code is built.
+<li> \ref thyra_external_projects_sec describes how to build and link
+against %Thyra software by external projects.
+<li> \ref thyra_documents_sec lists some useful documents related to %Thyra.
+<li> \ref thyra_contributors_sec list individuals who contributed to the
+development of %Thyra.
+<li> \ref thyra_related_software_sec gives links to other software related to %Thyra.
+</ul>
+
+\section thyra_software_sec Thyra Software
+
+Below are links to different Doxygen documentation collections for different
+aspects of Thyra:
+
+<ul>
+
+<li> <a href="../../src/utils/doc/html/index.html">Miscellaneous Utilities</a>: Some utility code
+that does not belong in any one of the below collections of code.
+
+<li> Abstract Numerical Algorithm (ANA) Software: Interfaces and support code for developing and using
+ANAs.
+
+  <ul>
+
+  <li> <a href="../../src/ana/rtop/doc/html/index.html">RTOp: Vector Reduction/Transformation Operators</a>:
+  Documents the basic RTOp interfaces and support software and
+  catalogs a library of pre-created RTOp subclasses.
+
+  <li> <a href="../../src/ana/operator_vector/doc/html/index.html">Operator/Vector Interfaces and Support Software</a>:
+  Contains the most fundamental %Thyra operator/vector interfaces as well as standard adapter code and ANA development
+  utilities.
+
+  </ul>
+
+<li> Other Thyra software
+
+</ul>
+
+\section thyra_dependencies_sec Other Trilinos Packages on which Thyra Depends
+
+The %Thyra code described here is dependent on the following Trilinos packages:
+
+<ul>
+<li><b><a href="../../../teuchos/doc/html/index.html">Teuchos</a></b>: This package supplies basic utility classes such
+as <tt>Teuchos::RefCountPtr</tt> and <tt>Teuchos::BLAS</tt> that
+%Thyra software is dependant on.
+</ul>
+
+\section thyra_configuration_sec Configuration of the Thyra Package
+
+The %Thyra package's <tt>configure</tt> script (which should be called from
+the base Trilinos-level configure script) responds to a number of options that
+affect the code that is built.
+
+Some of the more important configuration options are:
+
+<ul>
+<li><b><tt>--enable-thyra</tt></b>: Causes the %Thyra package and all of
+its dependent packages to be enabled and built.  Without this option,
+there will be no %Thyra header files or libraries included in the
+installation of Trilinos.
+</ul>
+
+See the output from <tt>./configure --help</tt> (where <tt>./</tt> is
+the base source directory) for a complete listing of all of the
+configure options that Thyra responds to.
+
+The %Thyra package is also affected by configure options passed to
+other packages and some of these options are:
+
+<ul>
+<li><b><tt>--enable-teuchos-complex</tt></b>: Causes the
+<tt>std::complex<></tt> scalar type to be used in templated examples
+and tests.
+<li><b><tt>--enable-teuchos-gmp</tt></b>: Causes the GNU MP
+extended-precision <tt>mpf_class</tt> scalar type to be used in
+templated examples and tests.
+</ul>
+
+\section thyra_external_projects_sec Building and Linking Against Thyra in External Projects
+
+It is recommended that developers external to Trilinos install %Thyra with the
+rest of Trilinos and then compile and link against the installed headers and
+libraries (see ??? for a discussion of installing Trilinos).  Remember that in
+order to install the contents of the <tt>thyra</tt> packages that one must
+enable it (see <tt>--enable-thyra</tt> and other <tt>configure</tt> options)
+before installation.
+
+Once %Thyra software is installed in the location specified by the configure
+option <tt>--prefix=TRILINOS_INSTALL_DIR</tt> with the rest of Trilinos, it is
+important that a client's external makefile system be consistent with the
+environment used to build %Thyra.  To do this, a set of makefile fragments is
+installed in the directory
+
+\verbatim
+
+  $TRILINOS_INSTALL_DIR/include/
+\endverbatim
+
+When %Thyra is installed with Trilinos, the directory
+
+\verbatim
+
+  $TRILINOS_INSTALL_DIR/example/thyra/
+\endverbatim
+
+is created which contains an exmaple of an external project that uses 
+%Thyra.  The example makefile 
+
+\verbatim
+
+  $TRILINOS_INSTALL_DIR/example/thyra/Makefile
+\endverbatim
+
+that builds an external version the <tt>sillyCgSolve_serial.exe</tt> program
+is shown below:
+
+\verbinclude external/Makefile
+
+By using the macros starting with <tt>THYRA_</tt> one is guaranteed that the
+same compiler with the same options are used to build the client's code that
+were used to build Trilinos.  Of particular importance are <tt>THYRA_CXX</tt>,
+<tt>THYRA_DEFS</tt>, <tt>THYRA_CPPFLAGS</tt>, and <tt>THYRA_CXXLD</tt> since
+these ensure that the same C++ compiler and the same <tt>-D</tt> macro
+definitions are used.
+
+\section thyra_documents_sec Documents Describing or are Related to Thyra
+
+<ul>
+
+<li><b><a
+href="http://software.sandia.gov/trilinos/RefCountPtrBeginnersGuideSAND.pdf">
+Teuchos::RefCountPtr Beginner's Guide : An Introduction to the
+Trilinos Smart Reference-Counted Pointer Class for (Almost) Automatic
+Dynamic Memory Management in C++ </a></b>
+
+This paper describes the basics of <tt>Teuchos::RefCountPtr</tt> and
+outlines a convention for passing objects to and from functions that
+all of the code in %Thyra adheres to.
+
+<li><b><a href="http://software.sandia.gov/RTOp/RTOpTOMS.pdf"> VectorBase
+Reduction/Transformation Operators </a></b>
+
+This paper describes the need for, and the basic design of,
+<tt>RTOpPack::RTOpT</tt>.  The concrete implementation described in
+this paper used C while the current <tt>RTOpPack::RTOpT</tt> is a
+fully templated C++ implementation.
+
+<li><b><a
+href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">
+TSFCore : A package of light-weight object-oriented abstractions for
+the development of abstract numerical algorithms and interfacing to
+linear algebra libraries and applications </a></b>
+
+This paper describes the requirements and the use cases for the \ref
+foundational_thyra_operator_vector_interfaces_sec.  This paper contains critical
+design information without which %Thyra can not be fully
+appreciated.  However, most developer's that interact with Thyra
+need not know all of the detailed design information presented in this
+report.
+
+ToDo: Update this paper using the Thyra Operator/Vector paper!
+
+</ul>
+
+\section thyra_contributors_sec Contributors to the Thyra Package and Related Software
+
+The contributors to the %Thyra package, or related packages, in alphabetical
+order, are:
+
+<ul>
+<li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead develoepr
+<li> Paul Boggs (ptboggs@sandia.gov) : Split/O3D lead developer, %Thyra developer
+<li> Michael Heroux (maherou@sandia.gov): Trilinos leader
+<li> Rob Hoekstra (rjhoeks@sandia.gov) : %EpetraExt lead developer
+<li> Victoria Howle (vehowle@sandia.gov) : %Meros lead developer, %Thyra developer
+<li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer, %Thyra developer
+<li> Roger Pawlowski (rppawlo@sandia.gov) : %NOX lead developer
+<li> Heidi Thornquist (hkthorn@sandia.gov): %Belos lead developer, %Thyra developer
+<li> Allan Williams (william@sandia.gov) : %FEI lead developer, %Thyra developer
+</ul>
+
+\section thyra_related_software_sec Other Software Related to Thyra
+
+Below is a partial list of software related to Thyra.
+
+<ul>
+
+<li><a href="../../../epetra/thyra/doc/html/index.html">ANA Operator/Vector
+Adapters for Epetra </a>: This software allows the creation of
+<tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
+<tt>Thyra::MultiVectorBase</tt>, and <tt>Thyra::LinearOpBase</tt> objects out
+of Epetra objects.
+
+</ul>
+
+*/
+

@@ -315,6 +315,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
 HAVE_TEUCHOS_COMPLEX_TRUE = @HAVE_TEUCHOS_COMPLEX_TRUE@
 HAVE_TEUCHOS_EXTENDED_FALSE = @HAVE_TEUCHOS_EXTENDED_FALSE@
@@ -358,6 +359,8 @@ TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR = @USE_ALTERNATE_AR@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -561,13 +564,6 @@ DIST =
 COMP_H = 
 COMP = 
 
-#np# List locations of include files within Trilinos but outside of this 
-#np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-#AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-AM_CPPFLAGS = 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
 #np# replace teuchos with the name of the package being autotool'ed here
@@ -612,8 +608,6 @@ EXTRA_libteuchos_a_SOURCES = \
 
 @USE_ALTERNATE_AR_FALSE@libteuchos_a_AR = $(AR) cru
 
-#We need the following to support separate build directories
-#AM_CPPFLAGS=-I$(builddir)/src
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
@@ -1502,8 +1496,6 @@ install-data-am: install-includeHEADERS
 
 install-exec-am: install-libLIBRARIES \
 	install-nodist_execincludeHEADERS
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-info: install-info-am
 
@@ -1545,13 +1537,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
-
-# ------------------------------------------------------------------------
-# Create the makeoptions file
-# ------------------------------------------------------------------------
-
-install-exec-hook:	
-	perl $(top_srcdir)/.generate-makeoptions.pl $(top_builddir)/src/Makefile > $(exec_prefix)/include/trilinos_make_macros.mak
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

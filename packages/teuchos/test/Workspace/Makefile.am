@@ -28,13 +28,17 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = workspace_test
+include $(top_builddir)/Makefile.export.teuchos
+
+bin_PROGRAMS = workspace_test
 
 workspace_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 workspace_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
-workspace_test_CXXFLAGS = -I$(top_srcdir)/src
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 
-workspace_test_LDADD = -L$(top_builddir)/src \
-	$(top_builddir)/src/libteuchos.a $(FLIBS)
+workspace_test_LDADD = $(TEUCHOS_LIBS)
+
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =

@@ -28,13 +28,17 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = dyn_cast_test
+include $(top_builddir)/Makefile.export.teuchos
+
+bin_PROGRAMS = dyn_cast_test
 
 dyn_cast_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 dyn_cast_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
-dyn_cast_test_CXXFLAGS = -I$(top_srcdir)/src
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 
-dyn_cast_test_LDADD = \
-	$(top_builddir)/src/libteuchos.a $(FLIBS)
+dyn_cast_test_LDADD = $(TEUCHOS_LIBS)
+
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =

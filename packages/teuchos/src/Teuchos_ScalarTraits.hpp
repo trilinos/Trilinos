@@ -74,11 +74,9 @@
      </ol>
 */
 
-/*! \struct Teuchos::UndefinedScalarTraits
-    \brief This is the default structure used by ScalarTraits<T> to produce a compile time
+/* This is the default structure used by ScalarTraits<T> to produce a compile time
 	error when the specialization does not exist for type <tt>T</tt>.
 */
-
 namespace Teuchos {
   template<class T>
   struct UndefinedScalarTraits
@@ -92,6 +90,8 @@ namespace Teuchos {
   {
     //! Madatory typedef for result of magnitude
     typedef T magnitudeType;
+		//! Determines of scalar type is complex
+		static const bool isComplex = false;
 		//! Determines of scalar type supports relational operators such as <, >, <=, >=.
 		static const bool isComparable = false;
     //! Does this scalar type have machine-specific parameters (i.e. eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax() are supported)
@@ -144,6 +144,7 @@ namespace Teuchos {
   struct ScalarTraits<int>
   {
     typedef int magnitudeType;
+		static const bool isComplex = false;
 		static const bool isComparable = true;
 		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -158,12 +159,15 @@ namespace Teuchos {
     static inline int squareroot(int x) { return (int) ::sqrt((double) x); };
   };
 
-  extern float flt_nan;
+#ifndef __sun
+  extern const float flt_nan;
+#endif
  
   template<>
   struct ScalarTraits<float>
   {
     typedef float magnitudeType;
+		static const bool isComplex = false;
 		static const bool isComparable = true;
 		static const bool hasMachineParameters = true;
     static inline float eps()   {
@@ -240,7 +244,13 @@ namespace Teuchos {
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
     static inline float conjugate(float x)   { return(x); };    
-    static inline float nan()   { return flt_nan; };
+    static inline float nan() {
+#ifdef __sun
+      return 0.0/sin(0.0);
+#else
+      return flt_nan;
+#endif
+    };
     static inline bool isnaninf(float x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
       const float tol = 1e-6; // Any (bounded) number should do!
       if( !(x <= tol) && !(x > tol) ) return true;                 // IEEE says this should fail for NaN
@@ -253,12 +263,15 @@ namespace Teuchos {
     static inline float squareroot(float x) { return sqrt(x); };
   };
 
-  extern double dbl_nan;
+#ifndef __sun
+  extern const double dbl_nan;
+#endif
  
   template<>
   struct ScalarTraits<double>
   {
     typedef double magnitudeType;
+		static const bool isComplex = false;
 		static const bool isComparable = true;
 		static const bool hasMachineParameters = true;
     static inline double eps()   {
@@ -335,7 +348,13 @@ namespace Teuchos {
     static inline double zero()  { return 0.0; };
     static inline double one()   { return 1.0; };
     static inline double conjugate(double x)   { return(x); };    
-    static inline double nan() { return dbl_nan; };
+    static inline double nan() {
+#ifdef __sun
+      return 0.0/sin(0.0);
+#else
+      return dbl_nan;
+#endif
+    };
     static inline bool isnaninf(double x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
       const double tol = 1e-6; // Any (bounded) number should do!
       if( !(x <= tol) && !(x > tol) ) return true;                  // IEEE says this should fail for NaN
@@ -356,6 +375,8 @@ namespace Teuchos {
   struct ScalarTraits<mpf_class>
   {
     typedef mpf_class magnitudeType;
+		static const bool isComplex = false;
+		static const bool isComparable = true;
 		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
     static magnitudeType magnitude(mpf_class a) { return abs(a); };
@@ -382,6 +403,7 @@ namespace Teuchos {
   struct ScalarTraits<mp_real>
   {
     typedef mp_real magnitudeType;
+		static const bool isComplex = false;
 		static const bool isComparable = true;
 		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -419,6 +441,7 @@ namespace Teuchos {
     typedef ::complex<T>     ComplexT;
 #endif
     typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
+		static const bool isComplex = true;
 		static const bool isComparable = false;
 		static const bool hasMachineParameters = true;
     static inline magnitudeType eps()          { return ScalarTraits<magnitudeType>::eps(); };

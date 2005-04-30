@@ -118,6 +118,10 @@ if BUILD_TEUCHOS
 TEUCHOS_SUBDIR = teuchos
 endif
 
+if BUILD_THYRA
+THYRA_SUBDIR = thyra
+endif
+
 if BUILD_NOX
 NOX_SUBDIR = nox
 endif
@@ -162,10 +166,10 @@ if BUILD_DIDASKO
 DIDASKO_SUBDIR = didasko
 endif
 
-#Epetra must be listed first due to aztecoo's dependence on Epetra
+# Must list the packages in the order that they are built!
 ## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
 ## above, to this list
-SUBDIRS = $(TEUCHOS_SUBDIR) $(KOKKOS_SUBDIR) $(EPETRA_SUBDIR) \
+SUBDIRS = $(TEUCHOS_SUBDIR) $(THYRA_SUBDIR) $(KOKKOS_SUBDIR) $(EPETRA_SUBDIR) \
 	  $(TRIUTILS_SUBDIR) $(TPETRA_SUBDIR) $(AZTECOO_SUBDIR) \
 	  $(EPETRAEXT_SUBDIR) $(AMESOS_SUBDIR) \
 	  $(IFPACK_SUBDIR) $(KOMPLEX_SUBDIR) \

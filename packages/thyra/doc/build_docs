@@ -1,0 +1,13 @@
+#!/bin/sh
+
+cd ../src/utils/doc ; ./generate_Doxyfile ; cd ../../../doc
+doxygen ../src/utils/doc/Doxyfile
+
+cd ../src/ana/rtop/doc ; ./generate_Doxyfile ; cd ../../../../doc
+doxygen ../src/ana/rtop/doc/Doxyfile
+
+cd ../src/ana/operator_vector/doc ; ./generate_Doxyfile ; cd ../../../../doc
+doxygen ../src/ana/operator_vector/doc/Doxyfile
+
+./generate_Doxyfile
+doxygen Doxyfile

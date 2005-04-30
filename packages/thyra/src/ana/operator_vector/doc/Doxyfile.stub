@@ -1,0 +1,39 @@
+#
+# Package options
+#
+PROJECT_NAME           = "Thyra ANA Operator/VectorBase Interfaces and Related Software"
+PROJECT_NUMBER         = "Version of the Day"
+OUTPUT_DIRECTORY       = ../src/ana/operator_vector/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src/ana/operator_vector/doc/index.doc \
+                         ../src/ana/operator_vector/interfaces \
+                         ../src/ana/operator_vector/extended_interfaces \
+                         ../src/ana/operator_vector/adapter_support \
+                         ../src/ana/operator_vector/ana_support \
+                         ../example/ana/operator_vector/SerialTridiagLinearOp.hpp \
+                         ../example/ana/operator_vector/MPITridiagLinearOp.hpp \
+                         ../example/ana/operator_vector/sillyCgSolve.hpp \
+                         ../example/ana/operator_vector/sillyPowerMethod.hpp
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           = ../example/ana/operator_vector \
+                         ../test/ana/operator_vector
+EXAMPLE_PATTERNS       = *.cpp *.hpp
+IMAGE_PATH             = ../src/ana/operator_vector/doc/images \
+                         ./images 
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../../../../teuchos/doc/html \
+                         ../../common/tag_files/ThyraUtils.tag=../../../../utils/doc/html \
+                         ../../common/tag_files/ThyraRTOp.tag=../../../rtop/doc/html
+GENERATE_TAGFILE       = ../../common/tag_files/ThyraOperatorVector.tag
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO

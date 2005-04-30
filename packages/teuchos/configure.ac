@@ -126,6 +126,33 @@ AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
+# Check for perl
+# ------------------------------------------------------------------------
+
+# Check for perl to run scripts
+AC_CHECK_PROG(HAVE_PERL, perl, yes, no)
+AM_CONDITIONAL(USING_PERL, test X${HAVE_PERL} = Xyes)
+
+#-------------------------------------------------------------------------
+# See if the user is allowing us to assume that gnu-make will be used
+#-------------------------------------------------------------------------
+
+#TAC_ARG_ENABLE_FEATURE_SUB(
+#  with, gnumake
+#  ,[Specify that the the program GNUMake will be used to make all code.  If specified, perl must also be in your path!]
+#  ,WITH_GNU_MAKE
+#  ,no
+#  )
+#AM_CONDITIONAL(USING_WITH_GNU_MAKE, [test "X$ac_cv_use_with_gnumake" != "Xno"])
+
+#AC_ARG_WITH(gnu-make,
+# [AC_HELP_STRING([--with-gnu-make],
+# [The program GNUMake will be used to make all code.  If specified, perl must also be in your path!])],
+# [
+#   USING_GNU_MAKE=1
+# ],)
+
+# ------------------------------------------------------------------------
 # Checks for extra flags
 # #np# - You can pull flag checks for languages not used in package 
 # ------------------------------------------------------------------------
@@ -668,6 +695,7 @@ AC_SUBST(AMDEP_FALSE)
 AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export 
+		Makefile.export.teuchos 
 		src/Makefile
 		test/Makefile
 		test/BLAS/Makefile
@@ -682,7 +710,7 @@ AC_CONFIG_FILES([
 		test/Workspace/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
-		test/scripts/daily/serial/Makefile
+		test/scripts/daily/serial/run-teuchos-tests.pl
 		test/scripts/daily/mpi/Makefile
 		example/Makefile
 		example/BLAS/Makefile

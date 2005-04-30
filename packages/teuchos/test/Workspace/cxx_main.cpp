@@ -32,8 +32,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"
 
-///
-/** This class implements a simple (useless) transformation that requires
+/** \brief This class implements a simple (useless) transformation that requires
  * workspace.
  *
  * This class creates workspace using one of four approaches:
@@ -76,7 +75,7 @@ int main( int argc, char* argv[] )
 {
   using Teuchos::CommandLineProcessor;
 
-  bool verbose = false;
+  bool verbose = true;
 
   try {
 

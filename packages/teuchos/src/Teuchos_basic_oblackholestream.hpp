@@ -36,8 +36,7 @@
 
 namespace Teuchos {
 
-///
-/** <tt>basic_ostream<></tt> subclass that does nothing but discard output.
+/** \brief <tt>basic_ostream<></tt> subclass that does nothing but discard output.
  *
  * Use the class anytime you must pass an <tt>basic_ostream<></tt> object
  * but don't want the output for any reason.
@@ -50,50 +49,81 @@ class basic_oblackholestream
 public:
 
 	// Types (inherited from basic_ios (27.4.4)):
+  /** \brief . */
 	typedef _CharT                     		char_type;
+  /** \brief . */
 	typedef typename _Traits::int_type 		int_type;
+  /** \brief . */
 	typedef typename _Traits::pos_type 		pos_type;
+  /** \brief . */
 	typedef typename _Traits::off_type 		off_type;
+  /** \brief . */
 	typedef _Traits                    		traits_type;
 	
 	// Non-standard Types:
+  /** \brief . */
 	typedef std::basic_streambuf<_CharT, _Traits>      __streambuf_type;
+  /** \brief . */
 	typedef std::basic_ios<_CharT, _Traits>            __ios_type;
+  /** \brief . */
 	typedef std::basic_ostream<_CharT, _Traits>        __ostream_type;
 
 	// 27.6.2.2 Constructor/destructor:
+  /** \brief . */
 	explicit basic_oblackholestream() : __ostream_type(NULL) {}
 //	explicit basic_oblackholestream(__streambuf_type* __sb) : __ostream_type(NULL){}
+  /** \brief . */
 	virtual ~basic_oblackholestream() { }
 
 	// 27.6.2.5 Formatted output:
 	// 27.6.2.5.3  basic_ostream::operator<<
+  /** \brief . */
 	__ostream_type& operator<<(__ostream_type& (*__pf)(__ostream_type&)) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(__ios_type& (*__pf)(__ios_type&)) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(std::ios_base& (*__pf) (std::ios_base&)) { return *this; }
 
 	// 27.6.2.5.2 Arithmetic Inserters
+  /** \brief . */
 	__ostream_type& operator<<(long __n) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(unsigned long __n) { return *this; }
-    __ostream_type& operator<<(bool __n) { return *this; }
+  /** \brief . */
+  __ostream_type& operator<<(bool __n) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(short __n) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(unsigned short __n) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(int __n) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(unsigned int __n) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(double __f) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(float __f) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(long double __f) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(const void* __p) { return *this; }
+  /** \brief . */
 	__ostream_type& operator<<(__streambuf_type* __sb) { return *this; }
 
 	// Unformatted output:
+  /** \brief . */
 	__ostream_type& put(char_type __c) { return *this; }
+  /** \brief . */
 	__ostream_type& write(const char_type* __s, std::streamsize __n) { return *this; }
+  /** \brief . */
 	__ostream_type& flush() { return *this; }
 
 	// Seeks:
+  /** \brief . */
 	pos_type tellp() { return 0; }
+  /** \brief . */
 	__ostream_type& seekp(pos_type) { return *this; }
+  /** \brief . */
 	__ostream_type& seekp(off_type, std::ios_base::seekdir) { return *this; }
 
 }; // end class basic_oblackholestream

@@ -75,7 +75,7 @@ public:
 	/// Default value for <tt>indentSpacer</tt> in <tt>describe()</tt>
 	static const std::string       indentSpacer_default;
 
-	///
+	/** \brief . */
 	virtual ~Describable() {}
 
 	/** \name Public virtual member functions */
@@ -139,6 +139,50 @@ public:
 		) const;
 
 };
+
+/** \defgroup Teuchos_Describable_Stream_Manipulators Stream Manipulators for Describable Objects.
+ *
+ * This code allows a client to call the function
+ * <tt>Describable::describe(...)</tt> inside of a string of output stream
+ * calls.
+ */
+
+/** \brief Describable stream manipulator state. */
+struct DescribableStreamManipulatorState {
+  const Describable          &describable;
+	const EVerbosityLevel      verbLevel;
+	const std::string          leadingIndent;
+	const std::string          indentSpacer;
+  DescribableStreamManipulatorState(
+    const Describable          &_describable
+    ,const EVerbosityLevel     _verbLevel
+    ,const std::string         _leadingIndent
+    ,const std::string         _indentSpacer
+    )
+    :describable(_describable)
+    ,verbLevel(_verbLevel)
+    ,leadingIndent(_leadingIndent)
+    ,indentSpacer(_indentSpacer)
+    {}
+};
+
+/** \brief Describable output stream maniuplator */
+inline DescribableStreamManipulatorState describe(
+  const Describable          &describable
+  ,const EVerbosityLevel     verbLevel     = Describable::verbLevel_default
+  ,const std::string         leadingIndent = Describable::leadingIndent_default
+  ,const std::string         indentSpacer  = Describable::indentSpacer_default
+  )
+{
+  return DescribableStreamManipulatorState(describable,verbLevel,leadingIndent,indentSpacer);
+}
+
+/** \brief Output stream operator for Describable manipulator */
+inline
+std::ostream& operator<<( std::ostream& os, const DescribableStreamManipulatorState& d )
+{
+  return d.describable.describe(os,d.verbLevel,d.leadingIndent,d.indentSpacer);
+}
 
 } // namespace Teuchos
 

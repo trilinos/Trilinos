@@ -61,12 +61,23 @@ any& RefCountPtr_node::get_extra_data( const std::string& type_name, const std::
 	TEST_FOR_EXCEPTION(
 		extra_data_map_==NULL, std::invalid_argument
 		,"Error, no extra data has been set yet!" );
+  any *extra_data = get_optional_extra_data(type_name,name);
+  if(extra_data) return *extra_data;
+	const std::string type_and_name( type_name + std::string(":") + name );
+	TEST_FOR_EXCEPTION(
+		extra_data == NULL, std::invalid_argument
+		,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
+  return *extra_data; // Will never be executed!
+}
+
+any* RefCountPtr_node::get_optional_extra_data( const std::string& type_name, const std::string& name )
+{
+  if( extra_data_map_ == NULL ) return NULL;
 	const std::string type_and_name( type_name + std::string(":") + name );
 	extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
-	TEST_FOR_EXCEPTION(
-		itr == extra_data_map_->end(), std::invalid_argument
-		,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
-	return (*itr).second.extra_data;
+  if(itr != extra_data_map_->end())
+    return &(*itr).second.extra_data;
+  return NULL;
 }
 
 void RefCountPtr_node::impl_pre_delete_extra_data()

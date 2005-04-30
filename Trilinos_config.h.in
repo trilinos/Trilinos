@@ -60,6 +60,9 @@
 /* Define if want to build teuchos */
 #undef HAVE_TEUCHOS
 
+/* Define if want to build thyra */
+#undef HAVE_THYRA
+
 /* Define if want to build tpetra */
 #undef HAVE_TPETRA
 

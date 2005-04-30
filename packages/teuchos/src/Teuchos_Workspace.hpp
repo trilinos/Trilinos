@@ -37,8 +37,7 @@ namespace Teuchos {
 class WorkspaceStore;
 class RawWorkspace;
 
-///
-/** \defgroup Teuchos_Workspace_grp Set of utilities for allocating temporary workspace.
+/** \brief \defgroup Teuchos_Workspace_grp Set of utilities for allocating temporary workspace.
  *
  * The goal of this set of utilities is to allow the user to create
  * arrays of uninitialized or default initialized objects as automatic
@@ -48,8 +47,7 @@ class RawWorkspace;
  */
 //@{
 
-///
-/** Set pointer to global workspace object.
+/** \brief Set pointer to global workspace object.
  *
  * This function sets a smart pointer to a workspace object can be set
  * at any time and will serve as the default workspace.  This object
@@ -69,13 +67,11 @@ class RawWorkspace;
  */
 void set_default_workspace_store( const Teuchos::RefCountPtr<WorkspaceStore> &default_workspace_store );
 
-///
-/** Get the global workspace object set by <tt>set_default_workspace_store()</tt>.
+/** \brief Get the global workspace object set by <tt>set_default_workspace_store()</tt>.
  */
 Teuchos::RefCountPtr<WorkspaceStore> get_default_workspace_store();
 
-///
-/** Print statistics on memory usage.
+/** \brief Print statistics on memory usage.
  *
  * @param  workspace_store [in] If <tt>workspace_store!=NULL</tt> then statistics
  *                         about its memory usage to this point are printed to
@@ -84,17 +80,15 @@ Teuchos::RefCountPtr<WorkspaceStore> get_default_workspace_store();
  */
 void print_memory_usage_stats( const WorkspaceStore* workspace_store, std::ostream& out );
 
-///
-/** Encapulsation object for raw temporary workspace that has been allocated.
+/** \brief Encapulsation object for raw temporary workspace that has been allocated.
  * These objects can only be created on the stack and should not be included
  * as the member of any other classes.
  */
 class RawWorkspace {
 public:
-	///
+	/** \brief . */
 	friend class WorkspaceStore;
-	///
-	/** Allocate num_bytes bytes of temporary workspace.
+	/** \brief Allocate num_bytes bytes of temporary workspace.
 	 * When this object is created if <tt>workspace_store != NULL</tt> the <tt>workspace_store</tt> object
 	 * will be used to get the raw memory.  If <tt>workspace_store == NULL || </tt>
 	 * <tt>workspace_store->num_bytes_remaining() < num_bytes</tt> then this memory
@@ -123,7 +117,7 @@ public:
 	size_t num_bytes() const;
 	/// Give a raw pointer to the beginning of the workspace.
 	char* workspace_ptr();
-	///
+	/** \brief . */
 	const char* workspace_ptr() const;
 private:
 	WorkspaceStore   *workspace_store_;
@@ -139,8 +133,7 @@ private:
 	static void operator delete(void*);
 }; // end class RawWorkspace
 
-///
-/** Templated class for workspace creation.
+/** \brief Templated class for workspace creation.
  *
  * Objects of this type are what should be created by the user
  * instead of RawWorkspace objects since this class will properly
@@ -167,8 +160,7 @@ private:
 template<class T>
 class Workspace {
 public:
-	///
-	/** Allocates a num_elements array of temporary objects.
+	/** \brief Allocates a num_elements array of temporary objects.
 	 *
 	 * @param  workspace_store  [in] Pointer to the workspace object to get the memory from.
 	 *                          This can be <tt>NULL</tt> in which case <tt>new T[]</tt> and 
@@ -200,23 +192,20 @@ public:
 	 * like <tt>double</tt> and <tt>int</tt> but not okay for class types like <tt>std::string</tt> etc.
 	 */
 	Workspace(WorkspaceStore* workspace_store, size_t num_elements, bool call_constructors = true);
-	///
-	/** The destructor on the elements will only be called if <tt>call_constructors == true</tt> was
+	/** \brief The destructor on the elements will only be called if <tt>call_constructors == true</tt> was
 	 * passed to the constructor.
 	 */
 	~Workspace();
 	/// Return the number of elements in the array.
 	size_t size() const;
-	///
-	/** Non-const zero based element access.
+	/** \brief Non-const zero based element access.
 	 *
 	 * Preconditions:<ul>
 	 * <li> <tt>0 <= i && i < size()</tt> (throw <tt>std::invalid_argument</tt>)
 	 * </ul>
 	 */
 	T& operator[](size_t i);
-	///
-	/** Const zero based element access.
+	/** \brief Const zero based element access.
 	 *
 	 * Preconditions:<ul>
 	 * <li> <tt>0 <= i && i < size()</tt> (throw <tt>std::invalid_argument</tt>)
@@ -234,8 +223,7 @@ private:
 	static void operator delete(void*);
 }; // end class Workspace
 
-///
-/** Workspace encapsulation class.
+/** \brief Workspace encapsulation class.
  *
  * Base class for objects that allocate a huge block of memory
  * at once and then allow RawWorkspace (an hense Workspace<T>) objects to be created
@@ -248,46 +236,40 @@ private:
  */
 class WorkspaceStore {
 public:
-	///
+	/** \brief . */
 	friend class RawWorkspace;
-	///
+	/** \brief . */
 	~WorkspaceStore();
-	///
-	/** Return the total number of bytes that where initially allocated.
+	/** \brief Return the total number of bytes that where initially allocated.
 	 */
 	size_t num_bytes_total() const;
-	///
-	/** Return the number of bytes remaining currently.
+	/** \brief Return the number of bytes remaining currently.
 	 */
 	size_t num_bytes_remaining() const;
-	///
-	/** Return the number of static memory allocations granted thus far.
+	/** \brief Return the number of static memory allocations granted thus far.
 	 * This is the number of memory allocations requested by the creation
 	 * of RawWorkspace objects where there was sufficient preallocated memory
 	 * to satisfy the request.
 	 */
 	int num_static_allocations() const;
-	///
-	/** Return the number of dynamic memory allocations granted thus far.
+	/** \brief Return the number of dynamic memory allocations granted thus far.
 	 * This is the number of memory allocations requested by the creation
 	 * of RawWorkspace objects where there was not sufficient preallocated memory
 	 * to satisfy the request and dynamic memory had to be created.
 	 */
 	int num_dyn_allocations() const;
-  ///
-  /** Return the total number of bytes currently allocated..  This is the
+  /** \brief Return the total number of bytes currently allocated..  This is the
    * total number of bytes currently being used.
    */
   size_t num_current_bytes_total();
-  ///
-  /** Return the maximum storage in bytes needed.  This is the maximum
+  /** \brief Return the maximum storage in bytes needed.  This is the maximum
    * total amount of * storage that was needed at any one time.
    */
   size_t num_max_bytes_needed() const;
 protected:
-	///
+	/** \brief . */
 	WorkspaceStore(size_t num_bytes);
-	///
+	/** \brief . */
 	void protected_initialize(size_t num_bytes);
 private:
   char    *workspace_begin_; // Points to the beginning of raw allocated workspace.
@@ -308,8 +290,7 @@ private:
 	WorkspaceStore& operator=(const WorkspaceStore&);
 }; // end class WorkspaceStore
 
-///
-/** WorkspaceStore class that can be used to actually reinitialize memory.
+/** \brief WorkspaceStore class that can be used to actually reinitialize memory.
  *
  * The client can create concrete instances of this type and initalize
  * the memory used.  The client should call <tt>initialize(num_bytes)</tt> to set the number
@@ -320,13 +301,11 @@ class WorkspaceStoreInitializeable
 	: public WorkspaceStore
 {
 public:
-	///
-	/** Default constructs to no memory set and will dynamically
+	/** \brief Default constructs to no memory set and will dynamically
 	 * allocate all memory requested.
 	 */
 	WorkspaceStoreInitializeable(size_t num_bytes = 0);
-	///
-	/** Set the size block of memory to be given as workspace.
+	/** \brief Set the size block of memory to be given as workspace.
 	 *
 	 * If there are any instantiated RawWorkspace objects then this
 	 * function willl throw an exception.  It must be called before

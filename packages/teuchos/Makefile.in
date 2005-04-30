@@ -63,10 +63,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.export.in $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure config/config.guess config/config.sub \
-	config/depcomp config/install-sh config/missing \
-	config/mkinstalldirs
+	$(srcdir)/Makefile.export.in \
+	$(srcdir)/Makefile.export.teuchos.in $(srcdir)/Makefile.in \
+	$(top_srcdir)/configure \
+	$(top_srcdir)/test/scripts/daily/serial/run-teuchos-tests.pl.in \
+	config/config.guess config/config.sub config/depcomp \
+	config/install-sh config/missing config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -97,7 +99,8 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Teuchos_config.h
-CONFIG_CLEAN_FILES = Makefile.export
+CONFIG_CLEAN_FILES = Makefile.export Makefile.export.teuchos \
+	test/scripts/daily/serial/run-teuchos-tests.pl
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -155,6 +158,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
 HAVE_TEUCHOS_COMPLEX_TRUE = @HAVE_TEUCHOS_COMPLEX_TRUE@
 HAVE_TEUCHOS_EXTENDED_FALSE = @HAVE_TEUCHOS_EXTENDED_FALSE@
@@ -198,6 +202,8 @@ TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR = @USE_ALTERNATE_AR@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -313,6 +319,10 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 Makefile.export: $(top_builddir)/config.status $(srcdir)/Makefile.export.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+Makefile.export.teuchos: $(top_builddir)/config.status $(srcdir)/Makefile.export.teuchos.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+test/scripts/daily/serial/run-teuchos-tests.pl: $(top_builddir)/config.status $(top_srcdir)/test/scripts/daily/serial/run-teuchos-tests.pl.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
@@ -435,7 +445,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/test/scripts/daily/serial
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -624,6 +634,8 @@ info-am:
 install-data-am:
 
 install-exec-am:
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-info: install-info-recursive
 
@@ -650,6 +662,8 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-info-am
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 uninstall-info: uninstall-info-recursive
 
@@ -673,6 +687,26 @@ uninstall-info: uninstall-info-recursive
 
 all-local:
 	@echo "Trilinos package teuchos built successfully"
+
+#if USING_PERL
+
+install-exec-hook:	
+	cp $(top_builddir)/Makefile.export.teuchos $(exec_prefix)/include/. ; \
+	perl $(top_srcdir)/config/replace-install-prefix.pl \
+		--exec-prefix=$(exec_prefix) \
+		--my-export-makefile=Makefile.export.teuchos \
+		--my-abs-top-srcdir=@abs_top_srcdir@ \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src ; \
+	perl $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile TEUCHOS > $(exec_prefix)/include/Makefile.export.teuchos.macros
+
+uninstall-hook:
+	rm -f $(exec_prefix)/include/Makefile.export.teuchos ; \
+	rm -f $(exec_prefix)/include/Makefile.export.teuchos.macros
+
+# RAB: This does not work??
+
+#endif
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -26,9 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// //////////////////////////////////////////////////
-// Teuchos_CommandLineProcessor.hpp
-
 #ifndef TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 #define TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 
@@ -41,8 +38,7 @@
 
 namespace Teuchos {
 
-///
-/** \class CommandLineProcessor
+/** \brief \class CommandLineProcessor
  *
  *   \brief Class that helps parse command line input arguments from <tt>(argc,argv[])</tt> and set options.
  *
@@ -72,7 +68,7 @@ public:
 		,PARSE_UNRECOGNIZED_OPTION     = -1 /*!< The command line parser encountered an unrecognized option. */
 	};
 
-	///
+	/** \brief . */
 	//@{ \name Constructors
 	/** \brief Default Constructor
 	 *
@@ -92,7 +88,6 @@ public:
 
 	//@{ \name Set up options
 
-	///
 	/** \brief Set a boolean option.
 	 *
 	 * @param  option_true    [in] (null terminated string) If this option is found then
@@ -112,7 +107,6 @@ public:
 		,const char    documentation[] = NULL
 		);
 
-	///
 	/** \brief Set an integer option.
 	 *
 	 * @param  option_name    [in] (null terminated string) The name of the option
@@ -129,7 +123,6 @@ public:
 		,const char    documentation[] = NULL
 		);
 
-	///
 	/** \brief Set a floating-point option.
 	 *
 	 * @param  option_name    [in] (null terminated string) The name of the option
@@ -146,7 +139,6 @@ public:
 		,const char    documentation[] = NULL
 		);
 
-	///
 	/** \brief Set a string option.
 	 *
 	 * @param  option_name    [in] (null terminated string) The name of the option
@@ -163,7 +155,6 @@ public:
 		,const char    documentation[] = NULL
 		);
 	
-	///
 	/** \brief Set an enumeration option (templated by enumeration type).
 	 *
 	 * @param  enum_option_name
@@ -206,7 +197,6 @@ public:
 
 	//@{ \name Parse methods
 
-	///
 	/** \brief Parse a command line.
 	 *
 	 * @param  argc    [in] number of entries in argv[]
@@ -270,7 +260,6 @@ public:
 
 	//@{ \name Miscellaneous method
 
-	///
 	/** \brief Print the help message.
 	 *
 	 * @param  out  [in/out] The stream the documentation will be printed to.
