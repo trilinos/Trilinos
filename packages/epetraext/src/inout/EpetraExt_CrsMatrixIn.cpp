@@ -78,6 +78,8 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   FILE * handle = 0;
 
   handle = fopen(filename,"r");  // Open file
+  if (handle == 0)
+    EPETRA_CHK_ERR(-1); // file not found
 
   // Check first line, which should be "%%MatrixMarket matrix coordinate real general" (without quotes)
   if(fgets(line, lineLength, handle)==0) return(-1);

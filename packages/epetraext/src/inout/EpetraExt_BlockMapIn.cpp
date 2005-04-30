@@ -58,6 +58,9 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
   bool inHeader = true;
 
   handle = fopen(filename,"r");
+  if (handle == 0)
+    EPETRA_CHK_ERR(-1); // file not found
+
   while (inHeader) {
     if(fgets(line, lineLength, handle)==0) return(-1);
     if(sscanf(line, "%s", token)==0) return(-1);
