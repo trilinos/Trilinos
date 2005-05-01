@@ -38,23 +38,20 @@ def main(Type):
   LHS = Epetra.Vector(Map);
   RHS = Epetra.Vector(Map);
   Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
-  Indices = Epetra.IntSerialDenseVector(3);
-  Values = Epetra.SerialDenseVector(3);
-  Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0;
 
+  # Populates the matrix by inserting one row at-a-time. Indices and Values
+  # are defined as Python's lists (of the same length).
   for i in range(0, n):
-    Indices[0] = i;
     if i == 0:
-      NumEntries = 2;
-      Indices[1] = i + 1;
+      Indices = [i, i + 1];
+      Values  = [2.0, -1.0];
     elif i == n - 1:
-      NumEntries = 2;
-      Indices[1] = i - 1;
+      Indices = [i, i - 1];
+      Values  = [2.0, -1.0];
     else:
-      NumEntries = 3;
-      Indices[1] = i - 1;
-      Indices[2] = i + 1;
-    Matrix.InsertGlobalValues(i, NumEntries, Values, Indices);
+      Indices = [  i,  i - 1, i + 1];
+      Values  = [2.0,   -1.0,  -1.0];
+    Matrix.InsertGlobalValues(i, Values, Indices);
   ierr = Matrix.FillComplete();
 
   # Builds a solution that is `i' at node `i', then the
