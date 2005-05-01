@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
       }
     } 
     else
-      if (!Comm.MyPID()) 
+      if (! quiet && !Comm.MyPID()) 
       {
 	cerr << endl;
 	cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << endl;

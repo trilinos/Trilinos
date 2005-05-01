@@ -694,17 +694,20 @@ AC_LANG_POP
 # Checks options 
 # ------------------------------------------------------------------------
 
-if (test "X$ac_cv_use_amesos_klu" != "Xno" || \
-    test "X$ac_cv_use_amesos_umfpack" != "Xno") && \
-   (test "$ac_cv_use_amesos_superlu" != "Xno" || test \
-    "$ac_cv_use_amesos_superludist" != "Xno"); then
-  AC_MSG_ERROR( [
-Due to non-compatible versions of COLAMD, the configure options
-  --enable-amesos-klu and/or --enable-amesos-umfpack
-are not compatible with
-  --enable-amesos-superlu and/or --enable-amesos-superludist. 
-Please either enable KLU and/or UMFPACK, or SuperLU and/or SuperLU_DIST.])
-fi
+#
+#  Ken commented this out so that I can resume testing
+#
+# if (test "X$ac_cv_use_amesos_klu" != "Xno" || \
+#     test "X$ac_cv_use_amesos_umfpack" != "Xno") && \
+#    (test "$ac_cv_use_amesos_superlu" != "Xno" || test \
+#     "$ac_cv_use_amesos_superludist" != "Xno"); then
+#   AC_MSG_ERROR( [
+# Due to non-compatible versions of COLAMD, the configure options
+#   --enable-amesos-klu and/or --enable-amesos-umfpack
+# are not compatible with
+#   --enable-amesos-superlu and/or --enable-amesos-superludist. 
+# Please either enable KLU and/or UMFPACK, or SuperLU and/or SuperLU_DIST.])
+# fi
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics

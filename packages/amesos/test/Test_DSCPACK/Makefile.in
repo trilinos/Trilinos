@@ -80,7 +80,8 @@ am__EXEEXT_1 = Test_DSCPACK$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Test_DSCPACK_OBJECTS = Test_DSCPACK-cxx_main.$(OBJEXT)
 Test_DSCPACK_OBJECTS = $(am_Test_DSCPACK_OBJECTS)
-am__DEPENDENCIES_1 =
+@HAVE_AMESOS_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
+am__DEPENDENCIES_2 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -264,9 +265,13 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TEST = Test_DSCPACK
+@HAVE_AMESOS_TRIUTILS_FALSE@TRIUTILS_INCDIR = 
+@HAVE_AMESOS_TRIUTILS_TRUE@TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+@HAVE_AMESOS_TRIUTILS_FALSE@TRIUTILS_LIBS = 
+@HAVE_AMESOS_TRIUTILS_TRUE@TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
 
 #Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = \
+AM_CPPFLAGS = $(TRIUTILS_INCDIR) \
 	-I$(top_builddir)/../epetra/src  -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
@@ -274,7 +279,8 @@ Test_DSCPACK_SOURCES = $(srcdir)/cxx_main.cpp
 Test_DSCPACK_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(TRIUTILS_LIBS)
 
 Test_DSCPACK_CXXFLAGS = -I$(top_srcdir)/src
 
@@ -283,6 +289,7 @@ Test_DSCPACK_CXXFLAGS = -I$(top_srcdir)/src
 #
 Test_DSCPACK_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(TRIUTILS_LIBS) \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(AMESOS_LIBS) \
 	$(top_builddir)/src/libamesos.a \

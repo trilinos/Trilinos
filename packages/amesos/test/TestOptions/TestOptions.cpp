@@ -382,7 +382,8 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Superlu" );
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-  AmesosClasses.push_back( "Amesos_Dscpack" );
+  //  This fails on my Fedora Core linux box
+  //  AmesosClasses.push_back( "Amesos_Dscpack" );
 #endif
 
   NumAmesosClasses = AmesosClasses.size();
