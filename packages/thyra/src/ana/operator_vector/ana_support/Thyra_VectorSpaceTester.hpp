@@ -92,18 +92,20 @@ bool VectorSpaceTester<Scalar>::check(
   if(!result) success = false;
   if(out) *out << result << " == true : " << passfail(result) << std::endl;
 
-  if(out) *out <<endl<<li<< "C) Creating a vector member v ...\n";
+  if(out) *out <<endl<<li<< "C) Creating a randomized vector member v ...\n";
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
     v = createMember(vs);
+  randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*v);
 
   if(out) *out <<endl<<li<< "D) Testing the VectorBase interface of v ...\n";
 
   result = vectorTester_.check(*v,out,li+is,is);
   if(!result) success = false;
 
-  if(out) *out <<endl<<li<< "C) Creating a MultiVector member mv ...\n";
+  if(out) *out <<endl<<li<< "C) Creating a randomized MultiVector member mv ...\n";
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
     mv = createMembers(vs,num_mv_cols());
+  randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*mv);
 
   if(out) *out <<endl<<li<< "D) Testing the MultiVectorBase interface of mv ...\n";
 
