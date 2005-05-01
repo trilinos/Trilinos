@@ -72,7 +72,7 @@ echo `uname -a` >>& $file
 #  I thought that I had Test_Epetra_CrsMatrix working, but now it has a memory error in it.
 #
 #foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix ) 
-foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
 # foreach f ( Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK )  # passes 1 MARCH 2005
 # foreach f ( Test_Epetra_VbrMatrix ) 
 # foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_KLU Test_Epetra_VbrMatrix ) # test passes Mar 1 
