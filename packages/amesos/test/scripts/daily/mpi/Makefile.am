@@ -114,12 +114,6 @@ else
 UMFPACK_TEST = 
 endif
 
-# if HAVE_AMESOS_SCALAPACK
-# SCALAPACK_TEST = TestScalapack
-# else
-# SCALAPACK_TEST = 
-# endif
-
 if HAVE_AMESOS_SUPERLU
 SUPERLU_TEST = Test_Superlu
 else
@@ -163,12 +157,15 @@ TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
 endif
 
-# if HAVE_AMESOS_SCALAPACK
-# TestScalapack_SOURCES = $(srcdir)/TestScalapack
-# 
-# TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
-# 	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 
-# endif
+if HAVE_AMESOS_SCALAPACK
+SCALAPACK_TEST = TestScalapack
+TestScalapack_SOURCES = $(srcdir)/TestScalapack
+
+TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
+	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 
+else
+SCALAPACK_TEST = 
+endif
 
 if HAVE_AMESOS_KLU
 endif
@@ -190,6 +187,7 @@ endif
 #
 #  Note:  COVERAGE_TEST must be listed last so that it will execute last
 #
-noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) $(UMFPACK_TEST) \
+noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) \
+	$(SCALAPACK_TEST) $(LAPACK_TEST) $(UMFPACK_TEST) \
 	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(VALGRIND_TEST)  $(COVERAGE_TEST)
 

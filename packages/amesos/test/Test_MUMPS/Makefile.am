@@ -5,6 +5,7 @@ EXEEXT = .exe
 TEST = Test_MUMPS
 
 noinst_PROGRAMS = $(TEST)
+
 if HAVE_AMESOS_TRIUTILS
 TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
 TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
@@ -12,7 +13,6 @@ else
 TRIUTILS_INCDIR = 
 TRIUTILS_LIBS = 
 endif
-
 
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = $(TRIUTILS_INCDIR) \

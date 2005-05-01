@@ -55,6 +55,12 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 
   Abase = Afactory.Create( AmesosClass, Problem ) ; 
 
+  string AC = AmesosClass ;
+  if ( AC == "Amesos_Mumps" ) { 
+    ParamList.set( "NoDestroy", true );
+   Abase->SetParameters( ParamList ) ; 
+  }
+
   double relerror = 0 ; 
   double relresidual = 0 ; 
   

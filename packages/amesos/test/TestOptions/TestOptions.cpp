@@ -452,6 +452,9 @@ int NextMain( int argc, char *argv[] ) {
     } else {
       if ( verbose ) cout << " Testing " << AmesosClasses[i] << endl ;
       AmesosClassesInstalled[i] = true;
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
+      Abase->SetParameters( ParamList );
     }
     delete Abase ; 
     }

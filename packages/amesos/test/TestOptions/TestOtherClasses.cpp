@@ -79,6 +79,7 @@ int TestOtherClasses( const char* AmesosClass,
   {
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
+    ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     ParamList.set( "Refactorize", true );
       
@@ -127,6 +128,7 @@ int TestOtherClasses( const char* AmesosClass,
   {
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
+    ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     ParamList.set( "ComputeTrueResidual", true );
       
