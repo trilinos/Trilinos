@@ -97,7 +97,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on LAPACK
 #
-$mpigo 1 amesos_test.exe LAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK SuperLU.rua 0 1 1 0 2e-14 1e-13 >>SST.stdout
 #  COMMENT fails on atlantis, sometimes janus    $mpigo 3 amesos_test.exe LAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
 #  COMMENT fails on atlantis, sometimes janus    $mpigo 3 amesos_test.exe LAPACK SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
 #
