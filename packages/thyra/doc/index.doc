@@ -13,15 +13,16 @@ on this main page:
 
 <ul>
 <li> \ref thyra_software_sec provides a roadmap to the various types
-of software in the %Thyra pacakge %Thyra-related software in other packages.
+of software in the %Thyra pacakge and %Thyra-related software in other packages.
 <li> \ref thyra_dependencies_sec describes what other Trilinos packages that
 the %Thyra package needs to build and link against.
 <li> \ref thyra_configuration_sec mentions some of the more important
-configuation options that affect the %Thyra package and what code is built.
+configuation options that affect the %Thyra package and what code is built
+and installed.
 <li> \ref thyra_external_projects_sec describes how to build and link
-against %Thyra software by external projects.
+against an installation of %Thyra in external projects.
 <li> \ref thyra_documents_sec lists some useful documents related to %Thyra.
-<li> \ref thyra_contributors_sec list individuals who contributed to the
+<li> \ref thyra_contributors_sec lists individuals who have contributed to the
 development of %Thyra.
 <li> \ref thyra_related_software_sec gives links to other software related to %Thyra.
 </ul>
@@ -53,6 +54,14 @@ ANAs.
 
 <li> Other Thyra software
 
+  <ul>
+
+  <li> Single program multiple data (SPMD) vector and matrix creational, loading and accessing interfaces: These are abstract
+  interfaces that application code can use to fill vectors and sparse matrices on distributed-memory
+  parallel computers (as well as on SMP computers of course).
+
+  </ul>
+
 </ul>
 
 \section thyra_dependencies_sec Other Trilinos Packages on which Thyra Depends
@@ -69,7 +78,7 @@ as <tt>Teuchos::RefCountPtr</tt> and <tt>Teuchos::BLAS</tt> that
 
 The %Thyra package's <tt>configure</tt> script (which should be called from
 the base Trilinos-level configure script) responds to a number of options that
-affect the code that is built.
+affect the code that is built and what code is installed.
 
 Some of the more important configuration options are:
 
@@ -77,7 +86,7 @@ Some of the more important configuration options are:
 <li><b><tt>--enable-thyra</tt></b>: Causes the %Thyra package and all of
 its dependent packages to be enabled and built.  Without this option,
 there will be no %Thyra header files or libraries included in the
-installation of Trilinos.
+installation of Trilinos (i.e. using <tt>make install</tt>).
 </ul>
 
 See the output from <tt>./configure --help</tt> (where <tt>./</tt> is
