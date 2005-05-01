@@ -74,7 +74,7 @@
 #
 #
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -101,7 +101,7 @@ noinst_PROGRAMS = TestAmesos$(EXEEXT) TestQuietAmesos$(EXEEXT) \
 	TestBasic$(EXEEXT) TestExamples$(EXEEXT) $(am__EXEEXT_1) \
 	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4) \
 	$(am__EXEEXT_5) $(am__EXEEXT_6) $(am__EXEEXT_7) \
-	$(am__EXEEXT_8)
+	$(am__EXEEXT_8) $(am__EXEEXT_9)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -139,12 +139,13 @@ CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
 @HAVE_AMESOS_DSCPACK_TRUE@am__EXEEXT_1 = TestDscpack$(EXEEXT)
 @HAVE_AMESOS_SCALAPACK_TRUE@am__EXEEXT_2 = TestScalapack$(EXEEXT)
-@HAVE_AMESOS_UMFPACK_TRUE@am__EXEEXT_3 = TestUmfpack$(EXEEXT)
-@HAVE_AMESOS_MUMPS_TRUE@am__EXEEXT_4 = TestMumps$(EXEEXT)
-@HAVE_AMESOS_KLU_TRUE@am__EXEEXT_5 = TestKlu$(EXEEXT)
-@HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_6 = TestSuperlud$(EXEEXT)
-@HAVE_VALGRIND_TRUE@am__EXEEXT_7 = TestValgrind$(EXEEXT)
-@HAVE_COVERAGE_TRUE@am__EXEEXT_8 = TestCoverage$(EXEEXT)
+@HAVE_AMESOS_LAPACK_TRUE@am__EXEEXT_3 = TestLapack$(EXEEXT)
+@HAVE_AMESOS_UMFPACK_TRUE@am__EXEEXT_4 = TestUmfpack$(EXEEXT)
+@HAVE_AMESOS_MUMPS_TRUE@am__EXEEXT_5 = TestMumps$(EXEEXT)
+@HAVE_AMESOS_KLU_TRUE@am__EXEEXT_6 = TestKlu$(EXEEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_7 = TestSuperlud$(EXEEXT)
+@HAVE_VALGRIND_TRUE@am__EXEEXT_8 = TestValgrind$(EXEEXT)
+@HAVE_COVERAGE_TRUE@am__EXEEXT_9 = TestCoverage$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestAmesos_SOURCES_DIST = $(srcdir)/TestAmesos.sh
 am_TestAmesos_OBJECTS =
@@ -170,6 +171,10 @@ am__TestKlu_SOURCES_DIST = $(srcdir)/TestKlu
 am_TestKlu_OBJECTS =
 TestKlu_OBJECTS = $(am_TestKlu_OBJECTS)
 TestKlu_LDADD = $(LDADD)
+am__TestLapack_SOURCES_DIST = $(srcdir)/TestLapack
+am_TestLapack_OBJECTS =
+TestLapack_OBJECTS = $(am_TestLapack_OBJECTS)
+TestLapack_LDADD = $(LDADD)
 am__TestMumps_SOURCES_DIST = $(srcdir)/TestMumps
 am_TestMumps_OBJECTS =
 TestMumps_OBJECTS = $(am_TestMumps_OBJECTS)
@@ -202,14 +207,15 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
 	$(TestCoverage_SOURCES) $(TestDscpack_SOURCES) \
 	$(TestExamples_SOURCES) $(TestKlu_SOURCES) \
-	$(TestMumps_SOURCES) $(TestQuietAmesos_SOURCES) \
-	$(TestScalapack_SOURCES) $(TestSuperlud_SOURCES) \
-	$(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
+	$(TestLapack_SOURCES) $(TestMumps_SOURCES) \
+	$(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) \
+	$(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) \
+	$(TestValgrind_SOURCES)
 DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
 	$(am__TestBasic_SOURCES_DIST) $(am__TestCoverage_SOURCES_DIST) \
 	$(am__TestDscpack_SOURCES_DIST) \
 	$(am__TestExamples_SOURCES_DIST) $(am__TestKlu_SOURCES_DIST) \
-	$(am__TestMumps_SOURCES_DIST) \
+	$(am__TestLapack_SOURCES_DIST) $(am__TestMumps_SOURCES_DIST) \
 	$(am__TestQuietAmesos_SOURCES_DIST) \
 	$(am__TestScalapack_SOURCES_DIST) \
 	$(am__TestSuperlud_SOURCES_DIST) \
@@ -410,6 +416,9 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_MUMPS_TRUE@MUMPS_TEST = TestMumps
 @HAVE_AMESOS_DSCPACK_TRUE@TestDscpack_SOURCES = $(srcdir)/TestDscpack
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
+@HAVE_AMESOS_LAPACK_FALSE@LAPACK_TEST = 
+@HAVE_AMESOS_LAPACK_TRUE@LAPACK_TEST = TestLapack
+@HAVE_AMESOS_LAPACK_TRUE@TestLapack_SOURCES = $(srcdir)/TestLapack
 @HAVE_AMESOS_SCALAPACK_FALSE@SCALAPACK_TEST = 
 @HAVE_AMESOS_SCALAPACK_TRUE@SCALAPACK_TEST = TestScalapack
 @HAVE_AMESOS_SCALAPACK_TRUE@TestScalapack_SOURCES = $(srcdir)/TestScalapack
@@ -468,6 +477,9 @@ clean-noinstPROGRAMS:
 @HAVE_AMESOS_KLU_FALSE@TestKlu$(EXEEXT): $(TestKlu_OBJECTS) $(TestKlu_DEPENDENCIES) 
 @HAVE_AMESOS_KLU_FALSE@	@rm -f TestKlu$(EXEEXT)
 @HAVE_AMESOS_KLU_FALSE@	$(LINK) $(TestKlu_LDFLAGS) $(TestKlu_OBJECTS) $(TestKlu_LDADD) $(LIBS)
+@HAVE_AMESOS_LAPACK_FALSE@TestLapack$(EXEEXT): $(TestLapack_OBJECTS) $(TestLapack_DEPENDENCIES) 
+@HAVE_AMESOS_LAPACK_FALSE@	@rm -f TestLapack$(EXEEXT)
+@HAVE_AMESOS_LAPACK_FALSE@	$(LINK) $(TestLapack_LDFLAGS) $(TestLapack_OBJECTS) $(TestLapack_LDADD) $(LIBS)
 @HAVE_AMESOS_MUMPS_FALSE@TestMumps$(EXEEXT): $(TestMumps_OBJECTS) $(TestMumps_DEPENDENCIES) 
 @HAVE_AMESOS_MUMPS_FALSE@	@rm -f TestMumps$(EXEEXT)
 @HAVE_AMESOS_MUMPS_FALSE@	$(LINK) $(TestMumps_LDFLAGS) $(TestMumps_OBJECTS) $(TestMumps_LDADD) $(LIBS)
@@ -634,6 +646,9 @@ uninstall-am: uninstall-info-am
 
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 @HAVE_AMESOS_UMFPACK_TRUE@	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
+
+@HAVE_AMESOS_LAPACK_TRUE@TestLapack$(EXEEXT): $(srcdir)/TestLapack
+@HAVE_AMESOS_LAPACK_TRUE@	cp $(srcdir)/TestLapack TestLapack$(EXEEXT) 
 
 @HAVE_AMESOS_SCALAPACK_TRUE@TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
 @HAVE_AMESOS_SCALAPACK_TRUE@	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 

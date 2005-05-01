@@ -157,6 +157,16 @@ TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
 endif
 
+if HAVE_AMESOS_LAPACK
+LAPACK_TEST = TestLapack
+TestLapack_SOURCES = $(srcdir)/TestLapack
+
+TestLapack$(EXEEXT): $(srcdir)/TestLapack
+	cp $(srcdir)/TestLapack TestLapack$(EXEEXT) 
+else
+LAPACK_TEST = 
+endif
+
 if HAVE_AMESOS_SCALAPACK
 SCALAPACK_TEST = TestScalapack
 TestScalapack_SOURCES = $(srcdir)/TestScalapack

@@ -212,7 +212,7 @@ $mpigo 1 amesos_test.exe SCALAPACK Khead.triS 0 1 1 0 2e-13 1e-10 >>SST.stdout
 #
 #  A couple more matrices
 #
-$mpigo 1 amesos_test.exe SCALAPACK 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+$mpigo 1 amesos_test.exe SCALAPACK 662_bus_out.rsa 0 1 3 0 2e-11 1e-11 >>SST.stdout 
 # COMMENT $mpigo 1 amesos_test.exe SCALAPACK meg1_out.rua 0 1 3 0 1e-08 1e-08 >>SST.stdout 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosScalapack.exe" >> SST.summary 
