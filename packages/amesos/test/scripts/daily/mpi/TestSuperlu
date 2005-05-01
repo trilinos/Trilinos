@@ -37,7 +37,7 @@
 #      run.  This assists a developer in figuring out which tests failed.
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
-
+#
 set error = None
 set AnError = False
 set printexitvalue
