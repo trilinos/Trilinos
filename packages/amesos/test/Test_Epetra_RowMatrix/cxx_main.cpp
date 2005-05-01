@@ -27,7 +27,7 @@ using namespace Trilinos_Util;
 // \date Last updated on 21-Apr-04.
 // ====================================================================== 
 
-bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
+bool TestAmesos(bool quiet, char ProblemType[], Teuchos::ParameterList& AmesosList,
                 bool UseTranspose, Epetra_RowMatrix* A, Epetra_MultiVector* lhs,
                 Epetra_MultiVector* rhs)
 {
@@ -50,6 +50,7 @@ bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
 
   Problem.SetOperator(A);
 
+
   if (Solver->SymbolicFactorization()) return(false);
   if (Solver->NumericFactorization()) return(false);
 
@@ -71,6 +72,7 @@ bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
   // compute ||Ax - b||
   vector<double> Norm(rhs->NumVectors());
 
+
   Epetra_MultiVector Ax(*rhs);
   A->Multiply(UseTranspose, *lhs, Ax);
   Ax.Update(1.0, *rhs, -1.0);
@@ -78,7 +80,7 @@ bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
 
   string msg = ProblemType;
 
-  if (!A->Comm().MyPID()) 
+  if (!quiet && !A->Comm().MyPID()) 
   {
     cout << endl;
     cout << msg << " : Using " << A->Comm().NumProc() << " processes, UseTranspose = " << UseTranspose << endl;
@@ -112,6 +114,9 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  bool quiet = false ;
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) quiet = true ;
+
   CrsMatrixGallery Gallery("recirc_2d", Comm);
   Gallery.Set("problem_size", 64);
   Gallery.Set("num_vectors", 2);
@@ -132,7 +137,7 @@ int main(int argc, char *argv[])
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Superlu");
-  SolverType.push_back("Amesos_Superludist");
+  SolverType.push_back("Amesos_Superludist");  // Does not seem to work
   SolverType.push_back("Amesos_Mumps");
   SolverType.push_back("Amesos_Scalapack");
   // NOTE: DSCPACK does not support RowMatrix's.
@@ -150,7 +155,7 @@ int main(int argc, char *argv[])
       if (1) {
 	// solve with matrix
 	Teuchos::ParameterList AmesosList;
-	res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
+	res = TestAmesos(quiet,(char*)Solver.c_str(), AmesosList, false, 
                          &A, LHS, RHS);
         assert (res == true);
       }
@@ -158,7 +163,7 @@ int main(int argc, char *argv[])
 	// solve transpose with matrix
 	if (Solver != "Amesos_Superludist") {// still not implementes
 	  Teuchos::ParameterList AmesosList;
-	  res  = TestAmesos((char*)Solver.c_str(), AmesosList, true, 
+	  res  = TestAmesos(quiet,(char*)Solver.c_str(), AmesosList, true, 
                             &A, LHS, RHS);
           assert (res == true);
 	}
