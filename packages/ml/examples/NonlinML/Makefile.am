@@ -18,7 +18,7 @@ ml_nox_1Delasticity_example_SOURCES = $(srcdir)/ml_nox_1Delasticity_example.cpp 
 ml_nox_1Delasticity_example_CPPFLAGS = ${ml_common_include_locations}
 ml_nox_1Delasticity_example_CXXFLAGS = ${ml_common_include_locations} \
                                        -I$(top_srcdir)/src/NonlinML \
-                                       -I$(ML_EXPORT_INCLUDES)
+                                       $(ML_EXPORT_INCLUDES)
 ml_nox_1Delasticity_example_LDADD = ${ml_libs} \
                                     $(top_builddir)/src/libml.a \
                                     $(ML_EXPORT_LIBS) \
