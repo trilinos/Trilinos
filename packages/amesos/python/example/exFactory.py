@@ -28,9 +28,12 @@
 # ************************************************************************
 # @header
 
-def main(Type):
-  from PyTrilinos import Amesos, Epetra
+# PyTrilinos imports
+import setpath
+import Amesos
+import Epetra
 
+def main(Type):
   n = 10;
   Comm = Epetra.SerialComm();
   Map = Epetra.Map(n, 0, Comm);

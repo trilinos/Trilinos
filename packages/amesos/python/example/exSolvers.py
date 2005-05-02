@@ -28,16 +28,20 @@
 # ************************************************************************
 # @header
 
+# System import
+import sys
+
+# PyTrilinos imports
+import setpath
+import Amesos
+import Epetra
+
 def PrintHelp():
   print 'Usage is: ./exSolvers.py <solver-type>'
   print 'where <solver-type> can be: Amesos_Lapack, Amesos_Klu'
   print 'Amesos_Umfpack, Amesos_Superlu'
 
 def main():
-  from PyTrilinos import Amesos, Epetra
-
-  import sys
-
   args = sys.argv[1:]
   if len(args) == 0:
     PrintHelp();

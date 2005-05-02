@@ -53,10 +53,13 @@ cmd = "%s %s/../PyTrilinos/pyLocate --build" % (makeInfo.get("PYTHON"    ,""),
 if status != 0:
     raise RuntimeError, "\n\tUNIX command '%s' gives\n\t%s" % (cmd,output)
 
-# Get the path to the build directory
-libDir = os.path.join("..", "src", output, "PyTrilinos")
+# Get the paths to the build directories
+libDir       = os.path.join("..", "src", output, "PyTrilinos")
+epetraLibDir = os.path.join("..", "..", "..", "epetra", "python", "src", output,
+                            "PyTrilinos")
 
 # Insert the library directory name at the beginning of
 # the python search path
 if libDir:
     sys.path.insert(0,libDir)
+    sys.path.insert(1,epetraLibDir)

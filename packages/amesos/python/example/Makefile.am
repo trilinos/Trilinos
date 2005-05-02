@@ -52,7 +52,7 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exSolver exFactory
+EXAMPLE_SUITE = exSolvers exFactory
 
 check-am: $(EXAMPLE_SUITE)
 
