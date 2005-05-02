@@ -191,7 +191,7 @@ template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 MPIVectorSpaceStd<Scalar>::clone() const
 {
-  return Teuchos::rcp(new MPIVectorSpaceStd<Scalar>(mpiComm_,localSubDim_,globalDim_));
+  return Teuchos::rcp(new MPIVectorSpaceStd<Scalar>(mpiComm_,localSubDim_,this->dim()));
 }
 
 // Overridden from MPIVectorSpaceBase

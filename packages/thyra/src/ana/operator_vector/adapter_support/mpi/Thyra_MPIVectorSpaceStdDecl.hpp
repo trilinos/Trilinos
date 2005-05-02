@@ -167,7 +167,6 @@ private:
 
   MPI_Comm           mpiComm_;
   Index              localSubDim_;
-  Index              globalDim_;
   int                numProc_;
   int                procRank_;
   

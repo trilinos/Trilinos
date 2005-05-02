@@ -220,9 +220,14 @@ void VectorBase<Scalar>::apply(
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
     std::cerr << "\nVector<Scalar>::apply(...) : y = beta*y + alpha*m'*x  (y is a scalar!)\n";
 #endif
-    Scalar y_inout = get_ele(*y,1);
-    if( beta == ST::zero() )    y_inout = ST::zero();
-    else                        y_inout = beta*y_inout;
+    Scalar y_inout;
+    if( beta == ST::zero() ) {
+      y_inout = ST::zero();
+    }
+    else {
+      y_inout = get_ele(*y,1);
+      y_inout = beta*y_inout;
+    }
     y_inout += alpha*space()->scalarProd(*this,x);
     set_ele(1,y_inout,y);
   }

@@ -92,9 +92,9 @@ void SerialVectorStd<Scalar>::initialize(
 
 template<class Scalar>
 void SerialVectorStd<Scalar>::initialize(
-  const Teuchos::RefCountPtr<Scalar>                      &v
-  ,const Index                                            vs
-  ,const Index                                            dim
+  const Teuchos::RefCountPtr<Scalar>                          &v
+  ,const Index                                                vs
+  ,const Index                                                dim
   ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vecSpc
   )
 {
