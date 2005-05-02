@@ -37,7 +37,7 @@
 # TODO - only build c++ test driver if CPP is defined in Config.ARCH
 ##############################################################################
 
-TARGET=zdrive 
+ZTARGET=zdrive 
 LIB_NAME=libzoltan.a     # if change LIB_NAME, must change ZOLTAN_LIB 
                          # in Utilities/Makefile
 LIB_TARGET=zoltan
@@ -436,8 +436,8 @@ zoltan:
 zdrive:
 	$(MAKE) zoltan
 	@cd $(ZOLTAN_OBJ_DIR); 			\
-	$(MAKE) $(TARGET)			\
-	"TARGET=$(TARGET)"			\
+	$(MAKE) $(ZTARGET)			\
+	"ZTARGET=$(ZTARGET)"			\
 	"LIB_NAME=$(LIB_NAME)"			\
 	"CC=$(CCOMP)" 				\
 	"VPATH=$(ZOLTAN_VPATH)"			\
@@ -453,7 +453,7 @@ zCPPdrive:
 	$(MAKE) zoltan
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zCPPdrive			\
-	"TARGET=zCPPdrive"			\
+	"ZTARGET=zCPPdrive"			\
 	"LIB_NAME=$(LIB_NAME)"			\
 	"VPATH=$(ZOLTAN_VPATH)"			\
 	"CC=$(CPPCOMP)"				\
@@ -610,7 +610,7 @@ clean:
 	-for a in $(SUBDIRS); do \
 	 cd $$a; \
          echo $$a; \
-	 $(RM) -f *.o *.d *.d@ $(TARGET) $(TARGET).pure $(LIB_NAME); \
+	 $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
 	 cd ..; \
 	 done;
 	-for a in $(ALL_OBJ_DIRS); do \
