@@ -19,7 +19,7 @@ my $top_build_dir = remove_rel_paths("@abs_top_builddir@");
 
 my $test_dir = "${top_build_dir}/thyra/test";
 
-run_test("$test_dir/test_epetra_adapters.exe","--quiet","--verbose");
+run_test("$test_dir/test_epetra_adapters.exe --max-flop-rate=1","--quiet","--verbose");
 
 #
 # Example programs
