@@ -155,6 +155,7 @@ int main(int argc, char *argv[])
       if (1) {
 	// solve with matrix
 	Teuchos::ParameterList AmesosList;
+	AmesosList.set("Redistribute",false);
 	res = TestAmesos(quiet,(char*)Solver.c_str(), AmesosList, false, 
                          &A, LHS, RHS);
         assert (res == true);

@@ -470,7 +470,7 @@ int Amesos_Superludist::Factor( )
     Global_Columns_[i] = SuperluMat_->RowMatrixColMap().GID( i ) ; 
   }
   Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SuperluMat_);
-  if ( SuperluCrs != 0 ) {
+  if ( SuperluCrs == 0 ) {
     ColIndicesV_.resize(MaxNumEntries_);
     RowValuesV_.resize(MaxNumEntries_);
   }
