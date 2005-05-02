@@ -85,6 +85,12 @@ class EpetraVector1DTestCase(unittest.TestCase):
         for i in range(ni):
             self.assertEqual(epetraVector[i], float(i))
 
+    def testSetArray(self):
+        "Test Epetra.Vector 1D __setattr__ method for 'array'"
+        epetraVector = Epetra.Vector(self.map)
+        self.assertRaises(AttributeError, epetraVector.__setattr__, "array",
+                          "junk")
+
     def testNorm1(self):
         "Test Epetra.Vector 1D Norm1 method"
         epetraVector  = Epetra.Vector([-1,2,-3,4])

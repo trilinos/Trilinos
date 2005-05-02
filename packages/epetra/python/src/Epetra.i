@@ -110,7 +110,7 @@ on-line documentation for more in-depth information."
 %ignore Epetra_CrsMatrix::operator[](int);           // See %extend CrsMatrix
 %ignore Epetra_CrsMatrix::operator[](int) const;     //       __getitem__()
 // Epetra_VbrMatrix member function
-// Solve(bool,bool,bool,Epetra_Vector const&,Epetra_Vector&) const doesn't
+// Solve(bool,bool,bool,Epetra_Vector const&,Epetra_Vector&) const does not
 // appear to be implemented.  Apparently overridden by
 // Solve(bool,bool,bool,Epetra_MultiVector const&,Epetra_MultiVector&) const
 %ignore Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix &);
@@ -502,4 +502,10 @@ class Vector(UserArray,NumPyVector):
         UserArray.__init__(self,self.getArray(),'d',0,1)
     def __str__(self):
         return str(self.array)
+    def __setattr__(self, name, value):
+        "Protect the 'array' attribute"
+        if name == "array":
+            if name in self.__dict__:
+                raise AttributeError, "Cannot change Epetra.Vector array attribute"
+        UserArray.__setattr__(self, name, value)
 %}
