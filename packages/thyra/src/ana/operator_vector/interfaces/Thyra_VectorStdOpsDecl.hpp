@@ -169,10 +169,10 @@ void ele_wise_divide( const Scalar& alpha, const VectorBase<Scalar>& x, const Ve
  */
 template<class Scalar>
 void linear_combination(
-  const int                m
-  ,const Scalar            alpha[]
+  const int                    m
+  ,const Scalar                alpha[]
   ,const VectorBase<Scalar>*   x[]
-  ,const Scalar            &beta
+  ,const Scalar                &beta
   ,VectorBase<Scalar>          *y
   );
 

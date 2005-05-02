@@ -164,14 +164,13 @@ public:
   /** \brief Returns the offset for the local sub-vector stored on this
    * processor.
    *
-   * This method has a default implementation which just assigns
-   * this offset based on counting up <tt>localSubDim() on each
-   * processor and then setting <tt>localOffset()</tt> by the rank
-   * of the processor.  For example, if there are 5 elements in
-   * process 0 and 4 elements in process rank, then
-   * <tt>localOffset</tt> on each of these processors will be set
-   * as: <tt>localOffset=0</tt> on process 0, <tt>localOffset=5</tt>
-   * on process 1, <tt>localOffset=9</tt> on process 2 and so on.
+   * This method has a default implementation which just assigns this offset
+   * based on counting up <tt>localSubDim()</tt> on each processor and then
+   * setting <tt>localOffset()</tt> by the rank of the processor.  For
+   * example, if there are 5 elements in process 0 and 4 elements in process
+   * rank, then <tt>localOffset</tt> on each of these processors will be set
+   * as: <tt>localOffset=0</tt> on process 0, <tt>localOffset=5</tt> on
+   * process 1, <tt>localOffset=9</tt> on process 2 and so on.
    */
   virtual Index localOffset() const;
   /** \brief Returns the code for the mapping of elements to processors.
@@ -248,7 +247,7 @@ public:
    *
    * If the mapping of vector elements to processors is not as
    * described
-   * <A HREF="classThyra_1_1MPIVectorSpaceBase.html#MPIVectorSpaceBase_Vector_layout>above</A>
+   * <A HREF="classThyra_1_1MPIVectorSpaceBase.html#MPIVectorSpaceBase_Vector_layout">above</A>
    * then this method should be overridden in a way that is specific
    * to the vector implementation.
    */

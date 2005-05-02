@@ -361,7 +361,7 @@ public:
 protected:
 #endif
 
-  /** @name Proteched pure virtual functions that must be overridden */
+  /** @name Protected pure virtual functions that must be overridden */
   //@{
 
   /** \brief Create a vector member from the vector space.
@@ -386,7 +386,7 @@ protected:
 
   //@}
 
-  /** @name Proteched virtual functions with default implementations */
+  /** @name Protected virtual functions with default implementations */
   //@{
 
   /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.

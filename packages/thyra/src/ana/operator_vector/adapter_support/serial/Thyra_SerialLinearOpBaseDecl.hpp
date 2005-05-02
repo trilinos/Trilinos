@@ -88,7 +88,7 @@ protected:
       Scalar       *y     = y_out->values();
       const Index  y_dim  = y_out->subDim();
       // Perform operation the operation
-      if( M_trans == ::Thyra::NOTRANS ) {
+      if( real_trans(M_trans) == ::Thyra::NOTRANS ) {
         // Perform the non-transposed operator: y = alpha*M*x + beta*y
         ...
       }
@@ -128,7 +128,7 @@ protected:
       double       *y     = y_out->values();
       const Index  y_dim  = y_out->subDim();
       // Perform operation the operation
-      if( M_trans == ::Thyra::NOTRANS ) {
+      if( real_trans(M_trans) == ::Thyra::NOTRANS ) {
         // Perform the non-transposed operator: y = alpha*M*x + beta*y
         ...
       }
