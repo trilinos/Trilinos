@@ -208,7 +208,7 @@ cleanUp();
             
         # Print progress message.
         my $message = "Compiling Trilinos...";
-        $message = sprintf("%-50s", $message);
+        $message = sprintf("%-30s", $message);
         printMessage($message, $v1+$v2+$v3);
         
         my $startSeconds = time();
@@ -228,25 +228,28 @@ cleanUp();
         my $makeStopTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
         my $stopSeconds = time();            
         my $runSeconds = $stopSeconds - $startSeconds;
-                            
-        # Print pass/fail message.
-        $message = ($makeExitStatus==0?"  passed ":"! FAILED ");
-        printMessage($message, $v1+$v2+$v3);
-        $message = ($runSeconds==0?"<1":$runSeconds);
-        $message = sprintf("%7s", $message);
-        printMessage($message, $v1+$v2+$v3);
-        $message = " second".($runSeconds>1?"s":"")."\n";
-        printMessage($message, $v1+$v2+$v3);
         
         # Detect broken package.
         my $brokenPackage = "NONE";
         if ($makeExitStatus) {
             $brokenPackage = detectBrokenPackage($makeOutput);
-            my $pad = " ";
-            $message = sprintf("%-50s", $pad);
-            $message .= "  $brokenPackage broke\n";
+            $message = sprintf("%-25s", " broken: $brokenPackage ");
+            printMessage($message, $v1+$v2+$v3);
+            $message = "! FAILED ";
+            printMessage($message, $v1+$v2+$v3);
+        } else {
+            $message = sprintf("%-25s", "");
+            printMessage($message, $v1+$v2+$v3);
+            $message = "  passed ";
             printMessage($message, $v1+$v2+$v3);
         }
+                            
+        # Finish printing pass/fail message.
+        $message = ($runSeconds==0?"<1":$runSeconds);
+        $message = sprintf("%6s", $message);
+        printMessage($message, $v1+$v2+$v3);
+        $message = " second".($runSeconds>1?"s":"")."\n";
+        printMessage($message, $v1+$v2+$v3);
         
         # Grab general information values for inclusion in test results files.        
         chomp (my $hostName=`uname -n`);

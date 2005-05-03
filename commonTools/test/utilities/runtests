@@ -356,7 +356,7 @@ cleanUp();
                 
             # Print progress message.
             $message = $testListAoH[$i]{'package'}." - ".$testListAoH[$i]{'name'}."...";
-            $message = sprintf("%-50s", $message);
+            $message = sprintf("%-55s", $message);
             printMessage($message, $v1+$v2+$v3);
         
             # Capture and format test start time.
@@ -398,7 +398,7 @@ cleanUp();
             $message = ($testExitStatus==0?"  passed ":"! FAILED ");
             printMessage($message, $v1+$v2+$v3);
             $message = ($runSeconds==0?"<1":$runSeconds);
-            $message = sprintf("%7s", $message);
+            $message = sprintf("%6s", $message);
             printMessage($message, $v1+$v2+$v3);
             $message = " second".($runSeconds>1?"s":"")."\n";
             printMessage($message, $v1+$v2+$v3);
@@ -459,10 +459,10 @@ cleanUp();
         } # foreach @testListAoH
         
         $message = "\n";
-        $message .= " Tests Passed:  $testsPassed\n";
-        $message .= " Tests Failed:  $testsFailed\n";
+        $message .= " Tests Passed: ".sprintf("%3s", "$testsPassed")."\n";
+        $message .= " Tests Failed: ".sprintf("%3s", "$testsFailed")."\n";
         $message .= "-------------------\n";
-        $message .= " Tests Total:   $testsTotal\n\n";
+        $message .= " Tests Total:  ".sprintf("%3s", "$testsTotal")."\n\n";
         printMessage($message, $v1+$v2+$v3);
         
         # Stop MPI
