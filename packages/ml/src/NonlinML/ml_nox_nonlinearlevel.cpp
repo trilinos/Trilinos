@@ -833,10 +833,11 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    solver_->reset(*group_,*combo2_);
    
    // iterate
-   if (ml_printlevel_ > 5 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==false)
+   if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==false)
       cout << "ML (level " << level_ << "): Entering NOX iteration\n";
-   else if (ml_printlevel_ > 5 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==true)
+   else if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==true)
       cout << "ML (level " << level_ << "): Entering FAS-NOX iteration\n";
+
    NOX::StatusTest::StatusType status = solver_->solve();
    
    // get the solution and the new F
@@ -849,27 +850,27 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
 
    bool returnstatus=false;
    double norm2=0.0;
-   if (ml_printlevel_ > 5)
+   if (ml_printlevel_ > 0)
       finalF.Norm2(&norm2);
       
    if (status == NOX::StatusTest::Converged)
    {
       returnstatus = true;
-      if (ml_printlevel_ > 5 && comm_.MyPID() == 0)
+      if (ml_printlevel_ > 0 && comm_.MyPID() == 0)
          cout << "ML (level " << level_ << "): NOX Converged, Norm(F)=" 
               << norm2 << "\n";
    }
    else if (status == NOX::StatusTest::Unconverged)
    {
       returnstatus = false;
-      if (ml_printlevel_ > 5 && comm_.MyPID() == 0)
+      if (ml_printlevel_ > 0 && comm_.MyPID() == 0)
          cout << "ML (level " << level_ << "): NOX Unconverged, Norm(F)=" 
               << norm2 << "\n";
    }
    else if (status == NOX::StatusTest::Failed)
    {
       returnstatus = false;
-      if (ml_printlevel_ > 5 && comm_.MyPID() == 0)
+      if (ml_printlevel_ > 0 && comm_.MyPID() == 0)
          cout << "ML (level " << level_ << "): NOX Unconverged after maxiter=" 
               << numiter << ", Norm(F)=" << norm2 << "\n";
    }

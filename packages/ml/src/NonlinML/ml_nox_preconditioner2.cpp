@@ -78,7 +78,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
       int    maxnnz  = 0;
       double cputime = 0.0;
       ML_Operator2EpetraCrsMatrix(&(ml_->Pmat[i]), P[i], maxnnz, false, cputime);
-      if (ml_printlevel_>0 && 0 == comm_.MyPID())
+      if (ml_printlevel_>5 && 0 == comm_.MyPID())
             cout << "ML (level " << i << "): extraction of P in " << cputime << " sec\n";
    }
 
@@ -194,7 +194,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       int    maxnnz  = 0;
       double cputime = 0.0;
       ML_Operator2EpetraCrsMatrix(&(ml_->Pmat[i]), P[i], maxnnz, false, cputime);
-      if (ml_printlevel_>0 && 0 == comm_.MyPID())
+      if (ml_printlevel_>5 && 0 == comm_.MyPID())
             cout << "ML (level " << i << "): extraction of P in " << cputime << " sec\n";
    }
 
