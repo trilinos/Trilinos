@@ -97,7 +97,6 @@ cleanUp();
         if (!$trilinosdir) {
             die "trilinosdir value required, see --help for more information\n"; 
         } else {
-            $trilinosdir =~ s/\/?$/\//;     # enforce trailing slash
             if (!stat($trilinosdir)) {
                 die "cannot stat trilinosdir: $trilinosdir\n";
             }
@@ -116,8 +115,9 @@ cleanUp();
         if (!$builddir) {
             die "builddir value required, see --help for more information\n"; 
         } else {
-            $builddir =~ s/\/?$/\//;        # enforce trailing slash
-            $builddir = $trilinosdir.$builddir;
+            if ($builddir !~ m/^\//) {
+                $builddir = "$trilinosdir/$builddir";
+            }
             if (!stat($builddir)) {
                 die "cannot stat builddir: $builddir\n";
             }
@@ -190,12 +190,17 @@ cleanUp();
         
         # Check for existance of output directory.
         if (!$outputdir) {
-            $outputdir = "./"; 
+            $outputdir = "";
+            $resultsDir = "$trilinosdir/commonTools/test/utilities/results"; 
         } else {
-            $outputdir =~ s/\/?$/\//;       # enforce trailing slash
-            if (!stat($outputdir)) {
-                die "cannot stat outputdir: $outputdir\n";
+            if ($outputdir =~ m/^\//) {
+                $resultsDir = $outputdir;
+            } else {
+                $resultsDir = "$trilinosdir/commonTools/test/utilities/$outputdir";
             }
+        }
+        if (!stat($resultsDir)) {
+            mkdir($resultsDir) or die "cannot create $resultsDir, died";
         }
         
         # Set verbosity level to corresponding constant.
@@ -248,11 +253,8 @@ cleanUp();
         my $startTime = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
         
         # Create results directory.
-        $resultsDir = $trilinosdir;
-        $resultsDir .= "commonTools/test/utilities/";
-        $resultsDir .= $outputdir;
-        $resultsDir .= "test_$startTime/";
-        mkdir($resultsDir);
+        $resultsDir .= "/test_$startTime";
+        mkdir($resultsDir) or die "cannot create $resultsDir, died";
         
         # Print list of variables for debugging.
         my $message = "";
@@ -352,9 +354,9 @@ cleanUp();
             chdir $builddir or die "cannot chdir to $builddir, died";
             chdir "packages/" or die "cannot chdir to packages/, died";
                 
-            # Print "Running test: " message.
-            my $string = $testListAoH[$i]{'package'}." - ".$testListAoH[$i]{'name'}."...";
-            $message = sprintf("%-50s", $string);
+            # Print progress message.
+            $message = $testListAoH[$i]{'package'}." - ".$testListAoH[$i]{'name'}."...";
+            $message = sprintf("%-50s", $message);
             printMessage($message, $v1+$v2+$v3);
         
             # Capture and format test start time.
@@ -393,12 +395,16 @@ cleanUp();
             my $runSeconds = $stopSeconds - $startSeconds;
                             
             # Print pass/fail message.
-            $message = ($testExitStatus==0?"  passed":"! FAILED");
-            $message .= " - ".($runSeconds==0?"<1":$runSeconds)." seconds\n";
+            $message = ($testExitStatus==0?"  passed ":"! FAILED ");
+            printMessage($message, $v1+$v2+$v3);
+            $message = ($runSeconds==0?"<1":$runSeconds);
+            $message = sprintf("%7s", $message);
+            printMessage($message, $v1+$v2+$v3);
+            $message = " second".($runSeconds>1?"s":"")."\n";
             printMessage($message, $v1+$v2+$v3);
             
             # Create results file.
-            my $resultsFile = $resultsDir;
+            my $resultsFile = "$resultsDir/";
             $resultsFile .= $testListAoH[$i]{'package'}."_";
             $resultsFile .= $testListAoH[$i]{'name'}."_";
             $resultsFile .= $testStartTimeForFilename.".txt";
@@ -462,7 +468,7 @@ cleanUp();
         # Stop MPI
         if ($comm eq "mpi" && $mpistop) { system("$mpistop 1>/dev/null 2>/dev/null"); }
         
-    }
+    } # run()
     
     ############################################################################
     # compileTestList()
@@ -962,7 +968,7 @@ cleanUp();
     sub printHelp {
         print "runtests - The Trilinos Test Utility\n";
         print "\n";
-        print "Usage:  perl runtests --trilinosdir=/home/user --comm=mpi --buildir=MPI\n";
+        print "Usage:  perl runtests --trilinosdir=/home/user/Trilinos --comm=mpi --buildir=MPI\n";
         print "        --category=all\n";
         print "\n";
         print "Options:\n";
@@ -975,9 +981,10 @@ cleanUp();
         print "  --comm=COMM            Specify the type of build, either \"serial\" or \"mpi\"\n";
         print "                         REQUIRED.\n";
         print "\n";
-        print "  --builddir=DIR         Specify the name of the build directory that contains\n";
-        print "                         the tests you would like run.  It is assumed that this\n";
-        print "                         directory is in the given Trilinos directory.\n";
+        print "  --builddir=DIR         Specify the path of the build directory that contains\n";
+        print "                         the tests you would like run.  If a relative path is\n";
+        print "                         given, it is assumed that it is in the given Trilinos\n";
+        print "                         directory.\n";
         print "                         REQUIRED.\n";
         print "\n";
         print "  --category=CATEGORY    Specify the category of tests to be run.  This must be\n";
@@ -999,17 +1006,16 @@ cleanUp();
         print "  --mpigo=COMMAND        Specify the mpigo command for this system.\n";
         print "                         Default: \"mpigo -np \"\n";
         print "\n";
-        print "  --outputdir=OUTPUTDIR  Specify the directory in which to create the directory\n";
-        print "                         containing the test results.  This value must be a\n";
-        print "                         path relative to trilinosdir/test/.\n";
+        print "  --outputdir=DIR        Specify the directory in which to create the directory\n";
+        print "                         containing the test results.\n";
         print "                         Default: \".\"\n";
         print "\n";
         print "  --verbosity=LEVEL      0 = no non-fatal ouput (same as --quiet)\n";
-        print "                         1 = normal output (Default)\n";
+        print "                         1 = normal output (default)\n";
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";
         print "\n";
-        print "  --logverbosity=LEVEL   0 = no log (Default)\n";
+        print "  --logverbosity=LEVEL   0 = no log (default)\n";
         print "                         1 = normal output\n";
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";

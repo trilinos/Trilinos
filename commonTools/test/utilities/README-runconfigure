@@ -1,5 +1,5 @@
 ###############################################################################
-# runmake - The Trilinos Make Utility                                         #
+# runconfigure - The Trilinos Configure Utility                               #
 #                                                                             #
 # The Trilinos Project                                                        #
 #                                                                             #
@@ -7,14 +7,12 @@
 #                                                                             #
 ###############################################################################
 
-  This document describes the usage of runmake, the Trilinos make utility.
+  This document describes the usage of runconfigure, the Trilinos make utility.
   
 -------------------------------------------------------------------------------
 I.  Prerequisites
 
-  In order for the make utility to work, you must have the following in place:
-  
-    1. You must have a correctly configured build directory.
+  In order for the configure utility to work, you must have the following in place:
        
 -------------------------------------------------------------------------------
 II.  Execution
@@ -22,19 +20,19 @@ II.  Execution
   To execute the Trilinos make utility, simply type:
   
     cd /PATH/TO/Trilinos/commonTools/test/utilities/
-    runmake --help
+    runconfigure --help
             
   for information on required and optional arguments.
   
 -------------------------------------------------------------------------------
-IV.  Make Results File
+IV.  Configure Results File
 
-  The results of the make attempt will be placed in the specified output
+  The results of the configure attempt will be placed in the specified output
   directory and will be named according to the following scheme:
   
-    make_YR-MO-DA_HR.MN.SE.txt
+    configure_YR-MO-DA_HR.MN.SE.txt
   
-  The make results file will consist of the following:
+  The results file will consist of the following:
   
   +---------------------------------------------------------------------------+
   |HOST_NAME            = beowulf
@@ -52,8 +50,15 @@ IV.  Make Results File
   |BRANCH_TAG           = development
   |
   |BUILD_DIR            = /common/TrilinosTestHarness/runtests/Trilinos/MPI/
+  |COMM                 = mpi
   |
-  |MAKE_COMMAND         = make
+  |PACKAGE_TEST_DIR     = ./epetra/test
+  |PACKAGE              = epetra
+  |
+  |TEST_DIR             = Vector
+  |TEST_NAME            = Vector_test.exe
+  |TYPE                 = MPI
+  |COMMAND              = mpirun -np 16 ./Vector/Vector_test.exe -v
   |
   |START_TIME           = 05-04-16 20:33:26
   |STOP_TIME            = 05-04-16 20:33:29
@@ -62,16 +67,18 @@ IV.  Make Results File
   |EXIT_STATUS          = 0
   |RESULT               = pass
   |
-  |BROKEN_PACKAGE       = NONE
+  |BEGIN_TEST_OUTPUT
   |
-  |BEGIN_MAKE_OUTPUT
+  |Epetra::MpiComm
+  |Epetra Version 3.4d - 03/01/2005
   |
-  |make  all-recursive
-  |make[1]: Entering directory ...
+  |Epetra::MpiComm
+  |  Processor 0 of 16 total processors
   |
   |...
   |
-  |END_MAKE_OUTPUT
+  |END_TEST_OUTPUT
   |
   +---------------------------------------------------------------------------+
+
 -------------------------------------------------------------------------------
