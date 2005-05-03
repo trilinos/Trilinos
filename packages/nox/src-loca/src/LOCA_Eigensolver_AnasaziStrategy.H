@@ -51,6 +51,9 @@ namespace NOX {
 }
 namespace LOCA {
   class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
 }
 
 namespace LOCA {
@@ -92,14 +95,15 @@ namespace LOCA {
       //! Constructor
       /*!
        * \param global_data [in] Global data object
+       * \param topParams [in] Parsed top-level parameter list.  Used to
+       * obtain linear-solver parameters and to instantiate sorting strategy.
        * \param eigenParams [in] %Eigensolver parameters as described above.
-       * \param solverParams [in] Linear solver parameters passed to linear
        * solver.
        */
       AnasaziStrategy(
-	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
       
       //! Destructor
       virtual ~AnasaziStrategy();

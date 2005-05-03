@@ -31,47 +31,32 @@
 //@HEADER
 
 #include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_ErrorCheck.H"
-#include "LOCA_Utils.H"
+#include "LOCA_MultiContinuation_NaturalConstraint.H"
+#include "LOCA_MultiContinuation_ConstrainedGroup.H"
 
 LOCA::MultiContinuation::NaturalGroup::NaturalGroup(
-				 LOCA::MultiContinuation::AbstractGroup& g, 
-				 const vector<int>& paramIDs,
-				 NOX::Parameter::List& params)
-  : LOCA::MultiContinuation::ExtendedGroup(g, paramIDs, params),
-    constraints(numParams, 1),
-    dgdp(numParams, numParams),
-    isValidConstraints(false)
+      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& continuationParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const vector<int>& paramIDs)
+  : LOCA::MultiContinuation::ExtendedGroup(global_data, topParams,
+					   continuationParams,
+					   grp, pred, paramIDs)
 {
-  // Initialize dgdp to identity matrix
-  dgdp.putScalar(0.0);
-  for (int i=0; i<numParams; i++)
-    dgdp(i,i) = 1.0;
-}
-
-LOCA::MultiContinuation::NaturalGroup::NaturalGroup(
-				 LOCA::MultiContinuation::AbstractGroup& g, 
-				 const string& paramID,
-				 NOX::Parameter::List& params)
-  : LOCA::MultiContinuation::ExtendedGroup(g, paramID, params),
-    constraints(numParams, 1),
-    dgdp(numParams, numParams),
-    isValidConstraints(false)
-{
-  // Initialize dgdp to identity matrix
-  dgdp.putScalar(0.0);
-  for (int i=0; i<numParams; i++)
-    dgdp(i,i) = 1.0;
+  Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> cons 
+    = Teuchos::rcp(new LOCA::MultiContinuation::NaturalConstraint(
+	globalData, Teuchos::rcp(this, false)));
+  LOCA::MultiContinuation::ExtendedGroup::setConstraints(cons);
 }
 
 LOCA::MultiContinuation::NaturalGroup::NaturalGroup(
 			 const LOCA::MultiContinuation::NaturalGroup& source,
 			 NOX::CopyType type)
-  : LOCA::MultiContinuation::ExtendedGroup(source, type),
-    constraints(source.constraints),
-    dgdp(source.dgdp),
-    isValidConstraints(source.isValidConstraints)
+  : LOCA::MultiContinuation::ExtendedGroup(source, type)
 {
+  Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::NaturalConstraint>(conGroup->getConstraints())->setNaturalGroup(Teuchos::rcp(this, false));
 }
 
 
@@ -87,9 +72,6 @@ LOCA::MultiContinuation::NaturalGroup::operator=(
   // Protect against A = A
   if (this != &source) {
     LOCA::MultiContinuation::ExtendedGroup::operator=(source);
-    constraints.assign(source.constraints);
-    dgdp.assign(source.dgdp);
-    isValidConstraints = source.isValidConstraints;
   }
 
   return *this;
@@ -103,71 +85,9 @@ LOCA::MultiContinuation::NaturalGroup::operator=(
     dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::NaturalGroup::computeConstraints()
-{
-  if (isValidConstraints)
-    return NOX::Abstract::Group::Ok;
-
-  for (int i=0; i<numParams; i++) {
-    constraints(i,0) = 
-      xMultiVec.getScalar(i,0) - prevXMultiVec.getScalar(i,0) - stepSize[i];
-  }
-
-  return NOX::Abstract::Group::Ok;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::NaturalGroup::computeConstraintDerivatives()
-{
-  return NOX::Abstract::Group::Ok;
-}
-
-bool
-LOCA::MultiContinuation::NaturalGroup::isConstraints() const
-{
-  return isValidConstraints;
-}
-
-bool
-LOCA::MultiContinuation::NaturalGroup::isConstraintDerivatives() const
-{
-  return true;
-}
-
-const NOX::Abstract::MultiVector::DenseMatrix&
-LOCA::MultiContinuation::NaturalGroup::getConstraints() const
-{
-  return constraints;
-}
-
-const NOX::Abstract::MultiVector*
-LOCA::MultiContinuation::NaturalGroup::getConstraintDerivativesX() const
-{
-  return NULL;
-}
-
-const NOX::Abstract::MultiVector::DenseMatrix*
-LOCA::MultiContinuation::NaturalGroup::getConstraintDerivativesP() const
-{
-  return &(dgdp);
-}
-
-bool
-LOCA::MultiContinuation::NaturalGroup::isConstraintDerivativesXZero() const
-{
-  return true;
-}
-
-bool
-LOCA::MultiContinuation::NaturalGroup::isConstraintDerivativesPZero() const
-{
-  return false;
-}
-
-LOCA::Extended::AbstractGroup&
+LOCA::Extended::MultiAbstractGroup&
 LOCA::MultiContinuation::NaturalGroup::operator=(
-			      const LOCA::Extended::AbstractGroup& source)
+			      const LOCA::Extended::MultiAbstractGroup& source)
 {
   return *this = 
     dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
@@ -187,24 +107,12 @@ LOCA::MultiContinuation::NaturalGroup::clone(NOX::CopyType type) const
   return new LOCA::MultiContinuation::NaturalGroup(*this, type);
 }
 
-void
-LOCA::MultiContinuation::NaturalGroup::setPrevX(
-					      const NOX::Abstract::Vector& y) 
+LOCA::MultiContinuation::AbstractStrategy& 
+LOCA::MultiContinuation::NaturalGroup::operator=(
+			    const MultiContinuation::AbstractStrategy& source)
 {
-  LOCA::MultiContinuation::ExtendedGroup::setPrevX(y);
-  isValidConstraints = false;
+  return *this = 
+    dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
 }
 
-void
-LOCA::MultiContinuation::NaturalGroup::setStepSize(double deltaS, int i) 
-{
-  LOCA::MultiContinuation::ExtendedGroup::setStepSize(deltaS, i);
-  isValidConstraints = false;
-}
-
-void
-LOCA::MultiContinuation::NaturalGroup::resetIsValid() {
-  LOCA::MultiContinuation::ExtendedGroup::resetIsValid();
-  isValidConstraints = false;
-}
 

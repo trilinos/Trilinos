@@ -43,6 +43,9 @@ namespace NOX {
 }
 namespace LOCA {
   class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
 }
 
 namespace LOCA {
@@ -60,9 +63,9 @@ namespace LOCA {
 
       //! Constructor
       DGGEVStrategy(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
       
       //! Destructor
       virtual ~DGGEVStrategy();
@@ -88,6 +91,9 @@ namespace LOCA {
 
       //! Global data
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+      //! Parsed top-level parameter list
+      Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
 
       //! Eigensolver parameter list
       Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams;

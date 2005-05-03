@@ -102,7 +102,7 @@ namespace LOCA {
        * smaller than the minimum step size
        */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::MultiContinuation::ExtendedGroup& curGroup,
+      compute(LOCA::MultiContinuation::AbstractStrategy& curGroup,
 	      const LOCA::MultiContinuation::ExtendedVector& predictor,
 	      const NOX::Solver::Generic& solver,
 	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,

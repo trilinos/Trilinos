@@ -38,6 +38,7 @@
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Eigensolver_AbstractStrategy.H"
+#include "LOCA_Parameter_SublistParser.H"
 
 #include "ChanProblemInterface.H"
 #include "NOX_TestCompare.H"
@@ -150,18 +151,24 @@ int main(int argc, char *argv[])
 					locaErrorCheck, 
 					locaFactory));
 
+    // Create parsed parameter list
+    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams = 
+      Teuchos::rcp(new LOCA::Parameter::SublistParser(locaGlobalData));
+    parsedParams->parseSublists(paramList);
+
     // Create LAPACK factory
     Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create factory
     locaFactory = Teuchos::rcp(new LOCA::Factory(locaGlobalData, 
-						 paramList,
 						 lapackFactory));
 
     // Create Anasazi eigensolver
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> anasaziStrategy
-      = locaFactory->createEigensolverStrategy();
+      = locaFactory->createEigensolverStrategy(
+				     parsedParams, 
+				     parsedParams->getSublist("Eigensolver"));
 
     Teuchos::RefCountPtr< std::vector<double> > anasazi_evals_r;
     Teuchos::RefCountPtr< std::vector<double> > anasazi_evals_i;
@@ -180,11 +187,12 @@ int main(int argc, char *argv[])
     // Change strategy to DGGEV
     aList.setParameter("Method", "DGGEV");
     aList.setParameter("Sorting Order","SM");
-    locaFactory->reset(paramList);
 
     // Create DGGEV eigensolver
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> dggevStrategy
-      = locaFactory->createEigensolverStrategy();
+      = locaFactory->createEigensolverStrategy(
+				      parsedParams,
+				      parsedParams->getSublist("Eigensolver"));
 
     Teuchos::RefCountPtr< std::vector<double> > dggev_evals_r;
     Teuchos::RefCountPtr< std::vector<double> > dggev_evals_i;

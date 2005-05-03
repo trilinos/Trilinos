@@ -43,6 +43,9 @@ namespace NOX {
 }
 namespace LOCA {
   class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
   namespace Eigensolver {
     class AbstractStrategy;
   }
@@ -78,12 +81,13 @@ namespace LOCA {
 
       //! Create eigensolver strategy
       /*!
+       * \param topParams [in] Parsed top-level parameter list.  
        * \param eigenParams [in] %Eigensolver parameters as described above
-       * \param solverParams [in] Linear solver parameters
        */
       Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
-      create(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+      create(
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
 
     private:
 

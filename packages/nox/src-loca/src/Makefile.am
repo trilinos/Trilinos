@@ -50,21 +50,23 @@ LOCA_ABSTRACT = \
 LOCA_EXTENDED_H = \
 	$(srcdir)/LOCA_Extended_Vector.H \
 	$(srcdir)/LOCA_Extended_MultiVector.H \
-	$(srcdir)/LOCA_Extended_AbstractGroup.H
+	$(srcdir)/LOCA_Extended_AbstractGroup.H \
+	$(srcdir)/LOCA_Extended_MultiAbstractGroup.H
 
 LOCA_EXTENDED = \
 	$(srcdir)/LOCA_Extended_Vector.C \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
-	$(srcdir)/LOCA_Extended_AbstractGroup.C
+	$(srcdir)/LOCA_Extended_AbstractGroup.C \
+	$(srcdir)/LOCA_Extended_MultiAbstractGroup.C
 
 LOCA_BORDERED_SYSTEM_H = \
-	$(srcdir)/LOCA_BorderedSystem_Generic.H \
-	$(srcdir)/LOCA_BorderedSystem_Manager.H \
-	$(srcdir)/LOCA_BorderedSystem_Bordering.H
+	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.H \
+	$(srcdir)/LOCA_BorderedSystem_Bordering.H \
+	$(srcdir)/LOCA_BorderedSystem_Factory.H
 
 LOCA_BORDERED_SYSTEM = \
-	$(srcdir)/LOCA_BorderedSystem_Manager.C \
-	$(srcdir)/LOCA_BorderedSystem_Bordering.C
+	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
+	$(srcdir)/LOCA_BorderedSystem_Factory.C
 
 LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
@@ -91,20 +93,28 @@ LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_Manager.H
+	$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_Factory.H 
 
 LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
-	$(srcdir)/LOCA_MultiContinuation_Manager.C
+	$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_Factory.C
 
 LOCA_SINGULARSOLVE_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
@@ -189,6 +199,13 @@ LOCA_PARAMETER = \
 	$(srcdir)/LOCA_Parameter_SublistParser.C
 
 LOCA_PREDICTOR_H = \
+	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.H \
+	$(srcdir)/LOCA_MultiPredictor_Constant.H \
+	$(srcdir)/LOCA_MultiPredictor_Tangent.H \
+	$(srcdir)/LOCA_MultiPredictor_Secant.H \
+	$(srcdir)/LOCA_MultiPredictor_Random.H \
+	$(srcdir)/LOCA_MultiPredictor_Restart.H \
+	$(srcdir)/LOCA_MultiPredictor_Factory.H \
 	$(srcdir)/LOCA_Predictor_Generic.H \
 	$(srcdir)/LOCA_Predictor_Manager.H \
 	$(srcdir)/LOCA_Predictor_Constant.H \
@@ -198,6 +215,13 @@ LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Restart.H
 
 LOCA_PREDICTOR = \
+	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C \
+	$(srcdir)/LOCA_MultiPredictor_Constant.C \
+	$(srcdir)/LOCA_MultiPredictor_Tangent.C \
+	$(srcdir)/LOCA_MultiPredictor_Secant.C \
+	$(srcdir)/LOCA_MultiPredictor_Random.C \
+	$(srcdir)/LOCA_MultiPredictor_Restart.C \
+	$(srcdir)/LOCA_MultiPredictor_Factory.C \
 	$(srcdir)/LOCA_Predictor_Generic.C \
 	$(srcdir)/LOCA_Predictor_Manager.C \
 	$(srcdir)/LOCA_Predictor_Constant.C \

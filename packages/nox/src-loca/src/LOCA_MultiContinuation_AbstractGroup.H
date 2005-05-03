@@ -72,7 +72,7 @@ namespace LOCA {
       //! Assignment operator
       virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
 
-       //! Set parameters indexed by (integer) paramIDs
+      //! Set parameters indexed by (integer) paramIDs
       virtual void setParamsMulti(
 		     const vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
@@ -117,6 +117,16 @@ namespace LOCA {
        * projection is the max norm of the vector (a scalar).
        */
       virtual int projectToDrawDimension() const;
+
+      //@}
+
+      /*! 
+       * @name Virtual methods with empty or trivial implementations 
+       * These methods should be overloaded in a concrete implementation
+       * but their implementation is not critical to the rest of %LOCA and
+       * therefore have empty or trivial implementations.
+       */
+      //@{
 
       //@}
 

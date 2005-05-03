@@ -64,15 +64,17 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    LOCA::LAPACK::Group grp(chan);
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+      Teuchos::rcp(new LOCA::LAPACK::Group(chan));
     
-    grp.setParams(p);
+    grp->setParams(p);
 
     // Create parameter list
-    NOX::Parameter::List paramList;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
+      Teuchos::rcp(new NOX::Parameter::List);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
@@ -131,7 +133,7 @@ int main()
 			       LOCA::Utils::SolverDetails);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
@@ -144,9 +146,10 @@ int main()
     // Set up the status tests
     NOX::StatusTest::NormF normF(1.0e-8);
     NOX::StatusTest::MaxIters maxIters(maxNewtonIters);
-    NOX::StatusTest::Combo comboOR(NOX::StatusTest::Combo::OR, 
-				   normF, 
-				   maxIters);
+    Teuchos::RefCountPtr<NOX::StatusTest::Generic> comboOR = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					      normF, 
+					      maxIters));
 
     // Create the stepper  
     LOCA::NewStepper stepper(grp, comboOR, paramList);
@@ -158,16 +161,16 @@ int main()
       cout << "Stepper failed to converge!" << endl;
 
     // Get the final solution from the stepper
-    const LOCA::LAPACK::Group& finalGroup = 
-      dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
+    Teuchos::RefCountPtr<const LOCA::LAPACK::Group> finalGroup = 
+      Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = 
-      dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
+      dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
 
     // Output the parameter list
     if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
       cout << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      stepper.getParameterList().print(cout);
+      stepper.getParameterList()->print(cout);
       cout << endl;
     }
 

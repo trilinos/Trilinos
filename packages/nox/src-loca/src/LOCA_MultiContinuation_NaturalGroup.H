@@ -39,45 +39,47 @@ namespace LOCA {
 
   namespace MultiContinuation { 
 
-
     /*! 
-     * \brief Natural continuation implementation of 
-     * LOCA::MultiContinuation::ExtendedGroup
+     * \brief Specialization of LOCA::MultiContinuation::ExtendedGroup
+     * to natural continuation.
+     */
+    /*!
+     * Natural continuation corresponds to a continuation equation
+     * \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=0\f$ with \f$g\f$ given by
+     * \f[
+     *     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=
+     *         p-p_0-v_p \Delta s\f
+     * \f]
+     * where \f$v_p\f$ is the parameter component of the predictor direction 
+     * \f$v\f$. This corresponds geometrically to constraining the nonlinear 
+     * solver steps used in calculating \f$F(x,p)=0\f$ to be orthogonal to the 
+     * parameter axis.  The natural constraint \f$g\f$ is
+     * represented by a LOCA::MultiContinuation::NaturalConstraint object.
      */
     class NaturalGroup : 
       public virtual LOCA::MultiContinuation::ExtendedGroup {
 
     public:
   
-      //! Constructor with integer continuation parameter ids
+      //! Constructor
       /*!
-       * The argument \em grp is the underlying group which implements \f$F\f$,
-       * \em paramID is the index of the continuation parameter, 
-       * \em params
-       * is the parameter list for the continuation groups described above.
-       *
-       * The \em grp argument is a non-const reference and may be modified.
+       * \param global_data [in] Global data object
+       * \param topParams [in] Parsed top-level parameter list.
+       * \param continuationParams [in] Continuation parameters.
+       * \param grp [in] Group representing \f$F\f$.
+       * \param pred [in] Predictor strategy.
        */
-      NaturalGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
-		   const vector<int>& paramIDs,
-		   NOX::Parameter::List& params);
-
-      //! Constructor for single parameter continuation
-      /*!
-       * The argument \em grp is the underlying group which implements \f$F\f$,
-       * \em paramID is the name of the continuation parameter, 
-       * \em params
-       * is the parameter list for the continuation groups described above.
-       *
-       * The \em grp argument is a non-const reference and may be modified.
-       */
-      NaturalGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
-		   const string& paramID,
-		   NOX::Parameter::List& params);
+      NaturalGroup(
+      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& continuationParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const vector<int>& paramIDs);
 
       //! Copy constructor
       NaturalGroup(const NaturalGroup& source, 
-		   NOX::CopyType type = NOX::DeepCopy);
+		     NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~NaturalGroup();
@@ -95,54 +97,17 @@ namespace LOCA {
       virtual LOCA::MultiContinuation::ExtendedGroup& 
       operator=(const LOCA::MultiContinuation::ExtendedGroup& source);
 
-      //! Compute continuation constraint equations
-      virtual NOX::Abstract::Group::ReturnType
-      computeConstraints();
-
-      //! Compute continuation constraint equations
-      virtual NOX::Abstract::Group::ReturnType
-      computeConstraintDerivatives();
-
-      //! Return \c true if constraint residuals are valid
-      virtual bool isConstraints() const;
-
-      //! Return \c true if constraint derivatives are valid
-      virtual bool isConstraintDerivatives() const;
-
-      //! Return constraint residuals
-      virtual const NOX::Abstract::MultiVector::DenseMatrix&
-      getConstraints() const;
-
-      //! Return solution component of constraint derivatives
-      virtual const NOX::Abstract::MultiVector*
-      getConstraintDerivativesX() const;
-
-      //! Return parameter component of constraint derivatives
-      virtual const NOX::Abstract::MultiVector::DenseMatrix*
-      getConstraintDerivativesP() const;
-
-      /*! 
-       * \brief Return \c true if solution component of constraint 
-       * derivatives is zero
-       */
-      virtual bool isConstraintDerivativesXZero() const;
-
-      /*! 
-       * \brief Return \c true if solution component of constraint 
-       * derivatives is zero
-       */
-      virtual bool isConstraintDerivativesPZero() const;
-
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Extended::AbstractGroup virtual methods 
+       * @name Implementation of LOCA::Extended::MultiAbstractGroup virtual 
+       * methods 
        */
       //@{
 
       //! Assignment operator
-      virtual LOCA::Extended::AbstractGroup& 
-      operator=(const LOCA::Extended::AbstractGroup& source);
+      virtual LOCA::Extended::MultiAbstractGroup& 
+      operator=(const LOCA::Extended::MultiAbstractGroup& source);
 
       //@}
 
@@ -166,29 +131,11 @@ namespace LOCA {
        */
       //@{
 
-      //! Set the previous solution vector y
-      virtual void setPrevX(const NOX::Abstract::Vector& y);
-
-      //! Set step size for continuation constraint equation \em i
-      virtual void setStepSize(double deltaS, int i = 0);
+      //! Assignment operator
+      virtual LOCA::MultiContinuation::AbstractStrategy&
+      operator=(const MultiContinuation::AbstractStrategy& source);
 
       //@}
-
-    protected:
-
-      //! Resets all isValid flags to false
-      virtual void resetIsValid();
-
-    protected:
-
-      //! Stores constraint residuals
-      NOX::Abstract::MultiVector::DenseMatrix constraints;
-
-      //! Stores derivative of constraints w.r.t. parameters
-      NOX::Abstract::MultiVector::DenseMatrix dgdp;
-
-      //! Flag indicating whether constraints are valid
-      bool isValidConstraints;
     };
 
   } // namespace MultiContinuation

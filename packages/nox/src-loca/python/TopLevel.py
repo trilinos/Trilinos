@@ -56,7 +56,7 @@ class Iterator(_object):
             if self.thisown: destroy(self)
         except: pass
 
-    def reset(*args): return _TopLevel.Iterator_reset(*args)
+    def resetIterator(*args): return _TopLevel.Iterator_resetIterator(*args)
     def getIteratorStatus(*args): return _TopLevel.Iterator_getIteratorStatus(*args)
     def getStepNumber(*args): return _TopLevel.Iterator_getStepNumber(*args)
     def getNumFailedSteps(*args): return _TopLevel.Iterator_getNumFailedSteps(*args)

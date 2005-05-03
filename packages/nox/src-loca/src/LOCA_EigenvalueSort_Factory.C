@@ -49,7 +49,8 @@ LOCA::EigenvalueSort::Factory::~Factory()
 
 Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
 LOCA::EigenvalueSort::Factory::create(
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
 {
   string methodName = "LOCA::EigenvalueSort::Factory::create()";
   Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;

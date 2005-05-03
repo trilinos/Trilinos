@@ -45,6 +45,19 @@ namespace NOX {
 }
 namespace LOCA {
   class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
+  namespace MultiPredictor {
+    class AbstractStrategy;
+  }
+  namespace MultiContinuation {
+    class AbstractStrategy;
+    class AbstractGroup;
+  }
+  namespace BorderedSystem {
+    class AbstractStrategy;
+  }
   namespace Eigensolver {
     class AbstractStrategy;
   }
@@ -67,10 +80,8 @@ namespace LOCA {
      * This is done by deriving a user-defined factory from this interface,
      * implementing any of the create methods for the user-defined strategies,
      * and passing an instance of the derived factory to the LOCA::Factory
-     * object.  Any derived class must implement the \c reset() method,
-     * which should parse the supplied parameter list for the relevant
-     * strategy parameters.  Also derived classes must implement the
-     * \c setGlobalData() method to set the global data object which the
+     * object.  Any derived class must implement the
+     * \c init() method to set the global data object which the
      * factory can then pass to any instantiated strategies.
      */
     class Factory {
@@ -92,29 +103,47 @@ namespace LOCA {
       virtual void 
       init(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) = 0;
 
-      //! Reset
-      /*!
-       * Derived classes must implement this method which should parse
-       * the parameter list \c topLevelParams to determine any relevant
-       * strategy parameters.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      reset(
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams) = 0;
-
       /*! 
        * @name Strategy create methods
        */
       //@{
 
+       //! Create predictor strategy
+      virtual bool
+      createPredictorStrategy(
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams,
+       Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& strategy);
+
+      //! Create continuation strategy
+      virtual bool
+      createContinuationStrategy(
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const vector<int>& paramIDs,
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& strategy);
+
+      //! Create bordered system solver strategy
+      virtual bool
+      createBorderedSystemStrategy(
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy);
+
       //! Create eigensolver strategy
       virtual bool
       createEigensolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
 
       //! Create eigenvalue sorting strategy
       virtual bool
       createEigenvalueSortStrategy(
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
        Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
 
       //@}

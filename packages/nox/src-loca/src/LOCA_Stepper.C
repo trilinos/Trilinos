@@ -38,6 +38,7 @@
 #include "LOCA_Utils.H"		                // for static function doPrint
 #include "LOCA_ErrorCheck.H"                    // for error checking methods
 #include "LOCA_Factory.H"
+#include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "LOCA_Continuation_AbstractGroup.H"   // class data element
 #include "LOCA_Continuation_ExtendedGroup.H"
@@ -147,14 +148,18 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   // Create factory
   if (haveFactory)
     locaFactory = Teuchos::rcp(new LOCA::Factory(globalData, 
-						 paramListPtr,
 						 factory));
   else
-    locaFactory = Teuchos::rcp(new LOCA::Factory(globalData, 
-						 paramListPtr));
+    locaFactory = Teuchos::rcp(new LOCA::Factory(globalData));
 
   // Create eigensolver
-  eigensolver = locaFactory->createEigensolverStrategy();
+  Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams = 
+    Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
+  parsedParams->parseSublists(paramListPtr);
+  Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams = 
+    parsedParams->getSublist("Eigensolver");
+  eigensolver = locaFactory->createEigensolverStrategy(parsedParams,
+						       eigenParams);
 
   // Initialize the utilities
   LOCA::Utils::setUtils(*paramListPtr);

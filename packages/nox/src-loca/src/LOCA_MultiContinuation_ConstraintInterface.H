@@ -1,0 +1,176 @@
+// $Id$
+// $Source$
+
+//@HEADER
+// ************************************************************************
+//
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
+// ************************************************************************
+//@HEADER
+
+#ifndef LOCA_MULTICONTINUATION_CONSTRAINTINTERFACE_H
+#define LOCA_MULTICONTINUATION_CONSTRAINTINTERFACE_H
+
+#include "Teuchos_RefCountPtr.hpp"           // for RefCountPtr
+
+#include "NOX_Abstract_Group.H"              // for CopyType, ReturnType
+#include "NOX_Abstract_MultiVector.H"        // for MultiVector, DenseMatrix
+
+// forward declarations
+namespace LOCA {
+  namespace MultiContinuation {
+    class ExtendedVector;
+  }
+}
+
+namespace LOCA {
+
+  namespace MultiContinuation {
+
+    /*! 
+     * \brief Abstract interface for the constraint portion of a constrained 
+     * nonlinear system.
+     */
+    /*!
+     * This class is used in conjunction with 
+     * LOCA::MultiContinuation::ConstrainedGroup to represent a constrained
+     * nonlinear system:
+     * \f[
+     *      f(x,y) = 0
+     *      g(x,y) = 0
+     * \f]
+     * where \f$f(x,y)\f$ is represented by a concrete implementation of
+     * a LOCA::MultiContinuation::AbstractGroup and \f$g(x,y)\f$ (the
+     * constraint) is represented by an implementation of this class.  Here
+     * it is assumed the resulting system is square, i.e., \fx\in\Re^n\f$,
+     * \f$y\in\Re^m\f$, \f$f(x,y)\in\Re^n\f$ and \f$g(x,y)\in\Re^m\f$.
+     *
+     * This class provides an interface to evaluate \f$g(x,y)\f$, compute
+     * the derivatives \f$g_x\f$ and \f$g_y\f$, and apply the derivative
+     * \f$g_x\f$ to arbitrary multi-vectors (the implementation is never
+     * required to explicitly store \f$g_x\f$ which is impractical in 
+     * many situations).
+     */
+    class ConstraintInterface {
+
+    public:
+
+      //! Constructor
+      ConstraintInterface() {}
+
+      //! Destructor
+      virtual ~ConstraintInterface() {}
+
+      //! Assignment
+      virtual ConstraintInterface& 
+      operator=(const ConstraintInterface& source) = 0;
+
+      //! Cloning function
+      virtual 
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
+
+      //! Return number of constraints
+      virtual int numConstraints() const = 0;
+
+      //! Set the solution vector to x.
+      virtual void setX(const NOX::Abstract::Vector& x) = 0;
+
+      //! Sets parameter indexed by paramID
+      virtual void setParam(int paramID, double val) = 0;
+
+      //! Sets parameters indexed by paramIDs
+      virtual void setParams(const vector<int>& paramIDs, 
+		     const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
+
+      //! Compute constraint residuals
+      virtual NOX::Abstract::Group::ReturnType
+      computeConstraints() = 0;
+
+      //! Compute constraint derivatives
+      virtual NOX::Abstract::Group::ReturnType
+      computeConstraintDerivatives() = 0;
+
+      //! Return \c true if constraint residuals are valid
+      virtual bool isConstraints() const = 0;
+
+      //! Return \c true if constraint derivatives are valid
+      virtual bool isConstraintDerivatives() const = 0;
+
+      //! Return constraint residuals
+      virtual const NOX::Abstract::MultiVector::DenseMatrix&
+      getConstraints() const = 0;
+
+      //! Return parameter component of constraint derivatives
+      virtual
+      const NOX::Abstract::MultiVector::DenseMatrix&
+      getConstraintDerivativesP() const = 0;
+
+      //! Compute result_p = alpha * dg/dx * input_x
+      virtual NOX::Abstract::Group::ReturnType
+      applyConstraintDerivativesX(
+		double alpha, 
+		const NOX::Abstract::MultiVector& input_x,
+		NOX::Abstract::MultiVector::DenseMatrix& result_p) const = 0;
+
+      //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x
+      virtual NOX::Abstract::Group::ReturnType
+      applyConstraintDerivativesX(
+		Teuchos::ETransp transb,
+		double alpha, 
+		const NOX::Abstract::MultiVector::DenseMatrix& b,
+		double beta,
+		NOX::Abstract::MultiVector& result_x) const = 0;
+
+      /*! 
+       * \brief Return \c true if solution component of constraint 
+       * derivatives is zero
+       */
+      virtual bool isConstraintDerivativesXZero() const = 0;
+
+      /*! 
+       * \brief Return \c true if parameter component of constraint 
+       * derivatives is zero
+       */
+      virtual bool isConstraintDerivativesPZero() const = 0;
+
+      //! Compute derivative of constraints w.r.t. supplied parameters.
+      /*!
+       * The first column of \c dgdp should be filled with the constraint
+       * residuals \f$g\f$ if \c isValidG is \c false.  If \c isValidG is
+       * \c true, then the \c dgdp contains \f$g\f$ on input.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeDgDp(const vector<int>& paramIDs, 
+		  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+		  bool isValidG) = 0;
+
+    }; // Class ConstraintInterface
+
+  } // Namespace MultiContinuation
+
+} // Namespace LOCA
+
+#endif // LOCA_MULTICONTINUATION_CONSTRAINTINTERFACE_H

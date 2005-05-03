@@ -57,16 +57,16 @@ namespace LOCA {
      * class Derived : public AbstractStrategy {
      * public:
      *   Derived(
-     *      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     *      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-     *      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+     *   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+     *   const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
      *   ...
      * };
      * \endcode
      *
-     * where \c global_data is the LOCA global data object, \c eigenParams 
-     * is a parameter list of eigensolver parameters
-     * and \c solverParams is a parameter list of linear solver parametes.
+     * where \c global_data is the LOCA global data object, \c topParams is
+     * the parsed top-level parameter list, and \c eigenParams 
+     * is a parameter list of eigensolver parameters.
      *
      * This class and its children follow the Strategy pattern as defined
      * in Erich Gamma, et al. "Design Patterns:  Elements of Reusable 
@@ -98,6 +98,14 @@ namespace LOCA {
 	      Teuchos::RefCountPtr< std::vector<double> >& evals_i,
 	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
 	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i) = 0;
+
+    private:
+
+      //! Private to prohibit copying
+      AbstractStrategy(const AbstractStrategy&);
+
+      //! Private to prohibit copying
+      AbstractStrategy& operator = (const AbstractStrategy&);
 
     }; // Class AbstractStrategy
 

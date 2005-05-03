@@ -37,7 +37,6 @@
 #include "LOCA_StepSize_Constant.H"
 #include "LOCA_StepSize_Adaptive.H"
 #include "LOCA_Utils.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
 #include "LOCA_NewStepper.H"
 
 LOCA::StepSize::Manager::Manager(NOX::Parameter::List& params) :
@@ -100,7 +99,7 @@ LOCA::StepSize::Manager::compute(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::StepSize::Manager::compute(
-		      LOCA::MultiContinuation::ExtendedGroup& curGroup,
+		      LOCA::MultiContinuation::AbstractStrategy& curGroup,
 		      const LOCA::MultiContinuation::ExtendedVector& predictor,
 		      const NOX::Solver::Generic& solver,
 		      const LOCA::Abstract::Iterator::StepStatus& stepStatus,

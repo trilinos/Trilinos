@@ -123,6 +123,14 @@ namespace LOCA {
       sort(int n, double* r_evals, double* i_evals = NULL, 
 	   std::vector<int>* perm = NULL) const = 0;
 
+    private:
+
+      //! Private to prohibit copying
+      AbstractStrategy(const AbstractStrategy&);
+
+      //! Private to prohibit copying
+      AbstractStrategy& operator = (const AbstractStrategy&);
+
     }; // Class AbstractStrategy
 
     //! Largest-magnitude sorting strategy
@@ -155,6 +163,14 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       sort(int n, double* r_evals, double* i_evals, 
 	   std::vector<int>* perm = NULL) const;
+
+    private:
+
+      //! Private to prohibit copying
+      LargestMagnitude(const LargestMagnitude&);
+
+      //! Private to prohibit copying
+      LargestMagnitude& operator = (const LargestMagnitude&);
 
     }; // Class LargestMagnitude
 
@@ -189,6 +205,14 @@ namespace LOCA {
       sort(int n, double* r_evals, double* i_evals, 
 	   std::vector<int>* perm = NULL) const;
 
+    private:
+
+      //! Private to prohibit copying
+      SmallestMagnitude(const SmallestMagnitude&);
+
+      //! Private to prohibit copying
+      SmallestMagnitude& operator = (const SmallestMagnitude&);
+
     }; // Class SmallestMagnitude
 
     //! Largest-real sorting strategy
@@ -221,6 +245,14 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       sort(int n, double* r_evals, double* i_evals, 
 	   std::vector<int>* perm = NULL) const;
+
+    private:
+
+      //! Private to prohibit copying
+      LargestReal(const LargestReal&);
+
+      //! Private to prohibit copying
+      LargestReal& operator = (const LargestReal&);
 
     }; // Class LargestReal
 
@@ -255,6 +287,14 @@ namespace LOCA {
       sort(int n, double* r_evals, double* i_evals, 
 	   std::vector<int>* perm = NULL) const;
 
+    private:
+
+      //! Private to prohibit copying
+      SmallestReal(const SmallestReal&);
+
+      //! Private to prohibit copying
+      SmallestReal& operator = (const SmallestReal&);
+
     }; // Class SmallestReal
 
     //! Largest-imaginary sorting strategy
@@ -287,6 +327,14 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       sort(int n, double* r_evals, double* i_evals, 
 	   std::vector<int>* perm = NULL) const;
+      
+    private:
+
+      //! Private to prohibit copying
+      LargestImaginary(const LargestImaginary&);
+
+      //! Private to prohibit copying
+      LargestImaginary& operator = (const LargestImaginary&);
 
     }; // Class LargestImaginary
 
@@ -320,6 +368,14 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       sort(int n, double* r_evals, double* i_evals, 
 	   std::vector<int>* perm = NULL) const;
+
+    private:
+
+      //! Private to prohibit copying
+      SmallestImaginary(const SmallestImaginary&);
+
+      //! Private to prohibit copying
+      SmallestImaginary& operator = (const SmallestImaginary&);
 
     }; // Class SmallestImaginary
 
@@ -359,6 +415,14 @@ namespace LOCA {
 
       //! Compute the part of the inverse of the Cayley transformation
       double realLambda(double er, double ei) const;
+
+    private:
+
+      //! Private to prohibit copying
+      LargestRealInverseCayley(const LargestRealInverseCayley&);
+
+      //! Private to prohibit copying
+      LargestRealInverseCayley& operator = (const LargestRealInverseCayley&);
 
     protected:
 

@@ -36,6 +36,7 @@
 #include "LOCA_Factory.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
+#include "LOCA_Parameter_SublistParser.H"
 
 #include "LOCA_Eigensolver_DGGEVStrategy.H"
 #include "LOCA_EigenvalueSort_Strategies.H"
@@ -45,12 +46,13 @@
 
 
 LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
-		 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams,
-		 const Teuchos::RefCountPtr<NOX::Parameter::List>& solParams) :
-  globalData(global_data)
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& tpParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams) :
+  globalData(global_data),
+  topParams(tpParams),
+  eigenParams(eigParams)
 {
-  eigenParams = eigParams;
   nev = eigenParams->getParameter("NEV", 4);
   which = eigenParams->getParameter("Sorting Order","LM");
 }
@@ -241,7 +243,8 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 
   // Instantiate a sorting strategy
   Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> evalSort = 
-    globalData->locaFactory->createEigenvalueSortStrategy();
+    globalData->locaFactory->createEigenvalueSortStrategy(topParams,
+							  eigenParams);
 
   // Create permutation array
   std::vector<int> perm(n);

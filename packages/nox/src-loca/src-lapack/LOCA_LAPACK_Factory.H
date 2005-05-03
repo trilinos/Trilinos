@@ -61,11 +61,6 @@ namespace LOCA {
       virtual void 
       init(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
 
-      //! Reset
-      virtual NOX::Abstract::Group::ReturnType
-      reset(
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams);
-
       /*! 
        * @name Strategy create methods
        */
@@ -74,6 +69,8 @@ namespace LOCA {
       //! Create eigensolver strategy
       virtual bool
       createEigensolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
 
       //@}
@@ -90,9 +87,6 @@ namespace LOCA {
 
       //! Global data
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
-
-      //! Parser to find sublists
-      Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> sublistParser;
 
     }; // Class Factory
 

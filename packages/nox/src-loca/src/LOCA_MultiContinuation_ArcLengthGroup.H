@@ -40,39 +40,70 @@ namespace LOCA {
   namespace MultiContinuation { 
 
     /*! 
-     * \brief Arclength continuation implementation of 
-     * LOCA::MultiContinuation::ExtendedGroup
+     * \brief Specialization of LOCA::MultiContinuation::ExtendedGroup
+     * to pseudo-arclength continuation.
+     */
+    /*!
+     * Pseudo arc-length continuation corresponds to a continuation equation
+     * \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=0\f$ with \f$g\f$ given by
+     * \f[
+     *     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=
+     *         (x-x^\ast)^Tv_x + (p-p^\ast) v_p - \Delta s
+     * \f]
+     * where \f$v_x\f$, \f$v_p\f$ are the solution and  parameter components 
+     * of the predictor direction \f$v\f$ respectively.
+     * This corresponds geometrically to constraining the nonlinear solver 
+     * steps used in calculating \f$F(x,p)=0\f$ to be orthogonal to the 
+     * predictor direction \f$v\f$.  The arclength constraint \f$g\f$ is
+     * represented by a LOCA::MultiContinuation::ArcLengthConstraint object.
+     *
+     * This class also reimplements the scaleTangent() and 
+     * computeScaledDotProduct() methods to implement a scaling method 
+     * that tries to ensure the solution and parameter contributions to the
+     * arc-length equation are of the same order.  Specifically, the
+     * arc-length equation is replaced by
+     * \f[
+     *      (x-x^\ast)^Tv_x + \theta^2(p-p^\ast) v_p - \Delta s = 0
+     * \f]
+     * where \f$\theta\f$ is chosen so that \f$\theta^2 v_p\f$
+     * is equal to a target value, 0.5 by default.  Parameters for this
+     * scaling method are passed through the \c continuationParams argument
+     * to the constructor and are:
+     * <ul>
+     * <li> "Enable Arc Length Scaling" -- [bool] (default: true)
+     * <li> "Initial Scale Factor" -- [double] (default: 1.0)
+     * <li> "Goal Arc Length Parameter Contribution" -- [double] (default: 0.5)
+     * <li> "Max Arc Length Parameter Contribution" -- [double] (default: 0.0)
+     * <li> "Min Scale Factor" -- [double] (default: 1.0e-3)
+     * </ul>
+     * Whether this scaling method is used is determined by the
+     * "Enable Arc Length Scaling", and the initial value for \f$\theta\f$
+     * is given by "Initial Scale Factor".  A new value of \f$\theta\f$ is
+     * chosen only if \f$\theta^2 v_p\f$ is larger than the value given by
+     * "Max Arc Length Parameter Contribution" and "Min Scale Factor" 
+     * provides a minimum value for \f$\theta\f$.
      */
     class ArcLengthGroup : 
       public virtual LOCA::MultiContinuation::ExtendedGroup {
 
     public:
   
-      //! Constructor with integer continuation parameter ids
+      //! Constructor
       /*!
-       * The argument \em grp is the underlying group which implements \f$F\f$,
-       * \em paramID is the index of the continuation parameter, 
-       * \em params
-       * is the parameter list for the continuation groups described above.
-       *
-       * The \em grp argument is a non-const reference and may be modified.
+       * \param global_data [in] Global data object
+       * \param topParams [in] Parsed top-level parameter list.
+       * \param continuationParams [in] Continuation parameters as described 
+       * above.
+       * \param grp [in] Group representing \f$F\f$.
+       * \param pred [in] Predictor strategy.
        */
-      ArcLengthGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
-		     const vector<int>& paramIDs,
-		     NOX::Parameter::List& params);
-
-      //! Constructor for single parameter continuation
-      /*!
-       * The argument \em grp is the underlying group which implements \f$F\f$,
-       * \em paramID is the name of the continuation parameter, 
-       * \em params
-       * is the parameter list for the continuation groups described above.
-       *
-       * The \em grp argument is a non-const reference and may be modified.
-       */
-      ArcLengthGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
-		     const string& paramID,
-		     NOX::Parameter::List& params);
+      ArcLengthGroup(
+      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& continuationParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const vector<int>& paramIDs);
 
       //! Copy constructor
       ArcLengthGroup(const ArcLengthGroup& source, 
@@ -94,44 +125,6 @@ namespace LOCA {
       virtual LOCA::MultiContinuation::ExtendedGroup& 
       operator=(const LOCA::MultiContinuation::ExtendedGroup& source);
 
-      //! Compute continuation constraint equations
-      virtual NOX::Abstract::Group::ReturnType
-      computeConstraints();
-
-      //! Compute continuation constraint equations
-      virtual NOX::Abstract::Group::ReturnType
-      computeConstraintDerivatives();
-
-      //! Return \c true if constraint residuals are valid
-      virtual bool isConstraints() const;
-
-      //! Return \c true if constraint derivatives are valid
-      virtual bool isConstraintDerivatives() const;
-
-      //! Return constraint residuals
-      virtual const NOX::Abstract::MultiVector::DenseMatrix&
-      getConstraints() const;
-
-      //! Return solution component of constraint derivatives
-      virtual const NOX::Abstract::MultiVector*
-      getConstraintDerivativesX() const;
-
-      //! Return parameter component of constraint derivatives
-      virtual const NOX::Abstract::MultiVector::DenseMatrix*
-      getConstraintDerivativesP() const;
-
-      /*! 
-       * \brief Return \c true if solution component of constraint 
-       * derivatives is zero
-       */
-      virtual bool isConstraintDerivativesXZero() const;
-
-      /*! 
-       * \brief Return \c true if solution component of constraint 
-       * derivatives is zero
-       */
-      virtual bool isConstraintDerivativesPZero() const;
-
       //@}
 
       /*! 
@@ -140,8 +133,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Extended::AbstractGroup& 
-      operator=(const LOCA::Extended::AbstractGroup& source);
+      virtual LOCA::Extended::MultiAbstractGroup& 
+      operator=(const LOCA::Extended::MultiAbstractGroup& source);
 
       //@}
 
@@ -165,11 +158,12 @@ namespace LOCA {
        */
       //@{
 
-      //! Notifies group that continuation step is completed
-      virtual void notifyCompletedStep();
+      //! Assignment operator
+      virtual LOCA::MultiContinuation::AbstractStrategy&
+      operator=(const MultiContinuation::AbstractStrategy& source);
 
       //! Scales predictor
-      virtual void scalePredictor();
+      virtual void scaleTangent();
 
       //! Computes a scaled dot product between two continuation vectors
       virtual double computeScaledDotProduct(
@@ -183,20 +177,6 @@ namespace LOCA {
       //@}
 
     protected:
-
-      //! Resets all isValid flags to false
-      virtual void resetIsValid();
-
-    protected:
-
-      //! Stores arclength constraint residuals
-      NOX::Abstract::MultiVector::DenseMatrix constraints;
-
-      //! Flag indicating whether constraints are valid
-      bool isValidConstraints;
-
-      //! Flag indicating whether constraint derivatives are valid
-      bool isValidConstraintDerivatives;
 
       //! Stores scaling factor for each arclength equation
       vector<double> theta;

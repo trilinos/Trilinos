@@ -3,43 +3,51 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //                  LOCA Continuation Algorithm Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
-// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-// (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef LOCA_BORDEREDSYSTEM_BORDERING_H
 #define LOCA_BORDEREDSYSTEM_BORDERING_H
 
-#include "LOCA_BorderedSystem_Generic.H"  // base class
+#include "LOCA_BorderedSystem_AbstractStrategy.H"  // base class
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
+}
 
 namespace LOCA {
 
   namespace BorderedSystem {
     
-    //! Solved bordered system of equations using bordering
+    //! Bordered system solver strategy based on bordering
     /*! 
      * This class solves the extended system of equations
      * \f[
@@ -65,52 +73,48 @@ namespace LOCA {
      *        X   &= X_1 - X_2 Y
      *     \end{aligned}
      * \f]
+     * It takes advantage of any of the matrix blocks being zero and
+     * concatenates \f$F\f$ and \f$A\f$ into a contiguous multivector
+     * (if they are not already) to compute \f$X_1\f$ and \f$X_2\f$ in
+     * one block solve.
     */
-    class Bordering : public LOCA::BorderedSystem::Generic {
+    class Bordering : public LOCA::BorderedSystem::AbstractStrategy {
 
     public:
 
       //! Constructor. 
-      Bordering(NOX::Parameter::List& params);
-
-      //! Copy constructor
-      Bordering(const Bordering& source);
+      /*!
+       * \param global_data [in] Global data object
+       * \param topParams [in] Parsed top-level parameter list 
+       * \param predParams [in] Bordered solver parameters.  Currently none
+       * are referenced.
+       */
+      Bordering(
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
 
       //! Destructor
       virtual ~Bordering();
-
-      //! Assignment operator
-      virtual Bordering& 
-      operator = (const Bordering& source);
-
-      //! Clone function
-      virtual LOCA::BorderedSystem::Generic* clone() const;
-
-      //! Assignment operator
-      virtual LOCA::BorderedSystem::Generic& 
-      operator = (const LOCA::BorderedSystem::Generic& source);
-
-      //! Reset parameters
-      virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params);
 
       //! Set flags indicating if any blocks are zero
       virtual void setIsZero(bool flagA, bool flagB, bool flagC, bool flagF,
 			     bool flagG);
 
-      //! Set flag indicating whether F and A are continguous
+      /*! 
+       * \brief Set flag indicating whether F and A are stored in a 
+       * continguous multivector.
+       */
       virtual void setIsContiguous(bool flag);
 
       //! Set blocks
       /*!
-       * Any of these block pointers (execpt the group pointer) may be NULL 
-       * if the corresponding flag is set indicating the block is zero.
+       * The \c blockA pointer may be null if this block is zero
        */
       virtual void setMatrixBlocks(
-			const NOX::Abstract::Group* group,
-			const NOX::Abstract::MultiVector* blockA,
-			const NOX::Abstract::MultiVector* blockB,
-			const NOX::Abstract::MultiVector::DenseMatrix* blockC);
+	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockBC);
   
       /*! 
        * \brief Computed extended matrix-multivector product
@@ -209,14 +213,14 @@ namespace LOCA {
        */
       NOX::Abstract::Group::ReturnType  
       solveBNonZeroNoncontiguous(
-			   NOX::Parameter::List& params,
-			   const NOX::Abstract::MultiVector* AA,
-			   const NOX::Abstract::MultiVector* BB,
-			   const NOX::Abstract::MultiVector::DenseMatrix* CC,
-			   const NOX::Abstract::MultiVector* F,
-			   const NOX::Abstract::MultiVector::DenseMatrix* G,
-			   NOX::Abstract::MultiVector& X,
-			   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+			NOX::Parameter::List& params,
+			const NOX::Abstract::MultiVector* AA,
+			const LOCA::MultiContinuation::ConstraintInterface* BB,
+			const NOX::Abstract::MultiVector::DenseMatrix* CC,
+			const NOX::Abstract::MultiVector* F,
+			const NOX::Abstract::MultiVector::DenseMatrix* G,
+			NOX::Abstract::MultiVector& X,
+			NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
       /*! 
        * \brief Solves the extended system when B is not 0 and F and A are
@@ -224,30 +228,44 @@ namespace LOCA {
        */
       NOX::Abstract::Group::ReturnType  
       solveBNonZeroContiguous(
-			  NOX::Parameter::List& params,
-			  const NOX::Abstract::MultiVector* AA,
-			  const NOX::Abstract::MultiVector* BB,
-			  const NOX::Abstract::MultiVector::DenseMatrix* CC,
-			  vector<int>& indexF,
-			  vector<int>& indexA,
-			  const NOX::Abstract::MultiVector* F,
-			  const NOX::Abstract::MultiVector::DenseMatrix* G,
-			  NOX::Abstract::MultiVector& X,
-			  NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+			NOX::Parameter::List& params,
+			const NOX::Abstract::MultiVector* AA,
+			const LOCA::MultiContinuation::ConstraintInterface* BB,
+			const NOX::Abstract::MultiVector::DenseMatrix* CC,
+			vector<int>& indexF,
+			vector<int>& indexA,
+			const NOX::Abstract::MultiVector* F,
+			const NOX::Abstract::MultiVector::DenseMatrix* G,
+			NOX::Abstract::MultiVector& X,
+			NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
+    private:
+
+      //! Private to prohibit copying
+      Bordering(const Bordering&);
+
+      //! Private to prohibit copying
+      Bordering& operator = (const Bordering&);
 
     protected:
 
+      //! Global data object
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+      //! Solver parameters
+      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+
       //! Pointer to group storing J
-      const NOX::Abstract::Group* grp;
+      Teuchos::RefCountPtr<const NOX::Abstract::Group>  grp;
 
       //! Pointer to A block
-      const NOX::Abstract::MultiVector* A;
+      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
 
       //! Pointer to B block
-      const NOX::Abstract::MultiVector* B;
+      Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface> B;
 
       //! Pointer to C block
-      const NOX::Abstract::MultiVector::DenseMatrix* C;
+      const NOX::Abstract::MultiVector::DenseMatrix *C;
 
       //! flag indicating whether A block is zero
       bool isZeroA;

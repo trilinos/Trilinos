@@ -1,0 +1,135 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//                                                                                 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA                                                                                
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov), Sandia National Laboratories.
+// 
+// ************************************************************************
+//@HEADER
+
+#ifndef LOCA_MULTIPREDICTOR_RESTART_H
+#define LOCA_MULTIPREDICTOR_RESTART_H
+
+#include "LOCA_MultiPredictor_AbstractStrategy.H"  // base class
+
+// forward declarations
+namespace LOCA{
+  class GlobalData;
+}
+
+namespace LOCA {
+
+  namespace MultiPredictor {
+
+    //! %Restart predictor strategy
+    /*! 
+     * This class implements a predictor that is restarted from a previous
+     * computation.  In other words, this class takes a predictor vector
+     * that would be computed previously and uses it as the predictor.
+     *
+     * The parameters used by this class supplied in the constructor are:
+     * <ul>
+     * <li> "Restart Vector" - Teuchos::RefCountPtr to a 
+     *      LOCA::MultiContinuation::ExtendedVector or ExtendedMultiVector 
+     *      storing the predictor direction.
+     * </ul>
+     */
+    class Restart : public LOCA::MultiPredictor::AbstractStrategy {
+
+    public:
+
+      //! Constructor.
+      /*!
+       * \param global_data [in] Global data object 
+       * \param predParams [in] Predictor parameters as described above.
+       */
+      Restart(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams);
+
+      //! Destructor
+      virtual ~Restart();
+
+      //! Copy constructor
+      Restart(const Restart& source, NOX::CopyType type = NOX::DeepCopy);
+  
+      //! Assignment operator
+      virtual LOCA::MultiPredictor::AbstractStrategy& 
+      operator=(const LOCA::MultiPredictor::AbstractStrategy& source);
+
+      //! Clone function
+      virtual Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
+
+      /*! 
+       * \brief Compute the predictor given the current and
+       * previous solution vectors.  Set \em baseOnSecant to \em false
+       * if the predictor orientation should not be based on the
+       * secant vector (first or last steps of a continuation run).
+       */
+      /*!
+       * This method actually implements the predictor computation described 
+       * above
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      compute(bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
+	      const LOCA::MultiContinuation::ExtendedVector& xVec);
+
+      //! Evaluate predictor with step size \c stepSize.
+      /*!
+       * This method computes
+       * \c result[i] = \c xVec[i] + \c stepSize[i] * v[i]
+       * for each i, where \c v[i] is the ith predictor direction.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      evaluate(const vector<double>& stepSize,
+	       const LOCA::MultiContinuation::ExtendedVector& xVec,
+	       LOCA::MultiContinuation::ExtendedMultiVector& result) const;
+
+      //! Compute tangent to predictor and store in \c tangent.
+      virtual NOX::Abstract::Group::ReturnType 
+      computeTangent(LOCA::MultiContinuation::ExtendedMultiVector& tangent);
+
+      //! Is the tangent vector for this predictor scalable
+      /*!
+       * For the restart predictor, this always returns false.
+       */
+      virtual bool isTangentScalable() const;
+
+    protected:
+
+      //! LOCA global data object
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+      //! Stores predictor vector
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> predictor;
+
+    };
+  } // namespace Predictor
+} // namespace LOCA
+
+#endif

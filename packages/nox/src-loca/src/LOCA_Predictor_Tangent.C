@@ -35,6 +35,7 @@
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_AbstractGroup.H"
 
 LOCA::Predictor::Tangent::Tangent(NOX::Parameter::List& params) :
   dfdpVecPtr(NULL)
@@ -130,8 +131,8 @@ LOCA::Predictor::Tangent::compute(
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Get underlying group
-  LOCA::MultiContinuation::AbstractGroup& underlyingGroup = 
-    dynamic_cast<LOCA::MultiContinuation::AbstractGroup&>(grp.getUnderlyingGroup());
+  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
+    = grp.getUnderlyingGroup();
 
   // Get references to x, parameter components of predictor
   NOX::Abstract::MultiVector& tanX = result.getXMultiVec();
@@ -143,7 +144,7 @@ LOCA::Predictor::Tangent::compute(
   // Compute derivative of residual w.r.t. parameter
   NOX::Abstract::MultiVector *fdfdp = 
     xMultiVec.getXMultiVec().clone(NOX::DeepCopy);
-  finalStatus = underlyingGroup.computeDfDpMulti(conParamIDs, *fdfdp, false);
+  finalStatus = underlyingGroup->computeDfDpMulti(conParamIDs, *fdfdp, false);
   LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   vector<int> index_dfdp(conParamIDs.size());
@@ -156,7 +157,7 @@ LOCA::Predictor::Tangent::compute(
     (*dfdp)[i].scale(-1.0);
 
   // Compute Jacobian
-  status = underlyingGroup.computeJacobian();
+  status = underlyingGroup->computeJacobian();
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
@@ -164,9 +165,10 @@ LOCA::Predictor::Tangent::compute(
   // Solve J*tanX = -df/dp
   NOX::Parameter::List& linearSolverParams = 
     LOCA::Utils::getSublist("Linear Solver");
-  status = underlyingGroup.applyJacobianInverseMultiVector(linearSolverParams, 
-							   *dfdp, 
-							   tanX);
+  status = 
+    underlyingGroup->applyJacobianInverseMultiVector(linearSolverParams, 
+						     *dfdp, 
+						     tanX);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);

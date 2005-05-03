@@ -1,0 +1,106 @@
+// $Id$
+// $Source$
+
+//@HEADER
+// ************************************************************************
+//
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
+// ************************************************************************
+//@HEADER
+
+#include "NOX_Parameter_List.H"
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
+
+#include "LOCA_MultiContinuation_Factory.H"
+#include "LOCA_MultiContinuation_AbstractStrategy.H"
+#include "LOCA_MultiContinuation_NaturalGroup.H"
+#include "LOCA_MultiContinuation_ArcLengthGroup.H"
+
+LOCA::MultiContinuation::Factory::Factory(
+	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+  globalData(global_data)
+{
+}
+
+LOCA::MultiContinuation::Factory::~Factory()
+{
+}
+
+Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
+LOCA::MultiContinuation::Factory::create(
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const vector<int>& paramIDs)
+{
+  string methodName = "LOCA::MultiContinuation::Factory::create()";
+  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> strategy;
+
+  // Get name of strategy
+  string name = stepperParams->getParameter("Continuation Method", "Natural");
+
+  if (name == "Natural")
+    strategy = 
+      Teuchos::rcp(new LOCA::MultiContinuation::NaturalGroup(globalData,
+							     topParams,
+							     stepperParams,
+							     grp,
+							     pred,
+							     paramIDs));
+
+  else if (name == "Arc Length")
+    strategy = 
+      Teuchos::rcp(new LOCA::MultiContinuation::ArcLengthGroup(
+							      globalData,
+							      topParams,
+							      stepperParams,
+							      grp,
+							      pred,
+							      paramIDs));
+  else if (name == "User-Defined") {
+
+    // Get name of user-defined strategy
+    string userDefinedName = stepperParams->getParameter("User-Defined Name",
+							 "???");
+    if (stepperParams->
+	  isParameterRcp<LOCA::MultiContinuation::AbstractStrategy>(userDefinedName))
+      strategy = stepperParams->
+	getRcpParameter<LOCA::MultiContinuation::AbstractStrategy>(userDefinedName);
+    else
+       globalData->locaErrorCheck->throwError(
+				       methodName,
+				       "Cannot find user-defined strategy: " + 
+				       userDefinedName);
+  }
+  else
+    globalData->locaErrorCheck->throwError(
+				      methodName,
+				      "Invalid continuation method: " + 
+				      name);
+
+  return strategy;
+}

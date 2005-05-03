@@ -61,10 +61,15 @@ LOCA::Parameter::SublistParser::parseSublists(
   NOX::Parameter::List& stepperSublist = locaSublist.sublist("Stepper");
   sublistMap["Stepper"] = Teuchos::rcp(&stepperSublist, false);
 
-  // Anasazi sublist
+  // Eigensolver sublist
   NOX::Parameter::List& eigensolverSublist = 
     stepperSublist.sublist("Eigensolver");
   sublistMap["Eigensolver"] = Teuchos::rcp(&eigensolverSublist, false);
+
+  // Constraints sublist
+  NOX::Parameter::List& constraintsSublist = 
+    locaSublist.sublist("Constraints");
+  sublistMap["Constraints"] = Teuchos::rcp(&constraintsSublist, false);
 
   // Bifurcation sublist
   NOX::Parameter::List& bifurcationSublist = 

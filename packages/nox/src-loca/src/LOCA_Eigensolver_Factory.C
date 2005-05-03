@@ -51,8 +51,8 @@ LOCA::Eigensolver::Factory::~Factory()
 
 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
 LOCA::Eigensolver::Factory::create(
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
 {
   string methodName = "LOCA::Eigensolver::Factory::create()";
   Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
@@ -63,13 +63,13 @@ LOCA::Eigensolver::Factory::create(
   if (name == "Default")
     strategy = 
       Teuchos::rcp(new LOCA::Eigensolver::DefaultStrategy(globalData,
-							  eigenParams,
-							  solverParams));
+							  topParams,
+							  eigenParams));
   else if (name == "Anasazi")
     strategy = 
       Teuchos::rcp(new LOCA::Eigensolver::AnasaziStrategy(globalData,
-							  eigenParams,
-							  solverParams));
+							  topParams,
+							  eigenParams));
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy

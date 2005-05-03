@@ -37,8 +37,7 @@
 #include "LOCA_Eigensolver_DGGEVStrategy.H"
 
 LOCA::LAPACK::Factory::Factory() :
-  globalData(),
-  sublistParser()
+  globalData()
 {
 }
 
@@ -51,29 +50,14 @@ LOCA::LAPACK::Factory::init(
 		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data)
 {
   globalData = global_data;
-  sublistParser = Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Factory::reset(
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams)
-{
-  // Parse sublists
-  sublistParser->parseSublists(topLevelParams);
-
-  return NOX::Abstract::Group::Ok;
 }
 
 bool
 LOCA::LAPACK::Factory::createEigensolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
 {
-  // Get parameter lists
-  Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams = 
-    sublistParser->getSublist("Eigensolver");
-  Teuchos::RefCountPtr<NOX::Parameter::List> solverParams = 
-    sublistParser->getSublist("Linear Solver");
-
   // Get name of strategy
   string name = eigenParams->getParameter("Method", "Default");
 
@@ -81,8 +65,8 @@ LOCA::LAPACK::Factory::createEigensolverStrategy(
   if (name == "DGGEV") {
     strategy = 
       Teuchos::rcp(new LOCA::Eigensolver::DGGEVStrategy(globalData,
-							eigenParams,
-							solverParams));
+							topParams,
+							eigenParams));
     return true;
   }
   else

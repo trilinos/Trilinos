@@ -32,6 +32,7 @@
 
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Parameter_List.H"
+#include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Utils.H"
 #include "LOCA_Factory.H"
@@ -47,14 +48,14 @@
 #endif
 
 LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
-		 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams,
-		 const Teuchos::RefCountPtr<NOX::Parameter::List>& solParams) :
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams) :
   globalData(global_data)
 {
 #ifdef HAVE_LOCA_ANASAZI
   eigenParams = eigParams;
-  solverParams = solParams;
+  solverParams = topParams->getSublist("Linear Solver");
 
   // Get values out of parameter list
   blksz = eigenParams->getParameter("Block Size", 1);
@@ -93,7 +94,8 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 
   // Create a sorting manager to handle the sorting of eigenvalues 
   Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> sortingStrategy
-    = globalData->locaFactory->createEigenvalueSortStrategy();
+    = globalData->locaFactory->createEigenvalueSortStrategy(topParams,
+							    eigenParams);
   LOCASort =
     Teuchos::rcp(new Anasazi::LOCASort(sortingStrategy));
 #endif

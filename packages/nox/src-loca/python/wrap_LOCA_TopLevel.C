@@ -1371,7 +1371,7 @@ static PyObject *_wrap_delete_Iterator(PyObject *, PyObject *args) {
 }
 
 
-static PyObject *_wrap_Iterator_reset(PyObject *, PyObject *args) {
+static PyObject *_wrap_Iterator_resetIterator(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::Abstract::Iterator *arg1 = (LOCA::Abstract::Iterator *) 0 ;
     NOX::Parameter::List *arg2 = 0 ;
@@ -1379,7 +1379,7 @@ static PyObject *_wrap_Iterator_reset(PyObject *, PyObject *args) {
     PyObject * obj0 = 0 ;
     PyObject * obj1 = 0 ;
     
-    if(!PyArg_ParseTuple(args,(char *)"OO:Iterator_reset",&obj0,&obj1)) goto fail;
+    if(!PyArg_ParseTuple(args,(char *)"OO:Iterator_resetIterator",&obj0,&obj1)) goto fail;
     SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__Abstract__Iterator, SWIG_POINTER_EXCEPTION | 0);
     if (SWIG_arg_fail(1)) SWIG_fail;
     {
@@ -1390,7 +1390,7 @@ static PyObject *_wrap_Iterator_reset(PyObject *, PyObject *args) {
         }
         if (SWIG_arg_fail(2)) SWIG_fail;
     }
-    result = (bool)(arg1)->reset(*arg2);
+    result = (bool)(arg1)->resetIterator(*arg2);
     
     {
         resultobj = SWIG_From_bool((bool)(result)); 
@@ -2765,7 +2765,7 @@ static PyObject * Utils_swigregister(PyObject *, PyObject *args) {
 }
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_Iterator", _wrap_delete_Iterator, METH_VARARGS, NULL},
-	 { (char *)"Iterator_reset", _wrap_Iterator_reset, METH_VARARGS, NULL},
+	 { (char *)"Iterator_resetIterator", _wrap_Iterator_resetIterator, METH_VARARGS, NULL},
 	 { (char *)"Iterator_getIteratorStatus", _wrap_Iterator_getIteratorStatus, METH_VARARGS, NULL},
 	 { (char *)"Iterator_getStepNumber", _wrap_Iterator_getStepNumber, METH_VARARGS, NULL},
 	 { (char *)"Iterator_getNumFailedSteps", _wrap_Iterator_getNumFailedSteps, METH_VARARGS, NULL},

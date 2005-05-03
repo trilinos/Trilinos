@@ -40,36 +40,34 @@
 #include "LOCA_Eigensolver_Factory.H"
 
 LOCA::Factory::Factory(
-	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	  const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams) :
+	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
   globalData(global_data),
   factory(),
   haveFactory(false),
-  sublistParser(global_data),
+  predictorFactory(global_data),
+  continuationFactory(global_data),
+  borderedFactory(global_data),
   eigensolverFactory(global_data),
   eigenvalueSortFactory(global_data)
 {
-  reset(topLevelParams);
-
   // Set the factory member of the global data
   globalData->locaFactory = Teuchos::rcp(this, false);
 }
 
 LOCA::Factory::Factory(
 	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	  const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams,
 	  const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory) :
   globalData(global_data),
   factory(userFactory),
   haveFactory(true),
-  sublistParser(global_data),
+  predictorFactory(global_data),
+  continuationFactory(global_data),
+  borderedFactory(global_data),
   eigensolverFactory(global_data),
   eigenvalueSortFactory(global_data)
 {
   // Initialize user-defined factory
   factory->init(globalData);
-
-  reset(topLevelParams);
   
   // Set the factory member of the global data
   globalData->locaFactory = Teuchos::rcp(this, false);
@@ -79,24 +77,84 @@ LOCA::Factory::~Factory()
 {
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::Factory::reset(
-	    const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams)
+Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+LOCA::Factory::createPredictorStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams)
 {
-  NOX::Abstract::Group::ReturnType result = NOX::Abstract::Group::Ok;
+  string methodName = "LOCA::Factory::createPredictorStrategy()";
+  Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> strategy;
 
-  // Parse sublists
-  sublistParser.parseSublists(topLevelParams);
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    bool created = factory->createPredictorStrategy(topParams,
+						    predictorParams,
+						    strategy);
+    if (created)
+      return strategy;
+  }
 
-  // Reset user-provided factory if present
-  if (haveFactory)
-    result = factory->reset(topLevelParams);
+  strategy = predictorFactory.create(topParams, predictorParams);
 
-  return result;
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
+LOCA::Factory::createContinuationStrategy(
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const vector<int>& paramIDs)
+{
+  string methodName = "LOCA::Factory::createContinuationStrategy()";
+  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    bool created = factory->createContinuationStrategy(topParams,
+						       stepperParams,
+						       grp, pred, paramIDs,
+						       strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = continuationFactory.create(topParams, stepperParams, grp, pred,
+					paramIDs);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>
+LOCA::Factory::createBorderedSystemStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+{
+  string methodName = "LOCA::Factory::createBorderedSystemStrategy()";
+  Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    bool created = factory->createBorderedSystemStrategy(topParams,
+							 solverParams,
+							 strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = borderedFactory.create(topParams, solverParams);
+
+  return strategy;
 }
 
 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
-LOCA::Factory::createEigensolverStrategy()
+LOCA::Factory::createEigensolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
 {
   string methodName = "LOCA::Factory::createEigensolverStrategy()";
   Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
@@ -104,24 +162,22 @@ LOCA::Factory::createEigensolverStrategy()
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createEigensolverStrategy(strategy);
+    bool created = factory->createEigensolverStrategy(topParams,
+						      eigenParams,
+						      strategy);
     if (created)
       return strategy;
   }
 
-  // Get parameter lists
-  Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams = 
-    sublistParser.getSublist("Eigensolver");
-  Teuchos::RefCountPtr<NOX::Parameter::List> solverParams = 
-    sublistParser.getSublist("Linear Solver");
-
-  strategy = eigensolverFactory.create(eigenParams, solverParams);
+  strategy = eigensolverFactory.create(topParams, eigenParams);
 
   return strategy;
 }
 
 Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
-LOCA::Factory::createEigenvalueSortStrategy()
+LOCA::Factory::createEigenvalueSortStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
 {
   string methodName = "LOCA::Factory::createEigenvalueSortStrategy()";
   Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
@@ -129,16 +185,14 @@ LOCA::Factory::createEigenvalueSortStrategy()
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createEigenvalueSortStrategy(strategy);
+    bool created = factory->createEigenvalueSortStrategy(topParams,
+							 eigenParams,
+							 strategy);
     if (created)
       return strategy;
   }
 
-  // Get parameter lists
-  Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams = 
-    sublistParser.getSublist("Eigensolver");
-
-  strategy = eigenvalueSortFactory.create(eigenParams);
+  strategy = eigenvalueSortFactory.create(topParams, eigenParams);
 
   return strategy;
 }

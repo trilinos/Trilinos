@@ -1,0 +1,412 @@
+// $Id$
+// $Source$
+
+//@HEADER
+// ************************************************************************
+//
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
+// ************************************************************************
+//@HEADER
+
+#ifndef LOCA_MULTICONTINUATION_CONSTRAINEDGROUP_H
+#define LOCA_MULTICONTINUATION_CONSTRAINEDGROUP_H
+
+#include "Teuchos_RefCountPtr.hpp"
+
+#include "LOCA_Extended_MultiAbstractGroup.H"           // base class
+#include "LOCA_MultiContinuation_AbstractGroup.H"       // base class
+#include "LOCA_MultiContinuation_ExtendedVector.H"      // class data element
+#include "LOCA_MultiContinuation_ExtendedMultiVector.H" // class data element
+
+// forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
+  namespace MultiContinuation {
+    class ConstraintInterface;
+  }
+  namespace BorderedSystem {
+    class AbstractStrategy;
+  }
+}
+
+namespace LOCA {
+
+  namespace MultiContinuation {
+
+    class ConstrainedGroup : 
+      public virtual LOCA::Extended::MultiAbstractGroup,
+      public virtual LOCA::MultiContinuation::AbstractGroup {
+
+    public:
+
+      //! Constructor 
+      ConstrainedGroup(
+       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& constraintParams,
+       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+       const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints,
+       const vector<int>& paramIDs);
+
+      //! Copy constructor
+      ConstrainedGroup(const ConstrainedGroup& source, 
+		       NOX::CopyType type = NOX::DeepCopy);
+
+      //! Destructor.
+      virtual ~ConstrainedGroup();
+
+       //! Assignment operator
+      virtual ConstrainedGroup& 
+      operator=(const ConstrainedGroup& source);
+
+      //! Set constraint parameter \c i to value \c val
+      virtual void setConstraintParameter(int i, double val);
+
+      //! Get constraint parameter \c i 
+      virtual double getConstraintParameter(int i) const;
+
+      //! Get group
+      virtual Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      getGroup() const;
+
+      //! Get constraints
+      virtual 
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      getConstraints() const;
+
+      /*! 
+       * @name Implementation of NOX::Abstract::Group virtual methods 
+       */
+      //@{
+
+      //! Assignment operator
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Abstract::Group& source);
+
+      //! Clone function
+      virtual NOX::Abstract::Group* 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
+
+      //! Set the solution vector to y.
+      virtual void setX(const NOX::Abstract::Vector& y);
+
+      /*! 
+       * \brief Compute and return solution vector, x, where 
+       * this.x = grp.x + step * d.
+       */
+      virtual void computeX(const NOX::Abstract::Group& g, 
+			    const NOX::Abstract::Vector& d,
+			    double step);
+
+      //! Compute extended continuation equations 
+      virtual NOX::Abstract::Group::ReturnType computeF();
+
+      //! Compute extended continuation jacobian
+      virtual NOX::Abstract::Group::ReturnType computeJacobian();
+
+      //! Gradient is not defined for this system
+      virtual NOX::Abstract::Group::ReturnType computeGradient();
+
+      //! Compute Newton direction for extended continuation system
+      virtual NOX::Abstract::Group::ReturnType 
+      computeNewton(NOX::Parameter::List& params);
+
+      //! Applies Jacobian for extended system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobian(const NOX::Abstract::Vector& input, 
+		    NOX::Abstract::Vector& result) const;
+
+      //! Jacobian transpose not defined for this system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTranspose(const NOX::Abstract::Vector& input, 
+			     NOX::Abstract::Vector& result) const;
+
+      //! Applies Jacobian inverse for extended system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverse(NOX::Parameter::List& params, 
+			   const NOX::Abstract::Vector& input, 
+			   NOX::Abstract::Vector& result) const;
+
+      //! Applies Jacobian for extended system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
+			       NOX::Abstract::MultiVector& result) const;
+
+      //! Jacobian transpose not defined for this system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTransposeMultiVector(
+				     const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& result) const;
+
+      //! Applies Jacobian inverse for extended system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverseMultiVector(
+				    NOX::Parameter::List& params, 
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const;
+
+      //! Return \c true if extended residual is valid.
+      virtual bool isF() const;
+
+      //! Return \c true if the extended Jacobian is valid.
+      virtual bool isJacobian() const;
+      
+      //! Always returns false
+      virtual bool isGradient() const;
+      
+      //! Return \c true if the extended Newton direction is valid
+      virtual bool isNewton() const;
+
+      //! Return extended solution vector.  
+      virtual const NOX::Abstract::Vector& getX() const;
+
+      //! Return extended residual
+      virtual const NOX::Abstract::Vector& getF() const;
+
+      //! Return 2-norm of extended residual. 
+      virtual double getNormF() const;
+
+      //! Gradient is never valid
+      virtual const NOX::Abstract::Vector& getGradient() const;
+
+      //! Return extended Newton direction.
+      virtual const NOX::Abstract::Vector& getNewton() const;
+
+      //! Returns 2-norm of extended Newton solve residual
+      virtual double getNormNewtonSolveResidual() const;
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Extended::MultiAbstractGroup 
+       * virtual methods 
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::Extended::MultiAbstractGroup& 
+      operator=(const LOCA::Extended::MultiAbstractGroup& source);
+
+      //! Return underlying group
+      virtual 
+      Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+      getUnderlyingGroup() const;
+      
+      //! Return underlying group
+      virtual 
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      getUnderlyingGroup();
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::AbstractGroup
+       * virtual methods 
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::MultiContinuation::AbstractGroup& 
+      operator=(const LOCA::MultiContinuation::AbstractGroup& source);
+
+      //! Set parameters indexed by (integer) paramIDs
+      virtual void setParamsMulti(
+		     const vector<int>& paramIDs, 
+		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
+
+      /*! 
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
+       * indexed by paramIDs.  The first column of \em dfdp holds F,
+       * which is valid if \em isValidF is true.  Otherwise F must be
+       * computed.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDpMulti(const vector<int>& paramIDs, 
+		       NOX::Abstract::MultiVector& dfdp, 
+		       bool isValidF);
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      virtual int projectToDrawDimension() const;
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Continuation::AbstractGroup
+       * virtual methods 
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::Continuation::AbstractGroup& 
+      operator=(const LOCA::Continuation::AbstractGroup& source);
+
+      //! Set the parameter vector in the group to p (pVector = p).  
+      virtual void setParams(const ParameterVector& p);
+
+       //! Set parameter indexed by (integer) paramID
+      virtual void setParam(int paramID, double val);
+
+      //! Set parameter indexed by (string) paramID
+      virtual void setParam(string paramID, double val);
+
+      //! Return a const reference to the ParameterVector owned by the group. 
+      virtual const ParameterVector& getParams() const;
+
+      //! Return copy of parameter indexed by (integer) paramID
+      virtual double getParam(int paramID) const;
+
+      //! Return copy of parameter indexed by (string) paramID
+      virtual double getParam(string paramID) const;
+
+      /*! 
+       * Compute \f$\partial F/\partial p\f$ where \f$p\f$ is the 
+       * parameter indexed by paramID.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDp(int paramID, NOX::Abstract::Vector& result);
+
+      //! Compute a scaled dot product
+      virtual double
+      computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			      const NOX::Abstract::Vector& b) const;
+
+      //! Function to print out solution and parameter after successful step
+      virtual void printSolution(const double conParam) const;
+
+      //! Function to print out a vector and parameter after successful step
+      virtual void printSolution(const NOX::Abstract::Vector& x,
+                                 const double conParam) const;
+
+      //! Scales a vector using scaling vector
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
+
+      //@}
+
+    protected:
+
+      //! applyJacobianInverseMultiVector specialized to Newton solves
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverseNewton(NOX::Parameter::List& params);
+
+      //! Resets all isValid flags to false
+      virtual void resetIsValid();
+
+      //! Sets up multivector views
+      virtual void setupViews();
+
+    protected:
+
+      //! Pointer LOCA global data object
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+      //! Parsed top-level parameters
+      Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+
+      //! Constraint parameter list
+      Teuchos::RefCountPtr<NOX::Parameter::List> constraintParams;
+
+      //! Pointer to base group that defines \f$F\f$
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grpPtr;
+
+      //! Pointer to constraint object
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraintsPtr;
+
+      //! Number of parameters
+      int numParams;
+
+      //! Stores the extended solution vector and J^-1 df/dp
+      LOCA::MultiContinuation::ExtendedMultiVector xMultiVec;
+
+      //! Stores the extended residual vector and df/dp
+      LOCA::MultiContinuation::ExtendedMultiVector fMultiVec;
+
+      //! Stores the extended Newton vector
+      LOCA::MultiContinuation::ExtendedMultiVector newtonMultiVec;
+
+      //! Stores the extended gradient vector
+      LOCA::MultiContinuation::ExtendedMultiVector gradientMultiVec;
+
+      //! Stores view of first column of xMultiVec
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> xVec;
+
+      //! Stores view of first column of fMultiVec
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> fVec;
+      
+      //! Stores view of first column of fMultiVec as a multivec
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> ffMultiVec;
+
+      //! Stores view of df/dp columns of fMultiVec
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> dfdpMultiVec;
+
+      //! Stores view of first column of newtonMultiVec
+      Teuchos::RefCountPtr< LOCA::MultiContinuation::ExtendedVector> newtonVec;
+
+      //! Stores view of first column of gradientMultiVec
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> gradientVec;
+
+      //! Stores bordered solver strategy
+      Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> borderedSolver;
+
+      //! Stores indices for getting f part of fMultiVec
+      vector<int> index_f;
+
+      //! Stores indices for getting df/dp part of fMultiVec
+      vector<int> index_dfdp;
+
+      //! integer id of constraint parameters
+      vector<int> constraintParamIDs;
+
+      //! Is residual vector valid
+      bool isValidF;
+
+      //! Is Jacobian matrix valid
+      bool isValidJacobian;
+
+      //! Is Newton vector valid
+      bool isValidNewton;
+
+      //! Is Gradient vector valid
+      bool isValidGradient;
+
+    }; // Class ConstrainedGroup
+
+  } // Namespace MultiContinuation
+
+} // Namespace LOCA
+
+#endif // LOCA_CONSTRAINEDSYSTEM_CONSTRAINEDGROUP_H

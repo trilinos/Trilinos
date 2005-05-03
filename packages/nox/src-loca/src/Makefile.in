@@ -107,9 +107,10 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Extended_Vector.H \
 	$(srcdir)/LOCA_Extended_MultiVector.H \
 	$(srcdir)/LOCA_Extended_AbstractGroup.H \
-	$(srcdir)/LOCA_BorderedSystem_Generic.H \
-	$(srcdir)/LOCA_BorderedSystem_Manager.H \
+	$(srcdir)/LOCA_Extended_MultiAbstractGroup.H \
+	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.H \
 	$(srcdir)/LOCA_BorderedSystem_Bordering.H \
+	$(srcdir)/LOCA_BorderedSystem_Factory.H \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
@@ -122,10 +123,15 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_Manager.H \
+	$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_Factory.H \
 	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
@@ -162,6 +168,13 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Parameter_LibraryT.H \
 	$(srcdir)/LOCA_Parameter_Entry.H \
 	$(srcdir)/LOCA_Parameter_SublistParser.H \
+	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.H \
+	$(srcdir)/LOCA_MultiPredictor_Constant.H \
+	$(srcdir)/LOCA_MultiPredictor_Tangent.H \
+	$(srcdir)/LOCA_MultiPredictor_Secant.H \
+	$(srcdir)/LOCA_MultiPredictor_Random.H \
+	$(srcdir)/LOCA_MultiPredictor_Restart.H \
+	$(srcdir)/LOCA_MultiPredictor_Factory.H \
 	$(srcdir)/LOCA_Predictor_Generic.H \
 	$(srcdir)/LOCA_Predictor_Manager.H \
 	$(srcdir)/LOCA_Predictor_Constant.H \
@@ -195,8 +208,9 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Extended_Vector.C \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
 	$(srcdir)/LOCA_Extended_AbstractGroup.C \
-	$(srcdir)/LOCA_BorderedSystem_Manager.C \
+	$(srcdir)/LOCA_Extended_MultiAbstractGroup.C \
 	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
+	$(srcdir)/LOCA_BorderedSystem_Factory.C \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
@@ -209,10 +223,13 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
-	$(srcdir)/LOCA_MultiContinuation_Manager.C \
+	$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_Factory.C \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
@@ -244,6 +261,13 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Parameter_Vector.C \
 	$(srcdir)/LOCA_Parameter_Library.C \
 	$(srcdir)/LOCA_Parameter_SublistParser.C \
+	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C \
+	$(srcdir)/LOCA_MultiPredictor_Constant.C \
+	$(srcdir)/LOCA_MultiPredictor_Tangent.C \
+	$(srcdir)/LOCA_MultiPredictor_Secant.C \
+	$(srcdir)/LOCA_MultiPredictor_Random.C \
+	$(srcdir)/LOCA_MultiPredictor_Restart.C \
+	$(srcdir)/LOCA_MultiPredictor_Factory.C \
 	$(srcdir)/LOCA_Predictor_Generic.C \
 	$(srcdir)/LOCA_Predictor_Manager.C \
 	$(srcdir)/LOCA_Predictor_Constant.C \
@@ -281,9 +305,10 @@ am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1)
 am__objects_3 = libloca_la-LOCA_Extended_Vector.lo \
 	libloca_la-LOCA_Extended_MultiVector.lo \
-	libloca_la-LOCA_Extended_AbstractGroup.lo
-am__objects_4 = libloca_la-LOCA_BorderedSystem_Manager.lo \
-	libloca_la-LOCA_BorderedSystem_Bordering.lo
+	libloca_la-LOCA_Extended_AbstractGroup.lo \
+	libloca_la-LOCA_Extended_MultiAbstractGroup.lo
+am__objects_4 = libloca_la-LOCA_BorderedSystem_Bordering.lo \
+	libloca_la-LOCA_BorderedSystem_Factory.lo
 am__objects_5 = libloca_la-LOCA_Continuation_ExtendedVector.lo \
 	libloca_la-LOCA_Continuation_AbstractGroup.lo \
 	libloca_la-LOCA_Continuation_FiniteDifferenceGroup.lo \
@@ -296,10 +321,13 @@ am__objects_6 = libloca_la-LOCA_MultiContinuation_ExtendedVector.lo \
 	libloca_la-LOCA_MultiContinuation_ExtendedMultiVector.lo \
 	libloca_la-LOCA_MultiContinuation_AbstractGroup.lo \
 	libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.lo \
+	libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo \
 	libloca_la-LOCA_MultiContinuation_ExtendedGroup.lo \
-	libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo \
 	libloca_la-LOCA_MultiContinuation_NaturalGroup.lo \
-	libloca_la-LOCA_MultiContinuation_Manager.lo
+	libloca_la-LOCA_MultiContinuation_NaturalConstraint.lo \
+	libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo \
+	libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.lo \
+	libloca_la-LOCA_MultiContinuation_Factory.lo
 @BUILD_LOCAANASAZI_TRUE@am__objects_7 = libloca_la-LOCA_AnasaziOperator_JacobianInverse.lo \
 @BUILD_LOCAANASAZI_TRUE@	libloca_la-LOCA_AnasaziOperator_ShiftInvert.lo \
 @BUILD_LOCAANASAZI_TRUE@	libloca_la-LOCA_AnasaziOperator_Cayley.lo \
@@ -334,7 +362,14 @@ am__objects_12 = libloca_la-LOCA_Utils.lo \
 am__objects_13 = libloca_la-LOCA_Parameter_Vector.lo \
 	libloca_la-LOCA_Parameter_Library.lo \
 	libloca_la-LOCA_Parameter_SublistParser.lo
-am__objects_14 = libloca_la-LOCA_Predictor_Generic.lo \
+am__objects_14 = libloca_la-LOCA_MultiPredictor_AbstractStrategy.lo \
+	libloca_la-LOCA_MultiPredictor_Constant.lo \
+	libloca_la-LOCA_MultiPredictor_Tangent.lo \
+	libloca_la-LOCA_MultiPredictor_Secant.lo \
+	libloca_la-LOCA_MultiPredictor_Random.lo \
+	libloca_la-LOCA_MultiPredictor_Restart.lo \
+	libloca_la-LOCA_MultiPredictor_Factory.lo \
+	libloca_la-LOCA_Predictor_Generic.lo \
 	libloca_la-LOCA_Predictor_Manager.lo \
 	libloca_la-LOCA_Predictor_Constant.lo \
 	libloca_la-LOCA_Predictor_Tangent.lo \
@@ -407,7 +442,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Continuation_AbstractGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Continuation_ArcLengthGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Continuation_ExtendedGroup.Plo \
@@ -426,19 +461,30 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_EigenvalueSort_Strategies.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_ErrorCheck.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Extended_AbstractGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Extended_MultiVector.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Extended_Vector.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Factory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_GlobalData.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Homotopy_Group.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_AbstractGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedMultiVector.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedVector.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_NewStepper.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Parameter_Library.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Parameter_SublistParser.Plo \
@@ -485,9 +531,10 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Extended_Vector.H \
 	$(srcdir)/LOCA_Extended_MultiVector.H \
 	$(srcdir)/LOCA_Extended_AbstractGroup.H \
-	$(srcdir)/LOCA_BorderedSystem_Generic.H \
-	$(srcdir)/LOCA_BorderedSystem_Manager.H \
+	$(srcdir)/LOCA_Extended_MultiAbstractGroup.H \
+	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.H \
 	$(srcdir)/LOCA_BorderedSystem_Bordering.H \
+	$(srcdir)/LOCA_BorderedSystem_Factory.H \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
@@ -500,10 +547,15 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_Manager.H \
+	$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_Factory.H \
 	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
@@ -540,6 +592,13 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Parameter_LibraryT.H \
 	$(srcdir)/LOCA_Parameter_Entry.H \
 	$(srcdir)/LOCA_Parameter_SublistParser.H \
+	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.H \
+	$(srcdir)/LOCA_MultiPredictor_Constant.H \
+	$(srcdir)/LOCA_MultiPredictor_Tangent.H \
+	$(srcdir)/LOCA_MultiPredictor_Secant.H \
+	$(srcdir)/LOCA_MultiPredictor_Random.H \
+	$(srcdir)/LOCA_MultiPredictor_Restart.H \
+	$(srcdir)/LOCA_MultiPredictor_Factory.H \
 	$(srcdir)/LOCA_Predictor_Generic.H \
 	$(srcdir)/LOCA_Predictor_Manager.H \
 	$(srcdir)/LOCA_Predictor_Constant.H \
@@ -812,21 +871,23 @@ LOCA_ABSTRACT = \
 LOCA_EXTENDED_H = \
 	$(srcdir)/LOCA_Extended_Vector.H \
 	$(srcdir)/LOCA_Extended_MultiVector.H \
-	$(srcdir)/LOCA_Extended_AbstractGroup.H
+	$(srcdir)/LOCA_Extended_AbstractGroup.H \
+	$(srcdir)/LOCA_Extended_MultiAbstractGroup.H
 
 LOCA_EXTENDED = \
 	$(srcdir)/LOCA_Extended_Vector.C \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
-	$(srcdir)/LOCA_Extended_AbstractGroup.C
+	$(srcdir)/LOCA_Extended_AbstractGroup.C \
+	$(srcdir)/LOCA_Extended_MultiAbstractGroup.C
 
 LOCA_BORDERED_SYSTEM_H = \
-	$(srcdir)/LOCA_BorderedSystem_Generic.H \
-	$(srcdir)/LOCA_BorderedSystem_Manager.H \
-	$(srcdir)/LOCA_BorderedSystem_Bordering.H
+	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.H \
+	$(srcdir)/LOCA_BorderedSystem_Bordering.H \
+	$(srcdir)/LOCA_BorderedSystem_Factory.H
 
 LOCA_BORDERED_SYSTEM = \
-	$(srcdir)/LOCA_BorderedSystem_Manager.C \
-	$(srcdir)/LOCA_BorderedSystem_Bordering.C
+	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
+	$(srcdir)/LOCA_BorderedSystem_Factory.C
 
 LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
@@ -853,20 +914,28 @@ LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
+	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_Manager.H
+	$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_Factory.H 
 
 LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
-	$(srcdir)/LOCA_MultiContinuation_Manager.C
+	$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_Factory.C
 
 LOCA_SINGULARSOLVE_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
@@ -951,6 +1020,13 @@ LOCA_PARAMETER = \
 	$(srcdir)/LOCA_Parameter_SublistParser.C
 
 LOCA_PREDICTOR_H = \
+	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.H \
+	$(srcdir)/LOCA_MultiPredictor_Constant.H \
+	$(srcdir)/LOCA_MultiPredictor_Tangent.H \
+	$(srcdir)/LOCA_MultiPredictor_Secant.H \
+	$(srcdir)/LOCA_MultiPredictor_Random.H \
+	$(srcdir)/LOCA_MultiPredictor_Restart.H \
+	$(srcdir)/LOCA_MultiPredictor_Factory.H \
 	$(srcdir)/LOCA_Predictor_Generic.H \
 	$(srcdir)/LOCA_Predictor_Manager.H \
 	$(srcdir)/LOCA_Predictor_Constant.H \
@@ -960,6 +1036,13 @@ LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Restart.H
 
 LOCA_PREDICTOR = \
+	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C \
+	$(srcdir)/LOCA_MultiPredictor_Constant.C \
+	$(srcdir)/LOCA_MultiPredictor_Tangent.C \
+	$(srcdir)/LOCA_MultiPredictor_Secant.C \
+	$(srcdir)/LOCA_MultiPredictor_Random.C \
+	$(srcdir)/LOCA_MultiPredictor_Restart.C \
+	$(srcdir)/LOCA_MultiPredictor_Factory.C \
 	$(srcdir)/LOCA_Predictor_Generic.C \
 	$(srcdir)/LOCA_Predictor_Manager.C \
 	$(srcdir)/LOCA_Predictor_Constant.C \
@@ -1226,7 +1309,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Continuation_AbstractGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Continuation_ArcLengthGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Continuation_ExtendedGroup.Plo@am__quote@
@@ -1245,19 +1328,30 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_EigenvalueSort_Strategies.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_ErrorCheck.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Extended_AbstractGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Extended_MultiVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Extended_Vector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Factory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_GlobalData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Homotopy_Group.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_AbstractGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedMultiVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedVector.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_NewStepper.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Parameter_Library.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Parameter_SublistParser.Plo@am__quote@
@@ -1379,29 +1473,29 @@ libloca_la-LOCA_Extended_AbstractGroup.lo: $(srcdir)/LOCA_Extended_AbstractGroup
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Extended_AbstractGroup.lo `test -f '$(srcdir)/LOCA_Extended_AbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_AbstractGroup.C
 
-libloca_la-LOCA_BorderedSystem_Manager.o: $(srcdir)/LOCA_BorderedSystem_Manager.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Manager.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Manager.o `test -f '$(srcdir)/LOCA_BorderedSystem_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Manager.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_Manager.C' object='libloca_la-LOCA_BorderedSystem_Manager.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Extended_MultiAbstractGroup.o: $(srcdir)/LOCA_Extended_MultiAbstractGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Extended_MultiAbstractGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo" -c -o libloca_la-LOCA_Extended_MultiAbstractGroup.o `test -f '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_MultiAbstractGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Extended_MultiAbstractGroup.C' object='libloca_la-LOCA_Extended_MultiAbstractGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Manager.o `test -f '$(srcdir)/LOCA_BorderedSystem_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Manager.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Extended_MultiAbstractGroup.o `test -f '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_MultiAbstractGroup.C
 
-libloca_la-LOCA_BorderedSystem_Manager.obj: $(srcdir)/LOCA_BorderedSystem_Manager.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Manager.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Manager.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_Manager.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_Manager.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_Manager.C' object='libloca_la-LOCA_BorderedSystem_Manager.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Extended_MultiAbstractGroup.obj: $(srcdir)/LOCA_Extended_MultiAbstractGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Extended_MultiAbstractGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo" -c -o libloca_la-LOCA_Extended_MultiAbstractGroup.obj `if test -f '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Extended_MultiAbstractGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Extended_MultiAbstractGroup.C' object='libloca_la-LOCA_Extended_MultiAbstractGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Manager.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_Manager.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_Manager.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Extended_MultiAbstractGroup.obj `if test -f '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Extended_MultiAbstractGroup.C'; fi`
 
-libloca_la-LOCA_BorderedSystem_Manager.lo: $(srcdir)/LOCA_BorderedSystem_Manager.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Manager.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Manager.lo `test -f '$(srcdir)/LOCA_BorderedSystem_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Manager.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_Manager.C' object='libloca_la-LOCA_BorderedSystem_Manager.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Manager.TPlo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Extended_MultiAbstractGroup.lo: $(srcdir)/LOCA_Extended_MultiAbstractGroup.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Extended_MultiAbstractGroup.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo" -c -o libloca_la-LOCA_Extended_MultiAbstractGroup.lo `test -f '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_MultiAbstractGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Extended_MultiAbstractGroup.C' object='libloca_la-LOCA_Extended_MultiAbstractGroup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Extended_MultiAbstractGroup.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Manager.lo `test -f '$(srcdir)/LOCA_BorderedSystem_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Manager.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Extended_MultiAbstractGroup.lo `test -f '$(srcdir)/LOCA_Extended_MultiAbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_MultiAbstractGroup.C
 
 libloca_la-LOCA_BorderedSystem_Bordering.o: $(srcdir)/LOCA_BorderedSystem_Bordering.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Bordering.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Bordering.o `test -f '$(srcdir)/LOCA_BorderedSystem_Bordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Bordering.C; \
@@ -1426,6 +1520,30 @@ libloca_la-LOCA_BorderedSystem_Bordering.lo: $(srcdir)/LOCA_BorderedSystem_Borde
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Bordering.lo `test -f '$(srcdir)/LOCA_BorderedSystem_Bordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Bordering.C
+
+libloca_la-LOCA_BorderedSystem_Factory.o: $(srcdir)/LOCA_BorderedSystem_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Factory.o `test -f '$(srcdir)/LOCA_BorderedSystem_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_Factory.C' object='libloca_la-LOCA_BorderedSystem_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Factory.o `test -f '$(srcdir)/LOCA_BorderedSystem_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Factory.C
+
+libloca_la-LOCA_BorderedSystem_Factory.obj: $(srcdir)/LOCA_BorderedSystem_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Factory.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Factory.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_Factory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_Factory.C' object='libloca_la-LOCA_BorderedSystem_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Factory.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_Factory.C'; fi`
+
+libloca_la-LOCA_BorderedSystem_Factory.lo: $(srcdir)/LOCA_BorderedSystem_Factory.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Factory.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Factory.lo `test -f '$(srcdir)/LOCA_BorderedSystem_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_Factory.C' object='libloca_la-LOCA_BorderedSystem_Factory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Factory.lo `test -f '$(srcdir)/LOCA_BorderedSystem_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Factory.C
 
 libloca_la-LOCA_Continuation_ExtendedVector.o: $(srcdir)/LOCA_Continuation_ExtendedVector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Continuation_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Continuation_ExtendedVector.Tpo" -c -o libloca_la-LOCA_Continuation_ExtendedVector.o `test -f '$(srcdir)/LOCA_Continuation_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Continuation_ExtendedVector.C; \
@@ -1715,6 +1833,30 @@ libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.lo: $(srcdir)/LOCA_Multi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C
 
+libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o: $(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' object='libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C
+
+libloca_la-LOCA_MultiContinuation_ConstrainedGroup.obj: $(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ConstrainedGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ConstrainedGroup.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' object='libloca_la-LOCA_MultiContinuation_ConstrainedGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ConstrainedGroup.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C'; fi`
+
+libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo: $(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' object='libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C
+
 libloca_la-LOCA_MultiContinuation_ExtendedGroup.o: $(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ExtendedGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ExtendedGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Tpo"; exit 1; fi
@@ -1738,30 +1880,6 @@ libloca_la-LOCA_MultiContinuation_ExtendedGroup.lo: $(srcdir)/LOCA_MultiContinua
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ExtendedGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C
-
-libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o: $(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
-
-libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj: $(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; fi`
-
-libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo: $(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
 
 libloca_la-LOCA_MultiContinuation_NaturalGroup.o: $(srcdir)/LOCA_MultiContinuation_NaturalGroup.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_NaturalGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_NaturalGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C; \
@@ -1787,29 +1905,101 @@ libloca_la-LOCA_MultiContinuation_NaturalGroup.lo: $(srcdir)/LOCA_MultiContinuat
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_NaturalGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C
 
-libloca_la-LOCA_MultiContinuation_Manager.o: $(srcdir)/LOCA_MultiContinuation_Manager.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_Manager.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo" -c -o libloca_la-LOCA_MultiContinuation_Manager.o `test -f '$(srcdir)/LOCA_MultiContinuation_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Manager.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_Manager.C' object='libloca_la-LOCA_MultiContinuation_Manager.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_MultiContinuation_NaturalConstraint.o: $(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_NaturalConstraint.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_NaturalConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C' object='libloca_la-LOCA_MultiContinuation_NaturalConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_Manager.o `test -f '$(srcdir)/LOCA_MultiContinuation_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Manager.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_NaturalConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C
 
-libloca_la-LOCA_MultiContinuation_Manager.obj: $(srcdir)/LOCA_MultiContinuation_Manager.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_Manager.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo" -c -o libloca_la-LOCA_MultiContinuation_Manager.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_Manager.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_Manager.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_Manager.C' object='libloca_la-LOCA_MultiContinuation_Manager.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_MultiContinuation_NaturalConstraint.obj: $(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_NaturalConstraint.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_NaturalConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C' object='libloca_la-LOCA_MultiContinuation_NaturalConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_Manager.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_Manager.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_Manager.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_NaturalConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C'; fi`
 
-libloca_la-LOCA_MultiContinuation_Manager.lo: $(srcdir)/LOCA_MultiContinuation_Manager.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_Manager.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo" -c -o libloca_la-LOCA_MultiContinuation_Manager.lo `test -f '$(srcdir)/LOCA_MultiContinuation_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Manager.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_Manager.C' object='libloca_la-LOCA_MultiContinuation_Manager.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Manager.TPlo' @AMDEPBACKSLASH@
+libloca_la-LOCA_MultiContinuation_NaturalConstraint.lo: $(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_NaturalConstraint.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_NaturalConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C' object='libloca_la-LOCA_MultiContinuation_NaturalConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_Manager.lo `test -f '$(srcdir)/LOCA_MultiContinuation_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Manager.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_NaturalConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_NaturalConstraint.C
+
+libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o: $(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
+
+libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj: $(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C'; fi`
+
+libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo: $(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthGroup.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
+
+libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.o: $(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C
+
+libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.obj: $(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C'; fi`
+
+libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.lo: $(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C' object='libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C
+
+libloca_la-LOCA_MultiContinuation_Factory.o: $(srcdir)/LOCA_MultiContinuation_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo" -c -o libloca_la-LOCA_MultiContinuation_Factory.o `test -f '$(srcdir)/LOCA_MultiContinuation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_Factory.C' object='libloca_la-LOCA_MultiContinuation_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_Factory.o `test -f '$(srcdir)/LOCA_MultiContinuation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Factory.C
+
+libloca_la-LOCA_MultiContinuation_Factory.obj: $(srcdir)/LOCA_MultiContinuation_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_Factory.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo" -c -o libloca_la-LOCA_MultiContinuation_Factory.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_Factory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_Factory.C' object='libloca_la-LOCA_MultiContinuation_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_Factory.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_Factory.C'; fi`
+
+libloca_la-LOCA_MultiContinuation_Factory.lo: $(srcdir)/LOCA_MultiContinuation_Factory.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_Factory.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo" -c -o libloca_la-LOCA_MultiContinuation_Factory.lo `test -f '$(srcdir)/LOCA_MultiContinuation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_Factory.C' object='libloca_la-LOCA_MultiContinuation_Factory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_Factory.lo `test -f '$(srcdir)/LOCA_MultiContinuation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_Factory.C
 
 libloca_la-LOCA_AnasaziOperator_JacobianInverse.o: $(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_AnasaziOperator_JacobianInverse.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_AnasaziOperator_JacobianInverse.Tpo" -c -o libloca_la-LOCA_AnasaziOperator_JacobianInverse.o `test -f '$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C; \
@@ -2626,6 +2816,174 @@ libloca_la-LOCA_Parameter_SublistParser.lo: $(srcdir)/LOCA_Parameter_SublistPars
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Parameter_SublistParser.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Parameter_SublistParser.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Parameter_SublistParser.lo `test -f '$(srcdir)/LOCA_Parameter_SublistParser.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Parameter_SublistParser.C
+
+libloca_la-LOCA_MultiPredictor_AbstractStrategy.o: $(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_AbstractStrategy.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo" -c -o libloca_la-LOCA_MultiPredictor_AbstractStrategy.o `test -f '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C' object='libloca_la-LOCA_MultiPredictor_AbstractStrategy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_AbstractStrategy.o `test -f '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C
+
+libloca_la-LOCA_MultiPredictor_AbstractStrategy.obj: $(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_AbstractStrategy.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo" -c -o libloca_la-LOCA_MultiPredictor_AbstractStrategy.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C' object='libloca_la-LOCA_MultiPredictor_AbstractStrategy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_AbstractStrategy.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C'; fi`
+
+libloca_la-LOCA_MultiPredictor_AbstractStrategy.lo: $(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_AbstractStrategy.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo" -c -o libloca_la-LOCA_MultiPredictor_AbstractStrategy.lo `test -f '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C' object='libloca_la-LOCA_MultiPredictor_AbstractStrategy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_AbstractStrategy.lo `test -f '$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C
+
+libloca_la-LOCA_MultiPredictor_Constant.o: $(srcdir)/LOCA_MultiPredictor_Constant.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Constant.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Constant.o `test -f '$(srcdir)/LOCA_MultiPredictor_Constant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Constant.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Constant.C' object='libloca_la-LOCA_MultiPredictor_Constant.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Constant.o `test -f '$(srcdir)/LOCA_MultiPredictor_Constant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Constant.C
+
+libloca_la-LOCA_MultiPredictor_Constant.obj: $(srcdir)/LOCA_MultiPredictor_Constant.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Constant.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Constant.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Constant.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Constant.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Constant.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Constant.C' object='libloca_la-LOCA_MultiPredictor_Constant.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Constant.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Constant.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Constant.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Constant.C'; fi`
+
+libloca_la-LOCA_MultiPredictor_Constant.lo: $(srcdir)/LOCA_MultiPredictor_Constant.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Constant.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Constant.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Constant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Constant.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Constant.C' object='libloca_la-LOCA_MultiPredictor_Constant.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Constant.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Constant.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Constant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Constant.C
+
+libloca_la-LOCA_MultiPredictor_Tangent.o: $(srcdir)/LOCA_MultiPredictor_Tangent.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Tangent.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Tangent.o `test -f '$(srcdir)/LOCA_MultiPredictor_Tangent.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Tangent.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Tangent.C' object='libloca_la-LOCA_MultiPredictor_Tangent.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Tangent.o `test -f '$(srcdir)/LOCA_MultiPredictor_Tangent.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Tangent.C
+
+libloca_la-LOCA_MultiPredictor_Tangent.obj: $(srcdir)/LOCA_MultiPredictor_Tangent.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Tangent.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Tangent.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Tangent.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Tangent.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Tangent.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Tangent.C' object='libloca_la-LOCA_MultiPredictor_Tangent.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Tangent.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Tangent.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Tangent.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Tangent.C'; fi`
+
+libloca_la-LOCA_MultiPredictor_Tangent.lo: $(srcdir)/LOCA_MultiPredictor_Tangent.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Tangent.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Tangent.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Tangent.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Tangent.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Tangent.C' object='libloca_la-LOCA_MultiPredictor_Tangent.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Tangent.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Tangent.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Tangent.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Tangent.C
+
+libloca_la-LOCA_MultiPredictor_Secant.o: $(srcdir)/LOCA_MultiPredictor_Secant.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Secant.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Secant.o `test -f '$(srcdir)/LOCA_MultiPredictor_Secant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Secant.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Secant.C' object='libloca_la-LOCA_MultiPredictor_Secant.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Secant.o `test -f '$(srcdir)/LOCA_MultiPredictor_Secant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Secant.C
+
+libloca_la-LOCA_MultiPredictor_Secant.obj: $(srcdir)/LOCA_MultiPredictor_Secant.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Secant.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Secant.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Secant.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Secant.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Secant.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Secant.C' object='libloca_la-LOCA_MultiPredictor_Secant.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Secant.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Secant.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Secant.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Secant.C'; fi`
+
+libloca_la-LOCA_MultiPredictor_Secant.lo: $(srcdir)/LOCA_MultiPredictor_Secant.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Secant.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Secant.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Secant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Secant.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Secant.C' object='libloca_la-LOCA_MultiPredictor_Secant.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Secant.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Secant.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Secant.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Secant.C
+
+libloca_la-LOCA_MultiPredictor_Random.o: $(srcdir)/LOCA_MultiPredictor_Random.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Random.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Random.o `test -f '$(srcdir)/LOCA_MultiPredictor_Random.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Random.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Random.C' object='libloca_la-LOCA_MultiPredictor_Random.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Random.o `test -f '$(srcdir)/LOCA_MultiPredictor_Random.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Random.C
+
+libloca_la-LOCA_MultiPredictor_Random.obj: $(srcdir)/LOCA_MultiPredictor_Random.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Random.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Random.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Random.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Random.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Random.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Random.C' object='libloca_la-LOCA_MultiPredictor_Random.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Random.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Random.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Random.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Random.C'; fi`
+
+libloca_la-LOCA_MultiPredictor_Random.lo: $(srcdir)/LOCA_MultiPredictor_Random.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Random.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Random.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Random.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Random.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Random.C' object='libloca_la-LOCA_MultiPredictor_Random.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Random.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Random.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Random.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Random.C
+
+libloca_la-LOCA_MultiPredictor_Restart.o: $(srcdir)/LOCA_MultiPredictor_Restart.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Restart.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Restart.o `test -f '$(srcdir)/LOCA_MultiPredictor_Restart.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Restart.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Restart.C' object='libloca_la-LOCA_MultiPredictor_Restart.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Restart.o `test -f '$(srcdir)/LOCA_MultiPredictor_Restart.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Restart.C
+
+libloca_la-LOCA_MultiPredictor_Restart.obj: $(srcdir)/LOCA_MultiPredictor_Restart.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Restart.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Restart.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Restart.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Restart.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Restart.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Restart.C' object='libloca_la-LOCA_MultiPredictor_Restart.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Restart.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Restart.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Restart.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Restart.C'; fi`
+
+libloca_la-LOCA_MultiPredictor_Restart.lo: $(srcdir)/LOCA_MultiPredictor_Restart.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Restart.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Restart.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Restart.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Restart.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Restart.C' object='libloca_la-LOCA_MultiPredictor_Restart.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Restart.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Restart.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Restart.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Restart.C
+
+libloca_la-LOCA_MultiPredictor_Factory.o: $(srcdir)/LOCA_MultiPredictor_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Factory.o `test -f '$(srcdir)/LOCA_MultiPredictor_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Factory.C' object='libloca_la-LOCA_MultiPredictor_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Factory.o `test -f '$(srcdir)/LOCA_MultiPredictor_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Factory.C
+
+libloca_la-LOCA_MultiPredictor_Factory.obj: $(srcdir)/LOCA_MultiPredictor_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Factory.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Factory.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Factory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Factory.C' object='libloca_la-LOCA_MultiPredictor_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Factory.obj `if test -f '$(srcdir)/LOCA_MultiPredictor_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiPredictor_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiPredictor_Factory.C'; fi`
+
+libloca_la-LOCA_MultiPredictor_Factory.lo: $(srcdir)/LOCA_MultiPredictor_Factory.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiPredictor_Factory.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo" -c -o libloca_la-LOCA_MultiPredictor_Factory.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiPredictor_Factory.C' object='libloca_la-LOCA_MultiPredictor_Factory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiPredictor_Factory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiPredictor_Factory.lo `test -f '$(srcdir)/LOCA_MultiPredictor_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiPredictor_Factory.C
 
 libloca_la-LOCA_Predictor_Generic.o: $(srcdir)/LOCA_Predictor_Generic.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Predictor_Generic.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Predictor_Generic.Tpo" -c -o libloca_la-LOCA_Predictor_Generic.o `test -f '$(srcdir)/LOCA_Predictor_Generic.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Predictor_Generic.C; \

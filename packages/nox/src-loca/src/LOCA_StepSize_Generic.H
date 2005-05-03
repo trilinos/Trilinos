@@ -49,7 +49,7 @@ namespace LOCA {
   }
   class Stepper;
   namespace MultiContinuation {
-    class ExtendedGroup;
+    class AbstractStrategy;
     class ExtendedVector;
   }
   class NewStepper;
@@ -106,7 +106,7 @@ namespace LOCA {
        * fails certain criteria (e.g., if it is too small)
        */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::MultiContinuation::ExtendedGroup& curGroup,
+      compute(LOCA::MultiContinuation::AbstractStrategy& curGroup,
 	      const LOCA::MultiContinuation::ExtendedVector& predictor,
 	      const NOX::Solver::Generic& solver,
 	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,

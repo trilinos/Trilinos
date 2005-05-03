@@ -43,6 +43,9 @@ namespace NOX {
 }
 namespace LOCA {
   class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
   namespace EigenvalueSort {
     class AbstractStrategy;
   }
@@ -83,10 +86,13 @@ namespace LOCA {
 
       //! Create sorting strategy
       /*!
+       * \param topParams [in] Parsed top-level parameter list.
        * \param eigenParams [in] %Eigensolver parameters as described above
        */
       Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
-      create(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+      create(
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
 
     private:
 
