@@ -57,6 +57,9 @@
 /* Define if want to build pytrilinos */
 #undef HAVE_PYTRILINOS
 
+/* Define if want to build rythmos */
+#undef HAVE_RYTHMOS
+
 /* Define if want to build teuchos */
 #undef HAVE_TEUCHOS
 

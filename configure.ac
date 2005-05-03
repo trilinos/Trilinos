@@ -81,6 +81,8 @@ TAC_ARG_ENABLE_FEATURE(pliris, [Build pliris], PLIRIS, no)
 
 TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos], PYTRILINOS, no)
 
+TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos], RYTHMOS, no)
+
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 
 TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra], THYRA, no)
@@ -386,6 +388,17 @@ else
   BUILD_PYTRILINOS=no
 fi
 AM_CONDITIONAL(BUILD_PYTRILINOS, test "X$BUILD_PYTRILINOS" != "Xno")
+
+if test "X$ac_cv_use_rythmos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/rythmos])
+  BUILD_RYTHMOS=yes
+  if test "X$ac_cv_use_rythmos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-rythmos"
+  fi
+else
+  BUILD_RYTHMOS=no
+fi
+AM_CONDITIONAL(BUILD_RYTHMOS, test "X$BUILD_RYTHMOS" != "Xno")
 
 if test "X$ac_cv_use_tpetra" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/tpetra])
