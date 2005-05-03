@@ -90,8 +90,8 @@ bool NonlinearCG::compute(Abstract::Group& newgrp,
     cout << setw(3) << "1" << ":";
     cout << " step = " << utils.sciformat(step);
     cout << " orth = " << utils.sciformat(checkOrthogonality);
+    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
-  cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   
   return true;
 }
