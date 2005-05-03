@@ -84,7 +84,7 @@ namespace NOX {
       virtual ostream& print(ostream& stream, int indent = 0) const {
 	for (int i=0; i<indent; i++)
 	  stream << " ";
-	return stream << data << endl; } 
+	return stream << type_string << endl; } 
 
       //! Return whether stored data type is RefCountPtr<T>
       template <typename T> bool isType() const {
