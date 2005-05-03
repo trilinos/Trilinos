@@ -23,8 +23,8 @@ my $logverbosity;       # log file verbosity level  (default: 0)
 
 my $resultsDir;         # absolute path to results directory
 
-my $makeStartTime;
-my $makeStartTimeForFilename;
+my $runStartTime;
+my $runStartTimeForFilename;
 
 # Constants
 my $v0 = "0";           # quiet
@@ -173,8 +173,8 @@ cleanUp();
         $hr = sprintf("%02d", $hr);
         $mn = sprintf("%02d", $mn);
         $se = sprintf("%02d", $se);
-        $makeStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
-        $makeStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+        $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
         
         # Print list of variables for debugging.
         my $message = "";
@@ -278,7 +278,7 @@ cleanUp();
         }
         
         # Create results file.
-        my $resultsFile = "$resultsDir/make_$makeStartTimeForFilename.txt";
+        my $resultsFile = "$resultsDir/make_$runStartTimeForFilename.txt";
         open (RESULTS, ">$resultsFile") 
             or die "can't open make result file $resultsFile for writing, died";
             
@@ -302,7 +302,7 @@ cleanUp();
         $resultsString .= "\n";
         $resultsString .= "MAKE_COMMAND         = $makecmd\n";
         $resultsString .= "\n";
-        $resultsString .= "START_TIME           = $makeStartTime\n";
+        $resultsString .= "START_TIME           = $runStartTime\n";
         $resultsString .= "STOP_TIME            = $makeStopTime\n";
         $resultsString .= "RUN_TIME             = ".($runSeconds==0?"<1":$runSeconds)." seconds\n";
         $resultsString .= "\n";
@@ -455,7 +455,7 @@ cleanUp();
         }
         
         if ($logverbosity & $level) {
-            my $log = $resultsDir."make_$makeStartTimeForFilename"."_log.txt";
+            my $log = $resultsDir."make_$runStartTimeForFilename"."_log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;
@@ -497,7 +497,7 @@ cleanUp();
         print "                         Default: \"make\"\n";
         print "\n";
         print "  --outputdir=DIR        Specify the directory in which to create the directory\n";
-        print "                         containing the test results.\n";
+        print "                         containing the results.\n";
         print "                         Default: \".\"\n";
         print "\n";
         print "  --verbosity=LEVEL      0 = no non-fatal ouput (same as --quiet)\n";

@@ -1,0 +1,35 @@
+###############################################################################
+# runbuld - The Trilinos Build Utility                                        #
+#                                                                             #
+# The Trilinos Project                                                        #
+#                                                                             #
+#   Mike Phenow, Jim Willenbring                                              #
+#                                                                             #
+###############################################################################
+
+  This document describes the usage of runbuild, the Trilinos make utility.
+  
+-------------------------------------------------------------------------------
+I.  Prerequisites
+
+  In order for the configure utility to work, you must have the following in place:
+       
+-------------------------------------------------------------------------------
+II.  Execution
+
+  To execute the Trilinos build utility, simply type:
+  
+    cd /PATH/TO/Trilinos/commonTools/test/utilities/
+    runbuild --help
+            
+  for information on required and optional arguments.
+  
+-------------------------------------------------------------------------------
+IV.  Build Results File
+
+  The results of the build attempt will be placed in the specified output
+  directory and will be named according to the following scheme:
+  
+    build_YR-MO-DA_HR.MN.SE.txt
+
+-------------------------------------------------------------------------------
