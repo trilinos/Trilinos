@@ -169,7 +169,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       test  = currentX.Dot(X, &dotprod);
       if (dotprod==0.0) dotprod = 1.0e-12;
       //eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm);
-      eta = lambda*(1.0e-8/lambda + fabs(dotprod)/(vectorNorm * vectorNorm)) * dotprod/fabs(dotprod);
+      eta = lambda*(1.0e-12/lambda + fabs(dotprod)/(vectorNorm * vectorNorm)) * dotprod/fabs(dotprod);
     }
     else
       eta = lambda*(lambda + solutionNorm/vectorNorm);
