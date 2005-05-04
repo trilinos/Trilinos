@@ -88,7 +88,7 @@ LOCA::NewStepper::NewStepper(
   globalData(),
   parsedParams(),
   locaFactory(),
-  factory(),
+  factory(userFactory),
   haveFactory(true),
   predictor(),
   curGroupPtr(),
