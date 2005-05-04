@@ -34,6 +34,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
 BlockKrylovSchurEpetraEx_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a 
 
@@ -41,11 +42,13 @@ BlockKrylovSchurEpetraEx_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraEx_LDADD = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 BlockKrylovSchurEpetraExSVD_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a 
 
@@ -53,13 +56,15 @@ BlockKrylovSchurEpetraExSVD_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExSVD_LDADD = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 BlockKrylovSchurEpetraExHB_DEPENDENCIES = \
-	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 BlockKrylovSchurEpetraExHB_CXXFLAGS = -I$(top_srcdir)/src \
@@ -67,12 +72,14 @@ BlockKrylovSchurEpetraExHB_CXXFLAGS = -I$(top_srcdir)/src \
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExHB_LDADD = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -82,6 +89,7 @@ BlockKrylovSchurEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExGen_LDADD = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../epetra/src/libepetra.a \

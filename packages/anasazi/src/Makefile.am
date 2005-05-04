@@ -37,6 +37,7 @@ CORE_H = \
 	$(srcdir)/AnasaziSortManager.hpp
 
 CORE = \
+	$(srcdir)/AnasaziEpetraAdapter.cpp \
 	$(srcdir)/AnasaziVersion.cpp
 
 UTIL_H = 
@@ -102,7 +103,11 @@ COMP =
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
 #  
-#AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/../epetra/src \
+	-I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../teuchos/src \
+	-I$(top_builddir)/../teuchos/src	
 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
