@@ -363,11 +363,13 @@ bool ML_NOX::ML_Nox_Preconditioner::SetFAScycle(int prefsmooth,int presmooth,
 bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool  islinPrec, 
                                                        int   maxlevel,
                                                        bool  ismatrixfree, 
-                                                       bool  ismatfreelev0)
+                                                       bool  ismatfreelev0,
+                                                       bool  fixdiagonal)
 { 
   islinearPrec_ = islinPrec;
   ismatrixfree_ = ismatrixfree;
   matfreelev0_  = ismatfreelev0;
+  fixdiagonal_  = fixdiagonal;
   ml_N_levels_  = maxlevel;
   
   if (islinPrec && ismatrixfree && !ismatfreelev0 &&
@@ -580,6 +582,10 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
            << "**ERR**: interface_.getJacobian() returned NULL\n"
            << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
     }
+
+    // check for zero rows and fix the main diagonal of them
+    if (fixdiagonal_) 
+      fix_MainDiagonal(fineJac_,0);
   }
 
   // build matrixfree hierachy and probe for all operators
@@ -608,6 +614,11 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   else if (ismatrixfree_ == true && matfreelev0_ == true)
   {
     fineJac_ = ML_Nox_computeFineLevelJacobian(x);
+    
+    // check for zero rows and fix the main diagonal of them
+    if (fixdiagonal_)
+       fix_MainDiagonal(fineJac_,0);
+       
     // this class is in charge of destroying the operator fineJac_
     destroyfineJac_ = true;
     // turn to ismatrixfree_==false
@@ -910,6 +921,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
               << "**ERR**: returned NULL-ptr\n"
               << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
+      
+      // check the matrix for zero rows and fix the diagonal
+      if (fixdiagonal_)
+         fix_MainDiagonal(tmpMat,i);
+         
       // create a ML_Operator
       // NOTE:
       // As I understand this will wrap the Epetra_CrsMatrix from ML_Nox_MatrixfreeLevel,
@@ -1003,6 +1019,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
 
   Epetra_CrsMatrix* B = dynamic_cast<Epetra_CrsMatrix*>(&(FD->getUnderlyingMatrix()));                       
   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(*B);
+  A->FillComplete();
   
   // tidy up
   delete FD;            FD = 0;
@@ -1012,6 +1029,75 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   delete colorcolumns;  colorcolumns = 0;
   
   return A;
+}
+
+/*----------------------------------------------------------------------*
+ |  fix zero main diagonal/row (private)                     m.gee 05/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix* A, int level) const
+{
+  if (!A)
+  {
+     cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal: "
+          << "**ERR**: A is NULL\n" 
+          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+  if (!A->Filled()) A->FillComplete();
+
+  Epetra_Vector diag(A->RowMap(),false);
+  int err = A->ExtractDiagonalCopy(diag);
+  if (err)
+  {
+    cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
+         << "**ERR**: A->ExtractDiagonalCopy returned " << err << endl 
+         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+
+  double average=0.0;
+  for (int i=0; i<diag.MyLength(); i++) average += diag[i];
+  average /= diag.MyLength();
+  
+  for (int i=0; i<diag.MyLength(); i++)
+  {
+     if (abs(diag[i])<1.0e-9)
+     {
+        if (ml_printlevel_>7 && comm_.MyPID()==0)
+          cout << "ML (level " << level << "): Found diagonal zero entry in local row " << i << " : \n";
+        //check whether there are nonzero off-diagonal entries in that row
+        int numentries;
+        double* values;
+        err = A->ExtractMyRowView(i,numentries,values);
+        if (err)
+        {
+           cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
+                << "**ERR**: A->ExtractMyRowView returned " << err << endl 
+                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+        }
+        double sum=0.0;
+        for (int j=0; j<numentries; j++)
+           sum += abs(values[j]);
+        
+        if (sum>1.0e-9) 
+        {
+          if (ml_printlevel_>7 && comm_.MyPID()==0)
+            cout << " do nothing - row is not zero\n";
+          continue;
+        }
+        
+        if (ml_printlevel_>7 && comm_.MyPID()==0)
+          cout << " fixing main diagonal to be an averagevalue : " << average << "\n";
+
+        err = A->ReplaceMyValues(i,1,&average,&i);
+        if (err)
+        {
+           cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
+                << "**ERR**: A->ReplaceMyValues returned " << err << endl 
+                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+        }
+     }
+  }
+
+  return true;
 }
 
 /*----------------------------------------------------------------------*

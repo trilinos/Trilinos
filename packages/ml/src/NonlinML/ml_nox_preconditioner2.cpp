@@ -239,7 +239,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
          nlnLevel_[i] = 0;
    }
 
-   // the number of matrixfree levels has to be equall to the number of nonlinear levels
+   // the number of matrixfree levels has to be equal to the number of nonlinear levels
    if (nmatfreelevel_ !=  n_nlnlevel_)
    {
        cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearpreconditioner:\n"
@@ -291,6 +291,10 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
               << "**ERR**: returned NULL-ptr\n"
               << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
+      
+      // check the matrix for zero rows and fix the main diagonal
+      if (fixdiagonal_)
+         fix_MainDiagonal(tmpMat,i);
       
       // get the coarse interface from the matfreelevel
       ML_NOX::Nox_CoarseProblem_Interface* coarseinterface = 

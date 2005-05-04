@@ -191,7 +191,7 @@ public:
                                ismatrixfree==false.
    */
   bool SetNonlinearMethod(bool islinPrec, int maxlevel, bool ismatrixfree, 
-                          bool ismatfreelev0);
+                          bool ismatfreelev0, bool fixdiagonal);
 
   //! Set type of coarsening algorithm to be used.
   /*! 
@@ -481,7 +481,8 @@ private:
 
   // utils
   Epetra_CrsGraph* deepcopy_graph(const Epetra_CrsGraph* oldgraph);
-  bool             Set_Smoothers();
+  bool Set_Smoothers();
+  bool fix_MainDiagonal(Epetra_CrsMatrix* A, int level) const;
   
   // ApplyInverse functions, 
   // depending on type of preconditioner
@@ -506,6 +507,7 @@ private:
   bool                                  isinit_;           // flag whether preconditioner is valid
   bool                                  ismatrixfree_;     // use Graph or Jacobian in building the preconditioner
   bool                                  matfreelev0_;
+  bool                                  fixdiagonal_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
   ML_NOX::Ml_Nox_Fineinterface&         interface_;        // the user interface
   Epetra_Map                            DomainMap_;        // the operators domain map
