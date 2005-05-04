@@ -39,6 +39,7 @@ CHANTPMOD = chanTP_ModifiedBordering
 CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
 CHANTPNDMOD = chanTP_NicDayModifiedBordering
 CHANTPCONTNDMOD = chanTPContinuation_NicDayModifiedBordering
+CHANCONTCONSTRAINTS = chanContinuation_Constraints
 
 if BUILD_LIBLOCAMF
 CHANMULTICONT = chanMultiContinuation
@@ -48,7 +49,7 @@ endif
 
 noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY) \
 	          $(CHANTPMOD) $(CHANTPCONTMOD) $(CHANTPNDMOD) \
-		  $(CHANTPCONTNDMOD) $(CHANMULTICONT)
+		  $(CHANTPCONTNDMOD) $(CHANMULTICONT) $(CHANCONTCONSTRAINTS)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -164,6 +165,22 @@ chanMultiContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS) \
 chanMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                               -L$(MF_LIBDIR) -lMF -lExpCmp \
                               $(chanContinuation_LDADD)
+
+chanContinuation_Constraints_SOURCES = \
+	$(srcdir)/ChanContinuation_Constraints.C \
+	$(srcdir)/ChanConstraint.H \
+	$(srcdir)/ChanConstraint.C \
+	$(srcdir)/ChanProblemInterface.H \
+	$(srcdir)/ChanProblemInterface.C
+
+chanContinuation_Constraints_DEPENDENCIES = \
+	$(chanContinuation_DEPENDENCIES)
+
+chanContinuation_Constraints_CXXFLAGS = \
+	$(chanContinuation_CXXFLAGS) 
+
+chanContinuation_Constraints_LDADD = \
+	$(chanContinuation_LDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

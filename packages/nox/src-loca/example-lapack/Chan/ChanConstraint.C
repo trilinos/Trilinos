@@ -1,0 +1,219 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//                                                                                 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA                                                                                
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov), Sandia National Laboratories.
+// 
+// ************************************************************************
+//@HEADER
+
+#include "ChanConstraint.H"
+#include "LOCA_Parameter_Vector.H"
+#include "LOCA_Utils.H"
+
+ChanConstraint::ChanConstraint(int N, const LOCA::ParameterVector& pVec) :
+  n(N),
+  constraints(1,1),
+  isValidConstraints(false),
+  dgdp(1,1),
+  p(pVec),
+  x()
+{
+  constraints.putScalar(0.0);
+  dgdp.putScalar(0.0);
+  dgdp(0,0) = -1.0; // derivative w.r.t. gamma
+  NOX::LAPACK::Vector xx(n);
+  x = Teuchos::rcp(xx.createMultiVector(1));
+}
+
+ChanConstraint::ChanConstraint(const ChanConstraint& source, 
+			       NOX::CopyType type) :
+  n(source.n),
+  constraints(source.constraints),
+  isValidConstraints(false),
+  dgdp(source.dgdp),
+  p(source.p),
+  x(Teuchos::rcp(source.x->clone(type)))
+{
+  if (source.isValidConstraints && type == NOX::DeepCopy)
+    isValidConstraints = true;
+}
+
+ChanConstraint::~ChanConstraint()
+{
+}
+
+ChanConstraint&
+ChanConstraint::operator=(const ChanConstraint& source)
+{
+  if (this != &source) {
+    n = source.n;
+    constraints = source.constraints;
+    isValidConstraints = source.isValidConstraints;
+    dgdp = source.dgdp;
+    p = source.p;
+    *x = *source.x;
+  }
+
+  return *this;
+}
+
+LOCA::MultiContinuation::ConstraintInterface& 
+ChanConstraint::operator=(
+		   const LOCA::MultiContinuation::ConstraintInterface& source)
+{
+  return operator=(dynamic_cast<const ChanConstraint&>(source));
+}
+
+Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+ChanConstraint::clone(NOX::CopyType type) const
+{
+  return Teuchos::rcp(new ChanConstraint(*this, type));
+}
+
+int
+ChanConstraint::numConstraints() const
+{
+  return 1;
+}
+
+void
+ChanConstraint::setX(const NOX::Abstract::Vector& y)
+{
+  (*x)[0] = y;
+  isValidConstraints = false;
+}
+
+void
+ChanConstraint::setParam(int paramID, double val)
+{
+  p[paramID] = val;
+  isValidConstraints = false;
+}
+
+void
+ChanConstraint::setParams(
+			 const vector<int>& paramIDs, 
+			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
+{
+  for (unsigned int i=0; i<paramIDs.size(); i++)
+    p[paramIDs[i]] = vals(i,0);
+  isValidConstraints = false;
+}
+
+NOX::Abstract::Group::ReturnType
+ChanConstraint::computeConstraints()
+{
+  constraints(0,0) = 0.5 * (*x)[0].dot((*x)[0]) / n - p.getValue("gamma");
+  isValidConstraints = true;
+
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+ChanConstraint::computeConstraintDerivatives()
+{
+  return NOX::Abstract::Group::Ok;
+}
+
+bool
+ChanConstraint::isConstraints() const
+{
+  return isValidConstraints;
+}
+
+bool
+ChanConstraint::isConstraintDerivatives() const
+{
+  return true;
+}
+
+const NOX::Abstract::MultiVector::DenseMatrix&
+ChanConstraint::getConstraints() const
+{
+  return constraints;
+}
+
+const NOX::Abstract::MultiVector::DenseMatrix*
+ChanConstraint::getConstraintDerivativesP() const
+{
+  return &dgdp;
+}
+
+NOX::Abstract::Group::ReturnType
+ChanConstraint::applyConstraintDerivativesX(
+		    double alpha, 
+		    const NOX::Abstract::MultiVector& input_x,
+		    NOX::Abstract::MultiVector::DenseMatrix& result_p) const
+{
+  input_x.multiply(alpha/n, *x, result_p);
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+ChanConstraint::applyConstraintDerivativesX(
+			      Teuchos::ETransp transb,
+			      double alpha, 
+			      const NOX::Abstract::MultiVector::DenseMatrix& b,
+			      double beta,
+			      NOX::Abstract::MultiVector& result_x) const
+{
+  result_x.update(transb, alpha/n, *x, b, beta);
+  return NOX::Abstract::Group::Ok;
+}
+
+bool
+ChanConstraint::isConstraintDerivativesXZero() const
+{
+  return false;
+}
+
+bool
+ChanConstraint::isConstraintDerivativesPZero() const
+{
+  return false;
+}
+
+NOX::Abstract::Group::ReturnType
+ChanConstraint::computeDgDp(const vector<int>& paramIDs, 
+			      NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+			      bool isValidG)
+{
+  if (!isValidG) {
+    dgdp(0,0) = constraints(0,0);
+  }
+
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+    if (p.getLabel(paramIDs[i]) == "gamma") {
+      dgdp(0,i+1) = -1.0;
+    }
+    else {
+      dgdp(0,i+1) = 0.0;
+    }
+  }
+
+  return NOX::Abstract::Group::Ok;
+}
