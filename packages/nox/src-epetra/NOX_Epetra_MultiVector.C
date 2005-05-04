@@ -275,6 +275,13 @@ NOX::Epetra::MultiVector::operator [] (int i) const
 }
 
 NOX::Abstract::MultiVector& 
+NOX::Epetra::MultiVector::scale(double gamma)
+{
+  epetraMultiVec->Scale(gamma);
+  return *this;
+}
+
+NOX::Abstract::MultiVector& 
 NOX::Epetra::MultiVector::update(double alpha, 
 				 const NOX::Abstract::MultiVector& a, 
 				 double gamma)

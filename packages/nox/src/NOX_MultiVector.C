@@ -188,6 +188,14 @@ NOX::MultiVector::operator [] (int i) const
 }
 
 NOX::Abstract::MultiVector& 
+NOX::MultiVector::scale(double gamma)
+{
+  for (unsigned int i=0; i<vecs.size(); i++)
+    vecs[i]->scale(gamma);
+  return *this;
+}
+
+NOX::Abstract::MultiVector& 
 NOX::MultiVector::update(double alpha, const NOX::Abstract::MultiVector& a, 
 			 double gamma)
 {

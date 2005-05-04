@@ -237,7 +237,7 @@ LOCA::Extended::MultiVector::setBlock(
       source.numScalarRows != numScalarRows) 
     LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::setBlock()",
 	"Size of supplied multivector is incompatible with this multivector");
-  if (source.numColumns != index.size()) {
+  if (static_cast<unsigned int>(source.numColumns) != index.size()) {
     LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::setBlock()",
 	"Size of supplied index vector is incompatible with this multivector");
   }
@@ -308,6 +308,19 @@ const NOX::Abstract::Vector&
 LOCA::Extended::MultiVector::operator [] (int i) const
 {
   return getVector(i);
+}
+
+NOX::Abstract::MultiVector& 
+LOCA::Extended::MultiVector::scale(double gamma)
+{
+  // scale each multivec
+  for (int i=0; i<numMultiVecRows; i++)
+    multiVectorPtrs[i]->scale(gamma);
+
+  // scale scalars
+  scalarsPtr->scale(gamma);
+
+  return *this;
 }
 
 NOX::Abstract::MultiVector& 
@@ -459,7 +472,7 @@ LOCA::Extended::MultiVector::norm(vector<double>& result,
 {
 
   // Make sure result vector is of appropriate size
-  if (result.size() != numColumns)
+  if (result.size() != static_cast<unsigned int>(numColumns))
     result.resize(numColumns);
 
   // Zero out result vector
@@ -756,7 +769,7 @@ bool
 LOCA::Extended::MultiVector::isContiguous(const vector<int>& index) const 
 {
   for (unsigned int i=0; i<index.size(); i++) {
-    if (index[i] != index[0] + i)
+    if (static_cast<unsigned int>(index[i]) != index[0] + i)
       return false;
   }
   return true;

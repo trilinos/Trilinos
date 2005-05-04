@@ -129,6 +129,9 @@ namespace LOCA {
        */
       virtual const NOX::Abstract::Vector& operator [] (int i) const;
 
+      //! Scale each element of this multivector by \c gamma.
+      virtual NOX::Abstract::MultiVector& 
+      scale(double gamma);
       
       /*! 
        * \brief Compute x = (alpha * a) + (gamma * x) where \c a is a 
