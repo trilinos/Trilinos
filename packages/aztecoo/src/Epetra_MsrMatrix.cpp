@@ -28,7 +28,6 @@
 //@HEADER
 */
 
-#include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_Vector.h"

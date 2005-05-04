@@ -34,6 +34,7 @@
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_Map.h"
 #include "az_aztec.h"
 #ifdef AZTEC_MPI
 #include "Epetra_MpiComm.h"
@@ -41,8 +42,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-
-class Epetra_Map;
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
