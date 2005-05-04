@@ -229,6 +229,11 @@ AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES
+
+# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
@@ -246,8 +251,8 @@ TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output],
                    FORMAT_IO, yes)
 TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
 
-TAC_ARG_ENABLE_FEATURE_SUB( epetra, thyra, [enable Epetra's adapters implementing Thyra interfaces], EPETRA_THYRA, no)
-AM_CONDITIONAL(HAVE_EPETRA_THYRA, [test "X$ac_cv_use_epetra_thyra" != "Xno"])
+TAC_ARG_ENABLE_EXPLICIT_CAN_USE_PACKAGE(epetra, thyra, [Enable the Epetra/Thyra operator/vector adapaters.], EPETRA_THYRA, 
+                                        ENABLE_EPETRA_THYRA, no)
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -363,7 +368,6 @@ AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export
 		Makefile.export.epetra
-		Makefile.export.epetra.thyra
 		src/Makefile
 		test/Makefile
 		test/BasicPerfTest/Makefile

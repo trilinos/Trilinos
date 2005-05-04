@@ -5,8 +5,8 @@
 # @HEADER
 # ************************************************************************
 # 
-#               Thyra: Interfaces and Support Code for the Interoperability of Abstract Numerical Algorithms
-#                 Copyright (2004) Sandia Corporation
+# Thyra: Interfaces and Support Code for the Interoperability of Abstract Numerical Algorithms
+#                Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -184,9 +184,6 @@ TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not 
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( thyra, examples, [Build Thyra examples], THYRA_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_thyra_examples" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE( teuchos, [Build Thyra's examples which use teuchos], TEUCHOS, no)
-AM_CONDITIONAL(BUILD_TEUCHOS, [test "X$ac_cv_use_teuchos" != "Xno"])
-
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -220,6 +217,11 @@ fi
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES
 
 # ------------------------------------------------------------------------
 # Checks for linker characteristics

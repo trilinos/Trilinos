@@ -1,37 +1,28 @@
 /* src/Thyra_Config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
 /* Define if want to build teuchos */
 #undef HAVE_TEUCHOS
 
-/* Define if want to build tsfcore-aztecoo */
-#undef HAVE_TSFCORE_AZTECOO
+/* Define if want to build thyra-examples */
+#undef HAVE_THYRA_EXAMPLES
 
-/* Define if want to build tsfcore-epetra */
-#undef HAVE_TSFCORE_EPETRA
-
-/* Define if want to build tsfcore-examples */
-#undef HAVE_TSFCORE_EXAMPLES
-
-/* Define if want to build tsfcore-mpi */
-#undef HAVE_TSFCORE_MPI
-
-/* Define if want to build tsfcore-tests */
-#undef HAVE_TSFCORE_TESTS
-
-/* Define to 1 if you have the <typeinfo> header file. */
-#undef HAVE_TYPEINFO
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
-
-/* Define to 1 if you have the <valarray> header file. */
-#undef HAVE_VALARRAY
-
-/* Define to 1 if you have the <vector> header file. */
-#undef HAVE_VECTOR
+/* Define if want to build thyra-tests */
+#undef HAVE_THYRA_TESTS
 
 /* Name of package */
 #undef PACKAGE
@@ -50,9 +41,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
 
 /* Version number of package */
 #undef VERSION

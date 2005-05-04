@@ -26,8 +26,6 @@
 # ************************************************************************
 # @HEADER
 
-include $(top_builddir)/Makefile.export.epetra.thyra
-
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
@@ -54,9 +52,17 @@ SOURCE = \
 	$(srcdir)/Thyra_EpetraThyraWrappers.cpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.cpp
 
-#Specify locations of include files within Trilinos
+# Specify locations of include files within Trilinos
 
-AM_CPPFLAGS = $(shell perl $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_THYRA_INCLUDES))
+include $(top_builddir)/Makefile.export.epetra
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
+else
+EXPORT_INCLUDES = $(EPETRA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # --------------------------------------------------------------------
 # Epetra Thyra library specifications

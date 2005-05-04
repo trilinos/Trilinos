@@ -26,8 +26,6 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.epetra.thyra
-
 EXEEXT = .exe
 
 #
@@ -50,12 +48,19 @@ common_sources =
 
 common_dependencies = $(top_builddir)/thyra/src/libEpetraThyra.a $(top_builddir)/src/libepetra.a
 
-AM_CPPFLAGS = $(shell perl $(top_srcdir)/config/strip_dup_incl_paths.pl \
-	-I$(top_srcdir)/../thyra/example/ana/operator_vector \
-	$(EPETRA_THYRA_INCLUDES) \
-	)
+include $(top_builddir)/Makefile.export.epetra
 
-common_ldadd = $(shell perl $(top_srcdir)/config/strip_dup_libs.pl $(EPETRA_THYRA_LIBS))
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRA_LIBS))
+else
+EXPORT_INCLUDES = $(EPETRA_INCLUDES)
+EXPORT_LIBS = $(EPETRA_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+common_ldadd = $(EXPORT_LIBS)
 
 # This is already added part of EPETRA_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -26,8 +26,6 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.thyra
-
 EXEEXT = .exe
 
 #
@@ -64,9 +62,19 @@ test_std_ops_LDADD = $(common_ldadd)
 common_dependencies = \
   $(top_builddir)/src/libthyra.a
 
-AM_CPPFLAGS = $(shell perl $(top_srcdir)/config/strip_dup_incl_paths.pl $(THYRA_INCLUDES))
+include $(top_builddir)/Makefile.export.thyra
 
-common_ldadd = $(shell perl $(top_srcdir)/config/strip_dup_libs.pl $(THYRA_LIBS))
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(THYRA_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(THYRA_LIBS))
+else
+EXPORT_INCLUDES = $(THYRA_INCLUDES)
+EXPORT_LIBS = $(THYRA_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+common_ldadd = $(EXPORT_LIBS)
 
 # This is already added part of THYRA_LIBS and therefore automake does not need to add this again!
 LIBS =

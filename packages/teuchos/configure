@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE TRILINOS_TEMPLATE_OBJS ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -904,6 +904,11 @@ Optional Features:
   --enable-teuchos-libxml2
                           Enable Teuchos interface support for the LibXML2
                           Library (default is no)
+  --enable-export-makefiles
+                          Creates export makefiles in the install (prefix)
+                          directory. This option requires perl to be set in
+                          your path or defined with --with-perl=<perl
+                          executable>(default is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -943,6 +948,16 @@ Optional Packages:
                           format
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
+  --with-perl             supply a perl executable. For example
+                          --with-perl=/usr/bin/perl.
+  --with-gnumake          Gnu's make has special functions we can use to clean
+                          up build and link lines. Enable this if you use
+                          gnu-make to build Trilinos. This requires that perl
+                          is in your path or that you have specified the perl
+                          executable with --with-perl=<perl executable>.
+                          Configure will check for the existence of the perl
+                          executable and quit with an error if it is not
+                          found. Default is no.
 
 Some influential environment variables:
   CC          C compiler command
@@ -3818,7 +3833,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3821:" \
+echo "$as_me:3836:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9479,7 +9494,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9482: \"$ac_link\") >&5
+(eval echo $as_me:9497: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9557,7 +9572,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9560: \"$ac_link\") >&5
+(eval echo $as_me:9575: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12302,6 +12317,210 @@ fi
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+
+# Check whether --enable-export-makefiles or --disable-export-makefiles was given.
+if test "${enable_export_makefiles+set}" = set; then
+  enableval="$enable_export_makefiles"
+  ac_cv_use_export_makefiles=$enableval
+else
+  ac_cv_use_export_makefiles=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to build export makefiles" >&5
+echo $ECHO_N "checking whether to build export makefiles... $ECHO_C" >&6
+
+if test "X$ac_cv_use_export_makefiles" != "Xno"; then
+
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EXPORT_MAKEFILES
+_ACEOF
+
+
+else
+
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi
+
+
+
+if test X${ac_cv_use_export_makefiles} = Xyes; then
+  USING_EXPORT_MAKEFILES_TRUE=
+  USING_EXPORT_MAKEFILES_FALSE='#'
+else
+  USING_EXPORT_MAKEFILES_TRUE='#'
+  USING_EXPORT_MAKEFILES_FALSE=
+fi
+
+
+# Check for perl to run scripts (Required dependency)
+
+
+
+# Check whether --with-perl or --without-perl was given.
+if test "${with_perl+set}" = set; then
+  withval="$with_perl"
+
+echo "$as_me:$LINENO: checking for user supplied perl executable" >&5
+echo $ECHO_N "checking for user supplied perl executable... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${withval}" >&5
+echo "${ECHO_T}${withval}" >&6
+USER_SPECIFIED_PERL=yes
+PERL_EXE="${withval}"
+
+else
+
+USER_SPECIFIED_PERL=no
+
+fi;
+
+if test "X${USER_SPECIFIED_PERL}" = "Xyes"; then
+  as_ac_File=`echo "ac_cv_file_${PERL_EXE}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${PERL_EXE}" >&5
+echo $ECHO_N "checking for ${PERL_EXE}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${PERL_EXE}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HAVE_PERL=yes
+else
+  HAVE_PERL=no
+fi
+
+  PERL_EXE=${PERL_EXE}
+
+else
+  # Extract the first word of "perl", so it can be a program name with args.
+set dummy perl; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_HAVE_PERL+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$HAVE_PERL"; then
+  ac_cv_prog_HAVE_PERL="$HAVE_PERL" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_HAVE_PERL="yes"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_HAVE_PERL" && ac_cv_prog_HAVE_PERL="no"
+fi
+fi
+HAVE_PERL=$ac_cv_prog_HAVE_PERL
+if test -n "$HAVE_PERL"; then
+  echo "$as_me:$LINENO: result: $HAVE_PERL" >&5
+echo "${ECHO_T}$HAVE_PERL" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  PERL_EXE=perl
+
+fi
+
+
+if test X${HAVE_PERL} = Xyes; then
+  USING_PERL_TRUE=
+  USING_PERL_FALSE='#'
+else
+  USING_PERL_TRUE='#'
+  USING_PERL_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_export_makefiles" != "Xno"; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
+echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+# Check for using gnumake to clean up link lines via
+# gnumake's "shell" command. Optional dependency.
+
+
+
+
+# Check whether --with-gnumake or --without-gnumake was given.
+if test "${with_gnumake+set}" = set; then
+  withval="$with_gnumake"
+  ac_cv_use_gnumake=$withval
+else
+  ac_cv_use_gnumake=no
+fi;
+
+echo "$as_me:$LINENO: checking whether gnumake specific code should be enabled" >&5
+echo $ECHO_N "checking whether gnumake specific code should be enabled... $ECHO_C" >&6
+
+if test "X$ac_cv_use_gnumake" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GNUMAKE
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+if test "X$ac_cv_use_gnumake" = "Xyes"; then
+  USING_GNUMAKE_TRUE=
+  USING_GNUMAKE_FALSE='#'
+else
+  USING_GNUMAKE_TRUE='#'
+  USING_GNUMAKE_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_gnumake" != "Xno"; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  { { echo "$as_me:$LINENO: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
+echo "$as_me: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
+
+# ------------------------------------------------------------------------
 # Checks for linker characteristics
 # ------------------------------------------------------------------------
 
@@ -12357,7 +12576,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12360: \"$ac_link\") >&5
+(eval echo $as_me:12579: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12435,7 +12654,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12438: \"$ac_link\") >&5
+(eval echo $as_me:12657: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12606,7 +12825,6 @@ ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
 
 
 #  ----------------------------------------------------
@@ -12862,6 +13080,27 @@ if test -z "${HAVE_TEUCHOS_EXTENDED_TRUE}" && test -z "${HAVE_TEUCHOS_EXTENDED_F
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_EXPORT_MAKEFILES_TRUE}" && test -z "${USING_EXPORT_MAKEFILES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_PERL_TRUE}" && test -z "${USING_PERL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_PERL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_PERL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_GNUMAKE_TRUE}" && test -z "${USING_GNUMAKE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_GNUMAKE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_GNUMAKE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13513,6 +13752,11 @@ s,@HAVE_TEUCHOS_EXTENDED_FALSE@,$HAVE_TEUCHOS_EXTENDED_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
+s,@USING_EXPORT_MAKEFILES_TRUE@,$USING_EXPORT_MAKEFILES_TRUE,;t t
+s,@USING_EXPORT_MAKEFILES_FALSE@,$USING_EXPORT_MAKEFILES_FALSE,;t t
+s,@PERL_EXE@,$PERL_EXE,;t t
+s,@USING_GNUMAKE_TRUE@,$USING_GNUMAKE_TRUE,;t t
+s,@USING_GNUMAKE_FALSE@,$USING_GNUMAKE_FALSE,;t t
 s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 s,@TEUCHOS_BUILD_DIRECTORY@,$TEUCHOS_BUILD_DIRECTORY,;t t

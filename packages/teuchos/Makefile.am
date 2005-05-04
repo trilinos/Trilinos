@@ -89,22 +89,27 @@ endif
 
 SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
-#if USING_PERL
+if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
 	cp $(top_builddir)/Makefile.export.teuchos $(exec_prefix)/include/. ; \
-	perl $(top_srcdir)/config/replace-install-prefix.pl \
+	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.teuchos \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src ; \
-	perl $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile TEUCHOS > $(exec_prefix)/include/Makefile.export.teuchos.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile TEUCHOS > $(exec_prefix)/include/Makefile.export.teuchos.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.teuchos ; \
 	rm -f $(exec_prefix)/include/Makefile.export.teuchos.macros
 
-# RAB: This does not work??
 
-#endif
+else 
+
+install-exec-hook:
+
+uninstall-hook:
+
+endif

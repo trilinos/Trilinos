@@ -483,7 +483,7 @@ The classes shown in the above UML class diagram are described below:
 <ul>
 
 <li><tt>Thyra::ScalarProdBase</tt> defines an interface for an
-application-specific scalar product indeppendent from a vector space.
+application-specific scalar product independent from a vector space.
 
 <li><tt>Thyra::ScalarProdVectorSpaceBase</tt> is subclass of
 <tt>%Thyra::%VectorSpaceBase</tt> that defines the scalar product functions in
@@ -497,24 +497,24 @@ of <tt>%Thyra::%ScalarProdBase</tt> for Euclidean scalar products (i.e. using
 the dot product).  This is the default scalar product definition used by
 <tt>%Thyra::%ScalarProdVectorSpaceBase</tt> and all of its subclass objects.
 
-<li><tt>Thyra::LinearOpScalarProd</tt> is a more general
-implementation of a scalar product that uses an arbitrary symmetric
-positive-definite <tt>%Thyra::%LinearOpBase</tt> object (shown using the
-<tt>op</tt> relationship in the above UML class diagram).
+<li><tt>Thyra::LinearOpScalarProd</tt> is a more general implementation of a
+scalar product that uses an arbitrary symmetric positive-definite
+<tt>%Thyra::%LinearOpBase</tt> object (shown using the <tt>op</tt>
+relationship in the above UML class diagram).
 
-<li><tt>Thyra::EuclideanLinearOpBase</tt> is a base subclass that
-allows the development of general concrete implementations of
+<li><tt>Thyra::EuclideanLinearOpBase</tt> is a base subclass that allows the
+development of general concrete implementations of
 <tt>%Thyra::%LinearOpBase</tt> subclasses that are independent of an
-application-specific scalar product.  This base subclass defines the
-functions <tt>Thyra::EuclideanLinearOpBase::euclideanApply()</tt>
-which are called by <tt>Thyra::ScalarProdBase::apply()</tt> to modify
-the application of a Euclidean linear operator for the definition of
-the sclar product (see the C++ code for the overridden
-<tt>Thyra::EuclideanLinearOpBase::apply()</tt> functions).  More
-specialized linear operators that already define the operator with
-respect to application-specific scalar product should not derive from
-this subclass but should instead derived directly from
-<tt>%Thyra:%LinearOpBase</tt>.
+application-specific scalar product.  This base subclass defines the functions
+<tt>Thyra::EuclideanLinearOpBase::euclideanApply()</tt> which are called by
+<tt>Thyra::ScalarProdBase::apply()</tt> to modify the application of a
+Euclidean linear operator for the definition of the sclar product (see the C++
+code for the overridden <tt>Thyra::EuclideanLinearOpBase::apply()</tt>
+functions).  This base class is most helpful for the definition of concrete
+<tt>Thyra::MultiVectorBase</tt> subclasses.  More specialized linear operators
+that already define the operator with respect to application-specific scalar
+product should not derive from this subclass but should instead derived
+directly from <tt>%Thyra:%LinearOpBase</tt>.
 
 </ul>
 

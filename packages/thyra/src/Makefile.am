@@ -42,8 +42,6 @@
 # --with-xyz or --without-xyz)
 #
 
-include $(top_builddir)/Makefile.export.thyra
-
 UTILS_H = \
   $(srcdir)/utils/Thyra_Range1D.hpp
 
@@ -212,18 +210,15 @@ ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
 
 #Specify locations of include files within Trilinos
 
-AM_CPPFLAGS = \
--I$(srcdir) \
--I$(srcdir)/utils \
--I$(srcdir)/ana/rtop/base \
--I$(srcdir)/ana/rtop/ops_lib \
--I$(srcdir)/ana/operator_vector/interfaces \
--I$(srcdir)/ana/operator_vector/extended_interfaces \
--I$(srcdir)/ana/operator_vector/ana_support \
--I$(srcdir)/ana/operator_vector/adapter_support/serial \
--I$(srcdir)/ana/operator_vector/adapter_support/mpi \
--I$(top_srcdir)/../teuchos/src \
--I$(top_builddir)/../teuchos/src
+include $(top_builddir)/Makefile.export.thyra
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(THYRA_INCLUDES))
+else
+EXPORT_INCLUDES = $(THYRA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # --------------------------------------------------------------------
 # Thyra library specifications

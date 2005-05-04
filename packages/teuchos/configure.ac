@@ -612,12 +612,16 @@ fi
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES
+
+# ------------------------------------------------------------------------
 # Checks for linker characteristics
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
-
 
 #  ----------------------------------------------------
 #  Needs this because Dec handles templates differently

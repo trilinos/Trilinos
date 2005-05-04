@@ -117,8 +117,9 @@ before installation.
 Once %Thyra software is installed in the location specified by the configure
 option <tt>--prefix=TRILINOS_INSTALL_DIR</tt> with the rest of Trilinos, it is
 important that a client's external makefile system be consistent with the
-environment used to build %Thyra.  To do this, a set of makefile fragments is
-installed in the directory
+environment used to build %Thyra.  To do this, if the option
+<tt>--enable-export-makefiles</tt> was enabled, then a set of makefile
+fragments is installed in the directory
 
 \verbatim
 

@@ -95,20 +95,29 @@ endif
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 run-tests:
-	perl $(top_builddir)/test/scripts/daily/serial/run_operator_vector_tests.pl
+	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_operator_vector_tests.pl
+
+if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
 	cp $(top_builddir)/Makefile.export.thyra $(exec_prefix)/include/.
-	perl $(top_srcdir)/config/replace-install-prefix.pl \
+	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.thyra \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-pacakge-abs-builddirs=@abs_top_builddir@/../teuchos
-	perl $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile THYRA > $(exec_prefix)/include/Makefile.export.thyra.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile THYRA > $(exec_prefix)/include/Makefile.export.thyra.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.thyra
 	rm -f $(exec_prefix)/include/Makefile.export.thyra.macros
 
+else 
+
+install-exec-hook:
+
+uninstall-hook:
+
+endif

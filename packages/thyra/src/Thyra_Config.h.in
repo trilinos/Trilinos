@@ -3,14 +3,17 @@
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
 /* Define if want to build tests */
 #undef HAVE_TESTS
-
-/* Define if want to build teuchos */
-#undef HAVE_TEUCHOS
 
 /* Define if want to build thyra-examples */
 #undef HAVE_THYRA_EXAMPLES

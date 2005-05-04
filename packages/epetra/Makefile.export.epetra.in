@@ -1,6 +1,16 @@
 
+@ENABLE_EPETRA_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
+
+@ENABLE_EPETRA_THYRA_TRUE@EPETRA_THYRA_INCLUDES = \
+@ENABLE_EPETRA_THYRA_TRUE@	-I@abs_top_srcdir@/thyra/src \
+@ENABLE_EPETRA_THYRA_TRUE@	-I@abs_top_builddir@/thyra/src \
+@ENABLE_EPETRA_THYRA_TRUE@	$(THYRA_INCLUDES)
+
+@ENABLE_EPETRA_THYRA_TRUE@EPETRA_THYRA_LIBS = -L@abs_top_builddir@/thyra/src -lEpetraThyra $(THYRA_LIBS)
+
 EPETRA_INCLUDES = \
+  $(EPETRA_THYRA_INCLUDES) \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_builddir@/src
 
-EPETRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lepetra @LIBS@ @FLIBS@ 
+EPETRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lepetra $(EPETRA_THYRA_LIBS) @LIBS@ @FLIBS@ 
