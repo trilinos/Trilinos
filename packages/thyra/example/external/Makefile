@@ -16,14 +16,14 @@ include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.thyra
 #
 
 # For platforms where perl and GNUMake are used
-COMPILE_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_incl_paths.pl \
-	$(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES))
+#COMPILE_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_incl_paths.pl \
+#	$(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES))
 # For platforms where perl and/or GNUMake are not available
-#COMPILE_FLAGS = $(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES)
+COMPILE_FLAGS = $(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES)
 # For platforms where perl and GNUMake are used
-LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(THYRA_LIBS))
+#LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(THYRA_LIBS))
 # For platforms where perl and/or GNUMake are not available
-#LINK_FLAGS = $(THYRA_LIBS)
+LINK_FLAGS = $(THYRA_LIBS)
 
 sillyCgSolve_serial.exe : sillyCgSolve_serial.o
 	$(THYRA_CXXLD) $(THYRA_CXXFLAGS) sillyCgSolve_serial.o -o sillyCgSolve_serial.exe $(LINK_FLAGS)

@@ -70,6 +70,9 @@ foreach( @makefile_name_array ) {
 		#print "Macro search = \'$macro_search\'\n";
 		if( $line=~/$macro_search/ ) {
 			#print "Adding Macro!\n";
+      my $find_str = '\(CXX\)';
+      my $replace_str = "(${package_name}_CXX)";
+      $line=~s/$find_str/$replace_str/;
 			push @new_macros, "${package_name}_${line}";
 			if( substr($line,-2,1) eq "\\" ) {
 				$add_next_line = 1;
