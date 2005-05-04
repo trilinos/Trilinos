@@ -69,9 +69,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
-	$(top_srcdir)/python/src/.deps/dummy.in config/config.guess \
-	config/config.sub config/depcomp config/install-sh \
-	config/missing config/mkinstalldirs
+	config/config.guess config/config.sub config/depcomp \
+	config/install-sh config/missing config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -103,7 +102,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Rythmos_config.h
-CONFIG_CLEAN_FILES = python/src/.deps/dummy
+CONFIG_CLEAN_FILES =
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -114,7 +113,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test example python
+DIST_SUBDIRS = src test example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -307,7 +306,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
-@BUILD_PYTHON_TRUE@PYTHON_SUBDIR = python
+
+#if BUILD_PYTHON
+#PYTHON_SUBDIR=python
+#endif
 SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 all: all-recursive
 
@@ -345,8 +347,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-python/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src/.deps/dummy.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -468,7 +468,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
