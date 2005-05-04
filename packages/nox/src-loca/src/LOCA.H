@@ -42,6 +42,7 @@
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
+#include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 
 // Bifurcation groups
 #include "LOCA_Bifurcation_TPBord_ExtendedVector.H"

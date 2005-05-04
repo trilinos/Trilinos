@@ -33,7 +33,7 @@
 #ifndef LOCA_MULTICONTINUATION_NATURALCONSTRAINT_H
 #define LOCA_MULTICONTINUATION_NATURALCONSTRAINT_H
 
-#include "LOCA_MultiContinuation_ConstraintInterface.H" // base class
+#include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H" // base class
 #include "NOX_Abstract_MultiVector.H"                   // for dense matrix
 
 // forward declarations
@@ -63,7 +63,7 @@ namespace LOCA {
      * \f$v\f$.
      */
     class NaturalConstraint : 
-      public LOCA::MultiContinuation::ConstraintInterface {
+      public LOCA::MultiContinuation::ConstraintInterfaceMVDX {
 
     public:
 
@@ -133,8 +133,16 @@ namespace LOCA {
       getConstraints() const;
 
       //! Return parameter component of constraint derivatives
-      virtual const NOX::Abstract::MultiVector::DenseMatrix&
+      virtual const NOX::Abstract::MultiVector::DenseMatrix*
       getConstraintDerivativesP() const;
+
+      //! Return solution component of constraint derivatives
+      /*!
+       * Since the solution component of the derivative is always zero,
+       * this always returns NULL.
+       */
+      virtual const NOX::Abstract::MultiVector*
+      getConstraintDerivativesX() const;
 
       //! Compute result_p = alpha * dg/dx * input_x
       virtual NOX::Abstract::Group::ReturnType

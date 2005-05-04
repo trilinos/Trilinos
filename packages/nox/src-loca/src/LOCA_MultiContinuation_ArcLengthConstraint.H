@@ -33,7 +33,7 @@
 #ifndef LOCA_MULTICONTINUATION_ARCLENGTHCONSTRAINT_H
 #define LOCA_MULTICONTINUATION_ARCLENGTHCONSTRAINT_H
 
-#include "LOCA_MultiContinuation_ConstraintInterface.H" // base class
+#include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H" // base class
 #include "NOX_Abstract_MultiVector.H"                   // for dense matrix
 
 // forward declarations
@@ -49,8 +49,9 @@ namespace LOCA {
   namespace MultiContinuation { 
 
     /*! 
-     * \brief Implementation of LOCA::MultiContinuation::ConstraintInterface
-     * for arclength continuation.
+     * \brief Implementation of 
+     * LOCA::MultiContinuation::ConstraintInterfaceMVDX for arclength 
+     * continuation.
      */
     /*!
      * This class implements the arclength constraint equation for
@@ -60,10 +61,13 @@ namespace LOCA {
      *         (x-x^\ast)^Tv_x + (p-p^\ast) v_p - \Delta s
      * \f]
      * where \f$v_x\f$, \f$v_p\f$ are the solution and  parameter components 
-     * of the predictor direction \f$v\f$ respectively.
+     * of the predictor direction \f$v\f$ respectively.  Since the derivative
+     * of \f$g\f$ with respect to \f$x\f$ is just \f$v\f$, the predictor
+     * tangent, this class implements the MVDX version of the 
+     * constraint interface.
      */
     class ArcLengthConstraint : 
-      public LOCA::MultiContinuation::ConstraintInterface {
+      public LOCA::MultiContinuation::ConstraintInterfaceMVDX {
 
     public:
 
@@ -133,8 +137,12 @@ namespace LOCA {
       getConstraints() const;
 
       //! Return parameter component of constraint derivatives
-      virtual const NOX::Abstract::MultiVector::DenseMatrix&
+      virtual const NOX::Abstract::MultiVector::DenseMatrix*
       getConstraintDerivativesP() const;
+
+      //! Return solution component of constraint derivatives
+      virtual const NOX::Abstract::MultiVector*
+      getConstraintDerivativesX() const;
 
       //! Compute result_p = alpha * dg/dx * input_x
       virtual NOX::Abstract::Group::ReturnType

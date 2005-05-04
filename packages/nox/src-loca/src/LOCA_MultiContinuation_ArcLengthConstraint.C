@@ -190,13 +190,23 @@ LOCA::MultiContinuation::ArcLengthConstraint::getConstraints() const
   return constraints;
 }
 
-const NOX::Abstract::MultiVector::DenseMatrix&
+const NOX::Abstract::MultiVector::DenseMatrix*
 LOCA::MultiContinuation::ArcLengthConstraint::getConstraintDerivativesP() const
 {
   const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
     arcLengthGroup->getScaledPredictorTangent();
 
-  return tangent.getScalars();
+  return &tangent.getScalars();
+}
+
+const NOX::Abstract::MultiVector*
+LOCA::MultiContinuation::ArcLengthConstraint::getConstraintDerivativesX() const
+{
+  // Get tangent vector
+  const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
+    arcLengthGroup->getScaledPredictorTangent();
+
+  return &tangent.getXMultiVec();
 }
 
 NOX::Abstract::Group::ReturnType
@@ -213,7 +223,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::applyConstraintDerivativesX(
   const NOX::Abstract::MultiVector& tangent_x = tangent.getXMultiVec();
 
   // Multiply
-  tangent_x.multiply(alpha, input_x, result_p);
+  //tangent_x.multiply(alpha, input_x, result_p);
+  input_x.multiply(alpha, tangent_x, result_p);
 
   return NOX::Abstract::Group::Ok;
 }

@@ -112,7 +112,7 @@ LOCA::BorderedSystem::Bordering::setMatrixBlocks(
   grp = group;
   A = blockA;
   B = blockBC;
-  C = &(B->getConstraintDerivativesP());
+  C = B->getConstraintDerivativesP();
 }
 
 NOX::Abstract::Group::ReturnType 

@@ -124,11 +124,20 @@ namespace LOCA {
       getConstraints() const = 0;
 
       //! Return parameter component of constraint derivatives
-      virtual
-      const NOX::Abstract::MultiVector::DenseMatrix&
+      /*!
+       * May return NULL if constraint derivative is zero
+       */
+      virtual const NOX::Abstract::MultiVector::DenseMatrix*
       getConstraintDerivativesP() const = 0;
 
       //! Compute result_p = alpha * dg/dx * input_x
+      /*!
+       * Note that if there are n constraints and input_x has m columns,
+       * result_p should be a n by m matrix and is equivalent to
+       * \code
+       *    input_x.multiply(alpha, dgdx, result_p).
+       * \endcode
+       */
       virtual NOX::Abstract::Group::ReturnType
       applyConstraintDerivativesX(
 		double alpha, 
@@ -136,6 +145,12 @@ namespace LOCA {
 		NOX::Abstract::MultiVector::DenseMatrix& result_p) const = 0;
 
       //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x
+      /*!
+       * Note that this should be equivalent to
+       * \code
+       *    result_x.update(transb, alpha, dgdx, b, beta);
+       * \endcode
+       */
       virtual NOX::Abstract::Group::ReturnType
       applyConstraintDerivativesX(
 		Teuchos::ETransp transb,

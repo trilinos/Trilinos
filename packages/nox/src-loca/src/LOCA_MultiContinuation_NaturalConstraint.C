@@ -172,10 +172,16 @@ LOCA::MultiContinuation::NaturalConstraint::getConstraints() const
   return constraints;
 }
 
-const NOX::Abstract::MultiVector::DenseMatrix&
+const NOX::Abstract::MultiVector::DenseMatrix*
 LOCA::MultiContinuation::NaturalConstraint::getConstraintDerivativesP() const
 {
-  return dgdp;
+  return &dgdp;
+}
+
+const NOX::Abstract::MultiVector*
+LOCA::MultiContinuation::NaturalConstraint::getConstraintDerivativesX() const
+{
+  return NULL;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -197,8 +203,7 @@ LOCA::MultiContinuation::NaturalConstraint::applyConstraintDerivativesX(
 			     double beta,
 			     NOX::Abstract::MultiVector& result_x) const
 {
-  for (int i=0; i<result_x.numVectors(); i++)
-    result_x[i].scale(beta);
+  result_x.scale(beta);
 
   return NOX::Abstract::Group::Ok;
 }

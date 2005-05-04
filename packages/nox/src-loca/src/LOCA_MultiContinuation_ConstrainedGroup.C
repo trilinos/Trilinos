@@ -316,7 +316,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
 
   if (!constraintsPtr->isConstraintDerivativesPZero())
     dfdpMultiVec->
-      getScalars().assign(constraintsPtr->getConstraintDerivativesP());
+      getScalars().assign(*(constraintsPtr->getConstraintDerivativesP()));
   else
     dfdpMultiVec->getScalars().putScalar(0.0);
 
@@ -387,9 +387,9 @@ LOCA::MultiContinuation::ConstrainedGroup::computeGradient()
   // compute df/dp^T * f + dg/dp^T * g
   if (!constraintsPtr->isConstraintDerivativesPZero())
     gradientMultiVec.getScalars().multiply(
-				 Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, 
-				 constraintsPtr->getConstraintDerivativesP(),
-				 constraintsPtr->getConstraints(), 1.0);
+			       Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, 
+			       *(constraintsPtr->getConstraintDerivativesP()),
+			       constraintsPtr->getConstraints(), 1.0);
 
   isValidGradient = true;
 
