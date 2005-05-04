@@ -102,6 +102,23 @@ files for more details.  Instructions for customizing are listed behind
 Note that not all of these files are used in building new_package, as it is 
 a very simple package.
 
+The following instructions may save you some time in this process:
+
+cd $TRILINOS_HOME
+cp -r new_package Yourpackagename
+
+set $path = { $TRILINOS_HOME $TRILINOS_HOME/commonTools/refactoring }
+cd Yourpackagename
+edit ConvertToYourpackagename-string-replace.list
+sh ConvertToYourpackagename.sh
+rm ../ConvertToYourpackagename-string-replace.list 
+
+You then need to check all occurences of #np# and modify them as appropriate, 
+you might also double check all occurences of #auto np# - to check the 
+results of the automatic string replacement.
+
+
+
 2. Create generated Autoconf and Automake files.
 
 IMPORTANT: Before starting this phase, please see 

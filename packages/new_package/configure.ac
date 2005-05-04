@@ -43,7 +43,7 @@
 AC_INIT(new_package, 1.2d, YourName@sandia.gov)
 
 # Hello World!
-#  #np# - package name below
+#  #auto np# - package name below
 echo "----------------------------------------"
 echo "Running New_Package Configure Script"
 echo "----------------------------------------"
@@ -52,7 +52,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-# #np# - file name below
+# #auto np# - file name below
 AC_CONFIG_SRCDIR(/src/Newp_Hello.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
@@ -65,7 +65,7 @@ AC_CONFIG_SRCDIR(/src/Newp_Hello.cpp)
 # #np# common checks and set common variable values to minimize redundant work.
 #
 AC_CONFIG_AUX_DIR(config)
-#  #np# - Change file names in next line 
+#  #auto np# - Change file names in next line 
 # Configure should create src/New_Package_config.h from src/New_Package_config.h.in
 
 AM_CONFIG_HEADER(src/New_Package_config.h:src/New_Package_config.h.in)
@@ -100,7 +100,7 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-#  #np# - Required version of automake.
+#  - Required version of automake.
 AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
@@ -430,7 +430,7 @@ AC_CONFIG_FILES([
 AC_OUTPUT()
 
 # Bye World!
-#  #np# change package name
+#  #auto np# change package name
 echo "----------------------------------------"
 echo "Finished Running New_Package Configure Script"
 echo "----------------------------------------"
