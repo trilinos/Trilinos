@@ -351,8 +351,18 @@ namespace LOCA {
 	return jacobianMatrix;
       }
 
+      //! Return reference to Jacobian matrix
+      const NOX::LAPACK::Matrix& getJacobianMatrix() const {
+	return jacobianMatrix;
+      }
+
       //! Return reference to mass matrix
       NOX::LAPACK::Matrix& getMassMatrix() {
+	return massMatrix;
+      }
+
+      //! Return reference to mass matrix
+      const NOX::LAPACK::Matrix& getMassMatrix() const {
 	return massMatrix;
       }
 

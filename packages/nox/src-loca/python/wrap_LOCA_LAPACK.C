@@ -3361,7 +3361,7 @@ static PyObject *_wrap_Group_hasMass(PyObject *, PyObject *args) {
 }
 
 
-static PyObject *_wrap_Group_getJacobianMatrix(PyObject *, PyObject *args) {
+static PyObject *_wrap_Group_getJacobianMatrix__SWIG_0(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::LAPACK::Group *arg1 = (LOCA::LAPACK::Group *) 0 ;
     NOX::LAPACK::Matrix *result;
@@ -3382,7 +3382,73 @@ static PyObject *_wrap_Group_getJacobianMatrix(PyObject *, PyObject *args) {
 }
 
 
-static PyObject *_wrap_Group_getMassMatrix(PyObject *, PyObject *args) {
+static PyObject *_wrap_Group_getJacobianMatrix__SWIG_1(PyObject *, PyObject *args) {
+    PyObject *resultobj;
+    LOCA::LAPACK::Group *arg1 = (LOCA::LAPACK::Group *) 0 ;
+    NOX::LAPACK::Matrix *result;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"O:Group_getJacobianMatrix",&obj0)) goto fail;
+    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__LAPACK__Group, SWIG_POINTER_EXCEPTION | 0);
+    if (SWIG_arg_fail(1)) SWIG_fail;
+    {
+        NOX::LAPACK::Matrix const &_result_ref = ((LOCA::LAPACK::Group const *)arg1)->getJacobianMatrix();
+        result = (NOX::LAPACK::Matrix *) &_result_ref;
+    }
+    
+    resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_NOX__LAPACK__Matrix, 0);
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_Group_getJacobianMatrix(PyObject *self, PyObject *args) {
+    int argc;
+    PyObject *argv[2];
+    int ii;
+    
+    argc = PyObject_Length(args);
+    for (ii = 0; (ii < argc) && (ii < 1); ii++) {
+        argv[ii] = PyTuple_GetItem(args,ii);
+    }
+    if (argc == 1) {
+        int _v;
+        {
+            void *ptr;
+            if (SWIG_ConvertPtr(argv[0], &ptr, SWIGTYPE_p_LOCA__LAPACK__Group, 0) == -1) {
+                _v = 0;
+                PyErr_Clear();
+            } else {
+                _v = 1;
+            }
+        }
+        if (_v) {
+            return _wrap_Group_getJacobianMatrix__SWIG_0(self,args);
+        }
+    }
+    if (argc == 1) {
+        int _v;
+        {
+            void *ptr;
+            if (SWIG_ConvertPtr(argv[0], &ptr, SWIGTYPE_p_LOCA__LAPACK__Group, 0) == -1) {
+                _v = 0;
+                PyErr_Clear();
+            } else {
+                _v = 1;
+            }
+        }
+        if (_v) {
+            return _wrap_Group_getJacobianMatrix__SWIG_1(self,args);
+        }
+    }
+    
+    PyErr_SetString(PyExc_NotImplementedError,"No matching function for overloaded 'Group_getJacobianMatrix'");
+    return NULL;
+}
+
+
+static PyObject *_wrap_Group_getMassMatrix__SWIG_0(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::LAPACK::Group *arg1 = (LOCA::LAPACK::Group *) 0 ;
     NOX::LAPACK::Matrix *result;
@@ -3399,6 +3465,72 @@ static PyObject *_wrap_Group_getMassMatrix(PyObject *, PyObject *args) {
     resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_NOX__LAPACK__Matrix, 0);
     return resultobj;
     fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_Group_getMassMatrix__SWIG_1(PyObject *, PyObject *args) {
+    PyObject *resultobj;
+    LOCA::LAPACK::Group *arg1 = (LOCA::LAPACK::Group *) 0 ;
+    NOX::LAPACK::Matrix *result;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"O:Group_getMassMatrix",&obj0)) goto fail;
+    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__LAPACK__Group, SWIG_POINTER_EXCEPTION | 0);
+    if (SWIG_arg_fail(1)) SWIG_fail;
+    {
+        NOX::LAPACK::Matrix const &_result_ref = ((LOCA::LAPACK::Group const *)arg1)->getMassMatrix();
+        result = (NOX::LAPACK::Matrix *) &_result_ref;
+    }
+    
+    resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_NOX__LAPACK__Matrix, 0);
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_Group_getMassMatrix(PyObject *self, PyObject *args) {
+    int argc;
+    PyObject *argv[2];
+    int ii;
+    
+    argc = PyObject_Length(args);
+    for (ii = 0; (ii < argc) && (ii < 1); ii++) {
+        argv[ii] = PyTuple_GetItem(args,ii);
+    }
+    if (argc == 1) {
+        int _v;
+        {
+            void *ptr;
+            if (SWIG_ConvertPtr(argv[0], &ptr, SWIGTYPE_p_LOCA__LAPACK__Group, 0) == -1) {
+                _v = 0;
+                PyErr_Clear();
+            } else {
+                _v = 1;
+            }
+        }
+        if (_v) {
+            return _wrap_Group_getMassMatrix__SWIG_0(self,args);
+        }
+    }
+    if (argc == 1) {
+        int _v;
+        {
+            void *ptr;
+            if (SWIG_ConvertPtr(argv[0], &ptr, SWIGTYPE_p_LOCA__LAPACK__Group, 0) == -1) {
+                _v = 0;
+                PyErr_Clear();
+            } else {
+                _v = 1;
+            }
+        }
+        if (_v) {
+            return _wrap_Group_getMassMatrix__SWIG_1(self,args);
+        }
+    }
+    
+    PyErr_SetString(PyExc_NotImplementedError,"No matching function for overloaded 'Group_getMassMatrix'");
     return NULL;
 }
 
