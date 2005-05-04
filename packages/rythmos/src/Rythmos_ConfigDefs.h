@@ -136,6 +136,13 @@ using std::endl;
 #endif
 #endif
 
+/*
+ * Rythmos_Version() method
+ */
+namespace Rythmos {
+  string Rythmos_Version();
+}
+
 /*-----------------------------------------------------------------------
   Must refine the following up to #else HAVE_CONFIG_H is not defined
   -----------------------------------------------------------------------*/

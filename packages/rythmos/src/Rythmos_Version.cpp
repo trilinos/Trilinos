@@ -1,8 +1,7 @@
-
-//@HEADER
+// @HEADER
 // ***********************************************************************
 // 
-//                     Rythmos Package
+//                           Rythmos Package
 //                 Copyright (2005) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -25,37 +24,14 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
-//@HEADER
+// @HEADER
 
-#include "Newp_Hello.h"
-#include "Epetra_Comm.h"
-//=============================================================================
-Newp_Hello::Newp_Hello(const Epetra_Comm& Comm):Comm_(Comm) {} 
+#include "Rythmos_ConfigDefs.h"
 
-//=============================================================================
-Newp_Hello::Newp_Hello(const Newp_Hello& Source):Comm_(Source.Comm_) {} 
+namespace Rythmos {
 
-//=======================================================================
-void Newp_Hello::Print(ostream& os) const {
-  int MyPID = Comm_.MyPID();
-  int NumProc = Comm_.NumProc();
-  
-  for (int iproc=0; iproc < NumProc; iproc++) {
-    if (MyPID==iproc) {
+	string Rythmos_Version() { 
+		return("Rythmos Version 0.1 - 05/02/2005"); 
+	};
 
-      if (MyPID==0) {
-	os <<  "This will print out one line for each of the " << NumProc << " processes " << endl ; 
-	os << endl;
-      }
-      os << "Hello.  I am process " << MyPID << endl ; 
-      os << flush; 
-    }
-
-    // Do a few global ops to give I/O a chance to complete
-    Comm_.Barrier();
-    Comm_.Barrier();
-    Comm_.Barrier();
-  }
-  return; }
-
-
+} // namespace Rythmos

@@ -53,7 +53,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/Newp_Hello.cpp)
+AC_CONFIG_SRCDIR(/src/Rythmos_Version.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -409,16 +409,7 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		example/Makefile
-		test/Makefile
-		test/Hello_Test/Makefile
-		test/Jambo_Test/Makefile
-		test/scripts/Makefile
-		test/scripts/daily/Makefile
-		test/scripts/daily/serial/Makefile
-		test/scripts/daily/mpi/Makefile
-		test/scripts/weekly/Makefile
-		test/scripts/weekly/serial/Makefile
-		test/scripts/weekly/mpi/Makefile
+		example/basicExample/Makefile
 		python/Makefile
 		python/src/Makefile
 		python/src/__init__.py

@@ -43,14 +43,12 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/Newp_Hello.h \
 	$(srcdir)/Rythmos_ConfigDefs.h
 
 CORE = \
-	$(srcdir)/Newp_Hello.cpp
+	$(srcdir)/Rythmos_Version.cpp
 
-UTIL_H = \
-	$(srcdir)/Rythmos_Version.h
+UTIL_H =
 
 UTIL = 
 
@@ -87,29 +85,6 @@ MPI_H =
 MPI =
 
 endif
-#np# This section should come out, or be modified to reflect options in the 
-#np# package being autotool'ed
-EXTRA_NEWP_SWAHILI_H = \
-	$(srcdir)/Newp_Jambo.h 
-
-EXTRA_NEWP_SWAHILI = \
-	$(srcdir)/Newp_Jambo.cpp
-
-if HAVE_NEWP_SWAHILI
-
-NEWP_SWAHILI_H = \
-	$(EXTRA_NEWP_SWAHILI_H)
-NEWP_SWAHILI = \
-	$(EXTRA_NEWP_SWAHILI)
-
-else
-
-NEWP_SWAHILI_H =
-NEWP_SWAHILI =
-
-endif
-
-
 
 USERBASE_H = 
 
@@ -153,8 +128,7 @@ RYTHMOS_H = \
 	$(USERBASE_H) \
 	$(DIST_H) \
 	$(COMP_H) \
-	$(MPI_H) \
-	$(NEWP_SWAHILI_H)
+	$(MPI_H)
 
 #np# replace new_package with the name of the package being autotool'ed here
 librythmos_a_SOURCES = \
@@ -164,15 +138,12 @@ librythmos_a_SOURCES = \
 	$(SERIAL) \
 	$(DIST) \
 	$(COMP) \
-	$(MPI) \
-	$(NEWP_SWAHILI)
+	$(MPI)
 
 #np# replace new_package with the name of the package being autotool'ed here
 EXTRA_librythmos_a_SOURCES = \
 	$(EXTRA_MPI) \
-	$(EXTRA_MPI_H) \
-	$(EXTRA_NEWP_SWAHILI) \
-	$(EXTRA_NEWP_SWAHILI_H)
+	$(EXTRA_MPI_H)
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
