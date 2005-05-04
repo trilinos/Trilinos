@@ -194,8 +194,9 @@ Thyra::get_Epetra_Vector(
 	)
 {
 #ifdef _DEBUG
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
-	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(,mv)", *epetra_vs, *v->space() );
+  Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
 #endif
   //
   // First, try to grab the Epetra_Vector straight out of the
@@ -212,7 +213,7 @@ Thyra::get_Epetra_Vector(
 	// vector spaces are both derived from MPIVectorSpaceBase and have
 	// compatible maps.
 	// 
-  const VectorSpaceBase<double> &vs = *v->range();
+  const VectorSpaceBase<double>  &vs = *v->range();
   const MPIVectorSpaceBase<double> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
@@ -249,7 +250,7 @@ Thyra::get_Epetra_Vector(
 	// in emvv will automatically commit the changes to the elements in
 	// the input v MultiVectorBase object (reguardless of its
 	// implementation).  This is truly an elegant result!
-	Teuchos::set_extra_data( emvv, "emvv", &epetra_v );
+	Teuchos::set_extra_data( emvv, "emvv", &epetra_v, true, Teuchos::PRE_DESTROY );
   // Also set the v itself as extra data just to be safe
 	Teuchos::set_extra_data( v, "v", &epetra_v );
   // We are done!
@@ -263,8 +264,9 @@ Thyra::get_Epetra_Vector(
 	)
 {
 #ifdef _DEBUG
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
-	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(,v)", *epetra_vs, *v->space() );
+  Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
 #endif
   //
   // First, try to grab the Epetra_Vector straight out of the
@@ -306,7 +308,7 @@ Thyra::get_Epetra_Vector(
 	// only a freeSubVector(...) and not a commit will be called.
 	// This is the whole reason there is a seperate implementation for
 	// the const and non-const cases.
-	Teuchos::set_extra_data( evv, "evv", &epetra_v );
+	Teuchos::set_extra_data( evv, "evv", &epetra_v, true, Teuchos::PRE_DESTROY );
   // Also set the v itself as extra data just to be safe
 	Teuchos::set_extra_data( v, "v", &epetra_v );
   // We are done!
@@ -320,8 +322,9 @@ Thyra::get_Epetra_MultiVector(
 	)
 {
 #ifdef _DEBUG
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
-	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(,mv)", *epetra_vs, *mv->range() );
+  Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
 #endif
   //
   // First, try to grab the Epetra_MultiVector straight out of the
@@ -377,7 +380,7 @@ Thyra::get_Epetra_MultiVector(
 	// in emmvv will automatically commit the changes to the elements in
 	// the input mv MultiVectorBase object (reguardless of its
 	// implementation).  This is truly an elegant result!
-	Teuchos::set_extra_data( emmvv, "emmvv", &epetra_mv );
+	Teuchos::set_extra_data( emmvv, "emmvv", &epetra_mv, true, Teuchos::PRE_DESTROY );
   // Also set the mv itself as extra data just to be safe
 	Teuchos::set_extra_data( mv, "mv", &epetra_mv );
   // We are done!
@@ -391,8 +394,9 @@ Thyra::get_Epetra_MultiVector(
 	)
 {
 #ifdef _DEBUG
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
-	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(,mv)", *epetra_vs, *mv->range() );
+  Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
 #endif
   //
   // First, try to grab the Epetra_MultiVector straight out of the
@@ -436,7 +440,7 @@ Thyra::get_Epetra_MultiVector(
 	// only a freeSubMultiVector(...) and not a commit will be called.
 	// This is the whole reason there is a seperate implementation for
 	// the const and non-const cases.
-	Teuchos::set_extra_data( emvv, "emvv", &epetra_mv );
+	Teuchos::set_extra_data( emvv, "emvv", &epetra_mv, true, Teuchos::PRE_DESTROY );
   // Also set the mv itself as extra data just to be safe
 	Teuchos::set_extra_data( mv, "mv", &epetra_mv );
   // We are done!

@@ -703,20 +703,15 @@ template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefC
  * overwrite data by accident.
  *
  * When the last <tt>RefcountPtr</tt> object is removed and the
- * reference-count node is deleted, then objects are deleted in the
- * following order: (1) All of the extra data that where added with
- * <tt>destroy_when==PRE_DESTROY</tt> are first, (2) then the
- * underlying reference-counted object is deleted, and (3) the rest of
- * the extra data that was added with
- * <tt>destroy_when==PRE_DESTROY</tt> is then deleted.  The extra data
- * objects will then be destroyed in a first-in basis.  In other
- * words, within each set of pre- and post-destruction objects, the
- * first extra data object added will be deleted first, the second
- * extra data object will be deleted second and so on.  This must be
- * considered when multiple pieces of extra data are being added if
- * the order of distruction is significant.  In general, clients should
- * be careful not to add extra data that has deletion dependancies (instead
- * consider using nested RefCountPtr objects as extra data).
+ * reference-count node is deleted, then objects are deleted in the following
+ * order: (1) All of the extra data that where added with
+ * <tt>destroy_when==PRE_DESTROY</tt> are first, (2) then the underlying
+ * reference-counted object is deleted, and (3) the rest of the extra data
+ * that was added with <tt>destroy_when==PRE_DESTROY</tt> is then deleted.
+ * The order in which the objects are destroyed is not guaranteed.  Therefore,
+ * clients should be careful not to add extra data that has deletion
+ * dependancies (instead consider using nested RefCountPtr objects as extra
+ * data which will guarantee the order of deletion).
  *
  * Preconditions:<ul>
  * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
