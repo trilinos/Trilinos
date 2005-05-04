@@ -31,6 +31,37 @@ my $v0 = "0";           # quiet
 my $v1 = "1";           # normal verbosity
 my $v2 = "2";           # level 2 verbosity
 my $v3 = "4";           # level 3 verbosity
+
+# Package Failure Exit Status Codes
+my %failureCode = ();
+$failureCode{'amesos'} = 10;
+$failureCode{'anasazi'} = 11;
+$failureCode{'aztecoo'} = 12;
+$failureCode{'belos'} = 13;
+$failureCode{'claps'} = 14;
+$failureCode{'cmmlib'} = 15;
+$failureCode{'didasko'} = 16;
+$failureCode{'epetra'} = 17;
+$failureCode{'epetraext'} = 18;
+$failureCode{'ifpack'} = 19;
+$failureCode{'jpetra'} = 20;
+$failureCode{'kokkos'} = 21;
+$failureCode{'komplex'} = 22;
+$failureCode{'meros'} = 23;
+$failureCode{'ml'} = 24;
+$failureCode{'new_package'} = 25;
+$failureCode{'nox'} = 26;
+$failureCode{'pliris'} = 27;
+$failureCode{'pytrilinos'} = 28;
+$failureCode{'rythmos'} = 29;
+$failureCode{'teuchos'} = 30;
+$failureCode{'thyra'} = 31;
+$failureCode{'tpetra'} = 32;
+$failureCode{'triutils'} = 33;
+$failureCode{'tsf'} = 34;
+$failureCode{'tsfcore'} = 35;
+$failureCode{'tsfcoreutils'} = 36;
+$failureCode{'tsfextended'} = 37;
         
 ################################################################################
 # Execution ####################################################################
@@ -38,8 +69,10 @@ my $v3 = "4";           # level 3 verbosity
 
 getArgs();
 init();
-run();
+
+my $exitStatus = run();
 cleanUp();
+exit $exitStatus;
 
 ################################################################################
 # Subroutines ##################################################################
@@ -321,6 +354,12 @@ cleanUp();
         print RESULTS $resultsString;
         
         close RESULTS;
+        
+        if ($makeExitStatus) {
+            return $failureCode{"$brokenPackage"};
+        } else {
+            return 0;
+        }
         
     } # run()
     

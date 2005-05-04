@@ -17,6 +17,7 @@ use strict;
 my $trilinosdir;        # Trilinos directory        (required argument) 
 my $builddir;           # build directory           (required argument) 
 my $invokeConfigure;    # complete invoke-configure (required argument)
+my $makecmd;            # make command              (default: make)
 my $recover;            # recover mode?
 
 my $outputdir;          # output directory          (default: .)
@@ -41,9 +42,10 @@ my $v3 = "4";           # level 3 verbosity
 
 getArgs();
 init();
-parseDependencies();
-run();
+
+my $exitStatus = run();
 cleanUp();
+exit $exitStatus;
 
 ################################################################################
 # Subroutines ##################################################################
@@ -68,6 +70,7 @@ cleanUp();
         GetOptions( "trilinosdir=s" => \$trilinosdir,
                     "builddir=s" => \$builddir,
                     "invoke-configure=s" => \$invokeConfigure,
+                    "makecmd=s" => \$makecmd,
                     "recover" => \$recover,              
                     "outputdir=s" => \$outputdir,
                     "verbosity=i" => \$verbosity,
@@ -95,13 +98,7 @@ cleanUp();
         # Check for existance of builddir argument and actual directory.
         if (!$builddir) {
             die "builddir value required, see --help for more information\n"; 
-        } else {
-            if ($builddir !~ m/^\//) {
-                $builddir = "$trilinosdir/$builddir";
-            }
-            system("rm -rf $builddir");
-            mkdir($builddir) or die "cannot create builddir: $builddir\n";
-        }
+        } 
         
         # Check for existance of invoke-configure argument and actual file
         if (!$invokeConfigure) {
@@ -113,6 +110,11 @@ cleanUp();
             if (!stat($invokeConfigure)) {
                 die "cannot stat invoke-configure: $invokeConfigure\n";
             } 
+        }
+        
+        # Prevent problems with uninitialized value
+        if (!$makecmd) {
+            $makecmd = "";
         }
         
         # Prevent problems with uninitialized value
@@ -217,81 +219,70 @@ cleanUp();
 
     sub run {
         
-    } # run()
-    
-    ############################################################################
-    # parseDependencies()
-    #
-    # Parses testharness/dependencies and fills global hash of arrays of the 
-    # form ({PACKAGE_A, [optionA1, optionA2, ...]}, {PACKAGE_B, [optionB1, ...]})
-    #
-    #   - args:     NONE
-    #
-    #   - returns:  NONE
-    #
-
-    sub parseDependencies {
-        my $filename = "$trilinosdir/commonTools/test/utilities/dependencies";
+        my $argVerbosity;
+        if      ($verbosity == $v0) { $argVerbosity = 0; }
+        elsif   ($verbosity == $v1) { $argVerbosity = 1; }
+        elsif   ($verbosity == $v2) { $argVerbosity = 2; }
+        elsif   ($verbosity == $v3) { $argVerbosity = 3; }
         
-        open (IN_FILE, "<$filename")
-            or die "can't open $filename";
+        my $argLogVerbosity;
+        if      ($logverbosity == $v0) { $argLogVerbosity = 0; }
+        elsif   ($logverbosity == $v1) { $argLogVerbosity = 1; }
+        elsif   ($logverbosity == $v2) { $argLogVerbosity = 2; }
+        elsif   ($logverbosity == $v3) { $argLogVerbosity = 3; }
+        
+        my $cmd = "";
+        my $status = 0;
+        my $makeAttempted = 0;
+        my $makePassed = 0;
+        my $makeFailureCode = 0;
+        
+        while (!$makePassed) {
             
-        my $line;
-        my $name;
-        my $value;
-        my $continue;
-        while ($line = <IN_FILE>) {
-            $line =~ s/^\s*//;  # trim leading spaces
-            $line =~ s/\s*$//;  # trim trailing spaces
-            
-            if (!$line || $line =~ m/^[# ]/) {
-                # skip comments and blank lines
-            } else {
-                if ($continue) {    # previous line ended with a (\) continuation char
-                    $line =~ m/^((\S*?\s*?|".*?"\s*?)*)\s*?(\\?)$/;
-                    $value = $1;
-                    $continue = $3;                    
-                    # print "\$value: $value\n\n"; # debugging   
-                                     
-                } else {            # expecting a $name [+]= $value [$value ...] pair
-                    $line =~ m/^(\S+)\s*?\+?=\s*((\S*?\s*?|".*?"\s*?)*)\s*?(\\?)$/;
-                    $name = $1;
-                    $value = $2;
-                    $continue = $4;                    
-                    # print "\$name: $name, \$value: $value\n\n"; # debugging
+            # Run runconfigure
+            $cmd  = "perl runconfigure ";
+            $cmd .= "--trilinosdir=$trilinosdir ";
+            $cmd .= "--builddir=$builddir ";
+            $cmd .= "--invoke-configure=$invokeConfigure ";
+            if ($recover) {
+                $cmd .= "--recover ";
+                if ($makeAttempted) {
+                    $cmd .= "--make-failure=$makeFailureCode ";                
                 }
-                
-                if (!exists $dependencies{$name}) {  # if there isn't an option with this $name...
-                    $dependencies{$name} = ();       # add a new one
-                }
-                
-                while ($value) {
-                    $value =~ s/^\s*//;  # trim leading spaces
-                    $value =~ s/\s*$//;  # trim trailing spaces
-                    # print "\$value: $value\n"; # debugging
-                    
-                    $value =~ m/^(".*?"|\S+)/;          # grab leftmost value
-                    my $v = $1;                         # store temporarily in $v
-                    $value =~ s/^$v//;                  # remove $v from remaining list 
-                    $v =~ s/"//g;                       # remove any quotes from $v
-                    push (@{$dependencies{$name}}, $v); # add $v to %options{$name}     
-                }
-            } # else (non-comment/blank)
-        } # while ($line)
-        
-        close IN_FILE;
-        
-        # print the dependencies hash of arrays for debugging
-        printMessage("\n\%dependencies:\n\n", $v3);
-        for my $name (keys %dependencies) {
-            my $lastElementIndex = $#{$dependencies{$name}};
-            printMessage("  $name (".($lastElementIndex+1)."): \n", $v3);
-            for my $i (0 .. $lastElementIndex) {
-                printMessage("    $i = $dependencies{$name}[$i]\n", $v3);
             }
-        }            
+            $cmd .= "--outputdir=$resultsDir ";
+            $cmd .= "--verbosity=$argVerbosity ";
+            $cmd .= "--logverbosity=$argLogVerbosity ";
+            $status = system($cmd);
+            if ($status != 0 && !$recover) { 
+                return 1;
+            }
+                            
+            # Run runmake
+            $cmd  = "perl runmake ";
+            $cmd .= "--trilinosdir=$trilinosdir ";
+            $cmd .= "--builddir=$builddir ";
+            $cmd .= ($makecmd?"--makecmd=$makecmd ":"");
+            $cmd .= "--outputdir=$resultsDir ";
+            $cmd .= "--verbosity=$argVerbosity ";
+            $cmd .= "--logverbosity=$argLogVerbosity ";
+            $status = system($cmd);
+            $makeAttempted = 1;
+            if ($status == 0) { 
+                $makePassed = 1;
+            } else {
+                if ($recover) {
+                    $makeFailureCode = $status;
+                } else {
+                    return 1; 
+                }
+            }
+            
+        } # while (!$makePassed)
         
-    } # parseDependencies()
+        return 0;
+        
+    } # run()
     
     ############################################################################
     # cleanUp()
@@ -365,6 +356,11 @@ cleanUp();
         print "\n";
         print "  --invoke-configure=FILE    Relative paths to a complete invoke-configure file.\n";
         print "                             REQUIRED.\n";
+        print "\n";
+        print "  --makecmd=COMMAND          Specify the make command for this system.  This can\n";
+        print "                             be used to specify make flags, \"make -j4\", for\n";
+        print "                             example\n";
+        print "                             Default: \"make\"\n";
         print "\n";
         print "  --recover                  If this flag is present, runbuild will attempt\n";
         print "                             to remove a broken package and its dependents and\n";

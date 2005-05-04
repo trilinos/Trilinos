@@ -7,6 +7,8 @@
 # Mike Phenow, Jim Willenbring
 #
 # - Should dependencies be moved into packages like test definitions?
+# - Do we need a dependencies file (or the same one) to specify which package
+#   directories to blow away?
 #
 ################################################################################
 
@@ -20,6 +22,7 @@ my $trilinosdir;        # Trilinos directory        (required argument)
 my $builddir;           # build directory           (required argument) 
 my $invokeConfigure;    # complete invoke-configure (required argument)
 my $recover;            # recover mode?
+my $makeFailure;        # return code from runmake
 
 my $outputdir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
@@ -36,6 +39,38 @@ my $v0 = "0";           # quiet
 my $v1 = "1";           # normal verbosity
 my $v2 = "2";           # level 2 verbosity
 my $v3 = "4";           # level 3 verbosity
+
+# Package Failure Exit Status Codes
+my %failureCode = ();
+$failureCode{'amesos'} = 10;
+$failureCode{'anasazi'} = 11;
+$failureCode{'aztecoo'} = 12;
+$failureCode{'belos'} = 13;
+$failureCode{'claps'} = 14;
+$failureCode{'cmmlib'} = 15;
+$failureCode{'didasko'} = 16;
+$failureCode{'epetra'} = 17;
+$failureCode{'epetraext'} = 18;
+$failureCode{'ifpack'} = 19;
+$failureCode{'jpetra'} = 20;
+$failureCode{'kokkos'} = 21;
+$failureCode{'komplex'} = 22;
+$failureCode{'meros'} = 23;
+$failureCode{'ml'} = 24;
+$failureCode{'new_package'} = 25;
+$failureCode{'nox'} = 26;
+$failureCode{'pliris'} = 27;
+$failureCode{'pytrilinos'} = 28;
+$failureCode{'rythmos'} = 29;
+$failureCode{'teuchos'} = 30;
+$failureCode{'thyra'} = 31;
+$failureCode{'tpetra'} = 32;
+$failureCode{'triutils'} = 33;
+$failureCode{'tsf'} = 34;
+$failureCode{'tsfcore'} = 35;
+$failureCode{'tsfcoreutils'} = 36;
+$failureCode{'tsfextended'} = 37;
+my %failedPackage = reverse(%failureCode);
         
 ################################################################################
 # Execution ####################################################################
@@ -44,8 +79,10 @@ my $v3 = "4";           # level 3 verbosity
 getArgs();
 init();
 parseDependencies();
-run();
+
+my $exitStatus = run();
 cleanUp();
+exit $exitStatus;
 
 ################################################################################
 # Subroutines ##################################################################
@@ -70,7 +107,8 @@ cleanUp();
         GetOptions( "trilinosdir=s" => \$trilinosdir,
                     "builddir=s" => \$builddir,
                     "invoke-configure=s" => \$invokeConfigure,
-                    "recover" => \$recover,              
+                    "recover" => \$recover,
+                    "make-failure=s" => \$makeFailure,
                     "outputdir=s" => \$outputdir,
                     "verbosity=i" => \$verbosity,
                     "logverbosity=i" => \$logverbosity,
@@ -94,6 +132,11 @@ cleanUp();
             }
         }
         
+        # Fix makeFailure value
+        if ($makeFailure) {
+            $makeFailure = $makeFailure >> 8;
+        }
+        
         # Check for existance of builddir argument and actual directory.
         if (!$builddir) {
             die "builddir value required, see --help for more information\n"; 
@@ -101,8 +144,10 @@ cleanUp();
             if ($builddir !~ m/^\//) {
                 $builddir = "$trilinosdir/$builddir";
             }
-            system("rm -rf $builddir");
-            mkdir($builddir) or die "cannot create builddir: $builddir\n";
+            if (!$makeFailure) {
+                system ("rm -rf $builddir");
+                mkdir($builddir) or die "cannot create builddir: $builddir\n";
+            }
         }
         
         # Check for existance of invoke-configure argument and actual file
@@ -216,8 +261,14 @@ cleanUp();
     sub run {
         
         # Copy invoke-configure
-        system("cp $invokeConfigure $builddir/invoke-configure") == 0
-            or die "cannot copy invoke-configure, died";
+        if (!$makeFailure) {
+            system("cp $invokeConfigure $builddir/invoke-configure") == 0
+                or die "cannot copy invoke-configure, died";
+        } else {
+            print "\n\$failedPackage{$makeFailure}: ".$failedPackage{$makeFailure}."\n\n";
+            removeBrokenPackage($failedPackage{$makeFailure});
+            cleanInvokeConfigure($failedPackage{$makeFailure});
+        }
         
         chdir $builddir or die "cannot chdir to $builddir, died";
             
@@ -251,7 +302,18 @@ cleanUp();
             # Detect broken package.
             my $brokenPackage = "NONE";
             if ($configureExitStatus) {
+                    
+                my $icBrokenNumber = "00";
+                while (stat "$builddir/invoke-configure-broken-$icBrokenNumber") {
+                    $icBrokenNumber++;
+                }
+                system("cp $builddir/invoke-configure $builddir/invoke-configure-broken-$icBrokenNumber") == 0
+                    or die "can't copy invoke-configure, died";
+            
                 $brokenPackage = detectBrokenPackage($configureOutput);
+                removeBrokenPackage($brokenPackage);
+                cleanInvokeConfigure($brokenPackage);
+                
                 $message = sprintf("%-25s", " broken: $brokenPackage ");
                 printMessage($message, $v1+$v2+$v3);
                 $message = "! FAILED ";
@@ -340,9 +402,11 @@ cleanUp();
             
             close RESULTS;
                 
-            if (!$recover && $configureExitStatus) { return; }
+            if (!$recover && $configureExitStatus) { return $failureCode{"$brokenPackage"}; }
             
         } # while(!$configurePassed)
+        
+        return 0;
         
     } # run()
     
@@ -374,8 +438,23 @@ cleanUp();
             return "UNKNOWN";
         }
         
-        system("cp $builddir/invoke-configure $builddir/invoke-configure-broken") == 0
-            or die "can't copy invoke-configure, died";
+        # return broken package name
+        return $brokenPackage;
+        
+    } # detectBrokenPackage
+    
+    ############################################################################
+    # cleanInvokeConfigure()
+    #
+    # Remove the given package and its dependents from the invoke-configure.
+    #
+    #   - args:     $brokenPackage    (name of package to clean from invoke-configure)
+    #
+    #   - returns:  NONE
+    #
+
+    sub cleanInvokeConfigure {
+        my $brokenPackage = $_[0];
         
         # open invoke-configure for reading
         open (INVOKE_CONFIGURE, "<$builddir/invoke-configure")
@@ -432,11 +511,59 @@ cleanUp();
         # write new invoke configure
         print INVOKE_CONFIGURE $newInvokeConfigure;
         close INVOKE_CONFIGURE; 
-        
-        # return broken package name
-        return $brokenPackage;
            
-    } # detectBrokenPackage()
+    } # cleanInvokeConfigure()
+    
+    ############################################################################
+    # removeBrokenPackage()
+    #
+    # Blow away the given broken package.
+    #
+    #   - args:     $brokenPackage      (package to prune)
+    #
+    #   - returns:  NONE
+    #
+
+    sub removeBrokenPackage {
+        my $brokenPackage = $_[0];
+        
+        my %dirName = ();
+        $dirName{'amesos'} = "amesos";
+        $dirName{'anasazi'} = "anasazi";
+        $dirName{'aztecoo'} = "aztecoo";
+        $dirName{'belos'} = "belos";
+        $dirName{'claps'} = "claps";
+        $dirName{'cmmlib'} = "cmmlib";
+        $dirName{'didasko'} = "didasko";
+        $dirName{'epetra'} = "epetra";
+        $dirName{'epetraext'} = "epetraext";
+        $dirName{'ifpack'} = "ifpack";
+        $dirName{'jpetra'} = "jpetra";
+        $dirName{'kokkos'} = "kokkos";
+        $dirName{'komplex'} = "komplex";
+        $dirName{'meros'} = "meros";
+        $dirName{'ml'} = "ml";
+        $dirName{'new_package'} = "new_package";
+        $dirName{'nox'} = "nox";
+        $dirName{'pliris'} = "pliris";
+        $dirName{'pytrilinos'} = "PyTrilinos";
+        $dirName{'rythmos'} = "rythmos";
+        $dirName{'teuchos'} = "teuchos";
+        $dirName{'thyra'} = "thyra";
+        $dirName{'tpetra'} = "tpetra";
+        $dirName{'triutils'} = "triutils";
+        $dirName{'tsf'} = "TSF";
+        $dirName{'tsfcore'} = "TSFCore";
+        $dirName{'tsfcoreutils'} = "TSFCoreUtils";
+        $dirName{'tsfextended'} = "TSFExtended";
+        
+        my $packageDir = "";
+        
+        $packageDir  = "$builddir/packages/";
+        $packageDir .= $dirName{"$brokenPackage"};        
+        system("rm -rf $packageDir");
+           
+    } # removeBrokenPackage()
     
     ############################################################################
     # parseDependencies()
@@ -577,9 +704,12 @@ cleanUp();
         print "                             REQUIRED.\n";
         print "\n";
         print "  --builddir=DIR             Specify the name of the build directory where you\n";
-        print "                             would like to configure Trilnos.  If a relative\n";
+        print "                             would like to configure Trilinos.  If a relative\n";
         print "                             path is given, it is assumed to be in the given\n";
-        print "                             Trilinos directory.\n";
+        print "                             Trilinos directory.  IMPORTANT: regardless of\n";
+        print "                             whether this is a relative or absolute path,\n";
+        print "                             runconfigure will do an 'rm -rf' on this direcotry\n";
+        print "                             to blow it away before creating it and proceeding.\n";
         print "                             REQUIRED.\n";
         print "\n";
         print "  --invoke-configure=FILE    Relative paths to a complete invoke-configure file.\n";
