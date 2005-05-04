@@ -133,7 +133,9 @@ int main(int argc, char *argv[])
         cout << "does not equal to the total number of processes (" << Comm.NumProc() << endl;
         cout << "Please re-run with --help option for details." << endl;
       }
+#ifdef HAVE_MPI	
       MPI_Finalize();
+#endif
       exit(EXIT_SUCCESS);
     }
 
