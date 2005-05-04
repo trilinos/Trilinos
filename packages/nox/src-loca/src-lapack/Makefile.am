@@ -42,11 +42,13 @@ LOCA_LAPACK_H = \
 	$(srcdir)/LOCA_LAPACK_Group.H \
 	$(srcdir)/LOCA_LAPACK_Interface.H \
 	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.H \
+	$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.H \
 	$(srcdir)/LOCA_LAPACK_Factory.H
 
 LOCA_LAPACK = \
 	$(srcdir)/LOCA_LAPACK_Group.C \
 	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C \
+	$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C \
 	$(srcdir)/LOCA_LAPACK_Factory.C
 
 # ------------------------------------------------------------------------
