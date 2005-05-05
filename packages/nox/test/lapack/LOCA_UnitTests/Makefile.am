@@ -39,9 +39,16 @@ ANASAZIJACOBIANINVERSE =
 
 endif
 
-noinst_PROGRAMS = $(ANASAZIJACOBIANINVERSE)
+BORDEREDSOLVENC = borderedSolveNonContiguous_exe
+BORDEREDSOLVEC = borderedSolveContiguous_exe
 
-anasaziJacobianInverse_exe_SOURCES = $(srcdir)/AnasaziJacobianInverse.C 
+noinst_PROGRAMS = \
+	$(ANASAZIJACOBIANINVERSE) \
+	$(BORDEREDSOLVENC) \
+	$(BORDEREDSOLVEC)
+
+anasaziJacobianInverse_exe_SOURCES = \
+	$(srcdir)/AnasaziJacobianInverse.C 
 
 anasaziJacobianInverse_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
@@ -70,6 +77,30 @@ anasaziJacobianInverse_exe_LDADD = \
 	-L$(top_builddir)/test/utils \
         -lnoxtestutils -lnoxlapack -lnox \
         $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+
+borderedSolveNonContiguous_exe_SOURCES = \
+	$(srcdir)/BorderedSolveNonContiguous.C
+
+borderedSolveNonContiguous_exe_DEPENDENCIES = \
+	$(anasaziJacobianInverse_exe_DEPENDENCIES)
+
+borderedSolveNonContiguous_exe_CXXFLAGS = \
+	$(anasaziJacobianInverse_exe_CXXFLAGS)
+
+borderedSolveNonContiguous_exe_LDADD = \
+	$(anasaziJacobianInverse_exe_LDADD)
+
+borderedSolveContiguous_exe_SOURCES = \
+	$(srcdir)/BorderedSolveContiguous.C
+
+borderedSolveContiguous_exe_DEPENDENCIES = \
+	$(anasaziJacobianInverse_exe_DEPENDENCIES)
+
+borderedSolveContiguous_exe_CXXFLAGS = \
+	$(anasaziJacobianInverse_exe_CXXFLAGS)
+
+borderedSolveContiguous_exe_LDADD = \
+	$(anasaziJacobianInverse_exe_LDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
