@@ -82,27 +82,38 @@ private:
   void createFDobjects( bool useColoring = false );
 
   // Creates a graph with indices shifted as needed for coloring
-  Epetra_CrsGraph & shiftedIndexGraph(Epetra_CrsGraph &);
+  Epetra_CrsGraph & createBlockGraphFromComposite(Epetra_CrsGraph &);
 
 private:
 
-  int problemEqId;      // Number of registered Problems
-  int problemVarId;     // Number of registered Problems
+  int problemEqId;      // Problem Id of off-diagonal block equations
+  int problemVarId;     // Problem Id of off-diagonal block variables
 
-  Problem_Manager &myManager;  //Reference to the overall problem manager
+  Problem_Manager & myManager;  //Reference to the composite problem manager
 
-  Problem_Interface *offBlockInterface; // A problem interface to 
+  Problem_Interface * offBlockInterface; // A problem interface to 
   // this off-block problem manager.  
 
   // These allow off-diagonal block contributions representing
   // inter-problem coupling computed via FDC
-  EpetraExt::CrsGraph_MapColoring* mapColoring;
-  Epetra_MapColoring* colorMap;
-  EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex;
-  vector<Epetra_IntVector>* columnSet;
-  NOX::EpetraNew::FiniteDifference * matrixOperator;
-  NOX::EpetraNew::LinearSystemAztecOO* linearSystem;
-  NOX::EpetraNew::Group* group;    
+  Epetra_Map                           * blockRowMap;
+  Epetra_Map                           * blockColMap;
+  Epetra_Vector                        * rowMapVec;
+  EpetraExt::CrsGraph_MapColoring      * mapColoring;
+  Epetra_MapColoring                   * colorMap;
+  EpetraExt::CrsGraph_MapColoringIndex * colorMapIndex;
+  vector<Epetra_IntVector>             * columnSet;
+  NOX::EpetraNew::FiniteDifference     * matrixOperator;
+  NOX::EpetraNew::LinearSystemAztecOO  * linearSystem;
+  NOX::EpetraNew::Group                * group;    
+  
+  // These are needed to shift indices for coloring and 
+  // block-based condition number estimates
+  map< int, int > rowBlockToComposite;
+  map< int, int > rowCompositeToBlock;
+  map< int, int > colBlockToComposite;
+  map< int, int > colCompositeToBlock;
+
 };
 
 #endif

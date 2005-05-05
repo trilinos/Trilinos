@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   combo.addStatusTest(maxiters);
 
   // Make this explicit
-  bool doOffBlocks = false;
+  bool doOffBlocks = true;
 
   // Create the Problem Manager
   Problem_Manager problemManager(Comm, doOffBlocks);
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
     Equation_B ProblemB(Comm, NumGlobalNodes, "Species");
   //  Equation_B ProblemB2(Comm, 11);
   //  Equation_B ProblemB3(Comm, 501);
-    Burgers burgers(Comm, 5*NumGlobalNodes, "Burgers");
+    Burgers burgers(Comm, 1*NumGlobalNodes, "Burgers");
   
     // An interesting note: the order of solving each problem is based on the
     // order of adding.  For this decoupled problem, problem B is linear

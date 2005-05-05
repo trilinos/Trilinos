@@ -584,6 +584,9 @@ void Problem_Manager::computeAllJacobian()
         
         offBlocksVec[i]->getGroup().computeJacobian();
   
+        //cout << "For block : " << offBlocksVec[i]->getName() << endl;
+        //offBlocksVec[i]->getMatrix().Print(cout);
+        
         if (MyPID == 0)
           printf("\n\tTime to fill Jacobian %d (%d) --> %e sec. \n\n",
                       probId, i, fillTime.ElapsedTime());
@@ -1232,7 +1235,6 @@ void Problem_Manager::generateGraph()
 	*(*(ProblemToCompositeIndices.find(probId))).second;
   
       // Create containers for the off-block objects
-//      vector<Epetra_CrsGraph*> offGraphs;
       vector<OffBlock_Manager*> OffBlock_ManagersVec;
 
       int problemMaxNodes = problemGraph.Map().NumGlobalElements();
@@ -1249,9 +1251,6 @@ void Problem_Manager::generateGraph()
         Epetra_CrsGraph* offGraphPtr = 
           new Epetra_CrsGraph(Copy, *compositeMap, 0);
 	Epetra_CrsGraph &offGraph = *offGraphPtr;
-
-//        offGraphs.push_back(new Epetra_CrsGraph(Copy, *compositeMap, 0));
-//	Epetra_CrsGraph &offGraph = *offGraphs.back();
 
         // Get the needed objects for the depend problem
         GenericEpetraProblem & dependProblem = 
@@ -1312,12 +1311,12 @@ void Problem_Manager::generateGraph()
 #ifdef DEBUG_PROBLEM_MANAGER
 	offGraph.Print(cout);
 #endif
+        // A new graph is created within the OffBlock_Manager; so we delete our temporary 
         OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
                                                         probId, dependId) );
+        delete offGraphPtr;
       }
-//      Off_Graphs.insert( pair<int, vector<Epetra_CrsGraph*> >
-//                         (probId, offGraphs) );
-//      createFDCobjects(probId);
+
       OffBlock_Managers[probId] = OffBlock_ManagersVec;
     }
 #endif

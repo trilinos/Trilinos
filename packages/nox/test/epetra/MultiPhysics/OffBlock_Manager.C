@@ -64,12 +64,23 @@
 // Header for Timing info
 #include "Epetra_Time.h"
 
+// Simple macro for turning on debug code
+#undef DEBUG_BLOCKGRAPH
+#ifdef ENABLE_DEBUG_BLOCKGRAPH
+  #define DEBUG_BLOCKGRAPH(a) a
+#else
+  #define DEBUG_BLOCKGRAPH(a)
+#endif 
+
 OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_, 
 		Epetra_CrsGraph& graph_, int probEqId, int probVarId) :
   GenericEpetraProblem(graph_.Comm(), 0),
-  myManager(problemMan_),
   problemEqId(probEqId),
   problemVarId(probVarId),
+  myManager(problemMan_),
+  blockRowMap(0),
+  blockColMap(0),
+  rowMapVec(0),
   mapColoring(0),
   colorMap(0),
   colorMapIndex(0),
@@ -79,8 +90,10 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   group(0)
 {
  
-  // Set our graph (held in base class)
+  // Set our graph (held in base class) after converting from incoming
+  // global indices to shifted block indices
   AA = &graph_;
+  //AA = &( createBlockGraphFromComposite(graph_) );
 
   // Create a problem interface to the manager
   offBlockInterface = new Problem_Interface(*this);
@@ -90,14 +103,24 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
 
   // Reset number of dofs (overwrites base constructor assignment)
   NumMyNodes = 0;
+
+  // Assign a meaningful name
+  GenericEpetraProblem &problemEq = myManager.getProblem(problemEqId),
+                       &problemVar = myManager.getProblem(problemVarId);
+  
+  string myName = "OffBlock " + problemEq.getName() + " wrt " + problemVar.getName();
+  setName(myName);
+
 }
 
 OffBlock_Manager::~OffBlock_Manager()
 {
-  delete AA; AA = 0;
-  delete A; A = 0;
+  delete AA            ; AA             = 0;
+  delete A             ; A              = 0;
 
-  delete mapColoring; mapColoring = 0;
+  delete blockRowMap   ; blockRowMap    = 0;
+  delete blockColMap   ; blockColMap    = 0;
+  delete rowMapVec     ; rowMapVec      = 0;
   delete mapColoring   ; mapColoring    = 0;
   delete colorMap      ; colorMap       = 0;
   delete colorMapIndex ; colorMapIndex  = 0;
@@ -106,47 +129,6 @@ OffBlock_Manager::~OffBlock_Manager()
   delete linearSystem  ; linearSystem   = 0;
   delete group         ; group          = 0;
 
-  // Iterate over each problem and destroy/free the necessary objects
-
-  /*
-  map<int, GenericEpetraProblem*>::iterator iter = Problems.begin();
-  map<int, GenericEpetraProblem*>::iterator last = Problems.end();
-
-  map<int, NOX::EpetraNew::Group*>::iterator GroupsIter = Groups.begin();   
-  map<int, OffBlock_Interface*>::iterator InterfacesIter = Interfaces.begin();
-  map<int, NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
-
-#ifdef HAVE_NOX_EPETRAEXT
-#ifdef USE_FD
-  map<int, EpetraExt::CrsGraph_MapColoring*>::iterator 
-	  TmpMapColoringsIter = TmpMapColorings.begin();
-  map<int, Epetra_MapColoring*>::iterator 
-	  ColorMapsIter = ColorMaps.begin();
-  map<int, EpetraExt::CrsGraph_MapColoringIndex*>::iterator 
-	  ColorMapIndexSetsIter = ColorMapIndexSets.begin();
-  map<int, vector<Epetra_IntVector>*>::iterator 
-	  ColumnsSetsIter = ColumnsSets.begin();
-  map<int, Epetra_Operator*>::iterator 
-	  MatrixOperatorsIter = MatrixOperators.begin();
-#endif
-#endif
-
-  while( iter != last)
-  {
-    delete (SolversIter++)->second;
-    delete (GroupsIter++)->second;
-#ifdef HAVE_NOX_EPETRAEXT
-#ifdef USE_FD
-    delete (MatrixOperatorsIter++)->second;
-    delete (TmpMapColoringsIter++)->second;
-    delete (ColorMapsIter++)->second;
-    delete (ColorMapIndexSetsIter++)->second;
-    //delete *ColumnsSetsIter++;
-#endif
-#endif
-    iter++; // Problems are owned by the app driver (Example.C)
-  }
-  */
 }
 
 // These methods are needed to allow inheritance from GenericEpetraProblem base
@@ -170,6 +152,7 @@ bool OffBlock_Manager::evaluate(
   // problemVarId
   Epetra_Vector &probVarSoln = problemVar.getSolution();
   myManager.copyCompositeToVector(*solnVector, problemVarId, probVarSoln);
+  //probVarSoln = *solnVector;
   problemEq.doTransfer(); // This does all transfers for this problem
   myManager.setGroupX(problemEqId);
   myManager.computeGroupF(problemEqId);
@@ -177,6 +160,7 @@ bool OffBlock_Manager::evaluate(
   const Epetra_Vector &probEqGrpF = dynamic_cast<const NOX::Epetra::Vector&>
     (myManager.getGroup(problemEqId).getF()).getEpetraVector();
   myManager.copyVectorToComposite(*rhsVector, problemEqId, probEqGrpF);
+  //*rhsVector = probEqGrpF;
 
   return true;
 }
@@ -209,14 +193,13 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
 {
   Epetra_CrsGraph &graph = *AA;
 
-  // Debugging ..... RWH
-  cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n"
-       << graph << endl;
+  DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << graph << endl;)
 
   if( !useColoring )
   {
     // Note: We use a vector corresponding to compositeSoln
     Epetra_Vector & compositeVec = myManager.getCompositeSoln();
+    //rowMapVec = new Epetra_Vector (graph.RowMap());
 
     // Now setup each FD Jacobian as its own group/linearsystem
     matrixOperator = new NOX::EpetraNew::FiniteDifference(
@@ -250,7 +233,6 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
       tmpNOXVec,
       *tmpLinSys);
   }
-
   else // use FDC
   {
 
@@ -264,11 +246,8 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     bool distance1 = false;
     int verbose = 0;
   
-    Epetra_CrsGraph & graph2 = shiftedIndexGraph(*AA);
-  
-    // Debugging ..... RWH
-    cout << "OffBlock_Manager::createFDCobjects() : incoming graph --> \n"
-         << graph << endl;
+    Epetra_CrsGraph & graph2 = createBlockGraphFromComposite(*AA);
+    DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << graph << endl;)
   
     colorTime.ResetStartTime();
   
@@ -330,12 +309,72 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
   }
 }
 
-Epetra_CrsGraph & OffBlock_Manager::shiftedIndexGraph(Epetra_CrsGraph &)
+Epetra_CrsGraph & OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
 {
-
   // here we simply go through the graph and assign contiguous indices for
   // all unique and meaningful entries
+  
+  int rowCount = 0;
+  int colCount = 0;
+  int   numCols;
+  int * indices;
+  for( int lRow = 0; lRow < globalGraph.NumMyRows(); ++lRow )
+  {
+    globalGraph.ExtractMyRowView( lRow, numCols, indices ); // indices are local
+    if( numCols > 0 )
+    {
+      rowBlockToComposite[ rowCount ] = globalGraph.GRID( lRow );
+      rowCompositeToBlock[ globalGraph.GRID( lRow ) ] = rowCount++ ;
+      DEBUG_BLOCKGRAPH( cout << "[" << lRow << "] ";)
+      for( int col = 0; col < numCols; ++col )
+      {
+        DEBUG_BLOCKGRAPH( cout << globalGraph.GCID(indices[col]) << "  ";)
+        if( indices[col] >= colCount )
+        {
+          colBlockToComposite[ colCount ] = globalGraph.GCID( indices[col]  );
+          colCompositeToBlock[ globalGraph.GCID( indices[col]  ) ] = colCount++ ;
+          
+        }
+      }
+    }
+    DEBUG_BLOCKGRAPH( cout << endl;)
+  }
+
+  // Now create the block-sized row and column maps
+  int numGlobalRows = -1;
+  int numGlobalCols = -1;
+
+  blockRowMap = new Epetra_Map ( numGlobalRows, rowBlockToComposite.size(), 0, globalGraph.Comm() );
+  blockColMap = new Epetra_Map ( numGlobalRows, colBlockToComposite.size(), 0, globalGraph.Comm() );
  
+  DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Row Map : " << *blockRowMap << endl;)
+  DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Col Map : " << *blockColMap << endl;)
+
+  Epetra_CrsGraph * blockGraph = new Epetra_CrsGraph( Copy, *blockRowMap, *blockColMap, 0, false);
+
+  // Finally, construct a block-sized graph corresponding to a shifted globalGraph
+  for( int lRow = 0; lRow < globalGraph.NumMyRows(); ++lRow )
+  {
+    globalGraph.ExtractMyRowView( lRow, numCols, indices ); // indices are local
+    if( numCols > 0 )
+    {
+      int blockLocalRow = rowCompositeToBlock[ globalGraph.GRID( lRow ) ];
+      int newIndices[numCols];
+      for( int col = 0; col < numCols; ++col )
+      {
+        newIndices[col] = colCompositeToBlock[ globalGraph.GCID( indices[col]  ) ];
+      }
+
+      blockGraph->InsertMyIndices( blockLocalRow, numCols, newIndices );
+
+    }
+    DEBUG_BLOCKGRAPH( cout << endl;)
+  }
+
+  
+  DEBUG_BLOCKGRAPH( cout << "\n----> Block-Graph : " << blockGraph << endl;)
+  
+  return *blockGraph; 
 }
 
 #endif 
