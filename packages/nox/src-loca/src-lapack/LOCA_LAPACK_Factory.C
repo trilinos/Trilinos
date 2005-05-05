@@ -55,15 +55,13 @@ LOCA::LAPACK::Factory::init(
 
 bool
 LOCA::LAPACK::Factory::createBorderedSystemStrategy(
+       const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
        Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy)
 {
-  // Get name of strategy
-  string name = solverParams->getParameter("Bordered Solver Method", "Default");
-
   // Instantiate DGGEV strategy if requested
-  if (name == "LAPACK Direct Solve") {
+  if (strategyName == "LAPACK Direct Solve") {
     strategy = 
       Teuchos::rcp(new LOCA::BorderedSystem::LAPACKDirectSolve(globalData,
 							       topParams,
@@ -76,15 +74,13 @@ LOCA::LAPACK::Factory::createBorderedSystemStrategy(
 
 bool
 LOCA::LAPACK::Factory::createEigensolverStrategy(
+         const string& strategyName,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
 {
-  // Get name of strategy
-  string name = eigenParams->getParameter("Method", "Default");
-
   // Instantiate DGGEV strategy if requested
-  if (name == "DGGEV") {
+  if (strategyName == "DGGEV") {
     strategy = 
       Teuchos::rcp(new LOCA::Eigensolver::DGGEVStrategy(globalData,
 							topParams,

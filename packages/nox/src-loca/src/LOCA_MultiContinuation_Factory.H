@@ -99,6 +99,9 @@ namespace LOCA {
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
 
+      //! Return strategy name given by \c stepperParams
+      const string& strategyName(NOX::Parameter::List& stepperParams) const;
+
     private:
 
       //! Private to prohibit copying

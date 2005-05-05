@@ -88,7 +88,10 @@ LOCA::Factory::createPredictorStrategy(
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createPredictorStrategy(topParams,
+    const string& strategyName = 
+      predictorFactory.strategyName(*predictorParams);
+    bool created = factory->createPredictorStrategy(strategyName,
+						    topParams,
 						    predictorParams,
 						    strategy);
     if (created)
@@ -114,7 +117,10 @@ LOCA::Factory::createContinuationStrategy(
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createContinuationStrategy(topParams,
+    const string& strategyName = 
+      continuationFactory.strategyName(*stepperParams);
+    bool created = factory->createContinuationStrategy(strategyName,
+						       topParams,
 						       stepperParams,
 						       grp, pred, paramIDs,
 						       strategy);
@@ -139,7 +145,10 @@ LOCA::Factory::createBorderedSystemStrategy(
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createBorderedSystemStrategy(topParams,
+    const string& strategyName = 
+      borderedFactory.strategyName(*solverParams);
+    bool created = factory->createBorderedSystemStrategy(strategyName,
+							 topParams,
 							 solverParams,
 							 strategy);
     if (created)
@@ -162,7 +171,10 @@ LOCA::Factory::createEigensolverStrategy(
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createEigensolverStrategy(topParams,
+    const string& strategyName = 
+      eigensolverFactory.strategyName(*eigenParams);
+    bool created = factory->createEigensolverStrategy(strategyName,
+						      topParams,
 						      eigenParams,
 						      strategy);
     if (created)
@@ -185,7 +197,10 @@ LOCA::Factory::createEigenvalueSortStrategy(
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    bool created = factory->createEigenvalueSortStrategy(topParams,
+    const string& strategyName = 
+      eigenvalueSortFactory.strategyName(*eigenParams);
+    bool created = factory->createEigenvalueSortStrategy(strategyName,
+							 topParams,
 							 eigenParams,
 							 strategy);
     if (created)

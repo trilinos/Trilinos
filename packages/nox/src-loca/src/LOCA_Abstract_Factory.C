@@ -34,6 +34,7 @@
 
 bool
 LOCA::Abstract::Factory::createPredictorStrategy(
+        const string& strategyName,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams,
 	Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& strategy)
@@ -43,6 +44,7 @@ LOCA::Abstract::Factory::createPredictorStrategy(
 
 bool
 LOCA::Abstract::Factory::createContinuationStrategy(
+    const string& strategyName,
     const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
     const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
     const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
@@ -55,6 +57,7 @@ LOCA::Abstract::Factory::createContinuationStrategy(
 
 bool
 LOCA::Abstract::Factory::createBorderedSystemStrategy(
+        const string& strategyName,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
 	Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy)
@@ -64,6 +67,7 @@ LOCA::Abstract::Factory::createBorderedSystemStrategy(
 
 bool
 LOCA::Abstract::Factory::createEigensolverStrategy(
+         const string& strategyName,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
@@ -73,6 +77,7 @@ LOCA::Abstract::Factory::createEigensolverStrategy(
 
 bool
 LOCA::Abstract::Factory::createEigenvalueSortStrategy(
+        const string& strategyName,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy)

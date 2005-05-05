@@ -58,7 +58,7 @@ LOCA::Eigensolver::Factory::create(
   Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
 
   // Get name of strategy
-  string name = eigenParams->getParameter("Method", "Default");
+  const string& name = strategyName(*eigenParams);
 
   if (name == "Default")
     strategy = 
@@ -92,4 +92,11 @@ LOCA::Eigensolver::Factory::create(
 				      name);
 
   return strategy;
+}
+
+const string&
+LOCA::Eigensolver::Factory::strategyName(
+				  NOX::Parameter::List& eigenParams) const
+{
+  return eigenParams.getParameter("Method", "Default");
 }

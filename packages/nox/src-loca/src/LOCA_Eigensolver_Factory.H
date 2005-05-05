@@ -89,6 +89,9 @@ namespace LOCA {
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
 
+      //! Return strategy name given by \c eigenParams
+      const string& strategyName(NOX::Parameter::List& eigenParams) const;
+
     private:
 
       //! Private to prohibit copying

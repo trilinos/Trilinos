@@ -57,8 +57,7 @@ LOCA::BorderedSystem::Factory::create(
   Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> strategy;
 
   // Get name of strategy
-  string name = solverParams->getParameter("Bordered Solver Method", 
-					   "Bordering");
+  const string& name = strategyName(*solverParams);
 
   if (name == "Bordering")
     strategy = 
@@ -87,4 +86,11 @@ LOCA::BorderedSystem::Factory::create(
 				      name);
 
   return strategy;
+}
+
+const string&
+LOCA::BorderedSystem::Factory::strategyName(
+				  NOX::Parameter::List& solverParams) const
+{
+  return solverParams.getParameter("Bordered Solver Method", "Bordering");
 }

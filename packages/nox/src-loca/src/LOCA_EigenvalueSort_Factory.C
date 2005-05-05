@@ -56,7 +56,7 @@ LOCA::EigenvalueSort::Factory::create(
   Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
 
   // Get name of strategy
-  string name = eigenParams->getParameter("Sorting Order", "LM");
+  const string& name = strategyName(*eigenParams);
 
   if (name == "LM")
     strategy = 
@@ -117,4 +117,11 @@ LOCA::EigenvalueSort::Factory::create(
 				      name);
 
   return strategy;
+}
+
+const string&
+LOCA::EigenvalueSort::Factory::strategyName(
+				  NOX::Parameter::List& eigenParams) const
+{
+  return eigenParams.getParameter("Sorting Order", "LM");
 }

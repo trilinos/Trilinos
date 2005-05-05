@@ -61,7 +61,7 @@ LOCA::MultiContinuation::Factory::create(
   Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> strategy;
 
   // Get name of strategy
-  string name = stepperParams->getParameter("Continuation Method", "Natural");
+  const string& name = strategyName(*stepperParams);
 
   if (name == "Natural")
     strategy = 
@@ -103,4 +103,11 @@ LOCA::MultiContinuation::Factory::create(
 				      name);
 
   return strategy;
+}
+
+const string&
+LOCA::MultiContinuation::Factory::strategyName(
+				  NOX::Parameter::List& stepperParams) const
+{
+  return stepperParams.getParameter("Continuation Method", "Natural");
 }

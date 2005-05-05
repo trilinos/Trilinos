@@ -66,7 +66,7 @@ LOCA::MultiPredictor::Factory::create(
     topParams->getSublist("Linear Solver");
 
   // Get name of strategy
-  string name = predictorParams->getParameter("Method", "Constant");
+  const string& name = strategyName(*predictorParams);
 
   if (name == "Constant")
     strategy = 
@@ -114,4 +114,11 @@ LOCA::MultiPredictor::Factory::create(
 				      name);
 
   return strategy;
+}
+
+const string&
+LOCA::MultiPredictor::Factory::strategyName(
+				  NOX::Parameter::List& predictorParams) const
+{
+  return predictorParams.getParameter("Method", "Constant");
 }

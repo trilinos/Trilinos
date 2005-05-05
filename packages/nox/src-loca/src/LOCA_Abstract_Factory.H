@@ -111,6 +111,7 @@ namespace LOCA {
        //! Create predictor strategy
       virtual bool
       createPredictorStrategy(
+       const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams,
        Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& strategy);
@@ -118,6 +119,7 @@ namespace LOCA {
       //! Create continuation strategy
       virtual bool
       createContinuationStrategy(
+      const string& strategyName,
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
       const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
@@ -128,6 +130,7 @@ namespace LOCA {
       //! Create bordered system solver strategy
       virtual bool
       createBorderedSystemStrategy(
+       const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
        Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy);
@@ -135,6 +138,7 @@ namespace LOCA {
       //! Create eigensolver strategy
       virtual bool
       createEigensolverStrategy(
+         const string& strategyName,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
@@ -142,6 +146,7 @@ namespace LOCA {
       //! Create eigenvalue sorting strategy
       virtual bool
       createEigenvalueSortStrategy(
+       const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
        Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
