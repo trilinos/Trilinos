@@ -132,11 +132,6 @@ exit $exitStatus;
             }
         }
         
-        # Fix makeFailure value
-        if ($makeFailure) {
-            $makeFailure = $makeFailure >> 8;
-        }
-        
         # Check for existance of builddir argument and actual directory.
         if (!$builddir) {
             die "builddir value required, see --help for more information\n"; 
@@ -265,7 +260,6 @@ exit $exitStatus;
             system("cp $invokeConfigure $builddir/invoke-configure") == 0
                 or die "cannot copy invoke-configure, died";
         } else {
-            print "\n\$failedPackage{$makeFailure}: ".$failedPackage{$makeFailure}."\n\n";
             removeBrokenPackage($failedPackage{$makeFailure});
             cleanInvokeConfigure($failedPackage{$makeFailure});
         }

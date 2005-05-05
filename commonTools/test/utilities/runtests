@@ -459,10 +459,10 @@ cleanUp();
         } # foreach @testListAoH
         
         $message = "\n";
-        $message .= " Tests Passed: ".sprintf("%3s", "$testsPassed")."\n";
-        $message .= " Tests Failed: ".sprintf("%3s", "$testsFailed")."\n";
-        $message .= "-------------------\n";
-        $message .= " Tests Total:  ".sprintf("%3s", "$testsTotal")."\n\n";
+        $message .= "  Tests Passed: ".sprintf("%3s", "$testsPassed")."\n";
+        $message .= "  Tests Failed: ".sprintf("%3s", "$testsFailed")."\n";
+        $message .= " -------------------\n";
+        $message .= "  Tests Total:  ".sprintf("%3s", "$testsTotal")."\n\n";
         printMessage($message, $v1+$v2+$v3);
         
         # Stop MPI
