@@ -53,7 +53,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/clop/CLOP_solver.cpp)
+AC_CONFIG_SRCDIR(/src/preconditioners/CLOP_solver.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -238,12 +238,9 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB( claps, sclop, [enable Sandia Clop interface (requires Salinas header files)], CLAPS_SCLOP, no)
-AM_CONDITIONAL(HAVE_SCLOP, [test "X$ac_cv_use_claps_sclop" != "Xno"])
+TAC_ARG_ENABLE_FEATURE_SUB( claps, sclaps, [enable Sandia Claps interface (requires Salinas header files)], CLAPS_SCLAPS, no)
+AM_CONDITIONAL(HAVE_SCLAPS, [test "X$ac_cv_use_claps_sclaps" != "Xno"])
 
-TAC_ARG_ENABLE_FEATURE_SUB( claps, clop, [enable Clop solver], CLAPS_CLOP, no)
-AM_CONDITIONAL(HAVE_CLOP, [test "X$ac_cv_use_claps_clop" != "Xno" || test "X$ac_cv_use_claps_sclop" != "Xno"])
-                                                                                
 
 #
 #  #np# - These options are specific to Epetra and are left only as examples.

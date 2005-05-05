@@ -42,55 +42,48 @@
 #np# --with-xyz or --without-xyz)
 #
 #np# Make sure to list all source files in one of the following categories.
-EXTRA_CLOP_H = \
-	$(srcdir)/clop/CLOP_constraint.hpp \
-	$(srcdir)/clop/CLOP_graph.hpp \
-	$(srcdir)/clop/CLOP_solver.hpp \
-	$(srcdir)/clop/CLOP_sub.hpp \
-	$(srcdir)/clop/CRD_utils.hpp \
-	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.hpp \
-	$(srcdir)/clop/my_feti_sparse_solver.hpp \
-	$(srcdir)/clop/myzero.hpp \
-	$(srcdir)/clop/sparse_lu.hpp
+EXTRA_CLAPS_H = \
+	$(srcdir)/preconditioners/CLOP_constraint.hpp \
+	$(srcdir)/preconditioners/CLOP_graph.hpp \
+	$(srcdir)/preconditioners/CLOP_solver.hpp \
+	$(srcdir)/preconditioners/CLOP_sub.hpp \
+	$(srcdir)/preconditioners/CRD_utils.hpp \
+	$(srcdir)/preconditioners/EpetraExtCD_MatrixMatrix.hpp \
+	$(srcdir)/preconditioners/my_feti_sparse_solver.hpp \
+	$(srcdir)/preconditioners/myzero.hpp \
+	$(srcdir)/preconditioners/sparse_lu.hpp \
+	$(srcdir)/preconditioners/CLIP_solver.hpp
 
-EXTRA_CLOP = \
-	$(srcdir)/clop/CLOP_constraint.cpp \
-	$(srcdir)/clop/CLOP_graph.cpp \
-	$(srcdir)/clop/CLOP_solver.cpp \
-	$(srcdir)/clop/CLOP_sub.cpp \
-	$(srcdir)/clop/CRD_utils.cpp \
-	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp \
-	$(srcdir)/clop/sparse_lu.cpp
+EXTRA_CLAPS = \
+	$(srcdir)/preconditioners/CLOP_constraint.cpp \
+	$(srcdir)/preconditioners/CLOP_graph.cpp \
+	$(srcdir)/preconditioners/CLOP_solver.cpp \
+	$(srcdir)/preconditioners/CLOP_sub.cpp \
+	$(srcdir)/preconditioners/CRD_utils.cpp \
+	$(srcdir)/preconditioners/EpetraExtCD_MatrixMatrix.cpp \
+	$(srcdir)/preconditioners/sparse_lu.cpp \
+	$(srcdir)/preconditioners/CLIP_solver.cpp
 
-EXTRA_SCLOP_H = \
-	$(srcdir)/salinas/SCLOP_solver.hpp
+EXTRA_SCLAPS_H = \
+	$(srcdir)/salinas/SCLOP_solver.hpp \
+	$(srcdir)/salinas/SCLIP_solver.hpp
 
-EXTRA_SCLOP = \
+EXTRA_SCLAPS = \
 	$(srcdir)/salinas/SCLOP_interface.cpp \
-	$(srcdir)/salinas/SCLOP_solver.cpp
+	$(srcdir)/salinas/SCLOP_solver.cpp \
+	$(srcdir)/salinas/SCLIP_interface.cpp \
+	$(srcdir)/salinas/SCLIP_solver.cpp
 
-if HAVE_SCLOP
+if HAVE_SCLAPS
 
-SCLOP = $(EXTRA_SCLOP)
-SCLOP_H = $(EXTRA_SCLOP_H)
+SCLAPS = $(EXTRA_SCLAPS)
+SCLAPS_H = $(EXTRA_SCLAPS_H)
 
 else
 
-SCLOP =
-SCLOP_H =
+SCLAPS =
+SCLAPS_H =
                                                                                 
-endif
-
-if HAVE_CLOP
-
-CLOP = $(EXTRA_CLOP)
-CLOP_H = $(EXTRA_CLOP_H)
-
-else
-
-CLOP = 
-CLOP_H =
-
 endif
 
 #
@@ -103,11 +96,11 @@ endif
 
 if HAVE_MPI 
 MPI_H = \
-	$(CLOP_H) \
-	$(SCLOP_H)
+	$(EXTRA_CLAPS_H) \
+	$(SCLAPS_H)
 MPI = \
-	$(CLOP) \
-	$(SCLOP)
+	$(EXTRA_CLAPS) \
+	$(SCLAPS)
 
 else
 
@@ -123,7 +116,7 @@ endif
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
 #  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(srcdir)/clop
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(srcdir)/preconditioners
 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
@@ -144,10 +137,10 @@ libclaps_a_SOURCES = \
 
 #np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libclaps_a_SOURCES = \
-	$(EXTRA_CLOP) \
-	$(EXTRA_CLOP_H) \
-	$(EXTRA_SCLOP) \
-        $(EXTRA_SCLOP_H) 
+	$(EXTRA_CLAPS) \
+	$(EXTRA_CLAPS_H) \
+	$(EXTRA_SCLAPS) \
+        $(EXTRA_SCLAPS_H) 
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
