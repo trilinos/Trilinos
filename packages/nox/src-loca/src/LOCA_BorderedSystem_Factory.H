@@ -88,7 +88,7 @@ namespace LOCA {
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
 
-       //! Return strategy name given by \c solverParams
+      //! Return strategy name given by \c solverParams
       const string& strategyName(NOX::Parameter::List& solverParams) const;
 
     private:
