@@ -148,6 +148,9 @@ public:
   virtual void outputResults(NOX::Solver::Manager& solver, 
                              NOX::Parameter::List& printParams);
 
+  // Output current solution state 
+  virtual void outputSolutionStatus( ostream & os ) const;
+
   // Provide for transient inherited problems
   virtual void setdt( double dt );
 

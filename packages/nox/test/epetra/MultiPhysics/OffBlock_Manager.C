@@ -154,6 +154,7 @@ bool OffBlock_Manager::evaluate(
   myManager.copyCompositeToVector(*solnVector, problemVarId, probVarSoln);
   //probVarSoln = *solnVector;
   problemEq.doTransfer(); // This does all transfers for this problem
+  DEBUG_BLOCKGRAPH(problemEq.outputSolutionStatus(cout);)
   myManager.setGroupX(problemEqId);
   myManager.computeGroupF(problemEqId);
 

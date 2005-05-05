@@ -182,6 +182,22 @@ void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver,
   fclose(ifp);
 }
 
+void GenericEpetraProblem::outputSolutionStatus( ostream & os ) const
+{
+  // Output all solution vectors
+  os << "\nProblem Status for " << myName << endl;
+  os << "  ----------------------------------" << endl;
+  os << *initialSolution << endl;
+
+  for( int i = 0; i < depProblems.size(); ++i) {
+    int depId = depProblems[i];
+    os << "\tDependent Status for " << myManager->getProblem(depId).getName() << endl;
+    os << "\t----------------------------------" << endl;
+    Epetra_Vector & depVec = *( (*(depSolutions.find(depId))).second );
+    os << depVec << endl;
+  }
+}
+
 void GenericEpetraProblem::setdt( double dt )
 {
   cout << "No-op : Implement time dependence in inherited problem !!" << endl;
