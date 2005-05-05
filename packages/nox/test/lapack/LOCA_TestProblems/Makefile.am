@@ -18,13 +18,13 @@
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#                                                                                 
+#                                                                              
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA                                                                                
-# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-# (rppawlo@sandia.gov), Sandia National Laboratories.
+# USA                                                                          
+# Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+# (etphipp@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
 # @HEADER
@@ -38,10 +38,12 @@
 # ------------------------------------------------------------------------
 
 LOCA_TESTPROBLEMS_H = \
-	$(srcdir)/ChanProblemInterface.H 
+	$(srcdir)/ChanProblemInterface.H \
+	$(srcdir)/NormConstraint.H
 
 LOCA_TESTPROBLEMS = \
-	$(srcdir)/ChanProblemInterface.C 
+	$(srcdir)/ChanProblemInterface.C \
+	$(srcdir)/NormConstraint.C
 
 # ------------------------------------------------------------------------
 # localapack library specifications

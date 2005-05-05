@@ -32,13 +32,13 @@
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#                                                                                 
+#                                                                              
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA                                                                                
-# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-# (rppawlo@sandia.gov), Sandia National Laboratories.
+# USA                                                                          
+# Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+# (etphipp@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
 # @HEADER
@@ -103,14 +103,16 @@ liblocatestproblems_la_DEPENDENCIES =  \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am__objects_1 = liblocatestproblems_la-ChanProblemInterface.lo
+am__objects_1 = liblocatestproblems_la-ChanProblemInterface.lo \
+	liblocatestproblems_la-NormConstraint.lo
 am__objects_2 =
 am_liblocatestproblems_la_OBJECTS = $(am__objects_1) $(am__objects_2)
 liblocatestproblems_la_OBJECTS = $(am_liblocatestproblems_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -357,10 +359,12 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 LOCA_TESTPROBLEMS_H = \
-	$(srcdir)/ChanProblemInterface.H 
+	$(srcdir)/ChanProblemInterface.H \
+	$(srcdir)/NormConstraint.H
 
 LOCA_TESTPROBLEMS = \
-	$(srcdir)/ChanProblemInterface.C 
+	$(srcdir)/ChanProblemInterface.C \
+	$(srcdir)/NormConstraint.C
 
 
 # ------------------------------------------------------------------------
@@ -442,6 +446,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -490,6 +495,30 @@ liblocatestproblems_la-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+liblocatestproblems_la-NormConstraint.o: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
+
+liblocatestproblems_la-NormConstraint.obj: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`
+
+liblocatestproblems_la-NormConstraint.lo: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
