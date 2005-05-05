@@ -37,6 +37,8 @@
 #include "Epetra_Vector.h"
 #include "Rythmos_ConfigDefs.h"
 
+#include "ExampleApplication.h"
+
 int main(int argc, char *argv[])
 {
 
@@ -52,7 +54,7 @@ int main(int argc, char *argv[])
   if (MyPID == 0)
     cout << Rythmos::Rythmos_Version() << endl << endl;
 	
-  int NumElements = 1000;
+  int NumElements = 1;
 
   // Construct a Map with NumElements and index base of 0
   Epetra_Map Map(NumElements, 0, Comm);
@@ -72,6 +74,34 @@ int main(int argc, char *argv[])
     cout << "2 norm of x = " << xnorm << endl
          << "2 norm of b = " << bnorm << endl;
 
+  cout << "Integrating \\dot{x}=\\lambda x from t=0 to t=1" << endl
+       << "with initial x_0 = 10, and \\Delta t=0.1" << endl
+       << "using forward Euler." << endl;
+  double lambda = -0.9;
+  ExampleApplication problem(lambda);
+  Epetra_Vector xn(Map);
+  double t0 = 0;
+  double t1 = 1;
+  double dt = 0.1;
+  double N = (t1-t0)/dt;
+  double x_initial = 10; // initial condition
+  xn.PutScalar(x_initial); 
+  cout << "x(0.0) = " << xn[0] << endl;
+  double t = t0;
+  for (int i=1 ; i<N+1 ; ++i)
+  {
+    t = t0+i*dt;
+    x.Scale(1.0,xn); // x = xn;
+    problem.evalResidual(x,t);
+    xn.Update(dt,x,1.0); // xn = xn + dt*x
+    cout << "x(" << t << ") = " << xn[0] << endl;
+  }
+  cout << "       " << x_initial*exp(problem.getCoeff()*t) << " = Exact solution" << endl;
+
+
   return 0;
 }
+
+
+
 
