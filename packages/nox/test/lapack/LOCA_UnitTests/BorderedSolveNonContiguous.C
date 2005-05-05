@@ -92,13 +92,23 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   if (directStatus != NOX::Abstract::Group::Ok)
     ++ierr;
   
-  for (int i=0; i<X_bordering->numVectors(); i++) {
+  for (int i=0; i<Y_bordering->numCols(); i++) {
     stringstream sstr;
     sstr << "Column " << i;
     ierr += testCompare->testVector((*X_bordering)[i],
 				    (*X_direct)[i], reltol, abstol,
 				    sstr.str());
   }
+
+  for (int i=0; i<Y_bordering->numRows(); i++) 
+    for (int j=0; j<Y_bordering->numCols(); j++) {
+      stringstream sstr;
+      sstr << "Scalars entry (" << i << "," << j << ")";
+      ierr += testCompare->testValue((*Y_bordering)(i,j),
+				     (*Y_direct)(i,j), reltol,
+				     sstr.str(),
+				     NOX::TestCompare::Relative);
+    }
 
   return ierr;
 }
@@ -112,8 +122,8 @@ int main(int argc, char *argv[])
   double gamma = 2.0;
   double scale = 1.0;
   int ierr = 0;
-  double reltol = 1.0e-14;
-  double abstol = 1.0e-14;
+  double reltol = 1.0e-13;
+  double abstol = 1.0e-13;
 
   alpha = alpha / scale;
 
