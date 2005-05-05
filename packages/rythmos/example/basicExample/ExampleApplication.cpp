@@ -51,7 +51,7 @@
 #include "Epetra_Vector.h"
 #include "Rythmos_ConfigDefs.h"
 
-#include "ExampleApplication.h"
+#include "ExampleApplication.hpp"
 
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplication

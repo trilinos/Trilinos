@@ -37,7 +37,7 @@
 #include "Epetra_Vector.h"
 #include "Rythmos_ConfigDefs.h"
 
-#include "ExampleApplication.h"
+#include "ExampleApplication.hpp"
 
 int main(int argc, char *argv[])
 {
