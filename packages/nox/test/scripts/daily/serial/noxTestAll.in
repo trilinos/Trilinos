@@ -101,7 +101,7 @@ if ($run_lapack == yes) then
     set tests_lapack = ($tests_lapack NOX_NewTest NOX_Group)
 endif
 if ($run_loca_lapack == yes) then
-    set tests_lapack = ($tests_lapack LOCA_ChanProblem)
+    set tests_lapack = ($tests_lapack LOCA_ChanProblem LOCA_UnitTests)
 endif
 if ($run_loca_python == yes) then
     set tests_lapack = ($tests_lapack LOCA_python)
