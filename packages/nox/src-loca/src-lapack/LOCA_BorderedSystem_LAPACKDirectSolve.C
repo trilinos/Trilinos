@@ -138,7 +138,10 @@ LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
   n = J.numRows();
 
   // Get the number of additional rows/columns
-  m = A->numVectors();
+  if (!isZeroA)
+    m = A->numVectors();
+  else
+    m = C->numCols();
 
   // Form a new (n+m) x (n+m) matrix if this is a new size
   if (n+m != N) {

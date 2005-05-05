@@ -94,6 +94,21 @@ namespace LOCA {
      * the parsed top-level parameter list, and \c solverParams 
      * is a parameter list of bordered-solver parameters.
      *
+     * In many cases, F and A are stored in a contiguous multivector, and 
+     * this storage can be taken advantage of by some bordered solver
+     * strategies (e.g., bordering).  Any bordered solver strategy must be
+     * able to handle this, and is signaled by the setIsContiguous() method.
+     * In this case, the supplied A block should be a sub-view of the 
+     * contiguous multivector representing only A, and the F block passed in 
+     * applyInverse() should contain the columns of F first, then A.  The
+     * X multivector in applyInverse() must then have the same number of 
+     * columns as the supplied F.  These extra columns may be used by
+     * some strategies and my be overwritten.  The remaining blocks (G and Y)
+     * should have the proper number of columns corresponding to the actual
+     * number of right-hand sides (i.e., F.numVectors() - A.numVectors()).
+     * Also note that neither the F nor A blocks can be signaled as zero
+     * if they are to be stored contiguously.
+     *
      * This class and its children follow the Strategy pattern as defined
      * in Erich Gamma, et al. "Design Patterns:  Elements of Reusable 
      * Object-Oriented Software." Addison Wesley, Boston, MA, 1995.

@@ -85,8 +85,8 @@ LOCA::BorderedSystem::Bordering::setIsZero(bool flagA, bool flagB, bool flagC,
 				 "LOCA::BorderedSystem::Bordering::setIsZero",
 				 "Blocks A and C cannot both be zero");
 
-  isZeroX = isZeroF && isZeroA;
   isZeroY = (isZeroG && isZeroB) || (isZeroG && isZeroF);
+  isZeroX = (isZeroF && isZeroA) || (isZeroF && isZeroY);
   isZeroT1 = isZeroB || isZeroF;
   isZeroT2 = isZeroB || isZeroA;
 }
@@ -211,7 +211,7 @@ LOCA::BorderedSystem::Bordering::applyInverse(
 
    numColsRHS = numColsF + numColsA;
 
-    // create subindexing vectors
+   // create subindexing vectors
    vector<int> indexF(numColsF);
    vector<int> indexA(numColsA);
    for (int i=0; i<numColsF; i++)
