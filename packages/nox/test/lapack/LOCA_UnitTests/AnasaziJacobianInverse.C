@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 					dggev_evecs_i);
 
     if (dggevStatus != NOX::Abstract::Group::Ok)
-      ++ierr = 1;
+      ++ierr;
 
     // Check some statistics on the solution
     NOX::Utils utils(nlPrintParams);
@@ -225,10 +225,6 @@ int main(int argc, char *argv[])
 				    NOX::TestCompare::Relative);
     }
 
-    if (ierr == 0)
-      cout << "All tests passed!" << endl;
-    else
-      cout << ierr << " test(s) failed!" << endl;
   }
 
   catch (string& s) {
@@ -243,6 +239,11 @@ int main(int argc, char *argv[])
     cout << "Caught unknown exception!" << endl;
     ierr = 1;
   }
+
+   if (ierr == 0)
+      cout << "All tests passed!" << endl;
+    else
+      cout << ierr << " test(s) failed!" << endl;
 
   return ierr;
 }
