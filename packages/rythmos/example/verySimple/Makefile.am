@@ -34,7 +34,8 @@ example_SOURCES = $(srcdir)/cxx_main.cpp
 
 example_DEPENDENCIES = $(common_dependencies)
 
-example_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
+example_CXXFLAGS = -I$(top_srcdir)/src \
+  -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src \
 	-I$(top_srcdir)/../epetra/thyra/src  \
 	-I$(top_builddir)/../epetra/thyra/src 
@@ -42,6 +43,7 @@ example_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 example_LDADD = \
 	$(top_builddir)/src/librythmos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../epetra/thyra/src/libEpetraThyra.a \
 	$(common_ldadd) \
 	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 

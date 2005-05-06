@@ -34,18 +34,18 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
-//using Teuchos::RefCountPtr
-//using Teuchos::rcp
-//using Thyra::VectorSpaceBase
-//using Thyra::create_MPIVectorSpaceBase
-//using Thyra::VectorBase
-//using Thyra::createMember
-//using Thyra::randomize
-//using Thyra::V_StV
-//using Thyra::Norm2
 
 int main(int argc, char *argv[])
 {
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Thyra::VectorSpaceBase;
+  using Thyra::create_MPIVectorSpaceBase;
+  using Thyra::VectorBase;
+  using Thyra::createMember;
+  using Thyra::randomize;
+  using Thyra::V_StV;
+  using Thyra::norm_2;
 
   cout << Epetra_Version() << endl << endl;
 
@@ -53,36 +53,26 @@ int main(int argc, char *argv[])
 
   typedef double Scalar;
 
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm;
+  RefCountPtr<const Epetra_Comm> epetra_comm;
   epetra_comm = Teuchos::rcp(new Epetra_SerialComm);
   // Construct a Map with NumElements and index base of 0
-  Teuchos::RefCountPtr<const Epetra_Map> epetra_map;
-  epetra_map = Teuchos::rcp(new Epetra_Map(NumElements, 0, *epetra_comm));
+  RefCountPtr<const Epetra_Map> epetra_map;
+  epetra_map = rcp(new Epetra_Map(NumElements, 0, *epetra_comm));
   // Construct a VectorSpace from the map
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
-  epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
+  RefCountPtr<const VectorSpaceBase<Scalar> > epetra_vs;
+  epetra_vs = create_MPIVectorSpaceBase(epetra_map);
   
- // Epetra_Map Map(NumElements, 0, Comm);
 
   // Create x and b vectors
-//  Epetra_Vector x(Map);
-//  Epetra_Vector b(Map);
+  RefCountPtr<VectorBase<Scalar> > b = createMember(epetra_vs);
+  RefCountPtr<VectorBase<Scalar> > x = createMember(epetra_vs);
 
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = (Thyra::createMember(epetra_vs));
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = (Thyra::createMember(epetra_vs));
-  //RefCountPtr<VectorBase<Scalar> > b = createMember(epetra_vs);
-  //RefCountPtr<VectorBase<Scalar> > x = createMember(epetra_vs);
-
-//  b.Random();
-  Thyra::randomize(0.0,1.0,&*b);
-//  x.Update(2.0, b, 0.0); // x = 2*b
-  Thyra::V_StV(&*x,2.0,*b);
+  randomize(0.0,1.0,&*b);
+  V_StV(&*x,2.0,*b); // x = 2*b
 
   double bnorm, xnorm;
-//  x.Norm2(&xnorm);
-//  b.Norm2(&bnorm);
-  xnorm = Thyra::norm_2(*x);
-  bnorm = Thyra::norm_2(*b);
+  xnorm = norm_2(*x);
+  bnorm = norm_2(*b);
 
   cout << "2 norm of x = " << xnorm << endl
        << "2 norm of b = " << bnorm << endl;
