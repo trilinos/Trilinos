@@ -35,15 +35,16 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
 
   zero_pointers();
 
-  cdof_option  = int(clip_params[0]); 
-  solver_tol   = clip_params[1];
-  maxiter      = int(clip_params[2]);
-  max_orthog   = int(clip_params[3]);
-  atype        = int(clip_params[4]);
-  ndim         = int(clip_params[5]);
-  local_solver = int(clip_params[6]);
-  prt_debug    = int(clip_params[7]);
-  prt_summary  = int(clip_params[8]);
+  cdof_option         = int(clip_params[0]); 
+  solver_tol          = clip_params[1];
+  maxiter             = int(clip_params[2]);
+  max_orthog          = int(clip_params[3]);
+  atype               = int(clip_params[4]);
+  ndim                = int(clip_params[5]);
+  local_solver        = int(clip_params[6]);
+  prt_debug           = int(clip_params[7]);
+  prt_summary         = int(clip_params[8]);
+  chk_sub_singularity = int(clip_params[9]);
 
   assert (Coords->NumVectors() == 3);
   assert (Coords->ConstantStride() == true);
@@ -85,7 +86,7 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
   //
   // determine if extra corners are needed to remove singularities
   //
-  determine_extra_corners();
+  if (chk_sub_singularity == 1) determine_extra_corners();
   //
   // modify dof sets to account for selected corners and which types
   // of constraints are selected
@@ -764,10 +765,8 @@ void CLIP_solver::determine_corner_dofs()
   //
   // share corner dofs between subdomains
   //
-  Epetra_IntVector C_sub(View, *SubMap, corner_flag);
-  Epetra_IntVector C_all(*StandardMap);
-  C_all.Export(C_sub, *Exporter, Add);
-  C_sub.Import(C_all, *Importer, Insert);
+  share_corner_info();
+  max_added_corner = 0;
   /*
   for (i=0; i<ndof_sub; i++)
     if (corner_flag[i] > 0) { 
@@ -776,6 +775,15 @@ void CLIP_solver::determine_corner_dofs()
 	   << x << " " << y << " " << z << endl;
     }
   */
+}
+
+void CLIP_solver::share_corner_info()
+{
+  Epetra_IntVector C_sub(View, *SubMap, corner_flag);
+  Epetra_IntVector C_all(*StandardMap);
+  C_all.Export(C_sub, *Exporter, Add);
+  C_sub.Import(C_all, *Importer, Insert);
+  for (int i=0; i<ndof_sub; i++) if (corner_flag[i] > 0) corner_flag[i] = 1;
 }
 
 void CLIP_solver::determine_extra_corners()
@@ -809,16 +817,19 @@ void CLIP_solver::determine_extra_corners()
   gen_matrix(Block_Stiff, nR, dofR, rowbeg, colidx, vals);
   subspace_iteration(nR, rowbeg, colidx, vals, bound_flag, nextra, 
 		     extra_corner, AR);
-  if (nextra > 0) {
-    delete AR; delete [] dofR; delete [] dofC; nR = -1;
-  }
+  delete AR; delete [] dofR; delete [] dofC;
   for (i=0; i<nextra; i++) {
     dof = dofR[extra_corner[i]];
     corner_flag[dof] = 1;
-    cout << "MyPID, nextra_corner = " << MyPID << " " << nextra << endl; 
+    //    cout << "MyPID, nextra_corner = " << MyPID << " " << nextra << endl; 
   }
+  Comm.MaxAll(&nextra, &max_added_corner, 1);
   delete [] bound_flag; delete [] rowbeg, delete [] colidx; delete [] vals;
   delete [] extra_corner;
+  //
+  // share corner dofs between subdomains
+  //
+  share_corner_info();
   /*
   double *xyz; int MyLDA;
   Coords_red->ExtractView(&xyz, &MyLDA);
@@ -910,30 +921,28 @@ void CLIP_solver::factor_sub_matrices()
   // determine_extra_corners
   //
   
-  if (nR == -1) {
-    nR = 0; nC = 0;
-    for (i=0; i<ndof_sub; i++) {
-      if (corner_flag[i] == 0) nR++;
-      else nC++;
-    }
-    dofR = new int[nR]; dofC = new int[nC];
-    nR = 0; nC = 0;
-    for (i=0; i<ndof_sub; i++) {
-      if (corner_flag[i] == 0) {
-	dofR[nR] = i;
-	nR++;
-      }
-      else {
-	dofC[nC] = i;
-	nC++;
-      }
-    }
-    gen_matrix(Block_Stiff, nR, dofR, rowbeg, colidx, vals);
-    AR = new CLAPS_sparse_lu();
-    nnz = rowbeg[nR];
-    AR->factor(nR, nnz, rowbeg, colidx, vals);
-    delete [] rowbeg; delete [] colidx; delete [] vals;
+  nR = 0; nC = 0;
+  for (i=0; i<ndof_sub; i++) {
+    if (corner_flag[i] == 0) nR++;
+    else nC++;
   }
+  dofR = new int[nR]; dofC = new int[nC];
+  nR = 0; nC = 0;
+  for (i=0; i<ndof_sub; i++) {
+    if (corner_flag[i] == 0) {
+      dofR[nR] = i;
+      nR++;
+    }
+    else {
+      dofC[nC] = i;
+      nC++;
+    }
+  }
+  gen_matrix(Block_Stiff, nR, dofR, rowbeg, colidx, vals);
+  AR = new CLAPS_sparse_lu();
+  nnz = rowbeg[nR];
+  AR->factor(nR, nnz, rowbeg, colidx, vals);
+  delete [] rowbeg; delete [] colidx; delete [] vals;
   //
   // determine internal and boundary dofs and factor AI
   //
@@ -1265,7 +1274,8 @@ void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[],
   // subspace iteration stuff
   //
   int maxiter_si(20);
-  p = 2;
+  p = 20;
+  if (p > n) p = n;
   q = 2*p; if (2*p > (p+8)) q = p+8; if (q > n) q = n;
   double *X = new double[n*q]; myzero(X, n*q);
   double *SOL = new double[n*q];
@@ -1578,10 +1588,12 @@ void CLIP_solver::factor_coarse_stiff()
 }
 
 void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
-			int & num_iter, int & solver_status)
+			int & num_iter, int & solver_status,
+			int & max_added_cor)
 {
   int pcg_status;
   double starttime, endtime;
+  max_added_cor = max_added_corner;
   Comm.Barrier();
   if (MyPID == 0) starttime = MPI_Wtime();
   if (print_flag >= 0) fout.open("CLIP_solver.data", ios::app);

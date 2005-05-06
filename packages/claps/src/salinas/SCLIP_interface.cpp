@@ -41,17 +41,19 @@ void CLIP_init(
 {
   int cdof_option, max_iter, atype, ndim, max_N_orthog_vecs, coarse_solver;
   int *adj_elem1 = 0, *adj_elem2 = 0, local_solver, prt_debug, prt_summary;
+  int chk_sub_singularity;
   double solver_tol;
-  cdof_option       = params->cdof_option;
-  max_iter          = params->max_iterations;
-  solver_tol        = params->solver_tol;
-  atype             = params->atype;
-  ndim              = params->ndim;
-  max_N_orthog_vecs = params->max_N_orthog_vecs;
-  coarse_solver     = params->coarse_solver;
-  local_solver      = params->local_solver;
-  prt_debug         = params->prt_debug;
-  prt_summary       = params->prt_summary;
+  cdof_option         = params->cdof_option;
+  max_iter            = params->max_iterations;
+  solver_tol          = params->solver_tol;
+  atype               = params->atype;
+  ndim                = params->ndim;
+  max_N_orthog_vecs   = params->max_N_orthog_vecs;
+  coarse_solver       = params->coarse_solver;
+  local_solver        = params->local_solver;
+  prt_debug           = params->prt_debug;
+  prt_summary         = params->prt_summary;
+  chk_sub_singularity = params->chk_sub_singularity; 
   //
   // initialize CLIP_ptr
   //
@@ -78,16 +80,17 @@ void CLIP_init(
   //
   CLIP_ptr->CLIP_solver_init(cdof_option, solver_tol, max_iter, atype, ndim,
 			     local_solver, max_N_orthog_vecs, prt_debug,
-			     prt_summary);
+			     prt_summary, chk_sub_singularity);
 }
 
 int CLIP_solve( double *f, double *u, CLIPValues &returnvals)
 {
-  int number_iterations, number_reorthog_used, SCLIP_status;
+  int number_iterations, number_reorthog_used, SCLIP_status, max_added_corner;
 
-  CLIP_ptr->solve(f, u, number_iterations, SCLIP_status);
+  CLIP_ptr->solve(f, u, number_iterations, SCLIP_status, max_added_corner);
   returnvals.number_iterations = number_iterations;
   returnvals.CLIP_status = SCLIP_status;
+  returnvals.max_added_corner = max_added_corner;
   return 0;
 }
 

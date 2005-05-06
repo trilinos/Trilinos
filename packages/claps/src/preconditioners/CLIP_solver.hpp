@@ -34,7 +34,7 @@ class CLIP_solver
      const double* clip_params_);          // array of solver parameters
   ~CLIP_solver();
   void solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
-	     int & num_iter, int & solver_status);
+	     int & num_iter, int & solver_status, int & max_added_cor);
   void mpcforces(Epetra_Vector* uLocal, Epetra_Import* ImporterStLam2Loc);
  private: // functions
   void process_constraints();
@@ -52,6 +52,7 @@ class CLIP_solver
 			    int* & comp1, int* & comp2, int & ncomp);
   void determine_dof_sets();
   void determine_corner_dofs();
+  void share_corner_info();
   void determine_extra_corners();
   void modify_dof_sets();
   void factor_sub_matrices();
@@ -114,7 +115,7 @@ class CLIP_solver
   const Epetra_Comm & Comm;
 
   int cdof_option, maxiter, atype, ndim, local_solver, prt_debug, prt_summary;
-  int max_orthog;
+  int max_orthog, chk_sub_singularity;
   double solver_tol;
 
   Epetra_Import *Importer, *ImporterB, *ImporterSt2B, *Importer_Kc;
@@ -133,7 +134,7 @@ class CLIP_solver
   CLAPS_sparse_lu *AR, *AI, *AKc;
   int MyPID, NumProc, ndof_sub, ndof_global, print_flag, ncomp, ncomp_sum;
   int *comp1, *comp2, *sub1, *sub2, *dset1, *dset2, ndof_set, *corner_flag;
-  int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global;
+  int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global, max_added_corner;
   int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR;
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;

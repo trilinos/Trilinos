@@ -429,7 +429,7 @@ void SCLIP_solver::construct_K_base()
 
 void SCLIP_solver::CLIP_solver_init(int cdof_option, double solver_tol,
    int maxiter, int atype, int ndim, int local_solver, int max_orthog,
-   int prt_debug, int prt_summary)
+   int prt_debug, int prt_summary, int chk_sub_singularity)
 {
   double clip_params[20];
 
@@ -442,16 +442,17 @@ void SCLIP_solver::CLIP_solver_init(int cdof_option, double solver_tol,
   clip_params[6] = double(local_solver);
   clip_params[7] = double(prt_debug);
   clip_params[8] = double(prt_summary);
+  clip_params[9] = double(chk_sub_singularity);
   CS = new CLIP_solver(ASub, NodalDofs, Coords, ConStandard, clip_params);
 }
 
 void SCLIP_solver::solve(double f[], double u[], int & number_iterations, 
-			 int & SCLIP_status)
+			 int & SCLIP_status, int & max_added_corner)
 {
   int i;
   for (i=0; i<ndof; i++) subvec[i] = f[i];
   fStand->Export(*uSub, *ExporterSub2St, Add);
-  CS->solve(uStand, fStand, number_iterations, SCLIP_status);
+  CS->solve(uStand, fStand, number_iterations, SCLIP_status, max_added_corner);
   uSub->Import(*uStand, *ImporterSt2Sub, Insert);
   for (i=0; i<ndof; i++) u[i] = subvec[i];
 }
