@@ -36,7 +36,8 @@ example_DEPENDENCIES = $(common_dependencies)
 
 example_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src 
+	-I$(top_srcdir)/../epetra/thyra/src  \
+	-I$(top_builddir)/../epetra/thyra/src 
 
 example_LDADD = \
 	$(top_builddir)/src/librythmos.a \

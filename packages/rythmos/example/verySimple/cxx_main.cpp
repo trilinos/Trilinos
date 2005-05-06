@@ -34,6 +34,15 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
+//using Teuchos::RefCountPtr
+//using Teuchos::rcp
+//using Thyra::VectorSpaceBase
+//using Thyra::create_MPIVectorSpaceBase
+//using Thyra::VectorBase
+//using Thyra::createMember
+//using Thyra::randomize
+//using Thyra::V_StV
+//using Thyra::Norm2
 
 int main(int argc, char *argv[])
 {
@@ -61,6 +70,8 @@ int main(int argc, char *argv[])
 
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = (Thyra::createMember(epetra_vs));
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = (Thyra::createMember(epetra_vs));
+  //RefCountPtr<VectorBase<Scalar> > b = createMember(epetra_vs);
+  //RefCountPtr<VectorBase<Scalar> > x = createMember(epetra_vs);
 
 //  b.Random();
   Thyra::randomize(0.0,1.0,&*b);
