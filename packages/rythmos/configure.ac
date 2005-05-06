@@ -214,6 +214,12 @@ AC_CXX_NAMESPACES
 AC_CXX_HAVE_STL
 AC_CXX_BOOL
 AC_CXX_MUTABLE
+
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES
+
 # ---------------------------------------------------------------------
 # These are pretty obscure
 # ---------------------------------------------------------------------
@@ -407,9 +413,11 @@ AC_SUBST(ac_aux_dir)
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
+    Makefile.export.rythmos
 		src/Makefile
 		example/Makefile
 		example/basicExample/Makefile
+		example/verySimple/Makefile
 		test/Makefile
 		])
 

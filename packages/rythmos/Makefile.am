@@ -117,3 +117,30 @@ endif
 #endif
 
 SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+
+
+if USING_EXPORT_MAKEFILES
+
+install-exec-hook:	
+	cp $(top_builddir)/Makefile.export.rythmos $(exec_prefix)/include/.
+	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+		--exec-prefix=$(exec_prefix) \
+		--my-export-makefile=Makefile.export.rythmos \
+		--my-abs-top-srcdir=@abs_top_srcdir@ \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--dep-pacakge-abs-builddirs=@abs_top_builddir@/../thyra
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile RYTHMOS > $(exec_prefix)/include/Makefile.export.rythmos.macros
+
+uninstall-hook:
+	rm -f $(exec_prefix)/include/Makefile.export.rythmos
+	rm -f $(exec_prefix)/include/Makefile.export.rythmos.macros
+
+else 
+
+install-exec-hook:
+
+uninstall-hook:
+
+endif
+

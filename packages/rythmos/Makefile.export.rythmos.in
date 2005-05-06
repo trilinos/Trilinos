@@ -1,0 +1,9 @@
+
+include @abs_top_builddir@/../thyra/Makefile.export.thyra
+
+RYTHMOS_INCLUDES = \
+  -I@abs_top_srcdir@/src \
+  -I@abs_top_builddir@/src \
+  $(THYRA_INCLUDES)
+
+RYTHMOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lrythmos $(THYRA_LIBS) @LIBS@ @FLIBS@ 

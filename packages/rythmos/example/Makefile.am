@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = basicExample
+SUBDIRS = basicExample verySimple

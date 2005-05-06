@@ -68,9 +68,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing config/mkinstalldirs
+	$(srcdir)/Makefile.export.rythmos.in $(srcdir)/Makefile.in \
+	$(top_srcdir)/configure config/config.guess config/config.sub \
+	config/depcomp config/install-sh config/missing \
+	config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -85,6 +86,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_enable_option.m4 \
@@ -102,7 +104,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Rythmos_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = Makefile.export.rythmos
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -209,6 +211,10 @@ SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
 VERSION = @VERSION@
 WITH_SWIG = @WITH_SWIG@
 ac_aux_dir = @ac_aux_dir@
@@ -347,6 +353,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+Makefile.export.rythmos: $(top_builddir)/config.status $(srcdir)/Makefile.export.rythmos.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -468,7 +476,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config
+	$(mkdir_p) $(distdir)/. $(distdir)/config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -657,6 +665,8 @@ info-am:
 install-data-am:
 
 install-exec-am:
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-info: install-info-recursive
 
@@ -683,6 +693,8 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-info-am
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 uninstall-info: uninstall-info-recursive
 
@@ -706,6 +718,25 @@ uninstall-info: uninstall-info-recursive
 
 all-local:
 	@echo "Trilinos package rythmos built successfully"
+
+@USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.rythmos $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+@USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.rythmos \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-pacakge-abs-builddirs=@abs_top_builddir@/../thyra
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile RYTHMOS > $(exec_prefix)/include/Makefile.export.rythmos.macros
+
+@USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.rythmos
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.rythmos.macros
+
+@USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
+
+@USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
