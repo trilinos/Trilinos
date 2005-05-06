@@ -63,6 +63,14 @@
 #define USE_FD
 //#undef USE_FD
 
+// Simple macro for turning on debug code
+#undef DEBUG_BLOCKGRAPH
+#ifdef ENABLE_DEBUG_BLOCKGRAPH
+  #define DEBUG_BLOCKGRAPH(a) a
+#else
+  #define DEBUG_BLOCKGRAPH(a)
+#endif 
+
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
                                  bool doOffBlocks_,
                                  int numGlobalElements) :
@@ -435,8 +443,6 @@ void Problem_Manager::setAlldt( double dt )
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
-  // Loop over each problem being managed and set the corresponding group
-  // solution vector (used by NOX) with the problem's (used by application)
   for( ; problemIter != problemLast; ++problemIter)
     (*problemIter).second->setdt(dt);
 }
@@ -494,8 +500,14 @@ void Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 
     vector<OffBlock_Manager*> managerVec = (*offBlockIter).second;
 
-    for( unsigned int i = 0; i<managerVec.size(); i++ )
-      managerVec[i]->getGroup().setX(inVec);
+    // Need to extract block portion of incoming compositeVec
+    for( unsigned int i = 0; i < managerVec.size(); ++i )
+    {
+      // Note that we assign the group soln to be from the problemVar
+      int probVarId = managerVec[i]->getProblemVarId();
+      copyCompositeToVector(inVec, probVarId, managerVec[i]->getRowMapVec() ); 
+      managerVec[i]->getGroup().setX(managerVec[i]->getRowMapVec());
+    }
   }
 }
 #endif
@@ -582,10 +594,15 @@ void Problem_Manager::computeAllJacobian()
 
       for( unsigned int i = 0; i<offBlocksVec.size(); i++ ) {
         
+        // Refresh all problem vectors
+        copyCompositeToProblems(*compositeSoln, SOLUTION);
+
+  DEBUG_BLOCKGRAPH( cout << "Doing computeJacobian for : " << offBlocksVec[i]->getName() << endl;)
+
         offBlocksVec[i]->getGroup().computeJacobian();
   
-        //cout << "For block : " << offBlocksVec[i]->getName() << endl;
-        //offBlocksVec[i]->getMatrix().Print(cout);
+  DEBUG_BLOCKGRAPH( cout << "For block : " << offBlocksVec[i]->getName() << endl;)
+  DEBUG_BLOCKGRAPH( offBlocksVec[i]->getMatrix().Print(cout);)
         
         if (MyPID == 0)
           printf("\n\tTime to fill Jacobian %d (%d) --> %e sec. \n\n",
@@ -748,26 +765,26 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     int probId = (*problemIter).first;
 
     // Get the problem, its Jacobian graph and its linear system
-    GenericEpetraProblem &problem = *((*problemIter).second);
-    Epetra_CrsGraph &problemGraph = problem.getGraph();
-    NOX::EpetraNew::LinearSystemAztecOO &problemLinearSystem = 
+    GenericEpetraProblem & problem = *((*problemIter).second);
+    Epetra_CrsGraph & problemGraph = problem.getGraph();
+    NOX::EpetraNew::LinearSystemAztecOO & problemLinearSystem = 
       *(*(LinearSystems.find(probId))).second;
 
     // Get the indices map for copying data from this problem into 
     // the composite problem
-    Epetra_IntVector& indices = 
+    Epetra_IntVector & indices = 
       *(*(ProblemToCompositeIndices.find(probId))).second;
 
 
     // Each problem's Jacobian will be determined by type 
-    Epetra_CrsMatrix *problemMatrixPtr(0);
+    Epetra_CrsMatrix * p_problemMatrix(0);
 
     // Use each group's operator test to determine the type of Jacobian
     // operator being used.
     const Epetra_Operator& jacOp = problemLinearSystem.getJacobianOperator();
 
     if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOp) )
-      problemMatrixPtr = const_cast<Epetra_CrsMatrix*>(
+      p_problemMatrix = const_cast<Epetra_CrsMatrix*>(
         &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
           (jacOp).getUnderlyingMatrix());
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOp) )
@@ -775,7 +792,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
       // the same matrix wrapped in the group.  A safer alternative would be
       // to get this matrix from the group as above for a more general 
       // operator.
-      problemMatrixPtr = &(problem.getJacobian());
+      p_problemMatrix = &(problem.getJacobian());
     else
     {
       if (MyPID==0)
@@ -785,7 +802,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     }
 
     // Create convenient reference for each Jacobian matrix
-    Epetra_CrsMatrix &problemMatrix = *problemMatrixPtr;
+    Epetra_CrsMatrix &problemMatrix = *p_problemMatrix;
 
     // Temporary storage arrays for extracting/inserting matrix row data
     int* columnIndices = new int[problemMaxNodes];
@@ -824,43 +841,49 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     // Sync up processors to be safe
     Comm->Barrier();
 
-    // Add off-diagonal FDC block contributions if waranted
+    // Add off-diagonal FD block contributions if waranted
     if( doOffBlocks ) {
 #ifdef HAVE_NOX_EPETRAEXT
       // Loop over each problem on which this one depends
-      for( unsigned int k = 0; k<problem.depProblems.size(); k++) {
+      for( unsigned int k = 0; k < problem.depProblems.size(); ++k) {
+        
+        GenericEpetraProblem * p_depProblem = (*(Problems.find(problem.depProblems[k]))).second;
 
         // Copy the off-block jacobian matrices for this 
         // problem-problem coupling
-        // NOTE: the map used for the off-block graph is the composite Map
-        // to allow valid global indexing.  This also allows us to
-        // simply copy values directly from the off-block matrices to the
-        // composite Jacobian matrix
-	Epetra_CrsMatrix *offMatrixPtr = 
-          &( ((*(OffBlock_Managers.find(probId))).second)[k]->getMatrix() );
-	if( !offMatrixPtr ) {
-          cout << "ERROR: Unable to get FDColoring underlying matrix for "
-               << "dependence of problem " << probId << " on problem "
-               << problem.depProblems[k] << " !!" << endl;
+        //  !!! --------  THESE COMMENTS ARE NO LONGER VALID --------------!!!
+        //  *******************************************************************
+        //  *** NOTE: the map used for the off-block graph is the composite Map
+        //  *** to allow valid global indexing.  This also allows us to
+        //  *** simply copy values directly from the off-block matrices to the
+        //  *** composite Jacobian matrix
+        //  *******************************************************************
+        OffBlock_Manager * p_offBlockMgr = ((*(OffBlock_Managers.find(probId))).second)[k];
+	if( !p_offBlockMgr ) {
+          cout << "ERROR: Unable to get OffBlock_Manager for dependence of problem " 
+               << problem.getName() << " on problem " << p_depProblem->getName() 
+               << " !!" << endl;
           throw "Problem_Manager ERROR";
         }
-        Epetra_CrsMatrix &offMatrix = *offMatrixPtr;
+	Epetra_CrsMatrix & offMatrix = p_offBlockMgr->getMatrix();
 
-        int* columnIndices = new int[problemMaxNodes];
-        double* values = new double[problemMaxNodes];
+        int *        blockColIndices; //  = new int[problemMaxNodes];
+        int          numCols = -1;
+        double *     values; //  = new double[problemMaxNodes];
+        int *        compositeColIndices;
+        int          compositeRow;
 
         // Loop over each row and copy into composite matrix
-        for (int i = 0; i<offMatrix.NumMyRows(); i++) {
+        for (int i = 0; i < offMatrix.NumMyRows(); ++i) {
 
-          problemRow = offMatrix.Map().GID(i);
+          offMatrix.ExtractMyRowView(i, numCols, values, blockColIndices);
 
-          offMatrix.ExtractGlobalRowCopy(problemRow, problemMaxNodes,
-                           numValues, values, columnIndices);
-          compositeMatrix.ReplaceGlobalValues(problemRow, 
-                       numValues, values, columnIndices);
+          compositeColIndices = new int[numCols];
+
+          p_offBlockMgr->convertBlockRowIndicesToComposite(1, &i, &compositeRow);
+          p_offBlockMgr->convertBlockColIndicesToComposite(numCols, blockColIndices, compositeColIndices);
+          compositeMatrix.ReplaceMyValues(compositeRow, numCols, values, compositeColIndices);
         }
-        delete [] columnIndices; columnIndices = 0;
-        delete [] values; values = 0;
 
         // Sync up processors to be safe
         Comm->Barrier();
@@ -1118,6 +1141,9 @@ bool Problem_Manager::evaluate(
   // Note that incoming matrix is no longer used.  Instead, the problem
   // should own the matrix to be filled into.
 
+  // Copy incoming vector from NOX solver into our composite solution Vector
+  *compositeSoln = *solnVector;
+  
   copyCompositeToProblems(*solnVector, SOLUTION);
 
   // If used, give each off-block FDC manager a copy of the current total

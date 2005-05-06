@@ -69,6 +69,19 @@ public:
   // Return the underlying CrsMatrix 
   Epetra_CrsMatrix& getMatrix();
 
+  // Return the rowMapVec
+  Epetra_Vector& getRowMapVec() const;
+
+  // Return the problemEqId
+  int getProblemEqId() const;
+
+  // Return the problemVarId
+  int getProblemVarId() const;
+
+  // Convert block indices to composite indices
+  void convertBlockRowIndicesToComposite( int numIndices, int * block, int * composite);
+  void convertBlockColIndicesToComposite( int numIndices, int * block, int * composite);
+
 
   // These allow inheritance from GenericEpetraProblem base class
 
@@ -89,8 +102,6 @@ private:
   int problemEqId;      // Problem Id of off-diagonal block equations
   int problemVarId;     // Problem Id of off-diagonal block variables
 
-  Problem_Manager & myManager;  //Reference to the composite problem manager
-
   Problem_Interface * offBlockInterface; // A problem interface to 
   // this off-block problem manager.  
 
@@ -99,6 +110,7 @@ private:
   Epetra_Map                           * blockRowMap;
   Epetra_Map                           * blockColMap;
   Epetra_Vector                        * rowMapVec;
+  NOX::Epetra::Vector                  * noxVec;
   EpetraExt::CrsGraph_MapColoring      * mapColoring;
   Epetra_MapColoring                   * colorMap;
   EpetraExt::CrsGraph_MapColoringIndex * colorMapIndex;

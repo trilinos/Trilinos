@@ -292,7 +292,7 @@ void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
 void GenericEpetraProblem::doTransfer()
 {
   // Do transfers from each dependent problem to this one
-  for( int i = 0; i<depProblems.size(); i++) {
+  for( int i = 0; i < depProblems.size(); ++i) {
     int depId = depProblems[i];
     XferOp* xfer = (*xferOperators.find(depId)).second;
 
@@ -303,7 +303,7 @@ void GenericEpetraProblem::doTransfer()
 
     else {
       // NOTE that we are transferring (by default) to/from each problem's
-      // solution vector which may not be the same as in each respective
+      // solution vector which may be different data than in each respective
       // group.
       Epetra_Vector& fromVec = myManager->getProblem(depId).getSolution();
       Epetra_Vector& toVec = *( (*(depSolutions.find(depId))).second );

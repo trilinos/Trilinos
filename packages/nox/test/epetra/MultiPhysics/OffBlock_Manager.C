@@ -77,10 +77,10 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   GenericEpetraProblem(graph_.Comm(), 0),
   problemEqId(probEqId),
   problemVarId(probVarId),
-  myManager(problemMan_),
   blockRowMap(0),
   blockColMap(0),
   rowMapVec(0),
+  noxVec(0),
   mapColoring(0),
   colorMap(0),
   colorMapIndex(0),
@@ -90,10 +90,19 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   group(0)
 {
  
+  setManager(&problemMan_);
+
+  // Assign a meaningful name
+  GenericEpetraProblem &problemEq = myManager->getProblem(problemEqId),
+                       &problemVar = myManager->getProblem(problemVarId);
+  
+  string myName = "OffBlock " + problemEq.getName() + " wrt " + problemVar.getName();
+  setName(myName);
+
   // Set our graph (held in base class) after converting from incoming
   // global indices to shifted block indices
-  AA = &graph_;
-  //AA = &( createBlockGraphFromComposite(graph_) );
+  //AA = &graph_;
+  AA = &( createBlockGraphFromComposite(graph_) );
 
   // Create a problem interface to the manager
   offBlockInterface = new Problem_Interface(*this);
@@ -103,13 +112,6 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
 
   // Reset number of dofs (overwrites base constructor assignment)
   NumMyNodes = 0;
-
-  // Assign a meaningful name
-  GenericEpetraProblem &problemEq = myManager.getProblem(problemEqId),
-                       &problemVar = myManager.getProblem(problemVarId);
-  
-  string myName = "OffBlock " + problemEq.getName() + " wrt " + problemVar.getName();
-  setName(myName);
 
 }
 
@@ -145,23 +147,23 @@ bool OffBlock_Manager::evaluate(
     throw "OffBlock_Manager ERROR";
   }
 
-  GenericEpetraProblem &problemEq = myManager.getProblem(problemEqId),
-                       &problemVar = myManager.getProblem(problemVarId);
+  GenericEpetraProblem &problemEq = myManager->getProblem(problemEqId),
+                       &problemVar = myManager->getProblem(problemVarId);
 
   // Copy relevant part of incoming solnVector into solution vector of
   // problemVarId
   Epetra_Vector &probVarSoln = problemVar.getSolution();
-  myManager.copyCompositeToVector(*solnVector, problemVarId, probVarSoln);
-  //probVarSoln = *solnVector;
+  //myManager->copyCompositeToVector(*solnVector, problemVarId, probVarSoln);
+  probVarSoln = *solnVector;
   problemEq.doTransfer(); // This does all transfers for this problem
-  DEBUG_BLOCKGRAPH(problemEq.outputSolutionStatus(cout);)
-  myManager.setGroupX(problemEqId);
-  myManager.computeGroupF(problemEqId);
+  //problemEq.outputSolutionStatus(cout);
+  myManager->setGroupX(problemEqId);
+  myManager->computeGroupF(problemEqId);
 
-  const Epetra_Vector &probEqGrpF = dynamic_cast<const NOX::Epetra::Vector&>
-    (myManager.getGroup(problemEqId).getF()).getEpetraVector();
-  myManager.copyVectorToComposite(*rhsVector, problemEqId, probEqGrpF);
-  //*rhsVector = probEqGrpF;
+  const Epetra_Vector & probEqGrpF = dynamic_cast<const NOX::Epetra::Vector&>
+    (myManager->getGroup(problemEqId).getF()).getEpetraVector();
+  //myManager->copyVectorToComposite(*rhsVector, problemEqId, probEqGrpF);
+  *rhsVector = probEqGrpF;
 
   return true;
 }
@@ -190,22 +192,63 @@ Epetra_CrsMatrix& OffBlock_Manager::getMatrix()
   return( matrixOperator->getUnderlyingMatrix() );
 }
 
+Epetra_Vector& OffBlock_Manager::getRowMapVec() const
+{
+  if( !rowMapVec ) {
+    cout << "ERROR: Unable to get Row Map Vector for OffBlock " << getName() << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  return( *rowMapVec );
+}
+
+int OffBlock_Manager::getProblemEqId() const
+{
+  return problemEqId;
+}
+
+int OffBlock_Manager::getProblemVarId() const
+{
+  return problemVarId;
+}
+
+void OffBlock_Manager::convertBlockRowIndicesToComposite(int numIndices, 
+                         int * blockIndices, int * compositeIndices)
+{ 
+  for( int i = 0 ; i < numIndices; ++i )
+  {
+    // Add a check for index validity ? RWH
+    compositeIndices[i] = rowBlockToComposite[ blockIndices[i] ];
+  }
+}
+
+void OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices, 
+                         int * blockIndices, int * compositeIndices)
+{ 
+  for( int i = 0 ; i < numIndices; ++i )
+  {
+    // Add a check for index validity, RWH
+    compositeIndices[i] = colBlockToComposite[ blockIndices[i] ];
+  }
+}
+
 void OffBlock_Manager::createFDobjects( bool useColoring )
 {
-  Epetra_CrsGraph &graph = *AA;
+  Epetra_CrsGraph & graph = *AA;
 
   DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << graph << endl;)
 
   if( !useColoring )
   {
     // Note: We use a vector corresponding to compositeSoln
-    Epetra_Vector & compositeVec = myManager.getCompositeSoln();
-    //rowMapVec = new Epetra_Vector (graph.RowMap());
+    //Epetra_Vector & compositeVec = myManager->getCompositeSoln();
+    rowMapVec = new Epetra_Vector (graph.RowMap());
 
     // Now setup each FD Jacobian as its own group/linearsystem
     matrixOperator = new NOX::EpetraNew::FiniteDifference(
       	*offBlockInterface, 
-  	compositeVec, 
+  	*rowMapVec, 
+//  	compositeVec, 
   	graph);
   
     NOX::EpetraNew::Interface::Required& reqInt = 
@@ -217,22 +260,31 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
     // Problem_Manager object.
-    NOX::EpetraNew::LinearSystemAztecOO* tmpLinSys = 
-      new NOX::EpetraNew::LinearSystemAztecOO(
-        myManager.nlParams->sublist("Printing"),
-        myManager.nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
+    linearSystem = new NOX::EpetraNew::LinearSystemAztecOO(
+        myManager->nlParams->sublist("Printing"),
+        myManager->nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
         reqInt,
         jacInt,
         *matrixOperator,
-        compositeVec );
+  	*rowMapVec);
+//  	compositeVec, 
   
-    NOX::Epetra::Vector tmpNOXVec(compositeVec);
+    noxVec = new NOX::Epetra::Vector(*rowMapVec);
+//    NOX::Epetra::Vector tmpNOXVec(compositeVec);
   
     group = new NOX::EpetraNew::Group(
-      myManager.nlParams->sublist("Printing"),
+      myManager->nlParams->sublist("Printing"),
       reqInt,
-      tmpNOXVec,
-      *tmpLinSys);
+      *noxVec,
+      *linearSystem);
+
+    DEBUG_BLOCKGRAPH(   
+      cout << "OffBlock_Manager::createFDobjects .... " << myName << endl
+           << "---------------------------------------------------------------"
+           << "graph :" << graph << endl
+           << "---------------------------------------------------------------"
+           << "rowMapVec :" << *rowMapVec << endl
+           << "---------------------------------------------------------------" << endl;)
   }
   else // use FDC
   {
@@ -247,13 +299,12 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     bool distance1 = false;
     int verbose = 0;
   
-    Epetra_CrsGraph & graph2 = createBlockGraphFromComposite(*AA);
     DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << graph << endl;)
   
     colorTime.ResetStartTime();
   
     // Just a dummy for now, but needs to be hooked up correctly.
-    Epetra_Vector &compositeVec = myManager.getCompositeSoln();
+    Epetra_Vector &compositeVec = myManager->getCompositeSoln();
   
     mapColoring = new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose);
     colorMap = &(*mapColoring)(graph);
@@ -286,10 +337,9 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
     // Problem_Manager object.
-    NOX::EpetraNew::LinearSystemAztecOO* tmpLinSys = 
-      new NOX::EpetraNew::LinearSystemAztecOO(
-        myManager.nlParams->sublist("Printing"),
-        myManager.nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
+    linearSystem = new NOX::EpetraNew::LinearSystemAztecOO(
+        myManager->nlParams->sublist("Printing"),
+        myManager->nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
         reqInt,
         jacInt,
         *matrixOperator,
@@ -298,10 +348,10 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     NOX::Epetra::Vector tmpNOXVec(compositeVec);
   
     group = new NOX::EpetraNew::Group(
-      myManager.nlParams->sublist("Printing"),
+      myManager->nlParams->sublist("Printing"),
       reqInt,
       tmpNOXVec,
-      *tmpLinSys);
+      *linearSystem);
 #else
       if(MyPID==0)
         cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -346,7 +396,7 @@ Epetra_CrsGraph & OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGrap
   int numGlobalCols = -1;
 
   blockRowMap = new Epetra_Map ( numGlobalRows, rowBlockToComposite.size(), 0, globalGraph.Comm() );
-  blockColMap = new Epetra_Map ( numGlobalRows, colBlockToComposite.size(), 0, globalGraph.Comm() );
+  blockColMap = new Epetra_Map ( numGlobalCols, colBlockToComposite.size(), 0, globalGraph.Comm() );
  
   DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Row Map : " << *blockRowMap << endl;)
   DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Col Map : " << *blockColMap << endl;)
@@ -373,7 +423,7 @@ Epetra_CrsGraph & OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGrap
   }
 
   
-  DEBUG_BLOCKGRAPH( cout << "\n----> Block-Graph : " << blockGraph << endl;)
+  DEBUG_BLOCKGRAPH( cout << "\n----> Block-Graph : " << *blockGraph << endl;)
   
   return *blockGraph; 
 }

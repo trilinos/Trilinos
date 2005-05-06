@@ -166,7 +166,7 @@ protected:
 
   int myId;                     // Unique integer id for this Problem
   string myName;		// String identifier for convenience
-  Problem_Manager* myManager;   // Problem Manager with which this problem interacts
+  Problem_Manager * myManager;   // Problem Manager with which this problem interacts
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;
   Epetra_Vector *xptr;		// Spatial locations of mesh points
