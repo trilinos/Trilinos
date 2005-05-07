@@ -206,7 +206,11 @@ protected:
 
   // Overridden from OpBase
 
-  bool opSupported( Thyra::ETransp M_trans ) const { return (M_trans == Thyra::NOTRANS); }
+  bool opSupported( Thyra::ETransp M_trans ) const
+    {
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      return (M_trans == Thyra::NOTRANS || (!ST::isComplex && M_trans == Thyra::CONJ) );
+    }
 
   // Overridden from SeiralLinearOpBase
 

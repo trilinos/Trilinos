@@ -156,11 +156,17 @@ protected:
           y[k] += alpha * ( lower_[k-1]*x[k-1] + diag_[k]*x[k] + upper_[k]*x[k+1] );  // Middle rows
         y[k] += alpha * ( lower_[k-1]*x[k-1] + diag_[k]*x[k] );                       // Last row
       }
-      else if( M_trans == Thyra::TRANS ) {
-        y[k] += alpha * ( diag_[k]*x[k] + lower_[k]*x[k+1] );                         // First row
+      else if( M_trans == Thyra::CONJ ) {
+        y[k] += alpha * ( ST::conjugate(diag_[k])*x[k] + ST::conjugate(upper_[k])*x[k+1] );
         for( k = 1; k < dim_ - 1; ++k )
-          y[k] += alpha * ( upper_[k-1]*x[k-1] + diag_[k]*x[k] + lower_[k]*x[k+1] );  // Middle rows
-        y[k] += alpha * ( upper_[k-1]*x[k-1] + diag_[k]*x[k] );                       // Last row
+          y[k] += alpha * ( ST::conjugate(lower_[k-1])*x[k-1] + ST::conjugate(diag_[k])*x[k] + ST::conjugate(upper_[k])*x[k+1] );
+        y[k] += alpha * ( ST::conjugate(lower_[k-1])*x[k-1] + ST::conjugate(diag_[k])*x[k] );
+      }
+      else if( M_trans == Thyra::TRANS ) {
+        y[k] += alpha * ( diag_[k]*x[k] + lower_[k]*x[k+1] );
+        for( k = 1; k < dim_ - 1; ++k )
+          y[k] += alpha * ( upper_[k-1]*x[k-1] + diag_[k]*x[k] + lower_[k]*x[k+1] );
+        y[k] += alpha * ( upper_[k-1]*x[k-1] + diag_[k]*x[k] );
       }
       else if( M_trans == Thyra::CONJTRANS ) {
         y[k] += alpha * ( ST::conjugate(diag_[k])*x[k] + ST::conjugate(lower_[k])*x[k+1] );
