@@ -674,7 +674,7 @@ uninstall-info: uninstall-info-recursive
 all-local:
 	@echo "Trilinos package thyra built successfully"
 
-run-tests:
+check:
 	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_operator_vector_tests.pl
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	

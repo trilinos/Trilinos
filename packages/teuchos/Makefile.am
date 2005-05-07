@@ -89,6 +89,9 @@ endif
 
 SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
+check:
+	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run-teuchos-tests.pl
+
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	

@@ -706,6 +706,10 @@ uninstall-info: uninstall-info-recursive
 all-local:
 	@echo "Trilinos package epetra built successfully"
 
+@ENABLE_EPETRA_THYRA_TRUE@check:
+@ENABLE_EPETRA_THYRA_TRUE@	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_epetra_thyra_tests.pl
+@ENABLE_EPETRA_THYRA_FALSE@check:
+
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.epetra $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \

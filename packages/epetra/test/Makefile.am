@@ -52,4 +52,3 @@ SerialDense/SerialDense_test.exe \
 SerialSpdDense/SerialSpdDense_test.exe \
 VbrMatrix/VbrMatrix_test.exe \
 Vector/Vector_test.exe
-

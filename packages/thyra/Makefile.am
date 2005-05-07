@@ -94,7 +94,7 @@ endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
-run-tests:
+check:
 	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_operator_vector_tests.pl
 
 if USING_EXPORT_MAKEFILES

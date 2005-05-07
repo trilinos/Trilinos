@@ -87,6 +87,11 @@ Some of the more important configuration options are:
 its dependent packages to be enabled and built.  Without this option,
 there will be no %Thyra header files or libraries included in the
 installation of Trilinos (i.e. using <tt>make install</tt>).
+<li><b><tt>--enable-export-makefiles</tt></b>: Causes the installation of
+the %Thyra pacakge (an other Trilinos packages) to have the makefile
+fragments <tt>Makefile.export.thyra</tt> and <tt>Makefile.export.thyra.macros</tt>
+installed in the installation directory <tt>$TRILINOS_INSTALL_DIR/include</tt> for
+use by external makefiles (\ref thyra_external_projects_sec "see").
 </ul>
 
 See the output from <tt>./configure --help</tt> (where <tt>./</tt> is

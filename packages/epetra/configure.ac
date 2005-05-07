@@ -392,8 +392,8 @@ AC_CONFIG_FILES([
 		test/FEVector/Makefile.include
 		test/ImportExport/Makefile
 		test/ImportExport/Makefile.include
-                test/IntSerialDense/Makefile
-                test/IntSerialDense/Makefile.include
+		test/IntSerialDense/Makefile
+		test/IntSerialDense/Makefile.include
 		test/Map/Makefile
 		test/Map/Makefile.include
 		test/MapColoring/Makefile
@@ -415,7 +415,7 @@ AC_CONFIG_FILES([
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile
 		example/UG_Ex1/Makefile
-          	example/UG_ExMaps/Makefile
+		example/UG_ExMaps/Makefile
 		example/my_example/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
@@ -432,10 +432,10 @@ AC_CONFIG_FILES([
 		python/src/.deps/dummy
 		python/test/Makefile
 		python/example/Makefile
-    thyra/Makefile
-    thyra/src/Makefile
-    thyra/example/Makefile
-    thyra/test/Makefile
+		thyra/Makefile
+		thyra/src/Makefile
+		thyra/example/Makefile
+		thyra/test/Makefile
 		])
 
 AC_OUTPUT()

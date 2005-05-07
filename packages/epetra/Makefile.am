@@ -94,6 +94,13 @@ EPETRA_DEP_PACKAGES=$(EPETRA_THYRA_DEP_PACKAGES)
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR) $(THYRA_SUBDIR)
 
+if ENABLE_EPETRA_THYRA
+check:
+	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_epetra_thyra_tests.pl
+else
+check:
+endif
+
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
