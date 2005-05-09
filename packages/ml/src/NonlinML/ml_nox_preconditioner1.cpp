@@ -716,6 +716,9 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   double* nullsp = interface_.Get_Nullspace(i,ml_numPDE_,ml_dim_nullsp_);
   if (nullsp)
   {
+#if 0
+     test_nullspace(ml_dim_nullsp_,nullsp,fineJac_);
+#endif
      ML_Aggregate_Set_NullSpace(ag_,ml_numPDE_,ml_dim_nullsp_,nullsp,i);
      // delete [] nullsp; nullsp = 0; // FIXME, who deletes this?
   }
@@ -1097,6 +1100,35 @@ bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix* A, int le
      }
   }
 
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  test the nullspace and make printout (private)           m.gee 05/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::test_nullspace(int dimns, double* nullsp, 
+                                                   Epetra_CrsMatrix* Jac) const
+{
+  if (!Jac || !nullsp) return false;
+  
+  Epetra_Vector test(Jac->OperatorRangeMap(),true);
+  Epetra_Vector out(Jac->OperatorRangeMap(),true);
+  
+  for (int i=0; i<dimns; ++i)
+  {
+    for (int j=0; j<test.MyLength(); ++j)
+       test.ReplaceMyValue(j,0,nullsp[i*test.MyLength()+j]);
+    
+    int err = Jac->Multiply(false,test,out);
+    if (err) cout << "**ERR** There was an error in Multiply()\n";
+    
+    double norm;
+    out.Norm2(&norm);
+    cout << "*******Nullspace Vector " << i << ": Norm2 " << norm << endl;
+    cout << out;
+  }
+  
+  exit(0);
   return true;
 }
 

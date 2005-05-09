@@ -483,6 +483,7 @@ private:
   Epetra_CrsGraph* deepcopy_graph(const Epetra_CrsGraph* oldgraph);
   bool Set_Smoothers();
   bool fix_MainDiagonal(Epetra_CrsMatrix* A, int level) const;
+  bool test_nullspace(int dimns, double* nullsp, Epetra_CrsMatrix* Jac) const;
   
   // ApplyInverse functions, 
   // depending on type of preconditioner
