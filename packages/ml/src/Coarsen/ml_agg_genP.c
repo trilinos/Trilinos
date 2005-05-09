@@ -2202,6 +2202,7 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
     values[count]  = values[i];
     ++count;
 after:
+    continue;
   }
 
   if (DiagID == -1)
