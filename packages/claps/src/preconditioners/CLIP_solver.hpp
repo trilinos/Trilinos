@@ -135,7 +135,7 @@ class CLIP_solver
   int MyPID, NumProc, ndof_sub, ndof_global, print_flag, ncomp, ncomp_sum;
   int *comp1, *comp2, *sub1, *sub2, *dset1, *dset2, ndof_set, *corner_flag;
   int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global, max_added_corner;
-  int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR;
+  int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR, sub_begin;
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;

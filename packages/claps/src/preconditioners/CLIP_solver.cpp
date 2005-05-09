@@ -446,7 +446,8 @@ void CLIP_solver::determine_dof_sets()
   //  sub1[sub2[i]:sub2[i+1]-1] = subdomains containing dof i
   //
   int *columns = new int[ncomp];
-  for (i=0; i<ncomp; i++) columns[i] = ScanSums - ncomp + i;
+  sub_begin = ScanSums - ncomp;
+  for (i=0; i<ncomp; i++) columns[i] = sub_begin + i;
   Epetra_Map ColMap(ncomp_sum, ncomp, columns, 0, Comm);
   delete [] columns;
   Epetra_CrsGraph Subdomains(Copy, *SubMap, ColMap, 1, true);
@@ -561,11 +562,11 @@ void CLIP_solver::determine_dof_sets()
   //
   owner_flag = new bool[ndof_sub];
   for (i=0; i<ndof_sub; i++) owner_flag[i] = false;
-  int base = Comm.NumProc() + 1;
+  int base = ncomp_sum + 7;
   for (i=0; i<ndof_sub; i++) {
     int gmin = base;
     for (j=sub2[i]; j<sub2[i+1]; j++) if (sub1[j] < gmin) gmin = sub1[j];
-    if (MyPID == gmin) owner_flag[i] = true;
+    if ((gmin >= sub_begin) && (gmin < (sub_begin + ncomp))) owner_flag[i] = true;
   }
 
   /*
@@ -1729,6 +1730,31 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   // pcg iterations
   //
   pcg_status = 1;
+  //
+  // symmetry check
+  //
+  /*
+  rB_St->PutScalar(0.0);
+  double *rbst, *zbst;
+  rB_St->ExtractView(&rbst);
+  zB_St->ExtractView(&zbst);
+  if (MyPID == 0) {
+    cout << "nB = " << nB << endl;
+    rbst[777] = 1;
+  }
+  apply_preconditioner();
+  if (MyPID == 0) {
+    cout << "zB_St[1077] = " << zbst[1077] << endl;
+    rbst[777] = 0;
+    rbst[1077] = 1;
+  }
+  apply_preconditioner();
+  if (MyPID == 0) {
+    cout << "zB_St[777]  = " << zbst[777] << endl;
+  }
+  return;
+  */
+
   if (n_orthog_used == max_orthog) cg_iter = 0;
   for (int iter=0; iter<(maxiter*(1-init_flag)); iter++) {
     if (MyPID == -1) cout << "iteration " << iter+1 << " of maxiter = "
