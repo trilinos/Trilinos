@@ -1661,6 +1661,8 @@ void CLIP_solver::pcg_init()
   Etri = new double[maxiter+2];
   econa = new double[maxiter+2];
 
+  int nrB_St = rB_St->GlobalLength();
+  if (nrB_St < max_orthog) max_orthog = nrB_St; 
   P_ortho  = new double[max_orthog*nB_own];
   AP_ortho = new double[max_orthog*nB_own];
   orth1 = new double[max_orthog];
