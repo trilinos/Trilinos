@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   RefCountPtr<VectorBase<Scalar> > b = createMember(epetra_vs);
   RefCountPtr<VectorBase<Scalar> > x = createMember(epetra_vs);
 
-  randomize(0.0,1.0,&*b);
+  randomize(0.0,1.0,&*b); // b = random
   V_StV(&*x,2.0,*b); // x = 2*b
 
   double bnorm, xnorm;
