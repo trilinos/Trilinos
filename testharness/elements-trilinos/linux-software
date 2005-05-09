@@ -31,4 +31,6 @@
 --enable-triutils
 --enable-tpetra
 --enable-pytrilinos
+--enable-thyra
+--enable-epetra-thyra
 --disable-default-packages

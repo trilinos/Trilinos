@@ -37,4 +37,6 @@
 --enable-komplex
 --enable-nox
 --enable-python
+--enable-thyra
+--enable-epetra-thyra
 --disable-default-packages

@@ -34,4 +34,6 @@
 --enable-kokkos
 --enable-new_package
 --enable-new_swahili
+--enable-thyra
+--enable-epetra-thyra
 --disable-default-packages

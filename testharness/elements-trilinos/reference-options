@@ -78,4 +78,6 @@
 --disable-tsfcore-mpi
 --enable-tsfcoreutils
 --enable-tsfextended
+--enable-thyra
+--enable-epetra-thyra
 --disable-default-packages
