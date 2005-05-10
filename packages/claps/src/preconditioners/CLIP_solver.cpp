@@ -1714,6 +1714,8 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     rB_St->Norm2(&rnorm);
     if (print_flag > 0) {
       fout << "----------after using stored search directions------" << endl;
+      fout << "number of search directions used           = " 
+	   << n_orthog_used << endl;
       fout << "residual                                   = " << rnorm
 	   << endl;
       fout << "additional reduction in tpe                = " << tpe << endl;
@@ -1897,6 +1899,7 @@ double CLIP_solver::stat_cond()
   for (i=0; i<nI; i++) RHS_cg[i] = rsub[dofI[i]];
   if (nI > 0) AI->sol(1, RHS_cg, SOL_cg, TEMP_cg);
   for (i=0; i<nI; i++) tpe -= SOL_cg[i]*RHS_cg[i];
+  tpe /= 2;
   Comm.SumAll(&tpe, &tpe_sum, 1);
   myzero(RHS_cg, ndof_sub);
   for (i=0; i<nI; i++) RHS_cg[dofI[i]] = SOL_cg[i];
