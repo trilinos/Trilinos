@@ -1,0 +1,411 @@
+#!/usr/bin/perl -w
+# /Trilinos/commonTools/test/harness/runharness
+
+################################################################################
+# The Trilinos Project - runharness
+# 
+# Mike Phenow, Jim Willenbring
+#
+# This is the program used by the Trilinos Framework Developers to schedule
+# and report the results of automated building and testing of the latest
+# versions of Trilinos source.  This program is designed as a way to centrally
+# control the intricacies of maintainting an automated build and test suite on
+# a wide variety of distributed machines, each with their own demands and
+# constraints.
+#  
+# This is *not intended* to be used by individual developers or users.  There
+# is nothing to stop a user or developer from using it, but little support will
+# be provided.  If you have a need for similar configure/build/test/report
+# capability, see the utilities in commonTools/test/utilities.  Also, other
+# programs, similar to this one but designed for a developer or user's use
+# cases may be produced in the future.  If you have an interest in this,
+# please send a note to trilinos-framework@software.sandia.gov detailing your
+# needs.
+#
+################################################################################
+
+use strict;
+
+# Variable Declarations ========================================================
+
+# Command line arguments:
+
+my $trilinosDir;        # Trilinos directory            (required argument) 
+my $configFile;         # runharness config file        (required argument)
+
+my $runStartTime;
+my $runStartTimeForFilename;
+
+# Constants
+my $v0 = "0";           # quiet
+my $v1 = "1";           # normal verbosity
+my $v2 = "2";           # level 2 verbosity
+my $v3 = "4";           # level 3 verbosity
+        
+################################################################################
+# Execution ####################################################################
+################################################################################
+
+getArgs();
+init();
+
+my $exitStatus = run();
+cleanUp();
+exit $exitStatus;
+
+################################################################################
+# Subroutines ##################################################################
+################################################################################
+
+    ############################################################################
+    # getArgs()
+    #
+    # Parse command line arguments.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub getArgs {
+        
+        my $quiet;
+        my $help;
+
+        use Getopt::Long;
+        GetOptions( "trilinos-dir=s" => \$trilinosDir,
+                    "config-file=s" => \$configFile,
+                    "help" => \$help );
+        
+        # Print help and exit.
+        if ($help) { 
+            printHelp();
+            exit;
+        }
+        
+        # Enforce and/or prepare arguments.
+        
+        # check for existance of trilinos-dir argument and actual directory
+        if (!$trilinosDir) {
+            die "trilinos-dir value required, see --help for more information\n"; 
+        } else {
+            if (!stat($trilinosDir)) {
+                die "cannot stat trilinos-dir: $trilinosDir\n";
+            }
+        }
+        
+        # check for existance of trilinos-dir argument and actual directory
+        if (!$configFile) {
+            die "config-file value required, see --help for more information\n"; 
+        } else {
+            if (!stat($configFile)) {
+                die "cannot stat config-file: $configFile\n";
+            }
+        }
+        
+    } # getArgs()
+
+    ############################################################################
+    # init()
+    #
+    # Prepares varibles.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub init {
+    
+        # Capture and format make start time.
+        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+        $yr = sprintf("%02d", $yr % 100);
+        $mo = sprintf("%02d", $mo+1);
+        $da = sprintf("%02d", $da);
+        $hr = sprintf("%02d", $hr);
+        $mn = sprintf("%02d", $mn);
+        $se = sprintf("%02d", $se);
+        $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+        $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        
+        # Print list of variables for debugging.
+        my $message = "";
+        $message .= "init():\n";
+        $message .= "  \$configFile = $configFile\n";
+        $message .= "  \n";
+        printMessage($message, $v3);
+        
+    } # init()
+    
+    ############################################################################
+    # run()
+    #
+    # Runs runbuild and runtests as specified by the config file
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub run {
+
+        # Array of Hashes to store information in the config file
+        my @runListAoH = parseConfig();
+        
+    } # run()
+    
+    ############################################################################
+    # parseConfig()
+    #
+    # Parse config file and return data in configAoH.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  $configAoH       (array of runs, which contain...
+    #                                    hashes of property names/values.)
+    #
+
+    sub parseConfig {
+        my $status = 0;
+        my $errorString = "";
+    
+        # Array of hashs of arrays that will be returned when all is said and done.
+        my @configAoH = ();
+        
+        # Open config file for reading.
+        open (CONFIG, "<$configFile") or die "Can't open config file: $configFile, died";
+            
+        # Read config file into one string.
+        undef $/;               # undefine input record separator
+        my $file=<CONFIG>;      # copy entire file
+        $/ = "\n";              # restore it to default newline
+        close CONFIG;
+        
+        # Clean up file.
+        $file =~ s/#.*$//mg;        # remove everything after any #
+        $file =~ s/\n\s*\n/\n/g;    # remove any blank lines
+        $file =~ s/^\s*//mg;        # remove leading spaces
+        $file =~ s/\s*$//mg;        # remove trailing spaces
+        $file =~ s/\n//g;           # remove all newlines (force ourselves
+                                    # to avoid making assumptions about formatting)
+        
+        # Split config file into groups.
+        # This gives us an array of strings of the essential form {.*}.
+        my @rawRunGroups = $file =~ m/(\{.*?\})/g;
+        
+        # Step through the list of raw run groups, parsing each with
+        # parseRunGroup() and adding to the array.
+        foreach my $rawRunGroup (@rawRunGroups) {
+            (my $failures, my %result) = parseRunGroup($rawRunGroup);
+            if (!$failures) {
+                push(@configAoH, { %result });
+            } else {
+                $status += $failures;
+                $errorString .= $result{"errorString"};
+            }
+        }
+        
+        # print @definitionAoH
+        my $message = "";
+        $message .= "parseConfig():\n";
+        $message .= "  \@configAoH:\n";
+        for my $i (0 .. $#configAoH) {
+            $message .= "    run group $i:\n";
+            foreach my $key (keys %{ $configAoH[$i] }) { 
+                $message .= "      $key\n";
+                foreach my $item (@{ $configAoH[$i]{$key} }) {
+                    $message .= "        '$item'\n";
+                }
+            }
+        }
+        $message .= "\n";
+        printMessage($message, $v3);
+        
+        if (!$status) {         # Return properly parsed config file.
+            return ($status, @configAoH);
+        } else {                # Return $errorString string.
+            return ($status, ($errorString));
+        }
+    
+    } # parseConfig()
+    
+    ############################################################################
+    # parseRunGroup()
+    #
+    # Given a raw {.*} string, parse it into a hash.
+    #
+    #   - args:     $rawGroupString     (raw {.*} string)
+    #
+    #   - returns:  $status             (success(0)/failure(!0) status)
+    #               %runGroup           (hash of property names/values.)
+    #               $errorString        (record of malformed group error messages)
+    #
+
+    sub parseRunGroup {
+        my $rawGroupString = $_[0];
+        my $status = 0;
+        my $errorString = "";
+    
+        # Hash that will be returned when all is said and done.
+        my %runGroup = ();
+        
+        # Extract property {.*} section from raw string       
+        my $propertyListString = "";
+        if ($rawGroupString =~ m/\{(.+?)\}/) {
+            $propertyListString = $1;
+        } else {
+            $status++;
+            $errorString .= "! Malformed test group:  bad property list.\n";
+        }
+        
+        # Property section {.*}:       
+        # Grap each raw 'PROPERTY = VALUE-1, VALUE-N;' string.
+        my @rawPropertyStrings = $propertyListString =~ m/(.+?;)/g;        
+        foreach my $propertyString (@rawPropertyStrings) {
+            
+            # Grab property name.
+            my $key = "";
+            if ($propertyString =~ m/\s*(\w+?)\s*=.*?;/) {
+                $key = $1;
+            } else {
+                $status++;
+                $errorString .= "! Malformed test group:  bad property list.\n";
+            }
+            
+            # Grab the raw values list string.
+            my $valuesString = "";
+            if ($propertyString =~ m/\s*\w+?\s*=\s*(.*?;)/) {
+                $valuesString = $1;
+            } else {
+                $status++;
+                $errorString .= "! Malformed test group:  bad property list.\n";
+            }
+            
+            # Add new key=>(values) entry in array.
+            $runGroup{$key} = $valuesString;
+        }
+        
+        # Validate test group:
+        
+        # Enforce existance of MACHINE property.
+        if (!$runGroup{'MACHINE'}) {
+            $status++;            
+            $errorString .= "! Malformed test group:  no MACHINE property.\n";
+        }
+        
+        # Enforce existance of BUILD-DIR property.
+        if (!$runGroup{'BUILD-DIR'}) {
+            $status++;            
+            $errorString .= "! Malformed test group:  no BUILD-DIR property.\n";
+        }
+        
+        # Enforce existance of COMM property.
+        if (!$runGroup{'COMM'}) {
+            $status++;            
+            $errorString .= "! Malformed test group:  no COMM property.\n";
+        }
+        
+        # Enforce existance of INVOKE-CONFIGURE property.
+        if (!$runGroup{'INVOKE-CONFIGURE'}) {
+            $status++;            
+            $errorString .= "! Malformed test group:  no INVOKE-CONFIGURE property.\n";
+        }
+        
+        # Enforce existance of SCHEDULE property.
+        if (!$runGroup{'SCHEDULE'}) {
+            $status++;            
+            $errorString .= "! Malformed test group:  no SCHEDULE property.\n";
+        }
+        
+        # Add more validations as necessary to catch errors sooner...
+        
+        if (!$status) {         # Return properly parsed test group.
+            return ($status, %runGroup);
+        } else {                # Return $errorString string.
+            return ($status, ("errorString", $errorString));
+        }
+    
+    } # parseRunGroup()
+
+    ############################################################################
+    # cleanUp()
+    #
+    # Clean up environment variables, temp files, etc.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub cleanUp {
+    
+        # Currently, there is nothing to clean up, but I will leave this
+        # subroutine here for potential future use.
+           
+    } # cleanUp()
+    
+    ############################################################################
+    # printMessage()
+    #
+    # Prints an event if the verbosity is set.
+    #
+    #   - args:     $message        (message to be printed)
+    #               $level          (verbosity level of message)
+    #
+    #   - returns:  NONE
+    #
+
+    sub printMessage {
+        my $message = $_[0];
+        my $level = $_[1];
+        
+        if ($verbosity & $level) {
+            print $message;
+        }
+        
+        if ($logVerbosity & $level) {
+            my $log = "log-$runStartTimeForFilename.txt";
+            open (LOG, ">>$log")
+                or die "can't open $log";
+            print LOG $message;
+            close LOG;
+        }
+    } # printMessage()
+
+    ############################################################################
+    # printHelp()
+    #
+    # Prints help output.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub printHelp {
+        print "runharness - The Trilinos Framework Test Harness\n";
+        print "\n";
+        print "Usage:  perl runharness --config-file=/home/user/config\n";
+        print "\n";
+        print "Options:\n";
+        print "\n";
+        print "  --trilinos-dir=DIR         Specify the absolute path to the top-level\n";
+        print "                             Trilinos directory that contains this program.\n";
+        print "                             Example: /home/user/Trilinos\n";
+        print "                             REQUIRED.\n";
+        print "\n";
+        print "  --config-file=FILE         Specify the absolute path to the runharness\n";
+        print "                             config file that will determine the behavior.\n";
+        print "                             of the program.\n";
+        print "                             Example: /home/user/config\n";
+        print "                             REQUIRED.\n";
+        print "\n";
+        print "\n";
+        print "  --help                     Print this help output and exit.\n";
+        print "\n";
+        print "Notes:\n";
+        print "  - For more information, see README in\n";
+        print "    Trilinos/commonTools/test/harness/\n";
+        print "    or visit http://software.sandia.gov/trilinos/developer/\n";
+        print "\n";
+    } # printHelp()

@@ -1,0 +1,28 @@
+###############################################################################
+# runharness - The Trilinos Framework test harness manager                    #
+#                                                                             #
+# The Trilinos Project                                                        #
+#                                                                             #
+#   Mike Phenow, Jim Willenbring                                              #
+#                                                                             #
+###############################################################################
+
+  This document describes the usage of runharness, the Trilinos Framework test
+  harness manager.
+  
+-------------------------------------------------------------------------------
+I.  Prerequisites
+
+  In order for the test harness to work, you must have the following in place:
+  
+    1.  A well-formed runharness config file.
+       
+-------------------------------------------------------------------------------
+II.  Execution
+
+  To execute the Trilinos Framework test harness, simply type:
+  
+    cd /PATH/TO/Trilinos/commonTools/test/harness/
+    runharness --trilinos-dir /PATH/TO/Trilinos --config-file=/PATH/TO/config
+
+-------------------------------------------------------------------------------
