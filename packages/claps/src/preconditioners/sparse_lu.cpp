@@ -4,14 +4,14 @@
 CLAPS_sparse_lu::CLAPS_sparse_lu()
 {
   XSUPER = 0; XLINDX = 0; LINDX = 0; XLNZ = 0; PERM = 0; INVP = 0;
-  IPROW = 0;  IPCOL = 0; DEF = 0; LNZ = 0; NS = 0;
+  IPROW = 0;  IPCOL = 0; DEF = 0; LNZ = 0; NS = 0; SCALE = 0;
 }
 
 CLAPS_sparse_lu::~CLAPS_sparse_lu()
 {
   delete [] XSUPER; delete [] XLINDX; delete [] LINDX; delete [] XLNZ; 
   delete [] PERM; delete [] INVP; delete [] IPROW; delete [] IPCOL;
-  delete [] DEF; delete [] LNZ; delete [] NS;
+  delete [] DEF; delete [] LNZ; delete [] NS; delete [] SCALE;
 }
 
 void CLAPS_sparse_lu::cleanup()
@@ -22,7 +22,7 @@ void CLAPS_sparse_lu::cleanup()
 }
 
 int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[], 
-		      double ANZ[])
+		      double ANZ[], int scale_flag_)
 {
   //
   // Input:
@@ -45,6 +45,31 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
     int INFO;
     INFO = small_factor(COLPTR, ROWIDX, ANZ);
     return INFO;
+  }
+  scale_flag = scale_flag_;
+  //
+  // scale matrix entries if requested
+  //
+  double *ANZ_SCALED;
+  if (scale_flag == 1) {
+    int i, j;
+    SCALE = new double[N];
+    for (i=0; i<N; i++) SCALE[i] = 0;
+    for (i=0; i<N; i++) {
+      for (j=COLPTR[i]; j<COLPTR[i+1]; j++)
+	if (ROWIDX[j] == i) SCALE[i] = sqrt(fabs(ANZ[j]));
+      assert (SCALE[i] != 0);
+    }
+    ANZ_SCALED = new double[NNZ];
+    for (i=0; i<N; i++) SCALE[i] = 1/SCALE[i];
+    for (i=0; i<N; i++) {
+      for (j=COLPTR[i]; j<COLPTR[i+1]; j++) {
+	ANZ_SCALED[j] = SCALE[i]*SCALE[ROWIDX[j]]*ANZ[j];
+      }
+    }
+  }
+  else {
+    ANZ_SCALED = ANZ;
   }
   int NNZA, NADJ, IWMAX, IWSIZE, IFLAG, MAXSUP, NTOT, RWSIZE, LDNS;
   int NNZL, NSUB, NLNZ, TMPSIZ, MAXDEF, ASDEF;
@@ -101,7 +126,7 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   //
   // compute L-infinity norm of matrix
   //
-  getnrm(N,COLPTR,ROWIDX,ANZ,ANORM);
+  getnrm(N, COLPTR, ROWIDX, ANZ_SCALED, ANORM);
   //
   // convert COLPTR, ROWIDX, XADJ, and ADJ to Fortran numbering
   //
@@ -169,8 +194,9 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   for (int i=0;i<N;i++) DEF[i]=0;
   NDEF=0;
   LBDEF=0;
-  inpnv(N,COLPTR,ROWIDX,ANZ,PERM,INVP,NSUPER,XSUPER,XLINDX,LINDX,XLNZ,
+  inpnv(N,COLPTR,ROWIDX,ANZ_SCALED,PERM,INVP,NSUPER,XSUPER,XLINDX,LINDX,XLNZ,
 	LNZ,IWORK);
+  if (scale_flag == 1) delete [] ANZ_SCALED;
   //
   // numerical factorization
   //
@@ -241,12 +267,27 @@ int CLAPS_sparse_lu::sol(int NRHS, double RHS[], double SOL[], double TEMP[])
     INFO = small_solve(NRHS, RHS, SOL);
     return INFO;
   }
+  if (scale_flag == 1) {
+    for (int j=0; j<NRHS; j++) {
+      int jbeg = j*N;
+      for (int i=0; i<N; i++) RHS[jbeg+i] *= SCALE[i];
+    }
+  }
   int LRHS=N;
   int LSOL=N;
   //  cout << "LBDEF = " << LBDEF << endl;
   //  cout << "NDEF  = " << NDEF << endl;
   BLKSLVN_F77(NSUPER,XSUPER,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,NDEF,LBDEF,
 	      DEF,IPROW,IPCOL,PERM,INVP,LRHS,NRHS,RHS,LSOL,SOL,N,TEMP);
+  if (scale_flag == 1) {
+    for (int j=0; j<NRHS; j++) {
+      int jbeg = j*N;
+      for (int i=0; i<N; i++) {
+	SOL[jbeg+i] *= SCALE[i];
+	RHS[jbeg+i] /= SCALE[i];
+      }
+    }
+  }
   return 0;
 }
 
@@ -263,10 +304,10 @@ void CLAPS_sparse_lu::getnrm(int n, int colptr[], int rowidx[],
   }
 }
 
-void CLAPS_sparse_lu::inpnv(int &n , int colptr[], int rowidx[], double values[], 
-		      int perm[], int invp [], int &nsuper, int xsuper[], 
-		      int xlindx[], int lindx[], int xlnz[], double lnz[],
-		      int offset[])
+void CLAPS_sparse_lu::inpnv(int &n , int colptr[], int rowidx[], 
+                 double values[], int perm[], int invp [], int &nsuper, 
+		 int xsuper[], int xlindx[], int lindx[], int xlnz[], 
+                 double lnz[], int offset[])
 {
   //
   // input numerical values for cholesky factorization

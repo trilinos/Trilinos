@@ -51,7 +51,8 @@ class SCLIP_solver
   void CLIP_solver_init(int cdof_option, double solver_tol, int maxiter, 
 			int atype, int ndim, int local_solver, int max_orthog,
 			int prt_debug, int prt_summary, 
-			int chk_sub_singularity);
+			int chk_sub_singularity, int krylov_method,
+			int scale_option);
   void solve(double f[], double u[], int & number_iterations, 
 	     int & SCLIP_status, int & max_added_corner);
   void MpcForces( double *cvals);

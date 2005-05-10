@@ -45,6 +45,8 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
   prt_debug           = int(clip_params[7]);
   prt_summary         = int(clip_params[8]);
   chk_sub_singularity = int(clip_params[9]);
+  krylov_method       = int(clip_params[10]);
+  scale_option        = int(clip_params[11]);
 
   assert (Coords->NumVectors() == 3);
   assert (Coords->ConstantStride() == true);
@@ -111,8 +113,10 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
   Comm.Barrier();
   if (print_flag > 0) {
     endtime = MPI_Wtime();
-    fout << "elapsed time for clop solver init  = " 
+    fout << "elapsed time for clip solver init  = " 
 	 << endtime-starttime << " seconds" << endl;
+    if (krylov_method != 1) fout << "pcg solver will be used" << endl;
+    if (krylov_method == 1) fout << "gmres solver will be used" << endl;
     fout.close();
   }
 }
@@ -140,6 +144,8 @@ CLIP_solver::~CLIP_solver()
   delete [] rcurra; delete [] rhoa; delete [] betaa; delete [] pApa; 
   delete [] Dtri; delete [] Etri; delete [] econa; delete [] P_ortho; 
   delete [] AP_ortho; delete [] orth1; delete [] orth2; delete [] owner_flag;
+  delete [] VV; delete [] RR; delete [] HH; delete [] zz; delete [] cc;
+  delete [] ss; delete [] norms; delete [] gmres_vec; delete [] gmres_sum;
   zero_pointers();
 }
 
@@ -942,7 +948,7 @@ void CLIP_solver::factor_sub_matrices()
   gen_matrix(Block_Stiff, nR, dofR, rowbeg, colidx, vals);
   AR = new CLAPS_sparse_lu();
   nnz = rowbeg[nR];
-  AR->factor(nR, nnz, rowbeg, colidx, vals);
+  AR->factor(nR, nnz, rowbeg, colidx, vals, scale_option);
   delete [] rowbeg; delete [] colidx; delete [] vals;
   //
   // determine internal and boundary dofs and factor AI
@@ -968,7 +974,7 @@ void CLIP_solver::factor_sub_matrices()
   gen_matrix(Block_Stiff, nI, dofI, rowbeg, colidx, vals);
   AI = new CLAPS_sparse_lu();
   nnz = rowbeg[nI];
-  AI->factor(nI, nnz, rowbeg, colidx, vals);
+  AI->factor(nI, nnz, rowbeg, colidx, vals, scale_option);
   delete [] rowbeg; delete [] colidx; delete [] vals;
 }
 
@@ -1194,7 +1200,7 @@ void CLIP_solver::calculate_coarse()
       fout << "coarse problem dimension = " << ngather << endl;
     nnz = rowbeg[ngather];
     AKc = new CLAPS_sparse_lu();
-    AKc->factor(ngather, nnz, rowbeg, colidx, vals);
+    AKc->factor(ngather, nnz, rowbeg, colidx, vals, scale_option);
     delete [] rowbeg;
     SOL_Kc  = new double[ngather];
     TEMP_Kc = new double[ngather];
@@ -1562,7 +1568,8 @@ void CLIP_solver::zero_pointers()
   ARinvCT = 0; CARinvCT = 0; lambda_e = 0; RHS_cg = 0; SOL_cg = 0; TEMP_cg = 0;
   SOL_Kc = 0; TEMP_Kc = 0; rcurra = 0; rhoa = 0; betaa = 0; pApa = 0; Dtri = 0;
   Etri = 0; econa = 0; P_ortho = 0; AP_ortho = 0; orth1 = 0; orth2 = 0; 
-  owner_flag = 0;
+  owner_flag = 0; VV = 0; RR = 0; HH = 0; zz = 0; cc = 0; ss = 0; norms = 0; 
+  gmres_vec = 0; gmres_sum = 0;
 }
 
 void CLIP_solver::construct_subdomains()
@@ -1592,18 +1599,24 @@ void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 			int & num_iter, int & solver_status,
 			int & max_added_cor)
 {
-  int pcg_status;
+  int pcg_status, gmres_status;
   double starttime, endtime;
   max_added_cor = max_added_corner;
   Comm.Barrier();
   if (MyPID == 0) starttime = MPI_Wtime();
   if (print_flag >= 0) fout.open("CLIP_solver.data", ios::app);
-  pcg_solve(uStand, fStand, num_iter, pcg_status);
-  solver_status = pcg_status;
+  if (krylov_method != 1) {
+    pcg_solve(uStand, fStand, num_iter, pcg_status);
+    solver_status = pcg_status;
+  }
+  if (krylov_method == 1) {
+    gmres_solve(uStand, fStand, num_iter, gmres_status);
+    solver_status = gmres_status;
+  }
   Comm.Barrier();
   if (print_flag > 0) {
     endtime = MPI_Wtime();
-    fout << "elapsed time for clop solver solve = " << endtime-starttime
+    fout << "elapsed time for clip solver solve = " << endtime-starttime
 	 << " seconds" << endl;
   }
   if (print_flag >= 0) fout.close();
@@ -1654,20 +1667,36 @@ void CLIP_solver::pcg_init()
   prod_PhiB = new Epetra_Vector(PhiB->DomainMap());
 
   rcurra = new double[maxiter+2];
-  rhoa = new double[maxiter+2];
-  betaa = new double[maxiter+2];
-  pApa = new double[maxiter+2];
-  Dtri = new double[maxiter+2];
-  Etri = new double[maxiter+2];
-  econa = new double[maxiter+2];
 
   int nrB_St = rB_St->GlobalLength();
   if (nrB_St < max_orthog) max_orthog = nrB_St; 
-  P_ortho  = new double[max_orthog*nB_own];
-  AP_ortho = new double[max_orthog*nB_own];
-  orth1 = new double[max_orthog];
-  orth2 = new double[max_orthog];
 
+  if (krylov_method != 1) {
+    rhoa = new double[maxiter+2];
+    betaa = new double[maxiter+2];
+    pApa = new double[maxiter+2];
+    Dtri = new double[maxiter+2];
+    Etri = new double[maxiter+2];
+    econa = new double[maxiter+2];
+    P_ortho  = new double[max_orthog*nB_own];
+    AP_ortho = new double[max_orthog*nB_own];
+    orth1 = new double[max_orthog];
+    orth2 = new double[max_orthog];
+  }
+  if (krylov_method == 1) {
+    int m = nB_own*(maxiter+1);
+    VV = new double[m]; myzero(VV, m);
+    m = maxiter*maxiter;
+    RR = new double[m]; myzero(RR, m);
+    m = maxiter+1;
+    HH = new double[m]; myzero(HH, m);
+    zz = new double[m]; myzero(zz, m);
+    cc = new double[m]; myzero(cc, m);
+    ss = new double[m]; myzero(ss, m);
+    norms = new double[m]; myzero(norms, m);
+    gmres_vec = new double[m];
+    gmres_sum = new double[m];
+  }
   cg_iter = -1;
   n_orthog_used = 0;
 }
@@ -1726,39 +1755,14 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
       fout << "----------------------------------------------------" << endl;
     }
     if (rnorm/rorig <= solver_tol) {
-      pcg_status = 0;
-      init_flag = 1;
+      //      pcg_status = 0;
+      //      init_flag = 0;
     }
   }
   //
   // pcg iterations
   //
   pcg_status = 1;
-  //
-  // symmetry check
-  //
-  /*
-  rB_St->PutScalar(0.0);
-  double *rbst, *zbst;
-  rB_St->ExtractView(&rbst);
-  zB_St->ExtractView(&zbst);
-  if (MyPID == 0) {
-    cout << "nB = " << nB << endl;
-    rbst[777] = 1;
-  }
-  apply_preconditioner();
-  if (MyPID == 0) {
-    cout << "zB_St[1077] = " << zbst[1077] << endl;
-    rbst[777] = 0;
-    rbst[1077] = 1;
-  }
-  apply_preconditioner();
-  if (MyPID == 0) {
-    cout << "zB_St[777]  = " << zbst[777] << endl;
-  }
-  return;
-  */
-
   if (n_orthog_used == max_orthog) cg_iter = 0;
   for (int iter=0; iter<(maxiter*(1-init_flag)); iter++) {
     if (MyPID == -1) cout << "iteration " << iter+1 << " of maxiter = "
@@ -1777,7 +1781,7 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
       final_update(zB_St, ApB_St);
     }
     rB_St->Dot(*zB_St, &dprod);
-    assert (dprod >= 0);
+    if (krylov_method == 0) assert (dprod >= 0);
     if (cg_iter >= 0) {
       rhoa[cg_iter] = sqrt(fabs(dprod));
       if (cg_iter == 0) {
@@ -1889,6 +1893,113 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   }
 }
 
+void CLIP_solver::gmres_solve(Epetra_Vector* uStand, 
+          const Epetra_Vector* fStand, int & num_iter, int & gmres_status)
+{
+  int i, iflag(1), gmres_iter;
+  double dprod, rorig, normb, rcurr, ractual, rnorm;
+  double norm_rconstraint, norm_conerror, *vals;
+  //
+  // determine residual for constrained problem
+  //
+  if (ncon_global >  0) Tran->Multiply(true, *fStand, *r_St);
+  if (ncon_global == 0) r_St->Update(1.0, *fStand, 0.0);
+  uB_St->PutScalar(0);
+  //
+  // calculate initial residual
+  //
+  r_St->Norm2(&rorig);
+  rcurra[0] = rorig;
+  if (print_flag > 0) {
+    fout << "original residual                          = " << rorig << endl;
+  }
+  //
+  // calculate residual at boundary following initial static condensation
+  //
+  stat_cond();
+  rB_St->Norm2(&rnorm);
+  if (print_flag > 0) {
+    fout << "----------after initial static condensation---------" << endl;
+    fout << "residual                                   = " << rnorm << endl;
+    if (n_orthog_used == 0)
+      fout << "----------------------------------------------------" << endl;
+  }
+  //
+  // gmres iterations
+  //
+  normb = rnorm;
+  gmres_status = 1;
+  rB_St->ExtractView(&vals);
+  for (i=0; i<nB_own; i++) {
+    vals[i] /= normb;
+    VV[i] = vals[i];
+  }
+  for (gmres_iter=0; gmres_iter<maxiter; gmres_iter++) {
+    if (MyPID == -1) cout << "iteration " << gmres_iter+1 
+			  << " of maxiter = " << maxiter << endl;
+    apply_preconditioner();
+    //
+    // gmres stuff
+    //
+    determine_AxB(zB_St, rB_St);
+    //
+    // two steps of classical Gram-Schmidt
+    //
+    two_steps_CGS(gmres_iter, rB_St);
+    //
+    // Hessengberg QR using two by two rotations
+    //
+    hessenberg_qr(gmres_iter);
+    rcurr = normb*fabs(norms[gmres_iter]);
+    num_iter = gmres_iter+1;
+    if ((iflag > 0) && (rcurr/rorig <= solver_tol)) {
+      gmres_status = 0;
+      break;
+    }
+    memcpy(vals, &VV[nB_own*num_iter], nB_own*sizeof(double));
+  }
+  //
+  // construct the solution
+  //
+  construct_solution(num_iter, normb);
+  //
+  // calculate uStand
+  //
+  if (ncon_global == 0) r_St->Update(1.0, *fStand, 0.0);
+  if (ncon_global >  0) Tran->Multiply(true, *fStand, *r_St);
+  calculate_u_St();
+  if (ncon_global == 0) uStand->Update(1.0, *u_St, 0.0);
+  if (ncon_global > 0) Tran->Multiply(false, *u_St, *uStand);
+  //
+  // calculate actual residual for reduced system
+  //
+  calculate_Au(u_St, work_St2);
+  work_St2->Update(1.0, *r_St, -1.0);
+  work_St2->Dot(*work_St2, &ractual);
+  ractual = sqrt(ractual);
+  //
+  // calculate Lagrange multipliers and check residual for full system
+  //
+  if (ncon_global > 0) {
+    calculate_AuStand(uStand, vStand);
+    vStand->Update(1.0, *fStand, -1.0);
+    calculate_multipliers(uStand, norm_rconstraint, norm_conerror);
+  }
+  if (MyPID == 0) {
+    //    cout << "rorig                 = " << rorig << endl;
+    if (print_flag > 0) {
+      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << endl;
+      fout << "rcurr(actual)         = " << ractual << endl;
+      if (ncon_global > 0) {
+	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
+	fout << "constraint error norm = " << norm_conerror << endl;
+      }
+      fout << "number of iterations  = " << num_iter << endl;
+      fout << "solver tolerance      = " << solver_tol << endl;
+    }
+  }
+}
+
 double CLIP_solver::stat_cond()
 {
   int i, j, NumEntries, *Indices, dof;
@@ -1914,8 +2025,9 @@ double CLIP_solver::stat_cond()
   workB_St->Export(*rB_Sub, *ExporterB, Add);
   rB_St->Import(*r_St, *ImporterSt2B, Insert);
   rB_St->Update(-1.0, *workB_St, 1.0);
-  /*  
+  /* 
   rB_St->Norm2(&dnorm);
+  if (MyPID == 0) cout << "scale_option = " << scale_option << endl;
   if (MyPID == 0) cout << "2 norm of rB_St = " << dnorm << endl;
   work_Sub->PutScalar(0.0);
   double *worksub;
@@ -1926,10 +2038,41 @@ double CLIP_solver::stat_cond()
     for (j=0; j<NumEntries; j++) sum += Values[j]*RHS_cg[Indices[j]];
     worksub[i] = sum;
   }
+  if (MyPID == 0) {
+    char fname[101];
+    sprintf(fname,"%s%d","test_crd_", MyPID);
+    sprintf(fname, "%s.dat", fname);
+    ofstream ffout;
+    ffout.open(fname);
+    ffout << ndof_sub << endl;
+    ffout << nI << endl;
+    ffout << Block_Stiff->NumMyNonzeros() << endl;
+    for (i=0; i<ndof_sub; i++) ffout << rsub[i] << endl;
+    for (i=0; i<nI; i++) ffout << dofI[i] << endl;
+    for (i=0; i<ndof_sub; i++) {
+      Block_Stiff->ExtractMyRowView(i, NumEntries, Values, Indices);
+      ffout << NumEntries << endl;
+      for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
+					 << Values[j] << endl;
+    }
+    ffout.close();
+  }
+  double *rst, delta;
+  r_St->ExtractView(&rst);
+  sum = 0;
+  for (i=0; i<nI; i++) {
+    delta = rst[dofI[i]] - worksub[dofI[i]];
+    sum += delta*delta;
+  }
+  sum = sqrt(sum);
+  cout << "MyPID, internal norm = " << MyPID << " " << sum << endl;
+
+  work_St->PutScalar(0);
   work_St->Export(*work_Sub, *Exporter, Add);
   r_St->Update(-1.0, *work_St, 1.0);
   r_St->Norm2(&dnorm);
   if (MyPID == 0) cout << "2 norm of r_St  = " << dnorm << endl;
+  assert (dnorm == 0);
   */
   return tpe_sum;
 }
@@ -2186,18 +2329,54 @@ void CLIP_solver::calculate_AuStand(Epetra_Vector *u, Epetra_Vector *Au)
   Au->Export(*vec2_ASub, *ExporterStand, Add);
 }
 
-void CLIP_solver::gmres_solve(Epetra_Vector* uStand, 
-          const Epetra_Vector* fStand, int & num_iter, int & gmres_status)
-{
-}
-
 void CLIP_solver::two_steps_CGS(int gmres_iter, Epetra_Vector* r)
 {
+  int i;
+  double dprod, normr;
+  Epetra_BLAS EB;
+  double *A = VV;
+  double *X = r->Values();
+  double *Y = gmres_vec;
+  double *Z = gmres_sum;
+  int M = r->MyLength();
+  int N = gmres_iter+1;
+  int LDA = M;
+  char TRANS = 'T'; double ALPHA(1); double BETA(0);
+  if (M > 0) EB.GEMV(TRANS, M, N, ALPHA, A, LDA, X, BETA, Y);
+  else myzero(gmres_vec, N);
+  Comm.SumAll(gmres_vec, gmres_sum, N);
+  for (i=0; i<N; i++) HH[i]  = gmres_sum[i];
+  TRANS = 'N'; ALPHA = -1; BETA = 1;
+  if (M > 0) EB.GEMV(TRANS, M, N, ALPHA, A, LDA, Z, BETA, X);
+  TRANS = 'T'; ALPHA =  1; BETA = 0;
+  if (M > 0) EB.GEMV(TRANS, M, N, ALPHA, A, LDA, X, BETA, Y);
+  else myzero(gmres_vec, N);
+  Comm.SumAll(gmres_vec, gmres_sum, N);
+  for (i=0; i<N; i++) HH[i] += gmres_sum[i];
+  TRANS = 'N'; ALPHA = -1; BETA = 1;
+  if (M > 0) EB.GEMV(TRANS, M, N, ALPHA, A, LDA, Z, BETA, X);
+  r->Dot(*r, &dprod);
+  normr = sqrt(dprod);
+  HH[N] = normr;
+  int ibeg = M*N;
+  double *V = &VV[ibeg];
+  for (i=0; i<M; i++) V[i] = X[i]/normr;
+  for (i=0; i<=N; i++) zz[i] = -HH[i];
+  /*  
+  TRANS = 'T'; ALPHA = 1; BETA = 0;
+  for (i=0; i<N+1; i++) {
+    EB.GEMV(TRANS, M, N+1, ALPHA, A, LDA, &VV[M*i], BETA, Y);
+    Comm.SumAll(gmres_vec, gmres_sum, N+1);
+    if (MyPID == 0) {
+      cout << "orthogonality for i = " << i << endl;
+      for (int j=0; j<N+1; j++) cout << gmres_sum[j] << endl;
+    }
+  }
+  */
 }
 
 void CLIP_solver::hessenberg_qr(int gmres_iter)
 {
-  /*
   int i, ibeg;
   double w1, w2, vsign, normz;
   for (i=0; i<gmres_iter; i++) {
@@ -2216,7 +2395,6 @@ void CLIP_solver::hessenberg_qr(int gmres_iter)
   RR[ibeg+gmres_iter] = -normz*vsign;
   if (i == 0) norms[i] = ss[i];
   else norms[i] = norms[i-1]*ss[i];
-  */
 }  
 
 void CLIP_solver::gmres_givens(double a, double b, double & c, double & s)
@@ -2238,6 +2416,38 @@ void CLIP_solver::gmres_givens(double a, double b, double & c, double & s)
       c = -tau*s;
     }
   }
+}
+
+void CLIP_solver::construct_solution(int gmres_iter, double normb)
+{
+  int i, j, ii, n;
+  double w1, w2;
+  Epetra_BLAS EB;
+  myzero(zz, gmres_iter+1);
+  zz[0] = 1;
+  for (i=0; i<gmres_iter; i++) {
+    w1 = cc[i]*zz[i] - ss[i]*zz[i+1];
+    w2 = ss[i]*zz[i] + cc[i]*zz[i+1];
+    zz[i] = w1;
+    zz[i+1] = w2;
+  }
+  n = gmres_iter;
+  for (i=0; i<n; i++) {
+    ii = n - i - 1; 
+    for (j=ii+1; j<n; j++) zz[ii] -= RR[maxiter*j+ii]*zz[j];
+    zz[ii] /= RR[maxiter*ii+ii];
+  }
+  char TRANS = 'N';
+  double *A = VV;
+  double *X = zz;
+  double *Y = rB_St->Values();
+  int M = rB_St->MyLength();
+  int N = gmres_iter;
+  int LDA = M;
+  double ALPHA(normb); double BETA(0);
+  if (M > 0) EB.GEMV(TRANS, M, N, ALPHA, A, LDA, X, BETA, Y);
+  apply_preconditioner();
+  uB_St->Update(1.0, *zB_St, 0.0);
 }
 
 void CLIP_solver::calculate_multipliers(Epetra_Vector* uStand, 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <iomanip>
+#include <assert.h>
 //#include "my_feti_sparse_solver.hpp"
 #include "Epetra_LAPACK.h"
 extern "C"{
@@ -12,7 +13,8 @@ class CLAPS_sparse_lu {
   CLAPS_sparse_lu();
   ~CLAPS_sparse_lu();
   void cleanup();
-  int factor(int N_, int NNZ_, int COLPTR[], int ROWIDX[], double ANZ[]);
+  int factor(int N_, int NNZ_, int COLPTR[], int ROWIDX[], double ANZ[],
+	     int scale_flag_ = 0);
   int sol(int NRHS, double RHS[], double SOL[], double TEMP[]);
  private: //
   void getnrm(int n, int colptr[], int rowidx[], 
@@ -24,7 +26,7 @@ class CLAPS_sparse_lu {
   int small_factor(int rowbeg[], int colidx[], double vals[]);
   int small_solve(int NRHS, double RHS[], double SOL[]);
   Epetra_LAPACK EL;
-  int N, DEFBLK, NSUPER, NDEF, LBDEF, max_small;
+  int N, DEFBLK, NSUPER, NDEF, LBDEF, max_small, scale_flag;
   int *XSUPER;
   int *XLINDX;
   int *LINDX;
@@ -36,5 +38,6 @@ class CLAPS_sparse_lu {
   int *DEF;
   double* LNZ;
   double* NS;
+  double *SCALE;
 };
   

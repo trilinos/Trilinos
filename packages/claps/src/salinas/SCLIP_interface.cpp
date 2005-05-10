@@ -41,7 +41,7 @@ void CLIP_init(
 {
   int cdof_option, max_iter, atype, ndim, max_N_orthog_vecs, coarse_solver;
   int *adj_elem1 = 0, *adj_elem2 = 0, local_solver, prt_debug, prt_summary;
-  int chk_sub_singularity;
+  int chk_sub_singularity, krylov_method, scale_option;
   double solver_tol;
   cdof_option         = params->cdof_option;
   max_iter            = params->max_iterations;
@@ -53,7 +53,9 @@ void CLIP_init(
   local_solver        = params->local_solver;
   prt_debug           = params->prt_debug;
   prt_summary         = params->prt_summary;
-  chk_sub_singularity = params->chk_sub_singularity; 
+  chk_sub_singularity = params->chk_sub_singularity;
+  krylov_method       = params->krylov_method;
+  scale_option        = params->scale_option;
   //
   // initialize CLIP_ptr
   //
@@ -80,7 +82,8 @@ void CLIP_init(
   //
   CLIP_ptr->CLIP_solver_init(cdof_option, solver_tol, max_iter, atype, ndim,
 			     local_solver, max_N_orthog_vecs, prt_debug,
-			     prt_summary, chk_sub_singularity);
+			     prt_summary, chk_sub_singularity, krylov_method,
+			     scale_option);
 }
 
 int CLIP_solve( double *f, double *u, CLIPValues &returnvals)

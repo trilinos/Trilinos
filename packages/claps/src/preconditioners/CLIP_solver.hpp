@@ -86,6 +86,8 @@ class CLIP_solver
   void factor_coarse_stiff();
   void pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 		 int & num_iter, int & pcg_status);
+  void gmres_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand, 
+		   int & num_iter, int & gmres_status);
   double stat_cond();
   double initial_update();
   void apply_preconditioner();
@@ -96,8 +98,6 @@ class CLIP_solver
   void calculate_u_St();
   void calculate_Au(Epetra_Vector *a_St, Epetra_Vector *b_St);
   void calculate_AuStand(Epetra_Vector *u, Epetra_Vector *Au);
-  void gmres_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand, 
-		   int & num_iter, int & gmres_status);
   void calculate_multipliers(Epetra_Vector* uStand, double & norm_rconstraint, 
 			     double & norm_conerror);
   void calculate_condition(int miter);
@@ -115,7 +115,7 @@ class CLIP_solver
   const Epetra_Comm & Comm;
 
   int cdof_option, maxiter, atype, ndim, local_solver, prt_debug, prt_summary;
-  int max_orthog, chk_sub_singularity;
+  int max_orthog, chk_sub_singularity, krylov_method, scale_option;
   double solver_tol;
 
   Epetra_Import *Importer, *ImporterB, *ImporterSt2B, *Importer_Kc;
@@ -140,6 +140,7 @@ class CLIP_solver
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
   double *P_ortho, *AP_ortho, *orth1, *orth2;
+  double *VV, *RR, *HH, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
   bool *owner_flag;
   ofstream fout;
 };
