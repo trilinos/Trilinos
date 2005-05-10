@@ -460,13 +460,15 @@ void MPIMultiVectorBase<Scalar>::applyOp(
     ,reduct_objs                                                                       // reduct_objs
     );
   // Free and commit the local data
-  for(int k = 0; k < num_multi_vecs; ++k ) {
-    sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
-    multi_vecs[k]->freeSubMultiVector( &sub_multi_vecs[k] );
-  }
-  for(int k = 0; k < num_targ_multi_vecs; ++k ) {
-    targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
-    targ_multi_vecs[k]->commitSubMultiVector( &targ_sub_multi_vecs[k] );
+  if( overlap_first_local_ele != 0 ) {
+    for(int k = 0; k < num_multi_vecs; ++k ) {
+      sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      multi_vecs[k]->freeSubMultiVector( &sub_multi_vecs[k] );
+    }
+    for(int k = 0; k < num_targ_multi_vecs; ++k ) {
+      targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      targ_multi_vecs[k]->commitSubMultiVector( &targ_sub_multi_vecs[k] );
+    }
   }
   // Flag that we are leaving applyOp()
   in_applyOp_ = false;

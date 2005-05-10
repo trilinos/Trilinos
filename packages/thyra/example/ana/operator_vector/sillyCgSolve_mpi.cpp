@@ -51,6 +51,7 @@ bool runCgSolveExample(
   ,const int                                                     localDim
   ,const Scalar                                                  diagScale
   ,const bool                                                    verbose
+  ,const bool                                                    dumpAll
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType   tolerance
   ,const int                                                     maxNumIters
   )
@@ -85,24 +86,25 @@ bool runCgSolveExample(
     upperDim = ( procRank == numProc-1 ? localDim - 1 : localDim );
   std::vector<Scalar> lower(lowerDim), diag(localDim), upper(upperDim);
   const Scalar one = ST::one(), diagTerm = Scalar(2)*diagScale*ST::one();
-  int k = 0;
-  if(procRank > 0) lower[k] = -one; diag[k] = diagTerm; upper[k] = -one;           // First local row
-  for( k = 1; k < localDim - 1; ++k ) {
-    lower[k-1] = -one; diag[k] = diagTerm; upper[k] = -one;                        // Middle local rows
+  int k = 0, kl = 0;
+  if(procRank > 0) { lower[kl] = -one; ++kl; };  diag[k] = diagTerm; upper[k] = -one; // First local row
+  for( k = 1; k < localDim - 1; ++k, ++kl ) {
+    lower[kl] = -one; diag[k] = diagTerm; upper[k] = -one;                            // Middle local rows
   }
-  lower[k-1] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one; // Last local row
+  lower[kl] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one;     // Last local row
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A = rcp(new MPITridiagLinearOp<Scalar>(mpiComm,localDim,&lower[0],&diag[0],&upper[0]));
   if(verbose) out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
   // (A.2) Testing the linear operator constructed linear operator
-  if(verbose) std::cout << "\nTesting the constructed linear operator A ...\n";
+  if(verbose) out << "\nTesting the constructed linear operator A ...\n";
   Thyra::LinearOpTester<Scalar> linearOpTester;
+  linearOpTester.dump_all(dumpAll);
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(ScalarMag(ScalarMag(1e-2)*tolerance));
   linearOpTester.show_all_tests(true);
   linearOpTester.check_adjoint(false);
   linearOpTester.check_for_symmetry(true);
-  result = linearOpTester.check(*A,verbose?&std::cout:0);
+  result = linearOpTester.check(*A,verbose?&out:0);
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
   RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());
@@ -165,6 +167,7 @@ int main(int argc, char *argv[])
     double diagScale   = 1.001;
     double tolerance   = 1e-4;
     int    maxNumIters = 300;
+    bool   dumpAll     = false;
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
 
@@ -173,6 +176,7 @@ int main(int argc, char *argv[])
     clp.setOption( "diag-scale", &diagScale, "Scaling of the diagonal to improve conditioning." );
     clp.setOption( "tol", &tolerance, "Relative tolerance for linear system solve." );
     clp.setOption( "max-num-iters", &maxNumIters, "Maximum of CG iterations." );
+    clp.setOption( "dump-all", "no-dump-all", &dumpAll, "Determines if vectors are printed or not." );
 
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -180,21 +184,21 @@ int main(int argc, char *argv[])
     TEST_FOR_EXCEPTION( localDim < 2, std::logic_error, "Error, localDim=" << localDim << " < 2 is not allowed!" );
 
     // Run using float
-    result = runCgSolveExample<float>(mpiComm,procRank,numProc,localDim,diagScale,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<float>(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using double
-    result = runCgSolveExample<double>(mpiComm,procRank,numProc,localDim,diagScale,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<double>(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
     // Run using std::complex<float>
-    result = runCgSolveExample<std::complex<float> >(mpiComm,procRank,numProc,localDim,diagScale,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<float> >(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using std::complex<double>
-    result = runCgSolveExample<std::complex<double> >(mpiComm,procRank,numProc,localDim,diagScale,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<double> >(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
 #endif		

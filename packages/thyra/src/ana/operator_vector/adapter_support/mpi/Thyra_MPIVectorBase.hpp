@@ -144,14 +144,16 @@ void MPIVectorBase<Scalar>::applyOp(
     ,reduct_obj                                                            // reduct_obj
     );
   // Free and commit the local data
-  if(1){for(int k = 0; k < num_vecs; ++k ) {
-    sub_vecs[k].setGlobalOffset(local_rng.lbound()-1);
-    vecs[k]->freeSubVector( &sub_vecs[k] );
-  }}
-  if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
-    sub_targ_vecs[k].setGlobalOffset(local_rng.lbound()-1);
-    targ_vecs[k]->commitSubVector( &sub_targ_vecs[k] );
-  }}
+  if( overlap_first_local_ele != 0 ) {
+    if(1){for(int k = 0; k < num_vecs; ++k ) {
+      sub_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      vecs[k]->freeSubVector( &sub_vecs[k] );
+    }}
+    if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
+      sub_targ_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      targ_vecs[k]->commitSubVector( &sub_targ_vecs[k] );
+    }}
+  }
   // Flag that we are leaving applyOp()
   in_applyOp_ = false;
 }
