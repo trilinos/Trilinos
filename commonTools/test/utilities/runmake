@@ -6,6 +6,13 @@
 # 
 # Mike Phenow, Jim Willenbring
 #
+# This is a utility for compiliing Trilinos.  It assumes you have a properly
+# configured build tree.  It is of limited value by itself.  It is best used in
+# conjunction with runconfigure, as in the utility runbuild.
+#
+# - Check contents of report.
+# - Output package names as they compile successfully.
+#
 ################################################################################
 
 use strict;
@@ -14,12 +21,13 @@ use strict;
 
 # Command line arguments:
 
-my $trilinosdir;        # Trilinos directory        (required argument) 
-my $builddir;           # build directory           (required argument) 
-my $makecmd;            # make command              (default: make)
-my $outputdir;          # output directory          (default: .)
+my $trilinosDir;        # Trilinos directory        (required argument) 
+my $buildDir;           # build directory           (required argument) 
+my $makeCmd;            # make command              (default: make)
+
+my $outputDir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
-my $logverbosity;       # log file verbosity level  (default: 0)
+my $logVerbosity;       # log file verbosity level  (default: 0)
 
 my $resultsDir;         # absolute path to results directory
 
@@ -32,7 +40,11 @@ my $v1 = "1";           # normal verbosity
 my $v2 = "2";           # level 2 verbosity
 my $v3 = "4";           # level 3 verbosity
 
-# Package Failure Exit Status Codes
+# Package failure exit status codes.  These are needed when you are combining
+# runconfigure and runmake (as in runbuild) and you want to be able to recover
+# from make failures because runmake can't recover from a make failure by
+# itself--it needs to communicate the broken package to runconfigure to that
+# runconfigure can remove its directory and its configure flags.
 my %failureCode = ();
 $failureCode{'amesos'} = 10;
 $failureCode{'anasazi'} = 11;
@@ -90,16 +102,18 @@ exit $exitStatus;
 
     sub getArgs {
         
+        # Argument variables that don't need to be global.
         my $quiet;
         my $help;
 
+        # Gather command line arguments.
         use Getopt::Long;
-        GetOptions( "trilinosdir=s" => \$trilinosdir,
-                    "builddir=s" => \$builddir,
-                    "makecmd=s" => \$makecmd,
-                    "outputdir=s" => \$outputdir,
+        GetOptions( "trilinos-dir=s" => \$trilinosDir,
+                    "build-dir=s" => \$buildDir,
+                    "make-cmd=s" => \$makeCmd,
+                    "output-dir=s" => \$outputDir,
                     "verbosity=i" => \$verbosity,
-                    "logverbosity=i" => \$logverbosity,
+                    "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -111,55 +125,61 @@ exit $exitStatus;
         
         # Enforce and/or prepare arguments.
         
-        # check for existance of trilinosdir argument and actual directory
-        if (!$trilinosdir) {
-            die "trilinosdir value required, see --help for more information\n"; 
+        # check for existance of trilinos-dir argument and actual directory
+        if (!$trilinosDir) {
+            die "trilinos-dir value required, see --help for more information\n"; 
         } else {
-            if (!stat($trilinosdir)) {
-                die "cannot stat trilinosdir: $trilinosdir\n";
+            if (!stat($trilinosDir)) {
+                die "cannot stat trilinos-dir: $trilinosDir\n";
             }
         }
         
-        # Check for existance of builddir argument and actual directory.
-        if (!$builddir) {
-            die "builddir value required, see --help for more information\n"; 
+        # Check for existance of build-dir argument and actual directory.
+        # If it isn't given as an absolute path, prepend the Trilinos path.
+        if (!$buildDir) {
+            die "build-dir value required, see --help for more information\n"; 
         } else {
-            if ($builddir !~ m/^\//) {
-                $builddir = "$trilinosdir/$builddir";
+            if ($buildDir !~ m/^\//) {
+                $buildDir = "$trilinosDir/$buildDir";
             }
-            if (!stat($builddir)) {
-                die "cannot stat builddir: $builddir\n";
+            if (!stat($buildDir)) {
+                die "cannot stat build-dir: $buildDir\n";
             }
         }
         
-        # Check for valid makecmd.
-        if ($makecmd) { 
-            $makecmd =~ m/^(\w*)/;
+        # Check for valid make-cmd.
+        if ($makeCmd) { 
+            $makeCmd =~ m/^(\w*)/;
             my $testMakeCommand = $1;
             `which $testMakeCommand`;
             if ($?) {
-                die "cannot find makecmd command: $makecmd\n";
+                die "cannot find make-cmd command: $makeCmd\n";
             }
         } else {
-            $makecmd = "make"; 
+            $makeCmd = "make"; 
         }
         
-        # Check for existance of output directory.
-        if (!$outputdir) {
-            $outputdir = "";
-            $resultsDir = "$trilinosdir/commonTools/test/utilities/results"; 
+        # Check for existance of output directory, use it to create the
+        # complete path for the results directory, and create the results
+        # directory.
+        if (!$outputDir) {
+            $outputDir = "";
+            $resultsDir = "$trilinosDir/commonTools/test/utilities/results"; 
         } else {
-            if ($outputdir =~ m/^\//) {
-                $resultsDir = $outputdir;
+            if ($outputDir =~ m/^\//) {
+                $resultsDir = $outputDir;
             } else {
-                $resultsDir = "$trilinosdir/commonTools/test/utilities/$outputdir";
+                $resultsDir = "$trilinosDir/commonTools/test/utilities/$outputDir";
             }
         }
         if (!stat($resultsDir)) {
             mkdir($resultsDir) or die "cannot create $resultsDir, died";
         }
         
-        # Set verbosity level to corresponding constant.
+        # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
+        # used for the levels the user may specify, but they are stored as 0,
+        # 1, 2, and 4 so they can be combined and processed with bitwise
+        # operations.
         if ($verbosity) {
             if      ($verbosity == 0) { $verbosity = $v0; }
             elsif   ($verbosity == 1) { $verbosity = $v1; }
@@ -169,17 +189,21 @@ exit $exitStatus;
             $verbosity = $v1; 
         }
         
-        # Set log verbosity level to corresponding constant.
-        if ($logverbosity) {
-            if      ($logverbosity == 0) { $logverbosity = $v0; }
-            elsif   ($logverbosity == 1) { $logverbosity = $v1; }
-            elsif   ($logverbosity == 2) { $logverbosity = $v2; }
-            elsif   ($logverbosity == 3) { $logverbosity = $v3; }        
+        # Set log verbosity level to corresponding constant.  Numbering scheme
+        # is the same for the log verbosity as it is for the standard verbosity.
+        # There is not distinct output and log output, the if a log verbosity
+        # is given, then that level of output is written to a file instead of
+        # to standard out.  
+        if ($logVerbosity) {
+            if      ($logVerbosity == 0) { $logVerbosity = $v0; }
+            elsif   ($logVerbosity == 1) { $logVerbosity = $v1; }
+            elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
+            elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logverbosity = $v0; 
+            $logVerbosity = $v0; 
         }
         
-        # Set quiet mode.
+        # Set quiet mode--same as passing --verbosity=0.
         if ($quiet) {
             $verbosity = $v0; 
         }            
@@ -212,12 +236,12 @@ exit $exitStatus;
         # Print list of variables for debugging.
         my $message = "";
         $message .= "init():\n";
-        $message .= "  \$trilinosdir = $trilinosdir\n";
-        $message .= "  \$builddir = $builddir\n";
-        $message .= "  \$makecmd = $makecmd\n";
-        $message .= "  \$outputdir = $outputdir\n";
+        $message .= "  \$trilinosDir = $trilinosDir\n";
+        $message .= "  \$buildDir = $buildDir\n";
+        $message .= "  \$makeCmd = $makeCmd\n";
+        $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
-        $message .= "  \$logverbosity = $logverbosity\n";
+        $message .= "  \$logVerbosity = $logVerbosity\n";
         $message .= "  \$resultsDir = $resultsDir\n";
         $message .= "  \n";
         printMessage($message, $v3);
@@ -227,7 +251,7 @@ exit $exitStatus;
     ############################################################################
     # run()
     #
-    # Moves into builddir/ and runs makecmd.
+    # Moves into build-dir/ and runs make-cmd.
     #
     #   - args:     NONE
     #
@@ -237,17 +261,18 @@ exit $exitStatus;
     sub run {
         
         # cd to packages directory in build directory.
-        chdir $builddir or die "cannot chdir to $builddir, died";
+        chdir $buildDir or die "cannot chdir to $buildDir, died";
             
         # Print progress message.
         my $message = "Compiling Trilinos...";
         $message = sprintf("%-30s", $message);
         printMessage($message, $v1+$v2+$v3);
         
+        # Capture start time.
         my $startSeconds = time();
     
-        # Run make        
-        my $makeOutput = `$makecmd 2>&1`;
+        # Run make.      
+        my $makeOutput = `$makeCmd 2>&1`;
         my $makeExitStatus = $?;
     
         # Capture and format make stop time.
@@ -298,11 +323,11 @@ exit $exitStatus;
         
         # Grab the repository branch tag
         my $branchTag = "";
-        my $homeDirContents = `ls $trilinosdir`;
+        my $homeDirContents = `ls $trilinosDir`;
         if ($homeDirContents =~ m/CVS/) {
-            my $cvsDirContents = `ls $trilinosdir/CVS`;
+            my $cvsDirContents = `ls $trilinosDir/CVS`;
             if ($cvsDirContents =~ m/Tag/) {
-                $branchTag = `cat $trilinosdir/CVS/Tag`;
+                $branchTag = `cat $trilinosDir/CVS/Tag`;
             } else {
                 $branchTag = "development";
             }      
@@ -328,12 +353,12 @@ exit $exitStatus;
         $resultsString .= "MACHINE_HARDWARE     = $machineHardware\n";
         $resultsString .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";
         $resultsString .= "\n";
-        $resultsString .= "TRILINOS_DIR         = $trilinosdir\n";
+        $resultsString .= "TRILINOS_DIR         = $trilinosDir\n";
         $resultsString .= "BRANCH_TAG           = $branchTag\n";
         $resultsString .= "\n";
-        $resultsString .= "BUILD_DIR            = $builddir\n";
+        $resultsString .= "BUILD_DIR            = $buildDir\n";
         $resultsString .= "\n";
-        $resultsString .= "MAKE_COMMAND         = $makecmd\n";
+        $resultsString .= "MAKE_COMMAND         = $makeCmd\n";
         $resultsString .= "\n";
         $resultsString .= "START_TIME           = $runStartTime\n";
         $resultsString .= "STOP_TIME            = $makeStopTime\n";
@@ -376,17 +401,21 @@ exit $exitStatus;
     sub detectBrokenPackage {
         my $makeOutput = $_[0];
         
+        # Initialize $lastSuccessfulPackage to some placeholder for the
+        # beginning of the list.  Grab the last instance of "built
+        # successfully" output string.
         my $lastSuccessfulPackage = "first";
         $makeOutput =~ m/.*^Trilinos package (\w*?) built successfully/ms;        
         if ($1) { $lastSuccessfulPackage = $1; }
         
+        # Convert package name to the format found in subdir list.
         $lastSuccessfulPackage = uc($lastSuccessfulPackage);
         $lastSuccessfulPackage = "$lastSuccessfulPackage"."_SUBDIR";
         
         my @enabledPackageSubdirs = ();
         
-        # parse package/Makefile, compiling a list of enabled packages
-        my $packagesMakefile = "$builddir/packages/Makefile";
+        # Parse package/Makefile, compiling a list of enabled packages.
+        my $packagesMakefile = "$buildDir/packages/Makefile";
         open (PACKAGES_MAKEFILE, "<$packagesMakefile")
             or die "can't open $packagesMakefile";
         while (my $line = <PACKAGES_MAKEFILE>) {
@@ -401,7 +430,7 @@ exit $exitStatus;
         my @subdirList = ();
         push (@subdirList, "FIRST_SUBDIR");
         
-        # parse package/Makefile, extracting subdir list
+        # Parse package/Makefile, extracting subdir list.
         open (PACKAGES_MAKEFILE, "<$packagesMakefile")
             or die "can't open $packagesMakefile";
         my $continue = 0;
@@ -425,7 +454,7 @@ exit $exitStatus;
         } # while ($line)
         close PACKAGES_MAKEFILE;
         
-        # find position of last successfully built package in subdir list
+        # Find position of last successfully built package in subdir list.
         my $i;
         for ($i=0; $i<$#{@subdirList}+1; $i++) {
             if ($subdirList[$i] eq $lastSuccessfulPackage) {
@@ -438,7 +467,8 @@ exit $exitStatus;
         my $foundBrokenPackage = 0;
         my $brokenPackage;        
         
-        # find next enabled package in subdir list
+        # Find next enabled package in subdir list--without fail, this should
+        # be the broken package.
         while ($i < $#{@subdirList}+1 && !$foundBrokenPackage) {
             foreach my $entry (@enabledPackageSubdirs) {
                 if ($entry eq $potentialMatch) {
@@ -451,6 +481,7 @@ exit $exitStatus;
             $potentialMatch = $subdirList[$i];
         }
         
+        # Standardize package name.
         if ($foundBrokenPackage) {
             $brokenPackage =~ s/_SUBDIR//;
             $brokenPackage = lc($brokenPackage);
@@ -471,7 +502,10 @@ exit $exitStatus;
     #
 
     sub cleanUp {
-           
+    
+        # Currently, there is nothing to clean up, but I will leave this
+        # subroutine here for potential future use.
+    
     } # cleanUp()
     
     ############################################################################
@@ -493,7 +527,7 @@ exit $exitStatus;
             print $message;
         }
         
-        if ($logverbosity & $level) {
+        if ($logVerbosity & $level) {
             my $log = $resultsDir."make_$runStartTimeForFilename"."_log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
@@ -515,27 +549,27 @@ exit $exitStatus;
     sub printHelp {
         print "runmake - The Trilinos Make Utility\n";
         print "\n";
-        print "Usage:  perl runmake --trilinosdir=/home/user/Trilinos --buildir=MPI\n";
+        print "Usage:  perl runmake --trilinos-dir=/home/user/Trilinos --build-dir=MPI\n";
         print "\n";
         print "Options:\n";
         print "\n";
-        print "  --trilinosdir=DIR      Specify the absolute path to the top-level Trilinos\n";
+        print "  --trilinos-dir=DIR     Specify the absolute path to the top-level Trilinos\n";
         print "                         directory that contains this program.\n";
         print "                         Example: /home/user/Trilinos\n";
         print "                         REQUIRED.\n";
         print "\n";
-        print "  --builddir=DIR         Specify the name of the build directory that contains\n";
+        print "  --build-dir=DIR        Specify the name of the build directory that contains\n";
         print "                         the configured source you would like compile.  If a\n";
         print "                         relative path is given, it is assume to be in the\n";
         print "                         given Trilinos directory.\n";
         print "                         REQUIRED.\n";
         print "\n";
-        print "  --makecmd=COMMAND      Specify the make command for this system.  This can\n";
+        print "  --make-cmd=COMMAND     Specify the make command for this system.  This can\n";
         print "                         be used to specify make flags, \"make -j4\", for\n";
         print "                         example\n";
         print "                         Default: \"make\"\n";
         print "\n";
-        print "  --outputdir=DIR        Specify the directory in which to create the directory\n";
+        print "  --output-dir=DIR       Specify the directory in which to create the directory\n";
         print "                         containing the results.\n";
         print "                         Default: \".\"\n";
         print "\n";
@@ -544,7 +578,7 @@ exit $exitStatus;
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";
         print "\n";
-        print "  --logverbosity=LEVEL   0 = no log (default)\n";
+        print "  --log-verbosity=LEVEL  0 = no log (default)\n";
         print "                         1 = normal output\n";
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";

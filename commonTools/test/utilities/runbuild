@@ -6,6 +6,14 @@
 # 
 # Mike Phenow, Jim Willenbring
 #
+# This is a utility for building Trilinos.  It uses the runconfigure and
+# runmake utilities.  Given a complete invoke-configure file, it can produce
+# a successful build, even (optionally) recovering from an arbitrary number of
+# configure and build failures.  
+#
+# - Check contents of report.
+# - Improve comments.
+#
 ################################################################################
 
 use strict;
@@ -14,15 +22,15 @@ use strict;
 
 # Command line arguments:
 
-my $trilinosdir;        # Trilinos directory        (required argument) 
-my $builddir;           # build directory           (required argument) 
+my $trilinosDir;        # Trilinos directory        (required argument) 
+my $buildDir;           # build directory           (required argument) 
 my $invokeConfigure;    # complete invoke-configure (required argument)
-my $makecmd;            # make command              (default: make)
+my $makeCmd;            # make command              (default: make)
 my $recover;            # recover mode?
 
-my $outputdir;          # output directory          (default: .)
+my $outputDir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
-my $logverbosity;       # log file verbosity level  (default: 0)
+my $logVerbosity;       # log file verbosity level  (default: 0)
 
 my $resultsDir;         # absolute path to results directory
 my %dependencies;       # package dependencies
@@ -63,18 +71,20 @@ exit $exitStatus;
 
     sub getArgs {
         
+        # Argument variables that don't need to be global.
         my $quiet;
         my $help;
 
+        # Gather command line arguments.
         use Getopt::Long;
-        GetOptions( "trilinosdir=s" => \$trilinosdir,
-                    "builddir=s" => \$builddir,
+        GetOptions( "trilinos-dir=s" => \$trilinosDir,
+                    "build-dir=s" => \$buildDir,
                     "invoke-configure=s" => \$invokeConfigure,
-                    "makecmd=s" => \$makecmd,
+                    "make-cmd=s" => \$makeCmd,
                     "recover" => \$recover,              
-                    "outputdir=s" => \$outputdir,
+                    "output-dir=s" => \$outputDir,
                     "verbosity=i" => \$verbosity,
-                    "logverbosity=i" => \$logverbosity,
+                    "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -86,18 +96,18 @@ exit $exitStatus;
         
         # Enforce and/or prepare arguments.
         
-        # check for existance of trilinosdir argument and actual directory
-        if (!$trilinosdir) {
-            die "trilinosdir value required, see --help for more information\n"; 
+        # check for existance of trilinos-dir argument and actual directory
+        if (!$trilinosDir) {
+            die "trilinos-dir value required, see --help for more information\n"; 
         } else {
-            if (!stat($trilinosdir)) {
-                die "cannot stat trilinosdir: $trilinosdir\n";
+            if (!stat($trilinosDir)) {
+                die "cannot stat trilinos-dir: $trilinosDir\n";
             }
         }
         
-        # Check for existance of builddir argument and actual directory.
-        if (!$builddir) {
-            die "builddir value required, see --help for more information\n"; 
+        # Check for existance of build-dir argument and actual directory.
+        if (!$buildDir) {
+            die "build-dir value required, see --help for more information\n"; 
         } 
         
         # Check for existance of invoke-configure argument and actual file
@@ -105,7 +115,7 @@ exit $exitStatus;
             die "invoke-configure value required, see --help for more information\n"; 
         } else {
             if ($invokeConfigure !~ m/^\//) {
-                $invokeConfigure = "$trilinosdir/commonTools/test/utilities/$invokeConfigure";
+                $invokeConfigure = "$trilinosDir/commonTools/test/utilities/$invokeConfigure";
             }
             if (!stat($invokeConfigure)) {
                 die "cannot stat invoke-configure: $invokeConfigure\n";
@@ -113,8 +123,8 @@ exit $exitStatus;
         }
         
         # Prevent problems with uninitialized value
-        if (!$makecmd) {
-            $makecmd = "";
+        if (!$makeCmd) {
+            $makeCmd = "";
         }
         
         # Prevent problems with uninitialized value
@@ -122,22 +132,27 @@ exit $exitStatus;
             $recover = "";
         }
         
-        # Check for existance of output directory.
-        if (!$outputdir) {
-            $outputdir = "";
-            $resultsDir = "$trilinosdir/commonTools/test/utilities/results"; 
+        # Check for existance of output directory, use it to create the
+        # complete path for the results directory, and create the results
+        # directory.
+        if (!$outputDir) {
+            $outputDir = "";
+            $resultsDir = "$trilinosDir/commonTools/test/utilities/results"; 
         } else {
-            if ($outputdir =~ m/^\//) {
-                $resultsDir = $outputdir;
+            if ($outputDir =~ m/^\//) {
+                $resultsDir = $outputDir;
             } else {
-                $resultsDir = "$trilinosdir/commonTools/test/utilities/$outputdir";
+                $resultsDir = "$trilinosDir/commonTools/test/utilities/$outputDir";
             }
         }
         if (!stat($resultsDir)) {
             mkdir($resultsDir) or die "cannot create $resultsDir, died";
         }
         
-        # Set verbosity level to corresponding constant.
+        # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
+        # used for the levels the user may specify, but they are stored as 0,
+        # 1, 2, and 4 so they can be combined and processed with bitwise
+        # operations.
         if ($verbosity) {
             if      ($verbosity == 0) { $verbosity = $v0; }
             elsif   ($verbosity == 1) { $verbosity = $v1; }
@@ -147,17 +162,21 @@ exit $exitStatus;
             $verbosity = $v1; 
         }
         
-        # Set log verbosity level to corresponding constant.
-        if ($logverbosity) {
-            if      ($logverbosity == 0) { $logverbosity = $v0; }
-            elsif   ($logverbosity == 1) { $logverbosity = $v1; }
-            elsif   ($logverbosity == 2) { $logverbosity = $v2; }
-            elsif   ($logverbosity == 3) { $logverbosity = $v3; }        
+        # Set log verbosity level to corresponding constant.  Numbering scheme
+        # is the same for the log verbosity as it is for the standard verbosity.
+        # There is not distinct output and log output, the if a log verbosity
+        # is given, then that level of output is written to a file instead of
+        # to standard out.  
+        if ($logVerbosity) {
+            if      ($logVerbosity == 0) { $logVerbosity = $v0; }
+            elsif   ($logVerbosity == 1) { $logVerbosity = $v1; }
+            elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
+            elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logverbosity = $v0; 
+            $logVerbosity = $v0; 
         }
         
-        # Set quiet mode.
+        # Set quiet mode--same as passing --verbosity=0.
         if ($quiet) {
             $verbosity = $v0; 
         }
@@ -194,13 +213,13 @@ exit $exitStatus;
         # Print list of variables for debugging.
         my $message = "";
         $message .= "init():\n";
-        $message .= "  \$trilinosdir = $trilinosdir\n";
-        $message .= "  \$builddir = $builddir\n";     
+        $message .= "  \$trilinosDir = $trilinosDir\n";
+        $message .= "  \$buildDir = $buildDir\n";     
         $message .= "  \$invokeConfigure = $invokeConfigure\n";      
         $message .= "  \$recover = $recover\n";
-        $message .= "  \$outputdir = $outputdir\n";
+        $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
-        $message .= "  \$logverbosity = $logverbosity\n";
+        $message .= "  \$logVerbosity = $logVerbosity\n";
         $message .= "  \$resultsDir = $resultsDir\n";
         $message .= "  \n";
         printMessage($message, $v3);
@@ -210,7 +229,7 @@ exit $exitStatus;
     ############################################################################
     # run()
     #
-    # Moves run runconfigure and runmake
+    # Runs runconfigure and runmake
     #
     #   - args:     NONE
     #
@@ -226,10 +245,10 @@ exit $exitStatus;
         elsif   ($verbosity == $v3) { $argVerbosity = 3; }
         
         my $argLogVerbosity;
-        if      ($logverbosity == $v0) { $argLogVerbosity = 0; }
-        elsif   ($logverbosity == $v1) { $argLogVerbosity = 1; }
-        elsif   ($logverbosity == $v2) { $argLogVerbosity = 2; }
-        elsif   ($logverbosity == $v3) { $argLogVerbosity = 3; }
+        if      ($logVerbosity == $v0) { $argLogVerbosity = 0; }
+        elsif   ($logVerbosity == $v1) { $argLogVerbosity = 1; }
+        elsif   ($logVerbosity == $v2) { $argLogVerbosity = 2; }
+        elsif   ($logVerbosity == $v3) { $argLogVerbosity = 3; }
         
         my $cmd = "";
         my $status = 0;
@@ -241,8 +260,8 @@ exit $exitStatus;
             
             # Run runconfigure
             $cmd  = "perl runconfigure ";
-            $cmd .= "--trilinosdir=$trilinosdir ";
-            $cmd .= "--builddir=$builddir ";
+            $cmd .= "--trilinos-dir=$trilinosDir ";
+            $cmd .= "--build-dir=$buildDir ";
             $cmd .= "--invoke-configure=$invokeConfigure ";
             if ($recover) {
                 $cmd .= "--recover ";
@@ -250,9 +269,9 @@ exit $exitStatus;
                     $cmd .= "--make-failure=$makeFailureCode ";                
                 }
             }
-            $cmd .= "--outputdir=$resultsDir ";
+            $cmd .= "--output-dir=$resultsDir ";
             $cmd .= "--verbosity=$argVerbosity ";
-            $cmd .= "--logverbosity=$argLogVerbosity ";
+            $cmd .= "--log-verbosity=$argLogVerbosity ";
             $status = system($cmd);
             if ($status != 0 && !$recover) { 
                 return 1;
@@ -260,12 +279,12 @@ exit $exitStatus;
                             
             # Run runmake
             $cmd  = "perl runmake ";
-            $cmd .= "--trilinosdir=$trilinosdir ";
-            $cmd .= "--builddir=$builddir ";
-            $cmd .= ($makecmd?"--makecmd=$makecmd ":"");
-            $cmd .= "--outputdir=$resultsDir ";
+            $cmd .= "--trilinos-dir=$trilinosDir ";
+            $cmd .= "--build-dir=$buildDir ";
+            $cmd .= ($makeCmd?"--make-cmd=$makeCmd ":"");
+            $cmd .= "--output-dir=$resultsDir ";
             $cmd .= "--verbosity=$argVerbosity ";
-            $cmd .= "--logverbosity=$argLogVerbosity ";
+            $cmd .= "--log-verbosity=$argLogVerbosity ";
             $status = system($cmd);
             $makeAttempted = 1;
             if ($status == 0) { 
@@ -295,6 +314,9 @@ exit $exitStatus;
     #
 
     sub cleanUp {
+    
+        # Currently, there is nothing to clean up, but I will leave this
+        # subroutine here for potential future use.
            
     } # cleanUp()
     
@@ -317,8 +339,8 @@ exit $exitStatus;
             print $message;
         }
         
-        if ($logverbosity & $level) {
-            my $log = $resultsDir."make_$runStartTimeForFilename"."_log.txt";
+        if ($logVerbosity & $level) {
+            my $log = $resultsDir."log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;
@@ -339,16 +361,16 @@ exit $exitStatus;
     sub printHelp {
         print "runbuild - The Trilinos Build Utility\n";
         print "\n";
-        print "Usage:  perl runbuild --trilinosdir=/home/user/Trilinos --buildir=MPI\n";
+        print "Usage:  perl runbuild --trilinos-dir=/home/user/Trilinos --build-dir=MPI\n";
         print "\n";
         print "Options:\n";
         print "\n";
-        print "  --trilinosdir=DIR          Specify the absolute path to the top-level\n";
+        print "  --trilinos-dir=DIR         Specify the absolute path to the top-level\n";
         print "                             Trilinos directory that contains this program.\n";
         print "                             Example: /home/user/Trilinos\n";
         print "                             REQUIRED.\n";
         print "\n";
-        print "  --builddir=DIR             Specify the name of the build directory where you\n";
+        print "  --build-dir=DIR            Specify the name of the build directory where you\n";
         print "                             would like to build Trilnos.  If a relative\n";
         print "                             path is given, it is assumed to be in the given\n";
         print "                             Trilinos directory.\n";
@@ -357,7 +379,7 @@ exit $exitStatus;
         print "  --invoke-configure=FILE    Relative paths to a complete invoke-configure file.\n";
         print "                             REQUIRED.\n";
         print "\n";
-        print "  --makecmd=COMMAND          Specify the make command for this system.  This can\n";
+        print "  --make-cmd=COMMAND         Specify the make command for this system.  This can\n";
         print "                             be used to specify make flags, \"make -j4\", for\n";
         print "                             example\n";
         print "                             Default: \"make\"\n";
@@ -366,7 +388,7 @@ exit $exitStatus;
         print "                             to remove a broken package and its dependents and\n";
         print "                             continue until some subset builds successfully.\n";
         print "\n";
-        print "  --outputdir=DIR            Specify the directory in which to create the\n";
+        print "  --output-dir=DIR           Specify the directory in which to create the\n";
         print "                             directory containing the results.\n";
         print "                             Default: \".\"\n";
         print "\n";
@@ -375,7 +397,7 @@ exit $exitStatus;
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";
         print "\n";
-        print "  --logverbosity=LEVEL       0 = no log (default)\n";
+        print "  --log-verbosity=LEVEL      0 = no log (default)\n";
         print "                             1 = normal output\n";
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";

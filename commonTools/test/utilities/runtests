@@ -6,6 +6,11 @@
 # 
 # Mike Phenow, Jim Willenbring
 #
+# This is a utility for running Trilinos packages tests.  It assumes you have
+# an existing build directory containing properly configured and built 
+# packages and tests.  It also requires that packages have test definition 
+# files in thier test directory.
+#
 ################################################################################
 
 use strict;
@@ -14,17 +19,18 @@ use strict;
 
 # Command line arguments:
 
-my $trilinosdir;        # Trilinos directory        (required argument) 
+my $trilinosDir;        # Trilinos directory        (required argument) 
 my $comm;               # comm                      (required argument) 
-my $builddir;           # build directory           (required argument) 
+my $buildDir;           # build directory           (required argument) 
 my $category;           # test category             (required argument) 
-my $maxproc;            # maximum processors        (default: 4)
-my $mpistart;           # mpi startup command       (default: NONE)
-my $mpistop;            # mpi shutdown command      (default: NONE)
-my $mpigo;              # mpigo command             (default: mpigo -np )
-my $outputdir;          # output directory          (default: .)
+my $maxProc;            # maximum processors        (default: 4)
+my $mpiStart;           # mpi startup command       (default: NONE)
+my $mpiStop;            # mpi shutdown command      (default: NONE)
+my $mpiGo;              # mpi-go command            (default: mpirun -np )
+
+my $outputDir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
-my $logverbosity;       # log file verbosity level  (default: 0)
+my $logVerbosity;       # log file verbosity level  (default: 0)
 
 my @testListAoH;        # test list array of hash
                         #   'package'       =>  package
@@ -32,7 +38,7 @@ my @testListAoH;        # test list array of hash
                         #   'directory'     =>  vector/
                         #   'type'          =>  MPI/
                         #   'name'          =>  test.exe
-                        #   'command'       =>  mpigo -np16 ./vector/test.exe myVector
+                        #   'command'       =>  mpi-go -np16 ./vector/test.exe myVector
 
 my $resultsDir;         # absolute path to results directory
 
@@ -67,21 +73,23 @@ cleanUp();
 
     sub getArgs {
         
+        # Argument variables that don't need to be global.
         my $quiet;
         my $help;
 
+        # Gather command line arguments.
         use Getopt::Long;
-        GetOptions( "trilinosdir=s" => \$trilinosdir,
+        GetOptions( "trilinos-dir=s" => \$trilinosDir,
                     "comm=s" => \$comm,
-                    "builddir=s" => \$builddir,
+                    "build-dir=s" => \$buildDir,
                     "category=s" => \$category,
-                    "maxproc=i" => \$maxproc,
-                    "mpistart=s" => \$mpistart,
-                    "mpistop=s" => \$mpistop,
-                    "mpigo=s" => \$mpigo,
-                    "outputdir=s" => \$outputdir,
+                    "max-proc=i" => \$maxProc,
+                    "mpi-start=s" => \$mpiStart,
+                    "mpi-stop=s" => \$mpiStop,
+                    "mpi-go=s" => \$mpiGo,
+                    "output-dir=s" => \$outputDir,
                     "verbosity=i" => \$verbosity,
-                    "logverbosity=i" => \$logverbosity,
+                    "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -93,12 +101,12 @@ cleanUp();
         
         # Enforce and/or prepare arguments.
         
-        # check for existance of trilinosdir argument and actual directory
-        if (!$trilinosdir) {
-            die "trilinosdir value required, see --help for more information\n"; 
+        # check for existance of trilinos-dir argument and actual directory.
+        if (!$trilinosDir) {
+            die "trilinos-dir value required, see --help for more information\n"; 
         } else {
-            if (!stat($trilinosdir)) {
-                die "cannot stat trilinosdir: $trilinosdir\n";
+            if (!stat($trilinosDir)) {
+                die "cannot stat trilinos-dir: $trilinosDir\n";
             }
         }
         
@@ -111,19 +119,22 @@ cleanUp();
             }
         }
         
-        # Check for existance of builddir argument and actual directory.
-        if (!$builddir) {
-            die "builddir value required, see --help for more information\n"; 
+        # Check for existance of build-dir argument and actual directory.
+        # If it isn't given as an absolute path, prepend the Trilinos path.
+        if (!$buildDir) {
+            die "build-dir value required, see --help for more information\n"; 
         } else {
-            if ($builddir !~ m/^\//) {
-                $builddir = "$trilinosdir/$builddir";
+            if ($buildDir !~ m/^\//) {
+                $buildDir = "$trilinosDir/$buildDir";
             }
-            if (!stat($builddir)) {
-                die "cannot stat builddir: $builddir\n";
+            if (!stat($buildDir)) {
+                die "cannot stat build-dir: $buildDir\n";
             }
         }
         
         # Check for existance and acceptable value of category argument.
+        # This may be changed from a 'die' to a 'warn' in the future if
+        # developers decide they want to define their own, non-standard groups.
         if (!$category) {
             die "category value required, see --help for more information\n"; 
         } else {
@@ -140,70 +151,75 @@ cleanUp();
             }
         }
         
-        # Check for existance of maxproc.
-        if (!$maxproc) {
-            $maxproc = 4;   # reasonable guess?
+        # Check for existance of max-proc.
+        if (!$maxProc) {
+            $maxProc = 4;   # reasonable guess?
         } else {
-            if ($maxproc < 1) {
-                die "maxproc value must be at least 1\n";
+            if ($maxProc < 1) {
+                die "max-proc value must be at least 1\n";
             }
         }
         
-        # Check for valid mpistart command.
-        if ($mpistart) { 
-            $mpistart =~ m/^(\w*)/;
+        # Check for valid mpi-start command.
+        if ($mpiStart) { 
+            $mpiStart =~ m/^(\w*)/;
             my $mpiStartProg = $1;
             `which $mpiStartProg`;
             if ($?) {
-                die "cannot find mpistart command: $mpistart\n";
+                die "cannot find mpi-start command: $mpiStart\n";
             }
         } else {
-            $mpistart = ""; 
+            $mpiStart = ""; 
         }
         
-        # Check for valid mpistop command.
-        if ($mpistop) {
-            $mpistop =~ m/^(\w*)/;
+        # Check for valid mpi-stop command.
+        if ($mpiStop) {
+            $mpiStop =~ m/^(\w*)/;
             my $mpiStopProg = $1;
             `which $mpiStopProg`;
             if ($?) {
-                die "cannot find mpistop command: $mpistop\n";
+                die "cannot find mpi-stop command: $mpiStop\n";
             }
         } else {
-            $mpistop = ""; 
+            $mpiStop = ""; 
         }
         
-        # Check for valid mpigo command, set mpigo environment variable.
-        if (!$mpigo) { 
-            $mpigo = "mpirun -np "; 
+        # Check for valid mpi-go command and set mpi-go environment variable.
+        if (!$mpiGo) { 
+            $mpiGo = "mpirun -np "; 
         }
         if ($comm eq "mpi") {
-            $mpigo =~ m/^(\w*)/;
+            $mpiGo =~ m/^(\w*)/;
             my $mpiGoProg = $1;
             `which $mpiGoProg`;
             if ($?) {
-                die "cannot find mpigo command: $mpigo\n";
+                die "cannot find mpi-go command: $mpiGo\n";
             } else {
-                $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpigo;
+                $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpiGo;
             }
         }
         
-        # Check for existance of output directory.
-        if (!$outputdir) {
-            $outputdir = "";
-            $resultsDir = "$trilinosdir/commonTools/test/utilities/results"; 
+        # Check for existance of output directory, use it to create the
+        # complete path for the results directory, and create the results
+        # directory.
+        if (!$outputDir) {
+            $outputDir = "";
+            $resultsDir = "$trilinosDir/commonTools/test/utilities/results"; 
         } else {
-            if ($outputdir =~ m/^\//) {
-                $resultsDir = $outputdir;
+            if ($outputDir =~ m/^\//) {
+                $resultsDir = $outputDir;
             } else {
-                $resultsDir = "$trilinosdir/commonTools/test/utilities/$outputdir";
+                $resultsDir = "$trilinosDir/commonTools/test/utilities/$outputDir";
             }
         }
         if (!stat($resultsDir)) {
             mkdir($resultsDir) or die "cannot create $resultsDir, died";
         }
         
-        # Set verbosity level to corresponding constant.
+        # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
+        # used for the levels the user may specify, but they are stored as 0,
+        # 1, 2, and 4 so they can be combined and processed with bitwise
+        # operations.
         if ($verbosity) {
             if      ($verbosity == 0) { $verbosity = $v0; }
             elsif   ($verbosity == 1) { $verbosity = $v1; }
@@ -213,17 +229,21 @@ cleanUp();
             $verbosity = $v1; 
         }
         
-        # Set log verbosity level to corresponding constant.
-        if ($logverbosity) {
-            if      ($logverbosity == 0) { $logverbosity = $v0; }
-            elsif   ($logverbosity == 1) { $logverbosity = $v1; }
-            elsif   ($logverbosity == 2) { $logverbosity = $v2; }
-            elsif   ($logverbosity == 3) { $logverbosity = $v3; }        
+        # Set log verbosity level to corresponding constant.  Numbering scheme
+        # is the same for the log verbosity as it is for the standard verbosity.
+        # There is not distinct output and log output, the if a log verbosity
+        # is given, then that level of output is written to a file instead of
+        # to standard out.  
+        if ($logVerbosity) {
+            if      ($logVerbosity == 0) { $logVerbosity = $v0; }
+            elsif   ($logVerbosity == 1) { $logVerbosity = $v1; }
+            elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
+            elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logverbosity = $v0; 
+            $logVerbosity = $v0; 
         }
         
-        # Set quiet mode.
+        # Set quiet mode--same as passing --verbosity=0.
         if ($quiet) {
             $verbosity = $v0; 
         }            
@@ -259,17 +279,17 @@ cleanUp();
         # Print list of variables for debugging.
         my $message = "";
         $message .= "init():\n";
-        $message .= "  \$trilinosdir = $trilinosdir\n";
+        $message .= "  \$trilinosDir = $trilinosDir\n";
         $message .= "  \$comm = $comm\n";
-        $message .= "  \$builddir = $builddir\n";
+        $message .= "  \$buildDir = $buildDir\n";
         $message .= "  \$category = $category\n";
-        $message .= "  \$maxproc = $maxproc\n";
-        $message .= "  \$mpistart = $mpistart\n";
-        $message .= "  \$mpistop = $mpistop\n";
-        $message .= "  \$mpigo = $mpigo\n";
-        $message .= "  \$outputdir = $outputdir\n";
+        $message .= "  \$maxProc = $maxProc\n";
+        $message .= "  \$mpiStart = $mpiStart\n";
+        $message .= "  \$mpiStop = $mpiStop\n";
+        $message .= "  \$mpiGo = $mpiGo\n";
+        $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
-        $message .= "  \$logverbosity = $logverbosity\n";
+        $message .= "  \$logVerbosity = $logVerbosity\n";
         $message .= "  \$startTime = $startTime\n";
         $message .= "  \$resultsDir = $resultsDir\n";
         $message .= "  \n";
@@ -280,7 +300,7 @@ cleanUp();
     ############################################################################
     # run()
     #
-    # Moves into builddir/packages, looks for files and runs tests based on
+    # Moves into build-dir/packages, looks for files and runs tests based on
     # @testListAoH compiled by compileTestList.
     #
     #   - args:     NONE
@@ -291,7 +311,7 @@ cleanUp();
     sub run {
         
         # cd to packages directory in build directory.
-        chdir $builddir or die "cannot chdir to $builddir, died";
+        chdir $buildDir or die "cannot chdir to $buildDir, died";
         chdir "packages/" or die "cannot chdir to packages/, died";
         
         # Compile list of test definition files (using File::Find instead
@@ -326,11 +346,11 @@ cleanUp();
         
         # Grab the repository branch tag
         my $branchTag = "";
-        my $homeDirContents = `ls $trilinosdir`;
+        my $homeDirContents = `ls $trilinosDir`;
         if ($homeDirContents =~ m/CVS/) {
-            my $cvsDirContents = `ls $trilinosdir/CVS`;
+            my $cvsDirContents = `ls $trilinosDir/CVS`;
             if ($cvsDirContents =~ m/Tag/) {
-                $branchTag = `cat $trilinosdir/CVS/Tag`;
+                $branchTag = `cat $trilinosDir/CVS/Tag`;
             } else {
                 $branchTag = "development";
             }      
@@ -345,13 +365,13 @@ cleanUp();
         my $testsFailed = 0;
         
         # Start MPI
-        if ($comm eq "mpi" && $mpistart) { system("$mpistart 1>/dev/null 2>/dev/null"); }
+        if ($comm eq "mpi" && $mpiStart) { system("$mpiStart 1>/dev/null 2>/dev/null"); }
         
         # For each test entry...
         for my $i (0 .. $#testListAoH) {
         
             # cd to packages directory in build directory.
-            chdir $builddir or die "cannot chdir to $builddir, died";
+            chdir $buildDir or die "cannot chdir to $buildDir, died";
             chdir "packages/" or die "cannot chdir to packages/, died";
                 
             # Print progress message.
@@ -424,10 +444,10 @@ cleanUp();
             $resultsString .= "MACHINE_HARDWARE     = $machineHardware\n";
             $resultsString .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";
             $resultsString .= "\n";
-            $resultsString .= "TRILINOS_DIR         = $trilinosdir\n";
+            $resultsString .= "TRILINOS_DIR         = $trilinosDir\n";
             $resultsString .= "BRANCH_TAG           = $branchTag\n";
             $resultsString .= "\n";
-            $resultsString .= "BUILD_DIR            = $builddir\n";
+            $resultsString .= "BUILD_DIR            = $buildDir\n";
             $resultsString .= "COMM                 = $comm\n";
             $resultsString .= "\n";
             $resultsString .= "PACKAGE_TEST_DIR     = ".$testListAoH[$i]{'definitionDir'}."\n";
@@ -458,6 +478,7 @@ cleanUp();
             
         } # foreach @testListAoH
         
+        # Print test summary.
         $message = "\n";
         $message .= "  Tests Passed: ".sprintf("%3s", "$testsPassed")."\n";
         $message .= "  Tests Failed: ".sprintf("%3s", "$testsFailed")."\n";
@@ -466,7 +487,7 @@ cleanUp();
         printMessage($message, $v1+$v2+$v3);
         
         # Stop MPI
-        if ($comm eq "mpi" && $mpistop) { system("$mpistop 1>/dev/null 2>/dev/null"); }
+        if ($comm eq "mpi" && $mpiStop) { system("$mpiStop 1>/dev/null 2>/dev/null"); }
         
     } # run()
     
@@ -672,21 +693,21 @@ cleanUp();
                                                 $range =~ m/(\d*)-(\S*)/;
                                                 $rangeMin = $1;
                                                 $rangeMax = $2;
-                                                if ($rangeMax eq "*") { $rangeMax = $maxproc; }
-                                                if ($rangeMin <= $maxproc) { 
-                                                    if ($rangeMax <= $maxproc) { 
+                                                if ($rangeMax eq "*") { $rangeMax = $maxProc; }
+                                                if ($rangeMin <= $maxProc) { 
+                                                    if ($rangeMax <= $maxProc) { 
                                                         $numProc = $rangeMax;
-                                                    } elsif ($rangeMax > $maxproc) {
-                                                        $numProc = $maxproc;
+                                                    } elsif ($rangeMax > $maxProc) {
+                                                        $numProc = $maxProc;
                                                     }                                                        
-                                                    $testEntry{'command'} = "$mpigo"."$numProc ./$test ".$arg;
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
                                                     push(@testListAoH, { %testEntry });
                                                 }
                                             } else {
-                                                if ($range eq "*") { $range = $maxproc; }
+                                                if ($range eq "*") { $range = $maxProc; }
                                                 $numProc = $range;
-                                                if ($numProc <= $maxproc) { 
-                                                    $testEntry{'command'} = "$mpigo"."$numProc ./$test ".$arg;
+                                                if ($numProc <= $maxProc) { 
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
                                                     push(@testListAoH, { %testEntry });
                                                 }
                                             }                                        
@@ -695,8 +716,8 @@ cleanUp();
                                     # no optional () present
                                     } else { 
                                         
-                                        my $numProc = $maxproc;
-                                        $testEntry{'command'} = "$mpigo"."$numProc ./$test ".$arg;
+                                        my $numProc = $maxProc;
+                                        $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
                                         push(@testListAoH, { %testEntry });
                                     
                                     }
@@ -946,7 +967,7 @@ cleanUp();
             print $message;
         }
         
-        if ($logverbosity & $level) {
+        if ($logVerbosity & $level) {
             my $log = $resultsDir."log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
@@ -968,12 +989,12 @@ cleanUp();
     sub printHelp {
         print "runtests - The Trilinos Test Utility\n";
         print "\n";
-        print "Usage:  perl runtests --trilinosdir=/home/user/Trilinos --comm=mpi --buildir=MPI\n";
+        print "Usage:  perl runtests --trilinos-dir=/home/user/Trilinos --comm=mpi --build-dir=MPI\n";
         print "        --category=all\n";
         print "\n";
         print "Options:\n";
         print "\n";
-        print "  --trilinosdir=DIR      Specify the absolute path to the top-level Trilinos\n";
+        print "  --trilinos-dir=DIR     Specify the absolute path to the top-level Trilinos\n";
         print "                         directory that contains this program.\n";
         print "                         Example: /home/user/Trilinos\n";
         print "                         REQUIRED.\n";
@@ -981,7 +1002,7 @@ cleanUp();
         print "  --comm=COMM            Specify the type of build, either \"serial\" or \"mpi\"\n";
         print "                         REQUIRED.\n";
         print "\n";
-        print "  --builddir=DIR         Specify the path of the build directory that contains\n";
+        print "  --build-dir=DIR        Specify the path of the build directory that contains\n";
         print "                         the tests you would like run.  If a relative path is\n";
         print "                         given, it is assumed that it is in the given Trilinos\n";
         print "                         directory.\n";
@@ -993,20 +1014,20 @@ cleanUp();
         print "                         README-definition for more information.\n";
         print "                         REQUIRED.\n";
         print "\n";
-        print "  --maxproc=N            Specify the maximum number of processors on which to\n";
+        print "  --max-proc=N           Specify the maximum number of processors on which to\n";
         print "                         run a test.\n";
         print "                         Default: 4\n";
         print "\n";
-        print "  --mpistart=COMMAND     Specify the mpi startup command for this system.\n";
+        print "  --mpi-start=COMMAND    Specify the mpi startup command for this system.\n";
         print "                         Default: NONE\n";
         print "\n";
-        print "  --mpistop=COMMAND      Specify the mpi shutdown command for this system.\n";
+        print "  --mpi-stop=COMMAND     Specify the mpi shutdown command for this system.\n";
         print "                         Default: NONE\n";
         print "\n";
-        print "  --mpigo=COMMAND        Specify the mpigo command for this system.\n";
-        print "                         Default: \"mpigo -np \"\n";
+        print "  --mpi-go=COMMAND       Specify the mpi-go command for this system.\n";
+        print "                         Default: \"mpi-go -np \"\n";
         print "\n";
-        print "  --outputdir=DIR        Specify the directory in which to create the directory\n";
+        print "  --output-dir=DIR       Specify the directory in which to create the directory\n";
         print "                         containing the test results.\n";
         print "                         Default: \".\"\n";
         print "\n";
@@ -1015,7 +1036,7 @@ cleanUp();
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";
         print "\n";
-        print "  --logverbosity=LEVEL   0 = no log (default)\n";
+        print "  --log-verbosity=LEVEL  0 = no log (default)\n";
         print "                         1 = normal output\n";
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";

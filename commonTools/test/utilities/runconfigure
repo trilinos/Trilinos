@@ -6,9 +6,16 @@
 # 
 # Mike Phenow, Jim Willenbring
 #
+# This is a utility for configuring Trilinos.  It requires you to provide a
+# complete invoke-configure file.  It is of limited value by itself.  It is
+# best used in conjunction with runmake, as in the utility runbuild.
+#
+# - Check contents of report.
+# - Improve comments.
 # - Should dependencies be moved into packages like test definitions?
 # - Do we need a dependencies file (or the same one) to specify which package
 #   directories to blow away?
+# - Output package names as they configure successfully.
 #
 ################################################################################
 
@@ -18,15 +25,15 @@ use strict;
 
 # Command line arguments:
 
-my $trilinosdir;        # Trilinos directory        (required argument) 
-my $builddir;           # build directory           (required argument) 
+my $trilinosDir;        # Trilinos directory        (required argument) 
+my $buildDir;           # build directory           (required argument) 
 my $invokeConfigure;    # complete invoke-configure (required argument)
 my $recover;            # recover mode?
 my $makeFailure;        # return code from runmake
 
-my $outputdir;          # output directory          (default: .)
+my $outputDir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
-my $logverbosity;       # log file verbosity level  (default: 0)
+my $logVerbosity;       # log file verbosity level  (default: 0)
 
 my $resultsDir;         # absolute path to results directory
 my %dependencies;       # package dependencies
@@ -40,7 +47,11 @@ my $v1 = "1";           # normal verbosity
 my $v2 = "2";           # level 2 verbosity
 my $v3 = "4";           # level 3 verbosity
 
-# Package Failure Exit Status Codes
+# Package failure exit status codes.  These are needed when you are combining
+# runconfigure and runmake (as in runbuild) and you want to be able to recover
+# from make failures because runmake can't recover from a make failure by
+# itself--it needs to communicate the broken package to runconfigure to that
+# runconfigure can remove its directory and its configure flags.
 my %failureCode = ();
 $failureCode{'amesos'} = 10;
 $failureCode{'anasazi'} = 11;
@@ -100,18 +111,20 @@ exit $exitStatus;
 
     sub getArgs {
         
+        # Argument variables that don't need to be global.
         my $quiet;
         my $help;
 
+        # Gather command line arguments.
         use Getopt::Long;
-        GetOptions( "trilinosdir=s" => \$trilinosdir,
-                    "builddir=s" => \$builddir,
+        GetOptions( "trilinos-dir=s" => \$trilinosDir,
+                    "build-dir=s" => \$buildDir,
                     "invoke-configure=s" => \$invokeConfigure,
                     "recover" => \$recover,
                     "make-failure=s" => \$makeFailure,
-                    "outputdir=s" => \$outputdir,
+                    "output-dir=s" => \$outputDir,
                     "verbosity=i" => \$verbosity,
-                    "logverbosity=i" => \$logverbosity,
+                    "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -123,25 +136,27 @@ exit $exitStatus;
         
         # Enforce and/or prepare arguments.
         
-        # check for existance of trilinosdir argument and actual directory
-        if (!$trilinosdir) {
-            die "trilinosdir value required, see --help for more information\n"; 
+        # check for existance of trilinos-dir argument and actual directory
+        if (!$trilinosDir) {
+            die "trilinos-dir value required, see --help for more information\n"; 
         } else {
-            if (!stat($trilinosdir)) {
-                die "cannot stat trilinosdir: $trilinosdir\n";
+            if (!stat($trilinosDir)) {
+                die "cannot stat trilinos-dir: $trilinosDir\n";
             }
         }
         
-        # Check for existance of builddir argument and actual directory.
-        if (!$builddir) {
-            die "builddir value required, see --help for more information\n"; 
+        # Check for existance of build-dir argument and actual directory.
+        # If it isn't given as an absolute path, prepend the Trilinos path.
+        # Blow it away and create it.
+        if (!$buildDir) {
+            die "build-dir value required, see --help for more information\n"; 
         } else {
-            if ($builddir !~ m/^\//) {
-                $builddir = "$trilinosdir/$builddir";
+            if ($buildDir !~ m/^\//) {
+                $buildDir = "$trilinosDir/$buildDir";
             }
             if (!$makeFailure) {
-                system ("rm -rf $builddir");
-                mkdir($builddir) or die "cannot create builddir: $builddir\n";
+                system ("rm -rf $buildDir");
+                mkdir($buildDir) or die "cannot create build-dir: $buildDir\n";
             }
         }
         
@@ -150,7 +165,7 @@ exit $exitStatus;
             die "invoke-configure value required, see --help for more information\n"; 
         } else {
             if ($invokeConfigure !~ m/^\//) {
-                $invokeConfigure = "$trilinosdir/commonTools/test/utilities/$invokeConfigure";
+                $invokeConfigure = "$trilinosDir/commonTools/test/utilities/$invokeConfigure";
             }
             if (!stat($invokeConfigure)) {
                 die "cannot stat invoke-configure: $invokeConfigure\n";
@@ -162,22 +177,27 @@ exit $exitStatus;
             $recover = "";
         }
         
-        # Check for existance of output directory.
-        if (!$outputdir) {
-            $outputdir = "";
-            $resultsDir = "$trilinosdir/commonTools/test/utilities/results"; 
+        # Check for existance of output directory, use it to create the
+        # complete path for the results directory, and create the results
+        # directory.
+        if (!$outputDir) {
+            $outputDir = "";
+            $resultsDir = "$trilinosDir/commonTools/test/utilities/results"; 
         } else {
-            if ($outputdir =~ m/^\//) {
-                $resultsDir = $outputdir;
+            if ($outputDir =~ m/^\//) {
+                $resultsDir = $outputDir;
             } else {
-                $resultsDir = "$trilinosdir/commonTools/test/utilities/$outputdir";
+                $resultsDir = "$trilinosDir/commonTools/test/utilities/$outputDir";
             }
         }
         if (!stat($resultsDir)) {
             mkdir($resultsDir) or die "cannot create $resultsDir, died";
         }
         
-        # Set verbosity level to corresponding constant.
+        # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
+        # used for the levels the user may specify, but they are stored as 0,
+        # 1, 2, and 4 so they can be combined and processed with bitwise
+        # operations.
         if ($verbosity) {
             if      ($verbosity == 0) { $verbosity = $v0; }
             elsif   ($verbosity == 1) { $verbosity = $v1; }
@@ -187,17 +207,21 @@ exit $exitStatus;
             $verbosity = $v1; 
         }
         
-        # Set log verbosity level to corresponding constant.
-        if ($logverbosity) {
-            if      ($logverbosity == 0) { $logverbosity = $v0; }
-            elsif   ($logverbosity == 1) { $logverbosity = $v1; }
-            elsif   ($logverbosity == 2) { $logverbosity = $v2; }
-            elsif   ($logverbosity == 3) { $logverbosity = $v3; }        
+        # Set log verbosity level to corresponding constant.  Numbering scheme
+        # is the same for the log verbosity as it is for the standard verbosity.
+        # There is not distinct output and log output, the if a log verbosity
+        # is given, then that level of output is written to a file instead of
+        # to standard out.  
+        if ($logVerbosity) {
+            if      ($logVerbosity == 0) { $logVerbosity = $v0; }
+            elsif   ($logVerbosity == 1) { $logVerbosity = $v1; }
+            elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
+            elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logverbosity = $v0; 
+            $logVerbosity = $v0; 
         }
         
-        # Set quiet mode.
+        # Set quiet mode--same as passing --verbosity=0.
         if ($quiet) {
             $verbosity = $v0; 
         }
@@ -230,13 +254,13 @@ exit $exitStatus;
         # Print list of variables for debugging.
         my $message = "";
         $message .= "init():\n";
-        $message .= "  \$trilinosdir = $trilinosdir\n";
-        $message .= "  \$builddir = $builddir\n";     
+        $message .= "  \$trilinosDir = $trilinosDir\n";
+        $message .= "  \$buildDir = $buildDir\n";     
         $message .= "  \$invokeConfigure = $invokeConfigure\n";      
         $message .= "  \$recover = $recover\n";
-        $message .= "  \$outputdir = $outputdir\n";
+        $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
-        $message .= "  \$logverbosity = $logverbosity\n";
+        $message .= "  \$logVerbosity = $logVerbosity\n";
         $message .= "  \$resultsDir = $resultsDir\n";
         $message .= "  \n";
         printMessage($message, $v3);
@@ -246,7 +270,7 @@ exit $exitStatus;
     ############################################################################
     # run()
     #
-    # Moves into builddir/ and configures.
+    # Moves into build-dir/ and configures.
     #
     #   - args:     NONE
     #
@@ -257,17 +281,19 @@ exit $exitStatus;
         
         # Copy invoke-configure
         if (!$makeFailure) {
-            system("cp $invokeConfigure $builddir/invoke-configure") == 0
+            system("cp $invokeConfigure $buildDir/invoke-configure") == 0
                 or die "cannot copy invoke-configure, died";
         } else {
             removeBrokenPackage($failedPackage{$makeFailure});
             cleanInvokeConfigure($failedPackage{$makeFailure});
         }
         
-        chdir $builddir or die "cannot chdir to $builddir, died";
+        chdir $buildDir or die "cannot chdir to $buildDir, died";
             
         my $configurePassed = 0;
         
+        # Attempt to configure.  If --recover flag was passed, we will
+        # continue to attempt to recover and reconfigure until it passes.
         while (!$configurePassed) {
             
             # Print progress message.
@@ -275,9 +301,10 @@ exit $exitStatus;
             $message = sprintf("%-30s", $message);
             printMessage($message, $v1+$v2+$v3);
             
+            # Capture start time.
             my $startSeconds = time();
         
-            # Run configure        
+            # Run configure.  
             my $configureOutput = `./invoke-configure 2>&1`;
             my $configureExitStatus = $?;
         
@@ -293,17 +320,22 @@ exit $exitStatus;
             my $stopSeconds = time();            
             my $runSeconds = $stopSeconds - $startSeconds;
             
-            # Detect broken package.
+            # Broken or not?
             my $brokenPackage = "NONE";
             if ($configureExitStatus) {
-                    
+                
+                # Move aside current, broken invoke-configure.  Serialize
+                # broken invoke-configures so that all are preserved.
+                # THE SERIALIZATION DOESN'T WORK YET.
                 my $icBrokenNumber = "00";
-                while (stat "$builddir/invoke-configure-broken-$icBrokenNumber") {
+                while (stat "$buildDir/invoke-configure-broken-$icBrokenNumber") {
                     $icBrokenNumber++;
                 }
-                system("cp $builddir/invoke-configure $builddir/invoke-configure-broken-$icBrokenNumber") == 0
+                system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
                     or die "can't copy invoke-configure, died";
             
+                # Detect broken package, remove broken package directory, and
+                # remove appropriate configure flags.
                 $brokenPackage = detectBrokenPackage($configureOutput);
                 removeBrokenPackage($brokenPackage);
                 cleanInvokeConfigure($brokenPackage);
@@ -339,13 +371,13 @@ exit $exitStatus;
             chomp (my $machineHardware=`uname -m`);
             chomp (my $hardwarePlatform=`uname -i`);
             
-            # Grab the repository branch tag
+            # Grab the repository branch tag.
             my $branchTag = "";
-            my $homeDirContents = `ls $trilinosdir`;
+            my $homeDirContents = `ls $trilinosDir`;
             if ($homeDirContents =~ m/CVS/) {
-                my $cvsDirContents = `ls $trilinosdir/CVS`;
+                my $cvsDirContents = `ls $trilinosDir/CVS`;
                 if ($cvsDirContents =~ m/Tag/) {
-                    $branchTag = `cat $trilinosdir/CVS/Tag`;
+                    $branchTag = `cat $trilinosDir/CVS/Tag`;
                 } else {
                     $branchTag = "development";
                 }      
@@ -371,10 +403,10 @@ exit $exitStatus;
             $resultsString .= "MACHINE_HARDWARE     = $machineHardware\n";
             $resultsString .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";
             $resultsString .= "\n";
-            $resultsString .= "TRILINOS_DIR         = $trilinosdir\n";
+            $resultsString .= "TRILINOS_DIR         = $trilinosDir\n";
             $resultsString .= "BRANCH_TAG           = $branchTag\n";
             $resultsString .= "\n";
-            $resultsString .= "BUILD_DIR            = $builddir\n";
+            $resultsString .= "BUILD_DIR            = $buildDir\n";
             $resultsString .= "\n";
             $resultsString .= "START_TIME           = $runStartTime\n";
             $resultsString .= "STOP_TIME            = $configureStopTime\n";
@@ -419,6 +451,9 @@ exit $exitStatus;
         
         my $brokenPackage;
         
+        # Find last instance of "Running PACKAGE Configure Script."  Since 
+        # configure failed, it should not have a matching "Finished Running..."
+        # string, and PACKAGE should be the broken package.
         $configureOutput =~ m/.*^Running(.*?)Configure Script/ms;
         if (defined $1) { $brokenPackage = $1; }
         
@@ -432,7 +467,6 @@ exit $exitStatus;
             return "UNKNOWN";
         }
         
-        # return broken package name
         return $brokenPackage;
         
     } # detectBrokenPackage
@@ -450,18 +484,18 @@ exit $exitStatus;
     sub cleanInvokeConfigure {
         my $brokenPackage = $_[0];
         
-        # open invoke-configure for reading
-        open (INVOKE_CONFIGURE, "<$builddir/invoke-configure")
+        # Open invoke-configure for reading.
+        open (INVOKE_CONFIGURE, "<$buildDir/invoke-configure")
             or die "can't open invoke-configure, died";
             
-        # parse it, extracting lines to keep
+        # Parse it, extracting lines to keep.
         my $newInvokeConfigure = "";
         my $changeMade = 0;
         while (my $line = <INVOKE_CONFIGURE>) {
             $line =~ s/^\s*//;  # trim leading spaces
             $line =~ s/\s*$//;  # trim trailing spaces
             
-            # compare lines to package dependencies
+            # Compare lines to package dependencies.
             my $dropLine = 0;
             my $lastElementIndex = $#{$dependencies{$brokenPackage}};
             for (my $i=0; $i<=$lastElementIndex; $i++) { 
@@ -478,7 +512,7 @@ exit $exitStatus;
                 }   
             }    
             
-            # write line if it isn't a dependency
+            # Write line if it isn't a dependency.
             if (!$dropLine) {                             
                 $newInvokeConfigure .= "$line\n";
             } else {
@@ -494,15 +528,15 @@ exit $exitStatus;
             return $brokenPackage;
         }
         
-        # prepare new invoke-configure
+        # Prepare new invoke-configure.
         $newInvokeConfigure =~ s/(.*)\\$/$1/s;  # remove last line-continuation
         chomp ($newInvokeConfigure);            # remove last newline 
         
-        # open invoke-configure for writing
-        open (INVOKE_CONFIGURE, ">$builddir/invoke-configure")
+        # Open invoke-configure for writing.
+        open (INVOKE_CONFIGURE, ">$buildDir/invoke-configure")
             or die "can't open invoke-configure, died";
         
-        # write new invoke configure
+        # Write new invoke configure.
         print INVOKE_CONFIGURE $newInvokeConfigure;
         close INVOKE_CONFIGURE; 
            
@@ -521,6 +555,7 @@ exit $exitStatus;
     sub removeBrokenPackage {
         my $brokenPackage = $_[0];
         
+        # Standardized name to package directory name conversions.
         my %dirName = ();
         $dirName{'amesos'} = "amesos";
         $dirName{'anasazi'} = "anasazi";
@@ -553,7 +588,7 @@ exit $exitStatus;
         
         my $packageDir = "";
         
-        $packageDir  = "$builddir/packages/";
+        $packageDir  = "$buildDir/packages/";
         $packageDir .= $dirName{"$brokenPackage"};        
         system("rm -rf $packageDir");
            
@@ -571,7 +606,7 @@ exit $exitStatus;
     #
 
     sub parseDependencies {
-        my $filename = "$trilinosdir/commonTools/test/utilities/dependencies";
+        my $filename = "$trilinosDir/commonTools/test/utilities/dependencies";
         
         open (IN_FILE, "<$filename")
             or die "can't open $filename";
@@ -644,6 +679,9 @@ exit $exitStatus;
     #
 
     sub cleanUp {
+    
+        # Currently, there is nothing to clean up, but I will leave this
+        # subroutine here for potential future use.
            
     } # cleanUp()
     
@@ -666,8 +704,8 @@ exit $exitStatus;
             print $message;
         }
         
-        if ($logverbosity & $level) {
-            my $log = $resultsDir."make_$runStartTimeForFilename"."_log.txt";
+        if ($logVerbosity & $level) {
+            my $log = $resultsDir."configure_$runStartTimeForFilename"."_log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;
@@ -688,16 +726,16 @@ exit $exitStatus;
     sub printHelp {
         print "runconfigure - The Trilinos Configure Utility\n";
         print "\n";
-        print "Usage:  perl runconfigure --trilinosdir=/home/user/Trilinos --buildir=MPI\n";
+        print "Usage:  perl runconfigure --trilinos-dir=/home/user/Trilinos --build-dir=MPI\n";
         print "\n";
         print "Options:\n";
         print "\n";
-        print "  --trilinosdir=DIR          Specify the absolute path to the top-level\n";
+        print "  --trilinos-dir=DIR         Specify the absolute path to the top-level\n";
         print "                             Trilinos directory that contains this program.\n";
         print "                             Example: /home/user/Trilinos\n";
         print "                             REQUIRED.\n";
         print "\n";
-        print "  --builddir=DIR             Specify the name of the build directory where you\n";
+        print "  --build-dir=DIR            Specify the name of the build directory where you\n";
         print "                             would like to configure Trilinos.  If a relative\n";
         print "                             path is given, it is assumed to be in the given\n";
         print "                             Trilinos directory.  IMPORTANT: regardless of\n";
@@ -714,7 +752,7 @@ exit $exitStatus;
         print "                             continue until some subset configures\n";
         print "                             successfully.\n";
         print "\n";
-        print "  --outputdir=DIR            Specify the directory in which to create the\n";
+        print "  --output-dir=DIR           Specify the directory in which to create the\n";
         print "                             directory containing the results.\n";
         print "                             Default: \".\"\n";
         print "\n";
@@ -723,7 +761,7 @@ exit $exitStatus;
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";
         print "\n";
-        print "  --logverbosity=LEVEL       0 = no log (default)\n";
+        print "  --log-verbosity=LEVEL      0 = no log (default)\n";
         print "                             1 = normal output\n";
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";
