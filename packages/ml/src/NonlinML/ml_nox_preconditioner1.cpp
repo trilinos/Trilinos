@@ -720,7 +720,7 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
      test_nullspace(ml_dim_nullsp_,nullsp,fineJac_);
 #endif
      ML_Aggregate_Set_NullSpace(ag_,ml_numPDE_,ml_dim_nullsp_,nullsp,i);
-     // delete [] nullsp; nullsp = 0; // FIXME, who deletes this?
+     delete [] nullsp; nullsp = 0;
   }
   else
   {
