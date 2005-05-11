@@ -1023,9 +1023,9 @@ bool ML_NOX::ML_Nox_NonlinearLevel::create_Nox_Convergencetest(double conv_normF
    if (combo2_)
       delete combo2_;
    
-   absresid_ = new NOX::StatusTest::NormF(conv_normF); 
+   absresid_ = new NOX::StatusTest::NormF(conv_normF,NOX::StatusTest::NormF::Unscaled); 
    
-   nupdate_ = new NOX::StatusTest::NormUpdate(conv_nupdate);
+   nupdate_ = new NOX::StatusTest::NormUpdate(conv_nupdate,NOX::StatusTest::NormUpdate::Unscaled);
    
    combo1_ = new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND);
    combo1_->addStatusTest(*absresid_);
