@@ -1224,6 +1224,7 @@ void CLIP_solver::calculate_coarse()
 	ffout << i+1 << " " << colidx[j]+1 << " " << vals[j] << endl;
     ffout.close();
     */
+    num_tied_down = 0;
     if (num_rigid_mode > ngather) num_rigid_mode = ngather;
     if (num_rigid_mode > 0) tie_down_coarse(ngather, rowbeg, colidx, vals,
 					    num_rigid_mode);
