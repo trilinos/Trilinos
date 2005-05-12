@@ -47,6 +47,7 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
   chk_sub_singularity = int(clip_params[9]);
   krylov_method       = int(clip_params[10]);
   scale_option        = int(clip_params[11]);
+  num_rigid_mode      = int(clip_params[12]);
 
   assert (Coords->NumVectors() == 3);
   assert (Coords->ConstantStride() == true);
@@ -146,6 +147,7 @@ CLIP_solver::~CLIP_solver()
   delete [] AP_ortho; delete [] orth1; delete [] orth2; delete [] owner_flag;
   delete [] VV; delete [] RR; delete [] HH; delete [] zz; delete [] cc;
   delete [] ss; delete [] norms; delete [] gmres_vec; delete [] gmres_sum;
+  delete [] tied_down;
   zero_pointers();
 }
 
@@ -222,12 +224,27 @@ void CLIP_solver::process_constraints()
 
     copy_map(Tran->DomainMap(), StandardMap);
     copy_map(Tran_Sub.ColMap(), SubMap);
-    Epetra_Export Exporter_temp(ASub->RowMap(), *StandardMap);
-    Epetra_MultiVector  Coords_temp(*StandardMap, Coords->NumVectors());
-    Epetra_IntVector NodalDofs_temp(*StandardMap);
+    /*
+    char fname[101];
+    sprintf(fname,"%s%d","test", MyPID);
+    sprintf(fname, "%s.dat", fname);
+    ofstream ffout;
+    ffout.open(fname);
+    ffout << ASub->NumMyRows() << endl;
+    for (i=0; i<ASub->NumMyRows(); i++) ffout << ASub->GRID(i) << endl;
+    ffout << StandardMap->NumMyElements() << endl;
+    for (i=0; i<StandardMap->NumMyElements(); i++) 
+      ffout << StandardMap->GID(i) << endl;
+    ffout.close();
+    */
+    // replaced *StandardMap with ConStandard->RowMap() 
+    Epetra_Export Exporter_temp(ASub->RowMap(), ConStandard->RowMap());
+    Epetra_MultiVector  Coords_temp(ConStandard->RowMap(), 
+				    Coords->NumVectors());
+    Epetra_IntVector NodalDofs_temp(ConStandard->RowMap());
     Coords_temp.Export(*Coords, Exporter_temp, Insert);
     NodalDofs_temp.Export(*NodalDofs, Exporter_temp, Insert);
-    Epetra_Import Importer_temp(*SubMap, *StandardMap);
+    Epetra_Import Importer_temp(*SubMap, ConStandard->RowMap());
     Coords_red = new Epetra_MultiVector( *SubMap, Coords->NumVectors());
     NodalDofs_red = new Epetra_IntVector(*SubMap);
     Coords_red->Import(Coords_temp, Importer_temp, Insert);
@@ -1199,12 +1216,63 @@ void CLIP_solver::calculate_coarse()
     if (print_flag > 0) 
       fout << "coarse problem dimension = " << ngather << endl;
     nnz = rowbeg[ngather];
+    /*
+    ofstream ffout;
+    ffout.open("coarse_mat.dat");
+    for (i=0; i<ngather; i++) 
+      for (j=rowbeg[i]; j<rowbeg[i+1]; j++)
+	ffout << i+1 << " " << colidx[j]+1 << " " << vals[j] << endl;
+    ffout.close();
+    */
+    if (num_rigid_mode > ngather) num_rigid_mode = ngather;
+    if (num_rigid_mode > 0) tie_down_coarse(ngather, rowbeg, colidx, vals,
+					    num_rigid_mode);
     AKc = new CLAPS_sparse_lu();
     AKc->factor(ngather, nnz, rowbeg, colidx, vals, scale_option);
     delete [] rowbeg;
     SOL_Kc  = new double[ngather];
     TEMP_Kc = new double[ngather];
   }
+}
+
+void CLIP_solver::tie_down_coarse(int n, int rowbeg[], int colidx[], 
+				  double vals[], int ne)
+{
+  int i, j, nextra;
+  bool *bound_flag = new bool[n];
+  for (i=0; i<n; i++) bound_flag[i] = true;
+  subspace_iteration(n, rowbeg, colidx, vals, bound_flag, num_tied_down, 
+		     tied_down, AKc, ne);
+  cout << "num_ridid_mode, num_tied_down = " << num_rigid_mode << " "
+       << num_tied_down << endl;
+  for (i=0; i<n; i++) bound_flag[i] = false;
+  for (i=0; i<num_tied_down; i++) bound_flag[tied_down[i]] = true;
+  double min_diag(1e40);
+  for (i=0; i<n; i++)
+    for (j=rowbeg[i]; j<rowbeg[i+1]; j++)
+      if ((colidx[j] == i) && (fabs(vals[j]) < min_diag))
+	min_diag = fabs(vals[i]);
+  for (i=0; i<n; i++) {
+    for (j=rowbeg[i]; j<rowbeg[i+1]; j++) {
+      if (colidx[j] == i) {
+	if (bound_flag[i] == true) vals[j] = min_diag;
+      }
+      else
+	if ((bound_flag[i] == true) || (bound_flag[colidx[j]] == true))
+	  vals[j] = 0;
+    }
+  }
+  delete [] bound_flag; delete AKc;
+  /*
+  subspace_iteration(n, rowbeg, colidx, vals, bound_flag, nextra, 
+		     tied_down, AKc, ne);
+  ofstream ffout;
+  ffout.open("coarse_mat.dat");
+  for (i=0; i<n; i++) 
+    for (j=rowbeg[i]; j<rowbeg[i+1]; j++)
+      ffout << i+1 << " " << colidx[j]+1 << " " << vals[j] << endl;
+  ffout.close();
+  */
 }
 
 void CLIP_solver::get_matrix_diag(Epetra_CrsMatrix* A, double* & diag)
@@ -1253,10 +1321,16 @@ void CLIP_solver::gen_matrix(Epetra_CrsMatrix* A, int na, int adof[],
 void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[], 
 				     double vals[], bool bound_flag[], 
 				     int & nextra, int* & extra_corner,
-				     CLAPS_sparse_lu* & A)
+				     CLAPS_sparse_lu* & A, int ne)
 {
   int i, j, k, nnz, p, q, kbeg;
   double dmin, dmax(-1), dtol(1e-4), sitol(1e-4), etol(1e-4), sum;
+
+  if (n == 0) {
+    nextra = 0;
+    extra_corner = new int[nextra];
+    return;
+  }
   //
   // add small multiple of identity to diagonal to handle positive
   // semidefinite matrices
@@ -1278,10 +1352,17 @@ void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[],
   nnz = rowbeg[n];
   A->factor(n, nnz, rowbeg, colidx, vals);
   //
+  // adjust vals array back to original values
+  //
+  for (i=0; i<n; i++)
+    for (j=rowbeg[i]; j<rowbeg[i+1]; j++) 
+      if (colidx[j] == i) vals[j] -= dtol*dmin;
+  //
   // subspace iteration stuff
   //
   int maxiter_si(20);
   p = 20;
+  if (ne > 0) p = ne + 1;
   if (p > n) p = n;
   q = 2*p; if (2*p > (p+8)) q = p+8; if (q > n) q = n;
   double *X = new double[n*q]; myzero(X, n*q);
@@ -1341,7 +1422,25 @@ void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[],
   }
   */
   nextra = 0;
-  for (i=0; i<q; i++) if (fabs(LAMBDA[i]) <= dtol*dmin) nextra++;
+  if (ne == 0) {
+    for (i=0; i<q; i++) if (fabs(LAMBDA[i]) <= dtol*dmin) nextra++;
+  }
+  if (ne > 0) {
+    double aaa = dtol*fabs(LAMBDA[ne]);
+    for (i=0; i<ne; i++) if (fabs(LAMBDA[i]) <= aaa) nextra++;
+  }
+  /*  
+  if (ne > 0) {
+    for (i=0; i<q; i++) cout << "lambda[" << i << "]= " << LAMBDA[i] << endl;
+    ofstream ffout;
+    ffout.open("coarse_vec.dat");
+    for (i=0; i<n; i++) {
+      for (j=0; j<ne; j++) ffout << X[i+j*n] << " ";
+      ffout << endl;
+    }
+    ffout.close();
+  }
+  */
   extra_corner = new int[nextra];
   double maxval, sfac;
   int col, ibeg;
@@ -1356,10 +1455,11 @@ void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[],
     }
     assert (maxval > 0);
     extra_corner[i] = col;
-    for (j=0; j<n; j++) X[ibeg+j] /= X[ibeg+col];
+    sfac = 1/X[ibeg+col];
+    for (j=0; j<n; j++) X[ibeg+j] *= sfac;
     for (k=i+1; k<nextra; k++) {
       kbeg = k*n;
-      for (j=0; j<n; j++) X[kbeg+j] -= X[kbeg+col]*X[ibeg+col];
+      for (j=0; j<n; j++) X[kbeg+j] -= X[kbeg+col]*X[ibeg+j];
     }
   }
   /*
@@ -1569,7 +1669,7 @@ void CLIP_solver::zero_pointers()
   SOL_Kc = 0; TEMP_Kc = 0; rcurra = 0; rhoa = 0; betaa = 0; pApa = 0; Dtri = 0;
   Etri = 0; econa = 0; P_ortho = 0; AP_ortho = 0; orth1 = 0; orth2 = 0; 
   owner_flag = 0; VV = 0; RR = 0; HH = 0; zz = 0; cc = 0; ss = 0; norms = 0; 
-  gmres_vec = 0; gmres_sum = 0;
+  gmres_vec = 0; gmres_sum = 0; tied_down = 0;
 }
 
 void CLIP_solver::construct_subdomains()
@@ -1849,6 +1949,7 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   work_St2->Update(1.0, *r_St, -1.0);
   work_St2->Dot(*work_St2, &ractual);
   ractual = sqrt(ractual);
+  if (ractual/rorig > 10*solver_tol) pcg_status = 1;
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -1977,6 +2078,7 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   work_St2->Update(1.0, *r_St, -1.0);
   work_St2->Dot(*work_St2, &ractual);
   ractual = sqrt(ractual);
+  if (ractual/rorig > 10*solver_tol) gmres_status = 1;
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -2146,6 +2248,7 @@ void CLIP_solver::apply_preconditioner()
   work_Kc->Import(*prod_PhiB, *Importer_Kc, Insert);
   nKc = work_Kc->GlobalLength();
   if (MyPID == 0) {
+    for (i=0; i<num_tied_down; i++) workkc[tied_down[i]] = 0;
     if (nKc > 0) AKc->sol(1, workkc, SOL_Kc, TEMP_Kc);
     for (i=0; i<nKc; i++) workkc[i] = SOL_Kc[i];
   }

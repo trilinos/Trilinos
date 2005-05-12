@@ -430,7 +430,7 @@ void SCLIP_solver::construct_K_base()
 void SCLIP_solver::CLIP_solver_init(int cdof_option, double solver_tol,
    int maxiter, int atype, int ndim, int local_solver, int max_orthog,
    int prt_debug, int prt_summary, int chk_sub_singularity, 
-   int krylov_method, int scale_option)
+   int krylov_method, int scale_option, int num_rigid_mode)
 {
   double clip_params[20];
 
@@ -446,6 +446,7 @@ void SCLIP_solver::CLIP_solver_init(int cdof_option, double solver_tol,
   clip_params[9]  = double(chk_sub_singularity);
   clip_params[10] = double(krylov_method);
   clip_params[11] = double(scale_option);
+  clip_params[12] = double(num_rigid_mode);
   CS = new CLIP_solver(ASub, NodalDofs, Coords, ConStandard, clip_params);
 }
 

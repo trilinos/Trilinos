@@ -77,7 +77,10 @@ class CLIP_solver
 		  int* & rowbeg, int* & colidx, double* &vals);
   void subspace_iteration(int n, int rowbeg[], int colidx[], 
 			  double vals[], bool bound_flag[], int & nextra, 
-			  int* & extra_corner, CLAPS_sparse_lu* & A);
+			  int* & extra_corner, CLAPS_sparse_lu* & A,
+			  int ne = 0);
+  void tie_down_coarse(int n, int rowbeg[], int colidx[], 
+		       double vals[], int ne);
   void zero_pointers();
   void construct_subdomains();
   int initialize_subdomains();
@@ -116,6 +119,7 @@ class CLIP_solver
 
   int cdof_option, maxiter, atype, ndim, local_solver, prt_debug, prt_summary;
   int max_orthog, chk_sub_singularity, krylov_method, scale_option;
+  int num_rigid_mode;
   double solver_tol;
 
   Epetra_Import *Importer, *ImporterB, *ImporterSt2B, *Importer_Kc;
@@ -136,6 +140,7 @@ class CLIP_solver
   int *comp1, *comp2, *sub1, *sub2, *dset1, *dset2, ndof_set, *corner_flag;
   int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global, max_added_corner;
   int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR, sub_begin;
+  int num_tied_down, *tied_down;
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
