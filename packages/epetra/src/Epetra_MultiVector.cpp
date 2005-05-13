@@ -1452,9 +1452,9 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 	int m = MyLength_;
 	int n = NumVectors_;
 	int k = A_ncols;
-	int lda = A_tmp->Stride();
-	int ldb = B_tmp->Stride();
-	int ldc = C_tmp->Stride();
+	int lda = EPETRA_MAX(A_tmp->Stride(),1); // The reference BLAS implementation requires lda, ldb, ldc > 0 even if m, n, or k = 0
+	int ldb = EPETRA_MAX(B_tmp->Stride(),1);
+	int ldc = EPETRA_MAX(C_tmp->Stride(),1);
 	double *Ap = A_tmp->Values();
 	double *Bp = B_tmp->Values();
 	double *Cp = C_tmp->Values();
