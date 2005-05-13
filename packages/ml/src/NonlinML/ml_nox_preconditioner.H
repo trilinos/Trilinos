@@ -82,6 +82,8 @@
 #include "ml_nox_matrixfreelevel.H"
 // a nonlinear level
 #include "ml_nox_nonlinearlevel.H"
+// utils
+#include "ml_nox_preconditioner_utils.H"
 // this is the wrapper for the Epetra_CrsGraph used by ml in matrix-free method
 // it is derived from Epetra_RowMatrix so the ml - Epetra_RowMatrix - wrapper will take it
 #include "ml_Epetra_wrap_CrsGraph_as_RowMatrix.H"
@@ -477,14 +479,13 @@ private:
   bool ML_Nox_compute_Matrixfree_Linearpreconditioner(const Epetra_Vector& xfine);    
   bool ML_Nox_compute_Jacobian_Nonlinearpreconditioner(const Epetra_Vector& xfine);   
   bool ML_Nox_compute_Matrixfree_Nonlinearpreconditioner(const Epetra_Vector& xfine); 
-  Epetra_CrsMatrix* ML_Nox_computeFineLevelJacobian(const Epetra_Vector& x);
 
   // utils
-  Epetra_CrsGraph* deepcopy_graph(const Epetra_CrsGraph* oldgraph);
   bool Set_Smoothers();
   bool fix_MainDiagonal(Epetra_CrsMatrix* A, int level) const;
   bool test_nullspace(int dimns, double* nullsp, Epetra_CrsMatrix* Jac) const;
-  
+  Epetra_CrsMatrix* ML_Nox_computeFineLevelJacobian(const Epetra_Vector& x);
+ 
   // ApplyInverse functions, 
   // depending on type of preconditioner
   int ML_Nox_ApplyInverse_Linear(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;

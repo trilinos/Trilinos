@@ -79,6 +79,7 @@
 #include "ml_MultiLevelOperator.h"
 #include "ml_nox_fineinterface.H"    // interface to user code on fine level
 #include "ml_nox_coarseinterface.H"  // interface to user code on coarse levels
+#include "ml_nox_preconditioner_utils.H"  // interface to user code on coarse levels
 
 // the graph coloring class 
 #include "EpetraExt_MapColoring.h"
@@ -104,7 +105,7 @@ public:
                                   Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface, 
                                   const Epetra_Comm& comm, const Epetra_Vector& xfine,
                                   double fd_alpha, double fd_beta, bool fd_centered, 
-                                  bool isDiagonalOnly);
+                                  bool isDiagonalOnly, int bsize);
 
   // a reconstructor
   bool recreateLevel(int level, int nlevel, int plevel, ML* ml, ML_Aggregate* ag,
@@ -136,8 +137,6 @@ private:
   bool destroyFD() { if (FD_) delete FD_; FD_ = 0; A_ = 0; graph_ = 0; return true;}
   // compare pointwise the global Indices in 2 graphs, returns false if not equal
   bool compare_graphs(const Epetra_CrsGraph* newgraph, const Epetra_CrsGraph* oldgraph);
-  // make a true deep copy of the graph
-  Epetra_CrsGraph* deepcopy_graph(const Epetra_CrsGraph* oldgraph);
   
   int                                       level_;
   int                                       nlevel_;
@@ -149,7 +148,7 @@ private:
   ML_NOX::Nox_CoarseProblem_Interface*      coarseinterface_;
   Epetra_CrsGraph*                          graph_;
   Epetra_CrsMatrix*                         A_;
-  EpetraExt::CrsGraph_MapColoring*          MapColoring_;
+  //EpetraExt::CrsGraph_MapColoring*          MapColoring_;
   Epetra_MapColoring*                       colorMap_;
   EpetraExt::CrsGraph_MapColoringIndex*     colorMapIndex_;
   vector<Epetra_IntVector>*                 colorcolumns_;
@@ -157,6 +156,7 @@ private:
   double                                    fd_beta_;
   bool                                      fd_centered_;
   bool                                      isDiagonalOnly_;
+  int                                       bsize_;
 #if 1
   NOX::EpetraNew::FiniteDifferenceColoring* FD_;
 #else

@@ -892,6 +892,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
    // loop levels and create the Operators and coarse interfaces
    for (i=0; i<ml_nlevel_; i++)
    {
+      // choose a blocksize
+      int bsize;
+      if (i==0) bsize = ml_numPDE_;
+      else      bsize = ml_dim_nullsp_;
+      
       if (comm_.MyPID()==0 && ml_printlevel_ > 5 )
          cout << "\nmatrixfreeML (level " << i << "): Entering FD-coarselevel (re)construction\n";
       fflush(stdout);
@@ -910,7 +915,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
          ml_matfreelevel_[i] = new ML_NOX::ML_Nox_MatrixfreeLevel(i,ml_nlevel_,ml_printlevel_,ml_,
                                                                   ag_,P,interface_,comm_,xfine,
                                                                   fd_alpha_,fd_beta_,fd_centered_,
-                                                                  isJacobismoother);
+                                                                  isJacobismoother,bsize);
       else // redo an existing level
          ml_matfreelevel_[i]->recreateLevel(i,ml_nlevel_,ml_printlevel_,ml_,
                                             ag_,P,interface_,comm_,xfine);
@@ -954,33 +959,42 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
 }
 
 /*----------------------------------------------------------------------*
- |  compute Jacobian on fine level (private)                 m.gee 04/05|
+ |  compute Jacobian on fine level (private)                 m.gee 05/05|
+ |  this version amalgamates nodal blocks in the graph first, colors    |
+ |  the amalgamated graph and then expands the colors back to the       |
+ |  full size.                                                          |
  *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian(
                                                   const Epetra_Vector& x)
 {
   // make a copy of the graph
-  Epetra_CrsGraph* graph = deepcopy_graph(interface_.getGraph());
-
-  // create coloring of the graph
-  if (ml_printlevel_>0 && comm_.MyPID()==0)
-     cout << "matrixfreeML (level 0): Entering Coloring on level 0\n";
+  Epetra_CrsGraph* graph = ML_NOX::deepcopy_graph(interface_.getGraph());
+  
+  // the block size of the graph here
+  int bsize = ml_numPDE_;
+  
   double t0 = GetClock();
-  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-                                  EpetraExt::CrsGraph_MapColoring::GREEDY;
-
-  EpetraExt::CrsGraph_MapColoring* MapColoring = 
-                   new EpetraExt::CrsGraph_MapColoring(algType,0,false,0);
-
-  Epetra_MapColoring* colorMap = &(*MapColoring)(*graph);
+  
+  // construct a collapsed coloring
+  // create coloring of the nodal graph
+  if (ml_printlevel_>0 && comm_.MyPID()==0)
+  {
+     cout << "matrixfreeML (level 0): Entering Coloring on level 0\n";
+     fflush(stdout);
+  }
+  Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_collapsedcoloring(graph,bsize,false);
+  if (!colorMap)      colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
 
   EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex = 
                       new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-                      
   vector<Epetra_IntVector>* colorcolumns = &(*colorMapIndex)(*graph);
+  
   double t1 = GetClock();
   if (ml_printlevel_>0 && comm_.MyPID()==0)
+  {
      cout << "matrixfreeML (level 0): Proc " << comm_.MyPID() <<" Coloring time is " << (t1-t0) << " sec\n";
+     fflush(stdout);
+  }
   
   // construct the FiniteDifferenceColoring-Matrix
   if (ml_printlevel_>0 && comm_.MyPID()==0)
@@ -988,7 +1002,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
      cout << "matrixfreeML (level 0): Entering Construction FD-Operator on level 0\n";
      fflush(stdout);
   }
-  
+
   t0 = GetClock();
   int ncalls = interface_.getnumcallscomputeF();
   interface_.setnumcallscomputeF(0);
@@ -1025,11 +1039,11 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   A->FillComplete();
   
   // tidy up
-  delete FD;            FD = 0;
-  delete MapColoring;   MapColoring = 0;
-  delete colorMap;      colorMap = 0;
-  delete colorMapIndex; colorMapIndex = 0;
-  delete colorcolumns;  colorcolumns = 0;
+  delete FD;               FD = 0;
+  delete colorMap;         colorMap = 0;
+  delete colorMapIndex;    colorMapIndex = 0;
+  colorcolumns->clear();
+  delete colorcolumns;     colorcolumns = 0;
   
   return A;
 }
@@ -1198,34 +1212,6 @@ int ML_NOX::ML_Nox_Preconditioner::SetUseTranspose(bool UseTranspose)
   return(-1); //  the implementation does not support use of transpose
 }
 
-/*----------------------------------------------------------------------*
- |  make a deep copy of a graph                              m.gee 01/05|
- |  allocate the new graph                                              |
- *----------------------------------------------------------------------*/
-Epetra_CrsGraph* ML_NOX::ML_Nox_Preconditioner::deepcopy_graph(const Epetra_CrsGraph* oldgraph)
-{
-   int  i,ierr;
-   int  nrows = oldgraph->NumMyRows();
-   int* nIndicesperRow = new int[nrows];
-
-   for (i=0; i<nrows; i++)
-      nIndicesperRow[i] = oldgraph->NumMyIndices(i);
-   Epetra_CrsGraph* graph = new Epetra_CrsGraph(Copy,oldgraph->RowMap(),oldgraph->ColMap(),
-                                                &(nIndicesperRow[0]));
-   delete [] nIndicesperRow;
-   nIndicesperRow = 0;
-   
-   for (i=0; i<nrows; i++)
-   {
-      int  numIndices;
-      int* Indices=0;
-      ierr = oldgraph->ExtractMyRowView(i,numIndices,Indices);
-      ierr = graph->InsertMyIndices(i,numIndices,Indices);
-   }
-
-   graph->FillComplete();
-   return graph;
-}                                                     
 
 /*----------------------------------------------------------------------*
  |  set smoothers to hierarchy                               m.gee 04/05|

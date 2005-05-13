@@ -63,7 +63,7 @@ ML_NOX::ML_Nox_MatrixfreeLevel::ML_Nox_MatrixfreeLevel(int level, int nlevel, in
                                  ML* ml, ML_Aggregate* ag, Epetra_CrsMatrix** P,
                                  ML_NOX::Ml_Nox_Fineinterface& interface, const Epetra_Comm& comm,
                                  const Epetra_Vector& xfine, double fd_alpha, double fd_beta,
-                                 bool fd_centered, bool isDiagonalOnly) 
+                                 bool fd_centered, bool isDiagonalOnly, int bsize) 
 : fineinterface_(interface),
 comm_(comm)                                                          
 {
@@ -78,6 +78,7 @@ comm_(comm)
    isDiagonalOnly_ = isDiagonalOnly;
    A_              = 0;
    coarseinterface_= 0;
+   bsize_          = bsize;
    
 
    // we need the graph of the operator on this level. On the fine grid we can just ask the
@@ -87,7 +88,7 @@ comm_(comm)
       // the Epetra_CrsGraph-copy-constructor shares data with the original one.
       // We want a really deep copy here so we cannot use it
       // graph_ will be given to the FiniteDifferencing class and will be destroyed by it
-      graph_ = deepcopy_graph(interface.getGraph());
+      graph_ = ML_NOX::deepcopy_graph(interface.getGraph());
    }
    else
    {
@@ -99,7 +100,7 @@ comm_(comm)
       ML_Operator2EpetraCrsMatrix(&(ml_->Amat[level_]), tmpMat, maxnnz, false, cputime);
       // copy the graph
       double t0 = GetClock();
-      graph_ = deepcopy_graph(&(tmpMat->Graph()));
+      graph_ = ML_NOX::deepcopy_graph(&(tmpMat->Graph()));
       // delete the copy of the Epetra_CrsMatrix
       if (tmpMat) delete tmpMat; tmpMat = 0;
       double t1 = GetClock();
@@ -147,22 +148,29 @@ comm_(comm)
    if (xthis) delete xthis; xthis = 0;
 
    // create the coloring of the graph
-   if (ml_printlevel_>0 && comm_.MyPID()==0)
+   if (ml_printlevel_>0 && comm_.MyPID()==0) 
+   {
       cout << "matrixfreeML (level " << level_ << "): Entering Coloring on level " << level_ << "\n";
+      fflush(stdout);
+   }
    double t0 = GetClock();
-   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = EpetraExt::CrsGraph_MapColoring::GREEDY;
-   //EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = EpetraExt::CrsGraph_MapColoring::LUBI;
-   MapColoring_   = new EpetraExt::CrsGraph_MapColoring(algType,0,isDiagonalOnly_,0);
-   colorMap_      = &(*MapColoring_)(*graph_);
+   colorMap_ = ML_NOX::ML_Nox_collapsedcoloring(graph_,bsize_,isDiagonalOnly);
+   if (!colorMap_) colorMap_ = ML_NOX::ML_Nox_standardcoloring(graph_,isDiagonalOnly);
    colorMapIndex_ = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap_);
    colorcolumns_  = &(*colorMapIndex_)(*graph_);
    double t1 = GetClock();
    if (ml_printlevel_>0 && comm_.MyPID()==0)
+   {
       cout << "matrixfreeML (level " << level_ << "): Proc " << comm_.MyPID() <<" Coloring time is " << (t1-t0) << " sec\n";
+      fflush(stdout);
+   }
 
    // construct the FiniteDifferenceColoring-Matrix
    if (ml_printlevel_>0 && comm_.MyPID()==0)
+   {
       cout << "matrixfreeML (level " << level_ << "): Entering Construction FD-Operator on level " << level_ << "\n";
+      fflush(stdout);
+   }
 
    t0 = GetClock();
 
@@ -201,7 +209,10 @@ comm_(comm)
 
    t1 = GetClock();
    if (ml_printlevel_>0 && comm_.MyPID()==0)
+   {
       cout << "matrixfreeML (level " << level_ << "): Proc " << comm_.MyPID() <<" colored Finite Differencing time is " << (t1-t0) << " sec\n";
+      fflush(stdout);
+   }
 
    // get ref to computed Epetra_CrsMatrix  
    A_ = dynamic_cast<Epetra_CrsMatrix*>(&(FD_->getUnderlyingMatrix()));
@@ -258,7 +269,7 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
       // check whether the old graph matches the new one
       same = compare_graphs(graph,graph_);
       destroyFD(); // we are here to recompute the FD-operator (this destroys graph_)
-      graph_ = deepcopy_graph(graph);
+      graph_ = ML_NOX::deepcopy_graph(graph);
    }
    else
    {
@@ -274,7 +285,7 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
       same = compare_graphs(&graph,graph_);
       destroyFD(); // we are here to recompute the FD-operator (this destroys graph_)
       double t0 = GetClock();
-      graph_ = deepcopy_graph(&graph);
+      graph_ = ML_NOX::deepcopy_graph(&graph);
       // delete the copy of the Epetra_CrsMatrix
       if (tmpMat) delete tmpMat; tmpMat = 0;
       double t1 = GetClock();
@@ -329,19 +340,19 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
 
    // create the coloring of the graph
    if (ml_printlevel_>0 && comm_.MyPID()==0)
+   {
       cout << "matrixfreeML (level " << level_ << "): Entering Recoloring on level " << level_ << "\n";
+      fflush(stdout);
+   }
    double t0 = GetClock();
    if (!same) // te graph has obviously changed, so we need to recolor
    {
-      if (MapColoring_) delete MapColoring_; MapColoring_ = 0;
       if (colorMap_) delete colorMap_; colorMap_ = 0;
       if (colorMapIndex_) delete colorMapIndex_; colorMapIndex_ = 0;
       if (colorcolumns_) delete colorcolumns_; colorcolumns_ = 0;
 
-      EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = EpetraExt::CrsGraph_MapColoring::GREEDY;
-      //EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = EpetraExt::CrsGraph_MapColoring::LUBI;
-      MapColoring_   = new EpetraExt::CrsGraph_MapColoring(algType,0,isDiagonalOnly_,0);
-      colorMap_      = &(*MapColoring_)(*graph_);
+      colorMap_ = ML_NOX::ML_Nox_collapsedcoloring(graph_,bsize_,isDiagonalOnly_);
+      if (!colorMap_) colorMap_ = ML_NOX::ML_Nox_standardcoloring(graph_,isDiagonalOnly_);
       colorMapIndex_ = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap_);
       colorcolumns_  = &(*colorMapIndex_)(*graph_);
     }
@@ -349,17 +360,17 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
       cout << "matrixfreeML (level " << level_ << "): Reusing existing Coloring on level " << level_ << "\n";
     double t1 = GetClock();
     if (ml_printlevel_>5)
+    {
       cout << "matrixfreeML (level " << level_ << "): Proc " << comm_.MyPID() <<" (Re)Coloring time is " << (t1-t0) << " sec\n";
+      fflush(stdout);
+    }
 
 #if 0
    // print the colorMap_
    if (comm_.MyPID()==0)
    cout << "colorMap_\n";
    cout << *colorMap_;
-   // I don't know how to access the number of Epetra_IntVectors in this vector
-   // Just print the first few (This might crash if there are not enough vectors)   
-   int i;
-   for (i=0; i<20; i++)
+   for (int i=0; i<colorcolumns_->size(); i++)
    {
       if (comm_.MyPID()==0)
          cout << "the " << i << " th colorcolumn_ - vector\n";
@@ -369,7 +380,10 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
    
    // construct the FiniteDifferenceColoring-Matrix
    if (ml_printlevel_>0 && comm_.MyPID()==0)
+   {
       cout << "matrixfreeML (level " << level_ << "): Entering Construction FD-Operator on level " << level_ << "\n";
+      fflush(stdout);
+   }
 
    t0 = GetClock();
 #if 1 // FD-operator with coloring (see the #if 1 in ml_nox_matrixfreelevel.H as well!)
@@ -456,35 +470,6 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::compare_graphs(const Epetra_CrsGraph* newgr
 }                                                     
  
 /*----------------------------------------------------------------------*
- |  make a deep copy of a graph                              m.gee 01/05|
- |  allocate the new graph                                              |
- *----------------------------------------------------------------------*/
-Epetra_CrsGraph* ML_NOX::ML_Nox_MatrixfreeLevel::deepcopy_graph(const Epetra_CrsGraph* oldgraph)
-{
-   int  i,ierr;
-   int  nrows = oldgraph->NumMyRows();
-   int* nIndicesperRow = new int[nrows];
-
-   for (i=0; i<nrows; i++)
-      nIndicesperRow[i] = oldgraph->NumMyIndices(i);
-   Epetra_CrsGraph* graph = new Epetra_CrsGraph(Copy,oldgraph->RowMap(),oldgraph->ColMap(),
-                                                &(nIndicesperRow[0]));
-   delete [] nIndicesperRow;
-   nIndicesperRow = 0;
-   
-   for (i=0; i<nrows; i++)
-   {
-      int  numIndices;
-      int* Indices=0;
-      ierr = oldgraph->ExtractMyRowView(i,numIndices,Indices);
-      ierr = graph->InsertMyIndices(i,numIndices,Indices);
-   }
-
-   graph->FillComplete();
-   return graph;
-}                                                     
-
-/*----------------------------------------------------------------------*
  |  Destructor (public)                                      m.gee 12/04|
  *----------------------------------------------------------------------*/
 ML_NOX::ML_Nox_MatrixfreeLevel::~ML_Nox_MatrixfreeLevel()
@@ -494,9 +479,9 @@ ML_NOX::ML_Nox_MatrixfreeLevel::~ML_Nox_MatrixfreeLevel()
   if (FD_)              
      destroyFD();
 
-  if (MapColoring_)     
-     delete MapColoring_;
-  MapColoring_ = 0;
+//  if (MapColoring_)     
+//     delete MapColoring_;
+//  MapColoring_ = 0;
  
   if (colorMap_)        
      delete colorMap_;

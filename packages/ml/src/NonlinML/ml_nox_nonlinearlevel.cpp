@@ -834,9 +834,13 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    
    // iterate
    if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==false)
-      cout << "ML (level " << level_ << "): Entering NOX iteration\n";
+   {
+      cout << "ML (level " << level_ << "): Entering NOX iteration\n"; fflush(stdout);
+   }
    else if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==true)
-      cout << "ML (level " << level_ << "): Entering FAS-NOX iteration\n";
+   {
+      cout << "ML (level " << level_ << "): Entering FAS-NOX iteration\n"; fflush(stdout);
+   }
 
    NOX::StatusTest::StatusType status = solver_->solve();
    
@@ -856,30 +860,33 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    if (status == NOX::StatusTest::Converged)
    {
       returnstatus = true;
-      if (ml_printlevel_ > 0 && comm_.MyPID() == 0)
+      if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
          cout << "ML (level " << level_ << "): NOX Converged, Norm(F)=" 
-              << norm2 << "\n";
+              << norm2 << "\n"; fflush(stdout);
+      }
    }
    else if (status == NOX::StatusTest::Unconverged)
    {
       returnstatus = false;
-      if (ml_printlevel_ > 0 && comm_.MyPID() == 0)
+      if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
          cout << "ML (level " << level_ << "): NOX Unconverged, Norm(F)=" 
-              << norm2 << "\n";
+              << norm2 << "\n"; fflush(stdout);
+      }
    }
    else if (status == NOX::StatusTest::Failed)
    {
       returnstatus = false;
-      if (ml_printlevel_ > 0 && comm_.MyPID() == 0)
+      if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
          cout << "ML (level " << level_ << "): NOX Unconverged after maxiter=" 
-              << numiter << ", Norm(F)=" << norm2 << "\n";
+              << numiter << ", Norm(F)=" << norm2 << "\n"; fflush(stdout);
+      }
    }
    else
    {
       returnstatus = false;
       if (comm_.MyPID() == 0)
          cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)=" 
-              << norm2 << "\n";
+              << norm2 << "\n"; fflush(stdout);
    }
    
    // reset number of calls to coarseinterface->computeF
