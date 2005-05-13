@@ -34,10 +34,12 @@ CLOP_sub::~CLOP_sub()
 }
 
 void CLOP_sub::getmatrix_nnz(int subdofs_[], int ndof_sub, 
-   const Epetra_CrsMatrix *A, int imap[], const Epetra_Comm* Comm_, int &nnz)
+   const Epetra_CrsMatrix *A, int imap[], const Epetra_Comm* Comm_, 
+   int &nnz, int scale_option_)
 {
   int i, j, NumEntries, *Indices;
   double *Values;
+  scale_option = scale_option_;
   subdofs = subdofs_;
   ndof = ndof_sub;
   Comm = Comm_;
@@ -85,7 +87,7 @@ void CLOP_sub::factormatrix(const Epetra_CrsMatrix *A, int imap[],
   CRD_utils::spmat_datfile(ndof, rowbeg, colidx, K, filename);
   */
   A_sub = new CLAPS_sparse_lu();
-  A_sub->factor(ndof, nnz, rowbeg, colidx, K);
+  A_sub->factor(ndof, nnz, rowbeg, colidx, K, scale_option);
   myzero(K, nnz);
   for (i=0; i<ndof; i++) imap[subdofs[i]] = -1;
 }
@@ -466,7 +468,7 @@ void CLOP_sub::construct_coarse1(const Epetra_CrsMatrix *A, double rhs[],
     }
     assert (colmax < ndof_rot);
     assert (colmin == 0);
-    A_rot->factor(ndof_rot, nnz, rowbeg, colidx, K);
+    A_rot->factor(ndof_rot, nnz, rowbeg, colidx, K, scale_option);
     //
     // solve for rotational dofs via static condensation
     //
@@ -623,7 +625,7 @@ void CLOP_sub::statcond(unsigned char nsubdof[], unsigned char on_sub_bound[],
       rowbeg[i+1] = nnz;
     }
     CLAPS_sparse_lu *A_free; A_free = new CLAPS_sparse_lu();
-    A_free->factor(ndof_free, nnz, rowbeg, colidx, K);
+    A_free->factor(ndof_free, nnz, rowbeg, colidx, K, scale_option);
     //
     // solve for free dofs via static condensation
     //

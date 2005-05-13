@@ -78,9 +78,9 @@ class CLIP_solver
   void subspace_iteration(int n, int rowbeg[], int colidx[], 
 			  double vals[], bool bound_flag[], int & nextra, 
 			  int* & extra_corner, CLAPS_sparse_lu* & A,
-			  int ne = 0);
+			  double* &Xvecs, int ne = 0);
   void tie_down_coarse(int n, int rowbeg[], int colidx[], 
-		       double vals[], int ne);
+		       double vals[], int ne, double* & Xvecs);
   void zero_pointers();
   void construct_subdomains();
   int initialize_subdomains();
@@ -92,6 +92,7 @@ class CLIP_solver
   void gmres_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand, 
 		   int & num_iter, int & gmres_status);
   double stat_cond();
+  void remove_orthog_null(Epetra_Vector *vec);
   double initial_update();
   void apply_preconditioner();
   void final_update(Epetra_Vector* uB, Epetra_Vector* rB);
@@ -130,10 +131,10 @@ class CLIP_solver
   Epetra_Vector *pB_Sub, *pB_St, *zB_Sub, *zB_St, *uB_St, *u_St, *vStand;
   Epetra_Vector *r_St, *r_Sub, *rB_St, *rB_Sub, *work_Sub, *work_Kc;
   Epetra_Vector *rBSub, *workB_St, *work_St, *work_St2, *vec_PhiB, *prod_PhiB;
-  Epetra_Vector *vec1_ASub, *vec2_ASub, *wStand;
+  Epetra_Vector *vec1_ASub, *vec2_ASub, *wStand, *Rhs_null;
   Epetra_Map *StandardMap, *SubMap, *RowMapMyCon, *MapB_Sub, *MapB_St;
   Epetra_CrsMatrix *CtT, *Tran, *Block_Stiff, *PhiB;
-  Epetra_MultiVector *Coords_red;
+  Epetra_MultiVector *Coords_red, *Phir_St;
   Epetra_IntVector *NodalDofs_red;
   CLAPS_sparse_lu *AR, *AI, *AKc;
   int MyPID, NumProc, ndof_sub, ndof_global, print_flag, ncomp, ncomp_sum;
@@ -144,7 +145,7 @@ class CLIP_solver
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
-  double *P_ortho, *AP_ortho, *orth1, *orth2;
+  double *P_ortho, *AP_ortho, *orth1, *orth2, *PhirTPhir;
   double *VV, *RR, *HH, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
   bool *owner_flag;
   ofstream fout;

@@ -99,7 +99,7 @@ class CLOP_solver
   Epetra_LAPACK EL;
   MPI_Comm mpicomm;
   int overlap, maxiter, atype, ndim, local_solver, prt_debug, prt_summary;
-  int max_orthog;
+  int max_orthog, krylov_method, scale_option;
   double solver_tol;
   int npart, ndof, ndof_overlap, MyPID, NumProc, gpart0, gcdof0;
   int ndof_rot, *count1, *cs_local, *csdima, ncdof_proc, max_csdim;

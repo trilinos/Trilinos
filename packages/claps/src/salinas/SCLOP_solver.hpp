@@ -50,7 +50,8 @@ class SCLOP_solver
   void construct_K_base();
   void CLOP_solver_init(int overlap, double solver_tol, int maxiter, 
 			int atype, int ndim, int local_solver, int max_orthog,
-			int prt_debug, int prt_summary);
+			int prt_debug, int prt_summary, int krylov_method,
+			int scale_option);
   void solve(double f[], double u[], int & number_iterations, 
 	     int & SCLOP_status);
   void MpcForces( double *cvals);

@@ -34,15 +34,17 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
     CStandard(CStandard_), SubMap(SubMap_), ConStandard(ConStandard_), 
     GNStandard(GNStandard_), clop_params(clop_params_), Comm(AStandard->Comm())
 {
-  overlap      = int(clop_params[0]); 
-  solver_tol   = clop_params[1];
-  maxiter      = int(clop_params[2]);
-  max_orthog   = int(clop_params[3]);
-  atype        = int(clop_params[4]);
-  ndim         = int(clop_params[5]);
-  local_solver = int(clop_params[6]);
-  prt_debug    = int(clop_params[7]);
-  prt_summary  = int(clop_params[8]);
+  overlap       = int(clop_params[0]); 
+  solver_tol    = clop_params[1];
+  maxiter       = int(clop_params[2]);
+  max_orthog    = int(clop_params[3]);
+  atype         = int(clop_params[4]);
+  ndim          = int(clop_params[5]);
+  local_solver  = int(clop_params[6]);
+  prt_debug     = int(clop_params[7]);
+  prt_summary   = int(clop_params[8]);
+  krylov_method = int(clop_params[9]);
+  scale_option  = int(clop_params[10]);
   double starttime, endtime;
   //  const Epetra_MpiComm &empicomm = 
   //               dynamic_cast<const Epetra_MpiComm &>(Comm);
@@ -457,6 +459,7 @@ int CLOP_solver::initialize_subdomains()
   if (print_flag > 9) fout << "in initialize_subdomains" << endl;
   int i, max_nnz(0), nnz, ipres, ipres_max, *locdof;
   max_ndof = 0; gmres_flag = 0;
+  if (krylov_method == 1) gmres_flag = 1;
   //
   // determine if pressure degrees of freedom present
   //
@@ -487,7 +490,7 @@ int CLOP_solver::initialize_subdomains()
     int ndof_part = dofpart2[i+1] - dofpart2[i];
     if (ndof_part > max_ndof) max_ndof = ndof_part;
     Asub[i].getmatrix_nnz(&dofpart1[dofpart2[i]], ndof_part, AOverlap, 
-			  imap, &Comm, nnz);
+			  imap, &Comm, nnz, scale_option);
     if (nnz > max_nnz) max_nnz = nnz;
   }
   int *rowbeg_work = new int[max_ndof+1];
@@ -1026,7 +1029,7 @@ void CLOP_solver::factor_coarse_stiff()
 
     Kc_fac = new CLAPS_sparse_lu();
     if (ncdof <= ndof_global_red)
-      Kc_fac->factor(ncdof, nnz_KC, rowbeg_KC, colidx_KC, KC);
+      Kc_fac->factor(ncdof, nnz_KC, rowbeg_KC, colidx_KC, KC, scale_option);
     delete [] rowbeg_KC;
   }
 }

@@ -147,7 +147,7 @@ CLIP_solver::~CLIP_solver()
   delete [] AP_ortho; delete [] orth1; delete [] orth2; delete [] owner_flag;
   delete [] VV; delete [] RR; delete [] HH; delete [] zz; delete [] cc;
   delete [] ss; delete [] norms; delete [] gmres_vec; delete [] gmres_sum;
-  delete [] tied_down;
+  delete [] tied_down; delete Phir_St; delete [] PhirTPhir; delete Rhs_null;
   zero_pointers();
 }
 
@@ -813,7 +813,7 @@ void CLIP_solver::share_corner_info()
 void CLIP_solver::determine_extra_corners()
 {
   int i, *rowbeg, *colidx, *extra_corner, nextra, dof;
-  double *vals;
+  double *vals, *Xvecs;
   //  myzero(corner_flag, ndof_sub);
   nR = 0; nC = 0;
   for (i=0; i<ndof_sub; i++) {
@@ -840,7 +840,7 @@ void CLIP_solver::determine_extra_corners()
   }
   gen_matrix(Block_Stiff, nR, dofR, rowbeg, colidx, vals);
   subspace_iteration(nR, rowbeg, colidx, vals, bound_flag, nextra, 
-		     extra_corner, AR);
+		     extra_corner, AR, Xvecs);
   delete AR; delete [] dofR; delete [] dofC;
   for (i=0; i<nextra; i++) {
     dof = dofR[extra_corner[i]];
@@ -1201,6 +1201,7 @@ void CLIP_solver::calculate_coarse()
   Kc.Multiply(false, X, Kc_X);
   cout << Kc_X << endl;
   */
+  double *Xvecs = 0;
   //
   // factor coarse stiffness matrix
   //
@@ -1227,25 +1228,90 @@ void CLIP_solver::calculate_coarse()
     num_tied_down = 0;
     if (num_rigid_mode > ngather) num_rigid_mode = ngather;
     if (num_rigid_mode > 0) tie_down_coarse(ngather, rowbeg, colidx, vals,
-					    num_rigid_mode);
+					    num_rigid_mode, Xvecs);
     AKc = new CLAPS_sparse_lu();
     AKc->factor(ngather, nnz, rowbeg, colidx, vals, scale_option);
     delete [] rowbeg;
     SOL_Kc  = new double[ngather];
     TEMP_Kc = new double[ngather];
   }
+  //
+  // set up maps, importers, and exporters
+  //
+  nB_own = 0;
+  gdofB = new int[nB];
+  for (i=0; i<nB; i++) {
+    gdofB[i] = SubMap->GID(dofB[i]);
+    if (owner_flag[dofB[i]] == true) nB_own++;
+  }
+  int *gdofB_own = new int[nB_own];
+  nB_own = 0;
+  for (i=0; i<nB; i++) {
+    if (owner_flag[dofB[i]] == true) {
+      gdofB_own[nB_own] = SubMap->GID(dofB[i]);
+      nB_own++;
+    }
+  }
+  MapB_Sub = new Epetra_Map(-1, nB, gdofB, 0, Comm);
+  MapB_St = new Epetra_Map(-1, nB_own, gdofB_own, 0, Comm);
+  delete [] gdofB; delete [] gdofB_own;
+  ImporterB = new Epetra_Import(*MapB_Sub, *MapB_St);
+  ExporterB = new Epetra_Export(*MapB_Sub, *MapB_St);
+  //
+  // calculate rigid body modes for mode acceleration technique
+  //
+  Comm.Broadcast(&num_tied_down, 1, 0);  
+  if (num_tied_down > 0) {
+    Epetra_MultiVector Evec(View, Map_Final, Xvecs, ngather, num_tied_down);
+    Epetra_MultiVector Evec_B(PhiB->DomainMap(), num_tied_down);
+    Evec_B.Export(Evec, *Exporter_Kc, Insert);
+    Epetra_MultiVector Phir_Sub(PhiB->RowMap(), num_tied_down);
+    Epetra_MultiVector Phir_Sub2(*MapB_Sub, num_tied_down);
+    PhiB->Multiply(false, Evec_B, Phir_Sub);
+    int MyLDA, MyLDA2, jbeg, jbeg2;
+    double *phirsub, *phirsub2;
+    Phir_Sub.ExtractView(&phirsub, &MyLDA);
+    Phir_Sub2.ExtractView(&phirsub2, &MyLDA2);
+    for (j=0; j<num_tied_down; j++) {
+      jbeg = j*MyLDA;
+      jbeg2 = j*MyLDA2;
+      for (i=0; i<nB; i++) phirsub2[jbeg2+i] = phirsub[jbeg+i]*weight[i];
+    }
+    Phir_St = new Epetra_MultiVector(*MapB_St, num_tied_down);
+    Phir_St->Export(Phir_Sub2, *ExporterB, Add);
+    Epetra_LocalMap Local_Map(num_tied_down, 0, Comm);
+    Epetra_MultiVector AA(Local_Map, num_tied_down);
+    Rhs_null = new Epetra_Vector(Local_Map);
+    AA.Multiply('T', 'N', 1.0, *Phir_St, *Phir_St, 0.0);
+    double *aa;
+    AA.ExtractView(&aa, &MyLDA);
+    PhirTPhir = new double[num_tied_down*num_tied_down];
+    for (i=0; i<num_tied_down; i++)
+      for (j=0; j<num_tied_down; j++) 
+	PhirTPhir[i+j*num_tied_down] = aa[i+j*MyLDA];
+    EL.POTRF(UPLO, num_tied_down, PhirTPhir, num_tied_down, &INFO);
+    assert (INFO == 0);
+  }
+  delete [] Xvecs;
 }
 
 void CLIP_solver::tie_down_coarse(int n, int rowbeg[], int colidx[], 
-				  double vals[], int ne)
+				  double vals[], int ne, double* & Xvecs)
 {
   int i, j, nextra;
   bool *bound_flag = new bool[n];
   for (i=0; i<n; i++) bound_flag[i] = true;
   subspace_iteration(n, rowbeg, colidx, vals, bound_flag, num_tied_down, 
-		     tied_down, AKc, ne);
-  cout << "num_ridid_mode, num_tied_down = " << num_rigid_mode << " "
+		     tied_down, AKc, Xvecs, ne);
+  cout << "num_rigid_mode, num_tied_down = " << ne << " "
        << num_tied_down << endl;
+  if (num_tied_down > 0) {
+    if (num_tied_down != ne) {
+      cout << "Error: number of actual rigid body modes less than ";
+      cout << " num_rigid_mode specified in CLAPS block" << endl;
+      assert (num_tied_down == ne);
+    }
+  }
   for (i=0; i<n; i++) bound_flag[i] = false;
   for (i=0; i<num_tied_down; i++) bound_flag[tied_down[i]] = true;
   double min_diag(1e40);
@@ -1266,7 +1332,7 @@ void CLIP_solver::tie_down_coarse(int n, int rowbeg[], int colidx[],
   delete [] bound_flag; delete AKc;
   /*
   subspace_iteration(n, rowbeg, colidx, vals, bound_flag, nextra, 
-		     tied_down, AKc, ne);
+		     tied_down, AKc, Xvecs, ne);
   ofstream ffout;
   ffout.open("coarse_mat.dat");
   for (i=0; i<n; i++) 
@@ -1322,7 +1388,8 @@ void CLIP_solver::gen_matrix(Epetra_CrsMatrix* A, int na, int adof[],
 void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[], 
 				     double vals[], bool bound_flag[], 
 				     int & nextra, int* & extra_corner,
-				     CLAPS_sparse_lu* & A, int ne)
+				     CLAPS_sparse_lu* & A, double* & Xvecs,
+				     int ne)
 {
   int i, j, k, nnz, p, q, kbeg;
   double dmin, dmax(-1), dtol(1e-4), sitol(1e-4), etol(1e-4), sum;
@@ -1351,7 +1418,7 @@ void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[],
   //
   A = new CLAPS_sparse_lu();
   nnz = rowbeg[n];
-  A->factor(n, nnz, rowbeg, colidx, vals);
+  A->factor(n, nnz, rowbeg, colidx, vals, scale_option);
   //
   // adjust vals array back to original values
   //
@@ -1429,6 +1496,8 @@ void CLIP_solver::subspace_iteration(int n, int rowbeg[], int colidx[],
   if (ne > 0) {
     double aaa = dtol*fabs(LAMBDA[ne]);
     for (i=0; i<ne; i++) if (fabs(LAMBDA[i]) <= aaa) nextra++;
+    Xvecs = new double[n*nextra];
+    for (i=0; i<(n*nextra); i++) Xvecs[i] = X[i];
   }
   /*  
   if (ne > 0) {
@@ -1670,7 +1739,8 @@ void CLIP_solver::zero_pointers()
   SOL_Kc = 0; TEMP_Kc = 0; rcurra = 0; rhoa = 0; betaa = 0; pApa = 0; Dtri = 0;
   Etri = 0; econa = 0; P_ortho = 0; AP_ortho = 0; orth1 = 0; orth2 = 0; 
   owner_flag = 0; VV = 0; RR = 0; HH = 0; zz = 0; cc = 0; ss = 0; norms = 0; 
-  gmres_vec = 0; gmres_sum = 0; tied_down = 0;
+  gmres_vec = 0; gmres_sum = 0; tied_down = 0; Phir_St = 0; PhirTPhir = 0;
+  Rhs_null = 0;
 }
 
 void CLIP_solver::construct_subdomains()
@@ -1725,27 +1795,6 @@ void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 
 void CLIP_solver::pcg_init()
 {
-  int i;
-  nB_own = 0;
-  int *gdofB = new int[nB];
-  for (i=0; i<nB; i++) {
-    gdofB[i] = SubMap->GID(dofB[i]);
-    if (owner_flag[dofB[i]] == true) nB_own++;
-  }
-  int *gdofB_own = new int[nB_own];
-  nB_own = 0;
-  for (i=0; i<nB; i++) {
-    if (owner_flag[dofB[i]] == true) {
-      gdofB_own[nB_own] = SubMap->GID(dofB[i]);
-      nB_own++;
-    }
-  }
-  MapB_Sub = new Epetra_Map(-1, nB, gdofB, 0, Comm);
-  MapB_St = new Epetra_Map(-1, nB_own, gdofB_own, 0, Comm);
-  delete [] gdofB; delete [] gdofB_own;
-  ImporterB = new Epetra_Import(*MapB_Sub, *MapB_St);
-  ExporterB = new Epetra_Export(*MapB_Sub, *MapB_St);
-
   pB_Sub  = new Epetra_Vector(*MapB_Sub);
   pB_St   = new Epetra_Vector(*MapB_St);
   zB_Sub  = new Epetra_Vector(*MapB_Sub);
@@ -1822,6 +1871,25 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   if (print_flag > 0) {
     fout << "original residual                          = " << rorig << endl;
   }
+
+  if (num_tied_down > 0) {
+    int *nodaldofs;
+    double *rst, sum, sum_all, rn;
+    r_St->ExtractView(&rst);
+    Epetra_IntVector NDOF(*StandardMap);
+    NDOF.Export(*NodalDofs, *Exporter, Insert);
+    NDOF.ExtractView(&nodaldofs);
+    sum = 0;
+    assert (r_St->MyLength() == NDOF.MyLength()); 
+    for (i=0; i<r_St->MyLength(); i++)
+      if (nodaldofs[i] == 1) sum += rst[i];
+    Comm.SumAll(&sum, &sum_all, 1);
+    r_St->Norm2(&rn);
+    sum_all /= rn;
+    if (MyPID == 0) cout << "1-direction normalized force = " << sum_all
+			 << endl;
+  }
+
   //
   // calculate residual at boundary and total potential energy following 
   // initial static condensation
@@ -1834,6 +1902,14 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     fout << "total potential energy reduction           = " << tpe << endl;
     if (n_orthog_used == 0)
       fout << "----------------------------------------------------" << endl;
+  }
+  //
+  // remove part of residual parallel to null space for mode acceleration
+  // technique
+  //
+  if (num_tied_down > 0) {
+    remove_orthog_null(rB_St);
+    if (print_flag > 0) fout << "singular system being solved" << endl;
   }
   //
   // reduce total potential energy further by using stored vectors
@@ -1950,7 +2026,7 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   work_St2->Update(1.0, *r_St, -1.0);
   work_St2->Dot(*work_St2, &ractual);
   ractual = sqrt(ractual);
-  if (ractual/rorig > 10*solver_tol) pcg_status = 1;
+  if ((ractual/rorig > 10*solver_tol) && (num_tied_down > 0)) pcg_status = 1;
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -2101,6 +2177,33 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
       fout << "solver tolerance      = " << solver_tol << endl;
     }
   }
+}
+
+void CLIP_solver::remove_orthog_null(Epetra_Vector *vec)
+{
+  int i, MyLDA, INFO;
+  double *rhsnull, rnorm, rhsnorm, *phirst, *zbst;
+  Epetra_LAPACK EL;
+  char UPLO = 'U';
+  /*
+  Phir_St->ExtractView(&phirst, &MyLDA);
+  zB_St->ExtractView(&zbst);
+  for (i=0; i<nB_own; i++) zbst[i] = phirst[i];
+  determine_AxB(zB_St, ApB_St);
+  zB_St->Norm2(&rnorm);
+  ApB_St->Scale(1/rnorm/Block_Stiff->NormInf());
+  cout << *ApB_St << endl;
+  */
+  Rhs_null->Multiply('T', 'N', 1.0, *Phir_St, *vec, 0.0);
+  Rhs_null->ExtractView(&rhsnull);
+  EL.POTRS(UPLO, num_tied_down, 1, PhirTPhir, num_tied_down, rhsnull, 
+  	   num_tied_down, &INFO);
+  vec->Multiply('N', 'N', -1.0, *Phir_St, *Rhs_null, 1.0);
+  Rhs_null->Multiply('T', 'N', 1.0, *Phir_St, *vec, 0.0);
+  //  cout << *Rhs_null << endl;
+  Rhs_null->Norm2(&rhsnorm);
+  vec->Norm2(&rnorm);
+  //  if (MyPID == 0) cout << "check_orthog_null = " << rhsnorm/rnorm << endl;
 }
 
 double CLIP_solver::stat_cond()
@@ -2259,6 +2362,7 @@ void CLIP_solver::apply_preconditioner()
   //  cout << *zB_Sub << endl;
   zB_St->Export(*zB_Sub, *ExporterB, Add);
   //  cout << *zB_St << endl;
+  if (num_tied_down > 0) remove_orthog_null(zB_St);
 }
 
 void CLIP_solver::final_update(Epetra_Vector* uB, Epetra_Vector* rB)

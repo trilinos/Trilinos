@@ -16,7 +16,8 @@ class CLOP_sub {
   CLOP_sub();
   ~CLOP_sub();
   void getmatrix_nnz(int subdofs_[], int ndof_sub, const Epetra_CrsMatrix *A, 
-		     int imap[], const Epetra_Comm* Comm, int &nnz);
+		     int imap[], const Epetra_Comm* Comm, int &nnz,
+		     int scale_option_);
   void factormatrix(const Epetra_CrsMatrix *A, int imap[], int rowbeg[], 
 		    int colidx[], double K[]);
   void genpu(const Epetra_IntVector *LD, const Epetra_MultiVector *Coords, 
@@ -41,7 +42,7 @@ class CLOP_sub {
 	      double sol_work[], double tmp_work[]);
  private: // variables
   const Epetra_Comm *Comm;
-  int ndof, csdim, csdim_max, ndim, atype, INFO, MyPID;
+  int ndof, csdim, csdim_max, ndim, atype, INFO, MyPID, scale_option;
   double xcent, ycent, zcent, *x, *y, *z, *Edof, *Phi;
   CLAPS_sparse_lu *A_sub;
   int *jpvt, *subdofs, *locdof;
