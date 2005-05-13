@@ -1,3 +1,4 @@
+#include "Ifpack_ConfigDefs.h"
 #include "Ifpack_OverlappingRowMatrix.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Map.h"
@@ -5,7 +6,6 @@
 #include "Epetra_Import.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
-#include <algorithm>
 
 // ====================================================================== 
 Ifpack_OverlappingRowMatrix::

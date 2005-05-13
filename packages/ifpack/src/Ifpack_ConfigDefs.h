@@ -133,6 +133,16 @@
 #error "Found neither iostream nor iostream.h"
 #endif
 
+#ifdef HAVE_ALGORITHM
+#include <algorithm>
+#elif defined(HAVE_ALGO_H)
+#include <algo.h>
+#elif defined(HAVE_ALGORITHM_H)
+#include <algorithm.h>
+#else
+#error "Did not find algorithm, algo.h or algorithm.h"
+#endif
+
 #if HAVE_VECTOR
 #include <vector>
 #elif HAVE_IOSTREAM_H

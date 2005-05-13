@@ -7,7 +7,6 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
-#include <algorithm>
 
 //==============================================================================
 Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :

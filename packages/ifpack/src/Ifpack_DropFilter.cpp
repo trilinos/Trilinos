@@ -6,7 +6,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include <algorithm>
 
 //==============================================================================
 Ifpack_DropFilter::Ifpack_DropFilter(Epetra_RowMatrix* Matrix,

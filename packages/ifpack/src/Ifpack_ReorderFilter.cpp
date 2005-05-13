@@ -7,7 +7,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include <algorithm>
 
 //==============================================================================
 Ifpack_ReorderFilter::Ifpack_ReorderFilter(Epetra_RowMatrix* Matrix,
