@@ -3049,7 +3049,7 @@ int Epetra_VbrMatrix::BlockMap2PointMap(const Epetra_BlockMap & BlockMap,
 }
 //=========================================================================
 int Epetra_VbrMatrix::UpdateOperatorXY(const Epetra_MultiVector& X,
-				       Epetra_MultiVector& Y) const
+				       const Epetra_MultiVector& Y) const
 {
   if (OperatorX_!=0)
     if (OperatorX_->NumVectors()!=X.NumVectors()) {delete OperatorX_; OperatorX_ = 0; delete OperatorY_; OperatorY_=0;}
@@ -3058,7 +3058,7 @@ int Epetra_VbrMatrix::UpdateOperatorXY(const Epetra_MultiVector& X,
     if (!Y.Map().PointSameAs(RangeMap())) EPETRA_CHK_ERR(-2); // Y not point-wise compatible with the block col map
     OperatorX_ = new Epetra_MultiVector(View, DomainMap(), X.Pointers(), X.NumVectors());
     OperatorY_ = new Epetra_MultiVector(View, RangeMap(), Y.Pointers(), Y.NumVectors());
-  }
+  } 
   else {
     EPETRA_CHK_ERR(OperatorX_->ResetView(X.Pointers()));
     EPETRA_CHK_ERR(OperatorY_->ResetView(Y.Pointers()));
@@ -3069,16 +3069,28 @@ int Epetra_VbrMatrix::UpdateOperatorXY(const Epetra_MultiVector& X,
 int Epetra_VbrMatrix::Apply(const Epetra_MultiVector& X,
 			    Epetra_MultiVector& Y) const
 {
-  EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
-  EPETRA_CHK_ERR(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), *OperatorX_, *OperatorY_));
+  if (!Epetra_VbrMatrix::UseTranspose()) {
+    EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), *OperatorX_, *OperatorY_));
+  } 
+  else { // Swap role of OperatorX_ and OperatorY_ to remain compatible with domain and range spaces.
+    EPETRA_CHK_ERR(UpdateOperatorXY(Y,X)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), *OperatorY_, *OperatorX_));
+  }
   return(0);
 }
 //=========================================================================
 int Epetra_VbrMatrix::ApplyInverse(const Epetra_MultiVector& X,
 				   Epetra_MultiVector& Y) const
 {
-  EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
-  EPETRA_CHK_ERR(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorX_, *OperatorY_));
+  if (!Epetra_VbrMatrix::UseTranspose()) {
+    EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorX_, *OperatorY_));
+  }
+  else { // Swap role of OperatorX_ and OperatorY_ to remain compatible with domain and range spaces.
+    EPETRA_CHK_ERR(UpdateOperatorXY(Y,X)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorY_, *OperatorX_));
+  }
   return(0);
 }
 //=========================================================================

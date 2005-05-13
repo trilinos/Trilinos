@@ -1266,7 +1266,7 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
 	int GeneratePointObjects() const;
 	int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap) const;
-	int UpdateOperatorXY(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+	int UpdateOperatorXY(const Epetra_MultiVector& X, const Epetra_MultiVector& Y) const;
 
   Epetra_CrsGraph * Graph_;
   bool Allocated_;
