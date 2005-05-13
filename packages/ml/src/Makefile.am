@@ -165,6 +165,7 @@ $(srcdir)/NonlinML/ml_nox_linearsystem.H     \
 $(srcdir)/NonlinML/ml_nox_matrixfreelevel.H  \
 $(srcdir)/NonlinML/ml_nox_nonlinearlevel.H   \
 $(srcdir)/NonlinML/ml_nox_preconditioner.H   \
+$(srcdir)/NonlinML/ml_nox_preconditioner_utils.H   \
 $(srcdir)/MLAPI/MLAPI.h                      \
 $(srcdir)/MLAPI/MLAPI_Aggregation.h          \
 $(srcdir)/MLAPI/MLAPI_BaseObject.h           \
@@ -246,6 +247,7 @@ $(srcdir)/NonlinML/ml_nox_coarseinterface.cpp               \
 $(srcdir)/NonlinML/ml_nox_linearsystem.cpp                  \
 $(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp               \
 $(srcdir)/NonlinML/ml_nox_nonlinearlevel.cpp                \
+$(srcdir)/NonlinML/ml_nox_preconditioner_utils.cpp          \
 $(srcdir)/NonlinML/ml_nox_preconditioner1.cpp               \
 $(srcdir)/NonlinML/ml_nox_preconditioner2.cpp
 
