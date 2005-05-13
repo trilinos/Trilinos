@@ -835,15 +835,17 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    // iterate
    if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==false)
    {
-      cout << "ML (level " << level_ << "): Entering NOX iteration\n"; fflush(stdout);
+      cout << "ML (level " << level_ << "): Entering Nonlinear Smoother\n"; fflush(stdout);
    }
    else if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==true)
    {
-      cout << "ML (level " << level_ << "): Entering FAS-NOX iteration\n"; fflush(stdout);
+      cout << "ML (level " << level_ << "): Entering FAS-Nonlinear Smoother\n"; fflush(stdout);
    }
 
    NOX::StatusTest::StatusType status = solver_->solve();
    
+   // get number of iterations done
+   int niter = solver_->getNumIterations();
    // get the solution and the new F
    const NOX::EpetraNew::Group& finalGroup = 
    dynamic_cast<const NOX::EpetraNew::Group&>(solver_->getSolutionGroup());
@@ -861,24 +863,26 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    {
       returnstatus = true;
       if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
-         cout << "ML (level " << level_ << "): NOX Converged, Norm(F)=" 
-              << norm2 << "\n"; fflush(stdout);
+         cout << "ML (level " << level_ << "): NOX: " 
+              << niter << " iterations, Norm(F)=" 
+              << norm2 << " , Converged\n"; fflush(stdout);
       }
    }
    else if (status == NOX::StatusTest::Unconverged)
    {
       returnstatus = false;
       if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
-         cout << "ML (level " << level_ << "): NOX Unconverged, Norm(F)=" 
-              << norm2 << "\n"; fflush(stdout);
+         cout << "ML (level " << level_ << "): NOX: "
+              << niter << " iterations, Norm(F)=" 
+              << norm2 << ", Unconverged\n"; fflush(stdout);
       }
    }
    else if (status == NOX::StatusTest::Failed)
    {
       returnstatus = false;
       if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
-         cout << "ML (level " << level_ << "): NOX Unconverged after maxiter=" 
-              << numiter << ", Norm(F)=" << norm2 << "\n"; fflush(stdout);
+         cout << "ML (level " << level_ << "): NOX: " 
+              << niter << " iterations, Norm(F)=" << norm2 << ", Unconverged\n"; fflush(stdout);
       }
    }
    else
