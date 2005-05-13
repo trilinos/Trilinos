@@ -321,6 +321,17 @@ report($SUMMARY);
                     die " *** error updating Trilinos - aborting test-harness ***\n";
                 }
                 system "rm -f $options{'TRILINOS_DIR'}[0]/testharness/temp/update_log.txt";
+            
+                if ($options{'TRILINOS_3PL_DIR'}[0]) {
+                    chdir "$options{'TRILINOS_3PL_DIR'}[0]";       
+                    my $command = "";
+                    $command .= "$options{'CVS_CMD'}[0] update -dP";
+                    my $result = system $command;
+                    if ($result) {
+                        report($UPDATE_ERROR, $codes{$UPDATE_ERROR});
+                        die " *** error updating Trilinos3PL - aborting test-harness ***\n";
+                    }
+                }
 
                 # Finished updating.
                 # Replace ourself with the new, updated version of ourselves.
@@ -330,16 +341,6 @@ report($SUMMARY);
                 foreach (@programArguments) { $command .= "$_ "; }
                 exec $command;
             }
-            
-            if ($options{'TRILINOS_3PL_DIR'}[0]) {
-                chdir "$options{'TRILINOS_3PL_DIR'}[0]";       
-                my $command = "";
-                $command .= "$options{'CVS_CMD'}[0] update -dP";
-                my $result = system $command;
-                if ($result) {
-                    report($UPDATE_ERROR, $codes{$UPDATE_ERROR});
-                    die " *** error updating Trilinos3PL - aborting test-harness ***\n";
-                }
         }
         
     } # cvsUpdate()
