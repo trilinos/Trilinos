@@ -204,6 +204,7 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
 
   int nactive = 0;
   bool no_send_buff = true;
+  int numDeadIndices = 0; // In some cases the GIDs will not be owned by any processors and the PID will be -1
 
   for( i = 0; i < NumExportIDs; i++ )
   {
@@ -214,6 +215,7 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
       ++starts[ ExportPIDs[i] ];
       ++nactive;
     }
+    else numDeadIndices++; // Increase the number of dead indices.  Used below to leave these out of the analysis
   }
 
   self_msg_ = ( starts[my_proc] != 0 ) ? 1 : 0;
@@ -232,7 +234,7 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
       lengths_to_ = new int[nsends_];
     }
 
-    int index = 0;
+    int index = numDeadIndices;  // Leave off the dead indices (PID = -1)
     int proc;
     for( i = 0; i < nsends_; ++i )
     {
