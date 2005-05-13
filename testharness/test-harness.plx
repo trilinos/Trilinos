@@ -330,6 +330,16 @@ report($SUMMARY);
                 foreach (@programArguments) { $command .= "$_ "; }
                 exec $command;
             }
+            
+            if ($options{'TRILINOS_3PL_DIR'}[0]) {
+                chdir "$options{'TRILINOS_3PL_DIR'}[0]";       
+                my $command = "";
+                $command .= "$options{'CVS_CMD'}[0] update -dP";
+                my $result = system $command;
+                if ($result) {
+                    report($UPDATE_ERROR, $codes{$UPDATE_ERROR});
+                    die " *** error updating Trilinos3PL - aborting test-harness ***\n";
+                }
         }
         
     } # cvsUpdate()
@@ -2921,6 +2931,19 @@ report($SUMMARY);
         
         push (@optionsOrder, "CVS_CMD");
         if (!$silent) { print outFile "CVS_CMD                         = cvs\n"; }
+        
+        if (!$short) {    
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n"; 
+            print outFile "# Provide the absolute path to the Trilinos3PL directory if you need it updated.\n"; 
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO\n";        
+            print outFile "\n";
+        }
+        
+        push (@optionsOrder, "TRILINOS_3PL_DIR");
+        if (!$silent) { print outFile "TRILINOS_3PL_DIR                = \n"; }
         
         if (!$short) {    
             print outFile "\n";  
