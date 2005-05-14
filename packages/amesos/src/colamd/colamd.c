@@ -40,7 +40,7 @@
 
     Date:
 
-	September 8, 2003.  Version 2.3.
+	April 11, 2005.  Version 2.4.
 
     Acknowledgements:
 
@@ -49,7 +49,7 @@
 
     Copyright and License:
 
-	Copyright (c) 1998-2003 by the University of Florida.
+	Copyright (c) 1998-2005 by the University of Florida.
 	All Rights Reserved.
 
 	THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
@@ -70,8 +70,20 @@
 	This is the http://www.cise.ufl.edu/research/sparse/colamd/colamd.c
 	file.  It requires the colamd.h file.  It is required by the colamdmex.c
 	and symamdmex.c files, for the MATLAB interface to colamd and symamd.
+	Appears as ACM Algorithm 836.
 
     See the ChangeLog file for changes since Version 1.0.
+
+    References:
+
+	T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, An approximate column
+	minimum degree ordering algorithm, ACM Transactions on Mathematical
+	Software, vol. 30, no. 3., pp. 353-376, 2004.
+
+	T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, Algorithm 836: COLAMD,
+	an approximate column minimum degree ordering algorithm, ACM
+	Transactions on Mathematical Software, vol. 30, no. 3., pp. 377-380,
+	2004.
 
 */
 
@@ -353,7 +365,7 @@
 
 		#include "colamd.h"
 		#define ALEN COLAMD_RECOMMENDED (11, 5, 4)
-		int A [ALEN] = {1, 2, 5, 3, 5, 1, 2, 3, 4, 2, 4} ;
+		int A [ALEN] = {0, 1, 4, 2, 4, 0, 1, 2, 3, 1, 3} ;
 		int p [ ] = {0, 3, 5, 9, 11} ;
 		int stats [COLAMD_STATS] ;
 		colamd (5, 4, ALEN, A, p, (double *) NULL, stats) ;
@@ -510,13 +522,6 @@
 				workspace for M or count arrays using the
 				"allocate" routine passed into symamd).
 
-			-999	internal error.  colamd failed to order the
-				matrix M, when it should have succeeded.  This
-				indicates a bug.  If this (and *only* this)
-				error code occurs, please contact the authors.
-				Don't contact the authors if you get any other
-				error code.
-
 		Future versions may return more statistics in the stats array.
 
 	    void * (*allocate) (size_t, size_t)
@@ -584,7 +589,11 @@
 /* Ensure that debugging is turned off: */
 #ifndef NDEBUG
 #define NDEBUG
-#endif /* NDEBUG */
+#endif
+
+/* turn on debugging by uncommenting the following line
+#undef NDEBUG
+*/
 
 /*
    Our "scaffolding code" philosophy:  In our opinion, well-written library
@@ -603,9 +612,7 @@
    (3) (gasp!) for actually finding bugs.  This code has been heavily tested
 	and "should" be fully functional and bug-free ... but you never know...
 
-    To enable debugging, comment out the "#define NDEBUG" above.  For a MATLAB
-    mexFunction, you will also need to modify mexopts.sh to remove the -DNDEBUG
-    definition.  The code will become outrageously slow when debugging is
+    The code will become outrageously slow when debugging is
     enabled.  To control the level of debugging output, set an environment
     variable D to 0 (little), 1 (some), 2, 3, or 4 (lots).  When debugging,
     you should see the following message on the standard output:
@@ -781,6 +788,8 @@ PRIVATE int garbage_collection
 
 PRIVATE int clear_mark
 (
+    int tag_mark,
+    int max_mark,
     int n_row,
     Colamd_Row Row []
 ) ;
@@ -868,7 +877,7 @@ PRIVATE void debug_structures
 #define DEBUG3(params) ;
 #define DEBUG4(params) ;
 
-#define ASSERT(expression) ((void) 0)
+#define ASSERT(expression)
 
 #endif /* NDEBUG */
 
@@ -1146,11 +1155,7 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 	}
     }
 
-    if (stats [COLAMD_STATUS] == COLAMD_OK)
-    {
-	/* if there are no duplicate entries, then mark is no longer needed */
-	(*release) ((void *) mark) ;
-    }
+    /* v2.4: removed free(mark) */
 
     /* === Compute column pointers of M ===================================== */
 
@@ -1230,11 +1235,12 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 		}
 	    }
 	}
-	(*release) ((void *) mark) ;
+	/* v2.4: free(mark) moved below */
     }
 
     /* count and mark no longer needed */
     (*release) ((void *) count) ;
+    (*release) ((void *) mark) ;	/* v2.4: free (mark) moved here */
     ASSERT (k == n_row) ;
 
     /* === Adjust the knobs for M =========================================== */
@@ -1263,14 +1269,8 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 
     /* === Order the columns of M =========================================== */
 
-    if (!colamd (n_row, n, Mlen, M, perm, cknobs, cstats))
-    {
-	/* This "cannot" happen, unless there is a bug in the code. */
-	stats [COLAMD_STATUS] = COLAMD_ERROR_internal_error ;
-	(*release) ((void *) M) ;
-	DEBUG0 (("symamd: internal error!\n")) ;
-	return (FALSE) ;
-    }
+    /* v2.4: colamd cannot fail here, so the error check is removed in v2.4 */
+    (void) colamd (n_row, n, Mlen, M, perm, cknobs, cstats) ;
 
     /* Note that the output permutation is now in perm */
 
@@ -2054,7 +2054,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
     /* === Initialization and clear mark ==================================== */
 
     max_mark = INT_MAX - n_col ;	/* INT_MAX defined in <limits.h> */
-    tag_mark = clear_mark (n_row, Row) ;
+    tag_mark = clear_mark (0, max_mark, n_row, Row) ;
     min_score = 0 ;
     ngarbage = 0 ;
     DEBUG1 (("colamd: Ordering, n_col2=%d\n", n_col2)) ;
@@ -2131,7 +2131,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	    /* after garbage collection we will have enough */
 	    ASSERT (pfree + needed_memory < Alen) ;
 	    /* garbage collection has wiped out the Row[].shared2.mark array */
-	    tag_mark = clear_mark (n_row, Row) ;
+	    tag_mark = clear_mark (0, max_mark, n_row, Row) ;
 
 #ifndef NDEBUG
 	    debug_matrix (n_row, n_col, Row, Col, A) ;
@@ -2159,26 +2159,25 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	    row = *cp++ ;
 	    DEBUG4 (("Pivot col pattern %d %d\n", ROW_IS_ALIVE (row), row)) ;
 	    /* skip if row is dead */
-	    if (ROW_IS_DEAD (row))
+	    if (ROW_IS_ALIVE (row))
 	    {
-		continue ;
-	    }
-	    rp = &A [Row [row].start] ;
-	    rp_end = rp + Row [row].length ;
-	    while (rp < rp_end)
-	    {
-		/* get a column */
-		col = *rp++ ;
-		/* add the column, if alive and untagged */
-		col_thickness = Col [col].shared1.thickness ;
-		if (col_thickness > 0 && COL_IS_ALIVE (col))
+		rp = &A [Row [row].start] ;
+		rp_end = rp + Row [row].length ;
+		while (rp < rp_end)
 		{
-		    /* tag column in pivot row */
-		    Col [col].shared1.thickness = -col_thickness ;
-		    ASSERT (pfree < Alen) ;
-		    /* place column in pivot row */
-		    A [pfree++] = col ;
-		    pivot_row_degree += col_thickness ;
+		    /* get a column */
+		    col = *rp++ ;
+		    /* add the column, if alive and untagged */
+		    col_thickness = Col [col].shared1.thickness ;
+		    if (col_thickness > 0 && COL_IS_ALIVE (col))
+		    {
+			/* tag column in pivot row */
+			Col [col].shared1.thickness = -col_thickness ;
+			ASSERT (pfree < Alen) ;
+			/* place column in pivot row */
+			A [pfree++] = col ;
+			pivot_row_degree += col_thickness ;
+		    }
 		}
 	    }
 	}
@@ -2444,12 +2443,17 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 
 	/* === Clear mark =================================================== */
 
+	tag_mark = clear_mark (tag_mark+max_deg+1, max_mark, n_row, Row) ;
+
+#if 0
 	tag_mark += (max_deg + 1) ;
 	if (tag_mark >= max_mark)
 	{
+	    /* this occurs only when int overflow is near */
 	    DEBUG2 (("clearing tag_mark\n")) ;
 	    tag_mark = clear_mark (n_row, Row) ;
 	}
+#endif
 
 #ifndef NDEBUG
 	DEBUG3 (("check3\n")) ;
@@ -2531,9 +2535,13 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	    /* during super-col detection and mass elimination */
 	    Row [pivot_row].start  = pivot_row_start ;
 	    Row [pivot_row].length = (int) (new_rp - &A[pivot_row_start]) ;
+	    ASSERT (Row [pivot_row].length > 0) ;
 	    Row [pivot_row].shared1.degree = pivot_row_degree ;
 	    Row [pivot_row].shared2.mark = 0 ;
 	    /* pivot row is no longer dead */
+
+	    DEBUG1 (("Resurrect Pivot_row %d deg: %d\n",
+			pivot_row, pivot_row_degree)) ;
 	}
     }
 
@@ -2875,28 +2883,25 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 
     for (r = 0 ; r < n_row ; r++)
     {
-	if (ROW_IS_ALIVE (r))
+	if (ROW_IS_DEAD (r) || (Row [r].length == 0))
 	{
-	    if (Row [r].length == 0)
-	    {
-		/* this row is of zero length.  cannot compact it, so kill it */
-		DEBUG3 (("Defrag row kill\n")) ;
-		KILL_ROW (r) ;
-	    }
-	    else
-	    {
-		/* save first column index in Row [r].shared2.first_column */
-		psrc = &A [Row [r].start] ;
-		Row [r].shared2.first_column = *psrc ;
-		ASSERT (ROW_IS_ALIVE (r)) ;
-		/* flag the start of the row with the one's complement of row */
-		*psrc = ONES_COMPLEMENT (r) ;
-
+	    /* This row is already dead, or is of zero length.  Cannot compact
+	     * a row of zero length, so kill it.  NOTE: in the current version,
+	     * there are no zero-length live rows.  Kill the row (for the first
+	     * time, or again) just to be safe. */
+	    KILL_ROW (r) ;
+	}
+	else
+	{
+	    /* save first column index in Row [r].shared2.first_column */
+	    psrc = &A [Row [r].start] ;
+	    Row [r].shared2.first_column = *psrc ;
+	    ASSERT (ROW_IS_ALIVE (r)) ;
+	    /* flag the start of the row with the one's complement of row */
+	    *psrc = ONES_COMPLEMENT (r) ;
 #ifndef NDEBUG
-		debug_rows++ ;
+	    debug_rows++ ;
 #endif /* NDEBUG */
-
-	    }
 	}
     }
 
@@ -2915,7 +2920,7 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 	    /* restore first column index */
 	    *psrc = Row [r].shared2.first_column ;
 	    ASSERT (ROW_IS_ALIVE (r)) ;
-
+	    ASSERT (Row [r].length > 0) ;
 	    /* move and compact the row */
 	    ASSERT (pdest <= psrc) ;
 	    Row [r].start = (int) (pdest - &A [0]) ;
@@ -2929,11 +2934,10 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 		}
 	    }
 	    Row [r].length = (int) (pdest - &A [Row [r].start]) ;
-
+	    ASSERT (Row [r].length > 0) ;
 #ifndef NDEBUG
 	    debug_rows-- ;
 #endif /* NDEBUG */
-
 	}
     }
     /* ensure we found all the rows */
@@ -2958,6 +2962,9 @@ PRIVATE int clear_mark	/* return the new value for tag_mark */
 (
     /* === Parameters ======================================================= */
 
+    int tag_mark,	/* new value of tag_mark */
+    int max_mark,	/* max allowed value of tag_mark */
+
     int n_row,		/* number of rows in A */
     Colamd_Row Row []	/* Row [0 ... n_row-1].shared2.mark is set to zero */
 )
@@ -2966,14 +2973,19 @@ PRIVATE int clear_mark	/* return the new value for tag_mark */
 
     int r ;
 
-    for (r = 0 ; r < n_row ; r++)
+    if (tag_mark <= 0 || tag_mark >= max_mark)
     {
-	if (ROW_IS_ALIVE (r))
+	for (r = 0 ; r < n_row ; r++)
 	{
-	    Row [r].shared2.mark = 0 ;
+	    if (ROW_IS_ALIVE (r))
+	    {
+		Row [r].shared2.mark = 0 ;
+	    }
 	}
+	tag_mark = 1 ;
     }
-    return (1) ;
+
+    return (tag_mark) ;
 }
 
 
@@ -3097,12 +3109,7 @@ PRIVATE void print_report
 	    PRINTF ("Out of memory.\n") ;
 	    break ;
 
-	case COLAMD_ERROR_internal_error:
-
-	    /* if this happens, there is a bug in the code */
-	    PRINTF
-	    ("Internal error! Please contact authors (davis@cise.ufl.edu).\n") ;
-	    break ;
+	/* v2.4: internal-error case deleted */
     }
 }
 
@@ -3397,13 +3404,18 @@ PRIVATE void colamd_get_debug
 )
 {
     colamd_debug = 0 ;		/* no debug printing */
-
-    /* get "D" environment variable, which gives the debug printing level */
-    if (getenv ("D"))
+    FILE *f ;
+    f = fopen ("debug", "r") ;
+    if (f == (FILE *) NULL)
     {
-    	colamd_debug = atoi (getenv ("D")) ;
+	printf ("no debug file\n") ;
+	colamd_debug = 0 ;
     }
-
+    else
+    {
+	fscanf (f, "%d", &colamd_debug) ;
+	fclose (f) ;
+    }
     DEBUG0 (("%s: debug version, D = %d (THIS WILL BE SLOW!)\n",
     	method, colamd_debug)) ;
 }

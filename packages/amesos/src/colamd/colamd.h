@@ -15,7 +15,7 @@
 
     Date:
 
-	September 8, 2003.  Version 2.3.
+	April 11, 2005.  Version 2.4.
 
     Acknowledgements:
 
@@ -24,7 +24,7 @@
 
     Notice:
 
-	Copyright (c) 1998-2003 by the University of Florida.
+	Copyright (c) 1998-2005 by the University of Florida.
 	All Rights Reserved.
 
 	THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
