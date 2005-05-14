@@ -3,7 +3,7 @@
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
-/* AMD Version 1.1 (Jan. 21, 2004), Copyright (c) 2004 by Timothy A. Davis,  */
+/* AMD Version 1.2 (May 13, 2005 ), Copyright (c) 2005 by Timothy A. Davis,  */
 /* Patrick R. Amestoy, and Iain S. Duff.  See ../README for License.         */
 /* email: davis@cise.ufl.edu    CISE Department, Univ. of Florida.           */
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
@@ -16,6 +16,10 @@
 
 #include "amd_internal.h"
 
+/* ========================================================================= */
+/* === AMD_preprocess ====================================================== */
+/* ========================================================================= */
+
 GLOBAL Int AMD_preprocess   /* returns AMD_OK if input is OK, AMD_INVALID
 			     * if the matrix is invalid, or AMD_OUT_OF_MEMORY
 			     * if out of memory for the 2n workspace. */
@@ -27,6 +31,29 @@ GLOBAL Int AMD_preprocess   /* returns AMD_OK if input is OK, AMD_INVALID
     /* output matrix R: */
     Int Rp [ ],		/* size n+1 */
     Int Ri [ ]		/* size nz (or less, if duplicates present) */
+)
+{
+    /* calls AMD_preprocess_alt with malloc, free routines defined in amd.h */
+    return (AMD_preprocess_alt (n, Ap, Ai, Rp, Ri, ALLOCATE, FREE)) ;
+}
+
+
+/* ========================================================================= */
+/* === AMD_preprocess_alt ================================================== */
+/* ========================================================================= */
+
+/* Identical to AMD_preprocess, except that it uses memory management routines
+ * passed in as function pointers. */
+
+GLOBAL Int AMD_preprocess_alt
+(
+    Int n,
+    const Int Ap [ ],
+    const Int Ai [ ],
+    Int Rp [ ],
+    Int Ri [ ],
+    void *(*malloc_memory) (size_t),	/* pointer to malloc, or equivalent */
+    void (*free_memory) (void *)	/* pointer to free, or equivalent */
 )
 {
     /* --------------------------------------------------------------------- */
@@ -48,15 +75,15 @@ GLOBAL Int AMD_preprocess   /* returns AMD_OK if input is OK, AMD_INVALID
     /* allocate workspace */
     /* --------------------------------------------------------------------- */
 
-    W = (Int *) ALLOCATE (MAX (n,1) * sizeof (Int)) ;
+    W = (Int *) malloc_memory (MAX (n,1) * sizeof (Int)) ;
     if (!W)
     {
 	return (AMD_OUT_OF_MEMORY) ;
     }
-    Flag = (Int *) ALLOCATE (MAX (n,1) * sizeof (Int)) ;
+    Flag = (Int *) malloc_memory (MAX (n,1) * sizeof (Int)) ;
     if (!Flag)
     {
-	FREE (W) ;
+	free_memory (W) ;
 	return (AMD_OUT_OF_MEMORY) ;
     }
 
@@ -70,8 +97,8 @@ GLOBAL Int AMD_preprocess   /* returns AMD_OK if input is OK, AMD_INVALID
     /* free the workspace */
     /* --------------------------------------------------------------------- */
 
-    FREE (W) ;
-    FREE (Flag) ;
+    free_memory (W) ;
+    free_memory (Flag) ;
     return (AMD_OK) ;
 }
 

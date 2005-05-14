@@ -3,7 +3,7 @@
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
-/* AMD Version 1.1 (Jan. 21, 2004), Copyright (c) 2004 by Timothy A. Davis,  */
+/* AMD Version 1.2 (May 13, 2005 ), Copyright (c) 2004 by Timothy A. Davis,  */
 /* Patrick R. Amestoy, and Iain S. Duff.  See ../README for License.         */
 /* email: davis@cise.ufl.edu    CISE Department, Univ. of Florida.           */
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
@@ -36,6 +36,9 @@
 #ifndef AMD_H
 #define AMD_H
 
+/* get the definition of size_t: */
+#include <stddef.h>
+
 int amd_order (		    /* returns 0 if OK, negative value if error */
     int n,		    /* A is n-by-n.  n must be >= 0. */
     const int Ap [ ],	    /* column pointers for A, of size n+1 */
@@ -52,6 +55,28 @@ long amd_l_order (	    /* see above for description of arguments */
     long P [ ],
     double Control [ ],
     double Info [ ]
+) ;
+
+int amd_order_alt (	    /* amd_order, but with alternate malloc/free */
+    int n,
+    const int Ap [ ],
+    const int Ai [ ],
+    int P [ ],
+    double Control [ ],
+    double Info [ ],
+    void *(*malloc_memory) (size_t),	    /* pointer to malloc, or equiv. */
+    void (*free_memory) (void *)	    /* pointer to free, or equiv. */
+) ;
+
+long amd_l_order_alt (	    /* amd_l_order, but with alternate malloc/free */
+    long n,
+    const long Ap [ ],
+    const long Ai [ ],
+    long P [ ],
+    double Control [ ],
+    double Info [ ],
+    void *(*malloc_memory) (size_t),	    /* pointer to malloc, or equiv. */
+    void (*free_memory) (void *)	    /* pointer to free, or equiv. */
 ) ;
 
 /* Input arguments (not modified):
@@ -253,6 +278,8 @@ long amd_l_order (	    /* see above for description of arguments */
  * of range or if the Ap array is invalid.  These errors are not corrected by
  * amd_preprocess since they represent a more serious error that should be
  * flagged with the AMD_INVALID error code.
+ *
+ * You may also call amd_valid directly (see below).
  */ 
 
 int amd_preprocess
@@ -271,6 +298,28 @@ long amd_l_preprocess
     const long Ai [ ],
     long Rp [ ],
     long Ri [ ]
+) ;
+
+int amd_preprocess_alt	    /* amd_preprocess with alternate malloc/free */
+(
+    int n,
+    const int Ap [ ],
+    const int Ai [ ],
+    int Rp [ ],
+    int Ri [ ],
+    void *(*malloc_memory) (size_t),	    /* pointer to malloc, or equiv. */
+    void (*free_memory) (void *)	    /* pointer to free, or equiv. */
+) ;
+
+long amd_l_preprocess_alt    /* amd_l_preprocess with alternate malloc/free */
+(
+    long n,
+    const long Ap [ ],
+    const long Ai [ ],
+    long Rp [ ],
+    long Ri [ ],
+    void *(*malloc_memory) (size_t),	    /* pointer to malloc, or equiv. */
+    void (*free_memory) (void *)	    /* pointer to free, or equiv. */
 ) ;
 
 /* Input arguments (not modified):
@@ -304,6 +353,77 @@ long amd_l_preprocess
  *	AMD_INVALID if the input arguments n, Ap, Ai are invalid, or if Rp or
  *	    Ri are NULL.
  */
+
+/* ------------------------------------------------------------------------- */
+/* direct interface to AMD */
+/* ------------------------------------------------------------------------- */
+
+/* This is the primary AMD ordering routine.  It is not meant to be
+ * user-callable because of its restrictive inputs and because it destroys
+ * the user's input matrix.  It does not check its inputs for errors, either.
+ * However, if you can work with these restrictions it can be faster than
+ * amd_order and use less memory (assuming that you can create your own copy
+ * of the matrix for AMD to destroy).  Refer to AMD/Source/amd_2.c for a
+ * description. */
+
+void amd_2 (
+    int n,
+    int Pe [ ],
+    int Iw [ ],
+    int Len [ ],
+    int iwlen,
+    int pfree,
+    int Nv [ ],
+    int Next [ ], 
+    int Last [ ],
+    int Head [ ],
+    int Elen [ ],
+    int Degree [ ],
+    int W [ ],
+    double Control [ ],
+    double Info [ ]
+) ;
+
+void amd_l2 (
+    long n,
+    long Pe [ ],
+    long Iw [ ],
+    long Len [ ],
+    long iwlen,
+    long pfree,
+    long Nv [ ],
+    long Next [ ], 
+    long Last [ ],
+    long Head [ ],
+    long Elen [ ],
+    long Degree [ ],
+    long W [ ],
+    double Control [ ],
+    double Info [ ]
+) ;
+
+/* ------------------------------------------------------------------------- */
+/* amd_valid */
+/* ------------------------------------------------------------------------- */
+
+/* Returns TRUE (1) if the matrix is valid as input to amd_order, FALSE (0)
+ * otherwise.  For amd_order, the matrix must also be square. */
+
+int amd_valid
+(
+    int n_row,		    /* # of rows */
+    int n_col,		    /* # of columns */
+    const int Ap [ ],	    /* column pointers, of size n_col+1 */
+    const int Ai [ ]	    /* row indices, of size Ap [n_col] */
+) ;
+
+long amd_l_valid
+(
+    long n_row,
+    long n_col,
+    const long Ap [ ],
+    const long Ai [ ]
+) ;
 
 /* ------------------------------------------------------------------------- */
 /* AMD Control and Info arrays */

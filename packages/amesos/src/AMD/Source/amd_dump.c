@@ -3,7 +3,7 @@
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
-/* AMD Version 1.1 (Jan. 21, 2004), Copyright (c) 2004 by Timothy A. Davis,  */
+/* AMD Version 1.2 (May 13, 2005 ), Copyright (c) 2005 by Timothy A. Davis,  */
 /* Patrick R. Amestoy, and Iain S. Duff.  See ../README for License.         */
 /* email: davis@cise.ufl.edu    CISE Department, Univ. of Florida.           */
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */

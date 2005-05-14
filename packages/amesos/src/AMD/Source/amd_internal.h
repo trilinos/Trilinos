@@ -3,7 +3,7 @@
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
-/* AMD Version 1.1 (Jan. 21, 2004), Copyright (c) 2004 by Timothy A. Davis,  */
+/* AMD Version 1.2 (May 13, 2005 ), Copyright (c) 2005 by Timothy A. Davis,  */
 /* Patrick R. Amestoy, and Iain S. Duff.  See ../README for License.         */
 /* email: davis@cise.ufl.edu    CISE Department, Univ. of Florida.           */
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
@@ -172,6 +172,7 @@
 #define Int_MIN LONG_MIN
 
 #define AMD_order amd_l_order
+#define AMD_order_alt amd_l_order_alt
 #define AMD_defaults amd_l_defaults
 #define AMD_control amd_l_control
 #define AMD_info amd_l_info
@@ -186,6 +187,7 @@
 #define AMD_debug_init amd_l_debug_init
 #define AMD_wpreprocess amd_l_wpreprocess
 #define AMD_preprocess amd_l_preprocess
+#define AMD_preprocess_alt amd_l_preprocess_alt
 #define AMD_preprocess_valid amd_l_preprocess_valid
 
 #else
@@ -196,6 +198,7 @@
 #define Int_MIN INT_MIN
 
 #define AMD_order amd_order
+#define AMD_order_alt amd_order_alt
 #define AMD_defaults amd_defaults
 #define AMD_control amd_control
 #define AMD_info amd_info
@@ -210,6 +213,7 @@
 #define AMD_debug_init amd_debug_init
 #define AMD_wpreprocess amd_wpreprocess
 #define AMD_preprocess amd_preprocess
+#define AMD_preprocess_alt amd_preprocess_alt
 #define AMD_preprocess_valid amd_preprocess_valid
 
 #endif
@@ -268,14 +272,6 @@
 /* AMD routine definitions (not user-callable) */
 /* ------------------------------------------------------------------------- */
 
-GLOBAL Int AMD_valid
-(
-    Int n_row,
-    Int n_col,
-    const Int Ap [ ],
-    const Int Ai [ ]
-) ;
-
 GLOBAL Int AMD_aat
 (
     Int n,
@@ -296,24 +292,6 @@ GLOBAL void AMD_1
     Int Len [ ],
     Int slen,
     Int S [ ],
-    double Control [ ],
-    double Info [ ]
-) ;
-
-GLOBAL void AMD_2 (
-    Int n,
-    Int Pe [ ],
-    Int Iw [ ],
-    Int Len [ ],
-    Int iwlen,
-    Int pfree,
-    Int Nv [ ],
-    Int Next [ ], 
-    Int Last [ ],
-    Int Head [ ],
-    Int Elen [ ],
-    Int Degree [ ],
-    Int W [ ],
     double Control [ ],
     double Info [ ]
 ) ;

@@ -3,7 +3,7 @@
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
-/* AMD Version 1.1 (Jan. 21, 2004), Copyright (c) 2004 by Timothy A. Davis,  */
+/* AMD Version 1.2 (May 13, 2005 ), Copyright (c) 2005 by Timothy A. Davis,  */
 /* Patrick R. Amestoy, and Iain S. Duff.  See ../README for License.         */
 /* email: davis@cise.ufl.edu    CISE Department, Univ. of Florida.           */
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
@@ -15,6 +15,30 @@
  */
 
 #include "amd_internal.h"
+
+/* ========================================================================= */
+/* === clear_flag ========================================================== */
+/* ========================================================================= */
+
+static Int clear_flag (Int wflg, Int wbig, Int W [ ], Int n)
+{
+    Int x ;
+    if (wflg < 2 || wflg >= wbig)
+    {
+	for (x = 0 ; x < n ; x++)
+	{
+	    if (W [x] != 0) W [x] = 1 ;
+	}
+	wflg = 2 ;
+    }
+    /*  at this point, W [0..n-1] < wflg holds */
+    return (wflg) ;
+}
+
+
+/* ========================================================================= */
+/* === AMD_2 =============================================================== */
+/* ========================================================================= */
 
 GLOBAL void AMD_2
 (
@@ -436,7 +460,7 @@ GLOBAL void AMD_2
 
     Int deg, degme, dext, lemax, e, elenme, eln, i, ilast, inext, j,
 	jlast, jnext, k, knt1, knt2, knt3, lenj, ln, me, mindeg, nel, nleft,
-	nvi, nvj, nvpiv, slenme, wbig, we, wflg, wnvi, x, ok, ndense, ncmpa,
+	nvi, nvj, nvpiv, slenme, wbig, we, wflg, wnvi, ok, ndense, ncmpa,
 	dense, aggressive ;
 
     unsigned Int hash ;	    /* unsigned, so that hash % n is well defined.*/
@@ -552,19 +576,10 @@ GLOBAL void AMD_2
     dmax = 1 ;
     me = EMPTY ;
 
-    wflg = 2 ;
     mindeg = 0 ;
     ncmpa = 0 ;
     nel = 0 ;
     lemax = 0 ;		/* this is called dmax in the Fortran version */
-
-#ifdef TEST_FOR_INTEGER_OVERFLOW
-    /* for testing only */
-    wbig = 3*n ;
-#else
-    /* normal operation */
-    wbig = Int_MAX - n ;
-#endif
 
     /* get control parameters */
     if (Control != (double *) NULL)
@@ -609,6 +624,10 @@ GLOBAL void AMD_2
     AMD_dump (n, Pe, Iw, Len, iwlen, pfree, Nv, Next, Last,
 		Head, Elen, Degree, W, -1) ;
 #endif
+
+    /* initialize wflg */
+    wbig = Int_MAX - n ;
+    wflg = clear_flag (0, wbig, W, n) ;
 
     /* --------------------------------------------------------------------- */
     /* initialize degree lists and eliminate dense and empty rows */
@@ -987,14 +1006,7 @@ GLOBAL void AMD_2
 	/* With the current value of wflg, wflg+n must not cause integer
 	 * overflow */
 
-	if (wflg >= wbig)
-	{
-	    for (x = 0 ; x < n ; x++)
-	    {
-		if (W [x] != 0) W [x] = 1 ;
-	    }
-	    wflg = 2 ;
-	}
+	wflg = clear_flag (wflg, wbig, W, n) ;
 
 /* ========================================================================= */
 /* COMPUTE (W [e] - wflg) = |Le\Lme| FOR ALL ELEMENTS */
@@ -1276,15 +1288,8 @@ GLOBAL void AMD_2
         /* make sure that wflg+n does not cause integer overflow */
 	lemax =  MAX (lemax, degme) ;
 	wflg += lemax ;
-	if (wflg >= wbig)
-	{
-	    for (x = 0 ; x < n ; x++)
-	    {
-		if (W [x] != 0) W [x] = 1 ;
-	    }
-	    wflg = 2 ;
-	}
-        /*  at this point, W [0..n-1] < wflg holds */
+	wflg = clear_flag (wflg, wbig, W, n) ;
+	/*  at this point, W [0..n-1] < wflg holds */
 
 /* ========================================================================= */
 /* SUPERVARIABLE DETECTION */

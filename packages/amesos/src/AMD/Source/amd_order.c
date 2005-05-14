@@ -3,7 +3,7 @@
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
-/* AMD Version 1.1 (Jan. 21, 2004), Copyright (c) 2004 by Timothy A. Davis,  */
+/* AMD Version 1.2 (May 13, 2005 ), Copyright (c) 2005 by Timothy A. Davis,  */
 /* Patrick R. Amestoy, and Iain S. Duff.  See ../README for License.         */
 /* email: davis@cise.ufl.edu    CISE Department, Univ. of Florida.           */
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
@@ -15,6 +15,10 @@
 
 #include "amd_internal.h"
 
+/* ========================================================================= */
+/* === AMD_order =========================================================== */
+/* ========================================================================= */
+
 GLOBAL Int AMD_order
 (
     Int n,
@@ -23,6 +27,30 @@ GLOBAL Int AMD_order
     Int P [ ],
     double Control [ ],
     double Info [ ]
+)
+{
+    /* calls AMD_order_alt with malloc and free routines defined in amd.h */
+    return (AMD_order_alt (n, Ap, Ai, P, Control, Info, ALLOCATE, FREE)) ;
+}
+
+
+/* ========================================================================= */
+/* === AMD_order_alt ======================================================= */
+/* ========================================================================= */
+
+/* Identical to AMD_order, except that it uses memory management routines
+ * passed in as function pointers. */
+
+GLOBAL Int AMD_order_alt
+(
+    Int n,
+    const Int Ap [ ],
+    const Int Ai [ ],
+    Int P [ ],
+    double Control [ ],
+    double Info [ ],
+    void *(*malloc_memory) (size_t),    /* pointer to malloc, or equivalent */
+    void (*free_memory) (void *)	/* pointer to free, or equivalent */
 )
 {
     Int slen, *Len, *S, nz, nzaat, i, *Pinv, info ;
@@ -87,7 +115,7 @@ GLOBAL Int AMD_order
     /* --------------------------------------------------------------------- */
 
     /* allocate size-n integer workspace */
-    Len = (Int *) ALLOCATE (n * sizeof (Int)) ;
+    Len = (Int *) malloc_memory (n * sizeof (Int)) ;
     if (!Len)
     {
 	/* :: out of memory :: */
@@ -108,13 +136,13 @@ GLOBAL Int AMD_order
 	/* memory usage (Len and S), in bytes. */
 	Info [AMD_MEMORY] = ((double) slen + n) * sizeof (Int) ;
     }
-    S = (Int *) ALLOCATE (slen * sizeof (Int)) ;
+    S = (Int *) malloc_memory (slen * sizeof (Int)) ;
     AMD_DEBUG1 ((" S "ID" Len "ID" n "ID" nzaat "ID" slen "ID"\n",
 	(Int) S, (Int) Len, n, nzaat, slen)) ;
     if (S == (Int *) NULL)
     {
 	/* :: out of memory :: */
-	FREE (Len) ;
+	free_memory (Len) ;
 	if (Info != (double *) NULL) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
 	return (AMD_OUT_OF_MEMORY) ;
     }
@@ -133,7 +161,7 @@ GLOBAL Int AMD_order
     /* free the workspace */
     /* --------------------------------------------------------------------- */
 
-    FREE (Len) ;
-    FREE (S) ;
+    free_memory (Len) ;
+    free_memory (S) ;
     return (AMD_OK) ;	    /* successful ordering */
 }
