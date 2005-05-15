@@ -45,11 +45,11 @@ $A$~\cite{axelsson94iterative,saad96iterative,QSS}. Often, $A$ is very
 ill-conditioned, so the
 original system~(\ref{eq:linear_sys}) is replaced by
 \[
-P^{-1} A{u} = P^{-1} {b}
+P^{-1} A{x} = P^{-1} {b}
 \]
 (left-preconditioning), or by
 \[
-A P^{-1} P {u} = {b}
+A P^{-1} P {x} = {b}
 \]
 (right-preconditioning), using a linear transformation $P^{-1}$,
 called {\sl preconditioner}, in order to improve the spectral properties of
@@ -93,7 +93,7 @@ Single-level algebraic preconditioners can be classified as follows:
 \item {\bf Polynomial preconditioner}, like Neumann, Least-Square, and
 Chebyshev~\cite{saad96iterative}.
 \item {\bf Incomplete Factorizations preconditioner}, like IC($k$), ILU($k$), 
-  ILUT($k$);
+  ILUT($k$)~\cite{saad96iterative};
 \item {\bf One-level domain decomposition preconditioners of Schwarz type},
   with minimal or wider overlap among the subdomains~\cite{smith96parallel,
     QV2}. The local linear problems
@@ -110,9 +110,10 @@ ParaSails or SPAI are available to define preconditioners of class 5
 Single-level preconditioners can be used as stand-alone preconditioners, on in
 conjunction with multilevel preconditioners. In this latter case, the
 single-level preconditioner is reinterpreted as a smoother for the multilevel
-hierarchy. Two families of methods have been
-proposed in the literature:
-the classical Ruge-St\"uben multigrid (AMG), or smoothed aggregation (SA).
+hierarchy. Three families of multilevel (or multigrid) methods have been
+proposed in the literature: geometric multigrid~\cite{brandt.classic},
+the classical Ruge-St\"uben algebraic multigrid (AMG)~\cite{ruge87algebraic}, 
+  or smoothed aggregation (SA)~\cite{vanek4}.
 The preconditioning package Hypre can be used to define AMG preconditioners,
   while the Trilinos package ML can be used to build SA preconditioners.
 \end{remark}
@@ -121,9 +122,7 @@ The preconditioning package Hypre can be used to define AMG preconditioners,
 
 The goal of this document is to provide an overview of all \ifpack\
   preconditioners. Several examples are reported to illustrate how to define
-  and use \ifpack\ objects. Further details can be found on the Doxygen
-  documentation.
-The manuscript is organized as follows. Section~\ref{sec:theo} briefly outlines
+  and use \ifpack\ objects. The manuscript is organized as follows. Section~\ref{sec:theo} briefly outlines
 the theoretical background. A general description of \ifpack\
   preconditioners is reported in Section~\ref{sec:prec}.
 The \ifpack\ factory class is detailed in
@@ -132,6 +131,11 @@ Section~\ref{sec:usage}. Parameters for \ifpack~preconditioners are reported in
 Section~\ref{sec:parameters}. The analysis tools of \ifpack\ are reported in
 Section~\ref{sec:analysis}. Configuration and building are detailed in
 Section~\ref{sec:config}.
+
+Further details can be found on the Doxygen
+  documentation. Document~\cite{ifpack-design} explains the design of IFPACK.
+  The usage of the Python interface is described in
+  document~\cite{pytrilinos-tutorial}.
 
 %-----------------------------------------------------------------------------
 \section{Theoretical background}
@@ -143,38 +147,12 @@ preconditioning and establish our notation. This section is not
 supposed to be exhaustive, nor complete on this subject. The reader is
 referred to the existing literature for a comprehensive presentation.
 
-\medskip
-
 %-----------------------------------------------------------------------------
-\subsection{Condition Number Estimates}
-\label{sec:cond}
-%-----------------------------------------------------------------------------
-
-The condition of a matrix $B$, called $\kappa_p(B)$, is defined as
-$\kappa_p(B) = \|B\|_p\|B^{-1}\|_p$ in some appropriate norm $p$. 
-$\kappa_p(B)$
-gives some indication of how many accurate floating point
-digits can be expected from operations involving the matrix and its
-inverse.  A condition number approaching the accuracy of a given
-floating point number system, about 15 decimal digits in IEEE double
-precision, means that any results involving $B$ or $B^{-1}$ may be
-meaningless.
-
-The $\infty$-norm of a vector $y$ is defined as the maximum of the
-absolute values of the vector entries, and the $\infty$-norm of a
-matrix C is defined as
-$\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty$.
-A crude lower bound for the $\kappa_\infty(C)$ is
-$\|C^{-1}e\|_\infty$ where $e = (1, 1, \ldots, 1)^T$.  It is a
-lower bound because $\kappa_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
-\ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty$. 
-
-%-----------------------------------------------------------------------------
-\subsection{Point Preconditioners}
+\subsection{Point Relaxation Scheme}
 \label{sec:point}
 %-----------------------------------------------------------------------------
 
-\ifpack\ contains a set of simple point preconditioners based on relaxation
+\ifpack\ contains a set of simple preconditioners based on point relaxation
 methods.
 Beginning with a given approximate solution, these methods modify the
 components of the approximation, one or a few at a time and in a certain order,
@@ -292,11 +270,11 @@ This method
 is often called symmetric Gauss-Seidel.
 
 %-----------------------------------------------------------------------------
-\subsection{Block Preconditioners}
+\subsection{Block Relaxation Schemes}
 \label{sec:block}
 %-----------------------------------------------------------------------------
 
-Block preconditioners of Jacobi and Gauss-Seidel type generalize their point
+Block relaxation schemes of Jacobi and Gauss-Seidel type generalize their point
 counterpart by updating a set of variables at the same time. Consider
 to partition the matrix $A$, the right-hand side and the solution vector
 as follows:
@@ -386,6 +364,7 @@ Jacobi method is simply as reported in equation (\ref{eq:jacobi}). Analogously,
 the block Gauss-Seidel is still described by equation (\ref{eq:gs}), and
 the symmetric Gauss-Seidel by equation (\ref{eq:sgs}).
 
+An alternative definition of block relaxation scheme is as follows.
 Let us suppose to partition the set of rows of 
 the matrix into $m$ sets $S_i, i=1, \ldots,m$, such that
 \[
@@ -434,33 +413,38 @@ x^{(k)} = x^{(k-1)} + \omega V_i^T A_{i,i}^{-1} V_i(b - A x^{(k)}).
 %-----------------------------------------------------------------------------
 
 A broad class of effective preconditioners is based on incomplete
-factorization of the linear system matrix.  Such preconditioners are often
-referred to as incomplete lower/upper (ILU) preconditioners.  
-ILU preconditioning techniques lie between direct and
-iterative methods and provide a balance between reliability and
-numerical efficiency.  ILU preconditioners are constructed in the factored form
-$P=\tilde{L} \tilde{U}$, with $\tilde{L}$ and $\tilde{U}$ being lower
-and upper triangular matrices. Solving with $P$ involves two triangular
-solutions.
+factorization technique.  Such preconditioners are often referred to as
+incomplete lower/upper (ILU) preconditioners.  ILU preconditioning techniques
+lie between direct and iterative methods and provide a balance between
+reliability and numerical efficiency.  ILU preconditioners are constructed in
+the factored form $P=\tilde{L} \tilde{U}$, with $\tilde{L}$ and $\tilde{U}$
+being a lower and an upper triangular matrices, respectively. Solving with $P$
+involves two triangular solutions.
 
-ILU preconditioners are based on the observation
-that, although most matrices $A$ admit an LU factorization $A=LU$, where $L$ is
-(unit) lower triangular and $U$ is upper triangular, the factors $L$ and $U$ often
-contain too many nonzero terms, making the cost of factorization too expensive in
-time or memory use, or both.  One type of ILU preconditioner is ILU(0), which 
-is defined as proceeding through the standard LU decomposition computations, but keeping 
-only those terms in $\tilde{L}$ that correspond to nonzero terms in the lower
-triangle of $A$ and similarly keeping only those terms in $\tilde{U}$ that 
-correspond to nonzero terms in the upper triangle of $A$.  Although effective, in
-some cases the accuracy of the ILU(0) may be insufficient to yield an
-adequate rate of convergence. More accurate factorizations will differ
-from ILU(0) by allowing some {\em fill-in}. The resulting class of
-methods is called ILU($k$), where $k$ is the level-of-fill. A
-level-of-fill is attributed to each element that is processed by
-Gaussian elimination, and dropping will be based on the level-of-fill.
-The level-of-fill should be indicative of the size of the element: the
-higher the level-of-fill, the smaller the elements.  
-
+ILU preconditioners are based on the observation that, although most matrices
+$A$ admit an LU factorization $A=LU$, where $L$ is (unit) lower triangular and
+$U$ is upper triangular, the factors $L$ and $U$ often contain too many
+nonzero terms, making the cost of factorization too expensive in time and
+memory use.  The simplest type of ILU preconditioner is ILU(0), which is
+defined as proceeding through the standard LU decomposition computations, but
+keeping only those terms in $\tilde{L}$ that correspond to nonzero terms in
+the lower triangle of $A$ and similarly keeping only those terms in
+$\tilde{U}$ that correspond to nonzero terms in the upper triangle of $A$.
+Although effective for certain classes of problems, in some cases the accuracy of the ILU(0) may be
+insufficient to yield an adequate rate of convergence. More accurate
+factorizations will differ from ILU(0) by allowing some {\em fill-in}--that i,
+some of the elements produced by the Gaussian elimination are kept in order to
+  make $\tilde{U}$ and $\tilde{U}$ ``closer'' to the exact factorization $L$
+  and $U$.
+The
+level-of-fill should be indicative of the size of the element: the higher the
+level-of-fill, the smaller the elements.  
+Several strategies have been proposed in the literature to define the
+level-of-fill. One strategy is to compute the graph of $A^{(\ell + 1})$
+($\ell$ being the level-of-fill) and use this sparsity pattern in the
+construction of $\tilde{L}$ and $\tilde{U}$.
+The
+resulting class of methods is called ILU($k$), where $k$ is the level-of-fill.
 Other strategies consider dropping by value -- for example, dropping
 entries smaller than a prescribed threshold. Alternative dropping
 techniques can be based on the numerical size of the element to be
@@ -482,6 +466,35 @@ be the same for each linear system and the overhead of computing the
 pattern is amortized.
 
 %-----------------------------------------------------------------------------
+\subsection{Condition Number Estimates}
+\label{sec:cond}
+%-----------------------------------------------------------------------------
+
+The condition of a matrix $B$, called $\kappa_p(B)$, is defined as
+$\kappa_p(B) = \|B\|_p\|B^{-1}\|_p$ in some appropriate norm $p$. 
+$\kappa_p(B)$
+gives some indication of how many accurate floating point
+digits can be expected from operations involving the matrix and its
+inverse.  A condition number approaching the accuracy of a given
+floating point number system, about 15 decimal digits in IEEE double
+precision, means that any results involving $B$ or $B^{-1}$ may be
+meaningless.
+
+The computation of $\kappa_p(B)$ is in general an expensive operation, and it
+is therefore to be avoided unless necessary. 
+(The Aztec library can be used to compute accurate estimates of 
+ $\kappa_2(B)$ by using CG or GMRES.) On the other side, a crude estimate of
+$\kappa_\infty(B)$ can be cheaply computed as follows.
+The $\infty$-norm of a vector $y$ is defined as the maximum of the
+absolute values of the vector entries, and the $\infty$-norm of a
+matrix B is defined as
+$\|B\|_\infty = \max_{\|y\|_\infty = 1} \|By\|_\infty$.
+A crude lower bound for the $\kappa_\infty(B)$ is
+$\|B^{-1}e\|_\infty$ where $e = (1, 1, \ldots, 1)^T$.  It is a
+lower bound because $\kappa_\infty(B) = \|B\|_\infty\|B^{-1}\|_\infty
+\ge \|B^{-1}\|_\infty \ge |B^{-1}e\|_\infty$. 
+
+%-----------------------------------------------------------------------------
 \subsubsection{{\em A-priori} Diagonal Perturbations}
 \label{sec:a-priori}
 %-----------------------------------------------------------------------------
@@ -494,15 +507,14 @@ occurs to be very small. Computing the condition number estimate using method
 detect ill-conditioned factorizations.  The procedure is as follows. If this
 condition estimate is larger than machine precision, say greater than
 $10^{15}$, then it is possible that numerical errors in the application of the
-preconditioner can will destroy convergence of the iterative solver (that is,
+preconditioner can destroy convergence of the iterative solver (that is,
 the iterative solver starts to diverge, stagnates, or aborts because it
 detects ill-conditioning).  In this case, {\sl a-priori} diagonal
 perturbations may be effective.  
 
 Diagonal perturbations operate as follows:
-instead of using matrix $A$, we perform the factorization  on 
-a modified matrix $B$\footnote{This matrix is never built. The code modifies
-  the {\tt ExtractMyRowCopy()} method, and updated the diagonal value.}, whose elements are defined as
+instead of using the matrix $A$ of (\ref{eq:linear_sys}), we perform the factorization  on 
+a modified matrix $B$, whose elements are defined as
 \begin{equation}
 \label{eq:B}
 \begin{array}{lcr}
@@ -513,15 +525,19 @@ B_{i,i} = \alpha \; \; sgn(A_{i,i}) + \rho A_{i,i},
 where $\alpha$ and $\rho$ are two real parameters, to be determined by the
 user. $\alpha$ represents an absolute threshold added to the matrix, while
 $\rho$ is a relative threshold (that is, the actual diagonal value of the
-matrix to be factored is $\rho$ times the original value).  This has the
+matrix to be factored is $\rho$ times the original value).  Note that $B$ is
+never built, since the code modifies
+  the {\tt ExtractMyRowCopy()} method, and updates the diagonal value.
+
+
+This has the
 effect of forcing the diagonal values to have minimal magnitude of $\alpha$
 and to increase each by an amount proportional to $\rho$, and still keep the
 sign of the original diagonal entry.
 
-Although no general theory to define $\alpha$ and $\rho$ is avaialble, 
+Although no general theory to define $\alpha$ and $\rho$ is available, 
 it can be convenient to adopt the strategy
 outlined in Figure~\ref{f:aprioristrategy}.
-{\small
 \begin{figure}
 \vspace{.05in}
 \hrule
@@ -575,7 +591,7 @@ family of subproblems is coupled one to another through the values of the
 unknown solution at subdomain interface. This coupling is then removed at
 the expense of introducing an iterative process which involves, at each
 step, solutions on the $\Omega_i$ with additional interface conditions on
-$\partial \Omega_i \setminus \partial \Omega$.
+$\partial \Omega_i \setminus \partial \Omega$~\cite{QV2, smith96parallel},
 
 In overlapping Schwarz preconditioner, the computational domain is
 subdivided into {\sl overlapping} subdomains, and local Dirichlet-type
@@ -601,35 +617,20 @@ A_i = R_i A P_i.
 \begin{itemize}
 \item Minimal-overlap (here referred to as "zero-overlap"): each subdomain
 is identified by the set of local rows of the preconditioned matrix;
-\item Wider overlap: each subdomain is identified by the set of local rows
-of a suitable overlapping matrix.
-\end{itemize}
-In both cases, each processor is responsible for exactly one subdomain.
-
-In the minimal overlap case, the $R_i$'s and $P_i$'s are not implemented, since the
+The operators $R_i$'s and $P_i$'s are not implemented, since the
 required components of the residual vector are already local. Besides, matrix
 (\ref{eq:Ai}) can be easily extracted from the local matrix, by dropping all
 nonzeros corresponding to non-local columns with no 
-communications between processors. If a wider overlap
-is used, instead, each application of $R_i$ and $P_i$ may require the
+communications between processors. 
+\item Wider overlap: each subdomain is identified by the set of local rows
+of a suitable overlapping matrix.
+Each application of $R_i$ and $P_i$ may require the
 importing or exporting of
 off-process data, and the construction of (\ref{eq:Ai}) requires
 communications.
 
-\smallskip
-
-Once matrices (\ref{eq:Ai}) have been formed, the user still need to define a
-strategy to apply the inverse of $A_i$ in (\ref{eq:as}). At this purpose,
-any \ifpack\ preconditioner can be adopted. Common choices are:
-\begin{itemize}
-\item To solve exactly on each subdomain with an complete LU factorization, using the \verb!Ifpack_Amesos!
-preconditioner. This is shown in Section~\ref{sec:as_amesos}.
-\item To solve using an incomplete LU factorization, as presented in
-Section~\ref{sec:as_ilu}.
-\item To furtherly decompose the local domain into smaller subdomains,
-  then apply a block Jacobi or block Gauss-Seidel preconditioner. This is
-  outlined in Section~\ref{sec:as_b_ov}.
 \end{itemize}
+In both cases, each processor is responsible for exactly one subdomain.
 
 \begin{remark}
 Additive Schwarz preconditioners as reported in equation~(\ref{eq:as}) 
@@ -714,9 +715,9 @@ as follows:
 pointer of the matrix to be preconditioned, say {\tt A}. {\tt A} has already
 been {\tt FillComplete()}'d\footnote{It is supposed that the {\tt OperatorDomainMap()}, {\tt the OperatorRangeMap()}
 and
-the {\tt RowMatrixRowMap()} of the matrix all coincide, and that each row is ass
-igned
-to exactly one process..}.
+the {\tt RowMatrixRowMap()} of the matrix all coincide, and that each row is 
+assigned
+to exactly one process.}.
 %
 \item All the parameters, stored in a \teuchos\ parameters list, are
 set using method \verb!SetParameters()!. If \verb!SetParameters()! is not
@@ -732,14 +733,14 @@ are performed
 \footnote{For example, in a time dependent setting, if the structure of {\tt
   A} does not change from a given time step to the next but its values do,
   the user can call {\tt Initialize()} only once before the first time step,
-  then {\tt Compute()} at each time step. Also calls {\tt Initialize()} if
-  not already done by the user.}
+  then {\tt Compute()} at each time step.}. It calls {\tt Initialize()} if
+  not already done by the user.
 %
 \item Method \verb!ApplyInverse()! applies the preconditioner. Any class that
 uses \verb!ApplyInverse()! to apply the preconditioner can take advantage of
 an \verb!Ifpack_Preconditioner! derived object\footnote{For example, {\tt
 AztecOO} objects can use {\tt Ifpack\_Preconditioner} objects as
-preconditioners.} Note that {\tt Compute()} must be successfully called before
+preconditioners.} Note that {\tt Compute()} must have been successfully called before
 using \verb!ApplyInverse()!.
 
 \item Method \verb!IsInitialized()! returns {\tt true} is the preconditioner has
@@ -755,8 +756,8 @@ Accurate (and expensive) computations of the condition number of
 the preconditioned system can be
 obtained by calling {\tt Condest(Ifpack\_CG)} or {\tt
   Condest(Ifpack\_GMRES)}\footnote{We note that using CG or GMRES to compute
-and estimated condition number is an expensive operations, and should not
-be used unless the accurate value of the condition number is required.}.
+and estimated condition number is an expensive operations; see discussion in
+  Section~\ref{sec:cond}.}.
 See Section~\ref{sec:a-priori} for more details.
 %
 \item Methods \verb!NumInitialize()!, \verb!NumCompute()! and
@@ -768,6 +769,9 @@ See Section~\ref{sec:a-priori} for more details.
 \item Methods \verb!InitializeFlops()!, \verb!ComputeFlops()! and
 \verb!ApplyInverseFlops()! return the number floating point operations (FLOPS)
   occurred in each phase.
+%
+\item Method \verb!AreFlopsComputed()! return \verb!true! is the
+  preconditioner counts the flops, \verb~false~ otherwise.
 \end{enumerate}
 
 
@@ -791,8 +795,10 @@ using an instruction of the type: \verb!cout << Prec!.
 \label{sec:factory}
 %-----------------------------------------------------------------------------
 
-The easiest way to use \ifpack\ is through its factory class. Let us consider
-the following fragment of code:
+The easiest way to define preconditioners of type (\ref{eq:as}) in
+  \ifpack\ is through its factory class. Let us consider
+the following fragment of code, which constructs an ILU(5) preconditioner,
+  with minimal overlap.
 \begin{verbatim}
 #include "Ifpack.h"
 ...
@@ -801,9 +807,8 @@ Epetra_RowMatrix* A; // A is already FillComplete()'d
 Ifpack Factory;
 Ifpack_Preconditioner* Prec;
 string PrecType = "ILU";
-int OverlapLevel = 0;
 // create the preconditioner using Create()
-Prec = Factory.Create(PrecType, A, OverlapLevel);
+Prec = Factory.Create(PrecType, A);
 assert (Prec != 0);
 
 // specify parameters for ILU
@@ -820,6 +825,26 @@ Problem.SetPrec(Prec);
 // now we can solve with AztecOO
 \end{verbatim}
 
+The difficulty with this type of preconditioner is that it tends to become
+less robust and require more iterations as the number of processors used
+increases.  This effect can be offset to some extent by allowing {\em
+overlap}.  Overlap refers to having processors redundantly own certain rows
+of the matrix for the ILU factorization.  Level-1 overlap is defined so
+that a processor will include rows that are part of its original set.  In
+addition, if row $i$ is part of its original set and row $i$ of $A$ has a
+nonzero entry in column $j$, then row $j$ will also be included in the
+factorization on that processor.  Other levels of overlap are computed
+recursively.  IFPACK supports an arbitrary level of overlap.  However,
+level-1 is often most effective.  Seldom more than 3 levels are needed. 
+
+To increase the overlap among processors, one can simply call method
+\verb!Create()! as follows:
+\begin{verbatim}
+int OverlapLevel = 2;
+Prec = Factory.Create(PrecType, A, OverlapLevel);
+\end{verbatim}
+
+
 The list of options for {\tt PrecType} is reported in
 Table~\ref{tab:factory}. Note that only one word in the above fragment of code
 has to be changed to define, for instance, the Gauss-Seidel preconditioner.
@@ -830,17 +855,6 @@ has to be changed to define, for instance, the Gauss-Seidel preconditioner.
 \hline
 {\tt PrecType} & Description \\
 \hline
-\hline
-\tt point relaxation & Point relaxation preconditioner, like Jacobi, Gauss-Seidel,
-  and symmetric Gauss-Seidel.\\
-\hline
-\tt block relaxation & Block relaxation preconditioner, like Jacobi, Gauss-Seidel,
-  and symmetric Gauss-Seidel. LAPACK is used to apply the inverse of each
-  diagonal block. \\
-\hline
-\tt block relaxation (Amesos) & Block relaxation preconditioner, like Jacobi, Gauss-Seidel,
-  and symmetric Gauss-Seidel. Amesos is used to apply the inverse of each
-  block. Requires \ifpack\ support for \amesos. \\
 \hline
 \tt IC & Incomplete Cholesky factorization on each subdomain. \\
 \hline
@@ -869,7 +883,7 @@ detailed list of \ifpack\ parameters is reported in
 section~\ref{sec:parameters}.
 
 %-----------------------------------------------------------------------------
-\subsection{Point Preconditioners}
+\subsection{Point Relaxation Schemes}
 \label{sec:point_ex}
 %-----------------------------------------------------------------------------
 
@@ -906,8 +920,16 @@ Macro \verb!IFPACK_CHK_ERR()! can be used to check return values. If the
 return value if different from 0, the macro prints out a warning message on
 \verb!cerr!, and returns.
 
+\begin{remark}
+Point relaxation schemes are implemented in \ifpack\ for general
+Epetra\_RowMatrix's and they therefore require several calls to method
+\verb!ExtractMyRowCopy()!. This approach make point relaxation schemes quite
+flexible, but potentially slower than implementations tuned for a particular
+matrix format.
+\end{remark}
+
 %-----------------------------------------------------------------------------
-\subsection{Block Preconditioners}
+\subsection{Block Relaxation Schemes}
 \label{sec:block_ex}
 %-----------------------------------------------------------------------------
 
@@ -1071,7 +1093,25 @@ A call to \verb!SetParameters(List)! will set the parameters for the block
 preconditioner.
 
 %-----------------------------------------------------------------------------
-\subsection{Additive Schwarz with Exact Local Solves}
+\subsection{Additive Schwarz Preconditioners}
+\label{sec:as}
+%-----------------------------------------------------------------------------
+
+Once matrices (\ref{eq:Ai}) have been formed, the user still need to define a
+strategy to apply the inverse of $A_i$ in (\ref{eq:as}). At this purpose,
+any \ifpack\ preconditioner can be adopted. Common choices are:
+\begin{itemize}
+\item To solve exactly on each subdomain with an complete LU factorization, using the \verb!Ifpack_Amesos!
+preconditioner. This is shown in Section~\ref{sec:as_amesos}.
+\item To solve using an incomplete LU factorization (ILU), as presented in
+Section~\ref{sec:as_ilu}.
+\item To furtherly decompose the local domain into smaller subdomains,
+  then apply a block Jacobi or block Gauss-Seidel preconditioner. This is
+  outlined in Section~\ref{sec:as_b_ov}.
+\end{itemize}
+
+%-----------------------------------------------------------------------------
+\subsubsection{Additive Schwarz with Exact Local Solves}
 \label{sec:as_amesos}
 %-----------------------------------------------------------------------------
 
@@ -1103,7 +1143,7 @@ preconditioners fail.
 \end{remark}
 
 %-----------------------------------------------------------------------------
-\subsection{Additive Schwarz with ILU}
+\subsubsection{Additive Schwarz with ILU}
 \label{sec:as_ilu}
 %-----------------------------------------------------------------------------
 
@@ -1127,19 +1167,6 @@ IFPACK_CHK_ERR(Prec->SetParameters(List));
 IFPACK_CHK_ERR(Prec->Initialize());
 IFPACK_CHK_ERR(Prec->Compute());
 \end{verbatim}
-
-The difficulty with this type of preconditioner is that it tends to become
-less robust and require more iterations as the number of processors used
-increases.  This effect can be offset to some extent by allowing {\em
-overlap}.  Overlap refers to having processors redundantly own certain rows
-of the matrix for the ILU factorization.  Level-1 overlap is defined so
-that a processor will include rows that are part of its original set.  In
-addition, if row $i$ is part of its original set and row $i$ of $A$ has a
-nonzero entry in column $j$, then row $j$ will also be included in the
-factorization on that processor.  Other levels of overlap are computed
-recursively.  IFPACK supports an arbitrary level of overlap.  However,
-level-1 is often most effective.  Seldom more than 3 levels are needed. 
-
 \smallskip
 
 The user can access the factorization of the local matrix produced by
@@ -1166,7 +1193,7 @@ const Epetra_CrsMatrix& U = Inverse->U();
 \end{verbatim}
 
 %-----------------------------------------------------------------------------
-\subsection{Additive Schwarz with Local Block Preconditioners}
+\subsubsection{Additive Schwarz with Local Block Preconditioners}
 \label{sec:as_b_ov}
 %-----------------------------------------------------------------------------
 
@@ -1285,7 +1312,7 @@ specified parameter value, whose type can be any C++ object or pointer.
 \choicebox{\tt relaxation: sweeps}{[{\tt int}] Number of sweeps of
   the point relaxation preconditioner. Default: {\tt 1}.}
 
-\choicebox{\tt relaxation: damping factor}{[{\tt double}] This is the value for $\omega$ 
+\choicebox{\tt relaxation: damping factor}{[{\tt double}] Value of $\omega$ 
   in formulae (\ref{eq:jacobi}), (\ref{eq:gs}), (\ref{eq:sor}) and
     (\ref{eq:ssor}). Default: {\tt 1.0}.}
 				 
@@ -1307,13 +1334,12 @@ specified parameter value, whose type can be any C++ object or pointer.
   subgraphs (for block relaxation methods only). Default: 4.}
 
 \choicebox{\tt partitioner: overlap}{[{\tt int}] Overlap among blocks. Only
-  for block Jacobi methods. Default: 0.}
+  for the block Jacobi method. Default: 0.}
 
 \choicebox{\tt partitioner: root node}{[{\tt int}] Root node, for greedy
   algorithm only. Default: 0}
 
 \choicebox{\tt schwarz: combine mode}{[{\tt Epetra\_CombineMode}].
-Default: {\tt Zero}.
 It can assume one of the following values:
 {\tt Add}: Components on the receiving processor will be added together;
 {\tt Zero}: Off-processor components will be ignored;
@@ -1324,7 +1350,8 @@ receiving processor replacing existing values.
 maxed with magnitudes of existing components on the receiving
 processor. Note that, for non-zero overlap values, the preconditioner is in general
   non-symmetric, due to the handling of the overlapping region. Set this parameter to {\tt Insert} if a
-    symmetric preconditioner is required.}
+    symmetric preconditioner is required.
+Default: {\tt Zero}.}
 
 \choicebox{\tt amesos: solver type}{[{\tt string}]. Defines the Amesos solver to be
   used by class Ifpack\_Amesos. Valid values are:
@@ -1333,7 +1360,7 @@ processor. Note that, for non-zero overlap values, the preconditioner is in gene
 {\tt Amesos\_Umfpack},
 {\tt Amesos\_Superlu},
 {\tt Amesos\_Mumps},
-{\tt Amesos\_Dscpack}. Default: {\tt Amesos\_Klu} Default: {\tt Amesos\_Klu}.}
+{\tt Amesos\_Dscpack}. Default: {\tt Amesos\_Klu}.}
 
 \choicebox{\tt fact: level-of-fill}{[{\tt int}] Level-of-fill for IC and ILU.}
 
@@ -1344,9 +1371,9 @@ processor. Note that, for non-zero overlap values, the preconditioner is in gene
 
 \choicebox{\tt fact: relax value}{[{\tt double}] Relaxation value.}
 
-\choicebox{\tt fact: absolute threshold}{[{\tt double}] Value $\alpha$ in equation (\ref{eq:B}). }
+\choicebox{\tt fact: absolute threshold}{[{\tt double}] Value of $\alpha$ in equation (\ref{eq:B}). }
 
-\choicebox{\tt fact: relative threshold}{[{\tt double}] Value $\rho$ in
+\choicebox{\tt fact: relative threshold}{[{\tt double}] Value of $\rho$ in
   equation (\ref{eq:B}). }
 
 
