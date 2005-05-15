@@ -8,6 +8,7 @@
 #include "Ifpack_ICT.h"
 #include "Ifpack_ILU.h"
 #include "Ifpack_ILUT.h"
+#include "Ifpack_SPARSKIT.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
@@ -81,6 +82,11 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
   else if (PrecType == "ILUT stand-alone") {
     return(new Ifpack_ILUT(Matrix));
   }
+#ifdef HAVE_IFPACK_SPARSKIT
+  else if (PrecType == "SPARSKIT") {
+    return(new Ifpack_SPARSKIT(Matrix));
+  }
+#endif
   else
     // nothing understandable
     return(0);
