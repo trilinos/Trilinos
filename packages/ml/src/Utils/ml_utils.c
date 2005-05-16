@@ -2714,8 +2714,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    
    /* if ordering is NULL, assume we have a square matrix */
    if( global_row_ordering == NULL ) {
-     ML_build_global_numbering(matrix, matrix->comm,
-			       &global_row_ordering);
+     ML_build_global_numbering(matrix, &global_row_ordering);
      is_global_allocated = 1;
      global_col_ordering = global_row_ordering; 
    }
@@ -2844,7 +2843,6 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 /* ******************************************************************** */
 
 int ML_build_global_numbering( ML_Operator *Amat,
-			       ML_Comm *comm,
 			       int **pglobal_numbering )
 {
 
@@ -2852,6 +2850,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
   int    Nrows, Nghosts, offset;
   double * dtemp = NULL;
   int * global_numbering;
+  ML_Comm *comm = Amat->comm;
   
   Nrows = Amat->getrow->Nrows;
   if (Amat->getrow->pre_comm == NULL) Nghosts = 0;

@@ -561,7 +561,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 
   /* allocates memory for global_ordering */
 
-  ML_build_global_numbering(Amatrix, comm, &global_numbering);
+  ML_build_global_numbering(Amatrix, &global_numbering);
 
   offsets = (int     *) ML_allocate( sizeof(int) * (N_procs+1) );
   vtxdist = (idxtype *) ML_allocate( sizeof(idxtype) * (N_procs+1) );

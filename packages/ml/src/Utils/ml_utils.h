@@ -129,7 +129,7 @@
                                            const char label[],
                                            int *, int *);
    extern int ML_build_global_numbering( ML_Operator *Amat,
-              ML_Comm *comm, int **pglobal_numbering );
+                                         int **pglobal_numbering );
 
 
    int ML_Operator_Lump(ML_Operator *A, ML_Operator **B);
