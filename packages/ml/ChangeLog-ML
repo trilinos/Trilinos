@@ -57,6 +57,11 @@ Mar 2005
           A new class, called MultiLevelAdaptiveSA, has been added.
         * Added a prototype of class for non-symmetric smoothed 
           aggregation.
+        * Added capability to write visualization files in legacy VTK
+          (Visualization toolkit) format.  These are readable by paraview,
+          which is freely available from www.paraview.org.  Supports 1D/2D/3D
+          point cloud visualization for aggregates, as well as solution
+          visualization.
         
 ------------------------------------------------------------------------------
 	
