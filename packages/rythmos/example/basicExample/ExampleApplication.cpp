@@ -52,6 +52,7 @@
 #include "Rythmos_ConfigDefs.h"
 
 #include "ExampleApplication.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
 
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplication
@@ -107,9 +108,10 @@ ExampleApplication::~ExampleApplication()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-int ExampleApplication::evalResidual(Epetra_Vector &x, double t)
+int ExampleApplication::evalResidual(Teuchos::RefCountPtr<Thyra::VectorBase> x, double t)
 {
-  x.Scale(lambda_);
+//  (&*x).Scale(lambda_);
+  Thyra::Vt_S(&*x,lambda_);
   return 0;
 }
 

@@ -35,26 +35,41 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+#include "Epetra_Version.h"
 
 #include "Rythmos_ConfigDefs.h"
 
 #include "ExampleApplication.hpp"
 
 // Includes for Thyra:
-//#include "Thyra_VectorSpaceBase.hpp"
-//#include "Thyra_VectorBase.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 
 int main(int argc, char *argv[])
 {
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Thyra::VectorSpaceBase;
+  using Thyra::create_MPIVectorSpaceBase;
+  using Thyra::VectorBase;
+  using Thyra::createMember;
+  using Thyra::Vp_StV;
+  using Thyra::assign;
+
+  typedef double Scalar; // Scalar type = double
+
+  RefCountPtr<const Epetra_Comm> epetra_comm;
+  RefCountPtr<const Epetra_Map> epetra_map;
+  RefCountPtr<const VectorSpaceBase<Scalar> > epetra_vs;
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm (MPI_COMM_WORLD);
+  epetra_comm = rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
-  Epetra_SerialComm Comm;
+  epetra_comm = rcp( new Epetra_SerialComm );
 #endif
 
-  int MyPID = Comm.MyPID();
+  int MyPID = epetra_comm->MyPID();
 
   if (MyPID == 0)
     cout << Rythmos::Rythmos_Version() << endl << endl;
@@ -62,17 +77,14 @@ int main(int argc, char *argv[])
   int NumElements = 1;
 
   // Construct a Map with NumElements and index base of 0
-  Epetra_Map Map(NumElements, 0, Comm);
+  epetra_map = rcp( new Epetra_Map(NumElements, 0, *epetra_comm) );
 
   // Construct a Thyra vector space
-//  Thyra::Thyra_VectorSpace vectorspace(NumElements, 0, Comm);
-  // Create two vectors in this vector space
-//  Thyra::Thyra_Vector x = vectorspace.createMember();
-//  Thyra::Thyra_Vector xn = vectorspace.createMember();
+  epetra_vs = create_MPIVectorSpaceBase(epetra_map);
 
   // Create x and xn vectors
-  Epetra_Vector x(Map);
-  Epetra_Vector xn(Map);
+  RefCountPtr<VectorBase<Scalar> > x  = createMember(epetra_vs);
+  RefCountPtr<VectorBase<Scalar> > xn = createMember(epetra_vs);
 
   cout << "Integrating \\dot{x}=\\lambda x from t=0 to t=1" << endl
        << "with initial x_0 = 10, and \\Delta t=0.1" << endl
@@ -84,26 +96,20 @@ int main(int argc, char *argv[])
   double dt = 0.1;
   double N = (t1-t0)/dt;
   double x_initial = 10; // initial condition
-  xn.PutScalar(x_initial); 
-//  Thyra::assign(xn,x_initial);
-  cout << "x(0.0) = " << xn[0] << endl;
+  assign(&*xn,x_initial); // xn = x_initial
+  cout << "x(0.0) = " << (&*xn)[0] << endl;
   double t = t0;
   for (int i=1 ; i<N+1 ; ++i)
   {
-    t = t0+i*dt;
-    x.Scale(1.0,xn); // x = xn;
-//    Thyra::assign(x,xn);
-    problem.evalResidual(x,t);
-    xn.Update(dt,x,1.0); // xn = xn + dt*x
-//    Thyra::Vp_StV(xn,dt,x);
-    cout << "x(" << t << ") = " << xn[0] << endl;
+    t = t0 + i*dt;
+    assign(&*x,*xn); // x = xn;
+    problem.evalResidual( x, t );
+    Vp_StV(&*xn,dt,*x); // xn = xn + dt*x
+    cout << "x(" << t << ") = " << (&*xn)[0] << endl;
   }
   cout << "       " << x_initial*exp(problem.getCoeff()*t) << " = Exact solution" << endl;
 
 
   return 0;
 }
-
-
-
 

@@ -30,6 +30,8 @@
 #ifndef Rythmos_EXAMPLE_APPLICATION_H
 #define Rythmos_EXAMPLE_APPLICATION_H
 
+#include "Thyra_VectorBase.hpp"
+
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplication
 // Purpose       : Example application code with DE: \dot{x}=\lambda x
@@ -48,7 +50,7 @@ class ExampleApplication
     ExampleApplication();
     ExampleApplication(double lam);
 
-    int evalResidual(Epetra_Vector &x, double t);
+    int evalResidual(Teuchos::RefCountPtr<Thyra::VectorBase<double> > x, double t);
     double getCoeff();
 
   private:

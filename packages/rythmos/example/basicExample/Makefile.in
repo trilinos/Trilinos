@@ -67,7 +67,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = basicExample$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = example/basicExample
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -101,11 +101,16 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Rythmos_config.h
 CONFIG_CLEAN_FILES =
+am__EXEEXT_1 = basicExample$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_basicExample_OBJECTS = basicExample-cxx_main.$(OBJEXT) \
 	basicExample-ExampleApplication.$(OBJEXT)
 basicExample_OBJECTS = $(am_basicExample_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(RYTHMOS_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -261,6 +266,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+EXAMPLE = basicExample
 
 #np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 #np# of the  following primaries that the pattern is 
@@ -271,12 +277,16 @@ basicExample_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/ExampleApplication.cpp
 #np# One DEPENDENCIES primary is needed for each exe listed above.  List any
 #np# libraries that the exe depends on.  (This primary is not absolutely
 #np# essential.)
-basicExample_DEPENDENCIES = $(top_builddir)/../epetra/src/libepetra.a
+basicExample_DEPENDENCIES = $(common_dependencies)
 
 #np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
 #np# any -I's necessary for building the exe.
-basicExample_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src
+basicExample_CXXFLAGS = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/../epetra/src \
+	-I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../epetra/thyra/src \
+	-I$(top_builddir)/../epetra/thyra/src 
 
 
 #np# One LDADD primary can be defined for each exe listed above.  Include any
@@ -284,8 +294,19 @@ basicExample_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 basicExample_LDADD = \
 	$(top_builddir)/src/librythmos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../epetra/thyrasrc/libEpetraThyra.a \
+	$(common_ldadd) \
 	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
+common_dependencies = $(top_builddir)/src/librythmos.a \
+  $(top_builddir)/../epetra/src/libepetra.a
+
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(RYTHMOS_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -545,6 +566,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.rythmos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

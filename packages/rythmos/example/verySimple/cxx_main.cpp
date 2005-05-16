@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
   typedef double Scalar;
 
   RefCountPtr<const Epetra_Comm> epetra_comm;
-  epetra_comm = Teuchos::rcp(new Epetra_SerialComm);
+  epetra_comm = rcp(new Epetra_SerialComm);
   // Construct a Map with NumElements and index base of 0
   RefCountPtr<const Epetra_Map> epetra_map;
   epetra_map = rcp(new Epetra_Map(NumElements, 0, *epetra_comm));
