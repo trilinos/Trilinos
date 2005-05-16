@@ -5,6 +5,8 @@
 #                                                                             #
 #   Mike Phenow, Jim Willenbring                                              #
 #                                                                             #
+# TEST
+#
 ###############################################################################
 
   This document describes the usage of runconfigure, the Trilinos make utility.
