@@ -238,9 +238,6 @@ int main(int argc, char *argv[])
   // NODE AND EDGE COORDINATES FOR REPARTITIONING WITH ZOLTAN
   // ======================================================== //
 
-  /* ML requires nodal_coordinates to be as one vector, with x-, then y-
-   * finally z-coordinates, one after the other.
-   */
   nodal_coordinates = (double *) malloc(2 * sizeof(double) *
                                          Node_Partition.Nlocal);
   mysize = sizeof(double)*(Node_Partition.Nlocal+Node_Partition.Nghost + 30);
@@ -278,8 +275,14 @@ int main(int argc, char *argv[])
   // ==================================================== //
 
   Teuchos::ParameterList MLList;
-  ML_Epetra::SetDefaults("maxwell", MLList);
+  int *options    = new int[AZ_OPTIONS_SIZE];
+  double *params  = new double[AZ_PARAMS_SIZE];
+  ML_Epetra::SetDefaults("maxwell", MLList, options, params);
 
+  // how verbose ML is
+  MLList.set("output", 10);
+
+  // controls repartitioning (load-balancing) of multigrid operators in parallel
   MLList.set("repartition: enable",true);
   MLList.set("repartition: node min max ratio",1.1);
   MLList.set("repartition: node min per proc",20);
@@ -287,24 +290,38 @@ int main(int argc, char *argv[])
   MLList.set("repartition: edge min per proc",20);
   MLList.set("repartition: partitioner","Zoltan");
   MLList.set("repartition: Zoltan dimensions",2);
-  MLList.set("repartition: Zoltan node coordinates",nodal_coordinates);
-  MLList.set("repartition: Zoltan edge coordinates",edge_coordinates);
+
+  // coordinates for repartitioning, visualization, & detecting grid stretching
+  MLList.set("x-coordinates", nodal_coordinates);
+  MLList.set("y-coordinates", nodal_coordinates + Node_Partition.Nlocal);
+  MLList.set("edge: y-coordinates", edge_coordinates + ML_Tmat->outvec_leng);
+  MLList.set("edge: x-coordinates", edge_coordinates);
   
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);
   MLList.set("aggregation: threshold", 0.0);
 
+  // coarse level solve
   MLList.set("coarse: type", "Amesos-KLU");
 
-  // this creates the multilevel hierarchy, set the smoother as
-  // Hiptmair, prepare the coarse solver, etc...
+  // visualization options
+  MLList.set("viz: output format","vtk");
+  MLList.set("viz: print starting solution", true);
+
+  // this creates the multilevel hierarchy, sets the smoothers,
+  // prepares the coarse solver, etc...
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*Epetra_Ke, *Epetra_T, *Epetra_Kn,
                         MLList);
 
+  // Visualize
+  MLPrec->VisualizeSmoothers(5,0);
+  MLPrec->VisualizeCycle(10);
+
   // Have process 0 print out unused parameters.
   MLPrec->PrintUnused(0);
+
   // ========================================================= //
   // D E F I N I T I O N   O F   A Z T E C O O   P R O B L E M //
   // ========================================================= //
@@ -374,6 +391,9 @@ int main(int argc, char *argv[])
   }
 
   ML_Operator_Destroy(&ML_Tmat);
+
+  delete [] options;
+  delete [] params;
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
