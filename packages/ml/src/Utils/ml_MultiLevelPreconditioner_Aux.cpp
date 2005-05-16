@@ -47,6 +47,7 @@
 #include "ml_agg_ParMETIS.h"
 
 #include "ml_anasazi.h"
+#include "ml_viz_stats.h"
 
 #ifdef OLD_AUX
 // ============================================================================
@@ -478,90 +479,117 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
 int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
 {
-  double* in_x_coord = List_.get("x-coordinates", (double *)0);
-  double* in_y_coord = List_.get("y-coordinates", (double *)0);
-  double* in_z_coord = List_.get("z-coordinates", (double *)0);
-  int NumDimensions  = 0;
+  ML*     ml_ptr;
+  int     NumDimensions;
+  double* in_x_coord;
+  double* in_y_coord;
+  double* in_z_coord;
 
-  if (in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0)
-    return(0);
-
-  ML_Operator* AAA = &(ml_->Amat[LevelID_[0]]);
-
-  int n = AAA->invec_leng, Nghost = 0;
-
-  if (AAA->getrow->pre_comm) 
+  // Check first for node coordinates, then for edge coordinates
+  for (int ii=0; ii<2; ii++)
   {
-    if (AAA->getrow->pre_comm->total_rcv_length <= 0)
-      ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
-    Nghost = AAA->getrow->pre_comm->total_rcv_length;
-  }
+    switch (ii) {
+    case 0:
+      if (SolvingMaxwell_) ml_ptr = ml_nodes_;
+      else ml_ptr = ml_;
+      in_x_coord = List_.get("x-coordinates", (double *)0);
+      in_y_coord = List_.get("y-coordinates", (double *)0);
+      in_z_coord = List_.get("z-coordinates", (double *)0);
+      break;
 
-  vector<double> tmp(Nghost + n);
-  for (int i = 0 ; i < Nghost + n ; ++i)
-    tmp[i] = 0.0;
+    case 1:
+      if (SolvingMaxwell_) {
+        ml_ptr = ml_;
+        in_x_coord = List_.get("edge: x-coordinates", (double *)0);
+        in_y_coord = List_.get("edge: y-coordinates", (double *)0);
+        in_z_coord = List_.get("edge: z-coordinates", (double *)0);
+      }
+      else {
+        in_x_coord = NULL;
+        in_y_coord = NULL;
+        in_z_coord = NULL;
+      }
+      break;
+    }
 
-  n /= NumPDEEqns_;
-  Nghost /= NumPDEEqns_;
+    NumDimensions  = 0;
+  
+    if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
+    {
+      ML_Aggregate_Viz_Stats *grid_info =
+        (ML_Aggregate_Viz_Stats *) ml_ptr->Grid[LevelID_[0]].Grid;
+      ML_Operator* AAA = &(ml_ptr->Amat[LevelID_[0]]);
 
-  if (in_x_coord) 
-  {
-    NumDimensions++;
-    double* x_coord;
-    ML_memory_alloc((void**)&x_coord, sizeof(double) * (Nghost + n),
-                    "x_coord");
+      int n = AAA->invec_leng, Nghost = 0;
 
-    for (int i = 0 ; i < n ; ++i)
-      tmp[i * NumPDEEqns_] = in_x_coord[i];
+      if (AAA->getrow->pre_comm) 
+      {
+        if (AAA->getrow->pre_comm->total_rcv_length <= 0)
+          ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
+        Nghost = AAA->getrow->pre_comm->total_rcv_length;
+      }
 
-    ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
-                     AAA->comm, ML_OVERWRITE,NULL);
+      vector<double> tmp(Nghost + n);
+      for (int i = 0 ; i < Nghost + n ; ++i)
+        tmp[i] = 0.0;
 
-    for (int i = 0 ; i < n + Nghost ; ++i)
-      x_coord[i] = tmp[i * NumPDEEqns_];
+      n /= NumPDEEqns_;
+      Nghost /= NumPDEEqns_;
 
-    ml_->Amat[LevelID_[0]].grid_info->x = x_coord;
-  }
+      if (in_x_coord) 
+      {
+        NumDimensions++;
+        double* x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
 
-  if (in_y_coord) 
-  {
-    NumDimensions++;
-    double* y_coord;
-    ML_memory_alloc((void**)&y_coord, sizeof(double) * (Nghost + n),
-                    "y_coord");
+        for (int i = 0 ; i < n ; ++i)
+          tmp[i * NumPDEEqns_] = in_x_coord[i];
 
-    for (int i = 0 ; i < n ; ++i)
-      tmp[i * NumPDEEqns_] = in_y_coord[i];
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                         AAA->comm, ML_OVERWRITE,NULL);
 
-    ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
-                     AAA->comm, ML_OVERWRITE,NULL);
+        for (int i = 0 ; i < n + Nghost ; ++i)
+          x_coord[i] = tmp[i * NumPDEEqns_];
 
-    for (int i = 0 ; i < n + Nghost ; ++i)
-      y_coord[i] = tmp[i * NumPDEEqns_];
+        grid_info->x = x_coord;
+      }
 
-    ml_->Amat[LevelID_[0]].grid_info->y = y_coord;
-  }
+      if (in_y_coord) 
+      {
+        NumDimensions++;
+        double* y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
 
-  if (in_z_coord) 
-  {
-    NumDimensions++;
-    double* z_coord;
-    ML_memory_alloc((void**)&z_coord, sizeof(double) * (Nghost + n),
-                    "z_coord");
+        for (int i = 0 ; i < n ; ++i)
+          tmp[i * NumPDEEqns_] = in_y_coord[i];
 
-    for (int i = 0 ; i < n ; ++i)
-      tmp[i * NumPDEEqns_] = in_z_coord[i];
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                         AAA->comm, ML_OVERWRITE,NULL);
 
-    ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
-                     AAA->comm, ML_OVERWRITE,NULL);
+        for (int i = 0 ; i < n + Nghost ; ++i)
+          y_coord[i] = tmp[i * NumPDEEqns_];
 
-    for (int i = 0 ; i < n + Nghost ; ++i)
-      z_coord[i] = tmp[i * NumPDEEqns_];
+        grid_info->y = y_coord;
+      }
 
-    ml_->Amat[LevelID_[0]].grid_info->z = z_coord;
-  }
+      if (in_z_coord) 
+      {
+        NumDimensions++;
+        double* z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
 
-  ml_->Amat[LevelID_[0]].grid_info->Ndim = NumDimensions;
+        for (int i = 0 ; i < n ; ++i)
+          tmp[i * NumPDEEqns_] = in_z_coord[i];
+
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                         AAA->comm, ML_OVERWRITE,NULL);
+
+        for (int i = 0 ; i < n + Nghost ; ++i)
+          z_coord[i] = tmp[i * NumPDEEqns_];
+
+        grid_info->z = z_coord;
+      }
+
+      grid_info->Ndim = NumDimensions;
+    } // if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
+  } //for (int ii=0; ii<2; ii++) 
 
   return(0);
 }

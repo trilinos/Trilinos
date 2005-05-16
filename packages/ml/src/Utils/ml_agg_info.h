@@ -63,12 +63,14 @@ extern "C" {
 					      int *pradius, int *pNcenter );
   extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
 						   double *x, double *y, double *z);
+  extern int ML_Aggregate_Stats_CopyCoordinates( ML *ml, ML_Aggregate *ag,
+						   double *x, double *y, double *z);
   extern int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag);
   extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice, 
 			      double *, char * base_filename, int level);
   extern int ML_Aggregate_Viz_Amalgamate( ML *ml, ML_Aggregate *ag);
   extern int ML_Aggregate_Viz_UnAmalgamate( ML *ml, ML_Aggregate *ag);
-  extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag);
+  extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag, int clean_finest);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

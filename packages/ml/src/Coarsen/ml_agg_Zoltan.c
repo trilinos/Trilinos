@@ -583,6 +583,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int Nnonzeros2 = 0;
    int optimal_value;
    ML_Operator * Pmatrix2 = NULL;
+   ML_Aggregate_Viz_Stats *grid_info;
    
 #if defined(OUTPUT_AGGREGATES) || defined(DDEBUG) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
    FILE *fp;
@@ -866,10 +867,11 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    desired_aggre_per_proc );
    } 
    
-   N_dimensions = Amatrix->grid_info->Ndim;
-   old_x = Amatrix->grid_info->x;
-   old_y = Amatrix->grid_info->y;
-   old_z = Amatrix->grid_info->z;
+   grid_info = (ML_Aggregate_Viz_Stats *) Amatrix->to->Grid[ml_ag->cur_level].Grid;
+   N_dimensions = grid_info->Ndim;
+   old_x = grid_info->x;
+   old_y = grid_info->y;
+   old_z = grid_info->z;
 
    if (N_dimensions >= 1 && old_x == NULL)
    {

@@ -31,9 +31,10 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
                   double * vector)
 {
 
-/* FIXME JJH Paraview supports visualization from multiple files (i.e., files
+/* TODO JJH Paraview supports visualization from multiple files (i.e., files
    written out by a parallel application).  I believe this requires the use
-   of xml.  Right now, I'm just writing to one plain, ASCII file (not xml).
+   of xml.  Right now, I'm just writing to a single, ASCII file in legacy VTK
+   format, not xml.
 */
 
   int i,j, k, irow, ipid;
@@ -53,6 +54,8 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   int AggrToVisualize = -1;
   char * str;
   char filemode[2];
+  char tcomm1[500];
+  char tcomm2[100];
   char comment[257];
   int Nlocal = info.Nlocal;
   int * reorder = NULL, ok;
@@ -77,15 +80,22 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   /* ------------------- execution begins --------------------------------- */
 
   if( Nlocal != Nrows ) {
-    fprintf( stderr,
-         "*ML*ERR* number of rows and lenght of graph_decomposition\n"
-         "*ML*ERR* differs (%d - %d)\n"
-         "*ML*ERR* (file %s, line %d)\n",
+    if (Naggregates > 0) {
+      fprintf( stderr, "*ML*ERR* number of rows and length of graph_decomposition\n*ML*ERR* differs (%d - %d)\n*ML*ERR* (file %s, line %d)\n",
          Nrows,
          Nlocal,
          __FILE__,
          __LINE__ );
-    exit( EXIT_FAILURE );
+      exit( EXIT_FAILURE );
+    }
+    else {
+      if (ML_Get_PrintLevel() > 9)
+        printf( "*ML*WARNING* number of rows and length of graph_decomposition\n*ML*WARNING* differs (%d - %d)\n*ML*WARNING* (file %s, line %d)\n(This is ok in the case of Maxwell.)\n",
+         Nrows,
+         Nlocal,
+         __FILE__,
+         __LINE__ );
+    }
   }
 
   str = getenv("ML_VIZ_AGGR");
@@ -99,6 +109,9 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   if( vector == NULL && str == NULL) {
 */
 
+  /* For Maxwell, we don't have a notion of aggregates for the edges */
+  if (Naggregates > 0)
+  {
     reorder = (int *) ML_allocate( sizeof(int) * Naggregates );
 
     if( reorder == NULL ) {
@@ -162,6 +175,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
     for (i = 0 ; i < Naggregates ; ++i)
       reorder[i] = i;
 #endif
+  } /* if (Naggregates > 0) */
 /*
   }
 */
@@ -172,7 +186,13 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
 
   /* Impose a global numbering on the matrix. */
 
-  ML_build_global_numbering(Amatrix, comm, &GlobRowOrdering);
+  ML_build_global_numbering(Amatrix, &GlobRowOrdering);
+
+  /* Calculate global number of aggregates. */
+  if (Naggregates > 0) {
+    Nglobaggregates = Naggregates;
+    ML_gsum_scalar_int(&Nglobaggregates, &i, comm);
+  }
 
   /********************************/
   /* Write out header information */
@@ -185,7 +205,13 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
     }
     fprintf(fp,"# vtk DataFile Version 2.0\n");
     /* comment line, 256 characters max */
-    strncpy(comment,"Unstructured grid.  Matrix connectivity is given by the vtk line cell type (cell type 3).  Aggregates are defined by the vtk poly-vertiex cell type (cell type 2).  Function values are given as point scalar values.\n",(size_t) 256);
+    if (Naggregates > 0)
+      sprintf(tcomm2,"Scalar POINT_DATA: aggregate number & solution.");
+    else
+      sprintf(tcomm2,"Scalar POINT_DATA: matrix_row_number & solution.");
+    sprintf(tcomm1,"File %s. PID %d. Local matrix rows = %d. Global rows = %d. Matrix connectivity given by LINES (cell type 3). %s\n",base_filename,mypid,Nrows,Nglobrows,tcomm2);
+    strncpy(comment,tcomm1, (size_t) 256);
+    sprintf(comment+255,"\n");
     fprintf(fp,"%s",comment);
     fprintf(fp,"ASCII\n");
 #ifdef UNSTRUCTURED
@@ -198,13 +224,15 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
     fclose(fp);
   }
 
+  if (Naggregates > 0) {
 #ifdef ML_MPI
-  MPI_Barrier(comm->USR_comm);
-  MPI_Scan (&Naggregates, &offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
-  offset -= Naggregates;
+    MPI_Barrier(comm->USR_comm);
+    MPI_Scan (&Naggregates, &offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
+    offset -= Naggregates;
 #else
-  offset = 0;
+    offset = 0;
 #endif  
+  }
 
 #ifdef ML_MPI
   MPI_Barrier(comm->USR_comm);
@@ -214,61 +242,88 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   vertex_offset = 0;
 #endif  
 
-  aggregates = (int *) ML_allocate(maxAggSize * Naggregates * sizeof(int));
-  index = (int *) ML_allocate(Naggregates * sizeof(int));
+  if (Naggregates > 0) {
+    aggregates = (int *) ML_allocate(maxAggSize * Naggregates * sizeof(int));
+    index = (int *) ML_allocate(Naggregates * sizeof(int));
 
-  for (i=0; i < maxAggSize*Naggregates; i++) aggregates[i] = -1;
-  for (i=0; i < Naggregates; i++) index[i] = 0;
+    for (i=0; i < maxAggSize*Naggregates; i++) aggregates[i] = -1;
+    for (i=0; i < Naggregates; i++) index[i] = 0;
+  }
 
   sprintf(filemode,"a");
   /* cycle over all local rows, write coordinates to file */
-  for (ipid=0 ; ipid < nprocs ; ++ipid) {
-    if (ipid == mypid)
-    {
-      if ((fp = fopen( base_filename, filemode )) == NULL ) {
-        fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
-        exit( EXIT_FAILURE );
-      }
-
-      for (irow=0 ; irow<Nrows ; irow++ )
+  if (Naggregates > 0)   /* have aggregates */
+  {
+    for (ipid=0 ; ipid < nprocs ; ++ipid) {
+      if (ipid == mypid)
       {
-        if( vector != NULL ) {
-          val = vector[irow];
-          myLocalAgg = graph_decomposition[irow];
+        if ((fp = fopen( base_filename, filemode )) == NULL ) {
+          fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
+          exit( EXIT_FAILURE );
         }
-        else if( AggrToVisualize != -1 ) {
-          if( graph_decomposition[irow] == AggrToVisualize ) {
-            val = 1.0;
-            myLocalAgg = 1;
+  
+        for (irow=0 ; irow<Nrows ; irow++ )
+        {
+          if( vector != NULL ) {
+            val = vector[irow];
+            myLocalAgg = graph_decomposition[irow];
+          }
+          else if( AggrToVisualize != -1 ) {
+            if( graph_decomposition[irow] == AggrToVisualize ) {
+              val = 1.0;
+              myLocalAgg = 1;
+            }
+            else {
+              val = 0.0;
+              myLocalAgg = 0;
+            }  
           }
           else {
-            val = 0.0;
-            myLocalAgg = 0;
-          }  
+            val = (double)(reorder[graph_decomposition[irow]] + offset);
+            myLocalAgg = reorder[graph_decomposition[irow]];
+          }
+  
+          if (Naggregates > 0)
+            aggregates[maxAggSize*(myLocalAgg) + index[myLocalAgg]++] =
+                irow +vertex_offset; 
+  
+          if( z == NULL ) 
+            fprintf( fp, "%f %f 0.0\n", x[irow], y[irow]);
+          else
+            fprintf( fp, "%f %f %f\n", x[irow], y[irow], z[irow]);
         }
-        else {
-          val = (double)(reorder[graph_decomposition[irow]] + offset);
-          myLocalAgg = reorder[graph_decomposition[irow]];
-        }
-
-        aggregates[maxAggSize*(myLocalAgg) + index[myLocalAgg]++] =
-            irow +vertex_offset; 
-
-        if( z == NULL ) 
-          fprintf( fp, "%f %f 0.0\n", x[irow], y[irow]);
-        else
-          fprintf( fp, "%f %f %f\n", x[irow], y[irow], z[irow]);
+        fclose(fp);
       }
-      fclose(fp);
-    }
 #ifdef ML_MPI
-    MPI_Barrier(comm->USR_comm);
+      MPI_Barrier(comm->USR_comm);
 #endif
+    }
   }
-
-  /* Calculate global number of aggregates. */
-  Nglobaggregates = Naggregates;
-  ML_gsum_scalar_int(&Nglobaggregates, &i, comm);
+  else /* no aggregates */
+  {
+    for (ipid=0 ; ipid < nprocs ; ++ipid) {
+      if (ipid == mypid)
+      {
+        if ((fp = fopen( base_filename, filemode )) == NULL ) {
+          fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
+          exit( EXIT_FAILURE );
+        }
+  
+        for (irow=0 ; irow<Nrows ; irow++ )
+        {
+          val = vector[irow];
+          if( z == NULL ) 
+            fprintf( fp, "%f %f 0.0\n", x[irow], y[irow]);
+          else
+            fprintf( fp, "%f %f %f\n", x[irow], y[irow], z[irow]);
+        }
+        fclose(fp);
+      }
+#ifdef ML_MPI
+      MPI_Barrier(comm->USR_comm);
+#endif
+    }
+  } /* if-else Naggregates > 0 */
 
   i = Amatrix->max_nz_per_row;
   allocated = (i > 0) ? i : 10;
@@ -385,8 +440,10 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   }
 #endif /*ifdef UNSTRUCTURED*/
 
-  ML_free(aggregates);
-  ML_free(index);
+  if (Naggregates > 0) {
+    ML_free(aggregates);
+    ML_free(index);
+  }
 
   /**********************************************************************
     Write out cell types (for right now, just line and polyvertex types)
@@ -419,39 +476,67 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
       exit( EXIT_FAILURE );
     }
     fprintf(fp,"POINT_DATA %d\n",Nglobrows);
-    fprintf(fp,"SCALARS aggregate_number int 1\n");
+    if (Naggregates > 0)
+       fprintf(fp,"SCALARS aggregate_number int 1\n");
+    else
+       fprintf(fp,"SCALARS matrix_row_number int 1\n");
     fprintf(fp,"LOOKUP_TABLE default\n");
     fclose(fp);
   }
 
-  for (ipid=0 ; ipid < nprocs ; ++ipid)
+  if (Naggregates > 0)   /* have aggregates */
   {
-    if (ipid == mypid)
+    for (ipid=0 ; ipid < nprocs ; ++ipid)
     {
-      if ((fp = fopen( base_filename, filemode )) == NULL ) {
-        fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
-        exit( EXIT_FAILURE );
-      }
-      for (irow=0 ; irow<Nrows ; irow++ )
+      if (ipid == mypid)
       {
-        /* the user can concentrate on just one aggregate */
-        if( AggrToVisualize != -1 ) {
-          if( graph_decomposition[irow] == AggrToVisualize )
-            val = 1.0;
-          else
-            val = 0.0;
+        if ((fp = fopen( base_filename, filemode )) == NULL ) {
+          fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
+          exit( EXIT_FAILURE );
         }
-        else 
-          val = (double)(reorder[graph_decomposition[irow]] + offset);
-
-        fprintf(fp,"%d\n",(int) val);   
+        for (irow=0 ; irow<Nrows ; irow++ )
+        {
+          /* the user can concentrate on just one aggregate */
+          if( AggrToVisualize != -1 ) {
+            if( graph_decomposition[irow] == AggrToVisualize )
+              val = 1.0;
+            else
+              val = 0.0;
+          }
+          else {
+              val = (double)(reorder[graph_decomposition[irow]] + offset);
+           }
+  
+          fprintf(fp,"%d\n",(int) val);   
+        }
+        fclose(fp);
       }
-      fclose(fp);
-    }
 #ifdef ML_MPI
-    MPI_Barrier(comm->USR_comm);
+      MPI_Barrier(comm->USR_comm);
 #endif
+    }
   }
+  else /* no aggregates */
+  {
+    for (ipid=0 ; ipid < nprocs ; ++ipid)
+    {
+      if (ipid == mypid)
+      {
+        if ((fp = fopen( base_filename, filemode )) == NULL ) {
+          fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
+          exit( EXIT_FAILURE );
+        }
+        for (irow=0 ; irow<Nrows ; irow++ ) {
+          val = (double)(irow + vertex_offset);
+          fprintf(fp,"%d\n",(int) val);   
+        }
+        fclose(fp);
+      }
+#ifdef ML_MPI
+      MPI_Barrier(comm->USR_comm);
+#endif
+    }
+  } /*if-else Naggregates > 0 */
 
   /* any scalar value on the nodes */
   if( vector != NULL )
@@ -461,7 +546,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
         fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
         exit( EXIT_FAILURE );
       }
-      fprintf(fp,"SCALARS residual float 1\n");
+      fprintf(fp,"SCALARS solution float 1\n");
       fprintf(fp,"LOOKUP_TABLE default\n");
       fclose(fp);
     }
@@ -484,22 +569,6 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
     }
   }
 
-
-
-#ifdef NOTYETIMPLEMENTED
-  if (mypid == 0) {
-    if ((fp = fopen( base_filename, filemode )) == NULL ) {
-      fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
-      exit( EXIT_FAILURE );
-    }
-    fprintf(fp,"CELL_DATA %d\n",NglobPts);
-    fprintf(fp,"SCALARS cell_scalars int 1\n");
-    fprintf(fp,"LOOKUP_TABLE default\n");
-    for (i=0; i<Nglobaggregates; i++)
-      fprintf(fp,"%d\n",i);
-    fclose(fp);
-  }
-#endif
   ML_free(GlobRowOrdering);
   ML_free(values);
   ML_free(bindx);

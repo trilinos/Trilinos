@@ -118,10 +118,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   
   // may need to clean up after visualization and statistics
-  if (!SolvingMaxwell_) {
-    ML_Aggregate_Stats_CleanUp_Info(ml_, agg_);
-    ML_Aggregate_VizAndStats_Clean( agg_, NumLevels_);
-  }
+  ML_Aggregate_VizAndStats_Clean(ml_);
 
   // destroy aggregate information
   if ((agg_)->aggr_info != NULL) {
@@ -132,6 +129,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   // destroy main objects
   if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
+  if (ml_comm_ != 0) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }
   if (agg_edge_ != 0) { ML_Aggregate_Destroy(&agg_edge_); agg_edge_ = 0; }
   if (ml_ != 0) { ML_Destroy(&ml_); ml_ = 0; }
   if (ml_nodes_ != 0) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
@@ -779,6 +777,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
   
   ML_Aggregate_Create(&agg_);
+  ML_Comm_Create(&ml_comm_);
 
   if( SolvingMaxwell_ == false ) {
 
@@ -917,7 +916,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
       {
         cerr << ErrorMsg_ << "Option `repartition: enable' == `true' requires" << endl;
         cerr << ErrorMsg_ << "ML to be compiled with support for ParMETIS." << endl;
-        cerr << ErrorMsg_ << "Now continuing without repatition." << endl;
+        cerr << ErrorMsg_ << "Now continuing without repartition." << endl;
       }
 #endif
     } 
@@ -925,7 +924,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   } else {
 
     // ====================================================================== //
-    // create hierarchy for Maxwell. Needs to define ml_ and ml_nodes_  //
+    // create hierarchy for Maxwell. Need to define ml_ and ml_nodes_         //
     // The only way to activate SolvingMaxwell_ == true is through the        //
     // constructor for Maxwell. I suppose that the matrices are called not    //
     // Matrix_, but moreover NodeMatrix_ and EdgeMatrix_.                     //
@@ -938,6 +937,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // create hierarchy for edges
 
     ML_Create(&ml_,MaxCreationLevels);
+    int Direction;
+    if (IsIncreasing == "increasing")
+      Direction = ML_INCREASING;
+    else
+      Direction = ML_DECREASING;
+    ML_Set_LevelID(ml_,Direction);
 
     NumMyRows = EdgeMatrix_->NumMyRows();
     N_ghost   = EdgeMatrix_->NumMyCols() - NumMyRows;
@@ -966,6 +971,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
     ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
+    ml_nodes_->Amat[LevelID_[0]].N_nonzeros = NodeMatrix_->NumMyNonzeros();
 
     // check whether coarse grid operators should be repartitioned among
     // processors
@@ -993,22 +999,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
         // (which requires coordinates)
         ML_Aggregate_Create(&agg_edge_);
 
-        // This copies the coordinates if the aggregation scheme
-        // of at least one level is Zoltan. Coordinates will be
-        // projected for ALL levels independently of the 
-        // aggregation scheme.
-        double * coord = List_.get("repartition: Zoltan node coordinates", (double *)0);
-        ML_Aggregate_Set_NodalCoordinates(ml_nodes_, agg_, coord);
         int NumDimensions = List_.get("repartition: Zoltan dimensions", 0);
         ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
 
         ML_Repartition_Set_Partitioner(ml_nodes_,ML_USEZOLTAN);
 
-        //edges
-        coord = List_.get("repartition: Zoltan edge coordinates", (double *)0);
         //FIXME JJH this would be a bug if increasing is ever supported
         agg_edge_->begin_level = MaxCreationLevels-1; 
-        ML_Aggregate_Set_NodalCoordinates(ml_, agg_edge_, coord);
         ML_Aggregate_Set_Dimensions(agg_edge_, NumDimensions);
         ML_Repartition_Set_Partitioner(ml_,ML_USEZOLTAN);
         ML_Aggregate_Set_MaxLevels(agg_edge_, ml_->ML_num_levels);
@@ -1022,7 +1019,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
           cerr << ErrorMsg_ << "Unrecognized partitioner `"
                << Repartitioner << "'" << endl;
           cerr << ErrorMsg_ << "It should be: " << endl;
-          cerr << ErrorMsg_ << "<Zoltan> / <ParMETIS> / <Jostle>" << endl;
+          cerr << ErrorMsg_ << "<Zoltan> / <ParMETIS>" << endl;
         }
         ML_EXIT(-1);
       }
@@ -1030,18 +1027,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
   } //if( SolvingMaxwell_ ...
 
   // ====================================================================== //
-  // If present, fix the finest-level coordinates into the hierarchy        //
-  // ====================================================================== //
-  
-  ML_CHK_ERR(SetupCoordinates());
-
-  // ====================================================================== //
   // visualize aggregate shape and other statistics.                        //
   // ====================================================================== //
   
-  bool viz = List_.get("viz: enable",false);
-  if( viz == true )
-    ML_Aggregate_VizAndStats_Setup(agg_,NumLevels_);
+  if (SolvingMaxwell_) {
+    if (agg_edge_ == 0) ML_Aggregate_Create(&agg_edge_);
+    ML_Aggregate_VizAndStats_Setup(ml_nodes_);
+  }
+  ML_Aggregate_VizAndStats_Setup(ml_);
+
+  // ====================================================================== //
+  // If present, fix the finest-level coordinates in the hierarchy          //
+  // ====================================================================== //
+  
+  ML_CHK_ERR(SetupCoordinates());
 
   // ====================================================================== //
   // pick up coarsening strategy. METIS and ParMETIS requires additional    //
@@ -1071,7 +1070,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ReqAggrePerProc = List_.get("aggregation: next-level aggregates per process", ReqAggrePerProc);
   }
 
-  if( SolvingMaxwell_ == false ) { 
+  if( SolvingMaxwell_ == false ) {
     ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
   } else {
     // Jonathan, is it right ???
@@ -1117,6 +1116,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_CHK_ERR(SetNullSpace());
   }
   else {
+    //JJH 5/9/05 this can be deleted
     ML_CHK_ERR(SetNullSpaceMaxwell());
   }
   
@@ -1290,6 +1290,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
                             ML_YES, 1.5); 
+
   }
 
   {
@@ -1491,6 +1492,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   }
 
+
+
   // ====================================================================== //
   // Other minor settings                                                   //
   // ====================================================================== //
@@ -1529,14 +1532,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // gravity, as no mesh is really available for coarser levels)           //
   // ===================================================================== //
  
-  if (viz == true) {
-    double * x_coord = List_.get("viz: x-coordinates", (double *)0);
-    double * y_coord = List_.get("viz: y-coordinates", (double *)0);
-    double * z_coord = List_.get("viz: z-coordinates", (double *)0);
-    ML_Aggregate_Stats_ComputeCoordinates(ml_, agg_,
-					  x_coord, y_coord, z_coord);
-  }
-
   OutputList_.set("time: final setup", InitialTime.ElapsedTime() 
                   + OutputList_.get("time: final setup", 0.0));
   InitialTime.ResetStartTime();

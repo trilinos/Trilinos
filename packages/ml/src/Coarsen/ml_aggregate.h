@@ -68,7 +68,7 @@ typedef struct ML_Aggregate_Struct
    int    nvblocks;                    /**<  for variable blocks (finest)  */
    int    *vblock_info;                /**<  for variable blocks (finest)  */
    int    keep_P_tentative;            /**<  keeping tentative prolongator */
-   struct ML_Operator_Struct **P_tentative;/**<  so it can be reused later.    */
+   struct ML_Operator_Struct **P_tentative; /**<  so it can be reused later.*/
    int    smooth_existing_P_tentative; /**<  already have P tent, don't create it*/
   int use_transpose;                   /**<  Used to build restriction by doing */
   int Restriction_smoothagg_transpose; /**<  smoothed aggregation on A^T */
@@ -313,9 +313,6 @@ int ML_Aggregate_CoarsenParMETIS(ML_Aggregate *ml_ag,
   /* ------------------------------------------------------------------------- */
 /* miscellaneous local functions                                             */
 /* ------------------------------------------------------------------------- */
-int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
-				    ML_Aggregate *ag, int num_PDEs,
-				    int relative_level);
 int ML_Aggregate_KeepInfo(ML_Aggregate *ag, int value);
 int ML_Aggregate_LabelVertices(int, int *, int, char *,char *,int,
               int *, int *, int, int **, int, int **, int *, int *,
@@ -419,8 +416,8 @@ extern int ML_Aggregate_Get_CoarsenScheme( ML_Aggregate *ag  );
 /* functions for visualization                                               */
 /* ------------------------------------------------------------------------- */
 
-extern int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels );
-extern int ML_Aggregate_VizAndStats_Clean( ML_Aggregate *ag, int MaxLevels );
+extern int ML_Aggregate_VizAndStats_Setup( ML *ml);
+extern int ML_Aggregate_VizAndStats_Clean( ML *ml);
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

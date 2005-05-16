@@ -116,6 +116,8 @@ extern int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
 						       ML_Aggregate *ag);
 extern int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data);
 extern int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int clevel, void *data);
+extern void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
+                            ML_Operator* Cmat);
 
 
 #ifndef ML_CPP

@@ -490,9 +490,17 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   }
 
   //! Returns a pointer to the internally stored ml pointer
-  const ML* GetML() const
+  const ML* GetML(const int WhichML= -1) const
   {
-    return ml_;
+    if (WhichML < 0)
+      return ml_;
+    else if (WhichML == 0)
+      return ml_nodes_;
+  }
+
+  const bool SolvingMaxwell() const
+  {
+    return SolvingMaxwell_;
   }
 
   //! Returns a pointer to the internally stored agg pointer
@@ -595,6 +603,9 @@ private:
   
   //! Pointer to ML_Struct
   ML* ml_;
+  //! ML communicator, convenient to have separately from ml_,
+  //  ml_nodes_, one or all of which may be null.
+  ML_Comm* ml_comm_;
   //! ML_Aggregate, contains aggregate information
   ML_Aggregate* agg_;
   //! Label for this object

@@ -23,6 +23,7 @@
 #include "ml_agg_Zoltan.h"
 #include "ml_agg_user.h"
 #include "ml_agg_VBMETIS.h"
+#include "ml_viz_stats.h"
 
 
 /* ************************************************************************* */
@@ -1001,6 +1002,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    int i=1, ndofs, Ncoarse, coarsen_scheme;
    int mypid, nprocs, relative_level;
    char *label;
+   ML_Aggregate_Viz_Stats *grid_info;
 
 #ifdef ML_TIMING
    double t0;
@@ -1191,13 +1193,13 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* Note: the current fine grid is located in                   */
    /*       ag->begin_level - ag->cur_level                       */
 
+/*
    relative_level = (int) fabs((double) (ag->begin_level - ag->cur_level));
-   /* && ((ag->nodal_coord)[relative_level] != NULL)*/
-   if ((ag->nodal_coord != NULL)){
-
+   grid_info = (ML_Aggregate_Viz_Stats *) Amatrix->to->Grid[ag->cur_level].Grid;
+   if (grid_info->x != NULL)
      ML_Aggregate_ProjectCoordinates(*Pmatrix, ag, Amatrix->num_PDEs,
 				     relative_level);
-   }
+*/
 
    i = -1;
    label = ML_memory_check(NULL);
@@ -2019,7 +2021,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
     temp->rowptr = NULL;
   }
 
-  if (ML_Get_PrintLevel() > 4) {
+  if (ML_Get_PrintLevel() > 9) {
     printf("%d: almost finished %d %d\n",mypid,perm_mat->outvec_leng,
 	       perm_mat->invec_leng);
   }
@@ -2123,9 +2125,10 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   double *new_null;
   int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
   double *xcoord = NULL, *ycoord = NULL, *zcoord = NULL;
-  double *new_coords;
+  double *new_xcoord, *new_ycoord, *new_zcoord;
   int UseImplicitTranspose;
   ML_Partitioner which_partitioner;
+  ML_Aggregate_Viz_Stats *grid_info;
 
   if (ML_Repartition_Status(ml) == ML_FALSE)
     return NULL;
@@ -2165,20 +2168,21 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   if (flag == 0) return NULL;
 
-  if (ag != NULL)
-  {
-    j = ((int) fabs((double)(ag->begin_level - ag->cur_level))) + 1;
+  grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[coarse].Grid;
+  /* no coordinates supplied */
+  if (grid_info == NULL) {
+    if (ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+      printf("\n*ML*WRN* No coordinates supplied. Cannot repartition from level %d to %d.\n\n",fine,coarse);
+    return NULL;
+  }
+  else {
 /*
     printf("(pid %d, level %d):  ag->begin_level = %d, ag->cur_level = %d, j = %d\n",
             ml->comm->ML_mypid, fine,ag->begin_level, ag->cur_level,j);
 */
-    if ((ag->nodal_coord != NULL) && ((ag->nodal_coord)[j] != NULL) ) {
-      if (ag->N_dimensions > 0) xcoord = &((ag->nodal_coord)[j][0]);
-      if (ag->N_dimensions > 1) 
-        ycoord = &((ag->nodal_coord)[j][Pmat->invec_leng/ag->nullspace_dim]);
-      if (ag->N_dimensions > 2) 
-        zcoord = &((ag->nodal_coord)[j][2*Pmat->invec_leng/ag->nullspace_dim]);
-    }
+    xcoord = grid_info->x;
+    ycoord = grid_info->y;
+    zcoord = grid_info->z;
 /*
     printf("(pid %d, level %d) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, fine,xcoord,ycoord,zcoord);
     printf("(pid %d, level 0) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, 
@@ -2191,35 +2195,49 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   which_partitioner = ML_Repartition_Get_Partitioner(ml);
   /* Turn off implicit transpose because the getrow is needed to apply
      the permutation matrices. */
-   if (ReturnPerm == ML_TRUE) UseImplicitTranspose = ML_FALSE;
-   else UseImplicitTranspose = ML_TRUE;
-   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, 
-                  Amatrix->num_PDEs, Nprocs_ToUse, 
-                  xcoord, ycoord, zcoord, UseImplicitTranspose,
-                  which_partitioner);
+  if (ReturnPerm == ML_TRUE) UseImplicitTranspose = ML_FALSE;
+  else UseImplicitTranspose = ML_TRUE;
+  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, 
+                 Amatrix->num_PDEs, Nprocs_ToUse, 
+                 xcoord, ycoord, zcoord, UseImplicitTranspose,
+                 which_partitioner);
 
-   if (status == 0) {
+  if (status == 0)
+  {
     if (ag !=NULL)
     {
-     /* repartition the coodinates if they are present */
-     if (xcoord != NULL)
-     {
-       if (ag->nullspace_dim != 1)
-         pr_error("repartitioning of coordinates does not work with null space greater than one.\n");
-       j = ((int) fabs((double)(ag->begin_level - ag->cur_level))) + 1;
+      /* repartition the coordinates if they are present */
+      if (ag->nullspace_dim != 1)
+        pr_error("repartitioning of coordinates does not work with null space greater than one.\n");
        /*
        printf("repartitioning coords %u %u %u\n",xcoord,ycoord,zcoord);
        */
-       new_coords = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
-                       (perm->outvec_leng +1));
-       ML_Operator_Apply(perm, perm->invec_leng, 
-             xcoord, perm->outvec_leng, new_coords);
-       if (ycoord != NULL) 
-         ML_Operator_Apply(perm, perm->invec_leng, ycoord, perm->outvec_leng,
-               &(new_coords[perm->outvec_leng]));
-       if (zcoord != NULL) 
-          ML_Operator_Apply(perm, perm->invec_leng, zcoord, perm->outvec_leng, 
-               &(new_coords[2*perm->outvec_leng]));
+      if (xcoord != NULL) {
+        new_xcoord = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
+                                          (perm->outvec_leng +1));
+        ML_Operator_Apply(perm, perm->invec_leng, 
+              xcoord, perm->outvec_leng, new_xcoord);
+        ML_free(grid_info->x);
+        grid_info->x = new_xcoord;
+      }
+      if (ycoord != NULL) {
+        new_ycoord = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
+                                            (perm->outvec_leng +1));
+        ML_Operator_Apply(perm,
+                          perm->invec_leng, ycoord,
+                          perm->outvec_leng, new_ycoord);
+        ML_free(grid_info->y);
+        grid_info->y = new_ycoord;
+      }
+      if (zcoord != NULL) {
+        new_zcoord = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
+                                            (perm->outvec_leng +1));
+        ML_Operator_Apply(perm,
+                          perm->invec_leng, zcoord,
+                          perm->outvec_leng, new_zcoord);
+        ML_free(grid_info->z);
+        grid_info->z = new_zcoord;
+      }
 /*
        for (i = 0; i < perm->invec_leng; i++)
          printf("%d: old coords(%d) =  %e %e\n",perm->comm->ML_mypid,i,
@@ -2228,10 +2246,6 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
          printf("%d: new coords(%d) =  %e %e\n",perm->comm->ML_mypid,i,
                 new_coords[i], new_coords[i+perm->outvec_leng]);
 */
-       if ((ag->nodal_coord)[j] != NULL)
-         ML_free( (ag->nodal_coord)[j]);
-       (ag->nodal_coord)[j] = new_coords;
-     } /* if (xcoord != NULL) */
 
      if (ag->nullspace_vect != NULL) {
        new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
@@ -2253,179 +2267,67 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      } /* if (ag->nullspace_vect != NULL) */
     } /* if (ag !=NULL) */
 
-     ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
+    ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
 
-     /* start of MS modif, 26-Mar-05                         */
-     /* This lines are required by ML_Project_Coordinates(), */
-     /* in ML_Gen_MultiLevelHierarchy(), since I use Ptent   */
-     /* to project the coordinates down to the next level    */
-     if (ag->P_tentative != 0) {
-       if (ag->P_tentative[coarse] != 0)
-       {
-         newP = ML_Operator_Create(Pmat->comm);
-         ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
-         ML_Operator_Destroy(&(ag->P_tentative[coarse]));
-         ag->P_tentative[coarse] = newP;
-         newP = NULL;
-       }
-     }
-     /* end of MS modif */
+    /* start of MS modif, 26-Mar-05                         */
+    /* This lines are required by ML_Project_Coordinates(), */
+    /* in ML_Gen_MultiLevelHierarchy(), since I use Ptent   */
+    /* to project the coordinates down to the next level    */
+    if (ag->P_tentative != 0) {
+      if (ag->P_tentative[coarse] != 0)
+      {
+        newP = ML_Operator_Create(Pmat->comm);
+        ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
+        ML_Operator_Destroy(&(ag->P_tentative[coarse]));
+        ag->P_tentative[coarse] = newP;
+        newP = NULL;
+      }
+    }
+    /* end of MS modif */
 
-     /* do a mat-mat mult to get the appropriate P for the */
-     /* unpartitioned matrix.                              */
+    /* do a mat-mat mult to get the appropriate P for the */
+    /* unpartitioned matrix.                              */
 
-     newP = ML_Operator_Create(Pmat->comm);
-     ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
-     ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
-     
-     if (R_is_Ptranspose == ML_TRUE) {
-       newR = ML_Operator_Create(Rmat->comm);
-       ML_Operator_Transpose(Pmat, newR);
-       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
-     }
-     else if (Rmat->getrow->post_comm == NULL) {
-       newR = ML_Operator_Create(Rmat->comm);
-       ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
-       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
-     }
-     else {
-       printf("ML_repartition_Acoarse: 2matmult does not work properly if\n");
-       printf("   rightmost matrix in multiply is created with an implicit\n");
-       printf("   transpose (e.g. ML_Gen_Restrictor_TransP). If R is P^T,\n");
-       printf("   then invoke as ML_repartition_Acoarse(..., ML_TRUE). If\n");
-       printf("   R is not P^T but an implicit transpose is used, then try\n");
-       printf("   to remove implicit transpose with: \n\n");
-       printf("   ML_Operator_Transpose_byrow( &(ml->Pmat[next]),&(ml->Rmat[level]));\n");
-       printf("   ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]), &(ml->SingleLevel[next]));\n");
-       exit(1);
-     }
-     if (ReturnPerm == ML_FALSE) {
-       ML_Operator_Destroy(&perm);
-       ML_Operator_Destroy(&permt);
-     }
-     else {
-       permvec = (ML_Operator **) ML_allocate(2 * sizeof(ML_Operator*));
-       ML_allocate_check(permvec);
-       permvec[0] = perm;
-       permvec[1] = permt;
-     }
-     ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
-   }
+    newP = ML_Operator_Create(Pmat->comm);
+    ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
+    ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
+    
+    if (R_is_Ptranspose == ML_TRUE) {
+      newR = ML_Operator_Create(Rmat->comm);
+      ML_Operator_Transpose(Pmat, newR);
+      ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
+    }
+    else if (Rmat->getrow->post_comm == NULL) {
+      newR = ML_Operator_Create(Rmat->comm);
+      ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
+      ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
+    }
+    else {
+      printf("ML_repartition_Acoarse: 2matmult does not work properly if\n");
+      printf("   rightmost matrix in multiply is created with an implicit\n");
+      printf("   transpose (e.g. ML_Gen_Restrictor_TransP). If R is P^T,\n");
+      printf("   then invoke as ML_repartition_Acoarse(..., ML_TRUE). If\n");
+      printf("   R is not P^T but an implicit transpose is used, then try\n");
+      printf("   to remove implicit transpose with: \n\n");
+      printf("   ML_Operator_Transpose_byrow( &(ml->Pmat[next]),&(ml->Rmat[level]));\n");
+      printf("   ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]), &(ml->SingleLevel[next]));\n");
+      exit(1);
+    }
+    if (ReturnPerm == ML_FALSE) {
+      ML_Operator_Destroy(&perm);
+      ML_Operator_Destroy(&permt);
+    }
+    else {
+      permvec = (ML_Operator **) ML_allocate(2 * sizeof(ML_Operator*));
+      ML_allocate_check(permvec);
+      permvec[0] = perm;
+      permvec[1] = permt;
+    }
+    ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
+  } /*if (status == 0)*/
 
   if (ReturnPerm == ML_FALSE)
     return NULL;
   else
     return permvec;
-}
-
-/* ************************************************************************* */
-/* Project the nodal coordinates contained in ag->nodal_coord[relative_level]*/
-/* using P_tentative. Store the result in ag->nodal_coord[relative_level+1]. */
-/* Coarse coordinates are obtained by taking averages of all the fine        */
-/* grid points within an aggregate.                                          */
-/* ------------------------------------------------------------------------- */
-int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
-				    ML_Aggregate *ag,
-				    int num_PDEs,
-				    int relative_level)
-{
-     /* figure out what the new level should be */
-     /* allocate the new coordinate arrays */
-     /* allocate something to keep the size of all the aggregates */
-     /* what about aggregates that span processors ? */
-     /* The best thing would be to compute R */
-       
-     /* fill a fine grid vector with all ones and project to get agg sizes */
-     /* take each coordinate and project */
-     /* divide each coordinate by agg sizes */
-     /* num_PDEs */
-
-     
-
-   ML_Operator *temp;
-   double *fine_vec, *coarse_vec, *agg_sizes, *new_coords;
-   int i, j,k;
-
-   /* Create a restriction operator by transposing prolongator and */
-   /* replacing all nonzeros entries by +1.                        */				    
-   temp = ML_Operator_Create((P_tentative)->comm);
-   ML_Operator_Transpose(P_tentative, temp);
-   if (temp->matvec->func_ptr == CSR_matvec)
-     temp->matvec->func_ptr = CSR_ones_matvec;
-   else if (temp->matvec->func_ptr == sCSR_matvec)
-     temp->matvec->func_ptr = sCSR_ones_matvec;
-   else {
-     printf("ML_Aggregate_ProjectCoordinates: Expected CSR_matvec for projection operator and found something else?\n");
-     exit(1);
-   }
-
-   /* allocate space */
-
-   fine_vec = (double *) ML_allocate(sizeof(double)*
-                                     (temp->invec_leng+1));
-   agg_sizes = (double *) ML_allocate(sizeof(double)*
-                                      (temp->outvec_leng+1));
-   coarse_vec= (double *) ML_allocate(sizeof(double)*
-				      (temp->outvec_leng+1));
-
-   if ((ag->nodal_coord)[relative_level+1] != NULL)
-     ML_free( (ag->nodal_coord)[relative_level+1]);
-
-   new_coords= (double *) ML_allocate(sizeof(double)*ag->N_dimensions*
-				      (temp->outvec_leng/ag->nullspace_dim+1));
-   (ag->nodal_coord)[relative_level+1] = new_coords;
-
-   /* Compute the aggregate sizes by projecting a vector of all ones */
-
-   for (i = 0; i < temp->invec_leng; i++) fine_vec[i] = 1.;
-   ML_Operator_Apply(temp, temp->invec_leng, fine_vec,
-		     temp->outvec_leng, agg_sizes);
-
-   for (i = 0 ; i < temp->outvec_leng ; ++i) {
-     if (agg_sizes[i] == 0.0) {
-       if (ML_Get_PrintLevel() > 2)
-         fprintf(stderr,"*ML*WRN* on proc %d, aggregate %d has size 0 "
-                 "(LocalRows=%d, LocalAggre=%d)!\n"
-                 "*ML*ERR* (file %s, line %d)\n",
-                 (P_tentative)->comm->ML_mypid, i,
-                 temp->invec_leng, temp->outvec_leng,
-                 __FILE__, __LINE__);
-       /* MS * I am not really sure of what we got here...
-        * MS * but at least the code does not crash... */
-       agg_sizes[i] = 1.0;
-     }
-   }
-
-   /* Take nodal coordinates and stuff them into a fine grid vector. */
-   /* Then, project the fine grid vector and stuff it into a coarse  */
-   /* nodal coordinate vector after dividing by the aggregate sizes. */
-
-   if ((temp->invec_leng != 0) && (ag->nodal_coord[relative_level] == NULL)) {
-     fprintf(stderr,"ERROR: projecting coordinates we don't have...\n");
-     fprintf(stderr,"ERROR: (on processor %d)\n", temp->comm->ML_mypid);
-     exit(EXIT_FAILURE);
-   }
-
-   for (k = 0; k < ag->N_dimensions; k++) {
-       for (i = 0; i < temp->invec_leng/num_PDEs; i++) {
-         for (j = 0; j < num_PDEs; j++) {
-           fine_vec[i*(num_PDEs)+j] = (ag->nodal_coord)[relative_level][
-             k*temp->invec_leng/num_PDEs + i];
-         }
-       }
-     ML_Operator_Apply(temp, temp->invec_leng, fine_vec,
-		       temp->outvec_leng, coarse_vec);
-
-     for (i = 0; i < temp->outvec_leng/ag->nullspace_dim; i++) {
-       new_coords[k*temp->outvec_leng/ag->nullspace_dim + i] =
-         coarse_vec[i*ag->nullspace_dim]/agg_sizes[i*ag->nullspace_dim];
-     }
-   }
-
-   ML_free(coarse_vec);
-   ML_free(agg_sizes);
-   ML_free(fine_vec);
-   ML_Operator_Destroy(&temp);
-
-   return 1;
 }

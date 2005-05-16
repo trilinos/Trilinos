@@ -26,6 +26,7 @@ extern int mls_or_gs, mls_order;
 #include "ml_agg_genP.h"
 #include "ml_memory.h"
 #include "ml_lapack.h"
+#include "ml_viz_stats.h"
 
 
 #ifndef ML_CPP
@@ -190,6 +191,8 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    int i, j, bail_flag, N_input_vector;
    ML_Operator *Pmat;
    ML_CommInfoOP *getrow_comm; 
+   ML_Operator *Ptent;
+   ML_Aggregate_Viz_Stats *grid_info;
 #ifdef ML_TIMING
    double t0;
 #endif
@@ -225,8 +228,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-         printf("ML_Gen_MGHierarchy : applying coarsening \n");
 #ifdef USE_AT
       /*
         Here is the idea:
@@ -294,8 +295,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
  
       }
       /* end of check */
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-         printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
       ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
       ML_memory_check("L%d: TransP end",level);
@@ -312,9 +311,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       }
 
 #endif
-
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-         printf("ML_Gen_MGHierarchy : Gen_RAP\n");
 
 #ifdef ML_TIMING
       t0 = GetClock();
@@ -362,20 +358,32 @@ MPI_Barrier(MPI_COMM_WORLD);
        csr_data->columns[row+1] = k;
      }
    }
-   if (k > bsize) {
-     printf("problemssssssssssssssssssss %d %d\n",k,bsize);
-     exit(1);
-   }
+   if (k > bsize)
+     pr_error("problemssssssssssssssssssss %d %d\n",k,bsize);
 #endif
+
+   /* project the coordinates (if any) to the next
+   * coarser level */
+   if (ag->P_tentative != NULL)
+     Ptent = ag->P_tentative[next];
+   else
+     Ptent = &(ml->Pmat[next]);
+
+   grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
+   if (grid_info) {
+     if (grid_info->x != NULL) {
+       if (ML_Get_PrintLevel() > 4)
+         printf("ML_Gen_MGHierarchy: Projecting node coordinates from level %d to level %d\n",
+                level,next);
+       ML_Project_Coordinates(ml->Amat+level, Ptent, ml->Amat+next);
+     }
+   }
 
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("RAP time for level %2d = %e\n", level, t0);
 #endif
-
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-         printf("ML_Gen_MGHierarchy : Gen_RAP done\n");
 
       level = next;
       next  = next_level(ml, next, ag);
@@ -412,12 +420,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    double t0;
    t0 =  GetClock();
 #endif
-
-   if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
-   {
-     printf("Entering ML_AGG_Gen_Prolongator\n");
-     fflush(stdout);
-   }
 
    Amat = &(ml->Amat[level]);
 
@@ -784,8 +786,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        }
 
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-	 printf("\nProlongator/Restriction smoother (level %d) : damping factor = %e\n"
-		"Prolongator/Restriction smoother (level %d) : ( = %e / %e)\n\n",
+	 printf("\nProlongator/Restriction smoother (level %d) : damping factor = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n\n",
 		level, ag->smoothP_damping_factor/ max_eigen,
 		level,
 		ag->smoothP_damping_factor, max_eigen );
@@ -898,11 +899,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
              ml->Pmat[clevel].N_nonzeros, ml->Pmat[clevel].outvec_leng);
    }
    */
-   if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
-   {
-     printf("Leaving ML_AGG_Gen_Prolongator\n");
-     fflush(stdout);
-   }
    if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
 
 #ifdef ML_TIMING
@@ -2225,12 +2221,13 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   int PDEs = Cmat->num_PDEs;
   int Nghost, i;
   ML_Operator* Rmat;
-  char name[80];
   int size_old, size_new;
   double* tmp_old,* tmp_new;
   double* aggr_sizes;
   int (*getrow)(ML_Operator*, int, int [], int, int [], double [], int []);
   int (*matvec)(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]);
+  ML_Aggregate_Viz_Stats *Agrid_info;
+  ML_Aggregate_Viz_Stats *Cgrid_info;
 
   if (PDEs != 1)
   {
@@ -2256,14 +2253,11 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     Pmat->getrow->func_ptr = CSR_get_one_row;
     Pmat->matvec->func_ptr = CSR_ones_matvec;
   }
+  Agrid_info = (ML_Aggregate_Viz_Stats *) Amat->to->Grid->Grid;
 
-  if (Amat->grid_info == NULL) 
-  {
-    fprintf(stderr, "Amat->grid_info == NULL\n"
-            "ERROR: (file %s, line %d)\n",
+  if (Agrid_info == NULL)
+    pr_error("Amat->to->Grid->Grid == NULL\nERROR: (file %s, line %d)\n",
             __FILE__, __LINE__);
-    exit(EXIT_FAILURE);
-  }
   
   Rmat = ML_Operator_Create(Pmat->comm);
 #if 0
@@ -2309,15 +2303,15 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 
   /* project the coordinates */
 
-  if (Amat->grid_info->x!= NULL) 
+  Cgrid_info = (ML_Aggregate_Viz_Stats *) Cmat->to->Grid->Grid;
+  if (Agrid_info->x!= NULL) 
   {
     for (i = 0 ; i < size_old ; i+=PDEs)
-      tmp_old[i] = Amat->grid_info->x[i / PDEs];
+      tmp_old[i] = Agrid_info->x[i / PDEs];
 
     ML_Operator_Apply(Rmat, size_old, tmp_old, Rmat->outvec_leng, tmp_new);
 
-    sprintf(name, "x_coord_%d", size_new / PDEs);
-    ML_memory_alloc((void**)&new_x_coord, sizeof(double) * (size_new / PDEs + 1), name);
+    new_x_coord = (double *) ML_allocate(sizeof(double) * (size_new / PDEs+1));
 
     ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
@@ -2325,18 +2319,18 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     for (i = 0 ; i < size_new ; i+=PDEs)
       new_x_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
 
-    Cmat->grid_info->x = new_x_coord;
+    //Cmat->grid_info->x = new_x_coord;
+    Cgrid_info->x = new_x_coord;
   }
 
-  if (Amat->grid_info->y != NULL) 
+  if (Agrid_info->y != NULL) 
   {
     for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
-      tmp_old[i] = Amat->grid_info->y[i / PDEs];
+      tmp_old[i] = Agrid_info->y[i / PDEs];
 
     ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
 
-    sprintf(name, "y_coord_%d", size_new / PDEs);
-    ML_memory_alloc((void**)&new_y_coord, sizeof(double) * (size_new / PDEs + 1), name);
+    new_y_coord = (double *) ML_allocate(sizeof(double) * (size_new / PDEs+1));
 
     ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
@@ -2344,18 +2338,17 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     for (i = 0 ; i < size_new ; i+=PDEs)
       new_y_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
 
-    Cmat->grid_info->y = new_y_coord;
+    Cgrid_info->y = new_y_coord;
   }
 
-  if (Amat->grid_info->z != NULL) 
+  if (Agrid_info->z != NULL) 
   {
     for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
-      tmp_old[i] = Amat->grid_info->z[i / PDEs];
+      tmp_old[i] = Agrid_info->z[i / PDEs];
 
     ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
 
-    sprintf(name, "z_coord_%d", size_new / PDEs);
-    ML_memory_alloc((void**)&new_z_coord, sizeof(double) * (size_new / PDEs + 1), name);
+    new_z_coord = (double *) ML_allocate(sizeof(double) * (size_new / PDEs+1));
 
     ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
@@ -2363,14 +2356,15 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     for (i = 0 ; i < size_new ; i+=PDEs)
       new_z_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
 
-    Cmat->grid_info->z = new_z_coord;
+    Cgrid_info->z = new_z_coord;
   }
 
   ML_free(tmp_old);
   ML_free(tmp_new);
   ML_free(aggr_sizes);
 
-  Cmat->grid_info->Ndim = Amat->grid_info->Ndim;
+  //FIXME is this right??
+  Cgrid_info->Ndim = Agrid_info->Ndim;
 
   if (PDEs != 1)
   {
@@ -2401,13 +2395,15 @@ static void ML_Init_Aux(ML* ml, int level)
   int** filter;
   double dist;
   double* x_coord,* y_coord,* z_coord;
+  ML_Aggregate_Viz_Stats *grid_info;
 
   ML_Operator* A = &(ml->Amat[level]);
+  grid_info = (ML_Aggregate_Viz_Stats *) A->to->Grid->Grid;
   num_PDEs = A->num_PDEs;
-  N_dimensions = A->grid_info->Ndim;
-  x_coord = A->grid_info->x;
-  y_coord = A->grid_info->y;
-  z_coord = A->grid_info->z;
+  N_dimensions = grid_info->Ndim;
+  x_coord = grid_info->x;
+  y_coord = grid_info->y;
+  z_coord = grid_info->z;
 
   threshold = A->aux_data->threshold;
   ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
@@ -2628,6 +2624,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
    ML_Operator *Amat, *Pmat, *Ptent;
    ML_CommInfoOP *getrow_comm;
    int aux_flag;
+   ML_Aggregate_Viz_Stats *grid_info;
    
 #ifdef ML_TIMING
    double t0;
@@ -2640,6 +2637,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
    while (next >= 0) 
    {
      Amat = &(ml->Amat[level]);
+     grid_info =(ML_Aggregate_Viz_Stats *) Amat->to->Grid->Grid;
      aux_flag = (ml->Amat[fine_level].aux_data->enable && 
                  level <= ml->Amat[fine_level].aux_data->max_level);
 
@@ -2710,8 +2708,6 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       t0 = GetClock();
 #endif
 
-      if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
-	printf("ML_Gen_MultiLevelHierarchy (level %d) : Gen RAP\n", level);
       ML_Gen_AmatrixRAP(ml, level, next);
 #ifdef ML_MPI
       MPI_Barrier(ml->comm->USR_comm);
@@ -2742,10 +2738,15 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
       /* project the coordinates (if any) to the next
        * coarser level */
-
-      if (Amat->grid_info->x != NULL || Amat->grid_info->y != NULL || 
-          Amat->grid_info->z != NULL)
-        ML_Project_Coordinates(Amat, Ptent, &(ml->Amat[next]));
+      if (grid_info) {
+        if (grid_info->x != NULL || grid_info->y != NULL || 
+            grid_info->z != NULL) {
+          if (ML_Get_PrintLevel() > 4)
+            printf("ML_Gen_MultiLevelHierarchy: Projecting node coordinates from level %d to level %d\n",
+                    level,next);
+          ML_Project_Coordinates(Amat, Ptent, &(ml->Amat[next]));
+        }
+      }
 
       if (aux_flag)
         ml->Amat[next].aux_data->threshold = ml->Amat[level].aux_data->threshold * 1.0;
