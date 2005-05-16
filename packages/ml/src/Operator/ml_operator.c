@@ -92,7 +92,6 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->N_total_cols_est    = -1;
    mat->subspace            = NULL;
    ML_Aux_Data_Create(&(mat->aux_data));
-   ML_GridAGX_Create(&(mat->grid_info));
 
    return 0;
 }
@@ -267,12 +266,6 @@ int ML_Operator_Clean( ML_Operator *mat)
      mat->aux_data = NULL;
    }
 
-   if (mat->grid_info != NULL) 
-   {
-     ML_GridAGX_Destroy(&(mat->grid_info)); 
-     mat->grid_info = NULL;
-   }
-
    return 0;
 }
 
@@ -350,8 +343,10 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->lambda_max = original->lambda_max;
    mat->lambda_min = original->lambda_min;
    mat->subspace            = original->subspace;
+   /* FIXME  this is a memory leak!   need a clone function for parts of
+             aux_data, just copy the stuff that isn't pointers */
    mat->aux_data            = NULL;
-   mat->grid_info           = NULL;
+
    return 1;
 }
 

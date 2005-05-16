@@ -132,9 +132,6 @@ struct ML_Operator_Struct {
                    a more appropriate spot for these, especially as they need
                    to be available when ML is used as a preconditioner to a
                    Krylov method. */
-   ML_GridAGX    *grid_info; 
-                 /*!< This field can be used to visualize and auxiliary
-                  * matrix stuff */
    ML_Aux_Data   *aux_data;     
                  /*!< General container for auxiliary matrix */
 };
