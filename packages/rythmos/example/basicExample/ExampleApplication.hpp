@@ -50,7 +50,7 @@ class ExampleApplication
     ExampleApplication();
     ExampleApplication(double lam);
 
-    int evalResidual(Teuchos::RefCountPtr<Thyra::VectorBase<double> > x, double t);
+    int evalResidual(Teuchos::RefCountPtr<Thyra::VectorBase<double> >& x, double t);
     double getCoeff();
 
   private:

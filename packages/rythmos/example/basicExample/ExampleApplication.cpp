@@ -108,7 +108,7 @@ ExampleApplication::~ExampleApplication()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-int ExampleApplication::evalResidual(Teuchos::RefCountPtr<Thyra::VectorBase> x, double t)
+int ExampleApplication::evalResidual(Teuchos::RefCountPtr<Thyra::VectorBase>& x, double t)
 {
 //  (&*x).Scale(lambda_);
   Thyra::Vt_S(&*x,lambda_);
