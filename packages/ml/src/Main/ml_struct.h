@@ -74,6 +74,12 @@ struct ML_Struct {
                                    /**< by the multigrid method.       */
    int            ML_num_transfers;/**< number of transfers  */
    int            ML_finest_level, ML_coarsest_level;
+   int            *LevelID;       /* Same idea as MultiLevelPreconditioner().
+                                     Logically, levels run from 0,...,L, where
+                                     0 is the finest level and L is the
+                                     coarsest.  Internally, the fine level's
+                                     array index is LevelID[0], and the coarse
+                                     level L's array index is LevelID[L]. */
    int            symmetrize_matrix;
    int            output_level;
    int            res_output_freq;
@@ -361,6 +367,8 @@ extern int ML_Repartition_Status(ML* ml);
 extern int ML_Use_LowMemory();
 extern void ML_Enable_LowMemory();
 extern void ML_Disable_LowMemory();
+extern void ML_Set_LevelID(ML *ml, int incr_or_decr);
+extern int ML_Get_LevelID(ML *ml, int logical_level);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

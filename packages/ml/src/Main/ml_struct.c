@@ -60,6 +60,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    ML_1Level       *SingleLevel;
    char            str[80];
    ML_Comm         *comm;
+   int              *LevelID;
 
 #ifdef ML_TIMING
    struct ML_Timing *timing;
@@ -67,6 +68,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
 
    ML_memory_alloc( (void**) ml_ptr, sizeof(ML), "MLM" );
 
+   (*ml_ptr)->id                = ML_ID_ML;
    (*ml_ptr)->ML_finest_level   = -1;
    (*ml_ptr)->ML_coarsest_level = -1;
    (*ml_ptr)->output_level    = 10;
@@ -121,6 +123,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    ML_memory_alloc((void**) &Rmat         ,sizeof(ML_Operator)*Nlevels,"MRM");
    ML_memory_alloc((void**) &Pmat         ,sizeof(ML_Operator)*Nlevels,"MPM");
    ML_memory_alloc((void**) &max_eigen    ,sizeof(double)*Nlevels,"MQM");
+   ML_memory_alloc((void**) &LevelID     ,sizeof(int)*Nlevels,"MSM");
    length = sizeof(ML_DVector) * Nlevels;
    for ( i = 0; i < Nlevels; i++ ) max_eigen[i] = 0.0;
    ML_memory_alloc((void**)&Amat_Normalization, (unsigned int) length, "MAN");
@@ -142,6 +145,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    (*ml_ptr)->symmetrize_matrix  = ML_FALSE;
    (*ml_ptr)->Amat_Normalization = Amat_Normalization ;
    (*ml_ptr)->timing             = NULL;
+   (*ml_ptr)->LevelID            = LevelID;
 
 #ifdef ML_TIMING
    ML_memory_alloc((void**) &timing, sizeof(struct ML_Timing),"MT");
@@ -181,6 +185,8 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
       ML_Mapper_Init( &(grid2eqn[i]) );
       ML_Grid_Init( &(Grid[i]) );
       ML_BdryPts_Init( &(BCs[i]) );
+
+      LevelID[i] = -1;
 
       ML_Smoother_Init( &(pre_smoother[i]), &(SingleLevel[i]) );
       ML_Smoother_Init( &(post_smoother[i]), &(SingleLevel[i]) );
@@ -241,6 +247,7 @@ int ML_Destroy(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->grid2eqn) );
       ML_memory_free( (void**) &(ml->SingleLevel) );
       ML_memory_free( (void**) &(ml->spectral_radius) );
+      ML_memory_free( (void**) &(ml->LevelID) );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
       ML_memory_free( (void**) &(ml) );
@@ -294,6 +301,7 @@ int ML_Destroy2(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->grid2eqn) );
       ML_memory_free( (void**) &(ml->SingleLevel) );
       ML_memory_free( (void**) &(ml->spectral_radius) );
+      ML_memory_free( (void**) &(ml->LevelID) );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
       ML_memory_free( (void**) &(ml) );
@@ -6681,6 +6689,64 @@ void ML_Enable_LowMemory()
 void ML_Disable_LowMemory()
 {
   LowMemoryFlag = ML_FALSE;
+}
+
+/*--------------------------------------------------------------------------
+   Sets the values in ml->LevelID, based on whether the user has chosen
+   ML_INCREASING or ML_DECREASING.   Logically, the levels are numbered 0,...,L,
+   where 0 is the finest level and L is the coarsest.  Internally, the index
+   for level i is given by ml->LevelID[i].
+
+   For example, the fine level matrix is accessed via
+       ml->Amat[ ml->LevelID[0] ].
+
+   Based on Marzio's code in the MultiLevelPreconditioner class.
+  --------------------------------------------------------------------------  */
+void ML_Set_LevelID(ML *ml, int incr_or_decr)
+{
+  int i;
+
+  if (ml->id != ML_ID_ML)
+    pr_error("ML_Set_LevelID: wrong object, expecting an ML pointer.\n");
+
+  switch(incr_or_decr) {
+    case ML_INCREASING:
+      for(i=0 ; i<ml->ML_num_levels ; i++ )
+         ml->LevelID[i] = i;
+      break;
+    case ML_DECREASING:
+      for(i=1 ; i<ml->ML_num_levels+1 ; i++ )
+         ml->LevelID[i-1] = ml->ML_num_levels - i;
+      break;
+    default:
+      pr_error("ML_Set_LevelID: only ML_INCREASING or ML_DECREASING are supported.\n");
+      break;
+   }
+
+  /* check that no levels are negative */
+  for (int i = 0; i < ml->ML_num_levels; ++i)
+    if (ml->LevelID[i] < 0)
+      pr_error("ML_Set_LevelID: Level %d has a negative ID.\n",i);
+}
+
+/*--------------------------------------------------------------------------
+   Returns the internal index ml->LeveID[i] for logical level i.  This index
+   is used in accessing level i data.
+
+   For example, the ith level matrix is accessed via
+       ml->Amat[ ml->LevelID[i] ].
+  --------------------------------------------------------------------------  */
+int ML_Get_LevelID(ML *ml, int logical_level)
+{
+  if (ml->id != ML_ID_ML)
+    pr_error("ML_Get_LevelID: wrong object, expecting an ML pointer.\n");
+
+  if (logical_level < 0 || logical_level >= ml->ML_num_levels)
+    pr_error("ML_Get_LevelID: Invalid logical level %d.  Must be between 0 and %d (inclusive).\n",logical_level,ml->ML_num_levels-1);
+
+  if (ml->LevelID[logical_level] < 0)
+    pr_error("ML_Get_LevelID: LevelID has not been initialized yet.  First call ML_Set_LevelID().\n");
+  return(ml->LevelID[logical_level]);
 }
 
 #ifdef WKC
