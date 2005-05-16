@@ -964,7 +964,6 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
     
     CrsMatrix->InsertGlobalValues( global_osize_as_int[i], NumNonzeros, 
 				   colVal, colInd);
-    
   }
 
   delete [] colInd;
@@ -1781,8 +1780,8 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
  | WARNING: The routine expects the map not to cut a single block onto  |
  |          several processors! It will return false if otherwise       |
  |                                                                      |
- | Returns true and allocated *blocks/*block_pde on success,            |
- | returns false and *blocks=NULL/*block_pde=NULL otherwise             |
+ | Returns true and allocated *blocks / *block_pde on success,          |
+ | returns false and *blocks=NULL / *block_pde=NULL otherwise           |
  |                                                                      |
  *----------------------------------------------------------------------*/
 bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
