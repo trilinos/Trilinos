@@ -336,7 +336,7 @@ exit $exitStatus;
         }
         
         # Create results file.
-        my $resultsFile = "$resultsDir/make_$runStartTimeForFilename.txt";
+        my $resultsFile = "$resultsDir/$runStartTimeForFilename-make.txt";
         open (RESULTS, ">$resultsFile") 
             or die "can't open make result file $resultsFile for writing, died";
             

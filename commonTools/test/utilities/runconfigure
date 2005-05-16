@@ -328,9 +328,12 @@ exit $exitStatus;
                 # broken invoke-configures so that all are preserved.
                 # THE SERIALIZATION DOESN'T WORK YET.
                 my $icBrokenNumber = "00";
+                print "\nIC-BROKEN ";
                 while (stat "$buildDir/invoke-configure-broken-$icBrokenNumber") {
                     $icBrokenNumber++;
+                    print "$icBrokenNumber ";
                 }
+                print "\n\n";
                 system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
                     or die "can't copy invoke-configure, died";
             
@@ -386,7 +389,7 @@ exit $exitStatus;
             }
             
             # Create results file.
-            my $resultsFile = "$resultsDir/configure_$runStartTimeForFilename.txt";
+            my $resultsFile = "$resultsDir/$runStartTimeForFilename-configure.txt";
             open (RESULTS, ">$resultsFile")
                 or die "can't open configure result file $resultsFile for writing, died";
                 

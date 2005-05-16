@@ -273,7 +273,7 @@ cleanUp();
         my $startTime = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
         
         # Create results directory.
-        $resultsDir .= "/test_$startTime";
+        $resultsDir .= "/$startTime-test";
         mkdir($resultsDir) or die "cannot create $resultsDir, died";
         
         # Print list of variables for debugging.
@@ -427,7 +427,12 @@ cleanUp();
             my $resultsFile = "$resultsDir/";
             $resultsFile .= $testListAoH[$i]{'package'}."_";
             $resultsFile .= $testListAoH[$i]{'name'}."_";
-            $resultsFile .= $testStartTimeForFilename.".txt";
+            
+            my $testNumber = "00";
+            while (stat "$resultsFile"."$testNumber.txt") {
+                $testNumber++;
+            }           
+            $resultsFile .= $testNumber.".txt";
             open (RESULTS, ">$resultsFile") 
                 or die "can't open test result file $resultsFile for writing, died";
                 

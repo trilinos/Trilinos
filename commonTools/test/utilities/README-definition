@@ -52,7 +52,7 @@ III.  Test Group Structure
        place comments in a block preceding the group it describes.
     2. The opening curly brace can be anywhere between the closing right 
        parenthesis of the category list and the first property, but the
-       convention will be to put it on space after it.
+       convention will be to put it one space after it.
     3. The closing curly brace can be anywhere between the last property and
        the opening left parenthesis of the next group, but the convention will
        be to put it as the first and only thing on the line following the last
@@ -187,18 +187,19 @@ V.  Properties
                   MPI can be optionally followed by a list specifying the
                   number of processors to be run on.  This can be one value,
                   in which case the test will run on that many processors, or
-                  not at all if that many processors are not available.  It
-                  can also be a range of acceptable numbers of processors.
-                  The test will be run on the highest number available in the
-                  range.  An asterisk can be used for the upper end of the
-                  array to indicate that the test should be run on as many
-                  processors as are available.  If multiple values or ranges
-                  are given, separated by spaces, then each test will be run on
-                  as many processors as specified (or the most available in the
-                  given range) and then again for the next value or range in
-                  the list until the list is exhausted or until there aren't
-                  enough processors to continue.  This functionality is useful
-                  for defining performance and scalability tests.
+                  the maximum available if that many processors are not
+                  available.  It can also be a range of acceptable numbers of
+                  processors.  The test will be run on the highest number
+                  available in the range.  An asterisk can be used for the
+                  upper end of the array to indicate that the test should be
+                  run on as many processors as are available.  If multiple
+                  values or ranges are given, separated by spaces, then each
+                  test will be run on as many processors as specified (or the
+                  most available in the given range) and then again for the
+                  next value or range in the list until the list is exhausted
+                  or until there aren't enough processors to continue.  This
+                  functionality is useful for defining performance and
+                  scalability tests.
                   
                   If CUSTOM-SERIAL or CUSTOM-MPI is supplied, it is assumed
                   that the executables files listed in either NAMES or DIRS are
@@ -250,13 +251,14 @@ VI.  Example
     |(SCALABILITY) {                                                          |
     |    DIRS = SomeTests;                                                    |
     |    ARGS = smallMatrix, bigMatrix;                                       |
-    |    COMM = MPI(1-5, 6-10, 11-15, 16-20, 21-*);                           |
+    |    COMM = MPI(1-5 6-10 11-15 16-20 21-*);                               |
     |}                                                                        |
     |                                                                         |
     +-------------------------------------------------------------------------+
   
   Given the above definitions file, when someone runs the runtests test utility
-  with --category=ALL, the following is a possible set of events:
+  (on both a serial and an mpi build directory) with --category=ALL, the
+  following is a possible set of events:
   
     Test                          Arguments       Comm      Processors
     
