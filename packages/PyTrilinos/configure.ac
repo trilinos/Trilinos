@@ -45,7 +45,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR(/src/Epetra_NumPyVector.cxx)
+AC_CONFIG_SRCDIR(/src/FileStream.h)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -111,7 +111,7 @@ TAC_ARG_CONFIG_MPI
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 #AC_PROG_F77(f77 g77 f90 xlf90)
-#AC_PROG_RANLIB
+AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -366,12 +366,8 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
-		src/.deps/dummy
-		src/.deps/NOX/dummy
-		src/Makefile
-		src/__init__.py
-		src/NOX/__init__.py
 		example/Makefile
+		src/Makefile
 		test/Makefile
 		])
 

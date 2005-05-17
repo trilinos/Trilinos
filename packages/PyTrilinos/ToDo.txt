@@ -64,6 +64,8 @@ PyTrilinos To Do List
     [Done] LOCA (Eric)
 
 ****** Handle conversion between C++ iostreams and python files
+    [Done] FileStream class
+    ------ Implement exceptions
 
 ****** Improve package documentation strings
 
@@ -88,7 +90,7 @@ PyTrilinos To Do List
         ++++++ Epetra_IntVector
         ++++++ Epetra_IntSerialDenseVector
         ++++++ Epetra_IntSerialDenseMatrix
-    ------ Protect Epetra.{Vector,...} against changing array attribute
+    [Done] Protect Epetra.{Vector,...} against changing array attribute
     ------ Use typemaps to change (double *) or (int *) arguments to
            Numeric arrays
 
@@ -122,6 +124,7 @@ Summer, 2005, List of Project Tasks (Tentative)
 * Documentation
   - Manual: differences in C++/python implementations
   - Automatic: can we use doxygen with interface files?
+  - Evaluation of pydoc, happydoc, etc. for generating web pages
   - Users Manual
 
 * Software quality
@@ -135,12 +138,18 @@ Summer, 2005, List of Project Tasks (Tentative)
   - Unit tests
   - Examples
 
+* Develop pytrilinos library
+  - Python/C API FILEs -> C++ iostreams
+  - Input Python containers -> C arrays
+  - Output C arrays -> Numeric arrays
+
 * Start wrapping new modules
-  - Teuchos
-  - AztecOO
-  - Anasazi
-  - Ifpack
-  - ML
+  - Teuchos (with Heidi Thornquist)
+  - AztecOO (with Marzio Sala)
+  - Anasazi (with Heidi Thornquist)
+  - Ifpack  (with Marzio Sala)
+  - ML      (with Marzio Sala)
+  - Amesos  (with Marzio Sala)
   - etc.
 
 ==================================================

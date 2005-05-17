@@ -1408,7 +1408,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # Hello World!
-#  #np# - package name below
+#  #auto np# - package name below
 echo "----------------------------------------"
 echo "Running New_Package Configure Script"
 echo "----------------------------------------"
@@ -1417,7 +1417,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-# #np# - file name below
+# #auto np# - file name below
 
 
 # Specify directory for auxillary build tools (e.g., install-sh,
@@ -1454,7 +1454,7 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"
 ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 
-#  #np# - Change file names in next line
+#  #auto np# - Change file names in next line
 # Configure should create src/New_Package_config.h from src/New_Package_config.h.in
 
           ac_config_headers="$ac_config_headers src/New_Package_config.h:src/New_Package_config.h.in"
@@ -1596,7 +1596,7 @@ test -n "$target_alias" &&
 
 # Use automake
 
-#  #np# - Required version of automake.
+#  - Required version of automake.
 am__api_version="1.8"
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -7614,11 +7614,11 @@ echo "$as_me: error: failed to find required module Numeric" >&2;}
 
 
   # If user specifies prefix, use it for the PYTHON_PREFIX
-  if test @prefix@ != $ac_default_prefix; then
-    PYTHON_PREFIX=@prefix@
+  if test "$prefix" != "$ac_default_prefix"; then
+    PYTHON_PREFIX=$prefix
   fi
-  if test @exec_prefix@ != $ac_default_prefix; then
-    PYTHON_EXECPREFIX=@exec_prefix@
+  if test "$exec_prefix" != "$ac_default_prefix"; then
+    PYTHON_EXECPREFIX=$exec_prefix
   fi
 
 else
@@ -12490,7 +12490,7 @@ fi
 
 
 # Bye World!
-#  #np# change package name
+#  #auto np# change package name
 echo "----------------------------------------"
 echo "Finished Running New_Package Configure Script"
 echo "----------------------------------------"

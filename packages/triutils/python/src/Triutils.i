@@ -44,6 +44,8 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Trilinos_Util_Version.h"
+#include "Epetra_NumPyVector.h"
 void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 const Epetra_Comm  &comm, 
 				 Epetra_Map *& map, 
@@ -51,7 +53,6 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact);
-#include "Epetra_NumPyVector.h"
 %}
 
 // Auto-documentation feature
@@ -59,13 +60,6 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 
 // rename
 %rename Trilinos_Util_ReadHb2Epetra ReadHB;
-
-// Epetra interface includes
-using namespace std;
-%import "Epetra.i"
-
-// Triutils interface includes
-%include "Trilinos_Util_CrsMatrixGallery.h"
 
 // defining typemaps for ReadMatrix
 %typemap(argout) (Epetra_Map*& OutMap,
@@ -127,3 +121,18 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 Epetra_Vector *& OutX, 
 				 Epetra_Vector *& OutB,
 				 Epetra_Vector *& OutXexact);
+
+// Epetra interface includes
+using namespace std;
+%import "Epetra.i"
+
+// Triutils interface includes
+%include "Trilinos_Util_CrsMatrixGallery.h"
+%include "Trilinos_Util_Version.h"
+
+// Python code
+%pythoncode %{
+
+  __version__ = Triutils_Version().split()[2]
+
+%}

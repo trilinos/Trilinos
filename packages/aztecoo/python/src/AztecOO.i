@@ -62,7 +62,7 @@ using namespace std;
 %include "AztecOO_Version.h"
 %include "az_aztec_defs.h"
 
-// Python code.
+// Python code
 %pythoncode %{
 
   __version__ = AztecOO_Version().split()[2]

@@ -31,11 +31,11 @@ if test -n "$PYTHON"; then
   AC_PYTHON_MODULE(Numeric,yes)
 
   # If user specifies prefix, use it for the PYTHON_PREFIX
-  if test @prefix@ != $ac_default_prefix; then
-    PYTHON_PREFIX=@prefix@
+  if test "$prefix" != "$ac_default_prefix"; then
+    PYTHON_PREFIX=$prefix
   fi
-  if test @exec_prefix@ != $ac_default_prefix; then
-    PYTHON_EXECPREFIX=@exec_prefix@
+  if test "$exec_prefix" != "$ac_default_prefix"; then
+    PYTHON_EXECPREFIX=$exec_prefix
   fi
 
 else
