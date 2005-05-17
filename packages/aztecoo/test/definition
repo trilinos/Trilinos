@@ -1,0 +1,11 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = AztecOO,
+	   AztecOO_SetParameters,
+	   AztecOO_UserOpUserMat;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

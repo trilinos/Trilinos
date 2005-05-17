@@ -1,0 +1,9 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = Read;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

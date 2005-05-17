@@ -1,0 +1,27 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = BlockMap,
+           Comm,
+           CrsGraph,
+	   CrsMatrix,
+	   CrsRectMatrix,
+	   FECrsGraph,
+	   FECrsMatrix,
+	   FEVbrMatrix,
+	   FEVector,
+	   ImportExport,
+	   IntSerialDense,
+	   Map,
+	   MapColoring,
+	   MultiVector,
+	   Object,
+	   SerialDense,
+	   SerialSpdDense,
+	   VbrMatrix,
+	   Vector;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

@@ -1,0 +1,18 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = BLAS,
+           Containers,
+	   DenseMatrix,
+	   LAPACK,
+	   ParameterList,
+	   RefCountPtr,
+	   Time,
+	   Workspace,
+	   XML,
+	   dyn_cast;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

@@ -1,0 +1,18 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = CompareWithAztecOO,
+           Container,
+	   CrsRiluk,
+	   IC,
+	   ILU,
+	   IlukGraph,
+	   OverlappingRowMatrix,
+	   PreconditionerFactory,
+	   Relaxation,
+	   SetParameters;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
