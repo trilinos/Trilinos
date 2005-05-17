@@ -611,7 +611,15 @@ cleanUp();
                     # Add a complete hash entry for each executable file found
                     # in the directories listed in DIRS.
                     foreach my $dir (@{ $definitionAoHoA[$i]{'DIRS'} }) {
-                        if (!opendir(DIR, $dir)) {
+                    
+                        # Open the corresponding, analogous directory in the
+                        # build directory.  I'm not convinced this method of
+                        # constructing that path is bullet-proof.  It may be
+                        # making assumptions about the precise contents of
+                        # $package and $dir.
+                        my $builtTestDirPath = "$buildDir/packages/$package/test/$dir";
+                    
+                        if (!opendir(DIR, $builtTestDirPath)) {
                             my $message = "";
                             $message .= "! Error opening $dir, skipping $package tests.\n";
                             printMessage($message, $v1+$v2+$v3);
