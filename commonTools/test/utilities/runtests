@@ -311,7 +311,7 @@ cleanUp();
     sub run {
         
         # cd to packages directory in build directory.
-        chdir $buildDir or die "cannot chdir to $buildDir, died";
+        chdir $trilinosDir or die "cannot chdir to $trilinosDir, died";
         chdir "packages/" or die "cannot chdir to packages/, died";
         
         # Compile list of test definition files (using File::Find instead
@@ -626,13 +626,13 @@ cleanUp();
                             return;
                         } 
                         while (defined (my $file = readdir(DIR))) {
-                            my $filename = "$dir/$file";
-                            if (    (-x $filename) &&
+                            my $absFile = "$buildDir/packages/$package/test/$dir/$file";                        
+                            if (    (-x $absFile) &&
                                     ($file !~ m/^\.$/) &&
                                     ($file !~ m/^\.\.$/) &&
                                     ($file !~ m/^\.deps$/)
                             ) {
-                                push( @{ $definitionAoHoA[$i]{'TESTS'} }, $filename);
+                                push( @{ $definitionAoHoA[$i]{'TESTS'} }, "$dir/$file");
                             }
                         }
                         closedir(DIR);
