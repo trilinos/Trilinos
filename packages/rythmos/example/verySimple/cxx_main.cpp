@@ -77,6 +77,12 @@ int main(int argc, char *argv[])
   cout << "2 norm of x = " << xnorm << endl
        << "2 norm of b = " << bnorm << endl;
 
+//  cout << "Element 0 of x = " << (&*x)[0] << endl; // bad error message
+//  cout << "Element 0 of x = " << (*x)[0] << endl; // good error message
+//  for (int i=1;i<=NumElements;++i)
+//    cout << "Element " << i << " of x = " << Thyra::get_ele(*x,i) << endl;
+
+
   return 0;
 }
 
