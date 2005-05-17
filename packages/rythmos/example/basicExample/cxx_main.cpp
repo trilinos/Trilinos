@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
   double N = (t1-t0)/dt;
   double x_initial = 10.0; // initial condition
   Thyra::assign(&*xn,x_initial); // xn = x_initial
-  cout << "x(0.0) = " << Thyra::get_ele(*xn,0) << endl;
+  cout << "x(0.0) = " << Thyra::get_ele(*xn,1) << endl;
   double t = t0;
   for (int i=1 ; i<N+1 ; ++i)
   {
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     Thyra::assign(&*x,*xn); // x = xn;
     problem.evalResidual( x, t ); 
     Thyra::Vp_StV(&*xn,dt,*x); // xn = xn + dt*x
-    cout << "x(" << t << ") = " << Thyra::get_ele(*xn,0) << endl; 
+    cout << "x(" << t << ") = " << Thyra::get_ele(*xn,1) << endl; 
   }
   cout << "       " << x_initial*exp(problem.getCoeff()*t) << " = Exact solution" << endl;
   return 0;
