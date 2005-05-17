@@ -284,6 +284,16 @@ exit $exitStatus;
             system("cp $invokeConfigure $buildDir/invoke-configure") == 0
                 or die "cannot copy invoke-configure, died";
         } else {
+                
+            # Move aside current, broken invoke-configure.  Serialize
+            # broken invoke-configures so that all are preserved.
+            my $icBrokenNumber = "00";
+            while (stat "$buildDir/invoke-configure-broken-$icBrokenNumber") {
+                $icBrokenNumber++;
+            }
+            system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
+                or die "can't copy invoke-configure, died";
+                    
             removeBrokenPackage($failedPackage{$makeFailure});
             cleanInvokeConfigure($failedPackage{$makeFailure});
         }
@@ -326,14 +336,10 @@ exit $exitStatus;
                 
                 # Move aside current, broken invoke-configure.  Serialize
                 # broken invoke-configures so that all are preserved.
-                # THE SERIALIZATION DOESN'T WORK YET.
                 my $icBrokenNumber = "00";
-                print "\nIC-BROKEN ";
                 while (stat "$buildDir/invoke-configure-broken-$icBrokenNumber") {
                     $icBrokenNumber++;
-                    print "$icBrokenNumber ";
                 }
-                print "\n\n";
                 system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
                     or die "can't copy invoke-configure, died";
             

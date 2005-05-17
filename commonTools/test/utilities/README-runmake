@@ -9,6 +9,10 @@
 
   This document describes the usage of runmake, the Trilinos make utility.
   
+  The runmake utility provides a standard way to compile Trilinos source and
+  generate results.  This simplifies the process of automating Trilinos testing
+  when combined with other utilities.
+  
 -------------------------------------------------------------------------------
 I.  Prerequisites
 
@@ -22,17 +26,19 @@ II.  Execution
   To execute the Trilinos make utility, simply type:
   
     cd /PATH/TO/Trilinos/commonTools/test/utilities/
-    runmake --help
+    perl runmake --help
             
-  for information on required and optional arguments.
+  Refer to this help output for the most up-to-date information on usage and
+  available options.  (You can use "./" instead of "perl " if your system's
+  perl interpreter resides at /usr/bin/perl)
   
 -------------------------------------------------------------------------------
-IV.  Make Results File
+III.  Make Results File
 
   The results of the make attempt will be placed in the specified output
   directory and will be named according to the following scheme:
   
-    make_YR-MO-DA_HR.MN.SE.txt
+    YR-MO-DA_HR.MN.SE-make.txt
   
   The make results file will consist of the following:
   
@@ -52,12 +58,11 @@ IV.  Make Results File
   |BRANCH_TAG           = development
   |
   |BUILD_DIR            = /common/TrilinosTestHarness/runtests/Trilinos/MPI/
-  |
-  |MAKE_COMMAND         = make
+  |MAKE_COMMAND         = make -j4
   |
   |START_TIME           = 05-04-16 20:33:26
-  |STOP_TIME            = 05-04-16 20:33:29
-  |RUN_TIME             = 3 seconds
+  |STOP_TIME            = 05-04-16 20:33:56
+  |RUN_TIME             = 30 seconds
   |
   |EXIT_STATUS          = 0
   |RESULT               = pass
@@ -66,12 +71,10 @@ IV.  Make Results File
   |
   |BEGIN_MAKE_OUTPUT
   |
-  |make  all-recursive
-  |make[1]: Entering directory ...
-  |
   |...
   |
   |END_MAKE_OUTPUT
   |
   +---------------------------------------------------------------------------+
+
 -------------------------------------------------------------------------------

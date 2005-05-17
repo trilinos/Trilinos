@@ -11,20 +11,29 @@
 
   This document describes the usage of runconfigure, the Trilinos make utility.
   
+  The runconfigure utility provides a standard way to configure Trilinos source
+  and generate results.  This simplifies the process of automating Trilinos
+  testing when combined with other utilities.
+  
 -------------------------------------------------------------------------------
 I.  Prerequisites
 
-  In order for the configure utility to work, you must have the following in place:
+  In order for the configure utility to work, you must have the following in
+  place:
+  
+    1.  A complete invoke-configure file.
        
 -------------------------------------------------------------------------------
 II.  Execution
 
-  To execute the Trilinos make utility, simply type:
+  To execute the Trilinos configure utility, simply type:
   
     cd /PATH/TO/Trilinos/commonTools/test/utilities/
-    runconfigure --help
+    perl runconfigure --help
             
-  for information on required and optional arguments.
+  Refer to this help output for the most up-to-date information on usage and
+  available options.  (You can use "./" instead of "perl " if your system's
+  perl interpreter resides at /usr/bin/perl)
   
 -------------------------------------------------------------------------------
 IV.  Configure Results File
@@ -32,7 +41,7 @@ IV.  Configure Results File
   The results of the configure attempt will be placed in the specified output
   directory and will be named according to the following scheme:
   
-    configure_YR-MO-DA_HR.MN.SE.txt
+    YR-MO-DA_HR.MN.SE-configure.txt
   
   The results file will consist of the following:
   
@@ -54,32 +63,20 @@ IV.  Configure Results File
   |BUILD_DIR            = /common/TrilinosTestHarness/runtests/Trilinos/MPI/
   |COMM                 = mpi
   |
-  |PACKAGE_TEST_DIR     = ./epetra/test
-  |PACKAGE              = epetra
-  |
-  |TEST_DIR             = Vector
-  |TEST_NAME            = Vector_test.exe
-  |TYPE                 = MPI
-  |COMMAND              = mpirun -np 16 ./Vector/Vector_test.exe -v
-  |
   |START_TIME           = 05-04-16 20:33:26
-  |STOP_TIME            = 05-04-16 20:33:29
-  |RUN_TIME             = 3 seconds
+  |STOP_TIME            = 05-04-16 20:33:49
+  |RUN_TIME             = 23 seconds
   |
   |EXIT_STATUS          = 0
   |RESULT               = pass
   |
-  |BEGIN_TEST_OUTPUT
+  |BROKEN_PACKAGE       = NONE
   |
-  |Epetra::MpiComm
-  |Epetra Version 3.4d - 03/01/2005
-  |
-  |Epetra::MpiComm
-  |  Processor 0 of 16 total processors
+  |BEGIN_CONFIGURE_OUTPUT
   |
   |...
   |
-  |END_TEST_OUTPUT
+  |END_CONFIGURE_OUTPUT
   |
   +---------------------------------------------------------------------------+
 
