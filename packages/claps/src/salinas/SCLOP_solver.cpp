@@ -441,7 +441,8 @@ void SCLOP_solver::construct_K_base()
 
 void SCLOP_solver::CLOP_solver_init(int overlap, double solver_tol,
    int maxiter, int atype, int ndim, int local_solver, int max_orthog,
-   int prt_debug, int prt_summary, int krylov_method, int scale_option)
+   int prt_debug, int prt_summary, int krylov_method, int scale_option,
+   int num_rigid_mode)
 {
   double clop_params[20];
   clop_params[0]  = double(overlap);
@@ -455,6 +456,7 @@ void SCLOP_solver::CLOP_solver_init(int overlap, double solver_tol,
   clop_params[8]  = double(prt_summary);
   clop_params[9]  = double(krylov_method);
   clop_params[10] = double(scale_option);
+  clop_params[11] = double(num_rigid_mode);
   CS = new CLOP_solver(AStandard, LDStandard, CStandard, SubMap, ConStandard, 
  	               GNStandard, clop_params);
 }

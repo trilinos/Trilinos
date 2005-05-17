@@ -1,3 +1,5 @@
+#ifndef CRD_UTILS_HPP
+#define CRD_UTILS_HPP
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -5,6 +7,9 @@
 #include <algorithm>
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MpiComm.h"
+#include "Epetra_BLAS.h"
+#include "Epetra_LAPACK.h"
+#include "sparse_lu.hpp"
 #include "myzero.hpp"
 
 namespace CRD_utils {
@@ -21,6 +26,27 @@ namespace CRD_utils {
 		       const int norm_opt,
 		       const int blocksize,
 		       double *col_norm);
+  void tie_down_coarse(int n, 
+		       int rowbeg[], 
+		       int colidx[], 
+		       double vals[], 
+		       int ne, 
+		       int scale_option,
+		       int & num_tied_down,
+		       int* & tied_down, 
+		       CLAPS_sparse_lu* & AA, 
+		       double* & Xvecs);
+  void subspace_iteration(int n, 
+			  int rowbeg[], 
+			  int colidx[], 
+			  double vals[], 
+			  bool bound_flag[],
+			  int scale_option,
+			  int & nextra, 
+			  int* & extra_corner,
+			  CLAPS_sparse_lu* & A, 
+			  double* & Xvecs, 
+			  int ne = 0);
   class Graph_class 
   {
   public:
@@ -34,3 +60,4 @@ namespace CRD_utils {
     int *component;
   };
 }
+#endif // CRD_UTILS_HPP

@@ -1,3 +1,5 @@
+#ifndef SPARSE_LU_HPP
+#define SPARSE_LU_HPP
 #include <stdio.h>
 #include <fstream>
 #include <iomanip>
@@ -40,4 +42,5 @@ class CLAPS_sparse_lu {
   double* NS;
   double *SCALE;
 };
+#endif // SPARSE_LU_HPP
   

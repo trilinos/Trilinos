@@ -34,17 +34,18 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
     CStandard(CStandard_), SubMap(SubMap_), ConStandard(ConStandard_), 
     GNStandard(GNStandard_), clop_params(clop_params_), Comm(AStandard->Comm())
 {
-  overlap       = int(clop_params[0]); 
-  solver_tol    = clop_params[1];
-  maxiter       = int(clop_params[2]);
-  max_orthog    = int(clop_params[3]);
-  atype         = int(clop_params[4]);
-  ndim          = int(clop_params[5]);
-  local_solver  = int(clop_params[6]);
-  prt_debug     = int(clop_params[7]);
-  prt_summary   = int(clop_params[8]);
-  krylov_method = int(clop_params[9]);
-  scale_option  = int(clop_params[10]);
+  overlap        = int(clop_params[0]); 
+  solver_tol     = clop_params[1];
+  maxiter        = int(clop_params[2]);
+  max_orthog     = int(clop_params[3]);
+  atype          = int(clop_params[4]);
+  ndim           = int(clop_params[5]);
+  local_solver   = int(clop_params[6]);
+  prt_debug      = int(clop_params[7]);
+  prt_summary    = int(clop_params[8]);
+  krylov_method  = int(clop_params[9]);
+  scale_option   = int(clop_params[10]);
+  num_rigid_mode = int(clop_params[11]);
   double starttime, endtime;
   //  const Epetra_MpiComm &empicomm = 
   //               dynamic_cast<const Epetra_MpiComm &>(Comm);
@@ -129,7 +130,8 @@ CLOP_solver::~CLOP_solver()
   delete [] ortho_sum; delete [] VV; delete [] HH; delete [] RR;
   delete [] zz; delete [] cc; delete [] ss; delete [] norms;
   delete [] gmres_vec; delete [] gmres_sum; delete gSt_red; delete [] PAP;
-  delete [] PAP_sum; delete [] IPIV; delete [] PAP_store;
+  delete [] PAP_sum; delete [] IPIV; delete [] PAP_store; delete [] tied_down;
+  zero_pointers();
 }
 
 void CLOP_solver::zero_pointers()
@@ -151,7 +153,7 @@ void CLOP_solver::zero_pointers()
   CtT = 0; AP_matrix = 0; P_matrix = 0; pAp_vec = 0; ortho_vec = 0;
   ortho_sum = 0; VV = 0; HH = 0; RR = 0; zz = 0; cc = 0; ss = 0; norms = 0;
   gmres_sum = 0; gmres_vec = 0; gSt_red = 0; PAP = 0; PAP_sum = 0; IPIV = 0;
-  PAP_store = 0;
+  PAP_store = 0; tied_down = 0;
 }
 
 void CLOP_solver::process_constraints()
@@ -977,6 +979,7 @@ void CLOP_solver::gather_coarse_stiff()
   int i, ncdof_solver;
   assert (Kc->NumGlobalCols() == Kc->NumGlobalRows());
   ncdof = Kc->NumGlobalRows();
+  if (print_flag > 0) fout << "coarse problem dimension = " << ncdof << endl;
   if (MyPID == 0) ncdof_solver = ncdof;
   if (MyPID != 0) ncdof_solver = 0;
   int *allrows = NULL;
@@ -988,6 +991,7 @@ void CLOP_solver::gather_coarse_stiff()
   Importer_coarse = new Epetra_Import(*RowMap_coarse, Kc->RowMap());
   Kc_gathered->Import(*Kc, *Importer_coarse, Insert);
   Kc_gathered->FillComplete();
+  Kc_gathered->MakeDataContiguous();
   //  cout << *Kc_gathered << endl;
   /*
   char fname[101];
@@ -1004,6 +1008,7 @@ void CLOP_solver::factor_coarse_stiff()
   int *rowbeg_KC, *colidx_KC, NumEntries;
   double *KC;
   int nnz_KC = Kc_gathered->NumMyNonzeros();
+  double *Xvecs = 0;
   if (MyPID == 0) {
     rowbeg_KC = new int[ncdof+1]; rowbeg_KC[0] = 0;
     for (i=0; i<ncdof; i++) {
@@ -1011,6 +1016,16 @@ void CLOP_solver::factor_coarse_stiff()
       rowbeg_KC[i+1] = rowbeg_KC[i] + NumEntries;
     }
     if (ncdof > 0) Kc_gathered->ExtractMyRowView(0, NumEntries, KC, colidx_KC);
+
+    CLAPS_sparse_lu *AA;
+    num_tied_down = 0;
+    if (num_rigid_mode > ncdof) num_rigid_mode = ncdof;
+    if (num_rigid_mode > 0) CRD_utils::tie_down_coarse(ncdof, rowbeg_KC, 
+                              colidx_KC, KC, num_rigid_mode, scale_option,
+			      num_tied_down, tied_down, AA, Xvecs);
+    if (print_flag > 0) fout << "num_rigid_mode, num_tied_down = " 
+			     << num_rigid_mode << " "
+			     << num_tied_down << endl;
     /*
     cout << "ncdof, nnz_KC = " << ncdof << " " << nnz_KC << endl;
     for (i=0; i<ncdof; i++) {
@@ -1026,13 +1041,15 @@ void CLOP_solver::factor_coarse_stiff()
     for (i=0; i<nnz_KC; i++) ffout << colidx_KC[i] << " " << KC[i] << endl;
     ffout.close();
     */
-
     Kc_fac = new CLAPS_sparse_lu();
     if (ncdof <= ndof_global_red)
       Kc_fac->factor(ncdof, nnz_KC, rowbeg_KC, colidx_KC, KC, scale_option);
     delete [] rowbeg_KC;
   }
+  Comm.Broadcast(&num_tied_down, 1, 0);  
+  delete [] Xvecs;
 }
+
 
 void CLOP_solver::solve_init()
 {
@@ -1307,7 +1324,7 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   //
   rSt_red->Dot(*rSt_red, &dprod);
   rorig = sqrt(dprod);
-  if (MyPID == 0) cout << "rorig = " << rorig << endl;
+  if (print_flag > 0) fout << "rorig = " << rorig << endl;
   uSt_red->PutScalar(0);
   //
   // gmres iterations
@@ -1374,30 +1391,32 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   }
   if (MyPID == 0) {
     //    cout << "rorig                 = " << rorig << endl;
-    cout << "rcurr(gmres)          = " << rcurr << endl;
-    cout << "rcurr(actual)         = " << ractual << endl;
-    if (ncon_global > 0) {
-      cout << "rcurr(constraint)     = " << norm_rconstraint << endl;
-      cout << "constraint error norm = " << norm_conerror << endl;
-    }
-    cout << "number of iterations  = " << num_iter << endl;
-    cout << "solver tolerance      = " << solver_tol << endl;
-    if (iflag == 2) {
-      cout << "condition # estimate      relative residual" 
-	   << "   iteration" << endl;
-      cout << setiosflags(ios::scientific | ios::uppercase);
-      for (i=0; i<num_iter; i++) {
-	cout << " " 
-	     << setw(17) << setprecision(10) << 0
-	     << "       " 
-	     << setw(17) << setprecision(10) << fabs(norms[i])
-	     << "        " 
-	     << i+1 << endl;
+    if (print_flag > 0) {
+      fout << "rcurr(gmres)          = " << rcurr << endl;
+      fout << "rcurr(actual)         = " << ractual << endl;
+      if (ncon_global > 0) {
+	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
+	fout << "constraint error norm = " << norm_conerror << endl;
       }
+      fout << "number of iterations  = " << num_iter << endl;
+      fout << "solver tolerance      = " << solver_tol << endl;
+      if (iflag == 2) {
+	cout << "condition # estimate      relative residual" 
+	     << "   iteration" << endl;
+	cout << setiosflags(ios::scientific | ios::uppercase);
+	for (i=0; i<num_iter; i++) {
+	  cout << " " 
+	       << setw(17) << setprecision(10) << 0
+	       << "       " 
+	       << setw(17) << setprecision(10) << fabs(norms[i])
+	       << "        " 
+	       << i+1 << endl;
+	}
+      }
+      cout << resetiosflags(ios::scientific);
+      cout << resetiosflags(ios::uppercase);
+      cout << setprecision(6);
     }
-    cout << resetiosflags(ios::scientific);
-    cout << resetiosflags(ios::uppercase);
-    cout << setprecision(6);
   }
 }
 
@@ -1714,7 +1733,10 @@ void CLOP_solver::coarse_correction(const Epetra_Vector* r, Epetra_Vector* u)
   //
   // solve coarse problem
   //
-  if (MyPID == 0) Kc_fac->sol(nrhs, rhs_coarse, sol_coarse, temp_coarse);
+  if (MyPID == 0) {
+    for (int i=0; i<num_tied_down; i++) rhs_coarse[tied_down[i]] = 0;
+    Kc_fac->sol(nrhs, rhs_coarse, sol_coarse, temp_coarse);
+  }
   //
   // scatter coarse problem solution
   //

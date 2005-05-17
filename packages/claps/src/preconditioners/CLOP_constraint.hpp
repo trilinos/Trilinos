@@ -1,3 +1,5 @@
+#ifndef CLOP_CONSTRAINT_HPP
+#define CLOP_CONSTRAINT_HPP
 #include <stdio.h>
 #include <fstream>
 #include <iomanip>
@@ -57,4 +59,5 @@ class CLOP_constraint {
   double **colvals, *dvec, *sfaca, **Values1, **Values2, *max_abs_con;
   bool *row_flag, *con_flag;
 };
+#endif // CLOP_CONSTRAINT_HPP
   

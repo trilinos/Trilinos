@@ -1,3 +1,5 @@
+#ifndef CLOP_GRAPH_HPP
+#define CLOP_GRAPH_HPP
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_CrsMatrix.h"
@@ -50,3 +52,4 @@ class CLOP_graph
 
   int ndof, nsub, ndof_target;
 };
+#endif // CLOP_GRAPH_HPP

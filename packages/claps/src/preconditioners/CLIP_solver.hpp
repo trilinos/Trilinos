@@ -1,3 +1,5 @@
+#ifndef CLIP_SOLVER_HPP
+#define CLIP_SOLVER_HPP
 #include <mpi.h>
 #include <math.h>
 #include <algorithm>
@@ -36,6 +38,9 @@ class CLIP_solver
   void solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	     int & num_iter, int & solver_status, int & max_added_cor);
   void mpcforces(Epetra_Vector* uLocal, Epetra_Import* ImporterStLam2Loc);
+  void tie_down_coarse(int n, int rowbeg[], int colidx[], 
+		       double vals[], int ne, CLAPS_sparse_lu* & AA,
+		       double* & Xvecs);
  private: // functions
   void process_constraints();
   void copy_map(const Epetra_Map A, 
@@ -75,12 +80,6 @@ class CLIP_solver
 
   void gen_matrix(Epetra_CrsMatrix* A, int na, int adof[], 
 		  int* & rowbeg, int* & colidx, double* &vals);
-  void subspace_iteration(int n, int rowbeg[], int colidx[], 
-			  double vals[], bool bound_flag[], int & nextra, 
-			  int* & extra_corner, CLAPS_sparse_lu* & A,
-			  double* &Xvecs, int ne = 0);
-  void tie_down_coarse(int n, int rowbeg[], int colidx[], 
-		       double vals[], int ne, double* & Xvecs);
   void zero_pointers();
   void construct_subdomains();
   int initialize_subdomains();
@@ -150,3 +149,4 @@ class CLIP_solver
   bool *owner_flag;
   ofstream fout;
 };
+#endif // CLIP_SOLVER_HPP

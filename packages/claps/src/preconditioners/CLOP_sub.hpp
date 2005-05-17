@@ -1,3 +1,5 @@
+#ifndef CLOP_SUB_HPP
+#define CLOP_SUB_HPP
 #include <stdio.h>
 #include <fstream>
 #include <iomanip>
@@ -47,4 +49,5 @@ class CLOP_sub {
   CLAPS_sparse_lu *A_sub;
   int *jpvt, *subdofs, *locdof;
 };
+#endif // CLOP_SUB_HPP
   

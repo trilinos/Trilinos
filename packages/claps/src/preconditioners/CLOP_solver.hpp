@@ -1,3 +1,5 @@
+#ifndef CLOP_SOLVER_HPP
+#define CLOP_SOLVER_HPP
 #include <mpi.h>
 #include <math.h>
 #include "CLOP_graph.hpp"
@@ -99,7 +101,7 @@ class CLOP_solver
   Epetra_LAPACK EL;
   MPI_Comm mpicomm;
   int overlap, maxiter, atype, ndim, local_solver, prt_debug, prt_summary;
-  int max_orthog, krylov_method, scale_option;
+  int max_orthog, krylov_method, scale_option, num_rigid_mode;
   double solver_tol;
   int npart, ndof, ndof_overlap, MyPID, NumProc, gpart0, gcdof0;
   int ndof_rot, *count1, *cs_local, *csdima, ncdof_proc, max_csdim;
@@ -107,7 +109,7 @@ class CLOP_solver
   int ndof_Standard, *sub_gdofs, nsub_gdofs, ncon_global, nx2, nx2_global;
   int *x2_dof, nmycon, *mycdof, gmres_flag, n_orthog_used;
   int pre_type_orthog, pre_type_coarse, orthog_option, *IPIV, ndof_global;
-  int ndof_global_red, print_flag;
+  int ndof_global_red, print_flag, num_tied_down, *tied_down;
   double *xcent, *ycent, *zcent, *sol_coarse, *temp_coarse, *rhs_coarse;
   double *rcurra, *r_overlap, *z_overlap, *rhs_work, *sol_work, *tmp_work;
   double *rhoa, *betaa, *pApa, *Etri, *Dtri, *econa, *lambda_local;
@@ -117,3 +119,4 @@ class CLOP_solver
   CLOP_sub *Asub;
   CLAPS_sparse_lu *Kc_fac;
 };
+#endif // CLOP_SOLVER_HPP
