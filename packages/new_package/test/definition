@@ -1,0 +1,9 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = Hello_Test, Jambo_Test, test1;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

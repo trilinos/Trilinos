@@ -1,0 +1,9 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = ana;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

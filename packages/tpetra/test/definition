@@ -1,0 +1,20 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = BasicPerfTest,
+           BlockElementSpace,
+           CisMatrix,
+           Comm,
+           Directory,
+           Distributor,
+           ElementSpace,
+           ImportExport,
+           Platform,
+           Traits,
+           Vector,
+           VectorSpace;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

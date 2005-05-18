@@ -1,0 +1,9 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = BlockCG, BlockGmres;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

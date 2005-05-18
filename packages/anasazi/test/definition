@@ -1,0 +1,12 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = BlockDavidson,
+           BlockKrylovSchur,
+           LOBPCG,
+           ModalSolverUtils;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

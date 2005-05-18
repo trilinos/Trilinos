@@ -1,0 +1,20 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = Composite,
+           MapColoring,
+           Matlab,
+           MatrixMatrix,
+           Overlap,
+           Permutation,
+           SingletonFilter,
+           SymmRCM,
+           Transpose,
+           View,
+           Zoltan,
+           inout;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

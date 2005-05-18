@@ -1,0 +1,26 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = epetra/1dfem,
+           epetra/DS6.5.1,
+           epetra/LOCA_Group,
+           epetra/LOCA_NewTest,
+           epetra/LOCA_Pitchfork,
+           epetra/MultiPhysics,
+           epetra/NOX_Group,
+           epetra/NOX_NewTest,
+           epetra/NOX_Vector,
+           lapack/LOCA_ChanProblem,
+           lapack/LOCA_Group,
+           lapack/LOCA_NewTest,
+           lapack/LOCA_TestProblems,
+           lapack/LOCA_UnitTests,
+           lapack/LOCA_python,
+           lapack/NOX,
+           lapack/NOX_Group,
+           lapack/NOX_NewTest;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

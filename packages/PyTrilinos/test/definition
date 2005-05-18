@@ -1,0 +1,8 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    TESTS = testEpetra.py, testEpetraExt.py, testExample.py, testNOX.py;
+    COMM = SERIAL, MPI;
+}

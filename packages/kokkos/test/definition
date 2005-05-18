@@ -1,0 +1,13 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = BaseSparseMultiply,
+           BaseSparseSolve,
+           DenseMultiVector,
+           HbMatrix,
+           Permutation;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

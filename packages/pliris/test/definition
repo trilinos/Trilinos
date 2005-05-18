@@ -1,0 +1,9 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = vector_random;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

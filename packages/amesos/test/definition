@@ -1,0 +1,22 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = TestOptions,
+           Test_Basic,
+           Test_DSPACK,
+           Test_Detailed
+           Test_Epetra_CrsMatrix,
+           Test_Epetra_RowMatrix,
+           Test_KLU,
+           Test_LAPACK,
+           Test_MUMPS,
+           Test_MultipleSolves,
+           Test_Performance,
+           Test_SuperLU,
+           Test_SuperLU_DIST,
+           Test_UMFPACK;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

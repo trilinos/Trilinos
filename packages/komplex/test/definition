@@ -1,0 +1,9 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    DIRS = simple;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
