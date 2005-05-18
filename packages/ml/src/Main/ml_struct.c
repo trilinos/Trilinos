@@ -6724,7 +6724,7 @@ void ML_Set_LevelID(ML *ml, int incr_or_decr)
    }
 
   /* check that no levels are negative */
-  for (int i = 0; i < ml->ML_num_levels; ++i)
+  for (i = 0; i < ml->ML_num_levels; ++i)
     if (ml->LevelID[i] < 0)
       pr_error("ML_Set_LevelID: Level %d has a negative ID.\n",i);
 }
