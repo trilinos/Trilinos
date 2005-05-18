@@ -70,7 +70,7 @@ extern "C" {
 			      double *, char * base_filename, int level);
   extern int ML_Aggregate_Viz_Amalgamate( ML *ml, ML_Aggregate *ag);
   extern int ML_Aggregate_Viz_UnAmalgamate( ML *ml, ML_Aggregate *ag);
-  extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag, int clean_finest);
+  extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml);
 
 #ifndef ML_CPP
 #ifdef __cplusplus
