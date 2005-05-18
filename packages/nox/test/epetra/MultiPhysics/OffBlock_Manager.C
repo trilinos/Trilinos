@@ -108,7 +108,7 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   offBlockInterface = new Problem_Interface(*this);
 
   // Use our graph to create FDC objects needed for off-diagonal block fills
-  createFDobjects();
+  createFDobjects( true );
 
   // Reset number of dofs (overwrites base constructor assignment)
   NumMyNodes = 0;
@@ -238,12 +238,12 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
 
   DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << graph << endl;)
 
+  // Note: We use a vector corresponding to compositeSoln
+  //Epetra_Vector & compositeVec = myManager->getCompositeSoln();
+  rowMapVec = new Epetra_Vector (graph.RowMap());
+
   if( !useColoring )
   {
-    // Note: We use a vector corresponding to compositeSoln
-    //Epetra_Vector & compositeVec = myManager->getCompositeSoln();
-    rowMapVec = new Epetra_Vector (graph.RowMap());
-
     // Now setup each FD Jacobian as its own group/linearsystem
     matrixOperator = new NOX::EpetraNew::FiniteDifference(
       	*offBlockInterface, 
@@ -292,8 +292,11 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
 #ifdef HAVE_NOX_EPETRAEXT
     // Create a timer for performance
     Epetra_Time colorTime(*Comm);
+    // GREEDY dies when doing a transpose for some reason, RWH
+    //EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
+    //  EpetraExt::CrsGraph_MapColoring::GREEDY;
     EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
-      EpetraExt::CrsGraph_MapColoring::GREEDY;
+      EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
     int reordering = 0;
     bool useParallel = false;
     bool distance1 = false;
@@ -321,7 +324,7 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     // Now setup each FDC Jacobian as its own group/linearsystem
     matrixOperator = new NOX::EpetraNew::FiniteDifferenceColoring(
       	*offBlockInterface, 
-  	compositeVec, 
+  	*rowMapVec, 
   	graph, 
   	*colorMap, 
   	*columnSet,
@@ -343,9 +346,9 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
         reqInt,
         jacInt,
         *matrixOperator,
-        compositeVec );
+        *rowMapVec );
   
-    NOX::Epetra::Vector tmpNOXVec(compositeVec);
+    NOX::Epetra::Vector tmpNOXVec(*rowMapVec);
   
     group = new NOX::EpetraNew::Group(
       myManager->nlParams->sublist("Printing"),
@@ -425,6 +428,8 @@ Epetra_CrsGraph & OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGrap
   
   DEBUG_BLOCKGRAPH( cout << "\n----> Block-Graph : " << *blockGraph << endl;)
   
+  blockGraph->FillComplete();
+
   return *blockGraph; 
 }
 

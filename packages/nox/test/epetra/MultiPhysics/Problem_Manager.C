@@ -883,6 +883,8 @@ void Problem_Manager::copyProblemJacobiansToComposite()
           p_offBlockMgr->convertBlockRowIndicesToComposite(1, &i, &compositeRow);
           p_offBlockMgr->convertBlockColIndicesToComposite(numCols, blockColIndices, compositeColIndices);
           compositeMatrix.ReplaceMyValues(compositeRow, numCols, values, compositeColIndices);
+
+          delete [] compositeColIndices;
         }
 
         // Sync up processors to be safe
