@@ -1,0 +1,273 @@
+From: Andy Salinger <agsalin@sandia.gov>
+Date: April 8, 2005 3:46:57 PM MDT
+To: tscoffe@sandia.gov
+Subject: Interfaces
+
+
+Enjoy!
+namespace EpetraExt {
+namespace NonlinearInterface {
+
+class Evaluate : public {
+
+  Evaluate::Evaluate() {};
+
+public:
+
+
+  //TSC: Can create an abstract class with just the EvaluateRequests
+  //function, pure virtual, then derive this class from it and
+  //call this Standard or Basic or Atomic....
+
+  //TSC: can globally rename results to outArgs, args to InArgs
+
+  //TSC: Roscoe recommends member function to return the initial
+  //guess vector/map, and also to include a method to initialize
+  //an OutArgs object with all the isSupported flags set correctly.
+
+  // Single evaluate function using InArgs to calculate all
+  // quantities requested in OutArgs. Can be overloaded to
+  // add flexibility in combining evaluations.
+  virtual void Evaluate::EvaluateRequests(InArgs& args,
+                                          OutArgs& results)
+  {
+
+     // One example of combined evaluation request
+     if (results.fRequested && result.jacobianRequested) {
+         compute_f_jacobian(args.x, args.p, results.f, results.jacobian);
+         results.fRequested=false;
+         results.jacobianRequested=false;
+     }
+
+     AtomicEvaluation(args, results);
+  }
+
+private:
+  virtual void Evaluate::AtomicEvaluation(InArgs& args,
+                                          OutArgs& results)
+     // One simple, easy interface is to just call the interface
+     // functions one at a time, with NOX/LOCA-like names
+
+     if (results.jacobianRequested) {
+         compute_jacobian(args.x, args.p, results.jacobian);
+         results.jacobianRequested=false;
+     }
+
+     if (results.preconditionerRequested) {
+         compute_preconditioner(args.x, args.p, results.preconditioner);
+         results.preconditionerRequested=false;
+     }
+
+     if (results.dfdpRequested) {
+         compute_dfdp(args.x, args.p, results.dfdp);
+         results.dfdpRequested=false;
+     }
+
+     if (results.gRequested) {
+         compute_g(args.x, args.p, args.xDot, args.t, results.g);
+         results.gRequested=false;
+     }
+
+     if (results.gradgRequested) {
+         compute_gradg(args.x, args.p, args.xDot, args.t, results.dgdp, results.dgdx);
+         results.gradgRequested=false;
+     }
+
+     if (results.ftRequested) {
+         compute_ft(args.x, args.p, args.xDot, args.t, results.ft);
+         results.ftRequested=false;
+     }
+
+     if (results.massMatrixRequested) {
+         compute_massMatrix(args.x, args.p, args.xDot, args.t, results.massMatrix);
+         results.massMatrixRequested=false;
+     }
+
+     if (results.implicitMatrixRequested) {
+         compute_implicitMatrix(args.x, args.p, args.xDot, args.t, 
+             results.alpha, results.beta, results.implicitMatrix);
+         results.implicitMatrixRequested=false;
+     }
+
+     if (results.dftdpRequested) {
+         compute_dftdp(args.x, args.p, args.xDot, args.t, results.dftdp);
+         results.dftdpRequested=false;
+     }
+  }
+
+protected:
+  // One Example of combined evaluate with default implementation
+  virtual void Evaluate::compute_f_jacobian(Epetra_Vector *x,
+                Epetra_Vector *p, Epetra_Vector *f, Epetra_Operator* jacobian)
+    { compute_f(x, p, f); compute_jacobian(x, p, jacobian); };
+
+  // All the rest are single evaluation interface functions, with dummy
+  // implementation that throws an error if called and not overloaded.
+  virtual void Evaluate::compute_f(Epetra_Vector *x,
+                        Epetra_Vector *p, Epetra_Vector *f)
+    { DO_ERR("f");};
+
+  virtual void Evaluate::compute_jacobian(Epetra_Vector *x,
+                        Epetra_Vector *p, Epetra_Operator *jacobian)
+    { DO_ERR("jacobian");};
+
+  virtual void Evaluate::compute_preconditioner(Epetra_Vector *x,
+                        Epetra_Vector *p, Epetra_Operator *preconditioner)
+    { DO_ERR("preconditioner");};
+
+  virtual void Evaluate::compute_dfdp(Epetra_Vector *x,
+                        Epetra_Vector *p, Epetra_MultiVector *dfdp)
+    { DO_ERR("dfdp");};
+
+  virtual void Evaluate::compute_g(Epetra_Vector *x,
+                        Epetra_Vector *xDot, double t,
+                        Epetra_Vector *p, Epetra_Vector *g)
+    { DO_ERR("g");};
+
+  //TSC: Can Split into 2 calls
+  virtual void Evaluate::compute_gradg(Epetra_Vector *x,
+                        Epetra_Vector *xDot, double t,
+                        Epetra_Vector *p, Epetra_MultiVector *dgdx,
+                        Epetra_MultiVector *dgdp)
+    { DO_ERR("gradg");};
+
+  virtual void Evaluate::compute_ft(Epetra_Vector *x,
+                        Epetra_Vector *xDot, double t,
+                        Epetra_Vector *p, Epetra_Vector *ft)
+    { DO_ERR("ft");};
+
+  virtual void Evaluate::compute_massMatrix(Epetra_Vector *x,
+                        Epetra_Vector *xDot, double t,
+                        Epetra_Vector *p, Epetra_Operator *massMatrix)
+    { DO_ERR("massMatrix");};
+
+  virtual void Evaluate::compute_implicitMatrix(Epetra_Vector *x,
+                        Epetra_Vector *xDot, double t,
+                        Epetra_Vector *p, double alpha, double beta, 
+                        Epetra_Operator *implicitMatrix)
+    { DO_ERR("implicitMatrix");};
+
+  virtual void Evaluate::compute_dftdp(Epetra_Vector *x,
+                        Epetra_Vector *xDot, double t,
+                        Epetra_Vector *p, Epetra_MultiVector *dftdp)
+    { DO_ERR("dftdp");};
+
+  void Evaluate::DO_ERR(char* tag)
+  { cout << "Error: Interface function compute_"<<tag<<"  needed for"
+         << "requested\n\talgorithm, but dummy implementation not overloaded."
+         << endl;
+    exit(-1); // throw something
+  }
+
+}
+}
+}
+
+namespace EpetraExt {
+namespace NonlinearInterface {
+
+class InArgs : public {
+
+  // Add other constructors, e.g. (x,t) for explicit time int.
+  InArgs::InArgs(Epetra_Vector *x_,
+                 Epetra_Vector *p_ = NULL,
+                 Epetra_Vector *xDot_ = NULL,
+                 double t_ = 0.0)
+     : x(x_), p(p_), xDot(xDot_), t(t_)
+     {};
+
+  // Can make protected and add accessors e.g. this->x()
+public :
+  Epetra_Vector *x;
+  Epetra_Vector *p;
+  Epetra_Vector *xDot;
+  double t;
+}
+}
+}
+
+namespace EpetraExt {
+namespace NonlinearInterface {
+
+//NOTE: Roscoe's suggestion is to add an isSupported bool to
+//each member, initialized by the Evaluation interface, so
+//that an error can be thrown was soon as a Request is made.
+
+class OutArgs : public {
+
+  OutArgs::OutArgs()
+     : f(NULL), jacobian(NULL), preconditioner(NULL), dfdp(NULL),
+       g(NULL), dgdp(NULL), dgdx(NULL),
+       ft(NULL), massMatrix(NULL), implicitMatrix(NULL), alpha(0.0), beta(0.0),
+       dfdp(NULL),
+       fRequested(false), jacobianRequested(false),
+       preconditionerRequested(false), dfdpRequested(false), gRequested(false),
+       gradgRequested(false), ftRequested(false), massMatrixRequested(false),
+       implicitMatrixRequested(false), dftdpRequested(false)
+       {};
+
+public:
+  // For each quantity that can be requested from the application
+  // through the interface, add a member function that sets the
+  // pointer and sets a bool flag.
+  void OutArgs::Request_f(Epetra_Vector *f_)
+       { f = f_; fRequested = true;};
+
+  void OutArgs::Request_jacobian(Epetra_Operator *jacobian_)
+       { jacobian = jacobian_; jacobianRequested = true;};
+
+  void OutArgs::Request_preconditioner(Epetra_Operator *preconditioner_)
+       { preconditioner = preconditioner_; preconditionerRequested = true;};
+
+  void OutArgs::Request_dfdp(Epetra_MultiVector *dfdp_)
+       { dfdp = dfdp_; dfdpRequested = true;};
+
+  void OutArgs::Request_g(Epetra_Vector *g_)
+       { g = g_; gRequested = true;};
+
+  void OutArgs::Request_gradg(Epetra_MultiVector *dgdp_, Epetra_MultiVector *dgdx_)
+       { dgdp=dgdp_; dgdx=dgdx_;  gradgRequested = true;};
+
+  void OutArgs::Request_ft(Epetra_Vector *ft_)
+       { ft = ft_; ftRequested = true;};
+
+  void OutArgs::Request_massMatrix(Epetra_Operator *massMatrix_)
+       { massMatrix = massMatrix_; massMatrixRequested = true;};
+
+  void OutArgs::Request_implicitMatrix(
+         Epetra_Operator *implicitMatrix_, double alpha_, double beta_)
+       { implicitMatrix = implicitMatrix_; alpha=alpha_; beta=beta_;
+         implicitMatrixRequested = true;};
+
+  void OutArgs::Request_dftdp(Epetra_MultiVector *dftdp_)
+       { dftdp = dftdp_; dftdpRequested = true;};
+
+  //TSC: Change to protected and add eponymous accessor function
+public :
+  // Steady
+  Epetra_Vector *f;
+  Epetra_Operator *jacobian;
+  Epetra_Operator *preconditioner;
+  Epetra_MultiVector *dfdp;
+  bool fRequested, jacobianRequested, preconditionerRequested, dfdpRequested;
+
+  //Constraints or Objective Functions
+  //TSC: Perhaps ungroup  dgdx  dgdp  into atomic boolean and Requests
+  Epetra_Vector *g;
+  Epetra_MultiVector *dgdp; // Grouped together 
+  Epetra_MultiVector *dgdx; // as gradg
+  bool gRequested, gradgRequested;
+
+  //Time dependent quantities
+  Epetra_Vector *ft;
+  Epetra_Operator *massMatrix;
+  Epetra_Operator *implicitMatrix;
+  double alpha, beta; //Weights in implict matrix (aM+bJ)
+  Epetra_MultiVector *dftdp;
+  bool ftRequested, massMatrixRequested, implicitMatrixRequested,
+       dftdpRequested;
+
+}
+}
+}
+
