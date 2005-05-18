@@ -552,6 +552,35 @@ report should be filled out with as much detail as possible.  Likewise, after
 a bug has been resolved, the developer should also provide a detailed 
 description of the solution that was used.
 
+Two commonly underutilized features of Bugzilla are the ability to assign a 
+priority and a severity to a bug.  Taking advantage of these features helps 
+users more clearly express their concerns and helps developers organize tasks.
+Below are recommended usage guidelines for the priority and severity settings 
+for Bugzilla bugs that are filed against Trilinos.
+
+Severity: Severity should be determined by the person who files the bug 
+(reporter) and should be based solely on how “severe” the reporter perceives 
+the bug to be at the time the bug is filed.  Considerations for selecting a 
+proper severity include whether or not the bug is currently directly impeding 
+progress, and if it has the potential to impede progress in the future.  There 
+is also an important distinction between enhancements and faults in existing 
+functionality.  Severity can be updated if conditions warrant a change.  
+Possible severity settings include blocker, critical, major, normal, minor, 
+trivial, and enhancement.  The severity of a bug is not necessarily related to 
+its priority. 
+
+Priority: Priority should be determined by the owner of the bug.  Priority can 
+be chosen based on the relative importance of other existing bugs, as well as 
+on how important the bug is to Trilinos and Sandia.  Other factors can come 
+into play when selecting a priority for a bug.  The priority of a bug can be 
+updated if conditions warrant a change.  Possible priority settings include P1, 
+P2, P3, P4, and P5.  P1 is the highest priority, P5 is the lowest.  A good rule 
+of thumb is to assign priorities P1, P2, and P3 to bugs that should be fixed 
+before the next release.  Obviously P1 is the highest priority rating within 
+this subset and P3 the lowest.  Priorities P4 and P5 can then be used for bugs 
+that do not necessarily need to be addressed prior to the next release.  
+The priority of a bug is not necessarily related to its severity.
+
 NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
 existing code, but also to a desired enhancement.  For example, a bug report 
 should be submitted to Bugzilla to report a segmentation fault that occurs 
