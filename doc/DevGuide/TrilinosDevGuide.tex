@@ -550,7 +550,9 @@ report is still very valuable in this case because it provides an artifact
 that outlines the problem and explains how the problem was fixed.  A bug 
 report should be filled out with as much detail as possible.  Likewise, after 
 a bug has been resolved, the developer should also provide a detailed 
-description of the solution that was used.
+description of the solution that was used.  Below we will discuss two 
+underutilized features of Bugzilla as well as the concept of a meta bug, which
+has proven to be very useful to the Trilinos development team.
 
 Two commonly underutilized features of Bugzilla are the ability to assign a 
 priority and a severity to a bug.  Taking advantage of these features helps 
@@ -580,6 +582,22 @@ before the next release.  Obviously P1 is the highest priority rating within
 this subset and P3 the lowest.  Priorities P4 and P5 can then be used for bugs 
 that do not necessarily need to be addressed prior to the next release.  
 The priority of a bug is not necessarily related to its severity.
+
+Bugzilla allows a bug to be listed as dependent on another bug.  If bug 1 is 
+dependent on bug 2, bug 2 is called a ``blocker'' for bug 1.  The ability to 
+make one bug dependent on another is useful for multiple reasons.  Trilinos 
+developers often make use of what are informally called ``meta bugs''.  Meta 
+bugs are larger tasks that are broken into several smaller tasks (there are no 
+special requirements for filing a meta bug, a meta bug is just a bug that 
+depends on other bugs).  For example, a meta bug with the summary ``Port to 
+all ASC platforms'' could be filed against a new package.  A separate bug 
+could be filed for porting to each individual ASC platform, and then all of 
+those bugs would block the meta bug.  The meta bug concept is used during the 
+Trilinos release process.  One meta bug is filed for the Trilinos release 
+process.  That bug depends on the bugs for each package release process and the 
+Trilinos web release process.  Each package also has a meta bug associated with 
+its release process.  The use of meta bugs makes the Trilinos release process 
+much more manageable at the framework and package levels.
 
 NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
 existing code, but also to a desired enhancement.  For example, a bug report 
