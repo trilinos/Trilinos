@@ -125,7 +125,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    ML_memory_alloc((void**) &Pmat         ,sizeof(ML_Operator)*Nlevels,"MPM");
    ML_memory_alloc((void**) &max_eigen    ,sizeof(double)*Nlevels,"MQM");
    ML_memory_alloc((void**) &LevelID     ,sizeof(int)*Nlevels,"MSM");
-   ML_memory_alloc((void**) &label       ,sizeof(int)*80,"MTM");
+   label = (char *) ML_allocate(sizeof(char) * 80);
    length = sizeof(ML_DVector) * Nlevels;
    for ( i = 0; i < Nlevels; i++ ) max_eigen[i] = 0.0;
    ML_memory_alloc((void**)&Amat_Normalization, (unsigned int) length, "MAN");
@@ -251,7 +251,7 @@ int ML_Destroy(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->SingleLevel) );
       ML_memory_free( (void**) &(ml->spectral_radius) );
       ML_memory_free( (void**) &(ml->LevelID) );
-      ML_memory_free( (void**) &(ml->label) );
+      ML_free( ml->label );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
       ML_memory_free( (void**) &(ml) );
