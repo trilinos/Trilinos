@@ -189,7 +189,7 @@ repository is granted only to co-developers, Sandians, and in select
 special cases.
 
 To access the repository, an account on software.sandia.gov is required.  In 
-addition, the user account must be a in the ``trilinos'' and ``cvs'' groups 
+addition, the user account must be a in the ``cvs'' group 
 on software.sandia.gov.  To request an account, send a note 
 to \InlineDirectory{trilinos-help@software.sandia.gov}.  
 The following two environment variables must be set to access the repository:
@@ -296,6 +296,29 @@ with as much detail as possible.  Specifically, be sure to include which
 version of Trilinos the bug was discovered in and which 
 platform(s) and compiler(s) the bug is associated with.  Also include any 
 specific error messages and any additional information that can be provided.
+
+Two commonly underutilized features of Bugzilla are the ability to assign a
+priority and a severity to a bug.  Taking advantage of these features helps
+users more clearly express their concerns and helps developers organize tasks.
+Below are recommended usage guidelines for the priority and severity settings
+for Bugzilla bugs that are filed against Trilinos.
+                                                                                
+Severity: Severity should be determined by the person who files the bug
+(reporter) and should be based solely on how “severe” the reporter perceives
+the bug to be at the time the bug is filed.  Considerations for selecting a
+proper severity include whether or not the bug is currently directly impeding
+progress, and if it has the potential to impede progress in the future.  There
+is also an important distinction between enhancements and faults in existing
+functionality.  Severity can be updated if conditions warrant a change.
+Possible severity settings include blocker, critical, major, normal, minor,
+trivial, and enhancement.  The severity of a bug is not necessarily related to
+its priority.
+
+Priority: Priority should be determined by the owner of the bug.  Priority can
+be chosen based on the relative importance of other existing bugs, as well as
+on how important the bug is to Trilinos and Sandia.  When filling out a bug 
+report, users can leave the bug at the default priority, or may try to guess
+the priority that the bug owner will select.
 
 NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
 existing code, but also to a desired enhancement.  For example, a bug report 
