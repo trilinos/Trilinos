@@ -27,38 +27,47 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Rythmos_EXAMPLE_APPLICATION_H
-#define Rythmos_EXAMPLE_APPLICATION_H
+#ifndef Rythmos_EXAMPLE_APPLICATION_RYTHMOS_INTERFACE_H
+#define Rythmos_EXAMPLE_APPLICATION_RYTHMOS_INTERFACE_H
 
-//#include "Thyra_VectorBase.hpp"
-#include "Epetra_Vector.h"
+#include "Epetra_Map.h"
+//#include "Epetra_Vector.h"
+//#include "Rythmos_ConfigDefs.h"
+
+#include "ExampleApplication.hpp"
+
+#include "Thyra_VectorBase.hpp"
+//#include "Thyra_EpetraThyraWrappers.hpp"
+
+#include "Teuchos_RefCountPtr.hpp"
+
 
 //-----------------------------------------------------------------------------
-// Class         : ExampleApplication
-// Purpose       : Example application code with DE: \dot{x}=\lambda x
+// Class         : ExampleApplicationRythmosInterface
+// Purpose       : Interface code to link EampleApplication to Rythmos
 // Special Notes :
 // Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
+// Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-class ExampleApplication
+class ExampleApplicationRythmosInterface
 {
   public:
     
     // Destructor
-    ~ExampleApplication();
+    ~ExampleApplicationRythmosInterface();
 
     // Cosntructor
-    ExampleApplication();
-    ExampleApplication(double lam);
+    ExampleApplicationRythmosInterface(Teuchos::RefCountPtr<const Epetra_Map> &epetra_map);
 
-    int evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t);
-    double getCoeff();
+    int evalModel(Teuchos::RefCountPtr<Thyra::VectorBase<double> > &y, Teuchos::RefCountPtr<Thyra::VectorBase<double> > &x, double t);
 
   private:
+    Teuchos::RefCountPtr<ExampleApplication> problem_;
+    Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
 
-    // Coefficient for ODE
-    double lambda_;
 };
 
 
-#endif // Rythmos_EXAMPLE_APPLICATION_H
+
+
+#endif // Rythmos_EXAMPLE_APPLICATION_RYTHMOS_INTERFACE_H

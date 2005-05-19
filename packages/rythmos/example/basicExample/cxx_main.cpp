@@ -39,7 +39,8 @@
 
 #include "Rythmos_ConfigDefs.h"
 
-#include "ExampleApplication.hpp"
+//#include "ExampleApplication.hpp"
+#include "ExampleApplicationRythmosInterface.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -50,15 +51,12 @@ int main(int argc, char *argv[])
 
   typedef double Scalar; // Scalar type = double
 
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm;
-  Teuchos::RefCountPtr<const Epetra_Map> epetra_map;
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
-  epetra_comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
+  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
-  epetra_comm = Teuchos::rcp( new Epetra_SerialComm );
+  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = Teuchos::rcp( new Epetra_SerialComm );
 #endif
 
   int MyPID = epetra_comm->MyPID();
@@ -69,20 +67,23 @@ int main(int argc, char *argv[])
   int NumElements = 1;
 
   // Construct a Map with NumElements and index base of 0
-  epetra_map = Teuchos::rcp( new Epetra_Map(NumElements, 0, *epetra_comm) );
+  Teuchos::RefCountPtr<const Epetra_Map> epetra_map = Teuchos::rcp( new Epetra_Map(NumElements, 0, *epetra_comm) );
 
   // Construct a Thyra vector space
-  epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > thyra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
 
   // Create x and xn vectors
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x  = Thyra::createMember(epetra_vs);
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn = Thyra::createMember(epetra_vs);
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x  = Thyra::createMember(thyra_vs);
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn = Thyra::createMember(thyra_vs);
 
-  cout << "Integrating \\dot{x}=\\lambda x from t=0 to t=1" << endl
-       << "with initial x_0 = 10, and \\Delta t=0.1" << endl
-       << "using forward Euler." << endl;
-  double lambda = -0.9;
-  ExampleApplication problem(lambda);
+  if (MyPID == 0) 
+  {
+    cout << "Integrating \\dot{x}=\\lambda x from t=0 to t=1" << endl
+        << "with initial x_0 = 10, and \\Delta t=0.1" << endl
+        << "using forward Euler." << endl;
+  }
+  double lambda = -0.5;
+  ExampleApplicationRythmosInterface problem(epetra_map);
 
   double t0 = 0.0;
   double t1 = 1.0;
@@ -90,17 +91,20 @@ int main(int argc, char *argv[])
   double N = (t1-t0)/dt;
   double x_initial = 10.0; // initial condition
   Thyra::assign(&*xn,x_initial); // xn = x_initial
-  cout << "x(0.0) = " << Thyra::get_ele(*xn,1) << endl;
+  if (MyPID == 0)
+    cout << "x(0.0) = " << Thyra::get_ele(*xn,1) << endl;
   double t = t0;
   for (int i=1 ; i<N+1 ; ++i)
   {
     t = t0 + i*dt;
-    Thyra::assign(&*x,*xn); // x = xn;
-    problem.evalResidual( x, t ); 
+//    Thyra::assign(&*x,*xn); // x = xn;
+    problem.evalModel(x, xn, t );  // x = f(xn,t)
     Thyra::Vp_StV(&*xn,dt,*x); // xn = xn + dt*x
-    cout << "x(" << t << ") = " << Thyra::get_ele(*xn,1) << endl; 
+    if (MyPID == 0)
+      cout << "x(" << t << ") = " << Thyra::get_ele(*xn,1) << endl; 
   }
-  cout << "       " << x_initial*exp(problem.getCoeff()*t) << " = Exact solution" << endl;
+  if (MyPID == 0)
+    cout << "       " << x_initial*exp(lambda*t) << " = Exact solution" << endl;
   return 0;
 }
 
