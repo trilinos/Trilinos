@@ -1140,12 +1140,12 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
   Parameter list:
   ===============
 
-  vals:            On input, vals[i] on this processor is to be summed with
+  tvals:           On input, vals[i] on this processor is to be summed with
                    vals[i] on all the other processors.
                    On output, vals[i] is the sum of the input values in val[i]
                    defined on all processors.
 
-  vals2:           Work space of size 'length'.
+  tvals2:          Work space of size 'length'.
 
   node:            Current processor number.
 
@@ -2710,11 +2710,12 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    FILE   *fid;
    int    Nrows, NglobalRows, NglobalCols=0;
    int    is_global_allocated = 0;
+   int    length=0;
    ML_Comm * comm = matrix->comm;
    
    /* if ordering is NULL, assume we have a square matrix */
    if( global_row_ordering == NULL ) {
-     ML_build_global_numbering(matrix, &global_row_ordering);
+     length = ML_build_global_numbering(matrix, &global_row_ordering);
      is_global_allocated = 1;
      global_col_ordering = global_row_ordering; 
    }
@@ -2726,6 +2727,13 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 
    MyPID = comm->ML_mypid;
    NumProc = comm->ML_nprocs;
+
+/*
+   MPI_Barrier(MPI_COMM_WORLD);
+   for (i=0; i<length; i++)
+     printf("(%d, %s) %d: %d\n",MyPID,label,i,global_row_ordering[i]);
+   MPI_Barrier(MPI_COMM_WORLD);
+*/
 
    allocated = matrix->max_nz_per_row;
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
@@ -2851,6 +2859,11 @@ int ML_build_global_numbering( ML_Operator *Amat,
   double * dtemp = NULL;
   int * global_numbering;
   ML_Comm *comm = Amat->comm;
+  /*ML_CommInfoOP *pre_comm = Amat->getrow->pre_comm;
+  ML_NeighborList *neighbor;
+  int mypid = Amat->comm->ML_mypid;
+  int *temp;
+  int k;*/
   
   Nrows = Amat->getrow->Nrows;
   if (Amat->getrow->pre_comm == NULL) Nghosts = 0;
@@ -2895,7 +2908,41 @@ int ML_build_global_numbering( ML_Operator *Amat,
 
   /* I exchange this information using ML_exchange_bdry,
      which is coded for double vectors. */
+
+/*
+struct ML_CommInfoOP_Struct {
+   int             N_neighbors;
+   ML_NeighborList *neighbors;
+   int             add_rcvd;
+   int             *remap;
+   int             total_rcv_length;
+   int             minimum_vec_size, remap_length, remap_max;
+   double          time;
+   int             NumActiveProc;
+   int             proc_active;
+   ML_Comm         *comm;
+};
+*/
     
+/*
+  printf("(%d) calling ML_exchange_bdry\n",comm->ML_mypid);
+  printf("(%d, %d) Nrows = %d, Nghosts = %d, Amat->outvec_leng = %d\n",
+         comm->ML_mypid,getpid(),Nrows,Nghosts,Amat->outvec_leng);
+  printf("(%d, %d) N_neighbors = %d, total_rcv_length = %d\n",
+         comm->ML_mypid,getpid(), pre_comm->N_neighbors, pre_comm->total_rcv_length);
+
+  for (i = 0; i < pre_comm->N_neighbors; i++) 
+  {
+    neighbor = pre_comm->neighbors+i;
+    printf("(%d,%d) neighbor->N_send = %d\n",mypid,getpid(), neighbor->N_send);
+
+    temp = pre_comm->neighbors[i].send_list;
+    for (k = 0; k < neighbor->N_send; k++) 
+        printf("(%d,%d) sendlist(%d) = %d\n",mypid,getpid(),k,temp[k]);
+  }
+  fflush(stdout);
+
+*/
   ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,
 		   Amat->outvec_leng,
 		   comm, ML_OVERWRITE,NULL);
@@ -2923,7 +2970,10 @@ int ML_build_global_numbering( ML_Operator *Amat,
   
   ML_free( dtemp ); dtemp = NULL;
 
-  return 0;
+/*
+  printf("%d: Nrows = %d, Nghosts = %d\n",Amat->comm->ML_mypid,Nrows,Nghosts);
+*/
+  return Nrows+Nghosts;
     
 }
 /*ms*/

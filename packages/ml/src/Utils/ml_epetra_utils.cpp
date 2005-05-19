@@ -1594,7 +1594,6 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
    char* bptr      = 0;
 
    int  numeq_total = map.NumGlobalElements();
-   int  numeq       = map.NumMyElements();
    int  nproc       = comm.NumProc();
    int  proc        = comm.MyPID();
    
@@ -1688,7 +1687,6 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
   char* bptr      = 0;
 
   int  numeq_total = map.NumGlobalElements();
-  int  numeq       = map.NumMyElements();
   int  nproc       = comm.NumProc();
   int  proc        = comm.MyPID();
    
@@ -1791,7 +1789,6 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
   char  buffer[1000];
   char* bptr      = 0;
 
-  int  numeq_total = map.NumGlobalElements();
   int  numeq       = map.NumMyElements();
   int  nproc       = comm.NumProc();
   int  proc        = comm.MyPID();
@@ -1912,12 +1909,9 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   char* bptr;
   char buffer[1000];
   char filename2[1000];
-  char fileoutm[100];
-  char fileoutr[100];
   
   int  numeq_total = map.NumGlobalElements();
   int  numeq       = map.NumMyElements();
-  int  nproc       = comm.NumProc();
   int  proc        = comm.MyPID();
 
   //----------------- reduce content of ivec Vector in vector to proc 0    

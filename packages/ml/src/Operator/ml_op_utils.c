@@ -671,8 +671,9 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   switch(which_partitioner) {
   case ML_USEZOLTAN:
 #ifdef HAVE_ML_ZOLTAN
-    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4) {
       printf("Repartitioning using Zoltan\n");
+    }
     if (ML_DecomposeGraph_with_Zoltan(matrix, *nblks, pnode_part, NULL,
 				      x_coord, y_coord, z_coord, -1) < 0)
       for (ii = 0; ii < n; ii++) pnode_part[ii] = myid;

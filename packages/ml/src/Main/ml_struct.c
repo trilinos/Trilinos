@@ -61,6 +61,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    char            str[80];
    ML_Comm         *comm;
    int              *LevelID;
+   char            *label;
 
 #ifdef ML_TIMING
    struct ML_Timing *timing;
@@ -124,6 +125,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    ML_memory_alloc((void**) &Pmat         ,sizeof(ML_Operator)*Nlevels,"MPM");
    ML_memory_alloc((void**) &max_eigen    ,sizeof(double)*Nlevels,"MQM");
    ML_memory_alloc((void**) &LevelID     ,sizeof(int)*Nlevels,"MSM");
+   ML_memory_alloc((void**) &label       ,sizeof(int)*80,"MTM");
    length = sizeof(ML_DVector) * Nlevels;
    for ( i = 0; i < Nlevels; i++ ) max_eigen[i] = 0.0;
    ML_memory_alloc((void**)&Amat_Normalization, (unsigned int) length, "MAN");
@@ -146,6 +148,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    (*ml_ptr)->Amat_Normalization = Amat_Normalization ;
    (*ml_ptr)->timing             = NULL;
    (*ml_ptr)->LevelID            = LevelID;
+   (*ml_ptr)->label              = label;
 
 #ifdef ML_TIMING
    ML_memory_alloc((void**) &timing, sizeof(struct ML_Timing),"MT");
@@ -248,6 +251,7 @@ int ML_Destroy(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->SingleLevel) );
       ML_memory_free( (void**) &(ml->spectral_radius) );
       ML_memory_free( (void**) &(ml->LevelID) );
+      ML_memory_free( (void**) &(ml->label) );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
       ML_memory_free( (void**) &(ml) );
@@ -302,6 +306,7 @@ int ML_Destroy2(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->SingleLevel) );
       ML_memory_free( (void**) &(ml->spectral_radius) );
       ML_memory_free( (void**) &(ml->LevelID) );
+      ML_memory_free( (void**) &(ml->label) );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
       ML_memory_free( (void**) &(ml) );
@@ -380,6 +385,32 @@ int ML_Set_MaxIterations(ML *ml, int iterations)
 {
   ml->max_iterations = iterations;
   return(1);
+}
+
+/* ------------------------------------------------------------------------- */
+
+void ML_Set_Label( ML *ml, char *label)
+{
+  int size;
+
+  if (ml->label != NULL) ML_free(ml->label);
+  size = strlen(label) + 1;
+  ml->label = (char *) ML_allocate(size*sizeof(char));
+  if (ml->label == NULL) pr_error("ML_Set_Label: Not enough space.\n");
+  strncpy(ml->label,label,(size_t) size);
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Get_Label( ML *ml, char *label)
+{
+  size_t size;
+
+  if (label == NULL || ml->label == NULL) return 0;
+  size = strlen(ml->label);
+  if (strlen(label) < size + 1) return 0;
+  strncpy(label,ml->label, size);
+  return 1;
 }
 
 /* ************************************************************************* */
@@ -2486,7 +2517,7 @@ int ML_fixCoarseMtx(
     * Return 0 if OK
     *        1 if failed
     **************************************************************************/
-    int           *bindx, i, j, nLocRows, nf, nCand, numDeadNodDof;
+    int           *bindx, i, j, nLocRows, nf, numDeadNodDof;
     double        *val, mxdia;
     ML_QR_FIX_TYPE dead;
     struct ML_CSR_MSRdata* data = (struct ML_CSR_MSRdata*) Cmat->data;

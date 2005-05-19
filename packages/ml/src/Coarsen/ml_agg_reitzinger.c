@@ -256,6 +256,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
     /* fill matrix field separately, after edge hierarchy is completed */
     grid_info->Amatrix = NULL;
   }
+/*
+  for (j=0; j<ml_edges->Amat[fine_level].invec_leng; j++)
+    printf("(pid %d, level 0) new coords(%d) =  %e %e\n",
+           ml_edges->comm->ML_mypid, j,grid_info->x[j],grid_info->y[j]);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+*/
 
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
@@ -1518,6 +1525,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        ML_Project_Coordinates(ml_edges->Amat+grid_level+1,
                               (ML_Operator *) ag->P_tentative[grid_level],
                               ml_edges->Amat+grid_level);
+/*
+       for (j=0; j<ml_edges->Amat[grid_level].invec_leng; j++) {
+         printf("(pid %d, level %d) new coords(%d) =  %e %e\n",
+                ml_edges->comm->ML_mypid, fine_level - grid_level, j,grid_info->x[j],grid_info->y[j]);
+       }
+*/
        grid_info->local_or_global = ML_LOCAL_INDICES;
        grid_info->is_filled = ML_YES;
        ML_Operator_Destroy(ag->P_tentative+grid_level);

@@ -66,6 +66,7 @@ typedef struct ML_Struct ML;
 
 struct ML_Struct {
    int            id;
+   char           *label;          /**< optional character label     */
    int            ML_init_flag;    /**< indicate initialization done */
    int            ML_scheme;       /**< which ML scheme to pick      */
    int            ML_num_levels;   /**< number of levels available   */
@@ -369,6 +370,8 @@ extern void ML_Enable_LowMemory();
 extern void ML_Disable_LowMemory();
 extern void ML_Set_LevelID(ML *ml, int incr_or_decr);
 extern int ML_Get_LevelID(ML *ml, int logical_level);
+extern void ML_Set_Label( ML *ml, char *label);
+extern int ML_Get_Label( ML *ml, char *label);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

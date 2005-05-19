@@ -25,7 +25,9 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
 {
 
   string CoarsenType     = List.get("aggregation: type", "Uncoupled");
+  /* old version
   int    NodesPerAggr    = List.get("aggregation: per aggregate", 64);
+  */
   double Threshold       = List.get("aggregation:", 0.0);
   int    NumPDEEquations = List.get("PDE equations", 1);
 

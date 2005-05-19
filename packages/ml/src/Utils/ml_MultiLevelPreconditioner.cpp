@@ -937,6 +937,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // create hierarchy for edges
 
     ML_Create(&ml_,MaxCreationLevels);
+    ML_Set_Label(ml_, "edges");
     int Direction;
     if (IsIncreasing == "increasing")
       Direction = ML_INCREASING;
@@ -959,7 +960,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // create hierarchy for nodes
     
     ML_Create(&ml_nodes_,MaxCreationLevels);
-
+    ML_Set_Label(ml_nodes_, "nodes");
     NumMyRows = NodeMatrix_->NumMyRows();
     N_ghost   = NodeMatrix_->NumMyCols() - NumMyRows;
     

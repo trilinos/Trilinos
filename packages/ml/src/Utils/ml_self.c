@@ -22,7 +22,6 @@ int ML_Smoother_Self(ML_Smoother *sm,int inlen,double x[],int outlen,
                      double rhs[])
 {
 
-  int i;
   void *Self_Handle = sm->smoother->data;
 
   ML_Self_Solve(Self_Handle, x, rhs);

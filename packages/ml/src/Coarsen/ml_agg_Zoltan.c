@@ -437,7 +437,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   MLZ_dim = ML_Comm_GmaxInt(Amatrix->comm, MLZ_dim);
 
   if (MLZ_dim == 0) {
-    if (Amatrix->comm->ML_mypid == 0) 
+    if (Amatrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0) 
       printf("ML_DecomposeGraph_with_Zoltan: No coordinates given\n");
     return(-1);
   }
@@ -476,7 +476,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   /*  Initialize Zoltan. It will start MPI if we haven't already. */
   /*  Do this only once. */
 
-  if ((error = Zoltan_Initialize((int) NULL, NULL, &version)) != ZOLTAN_OK) {
+  if ((error = Zoltan_Initialize(0, NULL, &version)) != ZOLTAN_OK) {
     printf("fatal(10) Zoltan_Initialize returned error code, %d", error);
     goto End;
   }
@@ -497,6 +497,12 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   Zoltan_Set_Param(zz, "num_gid_entries", "1");
   Zoltan_Set_Param(zz, "num_lid_entries", "0");
   Zoltan_Set_Param(zz, "obj_weight_dim", "1");
+  if ( ML_Get_PrintLevel() > 10)
+    Zoltan_Set_Param(zz, "debug_level", "2");
+  else if ( ML_Get_PrintLevel() > 0)
+    Zoltan_Set_Param(zz, "debug_level", "1");
+  else
+    Zoltan_Set_Param(zz, "debug_level", "0");
   
   /*
    *  Set up Zoltan query functions for our Matrix data structure.
@@ -610,7 +616,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double* old_x = NULL;
    double* old_y = NULL;
    double* old_z = NULL;
-   double* old_nodal_coord = NULL;
    
    /* ------------------- execution begins --------------------------------- */
 

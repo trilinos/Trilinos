@@ -321,7 +321,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       if (IfpackList.get("partitioner: type", "user") == "user")
         IfpackList.set("partitioner: local parts", NumAggr);
       IfpackList.set("partitioner: map", AggrMap);
-      double Omega = IfpackList.get("relaxation: damping factor", 1.0);
 
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              IfpackOverlap, LevelID_[level], pre_or_post,

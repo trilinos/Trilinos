@@ -37,7 +37,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
    format, not xml.
 */
 
-  int i,j, k, irow, ipid;
+  int i,j, irow, ipid;
   ML_Operator *Amatrix = (ML_Operator *)(info.Amatrix);
   double *x = info.x;
   double *y = info.y;
@@ -61,17 +61,19 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   int * reorder = NULL, ok;
   int offset;
   int vertex_offset;
+#ifdef UNSTRUCTURED
   int cell_type;
-  int *aggregates;
+#endif
+  int *aggregates = NULL;
   int maxAggSize = 1000;
-  int *index;
+  int *index = NULL;
   int myLocalAgg;
   int NPosConnections; /* number of edge connections (in matrix graph) from
                           given unknown to unknown with a larger index --
                           corresponds to nnz in upper triangular part of
                           local matrix */
   int NGlobPosConnections;
-  int NCells, NumPtsInCells, NGlobCells;
+  int NGlobCells;
   int *bindx, allocated, row_length;
   double *values;
   int *GlobRowOrdering;

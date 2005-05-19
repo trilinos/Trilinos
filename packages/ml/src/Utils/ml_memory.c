@@ -73,7 +73,7 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
       /* -------------------------------------------------------------- */
 
       nchunks = leng / ndouble;
-      if ((nchunks * ndouble) < leng) nchunks = nchunks + 3;
+      if ((nchunks * ndouble) < (int) leng) nchunks = nchunks + 3;
       else                            nchunks = nchunks + 2;
       var_ptr = (char *) ML_allocate(nchunks*ndouble);
       dptr = (double *) var_ptr;

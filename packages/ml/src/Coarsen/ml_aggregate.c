@@ -1000,9 +1000,8 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
                           ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int i=1, ndofs, Ncoarse, coarsen_scheme;
-   int mypid, nprocs, relative_level;
+   int mypid, nprocs;
    char *label;
-   ML_Aggregate_Viz_Stats *grid_info;
 
 #ifdef ML_TIMING
    double t0;
@@ -1186,20 +1185,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    if (comm->ML_mypid == 0)
       printf("Aggregation time \t= %e\n",t0);
 #endif
-
-   /* If we have coordinate information on the current fine grid, */
-   /* project it down to the next level by taking averages of     */
-   /* each nodal coordinate within an aggregate.                  */
-   /* Note: the current fine grid is located in                   */
-   /*       ag->begin_level - ag->cur_level                       */
-
-/*
-   relative_level = (int) fabs((double) (ag->begin_level - ag->cur_level));
-   grid_info = (ML_Aggregate_Viz_Stats *) Amatrix->to->Grid[ag->cur_level].Grid;
-   if (grid_info->x != NULL)
-     ML_Aggregate_ProjectCoordinates(*Pmatrix, ag, Amatrix->num_PDEs,
-				     relative_level);
-*/
 
    i = -1;
    label = ML_memory_check(NULL);
@@ -1652,6 +1637,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  int oldj, *the_list = NULL, offset, Nnonzero, oldNnonzero, *itemp = NULL;
   double * d2vec;
 #endif
+
  int *remote_offsets = NULL, *iwork = NULL;
  int *ttemp = NULL, *Procs_WhoGive_TheirUnPermuted_Rows = NULL;
  int Nprocs_WhoGive_TheirUnPermuted_Rows, msgtype, prev;
@@ -2022,7 +2008,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   }
 
   if (ML_Get_PrintLevel() > 9) {
-    printf("%d: almost finished %d %d\n",mypid,perm_mat->outvec_leng,
+    printf("(pid %d, level %d): permutation matrix has %10d rows, %10d columns\n",mypid,mat->to->levelnum,perm_mat->outvec_leng,
 	       perm_mat->invec_leng);
   }
 
@@ -2172,11 +2158,17 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   /* no coordinates supplied */
   if (grid_info == NULL) {
     if (ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
-      printf("\n*ML*WRN* No coordinates supplied. Cannot repartition from level %d to %d.\n\n",fine,coarse);
+      printf("\n*ML*WRN* No grid structure found. Cannot repartition from level %d to %d.\n\n",fine,coarse);
+    return NULL;
+  }
+  else if (grid_info->x == NULL) {
+    if (ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+      printf("\n*ML*WRN* No x-coordinates supplied. Cannot repartition from level %d to %d.\n\n",fine,coarse);
     return NULL;
   }
   else {
 /*
+    j = ((int) fabs((double)(ag->begin_level - ag->cur_level))) + 1;
     printf("(pid %d, level %d):  ag->begin_level = %d, ag->cur_level = %d, j = %d\n",
             ml->comm->ML_mypid, fine,ag->begin_level, ag->cur_level,j);
 */
@@ -2240,11 +2232,11 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
       }
 /*
        for (i = 0; i < perm->invec_leng; i++)
-         printf("%d: old coords(%d) =  %e %e\n",perm->comm->ML_mypid,i,
+         printf("(pid %d, level %d): old coords(%d) =  %e %e\n",perm->comm->ML_mypid,j,i,
                 xcoord[i],ycoord[i]);
        for (i = 0; i < perm->outvec_leng; i++)
-         printf("%d: new coords(%d) =  %e %e\n",perm->comm->ML_mypid,i,
-                new_coords[i], new_coords[i+perm->outvec_leng]);
+         printf("(pid %d, level %d): new coords(%d) =  %e %e\n",perm->comm->ML_mypid,j,i,
+                new_xcoord[i], new_ycoord[i]);
 */
 
      if (ag->nullspace_vect != NULL) {
