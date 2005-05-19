@@ -317,6 +317,23 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 #endif
       ML_Gen_AmatrixRAP(ml, level, next);
       ML_memory_check("L%d: RAP end",level);
+
+      /* project the coordinates (if any) to the next coarser level */
+      if (ag->P_tentative != NULL)
+        Ptent = ag->P_tentative[next];
+      else
+        Ptent = &(ml->Pmat[next]);
+
+      grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
+      if (grid_info) {
+        if (grid_info->x != NULL) {
+          if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
+            printf("ML_Gen_MGHierarchy: Projecting node coordinates from level %d to level %d\n",
+                   level,next);
+          ML_Project_Coordinates(ml->Amat+level, Ptent, ml->Amat+next);
+        }
+      }
+
 #ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -361,23 +378,6 @@ MPI_Barrier(MPI_COMM_WORLD);
    if (k > bsize)
      pr_error("problemssssssssssssssssssss %d %d\n",k,bsize);
 #endif
-
-   /* project the coordinates (if any) to the next
-   * coarser level */
-   if (ag->P_tentative != NULL)
-     Ptent = ag->P_tentative[next];
-   else
-     Ptent = &(ml->Pmat[next]);
-
-   grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
-   if (grid_info) {
-     if (grid_info->x != NULL) {
-       if (ML_Get_PrintLevel() > 4)
-         printf("ML_Gen_MGHierarchy: Projecting node coordinates from level %d to level %d\n",
-                level,next);
-       ML_Project_Coordinates(ml->Amat+level, Ptent, ml->Amat+next);
-     }
-   }
 
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
