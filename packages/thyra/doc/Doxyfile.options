@@ -10,7 +10,6 @@ OUTPUT_LANGUAGE        = English
 # What and how documentation is extracted
 #
 SUBGROUPING            = NO
-#EXTRACT_ALL            = YES
 EXTRACT_ALL            = NO
 EXTRACT_PRIVATE        = NO
 EXTRACT_STATIC         = YES

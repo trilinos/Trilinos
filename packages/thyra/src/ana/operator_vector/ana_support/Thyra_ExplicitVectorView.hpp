@@ -62,7 +62,7 @@ namespace Thyra {
    ,Scalar                           x[]   // Size == rng.size()
    )
  {
-    Thyra::ExplicitVectorView<Scalar> v_ev(rng,v,true);  // Force unit stride
+    Thyra::ExplicitVectorView<Scalar> v_ev(v,rng,true);  // Force unit stride
     const Scalar *v_ptr = v_ev.values();                 // Get pointer to unit-stride data
     for( int k = 0; k < n; ++k )                         // For each element in view:
       x[k] = v_ptr[k];                                   //   Copy elements
@@ -79,7 +79,7 @@ namespace Thyra {
    ,Scalar                           x[]   // Size == rng.size()
    )
  {
-    Thyra::ExplicitVectorView<Scalar> v_ev(rng,v);           // Allow non-unit stride
+    Thyra::ExplicitVectorView<Scalar> v_ev(v,rng);           // Allow non-unit stride
     const Scalar        *v_ptr    = v_ev.values();           // Get pointer to non-unit-stride data
     const Thyra::Index  *v_stride = v_ev.stride();           // Get stride between vector data
     for( int k = 0; k < rng.size(); ++k, v_ptr += v_stride ) // For each element in view:
@@ -97,7 +97,7 @@ namespace Thyra {
    ,Scalar                           x[]   // Size == rng.size()
    )
  {
-    Thyra::ExplicitVectorView<Scalar> v_ev(rng,v);       // Allow non-unit stride 
+    Thyra::ExplicitVectorView<Scalar> v_ev(v,rng);       // Allow non-unit stride 
     for( int k = 0; k < rng.size(); ++k )                // For each element in view:
       x[k] = v_ev[k];                                    //   Copy elements using operator[]()
     // When this function returns then v_ev will be destroyed and the view will be freed
@@ -113,7 +113,7 @@ namespace Thyra {
    ,Scalar                           x[]   // Size == rng.size()
    )
  {
-    Thyra::ExplicitVectorView<Scalar> v_ev(rng,v);       // Allow non-unit stride 
+    Thyra::ExplicitVectorView<Scalar> v_ev(v,rng);       // Allow non-unit stride 
     for( int k = 0; k < rng.size(); ++k )                // For each element in view:
       x[k] = v_ev(k+1);                                  //   Copy elements using operator()()
     // When this function returns then v_ev will be destroyed and the view will be freed

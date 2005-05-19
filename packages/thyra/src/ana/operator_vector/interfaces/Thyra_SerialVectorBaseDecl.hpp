@@ -44,9 +44,10 @@ namespace Thyra {
  *
  * <b>Notes to subclass develoeprs</b>
  *
- * All that is needed to develop a concrete subclass is to define the
- * pure virtual functions <tt>getData()</tt> and <tt>space()</tt> (for
- * which a subclass of <tt>SerialVectorSpaceBase</tt> should be used).
+ * All that is needed to develop a concrete subclass is to override the pure
+ * virtual functions <tt>getData()</tt>, <tt>commitData()</tt> and
+ * <tt>space()</tt> (for which a subclass of <tt>SerialVectorSpaceBase</tt>
+ * should be used).
  *
  * \ingroup Thyra_Op_Vec_adapters_serial_support_grp
  */
