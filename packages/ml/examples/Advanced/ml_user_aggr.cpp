@@ -216,11 +216,6 @@ int main(int argc, char *argv[])
   
   Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
   int NumMyRows = A->NumMyRows();
-  vector<double> coord(2 * NumMyRows);
-  for (int i = 0 ; i < NumMyRows ; ++i) {
-    coord[i] = x_coord[i];
-    coord[i + NumMyRows] = y_coord[i];
-  }
 
   // As we wish to use AztecOO, we need to construct a solver object for this problem
   AztecOO solver(*Problem);
@@ -241,18 +236,14 @@ int main(int argc, char *argv[])
   ML_SetUserLabel(UserLabel);
   // 3.- set the aggregation scheme (see function above)
   ML_SetUserPartitions(UserPartitions);
-  // 4.- set the coordinates. Note that "aggregation: coordinates"
-  //     requires a double*, which contains all the x-coordinates,
-  //     followed by the y-coordinates, then the z-coordinates
-  //     (if present)
-  MLList.set("aggregation: coordinates", &coord[0]);
+  // 4.- set the coordinates.
+  MLList.set("x-coordinates", x_coord);
+  MLList.set("y-coordinates", y_coord);
   MLList.set("aggregation: dimensions", 2);
 
   // also setup some variables to visualize the aggregates
   // (more details are reported in example `ml_viz.cpp'.
   MLList.set("viz: enable", true);
-  MLList.set("viz: x-coordinates", x_coord);
-  MLList.set("viz: y-coordinates", y_coord);
 
   // now we create the preconditioner
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
