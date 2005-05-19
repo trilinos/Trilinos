@@ -103,16 +103,8 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
 
   /* Fix the output level */
   char str[80];
-  switch (ML_Get_PrintLevel()) {
-  case 10:
-    strcpy(str,"2");
-    break;
-  case 9:
-    strcpy(str,"1");
-    break;
-  default:
-    strcpy(str,"0");
-  }
+  if (ML_Get_PrintLevel() > 9) strcpy(str,"1");
+  else strcpy(str,"0");
     
   if (Zoltan_Set_Param(zz, "DEBUG_LEVEL", str) == ZOLTAN_FATAL) {
     printf("fatal(0)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
@@ -497,12 +489,6 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   Zoltan_Set_Param(zz, "num_gid_entries", "1");
   Zoltan_Set_Param(zz, "num_lid_entries", "0");
   Zoltan_Set_Param(zz, "obj_weight_dim", "1");
-  if ( ML_Get_PrintLevel() > 10)
-    Zoltan_Set_Param(zz, "debug_level", "2");
-  else if ( ML_Get_PrintLevel() > 0)
-    Zoltan_Set_Param(zz, "debug_level", "1");
-  else
-    Zoltan_Set_Param(zz, "debug_level", "0");
   
   /*
    *  Set up Zoltan query functions for our Matrix data structure.

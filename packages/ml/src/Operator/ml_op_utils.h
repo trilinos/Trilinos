@@ -64,7 +64,8 @@ extern int ML_Operator_HashGlobalRcvList(ML_CommInfoOP *pre_comm, int Nrows,
 					 int *Nexternal_allocated);
 extern int ML_overlap(ML_Operator *oldA, ML_Operator *newA, int overlap,
 		      ML_CommInfoOP **nonOverlapped_2_Overlapped);
-extern void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel);
+extern void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
+                                         int perfAndCommStats);
 extern void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits);
 extern void ML_Operator_Profile_SetIterations(int numits);
 extern int ML_Operator_Profile_GetIterations();

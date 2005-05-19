@@ -163,85 +163,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   (*Tmat_array)[fine_level] = Tfine;
   (*Tmat_trans_array)[fine_level] = Tmat_trans;
 
-
-
-  if (ag->print_flag < ML_Get_PrintLevel())
-  {
-    Pe = &(ml_edges->Amat[fine_level]);
-    if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
-    else active_proc = 0;
-    NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
-    nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-    i = Pe->outvec_leng;
-    ML_gsum_scalar_int(&i,&j,ml_edges->comm);
-    if (Pe->getrow->pre_comm != NULL && active_proc)  {
-      j = Pe->getrow->pre_comm->N_neighbors;
-      /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
-      }
-    else j = 0;
-    j = ML_Comm_GsumInt(ml_edges->comm, j);
-
-    /* printf("level %d) pid %d owns %d rows of Ke (edge)\n",fine_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
-
-    maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
-    maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-    minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
-                           Pe->comm);
-    minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-
-/*
-    if (Pe->getrow->pre_comm != NULL) {
-       ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-       if (ML_Get_PrintLevel() > 0) {
-         printf("(level %d, pid %d) Ke: Total receive length = %d\n",
-                fine_level, Pe->comm->ML_mypid,
-                Pe->getrow->pre_comm->total_rcv_length);
-       }
-    }
-*/
-
-    if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
-      printf("(level %d) Ke: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n\n",
-             fine_level, nz_ptr,i,
-            ((double) j)/((double) NumActiveProc),
-            maxrows, maxproc, minrows, minproc);
+  if (ML_Get_PrintLevel() > 7) {
+    sprintf(str,"edge%d",fine_level);
+    ML_Operator_ReportStatistics(ml_edges->Amat+fine_level,str,ML_FALSE);
   }
 
-  if (ag->print_flag < ML_Get_PrintLevel())
-  {
-    Pe = &(ml_nodes->Amat[fine_level]);
-    ML_Operator_Profile(Pe, "node", profile_its);
-    if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
-    else active_proc = 0;
-    NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
-    nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-    i = Pe->outvec_leng;
-    ML_gsum_scalar_int(&i,&j,ml_edges->comm);
-    if (Pe->getrow->pre_comm != NULL && active_proc)  {
-      j = Pe->getrow->pre_comm->N_neighbors;
-      /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
-      }
-    else j = 0;
-    j = ML_Comm_GsumInt(ml_edges->comm, j);
-
-    /*printf("level %d) pid %d owns %d rows of Kn (nodal)\n",fine_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
-
-    maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
-    maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-    minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
-                           Pe->comm);
-    minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-
-    if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
-      printf("(level %d) Kn: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n\n",
-             fine_level, nz_ptr,i,
-            ((double) j)/((double) NumActiveProc),
-            NumActiveProc,
-            maxrows, maxproc, minrows, minproc);
+  if (ML_Get_PrintLevel() > 7) {
+    sprintf(str,"Node%d",fine_level);
+    ML_Operator_ReportStatistics(ml_nodes->Amat+fine_level,str,ML_FALSE);
   }
 
 #ifdef ML_VAMPIR
@@ -256,13 +185,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
     /* fill matrix field separately, after edge hierarchy is completed */
     grid_info->Amatrix = NULL;
   }
-/*
-  for (j=0; j<ml_edges->Amat[fine_level].invec_leng; j++)
-    printf("(pid %d, level 0) new coords(%d) =  %e %e\n",
-           ml_edges->comm->ML_mypid, j,grid_info->x[j],grid_info->y[j]);
-
-  MPI_Barrier(MPI_COMM_WORLD);
-*/
 
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
@@ -554,55 +476,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                          ml_nodes->Amat[grid_level].getrow->pre_comm);
      (*Tmat_array)[grid_level] = Tcoarse;
      ML_memory_check("L%d Tcoarse end",grid_level);
-     ML_Operator_Profile(Kn_coarse, "node", profile_its);
 
-     if (ag->print_flag < ML_Get_PrintLevel())
-     {
-        Pe = &(ml_nodes->Amat[grid_level]);
-        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
-        else active_proc = 0;
-        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
-        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-        i = Pe->outvec_leng;
-        /* printf("level %d) pid %d owns %d rows of Kn (nodal)\n",grid_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
-        ML_gsum_scalar_int(&i,&j,ml_edges->comm);
-        j = 0;
-        if (Pe->getrow->pre_comm != NULL) {
-          j = Pe->getrow->pre_comm->N_neighbors;
-          /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
-          }
-        j = ML_Comm_GsumInt(ml_edges->comm, j);
-
-        maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
-        maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-        minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
-                           Pe->comm);
-        minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-
-/*
-        if (Pe->getrow->pre_comm != NULL) {
-          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-          if (ML_Get_PrintLevel() > 5) {
-            printf("(level %d, pid %d) Kn: Total receive length = %d\n",
-                   grid_level, Pe->comm->ML_mypid,
-                   Pe->getrow->pre_comm->total_rcv_length);
-            fflush(stdout);
-          }
-        }
-*/
-
-        /* printf("level %d) pid %d owns %d rows of Kn\n",grid_level, Pe->comm->ML_mypid, Pe->outvec_leng); */
-
-        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
-        printf("(level %d) Kn: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
-          grid_level, nz_ptr,i,
-          ((double) j)/((double)NumActiveProc),
-          NumActiveProc,
-          maxrows, maxproc, minrows, minproc);
-
+     if (ML_Get_PrintLevel() > 7) {
+       sprintf(str,"Node%d",grid_level);
+       ML_Operator_ReportStatistics(ml_nodes->Amat+grid_level,str,ML_FALSE);
      }
+     ML_Operator_Profile(Kn_coarse, "node", profile_its);
 
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Kn_coarse);
@@ -1484,27 +1363,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #endif
      ML_memory_check("L%d Pe enriched",grid_level);
 
-    if (ag->print_flag < ML_Get_PrintLevel())
-    {
-        Pe = &(ml_edges->Pmat[grid_level]);
-        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
-        else active_proc = 0;
-        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
-        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-        j = Pe->outvec_leng;
-        i = ML_Comm_GsumInt(ml_edges->comm, j);
-        j = 0;
-        if (Pe->getrow->pre_comm != NULL) { 
-          j = Pe->getrow->pre_comm->N_neighbors;
-          /*printf("(pid %d) num nbrs = %d, active proc = %d   invec =
-            %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc,Pe->invec_leng);*/
-        }
-        j = ML_Comm_GsumInt(ml_edges->comm, j);
-
-        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
-          printf("(level %d) Pe: Global nonzeros = %d, global rows = %d, avg num neighbors = %e\n\n", 
-                 grid_level,nz_ptr, i,
-                ((double) j)/((double)NumActiveProc));
+     if (ML_Get_PrintLevel() > 7) {
+       sprintf(str,"Edge%d",grid_level);
+       ML_Operator_ReportStatistics(ml_edges->Pmat+grid_level,str,ML_FALSE);
      }
 
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
@@ -1525,50 +1386,17 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        ML_Project_Coordinates(ml_edges->Amat+grid_level+1,
                               (ML_Operator *) ag->P_tentative[grid_level],
                               ml_edges->Amat+grid_level);
-/*
-       for (j=0; j<ml_edges->Amat[grid_level].invec_leng; j++) {
-         printf("(pid %d, level %d) new coords(%d) =  %e %e\n",
-                ml_edges->comm->ML_mypid, fine_level - grid_level, j,grid_info->x[j],grid_info->y[j]);
-       }
-*/
        grid_info->local_or_global = ML_LOCAL_INDICES;
        grid_info->is_filled = ML_YES;
        ML_Operator_Destroy(ag->P_tentative+grid_level);
      }
 
-     Pe = &(ml_edges->Amat[grid_level]);
-     if (ag->print_flag < ML_Get_PrintLevel())
-     {
-        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
-        else active_proc = 0;
-        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
-        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-        i = Pe->outvec_leng;
-        ML_gsum_scalar_int(&i,&j,ml_edges->comm);
-        j = 0;
-        if (Pe->getrow->pre_comm != NULL) {
-          j = Pe->getrow->pre_comm->N_neighbors;
-        }
-        j = ML_Comm_GsumInt(ml_edges->comm, j);
-
-        maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
-        maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-        minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
-                           Pe->comm);
-        minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-	    max_nzs = ML_gmax_int( Pe->N_nonzeros , ml_edges->comm);
-	    min_nzs = ML_gmin_int( Pe->N_nonzeros , ml_edges->comm);
-
-        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
-        printf("(level %d) Ke before repart: Global nonzeros = %d, global rows = %d,\n\tavg num neighbors = %7.2e, num active proc = %d,\n\tlargest num of rows = %d (pid %d),\n\tsmallest num of rows = %d (pid %d),\n\tmin/max nzs = %d %d\n\n",
-          grid_level, nz_ptr,i,
-          ((double) j)/((double)NumActiveProc),
-          NumActiveProc,
-	       maxrows, maxproc, minrows, minproc, min_nzs,  max_nzs);
+     if (ML_Get_PrintLevel() > 7) {
+       sprintf(str,"Edge%dBeforeRepart",grid_level);
+       ML_Operator_ReportStatistics(ml_edges->Amat+grid_level,str,ML_FALSE);
      }
 
+     Pe = &(ml_edges->Amat[grid_level]);
      ML_Operator_Profile(Pe, "edge_before_repartition", profile_its);
 
      ML_memory_check("L%d EdgeRepartition",grid_level);
@@ -1639,40 +1467,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        ML_Operator_Print(ml_edges->Amat+grid_level,"Amat_after");
      */
 
-     if (ag->print_flag < ML_Get_PrintLevel())
-     {
-        Pe = &(ml_edges->Amat[grid_level]);
-        ML_Operator_Profile(Pe, "edge", profile_its);
-        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
-        else active_proc = 0;
-        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
-        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
-        max_nzs = ML_gmax_int( Pe->N_nonzeros , ml_edges->comm);
-        min_nzs = ML_gmin_int( Pe->N_nonzeros , ml_edges->comm);
-
-        i = Pe->outvec_leng;
-        ML_gsum_scalar_int(&i,&j,ml_edges->comm);
-        j = 0;
-        if (Pe->getrow->pre_comm != NULL) {
-          j = Pe->getrow->pre_comm->N_neighbors;
-        }
-        j = ML_Comm_GsumInt(ml_edges->comm, j);
-
-        maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
-        maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-        minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
-                           Pe->comm);
-        minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
-                           Pe->comm);
-
-        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
-          printf("(level %d) Ke after repart: Global nonzeros = %d, global rows = %d,\n\tavg num neighbors = %7.2e, num active proc = %d,\n\tlargest num of rows = %d (pid %d),\n\tsmallest num of rows = %d (pid %d),\n\tmin/max nzs = %d %d\n\n",
-          grid_level, nz_ptr,i,
-          ((double) j)/((double)NumActiveProc),
-          NumActiveProc,
-          maxrows, maxproc, minrows, minproc, min_nzs,  max_nzs);
-
+     if (ML_Get_PrintLevel() > 7) {
+       sprintf(str,"Edge%dAfterRepart",grid_level);
+       ML_Operator_ReportStatistics(ml_edges->Amat+grid_level,str,ML_FALSE);
      }
 
      Tfine = Tcoarse;
