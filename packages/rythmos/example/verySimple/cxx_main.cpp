@@ -37,51 +37,46 @@
 
 int main(int argc, char *argv[])
 {
-  using Teuchos::RefCountPtr;
-  using Teuchos::rcp;
-  using Thyra::VectorSpaceBase;
-  using Thyra::create_MPIVectorSpaceBase;
-  using Thyra::VectorBase;
-  using Thyra::createMember;
-  using Thyra::randomize;
-  using Thyra::V_StV;
-  using Thyra::norm_2;
-
   cout << Epetra_Version() << endl << endl;
 
   int NumElements = 1000;
 
   typedef double Scalar;
 
-  RefCountPtr<const Epetra_Comm> epetra_comm;
-  epetra_comm = rcp(new Epetra_SerialComm);
+  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm;
+  epetra_comm = Teuchos::rcp(new Epetra_SerialComm);
   // Construct a Map with NumElements and index base of 0
-  RefCountPtr<const Epetra_Map> epetra_map;
-  epetra_map = rcp(new Epetra_Map(NumElements, 0, *epetra_comm));
+  Teuchos::RefCountPtr<const Epetra_Map> epetra_map;
+  epetra_map = Teuchos::rcp(new Epetra_Map(NumElements, 0, *epetra_comm));
   // Construct a VectorSpace from the map
-  RefCountPtr<const VectorSpaceBase<Scalar> > epetra_vs;
-  epetra_vs = create_MPIVectorSpaceBase(epetra_map);
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
+  epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
   
 
   // Create x and b vectors
-  RefCountPtr<VectorBase<Scalar> > b = createMember(epetra_vs);
-  RefCountPtr<VectorBase<Scalar> > x = createMember(epetra_vs);
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = Thyra::createMember(epetra_vs);
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = Thyra::createMember(epetra_vs);
 
-  randomize(0.0,1.0,&*b); // b = random
-  V_StV(&*x,2.0,*b); // x = 2*b
+  Thyra::randomize(0.0,1.0,&*b); // b = random
+  Thyra::V_StV(&*x,2.0,*b); // x = 2*b
 
   double bnorm, xnorm;
-  xnorm = norm_2(*x);
-  bnorm = norm_2(*b);
+  xnorm = Thyra::norm_2(*x);
+  bnorm = Thyra::norm_2(*b);
 
   cout << "2 norm of x = " << xnorm << endl
        << "2 norm of b = " << bnorm << endl;
 
+//  Test out error messages from bad pointer arithmetic
 //  cout << "Element 0 of x = " << (&*x)[0] << endl; // bad error message
 //  cout << "Element 0 of x = " << (*x)[0] << endl; // good error message
 //  for (int i=1;i<=NumElements;++i)
 //    cout << "Element " << i << " of x = " << Thyra::get_ele(*x,i) << endl;
 
+// Test out get_Epetra_Vector:
+//  Teuchos::RefCountPtr<Epetra_Vector> x_epetra = Thyra::get_Epetra_Vector(*epetra_map,x);
+//  for (int i=0;i<NumElements;++i)
+//    cout << "Element " << i << " of x = " << (*x_epetra)[i] << endl;
 
   return 0;
 }
