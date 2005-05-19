@@ -91,6 +91,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
   int * graph_decomposition = NULL;
   ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
+  ML_Aggregate_Viz_Stats * grid_info;
   int Nprocs;
   char * unamalg_bdry = NULL;
   char* label;
@@ -191,14 +192,15 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   }
 
   N_dimensions = ml_ag->N_dimensions;
-  x_coord = ml_ag->nodal_coord[abs(diff_level)];
+  grid_info = (ML_Aggregate_Viz_Stats*) Amatrix->to->Grid->Grid;
+  x_coord = grid_info->x;
 
   if (N_dimensions > 1 && x_coord)
-    y_coord = x_coord + Nrows;
+    y_coord = grid_info->y;
   else
     y_coord = 0;
   if (N_dimensions > 2 && x_coord)
-    z_coord = x_coord + 2 * Nrows;
+    z_coord = grid_info->z;
   else
     z_coord = 0;
 

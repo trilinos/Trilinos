@@ -133,12 +133,6 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   else
     aggregates = agg_;
 
-
-/*
-  double * x_coord = ml_->Amat[LevelID_[0]].grid_info->x;
-  double * y_coord = ml_->Amat[LevelID_[0]].grid_info->y;
-  double * z_coord = ml_->Amat[LevelID_[0]].grid_info->z;
-*/
   char filename[80];
   int NumDimensions = 0;
   ML_Aggregate_Viz_Stats *grid_info =
