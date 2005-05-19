@@ -44,8 +44,8 @@
 ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface(Teuchos::RefCountPtr<const Epetra_Map> &epetra_map)
 {
   double lambda = -0.5;
-  Teuchos::RefCountPtr<ExampleApplication> problem_ = Teuchos::rcp(new ExampleApplication(lambda));
-  Teuchos::RefCountPtr<const Epetra_Map> epetra_map_ = epetra_map;
+  problem_ = Teuchos::rcp(new ExampleApplication(lambda));
+  epetra_map_ = epetra_map;
 }
 
 //-----------------------------------------------------------------------------
@@ -70,11 +70,7 @@ ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
 //-----------------------------------------------------------------------------
 int ExampleApplicationRythmosInterface::evalModel(Teuchos::RefCountPtr<Thyra::VectorBase<double> > &y, Teuchos::RefCountPtr<Thyra::VectorBase<double> > &x, double t)
 {
-  // 05/18/05 tscoffe:  I get a segfault on the following line:
-  Teuchos::RefCountPtr<Epetra_Vector> y_epetra = Thyra::get_Epetra_Vector(*epetra_map_,y);
-  Teuchos::RefCountPtr<Epetra_Vector> x_epetra = Thyra::get_Epetra_Vector(*epetra_map_,x);
-  (*problem_).evalResidual(&*y_epetra,*x_epetra,t);
-//  (*problem_).evalResidual(&*(Thyra::get_Epetra_Vector(*epetra_map_,y)),*(Thyra::get_Epetra_Vector(*epetra_map_,x)),t);
+  (*problem_).evalResidual(&*(Thyra::get_Epetra_Vector(*epetra_map_,y)),*(Thyra::get_Epetra_Vector(*epetra_map_,x)),t);
   return 0;
 }
 

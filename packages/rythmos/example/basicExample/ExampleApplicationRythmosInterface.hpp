@@ -63,7 +63,7 @@ class ExampleApplicationRythmosInterface
 
   private:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
+    Teuchos::RefCountPtr<const Epetra_Map> epetra_map_;
 
 };
 
