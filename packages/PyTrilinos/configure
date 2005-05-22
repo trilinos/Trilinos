@@ -273,7 +273,7 @@ PACKAGE_VERSION='1.0'
 PACKAGE_STRING='pytrilinos 1.0'
 PACKAGE_BUGREPORT='wfspotz@sandia.gov'
 
-ac_unique_file="/src/FileStream.h"
+ac_unique_file="/src/NumPyWrapper.h"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -6425,11 +6425,11 @@ echo "$as_me: error: failed to find required module Numeric" >&2;}
 
 
 # If user specifies prefix, use it for the PYTHON_PREFIX
-if test @prefix@ != $ac_default_prefix; then
-    PYTHON_PREFIX=@prefix@
+if test "$prefix" != $ac_default_prefix; then
+    PYTHON_PREFIX=$prefix
 fi
-if test @exec_prefix@ != $ac_default_prefix; then
-    PYTHON_EXECPREFIX=@exec_prefix@
+if test "$exec_prefix" != $ac_default_prefix; then
+    PYTHON_EXECPREFIX=$exec_prefix
 fi
 
 # ------------------------------------------------------------------------
@@ -10173,7 +10173,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 
-                                        ac_config_files="$ac_config_files Makefile example/Makefile src/Makefile test/Makefile"
+                                                                                ac_config_files="$ac_config_files Makefile example/Makefile src/Makefile src/__init__.py src/.deps/dummy src/.deps/NOX/dummy src/NOX/__init__.py test/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10819,6 +10819,10 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+  "src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES src/__init__.py" ;;
+  "src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES src/.deps/dummy" ;;
+  "src/.deps/NOX/dummy" ) CONFIG_FILES="$CONFIG_FILES src/.deps/NOX/dummy" ;;
+  "src/NOX/__init__.py" ) CONFIG_FILES="$CONFIG_FILES src/NOX/__init__.py" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/PyTrilinos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/PyTrilinos_config.h:src/PyTrilinos_config.h.in" ;;

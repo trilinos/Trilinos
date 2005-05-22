@@ -45,7 +45,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR(/src/FileStream.h)
+AC_CONFIG_SRCDIR(/src/NumPyWrapper.h)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -253,11 +253,11 @@ CPPFLAGS="$save_CPPFLAGS"
 AC_PYTHON_MODULE(Numeric,yes)
 
 # If user specifies prefix, use it for the PYTHON_PREFIX
-if test @prefix@ != $ac_default_prefix; then
-    PYTHON_PREFIX=@prefix@
+if test "$prefix" != $ac_default_prefix; then
+    PYTHON_PREFIX=$prefix
 fi
-if test @exec_prefix@ != $ac_default_prefix; then
-    PYTHON_EXECPREFIX=@exec_prefix@
+if test "$exec_prefix" != $ac_default_prefix; then
+    PYTHON_EXECPREFIX=$exec_prefix
 fi
 
 # ------------------------------------------------------------------------
@@ -368,6 +368,10 @@ AC_CONFIG_FILES([
 		Makefile 
 		example/Makefile
 		src/Makefile
+		src/__init__.py
+		src/.deps/dummy
+		src/.deps/NOX/dummy
+		src/NOX/__init__.py
 		test/Makefile
 		])
 
