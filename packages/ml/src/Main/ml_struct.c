@@ -203,7 +203,6 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
       sprintf(str,"PostS_%d",i);ML_Smoother_Set_Label( &(post_smoother[i]),str);
       sprintf(str,"Solve_%d",i);ML_CSolve_Set_Label(&(csolve[i]),str);
   }
-  (*ml_ptr)->ML_filled_flag = 0;  
   ML_random_init();
   return 0;
 }

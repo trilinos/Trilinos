@@ -68,7 +68,6 @@ struct ML_Struct {
    int            id;
    char           *label;          /**< optional character label     */
    int            ML_init_flag;    /**< indicate initialization done */
-   int            ML_filled_flag;  /**< indicate fill is completed   */
    int            ML_scheme;       /**< which ML scheme to pick      */
    int            ML_num_levels;   /**< number of levels available   */
    int            ML_num_actual_levels;
