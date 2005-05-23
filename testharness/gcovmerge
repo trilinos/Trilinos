@@ -13,14 +13,15 @@
 #                  [--without-files]                \
 #                  [--with-total]                   \
 #                  [--exclude=word]                 \
-#                  path
+#                  [--source-dir=path]              \
+#                  build-dir
 #
 # Arguments:
 #
-#        path
-#            The path to search for .bb and .bbg files (which are the
+#        build-dir
+#            The path to search for .gcda files (which are the
 #            markers for programs compiled with the appropriate
-#            arguments).
+#            arguments and later executed).
 #
 #        --with-files=min-max [0-100]
 #            When specified, no coverage information is displayed for
@@ -41,6 +42,14 @@
 #
 #        --with-total   
 #            The total coverage for all files examined will be displayed.
+#
+#        --source-dir=path
+#            The path to look for source files if the source and build
+#            directories are seperate.  This directory should have an identical
+#            hierarchy to that of build_dir, or else this script will not be
+#            able to reconcile the data in source_dir with that in build_dir.
+#            If not specified, the script will assume that the source files
+#            are in build-dir.
 #
 # Written by Joe Outzen, for the Trilinos project.
 #
@@ -63,7 +72,8 @@ $total_exec = 0;
 $total_comp = 0;
 
 # parse command-line options
-$start_directory = pop;
+$build_directory = pop;
+$source_directory = $build_directory;
 foreach (@ARGV){
     if(/--with-files=(\d+)-(\d+)/){
 	$minimum_per_file = $1;
@@ -82,19 +92,24 @@ foreach (@ARGV){
     elsif(/--with-total/){
 	$total = 1;
     }
+    elsif(/--source-dir=(.*)/){
+	$source_directory = $1;
+    }
     else{ 
-	die "Invalid paramater: $_"; 
+	die "96: Invalid paramater: $_"; 
     }
 }
 
 # find all source files of a type listed in @filetypes
-$find_string = "find $start_directory";
+$find_string = "find $source_directory";
 foreach(@file_types){
     $find_string .= " -name \"*.$_\" -or";
 }
 chop $find_string;
 chop $find_string;
 chop $find_string;
+chop $find_string;
+
 foreach(`$find_string`){
     chomp;
     $current_file = $_;
@@ -111,7 +126,7 @@ foreach(`$find_string`){
     }
     
     # add this source file and its path to %source_files
-    s/^((.*\/)*)[^\/]+$/$1/ or die "113: Path-only regex failed for $_\n";
+    s/^((.*\/)*)[^\/]+$/$1/ or die "128: Path-only regex failed for $_\n";
     $current_file =~ s/^(.*\/)*([^\/]+)$/$2/ or die "Name-only regex failed for $_\n";
     $source_files{$current_file} = $_;
     
@@ -125,9 +140,9 @@ foreach(`$find_string`){
 
 # find all .gcda files (which indicate a successful execution of code)
 $last = "!";
-foreach(`find $start_directory -name \"*.gcda\"`){
+foreach(`find $build_directory -name \"*.gcda\"`){
     chomp;
-    s/^((.*\/)*)[^\/]+$/$1/ or die "129: Path-only regex failed for $_\n";
+    s/^((.*\/)*)[^\/]+$/$1/ or die "145: Path-only regex failed for $_\n";
     
     #skip this directory if we've already seen it
     if($_ eq $last){
@@ -138,9 +153,9 @@ foreach(`find $start_directory -name \"*.gcda\"`){
     # run gcov on all the .gcda files in this directory
     chdir $_ or die "could not cd to $_\n";
     foreach(<*.gcda>){
-	system "gcov $_ > /dev/null" and die "gcov failed for $_\n";
+	system "gcov $_ > /dev/null" and die "156: gcov failed for $_\n";
     }
-    chdir $base or die "could not cd to $base\n"
+    chdir $base or die "158: could not cd to $base\n"
 }
 
 # find .gcov files for every source file
@@ -148,7 +163,7 @@ foreach(keys(%source_files)){
     $found = 0;
     $comp = 0;
     $exec = 0;
-    foreach(`find . -name \"$_.gcov\"`){
+    foreach(`find $build_dir -name \"$_.gcov\"`){
 	chomp;
 	open GCOV, "< $_";
 	foreach(<GCOV>){
