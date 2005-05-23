@@ -3,7 +3,7 @@
 #
 
 (FRAMEWORK) {
-    DIRS = ana;
+    DIRS = ana/operator_vector;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
