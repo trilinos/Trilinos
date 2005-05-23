@@ -490,12 +490,20 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   }
 
   //! Returns a pointer to the internally stored ml pointer
-  const ML* GetML(const int WhichML= -1) const
+  //const ML* GetML(const string WhichML= "primary") const
+  const ML* GetML(const int WhichML) const
   {
-    if (WhichML < 0)
+    if (WhichML < 1)
+    {
+      printf("returning ml_\n");
       return ml_;
-    else if (WhichML == 0)
+    }
+    //else if (WhichML == "auxiliary")
+    else
+    {
+      printf("returning ml_nodes_\n");
       return ml_nodes_;
+    }
   }
 
   const bool SolvingMaxwell() const

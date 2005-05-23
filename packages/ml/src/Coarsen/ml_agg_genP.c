@@ -2319,7 +2319,6 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     for (i = 0 ; i < size_new ; i+=PDEs)
       new_x_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
 
-    //Cmat->grid_info->x = new_x_coord;
     Cgrid_info->x = new_x_coord;
   }
 
@@ -2363,7 +2362,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   ML_free(tmp_new);
   ML_free(aggr_sizes);
 
-  //FIXME is this right??
+  /*FIXME is this right??*/
   Cgrid_info->Ndim = Agrid_info->Ndim;
 
   if (PDEs != 1)

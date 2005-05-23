@@ -16,6 +16,7 @@
 #include "MLAPI_Aggregation.h"
 #include "MLAPI_Eig.h"
 #include <vector>
+#include "ml_MultiLevelPreconditioner.h"
 
 namespace MLAPI {
 
@@ -92,6 +93,21 @@ public:
 
     ResizeArrays(MaxLevels);
     A(0) = FineMatrix;
+  }
+
+  //! Constructs the hierarchy for given parameters.  It's assumed you'll
+  //! set the operator later.
+  MultiLevelAdaptiveSA(Teuchos::ParameterList& List,
+                       const int NumPDEEqns, const int MaxLevels = 20) :
+    IsComputed_(false)
+  {
+    List_ = List;
+    MaxLevels_  = MaxLevels;
+    SetInputNumPDEEqns(NumPDEEqns);
+    SetNumPDEEqns(NumPDEEqns);
+
+    ResizeArrays(MaxLevels);
+    //A(0) = FineMatrix;
   }
 
   //! Destructor.
@@ -271,6 +287,102 @@ public:
 
   // @}
   // @{ \name Hierarchy construction methods
+
+  // ====================================================================== 
+  //! Create hierarchy from an existing ML_Epetra::MultiLevelPreconditioner.
+  // ====================================================================== 
+  void Compute(ML_Epetra::MultiLevelPreconditioner* MLPrec)
+  {
+    ResetTimer();
+    StackPush();
+    IsComputed_ = false;
+    
+    // retrieve null space
+    MultiVector ThisNS = GetNullSpace();
+
+    const ML *ml = MLPrec->GetML(0);
+    int fl = ml->ML_finest_level;
+    int cl = ml->ML_coarsest_level;
+    int i;
+    int NGlobRows = ml->Amat[fl].outvec_leng;
+    ML_gsum_scalar_int(&NGlobRows,&i,ml->comm);
+    int CNGlobRows, FNGlobRows;
+    int *frow2gid = NULL;  // array containing gid of fine grid local unknowns
+    int *row2gid;  // array containing gid of this level local unknowns
+    ML_build_global_numbering(ml->Amat+fl,&row2gid);
+    int *crow2gid;  // array containing gid of coarse grid local unknowns
+    Space MySpace(NGlobRows,ml->Amat[fl].outvec_leng,row2gid);
+    Space FSpace(MySpace);
+    int relativeLevel;
+
+    for (int i=fl; i>=cl; i--)
+    {
+
+      if (GetPrintLevel()) ML_print_line("-", 80);
+      relativeLevel = fl-i;
+      if (relativeLevel)
+        SetNumPDEEqns(ThisNS.GetNumVectors());
+      // load current level into database
+      List_.set("workspace: current level", relativeLevel);
+
+      ML_Operator *mlA = ML_Operator_Create(ml->comm);
+      ML_Operator_MoveFromHierarchyAndClean(mlA,ml->Amat+i);
+      Operator A(MySpace, MySpace, mlA, true);
+      A_[relativeLevel] = A;
+
+      //JJH
+      //S(relativeLevel).Reshape(A_[relativeLevel], GetSmootherType(), List_, MLPrec, i);
+      S(relativeLevel).Reshape(A_[relativeLevel], GetSmootherType(), List_);
+
+      if (i<fl) {
+        ML_Operator *mlA = ML_Operator_Create(ml->comm);
+        ML_Operator_MoveFromHierarchyAndClean(mlA,ml->Pmat+i);
+        Operator A(MySpace, FSpace, mlA, true);
+        P_[relativeLevel] = A;
+        ML_free(frow2gid);
+        frow2gid = row2gid;
+        FNGlobRows = NGlobRows;
+        FSpace = MySpace;
+
+      }
+      else ML_free(row2gid);
+
+      if (i>cl) {
+        CNGlobRows = ml->Amat[i-1].outvec_leng;
+        int j;
+        ML_gsum_scalar_int(&CNGlobRows,&j,ml->comm);
+        ML_build_global_numbering(ml->Amat+i-1,&crow2gid);
+        Space CSpace(CNGlobRows,ml->Amat[i-1].outvec_leng,crow2gid);
+        ML_Operator *mlA = ML_Operator_Create(ml->comm);
+        ML_Operator_MoveFromHierarchyAndClean(mlA,ml->Rmat+i);
+        Operator A(MySpace, CSpace, mlA, true);
+        R_[relativeLevel] = A;
+        row2gid = crow2gid;
+        NGlobRows = CNGlobRows;
+        MySpace = CSpace;
+      }
+
+    } //for (int i=fl; i>=cl; i--)
+    ML_free(row2gid);
+
+    // set coarse solver
+    //JJH
+    //S(relativeLevel).Reshape(A(relativeLevel), GetCoarseType(), List_,MLPrec,i);
+    S(relativeLevel).Reshape(A(relativeLevel), GetCoarseType(), List_);
+    SetMaxLevels(relativeLevel + 1);
+
+    // set the label
+    SetLabel("SA, L = " + GetString(GetMaxLevels()) +
+             ", smoother = " + GetSmootherType());
+
+    if (GetPrintLevel()) ML_print_line("-", 80);
+
+    IsComputed_ = true;
+
+    StackPop();
+    // FIXME: update flops!
+    UpdateTime();
+  } // Compute(ML_Epetra::MultiLevelPreconditioner* MLPrec)
 
   // ====================================================================== 
   //! Creates an hierarchy using the provided or default null space.
