@@ -16,6 +16,7 @@ I.  Prerequisites
   In order for the test harness to work, you must have the following in place:
   
     1.  A well-formed runharness config file.
+    2.  The appropriate files refered to by your config file.
        
 -------------------------------------------------------------------------------
 II.  Execution
@@ -23,6 +24,10 @@ II.  Execution
   To execute the Trilinos Framework test harness, simply type:
   
     cd /PATH/TO/Trilinos/commonTools/test/harness/
-    runharness --trilinos-dir /PATH/TO/Trilinos --config-file=/PATH/TO/config
+    perl unharness --help
+            
+  Refer to this help output for the most up-to-date information on usage and
+  available options.  (You can use "./" instead of "perl " if your system's
+  perl interpreter resides at /usr/bin/perl)
 
 -------------------------------------------------------------------------------

@@ -1,26 +1,186 @@
+###############################################################################
 #
-# herouxsmp - nightly
+# beowulf nightly serial
 #
+###############################################################################
 
-RUN {
-
-    MACHINE             = herouxsmp;
-    BUILD-DIR           = SERIAL-1;
+RUN (beowulf-nightly-serial) {
+    
+    BUILD-DIR           = SERIAL;
     COMM                = serial;
-    CVS-UPDATE-COMMAND  = "cvs -d :ext:mnphenow@software.sandia.gov:/space/CVS update -dP";
-    INVOKE-CONFIGURE    = ic-serial-1;
-    MAKE-COMMAND        = "make -j4";
-    RECOVER             = YES;
+    INVOKE-CONFIGURE    = linux-beowulf;
+    TEST-CATEGORY       = FRAMEWORK;
+    TEST-DATA-DIR       = /common/TrilinosTestHarness/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# beowulf nightly mpi
+#
+###############################################################################
+
+RUN (beowulf-nightly-mpi) {
+    
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     MPI-START           = lamboot;
-    MPI-STOP            = lamhalt;
-    OUTPUT-DIR          = results;
-    TEST-DATA-DIR       = /home/user/TrilinosTestData;
-    COMMIT-RESULTS      = YES;
-    VERBOSITY           = 1;
-    LOG-VERBOSITY       = 1;
-    SCHEDULE            = (MWFN, 23:00);
-    SCHEDULE            = (TRS, 4:00);
+    MPI-STOP            = lamhalt;    
+    TEST-DATA-DIR       = /common/TrilinosTestHarness/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# herouxsmp nightly serial
+#
+###############################################################################
+
+RUN (herouxsmp-nightly-serial) {
+    
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-herouxsmp;
+    MAKE-COMMAND        = make -j4;
+    TEST-CATEGORY       = FRAMEWORK;
+    TEST-DATA-DIR       = /u/TrilinosTestHarness/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# herouxsmp nightly mpi
+#
+###############################################################################
+
+RUN (herouxsmp-nightly-mpi) {
+    
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-herouxsmp-mpi;
+    MAKE-COMMAND        = make -j4;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 4;
+    MPI-START           = lamboot;
+    MPI-STOP            = lamhalt;    
+    TEST-DATA-DIR       = /u/TrilinosTestHarness/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# paunchy nightly serial
+#
+###############################################################################
+
+RUN (paunchy-nightly-serial) {
+    
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = sunos-paunchy;
+    TEST-CATEGORY       = FRAMEWORK;
+    TEST-DATA-DIR       = /local/proj/trilinos/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# paunchy nightly mpi
+#
+###############################################################################
+
+RUN (paunchy-nightly-mpi) {
+    
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = sunos-paunchy-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+    MPI-START           = lamboot;
+    MPI-STOP            = lamhalt;    
+    TEST-DATA-DIR       = /local/proj/trilinos/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# stratus nightly serial
+#
+###############################################################################
+
+RUN (stratus-nightly-serial) {
+    
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = osf-stratus;
+    TEST-CATEGORY       = FRAMEWORK;
+    TEST-DATA-DIR       = /projects/trilinos/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# stratus nightly mpi
+#
+###############################################################################
+
+RUN (stratus-nightly-mpi) {
+    
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = osf-stratus-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+    MPI-START           = lamboot;
+    MPI-STOP            = lamhalt;    
+    TEST-DATA-DIR       = /projects/trilinos/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# atlantis nightly serial
+#
+###############################################################################
+
+RUN (atlantis-nightly-serial) {
+    
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = sgi-atlantis;
+    TEST-CATEGORY       = FRAMEWORK;
+    TEST-DATA-DIR       = /scratch1/mnpheno/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# atlantis nightly mpi
+#
+###############################################################################
+
+RUN (atlantis-nightly-mpi) {
+    
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = sgi-atlantis-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+    MPI-START           = lamboot;
+    MPI-STOP            = lamhalt;    
+    TEST-DATA-DIR       = /scratch1/mnpheno/TrilinosTestData;
+    SSG-USERNAME        = mnphenow;
 
 }

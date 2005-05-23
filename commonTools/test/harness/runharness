@@ -31,7 +31,9 @@ use strict;
 # Command line arguments:
 
 my $trilinosDir;        # Trilinos directory            (required argument) 
-my $configFile;         # runharness config file        (required argument)
+
+my $verbosity;          # verbosity level               (default: 1)
+my $logVerbosity;       # log file verbosity level      (default: 0)
 
 my $runStartTime;
 my $runStartTimeForFilename;
@@ -74,7 +76,9 @@ exit $exitStatus;
 
         use Getopt::Long;
         GetOptions( "trilinos-dir=s" => \$trilinosDir,
-                    "config-file=s" => \$configFile,
+                    "verbosity=i" => \$verbosity,
+                    "log-verbosity=i" => \$logVerbosity,
+                    "quiet" => \$quiet,
                     "help" => \$help );
         
         # Print help and exit.
@@ -94,13 +98,36 @@ exit $exitStatus;
             }
         }
         
-        # check for existance of trilinos-dir argument and actual directory
-        if (!$configFile) {
-            die "config-file value required, see --help for more information\n"; 
+        # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
+        # used for the levels the user may specify, but they are stored as 0,
+        # 1, 2, and 4 so they can be combined and processed with bitwise
+        # operations.
+        if ($verbosity) {
+            if      ($verbosity == 0) { $verbosity = $v0; }
+            elsif   ($verbosity == 1) { $verbosity = $v1; }
+            elsif   ($verbosity == 2) { $verbosity = $v2; }
+            elsif   ($verbosity == 3) { $verbosity = $v3; }
         } else {
-            if (!stat($configFile)) {
-                die "cannot stat config-file: $configFile\n";
-            }
+            $verbosity = $v1; 
+        }
+        
+        # Set log verbosity level to corresponding constant.  Numbering scheme
+        # is the same for the log verbosity as it is for the standard verbosity.
+        # There is not distinct output and log output, the if a log verbosity
+        # is given, then that level of output is written to a file instead of
+        # to standard out.  
+        if ($logVerbosity) {
+            if      ($logVerbosity == 0) { $logVerbosity = $v0; }
+            elsif   ($logVerbosity == 1) { $logVerbosity = $v1; }
+            elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
+            elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
+        } else {
+            $logVerbosity = $v0; 
+        }
+        
+        # Set quiet mode--same as passing --verbosity=0.
+        if ($quiet) {
+            $verbosity = $v0; 
         }
         
     } # getArgs()
@@ -131,7 +158,9 @@ exit $exitStatus;
         # Print list of variables for debugging.
         my $message = "";
         $message .= "init():\n";
-        $message .= "  \$configFile = $configFile\n";
+        $message .= "  \$trilinosDir = $trilinosDir\n";
+        $message .= "  \$verbosity = $verbosity\n";
+        $message .= "  \$logVerbosity = $logVerbosity\n";
         $message .= "  \n";
         printMessage($message, $v3);
         
@@ -148,9 +177,33 @@ exit $exitStatus;
     #
 
     sub run {
+    
+        # List of runs, which are hashes of name/value properties
+        my @runListAoH;
 
-        # Array of Hashes to store information in the config file
-        my @runListAoH = parseConfig();
+        # Parse the config file, extracting run information
+        (my $status, my $result) = parseConfig();
+        if ($status) {
+            printMessage ($result, $v1+$v2+$v3);
+            return 1;
+        } else {
+            @runListAoH = $result;
+        }
+        
+        # Step through the list of runs, looking for one that applies here
+        for my $i (0 .. $#runListAoH) {
+        
+            if ($runListAoH[$i]{'MACHINE'} eq `uname -n`) { 
+            
+                print "RIGHT MACHINE\n\n"; 
+                
+                
+                
+                }
+                
+            }
+        
+        } # for ($i, $configAoH)
         
     } # run()
     
@@ -166,6 +219,7 @@ exit $exitStatus;
     #
 
     sub parseConfig {
+    
         my $status = 0;
         my $errorString = "";
     
@@ -173,7 +227,7 @@ exit $exitStatus;
         my @configAoH = ();
         
         # Open config file for reading.
-        open (CONFIG, "<$configFile") or die "Can't open config file: $configFile, died";
+        open (CONFIG, "<config") or die "Can't open config file, died";
             
         # Read config file into one string.
         undef $/;               # undefine input record separator
@@ -190,8 +244,8 @@ exit $exitStatus;
                                     # to avoid making assumptions about formatting)
         
         # Split config file into groups.
-        # This gives us an array of strings of the essential form {.*}.
-        my @rawRunGroups = $file =~ m/(\{.*?\})/g;
+        # This gives us an array of strings of the essential form (.*){.*}.
+        my @rawRunGroups = $file =~ m/(\(.*?\)\s*\{.*?\})/g;
         
         # Step through the list of raw run groups, parsing each with
         # parseRunGroup() and adding to the array.
@@ -205,17 +259,14 @@ exit $exitStatus;
             }
         }
         
-        # print @definitionAoH
+        # print @configAoH
         my $message = "";
         $message .= "parseConfig():\n";
         $message .= "  \@configAoH:\n";
         for my $i (0 .. $#configAoH) {
             $message .= "    run group $i:\n";
             foreach my $key (keys %{ $configAoH[$i] }) { 
-                $message .= "      $key\n";
-                foreach my $item (@{ $configAoH[$i]{$key} }) {
-                    $message .= "        '$item'\n";
-                }
+                $message .= "      $key: $configAoH[$i]{$key}\n";
             }
         }
         $message .= "\n";
@@ -234,7 +285,7 @@ exit $exitStatus;
     #
     # Given a raw {.*} string, parse it into a hash.
     #
-    #   - args:     $rawGroupString     (raw {.*} string)
+    #   - args:     $rawGroupString     (raw (.*){.*} string)
     #
     #   - returns:  $status             (success(0)/failure(!0) status)
     #               %runGroup           (hash of property names/values.)
@@ -243,16 +294,18 @@ exit $exitStatus;
 
     sub parseRunGroup {
         my $rawGroupString = $_[0];
+        
         my $status = 0;
         my $errorString = "";
     
         # Hash that will be returned when all is said and done.
         my %runGroup = ();
         
-        # Extract property {.*} section from raw string       
+        # Break raw string into category (.*) and property {.*} sections 
         my $propertyListString = "";
-        if ($rawGroupString =~ m/\{(.+?)\}/) {
-            $propertyListString = $1;
+        if ($rawGroupString =~ m/\((.+?)\)\s*\{(.+?)\}/) {
+            $runGroup{'LABEL'} = $1;
+            $propertyListString = $2;
         } else {
             $status++;
             $errorString .= "! Malformed test group:  bad property list.\n";
@@ -262,27 +315,24 @@ exit $exitStatus;
         # Grap each raw 'PROPERTY = VALUE-1, VALUE-N;' string.
         my @rawPropertyStrings = $propertyListString =~ m/(.+?;)/g;        
         foreach my $propertyString (@rawPropertyStrings) {
-            
-            # Grab property name.
+                    
+            # Grab property name & value.
             my $key = "";
-            if ($propertyString =~ m/\s*(\w+?)\s*=.*?;/) {
+            my $value = "";
+            if ($propertyString =~ m/\s*((\w|-)+?)\s*=\s*(.*?);/) {
                 $key = $1;
-            } else {
-                $status++;
-                $errorString .= "! Malformed test group:  bad property list.\n";
-            }
-            
-            # Grab the raw values list string.
-            my $valuesString = "";
-            if ($propertyString =~ m/\s*\w+?\s*=\s*(.*?;)/) {
-                $valuesString = $1;
+                $value = $3;
             } else {
                 $status++;
                 $errorString .= "! Malformed test group:  bad property list.\n";
             }
             
             # Add new key=>(values) entry in array.
-            $runGroup{$key} = $valuesString;
+            if (!$runGroup{$key}) {
+                $runGroup{$key} = $value;
+            } else {
+                $runGroup{$key} .= $value;
+            }
         }
         
         # Validate test group:
@@ -309,12 +359,6 @@ exit $exitStatus;
         if (!$runGroup{'INVOKE-CONFIGURE'}) {
             $status++;            
             $errorString .= "! Malformed test group:  no INVOKE-CONFIGURE property.\n";
-        }
-        
-        # Enforce existance of SCHEDULE property.
-        if (!$runGroup{'SCHEDULE'}) {
-            $status++;            
-            $errorString .= "! Malformed test group:  no SCHEDULE property.\n";
         }
         
         # Add more validations as necessary to catch errors sooner...
@@ -400,6 +444,15 @@ exit $exitStatus;
         print "                             Example: /home/user/config\n";
         print "                             REQUIRED.\n";
         print "\n";
+        print "  --verbosity=LEVEL          0 = no non-fatal ouput (same as --quiet)\n";
+        print "                             1 = normal output (default)\n";
+        print "                             2 = level 2 verbosity\n";
+        print "                             3 = level 3 verbosity\n";
+        print "\n";
+        print "  --log-verbosity=LEVEL      0 = no log (default)\n";
+        print "                             1 = normal output\n";
+        print "                             2 = level 2 verbosity\n";
+        print "                             3 = level 3 verbosity\n";
         print "\n";
         print "  --help                     Print this help output and exit.\n";
         print "\n";
