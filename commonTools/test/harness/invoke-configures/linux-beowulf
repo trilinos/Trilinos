@@ -7,6 +7,7 @@ FFLAGS=-O3 \
 /common/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a" \
 --with-incdirs="-I/common/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include \
 -I/common/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Include" \
+--cache-file=config.cache \
 --disable-default-packages \
 --enable-tpetra \
 --enable-triutils \

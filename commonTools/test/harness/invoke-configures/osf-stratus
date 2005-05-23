@@ -11,6 +11,7 @@ FFLAGS=-O3 \
 --with-incdirs="-I/projects/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB \
 -I/projects/trilinos/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include \
 -I/projects/trilinos/Trilinos3PL/UMFPACKv4.1/AMD/Include" \
+--cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos-dscpack \
 --enable-belos \

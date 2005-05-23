@@ -1,6 +1,7 @@
 ../configure \
 --enable-mpi \
 --with-mpi-compilers \
+--cache-file=config.cache \
 --disable-default-packages \
 --enable-pliris \
 --enable-tpetra \

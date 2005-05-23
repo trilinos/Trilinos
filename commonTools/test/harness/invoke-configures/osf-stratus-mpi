@@ -1,6 +1,7 @@
 ../configure \
 --enable-mpi \
 --with-mpi-libs=-lmpi \
+--cache-file=config.cache \
 --disable-default-packages \
 --enable-pliris \
 --enable-amesos-dscpack \

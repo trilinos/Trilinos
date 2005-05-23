@@ -9,6 +9,7 @@
 -I/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Include" \
 LDFLAGS="-xlic_lib=sunperf" \
 CXXFLAGS="-g -pto" \
+--cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
 --enable-amesos-klu \
