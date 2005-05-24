@@ -200,7 +200,7 @@ exit $exitStatus;
             elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
             elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logVerbosity = $v0; 
+            $logVerbosity = $v1; 
         }
         
         # Set quiet mode--same as passing --verbosity=0.
@@ -528,7 +528,7 @@ exit $exitStatus;
         }
         
         if ($logVerbosity & $level) {
-            my $log = $resultsDir."make_$runStartTimeForFilename"."_log.txt";
+            my $log = $resultsDir."/$runStartTimeForFilename-make-log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;
@@ -578,8 +578,8 @@ exit $exitStatus;
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";
         print "\n";
-        print "  --log-verbosity=LEVEL  0 = no log (default)\n";
-        print "                         1 = normal output\n";
+        print "  --log-verbosity=LEVEL  0 = no log\n";
+        print "                         1 = normal output (default)\n";
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";
         print "\n";

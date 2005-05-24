@@ -6,11 +6,11 @@
 
 RUN (beowulf-nightly-serial) {
     
-    BUILD-DIR           = SERIAL;
+    BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-beowulf;
     TEST-CATEGORY       = FRAMEWORK;
-    TEST-DATA-DIR       = /common/TrilinosTestHarness/TrilinosTestData;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -23,14 +23,14 @@ RUN (beowulf-nightly-serial) {
 
 RUN (beowulf-nightly-mpi) {
     
-    BUILD-DIR           = MPI;
+    BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
-    TEST-DATA-DIR       = /common/TrilinosTestHarness/TrilinosTestData;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -43,12 +43,12 @@ RUN (beowulf-nightly-mpi) {
 
 RUN (herouxsmp-nightly-serial) {
     
-    BUILD-DIR           = SERIAL;
+    BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-herouxsmp;
     MAKE-COMMAND        = make -j4;
     TEST-CATEGORY       = FRAMEWORK;
-    TEST-DATA-DIR       = /u/TrilinosTestHarness/TrilinosTestData;
+    TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -61,7 +61,7 @@ RUN (herouxsmp-nightly-serial) {
 
 RUN (herouxsmp-nightly-mpi) {
     
-    BUILD-DIR           = MPI;
+    BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-herouxsmp-mpi;
     MAKE-COMMAND        = make -j4;
@@ -69,7 +69,7 @@ RUN (herouxsmp-nightly-mpi) {
     MAX-PROC            = 4;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
-    TEST-DATA-DIR       = /u/TrilinosTestHarness/TrilinosTestData;
+    TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -82,11 +82,11 @@ RUN (herouxsmp-nightly-mpi) {
 
 RUN (paunchy-nightly-serial) {
     
-    BUILD-DIR           = SERIAL;
+    BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = sunos-paunchy;
     TEST-CATEGORY       = FRAMEWORK;
-    TEST-DATA-DIR       = /local/proj/trilinos/TrilinosTestData;
+    TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -99,14 +99,14 @@ RUN (paunchy-nightly-serial) {
 
 RUN (paunchy-nightly-mpi) {
     
-    BUILD-DIR           = MPI;
+    BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sunos-paunchy-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
-    TEST-DATA-DIR       = /local/proj/trilinos/TrilinosTestData;
+    TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -119,11 +119,11 @@ RUN (paunchy-nightly-mpi) {
 
 RUN (stratus-nightly-serial) {
     
-    BUILD-DIR           = SERIAL;
+    BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = osf-stratus;
     TEST-CATEGORY       = FRAMEWORK;
-    TEST-DATA-DIR       = /projects/trilinos/TrilinosTestData;
+    TTR-DIR             = /projects/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -136,14 +136,14 @@ RUN (stratus-nightly-serial) {
 
 RUN (stratus-nightly-mpi) {
     
-    BUILD-DIR           = MPI;
+    BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = osf-stratus-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
-    TEST-DATA-DIR       = /projects/trilinos/TrilinosTestData;
+    TTR-DIR             = /projects/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -156,11 +156,11 @@ RUN (stratus-nightly-mpi) {
 
 RUN (atlantis-nightly-serial) {
     
-    BUILD-DIR           = SERIAL;
+    BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = sgi-atlantis;
     TEST-CATEGORY       = FRAMEWORK;
-    TEST-DATA-DIR       = /scratch1/mnpheno/TrilinosTestData;
+    TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }
@@ -173,14 +173,14 @@ RUN (atlantis-nightly-serial) {
 
 RUN (atlantis-nightly-mpi) {
     
-    BUILD-DIR           = MPI;
+    BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sgi-atlantis-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
-    TEST-DATA-DIR       = /scratch1/mnpheno/TrilinosTestData;
+    TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
 }

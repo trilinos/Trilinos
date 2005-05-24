@@ -29,6 +29,7 @@ my $makeCmd;            # make command              (default: make)
 my $recover;            # recover mode?
 
 my $outputDir;          # output directory          (default: .)
+my $startTime;          # start time                (supplied by runharness)
 my $verbosity;          # verbosity level           (default: 1)
 my $logVerbosity;       # log file verbosity level  (default: 0)
 
@@ -83,6 +84,7 @@ exit $exitStatus;
                     "make-cmd=s" => \$makeCmd,
                     "recover" => \$recover,              
                     "output-dir=s" => \$outputDir,
+                    "start-time=s" => \$startTime,        
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
@@ -173,7 +175,7 @@ exit $exitStatus;
             elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
             elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logVerbosity = $v0; 
+            $logVerbosity = $v1; 
         }
         
         # Set quiet mode--same as passing --verbosity=0.
@@ -204,7 +206,12 @@ exit $exitStatus;
         $mn = sprintf("%02d", $mn);
         $se = sprintf("%02d", $se);
         $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
-        $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        
+        if ($startTime) {
+            $runStartTimeForFilename = $startTime;
+        } else {
+            $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        }
         
         # Create results directory.
         $resultsDir .= "/$runStartTimeForFilename-build";
@@ -340,7 +347,7 @@ exit $exitStatus;
         }
         
         if ($logVerbosity & $level) {
-            my $log = $resultsDir."log.txt";
+            my $log = $resultsDir."/log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;
@@ -397,8 +404,8 @@ exit $exitStatus;
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";
         print "\n";
-        print "  --log-verbosity=LEVEL      0 = no log (default)\n";
-        print "                             1 = normal output\n";
+        print "  --log-verbosity=LEVEL      0 = no log\n";
+        print "                             1 = normal output (default)\n";
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";
         print "\n";

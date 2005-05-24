@@ -240,7 +240,7 @@ cleanUp();
             elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
             elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logVerbosity = $v0; 
+            $logVerbosity = $v1; 
         }
         
         # Set quiet mode--same as passing --verbosity=0.
@@ -373,6 +373,7 @@ cleanUp();
             # cd to packages directory in build directory.
             chdir $buildDir or die "cannot chdir to $buildDir, died";
             chdir "packages/" or die "cannot chdir to packages/, died";
+            chdir $testListAoH[$i]{'definitionDir'} or next; # Potentially revist... 
                 
             # Print progress message.
             $message = $testListAoH[$i]{'package'}." - ".$testListAoH[$i]{'name'}."...";
@@ -392,10 +393,20 @@ cleanUp();
             my $startSeconds = time();
         
             # Run test
-            chdir $testListAoH[$i]{'definitionDir'} 
-                or die "cannot chdir to ".$testListAoH[$i]{'definitionDir'}.", died";
-            my $testOutput = `$testListAoH[$i]{'command'} 2>&1`;
+            my $testOutput = "";
+            $testOutput = `$testListAoH[$i]{'command'} 2>&1`;
             my $testExitStatus = $?;
+            
+            if (!defined $testOutput) { 
+                print "\n\n";
+                print "package: ".$testListAoH[$i]{'package'}."\n";
+                print "definitionDir: ".$testListAoH[$i]{'definitionDir'}."\n";
+                print "directory: ".$testListAoH[$i]{'directory'}."\n";
+                print "type: ".$testListAoH[$i]{'type'}."\n";
+                print "name: ".$testListAoH[$i]{'name'}."\n";
+                print "command: ".$testListAoH[$i]{'command'}."\n";
+                print "\n";                
+            }
             
             # Tally result
             $testsTotal++;
@@ -619,23 +630,18 @@ cleanUp();
                         # $package and $dir.
                         my $builtTestDirPath = "$buildDir/packages/$package/test/$dir";
                     
-                        if (!opendir(DIR, $builtTestDirPath)) {
-                            my $message = "";
-                            $message .= "! Error opening $dir, skipping $package tests.\n";
-                            printMessage($message, $v1+$v2+$v3);
-                            return;
-                        } 
-                        while (defined (my $file = readdir(DIR))) {
-                            my $absFile = "$buildDir/packages/$package/test/$dir/$file";                        
-                            if (    (-x $absFile) &&
-                                    ($file !~ m/^\.$/) &&
-                                    ($file !~ m/^\.\.$/) &&
-                                    ($file !~ m/^\.deps$/)
-                            ) {
-                                push( @{ $definitionAoHoA[$i]{'TESTS'} }, "$dir/$file");
+                        if (opendir(DIR, $builtTestDirPath)) {
+                            while (defined (my $file = readdir(DIR))) {
+                                my $absFile = "$buildDir/packages/$package/test/$dir/$file";                        
+                                if (    (-x $absFile) &&
+                                        (!-d $absFile) &&
+                                        ($file !~ m/^\./)
+                                ) {
+                                    push( @{ $definitionAoHoA[$i]{'TESTS'} }, "$dir/$file");
+                                }
                             }
+                            closedir(DIR);
                         }
-                        closedir(DIR);
                     }
                     
                     # Add a complete hash entry for each test listed in TESTS.
@@ -981,7 +987,7 @@ cleanUp();
         }
         
         if ($logVerbosity & $level) {
-            my $log = $resultsDir."log.txt";
+            my $log = $resultsDir."/log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;
@@ -1049,8 +1055,8 @@ cleanUp();
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";
         print "\n";
-        print "  --log-verbosity=LEVEL  0 = no log (default)\n";
-        print "                         1 = normal output\n";
+        print "  --log-verbosity=LEVEL  0 = no log\n";
+        print "                         1 = normal output (default)\n";
         print "                         2 = level 2 verbosity\n";
         print "                         3 = level 3 verbosity\n";
         print "\n";

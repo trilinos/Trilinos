@@ -31,6 +31,8 @@ use strict;
 # Command line arguments:
 
 my $trilinosDir;        # Trilinos directory            (required argument) 
+my $buildName;          # Name of the build             (required argument) 
+my $configFile;         # Config file to use            (default: ./config) 
 
 my $verbosity;          # verbosity level               (default: 1)
 my $logVerbosity;       # log file verbosity level      (default: 0)
@@ -76,6 +78,8 @@ exit $exitStatus;
 
         use Getopt::Long;
         GetOptions( "trilinos-dir=s" => \$trilinosDir,
+                    "build-name=s" => \$buildName,
+                    "config-file=s" => \$configFile,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
@@ -96,6 +100,20 @@ exit $exitStatus;
             if (!stat($trilinosDir)) {
                 die "cannot stat trilinos-dir: $trilinosDir\n";
             }
+        }
+        
+        # check for existance of build-name argument
+        if (!$buildName) {
+            die "build-name value required, see --help for more information\n"; 
+        } 
+        
+        # check for existance of config-file argument and actual directory
+        if ($configFile) {
+            if (!stat($configFile)) {
+                die "cannot stat config-file: $configFile\n";
+            }
+        } else {
+            $configFile = "$trilinosDir/commonTools/test/harness/config";
         }
         
         # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
@@ -122,7 +140,7 @@ exit $exitStatus;
             elsif   ($logVerbosity == 2) { $logVerbosity = $v2; }
             elsif   ($logVerbosity == 3) { $logVerbosity = $v3; }        
         } else {
-            $logVerbosity = $v0; 
+            $logVerbosity = $v1; 
         }
         
         # Set quiet mode--same as passing --verbosity=0.
@@ -177,33 +195,115 @@ exit $exitStatus;
     #
 
     sub run {
+        
+        # cd to test utility directory.
+        chdir "$trilinosDir/commonTools/test/utilities"
+            or die "cannot chdir to $trilinosDir/commonTools/test/utilities, died";
     
         # List of runs, which are hashes of name/value properties
-        my @runListAoH;
+        my @buildListAoH;
 
         # Parse the config file, extracting run information
-        (my $status, my $result) = parseConfig();
+        (my $status, my @result) = parseConfig();
         if ($status) {
-            printMessage ($result, $v1+$v2+$v3);
+            printMessage ($result[0], $v1+$v2+$v3);
             return 1;
         } else {
-            @runListAoH = $result;
+            @buildListAoH = @result;
         }
         
-        # Step through the list of runs, looking for one that applies here
-        for my $i (0 .. $#runListAoH) {
+        # Hash of build options from config file matching the given build-name
+        my %buildOptions;
         
-            if ($runListAoH[$i]{'MACHINE'} eq `uname -n`) { 
-            
-                print "RIGHT MACHINE\n\n"; 
-                
-                
-                
-                }
-                
+        # print @buildListAoH
+        for my $i (0 .. $#buildListAoH) {
+            if ($buildName eq $buildListAoH[$i]{'BUILD-NAME'}) {
+                %buildOptions = %{ $buildListAoH[$i] };
             }
+            
+        }
         
-        } # for ($i, $configAoH)
+        if (!%buildOptions) {
+            die "cannot find build-name $buildName in the config file $configFile, died";
+        }
+        
+        my $argVerbosity;
+        if      ($verbosity == $v0) { $argVerbosity = 0; }
+        elsif   ($verbosity == $v1) { $argVerbosity = 1; }
+        elsif   ($verbosity == $v2) { $argVerbosity = 2; }
+        elsif   ($verbosity == $v3) { $argVerbosity = 3; }
+        
+        my $argLogVerbosity;
+        if      ($logVerbosity == $v0) { $argLogVerbosity = 0; }
+        elsif   ($logVerbosity == $v1) { $argLogVerbosity = 1; }
+        elsif   ($logVerbosity == $v2) { $argLogVerbosity = 2; }
+        elsif   ($logVerbosity == $v3) { $argLogVerbosity = 3; }
+        
+        my $cmd = "";
+        my $output = "";
+        $status = 0;
+            
+        # Run runbuild
+        $cmd  = "perl runbuild ";
+        $cmd .= "--trilinos-dir=$trilinosDir ";
+        $cmd .= "--build-dir=".$buildOptions{'BUILD-DIR'}." ";
+        $cmd .= "--invoke-configure=$trilinosDir/commonTools/test/harness/";
+        $cmd .= "invoke-configures/".$buildOptions{'INVOKE-CONFIGURE'}." ";
+        if ($buildOptions{'MAKE-COMMAND'}) {
+            $cmd .= "--make-cmd=".$buildOptions{'MAKE-COMMAND'}." ";
+        }
+        $cmd .= "--recover ";
+        $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results ";
+        $cmd .= "--start-time=$runStartTimeForFilename ";
+        $cmd .= "--verbosity=$argVerbosity ";
+        $cmd .= "--log-verbosity=$argLogVerbosity ";
+        $status = system("$cmd");
+        if ($status != 0) { 
+            return 1;
+        }
+                        
+        # Run runtests
+        $cmd  = "perl runtests ";
+        $cmd .= "--trilinos-dir=$trilinosDir ";
+        $cmd .= "--build-dir=".$buildOptions{'BUILD-DIR'}." ";
+        $cmd .= "--comm=".$buildOptions{'COMM'}." ";
+        $cmd .= "--category=".$buildOptions{'TEST-CATEGORY'}." ";
+        if ($buildOptions{'MAX-PROC'}) {    
+            $cmd .= "--max-proc=".$buildOptions{'MAX-PROC'}." ";   
+        }
+        if ($buildOptions{'MPI-START'}) {   
+            $cmd .= "--mpi-start=".$buildOptions{'MPI-START'}." ";       
+        }
+        if ($buildOptions{'MPI-STOP'}) {   
+            $cmd .= "--mpi-stop=".$buildOptions{'MPI-STOP'}." ";       
+        }
+        if ($buildOptions{'MPI-GO'}) {   
+            $cmd .= "--mpi-go=".$buildOptions{'MPI-GO'}." ";       
+        }
+        $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results/";
+        $cmd .= "$runStartTimeForFilename-build ";
+        $cmd .= "--verbosity=$argVerbosity ";
+        $cmd .= "--log-verbosity=$argLogVerbosity ";
+        $output = `$cmd`;
+        $status = $?;
+        if ($status != 0) { 
+            return 1;
+        }
+                        
+        # Run report
+        $cmd  = "perl report ";
+        $cmd .= "--ttr-dir=".$buildOptions{'TTR-DIR'}." ";
+        $cmd .= "--results-dir=$trilinosDir/commonTools/test/harness/results/";
+        $cmd .= "$runStartTimeForFilename-build ";
+        $cmd .= "--ssg-username=".$buildOptions{'SSG-USERNAME'}." ";
+        $cmd .= "--verbosity=$argVerbosity ";
+        $output = `$cmd`;
+        $status = $?;
+        if ($status != 0) { 
+            return 1;
+        }
+        
+        return 0;       
         
     } # run()
     
@@ -227,7 +327,7 @@ exit $exitStatus;
         my @configAoH = ();
         
         # Open config file for reading.
-        open (CONFIG, "<config") or die "Can't open config file, died";
+        open (CONFIG, "<$configFile") or die "Can't open config file, died";
             
         # Read config file into one string.
         undef $/;               # undefine input record separator
@@ -304,11 +404,11 @@ exit $exitStatus;
         # Break raw string into category (.*) and property {.*} sections 
         my $propertyListString = "";
         if ($rawGroupString =~ m/\((.+?)\)\s*\{(.+?)\}/) {
-            $runGroup{'LABEL'} = $1;
+            $runGroup{'BUILD-NAME'} = $1;
             $propertyListString = $2;
         } else {
             $status++;
-            $errorString .= "! Malformed test group:  bad property list.\n";
+            $errorString .= "! Malformed test group:  incorrect grouping.\n";
         }
         
         # Property section {.*}:       
@@ -336,12 +436,6 @@ exit $exitStatus;
         }
         
         # Validate test group:
-        
-        # Enforce existance of MACHINE property.
-        if (!$runGroup{'MACHINE'}) {
-            $status++;            
-            $errorString .= "! Malformed test group:  no MACHINE property.\n";
-        }
         
         # Enforce existance of BUILD-DIR property.
         if (!$runGroup{'BUILD-DIR'}) {
@@ -429,7 +523,8 @@ exit $exitStatus;
     sub printHelp {
         print "runharness - The Trilinos Framework Test Harness\n";
         print "\n";
-        print "Usage:  perl runharness --config-file=/home/user/config\n";
+        print "Usage:  perl runharness --trilinos-dir=/home/user/Trilinos\n";
+        print "        --build-name=beowulf-nightly-serial\n";
         print "\n";
         print "Options:\n";
         print "\n";
@@ -438,19 +533,26 @@ exit $exitStatus;
         print "                             Example: /home/user/Trilinos\n";
         print "                             REQUIRED.\n";
         print "\n";
-        print "  --config-file=FILE         Specify the absolute path to the runharness\n";
-        print "                             config file that will determine the behavior.\n";
-        print "                             of the program.\n";
-        print "                             Example: /home/user/config\n";
+        print "  --build-name=NAME          Specify the name of the build to perform as\n";
+        print "                             given in the parenthesis of a \"run\"\n";
+        print "                             definition.\n";
+        print "                             Example: beowulf-nightly-serial\n";
         print "                             REQUIRED.\n";
+        print "\n";
+        print "  --config-file=FILE         Specify the path to the runharness config\n";
+        print "                             file containing the given build name. If not\n";
+        print "                             given, the standard config file in the\n";
+        print "                             commonTools/test/harness directory will be\n";
+        print "                             used.\n";
+        print "                             Example: /home/user/config\n";
         print "\n";
         print "  --verbosity=LEVEL          0 = no non-fatal ouput (same as --quiet)\n";
         print "                             1 = normal output (default)\n";
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";
         print "\n";
-        print "  --log-verbosity=LEVEL      0 = no log (default)\n";
-        print "                             1 = normal output\n";
+        print "  --log-verbosity=LEVEL      0 = no log\n";
+        print "                             1 = normal output (default)\n";
         print "                             2 = level 2 verbosity\n";
         print "                             3 = level 3 verbosity\n";
         print "\n";

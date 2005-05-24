@@ -252,7 +252,10 @@ exit $exitStatus;
         $result = $?;
         if ($result) { print "\n\n$output\n\n"; }
         
-        $output = `ssh $ssgUsername\@software.sandia.gov '/space/TrilinosWebHome/insert_results.pl' 2>&1`;
+        my $cmd = "";
+        $cmd .= "ssh $ssgUsername\@software.sandia.gov ";
+        $cmd .= "'/space/TrilinosWebHome/insert_results.pl --results-dir=$resultsDirNameNew' 2>&1";
+        $output = `$cmd`;
         $result = $?;
         print "\n\$output: $output\n";
         print "\n\$result: $result\n\n";
