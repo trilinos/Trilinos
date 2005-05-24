@@ -39,7 +39,7 @@ template <class Scalar> class ProductVectorSpace;
 /** \brief Concrete implementation of a product vector.
  *
  * Note that clients should almost never be creating objects of this
- * type explicitly and should insteady use <tt>ProductVectorSpace</tt>
+ * type explicitly and should instead use <tt>ProductVectorSpace</tt>
  * as a factory.
  *
  * ToDo: Finish documentation!

@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Advanced transforamtion operator that assigns elements from a
+/** \brief Advanced transformation operator that assigns elements from a
  * sparse explicit vector.
  *
  * ToDo: Finish documentation!
@@ -204,7 +204,7 @@ void TOpSetSubVector<Scalar>::load_op_state(
   ptrdiff_t  indicesStride = sub_vec_.indicesStride();
   // Reallocate storage if we have to
   if( Nz != sub_vec_.subNz() || (indices==NULL && num_indexes > num_sub_vec_members ) ) {
-    // The current sub_vec_ does not have storage setup to hold the incomming subvector.
+    // The current sub_vec_ does not have storage setup to hold the incoming subvector.
     // Delete current storage if owned.
     if( ownsMem_ ) {
       if(scalars) delete [] scalars;
@@ -219,7 +219,7 @@ void TOpSetSubVector<Scalar>::load_op_state(
     indicesStride = 1;
   }
   else {
-    // The storage in sub_vec_ is already correct to hold the incomming subvector
+    // The storage in sub_vec_ is already correct to hold the incoming subvector
   }
   // Set the internal sub_vec
   index_type v_off = 0;
@@ -314,7 +314,7 @@ void TOpSetSubVector<Scalar>::apply_op(
     // if statement in the above loop.
   }
   else {
-    // Dense elemements
+    // Dense elements
     if( v_global_offset <= z_global_offset )
       v_val += (z_global_offset - v_global_offset) * v_val_s;
     else

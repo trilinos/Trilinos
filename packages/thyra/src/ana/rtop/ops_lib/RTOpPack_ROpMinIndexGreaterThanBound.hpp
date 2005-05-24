@@ -34,7 +34,7 @@
 
 namespace RTOpPack {
 
-/** \breif Returns the minimum element greater than some bound along
+/** \brief Returns the minimum element greater than some bound along
  * with its index: <tt>result.scalar = x(k)</tt> and <tt>result.index
  * = k</tt> such that <tt>x(k) <= x(i)</tt> for all <tt>i</tt> where
  * <tt>x(i) > bound</tt> and <tt>k</tt> is the minimum index to break

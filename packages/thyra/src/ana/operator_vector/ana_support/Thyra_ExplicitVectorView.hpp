@@ -176,7 +176,7 @@ public:
         delete [] const_cast<Scalar*>(sv_.values());
       v_.freeSubVector(&sv_s_);
     }
-  /// Returns the explict view as an <tt>RTOpPack::SubVectorT<Scalar></tt> object
+  /// Returns the explicit view as an <tt>RTOpPack::SubVectorT<Scalar></tt> object
   const RTOpPack::SubVectorT<Scalar>& sv() const { return sv_; }
   /// Returns the global offset for the explicit view
   RTOp_index_type   globalOffset() const { return sv_.globalOffset(); }
@@ -234,7 +234,7 @@ private:
     const Scalar *v_ptr = v_ev.values();                         // Get pointer to unit-stride data
     for( int k = 0; k < n; ++k )                                 // For each element in view:
       v_ptr[k] += x[k];                                          //   Add-to elements
-    // When this function returns then v_ev will be destroyed and the view will be commited back and *v modified
+    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
  }
 
  //
@@ -252,7 +252,7 @@ private:
     const Thyra::Index  *v_stride = v_ev.stride();           // Get stride between vector data
     for( int k = 0; k < rng.size(); ++k, v_ptr += v_stride ) // For each element in view:
       *v_ptr + x[k];                                         //   Add-to elements
-    // When this function returns then v_ev will be destroyed and the view will be commited back and *v modified
+    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
  }
 
  //
@@ -268,7 +268,7 @@ private:
     Thyra::ExplicitMutableVectorView<Scalar> v_ev(rng,*v);   // Allow non-unit stride 
     for( int k = 0; k < rng.size(); ++k )                    // For each element in view:
       v_ev[k] += x[k];                                       //   Add-to elements using operator[]()
-    // When this function returns then v_ev will be destroyed and the view will be commited back and *v modified
+    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
  }
 
  //
@@ -284,7 +284,7 @@ private:
     Thyra::ExplicitMutableVectorView<Scalar> v_ev(rng,*v); // Allow non-unit stride 
     for( int k = 0; k < rng.size(); ++k )                  // For each element in view:
       v_ev(k+1) += x[k];                                   //   Add-to elements using operator()()
-    // When this function returns then v_ev will be destroyed and the view will be commited back and *v modified
+    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
  }
 
  \endcode
@@ -348,7 +348,7 @@ public:
       }
       v_.commitSubVector(&sv_s_);
     }
-  /// Returns the explict view as an <tt>RTOpPack::SubVectorT<Scalar></tt> object
+  /// Returns the explicit view as an <tt>RTOpPack::SubVectorT<Scalar></tt> object
   const RTOpPack::MutableSubVectorT<Scalar>& sv() const { return sv_; }
   /// Returns the global offset for the explicit view
   RTOp_index_type   globalOffset() const { return sv_.globalOffset(); }

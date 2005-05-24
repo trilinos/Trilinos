@@ -91,14 +91,14 @@ namespace Thyra {
  * simply return <tt>VectorSpaceBase</tt> objects for subclasses that are
  * already defined for the vectors that the linear operator interacts
  * with through the function <tt>apply()</tt>.  Therefore, given that
- * approprate <tt>VectorSpaceBase</tt> and <tt>VectorBase</tt> subclasses exist,
+ * appropriate <tt>VectorSpaceBase</tt> and <tt>VectorBase</tt> subclasses exist,
  * the only real work involved in implementing a <tt>LinearOpBase</tt> 
  * is defining a single function <tt>apply()</tt>.
  *
  * If a <tt>LinearOpBase</tt> subclass can not support a particular value
  * of the transpose argument <tt>M_trans</tt> in the <tt>apply()</tt>
- * functions, then the function <tt>opSuported(M_trans)</tt> must be
- * overriden to return <tt>false</tt> for this value of
+ * functions, then the function <tt>opSupported(M_trans)</tt> must be
+ * overridden to return <tt>false</tt> for this value of
  * <tt>M_trans</tt>.
  *
  * If possible, the subclass should also override the <tt>clone()</tt>
@@ -131,7 +131,7 @@ public:
    * <tt>y = alpha*op(M)*x + beta*y</tt>.
    *
    * @param  M_trans
-   *                [in] Determines whether the transposed or non-trnasposed
+   *                [in] Determines whether the transposed or non-transposed
    *                operator is applied as:
    *                <ul>
    *                <li> <tt>op(M) = M</tt>, for <tt>M_trans==NOTRANS</tt>
@@ -172,7 +172,7 @@ public:
 
   //@}
 
-  /** @name Virtual functions with default implemenations */
+  /** @name Virtual functions with default implementations */
   //@{
 
   /** \brief Clone the linear operator object (if supported).
@@ -195,7 +195,7 @@ public:
    * <tt>Y = alpha*op(M)*X + beta*Y</tt>.
    *
    * @param  M_trans
-   *                [in] Determines whether the transposed or non-trnasposed
+   *                [in] Determines whether the transposed or non-transposed
    *                operator is applied as:
    *                <ul>
    *                <li> <tt>op(M) = M</tt>, for <tt>M_trans==NOTRANS</tt>
@@ -244,7 +244,7 @@ public:
   /** @name Overridden from Teuchos::Describable */
   //@{
 
-  /** \breif Generates a default outputting for all linear operators.
+  /** \brief Generates a default outputting for all linear operators.
    *
    * Calls on the <tt>this->describe(void)</tt> function for the name
    * of the class (and possibly its instance name) and then if

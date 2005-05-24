@@ -37,7 +37,7 @@ namespace Thyra {
 
 /** \brief Abstract interface for finite-dimensional dense vectors.
  *
- * This interface contains a mimimal set of operations.  The main
+ * This interface contains a minimal set of operations.  The main
  * feature of this interface is the operation <tt>applyOp()</tt>.
  * Every standard (i.e. BLAS) and nearly every non-standard
  * element-wise operation that can be performed on a set of vectors
@@ -48,7 +48,7 @@ namespace Thyra {
  * implementations would not be significantly faster than those
  * implemented through reduction/transformation operators.  There are
  * some operations however that can not always be efficiently
- * implemented with reduction/transforamtion operators and a few of
+ * implemented with reduction/transformation operators and a few of
  * these important operations are included in this interface.  The
  * <tt>applyOp()</tt> function allows to client to specify a sub-set
  * of the vector elements to include in reduction/transformation
@@ -93,13 +93,13 @@ namespace Thyra {
  *
  * <b>Notes for subclass developers</b>
  *
- * In order to create a concreate subclass of this interface, only two
+ * In order to create a concrete subclass of this interface, only two
  * operations must be overridden: <tt>space()</tt> and
- * <tt>applyOp()</tt>.  Overridding the <tt>space()</tt> operation
- * requires defining a concreate <tt>VectorSpaceBase</tt> class (which has
+ * <tt>applyOp()</tt>.  Overriding the <tt>space()</tt> operation
+ * requires defining a concrete <tt>VectorSpaceBase</tt> class (which has
  * only three pure virtual operations).
  *
- * A subclass should only bother overidding the explicit sub-vector
+ * A subclass should only bother overriding the explicit sub-vector
  * access operations <tt>getSubVector()</tt>,
  * <tt>freeSubVector()</tt>, <tt>commitSubVector()</tt> and
  * <tt>setSubVector()</tt> if profiling shows that these operations
@@ -192,7 +192,7 @@ public:
    * simply creates a new vector using <tt>createMember(this->space())</tt>
    * and then assigns the contents from <tt>*this</tt>.
    *
-   * Subclasses should only consider overridding this function if there they
+   * Subclasses should only consider overriding this function if there they
    * want to be very sophisticated and implement some form of lazy evaluation
    * in case the created object might not actually be modified before it is
    * destroyed.
@@ -251,7 +251,7 @@ public:
    * reduction operator class (see <tt>RTOpPack::ROpGetSubVector</tt>)
    * and calls <tt>applyOp()</tt>.  Note that the footprint of the reduction
    * object (both internal and external state) will be
-   * O(<tt>rng.size()</tt>).  For serial applications this is faily
+   * O(<tt>rng.size()</tt>).  For serial applications this is fairly
    * reasonable and will not be a major performance penalty.  For
    * parallel applications, however, this is a terrible
    * implementation and must be overridden if <tt>rng.size()</tt> is
@@ -266,7 +266,7 @@ public:
   /** \brief Free an explicit view of a sub-vector.
    *
    * @param  sub_vec
-   *				[in/out] The memory refered to by <tt>sub_vec->values</tt>
+   *				[in/out] The memory referred to by <tt>sub_vec->values</tt>
    *				will be released if it was allocated and <tt>*sub_vec</tt>
    *              will be zeroed out using <tt>sub_vec->set_uninitialized()</tt>.
    *
@@ -296,7 +296,7 @@ public:
    * @param  sub_vec  [in/out] Mutable view of the sub-vector.  Prior to the
    *                  first call <tt>sub_vec->set_uninitialized()</tt> must
    *                  have been called for the correct behavior.  Technically
-   *                  <tt>*sub_vec</tt> owns the memory but this memory must be commited
+   *                  <tt>*sub_vec</tt> owns the memory but this memory must be committed
    *                  and freed only by calling <tt>this->commitSubVector(sub_vec)</tt>.
    *
    * Preconditions:<ul>
@@ -317,7 +317,7 @@ public:
    * Note that calling this operation might require some internal
    * allocations and temporary memory.  Therefore, it is critical
    * that <tt>this->commitSubVector(sub_vec)</tt> is called to
-   * commit the changed entires and clean up memory and avoid memory
+   * commit the changed entries and clean up memory and avoid memory
    * leaks after the sub-vector is modified.
    *
    * <b>Heads Up!</b> Note that client code in general should not
@@ -334,16 +334,16 @@ public:
    * of the memory.  Of course the same <tt>sub_vec</tt> object must
    * be passed to the same vector object for this to work correctly.
    *
-   * Changes to the underlying sub-vector are not guarrenteed to
+   * Changes to the underlying sub-vector are not guaranteed to
    * become permanent until <tt>this->getSubVector(...,sub_vec)</tt>
-   * is called agian, or <tt>this->commitSubVector(sub_vec)</tt> is
+   * is called again, or <tt>this->commitSubVector(sub_vec)</tt> is
    * called.
    *
    * This operation has a default implementation based on a vector
    * reduction operator class (see <tt>RTOpPack::ROpGetSubVector</tt>) and calls
    * <tt>applyOp()</tt>.  Note that the footprint of the reduction
    * object (both internal and external state) will be
-   * O(<tt>rng.size()</tt>).  For serial applications this is faily
+   * O(<tt>rng.size()</tt>).  For serial applications this is fairly
    * reasonable and will not be a major performance penalty.  For
    * parallel applications, this will be a terrible thing to do and
    * must be overridden if <tt>rng.size()</tt> is large at all.  If
@@ -357,7 +357,7 @@ public:
    *
    * @param sub_vec
    *				[in/out] The data in <tt>sub_vec->values()</tt> will be written
-   *              back internal storage and the memory refered to by
+   *              back internal storage and the memory referred to by
    *              <tt>sub_vec->values()</tt> will be released if it was allocated
    *				and <tt>*sub_vec</tt> will be zeroed out using
    *				<tt>sub_vec->set_uninitialized()</tt>.
@@ -399,7 +399,7 @@ public:
    * <li> All of the elements in the range
    *      <tt>[sub_vec.global_offset+1,sub_vec.global_offset+sub_vec.sub_dim]</tt>
    *      in <tt>*this</tt> are set to 0.0 except for those that have that
-   *      have entries in <tt>sub_vec</tt> which are set to the values spacificed
+   *      have entries in <tt>sub_vec</tt> which are set to the values specified
    *      by <tt>(*this)(sub_vec.global_offset+vec.local_offset+sub_vec.indices[sub_vec.indices_stride*(k-1)])
    *      = vec.values[vec.value_stride*(k-1)]</tt>, for <tt>k = 1..sub_vec.sub_nz</tt>
    * </ul>
@@ -421,7 +421,7 @@ public:
   /** @name Overridden from Teuchos::Describable */
   //@{
 
-  /** \breif Generates a default outputting for all vectors.
+  /** \brief Generates a default outputting for all vectors.
    *
    * Calls on the <tt>this->describe(void)</tt> function for the name
    * of the class (and possibly its instance name) and then if
@@ -584,7 +584,7 @@ private:
  * <li> The vectors in <tt>targ_vecs[]</tt> may be modified as determined by the definition of <tt>op</tt>.
  * <li> [<tt>reduct_obj!=RTOp_REDUCT_OBJ_NULL</tt>] The reduction object <tt>reduct_obj</tt> contains
  *      the combined reduction from the input state of <tt>reduct_obj</tt> and the reductions that
- *      where accumulated during this this operation invokation.
+ *      where accumulated during this this operation invocation.
  * </ul>
  *
  * The logical vector passed to the
@@ -598,7 +598,7 @@ private:
  * where <tt>v</tt> represents any one of the input or input/output
  * vectors.  The situation where <tt>first_ele == 1</tt> and
  * <tt>global_offset > 1</tt> corresponds to the case where the
- * vectors represent consitituent vectors in a larger aggregrate
+ * vectors represent constituent vectors in a larger aggregate
  * vector.  The situation where <tt>first_ele > 1</tt> and
  * <tt>global_offset == 0</tt> is for when a sub-view of the vectors
  * are being treated as full vectors.  Other combinations of these

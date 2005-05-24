@@ -36,10 +36,10 @@
 #include "Teuchos_oblackholestream.hpp"
 
 //
-// This example program is ment to show how easy it is to create MPI
+// This example program is meant to show how easy it is to create MPI
 // Thyra objects and use them with an ANA (CG in this case).
 //
-// This example uses a silly concrete tridagonal matrix class called
+// This example uses a silly concrete tridiagonal matrix class called
 // MPITridiagLinearOp that demonstrates how to write such
 // subclasses.
 //
@@ -70,7 +70,7 @@ bool runCgSolveExample(
   Teuchos::Time timer("");
   timer.start(true);
   //
-  // (A) Setup a simple linear system with tridagonal operator:
+  // (A) Setup a simple linear system with tridiagonal operator:
   //
   //       [  a*2   -1                ]
   //       [ -1    a*2  -1            ]
@@ -78,8 +78,8 @@ bool runCgSolveExample(
   //       [            -1  a*2    -1 ]
   //       [                 -1   a*2 ]
   //
-  // (A.1) Create the tridagonal matrix operator
-  if(verbose) out << "\nConstructing tridagonal matrix A of local dimmension = " << localDim
+  // (A.1) Create the tridiagonal matrix operator
+  if(verbose) out << "\nConstructing tridiagonal matrix A of local dimension = " << localDim
                         << " and diagonal multiplier = " << diagScale << " ...\n";
   const Thyra::Index
     lowerDim = ( procRank == 0         ? localDim - 1 : localDim ),
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
   try {
 
     //
-    // Read in commandline options
+    // Read in command-line options
     //
 
     int    localDim    = 500;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
   }
 
   if( verbose && procRank==0 ) {
-    if(success) std::cout << "\nAll of the tests seem to have run sucessfully!\n";
+    if(success) std::cout << "\nAll of the tests seem to have run successfully!\n";
     else        std::cout << "\nOh no! at least one of the tests failed!\n";	
   }
   

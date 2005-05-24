@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-// Range1D class used for representing a range of possitive integers.
+// Range1D class used for representing a range of positive integers.
 // Its primary usage is in accessing vectors and matrices by subregions
 // of rows and columns
 //
@@ -46,7 +46,7 @@ namespace RangePack {
   * It is used to index into vectors and matrices and return subregions of them
   * respectively.
   *
-  * Constructing using \c Range1D() yields a range that reprsents the entire dimension
+  * Constructing using \c Range1D() yields a range that represents the entire dimension
   * of an object <tt>[1, max_ubound]</tt> (an entire vector, all the rows in a matrix,
   * or all the columns in a matrix etc.).
   *
@@ -63,7 +63,7 @@ namespace RangePack {
   * There are many \ref Range1D_funcs_grp "non-member functions" that can be used with <tt>%Range1D</tt> objects.
   *
   * The default copy constructor and assignment operator functions are allowed since they have
-  * the correct sematics.
+  * the correct semantics.
   */
 class Range1D {
 public:
@@ -194,7 +194,7 @@ inline Range1D operator-(const Range1D &rng_rhs, Range1D::Index i)
 }
 
 /// 
-/** Return a bounded index range from a potantially unbounded index range.
+/** Return a bounded index range from a potentially unbounded index range.
   * 
   * Return a index range of lbound to ubound if rng.full_range() == true
   * , otherwise just return a copy of rng.

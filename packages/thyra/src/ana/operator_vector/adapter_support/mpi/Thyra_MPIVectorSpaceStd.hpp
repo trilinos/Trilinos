@@ -92,7 +92,7 @@ std::string MPIVectorSpaceStd<Scalar>::describe() const
   return (std::string("MPIVectorSpaceStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }
 
-// Overridden from VectorSpece
+// Overridden from VectorSpace
 
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >

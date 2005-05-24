@@ -38,7 +38,7 @@ namespace Thyra {
 /** \brief Testing class that tests all of the standard vector
  * operations defined in ??? using an arbitrary vector space.
  *
- * ToDo: Finish documenation!
+ * ToDo: Finish documentation!
  */
 template <class Scalar>
 class VectorStdOpsTester {

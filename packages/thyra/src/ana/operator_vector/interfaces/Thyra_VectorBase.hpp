@@ -66,7 +66,7 @@ void VectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVecto
     ,"VectorBase<Scalar>::getSubVector(rng,...): Error, rng = ["<<rng.lbound()<<","<<rng.ubound()
     <<"] is not in range = [1,"<<this->space()->dim()<<"]" );
 #endif
-  // Free sub_vec if needed (note this is dependent on the implemenation of this operator class!)
+  // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
   if( sub_vec_inout->values() ) {
     free( (void*)sub_vec_inout->values()  );
   }
@@ -91,7 +91,7 @@ void VectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVecto
 template<class Scalar>
 void VectorBase<Scalar>::freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const
 {
-  // Free sub_vec if needed (note this is dependent on the implemenation of this operator class!)
+  // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
   RTOpPack::ReductTargetSubVectorT<Scalar>::free(sub_vec);
 }
 

@@ -44,7 +44,7 @@ template<class Scalar>
 class SerialVectorSpaceBase : public ScalarProdVectorSpaceBase<Scalar> {
 public:
 
-  /** @name Overridden from VectorSpece */
+  /** @name Overridden from VectorSpace */
   //@{
 
   /// Returns true.

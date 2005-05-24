@@ -126,7 +126,7 @@ public:
   
   //@}
 
-  /** @name Overriddend form Teuchos::Describable */
+  /** @name Overridden form Teuchos::Describable */
   //@{
   /** \brief . */
   std::string describe() const;

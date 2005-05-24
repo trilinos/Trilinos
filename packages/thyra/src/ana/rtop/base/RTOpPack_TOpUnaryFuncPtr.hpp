@@ -92,8 +92,8 @@ void TOpUnaryFuncPtr<Scalar>::apply_op(
   TEST_FOR_EXCEPTION( num_vecs != 1 || sub_vecs == NULL, std::invalid_argument, "Error!" );
   TEST_FOR_EXCEPTION( num_targ_vecs != 1 || targ_sub_vecs == NULL, std::invalid_argument, "Error!" );
   TEST_FOR_EXCEPTION( reduct_obj != NULL, std::invalid_argument, "Error!" );
-  TEST_FOR_EXCEPTION( sub_vecs[0].stride() != 1, std::invalid_argument, "Error, can't handle nonunit strides here!" );
-  TEST_FOR_EXCEPTION( targ_sub_vecs[0].stride() != 1, std::invalid_argument, "Error, can't handle nonunit strides here!" );
+  TEST_FOR_EXCEPTION( sub_vecs[0].stride() != 1, std::invalid_argument, "Error, can't handle non-unit strides here!" );
+  TEST_FOR_EXCEPTION( targ_sub_vecs[0].stride() != 1, std::invalid_argument, "Error, can't handle non-unit strides here!" );
   TEST_FOR_EXCEPTION( sub_vecs[0].subDim() != targ_sub_vecs[0].subDim(), std::invalid_argument, "Error!" );
   TEST_FOR_EXCEPTION( sub_vecs[0].globalOffset() != targ_sub_vecs[0].globalOffset(), std::invalid_argument, "Error!" );
 

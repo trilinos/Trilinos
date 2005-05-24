@@ -39,7 +39,7 @@ namespace Thyra {
  * This interface defines a basic mechanism for the interoperability
  * of MPI SPMD <tt>VectorBase</tt> and <tt>MultiVectorBase</tt> objects.  See
  * the base classes <tt>MPIVetorBase</tt> and
- * <tt>MPIMultiVetorBase</tt> to demonstrate how this interface is
+ * <tt>MPIMultiVectorBase</tt> to demonstrate how this interface is
  * used to achieve universal interoperability of vector and
  * multi-vector objects.
  *
@@ -88,7 +88,7 @@ namespace Thyra {
  * are partitioned to unique processors and no ghost elements are
  * present, the actual indexes used by the application with these
  * vectors is immaterial.  The indexes associated with this set of
- * interfaces, however, are only meaningful to abstract numerial
+ * interfaces, however, are only meaningful to abstract numerical
  * algorithms and provide an arbitrary label for certain types of
  * coordinate-dependent operations (like required in an active-set
  * method for optimization).  Therefore, as long as the underlying
@@ -108,7 +108,7 @@ namespace Thyra {
  * If <tt>this</tt> this is in an uninitialized state then
  * <tt>localSubDim()</tt> should return <tt>0</tt>.
  *
- * It should never be neccassary to override the virtual functions
+ * It should never be necessary to override the virtual functions
  * <tt>mapCode()</tt> and <tt>isCompatible()</tt> as these functions
  * have very good and very general implementations.  do.
  *
@@ -190,7 +190,7 @@ public:
    *
    * The value returned from this default implementation of this
    * method must not be changed or this approach breaks down.  The
-   * only reason for overridding this method is for the subclass to
+   * only reason for overriding this method is for the subclass to
    * be alerted of <em>when</em> this method is called but not
    * <em>what</em> is returned from this method.  If a subclass
    * developer does not understand what this means then <b>don't</b>
@@ -198,7 +198,7 @@ public:
    *
    * The default implementation will always return <tt>return >
    * 0</tt> (unless <tt>this</tt> is uninitialized) so that if this
-   * method is overriden to return <tt>return <= </tt> then this is
+   * method is overridden to return <tt>return <= </tt> then this is
    * a flag that the underlying vector map does not satisfy the
    * assumptions of this vector space interface and vectors that are
    * in <tt>*this</tt> vector space can not collaborate with other

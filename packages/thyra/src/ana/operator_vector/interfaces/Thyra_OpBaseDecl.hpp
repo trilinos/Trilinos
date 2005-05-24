@@ -37,7 +37,7 @@ namespace Thyra {
 /** \brief Base class for all operators.
  *
  * It is not expected that clients will manipulate objects directly
- * through this interface.  This interface is just ment to provide
+ * through this interface.  This interface is just meant to provide
  * common declarations the functions <tt>domain()</tt>,
  * <tt>range()</tt> and <tt>opSupported()</tt>.
  *
@@ -93,7 +93,7 @@ public:
 
   //@}
 
-  /** @name Virtual functions with default implemenations */
+  /** @name Virtual functions with default implementations */
   //@{
 
   /** \brief Return if the <tt>M_trans</tt> operation is supported or not.
@@ -105,7 +105,7 @@ public:
    * The default implementation returns <tt>true</tt>.
    *
    * Note that an operator must support at least one of the values
-   * of <tt>ETrans</tt> (i.e. the transposed or the nontranspoed
+   * of <tt>ETrans</tt> (i.e. the transposed or the non-transposed
    * operations must be supported, both can not be unsupported)
    */
   virtual bool opSupported(ETransp M_trans) const;

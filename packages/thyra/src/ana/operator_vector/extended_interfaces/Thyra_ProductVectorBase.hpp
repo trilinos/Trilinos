@@ -42,7 +42,7 @@ template <class Scalar> class ProductVectorSpaceBase;
  * out of the one or more other vectors to form what mathematicians
  * like to call a "product vector".
  *
- * A product vector is simply the concatonation of two or more vectors
+ * A product vector is simply the concatenation of two or more vectors
  * to form a larger "composite" vector.  Specifically, a product vector
  * with <tt>numBlock</tt> constituent block vectors represents the blocked
  * vector

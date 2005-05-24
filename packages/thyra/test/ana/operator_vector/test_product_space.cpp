@@ -98,7 +98,7 @@ bool run_product_space_tests(
 
   if(out) *out
     << "\nB) Test the compatibility of serial vectors and product vectors with serial blocks."
-    << "\n   These tests demonstrate the principle of how all incore vectors are compatible ...\n";
+    << "\n   These tests demonstrate the principle of how all in-core vectors are compatible ...\n";
 
   const Scalar
     one   = ST::one(),
@@ -182,7 +182,7 @@ int main( int argc, char* argv[] ) {
   try {
 
     //
-    // Read options from commandline
+    // Read options from command-line
     //
 
     int n              = 4;
@@ -211,7 +211,7 @@ int main( int argc, char* argv[] ) {
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP
     //if( !run_product_space_tests<mpf_class>(n,numBlocks,mpf_class(1e-13),showAllTests,dumpAll,verbose?&out:NULL) ) success = false;
-    // Above commented out code will not compile because its ScalarTraits specializatioin does not support eps()
+    // Above commented out code will not compile because its ScalarTraits specialization does not support eps()
 #endif
 
   } // end try
@@ -228,7 +228,7 @@ int main( int argc, char* argv[] ) {
 
   if(verbose) {
     if(success)
-      out << "\nAll of the tests seem to have run sucessfully!\n";
+      out << "\nAll of the tests seem to have run successfully!\n";
     else
       out << "\nOh no! at least one of the test failed!\n";	
   }

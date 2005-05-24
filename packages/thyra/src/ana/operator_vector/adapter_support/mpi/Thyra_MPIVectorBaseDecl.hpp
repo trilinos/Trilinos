@@ -48,7 +48,7 @@ namespace Thyra {
  * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>,
  * (non-<tt>const</tt>) <tt>getSubVector()</tt> and
  * <tt>commitSubVector()</tt> (which all have default implementations
- * in this subclass).  In essense, this implemenation will only call
+ * in this subclass).  In essence, this implementation will only call
  * the <tt>getSubVector()</tt> methods using a range of (global)
  * indexes for elements that exist on the local processor.  As long as
  * the number of local elements on each processor is fairly large, the
@@ -57,7 +57,7 @@ namespace Thyra {
  *
  * <b>Notes to subclass developers</b>
  *
- * Concrete subclasses must overide only two functions:
+ * Concrete subclasses must override only two functions:
  * <tt>mpiSpace()</tt> and <tt>getLocalData(Scalar**,Index*)</tt>.
  * The default implementation of <tt>getLocalData(cons
  * Scalar**,Index*)</tt> should rarely need to be overridden as it
@@ -72,7 +72,7 @@ namespace Thyra {
  * (<tt>const</tt>) <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>,
  * (non-<tt>const</tt>) <tt>getSubVector()</tt> and
  * <tt>commitSubVector()</tt> are called in instead.  Alternatively, a
- * subclass could provide more specialized implemenations of these
+ * subclass could provide more specialized implementations of these
  * methods (for more efficient gather/scatter operations) if desired
  * but this should not be needed for most use cases.
  *
@@ -82,7 +82,7 @@ namespace Thyra {
  * operator will be properly applied since the version of
  * <tt>applyOp()</tt> implemented in this class will only request
  * local vector data and hence there will only be two levels of
- * recussion for any call to an explicit subvector access method.
+ * recursion for any call to an explicit subvector access method.
  * This is a truly elegant result.
  *
  * As described in the documentation for <tt>MPIVectorSpaceBase</tt>,
@@ -131,10 +131,10 @@ public:
    * <li> <tt>*stride!=0</tt>
    * </ul>
    *
-   * Note, the data view returned from this function must be commited
+   * Note, the data view returned from this function must be committed
    * back by a call to <tt>this->commitLocalData()</tt> in case dynamic
    * memory allocation had to be used and therefore the pointer return
-   * does not point to interal storage.
+   * does not point to internal storage.
    */
   virtual void getLocalData( Scalar** localValues, Index* stride ) = 0;
 
@@ -148,7 +148,7 @@ public:
    * </ul>
    *
    * Preconditions:<ul>
-   * <li> <tt>*this</tt> will be updated to the entires in <tt>*localValues</tt>.
+   * <li> <tt>*this</tt> will be updated to the entries in <tt>*localValues</tt>.
    * </ul>
    */
   virtual void commitLocalData( Scalar* localValues ) = 0;
@@ -177,7 +177,7 @@ public:
    * Note, the data view returned from this function must be freed by
    * a call to <tt>this->freeLocalData()</tt> in case dynamic memory
    * allocation had to be used and therefore the pointer returned does
-   * not point to interal storage.
+   * not point to internal storage.
    *
    * The default implementation performs a <tt>const_cast</tt> of
    * <tt>this</tt> and then calls the non-<tt>const</tt> version of

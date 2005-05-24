@@ -59,13 +59,13 @@ public:
 
   //@}
 
-  /** @name Overriddend form Teuchos::Describable */
+  /** @name Overridden form Teuchos::Describable */
   //@{
   /** \brief . */
   std::string describe() const;
   //@}
 
-  /** @name Overridden from VectorSpece */
+  /** @name Overridden from VectorSpace */
   //@{
 
   /// Returns 0 if uninitialized

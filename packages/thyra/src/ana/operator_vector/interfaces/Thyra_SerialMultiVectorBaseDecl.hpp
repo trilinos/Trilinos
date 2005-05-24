@@ -54,7 +54,7 @@ namespace Thyra {
  *
  * <b>Notes to subclass developers</b>
  *
- * Concrete subclasses must overide only four functions that give
+ * Concrete subclasses must override only four functions that give
  * direct access to MultiVectorBase data: <<tt>getData(const
  * Scalar**,Index*)</tt>, <tt>freeData(const
  * Scalar**,Index*)</tt>, <tt>getData(Scalar**,Index*)</tt>,
@@ -85,10 +85,10 @@ public:
   /** @name Pure virtual methods to be overridden by subclasses */
   //@{
 
-  /** \brief Returns a <tt>const</tt>  pointer to a fortran-style view of the local multi-vector data.
+  /** \brief Returns a <tt>const</tt>  pointer to a Fortran-style view of the local multi-vector data.
    *
    * @param  values      [out] On output <tt>*values</tt> will point to 
-   *                     the first element in the first colum of the local multi-vector
+   *                     the first element in the first column of the local multi-vector
    *                     stored as a column-major dense Fortran-style matrix.
    * @param  leadingDim  [out] On output <tt>*leadingDim</tt> gives the leading dimension
    *                     of the Fortran-style local multi-vector.
@@ -103,10 +103,10 @@ public:
    */
   virtual void freeData( const Scalar *values ) const = 0;
 
-  /** \brief Returns a non-<tt>const</tt> pointer to a fortran-style view of the local multi-vector data.
+  /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of the local multi-vector data.
    *
    * @param  values      [out] On output <tt>*values</tt> will point to 
-   *                     the first element in the first colum of the local multi-vector
+   *                     the first element in the first column of the local multi-vector
    *                     stored as a column-major dense Fortran-style matrix.
    * @param  leadingDim  [out] On output <tt>*leadingDim</tt> gives the leading dimension
    *                     of the Fortran-style local multi-vector.
@@ -229,7 +229,7 @@ protected:
    * <tt>VectorSpaceBase</tt> changes.
    *
    * This function can be overridden by subclasses but this
-   * particualar function implementation must be called from within
+   * particular function implementation must be called from within
    * any override.
    */
   virtual void updateSpace();

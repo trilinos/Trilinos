@@ -102,7 +102,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
 #ifdef _DEBUG
     TEST_FOR_EXCEPTION(
       localSubDim != localSubDim_in, std::logic_error
-      , "Error, localSubDim = "<<localSubDim<<" does not match the readin value of "
+      , "Error, localSubDim = "<<localSubDim<<" does not match the read in value of "
       "localSubDim_in = "<<localSubDim_in<<"!"
       );
 #endif
@@ -111,7 +111,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
 #ifdef _DEBUG
     TEST_FOR_EXCEPTION(
       local_mv.numSubCols() != numSubCols_in, std::logic_error
-      , "Error, numSubCols = "<<local_mv.numSubCols()<<" does not match the readin value of "
+      , "Error, numSubCols = "<<local_mv.numSubCols()<<" does not match the read in value of "
       "numSubCols_in = "<<numSubCols_in<<"!"
       );
 #endif
@@ -134,7 +134,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
 #ifdef _DEBUG
         TEST_FOR_EXCEPTION(
           i != i_in, std::logic_error
-          , "Error, i = "<<i<<" does not match the readin value of "
+          , "Error, i = "<<i<<" does not match the read in value of "
           "i_in = "<<i_in<<"!"
           );
 #endif

@@ -36,7 +36,7 @@ namespace Thyra {
 /** \brief Abstract interface for scalar products.
  * 
  * This interface is not considered a user-level interface.  Instead,
- * this interface is designed to subclassed off of and used with
+ * this interface is designed to be sub-classed off of and used with
  * <tt>VectorSpaceStdBase</tt> subclasses.  Applications should create
  * subclasses of this interface to define application-specific scalar
  * products (i.e. such as PDE code often do).
@@ -60,7 +60,7 @@ namespace Thyra {
  * (i.e. <tt>DotProd</tt>) can work for any vector space
  * implementation since they only rely on <tt>RTOp</tt> operators.  In
  * other cases, however, an application-specific scalar product may
- * a have dependancy of the data-structure of vector and multi-vector
+ * a have dependency of the data-structure of vector and multi-vector
  * objects.
  *
  * This interface class also defines functions to modify the

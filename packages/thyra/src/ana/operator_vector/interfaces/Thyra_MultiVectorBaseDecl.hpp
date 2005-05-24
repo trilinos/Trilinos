@@ -37,13 +37,13 @@ namespace Thyra {
 
 /** \brief Interface for a collection of column vectors called a multi-vector.
  *
- * The primary purpose for this interface is to allow for convienent
+ * The primary purpose for this interface is to allow for convenient
  * aggregations of column vectors.  Such an orderly arrangement of
  * column vectors into a single aggregate object allows for better
  * optimized linear algebra operations such as matrix-matrix
  * multiplication and the solution of linear systems for multiple
  * right hand sides.  Every computing environment (serial, parallel,
- * out-of-core etc.) should be able to define at least one reasonbly
+ * out-of-core etc.) should be able to define at least one reasonably
  * efficient implementation of <tt>%MultiVectorBase</tt>.
  *
  * The <tt>%MultiVectorBase</tt> interface is derived from the
@@ -140,7 +140,7 @@ public:
    * </ul>
    *
    * The default implementation of this function (which is the only
-   * implementaion needed by most subclasses) is based on the
+   * implementation needed by most subclasses) is based on the
    * non-const version <tt>col()</tt>.
    */
   virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > col(Index j) const;
@@ -204,7 +204,7 @@ public:
    *
    * The default implementation (which is the only implementation
    * needed by most subclasses) is to return object from the non-const
-   * verstion <tt>subView()</tt>.
+   * version <tt>subView()</tt>.
    */
   virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const;
   
@@ -256,7 +256,7 @@ public:
    *
    * The default implementation (which is the only implementation
    * needed by most subclasses) is to return object from the non-const
-   * verstion <tt>subView()</tt>.
+   * version <tt>subView()</tt>.
    */
   virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
 
@@ -312,7 +312,7 @@ public:
    * objects in <tt>multi_vecs[]</tt> or <tt>targ_multi_vecs[]</tt>.
    *
    * The default implementation calls <tt>VectorBase::applyOp()</tt> on
-   * each colunn <tt>this->col(j)</tt> for <tt>j = 1
+   * each column <tt>this->col(j)</tt> for <tt>j = 1
    * ... this->range()->dim()</tt>.
    */
   virtual void applyOp(
@@ -329,7 +329,7 @@ public:
     ,const Index                    secondary_sub_dim
     ) const;
 
-  /** \breif Apply a reduction/transformation operator column by column and reduce the intermediate
+  /** \brief Apply a reduction/transformation operator column by column and reduce the intermediate
    * reduction objects into one reduction object.
    *
    * Preconditions:<ul>
@@ -422,7 +422,7 @@ public:
    * that the footprint of the reduction object (both internal and
    * external state) will be
    * O(<tt>rowRng.size()*colRng.size()</tt>).  For serial
-   * applications this is faily reasonable and will not be a major
+   * applications this is fairly reasonable and will not be a major
    * performance penalty.  For parallel applications, however, this
    * is a terrible implementation and must be overridden if
    * <tt>rowRng.size()</tt> is large at all.  Although, this function
@@ -441,7 +441,7 @@ public:
   /** \brief Free an explicit view of a sub-multi-vector.
    *
    * @param  sub_mv
-   *				[in/out] The memory refered to by <tt>sub_mv->values()</tt>
+   *				[in/out] The memory referred to by <tt>sub_mv->values()</tt>
    *				will be released if it was allocated and <tt>*sub_mv</tt>
    *              will be zeroed out using <tt>sub_mv->set_uninitialized()</tt>.
    *
@@ -472,7 +472,7 @@ public:
    * @param  sub_mv   [in/out] Mutable view of the sub-multi-vector.  Prior to the
    *                  first call <tt>sub_mv->set_uninitialized()</tt> must
    *                  have been called for the correct behavior.  Technically
-   *                  <tt>*sub_mv</tt> owns the memory but this memory must be commited
+   *                  <tt>*sub_mv</tt> owns the memory but this memory must be committed
    *                  and freed only by calling <tt>this->commitSubMultiVector(sub_mv)</tt>.
    *
    * Preconditions:<ul>
@@ -496,7 +496,7 @@ public:
    * Note that calling this operation might require some internal
    * allocations and temporary memory.  Therefore, it is critical
    * that <tt>this->commitSubMultiVector(sub_mv)</tt> is called to
-   * commit the changed entires and clean up memory and avoid memory
+   * commit the changed entries and clean up memory and avoid memory
    * leaks after the sub-multi-vector is modified.
    *
    * <b>Heads Up!</b> Note that client code in general should not
@@ -514,9 +514,9 @@ public:
    * must be passed to the same multi-vector object for this to work
    * correctly.
    *
-   * Changes to the underlying sub-multi-vector are not guarrenteed to
+   * Changes to the underlying sub-multi-vector are not guaranteed to
    * become permanent until <tt>this->getSubMultiVector(...,sub_mv)</tt>
-   * is called agian, or <tt>this->commitSubMultiVector(sub_mv)</tt> is
+   * is called again, or <tt>this->commitSubMultiVector(sub_mv)</tt> is
    * called.
    *
    * This function has a default implementation based on the vector
@@ -524,7 +524,7 @@ public:
    * vector objects returned from <tt>col()</tt>.  Note that the
    * footprint of the reduction object (both internal and external
    * state) will be O(<tt>rowRng.size()*colRng.size()</tt>).  For
-   * serial applications this is faily reasonable and will not be a
+   * serial applications this is fairly reasonable and will not be a
    * major performance penalty.  For parallel applications, however,
    * this is a terrible implementation and must be overridden if
    * <tt>rowRng.size()</tt> is large at all.  Although, this function
@@ -544,7 +544,7 @@ public:
    *
    * @param sub_mv
    *				[in/out] The data in <tt>sub_mv->values()</tt> will be written
-   *              back internal storage and the memory refered to by
+   *              back internal storage and the memory referred to by
    *              <tt>sub_mv->values()</tt> will be released if it was allocated
    *				and <tt>*sub_mv</tt> will be zeroed out using
    *				<tt>sub_mv->set_uninitialized()</tt>.
@@ -575,7 +575,7 @@ public:
   /** @name Overridden functions from LinearOpBase */
   //@{
 
-  /** \breif This function is implemented in terms of the mulit-vector <tt>applyOp()</tt> function.
+  /** \brief This function is implemented in terms of the multi-vector <tt>applyOp()</tt> function.
    *
    * The implementation takes care of two types of operations.  One
    * (<tt>M_trans==TRANS</tt>) is the block dot product of two
@@ -586,7 +586,7 @@ public:
    * reduction/transformation operators.
    *
    * This implementation is near optimal but the default
-   * implementation of the multi-vector verstion of <tt>apply()</tt>
+   * implementation of the multi-vector version of <tt>apply()</tt>
    * as implemented in the base class <tt>LinearOpBase</tt> will not be
    * a near optimal implementation in its current form do to
    * multiple, sequential reductions but it could be made to be with
@@ -608,7 +608,7 @@ public:
 private:
   
 #ifdef DOXYGEN_COMPILE
-  VectorBase<Scalar>  *columns; // doxygen only
+  VectorBase<Scalar>  *columns; // Doxygen only
 #endif	
 
 }; // end class MultiVectorBase<Scalar>

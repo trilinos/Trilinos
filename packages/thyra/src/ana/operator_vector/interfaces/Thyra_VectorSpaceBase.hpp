@@ -111,7 +111,7 @@ VectorSpaceBase<Scalar>::createMemberView( const RTOpPack::MutableSubVectorT<Sca
   v->getSubVector(Range1D(),&sv);
   RTOpPack::assign_entries( &sv, raw_v );
   v->commitSubVector(&sv);
-  // Setup smart pointer to vector to copy view back out just before vector is destoryed
+  // Setup smart pointer to vector to copy view back out just before vector is destroyed
   Teuchos::set_extra_data(
     Teuchos::rcp(new CopyVectorViewBack<Scalar>(&*v,raw_v))
     ,"CopyVectorViewBack"
@@ -153,7 +153,7 @@ VectorSpaceBase<Scalar>::createMembersView( const RTOpPack::MutableSubMultiVecto
   mv->getSubMultiVector(Range1D(),Range1D(),&smv);
   RTOpPack::assign_entries( &smv, raw_mv );
   mv->commitSubMultiVector(&smv);
-  // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destoryed
+  // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destroyed
   Teuchos::set_extra_data(
     Teuchos::rcp(new CopyMultiVectorViewBack<Scalar>(&*mv,raw_mv))
     ,"CopyMultiVectorViewBack"

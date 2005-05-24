@@ -38,7 +38,7 @@
  * CG (conjugate gradient) method for solving symmetric positive definite
  * systems using the \ref Thyra_Op_Vec_foundational_interfaces_sec "foundational Thyra operator/vector interfaces".
  *
- * This function is small and is ment to be looked at so study its
+ * This function is small and is meant to be looked at so study its
  * implementation by clicking on the below link to its definition.
  *
  * \ingroup Thyra_Op_Vec_examples_cg_grp

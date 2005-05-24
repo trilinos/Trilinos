@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \breif Reduction operator that counts the number of entries that are NaN or Inf.
+/** \brief Reduction operator that counts the number of entries that are NaN or Inf.
  */
 template<class Scalar>
 class ROpCountNanInf : public ROpIndexReductionBase<Scalar> {

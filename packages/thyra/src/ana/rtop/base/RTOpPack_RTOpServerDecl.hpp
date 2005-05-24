@@ -43,7 +43,7 @@ template<class Scalar>
 class RTOpServer {
 public:
 
-  /** \brief Add a new abstract factory for an <tt>RTOpT</tt> opeator.
+  /** \brief Add a new abstract factory for an <tt>RTOpT</tt> operator.
    *
    * @param  op_factory  [in] Smart pointer to factory object that will create
    *                     <tt>RTOpT</tt> objects of a given type.  The name of

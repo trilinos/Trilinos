@@ -34,7 +34,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_LinearOpBase.hpp"
 
-// Utilties
+// Utilities
 
 template <bool hasMachineParameters, class Scalar>
 class relErrSmallNumber {

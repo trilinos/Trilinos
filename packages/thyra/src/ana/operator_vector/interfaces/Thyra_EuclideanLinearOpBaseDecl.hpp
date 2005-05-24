@@ -40,7 +40,7 @@ namespace Thyra {
  * scalar product.  Note that almost every concrete implementation of
  * <tt>MultiVectorBase</tt> should derive from this interface.
  *
- * ToDo: Finish Documenatation!
+ * ToDo: Finish Documentation!
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
@@ -110,7 +110,7 @@ public:
   /** \brief Apply the linear operator to a vector using an
    * application-specific definition of the scalar product.
    *
-   * ToDo: Finish Documenatation!
+   * ToDo: Finish Documentation!
    */
   void apply(
     const ETransp                M_trans
@@ -122,7 +122,7 @@ public:
   /** \brief Apply the linear operator to a multi-vector using an
    * application-specific definition of the scalar product.
    *
-   * ToDo: Finish Documenatation!
+   * ToDo: Finish Documentation!
    */
   void apply(
     const ETransp                     M_trans

@@ -35,10 +35,10 @@
 /** \brief Silly little example power method abstract numerical algorithm (ANA).
  *
  * This little function is just a silly little ANA that implements the
- * power method for estimating the dominate eigienvalue for a matrix
+ * power method for estimating the dominate eigenvalue for a matrix
  * using the \ref Thyra_Op_Vec_foundational_interfaces_sec "foundational Thyra operator/vector interfaces".
  *
- * This function is small and is ment to be looked at so study its
+ * This function is small and is meant to be looked at so study its
  * implementation by clicking on the below link to its definition.
  *
  * \ingroup Thyra_Op_Vec_examples_power_method_grp

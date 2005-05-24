@@ -12,12 +12,12 @@ This main page provides the starting point for all of the documentation for
 on this main page:
 
 <ul>
-<li> \ref thyra_software_sec provides a roadmap to the various types
-of software in the %Thyra pacakge and %Thyra-related software in other packages.
+<li> \ref thyra_software_sec provides a road-map to the various types
+of software in the %Thyra package and %Thyra-related software in other packages.
 <li> \ref thyra_dependencies_sec describes what other Trilinos packages that
 the %Thyra package needs to build and link against.
 <li> \ref thyra_configuration_sec mentions some of the more important
-configuation options that affect the %Thyra package and what code is built
+configuration options that affect the %Thyra package and what code is built
 and installed.
 <li> \ref thyra_external_projects_sec describes how to build and link
 against an installation of %Thyra in external projects.
@@ -71,7 +71,7 @@ The %Thyra code described here is dependent on the following Trilinos packages:
 <ul>
 <li><b><a href="../../../teuchos/doc/html/index.html">Teuchos</a></b>: This package supplies basic utility classes such
 as <tt>Teuchos::RefCountPtr</tt> and <tt>Teuchos::BLAS</tt> that
-%Thyra software is dependant on.
+%Thyra software is dependent on.
 </ul>
 
 \section thyra_configuration_sec Configuration of the Thyra Package
@@ -88,7 +88,7 @@ its dependent packages to be enabled and built.  Without this option,
 there will be no %Thyra header files or libraries included in the
 installation of Trilinos (i.e. using <tt>make install</tt>).
 <li><b><tt>--enable-export-makefiles</tt></b>: Causes the installation of
-the %Thyra pacakge (an other Trilinos packages) to have the makefile
+the %Thyra package (an other Trilinos packages) to have the makefile
 fragments <tt>Makefile.export.thyra</tt> and <tt>Makefile.export.thyra.macros</tt>
 installed in the installation directory <tt>$TRILINOS_INSTALL_DIR/include</tt> for
 use by external makefiles (\ref thyra_external_projects_sec "see").
@@ -138,7 +138,7 @@ When %Thyra is installed with Trilinos, the directory
   $TRILINOS_INSTALL_DIR/example/thyra/
 \endverbatim
 
-is created which contains an exmaple of an external project that uses 
+is created which contains an example of an external project that uses 
 %Thyra.  The example makefile 
 
 \verbatim
@@ -203,7 +203,7 @@ The contributors to the %Thyra package, or related packages, in alphabetical
 order, are:
 
 <ul>
-<li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead develoepr
+<li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead developer
 <li> Paul Boggs (ptboggs@sandia.gov) : Split/O3D lead developer, %Thyra developer
 <li> Michael Heroux (maherou@sandia.gov): Trilinos leader
 <li> Rob Hoekstra (rjhoeks@sandia.gov) : %EpetraExt lead developer

@@ -240,7 +240,7 @@ template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 ProductVectorSpace<Scalar>::clone() const
 {
-  // Warning! If the client uninitializes this object then changes the
+  // Warning! If the client uninitialized this object then changes the
   // constituent vector spaces then we are in trouble!  The client is warned
   // in documentation!
   Teuchos::RefCountPtr<ProductVectorSpace<Scalar> >

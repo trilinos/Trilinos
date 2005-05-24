@@ -37,10 +37,10 @@
 #include "Teuchos_Time.hpp"
 
 //
-// This example program is ment to show how easy it is to create
+// This example program is meant to show how easy it is to create
 // serial Thyra objects and use them with an ANA (CG in this case).
 //
-// This example uses a silly concrete tridagonal matrix class called
+// This example uses a silly concrete tridiagonal matrix class called
 // SerialTridiagLinearOp that demonstrates how to write and use such
 // subclasses.
 //
@@ -65,7 +65,7 @@ bool runCgSolveExample(
   Teuchos::Time timer("");
   timer.start(true);
   //
-  // (A) Setup a simple linear system with tridagonal operator:
+  // (A) Setup a simple linear system with tridiagonal operator:
   //
   //       [   a*2   -1                         ]
   //       [ -r(1)  a*2       -1                ]
@@ -73,8 +73,8 @@ bool runCgSolveExample(
   //       [             -r(n-2)      a*2    -1 ]
   //       [                      -r(n-1)   a*2 ]
   //
-  // (A.1) Create the tridagonal matrix operator
-  if(verbose) std::cout << "\nConstructing tridagonal matrix A of dimmension = " << dim << " and diagonal multiplier = " << diagScale << " ...\n";
+  // (A.1) Create the tridiagonal matrix operator
+  if(verbose) std::cout << "\nConstructing tridiagonal matrix A of dimension = " << dim << " and diagonal multiplier = " << diagScale << " ...\n";
   std::vector<Scalar> lower(dim-1), diag(dim), upper(dim-1);
   const Scalar up = -ST::one(), diagTerm = Scalar(2)*diagScale*ST::one(), low = -(symOp?ST::one():ST::random());
   int k = 0;
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   try {
 
     //
-    // Read in commandline options
+    // Read in command-line options
     //
 
     int    dim         = 500;
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
     clp.setOption( "dim", &dim, "Dimension of the linear system." );
     clp.setOption( "diag-scale", &diagScale, "Scaling of the diagonal to improve conditioning." );
-    clp.setOption( "sym-op", "unsym-op", &symOp, "Determins if the operator is symmetric or not." );
+    clp.setOption( "sym-op", "unsym-op", &symOp, "Determines if the operator is symmetric or not." );
     clp.setOption( "tol", &tolerance, "Relative tolerance for linear system solve." );
     clp.setOption( "max-num-iters", &maxNumIters, "Maximum of CG iterations." );
 

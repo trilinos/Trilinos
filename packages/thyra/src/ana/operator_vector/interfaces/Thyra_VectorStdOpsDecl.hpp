@@ -197,9 +197,9 @@ void randomize( Scalar l, Scalar u, VectorBase<Scalar>* v );
 
 //@}
 
-/** \defgroup Thyra_Op_Vec_VectorStdOpsComparable_grp Subset of vector operations for types supporting relational opeators.
+/** \defgroup Thyra_Op_Vec_VectorStdOpsComparable_grp Subset of vector operations for types supporting relational operators.
  *
- * Warning! do not try to instatiate these functions for complex types
+ * Warning! do not try to instantiate these functions for complex types
  * where relational operators are not defined (i.e. <, >, <=, >= etc).
  *
  * \ingroup Thyra_Op_Vec_VectorStdOps_grp
@@ -217,7 +217,7 @@ Scalar min( const VectorBase<Scalar>& x );
  *
  * @param  x         [in] Input vector.
  * @param  minEle    [out] The minimum element value.
- * @param  maxindex  [out] The global index of the miminum element.
+ * @param  maxindex  [out] The global index of the minimum element.
  *                   If there is more than one element with the
  *                   maximum entry then this returns the lowest index
  *                   in order to make the output independent of the order
@@ -241,7 +241,7 @@ void min( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex );
  * @param  minEle    [out] The minimum element value as defined above.
  * @param  minIndex  [out] The global index of the maximum element.
  *                   If there is more than one element with the
- *                   mimimum value then this returns the lowest index
+ *                   minimum value then this returns the lowest index
  *                   in order to make the output independent of the order
  *                   of operations.  If no entries are less than <tt>bound</tt>
  *                   then <tt>minIndex < 0</tt> on return.

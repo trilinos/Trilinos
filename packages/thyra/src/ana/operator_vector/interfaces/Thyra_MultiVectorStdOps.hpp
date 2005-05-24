@@ -95,7 +95,7 @@ Scalar Thyra::norm_1( const MultiVectorBase<Scalar>& V )
 {
   // Primary column-wise reduction (sum of absolute values)
   RTOpPack::ROpNorm1<Scalar> sum_abs_op;
-  // Secondaary reduction (max over all columns = induced norm_1 matrix  norm)
+  // Secondary reduction (max over all columns = induced norm_1 matrix  norm)
   RTOpPack::ROpNormInf<Scalar> max_op;
   // Reduction object (must be same for both sum_abs and max_targ objects)
   Teuchos::RefCountPtr<RTOpPack::ReductTarget>
@@ -256,7 +256,7 @@ void Thyra::linear_combination(
   }
   RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(m,alpha,beta);
   MultiVectorBase<Scalar>* targ_multi_vecs[] = { Y };
-  Thyra::applyOp<Scalar>(lin_comb_op,m,X,1,targ_multi_vecs,(RTOpPack::ReductTarget**)NULL);  // Cast retured by sun compiler
+  Thyra::applyOp<Scalar>(lin_comb_op,m,X,1,targ_multi_vecs,(RTOpPack::ReductTarget**)NULL);  // Cast returned by sun compiler
 }
 
 template<class Scalar>

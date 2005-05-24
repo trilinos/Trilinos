@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \breif Returns the maximum element: <tt>result = max{ v0[i], i=1...n }</tt>.
+/** \brief Returns the maximum element: <tt>result = max{ v0[i], i=1...n }</tt>.
  */
 template<class Scalar>
 class ROpMax : public ROpScalarReductionBase<Scalar> {

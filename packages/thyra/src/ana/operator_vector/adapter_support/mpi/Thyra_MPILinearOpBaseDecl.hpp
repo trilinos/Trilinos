@@ -41,14 +41,14 @@ template<class Scalar> class MPIVectorSpaceBase;
  * This subclass defines machinery for developing concrete
  * <tt>LinearOpBase</tt> subclasses for MPI SPMD vectors where it is
  * assumed that all of the local elements in associated vectors and
- * multi-vectors are immediately and cheaply avaliable on each
+ * multi-vectors are immediately and cheaply available on each
  * processor.
  *
  * This base subclass derives from <tt>EuclideanLinearOpBase</tt> and
  * therefore any application-specific scalar products can easily be
  * incorporated.
  *
- * <b>Notes to subclass develoeprs</b>
+ * <b>Notes to subclass developers</b>
  *
  * The only function that a subclass must override in order to provide
  * a concrete implementation is the explicit single-vector version
@@ -73,7 +73,7 @@ private:
   // Declare your classes private data
   ...
 public:
-  // Delcare you classes constructors, destructor and other initialization functions
+  // Declare you classes constructors, destructor and other initialization functions
   ...
 protected:
   // Override the version of euclideanApply() that takes explicit data
@@ -118,7 +118,7 @@ private:
   // Declare your classes private data
   ...
 public:
-  // Delcare you classes constructors, destructor and other initialization functions
+  // Declare you classes constructors, destructor and other initialization functions
   ...
 protected:
   // Override the version of euclideanApply() that takes explicit data
@@ -265,7 +265,7 @@ protected:
   virtual void setLocalDimensions(
     MPI_Comm                                                    mpiComm 
     ,const Index                                                localDimRange
-    ,const Index                                                locakDimDomain
+    ,const Index                                                localDimDomain
     );
 
   //@}
@@ -309,9 +309,9 @@ protected:
    * one column at a time.  A subclass should only override this
    * function if it can provide a cache-smart version.  At any rate,
    * one can get up and going very quickly by just providing an
-   * overide for the simpler single-vector version.  Then latter, if
+   * override for the simpler single-vector version.  Then latter, if
    * profiling data justifies it, one can provide a specialized
-   * override for this function in an attempt to imporve performance.
+   * override for this function in an attempt to improve performance.
    */
   virtual void euclideanApply(
     const ETransp                                     M_trans

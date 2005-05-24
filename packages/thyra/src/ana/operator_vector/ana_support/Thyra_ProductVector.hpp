@@ -294,9 +294,9 @@ void ProductVector<Scalar>::getSubVector(
     sub_vec->setGlobalOffset( sub_vec->globalOffset() + kth_global_offset );
   }
   else {
-    // Just let the default implementation handle this.  ToDo: In the futrue
+    // Just let the default implementation handle this.  ToDo: In the future
     // we could manually construct an explicit sub-vector that spanned
-    // two or more consitituent vectors but this would be a lot of work.
+    // two or more constituent vectors but this would be a lot of work.
     // However, this would require the use of temporary memory but
     // so what.
     VectorBase<Scalar>::getSubVector(rng_in,sub_vec);
@@ -346,9 +346,9 @@ void ProductVector<Scalar>::getSubVector(
     sub_vec->setGlobalOffset( sub_vec->globalOffset() + kth_global_offset );
   }
   else {
-    // Just let the default implementation handle this.  ToDo: In the futrue
+    // Just let the default implementation handle this.  ToDo: In the future
     // we could manually construct an explicit sub-vector that spanned
-    // two or more consitituent vectors but this would be a lot of work.
+    // two or more constituent vectors but this would be a lot of work.
     // However, this would require the use of temporary memory but
     // so what.
     VectorBase<Scalar>::getSubVector(rng_in,sub_vec);
@@ -396,8 +396,8 @@ void ProductVector<Scalar>::setSubVector(
     vecs_[kth_vector_space]->setSubVector(sub_vec_g);
   }
   else {
-    // Let the default implementation take care of this.  ToDo: In the futrue
-    // it would be possible to manualy set the relavent constituent
+    // Let the default implementation take care of this.  ToDo: In the future
+    // it would be possible to manually set the relevant constituent
     // vectors with no temp memory allocations.
     VectorBase<Scalar>::setSubVector(sub_vec);
   }

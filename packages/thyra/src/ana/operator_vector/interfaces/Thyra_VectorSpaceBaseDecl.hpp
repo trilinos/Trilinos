@@ -49,7 +49,7 @@ created them.
 /** \brief Helper function that clones a <tt>VectorSpaceBase</tt> object
  * if the <tt>RefCountPtr</tt> does not have ownership.
  *
- * ToDo: Finish documenation!
+ * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_createMember_grp
  */
@@ -78,7 +78,7 @@ createMember( const VectorSpaceBase<Scalar> &vs );
 
 /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
  *
- * ToDo: Finish documenation!
+ * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_createMember_grp
  */
@@ -96,7 +96,7 @@ createMembers( const VectorSpaceBase<Scalar> &vs, int numMembers );
 
 /** \brief Create a vector member that is a non-<tt>const</tt> view of raw data.
  *
- * ToDo: Finish documenation!
+ * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_createMember_grp
  */
@@ -114,7 +114,7 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSubV
 
 /** \brief Create a vector member that is a <tt>const</tt> view of raw data.
  *
- * ToDo: Finish documenation!
+ * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_createMember_grp
  */
@@ -132,7 +132,7 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorT<
 
 /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw data.
  *
- * ToDo: Finish documenation!
+ * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_createMember_grp
  */
@@ -150,7 +150,7 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSub
 
 /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw data.
  *
- * ToDo: Finish documenation!
+ * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_createMember_grp
  */
@@ -184,7 +184,7 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVe
  * must use the \ref Thyra_Op_Vec_createMember_grp.
  *
  * A <tt>%VectorSpaceBase</tt> object can exist independent from any
- * individual <tt>VectorBase</tt> (or <tt>MutiVector</tt>) object; Or, a
+ * individual <tt>VectorBase</tt> (or <tt>MultiVector</tt>) object; Or, a
  * <tt>%VectorSpaceBase</tt> object can have a lifetime that is dependent on a
  * single <tt>VectorBase</tt> ( or <tt>MultiVectorBase</tt>) object.  The same
  * interface serves both roles.
@@ -419,19 +419,19 @@ protected:
   /** \brief Create a vector member that is a non-<tt>const</tt> view of raw data.
    *
    * @param  raw_v  [in] On input contains pointer (i.e. <tt>raw_v.values()</tt>)
-   *                to array that the returned <tt>VectorBase</tt> wil be a view of.
+   *                to array that the returned <tt>VectorBase</tt> will be a view of.
    *                The data pointed to by <tt>raw_v.values()</tt> must remain
    *                valid until the returned <tt>VectorBase</tt> object is destroyed.
    *
    * Preconditions:<ul>
-   * <li><tt>raw_v</tt> has been initiaized to memory (i.e.
+   * <li><tt>raw_v</tt> has been initialized to memory (i.e.
    *     <tt>raw_v.subDim()!=0 && raw_v.values()!=NULL</tt>).
    * <li><tt>raw_v</tt> is *consistent* with the local storage
-   *     of a vector's data.  This precondition is purposefully vaigue since
+   *     of a vector's data.  This precondition is purposefully vague since
    *     this function can be used an variety of specialized use-cases.
    * </ul>
    *
-   * Posconditions:<ul>
+   * Postconditions:<ul>
    * <li>See <tt>createMember()</tt>
    * </ul>
    *
@@ -453,7 +453,7 @@ protected:
   /** \brief Create a vector member that is a <tt>const</tt> view of raw data.
    *
    * @param  raw_v  [in] On input contains pointer (i.e. <tt>raw_v.values()</tt>)
-   *                to array that the returned <tt>VectorBase</tt> wil be a view of.
+   *                to array that the returned <tt>VectorBase</tt> will be a view of.
    *                The data pointed to by <tt>raw_v.values()</tt> must remain
    *                valid until the returned <tt>VectorBase</tt> object is destroyed.
    *
@@ -466,7 +466,7 @@ protected:
    * <li>See the <tt>RTOpPack::MutableSubVectorT</tt> version of this function.
    * </ul>
    *
-   * Posconditions:<ul>
+   * Postconditions:<ul>
    * <li>See <tt>createMember()</tt>
    * </ul>
    *
@@ -479,17 +479,17 @@ protected:
   /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw data.
    *
    * @param  raw_mv  [in] On input contains pointer (i.e. <tt>raw_mv.values()</tt>)
-   *                 to array that the returned <tt>MultiVectorBase</tt> wil be a view of.
+   *                 to array that the returned <tt>MultiVectorBase</tt> will be a view of.
    *
    * Preconditions:<ul>
-   * <li><tt>raw_mv</tt> has been initiaized to memory (i.e.
+   * <li><tt>raw_mv</tt> has been initialized to memory (i.e.
    *     <tt>raw_mv.subDim()!=0 && raw_mv.values()!=NULL</tt>).
    * <li><tt>raw_mv</tt> is *consistent* with the local storage
-   *     of a vector's data.  This precondition is purposefully vaigue since
+   *     of a vector's data.  This precondition is purposefully vague since
    *     this function can be used an variety of specialized use-cases.
    * </ul>
    *
-   * Posconditions:<ul>
+   * Postconditions:<ul>
    * <li>See <tt>createMembers()</tt> where <tt>numMembers==raw_mv.numSubCols()</tt>
    * </ul>
    *
@@ -511,7 +511,7 @@ protected:
   /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw data.
    *
    * @param  raw_mv  [in] On input contains pointer (i.e. <tt>raw_mv.values()</tt>)
-   *                 to array that the returned <tt>MultiVectorBase</tt> wil be a view of.
+   *                 to array that the returned <tt>MultiVectorBase</tt> will be a view of.
    *                 The data pointed to by <tt>raw_mv.values()</tt> must remain
    *                 valid until the returned <tt>MultiVectorBase</tt> object is destroyed.
    *
@@ -524,7 +524,7 @@ protected:
    * <li>See the <tt>RTOpPack::MutableSubMultiVectorT</tt> version of this function.
    * </ul>
    *
-   * Posconditions:<ul>
+   * Postconditions:<ul>
    * <li>See <tt>createMember()</tt>
    * </ul>
    *

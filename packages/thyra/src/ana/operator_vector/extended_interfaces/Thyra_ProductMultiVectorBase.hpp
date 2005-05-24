@@ -58,7 +58,7 @@ public:
   virtual Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productSpace() const = 0;
 
   /** \brief Returns a non-persisting non-<tt>const</tt> view of the (zero-based)
-   * <tt>kth</tt> block mulit-vector.
+   * <tt>kth</tt> block multi-vector.
    *
    * @param k [in] The (zero-based) <tt>kth</tt> block index specifying which block to access.
    *

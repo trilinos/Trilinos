@@ -54,8 +54,8 @@ namespace Thyra {
  \endverbatim
  *
  * The total number of constituent vector spaces is returned by the
- * <tt>numBlocks()</tt> function.  Smart pointers to the contituent
- * vector space blocks themselfs are returned using the
+ * <tt>numBlocks()</tt> function.  Smart pointers to the constituent
+ * vector space blocks themselves are returned using the
  * <tt>getBlock()</tt> function.
  *
  * The vectors created by <tt>this->createMember()</tt> (which is

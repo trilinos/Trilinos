@@ -56,7 +56,7 @@ enum ETransp {
   NOTRANS     ///< Use the non-transposed operator
   ,CONJ       ///< Use the non-transposed operator with complex-conjugate elements (same as <tt>NOTRANS</tt> for real scalar types)
   ,TRANS      ///< Use the transposed operator 
-  ,CONJTRANS  ///< Use the transposed operator with complex-conjugate lements (same as <tt>TRANS</tt> for real scalar types)
+  ,CONJTRANS  ///< Use the transposed operator with complex-conjugate clements (same as <tt>TRANS</tt> for real scalar types)
 };
 
 /** \brief Return a string name for a <tt>ETransp</tt> value.
@@ -74,7 +74,7 @@ const char* toString(ETransp transp)
   return "BAD"; // Should never be called!
 }
 
-/** \breif Return <tt>NOTRANS</tt> or <tt>TRANS</tt> for real scalar valued
+/** \brief Return <tt>NOTRANS</tt> or <tt>TRANS</tt> for real scalar valued
  * operators and this also is used for determining structural transpose.
  */
 inline

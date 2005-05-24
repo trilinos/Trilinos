@@ -45,7 +45,7 @@ namespace RTOpPack {
  * @param displacements [out] array (length<tt> >= RTOp_NUM_DATA_TYPES</tt>)
  * @param datatypes     [out] array (length<tt> >= RTOp_NUM_DATA_TYPES</tt>)
  *
- * See the MPI function <tt>MPI_Type_struct(...)</tt> for a discription of these arrays.
+ * See the MPI function <tt>MPI_Type_struct(...)</tt> for a description of these arrays.
  *
  * \ingroup RTOpPack_parallel_helpers_grp
  */
@@ -102,7 +102,7 @@ void load_reduct_obj_ext_state(
   );
 
 /** \brief Apply an RTOp in SMPD mode with MPI to a set of vectors with
- * contigous storage per processor.
+ * contiguous storage per processor.
  *
  * ToDo: Finish documentation!
  *
@@ -121,7 +121,7 @@ void MPI_apply_op(
   );
 
 /** \brief Apply an RTOp in SMPD mode with MPI to a set of columns to a set of
- * multi-vectors with contigous storage per processor.
+ * multi-vectors with contiguous storage per processor.
  *
  * ToDo: Finish documentation!
  *
@@ -141,7 +141,7 @@ void MPI_apply_op(
   );
 
 /** \brief Apply an RTOp in SMPD mode with MPI to a set of columns to a set of
- * multi-vectors with contigous storage per processor.
+ * multi-vectors with contiguous storage per processor.
  *
  * ToDo: Finish documentation!
  *

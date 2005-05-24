@@ -52,15 +52,15 @@
  * <tt>upper[]</tt> of dimension <tt>dim-1</tt>, <tt>dim</tt> and <tt>dim-1</tt>
  * respectively (see <tt>initialize()</tt>).
  *
- * Note, this is just an exmaple class and for the sake of simplifed
- * presentation the private members are listed first and inclass
+ * Note, this is just an example class and for the sake of simplified
+ * presentation the private members are listed first and in class
  * declarations are used which are not a good idea in production code.
  * However, in this case, they make the example code easier to read
  * and maintaining encapsulation and a well defined interface are
  * unnecessary here.
  *
  * See the source code for this simple example by clicking on the
- * link to the defintion below.
+ * link to the definition below.
  *
  * \ingroup Thyra_Op_Vec_examples_power_method_serial_grp
  * \ingroup Thyra_Op_Vec_examples_cg_serial_grp
@@ -97,7 +97,7 @@ public:
    * <li><tt>dim >= 2</tt>
    * </ul>
    *
-   * Postonditions:<ul>
+   * Postconditions:<ul>
    * <li>Should be obvious!
    * <li>See <tt>setDimensions()</tt>
    * </ul>
@@ -117,7 +117,7 @@ public:
       upper_.resize(dim-1);  for( int k = 0; k < dim-1; ++k ) upper_[k] = upper[k];
     }
 
-  // Overriddend form Teuchos::Describable */
+  // Overridden form Teuchos::Describable */
 
   std::string describe() const
     {
@@ -126,7 +126,7 @@ public:
 
 protected:
 
-  // Overridden from SeiralLinearOpBase
+  // Overridden from SerialLinearOpBase
 
   void euclideanApply(
     const Thyra::ETransp                         M_trans

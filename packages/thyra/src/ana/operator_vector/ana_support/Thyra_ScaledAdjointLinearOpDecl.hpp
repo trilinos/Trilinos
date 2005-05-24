@@ -33,7 +33,7 @@
 
 namespace Thyra {
 
-/** \breif Concrete decorator <tt>LinearOpBase</tt> subclass that wrappes a
+/** \brief Concrete decorator <tt>LinearOpBase</tt> subclass that wraps a
 <tt>LinearOpBase</tt> objects and adds on an extra scaling factor and/or a
  new transpose enum.
 
@@ -50,12 +50,12 @@ a <tt>Scalar</tt>, and the operation <tt>op(Op)</tt> is specified by a
 <tt>op(Op) = Op^T</tt> (<tt>TRANS</tt>), or <tt>op(Op) = Op^H</tt>
 (<tt>CONJTRANS</tt>).  Of course the operator <tt>M</tt> is not constructed
 explicitly but instead just applies the decorated operator <tt>Op</tt> by
-modifing the <tt>apply()</tt> function that calls <tt>Op.apply()</tt>.
+modifying the <tt>apply()</tt> function that calls <tt>Op.apply()</tt>.
 
 This subclass is designed to allow the efficient handling of multiple implicit
-scalings and/or adjoinings (transposes) and allow these implicit
-transformations to be reversed.  A sequence of scalings/adjoinings from some
-origninal <tt>LinearOpBase</tt> object <tt>origOp</tt> is shown as:
+scalings and/or adjoints (transposes) and allow these implicit
+transformations to be reversed.  A sequence of scalings/adjoints from some
+original <tt>LinearOpBase</tt> object <tt>origOp</tt> is shown as:
 
 \verbatim
 
@@ -76,7 +76,7 @@ transformations given as:
  overall_op(origOp) = op_n( ... op_2( op_1( ... op_n( origOp ) ... ) ) )
 \endverbatim
  
-Each individual transformation pair <tt>(scalar_i,op_i(...))</tt> is specifed
+Each individual transformation pair <tt>(scalar_i,op_i(...))</tt> is specified
 with arguments <tt>Scalar scalar</tt> and <tt>ETransp transp</tt>.  The
 overall scaling is returned using <tt>this->overallScalar()</tt>, the overall
 adjoint enum is returned using <tt>this->overallTransp()</tt>, and the
@@ -93,7 +93,7 @@ This subclass keeps track of all of the individual scalings <tt>scalar_i</tt>
 and adjoining operations <tt>op_i(...)</tt> so that the <tt>describe()</tt>
 function can print this out and also so that the operations can be reversed.
 
-The copy constructor and assument operators are declared private since some
+The copy constructor and assignment operators are declared private since some
 thought needs to be put into what they should mean.
 
 Note: This class does not maintain any specific cached information about the
@@ -196,8 +196,8 @@ public:
    */
   std::string describe() const;
 
-  /** \breif Prints out the original operator as well as all of the scalings
-   * and transpositions in the order that they occured.
+  /** \brief Prints out the original operator as well as all of the scalings
+   * and transpositions in the order that they occurred.
    *
    * This function outputs different levels of detail based on the value passed in
    * for <tt>verbLevel</tt>:
@@ -482,7 +482,7 @@ scaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::Ref
  * \param  transp  [out] The overall adjoint (transposition) enum.
  * \param  origOp  [out] The underlying, non-scaled and non-adjoined linear operator.
  *                 This pointer returns a non-persisting relationship that is to be
- *                 used and then immediatly forgoten.
+ *                 used and then immediately forgotten.
  *
  * Preconditions:<ul>
  * <li><tt>scalar!==NULL</tt>

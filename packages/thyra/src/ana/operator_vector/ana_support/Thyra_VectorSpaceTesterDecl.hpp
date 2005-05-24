@@ -39,14 +39,14 @@ namespace Thyra {
  *
  * The testing function <tt>check()</tt> calls all of the methods defined in
  * the interfaces <tt>VectorSpace</tt>, <tt>VectorBase</tt>,
- * <tt>MultiVectorBase</tt> and <tt>VectorSpaceFactoryBase</tt> and chackes
+ * <tt>MultiVectorBase</tt> and <tt>VectorSpaceFactoryBase</tt> and checks
  * may (but perhaps not all) of the postconditions.  It would be very
  * difficult to completely verify every postcondition in every situation.
  *
  * The behavior of the testing function <tt>check()</tt> is strongly
  * influenced by a set of options.
  *
- * When writting new concrete implenetations of <tt>VectorSpace</tt>,
+ * When writing new concrete implementations of <tt>VectorSpace</tt>,
  * <tt>VectorBase</tt>, <tt>MultiVectorBase</tt> and
  * <tt>VectorSpaceFactoryBase</tt>, a developer is likely to spend a lot of
  * time debugging while in this testing function.
@@ -136,7 +136,7 @@ public:
    */
   bool dump_all() const;
 
-  /** \breif Default constructor which sets default parameter values.
+  /** \brief Default constructor which sets default parameter values.
    *
    * Note: It is not recommended that the client pass in values in this
    * constructor since the argument list may change in the near future but
@@ -153,7 +153,7 @@ public:
     );
 
 	/** \brief Check a vector space and the objects it creates through a set of
-   * comprehensive tets.
+   * comprehensive tests.
 	 *
 	 * @param  vs     [in] The vector space object to test.
 	 * @param  out    [in/out] If <tt>out != NULL</tt> then output will be sent to <tt>*out</tt>.
@@ -170,7 +170,7 @@ public:
 	 *      <tt>*out</tt> for every test performed.  This is useful to see all of tests that are performed and
 	 *      in debugging.
 	 * <li> <b><tt>dump_all(bool)</tt></b>:  If <tt>dump_all() == true</tt>, then all of the vectors will be printed
-	 *      that are created durring the tests.  This option is really only needed during initial debugging
+	 *      that are created during the tests.  This option is really only needed during initial debugging
 	 *      and should only be used with small vector spaces since it will produce a lot of <tt>O(space.dim())</tt>
 	 *      output.
 	 * <li> <b><tt>num_random_tests(int)</tt></b>:  This is the number of random tests to perform per category of test.

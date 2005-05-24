@@ -45,8 +45,8 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  *
- * The default compilier-generated copy constructor and assignment operators
- * are allowed since they have the correct simantics which are to simply copy
+ * The default compiler-generated copy constructor and assignment operators
+ * are allowed since they have the correct semantics which are to simply copy
  * control parameters.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
@@ -117,7 +117,7 @@ public:
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all )
 
-  /** \breif Default constructor which sets default parameter values.
+  /** \brief Default constructor which sets default parameter values.
    *
    * Note: It is not recommended that the client pass in values in this
    * constructor since the argument list may change in the near future but
@@ -177,7 +177,7 @@ public:
    *
    * <li>If <tt>this->check_linear_properties()==true</tt> then checks that
    *     \f$\alpha A ( u  + v ) = \alpha A u + \alpha A v\f$ to a
-   *     relative tolerance defined by <tt>error_tol()</tt>.  Note, if the clinet
+   *     relative tolerance defined by <tt>error_tol()</tt>.  Note, if the client
    *     wants to check the linear properties of the adjoint then the client
    *     should first create an implicit adjoint using <tt>adjoint()</tt>
    *     (or transpose using <tt>transpose()</tt>) which wraps the operation in

@@ -307,7 +307,7 @@ protected:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Index, initIndexReductObjValue )
 }; // class ROpScalarIndexReductionBase
 
-/** \breif Simple base class for all reduction operators that return a simple
+/** \brief Simple base class for all reduction operators that return a simple
  * index reduction object.
  *
  * Subclasses have to minimally define <tt>apply_op()</tt>.
@@ -417,7 +417,7 @@ protected:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( index_type, initReductObjValue )
 }; // class ROpIndexReductionBase
 
-/** \breif Simple base class for all transformation operators that
+/** \brief Simple base class for all transformation operators that
  * use a single piece of Scalar data.
  *
  * Subclasses have to minimally define <tt>apply_op()</tt>.
@@ -489,7 +489,7 @@ protected:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData )
 }; // class ROpScalarTransformationBase
 
-/** \breif Simple base class for all transformation operators that
+/** \brief Simple base class for all transformation operators that
  * use a pair of Scalar data members.
  *
  * Subclasses have to minimally define <tt>apply_op()</tt>.
@@ -570,7 +570,7 @@ protected:
 
 } // namespace RTOpPack
 
-/** \breif Use within an apply_op(...) function implemention where num_vecs==1, num_targ_vecs==0.
+/** \brief Use within an apply_op(...) function implementation where num_vecs==1, num_targ_vecs==0.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
@@ -589,7 +589,7 @@ protected:
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride()
 
-/** \breif Use within an apply_op(...) function implemention where num_vecs==2, num_targ_vecs==0.
+/** \brief Use within an apply_op(...) function implementation where num_vecs==2, num_targ_vecs==0.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
@@ -616,7 +616,7 @@ protected:
   const Scalar                 *v1_val = (SUB_VECS)[1].values(); \
   const ptrdiff_t              v1_s    = (SUB_VECS)[1].stride()
 
-/** \breif Use within an apply_op(...) function implemention where num_vecs==0, num_targ_vecs==1.
+/** \brief Use within an apply_op(...) function implementation where num_vecs==0, num_targ_vecs==1.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
@@ -635,7 +635,7 @@ protected:
   Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
   const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
 
-/** \breif Use within an apply_op(...) function implemention where num_vecs==1, num_targ_vecs==1.
+/** \brief Use within an apply_op(...) function implementation where num_vecs==1, num_targ_vecs==1.
  */
 #define RTOP_APPLY_OP_1_1( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
   TEST_FOR_EXCEPTION( \
@@ -660,7 +660,7 @@ protected:
   Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
   const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
 
-/** \breif Use within an apply_op(...) function implemention where num_vecs==2, num_targ_vecs==1.
+/** \brief Use within an apply_op(...) function implementation where num_vecs==2, num_targ_vecs==1.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */

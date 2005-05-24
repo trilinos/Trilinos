@@ -45,7 +45,7 @@ void RTOpPack_MPI_apply_op_reduction_op(
 //
 // This implementation of handling the reduction operator
 // will work just fine in a single threaded program.
-// For multithreaded program this has to be reworked!
+// For multi-threaded program this has to be reworked!
 //
 
 namespace {

@@ -34,7 +34,7 @@
 
 namespace Thyra {
 
-/** \breif Concrete composite <tt>LinearOpBase</tt> subclass that creates a
+/** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates a
  * multiplicative linear operator out of one or more constituent
  * <tt>LinearOpBase</tt> objects.
  *
@@ -125,7 +125,7 @@ public:
 
   /** \brief Initialize given a list of linear operators.
    *
-   * @param  numOps  [in] Number of constituent opeators.
+   * @param  numOps  [in] Number of constituent operators.
    * @param  Ops     [in] Array (length <tt>numOps</tt>) of
    *                 constituent linear operators and their
    *                 aggregated default definitions of the
@@ -150,7 +150,7 @@ public:
     ,const Scalar                                               &gamma = Teuchos::ScalarTraits<Scalar>::one()
     );
 
-  /** \brief Returns the current number of constutient operators.
+  /** \brief Returns the current number of constituent operators.
    *
    * A return value of <tt>0</tt> indicates that <tt>this</tt> is not
    * fully initialized.
@@ -177,7 +177,7 @@ public:
    *               If <tt>gamma!=NULL</tt> then on output <tt>*gamma</tt>
    *               is set to <tt>this->gamma()</tt> (before call).
    *
-   * Precconditions:<ul>
+   * Preconditions:<ul>
    * <li>[<tt>Ops!=NULL</tt>] <tt>numOps==this->numOps()</tt>
    * </ul>
    *
@@ -201,7 +201,7 @@ public:
    */
   std::string describe() const;
 
-  /** \breif Prints the details about the constituent linear operators.
+  /** \brief Prints the details about the constituent linear operators.
    *
    * This function outputs different levels of detail based on the value passed in
    * for <tt>verbLevel</tt>:
@@ -233,7 +233,7 @@ public:
    * </ul>
    */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
-  /** \brief Returns <tt>true</tt> only if all constituent opeators support
+  /** \brief Returns <tt>true</tt> only if all constituent operators support
    * <tt>M_trans</tt>.
    */
   bool opSupported(ETransp M_trans) const;
@@ -277,7 +277,7 @@ private:
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 
-/** \brief Form an implicit multipliation of two linear operators: <tt>return = A * B</tt>.
+/** \brief Form an implicit multiplication of two linear operators: <tt>return = A * B</tt>.
  *
  * This function simply creates a <tt>MultiplicativeLinearOp</tt> given
  * <tt>A</tt> and <tt>B</tt>.

@@ -3,7 +3,7 @@
 <b>Warning!</b> Clicking on the above links (i.e. "Class List", "File List"
 etc.)  can be a bit overwhelming and not recommended as a way to "browse" the
 code that is part of this doxygen collection.  Instead, it is recommended that
-one use the below outline to browse the classes and various functions
+one use the outline below to browse the classes and various functions
 documented here.  The one exception is the above <a
 href="./modules.html">"Modules"</a> link which is essentially an outline of
 what is presented below.  The following presentation is designed to expose
@@ -13,11 +13,11 @@ useful as a developer's reference and should only be used as such.
 
 The C++ namespace <tt>Thyra</tt> contains abstract interfaces to linear
 algebra objects such as vectors and linear operators and its most fundamental
-interfaces are shown in the below UML class diagram.  A detailed discussion of
+interfaces are shown in the UML class diagram below.  A detailed discussion of
 the motivation, requirements and basic design issues associated with %Thyra
 are described in <a href="???">this report</a>.  The purpose of this online
 documentation is not to restate what is in <a href="???">this report</A>.
-Instead, this online documentation is meant to provide a roadmap to the
+Instead, this online documentation is meant to provide a road-map to the
 Doxygen-generated C++ code documentation and provide convenient access to
 helpful examples.
 
@@ -44,7 +44,7 @@ collections that are related to this doxygen collection.
 
 \image html ThyraOperatorVectorSimple.gif "Foundational Thyra operator/vector interfaces (Note: above graphic not hyperlinked!)"
 
-The most fundumental abstract interfaces contained in the %Thyra package
+The most fundamental abstract interfaces contained in the %Thyra package
 (and shown in the above UML class diagram) are:
 
 <ul>
@@ -73,7 +73,7 @@ Thyra_Op_Vec_foundational_interfaces_sec .
 
 There are primarily three different use cases related to the foundational
 %Thyra operator/vector interfaces shown above.  The first, and by far the most
-important, is the use of \ref Thyra_Op_Vec_ANA_Iteroperability_grp.  This first use
+important, is the use of \ref Thyra_Op_Vec_ANA_Interoperability_grp.  This first use
 case is really the main reason for the creation of %Thyra in the first place.
 The second most important use case associated with the foundational %Thyra
 operator/vector interfaces is the \ref Thyra_Op_Vec_Adapters_grp of vector spaces,
@@ -86,12 +86,12 @@ interface classes were not directly designed for this use case, with some
 minimal helper functions and classes, directly writing ANA implementations in
 terms of %Thyra objects is quite straightforward.
 
-Click on the below links for a discussion of each of these three use
+Click on the links below for a discussion of each of these three use
 cases and a description of additional supporting code.
 
 <ol>
 
-<li> \ref Thyra_Op_Vec_ANA_Iteroperability_grp
+<li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
 
 <li> \ref Thyra_Op_Vec_Adapters_grp
 
@@ -151,7 +151,7 @@ The fundamental %Thyra interfaces and related software are not templated on an
 index (i.e. ordinal) type.  Instead, the type <tt>Thyra::Index</tt> is used
 which is just a typedef that is defined at configure time to be an unsigned
 integral type.  This type must be able to hold the value of the largest
-dimension of a vector space that will be used by an exectuable.  For most
+dimension of a vector space that will be used by an executable.  For most
 platforms and use cases, <b><tt>int</tt></b> is sufficient but in other cases
 <b><tt>long int</tt></b> may be necessary on some 64 bit platforms.  Not
 templating on the index (ordinal) type does not result in any degradation in
@@ -159,7 +159,7 @@ usability, runtime speed or storage usage for any use case.  However, certain
 types of subclasses of the %Thyra interfaces, such as sparse matrix
 subclasses, may need to be templated on a local index (ordinal) type.
 
-<li><b>Dynamic memory mangament using <tt>%Teuchos::RefCountPtr</tt></b>
+<li><b>Dynamic memory management using <tt>%Teuchos::RefCountPtr</tt></b>
 
 All of the code in the %Thyra package almost exclusively uses the
 <tt>%Teuchos</tt> smart reference counted pointer class
@@ -213,13 +213,13 @@ of Epetra objects.
 \brief Here we outline three common use cases related to the \ref
 Thyra_Op_Vec_foundational_interfaces_sec.
 
-Click on the below links for a discussion of each of these three use
+Click on the links below for a discussion of each of these three use
 cases and a description of additional supporting C++ classes and
 non-member functions.
 
 <ol>
 
-<li> \ref Thyra_Op_Vec_ANA_Iteroperability_grp
+<li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
 
 <li> \ref Thyra_Op_Vec_Adapters_grp
 
@@ -229,7 +229,7 @@ non-member functions.
 
 */
 
-/** \defgroup Thyra_Op_Vec_ANA_Iteroperability_grp Thyra Operator/Vector Interfaces as an Interoperability Layer for Abstract Numerical Algorithms (ANAs)
+/** \defgroup Thyra_Op_Vec_ANA_Interoperability_grp Thyra Operator/Vector Interfaces as an Interoperability Layer for Abstract Numerical Algorithms (ANAs)
 
 \ingroup Thyra_Op_Vec_use_cases_grp
 
@@ -302,7 +302,7 @@ Thyra_Op_Vec_ANA_Development_overview_sec "here".
 
 </ol>
 
-\section Thyra_Op_Vec_ANA_Iteroperability_other_sec Other Use Cases
+\section Thyra_Op_Vec_ANA_Interoperability_other_sec Other Use Cases
 
 <ul>
 
@@ -316,7 +316,7 @@ Thyra_Op_Vec_ANA_Development_overview_sec "here".
 
 /** \defgroup Thyra_Op_Vec_fundamental_interfaces_code_grp C++ code for foundational Thyra operator/vector interfaces
 
-\ingroup Thyra_Op_Vec_ANA_Iteroperability_grp
+\ingroup Thyra_Op_Vec_ANA_Interoperability_grp
 
 \brief These are the \ref Thyra_Op_Vec_foundational_interfaces_sec that
 provide the foundation for all ANAs.
@@ -329,7 +329,7 @@ provide the foundation for all ANAs.
 
 \brief In order for abstract numerical algorithms (ANAs)
 \ref Thyra_Op_Vec_ANA_Development_grp "developed with Thyra" or
-\ref Thyra_Op_Vec_ANA_Iteroperability_grp "accessed using Thyra" to be useful,
+\ref Thyra_Op_Vec_ANA_Interoperability_grp "accessed using Thyra" to be useful,
 concrete implementations of the
 \ref Thyra_Op_Vec_foundational_interfaces_sec must be provided.
 However, because of a number of convenient C++ subclasses described
@@ -341,7 +341,7 @@ cases.
 One of the main motivations behind the design of the \ref
 Thyra_Op_Vec_foundational_interfaces_sec is
 the uniform support for many different computing environments such as
-serial shared-memory (i.e. SMP) and a varienty of distributed-memory
+serial shared-memory (i.e. SMP) and a variety of distributed-memory
 models (e.g. SPMD (single program, multiple data), client-server,
 master-slave and client-server/master-slave).  While this is the case,
 the overwhelming majority of concrete implementations of these types
@@ -372,7 +372,7 @@ concrete <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt> or
 platforms are already available.
 
 Next, we provide a description of the various types of support code
-for creating concrete implementatons as well as concrete
+for creating concrete implementations as well as concrete
 implementations that are available.  Just browse the categories that
 you are interested in.
 
@@ -383,7 +383,7 @@ you are interested in.
 <li><b>\ref Thyra_Op_Vec_basic_adapter_support_grp</b>
 
 Click on the above link if you want to know about high-level support
-subclasses for seperating out the definition of the scalar product
+subclasses for separating out the definition of the scalar product
 from the data structures and factory methods for specific computing
 platforms.  All of the concrete %Thyra implementation subclasses
 outlined below derive from and use these base interfaces.  However,
@@ -399,14 +399,14 @@ Below we outline support code contained in the %Thyra package for
 different categories of computing platforms.
 
 <b>Note!</b> Before attempting to create your own concrete subclasses
-of the \ref Thyra_Op_Vec_foundational_interfaces_sec please browse the below
-links so that you know what support is already available.  In many
+of the \ref Thyra_Op_Vec_foundational_interfaces_sec please browse the 
+links below so that you know what support is already available.  In many
 cases, most of the concrete implementation software that you need for
 %Thyra is already provided.
 
 <ol>
 
-<li>\ref <b>\ref Thyra_Op_Vec_serial_adpaters_grp</b>
+<li>\ref <b>\ref Thyra_Op_Vec_serial_adapters_grp</b>
 
 Click on the above link if you want to know about support for
 developing %Thyra subclass implementations for serial shared-memory
@@ -417,7 +417,7 @@ link also describes very general and efficient concrete serial
 subclasses for vector spaces, vectors and multi-vectors as well as a
 support class for creating concrete linear operator implementations.
 
-<li>\ref <b>\ref Thyra_Op_Vec_mpi_adpaters_grp</b>
+<li>\ref <b>\ref Thyra_Op_Vec_mpi_adapters_grp</b>
 
 Click on the above link if you want to know about support for developing
 %Thyra subclass implementations for SPMD distributed-memory platforms.  These
@@ -434,7 +434,7 @@ support class for creating concrete linear operator implementations.
 
 <ul>
 
-<li> \ref Thyra_Op_Vec_ANA_Iteroperability_grp
+<li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
 
 <li> \ref Thyra_Op_Vec_ANA_Development_grp
 
@@ -442,7 +442,7 @@ support class for creating concrete linear operator implementations.
 
 */
 
-/** \defgroup Thyra_Op_Vec_general_adater_support_code_grp Miscellaneous Support Code for Developing Thyra Operator/Vector Subclass Implementations
+/** \defgroup Thyra_Op_Vec_general_adapter_support_code_grp Miscellaneous Support Code for Developing Thyra Operator/Vector Subclass Implementations
 
 \ingroup Thyra_Op_Vec_Adapters_grp
 
@@ -451,11 +451,11 @@ support class for creating concrete linear operator implementations.
 */
 
 
-/** \defgroup Thyra_Op_Vec_general_adater_support_code_utils_grp Internal Helper Code not ment for General Use
+/** \defgroup Thyra_Op_Vec_general_adapter_support_code_utils_grp Internal Helper Code not meant for General Use
 
-\brief Some support code that is not ment for general programmers to access.
+\brief Some support code that is not meant for general programmers to access.
 
-\ingroup Thyra_Op_Vec_general_adater_support_code_grp
+\ingroup Thyra_Op_Vec_general_adapter_support_code_grp
 
 */
 
@@ -469,7 +469,7 @@ application-specific scalar products without concern for how such scalar
 products are implemented or how such scalar products relate to the
 implementation of vectors, multi-vectors or linear operators.  While this is
 most straightforward for clients of these interfaces, it is not the most
-convienent for subclass implementation developers.  The first level of basic
+convenient for subclass implementation developers.  The first level of basic
 subclasses for supporting the development of concrete %Thyra operator/vector
 implementations involves separating out the definition of the scalar product
 from the basic vector and multi-vector data structures and the factory methods
@@ -508,7 +508,7 @@ development of general concrete implementations of
 application-specific scalar product.  This base subclass defines the functions
 <tt>Thyra::EuclideanLinearOpBase::euclideanApply()</tt> which are called by
 <tt>Thyra::ScalarProdBase::apply()</tt> to modify the application of a
-Euclidean linear operator for the definition of the sclar product (see the C++
+Euclidean linear operator for the definition of the scalar product (see the C++
 code for the overridden <tt>Thyra::EuclideanLinearOpBase::apply()</tt>
 functions).  This base class is most helpful for the definition of concrete
 <tt>Thyra::MultiVectorBase</tt> subclasses.  More specialized linear operators
@@ -524,7 +524,7 @@ concrete Thyra subclass implementations in the %Thyra package.
 
 */
 
-/** \defgroup Thyra_Op_Vec_serial_adpaters_grp Thyra Operator/Vector Subclasses for Serial Shared-Memory Platforms
+/** \defgroup Thyra_Op_Vec_serial_adapters_grp Thyra Operator/Vector Subclasses for Serial Shared-Memory Platforms
 
 \ingroup Thyra_Op_Vec_Adapters_grp
 
@@ -535,9 +535,9 @@ described here.
 When interfacing to most other well designed packages, there should be
 no need to create new such subclasses for concrete serial
 shared-memory vector spaces, vectors or multi-vectors given the
-subclasses descirbed below.
+subclasses described below.
 
-\section Thyra_Op_Vec_serial_adpaters_classes_sec Subclasses for Serial Thyra Implementations
+\section Thyra_Op_Vec_serial_adapters_classes_sec Subclasses for Serial Thyra Implementations
 
 <ol>
 
@@ -567,7 +567,7 @@ spaces, vectors and multi-vectors.
 
 </ol>
 
-\section Thyra_Op_Vec_serial_adpaters_examples_sec Example Subclasses for Serial Shared-Memory Platforms
+\section Thyra_Op_Vec_serial_adapters_examples_sec Example Subclasses for Serial Shared-Memory Platforms
 
 The only example that one should need for how to provide a serial
 implementation for the
@@ -589,20 +589,20 @@ name and then modify the new subclass as needed.
 
 */
 
-/** \defgroup Thyra_Op_Vec_serial_adpaters_support_code_grp Support code for Thyra Operator/Vector Subclasses for Serial Shared-Memory Platforms
+/** \defgroup Thyra_Op_Vec_serial_adapters_support_code_grp Support code for Thyra Operator/Vector Subclasses for Serial Shared-Memory Platforms
 
-\ingroup Thyra_Op_Vec_serial_adpaters_grp
+\ingroup Thyra_Op_Vec_serial_adapters_grp
 
 */
 
 /** \defgroup Thyra_Op_Vec_adapters_serial_support_grp Thyra Operator/Vector Base Support Subclasses for Serial Shared-Memory Thyra Implementations
 
-\ingroup Thyra_Op_Vec_serial_adpaters_grp
+\ingroup Thyra_Op_Vec_serial_adapters_grp
 
 \brief The package %Thyra includes base subclasses for serial vector
 spaces, vectors, multi-vectors and linear operators.
 
-The below UML class diagram shows the subclasses described here:
+The UML class diagram below shows the subclasses described here:
 
 \image html SerialVectorSpaceBase.gif "Support base subclasses for serial shared-memory Thyra implementations (Note: above graphic not hyperlinked!)"
 
@@ -624,9 +624,9 @@ serial vectors and multi-vectors to be 100\% compatible.
 <li><tt>Thyra::SerialVectorBase</tt> is a useful base subclass for
 defining concrete serial vector subclasses.  This base class provides
 a very general implementation for
-<tt>%Thyra::%VectorBase::%applyOp()</tt> that relies on explict vector
+<tt>%Thyra::%VectorBase::%applyOp()</tt> that relies on explicit vector
 element access.  All that a concrete subclass must do to is to provide
-explicit access to vector data in overriddes of the
+explicit access to vector data in overrides of the
 virtual <tt>%Thyra::%SerialVectorBase::%getData()</tt> functions.
 
 <li><tt>Thyra::SerialMultiVectorBase</tt> is a useful base subclass
@@ -635,7 +635,7 @@ provides implementations for both
 <tt>%Thyra::%MultiVectorBase::%applyOp()</tt> and
 <tt>%Thyra::%MultiVectorBase::%apply()</tt> that relies on explicit
 multi-vector element access.  All that a concrete subclass must do is
-to provide explicit access to mulit-vector data in overrides of the
+to provide explicit access to multi-vector data in overrides of the
 <tt>%Thyra::SerialMultiVectorBase::getData()</tt> functions.  Note
 in general that the override of
 <tt>%Thyra::MultiVectorBase::apply()</tt> is a level-3 BLAS operation
@@ -654,27 +654,27 @@ implementations of all of the operations defined on
 shared-memory platforms.  All that concrete subclasses must provide is
 explicit access to vector and multi-vector data.
 
-\section Thyra_Op_Vec_serial_adpaters_linear_op_sec Base Subclasses for Serial Thyra::LinearOpBase Implementations
+\section Thyra_Op_Vec_serial_adapters_linear_op_sec Base Subclasses for Serial Thyra::LinearOpBase Implementations
 
 To facilitate the creation of concrete serial linear operators the
 following simple but very general base class is supplied:
 
 <ul> <li><tt>Thyra::SerialLinearOpBase</tt> is a general base
 subclass for serial shared-memory platforms that only requires
-concrete subclass implementations to overide one function that accepts
-explict vector data.  </ul>
+concrete subclass implementations to override one function that accepts
+explicit vector data.  </ul>
 
 */
 
 /** \defgroup Thyra_Op_Vec_adapters_serial_concrete_std_grp Efficient Generic Serial Concrete Thyra Operator/Vector Subclass Implementations
 
-\ingroup Thyra_Op_Vec_serial_adpaters_grp
+\ingroup Thyra_Op_Vec_serial_adapters_grp
 
 \brief The package %Thyra includes general, yet very efficient
 concrete subclass implementations for serial vector spaces, vectors,
 multi-vectors and linear operators.
 
-The below UML class diagram shows the subclasses described here:
+The UML class diagram below shows the subclasses described here:
 
 \image html SerialVectorSpaceStd.gif "Concrete subclasses for serial shared-memory Thyra implementations (Note: above graphic not hyperlinked!)"
 
@@ -693,12 +693,12 @@ the domain space of the default multi-vectors returned from
 implementation for serial vector spaces that creates
 <tt>%Thyra::SerialVectorStd</tt> and
 <tt>%Thyra::SerialMultiVectorStd</tt> objects.  All this subclass
-really does is provide trival implementations for the factory methods
+really does is provide trivial implementations for the factory methods
 <tt>%Thyra::VectorSpaceBase::createMember()</tt> and
 <tt>%Thyra::VectorSpaceBase::createMembers()</tt>.
 
 <li><tt>Thyra::SerialVectorStd</tt> is an efficient general concrete
-implementaion for serial vectors.  All this subclass does is provide
+implementation for serial vectors.  All this subclass does is provide
 storage for a serial vector and return pointers to that storage to the
 <tt>%Thyra::SerialVectorBase</tt> base class through the overridden
 <tt>%Thyra::SerialVectorStd::getData()</tt> functions.  This concrete
@@ -707,7 +707,7 @@ trivially handle any underlying data storage format due to the magic
 of <tt>%Teuchos::RefCountPtr</tt>.
 
 <li><tt>Thyra::SerialMultiVectorStd</tt> is an efficient general
-concrete implementaion for serial multi-vectors.  All this subclass
+concrete implementation for serial multi-vectors.  All this subclass
 does is provide storage for a serial multi-vector and return pointers
 to that storage (and leading dimension) to the
 <tt>%Thyra::SerialMultiVectorBase</tt> base class through the
@@ -728,7 +728,7 @@ so.
 
 */
 
-/** \defgroup Thyra_Op_Vec_mpi_adpaters_grp Thyra Operator/Vector Subclasses for MPI-based SPMD Distributed-Memory Platforms
+/** \defgroup Thyra_Op_Vec_mpi_adapters_grp Thyra Operator/Vector Subclasses for MPI-based SPMD Distributed-Memory Platforms
 
 \ingroup Thyra_Op_Vec_Adapters_grp
 
@@ -738,10 +738,10 @@ here.
 
 When interfacing to most other well designed packages, there should be
 no need to create new such subclasses for concrete MPI-based SPMD
-vector spaces, vectors or multi-vectors given the subclasses descirbed
+vector spaces, vectors or multi-vectors given the subclasses described
 below.
 
-\section Thyra_Op_Vec_mpi_adpaters_classes_sec Subclasses for MPI SPMD Thyra Implementations
+\section Thyra_Op_Vec_mpi_adapters_classes_sec Subclasses for MPI SPMD Thyra Implementations
 
 <ol>
 
@@ -779,13 +779,13 @@ Click on the above link if you want to know about some general code that takes E
 
 /** \defgroup Thyra_Op_Vec_adapters_MPI_support_grp Thyra Operator/Vector Base Support Subclasses for MPI-based SPMD Thyra Implementations
 
-\ingroup Thyra_Op_Vec_mpi_adpaters_grp
+\ingroup Thyra_Op_Vec_mpi_adapters_grp
 
 \brief The package %Thyra contains base subclasses that support a
 common type of MPI-based SPMD implementation of vectors and
-mulit-vectors that are described here.
+multi-vectors that are described here.
 
-The below UML class diagram shows the subclasses described here:
+The UML class diagram below shows the subclasses described here:
 
 \image html MPIVectorSpaceBase.gif "Support base subclasses for MPI SPMD distributed-memory Thyra implementations (Note: above graphic not hyperlinked!)"
 
@@ -799,14 +799,14 @@ spaces.
 SPMD distributed-memory data distributions supported by these base
 subclasses.  This vector space base class assumes a unique
 partitioning of vector and multi-vector elements to a set of
-processors where there exists no ghost elments.
+processors where there exists no ghost elements.
 
 <li><tt>Thyra::MPIVectorBase</tt> is a base subclass for MPI-based
 SPMD <tt>%Thyra::%VectorBase</tt> objects.  This class defines concrete
 implementations for the <tt>%Thyra::%VectorBase</tt> virtual functions
 <tt>%applyOp()</tt>, <tt>%getSubVector() const</tt>, <tt>%freeSubVector()
 const</tt>, <tt>%getSubVector()</tt> and <tt>%commitSubVector()</tt>.
-These functions are implemented given expicit access to local processor
+These functions are implemented given explicit access to local processor
 elements as returned by the <tt>getLocalData()</tt> functions overridden
 in a subclass object.
 
@@ -817,7 +817,7 @@ defines concrete implementations for the
 <tt>%getSubMultiVector() const</tt>, <tt>%freeSubMultiVector()
 const</tt>, <tt>%getSubMultiVector()</tt> and
 <tt>%commitSubMultiVector()</tt>.  These functions are implemented
-given expicit access to local processor elements as returned by the
+given explicit access to local processor elements as returned by the
 <tt>getLocalData()</tt> functions overridden in a subclass object.  In
 addition, this subclass derives from
 <tt>Thyra::EuclideanLinearOpBase</tt> so that any
@@ -826,7 +826,7 @@ multi-vector version of
 <tt>Thyra::MPIMultiVectorBase::euclideanApply()</tt> is implemented
 by calling <tt>Teuchos::BLAS::GEMM()</tt> on each local processor to
 access level-3 BLAS.  Therefore, if %Teuchos is configured to link to
-optimized BLAs then this base subclass will provided a near optimial
+optimized BLAS then this base subclass will provided a near optimal
 implementation of a MPI SPMD multi-vector.
 
 </ul>
@@ -836,21 +836,21 @@ implementations from these base subclasses is that they provide automatic
 interoperability between different concrete subclasses.  This type of
 automatic interoperability is demonstrated in ???this testing program???.
 
-\section Thyra_Op_Vec_mpi_adpaters_linear_op_sec Base Subclasses for MPI Thyra::LinearOpBase Implementations
+\section Thyra_Op_Vec_mpi_adapters_linear_op_sec Base Subclasses for MPI Thyra::LinearOpBase Implementations
 
 To facilitate the creation of concrete MPI linear operators the
 following simple but very general base class is supplied:
 
 <ul> <li><tt>Thyra::MPILinearOpBase</tt> is a general base subclass
 for MPI SPMD platforms that only requires concrete subclass
-implementations to overide one function that accepts explict local
+implementations to override one function that accepts explicit local
 vector data.  </ul>
 
 */
 
 /** \defgroup Thyra_Op_Vec_adapters_MPI_concrete_std_grp Efficient Generic MPI-based SPMD Concrete Thyra Operator/Vector Subclass Implementations
 
-\ingroup Thyra_Op_Vec_mpi_adpaters_grp
+\ingroup Thyra_Op_Vec_mpi_adapters_grp
 
 \brief The package %Thyra contains highly efficient concrete
 implementations of MPI-based vector space, vector and multi-vector
@@ -868,7 +868,7 @@ The concrete subclasses described here derive directly from the \ref
 <li><tt>Thyra::MPIVectorSpaceFactoryStd</tt> is a concrete
 <tt>%Thyra::%VectorSpaceFactoryBase</tt> subclass implementation that
 creates locally replicated <tt>%Thyra::%MPIVectorSpaceStd</tt> objects
-given their dimension.  This class is ment to create domain spaces for
+given their dimension.  This class is meant to create domain spaces for
 any MPI-based SPMD multi-vector object it is is used as such (for
 example, see <tt>Thyra::MPIVectorSpaceBase::smallVecSpcFcty()</tt>).
 
@@ -891,8 +891,8 @@ from a variety of data sources due to the magic of
 
 </ul>
 
-Together, these concrete subclasses provide a complete and highy
-efficient implemenation for MPI-based SPMD vector, multi-vector and
+Together, these concrete subclasses provide a complete and highly
+efficient implementation for MPI-based SPMD vector, multi-vector and
 vector space objects.  From the standpoint of the needs of an ANA,
 there is really no need for any other concrete implementations of
 these subclasses for MPI SPMD platforms.
@@ -924,7 +924,7 @@ simplify the use of %Thyra for the development of ANAs.
 
 While the use of the <tt>RTOpPack::RTOpT</tt> interface class and the
 single <tt>Thyra::VectorBase::applyOp()</tt> function provide an elegant
-and efficient solution for the iteroperability of vector
+and efficient solution for the interoperability of vector
 interfaces, it is not the easiest API for developing ANAs.  However,
 a number of easy to use C++ wrapper functions for many different
  vector and multi-vector operations is already provided:
@@ -937,15 +937,15 @@ a number of easy to use C++ wrapper functions for many different
 These C++ wrapper functions rely on pre-implemented
 <tt>RTOpPack::RTOpT</tt> subclasses.  Adding new
 <tt>RTOpPack::RTOpT</tt> subclasses and new wrapper functions for new
-vector and multi-vector reduction/transformatin operations is an easy
+vector and multi-vector reduction/transformation operations is an easy
 matter for an experienced C++ developer who understands
 <tt>RTOpPack::RTOpT</tt> (please contact rabartl@sandia.gov if you
-need a new vector or mulit-vector operation that is not already
+need a new vector or multi-vector operation that is not already
 supported).
 
 <li> <b>Creating explicit views of vector and multi-vector elements</b>
 
-<b>Warning!</b> using the below utility classes it is very easy to
+<b>Warning!</b> using the utility classes below it is very easy to
 obtain direct access to vector and multi-vector elements but in
 general, this is a very bad idea.  However, as described in <a
 href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">this
@@ -1004,7 +1004,7 @@ X = \left[\begin{array}{c} V_1 \\ V_2 \\ \vdots \\ V_m \end{array}\right].
 \ldots, V_m \in \mathcal{V}_m | \mathcal{D}\f$ and \f$\mathcal{D}\f$ is the
 domain space for the multi-vectors).
 
-Very general concrete implementations of theproduct vector space, vector and
+Very general concrete implementations of the product vector space, vector and
 multi-vector interfaces described \ref
 Thyra_Op_Vec_Interoperability_Extended_Interfaces_sec "here" are provided and
 are shown below:
@@ -1043,7 +1043,7 @@ useful composite linear operator subclasses are shown below:
     out of any <tt>Thyra::VectorBase</tt> object for the diagonal \f$d \in \Re^n\f$.
 <li><tt>Thyra::ScaledAdjointLinearOp</tt> is a simple concrete decorator subclass that defines an
     implicit scaled and/or adjoined (or transposed) linear operator \f$M = \gamma \; op(A)\f$.
-<li><tt>Thyra::MultiplicativeLinearOp</tt> is a simple concrete composite subclass that defines a composite multipliciative
+<li><tt>Thyra::MultiplicativeLinearOp</tt> is a simple concrete composite subclass that defines a composite multiplicative
     <tt>Thyra::LinearOpBase</tt> of the form \f$M = \gamma \; A_1 A_2 \ldots A_m}\f$ composed out of one or more
     constituent linear operators \f$A_1, A_2 \ldots A_m\f$.
 </ul>
@@ -1055,13 +1055,13 @@ useful composite linear operator subclasses are shown below:
 This is basic testing software for %Thyra:
 
 <ul>
-<li><tt>Thyra::LinearOpTester</tt> is a unit testing class that validates the implemenation
+<li><tt>Thyra::LinearOpTester</tt> is a unit testing class that validates the implementation
     of a <tt>Thyra::LinearOpBase</tt> object by checking its linear properties, and/or its adjoint,
     and/or symmetry.  In addition, it can check if two linear operators are the same.
-<li><tt>Thyra::MultiVectorTester</tt> is a unit testing class that validates the implemenation
+<li><tt>Thyra::MultiVectorTester</tt> is a unit testing class that validates the implementation
     of a <tt>Thyra::MultiVectorBase</tt> object.  This class exposes a <tt>Thyra::LinearOpTester</tt> object
     for testing the <tt>LinearOpBase</tt> base interface of <tt>Thyra::MultiVectorBase</tt>. 
-<li><tt>Thyra::VectorTester</tt> is a unit testing class that validates the implemenation
+<li><tt>Thyra::VectorTester</tt> is a unit testing class that validates the implementation
     of a <tt>Thyra::VectorBase</tt> object.  This class exposes a <tt>Thyra::MultiVectorTester</tt> object
     for testing the <tt>MultiVectorBase</tt> base interface of <tt>Thyra::VectorBase</tt>. 
 <li><tt>Thyra::VectorSpaceTester</tt> is a unit testing class that accepts any <tt>Thyra::VectorSpaceBase</tt>
@@ -1102,12 +1102,12 @@ the code described here as an API for developing ANAs.
 <ul>
 
 <li><tt>sillyPowerMethod()</tt> is a simple example ANA that
-implements the power method for estimating the dominiate eigenvalue
+implements the power method for estimating the dominate eigenvalue
 of a linear operator.
 
 <li><tt>sillyCgSolve()</tt> is a simple example ANA that
 implements the conjugate gradient method for solving a symmetric
-possitive definite linear system.
+positive definite linear system.
 
 <li><tt>Thyra::LinearOpTester::check()</tt> shows how to access a
 <tt>Thyra::LinearOpBase</tt> objects domain and range spaces, how to use
@@ -1121,7 +1121,7 @@ linear operators.
 
 <ul>
 
-<li> \ref Thyra_Op_Vec_ANA_Iteroperability_grp
+<li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
 
 <li> \ref Thyra_Op_Vec_Adapters_grp
 
@@ -1163,7 +1163,7 @@ linear operators.
 package with an example linear ANA algorithm for the power method for
 estimating the dominate eigen value of a matrix.
 
-These example programs are ment to mimic the power method example
+These example programs are meant to mimic the power method example
 program shown in the <a href="../../../../../../epetra/doc/html/index.html#example">Epetra
 documentation</a>.
 
@@ -1194,7 +1194,7 @@ detailed discussion of this example function.
 
 */
 
-/** \defgroup Thyra_Op_Vec_examples_power_method_serial_grp Templated Serial Implemenation of the Power Method
+/** \defgroup Thyra_Op_Vec_examples_power_method_serial_grp Templated Serial Implementation of the Power Method
 
 \ingroup Thyra_Op_Vec_examples_power_method_grp
 
@@ -1290,7 +1290,7 @@ $ ./sillyPowerMethod_serial.exe
 *** Running power method example using scalar type = 'float' ...
 ***
 
-(1) Constructing tridagonal matrix A of dimmension = 4 ...
+(1) Constructing tridiagonal matrix A of dimension = 4 ...
 
 (2) Running the power method on matrix A ...
 
@@ -1322,7 +1322,7 @@ Iter = 8, lambda = 2.005556e+01, ||A*q-lambda*q|| = 2.788594e-06
 *** Running power method example using scalar type = 'double' ...
 ***
 
-(1) Constructing tridagonal matrix A of dimmension = 4 ...
+(1) Constructing tridiagonal matrix A of dimension = 4 ...
 
 (2) Running the power method on matrix A ...
 
@@ -1354,7 +1354,7 @@ Iter = 8, lambda = 2.005556e+01, ||A*q-lambda*q|| = 2.681092e-06
 *** Running power method example using scalar type = 'std::complex<float>' ...
 ***
 
-(1) Constructing tridagonal matrix A of dimmension = 4 ...
+(1) Constructing tridiagonal matrix A of dimension = 4 ...
 
 (2) Running the power method on matrix A ...
 
@@ -1387,7 +1387,7 @@ Iter = 8, lambda = (2.005555e+01,5.564779e-08), ||A*q-lambda*q|| = 4.349416e-06
 *** Running power method example using scalar type = 'std::complex<double>' ...
 ***
 
-(1) Constructing tridagonal matrix A of dimmension = 4 ...
+(1) Constructing tridiagonal matrix A of dimension = 4 ...
 
 (2) Running the power method on matrix A ...
 
@@ -1420,7 +1420,7 @@ Iter = 8, lambda = (2.005556e+01,-1.371085e-17), ||A*q-lambda*q|| = 3.719354e-06
 *** Running power method example using scalar type = 'mpf_class' ...
 ***
 
-(1) Constructing tridagonal matrix A of dimmension = 4 ...
+(1) Constructing tridiagonal matrix A of dimension = 4 ...
 
 (2) Running the power method on matrix A ...
 
@@ -1501,7 +1501,7 @@ detailed discussion of this example program.
 */
 
 //
-// Silly CG examle
+// Silly CG example
 //
 
 /** \defgroup Thyra_Op_Vec_examples_cg_grp CG Examples
@@ -1541,7 +1541,7 @@ detailed discussion of this example function.
 
 */
 
-/** \defgroup Thyra_Op_Vec_examples_cg_serial_grp Templated Serial Implemenation of the CG Method
+/** \defgroup Thyra_Op_Vec_examples_cg_serial_grp Templated Serial Implementation of the CG Method
 
 \ingroup Thyra_Op_Vec_examples_cg_grp
 
@@ -1576,7 +1576,7 @@ A=
 \end{array}\right]
 \f]
 
-where \f$a\f$ is an adjustable diagonal scale factoris that makes the matrix
+where \f$a\f$ is an adjustable diagonal scale factories that makes the matrix
 \f$A\f$ more or less well conditioned and \f$r(i)\f$ is either \f$-1\f$ for a
 symmetric operator or \f$rand()\f$ for an unsymmetric operator.
 
@@ -1645,7 +1645,7 @@ $ ./sillyCgSolve_serial.exe
 *** Running silly CG solver using scalar type = 'float' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = 1.001 ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001 ...
 
 Testing the constructed linear operator A ...
 
@@ -1837,7 +1837,7 @@ Total time = 3.680000e-01 sec
 *** Running silly CG solver using scalar type = 'double' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = 1.001000e+00 ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+00 ...
 
 Testing the constructed linear operator A ...
 
@@ -2023,7 +2023,7 @@ Total time = 2.020000e-01 sec
 *** Running silly CG solver using scalar type = 'std::complex<float>' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
 
 Testing the constructed linear operator A ...
 
@@ -2215,7 +2215,7 @@ Total time = 3.410000e-01 sec
 *** Running silly CG solver using scalar type = 'std::complex<double>' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
 
 Testing the constructed linear operator A ...
 
@@ -2401,7 +2401,7 @@ Total time = 3.120000e-01 sec
 *** Running silly CG solver using scalar type = 'mpf_class' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = 1.001000e+00 ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+00 ...
 
 Testing the constructed linear operator A ...
 
@@ -2588,7 +2588,7 @@ Congratulations! All of the tests checked out!
 
 \endverbatim
 
-This exaple program also takes a number of command-line options.  To
+This example program also takes a number of command-line options.  To
 see what the command-line options are, use the <tt>--help</tt> option.
 At the time of this writing, the command-line options returned from
 <tt>./sillyCgSolve_serial.exe --help</tt> are:
@@ -2606,7 +2606,7 @@ Usage: ./sillyCgSolve_serial [options]
                                  (default: --dim=500)
   --diag-scale           double  Scaling of the diagonal to improve conditioning.
                                  (default: --diag-scale=1.001)
-  --sym-op               bool    Determins if the operator is symmetric or not.
+  --sym-op               bool    Determines if the operator is symmetric or not.
   --unsym-op                     (default: --sym-op)
   --tol                  double  Relative tolerance for linear system solve.
                                  (default: --tol=0.0001)
@@ -2625,7 +2625,7 @@ $ ./sillyCgSolve_serial.exe --unsym-op --max-num-iters=20
 *** Running silly CG solver using scalar type = 'float' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = 1.001 ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001 ...
 
 Testing the constructed linear operator A ...
 
@@ -2832,7 +2832,7 @@ Total time = 1.090000e-01 sec
 *** Running silly CG solver using scalar type = 'double' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = 1.001000e+00 ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+00 ...
 
 Testing the constructed linear operator A ...
 
@@ -3043,7 +3043,7 @@ Total time = 6.700000e-02 sec
 *** Running silly CG solver using scalar type = 'std::complex<float>' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
 
 Testing the constructed linear operator A ...
 
@@ -3253,7 +3253,7 @@ Total time = 6.700000e-02 sec
 *** Running silly CG solver using scalar type = 'std::complex<double>' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
 
 Testing the constructed linear operator A ...
 
@@ -3461,7 +3461,7 @@ Total time = 5.900000e-02 sec
 *** Running silly CG solver using scalar type = 'mpf_class' ...
 ***
 
-Constructing tridagonal matrix A of dimmension = 500 and diagonal multiplier = 1.001000e+00 ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+00 ...
 
 Testing the constructed linear operator A ...
 
@@ -3674,7 +3674,7 @@ Congratulations! All of the tests checked out!
 Note in the above example how the normal operator \f$A^H A\f$ is described.
 This aggregate operator is created by the function calls
 <tt>Thyra::scale()</tt> and <tt>Thyra::multiply()</tt> which create implicit
-<tt>Thyra::ScaledAdjoinedLinearOp</tt> and
+<tt>Thyra::ScaledAdjointedLinearOp</tt> and
 <tt>Thyra::MultiplicativeLinearOp</tt> objects.
 
 To see the full listing of this example program click: <a
@@ -3690,7 +3690,7 @@ detailed discussion of this example program.
 
 */
 
-/** \defgroup Thyra_Op_Vec_examples_cg_MPI_grp Templated MPI Implemenation of the CG Method
+/** \defgroup Thyra_Op_Vec_examples_cg_MPI_grp Templated MPI Implementation of the CG Method
 
 \ingroup Thyra_Op_Vec_examples_cg_grp
 
@@ -3775,7 +3775,7 @@ $ ./sillyCgSolve_mpi.exe
 *** Running silly CG solver using scalar type = 'float' ...
 ***
 
-Constructing tridagonal matrix A of local dimmension = 500 and diagonal multiplier = 1.001 ...
+Constructing tridiagonal matrix A of local dimension = 500 and diagonal multiplier = 1.001 ...
 
 Global dimension of A = 500
 
@@ -3878,7 +3878,7 @@ Total time = 5.490000e-01 sec
 *** Running silly CG solver using scalar type = 'double' ...
 ***
 
-Constructing tridagonal matrix A of local dimmension = 500 and diagonal multiplier = 1.001000e+00 ...
+Constructing tridiagonal matrix A of local dimension = 500 and diagonal multiplier = 1.001000e+00 ...
 
 Global dimension of A = 500
 
@@ -3978,7 +3978,7 @@ Total time = 2.120000e-01 sec
 *** Running silly CG solver using scalar type = 'std::complex<float>' ...
 ***
 
-Constructing tridagonal matrix A of local dimmension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+Constructing tridiagonal matrix A of local dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
 
 Global dimension of A = 500
 
@@ -4081,7 +4081,7 @@ Total time = 3.020000e-01 sec
 *** Running silly CG solver using scalar type = 'std::complex<double>' ...
 ***
 
-Constructing tridagonal matrix A of local dimmension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+Constructing tridiagonal matrix A of local dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
 
 Global dimension of A = 500
 
@@ -4181,7 +4181,7 @@ Congratulations! All of the tests checked out!
 
 \endverbatim
 
-This exaple program also takes a number of command-line options.  To
+This example program also takes a number of command-line options.  To
 see what the command-line options are, use the <tt>--help</tt> option.
 At the time of this writing, the command-line options returned from
 <tt>./sillyCgSolve_mpi.exe --help</tt> are:
@@ -4235,7 +4235,7 @@ test_product_space.cpp </a>.
 /** \example test_product_space.cpp
 
 Click \ref Thyra_Op_Vec_product_vec_spc_prg_grp "here" for a more
-detailed discusion of this example/test program.
+detailed discussion of this example/test program.
 
 */
 

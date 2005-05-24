@@ -39,7 +39,7 @@ namespace Thyra {
  * Throws an exception with a nice error message if one of the
  * preconditions are not met.
  *
- * \ingroup Thyra_Op_Vec_general_adater_support_code_grp
+ * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
 template<class Scalar>
 void apply_op_validate_input(
@@ -61,7 +61,7 @@ void apply_op_validate_input(
  * Throws an exception with a nice error message if one of the
  * preconditions are not met.
  *
- * \ingroup Thyra_Op_Vec_general_adater_support_code_grp
+ * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
 template<class Scalar>
 void apply_op_validate_input(
@@ -89,7 +89,7 @@ void apply_op_validate_input(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_serial_adpaters_support_code_grp
+ * \ingroup Thyra_Op_Vec_serial_adapters_support_code_grp
  */
 template<class Scalar>
 void apply_op_serial(
@@ -113,7 +113,7 @@ void apply_op_serial(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_serial_adpaters_support_code_grp
+ * \ingroup Thyra_Op_Vec_serial_adapters_support_code_grp
  */
 template<class Scalar>
 void apply_op_serial(

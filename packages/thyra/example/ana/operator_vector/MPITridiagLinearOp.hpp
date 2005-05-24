@@ -118,15 +118,15 @@
  *
  * </ul>
  *
- * Note, this is just an exmaple class and for the sake of simplifed
- * presentation the private members are listed first and inclass
- * declarations are used which are not a good idea in producton code.
+ * Note, this is just an example class and for the sake of simplified
+ * presentation the private members are listed first and in-class
+ * declarations are used which are not a good idea in production code.
  * However, in this case, they make the example code easier to read
  * and maintaining encapsulation and a well defined interface are
  * unnecessary here.
  *
  * See the source code for this simple example by clicking on the
- * link to the defintion below.
+ * link to the definition below.
  *
  * \ingroup Thyra_Op_Vec_examples_cg_MPI_grp
  */
@@ -168,7 +168,7 @@ public:
    * <li><tt>localDim >= 2</tt>
    * </ul>
    *
-   * Postonditions:<ul>
+   * Postconditions:<ul>
    * <li>Should be obvious!
    * <li>See <tt>setLocalDimensions()</tt>
    * </ul>
@@ -195,7 +195,7 @@ public:
       upper_.resize(upperDim);  for( int k = 0; k < upperDim; ++k ) upper_[k] = upper[k];
     }
 
-  // Overriddend form Teuchos::Describable */
+  // Overridden form Teuchos::Describable */
 
   std::string describe() const
     {
@@ -212,7 +212,7 @@ protected:
       return (M_trans == Thyra::NOTRANS || (!ST::isComplex && M_trans == Thyra::CONJ) );
     }
 
-  // Overridden from SeiralLinearOpBase
+  // Overridden from SerialLinearOpBase
 
   void euclideanApply(
     const Thyra::ETransp                         M_trans
@@ -269,7 +269,7 @@ void MPITridiagLinearOp<Scalar>::communicate(
     MPI_Status status;
     // Setup buffer
     std::vector<PT> buff(numPrimObjs);
-    // Send and recieve x[localDim_-1] forward and copy into x_km1
+    // Send and receive x[localDim_-1] forward and copy into x_km1
     if(last) {
       MPI_Recv( &buff[0], numPrimObjs, primMPIType, procRank_-1, 0, mpiComm_, &status );
       PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_km1 );
@@ -285,7 +285,7 @@ void MPITridiagLinearOp<Scalar>::communicate(
         PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_km1 );
       }
     }
-    // Send and recieve x[0] backward and copy into x_kp1
+    // Send and receive x[0] backward and copy into x_kp1
     if(first) {
       MPI_Recv( &buff[0], numPrimObjs, primMPIType, procRank_+1, 0, mpiComm_, &status );
       TEST_FOR_EXCEPT( status.MPI_ERROR );

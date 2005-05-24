@@ -82,7 +82,7 @@ bool testRelErr(
 /** \brief Print summary outputting for a test or just <tt>passed</tt> or
  * <tt>failed</tt>.
  *
- * @param  result          [in] Bool for of the test was sucessful or unsucessful.
+ * @param  result          [in] Bool for of the test was successful or unsuccessful.
  * @param  test_summary    [in] The summary of the test that was just completed.
  * @param  show_all_tests  [in] Bool for if the test summary should be shown even if
  *                         the test passed.
@@ -97,7 +97,7 @@ bool testRelErr(
  * <li><tt>*success==false</tt> if <tt>result==false</tt>
  * </ul>
  * 
- * Just the the defintion of this function to see what it does.
+ * Just the the definition of this function to see what it does.
  */
 void printTestResults(
   const bool              result

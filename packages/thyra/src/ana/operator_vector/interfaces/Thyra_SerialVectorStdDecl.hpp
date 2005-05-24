@@ -33,7 +33,7 @@
 
 namespace Thyra {
 
-/** \brief General extendable implementation of serial vectors.
+/** \brief General extensible implementation of serial vectors.
  *
  * This class can be used either as a view of a vector data or as a
  * storage for vector data (with any underlying storage type).

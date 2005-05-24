@@ -87,7 +87,7 @@ class IncompatibleVecs : public std::logic_error
  * The raw pointer to the start of the memory can be obtained as
  * <tt>&vec(1)</tt>.
  *
- * Warning! the default copy constructor and assignement operators are
+ * Warning! the default copy constructor and assignment operators are
  * allowed which results in only pointer copy, not deep copy!  You
  * have been warned!
  */
@@ -139,7 +139,7 @@ private:
  * The meaning of <tt>const</tt> in this context is that the
  * view of the data can not change.
  *
- * Warning! the default copy constructor and assignement operators are
+ * Warning! the default copy constructor and assignment operators are
  * allowed which results in only pointer copy, not deep copy!  You
  * have been warned!
  */
@@ -232,7 +232,7 @@ public:
  * not allowed.  Allowing non-unique indexes would make some operations
  * (e.g. dot product) very difficult to implement and therefore can not
  * be allowed.  A sparse vector where <tt>vec.valueStride() == 0</tt> is one
- * where all of the nonzeros have the value <tt>vec.values[0]</tt>.  If
+ * where all of the non-zeros have the value <tt>vec.values[0]</tt>.  If
  * <tt>vec.sub_nz == 0</tt> for a sparse vector then it is allowed for
  * <tt>vec.values == NULL</tt> and <tt>vec.indices() == NULL</tt>.
  *
@@ -368,14 +368,14 @@ void assign_entries( const MutableSubVectorT<Scalar> *msv, const SubVectorT<Scal
   X(mv.globalOffset()+k1,mv.colOffset()+k2) = mv(k1,k2), for k1=1...mv.subDim(), k2=1...mv.numSubCols()
  \endverbatim
  * Unlike vectors, there can only be a unit stride between vector elements
- * in a particular column and there is a Fortran-like leading dimmension
- * <tt>mv.leadingDim()</tt> that seperates corresponding elements in 
+ * in a particular column and there is a Fortran-like leading dimension
+ * <tt>mv.leadingDim()</tt> that separates corresponding elements in 
  * each column sub-vector.
  *
  * The raw pointer to the first element, in the first column can be
  * obtained from the function <tt>mv.values()</tt>.
  *
- * Warning! the default copy constructor and assignement operators are
+ * Warning! the default copy constructor and assignment operators are
  * allowed which results in only pointer copy, not deep copy!  You
  * have been warned!
  */
@@ -451,7 +451,7 @@ private:
  * The meaning of <tt>const</tt> in this context is that the
  * view of the data can not change.
  *
- * Warning! the default copy constructor and assignement operators are
+ * Warning! the default copy constructor and assignment operators are
  * allowed which results in only pointer copy, not deep copy!  You
  * have been warned!
  */

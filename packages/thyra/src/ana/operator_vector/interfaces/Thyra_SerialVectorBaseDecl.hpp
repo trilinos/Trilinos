@@ -42,7 +42,7 @@ namespace Thyra {
  * implementations of <tt>getSubVector()</tt>,
  * <tt>freeSubVector()</tt> and <tt>commitSubVector()</tt>.
  *
- * <b>Notes to subclass develoeprs</b>
+ * <b>Notes to subclass developers</b>
  *
  * All that is needed to develop a concrete subclass is to override the pure
  * virtual functions <tt>getData()</tt>, <tt>commitData()</tt> and
@@ -87,10 +87,10 @@ public:
    * <li> <tt>*stride!=0</tt>
    * </ul>
    *
-   * Note, the data view returned from this function must be commited
+   * Note, the data view returned from this function must be committed
    * back by a call to <tt>this->commitData()</tt> in case dynamic
    * memory allocation had to be used and therefore the pointer
-   * returned does not point to interal storage.
+   * returned does not point to internal storage.
    */
   virtual void getData( Scalar** values, Index* stride ) = 0;
 
@@ -106,7 +106,7 @@ public:
    * </ul>
    *
    * Preconditions:<ul>
-   * <li> <tt>*this</tt> will be updated to the entires in <tt>*values</tt>.
+   * <li> <tt>*this</tt> will be updated to the entries in <tt>*values</tt>.
    * <li> <tt>*values==NULL</tt>
    * </ul>
    */
@@ -135,7 +135,7 @@ public:
    * Note, the data view returned from this function must be freed by
    * a call to <tt>this->freeData()</tt> in case dynamic memory
    * allocation had to be used and therefore the pointer returned does
-   * not point to interal storage.
+   * not point to internal storage.
    *
    * The default implementation performs a <tt>const_cast</tt> of
    * <tt>this</tt> and then calls the non-<tt>const</tt> version of

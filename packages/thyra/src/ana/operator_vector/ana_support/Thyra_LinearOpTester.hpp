@@ -213,12 +213,12 @@ bool LinearOpTester<Scalar>::check(
 
   }
   else {
-    if(out) *out <<endl<<li<< "this->check_linear_properties()==false: Skipping the check of the linear properites of the forward operator!\n";
+    if(out) *out <<endl<<li<< "this->check_linear_properties()==false: Skipping the check of the linear properties of the forward operator!\n";
   }
 
   if( check_linear_properties() && check_adjoint() ) {
 
-    if(out)	*out <<endl<<li<< "(this->check_linear_properties()&&this->check_adjoint())==true: Checking the linear properites of the adjoint operator ... ";
+    if(out)	*out <<endl<<li<< "(this->check_linear_properties()&&this->check_adjoint())==true: Checking the linear properties of the adjoint operator ... ";
 
     std::ostringstream oss;
     bool these_results = true;
@@ -291,7 +291,7 @@ bool LinearOpTester<Scalar>::check(
 
   }
   else {
-    if(out) *out <<endl<<li<< "(this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properites of the adjoint operator!\n";
+    if(out) *out <<endl<<li<< "(this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!\n";
   }
   
   if( check_adjoint() ) {

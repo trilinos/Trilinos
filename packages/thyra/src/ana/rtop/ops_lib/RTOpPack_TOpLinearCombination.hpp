@@ -34,7 +34,7 @@
 
 namespace RTOpPack {
 
-/** \brief Linear combination transforamtion operator: <tt>z0[i] = beta*z0[i] + sum( alpha[k]*v[k][i], k=0...num_vecs-1 ), i=1...n</tt>.
+/** \brief Linear combination transformation operator: <tt>z0[i] = beta*z0[i] + sum( alpha[k]*v[k][i], k=0...num_vecs-1 ), i=1...n</tt>.
  *
  * This transformation operator only accepts <tt>num_targ_vec==1</tt>
  * but accepts any <tt>num_vecs > 0</tt>.

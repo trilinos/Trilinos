@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief AXPY transforamtion operator: <tt>z0[i] += alpha*v0[i], i=1...n</tt>.
+/** \brief AXPY transformation operator: <tt>z0[i] += alpha*v0[i], i=1...n</tt>.
  */
 template<class Scalar>
 class TOpAXPY : public ROpScalarTransformationBase<Scalar> {

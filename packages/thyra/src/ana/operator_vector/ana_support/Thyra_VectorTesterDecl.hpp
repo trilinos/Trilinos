@@ -119,7 +119,7 @@ public:
    */
   bool dump_all() const;
 
-  /** \breif Default constructor which sets default parameter values.
+  /** \brief Default constructor which sets default parameter values.
    *
    * Note: It is not recommended that the client pass in values in this
    * constructor since the argument list may change in the near future but
@@ -147,7 +147,7 @@ public:
     ,const bool         dump_all               = false
     );
 
-	/** \brief Check a vector object in a set of comprehensive tets.
+	/** \brief Check a vector object in a set of comprehensive tests.
 	 *
 	 * @param  v      [in] The vector object to test.
 	 * @param  out    [in/out] If <tt>out != NULL</tt> then output will be sent to <tt>*out</tt>.
@@ -164,7 +164,7 @@ public:
 	 *      <tt>*out</tt> for every test performed.  This is useful to see all of tests that are performed and
 	 *      in debugging.
 	 * <li> <b><tt>dump_all(bool)</tt></b>:  If <tt>dump_all() == true</tt>, then all of the vectors will be printed
-	 *      that are created durring the tests.  This option is really only needed during initial debugging
+	 *      that are created during the tests.  This option is really only needed during initial debugging
 	 *      and should only be used with small vector spaces since it will produce a lot of <tt>O(space.dim())</tt>
 	 *      output.
 	 * <li> <b><tt>num_random_tests(int)</tt></b>:  This is the number of random tests to perform per category of test.

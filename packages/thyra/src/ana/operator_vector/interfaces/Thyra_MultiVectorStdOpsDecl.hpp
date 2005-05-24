@@ -45,7 +45,7 @@ namespace Thyra {
 /** \brief Column-wise multi-vector natural norm.
  *
  * @param  V     [in]
- * @param  norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of the natrual norms
+ * @param  norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of the natural norms
  *               <tt>dot[j-1] = sqrt(scalarProd(*V.col(j),*V.col(j)))</tt>, for <tt>j=1...m</tt>,
  *               computed using a single reduction.
  */
@@ -129,7 +129,7 @@ Scalar norm_1( const MultiVectorBase<Scalar>& V );
 template<class Scalar>
 void scale( Scalar alpha, MultiVectorBase<Scalar>* V );
 
-/** \brief A*U + V -> V (where A is a diagonal matrix with diagoanl a).
+/** \brief A*U + V -> V (where A is a diagonal matrix with diagonal a).
  */
 template<class Scalar>
 void scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V );
@@ -188,7 +188,7 @@ void linear_combination(
   ,MultiVectorBase<Scalar>          *Y
   );
 
-/** \brief Generate a random multi-vector with elements uniformly distrubuted
+/** \brief Generate a random multi-vector with elements uniformly distributed
  * elements.
  * 
  * The elements <tt>V->col(j)-getEle(i)</tt> are randomly generated between

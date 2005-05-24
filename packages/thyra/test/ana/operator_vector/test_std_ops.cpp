@@ -112,7 +112,7 @@ int main( int argc, char* argv[] ) {
   try {
 
     //
-    // Read options from the commandline
+    // Read options from the command-line
     //
 
     int     local_dim         = 4;
@@ -137,7 +137,7 @@ int main( int argc, char* argv[] ) {
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP
     //if( !Thyra::run_std_ops_tests<mpf_class>(local_dim,mpf_class(max_rel_err),dumpAll,verbose?&out:NULL) ) success = false;
-    // RAB: 4/16/2005: We can not intantiate the above since rmax() is not supported by this types ScalarTraits class
+    // RAB: 4/16/2005: We can not instantiate the above since rmax() is not supported by this types ScalarTraits class
     // and it is needed by the class RTOpPack::ROpMaxIndexLessThanBound.  This can be fixed using a template
     // conditional but I have not done this yet.
 #endif
@@ -156,7 +156,7 @@ int main( int argc, char* argv[] ) {
 
   if(verbose) {
     if(success)
-      out << "\nAll of the tests seem to have run sucessfully!\n";
+      out << "\nAll of the tests seem to have run successfully!\n";
     else
       out << "\nOh no! at least one of the test failed!\n";	
   }

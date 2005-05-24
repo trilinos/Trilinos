@@ -43,7 +43,7 @@ namespace Thyra {
  * However, a client may want to dynamic_cast to access the
  * <tt>ProductVectorBase</tt> interface.
  *
- * To demonstate how to use this class, suppose one has <tt>p</tt>
+ * To demonstrate how to use this class, suppose one has <tt>p</tt>
  * vector spaces <tt>V[k]</tt> for <tt>k = 0...p-1</tt> and one wants
  * to form a concatenated vector space <tt>Z</tt> containing all of
  * these vector spaces stacked on top of each other to form:
@@ -91,7 +91,7 @@ namespace Thyra {
  * objects containing vector members from the constituent vector
  * spaces.  The method <tt>createMembers()</tt> will create
  * <tt>ProductMultiVector</tt> objects containing multi-vector members
- * from the constitient vector spaces.
+ * from the constituent vector spaces.
  *
  * There are several methods that can be used by clients that need to
  * work with the individual constituent vector spaces.  The method
@@ -100,12 +100,12 @@ namespace Thyra {
  * of the constituent vector spaces passed to <tt>initialize()</tt>.
  * Some other useful utility methods are also defined.  The method
  * <tt>vecSpacesOffsets()</tt> returns a pointer to an array that
- * gives the offset of each constitient vector in the overall
+ * gives the offset of each constituent vector in the overall
  * composite product vector.  For example, the (zero-based)
  * <tt>kth</tt> vector space <tt>this->%vecSpaces()[k]</tt> owns the
  * element indexes <tt>this->%vecSpacesOffsets()[k]+1</tt> to
  * <tt>this->%vecSpacesOffsets()[k+1]</tt>.  Determining which
- * constitient vector space owns a particual element index can be
+ * constituent vector space owns a particular element index can be
  * found out by calling <tt>getVecSpcPoss()</tt>.
  *
  * The default assignment operator is allowed since it has the correct
@@ -150,7 +150,7 @@ public:
    *        ) == true </tt> for all <tt>i=[0,numBlocks]</tt>, <tt>j=[0,numBlocks]</tt>
    *        and valid <tt>k > 0</tt>.
    *      This is required to insure that product multi-vectors can be created
-   *      with constitient mult-vector blocks that have compatible <tt>domain()</tt>
+   *      with constituent multi-vector blocks that have compatible <tt>domain()</tt>
    *      vector spaces.
    * </ul>
    *
@@ -169,7 +169,7 @@ public:
   /** \brief Return if <tt>this</tt> vector space was cloned.
    *
    * If this function returns <tt>true</tt> then the client needs to be careful
-   * aboult how the constituent vector spaces returned from <tt>uninitialize()</tt>
+   * about how the constituent vector spaces returned from <tt>uninitialize()</tt>
    * will be used.
    */
   bool hasBeenCloned() const;

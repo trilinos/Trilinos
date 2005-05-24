@@ -103,17 +103,17 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
   //
   //     Y = beta * Y + alpha * M * X
   //
-  // where Y and M have compatible (distrubuted?) range vector
-  // spaces and X is a locally replicated serial mulit-vector.  This
+  // where Y and M have compatible (distributed?) range vector
+  // spaces and X is a locally replicated serial multi-vector.  This
   // operation does not require any global communication.
   //
   // The second operation (M_trans == TRANS) is:
   //
   //     Y = beta * Y + alpha * M' * X
   //
-  // where M and X have compatible (distrubuted?) range vector spaces
+  // where M and X have compatible (distributed?) range vector spaces
   // and Y is a locally replicated serial multi-vector.  This operation
-  // requires a glocal reduction.
+  // requires a local reduction.
   //
 
   //
@@ -134,7 +134,7 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
     ( globalDim_ > localSubDim_ ) && mpiComm == MPI_COMM_NULL, std::logic_error
     ,"MPIMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
-  // ToDo: Write a good general validation function that I can call tha will replace
+  // ToDo: Write a good general validation function that I can call that will replace
   // all of these TEST_FOR_EXCEPTION(...) uses
 
   TEST_FOR_EXCEPTION(
@@ -191,7 +191,7 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
 #endif
 
   //
-  // If nonlocal (i.e. M_trans==TRANS) then create temorary storage
+  // If nonlocal (i.e. M_trans==TRANS) then create temporary storage
   // for:
   //
   //     Y_local_tmp = alpha * M(local) * X(local)                 : on nonroot processes
@@ -335,7 +335,7 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
 #endif // RTOp_USE_MPI
 
     // When you get here the view Y_local will be committed back to Y
-    // in the distructor to Y_local
+    // in the destructor to Y_local
 
 #ifdef RTOp_USE_MPI
   }

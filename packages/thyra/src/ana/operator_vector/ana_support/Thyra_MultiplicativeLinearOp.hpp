@@ -205,7 +205,7 @@ void MultiplicativeLinearOp<Scalar>::apply(
     // =>
     // Y = (alpha*gamma) * op(Op[0]) * op(Op[1]) * ... * op(Op[numOps-1]) * X + beta*Y
     //
-    RefCountPtr<MultiVectorBase<Scalar> > T_kp1, T_k; // Temporary propogated between loops 
+    RefCountPtr<MultiVectorBase<Scalar> > T_kp1, T_k; // Temporary propagated between loops 
     for( int k = numOps-1; k >= 0; --k ) {
       RefCountPtr<MultiVectorBase<Scalar> >         Y_k;
       RefCountPtr<const MultiVectorBase<Scalar> >   X_k;
@@ -224,7 +224,7 @@ void MultiplicativeLinearOp<Scalar>::apply(
     // =>
     // Y = (alpha*gamma) * ( Op[numOps-1]' * ( .... ( Op[1]' * ( Op[0]' * X ) ) ... ) ) + beta * Y
     //
-    RefCountPtr<MultiVectorBase<Scalar> > T_km1, T_k; // Temporary propogated between loops 
+    RefCountPtr<MultiVectorBase<Scalar> > T_km1, T_k; // Temporary propagated between loops 
     for( int k = 0; k <= numOps-1; ++k ) {
       RefCountPtr<MultiVectorBase<Scalar> >         Y_k;
       RefCountPtr<const MultiVectorBase<Scalar> >   X_k;

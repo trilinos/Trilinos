@@ -170,7 +170,7 @@ int main( int argc, char* argv[] ) {
   try {
 
     //
-    // Read options from commandline
+    // Read options from command-line
     //
 
     int n         = 4;
@@ -211,7 +211,7 @@ int main( int argc, char* argv[] ) {
 
   if(verbose) {
     if(success)
-      out << "\nAll of the tests seem to have run sucessfully!\n";
+      out << "\nAll of the tests seem to have run successfully!\n";
     else
       out << "\nOh no! at least one of the test failed!\n";	
   }

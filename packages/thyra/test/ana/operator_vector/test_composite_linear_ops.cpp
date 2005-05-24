@@ -112,7 +112,7 @@ bool run_composite_linear_ops_tests(
 
   if(1) {
 
-    if(out) *out << "\nUnwrapping origA to get non-peristing pointer to origA_1, scalar and transp ...\n";
+    if(out) *out << "\nUnwrapping origA to get non-persisting pointer to origA_1, scalar and transp ...\n";
     Scalar  scalar;
     Thyra::ETransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_1 = NULL;
@@ -138,7 +138,7 @@ bool run_composite_linear_ops_tests(
 
   if(1) {
 
-    if(out) *out << "\nUnwrapping A1 to get non-peristing pointer to origA_2 ...\n";
+    if(out) *out << "\nUnwrapping A1 to get non-persisting pointer to origA_2 ...\n";
     Scalar  scalar;
     Thyra::ETransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_2 = NULL;
@@ -277,7 +277,7 @@ int main( int argc, char* argv[] ) {
   try {
 
     //
-    // Read options from commandline
+    // Read options from command-line
     //
 
     int n         = 4;
@@ -287,7 +287,7 @@ int main( int argc, char* argv[] ) {
     CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
     clp.setOption( "local-dim", &n, "Local number of elements in each constituent vector." );
-    clp.setOption( "use-mpi", "use-serial", &useMpi, "Detemines if MPI or serial vector space is used." );
+    clp.setOption( "use-mpi", "use-serial", &useMpi, "Determines if MPI or serial vector space is used." );
     clp.setOption( "dump-all", "no-dump-all", &dumpAll, "Determines if vectors are printed or not." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -319,7 +319,7 @@ int main( int argc, char* argv[] ) {
   }
 
   if( verbose && procRank==0 ) {
-    if(success) out << "\nAll of the tests seem to have run sucessfully!\n";
+    if(success) out << "\nAll of the tests seem to have run successfully!\n";
     else        out << "\nOh no! at least one of the tests failed!\n";	
   }
 

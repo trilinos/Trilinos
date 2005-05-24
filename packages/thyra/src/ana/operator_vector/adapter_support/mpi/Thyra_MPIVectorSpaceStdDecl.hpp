@@ -116,13 +116,13 @@ public:
 
   //@}
 
-  /** @name Overriddend form Teuchos::Describable */
+  /** @name Overridden form Teuchos::Describable */
   //@{
   /** \brief . */
   std::string describe() const;
   //@}
 
-  /** @name Public overridden from VectorSpece */
+  /** @name Public overridden from VectorSpace */
   //@{
   /** \brief . */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;
@@ -130,7 +130,7 @@ public:
 
 protected:
 
-  /** @name Protected overridden from VectorSpece */
+  /** @name Protected overridden from VectorSpace */
   //@{
 
   /** \brief . */

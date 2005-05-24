@@ -32,10 +32,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 
 //
-// This example function is ment to show how easy it is to create
+// This example function is meant to show how easy it is to create
 // serial Thyra objects and use them with an ANA.
 //
-// This example uses a silly concrete tridagonal matrix class
+// This example uses a silly concrete tridiagonal matrix class
 // called SillyTridiagSerialLinearOp that demonstrates how
 // to write such subclasses.
 //
@@ -66,7 +66,7 @@ bool runPowerMethodExample(
   //       [          -1  2  -1 ]
   //       [             -1   2 ]
   //
-  if(verbose) std::cout << "\n(1) Constructing tridagonal matrix A of dimmension = " << dim << " ...\n";
+  if(verbose) std::cout << "\n(1) Constructing tridiagonal matrix A of dimension = " << dim << " ...\n";
   std::vector<Scalar> lower(dim-1), diag(dim), upper(dim-1);
   const Scalar one = ST::one(), two = Scalar(2)*one;
   int k = 0;
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   try {
 
     //
-    // Read in commandline options
+    // Read in command-line options
     //
     
     int    dim          = 4;

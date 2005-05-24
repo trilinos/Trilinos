@@ -69,12 +69,12 @@ public:
    */
   MultiVectorCols();
 
-  /// Calls <tt>initalize()</tt>.
+  /// Calls <tt>initialize()</tt>.
   MultiVectorCols(
     const Teuchos::RefCountPtr<VectorBase<Scalar> > &col_vec
     );
 
-  /// Calls <tt>initalize()</tt>.
+  /// Calls <tt>initialize()</tt>.
   MultiVectorCols(
     const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >          &range
     ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >         &domain
@@ -114,7 +114,7 @@ public:
    *                  vectors to use for the columns of <tt>this</tt>.
    *                  It is allowed for <tt>col_vecs==NULL</tt> in which case
    *                  <tt>range->createMember()</tt> will be used to
-   *                  create the colmns of <tt>this</tt>.
+   *                  create the columns of <tt>this</tt>.
    *
    * Preconditions:<ul>
    * <li> <tt>range.get() != NULL</tt> (throw <tt>std::invalid_argument</tt>)
@@ -139,7 +139,7 @@ public:
     ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                    col_vecs[] = NULL
     );
 
-  /// Set uninitalized.
+  /// Set uninitialized.
   void set_uninitialized();
 
   //@}

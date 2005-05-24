@@ -53,7 +53,7 @@ template<class Scalar> class MPIVectorSpaceBase;
  * <tt>getSubMultiVector()</tt>, <tt>freeSubMultiVector()</tt>,
  * (non-<tt>const</tt>) <tt>getSubMultiVector()</tt> and
  * <tt>commitSubMultiVector()</tt> (which all have default
- * implementations in this subclass).  In essence, this implemenation
+ * implementations in this subclass).  In essence, this implementation
  * will only call the <tt>getSubMultiVector()</tt> methods using a
  * range of (global) indexes for elements that exist on the local
  * processor.  As long as the number of local elements on each
@@ -62,11 +62,11 @@ template<class Scalar> class MPIVectorSpaceBase;
  *
  * <b>Notes to subclass developers</b>
  *
- * Concrete subclasses must overide only five functions:
+ * Concrete subclasses must override only five functions:
  * <tt>mpiSpace()</tt>, <tt>getLocalData(const Scalar**,Index*)</tt>,
  * <tt>freeLocalData(const Scalar**,Index*)</tt>,
  * <tt>getLocalData(Scalar**,Index*)</tt>,
- * <tt>commitLocalData(Scalar**,Index*)</tt>.  Note that overidding
+ * <tt>commitLocalData(Scalar**,Index*)</tt>.  Note that overriding
  * the <tt>mpiSpace()</tt> function requires implementing or using a
  * pre-implemented concrete <tt>MPIVectorSpace</tt> object.
  *
@@ -78,7 +78,7 @@ template<class Scalar> class MPIVectorSpaceBase;
  * <tt>MultiVectorBase::getSubMultiVector()</tt> and
  * <tt>MultiVectorBase::commitSubMultiVector()</tt> are called in instead.
  * Alternatively, a subclass could provide more specialized
- * implemenations of these methods (for more efficient gather/scatter
+ * implementations of these methods (for more efficient gather/scatter
  * operations) if desired but this should not be needed for most use
  * cases.
  *
@@ -88,7 +88,7 @@ template<class Scalar> class MPIVectorSpaceBase;
  * <tt>applyOp()</tt>) and the operator will be properly applied since
  * the version of <tt>applyOp()</tt> implemented in this class will
  * only request local vector data and hence there will only be two
- * levels of recussion for any call to an explicit subvector access
+ * levels of recursion for any call to an explicit subvector access
  * method.  This is a truly elegant result.
  *
  * As described in the documentation for <tt>MPIVectorSpaceBase</tt>,
@@ -128,14 +128,14 @@ public:
   /** @name Pure virtual methods to be overridden by subclasses */
   //@{
 
-  /** \brief Returns the MPI-based vector space object for the range of <tt>*this</tt> multi-vectorr.
+  /** \brief Returns the MPI-based vector space object for the range of <tt>*this</tt> multi-vector.
    */
   virtual Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> > mpiSpace() const = 0;
 
-  /** \brief Returns a non-<tt>const</tt> pointer to a fortran-style view of the local multi-vector data.
+  /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of the local multi-vector data.
    *
    * @param  localValues [out] On output <tt>*localValues</tt> will point to 
-   *                     the first element in the first colum of the local multi-vector
+   *                     the first element in the first column of the local multi-vector
    *                     stored as a column-major dense Fortran-style matrix.
    * @param  leadingDim  [out] On output <tt>*leadingDim</tt> gives the leading dimension
    *                     of the Fortran-style local multi-vector.
@@ -165,15 +165,15 @@ public:
    * </ul>
    *
    * Preconditions:<ul>
-   * <li> <tt>*this</tt> will be updated to the entires in <tt>*localValues</tt>.
+   * <li> <tt>*this</tt> will be updated to the entries in <tt>*localValues</tt>.
    * </ul>
    */
   virtual void commitLocalData( Scalar *localValues ) = 0;
 
-  /** \brief Returns a <tt>const</tt>  pointer to a fortran-style view of the local multi-vector data.
+  /** \brief Returns a <tt>const</tt>  pointer to a Fortran-style view of the local multi-vector data.
    *
    * @param  localValues [out] On output <tt>*localValues</tt> will point to 
-   *                     the first element in the first colum of the local multi-vector
+   *                     the first element in the first column of the local multi-vector
    *                     stored as a column-major dense Fortran-style matrix.
    * @param  leadingDim  [out] On output <tt>*leadingDim</tt> gives the leading dimension
    *                     of the Fortran-style local multi-vector.
@@ -200,7 +200,7 @@ public:
    * </ul>
    *
    * Preconditions:<ul>
-   * <li> <tt>*this</tt> will be updated to the entires in <tt>*localValues</tt>.
+   * <li> <tt>*this</tt> will be updated to the entries in <tt>*localValues</tt>.
    * </ul>
    */
   virtual void freeLocalData( const Scalar *localValues ) const = 0;
@@ -302,7 +302,7 @@ protected:
   /** \brief Subclasses should call whenever the structure of the VectorSpaceBase changes.
    *
    * This function can be overridden by subclasses but this
-   * particualar function implementation must be called from within
+   * particular function implementation must be called from within
    * any override.
    */
   virtual void updateMpiSpace();

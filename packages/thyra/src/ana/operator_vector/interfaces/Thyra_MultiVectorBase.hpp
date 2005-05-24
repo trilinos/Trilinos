@@ -78,7 +78,7 @@ MultiVectorBase<Scalar>::subView( const Range1D& colRng_in ) const
   const Index                    dimDomain = domain.dim();
   const Range1D                  colRng    = RangePack::full_range(colRng_in,1,dimDomain);
   if( colRng.lbound() == 1 && static_cast<Index>(colRng.ubound()) == dimDomain )
-    return Teuchos::rcp(this,false); // Takes all of the colunns!
+    return Teuchos::rcp(this,false); // Takes all of the columns!
   if( colRng.size() ) {
     // We have to create a view of a subset of the columns
     Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
@@ -100,7 +100,7 @@ MultiVectorBase<Scalar>::subView( const Range1D& colRng_in )
   const Index                    dimDomain = domain.dim();
   const Range1D                  colRng    = RangePack::full_range(colRng_in,1,dimDomain);
   if( colRng.lbound() == 1 && static_cast<Index>(colRng.ubound()) == dimDomain )
-    return Teuchos::rcp(this,false); // Takes all of the colunns!
+    return Teuchos::rcp(this,false); // Takes all of the columns!
   if( colRng.size() ) {
     // We have to create a view of a subset of the columns
     Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
@@ -191,7 +191,7 @@ void MultiVectorBase<Scalar>::applyOp(
 
   const VectorSpaceBase<Scalar>  &domain = *this->domain();
 
-  // Get the primary and secondary dimmensions.
+  // Get the primary and secondary dimensions.
 
   const Index sec_dim = domain.dim();
   const Index sec_sub_dim  = ( sec_sub_dim_in != 0      ? sec_sub_dim_in  : sec_dim  -  sec_first_ele_in + 1  );
@@ -261,7 +261,7 @@ void MultiVectorBase<Scalar>::applyOp(
 
   const VectorSpaceBase<Scalar> &domain = *this->domain();
 
-  // Get the primary and secondary dimmensions.
+  // Get the primary and secondary dimensions.
   const Index sec_dim = domain.dim();
   const Index sec_sub_dim  = ( sec_sub_dim_in != 0      ? sec_sub_dim_in  : sec_dim  -  sec_first_ele_in + 1  );
 #ifdef _DEBUG
@@ -286,7 +286,7 @@ void MultiVectorBase<Scalar>::applyOp(
     }
   }
   
-  // Call the campanion version that accepts an array of reduction objects
+  // Call the companion version that accepts an array of reduction objects
   this->applyOp(
     prim_op
     ,num_multi_vecs,       multi_vecs
@@ -297,7 +297,7 @@ void MultiVectorBase<Scalar>::applyOp(
     );
 
   // Reduce all the reduction objects using the secondary reduction operator
-  // into one reduction object and free the intermedate reduction objects.
+  // into one reduction object and free the intermediate reduction objects.
   if(reduct_obj) {
     for(Index k = 0; k < sec_sub_dim; ++k) {
       sec_op.reduce_reduct_objs( *reduct_objs[k], reduct_obj );
@@ -336,8 +336,8 @@ void MultiVectorBase<Scalar>::getSubMultiVector(
 #endif
   // Allocate storage for the multi-vector (stored column-major)
   Scalar *values = new Scalar[ rowRng.size() * colRng.size() ];
-  // Extract multi-vector values colum by column
-  RTOpPack::SubVectorT<Scalar> sv; // uninitiaized by default
+  // Extract multi-vector values column by column
+  RTOpPack::SubVectorT<Scalar> sv; // uninitialized by default
   for( int k = colRng.lbound(); k <= colRng.ubound(); ++k ) {
     Teuchos::RefCountPtr<const VectorBase<Scalar> > col_k = this->col(k);
     col_k->getSubVector( rowRng, &sv );
@@ -395,9 +395,9 @@ void MultiVectorBase<Scalar>::commitSubMultiVector(
     sub_mv==NULL, std::logic_error, "MultiVectorBase<Scalar>::commitSubMultiVector(...): Error!"
     );
 #endif
-  // Set back the multi-vector values colum by column
+  // Set back the multi-vector values column by column
   const Range1D rowRng(sub_mv->globalOffset()+1,sub_mv->globalOffset()+sub_mv->subDim());
-  RTOpPack::MutableSubVectorT<Scalar> msv; // uninitiaized by default
+  RTOpPack::MutableSubVectorT<Scalar> msv; // uninitialized by default
   for( int k = sub_mv->colOffset()+1; k <= sub_mv->numSubCols(); ++k ) {
     Teuchos::RefCountPtr<VectorBase<Scalar> > col_k = this->col(k);
     col_k->getSubVector( rowRng, &msv );

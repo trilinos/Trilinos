@@ -86,7 +86,7 @@ public:
    * @param  diag   [in] Smart pointer to diagonal vector. 
    * @param  gamma  [in] Scalar multiplier.
    *
-   * Precconditions:<ul>
+   * Preconditions:<ul>
    * <li><tt>diag.get()!=NULL</tt>
    * </ul>
    *

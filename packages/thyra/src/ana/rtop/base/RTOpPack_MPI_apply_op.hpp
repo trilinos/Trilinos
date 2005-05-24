@@ -451,7 +451,7 @@ void RTOpPack::MPI_apply_op(
   TEST_FOR_EXCEPTION(
     0!=MPI_Op_create(
       &RTOpPack_MPI_apply_op_reduction_op
-      ,1                                        // Assume op is communitive?
+      ,1                                        // Assume op is commutative?
       ,&mpi_op
       )
     ,std::logic_error,"Error!"

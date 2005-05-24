@@ -179,7 +179,7 @@ public:
    * argument.  This is because the structure of a reduction object is
    * completely determined by its associated operator object and this
    * structure can not change as a result of a reduction operation
-   * (this is needed to simplyfy global communication code when used *
+   * (this is needed to simplify global communication code when used *
    * with MPI).
    *
    * The default implementation returns zeros for
@@ -192,7 +192,7 @@ public:
     ,int*  num_indexes
     ,int*  num_chars
     ) const;
-  /** \brief Creates a new reduction target object initalized and ready to be used in
+  /** \brief Creates a new reduction target object initialized and ready to be used in
    * a reduction.
    *
    * To delete this object simply let the returned
@@ -216,7 +216,7 @@ public:
    * The default implementation does nothing (i.e. by default there is
    * no reduction operation performed).
    *
-   * @param  reduct_obj  [in/out] Reduction object is reinitalized on output.
+   * @param  reduct_obj  [in/out] Reduction object is reinitialized on output.
    */
   virtual void reduct_obj_reinit( ReductTarget* reduct_obj ) const;
   /** \brief Extract the state of an already created reduction object.
@@ -261,7 +261,7 @@ public:
   virtual ~RTOpT();
   /** \brief Return the name (as a null-terminated C-style string) of the operator.
    *
-   * This name is used to differentate an operator subclass from all
+   * This name is used to differentiate an operator subclass from all
    * other operator subclasses.  This is an important property needed
    * for a client/server or master/slave runtime configuration.
    *
@@ -296,7 +296,7 @@ public:
    * operator to be externalized so that it can be passed over a
    * heterogeneous network of computers.
    *
-   * The default implemenation does nothing (i.e. the default
+   * The default implementation does nothing (i.e. the default
    * reduction/transformation operator has no state).
    *
    * @param  num_values
@@ -404,7 +404,7 @@ public:
    *	</ul>
    *
    * If <tt>reduct_obj != NULL</tt> then the reduction operation will
-   * be accumlated as:
+   * be accumulated as:
    *
    \verbatim
      op(op(sub_vecs[],targ_sub_vecs[]),reduct_obj) -> reduct_obj

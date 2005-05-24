@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \breif Returns the minimum element and its index:
+/** \brief Returns the minimum element and its index:
  * <tt>result.scalar = x(k)</tt> and <tt>result.index = k</tt> such
  * that <tt>x(k) <= x(i)</tt> for <tt>i=1...n</tt> and <tt>k</tt> is
  * the minimum index to break ties.

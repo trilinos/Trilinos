@@ -37,7 +37,7 @@
 
 namespace Thyra {
 
-// Virtual functions with default implemenations
+// Virtual functions with default implementations
 
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> > 
