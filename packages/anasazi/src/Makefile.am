@@ -172,7 +172,7 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazi_a_LIBADD = $(XTRALDADD)
+libanasazi_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

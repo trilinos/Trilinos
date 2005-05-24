@@ -82,7 +82,8 @@ ARFLAGS = cru
 am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir)
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
-libanasazi_a_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+libanasazi_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = AnasaziEpetraAdapter.$(OBJEXT) \
 	AnasaziVersion.$(OBJEXT)
 am__objects_2 =
@@ -373,7 +374,7 @@ EXTRA_libanasazi_a_SOURCES = \
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazi_a_LIBADD = $(XTRALDADD)
+libanasazi_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
