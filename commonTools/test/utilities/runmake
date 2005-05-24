@@ -173,7 +173,7 @@ exit $exitStatus;
             }
         }
         if (!stat($resultsDir)) {
-            mkdir($resultsDir) or die "cannot create $resultsDir, died";
+            system("mkdir $resultsDir") == 0 or die "cannot create $resultsDir, died";
         }
         
         # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
