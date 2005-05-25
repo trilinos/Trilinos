@@ -407,6 +407,12 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, smumps, [Enable Amesos interface support for
 
 TAC_ARG_ENABLE_FEATURE_SUB(amesos, mumps_mpi_c2f, [Enable conversion from C++ MPI commnicator to FORTRAN MPI communicator.], AMESOS_MPI_C2F, yes) 
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, pardiso, [Enable Amesos interface support for the double-precision version of PARDISO], 
+		AMESOS_PARDISO, no)
+
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, taucs, [Enable Amesos interface support for the double-precision version of TAUCS], 
+		AMESOS_TAUCS, no)
+
 #TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
 #		AMESOS_KUNDERT, no)
 
@@ -629,6 +635,30 @@ if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
 else
   AM_CONDITIONAL(HAVE_AMESOS_SMUMPS, false ) 
+fi
+
+#  =============  #
+#  P A R D I S O  #
+#  =============  #
+
+if test "X$ac_cv_use_amesos_pardiso" != "Xno"; then
+
+  AM_CONDITIONAL(HAVE_AMESOS_PARDISO, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_PARDISO, false ) 
+fi
+
+#  =========  #
+#  T A U C S  #
+#  =========  #
+
+if test "X$ac_cv_use_amesos_taucs" != "Xno"; then
+
+  AM_CONDITIONAL(HAVE_AMESOS_TAUCS, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_TAUCS, false ) 
 fi
 
 #  =============  #
