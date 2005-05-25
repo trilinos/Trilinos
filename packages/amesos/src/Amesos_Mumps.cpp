@@ -495,14 +495,14 @@ int Amesos_Mumps::SymbolicFactorization()
 {
 
   // erase data if present. 
-  if (SymbolicFactorizationOK_ && MDS.job != -777) {
+  if (IsSymbolicFactorizationOK_ && MDS.job != -777) {
    Destroy();
   }
 
-  SymbolicFactorizationOK_ = false;
-  NumericFactorizationOK_ = false;
+  IsSymbolicFactorizationOK_ = false;
+  IsNumericFactorizationOK_ = false;
 
-  InitTime();
+  InitTime(Comm());
   
   CheckParameters();
   AMESOS_CHK_ERR(ConvertToTriplet(false));
@@ -597,7 +597,7 @@ int Amesos_Mumps::SymbolicFactorization()
 
   CheckError();
 
-  SymbolicFactorizationOK_ = true ;
+  IsSymbolicFactorizationOK_ = true ;
   NumSymbolicFact_++;  
   return 0;
 
@@ -608,9 +608,9 @@ int Amesos_Mumps::SymbolicFactorization()
 int Amesos_Mumps::NumericFactorization()
 {
 
-  NumericFactorizationOK_ = false;
+  IsNumericFactorizationOK_ = false;
   
-  if (SymbolicFactorizationOK_ == false)
+  if (IsSymbolicFactorizationOK_ == false)
     AMESOS_CHK_ERR(SymbolicFactorization());
 
   RedistrMatrix(true);
@@ -651,7 +651,7 @@ int Amesos_Mumps::NumericFactorization()
   
   CheckError();
 
-  NumericFactorizationOK_ = true;
+  IsNumericFactorizationOK_ = true;
   NumNumericFact_++;  
   return 0;
 }
@@ -661,7 +661,7 @@ int Amesos_Mumps::NumericFactorization()
 int Amesos_Mumps::Solve()
 { 
 
-  if (NumericFactorizationOK_ == false)
+  if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
 
   NumSolve_++;  
@@ -754,10 +754,10 @@ int Amesos_Mumps::Solve()
   }
 
   if (ComputeTrueResidual_)
-    ComputeTrueResidual(Matrix(), *X, *B, UseTranspose(), "Amesos_Mumps");
+    ComputeTrueResidual(Matrix(), *vecX, *vecB, UseTranspose(), "Amesos_Mumps");
 
   if (ComputeVectorNorms_)
-    ComputeVectorNorms(*X, *B, "Amesos_Mumps");
+    ComputeVectorNorms(*vecX, *vecB, "Amesos_Mumps");
 
   return(0) ; 
 }

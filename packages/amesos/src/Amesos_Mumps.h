@@ -117,8 +117,11 @@ extern "C" {
   \author Marzio Sala, 9214
   
 */
-class Amesos_Mumps: public Amesos_BaseSolver, Amesos_Time, 
-  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
+class Amesos_Mumps: public Amesos_BaseSolver,
+                    private Amesos_Time, 
+                    private Amesos_NoCopiable, 
+                    private Amesos_Utils,  
+                    private Amesos_Status { 
 
 public: 
 

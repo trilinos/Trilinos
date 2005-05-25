@@ -105,8 +105,11 @@ is to small.
 class Amesos_Klu_Pimpl ; 
 #endif
 
-class Amesos_Klu: public Amesos_BaseSolver, Amesos_Time, 
-  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
+class Amesos_Klu: public Amesos_BaseSolver,  
+                  private Amesos_Time, 
+                  private Amesos_NoCopiable, 
+                  private Amesos_Utils, 
+                  private Amesos_Status { 
 
 public: 
 

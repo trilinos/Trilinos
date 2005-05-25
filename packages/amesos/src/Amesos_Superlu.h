@@ -88,8 +88,11 @@ class Epetra_LinearProblem;
  * \date Last updated on 28-Apr-05.
 */
 
-class Amesos_Superlu: public Amesos_BaseSolver, Amesos_Time, 
-  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
+class Amesos_Superlu: public Amesos_BaseSolver, 
+                      private Amesos_Time, 
+                      private Amesos_NoCopiable, 
+                      private Amesos_Utils, 
+                      private Amesos_Status { 
 
 public: 
 
