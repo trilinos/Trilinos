@@ -12,14 +12,17 @@
 CORE_H = \
 	$(srcdir)/BelosBlockCG.hpp \
 	$(srcdir)/BelosBlockGmres.hpp \
+	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosEpetraOperator.hpp \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblemManager.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
 	$(srcdir)/BelosOperator.hpp \
+	$(srcdir)/BelosOutputManager.hpp \
 	$(srcdir)/BelosPetraInterface.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
+	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
 	$(srcdir)/BelosStatusTestMaxRestarts.hpp \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
