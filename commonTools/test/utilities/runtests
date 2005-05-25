@@ -29,6 +29,7 @@ my $mpiStop;            # mpi shutdown command      (default: NONE)
 my $mpiGo;              # mpi-go command            (default: mpirun -np )
 
 my $outputDir;          # output directory          (default: .)
+my $simpleDirName;      # leave off timestamp for sake of database reporting
 my $verbosity;          # verbosity level           (default: 1)
 my $logVerbosity;       # log file verbosity level  (default: 0)
 
@@ -88,6 +89,7 @@ cleanUp();
                     "mpi-stop=s" => \$mpiStop,
                     "mpi-go=s" => \$mpiGo,
                     "output-dir=s" => \$outputDir,
+                    "simple-dir-name" => \$simpleDirName,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
@@ -273,7 +275,11 @@ cleanUp();
         my $startTime = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
         
         # Create results directory.
-        $resultsDir .= "/$startTime-test";
+        if (!$simpleDirName) {
+            $resultsDir .= "/$startTime-test";
+        } else {
+            $resultsDir .= "/test";
+        }
         system("mkdir $resultsDir") == 0 or die "cannot create $resultsDir, died";
         
         # Print list of variables for debugging.
@@ -469,6 +475,8 @@ cleanUp();
             $resultsString .= "PACKAGE_TEST_DIR     = ".$testListAoH[$i]{'definitionDir'}."\n";
             $resultsString .= "PACKAGE              = ".$testListAoH[$i]{'package'}."\n";
             $resultsString .= "\n";
+            $resultsString .= "TEST_CATEGORY        = $category\n";
+            $resultsString .= "\n";
             $resultsString .= "TEST_DIR             = ".$testListAoH[$i]{'directory'}."\n";
             $resultsString .= "TEST_NAME            = ".$testListAoH[$i]{'name'}."\n";
             $resultsString .= "TYPE                 = ".$testListAoH[$i]{'type'}."\n";
@@ -481,12 +489,7 @@ cleanUp();
             $resultsString .= "EXIT_STATUS          = $testExitStatus\n";
             $resultsString .= "RESULT               = ".($testExitStatus==0?"pass":"fail")."\n";
             $resultsString .= "\n";
-            $resultsString .= "BEGIN_TEST_OUTPUT\n";
-            $resultsString .= "\n";
-            $resultsString .= "$testOutput\n";
-            $resultsString .= "\n";
-            $resultsString .= "END_TEST_OUTPUT\n";
-            $resultsString .= "\n";
+            $resultsString .= "TEST_OUTPUT {{{\n\n$testOutput\n\n}}}\n";
             
             print RESULTS $resultsString;
             

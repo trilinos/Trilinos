@@ -369,12 +369,7 @@ exit $exitStatus;
         $resultsString .= "\n";
         $resultsString .= "BROKEN_PACKAGE       = $brokenPackage\n";
         $resultsString .= "\n";
-        $resultsString .= "BEGIN_MAKE_OUTPUT\n";
-        $resultsString .= "\n";
-        $resultsString .= "$makeOutput\n";
-        $resultsString .= "\n";
-        $resultsString .= "END_MAKE_OUTPUT\n";
-        $resultsString .= "\n";
+        $resultsString .= "MAKE_OUTPUT {{{\n\n$makeOutput\n\n}}}\n";
         
         print RESULTS $resultsString;
         
@@ -528,7 +523,7 @@ exit $exitStatus;
         }
         
         if ($logVerbosity & $level) {
-            my $log = $resultsDir."/$runStartTimeForFilename-make-log.txt";
+            my $log = $resultsDir."/log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;

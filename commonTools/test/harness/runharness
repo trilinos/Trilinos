@@ -172,6 +172,36 @@ exit $exitStatus;
         $se = sprintf("%02d", $se);
         $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
         $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+                                                
+        # Grab general information values for inclusion in machine info file.        
+        chomp (my $hostName=`uname -n`);
+        chomp (my $dnsName=`hostname -d`);
+        chomp (my $ipAddress=`hostname -i`);
+        chomp (my $operatingSystem=`uname -o`);
+        chomp (my $kernelName=`uname -s`);
+        chomp (my $kernelRelease=`uname -r`);
+        chomp (my $kernelVersion=`uname -v`);
+        chomp (my $processor=`uname -p`);
+        chomp (my $machineHardware=`uname -m`);
+        chomp (my $hardwarePlatform=`uname -i`);
+            
+        # Create machine info file for database.
+        my $machineInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/machine.txt";
+        open (FILE, ">$machineInfoFile")
+            or die "can't open machine info file $machineInfoFile for writing, died";            
+        my $string = "";        
+        $string .= "HOST_NAME            = $hostName\n";
+        $string .= "DNS_NAME             = $dnsName\n";
+        $string .= "IP_ADDRESS           = $ipAddress\n";
+        $string .= "OPERATING_SYSTEM     = $operatingSystem\n";
+        $string .= "KERNEL_NAME          = $kernelName\n";
+        $string .= "KERNEL_RELEASE       = $kernelRelease\n";
+        $string .= "KERNEL_VERSION       = $kernelVersion\n";
+        $string .= "PROCESSOR            = $processor\n";
+        $string .= "MACHINE_HARDWARE     = $machineHardware\n";
+        $string .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";        
+        print FILE $string;        
+        close FILE;
         
         # Print list of variables for debugging.
         my $message = "";
@@ -282,6 +312,7 @@ exit $exitStatus;
         }
         $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results/";
         $cmd .= "$runStartTimeForFilename-build ";
+        $cmd .= "--simple-dir-name ";
         $cmd .= "--verbosity=$argVerbosity ";
         $cmd .= "--log-verbosity=$argLogVerbosity ";
         $output = `$cmd`;

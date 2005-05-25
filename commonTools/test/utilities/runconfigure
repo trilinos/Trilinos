@@ -394,6 +394,16 @@ exit $exitStatus;
                 $branchTag = "unknown";
             }
             
+            # grab contents of broken package's config.log
+            my $configLog = "";
+            if ($brokenPackage ne "NONE" && $brokenPackage ne "UNKNOWN") {                
+                open (CONFIG_LOG, "<$buildDir/packages/$brokenPackage/config.log");
+                undef $/;                   # undefine input record separator
+                $configLog=<CONFIG_LOG>;    # copy entire file
+                $/ = "\n";                  # restore it to default newline
+                close CONFIG_LOG;
+            }
+            
             # Create results file.
             my $resultsFile = "$resultsDir/$runStartTimeForFilename-configure.txt";
             open (RESULTS, ">$resultsFile")
@@ -426,12 +436,9 @@ exit $exitStatus;
             $resultsString .= "\n";
             $resultsString .= "BROKEN_PACKAGE       = $brokenPackage\n";
             $resultsString .= "\n";
-            $resultsString .= "BEGIN_CONFIGURE_OUTPUT\n";
+            $resultsString .= "CONFIGURE_OUTPUT {{{\n\n$configureOutput\n\n}}}\n";
             $resultsString .= "\n";
-            $resultsString .= "$configureOutput\n";
-            $resultsString .= "\n";
-            $resultsString .= "END_CONFIGURE_OUTPUT\n";
-            $resultsString .= "\n";
+            $resultsString .= "CONFIG_LOG {{{\n\n$configLog\n\n}}}\n";
             
             print RESULTS $resultsString;
             
@@ -714,7 +721,7 @@ exit $exitStatus;
         }
         
         if ($logVerbosity & $level) {
-            my $log = $resultsDir."/$runStartTimeForFilename-configure-log.txt";
+            my $log = $resultsDir."/log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";
             print LOG $message;
