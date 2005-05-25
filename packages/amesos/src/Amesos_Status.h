@@ -28,6 +28,7 @@ public:
     NumSymbolicFact_ = 0;
     NumNumericFact_ = 0;
     NumSolve_ = 0;  
+    Threshold_ = 0.0;
   }
 
   //! Default destructor.
@@ -57,6 +58,8 @@ public:
   int NumNumericFact_;
   //! Number of solves.
   int NumSolve_;  
+
+  double Threshold_;
 };
 
 #endif

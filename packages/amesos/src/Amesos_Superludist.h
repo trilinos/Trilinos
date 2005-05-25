@@ -31,6 +31,10 @@
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
 #include "Epetra_LinearProblem.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -38,7 +42,6 @@
 #include "Epetra_Comm.h"
 #endif
 #include "Epetra_CrsGraph.h"
-#include "Epetra_Time.h"
 
 #include "superlu_ddefs.h"
 #include "supermatrix.h"
@@ -61,7 +64,12 @@
   solver.
     
 */
-class Amesos_Superludist: public Amesos_BaseSolver { 
+class Amesos_Superludist: public Amesos_BaseSolver,
+                          private Amesos_Time,
+                          private Amesos_NoCopiable,
+                          private Amesos_Utils,
+                          private Amesos_Status 
+{
 
 public: 
 
@@ -213,28 +221,10 @@ private:
                                     // latest call to SymbolicFactorization()
 
   bool UseTranspose_;      // Set by SetUseTranpose() 
-  bool PrintStatus_;            // print some information in the destruction phase
-                                    // (defaulted to false)
-  bool PrintTiming_;
-  
-  int verbose_;
-  
-  // timing variables
-  // some timing internal to MUMPS
-  double NumTime_;
-  double SolTime_;
-  double VecTime_;
-  double MatTime_;
-  double ConTime_;
-  Epetra_Time * Time_;
   
   //  int NumSymbolicFact_;  //  Amesos_Superludist_ does not separate Symbolic from Numeric Factorization
   int NumNumericFact_;
   int NumSolve_;
-
-  double AddToDiag_;
-  bool ComputeTrueResidual_;
-  bool ComputeVectorNorms_;
   
 };  // End of  class Amesos_Superludist  
 #endif /* AMESOS_SUPERLUDIST_H */

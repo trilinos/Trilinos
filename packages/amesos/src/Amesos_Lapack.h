@@ -31,8 +31,11 @@
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
 #include "Epetra_Comm.h"
-#include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
@@ -56,8 +59,12 @@ Amesos_Lapack factorizes the matrix using DGETRF().
 \author Marzio Sala, 9214.
 
 */
-class Amesos_Lapack: public Amesos_BaseSolver { 
-
+class Amesos_Lapack: public Amesos_BaseSolver,
+                     private Amesos_Time,
+                     private Amesos_NoCopiable,
+                     private Amesos_Utils,
+                     private Amesos_Status 
+{
 public: 
 
   //@{ \name Constructor methods
@@ -75,75 +82,34 @@ public:
   /*! Completely deletes an Amesos_Lapack object.  
   */
   ~Amesos_Lapack(void);
+  
   //@}
-
   //@{ \name Mathematical functions.
 
-    //! Performs SymbolicFactorization on the matrix A.
-    /*! 
-      In addition to performing symbolic factorization on the matrix A, 
-      the call to SymbolicFactorization() implies that no change will
-      be made to the non-zero structure of the underlying matrix without 
-      a subsequent call to SymbolicFactorization().
-      
-    \return Integer error code, set to 0 if successful.
-  */
-    int SymbolicFactorization() ;
+  int SymbolicFactorization() ;
 
-    //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
-      NumericFactorization() implies that no change will be made to
-      the underlying matrix without a subsequent call to
-      NumericFactorization().  
+  int NumericFactorization() ;
 
-     \return Integer error code, set to 0 if successful.
-  */
-    int NumericFactorization() ;
-
-    //! Solves A X = B (or A<SUP>T</SUP> X = B) 
-    /*! 
-
-     \return Integer error code, set to 0 if successful.
-     */
-    int Solve();
+  int Solve();
 
   //@}
-  
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
-#ifdef FIXME
-  //! Returns a character string describing the operator
-  char * Label() const {return(Epetra_Object::Label());};
-#endif
-    
-  //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Returns true if Amesos_Lapack can handle this matrix shape 
-  /*! Returns true if the matrix shape is one that KLU can
-    handle. Amesos_Lapack only works with square matrices.  
-  */
-  bool MatrixShapeOK() const ;
+  bool MatrixShapeOK() const;
 
-  //! SetUseTranpose(true).
   int SetUseTranspose(bool UseTranspose) {
     UseTranspose_ = UseTranspose; 
     return(0);
   }
 
-  //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {
     return(GetProblem()->GetOperator()->Comm());
   }
 
-  //!  Updates internal variables. 
-  /*!  
-    \return Integer error code, set to 0 if successful. 
-   */
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
   //! Computes the eigenvalues of the linear system matrix using DGEEV.
@@ -288,38 +254,6 @@ protected:
   //! Pointer to the linear problem.
   const Epetra_LinearProblem* Problem_;
 
-  //! If \c true, some timing are printed in destructor.
-  bool PrintTiming_;
-  //! If \c true, some additional information are printed in destructor.
-  bool PrintStatus_;
-  //! If \c true, solution and rhs norms are computed in Solve().
-  bool ComputeVectorNorms_;
-  //! If \c true, the norm of the residual in computed in Solve().
-  bool ComputeTrueResidual_;
-  //! If greater than 0, prints out additional information.
-  int verbose_;
-  //! Ignore all elements of the matrix whose absolute value if less than Threshold_.
-  double Threshold_;
-  //! Value to be added to the diagonal.
-  double AddToDiag_;
-  //! If \c true, SymbolicFactorization() has been successfully called.
-  bool IsSymbolicFactorizationOK_;
-  //! If \c true, NumericFactorization() has been successfully called.
-  bool IsNumericFactorizationOK_;
-
-  //! Time to convert to LAPACK format.
-  double ConTime_;
-  //! Time for symbolic factorization.
-  double SymTime_;
-  //! Time for numeric factorization.
-  double NumTime_;
-  //! Time for solution.
-  double SolTime_;
-  //! Time to redistribute vectors.
-  double VecTime_;
-  //! Time to redistribute matrix.
-  double MatTime_;
-
   //! Number of calls to SymbolicFactorization().
   int NumSymbolicFact_;
   //! Number of calls to NumericFactorization().
@@ -327,8 +261,5 @@ protected:
   //! Number of calls to Solver().
   int NumSolve_;
 
-  //! Object used to track times.
-  Epetra_Time * Time_;
-  
 };  // End of  class Amesos_Lapack
 #endif /* AMESOS_LAPACK_H */

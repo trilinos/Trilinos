@@ -484,7 +484,9 @@ int Amesos_Umfpack::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Umfpack");
 
-  AMESOS_RETURN(status);
+  if (status)
+    AMESOS_CHK_ERR(status);
+  return(0);
 }
 
 // ====================================================================== 

@@ -41,25 +41,9 @@ Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
   RowImporter_(0),
   UseTranspose_(false),
   Problem_(&Problem),
-  PrintTiming_(false),
-  PrintStatus_(false),
-  ComputeVectorNorms_(false),
-  ComputeTrueResidual_(false),
-  verbose_(1),
-  Threshold_(0.0),
-  AddToDiag_(0.0),
-  IsSymbolicFactorizationOK_(false),
-  IsNumericFactorizationOK_(false),
-  ConTime_(0.0),
-  SymTime_(0.0),
-  NumTime_(0.0),
-  SolTime_(0.0),
-  VecTime_(0.0),
-  MatTime_(0.0),
   NumSymbolicFact_(0),
   NumNumericFact_(0),
-  NumSolve_(0),
-  Time_(0)
+  NumSolve_(0)
 {
   Teuchos::ParameterList ParamList;
   SetParameters(ParamList);
@@ -76,9 +60,6 @@ Amesos_Lapack::~Amesos_Lapack(void) {
 
   if (RowImporter_) 
     delete RowImporter_;
-
-  if (Time_)
-    delete Time_;
 
   // print out some information if required by the user
   if ((verbose_ && PrintTiming_) || (verbose_ == 2)) 
@@ -162,13 +143,14 @@ int Amesos_Lapack::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
-  if (Time_ == 0) 
-    Time_ = new Epetra_Time( Comm() );
+  InitTime(Comm());
 
-  Time_->ResetStartTime();
+  ResetTime();
 
   IsSymbolicFactorizationOK_ = true;
-  SymTime_ += Time_->ElapsedTime();
+
+  AddTime("symbolic");
+
   ++NumSymbolicFact_;
 
   return(0);
@@ -196,15 +178,16 @@ int Amesos_Lapack::NumericFactorization()
     AMESOS_CHK_ERR(DistributedToDense());
   }
 
-  Time_->ResetStartTime();
+  ResetTime();
 
   if (MyPID() == 0) {
     AMESOS_CHK_ERR(DenseSolver_.SetMatrix(DenseMatrix_));
     AMESOS_CHK_ERR(DenseSolver_.Factor());
   }
 
+  AddTime("numeric");
   IsNumericFactorizationOK_ = true;
-  NumTime_ += Time_->ElapsedTime();
+
   ++NumNumericFact_;
   
   return(0);
@@ -245,7 +228,7 @@ int Amesos_Lapack::SolveSerial(Epetra_MultiVector& X,
 			       const Epetra_MultiVector& B) 
 {
   assert(NumProc() == 1);
-  Time_->ResetStartTime();
+  ResetTime();
   
   int NumVectors = X.NumVectors();
 
@@ -263,7 +246,8 @@ int Amesos_Lapack::SolveSerial(Epetra_MultiVector& X,
     for (int j = 0 ; j < NumVectors ; ++j)
        X[j][i] = DenseX(i,j);
 
-  SolTime_ += Time_->ElapsedTime();
+  AddTime("solve");
+
   ++NumSolve_;
 
   return(0) ;
@@ -274,7 +258,7 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
 				    const Epetra_MultiVector& B) 
 {
   assert(NumProc() != 1);
-  Time_->ResetStartTime();
+  ResetTime();
   
   int NumVectors = X.NumVectors();
 
@@ -284,7 +268,8 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
   // import off-process data
   AMESOS_CHK_ERR(SerialVector.Import(B,RowImporter(),Insert));
 
-  VecTime_ += Time_->ElapsedTime();
+  AddTime("vector redistribution");
+  ResetTime();
 
   if (MyPID() == 0) {
     Epetra_SerialDenseMatrix DenseX(NumGlobalRows(),NumVectors);
@@ -302,9 +287,13 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
 	SerialVector[j][i] = DenseX(i,j);
   }
 
+  AddTime("solve");
+  ResetTime();
+
   AMESOS_CHK_ERR(X.Export(SerialVector,RowImporter(),Insert));
 
-  SolTime_ += Time_->ElapsedTime();
+  AddTime("vector redistribution");
+
   ++NumSolve_;
 
   return(0) ;
@@ -315,7 +304,7 @@ int Amesos_Lapack::SerialToDense()
 {
 
   assert (NumProc() == 1);
-  Time_->ResetStartTime();
+  ResetTime();
 
   if (Matrix() == 0)
     AMESOS_CHK_ERR(-1); // something is wrong in the user's input
@@ -351,16 +340,15 @@ int Amesos_Lapack::SerialToDense()
     }
   }
 
-  ConTime_ += Time_->ElapsedTime();
+  AddTime("matrix conversion");
   return 0;
 }
 
 //=============================================================================
 int Amesos_Lapack::DistributedToDense()
 {
-
   assert(NumProc() != 1);
-  Time_->ResetStartTime();
+  ResetTime();
 
   if (SerialMatrix_) {
     delete SerialMatrix_;
@@ -378,7 +366,8 @@ int Amesos_Lapack::DistributedToDense()
   AMESOS_CHK_ERR(SerialMatrix().Import(*Matrix(),RowImporter(),Insert));
   AMESOS_CHK_ERR(SerialMatrix().FillComplete());
 
-  MatTime_ += Time_->ElapsedTime();
+  AddTime("matrix redistribution");
+  ResetTime();
 
   if (MyPID())
     return(0);
@@ -416,16 +405,13 @@ int Amesos_Lapack::DistributedToDense()
     }
   }
 
-  ConTime_ += Time_->ElapsedTime();
+  AddTime("matrix conversion");
   return 0;
 } 
 
 // ====================================================================== 
 int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
 {
-
-  if (Time_ == 0) 
-    Time_ = new Epetra_Time( Comm() );
 
   if (MyPID() == 0) {
     AMESOS_CHK_ERR(DenseMatrix_.Reshape(1,1));
@@ -499,51 +485,73 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
 // ================================================ ====== ==== ==== == =
 void Amesos_Lapack::PrintStatus()
 {
-  if (MyPID() != 0) return;
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
 
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Lapack : Matrix has " << NumGlobalRows() << " rows"
-       << " and " << Matrix()->NumGlobalNonzeros() << " nonzeros" << endl;
-  cout << "Amesos_Lapack : Nonzero elements per row = "
-       << 1.0 * Matrix()->NumGlobalNonzeros() / NumGlobalRows() << endl;
-  cout << "Amesos_Lapack : Percentage of nonzero elements = "
-       << 100.0 * Matrix()->NumGlobalNonzeros() /
-          (NumGlobalRows() * NumGlobalRows()) << endl;
-  cout << "Amesos_Lapack : Use transpose = " << UseTranspose_ << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+  PrintLine();
+  string p = "Amesos_Lapack : ";
+
+  int NumGlobalElements = Problem_->GetMatrix()->NumGlobalRows();
+  int numentries        = Problem_->GetMatrix()->NumGlobalNonzeros();
+
+  cout << p << "Matrix has " << NumGlobalElements << " rows"
+       << " and " << numentries << " nonzeros" << endl;
+  cout << p << "Nonzero elements per row = "
+       << 1.0 * numentries / NumGlobalElements << endl;
+  cout << p << "Percentage of nonzero elements = "
+       << 100.0 * numentries / (pow(NumGlobalElements,2.0)) << endl;
+  cout << p << "Use transpose = " << UseTranspose_ << endl;
+
+  PrintLine();
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
 void Amesos_Lapack::PrintTiming()
 {
-  if (MyPID() == 0) return;
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
 
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Lapack : Time to convert matrix to KLU format = "
-       << ConTime_ << " (s)" << endl;
-  cout << "Amesos_Lapack : Time to redistribute matrix = "
-       << MatTime_ << " (s)" << endl;
-  cout << "Amesos_Lapack : Time to redistribute vectors = "
-       << VecTime_ << " (s)" << endl;
-  cout << "Amesos_Lapack : Number of symbolic factorizations = "
+  double ConTime = GetTime("matrix conversion");
+  double MatTime = GetTime("matrix redistribution");
+  double VecTime = GetTime("vector redistribution");
+  double SymTime = GetTime("symbolic");
+  double NumTime = GetTime("numeric");
+  double SolTime = GetTime("solve");
+
+  if (NumSymbolicFact_)
+    SymTime /= NumSymbolicFact_;
+
+  if (NumNumericFact_)
+    NumTime /= NumNumericFact_;
+
+  if (NumSolve_)
+    SolTime /= NumSolve_;
+
+  string p = "Amesos_Lapack : ";
+  PrintLine();
+
+  cout << p << "Time to convert matrix to Klu format = "
+       << ConTime << " (s)" << endl;
+  cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << endl;
+  cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << endl;
+  cout << p << "Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
-  cout << "Amesos_Lapack : Time for sym fact = "
-       << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
-       << " (s)" << endl;
-  cout << "Amesos_Lapack : Number of numeric factorizations = "
+  cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
+  cout << p << "Number of numeric factorizations = "
        << NumNumericFact_ << endl;
-  cout << "Amesos_Lapack : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-       << " (s)" << endl;
-  cout << "Amesos_Lapack : Number of solve phases = "
+  cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+  cout << p << "Number of solve phases = "
        << NumSolve_ << endl;
-  cout << "Amesos_Lapack : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-       << " (s)" << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+  cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+
+  PrintLine();
 
   return;
 }
