@@ -204,6 +204,26 @@ SCALAPACK_H =
 SCALAPACK =
 endif
 
+if HAVE_AMESOS_PARDISO
+PARDISO_H = \
+	$(srcdir)/Amesos_Pardiso.h
+PARDISO = \
+	$(srcdir)/Amesos_Pardiso.cpp
+else
+PARDISO_H =
+PARDISO =
+endif
+
+if HAVE_AMESOS_TAUCS
+TAUCS_H = \
+	$(srcdir)/Amesos_Taucs.h
+TAUCS = \
+	$(srcdir)/Amesos_Taucs.cpp
+else
+TAUCS_H =
+TAUCS =
+endif
+
 
 
 
@@ -252,10 +272,15 @@ endif
 #  This file does not need to be copied to the include directory
 #	$(srcdir)/CrsMatrixTranspose.h
 COMP_H = \
-	Amesos_BaseSolver.h \
-	Amesos_ComponentBaseSolver.h \
-	Amesos_ConfigDefs.h \
-	$(srcdir)/CrsMatrixTranspose.h 
+	$(srcdir)/Amesos_BaseSolver.h \
+	$(srcdir)/Amesos_ComponentBaseSolver.h \
+	$(srcdir)/Amesos_ConfigDefs.h \
+	$(srcdir)/CrsMatrixTranspose.h  \
+        $(srcdir)/Amesos_NoCopiable.h \
+        $(srcdir)/Amesos_Utils.h \
+        $(srcdir)/Amesos_Time.h \
+        $(srcdir)/Amesos_Status.h
+
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
@@ -312,6 +337,8 @@ AMESOS_H = \
 	$(UMFPACK_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
+	$(PARDISO_H) \
+	$(TAUCS_H) \
 	$(SCALAPACK_H) \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
@@ -330,6 +357,8 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
+	$(PARDISO) \
+	$(TAUCS) \
 	$(SCALAPACK) \
 	$(FACTORY) \
 	$(SUPERLU) \

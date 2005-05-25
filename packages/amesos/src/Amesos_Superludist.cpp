@@ -604,7 +604,7 @@ int Amesos_Superludist::Factor( )
 
     //  Without the following two lines, SuperLU_DIST cannot be made
     //  quiet.
-#if 1
+#if 0
     if( PrintNonzeros_ ) options_.PrintStat = (yes_no_t)YES;
     else                 options_.PrintStat = NO;
 #endif
@@ -947,7 +947,8 @@ int Amesos_Superludist::Solve()
   return 0;
 }
 
-void Amesos_Superludist::PrintStatus() 
+// ====================================================================== 
+void Amesos_Superludist::PrintStatus() const
 {
   if( iam_ ) return;
   
@@ -975,10 +976,8 @@ void Amesos_Superludist::PrintStatus()
   return;
 }
 
-
-// ================================================ ====== ==== ==== == =
-
-void Amesos_Superludist::PrintTiming()
+// ====================================================================== 
+void Amesos_Superludist::PrintTiming() const
 {
   if (iam_) return;
   

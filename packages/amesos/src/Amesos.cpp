@@ -50,6 +50,12 @@
 #ifdef HAVE_AMESOS_DSCPACK
 #include "Amesos_Dscpack.h"
 #endif
+#ifdef HAVE_AMESOS_PARDISO
+#include "Amesos_Pardiso.h"
+#endif
+#ifdef HAVE_AMESOS_TAUCS
+#include "Amesos_Taucs.h"
+#endif
 #include "Epetra_Object.h"
 
 static bool verbose = false; 
@@ -137,6 +143,24 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #endif
   } 
   
+  if ((CT == "Amesos_Pardiso") || (CT == "Pardiso")) { 
+#ifdef HAVE_AMESOS_PARDISO
+    return new Amesos_Pardiso(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Pardiso is not implemented" << endl ; 
+    return(0); 
+#endif
+  } 
+  
+  if ((CT == "Amesos_Taucs") || (CT == "Taucs")) { 
+#ifdef HAVE_AMESOS_TAUCS
+    return new Amesos_Taucs(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Taucs is not implemented" << endl ; 
+    return(0); 
+#endif
+  } 
+  
   if (verbose) cerr << "Unknown class type:" << CT << endl ; 
   return(0); 
 }
@@ -210,6 +234,22 @@ bool Amesos::Query(const string CT)
 
   if ((CT == "Amesos_Dscpack") || (CT == "Dscpack")) { 
 #ifdef HAVE_AMESOS_DSCPACK
+    return true;
+#else
+    return false;
+#endif
+  } 
+  
+  if ((CT == "Amesos_Pardiso") || (CT == "Pardiso")) { 
+#ifdef HAVE_AMESOS_PARDISO
+    return true;
+#else
+    return false;
+#endif
+  } 
+  
+  if ((CT == "Amesos_Taucs") || (CT == "Taucs")) { 
+#ifdef HAVE_AMESOS_TAUCS
     return true;
 #else
     return false;

@@ -26,11 +26,25 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _AMESOS_KLU_H_
-#define _AMESOS_KLU_H_
+/*!
+ * \file Amesos_Klu.h
+ *
+ * \class Amesos_Klu
+ *
+ * \brief Interface to KLU internal solver.Interface to KLU internal solver.
+ *
+ * \date Last updated on 24-May-05.
+ */
+
+#ifndef AMESOS_KLU_H
+#define AMESOS_KLU_H
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "Epetra_Import.h"
@@ -82,7 +96,7 @@ is to small.
 
 */
 
-// Amesos_Klu_Pimpl contains a pointer to two sructures defined in 
+// Amesos_Klu_Pimpl contains a pointer to two structures defined in 
 // klu.h:  klu_symbolic and klu_numeric.  This prevents Amesos_Klu.h 
 // from having to include klu.h.
 //
@@ -91,11 +105,12 @@ is to small.
 class Amesos_Klu_Pimpl ; 
 #endif
 
-class Amesos_Klu: public Amesos_BaseSolver { 
+class Amesos_Klu: public Amesos_BaseSolver, Amesos_Time, 
+  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
 
 public: 
 
-  //@{ \name Constructor methods
+  //@{ \name Constructors and Destructors
   //! Amesos_Klu Constructor.
   /*! Creates an Amesos_Klu instance, using an Epetra_LinearProblem,
       passing in an already-defined Epetra_LinearProblem object. 
@@ -107,45 +122,19 @@ public:
   Amesos_Klu(const Epetra_LinearProblem& LinearProblem );
 
   //! Amesos_Klu Destructor.
-  /*! Completely deletes an Amesos_Klu object.  
-  */
   ~Amesos_Klu(void);
+  
   //@}
-
   //@{ \name Mathematical functions.
 
-    //! Performs SymbolicFactorization on the matrix A.
-    /*! 
-      In addition to performing symbolic factorization on the matrix A, 
-      the call to SymbolicFactorization() implies that no change will
-      be made to the non-zero structure of the underlying matrix without 
-      a subsequent call to SymbolicFactorization().
-      
-      It is required that GetProblem().GetOperator() != 0.
+  int SymbolicFactorization() ;
 
-    \return Integer error code, set to 0 if successful.
-  */
-    int SymbolicFactorization() ;
+  int NumericFactorization() ;
 
-    //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
-      NumericFactorization() implies that no change will be made to
-      the underlying matrix without a subsequent call to
-      NumericFactorization().  
-
-      It is required that GetProblem().GetOperator() != 0.
-
-     \return Integer error code, set to 0 if successful.
-  */
-    int NumericFactorization() ;
-
-    //! Solves A X = B (or A<SUP>T</SUP> X = B) 
-    int Solve();
+  int Solve();
 
   //@}
-  
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //@{ \name 
 
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
@@ -163,24 +152,23 @@ public:
   */  
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
-  //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //! Set parameters from the input parameters list, returns 0 if successful.
-  int SetParameters( Teuchos::ParameterList &ParameterList )  ;
+  int SetParameters( Teuchos::ParameterList &ParameterList );
 
   //! Prints timing information
-  void PrintTiming();
+  void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
-  void PrintStatus();
+  void PrintStatus() const;
+  
+private:  
   
   //@}
+  //@{ \name Utility methods
 
-private:  
   /*
   ConvertToSerial - Convert matrix to a serial Epetra_CrsMatrix
     Preconditions:
@@ -237,6 +225,8 @@ private:
   */
   int PerformNumericFactorization(); 
 
+  // @}
+  
   //! Creates SerialMap_
   int CreateSerialMap();
 
@@ -274,24 +264,6 @@ private:
   //! Pointer to the linear system problem.
   const Epetra_LinearProblem * Problem_;
 
-  //! If \c true, SymbolicFactorization() has been successfully called.
-  bool IsSymbolicFactorizationOK_;
-  //! If \c true, NumericFactorization() has been successfully called.
-  bool IsNumericFactorizationOK_;
-  //! If \c true, prints timing information in the destructor.
-  bool PrintTiming_;
-  //! If \c true, print additional information in the destructor.
-  bool PrintStatus_;
-  //! Add \c this value to the diagonal.
-  double AddToDiag_;
-  //! If \c true, prints the norms of X and B in Solve().
-  bool ComputeVectorNorms_;
-  //! If \c true, computes the true residual in Solve().
-  bool ComputeTrueResidual_;
-  
-  //! Toggles the output level.
-  int verbose_;
-
   //! Only used for RowMatrices to extract copies.
   vector<int>ColIndicesV_;
   //! Only used for RowMatrices to extract copies.
@@ -319,32 +291,9 @@ private:
 			    // 2: use the method's 1st alternative (if it has one)
 			    // 3: use the method's 2nd alternative, and so on.
 
-  //! time to convert to KLU format
-  double ConTime_;
-  //! time for symbolic factorization
-  double SymTime_;
-  //! time for numeric factorization
-  double NumTime_;
-  //! time for solution
-  double SolTime_;
-  //! time to redistribute vectors
-  double VecTime_;
-  //! time to redistribute matrix
-  double MatTime_;
-  
-  //! Number of symbolic factorization phases.
-  int NumSymbolicFact_;
-  //! Number of numeric factorization phases.
-  int NumNumericFact_;
-  //! Number of solves.
-  int NumSolve_;  
-
-  //! Used to track times.
-  Epetra_Time * Time_;
-
   //! Importer to process 0.
   Epetra_Import * ImportToSerial_;
   
 };  // class Amesos_Klu  
 
-#endif /* _AMESOS_KLU_H_ */
+#endif /* AMESOS_KLU_H */

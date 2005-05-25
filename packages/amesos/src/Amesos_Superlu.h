@@ -63,14 +63,17 @@
 //       FIRST PASS - assert( false ) 
 //    
 
-#ifndef _AMESOS_SUPERLU_H_
-#define _AMESOS_SUPERLU_H_
+#ifndef AMESOS_SUPERLU_H
+#define AMESOS_SUPERLU_H
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
 #include "Teuchos_RefCountPtr.hpp"
 
-class Epetra_Time;
 class SLUData;
 class Epetra_Comm;
 class Epetra_CrsMatrix;
@@ -85,7 +88,8 @@ class Epetra_LinearProblem;
  * \date Last updated on 28-Apr-05.
 */
 
-class Amesos_Superlu: public Amesos_BaseSolver { 
+class Amesos_Superlu: public Amesos_BaseSolver, Amesos_Time, 
+  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
 
 public: 
 
@@ -104,53 +108,29 @@ public:
   ~Amesos_Superlu();
 
   //@}
-
   //@{ \name Mathematical functions.
 
-  //! Performs the symbolic factorization on the matrix A (do-nothing for this solver).
   int SymbolicFactorization();
 
-  //! Performs the numeric factorization on the matrix A.
-  /*! In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
-      NumericFactorization() implies that no change will be made to
-      the underlying matrix without a subsequent call to
-      NumericFactorization().  
-
-     \return Integer error code, set to 0 if successful.
-  */
   int NumericFactorization();
 
-  //! Solves A X = B (or A<SUP>T</SUP> X = B) 
-  /*! 
-   * Solves the linear system, after calling NumericFactorization()
-   * if not yet done by the user.
-   * \return Integer error code, set to 0 if successful.
-   */
   int Solve();
 
   //@}
-  
   //@{ \name Additional methods
 
-  //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Returns true if the matrix is square.
   bool MatrixShapeOK() const ;
 
-  //! Specifies to solve the problem with A or its transpose.
   int SetUseTranspose(bool UseTranspose) {
     UseTranspose_ = UseTranspose; return(0);
   }
 
-  //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //! Sets the parameters as specified by the input list.
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
   //! Prints timing information.
@@ -159,21 +139,10 @@ public:
   //! Prints status information.
   void PrintStatus() const;
 
-  //@}
-
 private:  
 
-  //! Factors the matrix, no previous factorization available.
-  int Factor();
-  //! Re-factors the matrix.
-  int ReFactor();
-
-  //! Sets up the matrix on processor 0.
-  int ConvertToSerial();
-
-  //!  PerformNumericFactorization - Call Superlu to perform numeric factorization
-  // Note:  All action is performed on process 0
-  int PerformNumericFactorization(); 
+  //@}
+  //@{ Utility methods
 
   //! Returns a reference to the serial map.
   // Note: this method is delicate!
@@ -189,10 +158,19 @@ private:
     return(*(ImportToSerial_.get()));
   }
 
-  void PrintLine() const
-  {
-    cout << "----------------------------------------------------------------------------" << endl;
-  }
+  //! Factors the matrix, no previous factorization available.
+  int Factor();
+  //! Re-factors the matrix.
+  int ReFactor();
+
+  //! Sets up the matrix on processor 0.
+  int ConvertToSerial();
+
+  //!  PerformNumericFactorization - Call Superlu to perform numeric factorization
+  // Note:  All action is performed on process 0
+  int PerformNumericFactorization(); 
+
+  //@}
 
   //! Main structure for SuperLU.
   SLUData* data_;
@@ -220,8 +198,8 @@ private:
   //! If \c true, solve the linear system with the transpose of the matrix.
   bool UseTranspose_;      
   //! If \c true, the factorization has been successfully computed.
-  bool FactorizationDone_; 
   bool FactorizationOK_; 
+  bool FactorizationDone_; 
   bool ReuseSymbolic_;
   //! Process number (i.e. Comm().MyPID() 
   int iam_;
@@ -237,23 +215,6 @@ private:
   const Epetra_LinearProblem* Problem_;
   //! Pointer to the linear system matrix.
   Epetra_RowMatrix* RowMatrixA_;
-  //! If \c true, the destructor prints out some status information.
-  bool PrintStatus_;
-  //! If \c true, the destructor prints out some timing information.
-  bool PrintTiming_;
-  //! Time spent in all calls to NumericFactorization().
-  double NumTime_;
-  //! Time spent in all calls to Solve().
-  double SolTime_;
-  Teuchos::RefCountPtr<Epetra_Time> Time_;
-  //! Number of calls to NumericFactorization().
-  int NumNumericFact_;
-  //! Number of calls to Solve().
-  int NumSolve_;
-  //! If \c true, computes the norm of the true residual after solution.
-  bool ComputeTrueResidual_;
-  //! If \c true, computes the norm of the right-hand side and solution.
-  bool ComputeVectorNorms_;
 
 };  // End of  class Amesos_Superlu  
-#endif /* _AMESOS_SUPERLU_H_ */
+#endif /* AMESOS_SUPERLU_H */

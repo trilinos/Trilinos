@@ -30,10 +30,7 @@
 #define AMESOS_MUMPS_H
 
 class Epetra_Import;
-class Epetra_CrsMatrix;
 class Epetra_RowMatrix;
-class Epetra_CrsMatrix;
-class Epetra_VbrMatrix;
 class Epetra_MultiVector;
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
@@ -42,10 +39,13 @@ class Epetra_MultiVector;
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseMatrix;
 class Amesos_EpetraInterface;
-#include "Epetra_Time.h"
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
 #include "Epetra_LinearProblem.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -117,7 +117,8 @@ extern "C" {
   \author Marzio Sala, 9214
   
 */
-class Amesos_Mumps : public Amesos_BaseSolver { 
+class Amesos_Mumps: public Amesos_BaseSolver, Amesos_Time, 
+  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
 
 public: 
 
@@ -136,63 +137,19 @@ public:
 
   //@{ \name Mathematical functions.
 
-    //! Performs SymbolicFactorization on the matrix A.
-    /*! 
-      In addition to performing symbolic factorization on the matrix A, 
-      the call to SymbolicFactorization() implies that no change will
-      be made to the non-zero structure of the underlying matrix without 
-      a subsequent call to SymbolicFactorization().
-
-      At this point, the numerical values of A are not required.
-      
-    \return Integer error code, set to 0 if successful.
-  */
   int SymbolicFactorization() ;
 
-    //! Performs NumericFactorization on the matrix A.
-    /*! Performs the numeric factorization (and symbolic factorization
-      if necessary) on the matrix A. It is supposed that the structure
-      of the matrix A has not changed since the previous call the
-      SymbolicFactorization() (if any).
-
-      At this point, LHS and RHS of the Epetra_LinearProblem are not required.
-     \return Integer error code, set to 0 if successful.
-  */
   int NumericFactorization() ;
 
-    //! Solves A X = B (or A<SUP>T</SUP> x = B) 
-    /*! Solve the linear system for all vectors contained in the
-      Epetra_MultiVector RHS(), and store the solution in LHS().
-
-      By default, Solve() will solve the problem with A, and not with
-      A<SUP>T</SUP>.  Users can solve the problem with A<SUP>T</SUP> by
-      creating a Teuchos::ParameterList (say, AmesosList), set
-      AmesosList.set("UseTranspose",true), and calling
-      SetParameters(AmesosList).
-      
-     \return Integer error code, set to 0 if successful.
-  */
   int Solve();
 
   //! Destroys all data associated with \sl this object.
   void Destroy();
   
-  //  char * Label() const {return(Epetra_Object::Label());};
-
-  //! If set true, solve the problem with A<SUP>T</SUP>
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
   
-  //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Sets parameters for \sl this object from input list
-  /*! Sets all the parameters for \sl this object, retriving them form
-    the input Teuchos::ParameterList. This call can modify the input
-    list; default values (not found in the list) are added. For a
-    detailed overview of the available parameters, please refer to the
-    Amesos Reference Guide (in \c
-    Trilinos/packages/amesos/doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf).
-  */
   int SetParameters(Teuchos::ParameterList &ParameterList );
   
   //@}
@@ -414,10 +371,6 @@ protected:
   
   void SetICNTLandCNTL();
 
-  //! \c true if SymbolicFactorization has been done
-  bool SymbolicFactorizationOK_;
-  //! \c true if NumericFactorization has been done
-  bool NumericFactorizationOK_;
   //! \c true if matrix has already been converted to COO format
   bool IsConvertToTripletOK_;
   //! \c true if the Schur complement has been computed (need to free memory)
@@ -456,18 +409,6 @@ protected:
   //! If \c true, add a the value AddToDiag_ on the diagonal
   bool AddDiagElement_;
   
-  //! Value to add to the diagonal if specified 
-  double AddToDiag_;
-  
-  //! If \c true, print timing in the destruction phase
-  bool PrintTiming_;
-  //! If \c true, print status in the destruction phase
-  bool PrintStatus_;
-  //! If \c true, compute the norms of solution and RHS.
-  bool ComputeVectorNorms_;
-  //! If \c true, compute the true residual after solution
-  bool ComputeTrueResidual_;
-
   //! Set the matrix property.
   /*! Matrix property can be 
     - 0 : general unsymmetric matrix;
@@ -501,32 +442,6 @@ protected:
   //! Pointer to the Schur complement,as DenseMatrix.
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
-  //! Output level.
-  int verbose_;
-  
-  //! time to convert to MUMPS format
-  double ConTime_;
-  //! time for symbolic factorization
-  double SymTime_;
-  //! time for numeric factorization
-  double NumTime_;
-  //! time for solution
-  double SolTime_;
-  //! time to redistribute vectors
-  double VecTime_;
-  //! time to redistribute matrix
-  double MatTime_;
-  
-  //! Number of symbolic factorization phases
-  int NumSymbolicFact_;
-  //! Number of symbolic numeric phases
-  int NumNumericFact_;
-  //! Number of symbolic solution phases
-  int NumSolve_;
-
-  //! Used to track timing
-  Epetra_Time * Time_;
-  
   //! Pointer to the linear problem to be solved.
   const Epetra_LinearProblem* Problem_;
 

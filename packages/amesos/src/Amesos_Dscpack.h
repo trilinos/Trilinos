@@ -31,6 +31,10 @@
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_CrsGraph.h"
@@ -54,7 +58,8 @@ extern "C" {
   Epetra_MultiVector objects.
 
 */
-class Amesos_Dscpack: public Amesos_BaseSolver { 
+class Amesos_Dscpack: public Amesos_BaseSolver, Amesos_Time, 
+  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
 
 public: 
 
@@ -77,39 +82,15 @@ public:
 
   //@{ \name Mathematical functions.
 
-    //! Performs SymbolicFactorization on the matrix A.
-    /*! 
-      In addition to performing symbolic factorization on the matrix A, 
-      the call to SymbolicFactorization() implies that no change will
-      be made to the non-zero structure of the underlying matrix without 
-      a subsequent call to SymbolicFactorization().
-      
-    \return Integer error code, set to 0 if successful.
-  */
-    int SymbolicFactorization() ;
+  int SymbolicFactorization() ;
 
-    //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
-      NumericFactorization() implies that no change will be made to
-      the underlying matrix without a subsequent call to
-      NumericFactorization().  
+  int NumericFactorization() ;
 
-     \return Integer error code, set to 0 if successful.
-  */
-    int NumericFactorization() ;
-
-    //! Solves A X = B (or A<SUP>T</SUP> x = B) 
-    /*!
-     \return Integer error code, set to 0 if successful.
-  */
-    int Solve();
+  int Solve();
 
   //@}
-  
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
-  //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
   //! Returns true if DSCPACK can handle this matrix shape 
@@ -120,34 +101,27 @@ public:
 
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
-  //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //! Sets parameters as specified in the list, returns 0 if successful.
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
   //! Prints timing information
-  void PrintTiming();
+  void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
-  void PrintStatus();  
+  void PrintStatus() const;
 
   //@}
 
-protected:  
+private:  
   
   //! Performs the symbolic factorization.
   int PerformSymbolicFactorization();
+
   //! Performs the numeric factorization.
   int PerformNumericFactorization();
-
-  //! If \c true, SymbolicFactorization() has been successfully called.
-  bool IsSymbolicFactorizationOK_; 
-  //! If \c true, NumericFactorization() has been successfully called.
-  bool IsNumericFactorizationOK_; 
 
   //! Distribution specified by DscOrder
   Epetra_CrsGraph * DscGraph_;
@@ -174,37 +148,6 @@ protected:
   int NumGlobalCols;
   int NumLocalStructs;
   int NumLocalNonz ; 
-
-  //! If \c true, prints timing information in the destructor.
-  bool PrintTiming_;
-  //! If \c true, prints additinal information in the destructor.
-  bool PrintStatus_;
-  //! If \c true, computes the norm of rhs and solution.
-  bool ComputeVectorNorms_;
-  //! If \c true, compute the norm of the real residual.
-  bool ComputeTrueResidual_;
-  //! Toggles the output level.
-  int verbose_;
-  //! time to convert to DSCPACK format
-  double ConTime_;
-  //! time for symbolic factorization
-  double SymTime_;
-  //! time for numeric factorization
-  double NumTime_;
-  //! time for solution
-  double SolTime_;
-  //! time to redistribute vectors
-  double VecTime_;
-  //! time to redistribute matrix
-  double MatTime_;
-  //! number of symbolic factorizations
-  int NumSymbolicFact_;
-  //! number of numeric factorizations
-  int NumNumericFact_;
-  //! number of solves
-  int NumSolve_;
-  //! used to track timing
-  Epetra_Time * Time_;
 
   Epetra_Import * ImportToSerial_;
 

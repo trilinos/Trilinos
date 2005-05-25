@@ -62,23 +62,14 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
   NumGlobalRows_(-1),
   NumGlobalNonzeros_(-1),
   UseTranspose_(false),
-  FactorizationDone_(false),
   FactorizationOK_(false),
+  FactorizationDone_(false),
   iam_(0),
   SerialMap_(Teuchos::null), 
   SerialCrsMatrixA_(Teuchos::null), 
   ImportToSerial_(Teuchos::null),
   SerialMatrix_(0),
-  RowMatrixA_(0),
-  PrintStatus_(false),
-  PrintTiming_(false),
-  NumTime_(0.0),
-  SolTime_(0.0),
-  Time_(Teuchos::null),
-  NumNumericFact_(0),
-  NumSolve_(0),
-  ComputeTrueResidual_(false),
-  ComputeVectorNorms_(false)
+  RowMatrixA_(0)
 {
   data_ = new SLUData();
   ferr_.resize(1);
@@ -392,8 +383,8 @@ int Amesos_Superlu::SymbolicFactorization()
 // ======================================================================
 int Amesos_Superlu::NumericFactorization() 
 {
-  Time_ = rcp(new Epetra_Time(Comm()));
-  Time_->ResetStartTime();
+  InitTime(Comm());
+  ResetTime();
 
   ConvertToSerial(); 
 
@@ -464,7 +455,9 @@ int Amesos_Superlu::NumericFactorization()
   }
 
   FactorizationDone_ = true; 
-  NumTime_ += Time_->ElapsedTime();
+
+  AddTime("numeric");
+
   ++NumNumericFact_;
 
   return(0);
@@ -478,11 +471,10 @@ int Amesos_Superlu::Solve()
     AMESOS_CHK_ERR(NumericFactorization());
   }
 
-  Time_->ResetStartTime();
+  ResetTime();
 
   Epetra_MultiVector* vecX = Problem_->GetLHS(); 
   Epetra_MultiVector* vecB = Problem_->GetRHS(); 
-  const Epetra_Map& OriginalMap = RowMatrixA_->RowMatrixRowMap();
   int Ierr;
 
   if (vecX == 0 || vecB == 0)  
@@ -600,83 +592,74 @@ int Amesos_Superlu::Solve()
   if (Comm().NumProc() != 1)
     Comm().Broadcast(&Ierr, 1, 0); 
 
-  // MS // compute vector norms, as done in Amesos_Mumps
-  if (ComputeVectorNorms_ == true) 
-  {
-    double NormLHS, NormRHS;
-    for (int i = 0 ; i < nrhs ; ++i) 
-    {
-      AMESOS_CHK_ERR((*vecX)(i)->Norm2(&NormLHS));
-      AMESOS_CHK_ERR((*vecB)(i)->Norm2(&NormRHS));
-      if (Comm().MyPID() == 0) 
-      {
-	cout << "Amesos_Superlu : vector " << i << ", ||x|| = " << NormLHS
-	     << ", ||b|| = " << NormRHS << endl;
-      }
-    }
-  }
-  
-  // MS // add compute true residual, as done in Amesos_Mumps
-  if (ComputeTrueResidual_) 
-  {
-    double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),nrhs);
-    for (int i = 0 ; i < nrhs ; ++i) 
-    {
-      (RowMatrixA_->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
-      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
-      (Ax.Norm2(&Norm));
-      
-      if (Comm().MyPID() == 0) 
-      {
-	cout << "Amesos_Superlu : vector " << i << ", ||Ax - b|| = " << Norm << endl;
-      }
-    }
-  }
-  
-  SolTime_+= Time_->ElapsedTime();
+  AddTime("solve");
+
+  if (ComputeTrueResidual_)
+    ComputeTrueResidual(*(GetProblem()->GetMatrix()), *vecX, *vecB, 
+                        UseTranspose(), "Amesos_Superlu");
+
+  if (ComputeVectorNorms_)
+    ComputeVectorNorms(*vecX, *vecB, "Amesos_Superlu");
+
   ++NumSolve_;
 
   return(Ierr);
 }
 
 // ================================================ ====== ==== ==== == =
+
 void Amesos_Superlu::PrintStatus() const
 {
-  if (iam_) return;
-  
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
+
+  string p = "Amesos_Superlu : ";
   PrintLine();
-  cout << "Amesos_Superlu : Matrix has " << NumGlobalRows_ << " rows"
-       << " and " << NumGlobalNonzeros_ << " nonzeros" << endl;
-  cout << "Amesos_Superlu : Nonzero elements per row = "
-       << 1.0 * NumGlobalNonzeros_ / NumGlobalRows_ << endl;
-  cout << "Amesos_Superlu : Percentage of nonzero elements = "
-       << 100.0 * NumGlobalNonzeros_ /pow(NumGlobalRows_, 2.0) << endl;
-  cout << "Amesos_Superlu : Use transpose = " << UseTranspose_ << endl;
+
+  int n = GetProblem()->GetMatrix()->NumGlobalRows();
+  int nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros();
+
+  cout << p << "Matrix has " << n << " rows"
+       << " and " << nnz << " nonzeros" << endl;
+  cout << p << "Nonzero elements per row = "
+       << 1.0 *  nnz / n << endl;
+  cout << p << "Percentage of nonzero elements = "
+       << 100.0 * nnz /(pow(n,2.0)) << endl;
+  cout << p << "Use transpose = " << UseTranspose_ << endl;
+
   PrintLine();
+
+  return;
 }
 
 // ================================================ ====== ==== ==== == =
 void Amesos_Superlu::PrintTiming() const
 {
-  if (iam_) return;
-  
-  double NumTime = 0.0, SolTime = 0.0;
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
+
+  double NumTime = GetTime("numeric");
+  double SolTime = GetTime("solve");
 
   if (NumNumericFact_)
-    NumTime =  NumTime_ / NumNumericFact_;
+    NumTime /= NumNumericFact_;
 
   if (NumSolve_)
-    SolTime = SolTime_ / NumSolve_;
+    SolTime /= NumSolve_;
+
+  string p = "Amesos_Superlu : ";
+  PrintLine();
+
+  cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << endl;
+  cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+  cout << p << "Number of solve phases = "
+       << NumSolve_ << endl;
+  cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
 
   PrintLine();
-  cout << "Amesos_Superlu : Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << "Amesos_Superlu : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << "Amesos_Superludist : Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << "Amesos_Superlu : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;  
-  PrintLine();
+
+  return;
 }

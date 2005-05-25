@@ -27,20 +27,38 @@
 // ***********************************************************************
 // @HEADER
 
+/*!
+ * \file Amesos_Umfpack.h
+ *
+ * \class Amesos_Klu
+ *
+ * \brief Interface to UMFPACK.
+ *
+ * \date Last updated on 24-May-05.
+ */
+
 #ifndef AMESOS_UMFPACK_H
 #define AMESOS_UMFPACK_H
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "Epetra_Import.h"
+#include "Teuchos_RefCountPtr.hpp"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_Comm.h"
 #endif
+
+using namespace Teuchos;
 
 //! Class Amesos_Umfpack:  An object-oriented wrapper for UMFPACK.
 /*!  Amesos_Umfpack will solve a linear systems of equations: <TT>A X = B</TT>
@@ -50,7 +68,8 @@
 
  
 */
-class Amesos_Umfpack: public Amesos_BaseSolver { 
+class Amesos_Umfpack: public Amesos_BaseSolver,  Amesos_Time, 
+  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
 
 public: 
 
@@ -69,53 +88,19 @@ public:
   /*! Completely deletes an Amesos_Umfpack object.  
   */
   ~Amesos_Umfpack(void);
-  //@}
 
+  //@}
   //@{ \name Mathematical functions.
 
-    //! Performs SymbolicFactorization on the matrix A.
-    /*! 
-      In addition to performing symbolic factorization on the matrix A, 
-      the call to SymbolicFactorization() implies that no change will
-      be made to the non-zero structure of the underlying matrix without 
-      a subsequent call to SymbolicFactorization().
-      
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      </ul>
+  int SymbolicFactorization();
 
-      postconditions:<ul>
-      <li>Symbolic Factorization will be performed (or marked to be performed) 
-      allowing NumericFactorization() and Solve() to be called.
-      </ul>
+  int NumericFactorization();
 
-    \return Integer error code, set to 0 if successful.
-  */
-    int SymbolicFactorization() ;
-
-    //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
-      NumericFactorization() implies that no change will be made to
-      the underlying matrix without a subsequent call to
-      NumericFactorization().  
-
-     \return Integer error code, set to 0 if successful.
-  */
-    int NumericFactorization() ;
-
-    //! Solves A X = B (or A<SUP>T</SUP> x = B) 
-    /*!
-     \return Integer error code, set to 0 if successful.
-  */
-    int Solve();
+  int Solve();
 
   //@}
-  
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
-  //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
   //! Returns true if UMFPACK can handle this matrix shape 
@@ -126,10 +111,8 @@ public:
 
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
-  //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
   //! Returns an estimate of the reciprocal of the condition number 
@@ -140,25 +123,27 @@ public:
    */
   double GetRcond() const ; 
 
-  //! Sets parameters from the parameters list, returns 0 if successful.
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
   //! Prints timing information
-  void PrintTiming();
+  void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
-  void PrintStatus();
-
-  //@}
+  void PrintStatus() const;
 
 private:  
+  
+  //@}
+  //@{ \name Utility Methods
+  
+  //! Returns a pointer to the linear system matrix.
   Epetra_RowMatrix* Matrix()
   {
     return(dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator()));
   }
 
   //! Converts matrix to a serial Epetra_CrsMatrix
-  int ConvertToSerial();
+  int ConvertToSerial(const bool FirstTime);
 
   /*
     ConvertToUmfpackCRS - Convert matirx to form expected by Umfpack: Ai, Ap, Aval
@@ -198,13 +183,28 @@ private:
   */
   int PerformNumericFactorization(); 
 
- protected:
+  inline const Epetra_Import& Importer() const
+  {
+    return(*(ImportToSerial_.get()));
+  }
 
-  //! True if SymbolicFactorization has been done
-  bool IsSymbolicFactorizationOK_;
-  //! True if NumericFactorization has been done
-  bool IsNumericFactorizationOK_;
+  inline const Epetra_Map& SerialMap() const
+  {
+    return(*(SerialMap_.get()));
+  }
 
+  inline const Epetra_CrsMatrix& SerialCrsMatrix() const
+  {
+    return(*(SerialCrsMatrixA_.get()));
+  }
+
+  inline Epetra_CrsMatrix& SerialCrsMatrix()
+  {
+    return(*(SerialCrsMatrixA_.get()));
+  }
+
+  // @}
+  
   //! Umfpack internal opaque object
   void *Symbolic;
   //! Umfpack internal opaque object
@@ -225,14 +225,14 @@ private:
   int NumGlobalElements_;
 
   //! Points to a Serial Map (unused if IsLocal == 1 ) 
-  Epetra_Map *SerialMap_;
+  RefCountPtr<Epetra_Map> SerialMap_;
   //! Points to a Serial Copy of A
   /* If IsLocal==1 - Points to the original matrix 
    * If  IsLocal==0 - Points to SerialCrsMatrixA
    */
   Epetra_RowMatrix* SerialMatrix_;
 
-  Epetra_CrsMatrix* SerialCrsMatrixA_;
+  RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
 
   //! If \c true, solve the problem with the transpose.
   bool UseTranspose_;
@@ -242,42 +242,8 @@ private:
   mutable double Rcond_;
   //  True if Rcond_ is the same on all processes
   mutable bool RcondValidOnAllProcs_;
-  //! If \c true, prints timing in the destructor.
-  bool PrintTiming_;
-  //! If \c true, prints additional information in the destructor.
-  bool PrintStatus_;
-  //! Adds the specified value to the diagonal.
-  double AddToDiag_;
-  //! If \c true, prints the norm of LHS and RHS in Solve().
-  bool ComputeVectorNorms_;
-  //! If \c true, prints the norm of the computed residual in Solve().
-  bool ComputeTrueResidual_;
-  //! Toggles the output level.
-  int verbose_;
-  //! time to convert to MUMPS format
-  double ConTime_;
-  //! time for symbolic factorization
-  double SymTime_;
-  //! time for numeric factorization
-  double NumTime_;
-  //! time for solution
-  double SolTime_;
-  //! time to redistribute vectors
-  double VecTime_;
-  //! time to redistribute matrix
-  double MatTime_;
-  
-  //! Number of symbolic factorizations.
-  int NumSymbolicFact_;
-  //! Number of numeric factorizations.
-  int NumNumericFact_;
-  //! Number of solves.
-  int NumSolve_;  
-
-  //! Used to track timing.
-  Epetra_Time * Time_;
   //! Importer from distributed to serial (all rows on process 0).
-  Epetra_Import * ImportToSerial_;
+  RefCountPtr<Epetra_Import> ImportToSerial_;
   
 };  // class Amesos_Umfpack  
 #endif /* AMESOS_UMFPACK_H */

@@ -31,7 +31,6 @@
 #include "Epetra_Import.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 #include "Epetra_Time.h"
@@ -61,8 +60,6 @@ const double DEF_VALUE_DOUBLE = -123456.789;
 
 Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   Problem_(&prob),
-  SymbolicFactorizationOK_(false), 
-  NumericFactorizationOK_(false),
   NoDestroy_(false),
   MaxProcs_(-1),
   RedistrMap_(0),
@@ -75,32 +72,16 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   CrsSchurComplement_(0),
   DenseSchurComplement_(0),
   IsComputeSchurComplementOK_(false),
-  ComputeVectorNorms_(false),
-  ComputeTrueResidual_(false),
   MatrixProperty_(0),
   RowSca_(0),
   ColSca_(0),
   PermIn_(0),
   Maxis_(DEF_VALUE_INT),
   Maxs_(DEF_VALUE_INT),
-  verbose_(1),
-  AddToDiag_(0.0),
   AddDiagElement_(false),
-  PrintTiming_(false),
-  PrintStatus_(false),
   Threshold_(0.0),
   MUMPSComm_(0),
   UseTranspose_(false),
-  ConTime_(0.0),
-  SymTime_(0.0),
-  NumTime_(0.0),
-  SolTime_(0.0),
-  VecTime_(0.0),
-  MatTime_(0.0),
-  NumSymbolicFact_(0),
-  NumNumericFact_(0),
-  NumSolve_(0),
-  Time_(0),
   MatrixType_(0)
 
 {
@@ -115,15 +96,13 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
 
   Teuchos::ParameterList ParamList;
   SetParameters( ParamList );
-  
 }
 
 //=============================================================================
-
 void Amesos_Mumps::Destroy()
 {
-
-  if ( ! NoDestroy_ ) { 
+  if (!NoDestroy_) 
+  { 
     // destroy instance of the package
     MDS.job = -2;
     
@@ -170,11 +149,6 @@ void Amesos_Mumps::Destroy()
       PrintTiming();
     if( (verbose_ && PrintStatus_) || verbose_ == 2) 
       PrintStatus();
-    
-    if (Time_) { 
-      delete Time_; 
-      Time_ = 0; 
-    }
   }
      
   return;
@@ -184,13 +158,10 @@ void Amesos_Mumps::Destroy()
 
 Amesos_Mumps::~Amesos_Mumps(void)
 {
-
   Destroy();
- 
 }
 
 //=============================================================================
-
 int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
 {
 
@@ -201,7 +172,7 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
     ptr = &RedistrMatrix(true);
   }
 
-  Time_->ResetStartTime();
+  ResetTime();
 
 
   Row.resize(ptr->NumMyNonzeros());
@@ -242,7 +213,7 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
     }
   }
 
-  ConTime_ = Time_->ElapsedTime(); 
+  AddTime("matrix conversion");
   
   assert (count <= ptr->NumMyNonzeros());
 
@@ -531,9 +502,8 @@ int Amesos_Mumps::SymbolicFactorization()
   SymbolicFactorizationOK_ = false;
   NumericFactorizationOK_ = false;
 
-  if (Time_ == 0) 
-    Time_ = new Epetra_Time(Comm());
-
+  InitTime();
+  
   CheckParameters();
   AMESOS_CHK_ERR(ConvertToTriplet(false));
 
@@ -618,11 +588,12 @@ int Amesos_Mumps::SymbolicFactorization()
 
   // Perform symbolic factorization
 
-  Time_->ResetStartTime();
+  ResetTime();
+
   if (Comm().MyPID() < MaxProcs_) 
     MUMPS_INTERFACE(&MDS);
 
-  SymTime_ += Time_->ElapsedTime();
+  AddTime("symbolic");
 
   CheckError();
 
@@ -670,12 +641,13 @@ int Amesos_Mumps::NumericFactorization()
   // Request numeric factorization 
   MDS.job = 2;
   // Perform numeric factorization
-  Time_->ResetStartTime();
+  ResetTime();
+
   if (Comm().MyPID() < MaxProcs_) {
     MUMPS_INTERFACE(&MDS);
   }
 
-  NumTime_ += Time_->ElapsedTime();
+  AddTime("numeric");
   
   CheckError();
 
@@ -694,8 +666,6 @@ int Amesos_Mumps::Solve()
 
   NumSolve_++;  
   
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
-
   Epetra_MultiVector* vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector* vecB = Problem_->GetRHS() ;
   int NumVectors = vecX->NumVectors();
@@ -717,7 +687,8 @@ int Amesos_Mumps::Solve()
 
     for (int j = 0 ; j < NumVectors; j++) {
 
-      Time_->ResetStartTime();
+      ResetTime();
+
       MDS.job = 3;     // Request solve
 
 #ifndef HAVE_AMESOS_SMUMPS      
@@ -733,7 +704,7 @@ int Amesos_Mumps::Solve()
       for (int i = 0 ; i < Matrix().NumMyRows() ; ++i) 
 	(*vecX)[j][i] = (double)SVector[i];
 #endif
-      SolTime_ += Time_->ElapsedTime();
+      AddTime("solve");
       
       CheckError();
     }
@@ -742,9 +713,9 @@ int Amesos_Mumps::Solve()
 
     Epetra_MultiVector SerialVector(SerialMap(),NumVectors);
 
-    Time_->ResetStartTime();
+    ResetTime();
     AMESOS_CHK_ERR(SerialVector.Import(*vecB,SerialImporter(),Insert));
-    VecTime_ += Time_->ElapsedTime();
+    AddTime("vector redistribution");
     
     for (int j = 0 ; j < NumVectors; j++) { 
 
@@ -760,7 +731,7 @@ int Amesos_Mumps::Solve()
       }
       // solve the linear system and take time
       MDS.job = 3;     
-      Time_->ResetStartTime();
+      ResetTime();
       if (Comm().MyPID() < MaxProcs_) 
 	MUMPS_INTERFACE(&MDS) ;  // Perform solve
 #ifdef HAVE_AMESOS_SMUMPS  
@@ -770,46 +741,23 @@ int Amesos_Mumps::Solve()
 	for (int i = 0 ; i < Matrix().NumGlobalRows() ; ++i) 
 	  SerialVector[j][i] = (double)SVector[i];
 #endif
-      SolTime_ += Time_->ElapsedTime();
+      AddTime("solve");
       
       CheckError();
 
     }
 
     // ship solution back and take timing
-    Time_->ResetStartTime();
+    ResetTime();
     AMESOS_CHK_ERR(vecX->Export(SerialVector,SerialImporter(),Insert));
-    VecTime_ += Time_->ElapsedTime();
-
+    AddTime("vector redistribution");
   }
 
-  // compute vector norms
-  if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
-    double NormLHS, NormRHS;
-    for( int i=0 ; i<NumVectors ; ++i ) {
-      assert((*vecX)(i)->Norm2(&NormLHS)==0);
-      assert((*vecB)(i)->Norm2(&NormRHS)==0);
-      if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Mumps : vector " << i << ", ||x|| = " << NormLHS
-	     << ", ||b|| = " << NormRHS << endl;
-      }
-    }
-  }
-  
-  // compute true residual
-  if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
-    double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),NumVectors);
-    for( int i=0 ; i<NumVectors ; ++i ) {
-      (Matrix().Multiply(UseTranspose(), *vecX, Ax));
-      (Ax.Update(1.0, *vecB, -1.0));
-      (Ax.Norm2(&Norm));
-      
-      if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Mumps : vector " << i << ", ||Ax - b|| = " << Norm << endl;
-      }
-    }
-  }
+  if (ComputeTrueResidual_)
+    ComputeTrueResidual(Matrix(), *X, *B, UseTranspose(), "Amesos_Mumps");
+
+  if (ComputeVectorNorms_)
+    ComputeVectorNorms(*X, *B, "Amesos_Mumps");
 
   return(0) ; 
 }
@@ -992,41 +940,48 @@ void Amesos_Mumps::CheckError()
 // ================================================ ====== ==== ==== == =
 void Amesos_Mumps::PrintTiming()
 {
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
 
-  if( Comm().MyPID() ) return;
-
-  double SymTime = 0.0, NumTime = 0.0, SolTime = 0.0;
+  double ConTime = GetTime("conversion");
+  double MatTime = GetTime("matrix redistribution");
+  double VecTime = GetTime("vector redistribution");
+  double SymTime = GetTime("symbolic");
+  double NumTime = GetTime("numeric");
+  double SolTime = GetTime("solve");
 
   if (NumSymbolicFact_)
-    SymTime = SymTime_ / NumSymbolicFact_;
+    SymTime /= NumSymbolicFact_;
 
   if (NumNumericFact_)
-    NumTime =  NumTime_ / NumNumericFact_;
+    NumTime /= NumNumericFact_;
 
   if (NumSolve_)
-    SolTime = SolTime_ / NumSolve_;
+    SolTime /= NumSolve_;
 
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Mumps : Time to convert matrix to MUMPS format = "
-    << ConTime_ << " (s)" << endl;
-  if( MaxProcs_ != Comm().NumProc() ) 
-    cout << "Amesos_Mumps : Time to redistribute matrix = "
-      << MatTime_ << " (s)" << endl;
-  cout << "Amesos_Mumps : Time to redistribute vectors = "
-    << VecTime_ << " (s)" << endl;
-  cout << "Amesos_Mumps : Number of symbolic factorizations = "
-    << NumSymbolicFact_ << endl;
-  cout << "Amesos_Mumps : Time for sym fact = "
-    << SymTime_ << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << "Amesos_Mumps : Number of numeric factorizations = "
-    << NumNumericFact_ << endl;
-  cout << "Amesos_Mumps : Time for num fact = "
-    << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << "Amesos_Mumps : Number of solve phases = "
-    << NumSolve_ << endl;
-  cout << "Amesos_Mumps : Time for solve = "
-    << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+  string p = "Amesos_Mumps : ";
+  PrintLine();
+
+  cout << p << "Time to convert matrix to MUMPS format = "
+       << ConTime << " (s)" << endl;
+  cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << endl;
+  cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << endl;
+  cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << endl;
+  cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
+  cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << endl;
+  cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+  cout << p << "Number of solve phases = "
+       << NumSolve_ << endl;
+  cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+
+  PrintLine();
 
   return;
 }

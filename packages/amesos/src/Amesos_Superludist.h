@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _AMESOS_SUPERLUDIST_H_
-#define _AMESOS_SUPERLUDIST_H_
+#ifndef AMESOS_SUPERLUDIST_H
+#define AMESOS_SUPERLUDIST_H
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -84,103 +84,25 @@ public:
 
   //@{ \name Mathematical functions.
 
-    //! Performs SymbolicFactorization on the matrix A.
-    /*! 
-      In addition to performing symbolic factorization on the matrix A, 
-      the call to SymbolicFactorization() implies that no change will
-      be made to the non-zero structure of the underlying matrix without 
-      a subsequent call to SymbolicFactorization().
-      
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      </ul>
+  int SymbolicFactorization() ;
 
-      postconditions:<ul>
-      <li>Symbolic Factorization will be performed (or marked to be performed) 
-      allowing NumericFactorization() and Solve() to be called.
-      </ul>
-      
-      bugs:<ul>
-      <li>Construction and destruction of an Amesos_Superludist object leaks 24 bytes 
-      (This happens in superlu_gridinit() but it could be that I am not calling the right
-      destructor.) 
-     </ul>
+  int NumericFactorization() ;
 
-
-    \return Integer error code, set to 0 if successful.
-  */
-    int SymbolicFactorization() ;
-
-    //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
-      NumericFactorization() implies that no change will be made to
-      the underlying matrix without a subsequent call to
-      NumericFactorization().  
-
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().  
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      </ul>
-
-      postconditions:<ul>
-      <li>Numeric Factorization will be performed (or marked to be performed) 
-      allowing Solve() to be performed correctly despite a potential change in 
-      in the matrix values (though not in the non-zero structure).
-      </ul>
-
-     \return Integer error code, set to 0 if successful.
-  */
-    int NumericFactorization() ;
-
-    //! Solves A X = B (or A<SUP>T</SUP> x = B) 
-    /*! 
-
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      <li>The matrix should not have changed
-          since the last call to NumericFactorization().
-      </ul>
-
-      postconditions:<ul> 
-      <li>X will be set such that A X = B (or
-      A<SUP>T</SUP> X = B), within the limits of the accuracy of the
-      underlying solver.  
-      </ul>
-
-     \return Integer error code, set to 0 if successful.
-  */
-    int Solve();
+  int Solve();
 
   //@}
-  
   //@{ \name Atribute set methods
   //!  Amesos_Superludist does not support transpose at this time.
   /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
    */
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return( UseTranspose_?1:0 );};
+  int SetUseTranspose(bool UseTranspose) {
+    AMESOS_CHK_ERR(-1);
+  }
 
   //@}
   
   //@{ \name Atribute access functions
 
-#if 0
-  //! Returns a character string describing the operator
-  char * Label() const {return(Epetra_Object::Label());};
-#endif
-    
-  //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
   //! Returns true if SUPERLUDIST can handle this matrix shape 
@@ -189,60 +111,25 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
   //@}
 
-  //!  Updates internal variables. 
-  /*!  
-      <br \>Preconditions:<ul>
-      <li>None.</li>
-      </ul>
-
-      <br \>Postconditions:<ul> 
-      <li>Internal variables controlling the factorization and solve will
-      be updated and take effect on all subsequent calls to NumericFactorization() 
-      and Solve().</li>
-      <li>All parameters whose value are to differ from the default values must 
-be included in ParameterList.  Parameters not specified in ParameterList 
-revert to their default values.
-      </ul>
-
-    Amesos_Superludist accepts the following parameters:
-    <ul>
-    <li>"AddZeroToDiag" - boolean:false - Adds zero to the diagonal, only active if Redistribute is true 
-    <li>"Redistribute" - boolean:true - Redistributes the matrix 
-    <li>"MaxProcs" - Maximum Number of Processors to use
-      <ul>
-      <li>&gt 0: Specifies the maximum number of processes to use
-      <li>-1 : Maximum number of processes chosen via an internal heuristic based on the matrix size
-      <li>-2 : Maximum number of processes set to the square root of the number of processes
-      <li>-3 : Use all processes
-      </ul>
-    </ul>
-
-
-
-   */
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
   //! Print various timig.
-  void PrintTiming();
+  void PrintTiming() const;
   
   //! Print various information about the parameters used by Superludist.
-  void PrintStatus();
+  void PrintStatus() const;
   
- private:  
+private:  
 
-  int RedistributeA() ;
+  int RedistributeA();
 
-  int ReFactor() ;
-  int Factor() ;
-
- protected:
+  int ReFactor();
+  int Factor();
 
   //
   //  Parameters set by the Parameter list
@@ -350,4 +237,4 @@ revert to their default values.
   bool ComputeVectorNorms_;
   
 };  // End of  class Amesos_Superludist  
-#endif /* _AMESOS_SUPERLUDIST_H_ */
+#endif /* AMESOS_SUPERLUDIST_H */

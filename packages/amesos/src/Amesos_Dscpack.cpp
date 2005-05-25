@@ -26,17 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-//  As of July 1st, USE_STL_SORT and USE_LOCAL both work together or separately
-//  (But you have to set at least one)
-//  #define USE_STL_SORT
-#define USE_LOCAL
-
-#ifndef USE_LOCAL
-#ifndef USE_STL_SORT
-At present, either USE_LOCAL or USE_STL_SORT is required
-#endif
-#endif
-
 #include "Amesos_Dscpack.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -44,32 +33,16 @@ At present, either USE_LOCAL or USE_STL_SORT is required
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 #include "Epetra_Time.h"
+#define USE_STL_SORT
 #ifdef USE_STL_SORT
 #include <algorithm>
 #endif
 
 //=============================================================================
 Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
-  IsSymbolicFactorizationOK_(false), 
-  IsNumericFactorizationOK_(false),
   DscGraph_(0), 
   UseTranspose_(false), // Dscpack is only for symmetric systems
   DscNumProcs(-1), // will be set later
-  PrintTiming_(false),
-  PrintStatus_(false),
-  ComputeVectorNorms_(false),
-  ComputeTrueResidual_(false),
-  verbose_(1),
-  ConTime_(0.0),
-  SymTime_(0.0),
-  NumTime_(0.0),
-  SolTime_(0.0),
-  VecTime_(0.0),
-  MatTime_(0.0),
-  NumSymbolicFact_(0),
-  NumNumericFact_(0),
-  NumSolve_(0),
-  Time_(0),  
   ImportToSerial_(0),
   DscMap_(0),
   MaxProcs_(-1)
@@ -91,7 +64,6 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
   }
   DSC_End( MyDSCObject ) ; 
 
-  if( Time_ ) { delete Time_; Time_ = 0; }
   if( ImportToSerial_ ) { delete ImportToSerial_; ImportToSerial_ = 0; }
   if( DscMap_ ) { delete DscMap_; DscMap_ = 0; }
     
@@ -155,8 +127,7 @@ int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList )
 //=============================================================================
 int Amesos_Dscpack::PerformSymbolicFactorization()
 {
-  
-  Time_->ResetStartTime();
+  ResetTime();
   
   vector <int> Replicates;
   vector <int> Ap;
@@ -216,10 +187,10 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   assert( Ai_index == numentries ) ; 
   Ap[ numrows ] = Ai_index ; 
   
-  ConTime_ += Time_->ElapsedTime();
+  AddTime("matrix conversion");
 
-  Time_->ResetStartTime();
-  
+  ResetTime();
+
   //
   //  Call Dscpack Symbolic Factorization
   //  
@@ -312,7 +283,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   
   //  A_and_LU_built = true;   // If you uncomment this, TestOptions fails
   
-  SymTime_ += Time_->ElapsedTime();
+  AddTime("symbolic");
   return 0;
 
 }
@@ -320,8 +291,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Dscpack::PerformNumericFactorization()
 {
-
-  Time_->ResetStartTime();
+  ResetTime();
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
@@ -456,7 +426,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
   
   IsNumericFactorizationOK_ = true ; 
 
-  NumTime_ += Time_->ElapsedTime();
+  AddTime("numeric");
   
   return 0;
 }
@@ -479,8 +449,7 @@ int Amesos_Dscpack::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
   
-  if (Time_ == 0) 
-    Time_ = new Epetra_Time( Comm() );
+  InitTime(Comm());
 
   NumSymbolicFact_++;
   
@@ -495,8 +464,6 @@ int Amesos_Dscpack::NumericFactorization()
 {
 
   IsNumericFactorizationOK_ = false;
-  if (Time_ == 0) 
-    Time_ = new Epetra_Time( Comm() );
 
   NumNumericFact_++;
   
@@ -512,16 +479,12 @@ int Amesos_Dscpack::NumericFactorization()
 //=============================================================================
 int Amesos_Dscpack::Solve()
 {
-
-  if (Time_ == 0) 
-    Time_ = new Epetra_Time( Comm() );
-
   NumSolve_++;
 
   if (IsNumericFactorizationOK_ == false) 
     AMESOS_CHK_ERR(NumericFactorization());
 
-  Time_->ResetStartTime();
+  ResetTime();
   
   Epetra_RowMatrix *RowMatrixA = Problem_->GetMatrix();
   if (RowMatrixA == 0)
@@ -566,8 +529,8 @@ int Amesos_Dscpack::Solve()
   //....//  dscmapB.Import( *vecBvector, ImportOriginalToDsc, Insert ) ;
   dscmapB.Import( *vecBvector, *ImportToSerial_, Insert ) ;
 
-  VecTime_ += Time_->ElapsedTime();
-  Time_->ResetStartTime();
+  AddTime("vector redistribution");
+  ResetTime();
   
   // MS // now solve the problem
   
@@ -588,101 +551,106 @@ int Amesos_Dscpack::Solve()
     
   }
 
-  SolTime_ += Time_->ElapsedTime();
+  AddTime("solve");
 
   // MS // use always the same Import/Export, avoid allocations
   // MS // add timing
   //....//  Epetra_Import ImportDscToOriginal( OriginalMap, DscMap );
   
-  Time_->ResetStartTime();  
+  ResetTime();
+
   vecX->Export( dscmapX, *ImportToSerial_, Insert ) ;
-  VecTime_ += Time_->ElapsedTime();
 
-  // MS // compute vector norms if required
-  if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
-    double NormLHS, NormRHS;
-    for( int i=0 ; i<NumVectors ; ++i ) {
-      (*vecX)(i)->Norm2(&NormLHS);
-      (*vecB)(i)->Norm2(&NormRHS);
-      if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Dscpack : vector " << i << ", ||x|| = " << NormLHS
-	     << ", ||b|| = " << NormRHS << endl;
-      }
-    }
-  }
+  AddTime("vector redistribution");
 
-  // MS // compute true residual if required
-  if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
-    double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),NumVectors);
-    for( int i=0 ; i<NumVectors ; ++i ) {
-      (Problem_->GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
-      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
-      (Ax.Norm2(&Norm));
+  if (ComputeTrueResidual_)
+    ComputeTrueResidual(*(GetProblem()->GetMatrix()), *vecX, *vecB, 
+                        UseTranspose(), "Amesos_Dscpack");
 
-      if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Dscpack : vector " << i << ", ||Ax - b|| = " << Norm << endl;
-      }
-    }
-  }
+  if (ComputeVectorNorms_)
+    ComputeVectorNorms(*vecX, *vecB, "Amesos_Dscpack");
+
   
   return(0) ; 
 }
 
-// ================================================ ====== ==== ==== == =
-void Amesos_Dscpack::PrintStatus()
+// ======================================================================
+void Amesos_Dscpack::PrintStatus() const
 {
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
 
-  if( Comm().MyPID() != 0  ) return;
+  string p = "Amesos_Dscpack : ";
+  PrintLine();
 
-  int numrows =  GetProblem()->GetMatrix()->NumGlobalRows();
-  int numentries = GetProblem()->GetMatrix()->NumGlobalNonzeros();
-  
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Dscpack : Matrix has " << numrows << " rows"
-       << " and " << numentries << " nonzeros" << endl;
-  cout << "Amesos_Dscpack : Nonzero elements per row = "
-       << 1.0*numentries/numrows << endl;
-  cout << "Amesos_Dscpack : Percentage of nonzero elements = "
-       << 100.0*numentries/(pow(numentries,2.0)) << endl;
-  cout << "Amesos_Dscpack : Available process(es) = " << Comm().NumProc() << endl;
-  cout << "Amesos_Dscpack : Process(es) used = " << DscNumProcs
+  int n = GetProblem()->GetMatrix()->NumGlobalRows();
+  int nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros();
+
+  cout << p << "Matrix has " << n << " rows"
+       << " and " << nnz << " nonzeros" << endl;
+  cout << p << "Nonzero elements per row = "
+       << 1.0 *  nnz / n << endl;
+  cout << p << "Percentage of nonzero elements = "
+       << 100.0 * nnz /(pow(n,2.0)) << endl;
+  cout << p << "Use transpose = " << UseTranspose_ << endl;
+  cout << p << "Available process(es) = " << Comm().NumProc() << endl;
+  cout << p << "Process(es) used = " << DscNumProcs
        << ", idle = " << Comm().NumProc() - DscNumProcs << endl;
-  cout << "Amesos_Dscpack : Estimated total memory for factorization =  " 
+  cout << p << "Estimated total memory for factorization =  " 
        << TotalMemory_ << " Mbytes" << endl; 
-  cout << "----------------------------------------------------------------------------" << endl;
 
   DSC_DoStats( MyDSCObject );
-  return;
 
+  PrintLine();
+
+  return;
 }
 
-// ================================================ ====== ==== ==== == =
-void Amesos_Dscpack::PrintTiming()
+// ====================================================================== 
+void Amesos_Dscpack::PrintTiming() const
 {
-  if( Comm().MyPID() ) return;
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
 
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Dscpack : Time to convert matrix to DSCPACK format = "
-       << ConTime_ << " (s)" << endl;
-  cout << "Amesos_Dscpack : Time to redistribute vectors = "
-       << VecTime_ << " (s)" << endl;
-  cout << "Amesos_Dscpack : Number of symbolic factorizations = "
+  double ConTime = GetTime("conversion");
+  double MatTime = GetTime("matrix redistribution");
+  double VecTime = GetTime("vector redistribution");
+  double SymTime = GetTime("symbolic");
+  double NumTime = GetTime("numeric");
+  double SolTime = GetTime("solve");
+
+  if (NumSymbolicFact_)
+    SymTime /= NumSymbolicFact_;
+
+  if (NumNumericFact_)
+    NumTime /= NumNumericFact_;
+
+  if (NumSolve_)
+    SolTime /= NumSolve_;
+
+  string p = "Amesos_Dscpack : ";
+  PrintLine();
+
+  cout << p << "Time to convert matrix to DSCPACK format = "
+       << ConTime << " (s)" << endl;
+  cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << endl;
+  cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << endl;
+  cout << p << "Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
-  cout << "Amesos_Dscpack : Time for sym fact = "
-       << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
-       << " (s)" << endl;
-  cout << "Amesos_Dscpack : Number of numeric factorizations = "
+  cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
+  cout << p << "Number of numeric factorizations = "
        << NumNumericFact_ << endl;
-  cout << "Amesos_Dscpack : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-       << " (s)" << endl;
-  cout << "Amesos_Dscpack : Number of solve phases = "
+  cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+  cout << p << "Number of solve phases = "
        << NumSolve_ << endl;
-  cout << "Amesos_Dscpack : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-       << " (s)" << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+  cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+
+  PrintLine();
 
   return;
 }

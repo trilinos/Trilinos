@@ -40,34 +40,13 @@ extern "C" {
 
 //=============================================================================
 Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
-  IsSymbolicFactorizationOK_(false), 
-  IsNumericFactorizationOK_(false), 
   Symbolic(0),
   Numeric(0),
-  SerialMap_(0), 
   SerialMatrix_(0), 
-  SerialCrsMatrixA_(0),
   UseTranspose_(false),
   Problem_(&prob), 
   Rcond_(0.0), 
-  RcondValidOnAllProcs_(true), 
-  PrintTiming_(false),
-  PrintStatus_(false),
-  AddToDiag_(0.0),
-  ComputeVectorNorms_(false),
-  ComputeTrueResidual_(false),
-  verbose_(1),
-  ConTime_(0.0),
-  SymTime_(0.0),
-  NumTime_(0.0),
-  SolTime_(0.0),
-  VecTime_(0.0),
-  MatTime_(0.0),
-  NumSymbolicFact_(0),
-  NumNumericFact_(0),
-  NumSolve_(0),
-  Time_(0),
-  ImportToSerial_(0)
+  RcondValidOnAllProcs_(true)
 {
   
   // MS // move declaration of Problem_ above because I need it
@@ -79,28 +58,21 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
 //=============================================================================
 Amesos_Umfpack::~Amesos_Umfpack(void) 
 {
-
-  if ( SerialMap_ ) delete SerialMap_ ; 
-  if ( Symbolic ) umfpack_di_free_symbolic (&Symbolic) ;
-  if ( Numeric ) umfpack_di_free_numeric (&Numeric) ;
-
-    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
-
-  if( Time_ ) delete Time_;
-
-  if( ImportToSerial_ ) { delete ImportToSerial_; ImportToSerial_ = 0; }
+  if (Symbolic) umfpack_di_free_symbolic (&Symbolic);
+  if (Numeric) umfpack_di_free_numeric (&Numeric);
 
   // print out some information if required by the user
-  if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
-  if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
-  
+  if ((verbose_ && PrintTiming_) || verbose_ == 2) PrintTiming();
+  if ((verbose_ && PrintStatus_) || verbose_ == 2) PrintStatus();
 }
 
 //=============================================================================
-int Amesos_Umfpack::ConvertToSerial() 
+// If FirstTime is true, then build SerialMap and ImportToSerial,
+// otherwise simply re-ship the matrix, so that the numerical values
+// are updated.
+int Amesos_Umfpack::ConvertToSerial(const bool FirstTime) 
 { 
-
-  Time_->ResetStartTime();
+  ResetTime();
   
   iam = Comm().MyPID() ;
 
@@ -122,24 +94,34 @@ int Amesos_Umfpack::ConvertToSerial()
   if (IsLocal_== 1) {
      SerialMatrix_ = Matrix();
   } 
-  else {
-    if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
+  else 
+  {
+    if (FirstTime)
+    {
+      SerialMap_ = rcp(new Epetra_Map(NumGlobalElements_,NumMyElements_,
+                                      0,Comm()));
 
-    SerialMap_ = new Epetra_Map(NumGlobalElements_,NumMyElements_,0,Comm());
-    assert (SerialMap_ != 0);
+      if (SerialMap_.get() == 0)
+        AMESOS_CHK_ERR(-1);
 
-    Epetra_Export export_to_serial(OriginalMap,*SerialMap_);
+      ImportToSerial_ = rcp(new Epetra_Import (SerialMap(),OriginalMap));
 
-    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
+      if (ImportToSerial_.get() == 0)
+        AMESOS_CHK_ERR(-1);
+    }
 
-    SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy,*SerialMap_,0);
-    SerialCrsMatrixA_->Export(*Matrix(), export_to_serial,Insert); 
+    SerialCrsMatrixA_ = rcp(new Epetra_CrsMatrix(Copy,SerialMap(),0));
+
+    if (SerialCrsMatrixA_.get() == 0)
+      AMESOS_CHK_ERR(-1);
+
+    SerialCrsMatrix().Import(*Matrix(), Importer(),Insert); 
     
-    SerialCrsMatrixA_->FillComplete(); 
-    SerialMatrix_ = SerialCrsMatrixA_;
+    SerialCrsMatrix().FillComplete(); 
+    SerialMatrix_ = &SerialCrsMatrix();
   }
 
-  MatTime_ += Time_->ElapsedTime();
+  AddTime("matrix redistribution");
   
   return(0);
 } 
@@ -147,8 +129,7 @@ int Amesos_Umfpack::ConvertToSerial()
 //=============================================================================
 int Amesos_Umfpack::ConvertToUmfpackCRS()
 {
-  
-  Time_->ResetStartTime();
+  ResetTime();
   
   //  Convert matrix to the form that Umfpack expects (Ap, Ai, Aval) 
 
@@ -199,17 +180,14 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
     Ap[MyRow] = Ai_index ; 
   }
 
-  ConTime_ += Time_->ElapsedTime();
+  AddTime("matrix conversion");
   
   return 0;
 }   
 
 //=============================================================================
-int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
-
-  //  Some compilers reject the following cast:
-  //  if(  (int) &ParameterList == 0 ) return 0;
-
+int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) 
+{
   // ========================================= //
   // retrive UMFPACK's parameters from list.   //
   // default values defined in the constructor //
@@ -218,51 +196,43 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // retrive general parameters
 
   // solve problem with transpose
-  if( ParameterList.isParameter("UseTranspose") )
+  if (ParameterList.isParameter("UseTranspose"))
     SetUseTranspose(ParameterList.get("UseTranspose",false));
 
   // print some timing information (on process 0)
-  if( ParameterList.isParameter("PrintTiming") )
+  if (ParameterList.isParameter("PrintTiming"))
     PrintTiming_ = ParameterList.get("PrintTiming", false);
 
   // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
+  if (ParameterList.isParameter("PrintStatus"))
     PrintStatus_ = ParameterList.get("PrintStatus", false);
 
   // add this value to diagonal
-  if( ParameterList.isParameter("AddToDiag") )
+  if (ParameterList.isParameter("AddToDiag"))
     AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
 
   // compute norms of some vectors
-  if( ParameterList.isParameter("ComputeVectorNorms") )
+  if (ParameterList.isParameter("ComputeVectorNorms"))
     ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
 
   // compute the true residual Ax-b after solution
-  if( ParameterList.isParameter("ComputeTrueResidual") )
+  if (ParameterList.isParameter("ComputeTrueResidual"))
     ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
 
   // some verbose output:
   // 0 - no output at all
   // 1 - output as specified by other parameters
   // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
+  if (ParameterList.isParameter("OutputLevel"))
     verbose_ = ParameterList.get("OutputLevel",1);
 
-  // MS // now comment it out (only because the list if empty).
-  // MS // When we will have parameters for UMFPACK sublist
-  // MS // uncomment it
-  /*  
-  if (ParameterList.isSublist("Umfpack") ) {
-    Teuchos::ParameterList UmfpackParams = ParameterList.sublist("Umfpack") ;
-  }
-  */
   return 0;
 }
 
 //=============================================================================
-int Amesos_Umfpack::PerformSymbolicFactorization() {
-
-  Time_->ResetStartTime();  
+int Amesos_Umfpack::PerformSymbolicFactorization() 
+{
+  ResetTime();
 
   double *Control = (double *) NULL, *Info = (double *) NULL ;
   
@@ -274,15 +244,15 @@ int Amesos_Umfpack::PerformSymbolicFactorization() {
 				&Symbolic, Control, Info) ;
   }
 
-  SymTime_ += Time_->ElapsedTime();
+  AddTime("symbolic");
 
   return 0;
 }
 
 //=============================================================================
-int Amesos_Umfpack::PerformNumericFactorization( ) {
-
-  Time_->ResetStartTime();
+int Amesos_Umfpack::PerformNumericFactorization( ) 
+{
+  ResetTime();
 
   RcondValidOnAllProcs_ = false ; 
   if (iam == 0) {
@@ -342,7 +312,7 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
     assert( status == 0 ) ; 
   }
   
-  NumTime_ += Time_->ElapsedTime();
+  AddTime("numeric");
   return 0;
 }
 
@@ -369,16 +339,14 @@ bool Amesos_Umfpack::MatrixShapeOK() const
 //=============================================================================
 int Amesos_Umfpack::SymbolicFactorization() 
 {
-
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
-  if (Time_ == 0) 
-    Time_ = new Epetra_Time(Comm());
+  InitTime(Comm());
 
   NumSymbolicFact_++;  
 
-  ConvertToSerial() ; 
+  ConvertToSerial(true); 
   ConvertToUmfpackCRS();
   
   PerformSymbolicFactorization();
@@ -390,14 +358,11 @@ int Amesos_Umfpack::SymbolicFactorization()
 //=============================================================================
 int Amesos_Umfpack::NumericFactorization() 
 {
-
   IsNumericFactorizationOK_ = false;
-  if( Time_ == 0 ) 
-    Time_ = new Epetra_Time( Comm() );
+  if (!IsSymbolicFactorizationOK_)
+    AMESOS_CHK_ERR(SymbolicFactorization());
   
-  NumNumericFact_++;  
-
-  ConvertToSerial() ; 
+  ConvertToSerial(false);
   
   ConvertToUmfpackCRS();
   
@@ -407,7 +372,10 @@ int Amesos_Umfpack::NumericFactorization()
 
   PerformNumericFactorization();
 
+  NumNumericFact_++;  
+
   IsNumericFactorizationOK_ = true;
+
   return 0;
 }
 
@@ -415,8 +383,6 @@ int Amesos_Umfpack::NumericFactorization()
 int Amesos_Umfpack::Solve() 
 { 
 
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
-  
   NumSolve_++;
 
   // if necessary, perform numeric factorization. 
@@ -446,49 +412,33 @@ int Amesos_Umfpack::Solve()
     
   //  Copy B to the serial version of B
   //
-  Time_->ResetStartTime(); // track time to broadcast vectors
+  ResetTime();
   
   if (IsLocal_ == 1) { 
     SerialB = vecB ; 
     SerialX = vecX ; 
   } else { 
     assert (IsLocal_ == 0);
-    const Epetra_Map& OriginalMap = Matrix()->RowMatrixRowMap();
-    SerialXextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
-    SerialBextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
+    SerialXextract = new Epetra_MultiVector(SerialMap(),NumVectors); 
+    SerialBextract = new Epetra_MultiVector(SerialMap(),NumVectors); 
 
-    if (ImportToSerial_ == 0) {
-      ImportToSerial_ = new Epetra_Import (*SerialMap_,OriginalMap );
-    }
-     
-    if (!ImportToSerial_->SourceMap().SameAs(Matrix()->RowMatrixRowMap())) {
-      delete SerialMap_;
-      SerialMap_ = 0;
-      delete ImportToSerial_;
-      ImportToSerial_ = 0;
-      int i = Matrix()->NumGlobalRows();
-      if (Comm().MyPID())
-	i = 0;
-      SerialMap_ = new Epetra_Map(-1,i,0,Comm());
-      ImportToSerial_ = new Epetra_Import (*SerialMap_,OriginalMap );
-    }
-
-    SerialBextract->Import(*vecB,*ImportToSerial_,Insert);
+    SerialBextract->Import(*vecB,Importer(),Insert);
     SerialB = SerialBextract; 
     SerialX = SerialXextract; 
-
   } 
 
-  VecTime_ += Time_->ElapsedTime();
+  AddTime("vector redistribution");
   
   //  Call UMFPACK to perform the solve
   //  Note:  UMFPACK uses a Compressed Column Storage instead of compressed row storage, 
   //  Hence to compute A X = B, we ask UMFPACK to perform A^T X = B and vice versa
 
-  Time_->ResetStartTime(); // track time to solve
+  ResetTime();
 
   int SerialBlda, SerialXlda ; 
   int UmfpackRequest = UseTranspose()?UMFPACK_A:UMFPACK_At ;
+  int status = 0;
+
   if ( iam == 0 ) {
     int ierr;
     ierr = SerialB->ExtractView(&SerialBvalues, &SerialBlda);
@@ -502,68 +452,48 @@ int Amesos_Umfpack::Solve()
       double *Control = (double *) NULL, *Info = (double *) NULL ;
 
 
-      int status = umfpack_di_solve (UmfpackRequest, &Ap[0], 
+      status = umfpack_di_solve (UmfpackRequest, &Ap[0], 
 				     &Ai[0], &Aval[0], 
 				     &SerialXvalues[j*SerialXlda], 
 				     &SerialBvalues[j*SerialBlda], 
 				     Numeric, Control, Info) ;
-      AMESOS_CHK_ERR(status); 
     }
   }
     
-  SolTime_ += Time_->ElapsedTime();
+  AddTime("solve");
   
   //  Copy X back to the original vector
-  // 
-  Time_->ResetStartTime();  // track time to broadcast vectors
+  
+  ResetTime();
 
   if ( IsLocal_ == 0 ) {
-    vecX->Export( *SerialX, *ImportToSerial_, Insert ) ;
+    vecX->Export(*SerialX, Importer(), Insert ) ;
     if (SerialBextract) delete SerialBextract ;
     if (SerialXextract) delete SerialXextract ;
   }
 
-  VecTime_ += Time_->ElapsedTime();
+  AddTime("vector redistribution");
 
-  // MS // compute vector norms
-  if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
-    double NormLHS, NormRHS;
-    for( int i=0 ; i<NumVectors ; ++i ) {
-      (*vecX)(i)->Norm2(&NormLHS);
-      (*vecB)(i)->Norm2(&NormRHS);
-      if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Umfpack : vector " << i << ", ||x|| = " << NormLHS
-	     << ", ||b|| = " << NormRHS << endl;
-      }
-    }
-  }
-  
-  // MS // compute true residual
-  if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
-    double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),NumVectors);
-    for( int i=0 ; i<NumVectors ; ++i ) {
-      (Problem_->GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
-      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
-      (Ax.Norm2(&Norm));
-      
-      if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Umfpack : vector " << i << ", ||Ax - b|| = " << Norm << endl;
-      }
-    }
+  if (ComputeTrueResidual_)
+  {
+    Epetra_RowMatrix* Matrix = 
+      dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+    ComputeTrueResidual(*Matrix, *vecX, *vecB, UseTranspose(), "Amesos_Umfpack");
   }
 
-  return(0) ; 
+  if (ComputeVectorNorms_)
+    ComputeVectorNorms(*vecX, *vecB, "Amesos_Umfpack");
+
+  AMESOS_RETURN(status);
 }
 
-// ================================================ ====== ==== ==== == =
-
-void Amesos_Umfpack::PrintStatus() 
+// ====================================================================== 
+void Amesos_Umfpack::PrintStatus() const
 {
+  if (iam != 0) return;
 
-  if( iam != 0  ) return;
+  PrintLine();
 
-  cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Umfpack : Matrix has " << NumGlobalElements_ << " rows"
        << " and " << numentries_ << " nonzeros" << endl;
   cout << "Amesos_Umfpack : Nonzero elements per row = "
@@ -571,49 +501,57 @@ void Amesos_Umfpack::PrintStatus()
   cout << "Amesos_Umfpack : Percentage of nonzero elements = "
        << 100.0*numentries_/(pow(NumGlobalElements_,2.0)) << endl;
   cout << "Amesos_Umfpack : Use transpose = " << UseTranspose_ << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+
+  PrintLine();
 
   return;
-  
 }
 
-// ================================================ ====== ==== ==== == =
-
-void Amesos_Umfpack::PrintTiming()
+// ====================================================================== 
+void Amesos_Umfpack::PrintTiming() const
 {
-  if (iam) return;
-  
-  double SymTime = 0.0, NumTime = 0.0, SolTime = 0.0;
+  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+    return;
+
+  double ConTime = GetTime("conversion");
+  double MatTime = GetTime("matrix redistribution");
+  double VecTime = GetTime("vector redistribution");
+  double SymTime = GetTime("symbolic");
+  double NumTime = GetTime("numeric");
+  double SolTime = GetTime("solve");
 
   if (NumSymbolicFact_)
-    SymTime = SymTime_ / NumSymbolicFact_;
+    SymTime /= NumSymbolicFact_;
 
   if (NumNumericFact_)
-    NumTime =  NumTime_ / NumNumericFact_;
+    NumTime /= NumNumericFact_;
 
   if (NumSolve_)
-    SolTime = SolTime_ / NumSolve_;
+    SolTime /= NumSolve_;
 
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Umfpack : Time to convert matrix to UMFPACK format = "
-       << ConTime_ << " (s)" << endl;
-  cout << "Amesos_Umfpack : Time to redistribute matrix = "
-       << MatTime_ << " (s)" << endl;
-  cout << "Amesos_Umfpack : Time to redistribute vectors = "
-       << VecTime_ << " (s)" << endl;
-  cout << "Amesos_Umfpack : Number of symbolic factorizations = "
+  string p = "Amesos_Umfpack : ";
+  PrintLine();
+
+  cout << p << "Time to convert matrix to Umfpack format = "
+       << ConTime << " (s)" << endl;
+  cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << endl;
+  cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << endl;
+  cout << p << "Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
-  cout << "Amesos_Umfpack : Time for sym fact = "
-       << SymTime_ << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << "Amesos_Umfpack : Number of numeric factorizations = "
+  cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
+  cout << p << "Number of numeric factorizations = "
        << NumNumericFact_ << endl;
-  cout << "Amesos_Umfpack : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << "Amesos_Umfpack : Number of solve phases = "
+  cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+  cout << p << "Number of solve phases = "
        << NumSolve_ << endl;
-  cout << "Amesos_Umfpack : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
-   
+  cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+
+  PrintLine();
+
   return;
 }
