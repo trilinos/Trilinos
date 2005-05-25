@@ -30,6 +30,8 @@ Amesos supports the following classes:
 - \c Amesos_Klu - Interface to Tim Davis serial solver KLU (distributed within Amesos). 
 - \c Amesos_Umfpack - Interface to Tim Davis's UMFPACK (version 4.3 or later)
 - \c Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface.
+- \c Amesos_Pardiso - Interface to PARDISO
+- \c Amesos_Taucs - Interface to TAUCS
 - \c Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface (version 2.0 or later).
 - \c Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
 - \c Amesos_Mumps - Interface to CERFACS' MUMPS (version 4.3.1 or later)
@@ -140,6 +142,8 @@ The following tables reports an overview of the Amesos classes.
 <table>
 <tr>
 <td><B>Features</B></td>
+<td>Amesos_Pardiso</td>
+<td>Amesos_Taucs</td>
 <td>Amesos_Superludist</td>
 <td>Amesos_Mumps</td>
 <td>Amesos_Dscpack</td>
@@ -149,21 +153,29 @@ The following tables reports an overview of the Amesos classes.
 <td>Disabled</td>
 <td>Disabled</td>
 <td>Disabled</td>
+<td>Disabled</td>
+<td>Disabled</td>
 </tr>
 <tr>
 <td>Package is written in</td>
+<td>--</td>
+<td>C</td>
 <td>C</td>
 <td>FORTRAN90</td>
 <td>C</td>
 </tr>
 <tr>
 <td>Communicator</td>
+<td>none</td>
+<td>none</td>
 <td>MPI</td>
 <td>FORTRAN MPI</td>
 <td>MPI</td>
 </tr>
 <tr>
 <td>Processes used for Factorization/Solve</td>
+<td>Any</td>
+<td>Any</td>
 <td>Any</td>
 <td>Any (*)</td>
 <td>Any (**)</td>
@@ -173,9 +185,13 @@ The following tables reports an overview of the Amesos classes.
 <td>Yes </td>
 <td>Yes </td>
 <td>Yes </td>
+<td>Yes </td>
+<td>Yes </td>
 </tr>
 <tr>
 <td>Unsymmetric matrices</td>
+<td>Yes</td>
+<td>No</td>
 <td>Yes</td>
 <td>Yes</td>
 <td>No</td>
@@ -183,11 +199,15 @@ The following tables reports an overview of the Amesos classes.
 <tr>
 <td>Requires BLAS</td>
 <td>Yes</td>
+<td>No</td>
+<td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>Requires LAPACK</td>
+<td>Yes</td>
+<td>No</td>
 <td>No</td>
 <td>No</td>
 <td>No</td>
@@ -195,11 +215,15 @@ The following tables reports an overview of the Amesos classes.
 <tr>
 <td>Requires BLACS</td>
 <td>No</td>
+<td>No</td>
+<td>No</td>
 <td>Yes</td>
 <td>No</td>
 </tr>
 <tr>
 <td>Requires ScaLAPACK</td>
+<td>No</td>
+<td>No</td>
 <td>No</td>
 <td>Yes</td>
 <td>No</td>
