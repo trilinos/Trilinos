@@ -14,7 +14,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
+
 using namespace Trilinos_Util;
+
+bool quiet = false ;
 
 // ====================================================================== 
 // this function tests two things:
@@ -27,7 +30,7 @@ using namespace Trilinos_Util;
 // \date Last updated on 21-Apr-04.
 // ====================================================================== 
 
-bool TestAmesos(bool quiet, char ProblemType[], Teuchos::ParameterList& AmesosList,
+bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
                 bool UseTranspose, Epetra_RowMatrix* A, Epetra_MultiVector* lhs,
                 Epetra_MultiVector* rhs)
 {
@@ -49,7 +52,6 @@ bool TestAmesos(bool quiet, char ProblemType[], Teuchos::ParameterList& AmesosLi
   lhs->PutScalar(0.0);
 
   Problem.SetOperator(A);
-
 
   if (Solver->SymbolicFactorization()) return(false);
   if (Solver->NumericFactorization()) return(false);
@@ -101,23 +103,10 @@ bool TestAmesos(bool quiet, char ProblemType[], Teuchos::ParameterList& AmesosLi
   return(true);
 }
 
-// =========== //
-// main driver //
-// =========== //
-//
-int main(int argc, char *argv[]) 
+void driver(Epetra_Comm& Comm, const string Type, const bool UseTranspose, 
+            vector<string>& SolverType)
 {
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  bool quiet = false ;
-  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) quiet = true ;
-
-  CrsMatrixGallery Gallery("recirc_2d", Comm);
+  CrsMatrixGallery Gallery(Type, Comm);
   Gallery.Set("problem_size", 64);
   Gallery.Set("num_vectors", 2);
 
@@ -132,16 +121,6 @@ int main(int argc, char *argv[])
 
   Amesos Factory;  
   
-  vector<string> SolverType;
-  SolverType.push_back("Amesos_Lapack");
-  SolverType.push_back("Amesos_Klu");
-  SolverType.push_back("Amesos_Umfpack");
-  SolverType.push_back("Amesos_Superlu");
-  SolverType.push_back("Amesos_Superludist");  // Does not seem to work
-  SolverType.push_back("Amesos_Mumps");
-  SolverType.push_back("Amesos_Scalapack");
-  // NOTE: DSCPACK does not support RowMatrix's.
-
   bool res;
 
   // If a given test fails, than the code stops, bue to the assert()
@@ -152,31 +131,76 @@ int main(int argc, char *argv[])
 
     if (Factory.Query((char*)Solver.c_str())) 
     {
-      if (1) {
-	// solve with matrix
-	Teuchos::ParameterList AmesosList;
-	AmesosList.set("Redistribute",false);
-	res = TestAmesos(quiet,(char*)Solver.c_str(), AmesosList, false, 
-                         &A, LHS, RHS);
+      // solve with matrix
+      Teuchos::ParameterList AmesosList;
+      AmesosList.set("Redistribute",false);
+      res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
+                       &A, LHS, RHS);
+      assert (res == true);
+      if (UseTranspose) {
+        // solve transpose with matrix
+        Teuchos::ParameterList AmesosList;
+        res  = TestAmesos((char*)Solver.c_str(), AmesosList, true, 
+                          &A, LHS, RHS);
         assert (res == true);
-      }
-      if (1) {
-	// solve transpose with matrix
-	if (Solver != "Amesos_Superludist") {// still not implementes
-	  Teuchos::ParameterList AmesosList;
-	  res  = TestAmesos(quiet,(char*)Solver.c_str(), AmesosList, true, 
-                            &A, LHS, RHS);
-          assert (res == true);
-	}
       }
     } 
     else
-      if (! quiet && !Comm.MyPID()) 
+      if (!quiet && !Comm.MyPID()) 
       {
 	cerr << endl;
 	cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << endl;
 	cerr << endl;
       }
+  }
+}
+
+// =========== //
+// main driver //
+// =========== //
+//
+int main(int argc, char *argv[]) 
+{
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) quiet = true ;
+
+  // NOTE: DSCPACK does not support RowMatrix's.
+  
+  if (true)
+  {
+    // non-symmetric matrix, test A and A^T
+    vector<string> SolverType;
+    SolverType.push_back("Amesos_Lapack");
+    SolverType.push_back("Amesos_Klu");
+    SolverType.push_back("Amesos_Umfpack");
+    SolverType.push_back("Amesos_Superlu");
+    SolverType.push_back("Amesos_Mumps");
+    SolverType.push_back("Amesos_Scalapack");
+    driver(Comm, "recirc_2d", true, SolverType);
+  }
+ 
+  if (true)
+  {
+    // non-symmetric matrix, test only A
+    vector<string> SolverType;
+    SolverType.push_back("Amesos_Pardiso");
+    SolverType.push_back("Amesos_Superludist");
+    driver(Comm, "recirc_2d", false, SolverType);
+  }
+
+  // I have some problems with Taucs with LAM
+  if (true)
+  {
+    // symmetric
+    vector<string> SolverType;
+    SolverType.push_back("Amesos_Taucs");
+    driver(Comm, "laplace_2d", false, SolverType);
   }
 
 #ifdef HAVE_MPI
@@ -212,5 +236,3 @@ int main(int argc, char *argv[])
 }
 
 #endif
-
-

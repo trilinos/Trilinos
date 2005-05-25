@@ -115,6 +115,8 @@ int main(int argc, char *argv[]) {
   SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
+  SolverType.push_back("Amesos_Pardiso");
+  SolverType.push_back("Amesos_Taucs");
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");

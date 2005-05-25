@@ -94,7 +94,7 @@ bool Test(char* SolverType,
   // - set problem (empty)
   // - set matrix and vector
   // - call Solve() directly
-  {
+  if (true) {
     x_A.PutScalar(0.0);
     ProblemA.SetOperator((Epetra_RowMatrix*)0);
     ProblemA.SetLHS((Epetra_MultiVector*)0);
@@ -114,7 +114,6 @@ bool Test(char* SolverType,
 	CheckError(SolverType, "Solve() only", A,x_A,b_A,x_exactA);
     }
     delete Solver; 
-
   }
 
   // Test almost simple usage:
@@ -122,6 +121,8 @@ bool Test(char* SolverType,
   // - set matrix and vector
   // - call NumericFactorization()
   // - call Solve() directly
+  
+  if (true) 
   {
     x_A.PutScalar(0.0);
     ProblemA.SetOperator((Epetra_RowMatrix*)0);
@@ -141,6 +142,7 @@ bool Test(char* SolverType,
 
     delete Solver; 
   }
+
   // Test normal usage:
   // - set problem (empty)
   // - set matrix
@@ -150,6 +152,8 @@ bool Test(char* SolverType,
   // - call Solve() several times
   // Repeated calls should *not* break the object. Data are supposed
   // to be re-computed as needed.
+  
+  if (true) 
   {
     x_A.PutScalar(0.0);
     ProblemA.SetOperator((Epetra_RowMatrix*)0);
@@ -191,6 +195,8 @@ bool Test(char* SolverType,
   // - call NumericFactorization()
   // - set vectors for B
   // - call Solve()
+  
+  if (true)
   {
     x_A.PutScalar(0.0);
     ProblemA.SetOperator((Epetra_RowMatrix*)0);
@@ -217,8 +223,9 @@ bool Test(char* SolverType,
   // Construct Solver with filled ProblemA.
   // Then, stick pointers for different vectors.
   // a different map as well.
+  
+  if (true)
   {
-    
     x_C.PutScalar(0.0);
     ProblemA.SetOperator(&A);
     ProblemA.SetLHS(&x_A);
@@ -247,6 +254,8 @@ bool Test(char* SolverType,
   // Construct Solver with filled ProblemA, call Solve().
   // Then, replace the pointers for matrix and vectors,
   // and call Solve() again.
+  
+  if (true)
   {
     x_C.PutScalar(0.0);
     ProblemA.SetOperator(&A);
@@ -343,6 +352,7 @@ int SubMain( Epetra_Comm &Comm ) {
   SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
+  SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
   // NOTE: DSCPACK does not support Epetra_RowMatrix's
