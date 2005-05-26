@@ -47,3 +47,9 @@ INPUT                  = ../src
 FILE_PATTERNS          = *.hpp
 
 GENERATE_TAGFILE       = ../../common/tag_files/claps.tag
+
+# You may want to remove this later, after you have inserted more Doxygen-style
+# comments.  I put it in here so more documentation would be generated 
+# initially.  --MNP
+
+EXTRACT_ALL            = YES
