@@ -269,7 +269,7 @@ exit $exitStatus;
         $hr = sprintf("%02d", $hr);
         $mn = sprintf("%02d", $mn);
         $se = sprintf("%02d", $se);
-        $buildEndTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+        my $buildEndTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
             
         # Create build info file for database.
         my $buildInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/build.txt.tmp";
@@ -329,7 +329,7 @@ exit $exitStatus;
         my $machineInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/machine.txt";
         open (MACHINE_FILE, ">$machineInfoFile")
             or die "can't open machine info file $machineInfoFile for writing, died";            
-        my $string = "";        
+        $string = "";        
         $string .= "HOST_NAME            = $hostName\n";
         $string .= "DNS_NAME             = $dnsName\n";
         $string .= "IP_ADDRESS           = $ipAddress\n";
