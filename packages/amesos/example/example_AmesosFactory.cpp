@@ -144,6 +144,8 @@ int main(int argc, char *argv[])
   // - Lapack
   // - Klu
   // - Umfpack
+  // - Pardiso
+  // - Taucs
   // - Superlu
   // - Superludist
   // - Mumps
@@ -179,7 +181,7 @@ int main(int argc, char *argv[])
   // In this example, we specify that we want more output.
   //
   Teuchos::ParameterList List;
-  List.set("PrintTiminig", true);
+  List.set("PrintTiming", true);
   List.set("PrintStatus", true);
   
   Solver->SetParameters(List);
