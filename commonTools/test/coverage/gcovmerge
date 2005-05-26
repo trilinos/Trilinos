@@ -149,9 +149,7 @@ foreach(`$find_string`){
 	    $path_comp{$_} = 0;
 	}
 	if($directories == 2){
-	    print STDERR "ready for $_\n";
 	    while(s/^(\.\/(.+\/)+).+$/$1/){
-		print STDERR "clearing $_\n";
 		$path_exec{$_} = 0;
 		$path_comp{$_} = 0;
 	    }
@@ -223,7 +221,6 @@ foreach(keys(%source_files)){
 	}
 	if($directories == 2){
 	    while($path =~ s/^(\.\/(.+\/)+).+$/$1/){
-		print STDERR "adding to $_\n";
 		$path_exec{$path} += $exec;
 		$path_comp{$path} += $comp;
 	    }
