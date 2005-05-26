@@ -41,7 +41,6 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
-
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplicationRythmosInterface
 // Purpose       : Interface code to link EampleApplication to Rythmos
@@ -49,25 +48,25 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-class ExampleApplicationRythmosInterface
+class ExampleApplicationRythmosInterface public Rythmos::NonlinearModel
 {
   public:
-    
-    // Destructor
     ~ExampleApplicationRythmosInterface();
 
-    // Cosntructor
-    ExampleApplicationRythmosInterface(Teuchos::RefCountPtr<const Epetra_Map> &epetra_map);
+    ExampleApplicationRythmosInterface();
 
-    int evalModel(Teuchos::RefCountPtr<Thyra::VectorBase<double> > &y, Teuchos::RefCountPtr<Thyra::VectorBase<double> > &x, double t);
+    int evalModel(const InArgs &inargs, OutArgs &outarts);
 
-  private:
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_vector();
+
+  protected:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
     Teuchos::RefCountPtr<const Epetra_Map> epetra_map_;
+    InArgs inargs_;
+    OutArgs outargs_;
+    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > thyra_vs_;
 
 };
-
-
 
 
 #endif // Rythmos_EXAMPLE_APPLICATION_RYTHMOS_INTERFACE_H

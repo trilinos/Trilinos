@@ -70,22 +70,18 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-ExampleApplication::ExampleApplication()
-{
-  lambda_ = -0.5;
-}
-
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::ExampleApplication
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
-ExampleApplication::ExampleApplication(double lam)
+ExampleApplication::ExampleApplication(double lam, int numelements)
 {
   lambda_ = lam;
+  numElements_ = numelements;
+  // Serial only implementation here:
+  // 05/26/05 tscoffe:  I haven't figured out how to get MPI_Init called with
+  // argc and argv in such a way that MPI_COMM_WORLD is passed down here.
+  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm_ = Teuchos::rcp( new Epetra_SerialComm );
+  
+  // Construct a Map with NumElements and index base of 0
+  Teuchos::RefCountPtr<const Epetra_Map> epetra_map_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_) );
+  
 }
 
 //-----------------------------------------------------------------------------
@@ -102,7 +98,7 @@ ExampleApplication::~ExampleApplication()
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::evalResidual
-// Purpose       : constructor
+// Purpose       : Evaluate problem residual
 // Special Notes :
 // Scope         : public
 // Creator       : Todd Coffey, SNL
@@ -110,7 +106,6 @@ ExampleApplication::~ExampleApplication()
 //-----------------------------------------------------------------------------
 int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t)
 {
-  //Thyra::V_StV(y,lambda_,x); // y = lambda*x
   y->Scale(lambda_,x); // y = lambda*x
   return 0;
 }
@@ -127,5 +122,34 @@ int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, d
 double ExampleApplication::getCoeff()
 {
   return lambda_;
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ExampleApplication::get_epetra_map
+// Purpose       : Return epetra_map generated at construction time
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+Teuchos::RefCountPtr<Epetra_Map> &ExampleApplication::get_epetra_map()
+{
+  return(epetra_map_);
+}
+
+
+//-----------------------------------------------------------------------------
+// Function      : ExampleApplication::get_x0
+// Purpose       : Return nominal initial vector
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+Teuchos::RefCountPtr<Epetra_Vector> &ExampleApplication::get_x0()
+{
+  Teuchos::RefCountPtr<Epetra_Vector> x0 = rcp(new Epetra_Vector(epetra_map_));
+  (*x0).Random();
+  return(x0);
 }
 

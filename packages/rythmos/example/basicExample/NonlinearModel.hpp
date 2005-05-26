@@ -27,52 +27,41 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Rythmos_EXAMPLE_APPLICATION_H
-#define Rythmos_EXAMPLE_APPLICATION_H
+#ifndef Rythmos_NONLINEAR_MODEL_H
+#define Rythmos_NONLINEAR_MODEL_H
 
 //#include "Thyra_VectorBase.hpp"
-#include "Epetra_Vector.h"
+//#include "Epetra_Vector.h"
+
+namespace Rythmos {
 
 //-----------------------------------------------------------------------------
-// Class         : ExampleApplication
-// Purpose       : Example application code with DE: \dot{x}=\lambda x
+// Class         : NonlinearModel
+// Purpose       : Define interface to nonlinear models
 // Special Notes :
 // Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
+// Creation Date : 05/20/05
 //-----------------------------------------------------------------------------
-class ExampleApplication
+class NonlinearModel
 {
   public:
     
     // Destructor
-    ~ExampleApplication();
+    virtual ~NonlinearModel();
 
     // Cosntructor
-    ExampleApplication(double lam, int numelements);
+    virtual NonlinearModel();
 
-    // Evaluate residual:
-    int evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t);
-    
-    // return ODE decay coefficient
-    double getCoeff();
-    
-    // Return nominal x0 vector
-    Teuchos::RefCountPtr<Epetra_Vector> &get_x0();
+    virtual int evalModel(const InArgs &inargs, OutArgs &outargs)=0;
 
-    // Return epetra_map 
-    Teuchos::RefCountPtr<Epetra_Map> &get_epetra_map();
+    virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_vector()=0;
 
-  private:
+  protected:
 
-    // Coefficient for ODE
-    double lambda_;
-    // Epetra Comm:
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_;
-    // Epetra Map:
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
-    // Number of unknowns:
-    int numElements_;
+    InArgs inargs_;
+    OutArgs outargs_;
 };
 
+} // namespace Rythmos 
 
-#endif // Rythmos_EXAMPLE_APPLICATION_H
+#endif // Rythmos_NONLINEAR_MODEL_H

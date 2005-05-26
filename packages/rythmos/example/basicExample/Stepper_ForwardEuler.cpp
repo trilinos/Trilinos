@@ -27,74 +27,73 @@
 // ***********************************************************************
 // @HEADER
 
-//#include "ExampleApplication.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "ExampleApplicationRythmosInterface.hpp"
-//#include "Thyra_EpetraLinearOp.hpp"
-//#include "Epetra_Map.h"
+namespace Rythmos {
+namespace Stepper {
 
 //-----------------------------------------------------------------------------
-// Function      : ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface
+// Function      : ForwardEuler::ForwardEuler
 // Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/17/05
-//-----------------------------------------------------------------------------
-ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
-{
-  // 05/26/05 tscoffe:  This is where a parameter list could be passed in and
-  // used in constructing the problem.
-  lambda_ = -0.5;
-  numelements_ = 1;
-  problem_ = Teuchos::rcp(new ExampleApplication(lambda,numelements));
-  epetra_map_ = (*problem_).get_epetra_map();
-  thyra_vs_ = Thyra::create_MPIVectorSpaceBase(epetra_map_);
-}
-
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::~ExampleApplication
-// Purpose       : destructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
-ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
-{
-}
-
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::evalModel
-// Purpose       : Evaluate residual
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/17/05
-//-----------------------------------------------------------------------------
-int ExampleApplicationRythmosInterface::evalModel(const InArgs &inargs, OutArgs &outargs)
-{
-  // input arguments:
-  Teuchos::RefCountPtr<Thyra::VectorBase<double> > x = inargs.get_x();
-  double t = inargs.get_t();
-
-  // output arguments:
-  Teuchos::RefCountPtr<Thyra::VectorBase<double> > F = outargs.get_F();
-
-  (*problem_).evalResidual(&*(Thyra::get_Epetra_Vector(*epetra_map_,F)),*(Thyra::get_Epetra_Vector(*epetra_map_,x)),t);
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::get_vector
-// Purpose       : Gent nominal vector
 // Special Notes :
 // Scope         : public
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Teuchos::RefCountPtr<Thyra::VectorBase<double> > &ExampleApplicationRythmosInterface::get_vector()
+ForwardEuler::ForwardEuler(NonlinearModel model)
 {
-  return(Thyra::createMember(thyra_vs_));
+  model_ = model;
 }
 
+//-----------------------------------------------------------------------------
+// Function      : ~ForwardEuler::ForwardEuler
+// Purpose       : destructor
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+~ForwardEuler::ForwardEuler()
+{
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::TakeStep
+// Purpose       : Take a step 
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+Scalar ForwardEuler::TakeStep()
+{
+  return(-1);
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::TakeStep
+// Purpose       : Take a step no larger than dt
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+Scalar ForwardEuler::TakeStep(Scalar dt)
+{
+  InArgs inargs;
+  OutArgs outargs;
+
+  inargs.set_x(solution_vector_);
+  inargs.set_t(t_+dt);
+
+  outargs.set_F(residual_vector_);
+
+  (*problem_).evalModel(inargs,outargs);
+
+  // solution_vector = solution_vector + dt*residual_vector
+  Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
+  t_ += dt;
+
+  return(dt);
+}
+
+} // namespace Stepper
+} // namespace Rythmos

@@ -27,52 +27,50 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Rythmos_EXAMPLE_APPLICATION_H
-#define Rythmos_EXAMPLE_APPLICATION_H
+#ifndef Rythmos_STEPPER_FORWARDEULER_H
+#define Rythmos_STEPPER_FORWARDEULER_H
 
-//#include "Thyra_VectorBase.hpp"
-#include "Epetra_Vector.h"
+namespace Rythmos {
+namespace Stepper {
 
 //-----------------------------------------------------------------------------
-// Class         : ExampleApplication
-// Purpose       : Example application code with DE: \dot{x}=\lambda x
+// Class         : FowardEuler
+// Purpose       : Base class for defining stepper functionality
 // Special Notes :
 // Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
+// Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-class ExampleApplication
+template<class Scalar>
+class ForwardEuler public Stepper<Scalar>
 {
   public:
     
     // Destructor
-    ~ExampleApplication();
+    ~Stepper();
 
     // Cosntructor
-    ExampleApplication(double lam, int numelements);
+    Stepper(NonlinearModel model_);
 
-    // Evaluate residual:
-    int evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t);
-    
-    // return ODE decay coefficient
-    double getCoeff();
-    
-    // Return nominal x0 vector
-    Teuchos::RefCountPtr<Epetra_Vector> &get_x0();
+    // Take a step _no larger_ than dt 
+    Scalar TakeStep(Scalar dt);
+   
+    // Take a step 
+    Scalar TakeStep();
 
-    // Return epetra_map 
-    Teuchos::RefCountPtr<Epetra_Map> &get_epetra_map();
+    // Get solution vector
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_solution();
+    { return(solution_vector_); };
 
-  private:
+  protected:
 
-    // Coefficient for ODE
-    double lambda_;
-    // Epetra Comm:
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_;
-    // Epetra Map:
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
-    // Number of unknowns:
-    int numElements_;
+    NonlinearModel model_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
+    Scalar t_;
+
 };
 
+} // namespace Stepper
+} // namespace Rythmos
 
-#endif // Rythmos_EXAMPLE_APPLICATION_H
+#endif //Rythmos_STEPPER_FORWARDEULER_H
