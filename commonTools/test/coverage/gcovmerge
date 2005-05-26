@@ -10,6 +10,7 @@
 #
 #        gcovmerge [--with-files=min-max]           \
 #                  [--with-directories]             \
+#                  [--with-directories-recursive]   \
 #                  [--without-files]                \
 #                  [--with-total]                   \
 #                  [--exclude=word]                 \
@@ -30,7 +31,14 @@
 #
 #        --with-directories
 #            When specified, coverage percentages are displayed for
-#            each directory examined.
+#            each directory examined.  Only files directly under
+#            each directory count towards this number.
+#
+#        --with-directories-recursive
+#            When specified, coverage percentages are displayed for
+#            each directory examined.  All files under each
+#            directory, including those in subdirectories,  count
+#            towards this number.
 #
 #        --without-files
 #            No coverage information will be given for individual files.
@@ -75,24 +83,27 @@ $total_comp = 0;
 $build_directory = pop;
 $source_directory = $build_directory;
 foreach (@ARGV){
-    if(/--with-files=(\d+)-(\d+)/){
+    if(/^--with-files=(\d+)-(\d+)$/){
 	$minimum_per_file = $1;
 	$maximum_per_file = $2;
     }
-    elsif(/--with-directories/){
+    elsif(/^--with-directories$/){
 	$directories = 1;
     }
-    elsif(/--without-files/){
+    elsif(/^--with-directories-recursive$/){
+	$directories = 2;
+    }
+    elsif(/^--without-files$/){
 	$minimum_per_file = 100;
 	$maximum_per_file = 0;
     }
-    elsif(/--exclude=(.*)/){
+    elsif(/^--exclude=(.*)$/){
 	push @exclude_list, $1;
     }
-    elsif(/--with-total/){
+    elsif(/^--with-total$/){
 	$total = 1;
     }
-    elsif(/--source-dir=(.*)/){
+    elsif(/^--source-dir=(.*)$/){
 	$source_directory = $1;
     }
     else{ 
@@ -132,9 +143,19 @@ foreach(`$find_string`){
     
     # if we are keeping track of directory-based coverage, then put 0s into
     # %path_exec and %path_comp
-    if($directories){
-	$path_exec{$_} = 0;
-	$path_comp{$_} = 0;
+    if(!defined($path_comp{$_})){
+	if($directories){
+	    $path_exec{$_} = 0;
+	    $path_comp{$_} = 0;
+	}
+	if($directories == 2){
+	    print STDERR "ready for $_\n";
+	    while(s/^(\.\/(.+\/)+).+$/$1/){
+		print STDERR "clearing $_\n";
+		$path_exec{$_} = 0;
+		$path_comp{$_} = 0;
+	    }
+	}
     }
 }
 
@@ -187,16 +208,25 @@ foreach(keys(%source_files)){
 	}
     }
     if(!$found){
-	# deal with an unexecuted source file?
+	# this should only happen to an uncompiled file
+	# or to an untested templated header.
     }else{
 	# record the results for this source file
 	$cov = $comp ? 100 * $exec / $comp : 0;
 	if($cov >= $minimum_per_file && $cov <= $maximum_per_file){
 	    $file_cov{$source_files{$_}.$_} = $comp ? 100 * $exec / $comp : 0;
 	}
+	$path = $source_files{$_};
 	if($directories){
-	    $path_exec{$source_files{$_}} += $exec;
-	    $path_comp{$source_files{$_}} += $comp;
+	    $path_exec{$path} += $exec;
+	    $path_comp{$path} += $comp;
+	}
+	if($directories == 2){
+	    while($path =~ s/^(\.\/(.+\/)+).+$/$1/){
+		print STDERR "adding to $_\n";
+		$path_exec{$path} += $exec;
+		$path_comp{$path} += $comp;
+	    }
 	}
 	if($total){
 	    $total_exec += $exec;

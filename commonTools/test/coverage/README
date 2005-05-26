@@ -8,6 +8,8 @@ If the configure script does not automatically detect G++, you may have to speci
 
 $./configure CXX=g++ CXXFLAGS="-fprofile-arcs -ftest-coverage" [other options]
 
+Also, note that it is a good idea to remove optimization options.  Optimization can change the accuracy of the coverage information.
+
 Then do:
 
 $make
@@ -18,27 +20,33 @@ $make install
 
 Now, run whatever functionality tests you wish to run.  In theory, this should be every test you have.  Time lapses and test order do not matter.  If you are not testing the entirety of Trilinos, it may also be a good idea to run tests for packages that depend on the packages you are testing, as these external tests may test your packages in ways that your tests do not.  Note that since GCOV will eventually be part of the daily or weekly tests, it would be a good idea for these functionality tests to reflect what is on the CVS repository (whether that means updating your files or the repository's).
 
-Unfortunately, GCOV by itself cannot work with multiple files at once.  However, there is a Perl script (Trilinos/testharness/gcovmerge) which automates the process of running GCOV over a directory and summarizing the resulting information.
+Unfortunately, GCOV by itself cannot work with multiple files at once.  However, there is a Perl script (Trilinos/test/coverage/gcovmerge) which automates the process of running GCOV over a directory and summarizing the resulting information.  In order for the latest version of gcovmerge to work, your machine must have GCC 3.4.3 or later.
 
-At minimum, gcovmerge takes one argument: the path to search for .bb files (which indicate files that have been compiled as explained above).  There are 4 other arguments that can change the output (these should come before the path):
+At minimum, gcovmerge takes one argument: the path to search for .gcda files (which indicate files that have been compiled and tested as explained above).  There are 6 other arguments that can change the output (these should come before the path):
     --with-files=min-max
-    gcovmerge will only display information regarding individual files whose percentage of lines executed is within [min, max].  This is useful for restricting the output to the worst files or for executing the script multiple times to create straited data.
+    gcovmerge will only display information regarding individual files whose percentage of lines executed is within [min, max].  This is useful for restricting the output to the worst files or for executing the script multiple times to create striated data.
     --without-files
     gcovmerge will not display information regarding individual files.  This is the same as --with-files=100-0.  This is generally only useful if you are doing directory coverage.
     --with-directories
     gcovmerge will display the percentage of lines executed for entire directories as well as any information about individual files that would normally be displayed.
+    --with-directories-recursive
+    gcovmerge will display the percentage of lines executed for entire directories, including subdirectories, as well as any information about individual files.  This option can be used in Trilinos to receive coverage information for each package.
     --exclude=word
     gcovmerge will not look at files whose names and paths include word.  This can be used to prevent the test and example files from being analyzed.  Since the file will be excluded if word is located anywhere in the path, to exclude directories you should do --exclude=directoryname/.
+    --source-dir=path
+    gcovmerge will look for the original source files in path.  This must be used if your build and source directories are distinct.  However, note that the build and source directories must have the same structure, or gcovmerge will not be able to match data files to source files.
 
-Running gcovmerge with the default options from the Trilinos level will most likely generate too much information to really use.  Specifying the search path and the options will tone this down to something more useful.  For example, so check the coverage percentages on all members of the EPetra package (but not tests or examples), one would do this:
+Running gcovmerge with the default options from the Trilinos level will most likely generate too much information to really use.  Specifying the search path and the options will tone this down to something more useful.  For example, to check the coverage percentages on all members of the EPetra package (but not tests, documentation, or examples), one would do this:
 
-$./testharness/gcovmerge --exclude=test/ --exclude=example/ ./build/packages/epetra
+$./testharness/gcovmerge --exclude=test/ --exclude=example/ --exclude=doc/ --source-dir=./packages/epetra ./build/packages/epetra
 
 To get a summary of the coverage on each package, one could do this:
 
-$./testharness/gcovmerge --without-files --with-directories --exclude=test/ --exclude=example/ --exclude=examples/ ./build
+$./testharness/gcovmerge --without-files --with-directories-recursive --exclude=test/ --exclude=example/ --exclude=examples/ --exclude=doc/ --source-dir=./packages ./build/packages
 
 In theory, every package should have 100% test coverage.  This, however, is not a practical goal.  A more realistic goal is for every source file to have 85% test coverage.
+
+gcov and gcovmerge are not perfect.  It is impossible to run gcov on particular source files -- this could happen if a source file is a templated header that was left completely untested, or if a source file in the requested source-dir was never compiled.  In such cases, these source files will not be reported.
 
 If you want to see specific coverage information for any particular file, you should use GCOV directly:
 
