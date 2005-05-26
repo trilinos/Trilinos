@@ -45,17 +45,38 @@ extern "C" int F77_PARDISO
      double *, int *, int *, int *, int *, int *, 
      int *, double *, double *, int *);
 
+#define IPARM(I) iparm_[(I) - 1]
 
 //=============================================================================
 Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   UseTranspose_(false),
   Problem_(&prob),
+  maxfct_(1),
+  mnum_(1),
+  msglvl_(0),
   nrhs_(1)
 {
+  // Sets all parameters (many unused) to zero
+  for (int i = 1 ; i < 64 ; ++i)
+    IPARM(i) = 0; 
+
+  // setting parameters from manual's default
+  IPARM(1) = 0; // use default values
+  IPARM(2) = 2; // Fill-in reduction reordering
+  IPARM(3) = 1; // Number of processors
+  IPARM(4) = 0; // Preconditioned CGS
+  IPARM(5) = 0; // User permutation
+  IPARM(6) = 0; // write solution on X
+  IPARM(8) = 0; // number of iterative refinement steps
+  IPARM(10) = 8; // pivot perturbation
+  IPARM(11) = 1; // MPS scaling of the unsymmetric reordering
+  IPARM(18) = -1; // number of nonzeros in factor
+  IPARM(19) = 0; // MFlops of factorization
+  IPARM(21) = 1; // pivoting for undefinite symmetric matrices
 }
 
 //=============================================================================
-Amesos_Pardiso::~Amesos_Pardiso(void) 
+Amesos_Pardiso::~Amesos_Pardiso() 
 {
   int n = SerialMatrix().NumMyRows();
   int phase = -1;                 /* Release internal memory. */
@@ -67,6 +88,8 @@ Amesos_Pardiso::~Amesos_Pardiso(void)
     F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
                 &n, &ddum, &ia_[0], &ja_[0], &idum, &nrhs_,
                 iparm_, &msglvl_, &ddum, &ddum, &error);
+
+  AMESOS_CHK_ERRV(CheckError(error));
 
   // print out some information if required by the user
   if ((verbose_ && PrintTiming_) || verbose_ == 2) PrintTiming();
@@ -161,37 +184,76 @@ int Amesos_Pardiso::ConvertToPardiso()
 //=============================================================================
 int Amesos_Pardiso::SetParameters(Teuchos::ParameterList &ParameterList) 
 {
-  // solve problem with transpose
-  if( ParameterList.isParameter("UseTranspose") )
-    SetUseTranspose(ParameterList.get("UseTranspose",false));
-
   // print some timing information (on process 0)
-  if( ParameterList.isParameter("PrintTiming") )
-    PrintTiming_ = ParameterList.get("PrintTiming", false);
+  if (ParameterList.isParameter("PrintTiming"))
+    PrintTiming_ = ParameterList.get("PrintTiming", PrintTiming_);
 
   // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
-    PrintStatus_ = ParameterList.get("PrintStatus", false);
+  if (ParameterList.isParameter("PrintStatus"))
+    PrintStatus_ = ParameterList.get("PrintStatus", PrintStatus_);
 
   // add this value to diagonal
-  if( ParameterList.isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
+  if (ParameterList.isParameter("AddToDiag"))
+    AddToDiag_ = ParameterList.get("AddToDiag", AddToDiag_);
 
   // compute norms of some vectors
-  if( ParameterList.isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
+  if (ParameterList.isParameter("ComputeVectorNorms"))
+    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
 
   // compute the true residual Ax-b after solution
-  if( ParameterList.isParameter("ComputeTrueResidual") )
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
+  if (ParameterList.isParameter("ComputeTrueResidual"))
+    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
 
   // some verbose output:
   // 0 - no output at all
   // 1 - output as specified by other parameters
   // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",1);
+  if (ParameterList.isParameter("OutputLevel"))
+    verbose_ = ParameterList.get("OutputLevel", verbose_);
 
+  // retrive PARDISO's specific parameters
+
+  if (ParameterList.isSublist("pardiso")) 
+  {
+    Teuchos::ParameterList& PardisoList = ParameterList.sublist("pardiso");
+
+    if (PardisoList.isParameter("MSGLVL"))
+      msglvl_ = PardisoList.get("MSGLVL", msglvl_);
+
+    if (PardisoList.isParameter("IPARM(1)"))
+      IPARM(1) = PardisoList.get("IPARM(1)",  IPARM(1));
+
+    if (PardisoList.isParameter("IPARM(2)"))
+      IPARM(2) = PardisoList.get("IPARM(2)",  IPARM(2));
+
+    if (PardisoList.isParameter("IPARM(3)"))
+      IPARM(3) = PardisoList.get("IPARM(3)",  IPARM(3));
+
+    if (PardisoList.isParameter("IPARM(4)"))
+      IPARM(4) = PardisoList.get("IPARM(4)",  IPARM(4));
+
+    if (PardisoList.isParameter("IPARM(5)"))
+      IPARM(5) = PardisoList.get("IPARM(5)",  IPARM(5));
+
+    if (PardisoList.isParameter("IPARM(8)"))
+      IPARM(8) = PardisoList.get("IPARM(8)",  IPARM(8));
+
+    if (PardisoList.isParameter("IPARM(10)"))
+      IPARM(10) = PardisoList.get("IPARM(10)", IPARM(10));
+
+    if (PardisoList.isParameter("IPARM(11)"))
+      IPARM(11) = PardisoList.get("IPARM(11)", IPARM(17));
+
+    if (PardisoList.isParameter("IPARM(18)"))
+      IPARM(18) = PardisoList.get("IPARM(18)", IPARM(18));
+
+    if (PardisoList.isParameter("IPARM(19)"))
+      IPARM(19) = PardisoList.get("IPARM(19)", IPARM(19));
+
+    if (PardisoList.isParameter("IPARM(21)"))
+      IPARM(21) = PardisoList.get("IPARM(21)", IPARM(21));
+  }
+  
   return 0;
 }
 
@@ -242,12 +304,7 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
                        &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                        iparm_, &msglvl_, &ddum, &ddum, &error);
 
-    if (error != 0) 
-    {
-      cerr << "Amesos_Pardiso: error during symbolic factorization ("
-        << error << ")" << endl;
-      AMESOS_CHK_ERR(-1);
-    }
+    AMESOS_CHK_ERR(CheckError(error));
   }
 
   AddTime("symbolic");
@@ -272,12 +329,7 @@ int Amesos_Pardiso::PerformNumericFactorization( )
                        &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                        iparm_, &msglvl_, &ddum, &ddum, &error);
 
-    if (error != 0) 
-    {
-      cerr << "Amesos_Pardiso: error during symbolic factorization ("
-        << error << ")" << endl;
-      AMESOS_CHK_ERR(-1);
-    }
+    AMESOS_CHK_ERR(CheckError(error));
   }
 
   AddTime("numeric");
@@ -424,12 +476,7 @@ int Amesos_Pardiso::Solve()
                          SerialXValues + i * n,
                          &error);
 
-    if (error != 0) 
-    {
-      cerr << "Amesos_Pardiso: error during solution ("
-        << error << ")" << endl;
-      AMESOS_CHK_ERR(-1);
-    }
+    AMESOS_CHK_ERR(CheckError(error));
   }
 
   AddTime("solve");
@@ -448,10 +495,10 @@ int Amesos_Pardiso::Solve()
   AddTime("vector redistribution");
 
   if (ComputeTrueResidual_)
-    ComputeTrueResidual(Matrix(), *X, *B, UseTranspose(), "Amesos_Taucs");
+    ComputeTrueResidual(Matrix(), *X, *B, UseTranspose(), "Amesos_Pardiso");
 
   if (ComputeVectorNorms_)
-    ComputeVectorNorms(*X, *B, "Amesos_Taucs");
+    ComputeVectorNorms(*X, *B, "Amesos_Pardiso");
 
   ++NumSolve_;
 
@@ -472,11 +519,20 @@ void Amesos_Pardiso::PrintStatus() const
 
   cout << p << "Matrix has " << n << " rows"
        << " and " << nnz << " nonzeros" << endl;
-  cout << p << "Nonzero elements per row = "
+  cout << p << "Nonzero elements per row       = "
        << 1.0 *  nnz / n << endl;
   cout << p << "Percentage of nonzero elements = "
        << 100.0 * nnz /(pow(n,2.0)) << endl;
-  cout << p << "Use transpose = " << UseTranspose_ << endl;
+  cout << p << "Use transpose                  = " << UseTranspose_ << endl;
+  cout << p << "Number of performed iterative ref. steps = " << IPARM(9) << endl;
+  cout << p << "Peak memory symbolic factorization       = " << IPARM(15) << endl;
+  cout << p << "Permanent memory symbolic factorization  = " << IPARM(16) << endl;
+  cout << p << "Memory numerical fact. and solution      = " << IPARM(17) << endl;
+  cout << p << "Number of nonzeros in factors            = " << IPARM(18) << endl;
+  cout << p << "MFlops of factorization                  = " << IPARM(19) << endl;
+  cout << p << "CG/CGS diagnostic                        = " << IPARM(20) << endl;
+  cout << p << "Inertia: Number of positive eigenvalues  = " << IPARM(22) << endl;
+  cout << p << "Inertia: Number of negative eigenvalues  = " << IPARM(23) << endl;
 
   PrintLine();
 
@@ -508,7 +564,7 @@ void Amesos_Pardiso::PrintTiming() const
   string p = "Amesos_Pardiso : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Taucs format = "
+  cout << p << "Time to convert matrix to Pardiso format = "
        << ConTime << " (s)" << endl;
   cout << p << "Time to redistribute matrix = "
        << MatTime << " (s)" << endl;
@@ -530,4 +586,41 @@ void Amesos_Pardiso::PrintTiming() const
   PrintLine();
 
   return;
+}
+
+// ====================================================================== 
+int Amesos_Pardiso::CheckError(const int error) const
+{
+  if (!error)
+    return 0;
+  
+  cerr << "Amesos: PARDISO returned error code " << error << endl;
+  cerr << "Amesos: Related message from manual is:" << endl;
+
+  switch(error)
+  {
+  case -1:
+    cerr << "Input inconsistent" << endl;
+    break;
+  case -2:
+    cerr << "Not enough memory" << endl;
+    break;
+  case -3:
+    cerr << "Reordering problems" << endl;
+    break;
+  case -4:
+    cerr << "Zero pivot, numerical fact. or iterative refinement problem. " << endl;
+    break;
+  case -5:
+    cerr << "Unclassified (internal) error" << endl;
+    break;
+  case -6:
+    cerr << "Preordering failed (matrix types 11, 13 only)" << endl;
+    break;
+  case -7:
+    cerr << "Diagonal matrix problem." << endl;
+    break;
+  }
+
+  AMESOS_RETURN(error);
 }

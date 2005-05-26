@@ -24,7 +24,7 @@ public:
     AddToDiag_ = 0.0;
     ComputeVectorNorms_ = false;
     ComputeTrueResidual_ = false;
-    verbose_ = 0;
+    verbose_ = 1;
     NumSymbolicFact_ = 0;
     NumNumericFact_ = 0;
     NumSolve_ = 0;  
