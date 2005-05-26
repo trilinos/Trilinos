@@ -90,7 +90,7 @@ Albuquerque, NM 87185-1110
   Epetra\_MultiVector objects.   \amesos\ provides a common look-and-feel
   for all interfaces, and insulates the user from each solver's details, such as matrix and
   vector formats, and data distribution. Currently supported libraries are:
-  LAPACK, KLU, UMFPACK, SuperLU, SuperLU\_DIST, MUMPS, DSCPACK.
+  LAPACK, KLU, UMFPACK, PARDISO, TAUCS, SuperLU, SuperLU\_DIST, MUMPS, DSCPACK.
   
   \smallskip
 
@@ -259,6 +259,8 @@ bool IsAvailable = Factory.Query(SolverType);
     \tt Amesos\_Lapack       & serial   & general & LAPACK \\
     \tt Amesos\_Klu          & serial   & general & KLU \\
     \tt Amesos\_Umfpack      & serial   & general & UMFPACK 4.3 \\
+    \tt Amesos\_Pardiso      & serial/OMP   & general & PARDISO 1.2.3 \\
+    \tt Amesos\_Taucs        & serial   & symmetric & TAUCS 2.2 \\
     \tt Amesos\_Superlu      & serial   & general & SuperLU 3.0 \\
     \tt Amesos\_Superludist & parallel & general & SuperLU\_DIST 2.0 \\
     \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.3.1 \\
@@ -270,7 +272,11 @@ bool IsAvailable = Factory.Query(SolverType);
     more than one processor, the linear problem is gathered to process
     0, here solved, then the solution is broadcasted to the distributed
     solution 
-    vector. ``parallel'' means that a subset or all the processes in the current
+    vector. ``serial/OMP'' means that the solver does not support MPI, but it
+    can take advantage of OMP. Amesos will consider the solver as serial
+    (therefore, the linear system is gathered on processor zero), but the user
+    can still specify the number of OMP processes.
+    ``parallel'' means that a subset or all the processes in the current
     communicator will be used by the solver. ``general'' means general
     unsymmetric 
     matrix. If ``sym'' (symmetric matrix) or  ``SPD'' (symmetric
@@ -347,6 +353,8 @@ format, `--' means that it doesn't.
     Amesos\_Lapack       & yes & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Klu          & yes & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Umfpack      & yes & $\bullet$ & $\bullet$ & -- \\
+    Amesos\_Pardiso      & no  & $\bullet$ & -- & -- \\
+    Amesos\_Taucs        & no  & $\bullet$ & -- & -- \\
     Amesos\_Superlu      & no  & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Superludist  & no  & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Mumps        & yes & $\bullet$ & -- & -- \\
@@ -447,43 +455,55 @@ means to use its 2nd alternative method, and so on.}
 \begin{sidewaystable}[tbhp]
   \centering
   \begin{tabular}{| p{5cm} | p{2cm} | p{2cm} | c | c | c
-      | c | c | c |}
+      | c | c | c | c | c |}
     \hline
-    option & type & default value & \rotatebox{90}{KLU } &
-    \rotatebox{90}{UMFPACK } & \rotatebox{90}{SuperLU\_DIST } &
-    \rotatebox{90}{MUMPS } & \rotatebox{90}{LAPACK  }&
+    option & type & default value & \rotatebox{90}{KLU} &
+    \rotatebox{90}{UMFPACK} & 
+    \rotatebox{90}{PARDISO} & 
+    \rotatebox{90}{TAUCS} & 
+    \rotatebox{90}{SuperLU\_DIST} &
+    \rotatebox{90}{MUMPS} & \rotatebox{90}{LAPACK} &
     \rotatebox{90}{DSCPACK 1.0 } \\    
     \hline
-     \tt UseTranspose       & \tt bool   & \tt false  & $\bullet$ & $\bullet$ & -- & $\bullet$  & $\bullet$ & -- \\
+     \tt UseTranspose       & \tt bool   & \tt false  & $\bullet$ & $\bullet$
+     & -- & --   & -- & $\bullet$  & $\bullet$ & -- \\
     % -------------------------------------------------------------------
-     \tt MatrixType         & \tt string & \tt general& --        & -- & -- & $\bullet$ & -- & -- \\
+     \tt MatrixType         & \tt string & \tt general& --        & -- &  --
+     &  --  & -- & $\bullet$ & -- & -- \\
     % -------------------------------------------------------------------
-     \tt Threshold          & \tt double & \tt 0.0    & --        & -- & -- &
-     --& -- & --  \\
+     \tt Threshold          & \tt double & \tt 0.0    & --        & --
+     &  --         & --   &  -- & --& -- & --  \\
     % -------------------------------------------------------------------
-     \tt AddZeroToDiag      & \tt bool   & \tt false  & --        & -- &
-     $\bullet$ & -- & -- & -- \\
+     \tt AddZeroToDiag      & \tt bool   & \tt false  & --        & --
+     & $\bullet$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
     % -------------------------------------------------------------------
-     \tt PrintTiming        & \tt bool   & \tt false  & $\bullet$ & $\bullet$ & -- & $\bullet$ & $\bullet$ & $\bullet$ \\
+     \tt PrintTiming        & \tt bool   & \tt false  & $\bullet$ & $\bullet$
+     & $\bullet$ & $\bullet$ & -- & $\bullet$ & $\bullet$ & $\bullet$ \\
     % -------------------------------------------------------------------
-    \tt PrintStatus         & \tt bool   & \tt false  & $\bullet$ & $\bullet$ & $\bullet$  & $\bullet$ & $\bullet$ & $\bullet$ \\
+    \tt PrintStatus         & \tt bool   & \tt false  & $\bullet$ & $\bullet$
+    & $\bullet$ & $\bullet$ & $\bullet$  & $\bullet$ & $\bullet$ & $\bullet$ \\
     % -------------------------------------------------------------------
-    \tt MaxProcs            & \tt int    & -1         & --        & -- & $\bullet$  & $\bullet$  & $\bullet$ & $\bullet$  \\
+    \tt MaxProcs            & \tt int    & -1         & --        & --
+    & -- & -- &  $\bullet$  & $\bullet$  & $\bullet$ & $\bullet$  \\
     % -------------------------------------------------------------------
-    \tt MaxProcsMatrix      & \tt int    & -4         & --        & -- & -- & $\bullet$  & -- &   --    \\
+    \tt MaxProcsMatrix      & \tt int    & -4         & --        & --
+    & -- & -- &  -- & $\bullet$  & -- &   --    \\
     % -------------------------------------------------------------------
-    \tt ComputeVectorNorms  & \tt bool   & \tt false  & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
+    \tt ComputeVectorNorms  & \tt bool   & \tt false  & $\bullet$ & $\bullet$
+    & $\bullet$ & $\bullet$ &  $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
     % -------------------------------------------------------------------
-    \tt ComputeTrueResidual & \tt bool   & \tt false  & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$  & $\bullet$\\
+    \tt ComputeTrueResidual & \tt bool   & \tt false  & $\bullet$ & $\bullet$
+    & $\bullet$ & $\bullet$ &  $\bullet$ & $\bullet$ & $\bullet$  & $\bullet$\\
     % -------------------------------------------------------------------
-    \tt OutputLevel         & \tt int    & \tt 1      & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$  & $\bullet$\\
+    \tt OutputLevel         & \tt int    & \tt 1      & $\bullet$ & $\bullet$
+    & $\bullet$ & $\bullet$ &  $\bullet$ & $\bullet$ & $\bullet$  & $\bullet$\\
     % -------------------------------------------------------------------
 %---- added by Tim Davis:
-    \tt Refactorize         & \tt bool   & \tt false  & $\bullet$ & -- & -- & -- & -- & -- \\
+    \tt Refactorize         & \tt bool   & \tt false  & $\bullet$ & -- & -- & -- &  -- & -- & -- & -- \\
     % -------------------------------------------------------------------
-    \tt RcondThreshold      & \tt double & $10^{-12}$ & $\bullet$ & -- & -- & -- & -- &--\\
+    \tt RcondThreshold      & \tt double & $10^{-12}$ & $\bullet$ & -- & -- & -- &  -- & -- & -- & -- \\
     % -------------------------------------------------------------------
-    \tt ScaleMethod         & \tt int    & 1          & $\bullet$ & -- & -- & -- & -- &--\\
+    \tt ScaleMethod         & \tt int    & 1          & $\bullet$ & -- & -- & -- &  -- & -- & -- & -- \\
 %----
     \hline
   \end{tabular}
@@ -607,7 +627,10 @@ can be generated with the following commands:
 
 This Section details the solvers supported by \amesos.
 The LAPACK interface is presented in Section~\ref{sec:lapack}, the KLU
-interface in Section~\ref{sec:klu}, the UMFPACK in Section~\ref{sec:umfpack},
+interface in Section~\ref{sec:klu}, the UMFPACK interface
+in Section~\ref{sec:umfpack},
+  the PARDISO interface in Section~\ref{sec:pardiso},
+  the TAUCS interface in Section~\ref{sec:taucs},
   the SuperLU interface in Section~\ref{sec:superlu}, the interface to
   SuperLU\_DIST in Section~\ref{sec:superludist}, the MUMPS interface in
   Section~\ref{sec:mumps}, and finally the DSCPACK interface in
@@ -660,6 +683,80 @@ can be obtained at the web page
 
 \amesos\ must be configured with the option
 \verb!--enable-amesos-umfpack! to use the UMFPACK interface.  The location of the header files should be
+specified using \verb!--with-incdirs!, the location of the library with
+\verb!--with-ldflags!, and the library to be linked by \verb!--with-libs!. See
+Section~\ref{sec:configuration} for an example.
+
+%-----------------------------------------------------------------------------
+\subsection{Interface to PARDISO 1.2.3}
+\label{sec:pardiso}
+%-----------------------------------------------------------------------------
+
+PARDISO is package to solve large sparse symmetric and non-symmetric linear
+systems on shared memory multi-processors, developed at the Computer Science
+Department of the University of Basel. A discussion of the algorithms used
+in PARDISO and more information on the solver can be found at {\tt
+  http://www.computational.unibas.ch/cs/scicomp}.
+
+\amesos\ must be configured with the option
+\verb!--enable-amesos-pardiso! to use the PARDISO interface.  
+The location of the header files should be
+specified using \verb!--with-incdirs!, the location of the library with
+\verb!--with-ldflags!, and the library to be linked by \verb!--with-libs!. See
+Section~\ref{sec:configuration} for an example.
+
+The Amesos interface to PARDISO supports non-symmetric matrices only 
+(from the PARDISO manual, the matrix type is 11). PARDISO control parameters
+are specified using the IPARM vector. The user can 
+  
+\medskip
+
+The PARDISO interface will look for a sublist, called
+\verb!Pardiso!. The user is referred to PARDISO
+manual for a detailed explanation of the reported parameters. 
+
+\vskip .1in
+
+\choicebox{\tt IPARM(1)}{({\tt int}) Use default values.
+  Default: {\tt 0}.}
+
+\choicebox{\tt IPARM(2)}{({\tt int}) Fill-in reduction reordering.
+  Default: {\tt 0}.}
+
+\choicebox{\tt IPARM(3)}{({\tt int}) Number of processors.
+  Default: {\tt 1}.}
+
+\choicebox{\tt IPARM(4)}{({\tt int}) Preconditioned CGS.
+  Default: {\tt 0}.}
+
+\choicebox{\tt IPARM(8)}{({\tt int}) 
+  Default: {\tt 0}.}
+
+\choicebox{\tt IPARM(10)}{({\tt int}) Iterative refinement steps.
+  Default: {\tt 0}.}
+
+\choicebox{\tt IPARM(11)}{({\tt int}) MPS scaling of the unsymmetric
+  reoredering.
+  Default: {\tt 8}.}
+
+\choicebox{\tt IPARM(18)}{({\tt int}) Number of nonzeros in factors.
+  Default: {\tt -1}.}
+
+\choicebox{\tt IPARM(19)}{({\tt int}) MFlops in factorization.
+  Default: {\tt 0}.}
+
+\choicebox{\tt IPARM(21)}{({\tt int}) Pivoting for indefinite symmetric
+  matrices.
+  Default: {\tt 1}.}
+
+%-----------------------------------------------------------------------------
+\subsection{Interface to TAUCS 2.2}
+\label{sec:taucs}
+%-----------------------------------------------------------------------------
+
+\amesos\ must be configured with the option
+\verb!--enable-amesos-taucs! to use the TAUCS interface.  
+The location of the header files should be
 specified using \verb!--with-incdirs!, the location of the library with
 \verb!--with-ldflags!, and the library to be linked by \verb!--with-libs!. See
 Section~\ref{sec:configuration} for an example.
