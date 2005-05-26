@@ -65,7 +65,6 @@ Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   IPARM(2) = 2; // Fill-in reduction reordering
   IPARM(3) = 1; // Number of processors
   IPARM(4) = 0; // Preconditioned CGS
-  IPARM(5) = 0; // User permutation
   IPARM(6) = 0; // write solution on X
   IPARM(8) = 0; // number of iterative refinement steps
   IPARM(10) = 8; // pivot perturbation
@@ -215,7 +214,7 @@ int Amesos_Pardiso::SetParameters(Teuchos::ParameterList &ParameterList)
 
   if (ParameterList.isSublist("pardiso")) 
   {
-    Teuchos::ParameterList& PardisoList = ParameterList.sublist("pardiso");
+    Teuchos::ParameterList& PardisoList = ParameterList.sublist("Pardiso");
 
     if (PardisoList.isParameter("MSGLVL"))
       msglvl_ = PardisoList.get("MSGLVL", msglvl_);
@@ -231,9 +230,6 @@ int Amesos_Pardiso::SetParameters(Teuchos::ParameterList &ParameterList)
 
     if (PardisoList.isParameter("IPARM(4)"))
       IPARM(4) = PardisoList.get("IPARM(4)",  IPARM(4));
-
-    if (PardisoList.isParameter("IPARM(5)"))
-      IPARM(5) = PardisoList.get("IPARM(5)",  IPARM(5));
 
     if (PardisoList.isParameter("IPARM(8)"))
       IPARM(8) = PardisoList.get("IPARM(8)",  IPARM(8));
@@ -264,22 +260,20 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
 
   if (Comm().MyPID() == 0) 
   {
-    int num_procs;
-
-    // FIXME: at this point only read unsym matrix
+    // at this point only read unsym matrix
     mtype_ = 11; 
 
     // ============================================================== //
     // Setup Pardiso control parameters und initialize the solvers    //
     // internal adress pointers. This is only necessary for the FIRST //
     // call of the PARDISO solver.                                    // 
-    // Also get the number of processors (in terms of OMP threads),   //
-    // and quit if the user doesn't specify them. This is as done in  //
-    // one of the PARDISO examples.                                   //
+    // The number of processors is specified by IPARM(2), in the      //
+    // Pardiso sublist.                                               //
     // ============================================================== //
 
     F77_PARDISOINIT(pt_,  &mtype_, iparm_);
 
+    /*
     char* var = getenv("OMP_NUM_THREADS");
     if(var != NULL)
       sscanf( var, "%d", &num_procs );
@@ -290,6 +284,7 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     }
 
     iparm_[2]  = num_procs;
+    */
 
     maxfct_ = 1;         /* Maximum number of numerical factorizations.  */
     mnum_   = 1;         /* Which factorization to use. */
