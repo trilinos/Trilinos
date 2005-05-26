@@ -279,6 +279,9 @@ exit $exitStatus;
 
     sub run {
         
+        # Declare invoke-configure variable for reporting later on.
+        my $invokeConfigureString;
+        
         # Copy invoke-configure
         if (!$makeFailure) {
             system("cp $invokeConfigure $buildDir/invoke-configure") == 0
@@ -313,6 +316,14 @@ exit $exitStatus;
             
             # Capture start time.
             my $startSeconds = time();
+            
+            # grab contents of invoke-configure for reporting purposes.
+            $invokeConfigureString = "";              
+            open (INVOKE_CONFIGURE, "<invoke-configure");
+            undef $/;                                       # undefine input record separator
+            $invokeConfigureString=<INVOKE_CONFIGURE>;      # copy entire file
+            $/ = "\n";                                      # restore it to default newline
+            close INVOKE_CONFIGURE;
         
             # Run configure.  
             my $configureOutput = `./invoke-configure 2>&1`;
@@ -439,10 +450,27 @@ exit $exitStatus;
             $resultsString .= "CONFIGURE_OUTPUT {{{\n\n$configureOutput\n\n}}}\n";
             $resultsString .= "\n";
             $resultsString .= "CONFIG_LOG {{{\n\n$configLog\n\n}}}\n";
+            $resultsString .= "\n";
+            $resultsString .= "INVOKE_CONFIGURE {{{\n\n$invokeConfigureString\n\n}}}\n";
+            $resultsString .= "\n";
+            $resultsString .= "DEPENDENCIES {{{\n\n$rawDependenciesString\n\n}}}\n";
             
             print RESULTS $resultsString;
             
             close RESULTS;
+            
+            # Append to build info file for database.
+            my $buildInfoFile = "$resultsDir/build.txt.tmp";
+            if (stat $buildInfoFile) {
+                open (BUILD_FILE, ">>$buildInfoFile")
+                    or die "can't open build info file $buildInfoFile for writing, died";            
+                my $string = "";          
+                $string .= "BRANCH_TAG           = $branchTag\n";  
+                $string .= "DEPENDENCIES {{{\n\n$dependencies\n\n}}}\n\n";   
+                print BUILD_FILE $string;        
+                close BUILD_FILE;
+                system("mv $buildInfoFile $resultsDir/build.txt > /dev/null 2>&1");
+            }
                 
             if (!$recover && $configureExitStatus) { return $failureCode{"$brokenPackage"}; }
             
@@ -632,8 +660,9 @@ exit $exitStatus;
         my $value;
         my $continue;
         while ($line = <IN_FILE>) {
-            $line =~ s/^\s*//;  # trim leading spaces
-            $line =~ s/\s*$//;  # trim trailing spaces
+            $rawDependenciesFile .= $line;  # for reporting purposes
+            $line =~ s/^\s*//;              # trim leading spaces
+            $line =~ s/\s*$//;              # trim trailing spaces
             
             if (!$line || $line =~ m/^[# ]/) {
                 # skip comments and blank lines
