@@ -45,11 +45,16 @@ on-line documentation for more in-depth information."
 #include <sstream>
 #include <vector>
 
+#include "Epetra_ConfigDefs.h"
+
 // Epetra includes
 #include "Epetra_Version.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -81,6 +86,66 @@ on-line documentation for more in-depth information."
 #include "Epetra_NumPyVector.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
+
+#ifdef HAVE_MPI
+#include "mpi.h"
+PyObject* Init(PyObject *args) 
+{  
+
+  int i, error, myid, size;
+  int argc = 0;  
+  char **argv;   
+
+  /* Reconstruct C-commandline */     
+  /*                           */ 
+  argc = PyList_Size(args); //Number of commandline arguments
+  argv = (char**) malloc((argc+1)*sizeof(char*)); 
+  
+  for (i=0; i<argc; i++)  
+    argv[i] = PyString_AsString( PyList_GetItem(args, i) );
+    
+  argv[i] = NULL; //Lam 7.0 requires last arg to be NULL  
+  
+  error = MPI_Init(&argc, &argv); 
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);    
+  MPI_Comm_size(MPI_COMM_WORLD, &size);    
+
+  if (error != 0) {
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);    
+    PyErr_SetString(PyExc_RuntimeError, "error");   
+    return NULL;
+  }  
+
+  return Py_BuildValue("");  
+} 
+  
+PyObject* Finalize() {  
+  int error, myid;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);  
+  
+  error = MPI_Finalize();
+  if (error != 0) {
+    PyErr_SetString(PyExc_RuntimeError, "error");    //raise ValueError, errmsg
+    return NULL;
+  }  
+    
+  return Py_BuildValue("");
+} 
+
+MPI_Comm CommWorld()
+{
+  return(MPI_COMM_WORLD);
+}
+#endif
+
+extern "C" {
+  void environ()
+  {
+    exit(EXIT_FAILURE);
+  }
+}
+
 %}
 
 // Ignore directives
@@ -148,6 +213,9 @@ on-line documentation for more in-depth information."
 %rename(Object              ) Epetra_Object;
 %rename(Comm                ) Epetra_Comm;
 %rename(SerialComm          ) Epetra_SerialComm;
+#ifdef HAVE_MPI
+%rename(MpiComm             ) Epetra_MpiComm;
+#endif
 %rename(BlockMap            ) Epetra_BlockMap;
 %rename(Map                 ) Epetra_Map;
 %rename(LocalMap            ) Epetra_LocalMap;
@@ -206,13 +274,15 @@ on-line documentation for more in-depth information."
 %include "std_vector.i"
 %include "exception.i"
 
-
 // Epetra interface includes
 using namespace std;
 %include "Epetra_Version.h"
 %include "Epetra_Object.h"
 %include "Epetra_Comm.h"
 %include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+%include "Epetra_MpiComm.h"
+#endif
 %include "Epetra_BlockMap.h"
 %include "Epetra_Map.h"
 %include "Epetra_LocalMap.h"
@@ -508,4 +578,18 @@ class Vector(UserArray,NumPyVector):
             if name in self.__dict__:
                 raise AttributeError, "Cannot change Epetra.Vector array attribute"
         UserArray.__setattr__(self, name, value)
+
+def PyComm():
+#ifndef HAVE_MPI
+  return SerialComm();
+#else
+  return MpiComm(CommWorld());
+#endif
+
 %}
+
+#ifdef HAVE_MPI
+PyObject* Init(PyObject *args);
+PyObject* Finalize();
+MPI_Comm CommWorld();
+#endif

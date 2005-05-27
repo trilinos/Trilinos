@@ -51,8 +51,10 @@ except IOError:
 
 # Certain directory paths are needed by setup.py.  pakDir is the path for the
 # epetra package directory, and srcDir is the path for the python source directory
-pakDir = makeInfo.get("top_srcdir","")
-srcDir = makeInfo.get("srcdir"    ,"")
+pakDir   = makeInfo.get("top_srcdir","")
+srcDir   = makeInfo.get("srcdir"    ,"")
+buildDir = makeInfo.get("top_builddir"    ,"")
+CXX      = makeInfo.get("CXX")
 
 # Obtain the version from the package version function, using regular
 # expressions.  This assumes that the function returns a string constant of the
@@ -74,6 +76,7 @@ except IOError:
 
 # Define the epetra include path, library directory and library name
 epetraInc    = os.path.join(pakDir, "src")
+epetraBuildInc    = os.path.join(buildDir, "src")
 epetraLibDir = os.path.join("..", "..", "src")
 epetraLib    = "epetra"
 
@@ -87,7 +90,7 @@ if sysName == "Linux":
 # Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
-extraArgs = [ ]
+extraArgs = []
 libs = makeInfo.get("LDFLAGS"    ,"").split() + \
        makeInfo.get("BLAS_LIBS"  ,"").split() + \
        makeInfo.get("LAPACK_LIBS","").split() + \
@@ -105,13 +108,19 @@ epetraNumPyVector  = os.path.join(srcDir,"Epetra_NumPyVector.cpp" )
 numPyArray         = os.path.join(srcDir,"NumPyArray.cpp"         )
 numPyWrapper       = os.path.join(srcDir,"NumPyWrapper.cpp"       )
 
+# compiler and linker
+sysconfig.get_config_vars()
+config_vars = sysconfig._config_vars;
+config_vars['CC'] = CXX
+
 # _Epetra extension module
 _Epetra = Extension("PyTrilinos._Epetra",
                     [wrapEpetra,
                      epetraNumPyVector,
                      numPyArray,
                      numPyWrapper      ],
-                    include_dirs    = [epetraInc, srcDir],
+                    define_macros   = [('HAVE_CONFIG_H', '1')],
+                    include_dirs    = [epetraInc, epetraBuildInc, srcDir],
                     library_dirs    = [epetraLibDir],
                     libraries       = [epetraLib] + stdLibs,
                     extra_link_args = extraArgs
