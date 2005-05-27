@@ -46,6 +46,14 @@
 #include "Epetra_RowMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
+
+extern "C" {
+  void environ()
+  {
+    exit(EXIT_FAILURE);
+  }
+}
+
 %}
 
 %include "ml_config.h"

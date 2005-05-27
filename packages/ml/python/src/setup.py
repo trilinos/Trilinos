@@ -55,6 +55,8 @@ print makeInfo
 buildDir   = makeInfo.get("top_builddir","")
 pakDir     = makeInfo.get("top_srcdir","")
 srcDir     = makeInfo.get("srcdir","")
+CXX        = makeInfo.get("CXX")
+
 
 # Define the epetra include path, library directory and library name
 PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
@@ -103,6 +105,11 @@ if sysName == "Linux":
 # Define the strings that refer to the required source files.
 wrapML          = "ML_wrap.cpp"
 
+# compiler and linker
+sysconfig.get_config_vars()
+config_vars = sysconfig._config_vars;
+config_vars['CC'] = CXX
+
 # _ML  extension module
 _ML = Extension("PyTrilinos._ML",
                     [wrapML],
@@ -121,5 +128,5 @@ setup(name         = "PyTrilinos.ML",
       author_email = "msala@sandia.gov",
       package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
-      ext_modules  = [_ML],
+      ext_modules  = [_ML]
       )
