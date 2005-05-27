@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-from PyTrilinos import Triutils, EpetraExt, Epetra
+from PyTrilinos import EpetraExt, Epetra
 
 n = 10
 Comm = Epetra.SerialComm()
