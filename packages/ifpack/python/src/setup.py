@@ -48,13 +48,12 @@ try:
 except IOError:
     makeInfo = { }
 
-print makeInfo
-
 # Certain directory paths are needed by setup.py.  pakDir is the path for the
 # epetra package directory, and srcDir is the path for the python source directory
-buildDir   = makeInfo.get("top_builddir","")
-pakDir     = makeInfo.get("top_srcdir","")
-srcDir     = makeInfo.get("srcdir","")
+buildDir = makeInfo.get("top_builddir","")
+pakDir   = makeInfo.get("top_srcdir","")
+srcDir   = makeInfo.get("srcdir","")
+CXX      = makeInfo.get("CXX")
 
 # Define the epetra include path, library directory and library name
 PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
@@ -102,6 +101,11 @@ if sysName == "Linux":
 
 # Define the strings that refer to the required source files.
 wrapIFPACK          = "IFPACK_wrap.cpp"
+
+# compiler and linker
+sysconfig.get_config_vars()
+config_vars = sysconfig._config_vars;
+config_vars['CC'] = CXX
 
 # _IFPACK  extension module
 _IFPACK = Extension("PyTrilinos._IFPACK",

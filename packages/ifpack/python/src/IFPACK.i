@@ -38,6 +38,9 @@
 
 #include "Ifpack_ConfigDefs.h"
 
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_RowMatrix.h"
@@ -53,6 +56,14 @@
 #include "Ifpack_ILU.h"
 #include "Ifpack_ILUT.h"
 #include "Ifpack_PointRelaxation.h"
+
+extern "C" {
+  void environ()
+  {
+    exit(EXIT_FAILURE);
+  }
+}
+
 %}
 
 // Auto-documentation feature
