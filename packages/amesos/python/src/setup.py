@@ -53,34 +53,36 @@ except IOError:
 buildDir = makeInfo.get("top_builddir","")
 pakDir   = makeInfo.get("top_srcdir","")
 srcDir   = makeInfo.get("srcdir","")
+CXX      = makeInfo.get("CXX")
+
 #solverLibs = makeInfo.get("LIBS", "");
 #if len(solverLibs) == 0: solverLibs = "amesos";
 
 # Define the teuchos include path, library directory and library name
-#teuchosSrcDir   = os.path.join(pakDir, "..", "teuchos", "src")
-#teuchosBuildDir = os.path.join(buildDir, "..", "teuchos", "src")
+teuchosSrcDir   = os.path.join(pakDir, "..", "teuchos", "src")
+teuchosBuildDir = os.path.join(buildDir, "..", "teuchos", "src")
 teuchosIncDir = os.path.join(pakDir, "..", "teuchos", "src")
 teuchosLibDir = os.path.join("..", "..", "..", "teuchos", "src")
 teuchosLib    = "teuchos"
 
 # Define the triutils include path, library directory and library name
-#triutilsSrcDir   = os.path.join(pakDir, "..", "triutils", "src")
-#triutilsBuildDir = os.path.join(buildDir, "..", "triutils", "src")
+triutilsSrcDir   = os.path.join(pakDir, "..", "triutils", "src")
+triutilsBuildDir = os.path.join(buildDir, "..", "triutils", "src")
 triutilsIncDir = os.path.join(pakDir, "..", "triutils", "src")
 triutilsLibDir = os.path.join("..", "..", "..", "triutils", "src")
 triutilsLib    = "triutils"
 
 # Define the epetra include path, library directory and library name
-#epetraSrcDir   = os.path.join(pakDir, "..", "epetra", "src")
-#epetraBuildDir = os.path.join(buildDir, "..", "epetra", "src")
+epetraSrcDir   = os.path.join(pakDir, "..", "epetra", "src")
+epetraBuildDir = os.path.join(buildDir, "..", "epetra", "src")
 epetraIncDir = os.path.join(pakDir, "src")
 epetraLibDir = os.path.join("..", "..", "..", "epetra", "src")
 epetraLib    = "epetra"
 PyEpetraDir  = os.path.join(pakDir, "..", "epetra", "python", "src")
 
 # Define the amesos include path, library directory and library name
-#amesosSrcDir   = os.path.join(pakDir, "src")
-#amesosBuildDir = os.path.join(buildDir, "src")
+amesosSrcDir   = os.path.join(pakDir, "src")
+amesosBuildDir = os.path.join(buildDir, "src")
 amesosIncDir = os.path.join(pakDir, "src")
 amesosLibDir = os.path.join("..", "..", "src")
 amesosLib    = "amesos"
@@ -136,14 +138,19 @@ for lib in libs:
 # Define the strings that refer to the required source files.
 amesosWrap = "Amesos_wrap.cpp"
 
+# compiler and linker
+sysconfig.get_config_vars()
+config_vars = sysconfig._config_vars;
+config_vars['CC'] = CXX
+
 # _Amesos extension module
 _Amesos = Extension("PyTrilinos._Amesos",
                     [amesosWrap],
                     define_macros=[('HAVE_CONFIG_H', '1')],
-                    include_dirs    = [amesosIncDir,
-                                       epetraIncDir,
-                                       teuchosIncDir,
-                                       triutilsIncDir,
+                    include_dirs    = [amesosSrcDir, amesosBuildDir,
+                                       epetraSrcDir, epetraBuildDir,
+                                       teuchosSrcDir, teuchosBuildDir,
+                                       triutilsSrcDir, triutilsBuildDir,
                                        PyEpetraDir],
                     library_dirs    = [amesosLibDir, teuchosLibDir, 
                                        epetraLibDir],
