@@ -58,9 +58,11 @@ PROXIES    = $(INTERFACES:.i=.py      )
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
 	@echo "{"                                   >  $@
-	@echo "  'top_builddir' : '$(top_builddir)',"  >> $@
+	@echo "  'top_builddir' : '$(top_builddir)',">> $@
 	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
 	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
+	@echo "  'CC'           : '$(CC)',"          >> $@
+	@echo "  'CXX'          : '$(CXX)',"         >> $@
 	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
 	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
 	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@

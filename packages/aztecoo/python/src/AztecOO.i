@@ -36,8 +36,6 @@
 #include <sstream>
 #include <vector>
 
-#include "AztecOO_config.h"
-
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
@@ -46,12 +44,18 @@
 // AztecOO includes
 #include "AztecOO.h"
 #include "AztecOO_Version.h"
+
+extern "C" {
+  void environ()
+  {
+    exit(EXIT_FAILURE);
+  }
+}
+
 %}
 
 // Auto-documentation feature
 %feature("autodoc", "1");
-
-%include "AztecOO_config.h"
 
 // Epetra interface includes
 using namespace std;

@@ -28,7 +28,11 @@
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)
+@HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
+
+SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir) \
+                -I$(top_builddir)/src \
+		$(MPI_FLAG)
 
 # Default make target
 all-am: build
@@ -53,6 +57,9 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "{"                                   >  $@
 	@echo "  'top_srcdir'  : '$(top_srcdir)',"  >> $@
 	@echo "  'srcdir'      : '$(srcdir)',"      >> $@
+	@echo "  'top_builddir': '$(top_builddir)',">> $@
+	@echo "  'CC'          : '$(CC)',"          >> $@
+	@echo "  'CXX'         : '$(CXX)',"         >> $@
 	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"     >> $@
 	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)'," >> $@
 	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
