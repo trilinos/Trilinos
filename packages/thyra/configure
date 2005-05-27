@@ -2023,7 +2023,7 @@ echo "${ECHO_T}no" >&6
 fi
 
       if test X${MPI_TEMP_CXX} = Xno; then
-  # Extract the first word of "mpic++", so it can be a program name with args.
+	# Extract the first word of "mpic++", so it can be a program name with args.
 set dummy mpic++; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -2060,7 +2060,7 @@ echo "${ECHO_T}no" >&6
 fi
 
       else
-  MPI_CXX=${MPI_TEMP_CXX}
+	MPI_CXX=${MPI_TEMP_CXX}
       fi
       MPI_CC=mpicc
       MPI_F77=mpif77
@@ -2068,7 +2068,7 @@ fi
       if test -f ${withval}/mpicxx; then
         MPI_CXX=${withval}/mpicxx
       elif test -f ${withval}/mpic++; then
-  MPI_CXX=${withval}/mpi++
+	MPI_CXX=${withval}/mpic++
       else
         MPI_CXX=${withval}/mpiCC
       fi

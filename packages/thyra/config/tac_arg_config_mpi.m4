@@ -38,9 +38,9 @@ AC_ARG_WITH(mpi-compilers,
       # not exist, use mpiCC instead.
       AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
       if test X${MPI_TEMP_CXX} = Xno; then
-  AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
+	AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
       else 
-  MPI_CXX=${MPI_TEMP_CXX}
+	MPI_CXX=${MPI_TEMP_CXX}
       fi
       MPI_CC=mpicc
       MPI_F77=mpif77
@@ -48,7 +48,7 @@ AC_ARG_WITH(mpi-compilers,
       if test -f ${withval}/mpicxx; then
         MPI_CXX=${withval}/mpicxx
       elif test -f ${withval}/mpic++; then
-  MPI_CXX=${withval}/mpi++
+	MPI_CXX=${withval}/mpic++
       else
         MPI_CXX=${withval}/mpiCC
       fi

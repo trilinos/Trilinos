@@ -48,7 +48,7 @@ AC_ARG_WITH(mpi-compilers,
       if test -f ${withval}/mpicxx; then
         MPI_CXX=${withval}/mpicxx
       elif test -f ${withval}/mpic++; then
-	MPI_CXX=${withval}/mpi++
+	MPI_CXX=${withval}/mpic++
       else
         MPI_CXX=${withval}/mpiCC
       fi
