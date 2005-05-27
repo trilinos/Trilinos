@@ -292,7 +292,11 @@ CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
-SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)
+@HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
+SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir) \
+                -I$(top_builddir)/src \
+		$(MPI_FLAG)
+
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
@@ -478,6 +482,9 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "{"                                   >  $@
 	@echo "  'top_srcdir'  : '$(top_srcdir)',"  >> $@
 	@echo "  'srcdir'      : '$(srcdir)',"      >> $@
+	@echo "  'top_builddir': '$(top_builddir)',">> $@
+	@echo "  'CC'          : '$(CC)',"          >> $@
+	@echo "  'CXX'         : '$(CXX)',"         >> $@
 	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"     >> $@
 	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)'," >> $@
 	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
