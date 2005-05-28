@@ -21,7 +21,7 @@ BUILD_DIR=`pwd`
 --enable-tsfcore-aztecoo \
 --enable-teuchos \
 --enable-teuchos-expat \
---disable-ml \
+--enable-ml \
 --enable-teuchos-extended \
 --disable-new-package \
 --disable-ml-examples \
@@ -29,6 +29,7 @@ BUILD_DIR=`pwd`
 --enable-nox-tsf \
 --enable-nox-tsf-examples \
 --disable-loca \
+--cache-file=config.cache \
 --with-install="/usr/bin/install -c -p" \
 --prefix=$BUILD_DIR
 

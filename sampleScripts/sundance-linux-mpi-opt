@@ -11,7 +11,7 @@
 BUILD_DIR=`pwd`
 
 ../configure --enable-mpi --with-mpi-compilers \
-CXXFLAGS="-O3 -finline-functions -funroll-all-loops" \
+CXXFLAGS="-O3 -finline-functions -funroll-loops" \
 --with-libs="-lexpat" \
 --enable-tsfextended \
 --enable-tsfcore \
@@ -20,7 +20,7 @@ CXXFLAGS="-O3 -finline-functions -funroll-all-loops" \
 --enable-tsfcore-aztecoo \
 --enable-teuchos \
 --enable-teuchos-expat \
---disable-ml \
+--enable-ml \
 --enable-teuchos-extended \
 --disable-new-package \
 --disable-ml-examples \
