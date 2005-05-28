@@ -80,6 +80,16 @@
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
+
+extern "C" {
+  // on some MAC OS X with LAM/MPI _environ() is not found,
+  // need to specify -Wl,-i_environ:_fake_environ as LDFLAGS
+  void fake_environ() 
+  {
+     exit(EXIT_FAILURE); 
+  }
+}
+
 %}
 
 // Auto-documentation feature

@@ -89,7 +89,7 @@ on-line documentation for more in-depth information."
 
 #ifdef HAVE_MPI
 #include "mpi.h"
-PyObject* Init(PyObject *args) 
+PyObject* Init_Argv(PyObject *args) 
 {  
 
   int i, error, myid, size;
@@ -137,10 +137,22 @@ MPI_Comm CommWorld()
 {
   return(MPI_COMM_WORLD);
 }
+#else
+PyObject* Init_Args(PyObject *args) 
+{
+  return Py_BuildValue("");
+}
+
+PyObject* Finalize()
+{
+  return Py_BuildValue("");
+}
 #endif
 
 extern "C" {
-  void environ()
+  // on some MAC OS X with LAM/MPI _environ() is not found,
+  // need to specify -Wl,-i_environ:_fake_environ as LDFLAGS
+  void fake_environ()
   {
     exit(EXIT_FAILURE);
   }
@@ -562,6 +574,10 @@ using namespace std;
 // objects and UserArrays, to give users additional functionality.
 %pythoncode %{
 
+def Init():
+  import sys
+  Init_Argv(sys.argv)
+
 __version__ = Version().split()[2]
 
 from UserArray import *
@@ -579,17 +595,22 @@ class Vector(UserArray,NumPyVector):
                 raise AttributeError, "Cannot change Epetra.Vector array attribute"
         UserArray.__setattr__(self, name, value)
 
-def PyComm():
-#ifndef HAVE_MPI
-  return SerialComm();
-#else
-  return MpiComm(CommWorld());
-#endif
-
 %}
 
+#ifndef HAVE_MPI
+%pythoncode %{
+def PyComm():
+  return SerialComm();
+%}
+#else
+%pythoncode %{
+def PyComm():
+  return MpiComm(CommWorld());
+%}
+#endif
+
 #ifdef HAVE_MPI
-PyObject* Init(PyObject *args);
+PyObject* Init_Argv(PyObject *args);
 PyObject* Finalize();
 MPI_Comm CommWorld();
 #endif
