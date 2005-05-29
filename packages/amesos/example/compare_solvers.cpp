@@ -90,9 +90,13 @@ int main(int argc, char *argv[])
   Epetra_RowMatrix* A = Problem->GetMatrix();
     
   // use this list to set up parameters, now it is required
-  // to explicitly compute the residual after solution
+  // to use all the available processes (if supported by the
+  // underlying solver). Uncomment the following two lines
+  // to let Amesos print out some timing and status information.
   Teuchos::ParameterList List;
-  List.set("ComputeTruResidual",true);
+  // List.set("PrintTiming",true);
+  // List.set("PrintStatus",true);
+  List.set("MaxProcs",Comm.NumProc());
 
   vector<string> SolverType;
   SolverType.push_back("Amesos_Lapack");
@@ -103,7 +107,7 @@ int main(int argc, char *argv[])
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
-  //SolverType.push_back("Amesos_Dscpack");
+  SolverType.push_back("Amesos_Dscpack");
 
   Epetra_Time Time(Comm);
   
@@ -130,6 +134,8 @@ int main(int argc, char *argv[])
       // 4.- create the amesos solver object
       Amesos_BaseSolver* Solver = Factory.Create(SolverType[i], *Problem);
       assert (Solver != 0);
+
+      Solver->SetParameters(List);
 
       // 5.- factorize and solve
       

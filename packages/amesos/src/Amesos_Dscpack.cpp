@@ -32,25 +32,18 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
-#include "Epetra_Time.h"
-#define USE_STL_SORT
-#ifdef USE_STL_SORT
+#include "Teuchos_RefCountPtr.hpp"
 #include <algorithm>
-#endif
 
 //=============================================================================
 Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
-  DscGraph_(0), 
-  UseTranspose_(false), // Dscpack is only for symmetric systems
   DscNumProcs(-1), // will be set later
-  ImportToSerial_(0),
-  DscMap_(0),
   MaxProcs_(-1)
 {  
   Problem_ = &prob ; 
   A_and_LU_built = false ; 
   FirstCallToSolve_ = true ; 
-  MyDSCObject = DSC_Begin() ; 
+  MyDSCObject_ = DSC_Begin() ; 
 
   MyDscRank = -1 ; 
 }
@@ -59,28 +52,22 @@ Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) :
 Amesos_Dscpack::~Amesos_Dscpack(void) {
 
   if ( MyDscRank>=0 && A_and_LU_built ) { 
-    DSC_FreeAll( MyDSCObject ) ; 
-    DSC_Close0( MyDSCObject ) ; 
+    DSC_FreeAll( MyDSCObject_ ) ; 
+    DSC_Close0( MyDSCObject_ ) ; 
   }
-  DSC_End( MyDSCObject ) ; 
-
-  if( ImportToSerial_ ) { delete ImportToSerial_; ImportToSerial_ = 0; }
-  if( DscMap_ ) { delete DscMap_; DscMap_ = 0; }
-    
-  if ( DscGraph_) delete DscGraph_;  // This might not exist, is it dangerous to delete it?
+  DSC_End( MyDSCObject_ ) ; 
 
   // MS // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
-
 }
 
 //=============================================================================
-int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList ) 
+int Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList) 
 {
 
   // ========================================= //
-  // retrive KLU's parameters from list.       //
+  // retrive DSCPACK's parameters from list.   //
   // default values defined in the constructor //
   // ========================================= //
 
@@ -129,26 +116,47 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
 {
   ResetTime();
   
-  vector <int> Replicates;
-  vector <int> Ap;
-  vector <int> Ai;
-
   Epetra_RowMatrix *RowMatrixA = Problem_->GetMatrix();
   if (RowMatrixA == 0)
     AMESOS_CHK_ERR(-1);
 
-  Epetra_CrsMatrix *CastCrsMatrixA = 
+  const Epetra_Map& OriginalMap = RowMatrixA->RowMatrixRowMap() ;
+  const Epetra_MpiComm& comm1   = dynamic_cast<const Epetra_MpiComm &> (Comm());
+  int numrows                   = RowMatrixA->NumGlobalRows();
+  int numentries                = RowMatrixA->NumGlobalNonzeros();
+
+  Teuchos::RefCountPtr<Epetra_CrsGraph> Graph;
+
+  Epetra_CrsMatrix* CastCrsMatrixA = 
     dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA); 
-  if (CastCrsMatrixA == 0)
-    AMESOS_CHK_ERR(-1); // DSCPACK now supports Epetra_CrsMatrix's only.
 
-  const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ;
-  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm());
-  MPIC = comm1.Comm() ;
+  if (CastCrsMatrixA)
+  {
+    Graph = Teuchos::rcp(const_cast<Epetra_CrsGraph*>(&(CastCrsMatrixA->Graph())), false);
+  }
+  else
+  {
+    int MaxNumEntries = RowMatrixA->MaxNumEntries();
+    Graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, OriginalMap, MaxNumEntries));
 
-  int numrows = CastCrsMatrixA->NumGlobalRows();
-  int numentries = CastCrsMatrixA->NumGlobalNonzeros();
-  assert( numrows == CastCrsMatrixA->NumGlobalCols() );
+    vector<int>    Indices(MaxNumEntries);
+    vector<double> Values(MaxNumEntries);
+
+    for (int i = 0 ; i < RowMatrixA->NumMyRows() ; ++i)
+    {
+      int NumEntries;
+      RowMatrixA->ExtractMyRowCopy(i, MaxNumEntries, NumEntries,
+                                   &Values[0], &Indices[0]);
+
+      for (int j = 0 ; j < NumEntries ; ++j)
+        Indices[j] = RowMatrixA->RowMatrixColMap().GID(Indices[j]);
+
+      int GlobalRow = RowMatrixA->RowMatrixRowMap().GID(i);
+      Graph->InsertGlobalIndices(GlobalRow, NumEntries, &Indices[0]);
+    }
+
+    Graph->FillComplete();
+  }
 
   //
   //  Create a replicated map and graph 
@@ -156,28 +164,27 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   vector<int> AllIDs( numrows ) ; 
   for ( int i = 0; i < numrows ; i++ ) AllIDs[i] = i ; 
 
-  Epetra_Map ReplicatedMap( -1, numrows, &AllIDs[0], 0, Comm());
-  Epetra_Import importer( ReplicatedMap, OriginalMap );
-
-  //  Epetra_Import ImportToReplicated( ReplicatedMap, OriginalMap);
+  Epetra_Map      ReplicatedMap( -1, numrows, &AllIDs[0], 0, Comm());
+  Epetra_Import   ReplicatedImporter(ReplicatedMap, OriginalMap);
   Epetra_CrsGraph ReplicatedGraph( Copy, ReplicatedMap, 0 ); 
-  EPETRA_CHK_ERR( ReplicatedGraph.Import( (CastCrsMatrixA->Graph()), importer, Insert) );
-  EPETRA_CHK_ERR( ReplicatedGraph.FillComplete() ) ;
 
-  
+  AMESOS_CHK_ERR(ReplicatedGraph.Import(*Graph, ReplicatedImporter, Insert));
+  AMESOS_CHK_ERR(ReplicatedGraph.FillComplete());
+
   //
   //  Convert the matrix to Ap, Ai
   //
-  Replicates.resize( numrows );
+  vector <int> Replicates(numrows);
+  vector <int> Ap(numrows + 1);
+  vector <int> Ai(EPETRA_MAX(numrows, numentries));
+
   for( int i = 0 ; i < numrows; i++ ) Replicates[i] = 1; 
-  Ap.resize( numrows+1 );
-  Ai.resize( EPETRA_MAX( numrows, numentries) ) ; 
   
   int NumEntriesPerRow ;
   int *ColIndices = 0 ;
   int Ai_index = 0 ; 
   for ( int MyRow = 0; MyRow <numrows; MyRow++ ) {
-    EPETRA_CHK_ERR( ReplicatedGraph.ExtractMyRowView( MyRow, NumEntriesPerRow, ColIndices ) );
+    AMESOS_CHK_ERR( ReplicatedGraph.ExtractMyRowView( MyRow, NumEntriesPerRow, ColIndices ) );
     Ap[MyRow] = Ai_index ; 
     for ( int j = 0; j < NumEntriesPerRow; j++ ) { 
       Ai[Ai_index] = ColIndices[j] ; 
@@ -255,13 +262,12 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   while ( DscNumProcs * 2 <=EPETRA_MIN( MaxProcs_, DscMax ) )  DscNumProcs *= 2 ;
   
   MyDscRank = -1; 
-  DSC_Open0( MyDSCObject, DscNumProcs, &MyDscRank, MPIC ) ; 
+  DSC_Open0( MyDSCObject_, DscNumProcs, &MyDscRank, comm1.Comm()) ; 
   
-
   NumLocalCols = 0 ; // This is for those processes not in the Dsc grid
   if ( MyDscRank >= 0 ) { 
     assert( Comm().MyPID() == MyDscRank ) ; 
-    EPETRA_CHK_ERR( DSC_Order ( MyDSCObject, OrderCode, numrows, &Ap[0], &Ai[0], 
+    AMESOS_CHK_ERR( DSC_Order ( MyDSCObject_, OrderCode, numrows, &Ap[0], &Ai[0], 
 				&Replicates[0], &NumGlobalCols, &NumLocalStructs, 
 				&NumLocalCols, &NumLocalNonz, 
 				&GlobalStructNewColNum, &GlobalStructNewNum, 
@@ -270,13 +276,11 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
     assert( NumLocalCols == NumLocalStructs ) ; 
   }
 
-
-  
   if ( MyDscRank >= 0 ) { 
     int MaxSingleBlock; 
     
     const int Limit = 5000000 ;  //  Memory Limit set to 5 Terabytes 
-    EPETRA_CHK_ERR( DSC_SFactor ( MyDSCObject, &TotalMemory_, 
+    AMESOS_CHK_ERR( DSC_SFactor ( MyDSCObject_, &TotalMemory_, 
 				  &MaxSingleBlock, Limit, DSC_LBLAS3, DSC_DBLAS2 ) ) ; 
     
   }
@@ -284,8 +288,8 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   //  A_and_LU_built = true;   // If you uncomment this, TestOptions fails
   
   AddTime("symbolic");
-  return 0;
 
+  return(0);
 }
 
 //=============================================================================
@@ -293,51 +297,41 @@ int Amesos_Dscpack::PerformNumericFactorization()
 {
   ResetTime();
 
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
+  Epetra_RowMatrix* RowMatrixA = Problem_->GetMatrix();
+  if (RowMatrixA == 0)
+    AMESOS_CHK_ERR(-1);
 
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-  EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
+  const Epetra_Map& OriginalMap = RowMatrixA->RowMatrixRowMap() ; 
 
-  const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
-
-  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm());
-  MPIC = comm1.Comm() ;
-
-  int numrows = CastCrsMatrixA->NumGlobalRows();
-  assert( numrows == CastCrsMatrixA->NumGlobalCols() );
+  int numrows = RowMatrixA->NumGlobalRows();
+  assert( numrows == RowMatrixA->NumGlobalCols() );
   
   //
   //  Call Dscpack to perform Numeric Factorization
   //  
   vector<double> MyANonZ;
-  if ( DscMap_ ) {
-    delete DscMap_ ; 
 #if 0
     if ( IsNumericFactorizationOK_ ) { 
       DSC_ReFactorInitialize(MyDSCObject);
     }
 #endif
-  }
 
-  DscMap_ = new Epetra_Map(numrows, NumLocalCols, LocalStructOldNum, 0, Comm());
-  AMESOS_CHK_ERR( ( DscMap_ == 0 ) ) ; 
+  DscRowMap_ = Teuchos::rcp(new Epetra_Map(numrows, NumLocalCols, 
+                                           LocalStructOldNum, 0, Comm()));
+
+  if (DscRowMap_.get() == 0)
+    AMESOS_CHK_ERR(-1);
   
+  Importer_ = rcp(new Epetra_Import(DscRowMap(), OriginalMap));
+    
   //
   //  Import from the CrsMatrix
   //
-  if( ImportToSerial_ == 0 ) {
-    ImportToSerial_ = new Epetra_Import( *DscMap_, OriginalMap );
-    assert( ImportToSerial_ != 0 );
-  }
-  
-  Epetra_CrsMatrix DscMat(Copy, *DscMap_, 0);
-  EPETRA_CHK_ERR( DscMat.Import( *CastCrsMatrixA, *ImportToSerial_, Insert) );
-  EPETRA_CHK_ERR( DscMat.FillComplete() ) ; 
+  Epetra_CrsMatrix DscMat(Copy, DscRowMap(), 0);
+  AMESOS_CHK_ERR(DscMat.Import(*RowMatrixA, Importer(), Insert));
+  AMESOS_CHK_ERR(DscMat.FillComplete()); 
 
-  //    assert( DscGraph_ == 0 ) ; 
-  if ( DscGraph_ ) delete DscGraph_ ; 
-  DscGraph_ = new Epetra_CrsGraph ( DscMat.Graph() ); 
+  DscColMap_ = Teuchos::rcp(new Epetra_Map(DscMat.RowMatrixColMap()));
 
   assert( MyDscRank >= 0 || NumLocalNonz == 0 ) ;
   assert( MyDscRank >= 0 || NumLocalCols == 0 ) ;
@@ -348,9 +342,9 @@ int Amesos_Dscpack::PerformNumericFactorization()
   int max_num_entries = DscMat.MaxNumEntries() ; 
   vector<int> col_indices( max_num_entries ) ; 
   vector<double> mat_values( max_num_entries ) ; 
-  assert( NumLocalCols == DscMap_->NumMyElements() ) ;
+  assert( NumLocalCols == DscRowMap().NumMyElements() ) ;
   vector<int> my_global_elements( NumLocalCols ) ; 
-  EPETRA_CHK_ERR( DscMap_->MyGlobalElements( &my_global_elements[0] ) ) ;
+  AMESOS_CHK_ERR(DscRowMap().MyGlobalElements( &my_global_elements[0] ) ) ;
   
   vector<int> GlobalStructOldColNum( NumGlobalCols ) ; 
   
@@ -361,12 +355,11 @@ int Amesos_Dscpack::PerformNumericFactorization()
   for ( int i = 0; i < NumLocalCols ; i++ ) { 
     assert( my_global_elements[i] == LocalStructOldNum[i] ) ; 
     int num_entries_this_row; 
-    //  USE_LOCAL and not USE_LOCAL both work
 #ifdef USE_LOCAL
-    EPETRA_CHK_ERR( DscMat.ExtractMyRowCopy( i, max_num_entries, num_entries_this_row, 
+    AMESOS_CHK_ERR( DscMat.ExtractMyRowCopy( i, max_num_entries, num_entries_this_row, 
 					     &mat_values[0], &col_indices[0] ) ) ; 
 #else
-    EPETRA_CHK_ERR( DscMat.ExtractGlobalRowCopy( DscMat.GRID(i), max_num_entries, num_entries_this_row, 
+    AMESOS_CHK_ERR( DscMat.ExtractGlobalRowCopy( DscMat.GRID(i), max_num_entries, num_entries_this_row, 
 						 &mat_values[0], &col_indices[0] ) ) ; 
 #endif
     int OldRowNumber =  LocalStructOldNum[i] ;
@@ -388,25 +381,11 @@ int Amesos_Dscpack::PerformNumericFactorization()
 #endif
       sort_array[j].second = mat_values[j] ; 
     }
-#ifdef USE_STL_SORT
     sort(&sort_array[0], &sort_array[num_entries_this_row]);
-#else
-    double **DoubleCompanions = new double*[2] ;
-    *DoubleCompanions = &mat_values[0] ; 
-    Epetra_Util sorter;
-    sorter.Sort( true, num_entries_this_row, &sort_indices[0],
-		 1, DoubleCompanions, 0, 0 ) ;
-    delete[] DoubleCompanions; 
-#endif
     
     for ( int j = 0; j < num_entries_this_row; j++ ) { 
-#ifdef USE_STL_SORT
       int NewColNumber = sort_array[j].first ; 
       if ( NewRowNumber <= NewColNumber ) MyANonZ[ NonZIndex++ ] = sort_array[j].second ; 
-#else
-      int NewColNumber = sort_indices[j] ; 
-      if ( NewRowNumber <= NewColNumber ) MyANonZ[ NonZIndex++ ] = mat_values[j] ; 
-#endif
 #ifndef USE_LOCAL
       assert( NonZIndex <= NumLocalNonz );
 #endif
@@ -419,7 +398,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
     assert( NonZIndex == NumLocalNonz );
 #endif
     
-    EPETRA_CHK_ERR( DSC_NFactor ( MyDSCObject, SchemeCode, &MyANonZ[0], 
+    AMESOS_CHK_ERR( DSC_NFactor ( MyDSCObject_, SchemeCode, &MyANonZ[0], 
 				  DSC_LLT,  DSC_LBLAS3, DSC_DBLAS2 ) ) ;
     
   }        //     if ( MyDscRank >= 0 ) 
@@ -451,10 +430,10 @@ int Amesos_Dscpack::SymbolicFactorization()
   
   InitTime(Comm());
 
-  NumSymbolicFact_++;
-  
   AMESOS_CHK_ERR(PerformSymbolicFactorization());
+
   IsSymbolicFactorizationOK_ = true; 
+  NumSymbolicFact_++;
 
   return(0);
 }
@@ -462,25 +441,22 @@ int Amesos_Dscpack::SymbolicFactorization()
 //=============================================================================
 int Amesos_Dscpack::NumericFactorization()
 {
-
   IsNumericFactorizationOK_ = false;
 
-  NumNumericFact_++;
-  
   if (!IsSymbolicFactorizationOK_) 
     AMESOS_CHK_ERR(SymbolicFactorization());
 
   AMESOS_CHK_ERR(PerformNumericFactorization());
-  IsNumericFactorizationOK_ = true;
 
-  return 0;
+  IsNumericFactorizationOK_ = true;
+  NumNumericFact_++;
+  
+  return(0);
 }
 
 //=============================================================================
 int Amesos_Dscpack::Solve()
 {
-  NumSolve_++;
-
   if (IsNumericFactorizationOK_ == false) 
     AMESOS_CHK_ERR(NumericFactorization());
 
@@ -490,118 +466,109 @@ int Amesos_Dscpack::Solve()
   if (RowMatrixA == 0)
     AMESOS_CHK_ERR(-1);
 
-  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm());
-  MPIC = comm1.Comm() ;
-
   // MS // some checks on matrix size
-  int numrows = RowMatrixA->NumGlobalRows();
-  if (numrows != RowMatrixA->NumGlobalCols())
+  if (RowMatrixA->NumGlobalRows() != RowMatrixA->NumGlobalCols())
     AMESOS_CHK_ERR(-1);
 
   //  Convert vector b to a vector in the form that DSCPACK needs it
   //
-  Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
-  Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
+  Epetra_MultiVector* vecX = Problem_->GetLHS(); 
+  Epetra_MultiVector* vecB = Problem_->GetRHS(); 
 
   if ((vecX == 0) || (vecB == 0))
     AMESOS_CHK_ERR(-1); // something wrong with input
 
   int NumVectors = vecX->NumVectors(); 
-  Epetra_MultiVector *vecBvector = (vecB) ; // Ken gxx- do we need vecBvector?
+  if (NumVectors != vecB->NumVectors())
+    AMESOS_CHK_ERR(-2);
 
   double *dscmapXvalues ;
   int dscmapXlda ;
-  Epetra_MultiVector dscmapX(*DscMap_,NumVectors) ; 
+  Epetra_MultiVector dscmapX(DscRowMap(),NumVectors) ; 
   int ierr;
-  ierr = dscmapX.ExtractView(&dscmapXvalues,&dscmapXlda );
-  AMESOS_CHK_ERR(ierr);
-  assert( dscmapXlda == NumLocalCols ) ; 
+  AMESOS_CHK_ERR(dscmapX.ExtractView(&dscmapXvalues,&dscmapXlda));
+  assert (dscmapXlda == NumLocalCols); 
 
   double *dscmapBvalues ;
   int dscmapBlda ;
-  Epetra_MultiVector dscmapB( *DscMap_, NumVectors ) ; 
+  Epetra_MultiVector dscmapB(DscRowMap(), NumVectors ) ; 
   ierr = dscmapB.ExtractView( &dscmapBvalues, &dscmapBlda );
   AMESOS_CHK_ERR(ierr);
   assert( dscmapBlda == NumLocalCols ) ; 
 
-  // MS // erase this, use Import allocated only once
-  //....//  Epetra_Import ImportOriginalToDsc( DscMap, OriginalMap );
-  //....//  dscmapB.Import( *vecBvector, ImportOriginalToDsc, Insert ) ;
-  dscmapB.Import( *vecBvector, *ImportToSerial_, Insert ) ;
+  AMESOS_CHK_ERR(dscmapB.Import(*vecB, Importer(), Insert));
 
   AddTime("vector redistribution");
   ResetTime();
   
   // MS // now solve the problem
   
-  vector<double> ValuesInNewOrder( NumLocalCols ) ; 
+  vector<double> ValuesInNewOrder( NumLocalCols ) ;
 
   if ( MyDscRank >= 0 ) {
     for ( int j =0 ; j < NumVectors; j++ ) { 
       for ( int i = 0; i < NumLocalCols; i++ ) { 
-	ValuesInNewOrder[i] = dscmapBvalues[ DscGraph_->LCID( LocalStructOldNum[i] ) +j*dscmapBlda ] ;
+	ValuesInNewOrder[i] = dscmapBvalues[DscColMap().LID( LocalStructOldNum[i] ) +j*dscmapBlda ] ;
       }
-      EPETRA_CHK_ERR( DSC_InputRhsLocalVec ( MyDSCObject, &ValuesInNewOrder[0], NumLocalCols ) ) ;
-      EPETRA_CHK_ERR( DSC_Solve ( MyDSCObject ) ) ; 
-      EPETRA_CHK_ERR( DSC_GetLocalSolution ( MyDSCObject, &ValuesInNewOrder[0], NumLocalCols ) ) ; 
+      AMESOS_CHK_ERR( DSC_InputRhsLocalVec ( MyDSCObject_, &ValuesInNewOrder[0], NumLocalCols ) ) ;
+      AMESOS_CHK_ERR( DSC_Solve ( MyDSCObject_ ) ) ; 
+      AMESOS_CHK_ERR( DSC_GetLocalSolution ( MyDSCObject_, &ValuesInNewOrder[0], NumLocalCols ) ) ; 
       for ( int i = 0; i < NumLocalCols; i++ ) { 
-	dscmapXvalues[ DscGraph_->LCID( LocalStructOldNum[i] ) +j*dscmapXlda ] = ValuesInNewOrder[i];
+	dscmapXvalues[DscColMap().LID( LocalStructOldNum[i] ) +j*dscmapXlda ] = ValuesInNewOrder[i];
       }
     }
-    
   }
 
   AddTime("solve");
-
-  // MS // use always the same Import/Export, avoid allocations
-  // MS // add timing
-  //....//  Epetra_Import ImportDscToOriginal( OriginalMap, DscMap );
-  
   ResetTime();
 
-  vecX->Export( dscmapX, *ImportToSerial_, Insert ) ;
+  vecX->Export( dscmapX, Importer(), Insert ) ;
 
   AddTime("vector redistribution");
 
   if (ComputeTrueResidual_)
     ComputeTrueResidual(*(GetProblem()->GetMatrix()), *vecX, *vecB, 
-                        UseTranspose(), "Amesos_Dscpack");
+                        false, "Amesos_Dscpack");
 
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Dscpack");
-
   
+  NumSolve_++;
+
   return(0) ; 
 }
 
 // ======================================================================
 void Amesos_Dscpack::PrintStatus() const
 {
-  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+  if (Problem_->GetOperator() == 0)
     return;
 
-  string p = "Amesos_Dscpack : ";
-  PrintLine();
+  if (!Comm().MyPID())
+  {
+    string p = "Amesos_Dscpack : ";
+    PrintLine();
 
-  int n = GetProblem()->GetMatrix()->NumGlobalRows();
-  int nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros();
+    int n = GetProblem()->GetMatrix()->NumGlobalRows();
+    int nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros();
 
-  cout << p << "Matrix has " << n << " rows"
-       << " and " << nnz << " nonzeros" << endl;
-  cout << p << "Nonzero elements per row = "
-       << 1.0 *  nnz / n << endl;
-  cout << p << "Percentage of nonzero elements = "
-       << 100.0 * nnz /(pow(n,2.0)) << endl;
-  cout << p << "Use transpose = " << UseTranspose_ << endl;
-  cout << p << "Available process(es) = " << Comm().NumProc() << endl;
-  cout << p << "Process(es) used = " << DscNumProcs
-       << ", idle = " << Comm().NumProc() - DscNumProcs << endl;
-  cout << p << "Estimated total memory for factorization =  " 
-       << TotalMemory_ << " Mbytes" << endl; 
+    cout << p << "Matrix has " << n << " rows"
+         << " and " << nnz << " nonzeros" << endl;
+    cout << p << "Nonzero elements per row = "
+         << 1.0 *  nnz / n << endl;
+    cout << p << "Percentage of nonzero elements = "
+         << 100.0 * nnz /(pow(n,2.0)) << endl;
+    cout << p << "Available process(es) = " << Comm().NumProc() << endl;
+    cout << p << "Process(es) used = " << DscNumProcs
+         << ", idle = " << Comm().NumProc() - DscNumProcs << endl;
+    cout << p << "Estimated total memory for factorization =  " 
+         << TotalMemory_ << " Mbytes" << endl; 
+  }
 
-  DSC_DoStats( MyDSCObject );
+  DSC_DoStats( MyDSCObject_ );
 
-  PrintLine();
+  if (!Comm().MyPID())
+    PrintLine();
 
   return;
 }

@@ -37,8 +37,8 @@
 #include "Amesos_Status.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MpiComm.h"
-#include "Epetra_CrsGraph.h"
 #include "Epetra_Import.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 //
 //  dscmain.h does not check to make sure that it is not called twice,
@@ -102,11 +102,17 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose) 
+  {
+    return(0);
+  }
 
-  bool UseTranspose() const {return(UseTranspose_);};
+  bool UseTranspose() const 
+  {
+    return(false);
+  }
 
-  const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
+  const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
@@ -120,22 +126,31 @@ public:
 
 private:  
   
+  const Epetra_Import& Importer() const
+  {
+    return(*Importer_.get());
+  }
+
+  const Epetra_Map& DscRowMap() const
+  {
+    return(*DscRowMap_.get());
+  }
+
+  const Epetra_Map& DscColMap() const
+  {
+    return(*DscColMap_.get());
+  }
+
   //! Performs the symbolic factorization.
   int PerformSymbolicFactorization();
 
   //! Performs the numeric factorization.
   int PerformNumericFactorization();
 
-  //! Distribution specified by DscOrder
-  Epetra_CrsGraph * DscGraph_;
-
-  //! Is \c true, the transpose of the matrix is used.
-  bool UseTranspose_;
   //! Pointer to the linear problem.
   const Epetra_LinearProblem * Problem_;
 
-  DSC_Solver	MyDSCObject;
-  MPI_Comm MPIC ; 
+  DSC_Solver	MyDSCObject_;
 
   bool FirstCallToSolve_;
   //! Tells us whether to free them
@@ -145,16 +160,16 @@ private:
   int *GlobalStructOwner;
   int *LocalStructOldNum;
 
-  int MyDscRank ; 
-  int DscNumProcs ; 
-  int NumLocalCols; 
+  int MyDscRank;
+  int DscNumProcs;
+  int NumLocalCols;
   int NumGlobalCols;
   int NumLocalStructs;
   int NumLocalNonz ; 
 
-  Epetra_Import * ImportToSerial_;
-
-  Epetra_Map * DscMap_;
+  RefCountPtr<Epetra_Import> Importer_;
+  RefCountPtr<Epetra_Map>    DscColMap_;
+  RefCountPtr<Epetra_Map>    DscRowMap_;
 
   int MaxProcs_;
   

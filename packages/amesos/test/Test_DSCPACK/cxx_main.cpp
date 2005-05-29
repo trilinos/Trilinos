@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   // other data for this test //
   // ======================== //
 
-//  Amesos_TestRowMatrix A(&Matrix);
+  Amesos_TestRowMatrix A(&Matrix);
   Epetra_MultiVector x(Map,NumVectors);
   Epetra_MultiVector x_exact(Map,NumVectors);
   Epetra_MultiVector b(Map,NumVectors);
@@ -164,13 +164,13 @@ int main(int argc, char *argv[]) {
   Epetra_LinearProblem Problem;
   Amesos_Dscpack Solver(Problem);
 
-  Problem.SetOperator(&Matrix);
+  Problem.SetOperator(&A);
   Problem.SetLHS(&x);
   Problem.SetRHS(&b);
 
   Teuchos::ParameterList ParamList ;
-  ParamList.set( "MaxProcs", -3 );
-  EPETRA_CHK_ERR( Solver.SetParameters( ParamList ) ); 
+  ParamList.set("MaxProcs", Comm.NumProc());
+  EPETRA_CHK_ERR(Solver.SetParameters(ParamList)); 
 
   AMESOS_CHK_ERR(Solver.SymbolicFactorization());
   AMESOS_CHK_ERR(Solver.NumericFactorization());

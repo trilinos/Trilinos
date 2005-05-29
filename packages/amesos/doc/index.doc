@@ -293,7 +293,7 @@ The following table details the supported matrix formats for each class.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
-<td>no</td>
+<td>yes</td>
 </tr>
 <tr>
 <td>Epetra_CrsMatrix</td>
@@ -642,9 +642,6 @@ with the version distributed within SuperLU/SuperLU_DIST.
 Depending on the version of SuperLU/SuperLU_DIST, 
 this incompatibility may cause the code to crash. You
 might need to disable KLU and UMFPACK to use SuperLU/SuperLU_DIST.
-
-DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix's. A fix is
-under development.
 
 Amesos has an incomplete interface to ScaLAPACK under development.
 
