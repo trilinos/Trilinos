@@ -44,7 +44,7 @@ PROJECT_NAME           = Amesos
 
 INPUT                  = ../src index.doc
 
-EXAMPLE_PATH           = ../example
+EXAMPLE_PATH           = ../example ../
 
 IMAGE_PATH             = .
 

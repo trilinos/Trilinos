@@ -1,6 +1,6 @@
 /*! \mainpage Amesos: An Interface to Serial and Parallel Direct Sparse Solver Packages.
 
-\image html ../AmesosLogo.jpeg
+\image html AmesosLogo.jpeg
 
 \image latex AmesosLogo.eps
 
@@ -18,6 +18,9 @@ The main page of the Doxygen documentation is organized as follows:
 - \ref am_matrix
 - \ref am_install
 - \ref am_example
+- \ref am_readme
+- \ref am_change_log
+- \ref am_python
 - \ref am_future
 - \ref am_final
 
@@ -29,9 +32,9 @@ Amesos supports the following classes:
      only dense solver supported by Amesos.
 - \c Amesos_Klu - Interface to Tim Davis serial solver KLU (distributed within Amesos). 
 - \c Amesos_Umfpack - Interface to Tim Davis's UMFPACK (version 4.3 or later)
-- \c Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface.
 - \c Amesos_Pardiso - Interface to PARDISO
 - \c Amesos_Taucs - Interface to TAUCS
+- \c Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface.
 - \c Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface (version 2.0 or later).
 - \c Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
 - \c Amesos_Mumps - Interface to CERFACS' MUMPS (version 4.3.1 or later)
@@ -248,10 +251,12 @@ The following table details the supported matrix formats for each class.
 <td>Amesos_Lapack</td>
 <td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
-<td>Amesos_Superlu</td>
+<td>Amesos_Pardiso</td>
+<td>Amesos_Taucs</td>
 </tr>
 <tr>
 <td>Epetra_RowMatrix</td>
+<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
@@ -263,9 +268,11 @@ The following table details the supported matrix formats for each class.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
+<td>yes</td>
 </tr>
 <tr>
 <td>Epetra_VbrMatrix</td>
+<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
@@ -276,12 +283,14 @@ The following table details the supported matrix formats for each class.
 <table>
 <tr>
 <td> </td>
+<td>Amesos_Superlu</td>
 <td>Amesos_Superludist</td>
 <td>Amesos_Mumps</td>
 <td>Amesos_Dscpack</td>
 </tr>
 <tr>
 <td>Epetra_RowMatrix</td>
+<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
@@ -291,9 +300,11 @@ The following table details the supported matrix formats for each class.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
+<td>yes</td>
 </tr>
 <tr>
 <td>Epetra_VbrMatrix</td>
+<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
@@ -352,10 +363,12 @@ architectures and compilers tested with Amesos.
 <td>Amesos_Lapack</td>
 <td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
-<td>Amesos_Superlu</td>
+<td>Amesos_Pardiso</td>
+<td>Amesos_Taucs</td>
 </tr>
 <tr>
 <td>LINUX (GNU), SERIAL</td>
+<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
@@ -367,9 +380,11 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
+<td>no</td>
 </tr>
 <tr>
 <td>LINUX (GNU), MPI</td>
+<td>yes </td>
 <td>yes </td>
 <td>yes </td>
 <td>yes </td>
@@ -381,12 +396,14 @@ architectures and compilers tested with Amesos.
 <td>yes </td>
 <td>yes </td>
 <td>no </td>
+<td>no </td>
 </tr>
 <tr>
 <td>DEC/Alpha MPI</td>
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
+<td>no</td>
 <td>no</td>
 </tr>
 <tr>
@@ -395,26 +412,30 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
+<td>yes</td>
 </tr>
 <tr>
 <td>Sandia Cplant, MPI</td>
 <td>no</td>
 <td>yes</td>
 <td>yes</td>
-<td>yes</td>
+<td>no</td>
+<td>no</td>
 </tr>
 <tr>
 <td>Sandia ASCI Red, MPI</td>
 <td>no</td>
 <td>yes</td>
 <td>yes</td>
-<td>yes</td>
+<td>no</td>
+<td>no</td>
 </tr>
 </table>
 
 <table>
 <tr>
 <td>architecture</td>
+<td>Amesos_Superlu</td>
 <td>Amesos_Superludist</td>
 <td>Amesos_Mumps</td>
 <td>Amesos_Dscpack</td>
@@ -422,11 +443,13 @@ architectures and compilers tested with Amesos.
 <tr>
 <td>LINUX (GNU), SERIAL</td>
 <td>yes</td>
+<td>yes</td>
 <td>no</td>
 <td>yes</td>
 </tr>
 <tr>
 <td>LINUX (Intel), MPI</td>
+<td>no</td>
 <td>no</td>
 <td>yes</td>
 <td>no</td>
@@ -434,11 +457,13 @@ architectures and compilers tested with Amesos.
 <tr>
 <td>LINUX (GNU), MPI</td>
 <td>yes </td>
+<td>yes </td>
 <td>no </td>
 <td>yes </td>
 </tr>
 <tr>
 <td>SGI 64, MPI</td>
+<td>yes</td>
 <td>no</td>
 <td>yes </td>
 <td>no </td>
@@ -448,9 +473,11 @@ architectures and compilers tested with Amesos.
 <td>no</td>
 <td>no</td>
 <td>no</td>
+<td>no</td>
 </tr>
 <tr>
 <td>MAC OSX, SERIAL</td>
+<td>yes</td>
 <td>no</td>
 <td>no</td>
 <td>no</td>
@@ -458,30 +485,31 @@ architectures and compilers tested with Amesos.
 <tr>
 <td>Sandia Cplant, MPI</td>
 <td>yes</td>
+<td>yes</td>
 <td>no</td>
 <td>no</td>
 </tr>
 <tr>
 <td>Sandia ASCI Red, MPI</td>
 <td>yes</td>
+<td>yes</td>
 <td>no</td>
 <td>no</td>
 </tr>
 </table>
 
-Once Amesos has been compiled, it can be tested using the test harness. A
-quick test (using MPI) can be as follows:
+Once Amesos has been compiled, it can be tested using the example
+\c compare_solvers.exe, as follows:
 \code
-% cd amesos/test/Test_Basic
+% cd amesos/example
 % make
-% ./TestBasic.csh LAPACK
-% ./TestBasic.csh KLU
-% ./TestBasic.csh <other-solvers>
+% ./compare_solvers.exe
 \endcode
-
-where <other-solvers> can be: SUPERLU, SUPERLUDIST, MUMPS, DSCPACK. The tests
-exercise some of the Amesos features. Other tests are available for more
-intensive analysis.
+or, using MPI,
+\code
+% mpirun -np 4 ./compare_solvers.exe
+\endcode
+This will test all the supported solvers on an example matrix.
 
 \section am_example Example of Use of Amesos Classes
 
@@ -592,6 +620,13 @@ are still defined with the same \c Epetra_Map.
   solvers;
 - \ref am_hb details how to read a Harwell/Boeing matrix
 
+\section am_python Python support
+
+Amesos has an interface to PyTrilinos, and therefore all the enabled
+third-party libraries can be used within Python to solve problems
+defined using Python/Epetra objects. Please refer to the PyTrilinos
+documentation for more details.
+
 \section am_future Known bugs and future developments
 
 Depending on the version of SuperLU and SuperLU_DIST, you may or may not
@@ -599,22 +634,24 @@ configure Amesos with support for both. This is due to conflicts in the header
 files of SuperLU/SuperLU_DIST.
 
 You may encounter problems while trying to use the SuperLU/SuperLU_DIST
-classes when KLU is enabled. This is due to a conflict in the colamd algorithm.
-The version of colamd which is distributed within Amesos is not compatible
-with the version distributed with SuperLU (the SuperLU one being older). 
+classes when KLU or UMFPACK  are enabled. This is due to a conflict in the colamd algorithm.
+The version of colamd which is distributed within Amesos is latest available,
+  and it is comparible with
+that of UMFPACK, but it is not compatible
+with the version distributed within SuperLU/SuperLU_DIST.
 Depending on the version of SuperLU/SuperLU_DIST, 
-this causes the code to crash. You
-might need to disable KLU to use SuperLU/SuperLU_DIST.
+this incompatibility may cause the code to crash. You
+might need to disable KLU and UMFPACK to use SuperLU/SuperLU_DIST.
 
-DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix's. DSCPACK has memory leaks.  A fix is
-under development for both of these issues.
+DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix's. A fix is
+under development.
 
 Amesos has an incomplete interface to ScaLAPACK under development.
 
 \section am_final Final Remarks
 
 <P>This page is maintained by Marzio Sala, SNL 9214.
-<p>This page last updated 21-Apr-05.
+<p>This page last updated 29-May-05.
 
 */
 
@@ -640,3 +677,14 @@ Amesos has an incomplete interface to ScaLAPACK under development.
 \include example_AmesosFactory_HB.cpp
 */
 
+/*!
+\page am_readme README
+
+\include README-Amesos
+*/
+
+/*!
+\page am_change_log ChangeLog
+
+\include ChangeLog-Amesos
+*/
