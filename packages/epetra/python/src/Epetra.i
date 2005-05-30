@@ -72,6 +72,7 @@ on-line documentation for more in-depth information."
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialDenseOperator.h"
@@ -164,6 +165,9 @@ extern "C" {
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
 %ignore Epetra_Object::Print(ostream &) const;
 %ignore Epetra_SerialComm::operator=(const Epetra_SerialComm &);
+#ifdef HAVE_MPI
+%ignore Epetra_MpiComm::operator=(const Epetra_MpiComm &);
+#endif
 %ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
 %ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
 %ignore Epetra_CompObject::UpdateFlops(float) const; // Use double version
@@ -186,6 +190,9 @@ extern "C" {
 %ignore Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix &);
 %ignore Epetra_CrsMatrix::operator[](int);           // See %extend CrsMatrix
 %ignore Epetra_CrsMatrix::operator[](int) const;     //       __getitem__()
+%ignore Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix &);
+%ignore Epetra_FECrsMatrix::operator[](int);           // See %extend FECrsMatrix
+%ignore Epetra_FECrsMatrix::operator[](int) const;     //       __getitem__()
 // Epetra_VbrMatrix member function
 // Solve(bool,bool,bool,Epetra_Vector const&,Epetra_Vector&) const does not
 // appear to be implemented.  Apparently overridden by
@@ -243,6 +250,7 @@ extern "C" {
 %rename(Operator            ) Epetra_Operator;
 %rename(RowMatrix           ) Epetra_RowMatrix;
 %rename(CrsMatrix           ) Epetra_CrsMatrix;
+%rename(FECrsMatrix         ) Epetra_FECrsMatrix;
 %rename(VbrMatrix           ) Epetra_VbrMatrix;
 %rename(SerialDenseSolver   ) Epetra_SerialDenseSolver;
 %rename(SerialDenseOperator ) Epetra_SerialDenseOperator;
@@ -311,6 +319,7 @@ using namespace std;
 %include "Epetra_Operator.h"
 %include "Epetra_RowMatrix.h"
 %include "Epetra_CrsMatrix.h"
+%include "Epetra_FECrsMatrix.h"
 %include "Epetra_VbrMatrix.h"
 %include "Epetra_DataAccess.h"
 %include "Epetra_SerialDenseSolver.h"
@@ -377,8 +386,29 @@ using namespace std;
     return output;
   }
 
+  PyObject * __setitem__(PyObject * args, double val) {
+    int i, j;
+    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
+      PyErr_SetString(PyExc_IndexError, "Invalid index");
+      return NULL;
+    }
+    (*self)[i][j] = val;
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
   void Set(const int vector, const int element, const double value) {
     (*self)[vector][element] = value;
+  }
+
+  PyObject * __getitem__(PyObject * args) {
+    int i, j;
+    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
+      PyErr_SetString(PyExc_IndexError, "Invalid index");
+      return NULL;
+    }
+    double val = (*self)[i][j];
+    return PyFloat_FromDouble(val);
   }
 
   double Get(const int vector, const int element) {
@@ -498,6 +528,71 @@ using namespace std;
   }
 }
 
+%extend Epetra_FECrsMatrix {
+  double * __getitem__(int i) {
+    return self->operator[](i);
+  }
+
+  int InsertGlobalValues(const int Row, const int Size, 
+                         const Epetra_SerialDenseVector& Values,
+                         const Epetra_IntSerialDenseVector& Entries)
+  {
+    return self->InsertGlobalValues(1, &Row,
+                                    Size, (int*)Entries.Values(),
+                                    Values.Values());
+  }
+
+  int InsertGlobalValue(int i, int j, double val) {
+    double val2 = val;
+    int j2 = j;
+    return self->InsertGlobalValues(1, &i, 1, &j2, &val2);
+  }
+
+  int InsertGlobalValues(const int row, PyObject* Values, PyObject* Indices)
+  {
+    if (row < 0)
+      return(-1);
+
+    if (PyList_Check(Values) == 0 || PyList_Check(Indices) == 0) 
+    {
+      cerr << "Input object is not a list" << endl;
+      return(-1);
+    }
+
+    int len = PyList_Size(Values);
+    if (len != PyList_Size(Indices))
+    {
+      cerr << "Length of input lists differ" << endl;
+      return(-1);
+    }
+
+    for (int i = 0 ; i < len ; ++i)
+    {
+      PyObject* Value,* Index;
+      Value = PyList_GetItem(Values, i);
+      Index = PyList_GetItem(Indices, i);
+
+      if (PyInt_Check(Index) == 0)
+      {
+        cerr << "Indices must be integers" << endl;
+        return(-1);
+      }
+
+      if (PyFloat_Check(Value) == 0)
+      {
+        cerr << "Values must be doubles" << endl;
+        return(-1);
+      }
+
+      int cIndex = PyLong_AsLong(Index);
+      double cValue = PyFloat_AsDouble(Value);
+      if (self->InsertGlobalValues(1, &row, 1, &cIndex, &cValue) < 0)
+        return(-1);
+    }
+    return(0);
+  }
+}
+
 %extend Epetra_SerialDenseMatrix {
 
   double * __getitem__(int i) {
@@ -557,6 +652,69 @@ using namespace std;
   void __setitem__(int i, const int val) {
     int * column = self->Values();
     column[i] = val;
+  }
+}
+
+%extend Epetra_Map 
+{
+  Epetra_Map(const int NumGlobalElements,
+             const Epetra_IntSerialDenseVector& MyGlobalElements,
+             const int IndexBase, const Epetra_Comm& Comm)
+  {
+    return(new Epetra_Map(NumGlobalElements, MyGlobalElements.Length(),
+                         (int*)MyGlobalElements.Values(), IndexBase, Comm));
+  }
+
+  Epetra_Map(const int NumGlobalElements,
+             PyObject* MyGlobalElements, const int IndexBase,
+             const Epetra_Comm& Comm)
+  {
+    if (PyList_Check(MyGlobalElements) == 0)
+    {
+      cerr << "Input object is not a list" << endl;
+      return NULL;
+    }
+
+    int len = PyList_Size(MyGlobalElements);
+
+    vector<int> list(len);
+
+    for (int i = 0 ; i < len ; ++i)
+    {
+      PyObject* Index;
+      Index = PyList_GetItem(MyGlobalElements, i);
+
+      if (PyInt_Check(Index) == 0)
+      {
+        cerr << "Indices must be integers" << endl;
+        return NULL;
+      }
+
+      list[i] = PyLong_AsLong(Index);
+    }
+    return(new Epetra_Map(NumGlobalElements, len, &list[0], IndexBase, Comm));
+  }
+
+  PyObject*  MyGlobalElements()
+  {
+    int* MyGlobalElements_Epetra = self->MyGlobalElements();
+    PyObject* MyGlobalElements_Python,* item;
+    int size = self->NumMyElements();
+    if (size <= 0)
+      goto fail;
+
+    MyGlobalElements_Python = PyList_New(size);
+
+    for (int i = 0 ; i < size ; ++i)
+    {
+      item = PyInt_FromLong(MyGlobalElements_Epetra[i]);
+      PyList_SetItem(MyGlobalElements_Python, i, item);
+    }
+
+    return(MyGlobalElements_Python);
+fail:
+    Py_INCREF(Py_None);
+    return Py_None;
   }
 }
 
