@@ -46,7 +46,7 @@ Bill Spotz \\[10pt]
 \title{An Overview of PyTrilinos (DRAFT)}
 \SANDnum{SAND2005-XXXX}
 \SANDauthor{
-Marzio Sala, Bill Spotz, Micheal Heroux}
+Marzio Sala, William F. Spotz, Micheal A. Heroux}
 
 \SANDprintDate{June 2005}
 \SANDreleaseType{Unlimited Release}
@@ -112,11 +112,9 @@ code underneath.
 
 \clearpage
 \section*{Acknowledgments}
-We thank all the Trilinos developers for their contribution to Trilinos,
-  without which PyTrilinos will not exist.
-
-The authors would like to acknowledge the support of the ASCI and LDRD programs
-that funded development of Trilinos.
+The authors would like to acknowledge the support of the ASCI and LDRD
+programs that funded development of Trilinos, and all the Trilinos developers
+for their contribution to Trilinos, without which PyTrilinos will not exist.
 
 \medskip
 
@@ -129,6 +127,12 @@ that funded development of Trilinos.
 \section{Introduction}
 \label{chap:introduction}
 %-----------------------------------------------------------------------------
+
+Python has emerged as an excellent choice for scientific computing because of
+its simple syntax, ease of use, and elegant multi-dimensional array
+arithmetic. Its interpreted evaluation allows it to serve as both the
+development language and the command line environment in which to explore
+data. Python also excels as a "glue" -- a common need in the scientific arena.
 
 \PyTrilinos\ is a collection of mathematical algorithms and utility functions
 built on top of the Trilinos project~\cite{Trilinos-home-page}.  It adds
@@ -165,130 +169,8 @@ detailed insight.
 %\end{center}
 
 %-----------------------------------------------------------------------------
-\section{Getting Started}
-\label{chap:started}
-%-----------------------------------------------------------------------------
-
-%-----------------------------------------------------------------------------
-\subsection{Notational Conventions}
-\label{sec:notational}
-%-----------------------------------------------------------------------------
-
-In this manuscript, typed commands are shown in this font:
-\begin{verbatim}
-% any_shell_command
->>> any_python_command
-\end{verbatim}
-The character \verb!%! indicates any shell prompt, while \verb!>>>! is the
-Python prompt. Classes, function and module names are shown as \verb!Epetra!.
-Mathematical entities are shown in italics.
-
-%-----------------------------------------------------------------------------
-\subsection{Running PyTrilinos Scripts}
-\label{sec:running}
-%-----------------------------------------------------------------------------
-
-To fully take advantage of the presented modules of \PyTrilinos, you should
-compile Trilinos with the following options:
-\begin{verbatim}
-  --enable-teuchos    
-  --enable-epetra     
-  --enable-epetraext  
-  --enable-amesos    
-  --enable-ifpack     
-  --enable-ml         
-  --enable-triutils   
-\end{verbatim}
-Besides, you need \verb!--enable-python! to turn on the Python support. 
-
-After configuring and compiling Trilinos, one must install Trilinos 
-(by typing \verb!make install!), in order to create PyTrilinos module.
-The installing procedure will copy all the Python modules in a subdirectory of
-the directory specified with option \verb!--prefix=<inst-dir>!, for example
-\verb!lib/python2.3/site-packages/PyTrilinos!. You might want to add this
-directory to your \verb!PYTHONPATH! variable, for example in bash shell
-\begin{verbatim}
-% export PYTHONPATH=$PYTHONPATH:\
-  <inst-dir>/lib/python2.3/site-packages/PyTrilinos
-\end{verbatim}
-
-If Trilinos was configured in serial mode, to use PyTrilinos  simply type
-\begin{verbatim}
-% python
-Python 2.3 (#1, Sep 13 2003, 00:49:11) 
-[GCC 3.3 20030304 (Apple Computer, Inc. build 1495)] on darwin
-Type "help", "copyright", "credits" or "license" for more information.
->>> from PyTrilinos import <module-name>
-\end{verbatim}
-where \verb!<module-name>! is the name of the PyTrilinos module to be
-imported, as later described.
-
-If Trilinos was configured in parallel (MPI) mode, you cannot run PyTrilinos
-interactively, and you must create a script file. You can run PyTrilinos by
-using an instruction of type
-\begin{verbatim}
-% mpirun -np 4 python ./my-script.py
-\end{verbatim}
-where \verb!my-script.py! contains the instruction \verb!from PyTrilinos import <module-name>!.
-
-\begin{remark}
-\PyTrilinos\ is an open source library of scientific tools for Python.
-It is developed concurrently on both Linux and MAC OS X, and it should
-port successfully to most other platforms where Python and SWIG are available.
-\end{remark}
-
-%-----------------------------------------------------------------------------
-\subsection{Getting Information on \PyTrilinos}
-\label{sec:getting}
-%-----------------------------------------------------------------------------
-
-PyTrilinos is under very active development, therefore small changes in usage
-and calling sequences may occur, and all modules are under development. This
-guide describes the ``stable'' features of PyTrilinos; For more up-to-date
-information:
-\begin{itemize}
-\item Consult \verb!http://software.sandia.gov/trilinos/packages/pytrilinos!
-\item Subscribe to the mailing lists
-\begin{verbatim}
-pytrilinos-announce@software.sandia.gov
-pytrilinos-users@software.sandia.gov
-pytrilinos-developers@software.sandia.gov
-\end{verbatim}
-\item Users and developers are encouraged to used Bugzilla to report
-configuration problems, bugs, suggest enhancements, or require new features.
-Bugzilla can be found on the web at
-\begin{verbatim}
-http://~software.sandia.gov/bugzilla
-\end{verbatim}
-If reporting a configuration problem or a bug, please attach the configure
-script that has been used, and the compilation and/or run-time error.
-\end{itemize}
-
-%-----------------------------------------------------------------------------
-\subsection{How to Reference This Document}
-\label{sec:reference}
-%-----------------------------------------------------------------------------
-
-The PyTrilinos project can be referenced by using the following BiBTeX
-citation information: 
-\begin{verbatim}
-@techreport{PyTrilinos-Overview,
-  title = "{An Overview of PyTrilinos}",
-  author = "Marzio Sala and William Spotz and Michael A. Heroux",
-  institution = "Sandia National Laboratories",
-  number = "SAND2005-XXXX",
-  year = 2005
-}
-\end{verbatim}
-
-%-----------------------------------------------------------------------------
 \section{Project Overview}
 \label{sec:overview}
-%-----------------------------------------------------------------------------
-
-%-----------------------------------------------------------------------------
-\subsection{Why \PyTrilinos?}
-\label{sec:why}
 %-----------------------------------------------------------------------------
 
 In recent years, the application of object-oriented (OO) programming
@@ -346,105 +228,6 @@ is a  preprocessor
 that turns ANSI C/C++ declarations into scripting language interfaces, and
 produces a fully working Python extension module; see~\cite{swig}.
 \end{itemize}
-
-%-----------------------------------------------------------------------------
-\subsection{Impact of \PyTrilinos}
-\label{sec:impact}
-%-----------------------------------------------------------------------------
-
-Python provides a simple but powerful rapid development language, along with
-the integration tools needed to apply it in realistic development
-environments. With Python, it is no longer necessary to choose between fast
-development and fast execution.   
-
-\begin{itemize}
-\item {\bf Rapid Prototyping.}
-Because Python is a simple language, coding is much faster than in other
-  languages. For example, its dynamic typing, built-in objects, and garbage
-  collection eliminate much of the manual bookkeeping code typically required
-  in languages like C or C++. Since things like type declaration, memory
-  management, and common data structure implementations are absent, Pytho
-  programs are typically a fraction of the sier of their C or C++ equivalents.
-  Becase most bookkeeping code is missing, Python programs are easier to
-  understand and more closely reflect the actual problem they're intended to
-  address. 
-
-  Python's
-  develoment cycle is dramatically shorter than that of traditional tools. In
-  Python, there are no compile or link steps--Python programs simply import
-  modules are runtime and use the objects they contain. Because of this,
-Python programs run immediately after changes are made. Python integration
-  tools make it usable in hybrid, multicompont applications. As one
-  consequence, systems can simultaneousl utilize the strengths of Python for
-  rapid development, and of traditional languages such as C for rapid
-  execution.
-  This flexibility of development modes is crucial in realistic environments.
-  Python is optimized for speed of development, but that alone is not enough.
-%
-\item {\bf Reusability.} Because Python is a high-level, object-oriented
-language, it encourages writing reusable software and well-designed systems.
-%
-\item {\bf Legacy code migration.} Moving existing code from C/C++ to Python
-makes it simpler and more flexible.
-Modern numerical
-algorithms are complex, and both the testing and fine tuning of already
-developed algorithsm, or the development of brand new ones require a massive
-investment, for which rapid prototyping is essential. On the other hand,
-programmers simply cannot ignore efficiency completely. Our approach is the
-following: use Python when speed of development matters, compiled languages
-when efficiency dominates, and combinations of the two when our goals are
-not absolute.
-%
-\item {\bf Integration.} Python's role as integration tool. \PyTrilinos\ relies
-on the ability to mix components written in other languages. C, C++ and
-FORTRAN code is called, but note that Python coders don't need to care.
-  Python lends itself to experimental, interactive program development, and
-  encourages developing systems incrementally by testing components in
-  isolation and putting them together later.
-  By themselves, neigher C nor Python is adequate to address the development
-  bottleneck; together, they can do much more. We model we are using splits
-  the workplace into {\sl frontend} componenta that can benefit from Python's
-  easy-of-use and {\sl backend} modules that require the efficiency of static
-  languages like C, C++, or FORTRAN.
-%
-\end{itemize}
-
-%-----------------------------------------------------------------------------
-\subsection{Performance Considerations}
-\label{sec:performance}
-%-----------------------------------------------------------------------------
-
-By using a Python wrapper a performance penalty is introduced, due to
-deconding of Python script, the execution of wrapped code, and returning the
-results in a Python-compliant format. These tasks may require thousands of CPU
-cycles, therefore it is important to distinguish the following:
-\begin{itemize}
-\item The performance penalty is small if the C/C++ function do a lot of work.
-\item For rarely called function, this penalty is negligible.
-\item All performance critical kernels should be written in C/C++, and
-everything else can be in Python.
-\end{itemize}
-
-%-----------------------------------------------------------------------------
-\subsection{Main differences between \trilinos\ and \PyTrilinos}
-\label{sec:differences}
-%-----------------------------------------------------------------------------
-
-Although \PyTrilinos\ mimic very closely \trilinos, there is no one-to-one
-map. The most important differences are:
-\begin{itemize}
-\item No memory allocation and deallocation occurs in \PyTrilinos.
-\item No header files are required by \PyTrilinos.
-\item No {\tt int} and {\tt double} arrays are used by \PyTrilinos, replaced instead by
-Python's lists.
-\item Instruction \verb!cout << EpetraObject! is replaced by \verb!print EpetraObject!.
-\item \teuchos's parameters lists are replaced by Python's dictionaries.
-\end{itemize}
-
-Please note that \PyTrilinos\ is not meant to replace Trilinos. You can think
-of \PyTrilinos\ as a collection of all successful and stabile numerical
-algorithms of Trilinos.  Hence, not all the algorithms and the tools of Trilinos are 
-(or will) be ported to \PyTrilinos. 
 
 %-----------------------------------------------------------------------------
 \section{\PyTrilinos\ Organization}
@@ -524,240 +307,39 @@ do not need to be installed to use PyTrilinos (or Trilinos).
 %-----------------------------------------------------------------------------
 
 %-----------------------------------------------------------------------------
-\subsection{Theoretical Background}
-\label{sec:communicators}
+\subsection{Serial and Parallel Environments}
+\label{sec:running}
 %-----------------------------------------------------------------------------
 
-To give a sense of what can be done with PyTrilinos, we first need to briefly
-describe the supported mathematical algorithms, to fix the notation used in
-the following Sections.  The reader is strongly encourage to consult the
-manuals of the Trilinos packages and the references therein for more details.
-
-\medskip
-
-Let us consider the solution of the linear system
-\begin{equation}
-\label{eq:lin_sys}
-A X = B
-\end{equation}
-where $A \in \mathbb{R}^{n \times n}$ is a sparse linear operator, $X \in
-\mathbb{R}^{n \times m}$ and $B \in \mathbb{R}^{n \times m}$ are the solution
-and right-hand side, respectively. $n$ is the global dimension of the problem,
-  and $m$ is the number of vectors in the multi-vectors $X$ and $B$. 
-  (If $m = 1$, then $X$ and $B$ are ``normal'' vectors.)
-Linear systems of type (\ref{eq:lin_sys}) arise in a variety of applications,
-  and constitute the innermost computational kernel, and often the most
-  time-consuming of several numerical algorithsm. An efficient solver for
-  Equation (\ref{eq:lin_sys}) is of fundamental importance for most PDE
-  solvers, both linear and non-linear.
-
-Probably, the most robust strategy to solve (\ref{eq:lin_sys}) is to factorize
-the linear matrix $A$ into the product of two matrices $L$ and $U$, so that
-$A = L \, U$, and 
-the linear systems with $L$ and $U$ are readily solvable. Typically,
-$L$ and $U$ are a lower and upper triangular matrix, respectively, and the
-process is referred to as Gaussian elimination. 
-
-For sparse matrix, the major inconvenience of direct solution methods is that
-the $L$ and $U$ factors are typically much denser than the original matrix
-$A$, making Gaussian elimination too memory demanding for large scale
-problems. Moreover, the factorization process is inherintly serial, and
-parallel factorization algorithms can be successfully used only with a
-relatively modest number of processors. The
-forward and back triangular solves typically exhibit very poor parallel speedup.
-
-A very well known solution to this problem is to adopt an iterative solution
-process, like conjugate gradient or GMRES~\cite{FIXME}. The rationale behind
-iterative methods is that they only require (at least in their simplest form)
-matrix-vector and vector-vector products, and both operations scale well for
-sparse matrices. Unfortunately, 
-the convergence of
-iterative methods is determined by the spectral properties of the matrix $A$
-(typically, its condition number $\kappa(A)$), and for
-real-life problems $\kappa(A)$ is ``large'', meaning that the iterative
-solution method will converge slowly. To solve this problem,
-the original linear system is replaced by 
-\[
-A P P^{-1} X = B
-\]
-where $P$, called {\sl preconditioner}, is an operator whose inverse aim to
-represent the inverse of $A$, though being much cheaper to compute.
-$P$ is chosen so that $AP^{-1}$ is easier to solver than $A$ 
-(that is, it is better conditioned). 
-
-\smallskip
-
-Often, algebraic preconditioners are adopted, that is, $P$ is constructed by
-manipulating the entries of $A$. This gives rise to the so-called incomplete
-factorization preconditioners (ILU) or algebraic multilevel methods. 
-
-Because ILU preconditioners do not scale well on parallel computers, a common
-practice is to perform {\em local} ILU factorizations.  In this situation,
-each processor computes a factorization of a subset of matrix rows and
-columns independently from all other processors.  This additional layer of
-approximation leads to a block Jacobi type of preconditioner across
-processors, where each block is solved using an ILU preconditioner.  The
-difficulty with this type of preconditioner is that it tends to become less
-robust and require more iterations as the number of processors used
-increases.  This effect can be offset to some extent by allowing {\em
-overlap}.  Overlap refers to having processors redundantly own certain
-rows of the matrix for the ILU factorization.  Level-1 overlap is defined
-so that a processor will include rows that are part of its original set.
-In addition, if row $i$ is part of its original set and row $i$ of $A$ has
-a nonzero entry in column $j$, then row $j$ will also be included in the
-factorization on that processor.  Other levels of overlap are computed
-recursively. 
-
-What we have just described is an example of one-level overlapping domain
-decomposition (DD) preconditioners.  The basic idea of DD methods consists in
-dividing the computational domain into a set of subdomains, which may or may
-not overlap. We will focus on overlapping DD methods only, because they can be
-re-interpreted as algebraic manipulation of the assembled matrix, thus
-allowing the construction of black-box preconditioners. Overlapping DD methods
-are often referred to as overlapping Schwarz methods. DD preconditioners can
-be written as
-\begin{equation}
-  \label{eq:prec_dd}
-  P^{-1} = \sum_{i=1}^M R_i^T B_i^{-1} R_i,
-\end{equation}
-where $M$ represents the number of subdomains,
-$R_i$ is a rectangular Boolean matrix that restricts
-a global vector to the subspace defined by the interior of the $i$th
-subdomain, and $B_i$ approximates the inverse of 
-\begin{equation}
-  \label{eq:aztecoo_tilde_a}
-  A_i = R_i A R_i^T ,
-\end{equation}
-for example, being its ILU factorization.
-
-\medskip
-
-Another class of preconditioners is given by multilevel preconditioners.
-For certain combinations of iterative methods and linear systems, the
-error at each iteration projected onto the eigenfunctions has components
-that decay at a rate proportional to the corresponding eigenvalue (or
-frequency).  Multilevel methods exploit this property \cite{Briggs2000}
-by projecting the linear system onto a hierarchy of increasingly
-coarsened ``meshes" so that each error component rapidly decays on at
-least one coarse ``mesh."  The linear system on the coarsest ``mesh",
-called the coarse grid problem, is solved exactly.  The iterative method
-is called the smoother, as a reflection of its diminished role as a way
-to damp out the high frequency error.  The grid transfer (or
-interpolation) operators are called restriction ($\mathbf{R}$) and
-prolongation ($\mathbf{P}$) operators.
-
-Multilevel methods are characterized by the sequence of coarse spaces, the
-definition of the operator each coarse space, the specification of the
-smoother, and the restriction and prolongation operators.  Geometric multigrid
-(GMG) methods  are multilevel methods that require the user to specify the
-underlying grid, and in most cases a hierarchy of (not necessarily nested)
-  coarsens grids.  Both the automatic generation of a grid-hierarchy for GMG
-  and the specification of the ML, designed for unstructured problems, are
-  beyond the scope of the tutorial.
-
-Algebraic multigrid (AMG)  (see \cite[Section 8]{Briggs2000}) method
-development has been motivated by the demand for multilevel methods that are
-easier to use.  In AMG, both the matrix hierarchy and the prolongation
-operators are constructed just from the stiffness matrix.  Recall that to use
-Aztec00 or IFPACK,  a user must supply a linear system, a select a
-preconditioning strategy.  In AMG, the only additional information required
-from the user is to specify a coarsening strategy.
-
-%-----------------------------------------------------------------------------
-\subsection{Serial Dense Linear Algebra}
-\label{sec:serialdense}
-%-----------------------------------------------------------------------------
-
-Although PyTrilinos is focused on sparse and parallel linear algebra, some
-capabilities are given to handle dense and serial linear algebra problems.
-These capabilities are based on the Epetra wrapper for BLAS and LAPACK, and
-therefore the serial dense module of PyTrilinos is computationally efficient.
-
-We now report some basic operations involving serial dense objects. First, 
-the {\tt Epetra} module must be imported, with the instruction
+After configuring and compiling Trilinos, one must install Trilinos 
+(by typing \verb!make install!), in order to create PyTrilinos module.
+The installing procedure will copy all the Python modules in a subdirectory of
+the directory specified with option \verb!--prefix=<inst-dir>!, for example
+\verb!lib/python2.3/site-packages/PyTrilinos!. You might want to add this
+directory to your \verb!PYTHONPATH! variable, for example in bash shell
 \begin{verbatim}
->>> from PyTrilinos import Epetra
+% export PYTHONPATH=$PYTHONPATH:\
+  <inst-dir>/lib/python2.3/site-packages/PyTrilinos
 \end{verbatim}
-Then, we can create the matrix $A$ and vector $B$,
-\[
-A = 
-\begin{pmatrix}
-1 & 3 & 5 \\
-2 & 5 & 1 \\
-2 & 3 & 8
-\end{pmatrix}
-, \quad \quad
-B = 
-\begin{pmatrix}
-10 \\
-  8 \\
-  3
-\end{pmatrix}
-\]
-with the following commands:
-\begin{verbatim}
->>> A = Epetra.SerialDenseMatrix(3,3)
->>> X = Epetra.SerialDenseVector(3)
->>> B = Epetra.SerialDenseVector(3)
->>> A[0,0] = 1; A[1,0] = 3; A[2,0] = 5
->>> A[0,1] = 2; A[1,1] = 5; A[2,1] = 1
->>> A[0,2] = 2; A[1,2] = 3; A[2,2] = 8
->>> B[0] = 10;  B[1] = 8;   B[2] = 3
-\end{verbatim}
-We can  verify the result using 
-\begin{verbatim}
->>> print A
-Data access mode: Copy
-A_Copied: yes
-Rows(M): 3
-Columns(N): 3
-LDA: 3
-1 2 2 
-3 5 3 
-5 1 8 
->>> print B
-Data access mode: Copy
-A_Copied: yes
-Length(M): 3
-10 8 3 
-\end{verbatim}
-Matrix {\tt A} can be reshaped using \verb!A.Reshape(N, M)!; command
-\verb!A.Shape(N, M)! reshapes and sets all the matrix elements to zero.  The
-number of rows and columns of {\tt A} can be obtained using methods
-\verb!A.N()! and \verb!A.M()!, respectively. \verb!A.NormOne()! and
-\verb!A.NormInf()!  returns the 1- and $\infty-$norm of {\tt A}. The matrix
-vector product is computed as \verb!A.Multiply(X, B)!;
-\verb!SetUseTranspose()! toggles the use of $A$ or its transpose, $A^T$;
-\verb!Scale(alpha)! scaled all the matrix elements by \verb!alpha!.
 
-To solve the linear system with matrix (\ref{eq:lin_sys}), we first need to
-create an Epetra.SerialDenseSolver object, set the matrix and the vectors,
-  then solve the linear system:
+If Trilinos was configured in serial mode, to use PyTrilinos  simply type
 \begin{verbatim}
->>> Solver = Epetra.SerialDenseSolver()
->>> Solver.SetMatrix(A)
->>> Solver.SetVectors(X, B)
->>> Solver.Solve()
->>> print X
-Data access mode: Copy
-A_Copied: yes
-Length(M): 3
--9.84 3.88 6.04 
+% python
+Python 2.3 (#1, Sep 13 2003, 00:49:11) 
+[GCC 3.3 20030304 (Apple Computer, Inc. build 1495)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from PyTrilinos import <module-name>
 \end{verbatim}
-Alternatively, once can compute the inverse of $A$:
-\begin{verbatim}
->>> Solver.Invert()
->>> print A
+where \verb!<module-name>! is the name of the PyTrilinos module to be
+imported, as later described.
 
-Data access mode: Copy
-A_Copied: yes
-Rows(M): 3
-Columns(N): 3
-LDA: 3
--1.48 0.56 0.16 
-0.36 0.08 -0.12 
-0.88 -0.36 0.04 
+If Trilinos was configured in parallel (MPI) mode, you cannot run PyTrilinos
+interactively, and you must create a script file. You can run PyTrilinos by
+using an instruction of type
+\begin{verbatim}
+% mpirun -np 4 python ./my-script.py
 \end{verbatim}
+where \verb!my-script.py! contains the instruction \verb!from PyTrilinos import <module-name>!.
 
 %-----------------------------------------------------------------------------
 \subsection{Communicators}
@@ -917,14 +499,6 @@ contains 10 elements and 2 vectors, then sets the {\tt i-}th element of the
 Several methods cab be used to access and modify vectors and multivectors.
 To set all the elements of a vector to a given value simply use {\tt
   X.PutScalar(0.0)}. To define random elements, use {\tt X.Random()}.
-
-\begin{remark}
-Vectors defined as Epetra\_Vector are automatically defined as Numeric
-vectors, and they can therefore be used with any Numeric function or class.
-However, note that a Numeric vector is {\sl not} automatically recognized as
-Epetra\_Vector, since all distributed Epetra objects requires an underlying
-Map (not supported by Numeric).
-\end{remark}
 
 \vspace*{1cm}
 \fbox{{\bf FIXME: Vectors are Numeric, while MultiVectors are not??}}
@@ -1121,6 +695,22 @@ Trilinos and PyTrilinos.
 \label{sec:linear}
 %-----------------------------------------------------------------------------
 
+Let us consider the solution of the linear system
+\begin{equation}
+\label{eq:lin_sys}
+A X = B
+\end{equation}
+where $A \in \mathbb{R}^{n \times n}$ is a sparse linear operator, $X \in
+\mathbb{R}^{n \times m}$ and $B \in \mathbb{R}^{n \times m}$ are the solution
+and right-hand side, respectively. $n$ is the global dimension of the problem,
+  and $m$ is the number of vectors in the multi-vectors $X$ and $B$. 
+  (If $m = 1$, then $X$ and $B$ are ``normal'' vectors.)
+Linear systems of type (\ref{eq:lin_sys}) arise in a variety of applications,
+  and constitute the innermost computational kernel, and often the most
+  time-consuming of several numerical algorithsm. An efficient solver for
+  Equation (\ref{eq:lin_sys}) is of fundamental importance for most PDE
+  solvers, both linear and non-linear.
+
 In \PyTrilinos, linear problems are represented by {\tt Epetra.LinearProblem}
 objects, which can be created either as
 \begin{verbatim}
@@ -1149,6 +739,13 @@ Matrix.Multiply(False, LHS, RHS);
 \subsection{Direct Solution of Sparse Linear Systems}
 \label{sec:direct}
 %-----------------------------------------------------------------------------
+
+Probably, the most robust strategy to solve (\ref{eq:lin_sys}) is to factorize
+the linear matrix $A$ into the product of two matrices $L$ and $U$, so that
+$A = L \, U$, and 
+the linear systems with $L$ and $U$ are readily solvable. Typically,
+$L$ and $U$ are a lower and upper triangular matrix, respectively, and the
+process is referred to as Gaussian elimination. 
 
 This Section requires to import the {\tt Amesos} and {\tt Epetra} modules.
 
@@ -1201,114 +798,278 @@ Please consult the Amesos manual~\cite{Amesos-Reference-Guide} for more
 details.
 
 %-----------------------------------------------------------------------------
-\subsection{Krylov Accelerators}
+\subsection{Preconditioned Krylov Accelerators}
 \label{sec:iterative}
 %-----------------------------------------------------------------------------
 
-This Section requires to import the {\tt AztecOO} and {\tt Epetra} modules.
+For sparse matrix, the major inconvenience of direct solution methods is that
+the $L$ and $U$ factors are typically much denser than the original matrix
+$A$, making Gaussian elimination too memory demanding for large scale
+problems. Moreover, the factorization process is inherintly serial, and
+parallel factorization algorithms can be successfully used only with a
+relatively modest number of processors. The
+forward and back triangular solves typically exhibit very poor parallel speedup.
 
-The specification starts with
+A very well known solution to this problem is to adopt an iterative solution
+process, like conjugate gradient or GMRES~\cite{FIXME}. The rationale behind
+iterative methods is that they only require (at least in their simplest form)
+matrix-vector and vector-vector products, and both operations scale well for
+sparse matrices. 
+
+To adopt an non-preconditioned iterative solver (for example, CG), with 1550
+maximum iterations and a tolerance of $10^{-5}$ on the relative residual,
+  PyTrilinos requires the following instructions:
 \begin{verbatim}
-Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );
+>>> Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
+>>> Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
+>>> Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
+>>> Solver.Iterate(1550, 1e-5)
+\end{verbatim}
+
+Unfortunately, the convergence of
+iterative methods is determined by the spectral properties of the matrix $A$
+(typically, its condition number $\kappa(A)$), and for
+real-life problems $\kappa(A)$ is ``large'', meaning that the iterative
+solution method will converge slowly. To solve this problem,
+the original linear system is replaced by 
+\[
+A P P^{-1} X = B
+\]
+where $P$, called {\sl preconditioner}, is an operator whose inverse aim to
+represent the inverse of $A$, though being much cheaper to compute.
+$P$ is chosen so that $AP^{-1}$ is easier to solver than $A$ 
+(that is, it is better conditioned). 
+
+\smallskip
+
+Often, algebraic preconditioners are adopted, that is, $P$ is constructed by
+manipulating the entries of $A$. This gives rise to the so-called incomplete
+factorization preconditioners (ILU) or algebraic multilevel methods. 
+
+Because ILU preconditioners do not scale well on parallel computers, a common
+practice is to perform {\em local} ILU factorizations.  In this situation,
+each processor computes a factorization of a subset of matrix rows and
+columns independently from all other processors.  This additional layer of
+approximation leads to a block Jacobi type of preconditioner across
+processors, where each block is solved using an ILU preconditioner.  The
+difficulty with this type of preconditioner is that it tends to become less
+robust and require more iterations as the number of processors used
+increases.  This effect can be offset to some extent by allowing {\em
+overlap}.  Overlap refers to having processors redundantly own certain
+rows of the matrix for the ILU factorization.  Level-1 overlap is defined
+so that a processor will include rows that are part of its original set.
+In addition, if row $i$ is part of its original set and row $i$ of $A$ has
+a nonzero entry in column $j$, then row $j$ will also be included in the
+factorization on that processor.  Other levels of overlap are computed
+recursively. 
+
+What we have just described is an example of one-level overlapping domain
+decomposition (DD) preconditioners.  The basic idea of DD methods consists in
+dividing the computational domain into a set of subdomains, which may or may
+not overlap. We will focus on overlapping DD methods only, because they can be
+re-interpreted as algebraic manipulation of the assembled matrix, thus
+allowing the construction of black-box preconditioners. Overlapping DD methods
+are often referred to as overlapping Schwarz methods. DD preconditioners can
+be written as
+\begin{equation}
+  \label{eq:prec_dd}
+  P^{-1} = \sum_{i=1}^M R_i^T B_i^{-1} R_i,
+\end{equation}
+where $M$ represents the number of subdomains,
+$R_i$ is a rectangular Boolean matrix that restricts
+a global vector to the subspace defined by the interior of the $i$th
+subdomain, and $B_i$ approximates the inverse of 
+\begin{equation}
+  \label{eq:aztecoo_tilde_a}
+  A_i = R_i A R_i^T ,
+\end{equation}
+for example, being its ILU factorization.
+
+In PyTrilinos two ways are available to define DD preconditioners:
+\begin{itemize}
+\item Using the {\tt AztecOO}'s preconditioners. The specification starts with
+\begin{verbatim}
+>>> Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
 \end{verbatim}
 Next if an incomplete factorization of $A_i$ will be used, then specify its parameters:
 \begin{verbatim}
-Solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu );
-Solver.SetAztecOption( AZ_graph_fill, 1 );
+>>> Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_ilu)
+Sol>>> ver.SetAztecOption(AztecOO.AZ_graph_fill, 1)
 \end{verbatim}
-On the other hand, exact subdomain solves
-\footnote{AztecOO must be
-  configured with the option {\tt --enable-aztecoo-azlu}, and the
-  package Y12M is required.}
-are specified like this:
+
+\item Using the {\tt IFPACK}'s preconditioners. This requires the {\tt IFPACK}
+module.
 \begin{verbatim}
-Solver.SetAztecOption( AZ_subdomain_solve, AZ_lu );
+>>> Factory = IFPACK.Factory();
+>>> Prec = Factory.Create("IC", Matrix);
+>>> IFPACKList = {
+...   "fact: level-of-fill": ("int", "5")
+... }
+... 
+>>> Prec.SetParameters(IFPACKList);
+>>> Prec.Initialize();
+>>> Prec.Compute();
+>>> Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
+>>> Solver = AztecOO.AztecOO(Problem);
+>>> Solver.SetPrecOperator(Prec)
+>>> Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
 \end{verbatim}
-
-\begin{verbatim}
-Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
-
-Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
-Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
-Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
-Solver.SetAztecOption(AztecOO.AZ_output, 16)
-Solver.Iterate(1550, 1e-5)
-\end{verbatim}
-
-The following methods are often used:
-\begin{itemize}
-\item \verb!NumIters()! returns the total number of iterations performed
-  on {\sl this} problem;
-\item \verb!TrueResidal()! returns the true unscaled residual;
-\item \verb!ScaledResidual()! returns the unscaled residual;
-\item \verb!SetAztecDefaults()! can be used to restore default values in
-  the options and params vectors.
 \end{itemize}
-\verb!NumIters()! is useful in performance optimization.
-A less costly preconditioner is viable if \verb!NumIters()! is ``small",
-and a more costly preconditioner may be worthwhile if \verb!NumIters()! is ``large".
-Many iterative methods with right preconditioning
-apply the residual error norm threshold to the preconditioned residual,
-$P^{-1}r$, instead of $r=b-Ax$.
-\verb!TrueResidal()! will always return the unscaled residual norm.
 
-%-----------------------------------------------------------------------------
-\subsection{One-level Domain Decomposition Preconditioners}
-\label{sec:dd}
-%-----------------------------------------------------------------------------
+\bigskip
 
-This Section requires to import the {\tt IFPACK}, {\tt AztecOO} and {\tt
-  Epetra} modules.
+Another class of preconditioners is given by multilevel preconditioners.
+For certain combinations of iterative methods and linear systems, the
+error at each iteration projected onto the eigenfunctions has components
+that decay at a rate proportional to the corresponding eigenvalue (or
+frequency).  Multilevel methods exploit this property \cite{Briggs2000}
+by projecting the linear system onto a hierarchy of increasingly
+coarsened ``meshes" so that each error component rapidly decays on at
+least one coarse ``mesh."  The linear system on the coarsest ``mesh",
+called the coarse grid problem, is solved exactly.  The iterative method
+is called the smoother, as a reflection of its diminished role as a way
+to damp out the high frequency error.  The grid transfer (or
+interpolation) operators are called restriction ($\mathbf{R}$) and
+prolongation ($\mathbf{P}$) operators.
 
-\begin{verbatim}
-# Creates the IFPACK preconditioner, in this case an incomplete
-# Cholesky factorization, with fill-in of 5
-Factory = IFPACK.Factory();
-Prec = Factory.Create("IC", Matrix);
-IFPACKList = {
-  "fact: level-of-fill": ("int", "5")
-}
-Prec.SetParameters(IFPACKList);
-Prec.Initialize();
-Prec.Compute();
+Multilevel methods are characterized by the sequence of coarse spaces, the
+definition of the operator each coarse space, the specification of the
+smoother, and the restriction and prolongation operators.  Geometric multigrid
+(GMG) methods  are multilevel methods that require the user to specify the
+underlying grid, and in most cases a hierarchy of (not necessarily nested)
+  coarsens grids.  Both the automatic generation of a grid-hierarchy for GMG
+  and the specification of the ML, designed for unstructured problems, are
+  beyond the scope of the tutorial.
 
-# Creates the AztecOO solver, using GMRES and IFPACK as preconditioner
-Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
-Solver = AztecOO.AztecOO(Problem);
-Solver.SetPrecOperator(Prec)
-Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
-\end{verbatim}
-
-
-%-----------------------------------------------------------------------------
-\subsection{Smoothed Aggregation Preconditioners}
-\label{sec:prec}
-%-----------------------------------------------------------------------------
+Algebraic multigrid (AMG)  (see \cite[Section 8]{Briggs2000}) method
+development has been motivated by the demand for multilevel methods that are
+easier to use.  In AMG, both the matrix hierarchy and the prolongation
+operators are constructed just from the stiffness matrix.  Recall that to use
+Aztec00 or IFPACK,  a user must supply a linear system, a select a
+preconditioning strategy.  In AMG, the only additional information required
+from the user is to specify a coarsening strategy.
 
 This Section requires to import the {\tt ML}, {\tt AztecOO} and {\tt Epetra}
-modules.
-
+modules. First, we set up the parameters for ML using a python dictionary:
 \begin{verbatim}
-# sets up the parameters for ML using a python dictionary
-MLList = {
-  "max levels"        : ("int", "3"),
-  "output"            : ("int", "10"),
-  "smoother: type"    : ("string", "symmetric Gauss-Seidel"),
-  "aggregation: type" : ("string", "Uncoupled")
-};
-
-# creates the preconditioner and computes it
+>>> MLList = {
+...  "max levels"        : ("int", "3"),
+...  "output"            : ("int", "10"),
+...  "smoother: type"    : ("string", "symmetric Gauss-Seidel"),
+...  "aggregation: type" : ("string", "Uncoupled")
+... };
+... 
+\end{verbatim}
+Then, we create the preconditioner and compute it,
+\begin{verbatim}
 Prec = ML.MultiLevelPreconditioner(Matrix, False);
 Prec.SetParameterList(MLList);
 Prec.ComputePreconditioner();
-
-# sets up the solver, specifies Prec as preconditioner, and
-# solves using CG.
+\end{verbatim}
+Finally, we set up the solver, and specifies to use \verb!Prec! as
+preconditioner:
+\begin{verbatim}
 Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
 Solver.SetPrecOperator(Prec)
 Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
 Solver.SetAztecOption(AztecOO.AZ_output, 16);
 Solver.Iterate(1550, 1e-5)
+\end{verbatim}
+
+%-----------------------------------------------------------------------------
+\subsection{Serial Dense Linear Algebra}
+\label{sec:serialdense}
+%-----------------------------------------------------------------------------
+
+Although PyTrilinos is focused on sparse and parallel linear algebra, some
+capabilities are given to handle dense and serial linear algebra problems.
+These capabilities are based on the Epetra wrapper for BLAS and LAPACK, and
+therefore the serial dense module of PyTrilinos is computationally efficient.
+
+We now report some basic operations involving serial dense objects. First, 
+the {\tt Epetra} module must be imported, with the instruction
+\begin{verbatim}
+>>> from PyTrilinos import Epetra
+\end{verbatim}
+Then, we can create the matrix $A$ and vector $B$,
+\[
+A = 
+\begin{pmatrix}
+1 & 3 & 5 \\
+2 & 5 & 1 \\
+2 & 3 & 8
+\end{pmatrix}
+, \quad \quad
+B = 
+\begin{pmatrix}
+10 \\
+  8 \\
+  3
+\end{pmatrix}
+\]
+with the following commands:
+\begin{verbatim}
+>>> A = Epetra.SerialDenseMatrix(3,3)
+>>> X = Epetra.SerialDenseVector(3)
+>>> B = Epetra.SerialDenseVector(3)
+>>> A[0,0] = 1; A[1,0] = 3; A[2,0] = 5
+>>> A[0,1] = 2; A[1,1] = 5; A[2,1] = 1
+>>> A[0,2] = 2; A[1,2] = 3; A[2,2] = 8
+>>> B[0] = 10;  B[1] = 8;   B[2] = 3
+\end{verbatim}
+We can  verify the result using 
+\begin{verbatim}
+>>> print A
+Data access mode: Copy
+A_Copied: yes
+Rows(M): 3
+Columns(N): 3
+LDA: 3
+1 2 2 
+3 5 3 
+5 1 8 
+>>> print B
+Data access mode: Copy
+A_Copied: yes
+Length(M): 3
+10 8 3 
+\end{verbatim}
+Matrix {\tt A} can be reshaped using \verb!A.Reshape(N, M)!; command
+\verb!A.Shape(N, M)! reshapes and sets all the matrix elements to zero.  The
+number of rows and columns of {\tt A} can be obtained using methods
+\verb!A.N()! and \verb!A.M()!, respectively. \verb!A.NormOne()! and
+\verb!A.NormInf()!  returns the 1- and $\infty-$norm of {\tt A}. The matrix
+vector product is computed as \verb!A.Multiply(X, B)!;
+\verb!SetUseTranspose()! toggles the use of $A$ or its transpose, $A^T$;
+\verb!Scale(alpha)! scaled all the matrix elements by \verb!alpha!.
+
+To solve the linear system with matrix (\ref{eq:lin_sys}), we first need to
+create an Epetra.SerialDenseSolver object, set the matrix and the vectors,
+  then solve the linear system:
+\begin{verbatim}
+>>> Solver = Epetra.SerialDenseSolver()
+>>> Solver.SetMatrix(A)
+>>> Solver.SetVectors(X, B)
+>>> Solver.Solve()
+>>> print X
+Data access mode: Copy
+A_Copied: yes
+Length(M): 3
+-9.84 3.88 6.04 
+\end{verbatim}
+Alternatively, once can compute the inverse of $A$:
+\begin{verbatim}
+>>> Solver.Invert()
+>>> print A
+
+Data access mode: Copy
+A_Copied: yes
+Rows(M): 3
+Columns(N): 3
+LDA: 3
+-1.48 0.56 0.16 
+0.36 0.08 -0.12 
+0.88 -0.36 0.04 
 \end{verbatim}
 
 %-----------------------------------------------------------------------------
@@ -1332,43 +1093,254 @@ EpetraExt.Add(A, False, 1.0, B, -1.0)
 \end{verbatim}
 
 %-----------------------------------------------------------------------------
+\section{Comparison with Related Projects}
+\label{sec:related}
+%-----------------------------------------------------------------------------
+
+Similar projects are:
+\begin{itemize}
+\item {\bf Numeric.} Numerical Python adds a fast, compact, multidimensional array language facility to Python.
+\item  {\bf NumArray.} 
+Numarray is a reimplementation of Numeric which adds the ability to
+efficiently manipulate large numeric arrays in ways similar to Matlab and IDL.
+\item {\bf SciPy.} SciPy is an open source library of scientific tools for
+Python. SciPy supplements the popular Numeric module, gathering a variety of
+high level science and engineering modules together as a single package. SciPy
+includes modules for graphics and plotting, optimization, integration, special
+functions, signal and image processing, genetic algorithms, ODE solvers, and
+others.
+\item {\bf ScientificPython.} 
+ScientificPython is a collection of Python modules that are useful for
+scientific computing. In this collection you will find modules that cover
+basic geometry (vectors, tensors, transformations, vector and tensor fields),
+  quaternions, automatic derivatives, (linear) interpolation, polynomials,
+  elementary statistics, nonlinear least-squares fits, unit calculations,
+  Fortran-compatible text formatting, 3D visualization via VRML, and two Tk
+  widgets for simple line plots and 3D wireframe models. There are also
+  interfaces to the netCDF library (portable structured binary files), to MPI
+  (Message Passing Interface, message-based parallel programming), and to
+  BSPlib (Bulk Synchronous Parallel programming).
+\end{itemize}
+We believe that PyTrilinos is a very unique effort, since for the first time a
+massive number of high-performance algorithms for distributed sparse linear
+algebra is made easily available with the scripting language Python.  None of
+the previously reported projects for scientific computing with Python handles
+sparse and distributed matrices. 
+
+\smallskip
+
+PyTrilinos is compatible with the popular Numeric module
+Vectors defined as Epetra\_Vector are automatically defined as Numeric
+vectors, and they can therefore be used with any Numeric function or class.
+However, note that a Numeric vector is {\sl not} automatically recognized as
+Epetra\_Vector, since all distributed Epetra objects requires an underlying
+Map (not supported by Numeric).
+
+\bigskip
+\fbox{Say something about visualization, for example GNUPLOT}
+\bigskip
+
+%-----------------------------------------------------------------------------
 \section{Concluding Remarks}
 \label{sec:concluding}
 %-----------------------------------------------------------------------------
 
 The PyTrilinos project is an effort to facilitate the design, development,
-  integration and ongoing support of mathematical software libraries. 
+integration and ongoing support of mathematical software libraries. 
+PyTrilinos provides a simple but powerful rapid development language, along with
+the integration tools needed to apply it in realistic development
+environments. With PyTrilinos, it is no longer necessary to choose between fast
+development and fast execution.
 
-From our perspective, the most important feature of Python is to be a powerful
-but simple programming language designed for development speed, for
+In our opinion, the {\bf impact} of PyTrilinos is the following:
+\begin{itemize}
+\item {\bf Rapid Prototyping.}
+Because Python is a simple language, coding is much faster than in other
+  languages. For example, its dynamic typing, built-in objects, and garbage
+  collection eliminate much of the manual bookkeeping code typically required
+  in languages like C or C++. Since things like type declaration, memory
+  management, and common data structure implementations are absent, Pytho
+  programs are typically a fraction of the sier of their C or C++ equivalents.
+  Becase most bookkeeping code is missing, Python programs are easier to
+  understand and more closely reflect the actual problem they're intended to
+  address. 
+
+  Python's
+  develoment cycle is dramatically shorter than that of traditional tools. In
+  Python, there are no compile or link steps--Python programs simply import
+  modules are runtime and use the objects they contain. Because of this,
+Python programs run immediately after changes are made. Python integration
+  tools make it usable in hybrid, multicompont applications. As one
+  consequence, systems can simultaneousl utilize the strengths of Python for
+  rapid development, and of traditional languages such as C for rapid
+  execution.
+  This flexibility of development modes is crucial in realistic environments.
+  Python is optimized for speed of development, but that alone is not enough.
+%
+\item {\bf Reusability.} Because Python is a high-level, object-oriented
+language, it encourages writing reusable software and well-designed systems.
+%
+\item {\bf Legacy code migration.} Moving existing code from C/C++ to Python
+makes it simpler and more flexible.
+Modern numerical
+algorithms are complex, and both the testing and fine tuning of already
+developed algorithsm, or the development of brand new ones require a massive
+investment, for which rapid prototyping is essential. On the other hand,
+programmers simply cannot ignore efficiency completely. Our approach is the
+following: use Python when speed of development matters, compiled languages
+when efficiency dominates, and combinations of the two when our goals are
+not absolute.
+%
+\item {\bf Integration.} Python's role as integration tool. \PyTrilinos\ relies
+on the ability to mix components written in other languages. C, C++ and
+FORTRAN code is called, but note that Python coders don't need to care.
+  Python lends itself to experimental, interactive program development, and
+  encourages developing systems incrementally by testing components in
+  isolation and putting them together later.
+  By themselves, neigher C nor Python is adequate to address the development
+  bottleneck; together, they can do much more. We model we are using splits
+  the workplace into {\sl frontend} componenta that can benefit from Python's
+  easy-of-use and {\sl backend} modules that require the efficiency of static
+  languages like C, C++, or FORTRAN.
+%
+\end{itemize}
+
+\smallskip
+
+To summarize our prospective, the most important feature of Python is to be a
+powerful but simple programming language designed for development speed, for
 situations in which the complexity of larger languages can be a liability. Of
 course, Python entusiasts will point out several other strengths of the
-language; our aim was to show that Python can be successfully
-used also to develop and use state-of-the-art numerical linear algebra
-algorithms, in both serial and parallel environments.
-
-Of course, Python is not the perfect for all problems. Most numerical
+language; our aim was to show that Python can be successfully used also to
+develop and use state-of-the-art numerical linear algebra algorithms, in both
+serial and parallel environments.  Of course, Python is not the perfect for
+all problems. The most important problems we have encountered are:
+\begin{itemize}
+\item {\bf Portability.} \PyTrilinos\ is an open source library of scientific
+  tools for Python.  It is developed concurrently on both Linux and MAC OS X,
+  and it should port successfully to most other platforms where Trilinos,
+  Python, Numeric and SWIG are available.
+%
+\item {\bf Performance Considerations.}
+By using a Python wrapper a performance penalty is introduced, due to
+deconding of Python script, the execution of wrapped code, and returning the
+results in a Python-compliant format. These tasks may require thousands of CPU
+cycles, therefore it is important to distinguish.
+item The performance penalty is small if the C/C++ function does a lot of work.
+Therefore, for rarely called function, this penalty is negligible.
+All performance critical kernels should be written in C/C++, and
+everything else can be in Python.
+%
+\item {\bf Main differences between \trilinos\ and \PyTrilinos.}
+Although \PyTrilinos\ mimic very closely \trilinos, there is no one-to-one
+map. The most important differences are:
+\begin{itemize}
+\item No memory allocation and deallocation occurs in \PyTrilinos.
+\item No header files are required by \PyTrilinos.
+\item No {\tt int} and {\tt double} arrays are used by \PyTrilinos, replaced instead by
+Python's lists.
+\item Instruction \verb!cout << EpetraObject! is replaced by \verb!print EpetraObject!.
+\item \teuchos's parameters lists are replaced by Python's dictionaries.
+\end{itemize}
+\item {\bf Limited Templated Code.} Most numerical
 libraries are currently adopting massive template support, and templates have
 no meaning in Python. This means that the interface writer has to select {\sl
   a-priori} which instances of the templated class will be included.
-
-Another problem is related to the shared library approach, which is the
-easiest way of intergrating third-party libraries in Python. Most massively
-parallel computers do not support shared libraries, therefore making the use
-of Python scripts still off-limits for very large scale computations.
-
-\section{TO DO}
-
-\begin{itemize}
-\item Rather than giving a detailed description of each of the PyTrilinos classes
-and functions (which is available using the {\tt help} command), this
-manuscript presents their basic usage only.
-\item say something about visualization, for example GNUPLOT
+\item {\bf Shared Libraries on Massively Parallel Computers.} Another problem
+is related to the shared library approach, which is the easiest way of
+intergrating third-party libraries in Python. Most massively parallel
+computers do not support shared libraries, therefore making the use of Python
+scripts still off-limits for very large scale computations.
 \end{itemize}
+
+Finally, we point out that \PyTrilinos\ is not meant to replace Trilinos. You
+can think of \PyTrilinos\ as a collection of all successful and stable
+numerical algorithms of Trilinos.  Hence, not all the algorithms and the tools
+of Trilinos are (or will) be ported to \PyTrilinos. 
 
 %-----------------------------------------------------------------------------%
 \bibliographystyle{plain}
 \bibliography{guide}
 %-----------------------------------------------------------------------------%
+
+%-----------------------------------------------------------------------------
+\appendix
+\section{Additional Information}
+\label{sec:additional}
+%-----------------------------------------------------------------------------
+\subsection{Suggested Configuration}
+\label{sec:suggested}
+%-----------------------------------------------------------------------------
+
+To fully take advantage of the presented modules of \PyTrilinos, you should
+compile Trilinos with the following options:
+\begin{verbatim}
+  --enable-teuchos    
+  --enable-epetra     
+  --enable-epetraext  
+  --enable-amesos    
+  --enable-ifpack     
+  --enable-ml         
+  --enable-triutils   
+\end{verbatim}
+Besides, you need \verb!--enable-python! to turn on the Python support. 
+
+%-----------------------------------------------------------------------------
+\subsection{Notational Conventions}
+\label{sec:notational}
+%-----------------------------------------------------------------------------
+
+In this manuscript, typed commands are shown in this font:
+\begin{verbatim}
+% any_shell_command
+>>> any_python_command
+\end{verbatim}
+The character \verb!%! indicates any shell prompt, while \verb!>>>! is the
+Python prompt. Classes, function and module names are shown as \verb!Epetra!.
+Mathematical entities are shown in italics.
+
+%-----------------------------------------------------------------------------
+\subsection{Getting Information on \PyTrilinos}
+\label{sec:getting}
+%-----------------------------------------------------------------------------
+
+PyTrilinos is under very active development, therefore small changes in usage
+and calling sequences may occur, and all modules are under development. This
+guide describes the ``stable'' features of PyTrilinos; For more up-to-date
+information:
+\begin{itemize}
+\item Consult \verb!http://software.sandia.gov/trilinos/packages/pytrilinos!
+\item Subscribe to the mailing lists
+\begin{verbatim}
+pytrilinos-announce@software.sandia.gov
+pytrilinos-users@software.sandia.gov
+pytrilinos-developers@software.sandia.gov
+\end{verbatim}
+\item Users and developers are encouraged to used Bugzilla to report
+configuration problems, bugs, suggest enhancements, or require new features.
+Bugzilla can be found on the web at
+\begin{verbatim}
+http://software.sandia.gov/bugzilla
+\end{verbatim}
+If reporting a configuration problem or a bug, please attach the configure
+script that has been used, and the compilation and/or run-time error.
+\end{itemize}
+
+%-----------------------------------------------------------------------------
+\subsection{How to Reference This Document}
+\label{sec:reference}
+%-----------------------------------------------------------------------------
+
+The PyTrilinos project can be referenced by using the following BiBTeX
+citation information: 
+\begin{verbatim}
+@techreport{PyTrilinos-Overview,
+  title = "{An Overview of PyTrilinos}",
+  author = "Marzio Sala and William Spotz and Michael A. Heroux",
+  institution = "Sandia National Laboratories",
+  number = "SAND2005-XXXX",
+  year = 2005
+}
+\end{verbatim}
 
 \end{document}
