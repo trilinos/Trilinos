@@ -254,7 +254,7 @@ exit $exitStatus;
         
         my $cmd = "";
         $cmd .= "ssh $ssgUsername\@software.sandia.gov ";
-        $cmd .= "'/space/TrilinosWebHome/insert_results.pl --results-dir=$resultsDirNameNew' 2>&1";
+        $cmd .= "'/space/TrilinosWebHome/insert_results.pl --results-dir=$resultsDirNameNew 2>&1' 2>&1";
         $output = `$cmd`;
         $result = $?;
         print "\n\$output: $output\n";
