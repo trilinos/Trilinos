@@ -325,6 +325,9 @@ exit $exitStatus;
             # Run configure.  
             my $configureOutput = `./invoke-configure 2>&1`;
             my $configureExitStatus = $?;
+            
+            # Trim $configureOutput.
+            $configureOutput = substr ($configureOutput, -1000000);
         
             # Capture and format make stop time.
             (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
@@ -465,7 +468,7 @@ exit $exitStatus;
             close RESULTS;
             
             # Append to build info file for database.
-            my $buildInfoFile = "$resultsDir/build.txt.tmp";
+            my $buildInfoFile = "$resultsDir/build.txt.tmp1";
             if (stat $buildInfoFile) {
                 open (BUILD_FILE, ">>$buildInfoFile")
                     or die "can't open build info file $buildInfoFile for writing, died";            
@@ -474,7 +477,7 @@ exit $exitStatus;
                 $string .= "DEPENDENCIES {{{\n\n$dependenciesString\n\n}}}\n\n";   
                 print BUILD_FILE $string;        
                 close BUILD_FILE;
-                system("mv $buildInfoFile $resultsDir/build.txt > /dev/null 2>&1");
+                system("mv $buildInfoFile $resultsDir/build.txt.tmp2 > /dev/null 2>&1");
             }
                 
             if (!$recover && $configureExitStatus) { return $failureCode{"$brokenPackage"}; }

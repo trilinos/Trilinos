@@ -196,26 +196,44 @@ exit $exitStatus;
     #
 
     sub init {
-    
-        # Capture and format make start time.
-        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
-        $yr = sprintf("%02d", $yr % 100);
-        $mo = sprintf("%02d", $mo+1);
-        $da = sprintf("%02d", $da);
-        $hr = sprintf("%02d", $hr);
-        $mn = sprintf("%02d", $mn);
-        $se = sprintf("%02d", $se);
-        $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
         
+        # We've been passed the --start-time= command line argument by
+        # runharness, so use that instead of capturing our own.
         if ($startTime) {
             $runStartTimeForFilename = $startTime;
-        } else {
+        } else {    
+            # Capture and format build start time.
+            (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+            $yr = sprintf("%02d", $yr % 100);
+            $mo = sprintf("%02d", $mo+1);
+            $da = sprintf("%02d", $da);
+            $hr = sprintf("%02d", $hr);
+            $mn = sprintf("%02d", $mn);
+            $se = sprintf("%02d", $se);
+            $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
             $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
         }
         
         # Create results directory.
         $resultsDir .= "/$runStartTimeForFilename-build";
         system("mkdir $resultsDir") == 0 or die "cannot create $resultsDir, died";
+        
+        # --start-time= command line argument was passed from runharness so it
+        # would know what the results directory name was.  So...since we know
+        # we're being run from runharness, we know we also need to create the
+        # build info file, so runconfigure can append its information to it.
+        if ($startTime) {
+            
+            # Create build info file for database.
+            my $buildInfoFile = "$resultsDir/build.txt.tmp1";
+            open (BUILD_FILE, ">$buildInfoFile")
+                or die "can't open build info file $buildInfoFile for writing, died";            
+            my $string = "";
+            $string .= "TRILINOS_DIR         = $trilinosDir\n";
+            print BUILD_FILE $string;        
+            close BUILD_FILE;
+        
+        }
         
         # Print list of variables for debugging.
         my $message = "";

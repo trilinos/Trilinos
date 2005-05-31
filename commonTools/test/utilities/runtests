@@ -402,6 +402,9 @@ cleanUp();
             my $testOutput = "";
             $testOutput = `$testListAoH[$i]{'command'} 2>&1`;
             my $testExitStatus = $?;
+        
+            # Trim $testOutput.
+            $testOutput = substr ($testOutput, -1000000);
             
             if (!defined $testOutput) { 
                 print "\n\n";
