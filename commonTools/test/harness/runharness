@@ -45,6 +45,9 @@ my $v0 = "0";           # quiet
 my $v1 = "1";           # normal verbosity
 my $v2 = "2";           # level 2 verbosity
 my $v3 = "4";           # level 3 verbosity
+
+# Grab program arguments for use with self-updating functionality (see cvsUpdate())
+my @programArguments = @ARGV;
         
 ################################################################################
 # Execution ####################################################################
@@ -82,6 +85,7 @@ exit $exitStatus;
                     "config-file=s" => \$configFile,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
+                    "updated" => \$updated,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -183,6 +187,40 @@ exit $exitStatus;
         printMessage($message, $v3);
         
     } # init()
+
+    ############################################################################
+    # cvsUpdate()
+    #
+    # Updates Trilinos from the CVS repository.
+    #
+    #   - args: 
+    #
+    #   - returns: 
+
+    sub cvsUpdate {
+        
+        # If --updated flag is not set, update
+        # If --updated flag is set, we've already updated and we've been
+        #     replaced by the new, updated version of ourself--we want to skip
+        #     this so we don't continue the process forever
+        if (!$updated) {       
+            chdir "$trilinosDir"
+                or die "cannot chdir to $trilinosDir, died";  
+            my $output = `cvs -q update -dP 2>&1`;
+            my $result = $?;
+            if ($result) {
+                die "error updating Trilinos, died";
+            }
+
+            # Finished updating.
+            # Replace ourself with the new, updated version of ourselves.
+            chdir "$trilinosDir/commonTools/test/harness";
+            my $command = "perl $0 -u ";
+            foreach (@programArguments) { $command .= "$_ "; }
+            exec $command;
+        }
+        
+    } # cvsUpdate()
     
     ############################################################################
     # run()
