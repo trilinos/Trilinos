@@ -37,6 +37,8 @@ my $configFile;         # Config file to use            (default: ./config)
 my $verbosity;          # verbosity level               (default: 1)
 my $logVerbosity;       # log file verbosity level      (default: 0)
 
+my $updated;            # have we been updated yet?
+
 my $runStartTime;
 my $runStartTimeForFilename;
 
