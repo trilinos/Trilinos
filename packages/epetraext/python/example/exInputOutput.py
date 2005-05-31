@@ -1,5 +1,12 @@
 #! /usr/bin/env python
-from PyTrilinos import EpetraExt, Epetra
+try:
+  import setpath
+  import EpetraExt, Epetra
+except:
+  try:
+    from PyTrilinos import EpetraExt, Epetra
+  except ImportError:
+    raise ImportError, "error w/ EpetraExt or Epetra"
 
 n = 10
 Comm = Epetra.SerialComm()
