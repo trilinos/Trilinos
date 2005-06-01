@@ -274,9 +274,6 @@ exit $exitStatus;
         # Run make.      
         my $makeOutput = `$makeCmd 2>&1`;
         my $makeExitStatus = $?;
-        
-        # Trim $makeOutput.
-        $makeOutput = substr ($makeOutput, -1000000);
     
         # Capture and format make stop time.
         (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
@@ -292,6 +289,7 @@ exit $exitStatus;
         
         # Detect broken package.
         my $brokenPackage = "NONE";
+        my $madePackages = detectMadePackages($makeOutput);
         if ($makeExitStatus) {
             $brokenPackage = detectBrokenPackage($makeOutput);
             $message = sprintf("%-25s", " broken: $brokenPackage ");
@@ -304,6 +302,9 @@ exit $exitStatus;
             $message = "  passed ";
             printMessage($message, $v1+$v2+$v3);
         }
+        
+        # Trim $makeOutput.
+        $makeOutput = substr ($makeOutput, -1000000);
                             
         # Finish printing pass/fail message.
         $message = ($runSeconds==0?"<1":$runSeconds);
@@ -371,6 +372,8 @@ exit $exitStatus;
         $resultsString .= "RESULT               = ".($makeExitStatus==0?"pass":"fail")."\n";
         $resultsString .= "\n";
         $resultsString .= "BROKEN_PACKAGE       = $brokenPackage\n";
+        $resultsString .= "\n";
+        $resultsString .= "MADE_PACKAGES {{{\n\n$madePackages\n\n}}}\n";
         $resultsString .= "\n";
         $resultsString .= "MAKE_OUTPUT {{{\n\n$makeOutput\n\n}}}\n";
         
@@ -488,6 +491,39 @@ exit $exitStatus;
         return $brokenPackage;
            
     } # detectBrokenPackage()
+    
+    ############################################################################
+    # detectMadePackages()
+    #
+    # Compile a list of the packages that successfully compiled.
+    #
+    #   - args:     $makeOutput     (standard out and standard error from make)
+    #
+    #   - returns:  $madePackages   (list of packages that compiled successfully)
+    #
+
+    sub detectMadePackages {
+        my $makeOutput = $_[0];
+        
+        my $madePackages = "";
+        
+        # Compile list of all "Trilinos package PACKAGE built successfully" strings.        
+        my @builtStrings = $makeOutput =~ m/(Trilinos package \w*? built successfully)/g;        
+        foreach my $builtString (@builtStrings) {
+                            
+            # Grab package name.
+            my $package = "";
+            if ($builtString =~ m/Trilinos package (\w*?) built successfully/) {
+                $package = $1;
+                $package = lc($package);
+                $madePackages .= "$package; ";
+            }
+            
+        }
+        
+        return $madePackages;
+           
+    } # detectMadePackages()
     
     ############################################################################
     # cleanUp()

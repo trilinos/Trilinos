@@ -325,9 +325,6 @@ exit $exitStatus;
             # Run configure.  
             my $configureOutput = `./invoke-configure 2>&1`;
             my $configureExitStatus = $?;
-            
-            # Trim $configureOutput.
-            $configureOutput = substr ($configureOutput, -1000000);
         
             # Capture and format make stop time.
             (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
@@ -343,6 +340,7 @@ exit $exitStatus;
             
             # Broken or not?
             my $brokenPackage = "NONE";
+            my $configuredPackages = detectConfiguredPackages($configureOutput);
             if ($configureExitStatus) {
                 
                 # Move aside current, broken invoke-configure.  Serialize
@@ -371,6 +369,9 @@ exit $exitStatus;
                 printMessage($message, $v1+$v2+$v3);
                 $configurePassed = 1;
             }
+            
+            # Trim $configureOutput.
+            $configureOutput = substr ($configureOutput, -1000000);
                                 
             # Finish printing pass/fail message.
             $message = ($runSeconds==0?"<1":$runSeconds);
@@ -455,6 +456,8 @@ exit $exitStatus;
             $resultsString .= "\n";
             $resultsString .= "BROKEN_PACKAGE       = $brokenPackage\n";
             $resultsString .= "\n";
+            $resultsString .= "CONFIGURED_PACKAGES {{{\n\n$configuredPackages\n\n}}}\n";
+            $resultsString .= "\n";
             $resultsString .= "CONFIGURE_OUTPUT {{{\n\n$configureOutput\n\n}}}\n";
             $resultsString .= "\n";
             $resultsString .= "CONFIG_LOG {{{\n\n$configLog\n\n}}}\n";
@@ -522,6 +525,39 @@ exit $exitStatus;
         return $brokenPackage;
         
     } # detectBrokenPackage
+    
+    ############################################################################
+    # detectConfiguredPackages()
+    #
+    # Figure out which packages configured successfully.
+    #
+    #   - args:     $configureOutput    (standard out and standard error from configure)
+    #
+    #   - returns:  $configuredPackages (list of packages that configured successfully)
+    #
+
+    sub detectConfiguredPackages {
+        my $configureOutput = $_[0];
+        
+        my $configuredPackages = "";
+        
+        # Compile list of all "Finished Running PACKAGE Configure Script" strings.        
+        my @finishedStrings = $configureOutput =~ m/(Finished Running \w*? Configure Script)/g;        
+        foreach my $finishedString (@finishedStrings) {
+                            
+            # Grab package name.
+            my $package = "";
+            if ($finishedString =~ m/Finished Running (\w*?) Configure Script/) {
+                $package = $1;
+                $package = lc($package);
+                $configuredPackages .= "$package; ";
+            }
+            
+        }
+        
+        return $configuredPackages;
+        
+    } # detectConfiguredPackages
     
     ############################################################################
     # cleanInvokeConfigure()

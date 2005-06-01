@@ -476,7 +476,7 @@ cleanUp();
             $resultsString .= "COMM                 = $comm\n";
             $resultsString .= "\n";
             $resultsString .= "PACKAGE_TEST_DIR     = ".$testListAoH[$i]{'definitionDir'}."\n";
-            $resultsString .= "PACKAGE              = ".$testListAoH[$i]{'package'}."\n";
+            $resultsString .= "PACKAGE              = ".lc($testListAoH[$i]{'package'})."\n";
             $resultsString .= "\n";
             $resultsString .= "TEST_CATEGORY        = $category\n";
             $resultsString .= "\n";
