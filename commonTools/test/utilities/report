@@ -252,6 +252,8 @@ exit $exitStatus;
         $result = $?;
         if ($result) { print "\n\n$output\n\n"; }
         
+        sleep(60);
+        
         my $cmd = "";
         $cmd .= "ssh $ssgUsername\@software.sandia.gov ";
         $cmd .= "'/space/TrilinosWebHome/insert_results.pl --results-dir=$resultsDirNameNew 2>&1' 2>&1";
