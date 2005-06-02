@@ -217,7 +217,7 @@ exit $exitStatus;
             # Finished updating.
             # Replace ourself with the new, updated version of ourselves.
             chdir "$trilinosDir/commonTools/test/harness";
-            my $command = "perl $0 -u ";
+            my $command = "perl $0 --updated ";
             foreach (@programArguments) { $command .= "$_ "; }
             exec $command;
         }
