@@ -52,26 +52,25 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-template<class Scalar>
-class ExampleApplicationRythmosInterface public Rythmos::NonlinearModel
+class ExampleApplicationRythmosInterface : public Rythmos::NonlinearModel<double>
 {
   public:
     ~ExampleApplicationRythmosInterface();
 
     ExampleApplicationRythmosInterface();
 
-    int evalModel(const InArgs<Scalar> &inargs, OutArgs<Scalar> &outarts);
+    int evalModel(const InArgs<double> & inargs, OutArgs<double> & outargs);
 
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_vector();
+    Teuchos::RefCountPtr<Thyra::VectorBase<double> > & get_vector();
 
-    Teuchos::RefCountPtr<const Epetra_Map> &get_Epetra_Map();
+    Teuchos::RefCountPtr<const Epetra_Map> & get_Epetra_Map();
 
   protected:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
     Teuchos::RefCountPtr<const Epetra_Map> epetra_map_;
-    InArgs<Scalar> inargs_;
-    OutArgs<Scalar> outargs_;
-    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > thyra_vs_;
+    InArgs<double> inargs_;
+    OutArgs<double> outargs_;
+    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > thyra_vs_;
 
 };
 

@@ -41,7 +41,7 @@ namespace Stepper {
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-class ForwardEuler public Stepper<Scalar>
+class ForwardEuler : public Stepper<Scalar>
 {
   public:
     
