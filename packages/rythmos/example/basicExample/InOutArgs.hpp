@@ -30,8 +30,11 @@
 #ifndef Rythmos_INOUT_ARGS_H
 #define Rythmos_INOUT_ARGS_H
 
-//#include "Thyra_VectorBase.hpp"
-#include "Epetra_Vector.h"
+#include "Thyra_VectorBase.hpp"
+//#include "Epetra_Vector.h"
+#include "Teuchos_RefCountPtr.hpp"
+
+namespace Rythmos {
 
 //-----------------------------------------------------------------------------
 // Class         : InArgs
@@ -40,6 +43,7 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/20/05
 //-----------------------------------------------------------------------------
+template<class Scalar> 
 class InArgs
 {
   public:
@@ -48,26 +52,23 @@ class InArgs
     ~InArgs();
 
     // Constructor
-    InArgs(Teuchos::RefCountPtr<Epetra_Vector> &x, double t);
-//    InArgs(const Teuchos::RefCountPtr<const Epetra_Vector> &x, double t, const Teuchos::RefCountPtr<const Epetra_Vector> &p);
-//    InArgs(const Teuchos::RefCountPtr<const Epetra_Vector> &x, const Teuchos::RefCountPtr<const Epetra_Vector> &xDot,  double t, const RefCountPtr<const Epetra_Vector> &p);
+    InArgs(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x, Scalar t)
+      { x_ = x; t_ = t; };
     InArgs();
 
-    void set_x(Teuchos::RefCountPtr<Epetra_Vector> &x)
+    void set_x(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x)
       { x_ = x; };
-    Teuchos::RefCountPtr<Epetra_Vector> &get_x()
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_x()
       { return(x_); };
 
-    void set_t(double t);
+    void set_t(Scalar t)
       { t_ = t; };
-    double get_t()
+    Scalar get_t()
       { return(t_); };
 
   protected:
-    Teuchos::RefCountPtr<Epetra_Vector> x_;
-    double t_;
-//    const Teuchos::RefCountPtr<const Epetra_Vector> p_;
-//    const Teuchos::RefCountPtr<const Epetra_Vector> xDot_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
+    Scalar t_;
 
 };
 //
@@ -78,6 +79,7 @@ class InArgs
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/25/05
 //-----------------------------------------------------------------------------
+template<class Scalar> 
 class OutArgs
 {
   public:
@@ -89,15 +91,15 @@ class OutArgs
     OutArgs();
 
     // Request residual:
-    void request_F(Teuchos::RefCountPtr<Epetra_Vector> &F)
-      { F_ = F; };
-    Teuchos::RefCountPtr<Epetra_Vector> &get_F()
+    void request_F(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &F) { F_ = F; };
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_F()
       { return(F_); };
 
   protected:
-    Teuchos::RefCountPtr<Epetra_Vector> F_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > F_;
     
 };
 
+}// namespace Rythmos 
 
 #endif // Rythmos_INOUT_ARGS_H

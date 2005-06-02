@@ -51,60 +51,57 @@ int main(int argc, char *argv[])
 
   typedef double Scalar; // Scalar type = double
 
-
-#ifdef EPETRA_MPI
-  MPI_Init(&argc,&argv);
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
-#else
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = Teuchos::rcp( new Epetra_SerialComm );
-#endif
-
-  int MyPID = epetra_comm->MyPID();
-
-  if (MyPID == 0)
-    cout << Rythmos::Rythmos_Version() << endl << endl;
-	
-  int NumElements = 1;
-
-  // Construct a Map with NumElements and index base of 0
-  Teuchos::RefCountPtr<const Epetra_Map> epetra_map = Teuchos::rcp( new Epetra_Map(NumElements, 0, *epetra_comm) );
-
-  // Construct a Thyra vector space
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > thyra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
-
-  // Create x and xn vectors
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x  = Thyra::createMember(thyra_vs);
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn = Thyra::createMember(thyra_vs);
-
-  if (MyPID == 0) 
-  {
-    cout << "Integrating \\dot{x}=\\lambda x from t=0 to t=1" << endl
-        << "with initial x_0 = 10, and \\Delta t=0.1" << endl
-        << "using forward Euler." << endl;
-  }
-  double lambda = -0.5;
-  ExampleApplicationRythmosInterface problem(epetra_map);
+  // create interface to problem
+  Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = rcp(new ExampleApplicationRythmosInterface);
+  
+  // create forward Euler stepper object
+  Rythmos::Stepper::ForwardEuler stepper(problem);
 
   double t0 = 0.0;
   double t1 = 1.0;
-  double dt = 0.1;
-  double N = (t1-t0)/dt;
-  double x_initial = 10.0; // initial condition
-  Thyra::assign(&*xn,x_initial); // xn = x_initial
-  if (MyPID == 0)
-    cout << "x(0.0) = " << Thyra::get_ele(*xn,1) << endl;
-  double t = t0;
-  for (int i=1 ; i<N+1 ; ++i)
+  int N = 10;
+  double dt = (t1-t0)/N;
+
+  // Integrate forward with fixed step sizes:
+  for (int i=1 ; i<=N ; ++i)
   {
-    t = t0 + i*dt;
-//    Thyra::assign(&*x,*xn); // x = xn;
-    problem.evalModel(x, xn, t );  // x = f(xn,t)
-    Thyra::Vp_StV(&*xn,dt,*x); // xn = xn + dt*x
-    if (MyPID == 0)
-      cout << "x(" << t << ") = " << Thyra::get_ele(*xn,1) << endl; 
+    double dt_taken = stepper.TakeStep(dt);
+    if (dt_taken != dt)
+    {
+      cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << endl;
+      break;
+    }
   }
+  // Get solution out of stepper:
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_t = stepper.get_solution();
+  // Convert Thyra::VectorBase to Epetra_Vector
+  Teuchos::RefCountPtr<Epetra_Vector> x = Thyra::get_Epetra_Vector(problem.get_Epetra_Map(),x_t);
+
+  // These values should be passed by parameter list:
+  // hard-coded values in ExampleApplicationRythmosInterface:
+  // double numelements = 1;
+  double lambda = -0.5;
+  double x_initial = 10;
+
+  // check exact answer
+  double x_star = x_initial*exp(lambda*t_1);
+
+  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*problem).get_epetra_comm();
+  int MyPID = epetra_comm->MyPID();
   if (MyPID == 0)
-    cout << "       " << x_initial*exp(lambda*t) << " = Exact solution" << endl;
+  {
+    cout << Rythmos::Rythmos_Version() << endl << endl;
+    cout << "Integrating \\dot{x}=\\lambda x from t = " << t0 
+         << " to t = " << t1 << endl
+         << "with initial x_0 = " << x_initial 
+         << ", \\Delta t = " << dt 
+         << ", and \\lambda = " << lambda << endl
+         << "using forward Euler." << endl;
+
+    cout << "Computed: x(" << t1 << ") = " << x[0] << endl;
+    cout << "Exact:    x(" << t1 << ") = " << x_star << endl;
+  }
+  
   return 0;
 }
 

@@ -49,7 +49,7 @@ class ForwardEuler public Stepper<Scalar>
     ~Stepper();
 
     // Cosntructor
-    Stepper(NonlinearModel model_);
+    Stepper(Teuchos::RefCountPtr<Rythmos::NonlinearModel> &model_);
 
     // Take a step _no larger_ than dt 
     Scalar TakeStep(Scalar dt);
@@ -58,12 +58,16 @@ class ForwardEuler public Stepper<Scalar>
     Scalar TakeStep();
 
     // Get solution vector
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_solution();
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution();
     { return(solution_vector_); };
+
+    // Get residual vector
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual();
+    { return(residual_vector_); };
 
   protected:
 
-    NonlinearModel model_;
+    Teuchos::RefCountPtr<Rythmos::NonlinearModel> model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;

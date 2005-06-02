@@ -30,8 +30,8 @@
 #ifndef Rythmos_NONLINEAR_MODEL_H
 #define Rythmos_NONLINEAR_MODEL_H
 
-//#include "Thyra_VectorBase.hpp"
-//#include "Epetra_Vector.h"
+#include "Thyra_VectorBase.hpp"
+#include "InOutArgs.hpp"
 
 namespace Rythmos {
 
@@ -42,26 +42,27 @@ namespace Rythmos {
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/20/05
 //-----------------------------------------------------------------------------
+template<class Scalar>
 class NonlinearModel
 {
   public:
     
     // Destructor
-    virtual ~NonlinearModel();
+    ~NonlinearModel();
 
-    // Cosntructor
-    virtual NonlinearModel();
+    // Constructor
+    NonlinearModel();
 
-    virtual int evalModel(const InArgs &inargs, OutArgs &outargs)=0;
+    virtual int evalModel(const InArgs<Scalar> &inargs, OutArgs<Scalar> &outargs)=0;
 
     virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_vector()=0;
 
   protected:
 
-    InArgs inargs_;
-    OutArgs outargs_;
+    InArgs<Scalar> inargs_;
+    OutArgs<Scalar> outargs_;
 };
 
-} // namespace Rythmos 
+} //namespace Rythmos 
 
 #endif // Rythmos_NONLINEAR_MODEL_H

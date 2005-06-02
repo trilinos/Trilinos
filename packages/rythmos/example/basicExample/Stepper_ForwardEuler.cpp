@@ -38,9 +38,12 @@ namespace Stepper {
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ForwardEuler::ForwardEuler(NonlinearModel model)
+ForwardEuler::ForwardEuler(Teuchos::RefCountPtr<Rythmos::NonlinearModel> &model)
 {
   model_ = model;
+  t_ = 0.0; // this should come from Scalar class
+  solution_vector_ = (*model_).get_vector();
+  residual_vector_ = (*model_).get_vector();
 }
 
 //-----------------------------------------------------------------------------

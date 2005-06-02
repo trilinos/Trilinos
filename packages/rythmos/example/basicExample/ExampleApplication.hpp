@@ -32,6 +32,7 @@
 
 //#include "Thyra_VectorBase.hpp"
 #include "Epetra_Vector.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplication
@@ -60,7 +61,10 @@ class ExampleApplication
     Teuchos::RefCountPtr<Epetra_Vector> &get_x0();
 
     // Return epetra_map 
-    Teuchos::RefCountPtr<Epetra_Map> &get_epetra_map();
+    Teuchos::RefCountPtr<const Epetra_Map> &get_epetra_map();
+
+    // Return epetra_comm
+    Teuchos::RefCountPtr<const Epetra_Comm> &get_epetra_comm();
 
   private:
 

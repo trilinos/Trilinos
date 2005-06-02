@@ -87,7 +87,7 @@ int ExampleApplicationRythmosInterface::evalModel(const InArgs &inargs, OutArgs 
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::get_vector
-// Purpose       : Gent nominal vector
+// Purpose       : Get nominal vector
 // Special Notes :
 // Scope         : public
 // Creator       : Todd Coffey, SNL
@@ -95,6 +95,19 @@ int ExampleApplicationRythmosInterface::evalModel(const InArgs &inargs, OutArgs 
 //-----------------------------------------------------------------------------
 Teuchos::RefCountPtr<Thyra::VectorBase<double> > &ExampleApplicationRythmosInterface::get_vector()
 {
-  return(Thyra::createMember(thyra_vs_));
+  return(Thyra::create_MPIVectorBase((*problem_).get_x0(),thyra_vs_));
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ExampleApplication::get_Epetra_Map
+// Purpose       : Get Epetra map
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 06/02/05
+//-----------------------------------------------------------------------------
+Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplicationRythmosInterface::get_Epetra_Map()
+{
+  return(epetra_map_);
 }
 

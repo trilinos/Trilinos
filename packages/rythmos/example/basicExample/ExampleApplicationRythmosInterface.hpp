@@ -36,7 +36,11 @@
 
 #include "ExampleApplication.hpp"
 
+#include "InOutArgs.hpp"
+#include "NonlinearModel.hpp"
+
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 //#include "Thyra_EpetraThyraWrappers.hpp"
 
 #include "Teuchos_RefCountPtr.hpp"
@@ -48,6 +52,7 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
+template<class Scalar>
 class ExampleApplicationRythmosInterface public Rythmos::NonlinearModel
 {
   public:
@@ -55,16 +60,18 @@ class ExampleApplicationRythmosInterface public Rythmos::NonlinearModel
 
     ExampleApplicationRythmosInterface();
 
-    int evalModel(const InArgs &inargs, OutArgs &outarts);
+    int evalModel(const InArgs<Scalar> &inargs, OutArgs<Scalar> &outarts);
 
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_vector();
+
+    Teuchos::RefCountPtr<const Epetra_Map> &get_Epetra_Map();
 
   protected:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
     Teuchos::RefCountPtr<const Epetra_Map> epetra_map_;
-    InArgs inargs_;
-    OutArgs outargs_;
-    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > thyra_vs_;
+    InArgs<Scalar> inargs_;
+    OutArgs<Scalar> outargs_;
+    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > thyra_vs_;
 
 };
 
