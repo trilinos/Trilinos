@@ -363,8 +363,7 @@ fi
 # Checks for addons
 # ------------------------------------------------------------------------
                                                                                 
-TAC_ARG_WITH( trilinosdatadir, [Set TrilinosData directory], trilinosdatadir_not_sp
-ecified )
+TAC_ARG_WITH( trilinosdatadir, [Set TrilinosData directory], trilinosdatadir_not_specified )
 
 ## echo "  tac_with_trilinosdatadir =  ${tac_with_trilinosdatadir} "              
 ## TAC_CHECK_FILE(

@@ -1002,7 +1002,7 @@ Optional Packages:
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-trilinosdatadir  Set TrilinosData directory (default is
-                          trilinosdatadir_not_sp, ecified, )
+                          trilinosdatadir_not_specified, )
 
 Some influential environment variables:
   CC          C compiler command
@@ -11087,8 +11087,7 @@ if test "${with_trilinosdatadir+set}" = set; then
   withval="$with_trilinosdatadir"
   tac_with_trilinosdatadir=$withval
 else
-  tac_with_trilinosdatadir=trilinosdatadir_not_sp
-ecified
+  tac_with_trilinosdatadir=trilinosdatadir_not_specified
 fi;
 
 
@@ -13963,7 +13962,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13966: \"$ac_link\") >&5
+(eval echo $as_me:13965: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14041,7 +14040,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:14044: \"$ac_link\") >&5
+(eval echo $as_me:14043: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
