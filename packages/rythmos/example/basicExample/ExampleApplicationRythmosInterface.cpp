@@ -72,7 +72,7 @@ ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-int ExampleApplicationRythmosInterface::evalModel(const InArgs &inargs, OutArgs &outargs)
+int ExampleApplicationRythmosInterface::evalModel(const InArgs<double> &inargs, OutArgs<double> &outargs)
 {
   // input arguments:
   Teuchos::RefCountPtr<Thyra::VectorBase<double> > x = inargs.get_x();

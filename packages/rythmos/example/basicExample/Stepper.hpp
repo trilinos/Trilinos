@@ -30,6 +30,11 @@
 #ifndef Rythmos_STEPPER_H
 #define Rythmos_STEPPER_H
 
+
+#include "Teuchos_RefCountPtr.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "NonlinearModel.hpp"
+
 namespace Rythmos {
 
 //-----------------------------------------------------------------------------
@@ -45,12 +50,12 @@ class Stepper
   public:
     
     // Destructor
-    virtual ~Stepper();
+    ~Stepper();
 
     // Cosntructor
     // 05/26/05 tscoffe:  I think I'll pass in a parameter list at construction
     // time also to specify what stepper options I want.
-    virtual Stepper(NonlinearModel model)
+    Stepper(Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model)
       { model_ = model; };
 
     // Take a step _no larger_ than dt 
@@ -60,12 +65,16 @@ class Stepper
     virtual Scalar TakeStep()=0;
 
     // Get solution vector
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_solution();
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution()
       { return(solution_vector_); };
+    
+    // Get residual vector
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual()
+    { return(residual_vector_); };
 
   protected:
 
-    NonlinearModel model_;
+    Teuchos::RefCountPtr<NonlinearModel<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;

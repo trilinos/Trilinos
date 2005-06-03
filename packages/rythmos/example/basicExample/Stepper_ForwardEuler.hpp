@@ -30,8 +30,12 @@
 #ifndef Rythmos_STEPPER_FORWARDEULER_H
 #define Rythmos_STEPPER_FORWARDEULER_H
 
+#include "Stepper.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "NonlinearModel.hpp"
+
 namespace Rythmos {
-namespace Stepper {
 
 //-----------------------------------------------------------------------------
 // Class         : FowardEuler
@@ -46,10 +50,10 @@ class ForwardEuler : public Stepper<Scalar>
   public:
     
     // Destructor
-    ~Stepper();
+    ~ForwardEuler();
 
     // Cosntructor
-    Stepper(Teuchos::RefCountPtr<Rythmos::NonlinearModel> &model_);
+    ForwardEuler(Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model_);
 
     // Take a step _no larger_ than dt 
     Scalar TakeStep(Scalar dt);
@@ -59,22 +63,19 @@ class ForwardEuler : public Stepper<Scalar>
 
     // Get solution vector
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution();
-    { return(solution_vector_); };
 
     // Get residual vector
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual();
-    { return(residual_vector_); };
 
   protected:
 
-    Teuchos::RefCountPtr<Rythmos::NonlinearModel> model_;
+    Teuchos::RefCountPtr<NonlinearModel<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
 
 };
 
-} // namespace Stepper
 } // namespace Rythmos
 
 #endif //Rythmos_STEPPER_FORWARDEULER_H

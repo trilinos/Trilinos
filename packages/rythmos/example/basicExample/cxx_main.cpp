@@ -38,6 +38,8 @@
 #include "Epetra_Version.h"
 
 #include "Rythmos_ConfigDefs.h"
+#include "ExampleApplicationRythmosInterface.hpp"
+#include "Stepper_ForwardEuler.hpp"
 
 //#include "ExampleApplication.hpp"
 #include "ExampleApplicationRythmosInterface.hpp"
@@ -46,16 +48,15 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
+
 int main(int argc, char *argv[])
 {
 
-  typedef double Scalar; // Scalar type = double
-
   // create interface to problem
-  Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = rcp(new ExampleApplicationRythmosInterface);
+  Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface);
   
   // create forward Euler stepper object
-  Rythmos::Stepper::ForwardEuler stepper(problem);
+  Rythmos::ForwardEuler<double> stepper(problem);
 
   double t0 = 0.0;
   double t1 = 1.0;
@@ -73,9 +74,9 @@ int main(int argc, char *argv[])
     }
   }
   // Get solution out of stepper:
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_t = stepper.get_solution();
+  Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_t = stepper.get_solution();
   // Convert Thyra::VectorBase to Epetra_Vector
-  Teuchos::RefCountPtr<Epetra_Vector> x = Thyra::get_Epetra_Vector(problem.get_Epetra_Map(),x_t);
+  Teuchos::RefCountPtr<const Epetra_Vector> x = Thyra::get_Epetra_Vector(*(problem->get_Epetra_Map()),x_t);
 
   // These values should be passed by parameter list:
   // hard-coded values in ExampleApplicationRythmosInterface:
@@ -84,10 +85,17 @@ int main(int argc, char *argv[])
   double x_initial = 10;
 
   // check exact answer
-  double x_star = x_initial*exp(lambda*t_1);
+  double x_star = x_initial*exp(lambda*t1);
 
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*problem).get_epetra_comm();
-  int MyPID = epetra_comm->MyPID();
+  // 06/03/05 tscoffe to get an Epetra_Map associated with an Epetra_Vector:
+  // x.Map()
+  // to get an Epetra_Comm associated with an Epetra_Vector:
+  // x.Comm()
+  
+//  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*problem).get_epetra_comm();
+  //int MyPID = problem->get_Epetra_Map()->Comm()->MyPID();
+  int MyPID = (*x).Comm().MyPID();
+//  int MyPID = epetra_comm->MyPID();
   if (MyPID == 0)
   {
     cout << Rythmos::Rythmos_Version() << endl << endl;
@@ -98,7 +106,7 @@ int main(int argc, char *argv[])
          << ", and \\lambda = " << lambda << endl
          << "using forward Euler." << endl;
 
-    cout << "Computed: x(" << t1 << ") = " << x[0] << endl;
+    cout << "Computed: x(" << t1 << ") = " << (*x)[0] << endl;
     cout << "Exact:    x(" << t1 << ") = " << x_star << endl;
   }
   

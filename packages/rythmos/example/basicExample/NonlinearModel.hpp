@@ -59,8 +59,9 @@ class NonlinearModel
 
   protected:
 
-    InArgs<Scalar> inargs_;
-    OutArgs<Scalar> outargs_;
+//    InArgs<Scalar> inargs_;
+//    OutArgs<Scalar> outargs_;
+
 };
 
 } //namespace Rythmos 

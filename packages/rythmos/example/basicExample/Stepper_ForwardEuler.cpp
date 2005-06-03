@@ -28,7 +28,6 @@
 // @HEADER
 
 namespace Rythmos {
-namespace Stepper {
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::ForwardEuler
@@ -38,7 +37,7 @@ namespace Stepper {
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ForwardEuler::ForwardEuler(Teuchos::RefCountPtr<Rythmos::NonlinearModel> &model)
+ForwardEuler::ForwardEuler(Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> > &model)
 {
   model_ = model;
   t_ = 0.0; // this should come from Scalar class
@@ -81,8 +80,8 @@ Scalar ForwardEuler::TakeStep()
 //-----------------------------------------------------------------------------
 Scalar ForwardEuler::TakeStep(Scalar dt)
 {
-  InArgs inargs;
-  OutArgs outargs;
+  InArgs<Scalar> inargs;
+  OutArgs<Scalar> outargs;
 
   inargs.set_x(solution_vector_);
   inargs.set_t(t_+dt);
@@ -98,5 +97,4 @@ Scalar ForwardEuler::TakeStep(Scalar dt)
   return(dt);
 }
 
-} // namespace Stepper
 } // namespace Rythmos
