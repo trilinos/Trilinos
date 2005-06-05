@@ -31,15 +31,27 @@ Please submit Amesos bugs at software.sandia.gov/buzgilla.
 
 ------------------------------------------------------------------------------
 	
+June 2005
+
+*) Added full support for Teuchos' RefCountPtr to SuperLU_DIST and LAPACK
+   class. All objects allocated by these two classes are automatically 
+   destroyed by the RefCountPtr, therefore reducing possible memory leaks.
+   The code of Amesos_Lapack is now sensibly shorter and easier to read.
+   [M. Sala]
+
+------------------------------------------------------------------------------
+	
 May 2005
 
 *) Minor changes to the web site.
 
-*) Added support for PARDISO:
-   - the interface, called Amesos_Pardiso, supports non-symmetric
-     matrices only. Added description to the reference guide. [M. Sala]
+*) Added support for PARDISO. The interface, called Amesos_Pardiso, 
+   supports non-symmetric matrices only, and makes use of Teuchos's
+   RefCountPtr to manage memory. Added description of this class and
+   the corresponding parameters to the reference guide. [M. Sala]
 
-*) Added support for TAUCS. Added description to the reference guide.
+*) Added support for TAUCS. The TAUCS interface makes use of Teuchos'
+   RefCountPtr to manage memory. Added description to the reference guide.
    [M. Sala]
 
 *) Re-design the interfaces by adding classes Amesos_Time, Amesos_Status
