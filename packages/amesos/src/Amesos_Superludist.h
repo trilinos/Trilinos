@@ -36,12 +36,12 @@
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
 #include "Epetra_LinearProblem.h"
+#include "Teuchos_RefCountPtr.hpp"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_Comm.h"
 #endif
-#include "Epetra_CrsGraph.h"
 
 #include "superlu_ddefs.h"
 #include "supermatrix.h"
@@ -53,16 +53,6 @@
    using Epetra objects and the Superludist solver library, where
   <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
   Epetra_MultiVector objects.
-
-
-  Superludist execution can be tuned through a variety of parameters.
-  Amesos_Superludist.h allows control of these parameters through the
-  following named parameters, ignoring parameters with names that it
-  does not recognize.  Where possible, the parameters are common to
-  all direct solvers (although some may ignore them).  However, some
-  parameters, in particular tuning parameters, are unique to each
-  solver.
-    
 */
 class Amesos_Superludist: public Amesos_BaseSolver,
                           private Amesos_Time,
@@ -100,6 +90,7 @@ public:
 
   //@}
   //@{ \name Atribute set methods
+  
   //!  Amesos_Superludist does not support transpose at this time.
   /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
    */
@@ -108,7 +99,6 @@ public:
   }
 
   //@}
-  
   //@{ \name Atribute access functions
 
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
@@ -117,11 +107,10 @@ public:
   /*! Returns true if the matrix shape is one that SUPERLUDIST can
     handle. SUPERLUDIST only works with square matrices.  
   */
-  bool MatrixShapeOK() const ;
+  bool MatrixShapeOK() const;
 
-  bool UseTranspose() const {return(UseTranspose_);};
-
-  const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
+  //! Always returns true.
+  bool UseTranspose() const {return(true);};
   //@}
 
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
@@ -133,70 +122,66 @@ public:
   void PrintStatus() const;
   
 private:  
+  inline const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
+
+  inline const Epetra_Import& Importer() const
+  {
+    return(*(Importer_.get()));
+  }
+
+  inline const Epetra_Map& UniformMap() const
+  {
+    return(*(UniformMap_.get()));
+  }
+
+  inline const Epetra_RowMatrix& UniformMatrix() const
+  {
+    return(*(UniformMatrix_.get()));
+  }
+
+  inline Epetra_CrsMatrix& CrsUniformMatrix()
+  {
+    return(*(CrsUniformMatrix_.get()));
+  }
 
   int RedistributeA();
 
   int ReFactor();
   int Factor();
+  
+  const Epetra_LinearProblem* Problem_;
+  Epetra_RowMatrix *RowMatrixA_ ;  // Problem_->GetOperator()
 
-  //
-  //  Parameters set by the Parameter list
-  //
-  bool ReuseSymbolic_; // default is false ; Allows FactOption to be used on subsequent
-                       // calls to pdgssvx from NumericFactorization
-  bool AddZeroToDiag_; // default is false ; Adds zero to diagonal of redistributed matrix
-                       // (in case Superludist chokes on a matrix with a partly empty diag)
-  fact_t FactOption_;  // default is SamePattern_SameRow
-  bool Redistribute_ ; //  default = true;  redistribute the input matrix 
-                       //  prior to calling Superludist
-  int MaxProcesses_;   // default is -1 ; If positive, distribute problem over
-                       // MaxPricesses
+  RefCountPtr<Epetra_Map> UniformMap_;
+  RefCountPtr<Epetra_CrsMatrix> CrsUniformMatrix_;  
+  RefCountPtr<Epetra_RowMatrix> UniformMatrix_;  
+  Teuchos::RefCountPtr<Epetra_Import> Importer_;
 
+  //! Allows FactOption to be used on subsequent calls to pdgssvx from NumericFactorization
+  bool ReuseSymbolic_; 
+  //! Adds zero to diagonal of redistributed matrix (in case Superludist chokes on a matrix with a partly empty diag)
+  bool AddZeroToDiag_; 
+  fact_t FactOption_; 
+  //! redistribute the input matrix prior to calling Superludist
+  bool Redistribute_ ; 
+  int MaxProcesses_;
 
-  //
-  //  These are used to determine what needs to be cleaned up.
-  //
-  const Epetra_LinearProblem * Problem_;
+  //! \c true if the SuperLU_DIST's grid has been created (and has to be free'd)
   int GridCreated_ ; 
   int FactorizationDone_ ; 
+  //! \c true if NumericFactorization() has been successfully called.
+  bool FactorizationOK_ ;
 
-  int NumRows_; 
-  int NumGlobalNonzeros_; 
-  Epetra_Map *UniformMap_ ;    //  Uniform Map (SuperLUdist requires a linear map)
-  Epetra_CrsMatrix *UniformMatrix_;  
-  Epetra_Export *ExportToDist_; // Exporter from Input Matrix to UniformMatrix_
+  //! Global dimension of the matrix.
+  int NumGlobalRows_; 
 
-  Epetra_Import *ImportToDistributed_ ;
-  Epetra_Import *ImportBackToOriginal_ ;
-
-  //
-  //  These variables are here just to keep the code a bit shorter
-  //  They are set in NumericFactorization_
-  //
-  Epetra_RowMatrix *RowMatrixA_ ;  // Problem_->GetOperator()
-  int iam_;                        // Comm_.MyPID() ;
-  int NumProcs_;
-
-  Epetra_RowMatrix *SuperluMat_ ;  // As passed to Superludist
-
-  //
-  //  Ap, Ai, Aval form the compressed row storage used by Klu
-  //
+  // Ap, Ai, Aval form the compressed row storage used by SuperLU_DIST
   vector <int> Ap_;
   vector <int> Ai_;
   vector <double> Aval_;
-
-  Epetra_MultiVector *vecBdistributed_; 
-  Epetra_MultiVector *vecXdistributed_; 
-
-  vector<int>ColIndicesV_;
-  vector<double>RowValuesV_;
-  vector <int>Global_Columns_; 
-
-
-  //
+  //! Contains the global ID of local columns.
+  int* Global_Columns_;
   //  Here are the structures used by Superlu
-  //
   SuperMatrix SuperluA_;
   ScalePermstruct_t ScalePermstruct_;
   LUstruct_t LUstruct_;
@@ -204,7 +189,9 @@ private:
 
   int nprow_;
   int npcol_;
-  gridinfo_t grid_;                 // SuperLU's grid information
+  //! SuperLU_DIST's grid information.
+  gridinfo_t grid_;
+  //! Vector of options.
   superlu_options_t options_;
 
   bool PrintNonzeros_;
@@ -215,14 +202,7 @@ private:
   string IterRefine_;
   bool ReplaceTinyPivot_;
   bool Equil_;
-  
-  bool FactorizationOK_ ;           // True if the matrix factorization has
-                                    // been performed more recently than the
-                                    // latest call to SymbolicFactorization()
 
-  bool UseTranspose_;      // Set by SetUseTranpose() 
-  
-  //  int NumSymbolicFact_;  //  Amesos_Superludist_ does not separate Symbolic from Numeric Factorization
   int NumNumericFact_;
   int NumSolve_;
   

@@ -73,5 +73,29 @@ public:
     cout << "--------------------------------------------";
     cout << "--------------------------------" << endl;
   }
+
+  void SetMaxProcesses(int& MaxProcesses, const Epetra_RowMatrix& A)
+  {
+    int MaxProcs = A.Comm().NumProc();
+
+    switch(MaxProcesses) {
+    case -3:
+      MaxProcesses = MaxProcs;
+      break;
+    case -2:
+      MaxProcesses = (int) sqrt(1.0 * MaxProcs);
+      break;
+    case -1:
+      MaxProcesses = 1 + EPETRA_MAX(A.NumGlobalRows() / 10000, 
+                                    A.NumGlobalNonzeros() / 1000000);
+      break;
+    }
+
+    if (MaxProcesses <= 0) MaxProcesses = 1;
+    if (MaxProcesses > MaxProcs) MaxProcesses = MaxProcs;
+
+    return;
+  }
+
 };
 #endif
