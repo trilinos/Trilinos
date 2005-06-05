@@ -44,6 +44,8 @@
 #include "Epetra_Import.h"
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
+#include "Teuchos_RefCountPtr.hpp"
+using namespace Teuchos;
 
 //! Amesos_Lapack: an interface to LAPACK.
 /*!
@@ -150,74 +152,42 @@ protected:
   //! Returns a pointer to the linear system matrix.
   const Epetra_RowMatrix* Matrix() const
   {
-    return(dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator()));
+    return(Problem_->GetMatrix());
   }
 
   //! Returns the number of global rows, or -1 if Matrix() returns 0.
-  int NumGlobalRows() const
+  inline int NumGlobalRows() const
   {
-    if (Matrix())
-      return(Matrix()->NumGlobalRows());
-    else
-      return(-1);
+    return(Matrix()->NumGlobalRows());
   }
 
   //! Returns the number of local rows, or -1 if Matrix() returns 0.
-  int NumMyRows() const
+  inline int NumMyRows() const
   {
-    if (Matrix())
-      return(Matrix()->NumMyRows());
-    else
-      return(-1);
-  }
-
-  //! Returns the ID of calling process.
-  int MyPID() const
-  {
-    return(Matrix()->Comm().MyPID());
-  }
-
-  //! Returns the number of processes in communicator.
-  int NumProc() const
-  {
-    return(Matrix()->Comm().NumProc());
+    return(Matrix()->NumMyRows());
   }
 
   //! Returns a reference to serial map (that with all elements on process 0). Builds SerialMap_ if necessary or required.
-  const Epetra_Map& SerialMap()
+  inline const Epetra_Map& SerialMap()
   {
-    if (SerialMap_ == 0) {
-      int NumElements = 0;
-      if (MyPID() == 0)
-	NumElements = NumGlobalRows();
-
-      SerialMap_ = new Epetra_Map(-1,NumElements,0,Matrix()->Comm());
-      assert (SerialMap_ != 0);
-    }
-
-    return(*SerialMap_);
+    return(*(SerialMap_.get()));
   }
 
   //! Returns a reference to serial matrix (that with all rows on process 0). Builds SerialMap_ if necessary or required.
-  Epetra_CrsMatrix& SerialMatrix()
+  inline Epetra_RowMatrix& SerialMatrix()
   {
-    if (SerialMatrix_ == 0) {
-      SerialMatrix_ = new Epetra_CrsMatrix(Copy,SerialMap(),0);
-      assert (SerialMatrix_ != 0);
-    }
+    return(*(SerialMatrix_.get()));
+  }
 
-    return(*SerialMatrix_);
+  inline Epetra_CrsMatrix& SerialCrsMatrix()
+  {
+    return(*(SerialCrsMatrix_.get()));
   }
 
   //! Returns a reference to the importer map. Builds SerialMap_ if necessary or required.
-  const Epetra_Import& RowImporter()
+  const Epetra_Import& Importer()
   {
-    if (RowImporter_ == 0) {
-      RowImporter_ = new Epetra_Import(SerialMap(),Matrix()->RowMatrixRowMap());
-      assert (RowImporter_ != 0);
-    }
-
-    return(*RowImporter_);
+    return(*(Importer_.get()));
   }
 
   //! Solves the linear system, when only one process is used.
@@ -228,18 +198,19 @@ protected:
   int SolveDistributed(Epetra_MultiVector& X,
 		       const Epetra_MultiVector& B);
   
-  //! Convert a serial matrix to dense format. Only for Comm().NumProc() == 1.
+  //! Converts a distributed matrix to serial matrix.
+  int DistributedToSerial();
+
+  //! Converts a serial matrix to dense format.
   int SerialToDense();
 
-  //! Convert a distributed matrix to dense format. Only for Comm().NumProc() > 1
-  int DistributedToDense();
+  //! Factors the matrix using LAPACK.
+  int DenseToFactored();
 
-  //! Points to the Serial matrix (defined on process 0 only).
-  Epetra_CrsMatrix* SerialMatrix_;
-  //! Points to a Serial Map (to import LHS/RHS).
-  Epetra_Map* SerialMap_;
-  //! Importer from distributed map to SerialMap_.
-  Epetra_Import* RowImporter_;
+  RefCountPtr<Epetra_RowMatrix> SerialMatrix_;
+  RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrix_;
+  RefCountPtr<Epetra_Map> SerialMap_;
+  RefCountPtr<Epetra_Import> Importer_;
   //! Dense matrix.
   Epetra_SerialDenseMatrix DenseMatrix_;
   //! Dense LHS.
