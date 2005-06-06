@@ -39,7 +39,7 @@ noinst_PROGRAMS = $(EXAMPLE)
 #np# of the  following primaries that the pattern is 
 #np# "(Exe_name)_(PRIMARY_NAME) = ").
 #np# List all source files needed to compile the exe.
-RefCountPtrExample_SOURCES = $(srcdir)/RefCountPtrExample.cpp 
+RefCountPtrExample_SOURCES = $(srcdir)/cxx_main.cpp 
 
 #np# One DEPENDENCIES primary is needed for each exe listed above.  List any
 #np# libraries that the exe depends on.  (This primary is not absolutely
