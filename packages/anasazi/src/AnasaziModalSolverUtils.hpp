@@ -83,9 +83,9 @@ namespace Anasazi {
 
     //! Mass orthogonalize \c X with-respect-to the orthogonalization parameter \c orthoType.
     /*! @param X [in/out] Multi-vector being orthogonalized/orthonormalized.
-    @param MX [in/out] Image of the multi-vector \c X by the mass matrix \c M, not referenced if \c MX=0.
-    @param M [in] Pointer to the mass matrix, not referenced if 0.
-    @param Q [in] Vectors to orthogonalize against.
+    @param MX [in/out] Image of the multi-vector \c X by the mass matrix \c M, not referenced if \c MX==0.
+    @param M [in] Pointer to the mass matrix, not referenced if \c M==0.
+    @param Q [in] Vectors to orthogonalize against, not referenced if \c orthoType == 2.
     @param howMany [in] Number of vectors X to orthogonalize.
     @param orthoType [in] Orthogonalization type
     <ul>
@@ -104,7 +104,7 @@ namespace Anasazi {
     </ul>
     */    
     int massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, int howMany,
-			   int orthoType = 0, ScalarType kappa = 1.5625) const;
+                           int orthoType = 0, ScalarType kappa = 1.5625) const;
     
 
     //! Routine for computing the first NEV generalized eigenpairs of the symmetric pencil <tt>(KK, MM)</tt>
@@ -135,10 +135,10 @@ namespace Anasazi {
       </ul>
     */
     int directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
-		     const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
-		     Teuchos::SerialDenseMatrix<int,ScalarType> *EV,
-		     std::vector<ScalarType>* theta,
-		     int nev, int esType = 0) const;
+                     const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
+                     Teuchos::SerialDenseMatrix<int,ScalarType> *EV,
+                     std::vector<ScalarType>* theta,
+                     int nev, int esType = 0) const;
     //@}
 
     //@{ \name Sanity Checking Methods
@@ -207,33 +207,33 @@ namespace Anasazi {
     
     if (igap == 0) {
       if ((n > 0) && (perm != 0)) {
-	perm[0] = 0;
+        perm[0] = 0;
       }
       return 0;
     }
     
     if (perm) {
       for (i = 0; i < n; ++i)
-	perm[i] = i;
+        perm[i] = i;
     }
     
     while (igap > 0) {
       for (i=igap; i<n; ++i) {
-	for (j=i-igap; j>=0; j-=igap) {
-	  if (y[j] > y[j+igap]) {
-	    double tmpD = y[j];
-	    y[j] = y[j+igap];
-	    y[j+igap] = tmpD;
-	    if (perm) {
-	      int tmpI = perm[j];
-	      perm[j] = perm[j+igap];
-	      perm[j+igap] = tmpI;
-	    }
-	  }
-	  else {
-	    break;
-	  }
-	}
+        for (j=i-igap; j>=0; j-=igap) {
+          if (y[j] > y[j+igap]) {
+            double tmpD = y[j];
+            y[j] = y[j+igap];
+            y[j+igap] = tmpD;
+            if (perm) {
+              int tmpI = perm[j];
+              perm[j] = perm[j+igap];
+              perm[j+igap] = tmpI;
+            }
+          }
+          else {
+            break;
+          }
+        }
       }
       igap = igap / 2;
     }
@@ -243,7 +243,7 @@ namespace Anasazi {
   
   template<class ScalarType, class MV, class OP>
   int ModalSolverUtils<ScalarType, MV, OP>::sortScalars_Vectors( int n, ScalarType *lambda, MV *Q, 
-								 std::vector<ScalarType> *resids ) const
+                                                                 std::vector<ScalarType> *resids ) const
   {
     // This routines sorts the scalars (stored in lambda) in ascending order.
     // The associated vectors (stored in Q) are accordingly ordered.
@@ -261,62 +261,62 @@ namespace Anasazi {
     
     if ( Q ) {
       while (igap > 0) {
-	for (i=igap; i < n; ++i) {
-	  for (j=i-igap; j>=0; j-=igap) {
-	    if (lambda[j] > lambda[j+igap]) {
+        for (i=igap; i < n; ++i) {
+          for (j=i-igap; j>=0; j-=igap) {
+            if (lambda[j] > lambda[j+igap]) {
 
-	      // Swap two scalars
-	      tmp = lambda[j];
-	      lambda[j] = lambda[j+igap];
-	      lambda[j+igap] = tmp;
+              // Swap two scalars
+              tmp = lambda[j];
+              lambda[j] = lambda[j+igap];
+              lambda[j+igap] = tmp;
 
-	      // Swap residuals (if they exist)
-	      if (resids) {
-		tmp = (*resids)[j];
-		(*resids)[j] = (*resids)[j+igap];
-		(*resids)[j+igap] = tmp;
-	      }
+              // Swap residuals (if they exist)
+              if (resids) {
+                tmp = (*resids)[j];
+                (*resids)[j] = (*resids)[j+igap];
+                (*resids)[j+igap] = tmp;
+              }
 
-	      // Swap corresponding vectors
-	      index[0] = j;
-	      Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( *Q, index );
-	      Teuchos::RefCountPtr<MV> tmpQj = MVT::CloneView( *Q, index );
-	      index[0] = j + igap;
-	      Teuchos::RefCountPtr<MV> tmpQgap = MVT::CloneView( *Q, index );
-	      MVT::MvAddMv( one, *tmpQgap, zero, *tmpQgap, *tmpQj );
-	      MVT::MvAddMv( one, *tmpQ, zero, *tmpQ, *tmpQgap );
-	    } 
-	    else {
-	      break;
-	    }
-	  }
-	}
-	igap = igap / 2;
+              // Swap corresponding vectors
+              index[0] = j;
+              Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( *Q, index );
+              Teuchos::RefCountPtr<MV> tmpQj = MVT::CloneView( *Q, index );
+              index[0] = j + igap;
+              Teuchos::RefCountPtr<MV> tmpQgap = MVT::CloneView( *Q, index );
+              MVT::MvAddMv( one, *tmpQgap, zero, *tmpQgap, *tmpQj );
+              MVT::MvAddMv( one, *tmpQ, zero, *tmpQ, *tmpQgap );
+            } 
+            else {
+              break;
+            }
+          }
+        }
+        igap = igap / 2;
       } // while (igap > 0)
     } // if ( Q )
     else {
       while (igap > 0) {
-	for (i=igap; i < n; ++i) {
-	  for (j=i-igap; j>=0; j-=igap) {
-	    if (lambda[j] > lambda[j+igap]) {
-	      // Swap two scalars
-	      tmp = lambda[j];
-	      lambda[j] = lambda[j+igap];
-	      lambda[j+igap] = tmp;
-	      
-	      // Swap residuals (if they exist)
-	      if (resids) {
-		tmp = (*resids)[j];
-		(*resids)[j] = (*resids)[j+igap];
-		(*resids)[j+igap] = tmp;
-	      }	      
-	    } 
-	    else {
-	      break;
-	    }
-	  }
-	}
-	igap = igap / 2;
+        for (i=igap; i < n; ++i) {
+          for (j=i-igap; j>=0; j-=igap) {
+            if (lambda[j] > lambda[j+igap]) {
+              // Swap two scalars
+              tmp = lambda[j];
+              lambda[j] = lambda[j+igap];
+              lambda[j+igap] = tmp;
+              
+              // Swap residuals (if they exist)
+              if (resids) {
+                tmp = (*resids)[j];
+                (*resids)[j] = (*resids)[j+igap];
+                (*resids)[j+igap] = tmp;
+              }              
+            } 
+            else {
+              break;
+            }
+          }
+        }
+        igap = igap / 2;
       } // while (igap > 0)
     } // if ( Q )
     
@@ -331,7 +331,7 @@ namespace Anasazi {
   
   template<class ScalarType, class MV, class OP>
   int ModalSolverUtils<ScalarType, MV, OP>::massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, 
-							       int howMany, int orthoType, ScalarType kappa) const
+                                                               int howMany, int orthoType, ScalarType kappa) const
   {
     // For the inner product defined by the operator M or the identity (M = 0)
     //   -> Orthogonalize X against Q
@@ -348,10 +348,10 @@ namespace Anasazi {
     //
     // Q  : Vectors to orthogonalize against
     //
-    // howMany : Number of vectors of X to orthogonalized
+    // howMany : Number of vectors of X to be orthogonalized
     //           If this number is smaller than the total number of vectors in X,
     //           then it is assumed that the last "howMany" vectors are not orthogonal
-    //           while the other vectors in X are othogonal to Q and orthonormal.
+    //           while the other vectors in X are orthogonal to Q and orthonormal.
     //
     // orthoType = 0 (default) > Performs both operations
     // orthoType = 1           > Performs Q^T M X = 0
@@ -386,21 +386,23 @@ namespace Anasazi {
       int qc = MVT::GetNumberVecs( Q );
       
       std::vector<int> index(howMany);
-      for (i=0; i<howMany; i++)
-	index[i] = xr - howMany + i;
+      for (i=0; i<howMany; i++) {
+        index[i] = xr - howMany + i;
+      }
 
       Teuchos::RefCountPtr<MV> XX = MVT::CloneView( X, index );
       
       Teuchos::RefCountPtr<MV> MXX;
 
       if (M) {
-	int mxr = MVT::GetNumberVecs( MX );
-	for (i=0; i<howMany; i++)
-	  index[i] = mxr - howMany + i;
-	MXX = MVT::CloneView( MX, index );
+        int mxr = MVT::GetNumberVecs( MX );
+        for (i=0; i<howMany; i++) {
+          index[i] = mxr - howMany + i;
+        }
+        MXX = MVT::CloneView( MX, index );
       } 
       else {
-	MXX = MVT::CloneView( X, index );
+        MXX = MVT::CloneView( X, index );
       }
 
       // Perform the Gram-Schmidt transformation for a block of vectors
@@ -419,20 +421,20 @@ namespace Anasazi {
       
       // Update MX
       if (M) {
-	if (qc >= xc) {
-	  //timeProj_MassMult -= MyWatch.WallTime();
-	  OPT::Apply( *M, *XX, *MXX);
-	  //timeProj_MassMult += MyWatch.WallTime();
-	  //numProj_MassMult += xc;
-	}
-	else {
-	  Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
-	  //timeProj_MassMult -= MyWatch.WallTime();
-	  OPT::Apply( *M, Q, *MQ );
-	  //timeProj_MassMult += MyWatch.WallTime();
-	  //numProj_MassMult += qc;
-	  MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
-	}  // if (qc >= xc)
+        if (qc >= xc) {
+          //timeProj_MassMult -= MyWatch.WallTime();
+          OPT::Apply( *M, *XX, *MXX);
+          //timeProj_MassMult += MyWatch.WallTime();
+          //numProj_MassMult += xc;
+        }
+        else {
+          Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
+          //timeProj_MassMult -= MyWatch.WallTime();
+          OPT::Apply( *M, Q, *MQ );
+          //timeProj_MassMult += MyWatch.WallTime();
+          //numProj_MassMult += qc;
+          MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
+        }  // if (qc >= xc)
       } // if (M)
       
       // Compute new M-norms
@@ -441,38 +443,38 @@ namespace Anasazi {
       
       int j;
       for (j = 0; j < xc; ++j) {
-	
-	if (kappa*newDot[j] < oldDot[j]) {
-	  
-	  // Apply another step of classical Gram-Schmidt
-	  //timeQtMult -= MyWatch.WallTime();
-	  MVT::MvTransMv( one, Q, *MXX, qTmx );
-	  //timeQtMult += MyWatch.WallTime();
-	  
-	  //timeQMult -= MyWatch.WallTime();
-	  MVT::MvTimesMatAddMv( -one, Q, qTmx, one, *XX );
-	  //timeQMult += MyWatch.WallTime();
-	  
-	  // Update MX
-	  if (M) {
-	    if (qc >= xc) {
-	      //timeProj_MassMult -= MyWatch.WallTime();
-	      OPT::Apply( *M, *XX, *MXX);
-	      //timeProj_MassMult += MyWatch.WallTime();
-	      //numProj_MassMult += xc;
-	    }
-	    else {
-	      Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
-	      //timeProj_MassMult -= MyWatch.WallTime();
-	      OPT::Apply( *M, Q, *MQ);
-	      //timeProj_MassMult += MyWatch.WallTime();
-	      //numProj_MassMult += qc;
-	      MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
-	    } // if (qc >= xc)
-	  } // if (M)
-	  
-	  break;
-	} // if (kappa*newDot[j] < oldDot[j])
+        
+        if (kappa*newDot[j] < oldDot[j]) {
+          
+          // Apply another step of classical Gram-Schmidt
+          //timeQtMult -= MyWatch.WallTime();
+          MVT::MvTransMv( one, Q, *MXX, qTmx );
+          //timeQtMult += MyWatch.WallTime();
+          
+          //timeQMult -= MyWatch.WallTime();
+          MVT::MvTimesMatAddMv( -one, Q, qTmx, one, *XX );
+          //timeQMult += MyWatch.WallTime();
+          
+          // Update MX
+          if (M) {
+            if (qc >= xc) {
+              //timeProj_MassMult -= MyWatch.WallTime();
+              OPT::Apply( *M, *XX, *MXX);
+              //timeProj_MassMult += MyWatch.WallTime();
+              //numProj_MassMult += xc;
+            }
+            else {
+              Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
+              //timeProj_MassMult -= MyWatch.WallTime();
+              OPT::Apply( *M, Q, *MQ);
+              //timeProj_MassMult += MyWatch.WallTime();
+              //numProj_MassMult += qc;
+              MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
+            } // if (qc >= xc)
+          } // if (M)
+          
+          break;
+        } // if (kappa*newDot[j] < oldDot[j])
       } // for (j = 0; j < xc; ++j)
       
     } // if (orthoType != 2)
@@ -493,148 +495,148 @@ namespace Anasazi {
       std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
 
       for (j = 0; j < howMany; ++j) {
-	
-	int numX = xc - howMany + j;
-	int numMX = mxc - howMany + j;
-	
-	// Put zero vectors in X when we are exceeding the space dimension
-	if (numX + shift >= xr) {
-	  index[0] = numX;
-	  Teuchos::RefCountPtr<MV> XXj = MVT::CloneView( X, index );
-	  MVT::MvInit( *XXj, zero );
-	  if (M) {
-	    index[0] = numMX;
-	    Teuchos::RefCountPtr<MV> MXXj = MVT::CloneView( MX, index );
-	    MVT::MvInit( *MXXj, zero );
-	  }
-	  info = -1;
-	}
-	
-	// Get a view of the vectors currently being worked on.
-	index[0] = numX;
-	Teuchos::RefCountPtr<MV> Xj = MVT::CloneView( X, index );
-	index[0] = numMX;
-	Teuchos::RefCountPtr<MV> MXj;
-	if (M)
-	  MXj = MVT::CloneView( MX, index );
-	else
-	  MXj = MVT::CloneView( X, index );
+        
+        int numX = xc - howMany + j;
+        int numMX = mxc - howMany + j;
+        
+        // Put zero vectors in X when we are exceeding the space dimension
+        if (numX + shift >= xr) {
+          index[0] = numX;
+          Teuchos::RefCountPtr<MV> XXj = MVT::CloneView( X, index );
+          MVT::MvInit( *XXj, zero );
+          if (M) {
+            index[0] = numMX;
+            Teuchos::RefCountPtr<MV> MXXj = MVT::CloneView( MX, index );
+            MVT::MvInit( *MXXj, zero );
+          }
+          info = -1;
+        }
+        
+        // Get a view of the vectors currently being worked on.
+        index[0] = numX;
+        Teuchos::RefCountPtr<MV> Xj = MVT::CloneView( X, index );
+        index[0] = numMX;
+        Teuchos::RefCountPtr<MV> MXj;
+        if (M)
+          MXj = MVT::CloneView( MX, index );
+        else
+          MXj = MVT::CloneView( X, index );
 
-	// Get a view of the previous vectors.
-	std::vector<int> prev_idx( numX );
-	Teuchos::RefCountPtr<MV> prevXj;
+        // Get a view of the previous vectors.
+        std::vector<int> prev_idx( numX );
+        Teuchos::RefCountPtr<MV> prevXj;
 
-	if (numX > 0) {
-	  for (i=0; i<numX; i++)
-	    prev_idx[i] = i;
-	  prevXj = MVT::CloneView( X, prev_idx );
-	} 
+        if (numX > 0) {
+          for (i=0; i<numX; i++)
+            prev_idx[i] = i;
+          prevXj = MVT::CloneView( X, prev_idx );
+        } 
 
-	// Make storage for these Gram-Schmidt iterations.
-	Teuchos::SerialDenseMatrix<int,ScalarType> product( numX, 1 );
+        // Make storage for these Gram-Schmidt iterations.
+        Teuchos::SerialDenseMatrix<int,ScalarType> product( numX, 1 );
 
-	int numTrials;
-	bool rankDef = true;
-	for (numTrials = 0; numTrials < 10; ++numTrials) {
+        int numTrials;
+        bool rankDef = true;
+        for (numTrials = 0; numTrials < 10; ++numTrials) {
 
-	  //
-	  // Compute M-norm
-	  //
-	  MVT::MvDot( *Xj, *MXj, &oldDot );
-	  //
-	  // Save old MXj vector.
-	  //
-	  Teuchos::RefCountPtr<MV> oldMXj = MVT::CloneCopy( *MXj );
+          //
+          // Compute M-norm
+          //
+          MVT::MvDot( *Xj, *MXj, &oldDot );
+          //
+          // Save old MXj vector.
+          //
+          Teuchos::RefCountPtr<MV> oldMXj = MVT::CloneCopy( *MXj );
 
-	  if (numX > 0) {
-	    //
-	    // Apply the first step of Gram-Schmidt
-	    //
-	    MVT::MvTransMv( one, *prevXj, *MXj, product );
-	    //
-	    MVT::MvTimesMatAddMv( -one, *prevXj, product, one, *Xj );
-	    //
-	    if (M) {
-	      if (xc == mxc) {
-		Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, prev_idx );
-		MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
-	      }
-	      else {
-		//timeNorm_MassMult -= MyWatch.WallTime();
-		OPT::Apply( *M, *Xj, *MXj );
-		//timeNorm_MassMult += MyWatch.WallTime();
-		//numNorm_MassMult += 1;
-	      }
-	    }
-	    //
-	    // Compute new M-norm
-	    //
-	    MVT::MvDot( *Xj, *MXj, &newDot );
-	    //
-	    // Check if a correction is needed.
-	    //
-	    if (kappa*newDot[0] < oldDot[0]) {
-	      //
-	      // Apply the second step of Gram-Schmidt
-	      //
-	      MVT::MvTransMv( one, *prevXj, *MXj, product );
-	      //
-	      MVT::MvTimesMatAddMv( -one, *prevXj, product, one, *Xj );
-	      //
-	      if (M) {
-		if (xc == mxc) {
-		  Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, prev_idx );
-		  MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
-		}
-		else {
-		  //timeNorm_MassMult -= MyWatch.WallTime();
-		  OPT::Apply( *M, *Xj, *MXj );
-		  //timeNorm_MassMult += MyWatch.WallTime();
-		  //numNorm_MassMult += 1;
-		}
-	      }
-	    } // if (kappa*newDot[0] < oldDot[0])
-	    
-	  } // if (numX > 0)
-	    
-	  //
-	  // Compute M-norm with old MXj
-	  // NOTE:  Re-using newDot vector
-	  //
-	  MVT::MvDot( *Xj, *oldMXj, &newDot );
-	  
-	  if (newDot[0] > oldDot[0]*eps*eps) {
-	    MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *Xj, zero, *Xj, *Xj );
-	    if (M)
-	      MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *MXj, zero, *MXj, *MXj );
-	    rankDef = false;
-	    break;
-	  }
-	  else {
-	    info += 1;
-	    MVT::MvRandom( *Xj );
-	    if (M) {
-	      //timeNorm_MassMult -= MyWatch.WallTime();
-	      OPT::Apply( *M, *Xj, *MXj );
-	      //timeNorm_MassMult += MyWatch.WallTime();
-	      //numNorm_MassMult += 1;
-	    }
-	    if (orthoType == 0)
-	      massOrthonormalize(*Xj, *MXj, M, Q, 1, 1, kappa);
-	  } // if (norm > oldDot*eps*eps)
-	  
-	}  // for (numTrials = 0; numTrials < 10; ++numTrials)
-	
-	if (rankDef == true) {
-	  MVT::MvInit( *Xj, zero );
-	  if (M)
-	    MVT::MvInit( *MXj, zero );
-	  info = -1;
-	  break;
-	}
-	
+          if (numX > 0) {
+            //
+            // Apply the first step of Gram-Schmidt
+            //
+            MVT::MvTransMv( one, *prevXj, *MXj, product );
+            //
+            MVT::MvTimesMatAddMv( -one, *prevXj, product, one, *Xj );
+            //
+            if (M) {
+              if (xc == mxc) {
+                Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, prev_idx );
+                MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
+              }
+              else {
+                //timeNorm_MassMult -= MyWatch.WallTime();
+                OPT::Apply( *M, *Xj, *MXj );
+                //timeNorm_MassMult += MyWatch.WallTime();
+                //numNorm_MassMult += 1;
+              }
+            }
+            //
+            // Compute new M-norm
+            //
+            MVT::MvDot( *Xj, *MXj, &newDot );
+            //
+            // Check if a correction is needed.
+            //
+            if (kappa*newDot[0] < oldDot[0]) {
+              //
+              // Apply the second step of Gram-Schmidt
+              //
+              MVT::MvTransMv( one, *prevXj, *MXj, product );
+              //
+              MVT::MvTimesMatAddMv( -one, *prevXj, product, one, *Xj );
+              //
+              if (M) {
+                if (xc == mxc) {
+                  Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, prev_idx );
+                  MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
+                }
+                else {
+                  //timeNorm_MassMult -= MyWatch.WallTime();
+                  OPT::Apply( *M, *Xj, *MXj );
+                  //timeNorm_MassMult += MyWatch.WallTime();
+                  //numNorm_MassMult += 1;
+                }
+              }
+            } // if (kappa*newDot[0] < oldDot[0])
+            
+          } // if (numX > 0)
+            
+          //
+          // Compute M-norm with old MXj
+          // NOTE:  Re-using newDot vector
+          //
+          MVT::MvDot( *Xj, *oldMXj, &newDot );
+          
+          if (newDot[0] > oldDot[0]*eps*eps) {
+            MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *Xj, zero, *Xj, *Xj );
+            if (M)
+              MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *MXj, zero, *MXj, *MXj );
+            rankDef = false;
+            break;
+          }
+          else {
+            info += 1;
+            MVT::MvRandom( *Xj );
+            if (M) {
+              //timeNorm_MassMult -= MyWatch.WallTime();
+              OPT::Apply( *M, *Xj, *MXj );
+              //timeNorm_MassMult += MyWatch.WallTime();
+              //numNorm_MassMult += 1;
+            }
+            if (orthoType == 0)
+              massOrthonormalize(*Xj, *MXj, M, Q, 1, 1, kappa);
+          } // if (norm > oldDot*eps*eps)
+          
+        }  // for (numTrials = 0; numTrials < 10; ++numTrials)
+        
+        if (rankDef == true) {
+          MVT::MvInit( *Xj, zero );
+          if (M)
+            MVT::MvInit( *MXj, zero );
+          info = -1;
+          break;
+        }
+        
       } // for (j = 0; j < howMany; ++j)
-	
+        
     } // if (orthoType != 1)
     //timeNorm += MyWatch.WallTime();
 
@@ -644,10 +646,10 @@ namespace Anasazi {
   
   template<class ScalarType, class MV, class OP>
   int ModalSolverUtils<ScalarType, MV, OP>::directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
-							 const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
-							 Teuchos::SerialDenseMatrix<int,ScalarType>* EV,
-							 std::vector<ScalarType>* theta,
-							 int nev, int esType) const
+                                                         const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
+                                                         Teuchos::SerialDenseMatrix<int,ScalarType>* EV,
+                                                         std::vector<ScalarType>* theta,
+                                                         int nev, int esType) const
   {
     // Routine for computing the first NEV generalized eigenpairs of the symmetric pencil (KK, MM)
     //
@@ -720,69 +722,69 @@ namespace Anasazi {
       //
       for (rank = size; rank > 0; --rank) {
 
-	U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );      
-	//
-	// Copy KK & MM
-	//
-	KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, rank, rank ) );
-	MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, rank, rank ) );
-	//
-	// Solve the generalized eigenproblem with LAPACK
-	//
-	info = 0;
-	lapack.SYGV(1, 'V', 'U', rank, KKcopy->values(), KKcopy->stride(), 
-		    MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
-	//
-	// Treat error messages
-	//
-	if (info < 0) {
-	  //	    if (verbose > 0) {
-	  cerr << endl;
-	  cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
-	  cerr << endl;
-	  //}
-	  return -20;
-	}
-	if (info > 0) {
-	  if (info > rank)
-	    rank = info - rank;
-	  continue;
-	}
-	//
-	// Check the quality of eigenvectors
-	// ( using mass-orthonormality )
-	//
-	Teuchos::SerialDenseMatrix<int,ScalarType> MMcopy2( Teuchos::Copy, *MM, size, size );	  
-	for (i = 0; i < size; ++i) {
-	  for (j = 0; j < i; ++j)
-	    MMcopy2(i,j) = (*MM)(j,i);
-	}
-	blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, size, rank, size, one, MMcopy2.values(), MMcopy2.stride(), 
-		  KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
-	blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
-		  U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
-	ScalarType maxNorm = zero;
-	ScalarType maxOrth = zero;
-	for (i = 0; i < rank; ++i) {
-	  for (j = i; j < rank; ++j) {
-	    if (j == i)
-	      maxNorm = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) > maxNorm) 
-		? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) : maxNorm;	    
-	    else 
-	      maxOrth = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) > maxOrth)
-		? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) : maxOrth;
-	  }
-	}
-	/*        if (verbose > 4) {
-	cout << " >> Local eigensolve >> Size: " << rank;
-	cout.precision(2);
-	cout.setf(ios::scientific, ios::floatfield);
-	cout << " Normalization error: " << maxNorm;
-	cout << " Orthogonality error: " << maxOrth;
-	cout << endl;
-	}*/
-	if ((maxNorm <= tol) && (maxOrth <= tol))
-	  break;
+        U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );      
+        //
+        // Copy KK & MM
+        //
+        KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, rank, rank ) );
+        MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, rank, rank ) );
+        //
+        // Solve the generalized eigenproblem with LAPACK
+        //
+        info = 0;
+        lapack.SYGV(1, 'V', 'U', rank, KKcopy->values(), KKcopy->stride(), 
+                    MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
+        //
+        // Treat error messages
+        //
+        if (info < 0) {
+          //            if (verbose > 0) {
+          cerr << endl;
+          cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
+          cerr << endl;
+          //}
+          return -20;
+        }
+        if (info > 0) {
+          if (info > rank)
+            rank = info - rank;
+          continue;
+        }
+        //
+        // Check the quality of eigenvectors
+        // ( using mass-orthonormality )
+        //
+        Teuchos::SerialDenseMatrix<int,ScalarType> MMcopy2( Teuchos::Copy, *MM, size, size );          
+        for (i = 0; i < size; ++i) {
+          for (j = 0; j < i; ++j)
+            MMcopy2(i,j) = (*MM)(j,i);
+        }
+        blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, size, rank, size, one, MMcopy2.values(), MMcopy2.stride(), 
+                  KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
+        blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
+                  U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
+        ScalarType maxNorm = zero;
+        ScalarType maxOrth = zero;
+        for (i = 0; i < rank; ++i) {
+          for (j = i; j < rank; ++j) {
+            if (j == i)
+              maxNorm = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) > maxNorm) 
+                ? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) : maxNorm;            
+            else 
+              maxOrth = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) > maxOrth)
+                ? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) : maxOrth;
+          }
+        }
+        /*        if (verbose > 4) {
+        cout << " >> Local eigensolve >> Size: " << rank;
+        cout.precision(2);
+        cout.setf(ios::scientific, ios::floatfield);
+        cout << " Normalization error: " << maxNorm;
+        cout << " Orthogonality error: " << maxOrth;
+        cout << endl;
+        }*/
+        if ((maxNorm <= tol) && (maxOrth <= tol))
+          break;
       } // for (rank = size; rank > 0; --rank)
       //
       // Copy the computed eigenvectors and eigenvalues
@@ -792,7 +794,7 @@ namespace Anasazi {
       EV->putScalar( zero );
       blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
       for (i = 0; i < nev; ++i) {
-	blas.COPY( rank, (*KKcopy)[i], 1, (*EV)[i], 1 );
+        blas.COPY( rank, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
       break;
@@ -810,36 +812,36 @@ namespace Anasazi {
       //
       info = 0;
       lapack.SYGV(1, 'V', 'U', size, KKcopy->values(), KKcopy->stride(), 
-		  MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
+                  MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
       //
       // Treat error messages
       //
       if (info < 0) {
-	//if (verbose > 0) {
-	cerr << endl;
-	cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
-	cerr << endl;
-	//      }
-	return -20;
+        //if (verbose > 0) {
+        cerr << endl;
+        cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
+        cerr << endl;
+        //      }
+        return -20;
       }
       if (info > 0) {
-	if (info > size)
-	  nev = 0;
-	else {
-	  //	if (verbose > 0) {
-	  cerr << endl;
-	  cerr << " In DSYGV, DPOTRF or DSYEV returned an error code (" << info << ").\n";
-	  cerr << endl;
-	  //          }
-	  return -20; 
-	}
+        if (info > size)
+          nev = 0;
+        else {
+          //        if (verbose > 0) {
+          cerr << endl;
+          cerr << " In DSYGV, DPOTRF or DSYEV returned an error code (" << info << ").\n";
+          cerr << endl;
+          //          }
+          return -20; 
+        }
       }
       //
       // Copy the eigenvectors and eigenvalues
       //
       blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
       for (i = 0; i < nev; ++i) {
-	blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
+        blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
       break;
@@ -858,23 +860,23 @@ namespace Anasazi {
       //
       // Treat error messages
       if (info != 0) {
-	//      if (verbose > 0) {
-	cerr << endl;
-	if (info < 0) 
-	  cerr << " In DSYEV, argument " << -info << " has an illegal value\n";
-	else
-	  cerr << " In DSYEV, the algorithm failed to converge (" << info << ").\n";
-	cerr << endl;
-	//}
-	info = -20;
-	break;
+        //      if (verbose > 0) {
+        cerr << endl;
+        if (info < 0) 
+          cerr << " In DSYEV, argument " << -info << " has an illegal value\n";
+        else
+          cerr << " In DSYEV, the algorithm failed to converge (" << info << ").\n";
+        cerr << endl;
+        //}
+        info = -20;
+        break;
       }
       //
       // Copy the eigenvectors
       //
       blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
       for (i = 0; i < nev; ++i) {
-	blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
+        blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
       break;
@@ -894,7 +896,7 @@ namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
   ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorOrthogonality(const MV *X, const MV *R, 
-								      const OP *M) const
+                                                                      const OP *M) const
   {
     // Return the maximum value of R_i^T * M * X_j / || MR_i || || X_j ||
     // When M is not specified, the identity is used.
@@ -925,8 +927,8 @@ namespace Anasazi {
     MVT::MvTransMv( 1.0, *X, *MR, xTMr );    
     for (i = 0; i < xc; ++i) {
       for (j = 0; j < rc; ++j) {
-	dot = Teuchos::ScalarTraits<ScalarType>::magnitude(xTMr(i,j))/(normMR[j]*normX[i]);
-	maxDot = (dot > maxDot) ? dot : maxDot;
+        dot = Teuchos::ScalarTraits<ScalarType>::magnitude(xTMr(i,j))/(normMR[j]*normX[i]);
+        maxDot = (dot > maxDot) ? dot : maxDot;
       }
     }
     
@@ -958,18 +960,18 @@ namespace Anasazi {
     for (i = 0; i < xc; ++i) {
       index[0] = i;
       if (M) {
-	Xi = MVT::CloneView( *X, index );
-	OPT::Apply( *M, *Xi, *MXi );
+        Xi = MVT::CloneView( *X, index );
+        OPT::Apply( *M, *Xi, *MXi );
       }
       else {
-	MXi = MVT::CloneView( *(const_cast<MV *>(X)), index );
+        MXi = MVT::CloneView( *(const_cast<MV *>(X)), index );
       }
       for (j = 0; j < xc; ++j) {
-	index[0] = j;
-	Xi = MVT::CloneView( *X, index );
-	MVT::MvDot( *Xi, *MXi, &dot );
-	dot[0] = (i == j) ? fabs(dot[0] - one) : fabs(dot[0]);
-	maxDot = (dot[0] > maxDot) ? dot[0] : maxDot;
+        index[0] = j;
+        Xi = MVT::CloneView( *X, index );
+        MVT::MvDot( *Xi, *MXi, &dot );
+        dot[0] = (i == j) ? fabs(dot[0] - one) : fabs(dot[0]);
+        maxDot = (dot[0] > maxDot) ? dot[0] : maxDot;
       }
     }
     
@@ -978,7 +980,7 @@ namespace Anasazi {
   
   template<class ScalarType, class MV, class OP>
   ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorEquality(const MV *X, const MV *MX, 
-								 const OP *M) const
+                                                                 const OP *M) const
   {
     // Return the maximum coefficient of the matrix M * X - MX
     // scaled by the maximum coefficient of MX.
