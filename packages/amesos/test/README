@@ -71,3 +71,20 @@ Organization of Amesos tests:
   ============
 
   The linear system matrix is an Epetra_CrsMatrix.
+
+
+------------------+-------+-------+-----+-----+-----+-----+-----+-----+-----+
+                  | Linux | Linux | SUN | SGI | SGI | DEC | DEC | Mac | Mac |
+                  |       | MPI   |     |     | MPI |     | MPI |     | MPI |
+------------------+-------+-------+-----+-----+-----+-----+-----+-----+-----+
+LAPACK            |   X   |   X   |  X  |  X  |  X  |  X  |  X  |  X  |  X  |
+KLU               |       |       |  X  |     |     |  X  |  X  |     |     |
+UMFPACK v 4.4     |       |       |  X  |     |     |  X  |  X  |     |  X  |
+PARDISO v 1.0     |   X   |   X   |     |     |     |     |     |  X  |  X  |
+TAUCS v 2.2       |   X   |   X   |     |     |     |     |     |  X  |  X  |
+SUPERLU           |   X   |       |     |     |     |  X  |     |  X  |     |
+SUPERLU_DIST      |       |   X   |     |     |  X  |     |     |     |  X  |
+MUMPS             |       |       |     |     |  X  |     |     |     |     |
+DSCPACK           |   -   |   X   |  -  |  -  |  X  |  -  |  X  |  X  |  X  |
+SCALAPACK         |   -   |       |  -  |  -  |  X  |  -  |  -  |     |     |
+------------------+-------+-------+-----+-----+-----+-----+-----+-----+-----+
