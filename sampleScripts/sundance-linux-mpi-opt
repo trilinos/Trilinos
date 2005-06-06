@@ -21,6 +21,7 @@ CXXFLAGS="-O3 -finline-functions -funroll-loops" \
 --enable-teuchos \
 --enable-teuchos-expat \
 --enable-ml \
+--enable-epetraext \
 --enable-teuchos-extended \
 --disable-new-package \
 --disable-ml-examples \
