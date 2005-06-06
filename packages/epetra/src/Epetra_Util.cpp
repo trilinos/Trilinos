@@ -123,17 +123,9 @@ int Epetra_Util_binary_search(int item,
                               int len,
                               int& insertPoint)
 {
-  if (len < 2) {
-    if (len < 1) {
-      insertPoint = 0;
-      return(-1);
-    }
-
-    if (list[0] == item) return(0);
-    else {
-      insertPoint = list[0] < item ? 1 : 0;
-      return(-1);
-    }
+  if (len < 1) {
+    insertPoint = 0;
+    return(-1);
   }
 
   unsigned start = 0, end = len - 1;

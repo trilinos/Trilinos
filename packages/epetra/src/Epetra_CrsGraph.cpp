@@ -241,12 +241,15 @@ int Epetra_CrsGraph::InsertIndices(int Row,
   if(Row < 0 || Row >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-2); // Not in Row range
     
+  int& current_numAllocIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[Row];
+  int& current_numIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+
   if(CrsGraphData_->CV_ == View) {
     if(CrsGraphData_->Indices_[Row] != 0) 
-      ierr = 2; // This row has be defined already.  Issue warning.
+      ierr = 2; // This row has been defined already.  Issue warning.
     CrsGraphData_->Indices_[Row] = UserIndices;
-    CrsGraphData_->NumAllocatedIndicesPerRow_[Row] = NumIndices;
-    CrsGraphData_->NumIndicesPerRow_[Row] = NumIndices;
+    current_numAllocIndices = NumIndices;
+    current_numIndices = NumIndices;
   }
   else {
     // if HaveColMap_ is true, UserIndices is copied into a new array,
@@ -254,34 +257,33 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     // new array. If HaveColMap_ is false, nothing is done. This way,
     // the same UserIndices pointer can be used later on regardless of whether
     // changes were made.
-    Epetra_IntSerialDenseVector tempVector;
+    int* tempIndices = NULL;
     if(CrsGraphData_->HaveColMap_) { //only insert indices in col map if defined
-      tempVector.Size(NumIndices);
+      tempIndices = new int[NumIndices];
       int loc = 0;
       if(IndicesAreLocal()) {
         for(j = 0; j < NumIndices; ++j)
           if(CrsGraphData_->ColMap_.MyLID(UserIndices[j])) 
-	    tempVector[loc++] = UserIndices[j];
+	    tempIndices[loc++] = UserIndices[j];
       }
       else {
         for(j = 0; j < NumIndices; ++j)
           if(CrsGraphData_->ColMap_.MyGID(UserIndices[j])) 
-	    tempVector[loc++] = UserIndices[j];
+	    tempIndices[loc++] = UserIndices[j];
       }
       if(loc != NumIndices) 
 	ierr = 2; //Some columns excluded
       NumIndices = loc;
-      UserIndices = tempVector.Values();
+      UserIndices = tempIndices;
     }
 
-    int start = CrsGraphData_->NumIndicesPerRow_[Row];
+    int start = current_numIndices;
     int stop = start + NumIndices;
-    int NumAllocatedIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[Row];
-    if(stop > NumAllocatedIndices) {
+    if(stop > current_numAllocIndices) {
       if (CrsGraphData_->StaticProfile_) {
 	EPETRA_CHK_ERR(-2); // Cannot reallocate storage if graph created using StaticProfile
       }
-      if(NumAllocatedIndices == 0) {
+      if(current_numAllocIndices == 0) {
 	int * temp = new int[NumIndices];
 	CrsGraphData_->Indices_[Row] = temp;
       }
@@ -293,16 +295,21 @@ int Epetra_CrsGraph::InsertIndices(int Row,
 	delete [] CrsGraphData_->Indices_[Row];
 	CrsGraphData_->Indices_[Row] = temp;
       }
-      CrsGraphData_->NumAllocatedIndicesPerRow_[Row] = stop;
+      current_numAllocIndices = stop;
     }
     
-    CrsGraphData_->NumIndicesPerRow_[Row] = stop;
-    int* RowIndices = CrsGraphData_->Indices_[Row];
-    for(j = start; j < stop; j++) {
-      RowIndices[j] = UserIndices[j-start];
+    current_numIndices = stop;
+    int* RowIndices = CrsGraphData_->Indices_[Row]+start;
+    for(j = 0; j < NumIndices; j++) {
+      RowIndices[j] = UserIndices[j];
     }
+
+    if (tempIndices != NULL) delete [] tempIndices;
   }
-  CrsGraphData_->MaxNumIndices_ = EPETRA_MAX(CrsGraphData_->MaxNumIndices_, CrsGraphData_->NumIndicesPerRow_[Row]);
+
+  if (CrsGraphData_->MaxNumIndices_ < current_numIndices) {
+    CrsGraphData_->MaxNumIndices_ = current_numIndices;
+  }
   EPETRA_CHK_ERR(ierr);
 
 
@@ -719,6 +726,34 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
   return(0);
 }
 
+void epetra_shellsort(int* list, int length)
+{
+  int i, j, j2, temp;
+  unsigned step;
+
+  step = 3;
+  while (step > 0)
+  {
+    for (i=step; i < length; i++)
+    {
+      j = i;
+      j2 = j-step;
+      temp = list[i];
+      if (list[j2] > temp) {
+        while ((j >= step) && (list[j2] > temp))
+        {
+          list[j] = list[j2];
+          j = j2;
+          j2 -= step;
+        }
+        list[j] = temp;
+      }
+    }
+
+    step = step>>1;
+  }
+}
+
 //==============================================================================
 int Epetra_CrsGraph::SortIndices() {
   if(IndicesAreGlobal()) 
@@ -733,21 +768,25 @@ int Epetra_CrsGraph::SortIndices() {
   for(int i = 0; i < numMyBlockRows; i++){
     int n = CrsGraphData_->NumIndicesPerRow_[i];
     int* const list = CrsGraphData_->Indices_[i];
-    int m = n/2;
+
+    epetra_shellsort(list, n);
+//    int m = n/2;
     
-    while(m > 0) {
-      int max = n - m;
-      for(int j = 0; j < max; j++) {
-	for(int k = j; k >= 0; k-=m) {
-	  if(list[k+m] >= list[k])
-	    break;
-	  int itemp = list[k+m];
-	  list[k+m] = list[k];
-	  list[k] = itemp;
-	}
-      }
-      m = m/2;
-    }
+//    while(m > 0) {
+ //     int max = n - m;
+//      for(int j = 0; j < max; j++) {
+//        int k = j;
+//        while(k>-1) {
+//	  if(list[k+m] >= list[k])
+//	    break;
+//	  int itemp = list[k+m];
+//	  list[k+m] = list[k];
+//	  list[k] = itemp;
+//          k-=m;
+//	}
+//      }
+//      m = m/2;
+//    }
   }
   SetSorted(true);
 
@@ -757,13 +796,71 @@ int Epetra_CrsGraph::SortIndices() {
     return(0);
 }
 
+void epetra_crsgraph_compress_out_duplicates(int len, int* list, int& newlen)
+{
+  //
+  //This function runs the array ('list') checking for
+  //duplicate entries. Any duplicates that are found are
+  //removed by sliding subsequent data down in the array,
+  //over-writing the duplicates. Finally, the new length
+  //of the array (i.e., the number of unique entries) is
+  //placed in the output parameter 'newlen'. The array is
+  //**not** re-allocated.
+  //
+  //!*!*!*!
+  //Important assumption: The array contents are assumed to
+  //be sorted before this function is called. If the array
+  //contents are not sorted, then the behavior of this
+  //function is undefined.
+  //!*!*!*!
+  //
+
+  if (len < 2) return;
+
+  int* ptr0 = &list[0];
+  int* ptr1 = &list[1];
+
+  int* ptr_end = &list[len-1];
+
+  while(*ptr0 != *ptr1 && ptr1 < ptr_end) {
+    ++ptr0;
+    ++ptr1;
+  }
+
+  if (ptr1 < ptr_end) {
+    //if ptr1 < ptr_end we've found a duplicate...
+
+    ++ptr0;
+    ++ptr1;
+
+    while(*ptr0 == *ptr1 && ptr1 < ptr_end) ++ptr1;
+
+    while(ptr1 < ptr_end) {
+
+      int val = *ptr1++;
+
+      while(val == *ptr1 && ptr1 < ptr_end) {
+        ++ptr1;
+      }
+
+      *ptr0++ = val;
+    }
+
+    if (*(ptr0-1) != *ptr1) *ptr0++ = *ptr1;
+
+    int num_removed = ptr_end - ptr0 + 1;
+    newlen = len - num_removed;
+  }
+  else {
+    if (*ptr0 == *ptr1) newlen = len - 1;
+    else newlen = len;
+  }
+}
+
 //==============================================================================
-int Epetra_CrsGraph::RemoveRedundantIndices() {
-  int i;
-  int j;
-  int k;
-  int ig;
-  int jg, jl;
+int Epetra_CrsGraph::RemoveRedundantIndices()
+{
+  int i, j, k, ig, jg, jl, jl_0, jl_n, insertPoint;
 
   if(NoRedundancies()) 
     return(0);
@@ -772,49 +869,58 @@ int Epetra_CrsGraph::RemoveRedundantIndices() {
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-2); // Indices must be local
 
-  // For each row, remove column indices that are repeated.
-  // Also, determine if graph is upper or lower triangular or has no diagonal
   // Note:  This function assumes that SortIndices was already called.
+  // For each row, remove column indices that are repeated.
+
+  const int numMyBlockRows = NumMyBlockRows();
+  int nnz = 0;
+  int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
+  int** graph_indices = CrsGraphData_->Indices_;
+
+  for(i=0; i<numMyBlockRows; ++i) {
+    int NumIndices = numIndicesPerRow[i];
+    
+    if(NumIndices > 1) {
+      int* const Indices = graph_indices[i];
+      epetra_crsgraph_compress_out_duplicates(NumIndices, Indices,
+                                              numIndicesPerRow[i]);
+    }
+
+    nnz += numIndicesPerRow[i];
+  }
+
+  // Also, determine if graph is upper or lower triangular or has no diagonal
   
   CrsGraphData_->NumMyDiagonals_ = 0;
   CrsGraphData_->NumMyBlockDiagonals_ = 0;
-  const int numMyBlockRows = NumMyBlockRows();
+
+  const Epetra_BlockMap& rowMap = RowMap();
+  const Epetra_BlockMap& colMap = ColMap();
+
   for(i = 0; i < numMyBlockRows; i++) {
     bool diagfound = false;
-    int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+    int NumIndices = numIndicesPerRow[i];
     if(NumIndices > 0) {
-      int* const Indices = CrsGraphData_->Indices_[i];
-      int j0 = 0;
-      ig = GRID(i);
-      jl = Indices[0];
-      jg = GCID(jl);
-      if(jl > i) CrsGraphData_->LowerTriangular_ = false;
-      if(jl < i) CrsGraphData_->UpperTriangular_ = false;
-      if(jg == ig) diagfound = true;
-      for(j = 1; j < NumIndices; j++) {
-	jl = Indices[j];
-	jg = GCID(jl);
-	if (jl > i) CrsGraphData_->LowerTriangular_ = false;
-	if (jl < i) CrsGraphData_->UpperTriangular_ = false;
-	if (jg == ig) diagfound = true;
-	if (jl == Indices[j0]) { // Check if index is repeated
-	  CrsGraphData_->NumIndicesPerRow_[i]--; // Decrement NumIndices count
-	  CrsGraphData_->NumMyNonzeros_ --;
-	  for(k = j; k < NumIndices-1; k++) 
-	    Indices[k] = Indices[k+1]; // Shift indices
-	  NumIndices--;
-	  j--;
-	}
-	else 
-	  j0=j; // Redefine comparison index value
-      }
-      if(diagfound) {
+      ig = rowMap.GID(i);
+      int* const Indices = graph_indices[i];
+
+      jl_0 = Indices[0];
+      jl_n = Indices[NumIndices-1];
+
+      if(jl_n > i) CrsGraphData_->LowerTriangular_ = false;
+      if(jl_0 < i) CrsGraphData_->UpperTriangular_ = false;
+
+      //jl will be the local-index for the diagonal that we
+      //want to search for.
+      jl = colMap.LID(ig);
+
+      if (Epetra_Util_binary_search(jl, Indices, NumIndices, insertPoint)>-1) {
 	CrsGraphData_->NumMyBlockDiagonals_++;
-	CrsGraphData_->NumMyDiagonals_ += RowMap().ElementSize(i);
+	CrsGraphData_->NumMyDiagonals_ += rowMap.ElementSize(i);
       }
     }
   }
-	
+
   CrsGraphData_->NoDiagonal_ = (CrsGraphData_->NumMyBlockDiagonals_ == 0);
 
   SetNoRedundancies(true);
@@ -859,11 +965,12 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
     for(j = 0; j < NumIndices; j++) {
       int GID = ColIndices[j];
       // Check if GID matches a row GID
-      if(DomainMap.MyGID(GID)) {
-	bool alreadyFound = LocalGIDs[DomainMap.LID(GID)];
+      int LID = DomainMap.LID(GID);
+      if(LID != -1) {
+	bool alreadyFound = LocalGIDs[LID];
 	if (!alreadyFound) {
-	LocalGIDs[DomainMap.LID(GID)] = true; // There is a column in the graph associated with this domain map GID
-	NumLocalColGIDs++;
+          LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
+          NumLocalColGIDs++;
 	}
       }
       else {
