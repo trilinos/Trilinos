@@ -84,14 +84,26 @@ int main(int argc, char *argv[])
   */
   
   
-  
+  /*  
   // This does work because the constructor gets the right object and we
   // dynamic cast to get access to the new member function setx.
   Teuchos::RefCountPtr<Foo> B = Teuchos::rcp(new Bar);
   (Teuchos::rcp_dynamic_cast<Bar>(B))->setx(5.0);
   PrintFoo PF(B);
   PF.print();
-  
+  */  
 
-  return(0);
-};
+  Bar B;
+  B.setx(5.0);
+  Teuchos::RefCountPtr<Foo> F = Teuchos::rcp( &B, false );
+  PrintFoo PF(F);
+  PF.print();
+
+  Teuchos::RefCountPtr<Foo> F = Teuchos::rcp(new Bar);
+  Bar B = *F;
+  B.setx(5.0);
+  PrintFoo PF(F);
+  PF.print();
+
+  return 0;
+}
