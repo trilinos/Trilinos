@@ -2,7 +2,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include<iostream>
 
-
 class Foo
 {
   public:
@@ -51,13 +50,23 @@ int main(int argc, char *argv[])
   std::cout << "Output should be 5: " << std::endl;
 
   /*
+  // This works because this is exactly the type of cast the compiler is expecting.
   Bar B;
   B.setx(5.0);
   printFooDirect(B);
   */
 
+  /*
+  // This works because the function printFooDirect is able to make the
+  // RefCountPtr cast correctly somehow.
+  Teuchos::RefCountPtr<Bar> B = Teuchos::rcp(new Bar);
+  B->setx(5.0);
+  printFooDirect(B);
+  */
   
   /*
+  // This fails because the PrintFoo constructor is not able to make the
+  // RefCountPtr cast correctly.
   Teuchos::RefCountPtr<Bar> B = Teuchos::rcp(new Bar);
   B->setx(5.0);
   PrintFoo PF(B); // fails because PrintFoo takes RefCountPtr<Foo> not RefCountPtr<Bar>
@@ -66,6 +75,8 @@ int main(int argc, char *argv[])
   
   
   /*
+  // This fails because B is cast (by RefCountPtr) as an object of type Foo which
+  // doesn't have a member function setx.
   Teuchos::RefCountPtr<Foo> B = Teuchos::rcp(new Bar);
   B->setx(5.0); // fails because B is RefCountPtr<Foo> not RefCountPtr<Bar>
   PrintFoo PF(B);
@@ -73,10 +84,14 @@ int main(int argc, char *argv[])
   */
   
   
+  
+  // This does work because the constructor gets the right object and we
+  // dynamic cast to get access to the new member function setx.
   Teuchos::RefCountPtr<Foo> B = Teuchos::rcp(new Bar);
   (Teuchos::rcp_dynamic_cast<Bar>(B))->setx(5.0);
   PrintFoo PF(B);
   PF.print();
+  
 
   return(0);
 };
