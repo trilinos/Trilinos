@@ -34,6 +34,8 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/TestKlu.cpp \
 	$(srcdir)/TestKlu.h \
 	$(srcdir)/TestSuperludist.h \
+	$(srcdir)/NewMatNewMap.cpp \
+	$(srcdir)/NewMatNewMap.h \
 	$(srcdir)/TestAllClasses.cpp \
 	$(srcdir)/TestAllClasses.h \
 	$(srcdir)/PartialFactorization.cpp \

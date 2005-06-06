@@ -3,6 +3,7 @@
 #include "Epetra_CrsMatrix.h"
 
 int PerformOneSolveAndTest(const char* AmesosClass,
+			   int EpetraMatrixType,
 			   const Epetra_Comm &Comm, 
 			   bool transpose, 
 			   bool verbose, 

@@ -121,6 +121,18 @@ void driver(Epetra_Comm& Comm, const string Type, const bool UseTranspose,
 
   Amesos Factory;  
   
+#if 0
+  vector<string> SolverType;
+  SolverType.push_back("Amesos_Lapack");
+  SolverType.push_back("Amesos_Klu");
+  SolverType.push_back("Amesos_Umfpack");
+  SolverType.push_back("Amesos_Superlu");
+  SolverType.push_back("Amesos_Superludist"); 
+  SolverType.push_back("Amesos_Mumps");
+  SolverType.push_back("Amesos_Scalapack");
+  // NOTE: DSCPACK does not support RowMatrix's.
+#endif
+
   bool res;
 
   // If a given test fails, than the code stops, bue to the assert()

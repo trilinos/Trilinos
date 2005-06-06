@@ -10,47 +10,34 @@
 
 //
 //  Returns the number of failures.
-//  Note:  If AMESOS_SUPERLUDIST is not supported, PerformOneSolveAndTest() will 
+//  Note:  If AMESOS_SUPERLUDIST is not supported, TestSuperludist() will 
 //  always return 0
 //
-//  Still have to decide where we are going to check the residual.  
-//
-//  The following table shows the variable names that we use for 
-//  each of the three phases:  
-//     compute - which computes the correct value of b
-//     solve - which solves for x in  A' A' A x = b 
-//     check - which computes bcheck = A' A' A x 
-//
-//  For ill-conditioned matrices we restrict the test to one or two 
-//  solves, by setting Levels to 1 or 2 on input to this routine.
-//  When Levels is less than 3, some of the transformations
-//  shown in the table as "->" and "<-" are not performed, instead 
-//  a direct copy is made.
-//
-//  In the absence of roundoff, each item in a given column should 
-//  be identical.  
-//
-//  If Levels = 3, we compute and solve A' A' A x = b and hence all 
-//  of the transformations are performed
-//
-//  If Levels = 2, the transformations shown in the first column of 
-//  transformations (labelled Levels>=3) are replaced by a direct copy.
-//
-//  If Levels = 1, only the transformations shown in the third column
-//  are performed, the others being replaced by direct copies.
-//  
-//                           Levels>=3    Levels>=2
-//                              A'         A'            A
-//  compute             xexact  ->  cAx    ->     cAAx   ->       b 
-//  solve               x       <-  sAx    <-     sAAx   <-       b
-//  check               x       ->  kAx    ->     kAAx   ->  bcheck
-//
-//  Note that since Levels 2 and 3 use the same A, there is no need to 
-//  call NumericFactorization() between the second and third call to Solve. 
+//  TestSuperludist performs the following tests:
+//                         Redistribute   AddZeroToDiag   SUB:  ReuseSymbolic MaxProcesses
+//                            true           true                   true           2
+//                            true           true                   false          2
+//                            true           true                   false          2
+//                            true           true                   true           1
+//                            true           true                   false          1
+//                            true           true                   false          2
+//                            true           false                  true           1
+//                            true           false                  true           2
+//                            true           false                  false          1
+//                            true           false                  false          2
+//                            false/true     true                   true           1
+//                            false          true                   true           2
+//                            false          true                   false          1
+//                            false          true                   false          2
+//                            false          false                  true           1
+//                            false          false                  true           2
+//                            false          false                  false          1
+//                            false          false                  false          2
 //   
 
 
 int TestSuperludist( Epetra_CrsMatrix *& Amat, 
+		     int EpetraMatrixType,
 		     bool transpose, 
 		     bool verbose, 
 		     int Levels,
@@ -78,6 +65,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     //  ParamList.print( cerr, 10 ) ; 
     
     int Errors = PerformOneSolveAndTest("Amesos_Superludist",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -86,7 +74,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
+					relresidual) ;
 
     if ( Errors < 0 ) {
       NumErrors++;
@@ -119,6 +107,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       //  ParamList.print( cerr, 10 ) ; 
 	
       NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
 					  verbose,
@@ -134,7 +123,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 	
     }
       
-#if 0
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
@@ -145,7 +133,22 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
     {
@@ -158,7 +161,22 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
@@ -172,7 +190,22 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
@@ -186,7 +219,22 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
@@ -200,7 +248,22 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
@@ -214,7 +277,22 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
@@ -228,120 +306,278 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
 
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
       SuperludistParams.set( "MaxProcesses", 1 );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
   
     {
       Teuchos::ParameterList ParamList ;
       if ( verbose ) ParamList.set( "DebugLevel", 1 );
-      ParamList.set( "Redistribute", false );
+      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
+	ParamList.set( "Redistribute", true );
+      else
+	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
-#endif
   
     return NumErrors; 
   }

@@ -162,7 +162,8 @@ int PartialFactorization( const char* AmesosClass,
     string AC = AmesosClass ; 
 
     //
-    //  I have turned this test back on because it no longer seems to fail.
+    //  I have turned this test back on because it no longer seems to fail.  Although Amesos_Dscpack
+    //  fails other aspects of TestOptions.
     //
     //  Amesos_Dscpack dies if SymbolicFactorization() is called twice in a row - Bug #1237 
     //  Hence we do not test Amesos_Dscpack with 3 or more steps here.

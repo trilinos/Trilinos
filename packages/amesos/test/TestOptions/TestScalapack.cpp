@@ -44,6 +44,7 @@
 //     6)  no parameters
 //
 int TestScalapack( Epetra_CrsMatrix *& Amat, 
+		    int EpetraMatrixType,
 		      bool transpose, 
 		      bool verbose, 
 		      int Levels,
@@ -74,6 +75,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 1) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -82,7 +84,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
+					relresidual );
 
       
     if (Errors < 0 ) {
@@ -127,6 +129,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -179,6 +182,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 3) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -230,6 +234,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 4) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -281,6 +286,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 5) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -329,6 +335,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 6) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,

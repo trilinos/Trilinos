@@ -107,7 +107,7 @@ bool Test(char* SolverType,
     ProblemA.SetRHS(&b_A);
 
     string ST = SolverType ;    
-    if (! ( ST == "Amesos_Superludist" ) ) {    // Kludge see bug #1141
+    if (! ( ST == "Amesos_Superludist" ) ) {    // Kludge see bug #1141 and bug #1138
       AMESOS_CHK_ERR(Solver->Solve());
 
       TestPassed = TestPassed && 
@@ -236,7 +236,7 @@ bool Test(char* SolverType,
     ProblemA.SetOperator(&C);
 
     string ST = SolverType ; 
-    if (! ( ST == "Amesos_Superludist" ) ) { // Kludge see bug #1141
+    if (! ( ST == "Amesos_Superludist" ) ) { // Kludge see bug #1141 and bug #1138
 
       AMESOS_CHK_ERR(Solver->SymbolicFactorization());
       AMESOS_CHK_ERR(Solver->NumericFactorization());
@@ -265,7 +265,7 @@ bool Test(char* SolverType,
     Solver = Factory.Create(SolverType,ProblemA);
 
     string ST = SolverType ; 
-    if (! ( ST == "Amesos_Superludist" ) ) { 
+    if (! ( ST == "Amesos_Superludist" ) ) {   // bug #1141 and bug #1138
       AMESOS_CHK_ERR(Solver->Solve());
       
       ProblemA.SetOperator(&C);
@@ -327,8 +327,14 @@ int SubMain( Epetra_Comm &Comm ) {
   Epetra_RowMatrix* RowC = GalleryC.GetLinearProblem()->GetMatrix();
 
   Amesos_TestRowMatrix A(RowA);
+  cout << " A= " ; 
+  dynamic_cast<Epetra_CrsMatrix *>(RowA)->Print( cout ) ; 
   Amesos_TestRowMatrix B(RowB);
+  cout << " B= " ; 
+  dynamic_cast<Epetra_CrsMatrix *>(RowB)->Print( cout ) ; 
   Amesos_TestRowMatrix C(RowC);
+  cout << " C= " ; 
+  dynamic_cast<Epetra_CrsMatrix *>(RowC)->Print( cout ) ; 
 
   Epetra_MultiVector x_A(A.OperatorDomainMap(),NumVectors_AB);
   Epetra_MultiVector x_exactA(A.OperatorDomainMap(),NumVectors_AB);
@@ -349,12 +355,14 @@ int SubMain( Epetra_Comm &Comm ) {
   C.Multiply(false,x_exactC,b_C);
 
   vector<string> SolverType;
-  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
+#if 0
+  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
+#endif
   // NOTE: DSCPACK does not support Epetra_RowMatrix's
 
   Amesos Factory;

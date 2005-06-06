@@ -18,6 +18,9 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 #include "PerformOneSolveAndTest.h"
 #include "PartialFactorization.h"
 #include "CreateTridi.h"
+#include "NewMatNewMap.h" 
+#include "Amesos_TestRowMatrix.h" 
+
 //
 //  Returns the number of failures.
 //  Note:  If AmesosClass is not supported, PerformOneSolveAndTest() will 
@@ -59,33 +62,80 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 //  call NumericFactorization() between the second and third call to Solve. 
 //   
 
-int PerformOneSolveAndTest(const char* AmesosClass,
-			   const Epetra_Comm &Comm, 
-			   bool transpose, 
-			   bool verbose, 
-			   Teuchos::ParameterList ParamList, 
-			   Epetra_CrsMatrix *& Amat, 
-			   int Levels, 
-			   const double Rcond,
-			   double& relerror,
-			   double& relresidual) 
+int PerformOneSolveAndTest( const char* AmesosClass,
+			    int EpetraMatrixType,
+			    const Epetra_Comm &Comm, 
+			    bool transpose, 
+			    bool verbose, 
+			    Teuchos::ParameterList ParamList, 
+			    Epetra_CrsMatrix *& InMat, 
+			    int Levels, 
+			    const double Rcond,
+			    double& relerror,
+			    double& relresidual )
 {
 
-  PartialFactorization( AmesosClass, Comm, transpose, verbose, ParamList, Amat, Rcond );
+  RefCountPtr<Epetra_CrsMatrix> MyMat ; 
+  RefCountPtr<Epetra_CrsMatrix> MyMatWithDiag ; 
+
+  PartialFactorization( AmesosClass, Comm, transpose, verbose, ParamList, InMat, Rcond );
+
+
+  MyMat = rcp( new Epetra_CrsMatrix( *InMat ) ); 
+
+  Amesos_TestRowMatrix ATRW( &*MyMat ) ; 
+  
+  Epetra_RowMatrix* MyRowMat ; 
+  
+  assert ( EpetraMatrixType >= 0 && EpetraMatrixType <= 2 );
+  switch ( EpetraMatrixType ) {
+  case 0:
+    MyRowMat = &*MyMat ; 
+    break;
+  case 1:
+    MyRowMat = &ATRW;
+    break;
+  case 2:
+    MyMat->OptimizeStorage(); 
+    MyRowMat = &*MyMat ; 
+    break;
+  }
+
+  if (ParamList.isParameter("AddToDiag")) { 
+    //
+    //  If AddToDiag is set, create a matrix which is numerically identical, but structurally 
+    //  has no missing diagaonal entries.   In other words, every diagonal element in MyMayWithDiag 
+    //  has an entry in the matrix, though that entry will be zero if InMat has no entry for that
+    //  particular diagonal element.  
+    //
+    MyMatWithDiag = NewMatNewMap( *InMat, 2, 0, 0, 0, 0 );  //  Ensure that all diagonal entries exist ;
+
+    //
+    //  Now add AddToDiag to each diagonal element.  
+    //
+    double AddToDiag = ParamList.get("AddToDiag", AddToDiag );
+    Epetra_Vector Diag( MyMatWithDiag->RowMap() );
+    Epetra_Vector AddConstVecToDiag( MyMatWithDiag->RowMap() );
+    AddConstVecToDiag.PutScalar( AddToDiag );
+    assert( MyMatWithDiag->ExtractDiagonalCopy( Diag ) == 0 );
+    Diag.Update( 1.0, AddConstVecToDiag, 1.0 ) ; 
+    assert(MyMatWithDiag->ReplaceDiagonalValues( Diag ) == 0 ) ; 
+  } else { 
+    MyMatWithDiag = rcp( new Epetra_CrsMatrix( *InMat ) ); 
+  }
+  //  Epetra_CrsMatrix*& Amat = &*MyMat ; 
+
+  if ( verbose ) cout << " Partial Factorization complete " << endl ; 
 
   relerror = 0 ; 
   relresidual = 0 ; 
 
-#if 0
-  return 0 ; 
-#endif
-	
   assert( Levels >= 1 && Levels <= 3 ) ; 
 
   int iam = Comm.MyPID() ; 
   int errors = 0 ; 
 
-  const Epetra_Map *Map = &Amat->RowMap() ; 
+  const Epetra_Map *Map = &MyMat->RowMap() ; 
 
   Epetra_Vector xexact(*Map);
   Epetra_Vector x(*Map);
@@ -107,6 +157,9 @@ int PerformOneSolveAndTest(const char* AmesosClass,
   Amesos_BaseSolver* Abase ; 
   Amesos Afactory;
 
+
+
+
   Abase = Afactory.Create( AmesosClass, Problem ) ; 
 
   relerror = 0 ; 
@@ -119,8 +172,9 @@ int PerformOneSolveAndTest(const char* AmesosClass,
     //
     //  Phase 1:  Compute b = A' A' A xexact
     //
-    Problem.SetOperator( Amat );
-   
+    Problem.SetOperator( MyRowMat );
+    Epetra_CrsMatrix* ECM = dynamic_cast<Epetra_CrsMatrix*>(MyRowMat) ; 
+    
     //
     //  We only set transpose if we have to - this allows valgrind to check
     //  that transpose is set to a default value before it is used.
@@ -145,13 +199,14 @@ int PerformOneSolveAndTest(const char* AmesosClass,
     if ( Levels == 3 ) 
       {
 	val[0] = Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( transpose, xexact, cAx ) ; 
+	if ( MyMatWithDiag->MyGRID( 0 ) ) { 
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
+	}
+	MyMatWithDiag->Multiply( transpose, xexact, cAx ) ; 
 
 	val[0] = - Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
+	if ( MyMatWithDiag->MyGRID( 0 ) )
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
       }
     else
       {
@@ -164,20 +219,22 @@ int PerformOneSolveAndTest(const char* AmesosClass,
     if ( Levels >= 2 ) 
       {
 	val[0] =  Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( transpose, cAx, cAAx ) ; //  x2 = A' x1
+	if ( MyMatWithDiag->MyGRID( 0 ) )
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
+	MyMatWithDiag->Multiply( transpose, cAx, cAAx ) ; //  x2 = A' x1
 
 	val[0] = - Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
+	if ( MyMatWithDiag->MyGRID( 0 ) )
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
       }
     else
       {
 	cAAx = cAx ;
       }
 
-    Amat->Multiply( transpose, cAAx, b ) ;  //  b = A x2 = A A' A'' xexact
+    if ( verbose ) cout << " Compute  b = A x2 = A A' A'' xexact  " << endl ; 
+
+    MyMatWithDiag->Multiply( transpose, cAAx, b ) ;  //  b = A x2 = A A' A'' xexact
  
     //
     //  Phase 2:  Solve A' A' A x = b 
@@ -187,6 +244,8 @@ int PerformOneSolveAndTest(const char* AmesosClass,
     //
     Problem.SetLHS( &sAAx );
     Problem.SetRHS( &b );
+
+
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) );     // This should be irrelevant, but should nonetheless be legal 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
@@ -198,8 +257,8 @@ int PerformOneSolveAndTest(const char* AmesosClass,
 	Problem.SetLHS( &sAx );
 	Problem.SetRHS( &sAAx );
 	val[0] =  Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
+	if ( MyMat->MyGRID( 0 ) )
+	  MyMat->SumIntoMyValues( 0, 1, val, ind ) ; 
 	OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 	
 	Teuchos::ParameterList* NullList = (Teuchos::ParameterList*) 0 ;  
@@ -227,23 +286,27 @@ int PerformOneSolveAndTest(const char* AmesosClass,
     if ( Levels >= 2 ) 
       {
 	val[0] =  -Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
+	if ( MyMat->MyGRID( 0 ) ) {
+	  if ( MyMat->SumIntoMyValues( 0, 1, val, ind ) ) { 
+	    cout << " TestOptions requires a non-zero entry in A(1,1) " << endl ; 
+	  }
+	}
       }
 
     //
     //  Phase 3:  Check the residual: bcheck = A' A' A x 
     //
 
+
     if ( Levels >= 3 ) 
       {
 	val[0] =  Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( transpose, x, kAx ) ;
+	if ( MyMatWithDiag->MyGRID( 0 ) )
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
+	MyMatWithDiag->Multiply( transpose, x, kAx ) ;
 	val[0] =  -Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
+	if ( MyMatWithDiag->MyGRID( 0 ) )
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
       }
     else
       {
@@ -253,20 +316,19 @@ int PerformOneSolveAndTest(const char* AmesosClass,
     if ( Levels >= 2 ) 
       {
 	val[0] =  Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( transpose, kAx, kAAx ) ;
+	if ( MyMatWithDiag->MyGRID( 0 ) )
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
+	MyMatWithDiag->Multiply( transpose, kAx, kAAx ) ;
 	val[0] =  -Value ; 
-	if ( Amat->MyGRID( 0 ) )
-	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
+	if ( MyMatWithDiag->MyGRID( 0 ) )
+	  MyMatWithDiag->SumIntoMyValues( 0, 1, val, ind ) ; 
       }
     else
       {
 	kAAx = kAx ; 
       }
 
-
-    Amat->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
+    MyMatWithDiag->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
 
 
     if ( verbose ) cout << " Levels =  " << Levels << endl ; 

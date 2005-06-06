@@ -2,6 +2,7 @@
 #include <vector>
 
 int TestAllClasses( const vector<string> AmesosClasses,
+		     int EpetraMatrixType,
 		    const vector<bool> AmesosClassesInstalled,
 		    Epetra_CrsMatrix *& Amat, 
 		    const bool transpose, 
@@ -9,6 +10,13 @@ int TestAllClasses( const vector<string> AmesosClasses,
 		    const bool symmetric, 
 		    const int Levels,
 		    const double Rcond,
+		    int Diagonal,
+		    int ReindexRowMap,
+		    int ReindexColMap,
+		    int RangeMapType,
+		    int DomainMapType,
+		    bool distribute,
+		    char *filename,
 		    double &maxrelerror, 
 		    double &maxrelresidual,
 		    int &NumTests) ;

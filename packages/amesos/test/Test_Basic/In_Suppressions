@@ -351,6 +351,8 @@
 #
 #  The following are needed to run TestOptions with Amesos_Dscpack
 #
+#  When Bug #1210 is fixed, we should be able to eliminate all of the dscpack specific suppressions 
+#  It is not clear to me exactly which suppressions are related to dscpack
 #
 #
 {

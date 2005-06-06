@@ -16,10 +16,12 @@
 //     4)  ComputeTrueResidual==true
 //
 int TestKlu( Epetra_CrsMatrix *& Amat, 
+	     int EpetraMatrixType,
 	     const bool transpose, 
 	     const bool verbose, 
 	     const int Levels,
 	     const double Rcond,
+	     bool RowMapEqualsColMap, 
 	     double &maxrelerror, 
 	     double &maxrelresidual,
 	     int &NumTests ) {
@@ -43,6 +45,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 1) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -51,7 +54,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
+					relresidual ) ;
 
       
     if (Errors < 0 ) {
@@ -80,6 +83,55 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     }
   }
 
+  {
+    Teuchos::ParameterList ParamList ;
+    if ( verbose ) ParamList.set( "DebugLevel", 1 );
+    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+      
+    double relerror;
+    double relresidual;
+      
+    if ( verbose ) cout << " Test 1) no fail second time through yet " << endl ; 
+
+    int Errors = PerformOneSolveAndTest("Amesos_Klu",
+					EpetraMatrixType,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+
+      
+    if (Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
+      if ( verbose ) {
+	cout << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      }
+    } else { 
+      NumErrors += Errors ; 
+	
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+      if (verbose) cout << " TestKlu 2nd relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
+      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << " TestKlu 2nd maxrelerror = " << maxrelerror << endl ; 
+	
+    }
+    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if ( verbose && Errors > 0 ) {
+      cout << "Amesos_Klu" << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+  }
+
   //
   //     2)  Refactorize = true 
   {
@@ -91,9 +143,10 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
+    if ( verbose ) cout << " Klu Test 2) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -104,6 +157,58 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					relerror, 
 					relresidual ) ; 
       
+    if ( verbose ) cout << " Test 2) no fail here either " << endl ; 
+
+    if (Errors < 0 ) {
+      if (verbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
+      return 0 ; 
+    } else { 
+      NumErrors += Errors ; 
+	
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
+      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
+	
+    }
+    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if ( verbose && Errors > 0 ) {
+      cout << "Amesos_Klu" << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ; 
+    }
+  }
+  //
+  //     2A)  AddToDiag 
+  if (RowMapEqualsColMap ) {
+    Teuchos::ParameterList ParamList ;
+    if ( verbose ) ParamList.set( "DebugLevel", 1 );
+    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    ParamList.set( "Refactorize", true );
+    ParamList.set( "AddToDiag", 1e-2 );
+      
+    double relerror;
+    double relresidual;
+      
+    if ( verbose ) cout << " Klu Test 2) no fail yet " << endl ; 
+
+    int Errors = PerformOneSolveAndTest("Amesos_Klu",
+					EpetraMatrixType,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+      
+    if ( verbose ) cout << " Test 2) no fail here either " << endl ; 
+
     if (Errors < 0 ) {
       if (verbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
       return 0 ; 
@@ -124,6 +229,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Klu" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
+      exit( -13 ) ; 
     }
   }
 
@@ -191,6 +297,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     if ( verbose ) cout << " Test 4) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,

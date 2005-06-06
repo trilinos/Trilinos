@@ -178,14 +178,14 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
 
     if( SuperludistParams.isParameter("ReuseSymbolic") )
       ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
-    string FactOption;
+    string FactOption = "NotSet";
 
     if( SuperludistParams.isParameter("Fact") )
       FactOption = SuperludistParams.get("Fact", FactOption);
 
     if( FactOption == "SamePattern_SameRowPerm" ) FactOption_ = SamePattern_SameRowPerm;
     else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;
-    else
+    else if ( FactOption != "NotSet" ) 
       AMESOS_CHK_ERR(-2); // input not valid
 
     if (SuperludistParams.isParameter("Equil"))

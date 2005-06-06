@@ -9,11 +9,13 @@
 #include "PerformOneSolveAndTest.h"
 
 int TestOtherClasses( const char* AmesosClass,
+		      int EpetraMatrixType,
 		      Epetra_CrsMatrix *& Amat, 
 		      const bool transpose, 
 		      const bool verbose, 
 		      const int Levels,
 		      const double Rcond,
+		      bool RowMapEqualsColMap, 
 		      double &maxrelerror, 
 		      double &maxrelresidual,
 		      int &NumTests ) {
@@ -37,6 +39,7 @@ int TestOtherClasses( const char* AmesosClass,
     double relresidual;
    
     int Errors = PerformOneSolveAndTest(AmesosClass,
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -51,7 +54,7 @@ int TestOtherClasses( const char* AmesosClass,
       NumErrors++;
       NumTests++ ; 
       if ( verbose ) {
-	cout << AmesosClass << " failed with error code " << Errors<< endl ; 
+	cout << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
       }
     } else { 
       NumErrors += Errors ; 
@@ -66,11 +69,63 @@ int TestOtherClasses( const char* AmesosClass,
       if (verbose) cout << " TestOtherClasses maxrelerror = " << maxrelerror << endl ; 
 
     }
-    if (verbose)  cout << " TestOtherClasses NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
+  }
+
+  if ( RowMapEqualsColMap ) {
+    Teuchos::ParameterList ParamList ;
+    ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
+    ParamList.set( "Redistribute", false );
+    ParamList.set( "AddToDiag", 1e-3 );
+    if ( verbose ) ParamList.set( "DebugLevel", 1 );
+
+    //  ParamList.print( cerr, 10 ) ; 
+
+    double relerror;
+    double relresidual;
+   
+    int Errors = PerformOneSolveAndTest(AmesosClass,
+					EpetraMatrixType,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+
+
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
+      if ( verbose ) {
+	cout << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
+      }
+    } else { 
+      NumErrors += Errors ; 
+
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+      if (verbose) cout << " TestOtherClasses relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses relerror = " << relerror << endl ; 
+      if (verbose) cout << " TestOtherClasses maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses maxrelerror = " << maxrelerror << endl ; 
+
+    }
+    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if ( verbose && Errors > 0 ) {
+      cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+
 
 
   }
@@ -89,6 +144,7 @@ int TestOtherClasses( const char* AmesosClass,
     if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest(AmesosClass,
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -117,12 +173,16 @@ int TestOtherClasses( const char* AmesosClass,
       if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
 	
     }
-    if (verbose)  cout << "  NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
   }
+  //
+  //  ComputeTrueResidual is, by design, not quiet - it prints out the residual 
+  //
+#if 0
   //
   //     4)  ComputeTrueResidual==true
   {
@@ -138,6 +198,7 @@ int TestOtherClasses( const char* AmesosClass,
     if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
 
     int Errors = PerformOneSolveAndTest(AmesosClass,
+					EpetraMatrixType,
 					Comm, 
 					transpose, 
 					verbose,
@@ -146,8 +207,8 @@ int TestOtherClasses( const char* AmesosClass,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
-      
+					relresidual ) ;
+
     if (Errors < 0 ) {
       if (verbose ) cout << AmesosClass << " not built in this executable " << endl ; 
       return 0 ; 
@@ -164,13 +225,14 @@ int TestOtherClasses( const char* AmesosClass,
       if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
 	
     }
-    if (verbose)  cout << "  NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
   }
+#endif
 
 
   return NumErrors; 
-}
+  }

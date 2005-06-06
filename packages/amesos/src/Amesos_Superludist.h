@@ -76,8 +76,7 @@ public:
 
   //! Amesos_Superludist Destructor.
   /*! Completely deletes an Amesos_Superludist object.  
-  */
-  ~Amesos_Superludist(void);
+  */  ~Amesos_Superludist(void);
   //@}
 
   //@{ \name Mathematical functions.
@@ -88,15 +87,14 @@ public:
 
   int Solve();
 
+
   //@}
   //@{ \name Atribute set methods
   
   //!  Amesos_Superludist does not support transpose at this time.
   /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
    */
-  int SetUseTranspose(bool UseTranspose) {
-    AMESOS_CHK_ERR(-1);
-  }
+  int SetUseTranspose(bool UseTranspose) { return( UseTranspose?1:0 );};
 
   //@}
   //@{ \name Atribute access functions

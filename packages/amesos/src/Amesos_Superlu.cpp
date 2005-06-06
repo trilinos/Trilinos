@@ -174,7 +174,7 @@ int Amesos_Superlu::ConvertToSerial()
   // Otherwise, simply take the pointer of RowMatrixA_ and
   // set it to SerialMatrix_.
 
-  if (Comm().NumProc() == 1) 
+  if (Comm().NumProc() == 1) // Bug #1411 - should recognize serial matrices even when NumProc() > 1
   { 
      SerialMatrix_ = RowMatrixA_;
   } 
@@ -190,13 +190,24 @@ int Amesos_Superlu::ConvertToSerial()
     // MS // Set zero element if not present, possibly add
     // MS // something to the diagonal
     double AddToDiag = 0.0;
+#if 0
     if (iam_ == 0)
     {
+      int this_res ;
       for (int i = 0 ; i < NumGlobalRows_; i++ ) {
-        if (SerialCrsMatrixA_->InsertGlobalValues(i, 1, &AddToDiag, &i))
+	//  I am not sure what the intent is here, 
+	//  but InsertGlobalValues returns 1 meaning "out of room" 
+	//  and as a result, we sum AddToDiag_ into this diagonal element
+	//  a second time.
+        if (this_res=SerialCrsMatrixA_->InsertGlobalValues(i, 1, &AddToDiag, &i)) {
+	  cout << __FILE__ << "::" << __LINE__ 
+	       << " this_res = " <<  this_res 
+	       << endl ; 
           SerialCrsMatrixA_->SumIntoGlobalValues(i, 1, &AddToDiag, &i);
+	}
       }
     }
+#endif
 
     SerialCrsMatrixA_->FillComplete();
     SerialMatrix_ = SerialCrsMatrixA_.get();
@@ -592,6 +603,46 @@ int Amesos_Superlu::Solve()
   if (Comm().NumProc() != 1)
     Comm().Broadcast(&Ierr, 1, 0); 
 
+#if 0 
+  // MS // compute vector norms, as done in Amesos_Mumps
+  if (ComputeVectorNorms_ == true) 
+  {
+    double NormLHS, NormRHS;
+    for (int i = 0 ; i < nrhs ; ++i) 
+    {
+      AMESOS_CHK_ERR((*vecX)(i)->Norm2(&NormLHS));
+      AMESOS_CHK_ERR((*vecB)(i)->Norm2(&NormRHS));
+      if (Comm().MyPID() == 0) 
+      {
+	cout << "Amesos_Superlu : vector " << i << ", ||x|| = " << NormLHS
+	     << ", ||b|| = " << NormRHS << endl;
+      }
+    }
+  }
+  
+  // MS // add compute true residual, as done in Amesos_Mumps
+  if (ComputeTrueResidual_) 
+  {
+    double Norm;
+    Epetra_MultiVector Ax(vecB->Map(),nrhs);
+    for (int i = 0 ; i < nrhs ; ++i) 
+    {
+      (RowMatrixA_->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
+      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
+      (Ax.Norm2(&Norm));
+      
+      //
+      //  In Amesos_Klu, verbose_ turns this print statement on 
+      //
+      if (false && Comm().MyPID() == 0) 
+      {
+	cout << "Amesos_Superlu : Vector " << i << ", ||Ax - b|| = " << Norm << endl;
+      }
+    }
+  }
+  
+  SolTime_+= Time_->ElapsedTime();
+#else
   AddTime("solve");
 
   if (ComputeTrueResidual_)
@@ -601,6 +652,7 @@ int Amesos_Superlu::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Superlu");
 
+#endif
   ++NumSolve_;
 
   return(Ierr);

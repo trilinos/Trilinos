@@ -481,8 +481,9 @@ int Amesos_Umfpack::Solve()
     ComputeTrueResidual(*Matrix, *vecX, *vecB, UseTranspose(), "Amesos_Umfpack");
   }
 
-  if (ComputeVectorNorms_)
+  if (ComputeVectorNorms_) {
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Umfpack");
+  }
 
   if (status)
     AMESOS_CHK_ERR(status);
