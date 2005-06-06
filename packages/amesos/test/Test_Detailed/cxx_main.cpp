@@ -356,13 +356,11 @@ int SubMain( Epetra_Comm &Comm ) {
 
   vector<string> SolverType;
   SolverType.push_back("Amesos_Klu");
-#if 0
   SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
-#endif
   // NOTE: DSCPACK does not support Epetra_RowMatrix's
 
   Amesos Factory;

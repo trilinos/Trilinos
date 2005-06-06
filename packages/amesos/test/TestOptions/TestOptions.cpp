@@ -471,11 +471,25 @@ int NextMain( int argc, char *argv[] ) {
 #endif
 
 
-AmesosClasses.push_back( "Amesos_Klu" );
+#ifdef HAVE_AMESOS_KLU
+  AmesosClasses.push_back( "Amesos_Klu" );
+#endif
 
 #if 1
 #ifdef HAVE_AMESOS_SUPERLUDIST
   AmesosClasses.push_back( "Amesos_Superludist" );
+#endif
+
+#ifdef HAVE_AMESOS_PARDISO
+  AmesosClasses.push_back( "Amesos_Pardiso" );
+#endif
+
+#ifdef HAVE_AMESOS_TAUCS
+  AmesosClasses.push_back( "Amesos_Taucs" );
+#endif
+
+#ifdef HAVE_AMESOS_LAPACK
+  AmesosClasses.push_back( "Amesos_Lapack" );
 #endif
 
 #ifdef HAVE_AMESOS_SCALAPACK

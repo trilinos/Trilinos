@@ -77,6 +77,48 @@ int TestAllClasses( const vector<string> AmesosClasses,
 							 maxrelresidual, 
 							 NumTests ) ;
 
+      } else if ( AmesosClasses[i] == "Amesos_Taucs" ) {
+	bool RunTaucsTest = true;
+	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
+	  RunTaucsTest = false ;   //  Bug #969
+	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
+	  RunTaucsTest = false ;   //  Bug #1403
+
+	if ( RunTaucsTest && verbose) cout << " Testing TAUCS " << endl ; 
+	
+	if ( RunTaucsTest ) errors += TestOtherClasses("Amesos_Taucs",
+							 EpetraMatrixType,
+							 Amat, 
+							 transpose, 
+							 verbose, 
+							 Levels, 
+							 Rcond, 
+							 RowMapEqualsColMap,
+							 maxrelerror, 
+							 maxrelresidual, 
+							 NumTests ) ;
+
+      } else if ( AmesosClasses[i] == "Amesos_Pardiso" ) {
+	bool RunPardisoTest = true;
+	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
+	  RunPardisoTest = false ;   //  Bug #969
+	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
+	  RunPardisoTest = false ;   //  Bug #1403
+
+	if ( RunPardisoTest && verbose) cout << " Testing PARDISO " << endl ; 
+	
+	if ( RunPardisoTest ) errors += TestOtherClasses("Amesos_Pardiso",
+							 EpetraMatrixType,
+							 Amat, 
+							 transpose, 
+							 verbose, 
+							 Levels, 
+							 Rcond, 
+							 RowMapEqualsColMap,
+							 maxrelerror, 
+							 maxrelresidual, 
+							 NumTests ) ;
+
       } else if ( AmesosClasses[i] == "Amesos_Mumps" ) {
 	bool RunMumpsTest = true;
 	if ( ( ReindexRowMap || ReindexColMap ) && row_map.DistributedGlobal() ) 
