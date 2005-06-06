@@ -39,17 +39,17 @@ noinst_PROGRAMS = $(EXAMPLE)
 #np# of the  following primaries that the pattern is 
 #np# "(Exe_name)_(PRIMARY_NAME) = ").
 #np# List all source files needed to compile the exe.
-basicExample_SOURCES = $(srcdir)/RefCountPtrExample.cpp 
+RefCountPtrExample_SOURCES = $(srcdir)/RefCountPtrExample.cpp 
 
 #np# One DEPENDENCIES primary is needed for each exe listed above.  List any
 #np# libraries that the exe depends on.  (This primary is not absolutely
 #np# essential.)
-basicExample_DEPENDENCIES = $(common_dependencies)
+RefCountPtrExample_DEPENDENCIES = $(common_dependencies)
 
 
 #np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
 #np# any -I's necessary for building the exe.
-basicExample_CXXFLAGS = \
+RefCountPtrExample_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src \
@@ -58,7 +58,7 @@ basicExample_CXXFLAGS = \
 
 #np# One LDADD primary can be defined for each exe listed above.  Include any
 #np# LDFLAGS  necessary for building the exe.
-basicExample_LDADD = \
+RefCountPtrExample_LDADD = \
 	$(top_builddir)/src/librythmos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../epetra/thyra/src/libEpetraThyra.a \

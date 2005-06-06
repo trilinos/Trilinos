@@ -1,35 +1,48 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
-class foo
+class UtilityFoo
 {
   public:
-    foo();
-    virtual ~foo();
+    UtilityFoo();
+    virtual ~UtilityFoo();
     virtual double getx() = 0;
-}
+};
 
-class bar : public virtual foo
+class UtilityBar : public virtual UtilityFoo
 {
   public:
-    bar();
-    ~bar();
+    UtilityBar();
+    ~UtilityBar();
     double getx() { return(x_); };
-    void setx(double x) { x_ = x };
+    void setx(double x) { x_ = x; };
   protected:
     double x_;
-}
+};
 
-void printfoo(Teuchos::RefCountPtr<foo> foo_)
+void printFoo(Teuchos::RefCountPtr<UtilityFoo> foo)
 {
-  cout << "x = " << foo_->getx() << "!" << endl;
-}
+  cout << "x = " << foo->getx() << "!" << endl;
+};
 
 int main(int argc, char *argv[])
 {
-  Teuchos::RefCountPtr<foo> B = Teuchos::rcp(new bar);
-  rcp_dynamic_cast<bar>(B)->setx(5.0);
-  printfoo(B);
+  /*
+  Teuchos::RefCountPtr<UtilityBar> bar = Teuchos::rcp(new UtilityBar);
+  bar->setx(5.0);
+  printFoo(bar); // fails because printFoo takes RefCountPtr<UtilityFoo> not RefCountPtr<UtilityBar>
+  */
+
+  /*
+  Teuchos::RefCountPtr<UtilityFoo> bar = Teuchos::rcp(new UtilityBar);
+  bar->setx(5.0); // fails because bar is RefCountPtr<UtilityFoo> not RefCountPtr<UtilityBar>
+  printFoo(bar);
+  */
+  
+  Teuchos::RefCountPtr<UtilityFoo> bar = Teuchos::rcp(new UtilityBar);
+  (Teuchos::rcp_dynamic_cast<UtilityBar>(bar))->setx(5.0);
+  printFoo(bar);
+  
 
   return(0);
-}
+};
