@@ -68,9 +68,12 @@ using namespace Teuchos;
 
  
 */
-class Amesos_Umfpack: public Amesos_BaseSolver,  Amesos_Time, 
-  Amesos_NoCopiable, Amesos_Utils, Amesos_Status { 
-
+class Amesos_Umfpack: public Amesos_BaseSolver,  
+                      private Amesos_Time, 
+                      private Amesos_NoCopiable, 
+                      private Amesos_Utils, 
+                      private Amesos_Status 
+{ 
 public: 
 
   //@{ \name Constructor methods

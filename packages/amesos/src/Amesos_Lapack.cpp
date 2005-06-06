@@ -409,6 +409,7 @@ int Amesos_Lapack::DenseToFactored()
   }
 
   AddTime("numeric");
+  return(0);
 }
 
 // ================================================ ====== ==== ==== == =
