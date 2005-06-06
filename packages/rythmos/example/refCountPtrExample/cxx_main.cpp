@@ -27,6 +27,7 @@ class PrintFoo
     PrintFoo() {};
     PrintFoo(Teuchos::RefCountPtr<Foo> &F) { F_ = F; };
     ~PrintFoo() {};
+    void setFoo(Teuchos::RefCountPtr<Foo> &F) { F_ = F; };
     void print()
       { std::cout << "x = " << F_->getx() << "!" << std::endl; };
   protected:
@@ -73,6 +74,15 @@ int main(int argc, char *argv[])
   PF.print();
   */
   
+  /*
+  // This fails because PrintFoo.setFoo is not able to make the RefCountPtr
+  // cast correctly either.
+  Teuchos::RefCountPtr<Bar> B = Teuchos::rcp(new Bar);
+  B->setx(5.0);
+  PrintFoo PF;
+  PF.setFoo(B);
+  PF.print();
+  */
   
   /*
   // This fails because B is cast (by RefCountPtr) as an object of type Foo which
@@ -93,17 +103,29 @@ int main(int argc, char *argv[])
   PF.print();
   */  
 
+  /*
+  // This does work because we've made the correct RefCountPtr from a
+  // reference.  In this case, the RefCountPtr is not managing the object, so
+  // if the function that created the reference goes out of scope, then the
+  // RefCountPtr will be pointing at garbage.
   Bar B;
   B.setx(5.0);
   Teuchos::RefCountPtr<Foo> F = Teuchos::rcp( &B, false );
   PrintFoo PF(F);
   PF.print();
+  */
 
+  
+  
   Teuchos::RefCountPtr<Foo> F = Teuchos::rcp(new Bar);
-  Bar B = *F;
+  Bar &B = *Teuchos::rcp_dynamic_cast<Bar>(F);
   B.setx(5.0);
   PrintFoo PF(F);
   PF.print();
+  
+  
+
+
 
   return 0;
 }
