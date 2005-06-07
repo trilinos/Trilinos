@@ -4,7 +4,7 @@
 //
 //
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_DSCPACK
+#if defined(HAVE_AMESOS_DSCPACK) && defined(HAVE_AMESOS_TRIUTILS)
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -207,7 +207,9 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  puts("Please configure AMESOS with --enable-amesos-dscpack");
+  puts("Please configure AMESOS with:");
+  puts("--enable-amesos-dscpack");
+  puts("--enable-triutils");
   puts("to run this example");
 
 #ifdef HAVE_MPI
