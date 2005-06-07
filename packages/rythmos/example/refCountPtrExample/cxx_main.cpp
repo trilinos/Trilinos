@@ -117,15 +117,16 @@ int main(int argc, char *argv[])
 
   
   
+  // This does work because everything is of the right type, but we extracted a
+  // reference to the object from the RefCountPtr, so when this routien goes
+  // out of scope, the RefCountPtr will be pointing at garbage as in the
+  // example above.
   Teuchos::RefCountPtr<Foo> F = Teuchos::rcp(new Bar);
   Bar &B = *Teuchos::rcp_dynamic_cast<Bar>(F);
   B.setx(5.0);
   PrintFoo PF(F);
   PF.print();
   
-  
-
-
 
   return 0;
 }
