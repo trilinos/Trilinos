@@ -51,11 +51,7 @@ LOCA::BorderedSystem::Bordering::Bordering(
   isZeroC(true),
   isZeroF(true),
   isZeroG(true),
-  isContiguous(false),
-  isZeroX(true),
-  isZeroY(true),
-  isZeroT1(true),
-  isZeroT2(true)
+  isContiguous(false)
 {
 }
 
@@ -64,55 +60,38 @@ LOCA::BorderedSystem::Bordering::~Bordering()
 }
 
 void
-LOCA::BorderedSystem::Bordering::setIsZero(bool flagA, bool flagB, bool flagC,
-					   bool flagF, bool flagG)
-{
-  isZeroA = flagA;
-  isZeroB = flagB;
-  isZeroC = flagC;
-  isZeroF = flagF;
-  isZeroG = flagG;
-
-  // ensure blocks B and C are not both zero
-  if (isZeroB && isZeroC) 
-    globalData->locaErrorCheck->throwError(
-				 "LOCA::BorderedSystem::Bordering::setIsZero",
-				 "Blocks B and C cannot both be zero");
-
-  // ensure blocks A and C are not both zero
-  if (isZeroA && isZeroC) 
-    globalData->locaErrorCheck->throwError(
-				 "LOCA::BorderedSystem::Bordering::setIsZero",
-				 "Blocks A and C cannot both be zero");
-
-  isZeroY = (isZeroG && isZeroB) || (isZeroG && isZeroF);
-  isZeroX = (isZeroF && isZeroA) || (isZeroF && isZeroY);
-  isZeroT1 = isZeroB || isZeroF;
-  isZeroT2 = isZeroB || isZeroA;
-}
-
-void
 LOCA::BorderedSystem::Bordering::setIsContiguous(bool flag)
 {
   isContiguous = flag;
-
-  // ensure F and A are nonzero if contiguous
-  if (isContiguous && (isZeroF || isZeroA)) 
-     globalData->locaErrorCheck->throwError(
-		     "LOCA::BorderedSystem::Bordering::setIsContiguous",
-		     "Blocks F and A cannont be contiguous when one is zero");
 }
 
 void
 LOCA::BorderedSystem::Bordering::setMatrixBlocks(
 	 const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockBC)
+	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   grp = group;
   A = blockA;
-  B = blockBC;
-  C = B->getConstraintDerivativesP();
+  B = blockB;
+  C = blockC;
+
+  isZeroA = (A.get() == NULL);
+  isZeroB = B->isDXZero();
+  isZeroC = (C.get() == NULL);
+
+  // ensure blocks B and C are not both zero
+  if (isZeroB && isZeroC) 
+    globalData->locaErrorCheck->throwError(
+			    "LOCA::BorderedSystem::Bordering::setMatrixBlocks",
+			    "Blocks B and C cannot both be zero");
+
+  // ensure blocks A and C are not both zero
+  if (isZeroA && isZeroC) 
+    globalData->locaErrorCheck->throwError(
+			    "LOCA::BorderedSystem::Bordering::setMatrixBlocks",
+			    "Blocks A and C cannot both be zero");
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -132,7 +111,7 @@ LOCA::BorderedSystem::Bordering::apply(
 
   // Compute B^T*X
   if (!isZeroB)
-    B->applyConstraintDerivativesX(1.0, X, V);
+    B->multiplyDX(1.0, X, V);
 
   // Compute B^T*X + C*Y
   if (!isZeroC) {
@@ -161,7 +140,7 @@ LOCA::BorderedSystem::Bordering::applyTranspose(
 
   // Compute J*X + B*Y
   if (!isZeroA)
-    B->applyConstraintDerivativesX(Teuchos::NO_TRANS, 1.0, Y, 1.0, U);
+    B->addDX(Teuchos::NO_TRANS, 1.0, Y, 1.0, U);
 
   // Compute A^T*X
   if (!isZeroB)
@@ -195,22 +174,28 @@ LOCA::BorderedSystem::Bordering::applyInverse(
 
   int numColsF;
   int numColsA;
-  int numColsRHS;
+
+  isZeroF = (F == NULL);
+  isZeroG = (G == NULL);
+
+   // ensure F and A are nonzero if contiguous
+  if (isContiguous && (isZeroF || isZeroA)) 
+     globalData->locaErrorCheck->throwError(
+		     callingFunction,
+		     "Blocks F and A cannont be contiguous when one is zero");
 
   if (!isZeroA)
      numColsA = A->numVectors();
-   else
-     numColsA = 0;
+  else
+    numColsA = 0;
 
-   if (!isZeroF && isContiguous)
-     numColsF = F->numVectors() - numColsA;
-   else if (!isZeroF)
-     numColsF = F->numVectors();
-   else
-     numColsF = 0;
-
-   numColsRHS = numColsF + numColsA;
-
+  if (!isZeroF && isContiguous)
+    numColsF = F->numVectors() - numColsA;
+  else if (!isZeroF)
+    numColsF = F->numVectors();
+  else
+    numColsF = 0;
+  
    // create subindexing vectors
    vector<int> indexF(numColsF);
    vector<int> indexA(numColsA);
@@ -219,42 +204,46 @@ LOCA::BorderedSystem::Bordering::applyInverse(
    for (int i=0; i<numColsA; i++)
      indexA[i] = numColsF + i;
 
+   if (isZeroA)
+     status = solveAZero(params, B.get(), C.get(), F, G, X, Y);
    
-   if (isZeroB) {
+   else if (isZeroB) {
 
      if (isContiguous) {
        NOX::Abstract::MultiVector* f = F->subView(indexF);
        NOX::Abstract::MultiVector* a = F->subView(indexA);
        NOX::Abstract::MultiVector* x = X.subView(indexF);
 
-       status = solveBZeroNoncontiguous(params, a, C, f, G, *x, Y);
+       status = solveBZero(params, a, C.get(), f, G, *x, Y);
 
        delete f;
        delete a; 
        delete x;
      }
      else 
-       status = solveBZeroNoncontiguous(params, A.get(), C, 
-					F, G, X, Y);
+       status = solveBZero(params, A.get(), C.get(), F, G, X, Y);
 
    }
+   
+   else if (isZeroF)
+     status = solveFZero(params, A.get(), B.get(), C.get(), G, X, Y);
+
    else {
 
-     if (isContiguous  && !isZeroF && !isZeroA) 
-       status = solveBNonZeroContiguous(params, A.get(), B.get(), C, 
-					indexF, indexA, 
-					F, G, X, Y);
+     if (isContiguous) 
+       status = solveContiguous(params, A.get(), B.get(), C.get(), 
+				indexF, indexA, F, G, X, Y);
 
-     else if (!isContiguous && !isZeroF && !isZeroA) {
+     else {
+       int numColsRHS = numColsF + numColsA;
        NOX::Abstract::MultiVector* RHS = F->clone(numColsRHS);
        NOX::Abstract::MultiVector* LHS = X.clone(numColsRHS);
        NOX::Abstract::MultiVector* X1 = LHS->subView(indexF);
        RHS->setBlock(*F, indexF);
        RHS->setBlock(*A, indexA);
       
-       status = solveBNonZeroContiguous(params, A.get(), B.get(), C, 
-					indexF, indexA, RHS,
-					G, *LHS, Y);
+       status = solveContiguous(params, A.get(), B.get(), C.get(), 
+				indexF, indexA, RHS, G, *LHS, Y);
        X = *X1;
 
        delete X1;
@@ -262,29 +251,18 @@ LOCA::BorderedSystem::Bordering::applyInverse(
        delete LHS;
      }
 
-     else if (isContiguous && (isZeroF || isZeroA)) {
-       NOX::Abstract::MultiVector* f = F->subView(indexF);
-       NOX::Abstract::MultiVector* a = F->subView(indexA);
-       NOX::Abstract::MultiVector* x = X.subView(indexF);
-
-       status = solveBNonZeroNoncontiguous(params, a, B.get(), C, f, 
-					   G, *x, Y);
-
-       delete f;
-       delete a; 
-       delete x;
-     }
-
-     else 
-       status = solveBNonZeroNoncontiguous(params, A.get(), B.get(), 
-					   C, F, G, X, Y);
-     
    }
+
    return status;
 }
 
+// This function solves
+//    | J A ||X|   |F|
+//    | 0 C ||Y| = |G|
+// via:  Y = C^-1 * G, X = J^-1 * (F - A*Y), where special cases of A,F,G=0
+// are taken into account
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous(
+LOCA::BorderedSystem::Bordering::solveBZero(
 			    NOX::Parameter::List& params,
 			    const NOX::Abstract::MultiVector* AA,
 			    const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -294,38 +272,26 @@ LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous(
 			    NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous()";
+    "LOCA::BorderedSystem::Bordering::solveBZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  NOX::Abstract::MultiVector *RHS;
-  NOX::Abstract::MultiVector::DenseMatrix *M;
-  Teuchos::LAPACK<int,double> L;
-  int *ipiv;
-  int info;
+  // Determine if X or Y is zero
+  bool isZeroY = isZeroG;
+  bool isZeroX = isZeroF && (isZeroA || isZeroY);
 
-  // set X and Y if they are zero
-  if (isZeroX)
-    X.init(0.0);
-
+  // First compute Y
   if (isZeroY)
     Y.putScalar(0.0);
-
-  if (!isZeroX) {
-    if (!isZeroF)
-      RHS = F->clone(NOX::DeepCopy);
-    else
-      RHS = AA->clone(Y.numCols());
-  }
+  else {
+    // Solve Y = C^-1 * G
+    NOX::Abstract::MultiVector::DenseMatrix M(*CC);
+    int *ipiv = new int[M.numRows()];
+    Teuchos::LAPACK<int,double> L;
+    int info;
     
-
-  // Solve Y = C^-1 * G
-  if (!isZeroY) {
     Y.assign(*G);
-    M = new NOX::Abstract::MultiVector::DenseMatrix(*CC);
-    ipiv = new int[M->numRows()];
-    
-    L.GESV(M->numRows(), Y.numCols(), M->values(), M->stride(), ipiv, 
+    L.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
 	   Y.values(), Y.stride(), &info);
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
@@ -334,108 +300,96 @@ LOCA::BorderedSystem::Bordering::solveBZeroNoncontiguous(
 						     callingFunction);
     }
     delete [] ipiv;
-    delete M;
-
-    // compute F - A*Y
-    if (!isZeroF && !isZeroA)
-      RHS->update(Teuchos::NO_TRANS, -1.0, *AA, Y, 1.0);
-    else if (!isZeroA)
-      RHS->update(Teuchos::NO_TRANS, -1.0, *AA, Y, 0.0);
-
   }
 
-  // Solve X = J^-1 (F-A*Y)
-  if (!isZeroX) {
+  // Now compute X
+  if (isZeroX)
+    X.init(0.0);
+  else if (isZeroA || isZeroY) {
+    // Solve X = J^-1 F, note F must be nonzero
+    status = grp->applyJacobianInverseMultiVector(params, *F, X);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+  else {
+    NOX::Abstract::MultiVector *RHS;
+
+    if (isZeroF) {
+      RHS = AA->clone(Y.numCols());
+      RHS->update(Teuchos::NO_TRANS, -1.0, *AA, Y, 0.0);
+    }
+    else {
+      RHS = F->clone(NOX::DeepCopy);
+      RHS->update(Teuchos::NO_TRANS, -1.0, *AA, Y, 1.0);
+    }
+    // Solve X = J^-1 (F-A*Y)
     status = grp->applyJacobianInverseMultiVector(params, *RHS, X);
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
-    delete RHS;
   }
 
   return finalStatus;
 }
 
+// This function solves
+//    | J   0 ||X|   |F|
+//    | B^T C ||Y| = |G|
+// via:  X = J^-1 * F, Y = C^-1 * (G - B^T*X), where special cases of B,F,G=0
+// are taken into account
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous(
-		      NOX::Parameter::List& params,
-		      const NOX::Abstract::MultiVector* AA,
-		      const LOCA::MultiContinuation::ConstraintInterface* BB,
-		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		      const NOX::Abstract::MultiVector* F,
-		      const NOX::Abstract::MultiVector::DenseMatrix* G,
-		      NOX::Abstract::MultiVector& X,
-		      NOX::Abstract::MultiVector::DenseMatrix& Y) const
+LOCA::BorderedSystem::Bordering::solveAZero(
+		       NOX::Parameter::List& params,
+		       const LOCA::MultiContinuation::ConstraintInterface* BB,
+		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		       const NOX::Abstract::MultiVector* F,
+		       const NOX::Abstract::MultiVector::DenseMatrix* G,
+		       NOX::Abstract::MultiVector& X,
+		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous()";
+    "LOCA::BorderedSystem::Bordering::solveAZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  // set X and Y if they are zero
+  // Determine if X or Y is zero
+  bool isZeroX = isZeroF;
+  bool isZeroY = isZeroG && (isZeroB || isZeroX);
+
+  // First compute X
   if (isZeroX)
     X.init(0.0);
-
-  if (isZeroY)
-    Y.putScalar(0.0);
-
-  NOX::Abstract::MultiVector *X2;
-  NOX::Abstract::MultiVector::DenseMatrix *t2;
-
-  if (!isZeroX) {
-
-    // compute X1 = J^-1*F, X1 is stored in X
-    if (!isZeroF) {
-      status = grp->applyJacobianInverseMultiVector(params, *F, X);
-      finalStatus = 
-	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						     callingFunction);
-    }
-
-    // compute X2 = J^-1*A
-    if (!isZeroA && !isZeroY) {
-      X2 = AA->clone(NOX::ShapeCopy);
-      status = grp->applyJacobianInverseMultiVector(params, *AA, *X2);
-      finalStatus = 
-	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						     callingFunction);
-    }
-
+  else {
+    // Solve X = J^-1 F, note F must be nonzero
+    status = grp->applyJacobianInverseMultiVector(params, *F, X);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
   }
 
-  if (!isZeroY) {
-
-    // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
-    if (!isZeroT1) {
-      BB->applyConstraintDerivativesX(-1.0, X, Y);
+  // Now compute Y
+  if (isZeroY)
+    Y.putScalar(0.0);
+  else {
+    // Compute G - B^T*X and store in Y
+    if (isZeroG) 
+      BB->multiplyDX(-1.0, X, Y);
+    else {
+      Y.assign(*G);
+      if (!isZeroB && !isZeroX) {
+	NOX::Abstract::MultiVector::DenseMatrix T(Y.numRows(),Y.numCols());
+	BB->multiplyDX(1.0, X, T);
+	Y -= T;
+      }
     }
 
-    // compute t2 = -B^T*X2
-    if (!isZeroT2) {
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(BB->numConstraints(),
-						       X2->numVectors());
-      BB->applyConstraintDerivativesX(-1.0, *X2, *t2);
-    }
-
-    // compute G - B^T*X1
-    if (!isZeroG && !isZeroT1)
-      Y += *G;
-    else if (!isZeroG)
-      Y.assign(*G);  // don't use operator= (it destroys views)
-    
-    // compute C - B^T*X2
-    if (!isZeroC && !isZeroT2)
-      *t2 += *CC;
-    else if (!isZeroC)
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(*CC);
-      
-    // Note that C and T2 cannot both be zero
-
-    // compute Y = (C - B^T*X2)^-1 * (G - B^T*X1)
+    // Overwrite Y with Y = C^-1 * (G - B^T*X)
+    NOX::Abstract::MultiVector::DenseMatrix M(*CC);
+    int *ipiv = new int[M.numRows()];
     Teuchos::LAPACK<int,double> L;
-    int *ipiv = new int[t2->numRows()];
     int info;
-    L.GESV(t2->numRows(), Y.numCols(), t2->values(), t2->stride(), ipiv, 
+    L.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
 	   Y.values(), Y.stride(), &info);
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
@@ -444,32 +398,81 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroNoncontiguous(
 						     callingFunction);
     }
     delete [] ipiv;
-    delete t2;
-
-  }
-
-  if (!isZeroX) {
-
-    // compute X = X1 - X2*Y
-      
-    // if A is zero or Y is zero, then nothing needs to be done
-    if (!isZeroA && !isZeroY) {
-      if (isZeroF)
-	X.update(Teuchos::NO_TRANS, -1.0, *X2, Y, 0.0);
-      
-      else
-	X.update(Teuchos::NO_TRANS, -1.0, *X2, Y, 1.0);
-
-      delete X2;
-    }
-
   }
 
   return finalStatus;
 }
 
+// This function solves
+//    | J   A ||X|   |0|
+//    | B^T C ||Y| = |G|
+// via:  Xt = J^-1*A, Y = (C-B^T*Xt)^-1*G, X = -Xt*Y, where special cases of 
+// C,G=0 are taken into account
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::Bordering::solveBNonZeroContiguous(
+LOCA::BorderedSystem::Bordering::solveFZero(
+		       NOX::Parameter::List& params,
+		       const NOX::Abstract::MultiVector* AA,
+		       const LOCA::MultiContinuation::ConstraintInterface* BB,
+		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		       const NOX::Abstract::MultiVector::DenseMatrix* G,
+		       NOX::Abstract::MultiVector& X,
+		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
+{
+  string callingFunction = 
+    "LOCA::BorderedSystem::Bordering::solveFZero()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  // Set X and Y to zero if G is zero
+  if (isZeroG) {
+    X.init(0.0);
+    Y.putScalar(0.0);
+    return finalStatus;
+  }
+
+  NOX::Abstract::MultiVector *Xt = AA->clone(NOX::ShapeCopy);
+
+  // compute Xt = J^-1 A
+  status = grp->applyJacobianInverseMultiVector(params, *AA, *Xt);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  
+  // compute t2 = -B^T*Xt
+  NOX::Abstract::MultiVector::DenseMatrix t(BB->numConstraints(),
+					    Xt->numVectors());
+  BB->multiplyDX(-1.0, *Xt, t);
+    
+  // compute C - B^T*Xt
+  if (!isZeroC)
+    t += *CC;
+
+  // compute Y = (C - B^T*Xt)^-1 * G
+  Y.assign(*G);
+  Teuchos::LAPACK<int,double> L;
+  int *ipiv = new int[t.numRows()];
+  int info;
+  L.GESV(t.numRows(), Y.numCols(), t.values(), t.stride(), ipiv, 
+	 Y.values(), Y.stride(), &info);
+  if (info != 0) {
+    status = NOX::Abstract::Group::Failed;
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
+  // compute X = -Xt*Y
+  X.update(Teuchos::NO_TRANS, -1.0, *Xt, Y, -0.0);
+
+  delete Xt;
+
+  return finalStatus;
+}
+
+// This function assumes A, B, and F are nonzero.  C and/or G may be zero.
+// It also assumes F and A are in a contiguous multivec, stored in F
+NOX::Abstract::Group::ReturnType 
+LOCA::BorderedSystem::Bordering::solveContiguous(
 		       NOX::Parameter::List& params,
 		       const NOX::Abstract::MultiVector* AA,
 		       const LOCA::MultiContinuation::ConstraintInterface* BB,
@@ -482,84 +485,52 @@ LOCA::BorderedSystem::Bordering::solveBNonZeroContiguous(
 		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::Bordering::solveBNonZeroContiguous()";
+    "LOCA::BorderedSystem::Bordering::solveContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  NOX::Abstract::MultiVector *X1;
-  NOX::Abstract::MultiVector *X2; 
-  NOX::Abstract::MultiVector::DenseMatrix *t2;
+  // compute [X1 X2] = J^-1 [F A]
+  status = grp->applyJacobianInverseMultiVector(params, *F, X);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  NOX::Abstract::MultiVector *X1 = X.subView(indexF);
+  NOX::Abstract::MultiVector *X2 = X.subView(indexA);
   
-  // set X and Y if they are zero
-  if (isZeroX)
-    X.init(0.0);
+  // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
+  BB->multiplyDX(-1.0, *X1, Y);
+      
+  // compute t2 = -B^T*X2
+  NOX::Abstract::MultiVector::DenseMatrix t2(BB->numConstraints(),
+					     X2->numVectors());
+  BB->multiplyDX(-1.0, *X2, t2);
 
-  if (isZeroY)
-    Y.putScalar(0.0);
+  // compute G - B^T*X1
+  if (!isZeroG)
+    Y += *G;
+    
+  // compute C - B^T*X2
+  if (!isZeroC)
+    t2 += *CC;
 
-  if (!isZeroX) {
-
-    // compute J^-1 [F A]
-    status = grp->applyJacobianInverseMultiVector(params, *F, X);
+  // compute Y = (C - B^T*X2)^-1 * (G - B^T*X1)
+  Teuchos::LAPACK<int,double> L;
+  int *ipiv = new int[t2.numRows()];
+  int info;
+  L.GESV(t2.numRows(), Y.numCols(), t2.values(), t2.stride(), ipiv, 
+	 Y.values(), Y.stride(), &info);
+  if (info != 0) {
+    status = NOX::Abstract::Group::Failed;
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
-
-    X1 = X.subView(indexF);
-    X2 = X.subView(indexA);
-  }
-
-  if (!isZeroY) {
-
-    
-    if (!isZeroB) {
-
-      // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
-      BB->applyConstraintDerivativesX(-1.0, *X1, Y);
-      
-      // compute t2 = -B^T*X2
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(BB->numConstraints(),
-						       X2->numVectors());
-      BB->applyConstraintDerivativesX(-1.0, *X2, *t2);
-
-    }
-
-    // compute G - B^T*X1
-    if (!isZeroG && !isZeroB)
-      Y += *G;
-    else if (!isZeroG)
-      Y.assign(*G);  // don't use operator= (it destroys views)
-    
-    // compute C - B^T*X2
-    if (!isZeroC && !isZeroB)
-      *t2 += *CC;
-    else if (!isZeroC)
-      t2 = new NOX::Abstract::MultiVector::DenseMatrix(*CC);
-      
-    // Note that C and B cannot both be zero
-
-    // compute Y = (C - B^T*X2)^-1 * (G - B^T*X1)
-    Teuchos::LAPACK<int,double> L;
-    int *ipiv = new int[t2->numRows()];
-    int info;
-    L.GESV(CC->numRows(), Y.numCols(), t2->values(), t2->stride(), ipiv, 
-	   Y.values(), Y.stride(), &info);
-    if (info != 0) {
-      status = NOX::Abstract::Group::Failed;
-      finalStatus = 
-	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						     callingFunction);
-    }
-    delete t2;
-
   }
 
   // compute X = X1 - X2*Y
-  if (!isZeroX) {
-    X1->update(Teuchos::NO_TRANS, -1.0, *X2, Y, 1.0);
-    delete X1;
-    delete X2;
-  }
+  X1->update(Teuchos::NO_TRANS, -1.0, *X2, Y, 1.0);
+
+  delete X1;
+  delete X2;
 
   return finalStatus;
 }

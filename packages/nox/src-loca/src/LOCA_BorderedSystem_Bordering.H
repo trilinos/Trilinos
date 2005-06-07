@@ -97,10 +97,6 @@ namespace LOCA {
       //! Destructor
       virtual ~Bordering();
 
-      //! Set flags indicating if any blocks are zero
-      virtual void setIsZero(bool flagA, bool flagB, bool flagC, bool flagF,
-			     bool flagG);
-
       /*! 
        * \brief Set flag indicating whether F and A are stored in a 
        * continguous multivector.
@@ -109,12 +105,15 @@ namespace LOCA {
 
       //! Set blocks
       /*!
-       * The \c blockA pointer may be null if this block is zero
+       * The \c blockA or \c blockC pointer may be null if either is zero.
+       * Whether block B is zero will be determined by querying \c blockB
+       * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
 	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockBC);
+	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
   
       /*! 
        * \brief Computed extended matrix-multivector product
@@ -194,50 +193,55 @@ namespace LOCA {
     protected:
 
       /*! 
-       * \brief Solves the extended system when B = 0 and F and A are
-       * not contiguous
+       * \brief Solves the extended system when B = 0
        */
       NOX::Abstract::Group::ReturnType  
-      solveBZeroNoncontiguous(
-			   NOX::Parameter::List& params,
-			   const NOX::Abstract::MultiVector* AA,
-			   const NOX::Abstract::MultiVector::DenseMatrix* CC,
-			   const NOX::Abstract::MultiVector* F,
-			   const NOX::Abstract::MultiVector::DenseMatrix* G,
-			   NOX::Abstract::MultiVector& X,
-			   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+      solveBZero(NOX::Parameter::List& params,
+		 const NOX::Abstract::MultiVector* AA,
+		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		 const NOX::Abstract::MultiVector* F,
+		 const NOX::Abstract::MultiVector::DenseMatrix* G,
+		 NOX::Abstract::MultiVector& X,
+		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
       /*! 
-       * \brief Solves the extended system when B is not 0 and F and A are
-       * not contiguous
+       * \brief Solves the extended system when A = 0
        */
       NOX::Abstract::Group::ReturnType  
-      solveBNonZeroNoncontiguous(
-			NOX::Parameter::List& params,
-			const NOX::Abstract::MultiVector* AA,
-			const LOCA::MultiContinuation::ConstraintInterface* BB,
-			const NOX::Abstract::MultiVector::DenseMatrix* CC,
-			const NOX::Abstract::MultiVector* F,
-			const NOX::Abstract::MultiVector::DenseMatrix* G,
-			NOX::Abstract::MultiVector& X,
-			NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+      solveAZero(NOX::Parameter::List& params,
+		 const LOCA::MultiContinuation::ConstraintInterface* BB,
+		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		 const NOX::Abstract::MultiVector* F,
+		 const NOX::Abstract::MultiVector::DenseMatrix* G,
+		 NOX::Abstract::MultiVector& X,
+		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
       /*! 
-       * \brief Solves the extended system when B is not 0 and F and A are
-       * contiguous
+       * \brief Solves the extended system when F = 0
        */
       NOX::Abstract::Group::ReturnType  
-      solveBNonZeroContiguous(
-			NOX::Parameter::List& params,
-			const NOX::Abstract::MultiVector* AA,
-			const LOCA::MultiContinuation::ConstraintInterface* BB,
-			const NOX::Abstract::MultiVector::DenseMatrix* CC,
-			vector<int>& indexF,
-			vector<int>& indexA,
-			const NOX::Abstract::MultiVector* F,
-			const NOX::Abstract::MultiVector::DenseMatrix* G,
-			NOX::Abstract::MultiVector& X,
-			NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+      solveFZero(NOX::Parameter::List& params,
+		 const NOX::Abstract::MultiVector* AA,
+		 const LOCA::MultiContinuation::ConstraintInterface* BB,
+		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		 const NOX::Abstract::MultiVector::DenseMatrix* G,
+		 NOX::Abstract::MultiVector& X,
+		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
+      /*! 
+       * \brief Solves the extended system when F and A are contiguous
+       */
+      NOX::Abstract::Group::ReturnType  
+      solveContiguous(NOX::Parameter::List& params,
+		      const NOX::Abstract::MultiVector* AA,
+		      const LOCA::MultiContinuation::ConstraintInterface* BB,
+		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		      vector<int>& indexF,
+		      vector<int>& indexA,
+		      const NOX::Abstract::MultiVector* F,
+		      const NOX::Abstract::MultiVector::DenseMatrix* G,
+		      NOX::Abstract::MultiVector& X,
+		      NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
     private:
 
@@ -256,7 +260,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
 
       //! Pointer to group storing J
-      Teuchos::RefCountPtr<const NOX::Abstract::Group>  grp;
+      Teuchos::RefCountPtr<const NOX::Abstract::Group> grp;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
@@ -265,7 +269,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface> B;
 
       //! Pointer to C block
-      const NOX::Abstract::MultiVector::DenseMatrix *C;
+      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> C;
 
       //! flag indicating whether A block is zero
       bool isZeroA;
@@ -277,25 +281,13 @@ namespace LOCA {
       bool isZeroC;
 
       //! flag indicating whether F block is zero
-      bool isZeroF;
+      mutable bool isZeroF;
 
       //! flag indicating whether G block is zero
-      bool isZeroG;
+      mutable bool isZeroG;
 
       //! flag indicating whether F and A are contiguous
       bool isContiguous;
-
-      //! flag indicating whether X block is zero
-      bool isZeroX;
-
-      //! flag indicating whether Y block is zero
-      bool isZeroY;
-
-      //! flag indicating whether B^T*X1 block is zero
-      bool isZeroT1;
-
-      //! flag indicating whether B^T*X2 block is zero
-      bool isZeroT2;
 
     };
   } // namespace BorderedSystem

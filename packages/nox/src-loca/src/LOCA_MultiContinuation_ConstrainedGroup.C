@@ -307,28 +307,26 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
   }
 
   // Compute constraint derivatives
-  if (!constraintsPtr->isConstraintDerivatives()) {
-    status = constraintsPtr->computeConstraintDerivatives();
+  if (!constraintsPtr->isDX()) {
+    status = constraintsPtr->computeDX();
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
   }
-
-  if (!constraintsPtr->isConstraintDerivativesPZero())
-    dfdpMultiVec->
-      getScalars().assign(*(constraintsPtr->getConstraintDerivativesP()));
-  else
-    dfdpMultiVec->getScalars().putScalar(0.0);
+  status = 
+    constraintsPtr->computeDP(constraintParamIDs,
+			      fMultiVec.getScalars(),
+			      isValidF);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Set blocks in bordered solver
-  borderedSolver->setIsZero(false,
-			    constraintsPtr->isConstraintDerivativesXZero(),
-			    constraintsPtr->isConstraintDerivativesPZero(), 
-			    false, false);
   borderedSolver->setMatrixBlocks(
 			 grpPtr, 
 			 Teuchos::rcp(&(dfdpMultiVec->getXMultiVec()), false), 
-			 constraintsPtr);
+			 constraintsPtr,
+			 Teuchos::rcp(&(dfdpMultiVec->getScalars()), false));
 
   isValidJacobian = true;
 
@@ -374,21 +372,19 @@ LOCA::MultiContinuation::ConstrainedGroup::computeGradient()
   gradientVec->getXVec() = grpPtr->getGradient();
 
   // compute grad f + dg/dx^T * g
-  constraintsPtr->applyConstraintDerivativesX(
-					    Teuchos::TRANS, 1.0, 
-					    constraintsPtr->getConstraints(),
-					    1.0, 
-					    gradientMultiVec.getXMultiVec());
+  constraintsPtr->addDX(Teuchos::TRANS, 1.0, 
+			constraintsPtr->getConstraints(),
+			1.0, 
+			gradientMultiVec.getXMultiVec());
 
   // compute df/dp^T * f
   ffMultiVec->getXMultiVec().multiply(1.0, dfdpMultiVec->getXMultiVec(), 
 				      gradientMultiVec.getScalars());
 
   // compute df/dp^T * f + dg/dp^T * g
-  if (!constraintsPtr->isConstraintDerivativesPZero())
-    gradientMultiVec.getScalars().multiply(
+  gradientMultiVec.getScalars().multiply(
 			       Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, 
-			       *(constraintsPtr->getConstraintDerivativesP()),
+			       dfdpMultiVec->getScalars(),
 			       constraintsPtr->getConstraints(), 1.0);
 
   isValidGradient = true;
@@ -779,7 +775,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
 					     const vector<int>& paramIDs, 
 					     NOX::Abstract::MultiVector& dfdp, 
-					     bool isValidF)
+					     bool isValid_F)
 {
   string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti()";
@@ -791,14 +787,16 @@ LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(dfdp);
 
   // Compute df/dp
-  status = grpPtr->computeDfDpMulti(paramIDs, c_dfdp.getXMultiVec(), isValidF);
+  status = grpPtr->computeDfDpMulti(paramIDs, c_dfdp.getXMultiVec(), 
+				    isValid_F);
   finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
 
   // Compute dg/dp
-  status = constraintsPtr->computeDgDp(paramIDs, c_dfdp.getScalars(), 
-				       isValidF);
+  status = constraintsPtr->computeDP(paramIDs, 
+				     c_dfdp.getScalars(), 
+				     isValid_F);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);

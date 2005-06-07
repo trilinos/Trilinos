@@ -41,7 +41,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::ArcLengthConstraint(
   globalData(global_data),
   arcLengthGroup(grp),
   constraints(grp->getNumParams(), 1),
-  isValidConstraints(false)
+  isValidConstraints(false),
+  conParamIDs(grp->getContinuationParameterIDs())
 {
 }
 
@@ -51,7 +52,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::ArcLengthConstraint(
   globalData(source.globalData),
   arcLengthGroup(),
   constraints(source.constraints),
-  isValidConstraints(source.isValidConstraints)
+  isValidConstraints(source.isValidConstraints),
+  conParamIDs(source.conParamIDs)
 {
 }
 
@@ -67,6 +69,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::operator=(
     globalData = source.globalData;
     constraints.assign(source.constraints);
     isValidConstraints = source.isValidConstraints;
+    conParamIDs = source.conParamIDs;
   }
 
   return *this;
@@ -164,12 +167,59 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ArcLengthConstraint::computeConstraintDerivatives()
+LOCA::MultiContinuation::ArcLengthConstraint::computeDX()
 {
   if (!isValidConstraints)
     return computeConstraints();
   else
     return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::MultiContinuation::ArcLengthConstraint::computeDP(
+		                const vector<int>& paramIDs, 
+		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+				bool isValidG)
+{
+   string callingFunction = 
+    "LOCA::MultiContinuation::ArcLengthConstraint::computeDP()";
+  NOX::Abstract::Group::ReturnType status;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  
+  // Compute constraints if necessary
+  if (!isValidG && !isValidConstraints) {
+    status = computeConstraints();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+  if (!isValidG) {
+    for (int i=0; i<constraints.numRows(); i++)
+      dgdp(i,0) = constraints(i,0);
+  }
+
+  // Get tangent vector
+  const LOCA::MultiContinuation::ExtendedMultiVector& scaledTangent = 
+    arcLengthGroup->getScaledPredictorTangent();
+
+  // If a param ID is equal to a constraint param ID, then that column
+  // of dgdp is given by that column of the scaled predictor, other wise
+  // that column is zero
+  vector<int>::const_iterator it;
+  int idx;
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+    it = find(conParamIDs.begin(), conParamIDs.end(), paramIDs[i]);
+    if (it == conParamIDs.end())
+      for (int k=0; k<constraints.numRows(); k++)
+	dgdp(k,i+1) = 0.0;
+    else {
+      idx = it - conParamIDs.begin();
+      for (int k=0; k<constraints.numRows(); k++)
+	dgdp(k,i+1) = scaledTangent.getScalar(k,idx);
+    }
+  }
+
+  return finalStatus;
 }
 
 bool
@@ -179,7 +229,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::isConstraints() const
 }
 
 bool
-LOCA::MultiContinuation::ArcLengthConstraint::isConstraintDerivatives() const
+LOCA::MultiContinuation::ArcLengthConstraint::isDX() const
 {
   return isValidConstraints;
 }
@@ -190,17 +240,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::getConstraints() const
   return constraints;
 }
 
-const NOX::Abstract::MultiVector::DenseMatrix*
-LOCA::MultiContinuation::ArcLengthConstraint::getConstraintDerivativesP() const
-{
-  const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
-    arcLengthGroup->getScaledPredictorTangent();
-
-  return &tangent.getScalars();
-}
-
 const NOX::Abstract::MultiVector*
-LOCA::MultiContinuation::ArcLengthConstraint::getConstraintDerivativesX() const
+LOCA::MultiContinuation::ArcLengthConstraint::getDX() const
 {
   // Get tangent vector
   const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
@@ -209,69 +250,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::getConstraintDerivativesX() const
   return &tangent.getXMultiVec();
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ArcLengthConstraint::applyConstraintDerivativesX(
-		      double alpha, 
-		      const NOX::Abstract::MultiVector& input_x,
-		      NOX::Abstract::MultiVector::DenseMatrix& result_p) const
-{
-  // Get tangent vector
-  const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
-    arcLengthGroup->getScaledPredictorTangent();
-
-  // Get x component of tangent
-  const NOX::Abstract::MultiVector& tangent_x = tangent.getXMultiVec();
-
-  // Multiply
-  //tangent_x.multiply(alpha, input_x, result_p);
-  input_x.multiply(alpha, tangent_x, result_p);
-
-  return NOX::Abstract::Group::Ok;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ArcLengthConstraint::applyConstraintDerivativesX(
-		             Teuchos::ETransp transb,
-			     double alpha, 
-			     const NOX::Abstract::MultiVector::DenseMatrix& b,
-			     double beta,
-			     NOX::Abstract::MultiVector& result_x) const
-{
-  // Get tangent vector
-  const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
-    arcLengthGroup->getScaledPredictorTangent();
-
-  // Get x component of tangent
-  const NOX::Abstract::MultiVector& tangent_x = tangent.getXMultiVec();
-
-  // Update
-  result_x.update(transb, alpha, tangent_x, b, beta);
-
-  return NOX::Abstract::Group::Ok;
-}
-
 bool
-LOCA::MultiContinuation::ArcLengthConstraint::isConstraintDerivativesXZero() const
+LOCA::MultiContinuation::ArcLengthConstraint::isDXZero() const
 {
   return false;
-}
-
-bool
-LOCA::MultiContinuation::ArcLengthConstraint::isConstraintDerivativesPZero() const
-{
-  return false;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ArcLengthConstraint::computeDgDp(
-				const vector<int>& paramIDs, 
-		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-				bool isValidG)
-{
-  string callingFunction = 
-    "LOCA::MultiContinuation::ArcLengthConstraint::computeDgDp()";
-  globalData->locaErrorCheck->throwError(callingFunction,
-					 "ArcLength Constraint does not support derivatives with respect to non-continuation parameters!");
-
-  return NOX::Abstract::Group::NotDefined;
 }

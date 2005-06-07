@@ -41,13 +41,9 @@ LOCA::MultiContinuation::NaturalConstraint::NaturalConstraint(
   globalData(global_data),
   naturalGroup(grp),
   constraints(grp->getNumParams(), 1),
-  dgdp(grp->getNumParams(), grp->getNumParams()),
-  isValidConstraints(false)
+  isValidConstraints(false),
+  conParamIDs(grp->getContinuationParameterIDs())
 {
-  // Initialize dgdp to identity matrix
-  dgdp.putScalar(0.0);
-  for (int i=0; i<grp->getNumParams(); i++)
-    dgdp(i,i) = 1.0;
 }
 
 LOCA::MultiContinuation::NaturalConstraint::NaturalConstraint(
@@ -56,8 +52,8 @@ LOCA::MultiContinuation::NaturalConstraint::NaturalConstraint(
   globalData(source.globalData),
   naturalGroup(),
   constraints(source.constraints),
-  dgdp(source.dgdp),
-  isValidConstraints(source.isValidConstraints)
+  isValidConstraints(source.isValidConstraints),
+  conParamIDs(source.conParamIDs)
 {
 }
 
@@ -72,8 +68,8 @@ LOCA::MultiContinuation::NaturalConstraint::operator=(
   if (this != &source) {
     globalData = source.globalData;
     constraints.assign(source.constraints);
-    dgdp.assign(source.dgdp);
     isValidConstraints = source.isValidConstraints;
+    conParamIDs = source.conParamIDs;
   }
 
   return *this;
@@ -149,9 +145,47 @@ LOCA::MultiContinuation::NaturalConstraint::computeConstraints()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::NaturalConstraint::computeConstraintDerivatives()
+LOCA::MultiContinuation::NaturalConstraint::computeDX()
 {
   return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::MultiContinuation::NaturalConstraint::computeDP(
+		                const vector<int>& paramIDs, 
+		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+				bool isValidG)
+{
+   string callingFunction = 
+    "LOCA::MultiContinuation::NaturalConstraint::computeDP()";
+  NOX::Abstract::Group::ReturnType status;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  
+  // Compute constraints if necessary
+  if (!isValidG && !isValidConstraints) {
+    status = computeConstraints();
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+  if (!isValidG) {
+    for (int i=0; i<constraints.numRows(); i++)
+      dgdp(i,0) = constraints(i,0);
+  }
+
+  // If a param ID is equal to a constraint param ID, then that column
+  // of dgdp is given by that column of the identity matrix, other wise
+  // that column is zero
+  vector<int>::const_iterator it;
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+    for (int k=0; k<constraints.numRows(); k++)
+	dgdp(k,i+1) = 0.0;
+    it = find(conParamIDs.begin(), conParamIDs.end(), paramIDs[i]);
+    if (it != conParamIDs.end())
+      dgdp(it-conParamIDs.begin(),i+1) = 1.0;
+  }
+
+  return finalStatus;
 }
 
 bool
@@ -161,7 +195,7 @@ LOCA::MultiContinuation::NaturalConstraint::isConstraints() const
 }
 
 bool
-LOCA::MultiContinuation::NaturalConstraint::isConstraintDerivatives() const
+LOCA::MultiContinuation::NaturalConstraint::isDX() const
 {
   return true;
 }
@@ -172,64 +206,15 @@ LOCA::MultiContinuation::NaturalConstraint::getConstraints() const
   return constraints;
 }
 
-const NOX::Abstract::MultiVector::DenseMatrix*
-LOCA::MultiContinuation::NaturalConstraint::getConstraintDerivativesP() const
-{
-  return &dgdp;
-}
-
 const NOX::Abstract::MultiVector*
-LOCA::MultiContinuation::NaturalConstraint::getConstraintDerivativesX() const
+LOCA::MultiContinuation::NaturalConstraint::getDX() const
 {
   return NULL;
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::NaturalConstraint::applyConstraintDerivativesX(
-		      double alpha, 
-		      const NOX::Abstract::MultiVector& input_x,
-		      NOX::Abstract::MultiVector::DenseMatrix& result_p) const
-{
-  result_p.putScalar(0.0);
-
-  return NOX::Abstract::Group::Ok;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::NaturalConstraint::applyConstraintDerivativesX(
-		             Teuchos::ETransp transb,
-			     double alpha, 
-			     const NOX::Abstract::MultiVector::DenseMatrix& b,
-			     double beta,
-			     NOX::Abstract::MultiVector& result_x) const
-{
-  result_x.scale(beta);
-
-  return NOX::Abstract::Group::Ok;
-}
-
 bool
-LOCA::MultiContinuation::NaturalConstraint::isConstraintDerivativesXZero() const
+LOCA::MultiContinuation::NaturalConstraint::isDXZero() const
 {
   return true;
 }
 
-bool
-LOCA::MultiContinuation::NaturalConstraint::isConstraintDerivativesPZero() const
-{
-  return false;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::NaturalConstraint::computeDgDp(
-				const vector<int>& paramIDs, 
-		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-				bool isValidG)
-{
-  string callingFunction = 
-    "LOCA::MultiContinuation::NaturalConstraint::computeDgDp()";
-  globalData->locaErrorCheck->throwError(callingFunction,
-					 "Natural Constraint does not support derivatives with respect to non-continuation parameters!");
-
-  return NOX::Abstract::Group::NotDefined;
-}

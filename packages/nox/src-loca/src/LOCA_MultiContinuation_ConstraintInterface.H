@@ -109,26 +109,30 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType
       computeConstraints() = 0;
 
-      //! Compute constraint derivatives
+      //! Compute derivative of constraints w.r.t. solution vector x
       virtual NOX::Abstract::Group::ReturnType
-      computeConstraintDerivatives() = 0;
+      computeDX() = 0;
+
+      //! Compute derivative of constraints w.r.t. supplied parameters.
+      /*!
+       * The first column of \c dgdp should be filled with the constraint
+       * residuals \f$g\f$ if \c isValidG is \c false.  If \c isValidG is
+       * \c true, then the \c dgdp contains \f$g\f$ on input.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeDP(const vector<int>& paramIDs, 
+		NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+		bool isValidG) = 0;
 
       //! Return \c true if constraint residuals are valid
       virtual bool isConstraints() const = 0;
 
-      //! Return \c true if constraint derivatives are valid
-      virtual bool isConstraintDerivatives() const = 0;
+      //! Return \c true if derivative of constraint w.r.t. x is valid
+      virtual bool isDX() const = 0;
 
       //! Return constraint residuals
       virtual const NOX::Abstract::MultiVector::DenseMatrix&
       getConstraints() const = 0;
-
-      //! Return parameter component of constraint derivatives
-      /*!
-       * May return NULL if constraint derivative is zero
-       */
-      virtual const NOX::Abstract::MultiVector::DenseMatrix*
-      getConstraintDerivativesP() const = 0;
 
       //! Compute result_p = alpha * dg/dx * input_x
       /*!
@@ -139,10 +143,9 @@ namespace LOCA {
        * \endcode
        */
       virtual NOX::Abstract::Group::ReturnType
-      applyConstraintDerivativesX(
-		double alpha, 
-		const NOX::Abstract::MultiVector& input_x,
-		NOX::Abstract::MultiVector::DenseMatrix& result_p) const = 0;
+      multiplyDX(double alpha, 
+	      const NOX::Abstract::MultiVector& input_x,
+	      NOX::Abstract::MultiVector::DenseMatrix& result_p) const = 0;
 
       //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x
       /*!
@@ -152,35 +155,17 @@ namespace LOCA {
        * \endcode
        */
       virtual NOX::Abstract::Group::ReturnType
-      applyConstraintDerivativesX(
-		Teuchos::ETransp transb,
-		double alpha, 
-		const NOX::Abstract::MultiVector::DenseMatrix& b,
-		double beta,
-		NOX::Abstract::MultiVector& result_x) const = 0;
+      addDX(Teuchos::ETransp transb,
+	      double alpha, 
+	      const NOX::Abstract::MultiVector::DenseMatrix& b,
+	      double beta,
+	      NOX::Abstract::MultiVector& result_x) const = 0;
 
       /*! 
        * \brief Return \c true if solution component of constraint 
        * derivatives is zero
        */
-      virtual bool isConstraintDerivativesXZero() const = 0;
-
-      /*! 
-       * \brief Return \c true if parameter component of constraint 
-       * derivatives is zero
-       */
-      virtual bool isConstraintDerivativesPZero() const = 0;
-
-      //! Compute derivative of constraints w.r.t. supplied parameters.
-      /*!
-       * The first column of \c dgdp should be filled with the constraint
-       * residuals \f$g\f$ if \c isValidG is \c false.  If \c isValidG is
-       * \c true, then the \c dgdp contains \f$g\f$ on input.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      computeDgDp(const vector<int>& paramIDs, 
-		  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-		  bool isValidG) = 0;
+      virtual bool isDXZero() const = 0;
 
     }; // Class ConstraintInterface
 

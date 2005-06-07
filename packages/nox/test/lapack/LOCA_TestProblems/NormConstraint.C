@@ -38,13 +38,11 @@ NormConstraint::NormConstraint(int N, const LOCA::ParameterVector& pVec) :
   n(N),
   constraints(1,1),
   isValidConstraints(false),
-  dgdp(1,1),
   p(pVec),
-  x()
+  x(),
+  isZeroDgDx(false)
 {
   constraints.putScalar(0.0);
-  dgdp.putScalar(0.0);
-  dgdp(0,0) = -1.0; // derivative w.r.t. gamma
   NOX::LAPACK::Vector xx(n);
   x = Teuchos::rcp(xx.createMultiVector(1));
 }
@@ -54,9 +52,9 @@ NormConstraint::NormConstraint(const NormConstraint& source,
   n(source.n),
   constraints(source.constraints),
   isValidConstraints(false),
-  dgdp(source.dgdp),
   p(source.p),
-  x(Teuchos::rcp(source.x->clone(type)))
+  x(Teuchos::rcp(source.x->clone(type))),
+  isZeroDgDx(source.isZeroDgDx)
 {
   if (source.isValidConstraints && type == NOX::DeepCopy)
     isValidConstraints = true;
@@ -73,9 +71,9 @@ NormConstraint::operator=(const NormConstraint& source)
     n = source.n;
     constraints = source.constraints;
     isValidConstraints = source.isValidConstraints;
-    dgdp = source.dgdp;
     p = source.p;
     *x = *source.x;
+    isZeroDgDx = source.isZeroDgDx;
   }
 
   return *this;
@@ -128,15 +126,36 @@ NormConstraint::setParams(
 NOX::Abstract::Group::ReturnType
 NormConstraint::computeConstraints()
 {
-  constraints(0,0) = 0.5 * n * (*x)[0].dot((*x)[0]) - p.getValue("gamma");
+  constraints(0,0) = 0.5 * n * (*x)[0].dot((*x)[0]) - p.getValue("alpha");
   isValidConstraints = true;
 
   return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType
-NormConstraint::computeConstraintDerivatives()
+NormConstraint::computeDX()
 {
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+NormConstraint::computeDP(const vector<int>& paramIDs, 
+			  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+			  bool isValidG)
+{
+  if (!isValidG) {
+    dgdp(0,0) = constraints(0,0);
+  }
+
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+    if (p.getLabel(paramIDs[i]) == "alpha") {
+      dgdp(0,i+1) = -1.0;
+    }
+    else {
+      dgdp(0,i+1) = 0.0;
+    }
+  }
+
   return NOX::Abstract::Group::Ok;
 }
 
@@ -147,7 +166,7 @@ NormConstraint::isConstraints() const
 }
 
 bool
-NormConstraint::isConstraintDerivatives() const
+NormConstraint::isDX() const
 {
   return true;
 }
@@ -158,47 +177,20 @@ NormConstraint::getConstraints() const
   return constraints;
 }
 
-const NOX::Abstract::MultiVector::DenseMatrix*
-NormConstraint::getConstraintDerivativesP() const
-{
-  return &dgdp;
-}
-
 const NOX::Abstract::MultiVector*
-NormConstraint::getConstraintDerivativesX() const
+NormConstraint::getDX() const
 {
   return x.get();
 }
 
 bool
-NormConstraint::isConstraintDerivativesXZero() const
+NormConstraint::isDXZero() const
 {
-  return false;
+  return isZeroDgDx;
 }
 
-bool
-NormConstraint::isConstraintDerivativesPZero() const
+void
+NormConstraint::setIsZeroDX(bool flag)
 {
-  return false;
-}
-
-NOX::Abstract::Group::ReturnType
-NormConstraint::computeDgDp(const vector<int>& paramIDs, 
-			      NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-			      bool isValidG)
-{
-  if (!isValidG) {
-    dgdp(0,0) = constraints(0,0);
-  }
-
-  for (unsigned int i=0; i<paramIDs.size(); i++) {
-    if (p.getLabel(paramIDs[i]) == "gamma") {
-      dgdp(0,i+1) = -1.0;
-    }
-    else {
-      dgdp(0,i+1) = 0.0;
-    }
-  }
-
-  return NOX::Abstract::Group::Ok;
+  isZeroDgDx = flag;
 }

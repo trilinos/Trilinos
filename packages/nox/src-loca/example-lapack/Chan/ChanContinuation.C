@@ -95,6 +95,8 @@ int main()
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
     stepperList.setParameter("Compute Eigenvalues",false);
+    //stepperList.setParameter("Bordered Solver Method", "Bordering");
+    stepperList.setParameter("Bordered Solver Method", "LAPACK Direct Solve");
 
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
@@ -151,8 +153,12 @@ int main()
 					      normF, 
 					      maxIters));
 
+    // Create LAPACK Factory
+    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
     // Create the stepper  
-    LOCA::NewStepper stepper(grp, comboOR, paramList);
+    LOCA::NewStepper stepper(grp, comboOR, paramList, lapackFactory);
 
     // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();

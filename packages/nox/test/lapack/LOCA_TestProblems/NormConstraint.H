@@ -95,51 +95,49 @@ public:
   virtual NOX::Abstract::Group::ReturnType
   computeConstraints();
 
-  //! Compute continuation constraint equations
+  //! Compute derivative of constraints w.r.t. solution vector x
   virtual NOX::Abstract::Group::ReturnType
-  computeConstraintDerivatives();
+  computeDX();
+
+  //! Compute derivative of constraints w.r.t. supplied parameters.
+  /*!
+   * The first column of \c dgdp should be filled with the constraint
+   * residuals \f$g\f$ if \c isValidG is \c false.  If \c isValidG is
+   * \c true, then the \c dgdp contains \f$g\f$ on input.
+   */
+  virtual NOX::Abstract::Group::ReturnType
+  computeDP(const vector<int>& paramIDs, 
+	    NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+	    bool isValidG);
 
   //! Return \c true if constraint residuals are valid
   virtual bool isConstraints() const;
   
-  //! Return \c true if constraint derivatives are valid
-  virtual bool isConstraintDerivatives() const;
+  //! Return \c true if derivative of constraint w.r.t. x is valid
+  virtual bool isDX() const;
 
   //! Return constraint residuals
   virtual const NOX::Abstract::MultiVector::DenseMatrix&
   getConstraints() const;
 
-  //! Return parameter component of constraint derivatives
-  virtual const NOX::Abstract::MultiVector::DenseMatrix*
-  getConstraintDerivativesP() const;
-
   //! Return solution component of constraint derivatives
   virtual const NOX::Abstract::MultiVector*
-  getConstraintDerivativesX() const;
+  getDX() const;
 
   /*! 
    * \brief Return \c true if solution component of constraint 
    * derivatives is zero
    */
-  virtual bool isConstraintDerivativesXZero() const;
-  
-  /*! 
-   * \brief Return \c true if parameter component of constraint 
-   * derivatives is zero
-   */
-  virtual bool isConstraintDerivativesPZero() const;
-
-  //! Compute derivative of constraints w.r.t. supplied parameters.
-  /*!
-   * This is currently not defined for natural constraints, so we throw
-   * an error.
-   */
-  virtual NOX::Abstract::Group::ReturnType
-  computeDgDp(const vector<int>& paramIDs, 
-	      NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-	      bool isValidG);
+  virtual bool isDXZero() const;
 
   //@}
+
+  /*!
+   * \brief Set the flag determinging whether isDXZero() 
+   * returns true or false.  This is for testing bordered solvers when B
+   * is zero.
+   */
+  void setIsZeroDX(bool flag);
 
 protected:
 
@@ -152,14 +150,14 @@ protected:
   //! Flag indicating whether constraints are valid
   bool isValidConstraints;
 
-  //! Derivative of constraints w.r.t. constraint parameters
-  NOX::Abstract::MultiVector::DenseMatrix dgdp;
-
   //! Parameter vector
   LOCA::ParameterVector p;
 
   //! Solution vector
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> x;
+
+  //! Flag indicating whether dgdx is zero
+  bool isZeroDgDx;
 
 };
 

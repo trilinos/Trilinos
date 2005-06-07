@@ -54,8 +54,6 @@ LOCA::BorderedSystem::LAPACKDirectSolve::LAPACKDirectSolve(
   isZeroA(true),
   isZeroB(true),
   isZeroC(true),
-  isZeroF(true),
-  isZeroG(true),
   isContiguous(false)
 {
 }
@@ -65,47 +63,17 @@ LOCA::BorderedSystem::LAPACKDirectSolve::~LAPACKDirectSolve()
 }
 
 void
-LOCA::BorderedSystem::LAPACKDirectSolve::setIsZero(bool flagA, bool flagB, 
-						   bool flagC,
-						   bool flagF, bool flagG)
-{
-  isZeroA = flagA;
-  isZeroB = flagB;
-  isZeroC = flagC;
-  isZeroF = flagF;
-  isZeroG = flagG;
-
-  // ensure blocks B and C are not both zero
-  if (isZeroB && isZeroC) 
-    globalData->locaErrorCheck->throwError(
-			"LOCA::BorderedSystem::LAPACKDirectSolve::setIsZero",
-			"Blocks B and C cannot both be zero");
-
-  // ensure blocks A and C are not both zero
-  if (isZeroA && isZeroC) 
-    globalData->locaErrorCheck->throwError(
-			"LOCA::BorderedSystem::LAPACKDirectSolve::setIsZero",
-			"Blocks A and C cannot both be zero");
-
-}
-
-void
 LOCA::BorderedSystem::LAPACKDirectSolve::setIsContiguous(bool flag)
 {
   isContiguous = flag;
-
-  // ensure F and A are nonzero if contiguous
-  if (isContiguous && (isZeroF || isZeroA)) 
-     globalData->locaErrorCheck->throwError(
-		  "LOCA::BorderedSystem::LAPACKDirectSolve::setIsContiguous",
-		  "Blocks F and A cannont be contiguous when one is zero");
 }
 
 void
 LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
 	 const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockBC)
+	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
     "LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks()";
@@ -121,7 +89,8 @@ LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
 	      string("The LAPACK Direct Solve bordered solver method can\n") +
 	      string("only be used with LAPACK groups."));
   A = blockA;
-  B = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(blockBC);
+  
+  B = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(blockB);
   if (B.get() == NULL)
     globalData->locaErrorCheck->throwError(
 	     callingFunction,
@@ -130,8 +99,24 @@ LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
 	     string("The LAPACK Direct Solve bordered solver method can\n") +
 	     string("only be used with constraints that support obtaining\n") +
 	     string("the constraint derivative as a multivector."));
-    
-  C = B->getConstraintDerivativesP();
+
+  C = blockC;
+
+  isZeroA = (A.get() == NULL);
+  isZeroB = B->isDXZero();
+  isZeroC = (C.get() == NULL);
+
+  // ensure blocks B and C are not both zero
+  if (isZeroB && isZeroC) 
+    globalData->locaErrorCheck->throwError(
+				    callingFunction,
+				    "Blocks B and C cannot both be zero");
+
+  // ensure blocks A and C are not both zero
+  if (isZeroA && isZeroC) 
+    globalData->locaErrorCheck->throwError(
+			            callingFunction,
+				    "Blocks A and C cannot both be zero");
 
   // Get the Jacobian matrix and size
   const NOX::LAPACK::Matrix& J = grp->getJacobianMatrix();
@@ -176,7 +161,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
 	(*augmentedJ)(i+n,j) = 0.0;
   }
   else {
-    BV = B->getConstraintDerivativesX();
+    BV = B->getDX();
     for (int i=0; i<m; i++) {
       v = dynamic_cast<const NOX::LAPACK::Vector*>(&(*BV)[i]);
       for (int j=0; j<n; j++)
@@ -201,7 +186,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
   DGETRF_F77(&N, &N, &(*augmentedJ)(0,0), &N, &pivots[0], &info);
   if (info != 0)
     globalData->locaErrorCheck->throwError(
-		 "LOCA::borderedSystem::LAPACKDirectSolve::setMatrixBlocks()",
+		 callingFunction,
 		 "Factorization of augmented Jacobian matrix failed!");
 }
 
@@ -222,7 +207,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::apply(
 
   // Compute B^T*X
   if (!isZeroB)
-    B->applyConstraintDerivativesX(1.0, X, V);
+    B->multiplyDX(1.0, X, V);
 
   // Compute B^T*X + C*Y
   if (!isZeroC) {
@@ -251,7 +236,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyTranspose(
 
   // Compute J*X + B*Y
   if (!isZeroA)
-    B->applyConstraintDerivativesX(Teuchos::NO_TRANS, 1.0, Y, 1.0, U);
+    B->addDX(Teuchos::NO_TRANS, 1.0, Y, 1.0, U);
 
   // Compute A^T*X
   if (!isZeroB)
@@ -279,6 +264,15 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
 			      NOX::Abstract::MultiVector& X,
 			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
+  bool isZeroF = (F == NULL);
+  bool isZeroG = (G == NULL);
+
+  // ensure F and A are nonzero if contiguous
+  if (isContiguous && (isZeroF || isZeroA)) 
+     globalData->locaErrorCheck->throwError(
+		  "LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse()",
+		  "Blocks F and A cannont be contiguous when one is zero");
+
   // If F & G are zero, the solution is zero
   if (isZeroF && isZeroG) {
     X.init(0.0);

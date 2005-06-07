@@ -69,7 +69,7 @@ namespace LOCA {
        * May return NULL if constraint derivative is zero
        */
       virtual const NOX::Abstract::MultiVector*
-      getConstraintDerivativesX() const = 0;
+      getDX() const = 0;
 
       //! Compute result_p = alpha * dg/dx * input_x
       /*!
@@ -77,10 +77,9 @@ namespace LOCA {
        * and the NOX::Abstract::MultiVector::multiply() method.
        */
       virtual NOX::Abstract::Group::ReturnType
-      applyConstraintDerivativesX(
-		double alpha, 
-		const NOX::Abstract::MultiVector& input_x,
-		NOX::Abstract::MultiVector::DenseMatrix& result_p) const;
+      multiplyDX(double alpha, 
+		 const NOX::Abstract::MultiVector& input_x,
+		 NOX::Abstract::MultiVector::DenseMatrix& result_p) const;
 
       //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x
       /*!
@@ -88,12 +87,11 @@ namespace LOCA {
        * and the NOX::Abstract::MultiVector::update() method.
        */
       virtual NOX::Abstract::Group::ReturnType
-      applyConstraintDerivativesX(
-		Teuchos::ETransp transb,
-		double alpha, 
-		const NOX::Abstract::MultiVector::DenseMatrix& b,
-		double beta,
-		NOX::Abstract::MultiVector& result_x) const;
+      addDX(Teuchos::ETransp transb,
+	    double alpha, 
+	    const NOX::Abstract::MultiVector::DenseMatrix& b,
+	    double beta,
+	    NOX::Abstract::MultiVector& result_x) const;
 
     }; // Class ConstraintInterfaceMVDX
 

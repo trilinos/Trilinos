@@ -123,10 +123,6 @@ namespace LOCA {
       //! Destructor
       virtual ~AbstractStrategy() {}
 
-      //! Set flags indicating if any blocks are zero
-      virtual void setIsZero(bool flagA, bool flagB, bool flagC, bool flagF,
-			     bool flagG) = 0;
-
       /*! 
        * \brief Set flag indicating whether F and A are stored in a 
        * continguous multivector.
@@ -135,12 +131,15 @@ namespace LOCA {
 
       //! Set blocks
       /*!
-       * The \c blockA pointer may be null if this block is zero
+       * The \c blockA or \c blockC pointer may be null if either is zero.
+       * Whether block B is zero will be determined by querying \c blockB
+       * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
 	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockBC) = 0;
+	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC) = 0;
   
       /*! 
        * \brief Computed extended matrix-multivector product

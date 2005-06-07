@@ -374,7 +374,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> dfdpMultiVec;
 
       //! Stores view of first column of newtonMultiVec
-      Teuchos::RefCountPtr< LOCA::MultiContinuation::ExtendedVector> newtonVec;
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> newtonVec;
 
       //! Stores view of first column of gradientMultiVec
       Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> gradientVec;

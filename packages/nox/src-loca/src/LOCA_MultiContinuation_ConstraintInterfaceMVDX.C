@@ -33,15 +33,15 @@
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstraintInterfaceMVDX::applyConstraintDerivativesX(
+LOCA::MultiContinuation::ConstraintInterfaceMVDX::multiplyDX(
 		       double alpha, 
 		       const NOX::Abstract::MultiVector& input_x,
 		       NOX::Abstract::MultiVector::DenseMatrix& result_p) const
 {
   
 
-  if (!isConstraintDerivativesXZero()) {
-    const NOX::Abstract::MultiVector* dgdx = getConstraintDerivativesX();
+  if (!isDXZero()) {
+    const NOX::Abstract::MultiVector* dgdx = getDX();
     input_x.multiply(alpha, *dgdx, result_p);
   }
   else
@@ -51,15 +51,15 @@ LOCA::MultiContinuation::ConstraintInterfaceMVDX::applyConstraintDerivativesX(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstraintInterfaceMVDX::applyConstraintDerivativesX(
+LOCA::MultiContinuation::ConstraintInterfaceMVDX::addDX(
 		              Teuchos::ETransp transb,
 			      double alpha, 
 		              const NOX::Abstract::MultiVector::DenseMatrix& b,
 			      double beta,
 			      NOX::Abstract::MultiVector& result_x) const
 {
-  if (!isConstraintDerivativesXZero()) {
-    const NOX::Abstract::MultiVector* dgdx = getConstraintDerivativesX();
+  if (!isDXZero()) {
+    const NOX::Abstract::MultiVector* dgdx = getDX();
     result_x.update(transb, alpha, *dgdx, b, beta);
   }
   else

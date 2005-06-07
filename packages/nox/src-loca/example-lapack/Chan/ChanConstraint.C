@@ -38,13 +38,10 @@ ChanConstraint::ChanConstraint(int N, const LOCA::ParameterVector& pVec) :
   n(N),
   constraints(1,1),
   isValidConstraints(false),
-  dgdp(1,1),
   p(pVec),
   x()
 {
   constraints.putScalar(0.0);
-  dgdp.putScalar(0.0);
-  dgdp(0,0) = -1.0; // derivative w.r.t. gamma
   NOX::LAPACK::Vector xx(n);
   x = Teuchos::rcp(xx.createMultiVector(1));
 }
@@ -54,7 +51,6 @@ ChanConstraint::ChanConstraint(const ChanConstraint& source,
   n(source.n),
   constraints(source.constraints),
   isValidConstraints(false),
-  dgdp(source.dgdp),
   p(source.p),
   x(Teuchos::rcp(source.x->clone(type)))
 {
@@ -73,7 +69,6 @@ ChanConstraint::operator=(const ChanConstraint& source)
     n = source.n;
     constraints = source.constraints;
     isValidConstraints = source.isValidConstraints;
-    dgdp = source.dgdp;
     p = source.p;
     *x = *source.x;
   }
@@ -134,73 +129,15 @@ ChanConstraint::computeConstraints()
 }
 
 NOX::Abstract::Group::ReturnType
-ChanConstraint::computeConstraintDerivatives()
+ChanConstraint::computeDX()
 {
   return NOX::Abstract::Group::Ok;
 }
 
-bool
-ChanConstraint::isConstraints() const
-{
-  return isValidConstraints;
-}
-
-bool
-ChanConstraint::isConstraintDerivatives() const
-{
-  return true;
-}
-
-const NOX::Abstract::MultiVector::DenseMatrix&
-ChanConstraint::getConstraints() const
-{
-  return constraints;
-}
-
-const NOX::Abstract::MultiVector::DenseMatrix*
-ChanConstraint::getConstraintDerivativesP() const
-{
-  return &dgdp;
-}
-
 NOX::Abstract::Group::ReturnType
-ChanConstraint::applyConstraintDerivativesX(
-		    double alpha, 
-		    const NOX::Abstract::MultiVector& input_x,
-		    NOX::Abstract::MultiVector::DenseMatrix& result_p) const
-{
-  input_x.multiply(alpha/n, *x, result_p);
-  return NOX::Abstract::Group::Ok;
-}
-
-NOX::Abstract::Group::ReturnType
-ChanConstraint::applyConstraintDerivativesX(
-			      Teuchos::ETransp transb,
-			      double alpha, 
-			      const NOX::Abstract::MultiVector::DenseMatrix& b,
-			      double beta,
-			      NOX::Abstract::MultiVector& result_x) const
-{
-  result_x.update(transb, alpha/n, *x, b, beta);
-  return NOX::Abstract::Group::Ok;
-}
-
-bool
-ChanConstraint::isConstraintDerivativesXZero() const
-{
-  return false;
-}
-
-bool
-ChanConstraint::isConstraintDerivativesPZero() const
-{
-  return false;
-}
-
-NOX::Abstract::Group::ReturnType
-ChanConstraint::computeDgDp(const vector<int>& paramIDs, 
-			      NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-			      bool isValidG)
+ChanConstraint::computeDP(const vector<int>& paramIDs, 
+			  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+			  bool isValidG)
 {
   if (!isValidG) {
     dgdp(0,0) = constraints(0,0);
@@ -216,4 +153,49 @@ ChanConstraint::computeDgDp(const vector<int>& paramIDs,
   }
 
   return NOX::Abstract::Group::Ok;
+}
+
+bool
+ChanConstraint::isConstraints() const
+{
+  return isValidConstraints;
+}
+
+bool
+ChanConstraint::isDX() const
+{
+  return true;
+}
+
+const NOX::Abstract::MultiVector::DenseMatrix&
+ChanConstraint::getConstraints() const
+{
+  return constraints;
+}
+
+NOX::Abstract::Group::ReturnType
+ChanConstraint::multiplyDX(
+		    double alpha, 
+		    const NOX::Abstract::MultiVector& input_x,
+		    NOX::Abstract::MultiVector::DenseMatrix& result_p) const
+{
+  input_x.multiply(alpha/n, *x, result_p);
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+ChanConstraint::addDX(Teuchos::ETransp transb,
+		      double alpha, 
+		      const NOX::Abstract::MultiVector::DenseMatrix& b,
+		      double beta,
+		      NOX::Abstract::MultiVector& result_x) const
+{
+  result_x.update(transb, alpha/n, *x, b, beta);
+  return NOX::Abstract::Group::Ok;
+}
+
+bool
+ChanConstraint::isDXZero() const
+{
+  return false;
 }

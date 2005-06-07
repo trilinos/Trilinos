@@ -54,7 +54,7 @@ namespace LOCA {
 
   namespace BorderedSystem {
     
-    //! Bordered system solver strategy based on bordering
+    //! Bordered system solver strategy based on direct factorization
     /*! 
      * This class solves the extended system of equations
      * \f[
@@ -95,10 +95,6 @@ namespace LOCA {
       //! Destructor
       virtual ~LAPACKDirectSolve();
 
-      //! Set flags indicating if any blocks are zero
-      virtual void setIsZero(bool flagA, bool flagB, bool flagC, bool flagF,
-			     bool flagG);
-
       /*! 
        * \brief Set flag indicating whether F and A are stored in a 
        * continguous multivector.
@@ -107,12 +103,15 @@ namespace LOCA {
 
       //! Set blocks
       /*!
-       * The \c blockA pointer may be null if this block is zero
+       * The \c blockA or \c blockC pointer may be null if either is zero.
+       * Whether block B is zero will be determined by querying \c blockB
+       * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
 	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockBC);
+	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
   
       /*! 
        * \brief Computed extended matrix-multivector product
@@ -206,7 +205,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
 
       //! Pointer to group storing J
-      Teuchos::RefCountPtr<const LOCA::LAPACK::Group>  grp;
+      Teuchos::RefCountPtr<const LOCA::LAPACK::Group> grp;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
@@ -215,7 +214,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> B;
 
       //! Pointer to C block
-      const NOX::Abstract::MultiVector::DenseMatrix *C;
+      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> C;
 
       //! The augmented Jacobian matrix
       Teuchos::RefCountPtr<NOX::LAPACK::Matrix> augmentedJ;

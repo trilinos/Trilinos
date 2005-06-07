@@ -46,13 +46,14 @@
 
 // Global variables used in main() and testSolve()
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp;
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraints;
+Teuchos::RefCountPtr<NormConstraint> constraints;
 Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> bordering;
 Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> direct;
 Teuchos::RefCountPtr<NOX::Utils> utils;
 Teuchos::RefCountPtr<NOX::TestCompare> testCompare;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dfdp;
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> F;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> G;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_bordering;
@@ -69,26 +70,43 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   if (utils->isPrintProcessAndType(NOX::Utils::TestDetails))
     cout << endl << "***** " << testName << " *****" << endl;
 
-  // Set up bordered problem
-  bordering->setIsZero(flagA, flagB, flagC, flagF, flagG);
-  bordering->setIsContiguous(contiguous);
-  bordering->setMatrixBlocks(grp, dfdp, constraints);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> a = 
+    Teuchos::null;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> c = 
+    Teuchos::null;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> f = 
+    Teuchos::null;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> g = 
+    Teuchos::null;
 
-  direct->setIsZero(flagA, flagB, flagC, flagF, flagG);
+  if (!flagA)
+    a = A;
+  if (!flagC)
+    c = C;
+  if (!flagF)
+    f = F;
+  if (!flagG)
+    g = G;
+  constraints->setIsZeroDX(flagB);
+
+  // Set up bordered problem
+  bordering->setIsContiguous(contiguous);
+  bordering->setMatrixBlocks(grp, a, constraints, c);
+
   direct->setIsContiguous(contiguous);
-  direct->setMatrixBlocks(grp, dfdp, constraints);
+  direct->setMatrixBlocks(grp, a, constraints, c);
 
   // Solve using bordering
   NOX::Abstract::Group::ReturnType borderingStatus = 
     bordering->applyInverse(*(parsedParams->getSublist("Linear Solver")),
-			    F.get(), G.get(), *X_bordering, *Y_bordering);
+			    f.get(), g.get(), *X_bordering, *Y_bordering);
   if (borderingStatus != NOX::Abstract::Group::Ok)
     ++ierr;
 
   // Solve using direct
   NOX::Abstract::Group::ReturnType directStatus = 
     direct->applyInverse(*(parsedParams->getSublist("Linear Solver")),
-			 F.get(), G.get(), *X_direct, *Y_direct);
+			 f.get(), g.get(), *X_direct, *Y_direct);
   if (directStatus != NOX::Abstract::Group::Ok)
     ++ierr;
   
@@ -254,35 +272,32 @@ int main(int argc, char *argv[])
     testCompare = Teuchos::rcp(new NOX::TestCompare(cout, *utils));
 
     // Evaluate blocks
-    NOX::Abstract::MultiVector *fdfdp = 
-      grp->getX().createMultiVector(constraintParamIDs->size()+1);
-    grp->computeDfDpMulti(*constraintParamIDs, *fdfdp, false);
-    vector<int> dfdp_index(constraintParamIDs->size());
-    for (unsigned int i=0; i<constraintParamIDs->size(); i++)
-      dfdp_index[i] = i+1;
-    dfdp = Teuchos::rcp(fdfdp->subView(dfdp_index));
     grp->computeF();
     grp->computeJacobian();
+
+    // A
+    A = Teuchos::rcp(grp->getX().createMultiVector(1));
+    A->random();
     
+    // B
     constraints->setX(grp->getX());
     constraints->computeConstraints();
-    constraints->computeConstraintDerivatives();
+    constraints->computeDX();
+
+    // C
+    C = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,1));
+    C->random();
 
     // Set up left- and right-hand sides
-    F = 
-      Teuchos::rcp(grp->getX().createMultiVector(2));
+    F = Teuchos::rcp(grp->getX().createMultiVector(2));
     F->random();
-    G = 
-      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
+    G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
     G->random();
-    X_bordering = 
-      Teuchos::rcp(F->clone(NOX::ShapeCopy));
+    X_bordering = Teuchos::rcp(F->clone(NOX::ShapeCopy));
     Y_bordering = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
-    X_direct = 
-      Teuchos::rcp(F->clone(NOX::ShapeCopy));
-    Y_direct = 
-      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
+    X_direct = Teuchos::rcp(F->clone(NOX::ShapeCopy));
+    Y_direct = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
 
     string testName;
 
@@ -385,15 +400,9 @@ int main(int argc, char *argv[])
     testName = "Testing A,B,F,G=0, noncontiguous";
     ierr += testSolve(true, true, false, true, true, false,
 		      reltol, abstol, testName);
-
-    delete fdfdp;
   }
 
-  catch (string& s) {
-    cout << s << endl;
-    ierr = 1;
-  }
-  catch (char *s) {
+  catch (const char *s) {
     cout << s << endl;
     ierr = 1;
   }
