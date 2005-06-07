@@ -1,3 +1,5 @@
 --enable-mpi
 --with-mpi-libs=-lmpi
 --enable-amesos-dscpack
+--enable-amesos-mumps
+--enable-amesos-scalapack

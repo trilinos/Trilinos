@@ -1,8 +1,6 @@
 --enable-amesos
 --enable-amesos-klu
 --enable-amesos-umfpack
---enable-amesos-mumps
---enable-amesos-scalapack
 --enable-anasazi
 --enable-loca
 --with-loca-anasazi
