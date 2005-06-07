@@ -35,7 +35,7 @@
 #include "Epetra_Util.h"
 #include "CrsMatrixTranspose.h"
 #include "Amesos_SCALAPACK_wrappers.h"
-#include "Epetra_LAPACK_wrappers.h"
+//  #include "Epetra_LAPACK_wrappers.h"
 
 
 //
@@ -69,7 +69,8 @@ Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob ):
   Time_(0),
   NumSymbolicFact_(0),
   NumNumericFact_(0),
-  NumSolve_(0)
+  NumSolve_(0),
+  FatOut_(0)
 {
     Teuchos::ParameterList ParamList ;
     SetParameters( ParamList ) ; 
@@ -85,7 +86,8 @@ Amesos_Scalapack::~Amesos_Scalapack(void) {
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
 
   if( Time_ ) delete Time_;
-  
+  if( FatOut_ ) delete FatOut_;
+  if( VectorMap_ ) delete VectorMap_;
 }
 //  See  pre and post conditions in Amesos_Scalapack.h
 
@@ -387,6 +389,7 @@ int Amesos_Scalapack::RedistributeA( ) {
   if ( false || debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalaapack.cpp:344" << endl;
     Comm().Barrier(); 
 
+    if ( FatOut_ ) delete FatOut_ ; 
     FatOut_ = new Epetra_CrsMatrix( Copy, FatOutMap, 0 ) ;
   
   if ( false || debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalaapack.cpp:348" << endl;
@@ -751,6 +754,8 @@ int Amesos_Scalapack::PerformNumericFactorization( ) {
   Time_->ResetStartTime();  
 
   Ipiv_.resize(NumGlobalElements_) ;
+  for (int i=0; i <NumGlobalElements_ ; i++) 
+    Ipiv_[i] = 0 ; // kludge - just to see if this makes valgrind happy
 
   if ( false) cout  << " Amesos_Scalapack.cpp: 711 iam_ = " << iam_ << " DescA = " 
        << DescA_[0] << " " 
@@ -764,15 +769,18 @@ int Amesos_Scalapack::PerformNumericFactorization( ) {
        << DescA_[8] << " " 
        << endl ; 
 
-#if 0
+#if 1
   if( NumGlobalElements_ < 10 && nprow_ == 1 && npcol_ == 1 && debug_ == 1 ) {
     assert( lda_ == NumGlobalElements_ ) ; 
     cout << " DenseA = " << endl ; 
     for (int i=0 ; i < NumGlobalElements_; i++ ) {
       for (int j=0 ; j < NumGlobalElements_; j++ ) {
-	cout << DenseA_[ i+j*lda_ ] << "\t"; 
+	if ( DenseA_[ i+j*lda_ ] < 0 ) {
+	  DenseA_[ i+j*lda_ ] *= (1+1e-5) ;   // kludge fixme debugxx - just to let vaglrind check to be sure that DenseA is initialized
+	}
+	  //	cout << DenseA_[ i+j*lda_ ] << "\t"; 
       }
-      cout << endl ; 
+      //      cout << endl ; 
     }
   }
 #endif

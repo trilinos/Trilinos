@@ -31,6 +31,7 @@
 #define AMESOS_SCALAPACK_WRAPPERS_H
 
 #include "Epetra_ConfigDefs.h"
+#include "Epetra_LAPACK_wrappers.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -42,10 +43,6 @@
 
 #if defined(CRAY_T3X)
 
-#include "fortran.h"
-#define Epetra_fcd fcd
-#define PREFIX
-
 #define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT)
 #define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO)
 #define PDGETRF_F77  F77_FUNC(psgetrf,PSGETRF)
@@ -54,9 +51,6 @@
 
 #endif
 #if defined(INTEL_CXML)
-
-#define Epetra_fcd char *, unsigned int
-#define PREFIX __stdcall
 
 #define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT)
 #define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO)
@@ -67,9 +61,6 @@
 #endif
 #if defined(INTEL_MKL)
 
-#define Epetra_fcd char *
-#define PREFIX
-
 #define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT_)
 #define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO_)
 #define PDGETRF_F77  F77_FUNC(pdgetrf,PDGETRF)
@@ -78,33 +69,10 @@
 
 #endif
 
-#ifdef F77_FUNC
-#undef F77_FUNC
-#endif
-
-#define F77_FUNC(lcase,UCASE) UCASE
-
 #else
-
-#define Epetra_fcd char *
-#define PREFIX
 
 /* Use autoconf's definition of F77_FUNC 
    unless using old make system */
-
-#ifndef HAVE_CONFIG_H
-
-#ifdef F77_FUNC
-#undef F77_FUNC
-#endif
-
-#ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#define F77_FUNC(lcase,UCASE) lcase
-#else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#define F77_FUNC(lcase,UCASE) lcase ## _
-#endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
-#endif /* HAVE_CONFIG_H */
-
 
 #define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT)
 #define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO)

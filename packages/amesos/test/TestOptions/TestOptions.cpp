@@ -471,11 +471,14 @@ int NextMain( int argc, char *argv[] ) {
 #endif
 
 
+#ifdef HAVE_AMESOS_SCALAPACK
+  AmesosClasses.push_back( "Amesos_Scalapack" ) ;
+#endif
+
+#if 0
 #ifdef HAVE_AMESOS_KLU
   AmesosClasses.push_back( "Amesos_Klu" );
 #endif
-
-#if 1
 #ifdef HAVE_AMESOS_SUPERLUDIST
   AmesosClasses.push_back( "Amesos_Superludist" );
 #endif
@@ -492,9 +495,6 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Lapack" );
 #endif
 
-#ifdef HAVE_AMESOS_SCALAPACK
-  AmesosClasses.push_back( "Amesos_Scalapack" ) ;
-#endif
 #ifdef HAVE_AMESOS_UMFPACK
   AmesosClasses.push_back( "Amesos_Umfpack" );
 #endif

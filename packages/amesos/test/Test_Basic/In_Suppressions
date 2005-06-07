@@ -565,3 +565,83 @@
    fun:tcp_req_send_ack_long
    fun:lam_ssi_rpi_tcp_advmultiple
 }
+#
+#  Needed by TestOptions with ScaLAPACK enabled 
+#
+#
+{
+   <BLACS memory leak #1>
+   Memcheck:Leak
+   fun:malloc
+   fun:blacs_gridmap__
+   fun:blacs_gridinit__
+   fun:sl_init__
+}
+{
+   <BLACS memory leak #2>
+   Memcheck:Leak
+   fun:malloc
+   fun:blacs_gridmap__
+   fun:blacs_gridinit__
+   fun:sl_init__
+}
+
+{
+   <BLACS memory leak #3>
+   Memcheck:Leak
+   fun:malloc
+   fun:MPI_Type_contiguous
+   fun:blacs_gridmap__
+   fun:blacs_gridinit__
+}
+{
+   <lam mpi memory leak>
+   Memcheck:Leak
+   fun:malloc
+   fun:alloc_more
+   fun:lam_mp_malloc
+   fun:lam_comm_new
+}
+{
+   <BLACS memory leak #4>
+   Memcheck:Leak
+   fun:malloc
+   fun:blacs_pinfo__
+   fun:sl_init__
+   fun:_ZN16Amesos_Scalapack13RedistributeAEv
+}
+{
+   <BLACS memory leak #5>
+   Memcheck:Leak
+   fun:malloc
+   fun:MPI_Group_incl
+   fun:BI_TransUserComm
+   fun:blacs_gridmap__
+}
+#
+#  These are required by TestOptions when using multiple processes and ScaLAPACK 
+#
+{
+   <PBLAS unitialized conditional>
+   Memcheck:Cond
+   fun:PB_CptrsmAB
+   fun:pdtrsm_
+   fun:pdgetrs_
+   fun:_ZN16Amesos_Scalapack5SolveEv
+}
+{
+   <PBLAS unitiliazed conditional #2>
+   Memcheck:Cond
+   fun:PB_CptrsmAB
+   fun:pdtrsm_
+   fun:pdgetrs_
+   fun:_ZN16Amesos_Scalapack5SolveEv
+}
+{
+   <BLACS parallel memory leak >
+   Memcheck:Leak
+   fun:malloc
+   fun:MPI_Group_incl
+   fun:MPI_Comm_split
+   fun:blacs_gridmap__
+}
