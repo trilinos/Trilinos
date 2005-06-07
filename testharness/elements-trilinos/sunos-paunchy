@@ -1,8 +1,8 @@
 --enable-amesos
---enable-amesos-klu
+--disable-amesos-klu
+--enable-amesos-superlu
 --enable-new_package
 --enable-new_swahili
---enable-amesos-umfpack
 --enable-teuchos
 --enable-tpetra
 --enable-belos
