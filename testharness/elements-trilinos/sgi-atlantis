@@ -7,10 +7,6 @@
 --enable-anasazi
 --enable-loca
 --with-loca-anasazi
---enable-tsf
---disable-tsfcore
---disable-tsfcoreutils
---disable-tsfextended
 --enable-tpetra
 --enable-triutils
 --enable-ml
@@ -37,6 +33,4 @@
 --enable-kokkos
 --enable-new_package
 --enable-new_swahili
---enable-thyra
---enable-epetra-thyra
 --disable-default-packages
