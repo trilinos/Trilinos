@@ -182,8 +182,7 @@ AM_CONDITIONAL(BUILD_PLIRIS, test "X$BUILD_PLIRIS" != "Xno")
                                                                                                     
 if test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_amesos" != "Xno"; then
+	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/triutils])
   BUILD_TRIUTILS=yes
   if test "X$ac_cv_use_triutils_explicit" != "Xyes"; then
