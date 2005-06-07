@@ -1,5 +1,12 @@
 #! /usr/bin/env python
-from PyTrilinos import ML, Triutils, AztecOO, Epetra
+try:
+  import setpath
+  import ML, Triutils, AztecOO, Epetra
+except:
+  try:
+    from PyTrilinos import ML, Triutils, AztecOO, Epetra
+  except ImportError:
+    raise ImportError, "error w/ ML or Triutils or AztecOO or Epetra"
 
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
