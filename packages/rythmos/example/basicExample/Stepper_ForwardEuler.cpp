@@ -37,7 +37,7 @@ namespace Rythmos {
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ForwardEuler::ForwardEuler(Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> > &model)
+ForwardEuler::ForwardEuler(const Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> > &model)
 {
   model_ = model;
   t_ = 0.0; // this should come from Scalar class
@@ -109,5 +109,31 @@ Scalar ForwardEuler::TakeStep(Scalar dt)
 
   return(dt);
 }
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::get_solution
+// Purpose       : return current solution
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 06/07/05
+//-----------------------------------------------------------------------------
+const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get_solution()
+{
+  return(solution_vector_);
+};
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::get_residual
+// Purpose       : return current residual
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 06/07/05
+//-----------------------------------------------------------------------------
+const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get_residual()
+{
+  return(residual_vector_);
+};
 
 } // namespace Rythmos

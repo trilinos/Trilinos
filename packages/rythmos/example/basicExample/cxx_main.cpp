@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 {
 
   // create interface to problem
-  Teuchos::RefCountPtr<Rythmos::NonlinearModel<double> > problem = Teuchos::rcp(new ExampleApplicationRythmosInterface);
+  Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface);
   
   // create forward Euler stepper object
   Rythmos::ForwardEuler<double> stepper(problem);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   // Get solution out of stepper:
   Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_t = stepper.get_solution();
   // Convert Thyra::VectorBase to Epetra_Vector
-  Teuchos::RefCountPtr<const Epetra_Vector> x = Thyra::get_Epetra_Vector(*(Teuchos::rcp_dynamic_cast<ExampleApplicationRythmosInterface>(problem)->get_Epetra_Map()),x_t);
+  Teuchos::RefCountPtr<const Epetra_Vector> x = Thyra::get_Epetra_Vector(*(problem->get_Epetra_Map()),x_t);
 
   // These values should be passed by parameter list:
   // hard-coded values in ExampleApplicationRythmosInterface:

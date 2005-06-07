@@ -49,12 +49,12 @@ class ForwardEuler : public Stepper<Scalar>
 {
   public:
     
+    // Constructor
+    ForwardEuler();
+    ForwardEuler(const Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model_);
+    
     // Destructor
     ~ForwardEuler();
-
-    // Cosntructor
-    ForwardEuler();
-    ForwardEuler(Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model_);
 
     // Take a step _no larger_ than dt 
     Scalar TakeStep(Scalar dt);
@@ -63,10 +63,10 @@ class ForwardEuler : public Stepper<Scalar>
     Scalar TakeStep();
 
     // Get solution vector
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution();
+    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution();
 
     // Get residual vector
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual();
+    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual();
 
   protected:
 

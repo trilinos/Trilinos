@@ -49,15 +49,11 @@ class Stepper
 {
   public:
     
-    // Destructor
-    ~Stepper();
-
-    // Cosntructor
-    // 05/26/05 tscoffe:  I think I'll pass in a parameter list at construction
-    // time also to specify what stepper options I want.
+    // Constructor
     Stepper();
-    Stepper(Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model)
-      { model_ = model; };
+    
+    // Destructor
+    virtual ~Stepper();
 
     // Take a step _no larger_ than dt 
     virtual Scalar TakeStep(Scalar dt)=0;
@@ -66,19 +62,10 @@ class Stepper
     virtual Scalar TakeStep()=0;
 
     // Get solution vector
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution()
-      { return(solution_vector_); };
+    virtual const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution() =0;
     
     // Get residual vector
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual()
-    { return(residual_vector_); };
-
-  protected:
-
-    Teuchos::RefCountPtr<NonlinearModel<Scalar> > model_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
-    Scalar t_;
+    virtual const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual() = 0;
 
 };
 

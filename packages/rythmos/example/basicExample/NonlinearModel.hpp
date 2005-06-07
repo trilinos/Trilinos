@@ -47,20 +47,15 @@ class NonlinearModel
 {
   public:
     
-    // Destructor
-    ~NonlinearModel();
-
     // Constructor
     NonlinearModel();
 
+    // Destructor
+    virtual ~NonlinearModel();
+
     virtual int evalModel(const InArgs<Scalar> &inargs, OutArgs<Scalar> &outargs)=0;
 
-    virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_vector()=0;
-
-  protected:
-
-//    InArgs<Scalar> inargs_;
-//    OutArgs<Scalar> outargs_;
+    virtual const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_vector()=0;
 
 };
 

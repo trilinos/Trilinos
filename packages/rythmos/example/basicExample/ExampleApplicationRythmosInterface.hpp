@@ -52,25 +52,24 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-class ExampleApplicationRythmosInterface : public Rythmos::NonlinearModel<double>
+class ExampleApplicationRythmosInterface : public virtual Rythmos::NonlinearModel<double>
 {
   public:
-    ~ExampleApplicationRythmosInterface();
 
     ExampleApplicationRythmosInterface();
 
+    ~ExampleApplicationRythmosInterface();
+
     int evalModel(const Rythmos::InArgs<double> & inargs, Rythmos::OutArgs<double> & outargs);
 
-    Teuchos::RefCountPtr<Thyra::VectorBase<double> > & get_vector();
+    const Teuchos::RefCountPtr<Thyra::VectorBase<double> > & get_vector();
 
-    Teuchos::RefCountPtr<const Epetra_Map> & get_Epetra_Map() 
+    const Teuchos::RefCountPtr<const Epetra_Map> & get_Epetra_Map() 
       { return(epetra_map_); };
 
   protected:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
     Teuchos::RefCountPtr<const Epetra_Map> epetra_map_;
-//    Rythmos::InArgs<double> inargs_;
-//    Rythmos::OutArgs<double> outargs_;
     Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > thyra_vs_;
 
 };
