@@ -66,17 +66,12 @@ void createObjectA(PrintA &PA, PrintB &PB, int TEST)
     std::cout <<
       "This creates a valid RefCountPtr pointing to objectA, and then extracts a " << 
       "reference to it, then gives the RefCountPtr to the two print objects and " << 
-      "then goes out of scope.  This actuall works." << std::endl;
+      "then goes out of scope.  This works because a reference is just a new name " <<
+      "for the underlying object." << std::endl;
     Teuchos::RefCountPtr<objectA> OAptr = Teuchos::rcp( new objectA );
-    std::cout << "RefCountPtr count = " << OAptr.count() << std::endl;
     objectA &OA = *OAptr;
-    std::cout << "RefCountPtr count = " << OAptr.count() << std::endl;
     PA.setA(OAptr);
-    std::cout << "RefCountPtr count = " << OAptr.count() << std::endl;
     PB.setA(OAptr);
-    std::cout << "RefCountPtr count = " << OAptr.count() << std::endl;
-    std::cout << "Pointer in RefCountPtr = " << OAptr.get() << endl;
-    std::cout << "Pointer to reference   = " << &OA << endl;
   } else if (TEST == 4)
   {
     std::cout <<
