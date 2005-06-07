@@ -77,10 +77,10 @@ ExampleApplication::ExampleApplication(double lam, int numelements)
   // Serial only implementation here:
   // 05/26/05 tscoffe:  I haven't figured out how to get MPI_Init called with
   // argc and argv in such a way that MPI_COMM_WORLD is passed down here.
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm_ = Teuchos::rcp( new Epetra_SerialComm );
+  Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ = Teuchos::rcp( new Epetra_SerialComm );
   
   // Construct a Map with NumElements and index base of 0
-  Teuchos::RefCountPtr<const Epetra_Map> epetra_map_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_) );
+  Teuchos::RefCountPtr<Epetra_Map> epetra_map_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_) );
   
 }
 

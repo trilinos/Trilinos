@@ -53,6 +53,7 @@ class ForwardEuler : public Stepper<Scalar>
     ~ForwardEuler();
 
     // Cosntructor
+    ForwardEuler();
     ForwardEuler(Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model_);
 
     // Take a step _no larger_ than dt 

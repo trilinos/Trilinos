@@ -44,6 +44,18 @@ ForwardEuler::ForwardEuler(Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> 
   solution_vector_ = (*model_).get_vector();
   residual_vector_ = (*model_).get_vector();
 }
+//
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::ForwardEuler
+// Purpose       : constructor
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+ForwardEuler::ForwardEuler()
+{
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ~ForwardEuler::ForwardEuler
@@ -53,7 +65,7 @@ ForwardEuler::ForwardEuler(Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> 
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-~ForwardEuler::ForwardEuler()
+ForwardEuler::~ForwardEuler()
 {
 }
 
@@ -67,6 +79,7 @@ ForwardEuler::ForwardEuler(Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> 
 //-----------------------------------------------------------------------------
 Scalar ForwardEuler::TakeStep()
 {
+  // print something out about this method not supporting automatic variable step-size
   return(-1);
 }
 

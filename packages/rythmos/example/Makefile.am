@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = basicExample verySimple refCountPtrExample
+SUBDIRS = basicExample verySimple refCountPtrExample refCountPtrExample2

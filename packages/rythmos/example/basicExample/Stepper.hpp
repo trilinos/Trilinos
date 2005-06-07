@@ -55,6 +55,7 @@ class Stepper
     // Cosntructor
     // 05/26/05 tscoffe:  I think I'll pass in a parameter list at construction
     // time also to specify what stepper options I want.
+    Stepper();
     Stepper(Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model)
       { model_ = model; };
 
