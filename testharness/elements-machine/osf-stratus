@@ -4,9 +4,8 @@ TRILINOS_TEMPLATE_OBJS="cxx_repository"
 CFLAGS=-O3
 FFLAGS=-O3
 --with-ar="/projects/trilinos/Trilinos/sampleScripts/stratus_ar.pl ar cru"
---with-libs="/projects/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
-/projects/trilinos/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
-/projects/trilinos/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
---with-incdirs="-I/projects/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB
--I/projects/trilinos/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
--I/projects/trilinos/Trilinos3PL/UMFPACKv4.1/AMD/Include"
+--with-libs="/projects/trilinos/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_stratus.a 
+/projects/trilinos/Trilinos3PL/prebuilt/umfpack-4.1/libumfpack_stratus.a 
+/projects/trilinos/Trilinos3PL/prebuilt/umfpack-4.1/libamd_stratus.a" 
+--with-incdirs="-I/projects/trilinos/Trilinos3PL/prebuilt/dscpack-1.0 
+-I/projects/trilinos/Trilinos3PL/prebuilt/umfpack-4.1" 
