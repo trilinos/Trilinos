@@ -15,7 +15,6 @@
 --enable-new_package
 --enable-new_swahili
 --enable-amesos
---enable-amesos-dscpack
 --disable-amesos-klu
 --enable-epetraext
 --enable-loca
