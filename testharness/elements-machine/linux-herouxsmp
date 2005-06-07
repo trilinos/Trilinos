@@ -2,9 +2,7 @@ CXXFLAGS=-O3
 CFLAGS=-O3
 FFLAGS=-O3
 --enable-valgrind
---with-libs="/u/TrilinosTestHarness/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
-/u/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
-/u/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
---with-incdirs="-I/u/TrilinosTestHarness/Trilinos3PL/DSCPACK1.0/DSC_LIB
--I/u/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
--I/u/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Include"
+--with-libs="/u/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_linux_lam.a
+/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0/libsuperludist_linux_lam.a"
+--with-incdirs="-I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0
+-I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0"
