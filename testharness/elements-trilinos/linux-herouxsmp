@@ -41,3 +41,5 @@
 --enable-thyra
 --enable-epetra-thyra
 --disable-default-packages
+--enable-amesos-pardiso
+--enable-amesos-taucs
