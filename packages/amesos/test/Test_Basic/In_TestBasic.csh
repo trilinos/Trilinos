@@ -202,13 +202,13 @@ echo "COMMENT End BasicTest.exe" >> SST.summary
 set expected_lines = `grep -v COMMENT SST.summary | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] - 1) then
-    echo 'I expected ' $expected_lines[1] - 1 ' correct test results, but only saw: ' $results[1] 
+    echo ' ' $expected_lines[1] - 1 ' tests ran, only: ' $results[1] ' succeeded '
     grep -v OK SST.summary | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
     exit(1)
 endif
 
 #  Prints out success or failure and exit 
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test using $1 passed on all" $expected_lines[1] " tests"
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test using $1 passed on all" $expected_lines[1] " tests that executed"
 
 #  This should not generaly print anything as errors should have been caught in the if test above
 grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test using $1 FAILED" 
