@@ -56,6 +56,7 @@ class Epetra_Vector;
 class Epetra_Operator;
 class Epetra_RowMatrix;
 class AztecOO;
+class AztecOOConditionNumber;
 class Ifpack_IlukGraph;
 class Ifpack_CrsRiluk;
 
@@ -217,6 +218,10 @@ in NOX::Abstract::Group
   */
   virtual bool isPreconditioner() const;
 
+  /*! \brief Returns true if the condition number has been computed.  
+  */
+  virtual bool isConditionNumber() const;
+
   //@}
 
   /** @name "Get" functions 
@@ -251,7 +256,22 @@ in NOX::Abstract::Group
   //! Return the userInterface.
   virtual NOX::EpetraNew::Interface::Required& getRequiredInterface();
 
+  //! Return the Linear System.
   virtual const NOX::EpetraNew::LinearSystem& getLinearSystem() const;
+
+  /* \brief Computes the condition number of the Jacobian matrix.
+
+     Uses GMRES to estimate the condtion number.  The tolerance and
+     maxIters are used to control the GMRES iterations.  Typically the
+     solves do not have to be tight to get the estimate.
+  */
+  virtual NOX::Abstract::Group::ReturnType 
+  computeJacobianConditionNumber(int maxIters, double tolerance,
+				 int krylovSubspaceSize=100, 
+				 bool printOutput=false);
+
+  //! Returns the condition number of the Jacobian matrix.
+  virtual double getJacobianConditionNumber() const;
 
 protected:
 
@@ -304,6 +324,7 @@ protected:
   bool isValidNormNewtonSolveResidual;
   mutable bool isValidPreconditioner;
   mutable bool isValidSolverJacOp;
+  bool isValidConditionNumber;
   //@}
   
   //! 2-Norm of RHS
@@ -311,6 +332,12 @@ protected:
 
   //! 2-Norm of the Newton solve residual: ||Js+f||
   double normNewtonSolveResidual;
+
+  //! condition number of Jacobian
+  double conditionNumber;
+
+  //! Pointer to the condition number object.
+  AztecOOConditionNumber* azConditionNumberPtr;
 
   /** @name Shared Operators */
   //@{

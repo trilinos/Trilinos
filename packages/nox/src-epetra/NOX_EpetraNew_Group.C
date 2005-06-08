@@ -36,6 +36,7 @@
 #include "NOX_Utils.H"
 #include "NOX_EpetraNew_Interface_Required.H"
 #include "Epetra_Vector.h"
+#include "AztecOO_ConditionNumber.h"
 
 using namespace NOX;
 using namespace NOX::EpetraNew;
@@ -55,6 +56,8 @@ Group::Group(NOX::Parameter::List& printParams,
   tmpVectorPtr(0),
   normRHS(0.0),
   normNewtonSolveResidual(0),
+  conditionNumber(0.0),
+  azConditionNumberPtr(0),
   sharedLinearSystemPtr(0), 
   sharedLinearSystem(*sharedLinearSystemPtr),
   userInterface(i)
@@ -79,6 +82,8 @@ Group::Group(NOX::Parameter::List& printParams,
   tmpVectorPtr(0),
   normRHS(0.0),
   normNewtonSolveResidual(0),
+  conditionNumber(0.0),
+  azConditionNumberPtr(0),
   sharedLinearSystemPtr(new NOX::SharedObject<NOX::EpetraNew::LinearSystem, NOX::EpetraNew::Group>(linSys)), 
   sharedLinearSystem(*sharedLinearSystemPtr),
   userInterface(i)
@@ -98,6 +103,7 @@ Group::Group(const Group& source, CopyType type) :
   NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.NewtonVector.clone(type))),
   NewtonVector(*NewtonVectorPtr), 
   tmpVectorPtr(0),
+  azConditionNumberPtr(0),
   sharedLinearSystemPtr(0),
   sharedLinearSystem(source.sharedLinearSystem),
   userInterface(source.userInterface)
@@ -112,8 +118,10 @@ Group::Group(const Group& source, CopyType type) :
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
     isValidNormNewtonSolveResidual = source.isValidNormNewtonSolveResidual;
+    isValidConditionNumber = source.isValidConditionNumber;
     normRHS = source.normRHS;
     normNewtonSolveResidual = source.normNewtonSolveResidual;
+    conditionNumber = source.conditionNumber;
     isValidPreconditioner = source.isValidPreconditioner;
     isValidSolverJacOp = source.isValidSolverJacOp;
     
@@ -136,6 +144,7 @@ Group::Group(const Group& source, CopyType type) :
 
 Group::~Group() 
 {
+  delete azConditionNumberPtr;
   delete tmpVectorPtr;
   delete sharedLinearSystemPtr;
   delete NewtonVectorPtr;
@@ -153,6 +162,7 @@ void Group::resetIsValid() //private
   isValidNormNewtonSolveResidual = false;
   isValidPreconditioner = false;
   isValidSolverJacOp = false;
+  isValidConditionNumber = false;
   return;
 }
 
@@ -183,6 +193,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidNormNewtonSolveResidual = source.isValidNormNewtonSolveResidual;
   isValidPreconditioner = source.isValidPreconditioner;
   isValidSolverJacOp = source.isValidSolverJacOp;
+  isValidConditionNumber = source.isValidConditionNumber;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
@@ -203,6 +214,10 @@ Abstract::Group& Group::operator=(const Group& source)
   if (isValidJacobian)
     sharedLinearSystem.getObject(this);
     
+
+  if (isValidConditionNumber)
+    conditionNumber = source.conditionNumber;
+
   return *this;
 }
 
@@ -491,6 +506,11 @@ bool Group::isPreconditioner() const
   return ((sharedLinearSystem.isOwner(this)) && (isValidPreconditioner));
 }
 
+bool Group::isConditionNumber() const 
+{  
+  return isValidConditionNumber;
+}
+
 const Abstract::Vector& Group::getX() const 
 {
   return xVector;
@@ -596,4 +616,43 @@ bool Group::computeNormNewtonSolveResidual ()
   isValidNormNewtonSolveResidual = true;
   
   return true;
+}
+
+Abstract::Group::ReturnType NOX::EpetraNew::Group::
+computeJacobianConditionNumber(int maxIters, double tolerance,
+			       int krylovSubspaceSize, bool printOutput)
+{
+  if (!isConditionNumber()) {
+    if (!isJacobian()) {
+      cerr << "ERROR: NOX::EpetraNew::Group::computeJacobianConditionNumber()"
+	   << " - Jacobian is invalid wrt the solution." << endl;
+      throw "NOX Error";
+    }
+    
+    if (azConditionNumberPtr == 0)
+      azConditionNumberPtr = new AztecOOConditionNumber;
+    
+    azConditionNumberPtr->
+      initialize(sharedLinearSystem.getObject().getJacobianOperator(),
+		 AztecOOConditionNumber::GMRES_, krylovSubspaceSize,
+		 printOutput);
+   
+    azConditionNumberPtr->computeConditionNumber(maxIters, tolerance);
+
+    conditionNumber = azConditionNumberPtr->getConditionNumber();
+
+    isValidConditionNumber = true;
+  }
+  return NOX::Abstract::Group::Ok;
+}
+
+double NOX::EpetraNew::Group::getJacobianConditionNumber() const
+{
+  if (!isConditionNumber()) {
+    cerr << "ERROR: NOX::EpetraNew::Group::getJacobianConditionNumber()"
+	 << " - condition number has not yet been computed!" << endl;
+    throw "NOX Error";
+  }
+
+  return conditionNumber;
 }
