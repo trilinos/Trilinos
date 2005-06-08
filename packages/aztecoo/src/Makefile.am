@@ -82,7 +82,8 @@ WITH_CPP_H = \
         $(srcdir)/AztecOO_StatusType.h \
         $(srcdir)/AztecOO_StatusTestCombo.h \
         $(srcdir)/AztecOO_StatusTestMaxIters.h \
-        $(srcdir)/AztecOO_StatusTestResNorm.h
+        $(srcdir)/AztecOO_StatusTestResNorm.h \
+        $(srcdir)/AztecOO_ConditionNumber.h
 
 
 WITH_CPP = \
@@ -95,7 +96,8 @@ WITH_CPP = \
         $(srcdir)/AztecOO_Scaling.cpp \
         $(srcdir)/AztecOO_StatusTestCombo.cpp \
         $(srcdir)/AztecOO_StatusTestMaxIters.cpp \
-        $(srcdir)/AztecOO_StatusTestResNorm.cpp
+        $(srcdir)/AztecOO_StatusTestResNorm.cpp \
+        $(srcdir)/AztecOO_ConditionNumber.cpp
 
 ### end option 
 UTIL_H = \
