@@ -46,10 +46,13 @@ class ExampleApplication
   public:
     
     // Destructor
-    ~ExampleApplication();
+    ~ExampleApplication() {};
+    
+    // Default Constructor
+    ExampleApplication() {};
 
-    // Cosntructor
-    ExampleApplication(double lam, int numelements);
+    // Constructor
+    ExampleApplication(double lambda, int numElements);
 
     // Evaluate residual:
     int evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t);
@@ -58,15 +61,17 @@ class ExampleApplication
     double getCoeff();
     
     // Return nominal x0 vector
-    Teuchos::RefCountPtr<Epetra_Vector> &get_x0();
+    const Teuchos::RefCountPtr<Epetra_Vector> get_x0();
 
     // Return epetra_map 
-    Teuchos::RefCountPtr<const Epetra_Map> &get_epetra_map();
+    const Teuchos::RefCountPtr<const Epetra_Map> get_epetra_map()
+      { return(epetra_map_); };
 
     // Return epetra_comm
-    Teuchos::RefCountPtr<const Epetra_Comm> &get_epetra_comm();
+    const Teuchos::RefCountPtr<const Epetra_Comm> get_epetra_comm()
+      { return(epetra_comm_); };
 
-  private:
+  protected:
 
     // Coefficient for ODE
     double lambda_;
@@ -76,6 +81,7 @@ class ExampleApplication
     Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
     // Number of unknowns:
     int numElements_;
+
 };
 
 

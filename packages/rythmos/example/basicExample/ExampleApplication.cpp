@@ -48,6 +48,7 @@
 //-----------------------------------------------------------------------------
 
 #include "Epetra_Map.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_Vector.h"
 #include "Rythmos_ConfigDefs.h"
 
@@ -70,19 +71,19 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-ExampleApplication::ExampleApplication(double lam, int numelements)
+ExampleApplication::ExampleApplication(double lambda, int numElements)
 {
-  lambda_ = lam;
-  numElements_ = numelements;
+  lambda_ = lambda;
+  numElements_ = numElements;
   // Serial only implementation here:
   // 05/26/05 tscoffe:  I haven't figured out how to get MPI_Init called with
   // argc and argv in such a way that MPI_COMM_WORLD is passed down here.
-  Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ = Teuchos::rcp( new Epetra_SerialComm );
+  Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ = Teuchos::rcp( new Epetra_SerialComm  );
   
   // Construct a Map with NumElements and index base of 0
   Teuchos::RefCountPtr<Epetra_Map> epetra_map_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_) );
   
-}
+};
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::~ExampleApplication
@@ -92,9 +93,9 @@ ExampleApplication::ExampleApplication(double lam, int numelements)
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-ExampleApplication::~ExampleApplication()
-{
-}
+//ExampleApplication::~ExampleApplication()
+//{
+//};
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::evalResidual
@@ -104,11 +105,11 @@ ExampleApplication::~ExampleApplication()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t)
+int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector const &x, double t)
 {
   y->Scale(lambda_,x); // y = lambda*x
   return 0;
-}
+};
 
 
 //-----------------------------------------------------------------------------
@@ -122,7 +123,7 @@ int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, d
 double ExampleApplication::getCoeff()
 {
   return lambda_;
-}
+};
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::get_epetra_map
@@ -132,10 +133,10 @@ double ExampleApplication::getCoeff()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplication::get_epetra_map()
-{
-  return(epetra_map_);
-}
+//const Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplication::get_epetra_map()
+//{
+//  return(epetra_map_);
+//};
 //
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::get_epetra_comm
@@ -145,10 +146,10 @@ Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplication::get_epetra_map()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/02/05
 //-----------------------------------------------------------------------------
-Teuchos::RefCountPtr<const Epetra_Comm> &ExampleApplication::get_epetra_comm()
-{
-  return(epetra_comm_);
-}
+//const Teuchos::RefCountPtr<const Epetra_Comm> &ExampleApplication::get_epetra_comm()
+//{
+//  return(epetra_comm_);
+//};
 
 
 //-----------------------------------------------------------------------------
@@ -159,10 +160,10 @@ Teuchos::RefCountPtr<const Epetra_Comm> &ExampleApplication::get_epetra_comm()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Teuchos::RefCountPtr<Epetra_Vector> &ExampleApplication::get_x0()
+const Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0()
 {
-  Teuchos::RefCountPtr<Epetra_Vector> x0 = rcp(new Epetra_Vector(epetra_map_));
-  (*x0).Random();
+  Teuchos::RefCountPtr<Epetra_Vector> x0 = Teuchos::rcp(new Epetra_Vector(*epetra_map_));
+  x0->Random();
   return(x0);
-}
+};
 

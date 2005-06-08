@@ -420,6 +420,7 @@ AC_CONFIG_FILES([
 		example/verySimple/Makefile
 		example/refCountPtrExample/Makefile
 		example/refCountPtrExample2/Makefile
+		example/constExample/Makefile
 		test/Makefile
 		])
 

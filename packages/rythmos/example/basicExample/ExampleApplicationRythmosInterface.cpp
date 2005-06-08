@@ -45,8 +45,8 @@ ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
 {
   // 05/26/05 tscoffe:  This is where a parameter list could be passed in and
   // used in constructing the problem.
-  lambda_ = -0.5;
-  numelements_ = 1;
+  double lambda = -0.5;
+  int numelements = 1;
   problem_ = Teuchos::rcp(new ExampleApplication(lambda,numelements));
   epetra_map_ = (*problem_).get_epetra_map();
   thyra_vs_ = Thyra::create_MPIVectorSpaceBase(epetra_map_);
@@ -72,10 +72,10 @@ ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-int ExampleApplicationRythmosInterface::evalModel(const InArgs<double> &inargs, OutArgs<double> &outargs)
+int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> &inargs, const Rythmos::OutArgs<double> &outargs)
 {
   // input arguments:
-  Teuchos::RefCountPtr<Thyra::VectorBase<double> > x = inargs.get_x();
+  Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x = inargs.get_x();
   double t = inargs.get_t();
 
   // output arguments:

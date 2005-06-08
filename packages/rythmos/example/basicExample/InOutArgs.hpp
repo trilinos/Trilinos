@@ -52,13 +52,13 @@ class InArgs
     ~InArgs();
 
     // Constructor
-    InArgs(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x, Scalar t)
+    InArgs(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x, Scalar t)
       { x_ = x; t_ = t; };
     InArgs();
 
-    void set_x(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x)
+    void set_x(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x)
       { x_ = x; };
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_x()
+    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_x()
       { return(x_); };
 
     void set_t(Scalar t)
@@ -91,8 +91,8 @@ class OutArgs
     OutArgs();
 
     // Request residual:
-    void request_F(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &F) { F_ = F; };
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_F()
+    void request_F(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &F) { F_ = F; };
+    const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > get_F()
       { return(F_); };
 
   protected:
