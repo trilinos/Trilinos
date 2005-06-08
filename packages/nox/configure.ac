@@ -90,263 +90,17 @@ AC_CANONICAL_TARGET
 # Use automake, getting name and version from variables defined by
 # AC_INIT command.
 
-AM_INIT_AUTOMAKE(${PACKAGE_NAME}, ${PACKAGE_VERSION})
+AM_INIT_AUTOMAKE(1.6.3)
 
 # Specify required version of autoconf.
 
 AC_PREREQ(2.57)
 
 # ------------------------------------------------------------------------
-# Check for user overrides (some to be used later)
-# ------------------------------------------------------------------------
-
-if test -n "${CXXFLAGS}"; then
-  USERDEF_CXXFLAGS=yes
-fi
-
-if test -n "${CFLAGS}"; then
-  USERDEF_CFLAGS=yes
-fi
-
-if test -n "${CPPFLAGS}"; then
-  USERDEF_CPPFLAGS=yes
-fi
-
-if test -n "${F77}"; then
-  USERDEF_F77=yes
-fi
-
-if test -n "${FFLAGS}"; then
-  USERDEF_FFLAGS=yes
-fi
-
-if test -n "${LDFLAGS}"; then
-  USERDEF_LDFLAGS=yes
-fi
-
-if test -n "${LIBTOOL_COMPILER_FLAGS}"; then
-  USERDEF_LIBTOOL_COMPILER_FLAGS=yes
-fi
-
-if test -n "${LIBTOOL_LINKER_FLAGS}"; then
-  USERDEF_LIBTOOL_LINKER_FLAGS=yes
-fi
-
-if test -n "${LIBTOOL_CCLINKER_FLAGS}"; then
-  USERDEF_LIBTOOL_CCLINKER_FLAGS=yes
-fi
-
-# ------------------------------------------------------------------------
-# Checks for extra flags, etc
-# ------------------------------------------------------------------------
-
-# Since this is the first "with" command, we skip a line
-
-AC_ARG_WITH(cppflags,
-[AC_HELP_STRING([--with-cppflags],[add extra preprocessor flags (e.g., "-Dflag -Idir")])],
-[EXTRA_CPPFLAGS=${withval}]
-)
-
-
-AC_ARG_WITH(cxxflags,
-[AC_HELP_STRING([--with-cxxflags],[add extra C++ compiler flags])],
-[EXTRA_CXXFLAGS=${withval}]
-)
-
-
-AC_ARG_WITH(cflags,
-[AC_HELP_STRING([--with-cflags],[add extra C compiler flags])],
-[EXTRA_CFLAGS=${withval}]
-)
-
-
-AC_ARG_WITH(fflags,
-[AC_HELP_STRING([--with-fflags],[add extra FORTRAN compiler flags])],
-[EXTRA_FFLAGS=${withval}]
-)
-
-
-AC_ARG_WITH(ldflags,
-[AC_HELP_STRING([--with-ldflags],[add extra linker (typically -L) flags])],
-[EXTRA_LDFLAGS=${withval}]
-)
-
-AC_ARG_WITH(libtool-compiler-flags,
-[AC_HELP_STRING([--with-libtool-compiler-flags],[add extra libtool compiler flags])],
-[EXTRA_LIBTOOL_COMPILER_FLAGS=${withval}]
-)
-
-AC_ARG_WITH(libtool-linker-flags,
-[AC_HELP_STRING([--with-libtool-linker-flags],[add extra libtool linker flags])],
-[EXTRA_LIBTOOL_LINKER_FLAGS=${withval}]
-)
-
-AC_ARG_WITH(libtool-cclinker-flags,
-[AC_HELP_STRING([--with-libtool-cclinker-flags],[add extra libtool linker flagsfor the C++ linker])],
-[EXTRA_LIBTOOL_CCLINKER_FLAGS=${withval}]
-)
-
-# ------------------------------------------------------------------------
-# Alternate archiver
-# ------------------------------------------------------------------------
-
-AC_ARG_WITH(ar,
-[AC_HELP_STRING([--with-ar],[specify archiver command @<:@"ar cru"@:>@])],
-[
-  AC_MSG_CHECKING(user-defined archiver)
-  AC_MSG_RESULT([${withval}])
-  ALTERNATE_AR="${withval}"
-]
-)
-
-# ------------------------------------------------------------------------
-# MPI configure command line option
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(mpi,
-[AC_HELP_STRING([--enable-mpi],[MPI support])],
-[HAVE_PKG_MPI=$enableval],
-[HAVE_PKG_MPI=no]
-)
-
-AC_ARG_WITH(mpi-compilers,
-[AC_HELP_STRING([--with-mpi-compilers=PATH],
-[use MPI compilers mpicc, mpif77, and mpicxx, mpic++ or mpiCC in the specified path or in the default path if no path is specified. Enables MPI])],
-[
-  if test X${withval} != Xno; then
-    HAVE_PKG_MPI=yes
-    if test X${withval} = Xyes; then
-      # Check for mpicxx, if it does not exist, check for mpic++, if it does
-      # not exist, use mpiCC instead.
-      AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
-      if test X${MPI_TEMP_CXX} = Xno; then
-        AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
-      else
-        MPI_CXX=${MPI_TEMP_CXX}
-      fi
-      MPI_CC=mpicc
-      MPI_F77=mpif77
-    else
-      if test -f ${withval}/mpicxx; then
-        MPI_CXX=${withval}/mpicxx
-      elif test -f ${withval}/mpic++; then
-        MPI_CXX=${withval}/mpi++
-      else
-        MPI_CXX=${withval}/mpiCC
-      fi
-      MPI_CC=${withval}/mpicc
-      MPI_F77=${withval}/mpif77
-    fi
-  fi
-]
-)
-
-AC_ARG_WITH(mpi,
-[AC_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory (enables MPI)])],
-[
-  HAVE_PKG_MPI=yes
-  MPI_DIR=${withval}
-  AC_MSG_CHECKING(MPI directory)
-  AC_MSG_RESULT([${MPI_DIR}])
-]
-)
-
-
-AC_ARG_WITH(mpi-libs,
-[AC_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@"-lmpi"@:>@])],
-[
-  MPI_LIBS=${withval}
-  AC_MSG_CHECKING(user-defined MPI libraries)
-  AC_MSG_RESULT([${MPI_LIBS}])
-]
-)
-
-
-AC_ARG_WITH(mpi-incdir,
-[AC_HELP_STRING([--with-mpi-incdir=DIR],[MPI include directory @<:@MPIROOT/include@:>@])],
-[
-  MPI_INC=${withval}
-  AC_MSG_CHECKING(user-defined MPI includes)
-  AC_MSG_RESULT([${MPI_INC}])
-]
-)
-
-
-AC_ARG_WITH(mpi-libdir,
-[AC_HELP_STRING([--with-mpi-libdir=DIR],[MPI library directory @<:@MPIROOT/lib@:>@])],
-[
-  MPI_LIBDIR=${withval}
-  AC_MSG_CHECKING(user-defined MPI library directory)
-  AC_MSG_RESULT([${MPI_LIBDIR}])
-]
-)
-
-AC_MSG_CHECKING(whether we are using MPI)
-AC_MSG_RESULT([${HAVE_PKG_MPI}])
-
-# ------------------------------------------------------------------------
 # Check for MPI C++ compiler (must be done *before* AC_PROG_CXX)
 # ------------------------------------------------------------------------
 
-if test -n "${MPI_CXX}"; then
-
-  if test -f ${MPI_CXX}; then
-    MPI_CXX_EXISTS=yes
-  else
-    AC_CHECK_PROG(MPI_CXX_EXISTS, ${MPI_CXX}, yes, no)
-  fi
-
-  if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
-    CXX=${MPI_CXX}
-  else
-    echo "-----"
-    echo "Cannot find MPI C++ compiler ${MPI_CXX}."
-    echo "Specify with --with-mpi-cxx."
-    echo "-----"
-    AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
-  fi
-
-fi
-
-if test -n "${MPI_CC}"; then
-  if test -f ${MPI_CC}; then
-    MPI_CC_EXISTS=yes
-  else
-    AC_CHECK_PROG(MPI_CC_EXISTS, ${MPI_CC}, yes, no)
-  fi
-
-  if test "X${MPI_CC_EXISTS}" = "Xyes"; then
-    CC=${MPI_CC}
-  else
-    echo "-----"
-    echo "Cannot find MPI C compiler ${MPI_CC}."
-    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
-    echo "or specify a C compiler using CC=<compiler>"
-    echo "Do not use --with-mpi-compilers if using CC=<compiler>"
-    echo "-----"
-    AC_MSG_ERROR([MPI C compiler (${MPI_CC}) not found.])
-  fi
-fi
-
-if test -n "${MPI_F77}"; then
-  if test -f ${MPI_F77}; then
-    MPI_F77_EXISTS=yes
-  else
-    AC_CHECK_PROG(MPI_F77_EXISTS, ${MPI_F77}, yes, no)
-  fi
-
-  if test "X${MPI_F77_EXISTS}" = "Xyes"; then
-    F77=${MPI_F77}
-  else
-    echo "-----"
-    echo "Cannot find MPI Fortran compiler ${MPI_F77}."
-    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
-    echo "or specify a Fortran 77 compiler using F77=<compiler>"
-    echo "Do not use --with-mpi-compilers if using F77=<compiler>"
-    echo "-----"
-    AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
-  fi
-fi
+TAC_ARG_CONFIG_MPI
 
 # ------------------------------------------------------------------------
 # Checks for programs
@@ -359,286 +113,55 @@ AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
-# Check for doxygen dot program.  Used in doxygen config files Doxyfile.in
+# Checks for extra flags
 # ------------------------------------------------------------------------
-AC_CHECK_PROG(HAVE_DOXYGEN_DOT, dot, "YES", "NO")
-
-# ------------------------------------------------------------------------
-# Checks for special compiler options
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(debug,
-[AC_HELP_STRING([--enable-debug],[compile with debugging])],
-[DEBUG=${enableval}],
-[DEBUG="default"]
-)
-AC_MSG_CHECKING(whether debugging is on)
-AC_MSG_RESULT([${DEBUG}])
-
-AC_ARG_ENABLE(opt,
-[AC_HELP_STRING([--enable-opt],[compile with optimization])],
-[OPT=${enableval}],
-[OPT=default]
-)
-AC_MSG_CHECKING([whether optimization is on])
-AC_MSG_RESULT([${OPT}])
-
-# options needed only for optimization
-CXXFLAGS_OPT=-O
-
-# options needed only for debugging
-CXXFLAGS_DBG=-g
-
-# options that are always needed
-CXXFLAGS_MISC=
-
-
-# Checks for special cases...
-case $target in
-
-  # IBM test
-  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-
-    case $CXX in
-      xlC* )
-      CXXFLAGS_MISC="-qnolm -qrtti"
-      ;;
-    esac
-
-  ;;
-
-  # SGI/IRIX test
-  mips-sgi-irix* )
-
-    if test "${CXX}" = "CC"; then
-     CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -ptused -no_prelink -no_auto_include -DSGI64"
-     F77_MISC=f77
-     FFLAGS_MISC="-64"
-     LIBTOOL_CCLINKER_FLAGS_MISC = "-64 -ptused -no_prelink -no_auto_include"
-     SPECIAL_AR="CC -ar -W,l -W,s -o"
-    fi
-
-  ;;
-
-  # Solaris test
-  sparc-sun-solaris* )
-
-    if test "${CXX}" = "CC"; then
-     SPECIAL_AR="CC -xar -o"
-    fi
-
-  ;;
-
-esac
-
-
-# Process the C++ flags
-AC_MSG_CHECKING([for C++ flags])
-
-# Test for user-defined CXXFLAGS
-if test "X${USERDEF_CXXFLAGS}" = "Xyes"; then
-
-  AC_MSG_RESULT([${CXXFLAGS} (user-specified via CXXFLAGS)])
-
-# Otherwise, determine the flags automatically
-else
-
-  # Test for adding debug flags
-  if test ${DEBUG} = yes; then
-
-    CXXFLAGS=${CXXFLAGS_DBG}
-
-  # Otherwise, test for adding optimization flags
-  elif test ${OPT} = yes; then
-
-    CXXFLAGS=${CXXFLAGS_OPT}
-
-  fi
-
-  # Add on any additional automatically determined flags
-  if test -n "${CXXFLAGS_MISC}"; then
-    CXXFLAGS="${CXXFLAGS} ${CXXFLAGS_MISC}"
-  fi
-
-  # Print the result
-  AC_MSG_RESULT([${CXXFLAGS}])
-
-fi
-
-# Test for user-defined CFLAGS flags
-AC_MSG_CHECKING([for C flags])
-
-if test "X${USERDEF_CFLAGS}" = "Xyes"; then
-
-  AC_MSG_RESULT([${CFLAGS} (user-specified via CFLAGS)])
-
-# Otherwise, determine the flags automatically
-else
-
-  if test -n "${CFLAGS_MISC}"; then
-    CFLAGS="${CFLAGS} ${CFLAGS_MISC}"
-  fi
-
-  AC_MSG_RESULT([${CFLAGS}])
-
-fi
-
-# Check for user-defined F77 compiler (used only for compiler checks)
-if test "X${USERDEF_F77}" != "Xyes"; then
-  if test -n "${F77_MISC}"; then
-    F77="${F77_MISC}"
-  fi
-fi
-
-# Test for user-defined FFLAGS flags
-AC_MSG_CHECKING([for F77 flags])
-
-if test "X${USERDEF_FFLAGS}" = "Xyes"; then
-
-  AC_MSG_RESULT([${FFLAGS} (user-specified via FFLAGS)])
-
-# Otherwise, determine the flags automatically
-else
-
-  if test -n "${FFLAGS_MISC}"; then
-    FFLAGS="${FFLAGS} ${FFLAGS_MISC}"
-  fi
-
-  AC_MSG_RESULT([${FFLAGS}])
-
-fi
-
-# Test for user-defined LIBTOOL_COMPILER flags
-AC_MSG_CHECKING([for libtool compiler flags])
-
-if test "X${USERDEF_LIBTOOL_COMPILER_FLAGS}" = "Xyes"; then
-
-  AC_MSG_RESULT([${LIBTOOL_COMPILER_FLAGS} (user-specified via LIBTOOL_COMPILER_FLAGS)])
-
-# Otherwise, determine the flags automatically
-else
-
-  if test -n "${LIBTOOL_COMPILER_FLAGS_MISC}"; then
-    LIBTOOL_COMPILER_FLAGS="${LIBTOOL_COMPILER_FLAGS} ${LIBTOOL_COMPILER_FLAGS_MISC}"
-  fi
-
-  AC_MSG_RESULT([${LIBTOOL_COMPILER_FLAGS}])
-
-fi
-
-# Test for user-defined LIBTOOL_LINKER flags
-AC_MSG_CHECKING([for libtool linker flags])
-
-if test "X${USERDEF_LIBTOOL_LINKER_FLAGS}" = "Xyes"; then
-
-  AC_MSG_RESULT([${LIBTOOL_LINKER_FLAGS} (user-specified via LIBTOOL_LINKER_FLAGS)])
-
-# Otherwise, determine the flags automatically
-else
-
-  if test -n "${LIBTOOL_LINKER_FLAGS_MISC}"; then
-    LIBTOOL_LINKER_FLAGS="${LIBTOOL_LINKER_FLAGS} ${LIBTOOL_LINKER_FLAGS_MISC}"
-  fi
-
-  AC_MSG_RESULT([${LIBTOOL_LINKER_FLAGS}])
-
-fi
-
-# Test for user-defined LIBTOOL_CCLINKER flags
-AC_MSG_CHECKING([for libtool cclinker flags])
-
-if test "X${USERDEF_LIBTOOL_CCLINKER_FLAGS}" = "Xyes"; then
-
-  AC_MSG_RESULT([${LIBTOOL_CCLINKER_FLAGS} (user-specified via LIBTOOL_CCLINKER_FLAGS)])
-
-# Otherwise, determine the flags automatically
-else
-
-  if test -n "${LIBTOOL_CCLINKER_FLAGS_MISC}"; then
-    LIBTOOL_CCLINKER_FLAGS="${LIBTOOL_CCLINKER_FLAGS} ${LIBTOOL_CCLINKER_FLAGS_MISC}"
-  fi
-
-  AC_MSG_RESULT([${LIBTOOL_CCLINKER_FLAGS}])
-
-fi
-
-# Add on any extra CXXFLAGS
-AC_MSG_CHECKING([for extra C++ compiler flags])
-if test -z "${EXTRA_CXXFLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_CXXFLAGS}])
-  CXXFLAGS="${CXXFLAGS} ${EXTRA_CXXFLAGS}"
-fi
-
-# Add on any extra CFLAGS
-AC_MSG_CHECKING([for extra C compiler flags])
-if test -z "${EXTRA_CFLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_CFLAGS}])
-  CFLAGS="${CFLAGS} ${EXTRA_CFLAGS}"
-fi
-
-# Add on any extra FFLAGS
-AC_MSG_CHECKING([for extra F77 compiler flags])
-if test -z "${EXTRA_FFLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_FFLAGS}])
-  FFLAGS="${FFLAGS} ${EXTRA_FFLAGS}"
-fi
-
-# Add on any extra CPPFLAGS
-AC_MSG_CHECKING([for extra preprocessor flags])
-if test -z "${EXTRA_CPPFLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_CPPFLAGS}])
-  CPPFLAGS="${CPPFLAGS} ${EXTRA_CPPFLAGS}"
-fi
-
-# Add on any extra LDFLAGS
-AC_MSG_CHECKING([for extra linker flags])
-if test -z "${EXTRA_LDFLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_LDFLAGS}])
-  LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
-fi
-
-# Add on any extra LIBTOOL_COMPILER_FLAGS
-AC_MSG_CHECKING([for extra libtool compiler flags])
-if test -z "${EXTRA_LIBTOOL_COMPILER_FLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_LIBTOOL_COMPILER_FLAGS}])
-  LIBTOOL_COMPILER_FLAGS="${LIBTOOL_COMPILER_FLAGS} ${EXTRA_LIBTOOL_COMPILER_FLAGS}"
-fi
-
-# Add on any extra LIBTOOL_LINKER_FLAGS
-AC_MSG_CHECKING([for extra libtool linker flags])
-if test -z "${EXTRA_LIBTOOL_LINKER_FLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_LIBTOOL_LINKER_FLAGS}])
-  LIBTOOL_LINKER_FLAGS="${LIBTOOL_LINKER_FLAGS} ${EXTRA_LIBTOOL_LINKER_FLAGS}"
-fi
-
-# Add on any extra LIBTOOL_CCLINKER_FLAGS
-AC_MSG_CHECKING([for extra libtool cclinker flags])
-if test -z "${EXTRA_LIBTOOL_CCLINKER_FLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_LIBTOOL_CCLINKER_FLAGS}])
-  LIBTOOL_CCLINKER_FLAGS="${LIBTOOL_CCLINKER_FLAGS} ${EXTRA_LIBTOOL_CCLINKER_FLAGS}"
-fi
+# Check if --with-flags present, prepend any specs to FLAGS
+
+TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
+TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+TAC_ARG_WITH_LIBS
+TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
+
+# Libtool flags
+TAC_ARG_WITH_FLAGS(libtool-compiler-flags, LIBTOOL_COMPILER_FLAGS)
+TAC_ARG_WITH_FLAGS(libtool-linker-flags, LIBTOOL_LINKER_FLAGS)
+TAC_ARG_WITH_FLAGS(libtool-cclinker-flags, LIBTOOL_CCLINKER_FLAGS)
 
 # libtoolize LIBTOOL flags (i.e., add -Xcompiler, -Xlinker, -XCClinker flags
 # respectively)
 AC_LIBTOOLIZE_COMPILER_FLAGS(LIBTOOL_COMPILER_FLAGS)
 AC_LIBTOOLIZE_LINKER_FLAGS(LIBTOOL_LINKER_FLAGS)
 AC_LIBTOOLIZE_CCLINKER_FLAGS(LIBTOOL_CCLINKER_FLAGS)
+
+# ------------------------------------------------------------------------
+# Alternate archiver
+# ------------------------------------------------------------------------
+
+TAC_ARG_WITH_AR
+
+# ------------------------------------------------------------------------
+# MPI link check
+# ------------------------------------------------------------------------
+
+TAC_ARG_CHECK_MPI
+
+# ------------------------------------------------------------------------
+# Special check for case of running on TFLOP
+# ------------------------------------------------------------------------
+AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
+if test "X${host}" = "Xtflop"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(TFLOP,,[define if compiling for ASCI Red, aka TFLOP])
+else
+  AC_MSG_RESULT(no)
+fi
+
+# ------------------------------------------------------------------------
+# Check for doxygen dot program.  Used in doxygen config files Doxyfile.in
+# ------------------------------------------------------------------------
+AC_CHECK_PROG(HAVE_DOXYGEN_DOT, dot, "YES", "NO")
 
 # ------------------------------------------------------------------------
 # STL bug on solaris.
@@ -652,109 +175,74 @@ AC_LIBTOOLIZE_CCLINKER_FLAGS(LIBTOOL_CCLINKER_FLAGS)
 AC_CXX_STL_MAP_KEY_CONST
 
 # ------------------------------------------------------------------------
-# Set up alternate archiver (option -with-ar above)
+# Checks for standard library header files
 # ------------------------------------------------------------------------
-
-if test -n "${SPECIAL_AR}" && test -z "${ALTERNATE_AR}"; then
-  ALTERNATE_AR="${SPECIAL_AR}"
-fi
-
-# Note:  We now overwrite the AR and AR_FLAGS variables with the alternate
-# archiver.  This is necessary for libtool to respect the alternate archiver.
-# Note that the AR_FLAGS is specifically set to a space instead of being
-# empty because libtool.m4 automatically sets AR_FLAGS=cru if AR_FLAGS has
-# zero length.  We don't want this when using an alternate archiver.
-#
-# It may no longer be necessary to explicitly specify ALTERNATE_AR in each
-# Makefile.am with this change.
-AC_MSG_CHECKING(for special archiver command)
-if test -n "${ALTERNATE_AR}"; then
-   AC_MSG_RESULT([${ALTERNATE_AR}])
-   AM_CONDITIONAL(USE_ALTERNATE_AR, true)
-   AR="${ALTERNATE_AR}"
-   AR_FLAGS=" "
-else
-   AC_MSG_RESULT([none])
-   AM_CONDITIONAL(USE_ALTERNATE_AR, false)
-   AC_CHECK_TOOL(AR, ar, false)
-   if test "X${AR}" = "Xfalse" ; then
-      AC_MSG_ERROR([Default archiver ar not found.  Specify an archiver with --with-ar configure flag.])
-   fi
-fi
-
-AC_SUBST(ALTERNATE_AR)
-
-# ------------------------------------------------------------------------
-# MPI cpp check
-# ------------------------------------------------------------------------
-
-if test "X${HAVE_PKG_MPI}" = "Xyes"; then
-
-  if test -n "${MPI_DIR}" && test -z "${MPI_INC}"; then
-    MPI_INC="${MPI_DIR}/include"
-  fi
-
-  if test -n "${MPI_INC}"; then
-    CPPFLAGS="${CPPFLAGS} -I${MPI_INC}"
-  fi
-
-  AC_LANG([C++])
-  AC_MSG_CHECKING(for mpi.h)
-  AC_PREPROC_IFELSE(
-  [AC_LANG_SOURCE([[#include "mpi.h"]])],
-  [
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_MPI,,[define that mpi is being used])
-  ],[
-    AC_MSG_RESULT(no)
-    echo "---"
-    echo "Cannot find header file mpi.h."
-    echo "Either compile without mpi (no --with-mpi directives)"
-    echo "or specify --with-mpi-incdir=<dir>."
-    echo "---"
-    AC_MSG_ERROR(cannot find mpi.h)
-  ])
-
-  #Define Automake conditional for mpi builds: HAVE_MPI
-  AM_CONDITIONAL(HAVE_MPI, true)
-
-else
-
-  AM_CONDITIONAL(HAVE_MPI, false)
-
-fi
-
-# ------------------------------------------------------------------------
-# Checks for header files
-# ------------------------------------------------------------------------
-
-#iostream
-AC_LANG([C++])
-AC_CHECK_HEADERS(
-[iostream iostream.h],
-break,
-AC_MSG_NOTICE([You do not appear to have iostream nor iostream.h!!]))
-
-#iomanip
-AC_LANG([C++])
-AC_CHECK_HEADERS(
-[iomanip iomanip.h],
-break,
-AC_MSG_NOTICE([You do not appear to have iomanip nor iomanip.h!!]))
-
-#cmath
-AC_LANG([C++])
-AC_CHECK_HEADERS(
-[cmath math.h],
-break,
-AC_MSG_NOTICE([You do not appear to have cmath nor math.h!!]))
 
 #cstdlib
 AC_LANG([C++])
-AC_CHECK_HEADERS(
-[cstdlib stdlib.h],
-break,
-AC_MSG_NOTICE([You do not appear to have cstdlib nor stdlib.h!!]))
+AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
+AC_CHECK_HEADERS([cstdio stdio.h], [break],)
+AC_CHECK_HEADERS([cassert assert.h], [break],)
+AC_CHECK_HEADERS([cmath math.h], [break],)
+AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
+AC_CHECK_HEADERS([iostream iostream.h], [break],)
+AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([map map.h], [break],)
+AC_CHECK_HEADERS([vector vector.h], [break],)
+AC_CHECK_HEADERS([algorithm algo.h algorithm.h], [break],)
+AC_CHECK_HEADERS([sstream sstream.h strstream strstream.h], [break],)
+AC_CHECK_HEADERS([fstream fstream.h], [break],)
+
+if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  NOX requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  NOX requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cassert or assert.h.  NOX requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find string or string.h.  NOX requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  NOX requires at least one or the other.]])
+fi
+
+if test "X${host}" != "Xtflop"; then
+  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+    AC_MSG_ERROR([[Cannot find cmath or math.h.  NOX requires at least one or the other.]])
+  fi
+else
+  # TFLOP
+  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
+    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  NOX requires at least one or the other.]])
+  fi
+fi  
+
+if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find map or map.h.  NOX requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find vector or vector.h.  NOX requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find algorithm, algo.h, or algorithm.h.  NOX requires at least one of these.]])
+fi
+
+if test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes" && test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find sstream, strstream, sstream.h, or strstream.h.  NOX requires at least one of these.]])
+fi
+
+if test "X$ac_cv_header_fstream" != "Xyes" && test "X$ac_cv_header_fstream_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find fstream or fstream.h.  NOX requires at least one or the other.]])
+fi
 
 # can we say using std::ostream?
 AC_LANG([C++])
@@ -776,6 +264,12 @@ AC_COMPILE_IFELSE(
   AC_MSG_RESULT(no)
   AC_DEFINE(NO_USING_STD_OSTREAM,1,[define if "using std::ostream" is not okay])
 ])
+
+# ------------------------------------------------------------------------
+# Checks for typedefs, structures, and compiler characteristics.
+# ------------------------------------------------------------------------
+AC_C_CONST
+AC_C_INLINE
 
 # ------------------------------------------------------------------------
 # Determine if nox is being built as part of Trilinos or as a stand-alone
@@ -1223,48 +717,6 @@ AC_ARG_WITH(loca-mf,
 AC_MSG_CHECKING(whether we should build MF support into loca library)
 AC_MSG_RESULT([${BUILD_LOCA_MF_SUPPORT}])
 AM_CONDITIONAL(BUILD_LIBLOCAMF, test X${BUILD_LOCA_MF_SUPPORT} = Xyes)
-
-# ------------------------------------------------------------------------
-# Check for MPI library
-# ------------------------------------------------------------------------
-
-if test "X${HAVE_PKG_MPI}" = "Xyes"; then
-
-  if  test X${ADDON_epetra_TESTS} = Xyes ||
-      test X${ADDON_epetra_EXAMPLES} = Xyes; then
-
-    if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
-      MPI_LIBDIR="${MPI_DIR}/lib"
-    fi
-
-    if test -n "${MPI_LIBDIR}"; then
-      LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
-    fi
-
-    if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
-      MPI_LIBS="-lmpi"
-    fi
-
-    if test -n "${MPI_LIBS}"; then
-      LIBS="${MPI_LIBS} ${LIBS}"
-    fi
-
-    AC_LANG([C++])
-    AC_MSG_CHECKING(whether MPI will link using C++ compiler)
-    AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([[#include <mpi.h>]], [[int c; char** v; MPI_Init(&c,&v);]])],
-    [AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)
-     echo "-----"
-     echo "Cannot link simple MPI program."
-     echo "Try --with-mpi-cxx to specify MPI C++ compile script."
-     echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
-     echo "to specify all the specific MPI compile options."
-     echo "-----"
-     AC_MSG_ERROR(MPI cannot link)
-    ])
-  fi
-fi
 
 # ------------------------------------------------------------------------
 # User defined directories 

@@ -14,17 +14,41 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
+/* Define to 1 if you have the <algorithm> header file. */
+#undef HAVE_ALGORITHM
+
+/* Define to 1 if you have the <algorithm.h> header file. */
+#undef HAVE_ALGORITHM_H
+
+/* Define to 1 if you have the <algo.h> header file. */
+#undef HAVE_ALGO_H
+
+/* Define to 1 if you have the <assert.h> header file. */
+#undef HAVE_ASSERT_H
+
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
 
+/* Define to 1 if you have the <cassert> header file. */
+#undef HAVE_CASSERT
+
 /* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
+
+/* Define to 1 if you have the <cstdio> header file. */
+#undef HAVE_CSTDIO
 
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <fstream> header file. */
+#undef HAVE_FSTREAM
+
+/* Define to 1 if you have the <fstream.h> header file. */
+#undef HAVE_FSTREAM_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -56,13 +80,19 @@
 /* define that anasazi is activated in loca */
 #undef HAVE_LOCA_ANASAZI
 
+/* Define to 1 if you have the <map> header file. */
+#undef HAVE_MAP
+
+/* Define to 1 if you have the <map.h> header file. */
+#undef HAVE_MAP_H
+
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* define that mpi is being used */
+/* define if we want to use MPI */
 #undef HAVE_MPI
 
 /* define if the compiler implements namespaces */
@@ -95,17 +125,35 @@
 /* Define to 1 if you have the `sqrt' function. */
 #undef HAVE_SQRT
 
+/* Define to 1 if you have the <sstream> header file. */
+#undef HAVE_SSTREAM
+
+/* Define to 1 if you have the <sstream.h> header file. */
+#undef HAVE_SSTREAM_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <string> header file. */
+#undef HAVE_STRING
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if you have the <strstream> header file. */
+#undef HAVE_STRSTREAM
+
+/* Define to 1 if you have the <strstream.h> header file. */
+#undef HAVE_STRSTREAM_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -115,6 +163,12 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
+
+/* Define to 1 if you have the <vector.h> header file. */
+#undef HAVE_VECTOR_H
 
 /* define if STL map key is required to be const */
 #undef MUST_CONST_STL_MAP_KEY
@@ -143,5 +197,17 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* define if compiling for ASCI Red, aka TFLOP */
+#undef TFLOP
+
 /* Version number of package */
 #undef VERSION
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
