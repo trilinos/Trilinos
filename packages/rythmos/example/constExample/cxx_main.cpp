@@ -7,45 +7,43 @@ class Bar
 {
   public:
     // Constructor
-    Bar() 
-    { 
-      std::cout << "Bar::Bar  - address = " << this << std::endl;
-      x_ = 5.0; 
-    };
+    Bar();
     // Destructor
-    ~Bar() 
-    { 
-      std::cout << "Bar::~Bar - address = " << this << std::endl;
-      x_ = 0.0; 
-    };
-    void setx(double x) { x_ = x; };
-    double getx() { return(x_); };
+    ~Bar();
+    void setx(double x);
+    double getx(); 
   protected:
     double x_;
+};
+Bar::Bar()
+{ 
+  std::cout << "Bar::Bar  - address = " << this << std::endl;
+  x_ = 5.0; 
+};
+Bar::~Bar() 
+{ 
+  std::cout << "Bar::~Bar - address = " << this << std::endl;
+  x_ = 0.0; 
+};
+void Bar::setx(double x)
+{
+  x_ = x;
+};
+double Bar::getx() 
+{ 
+  return(x_); 
 };
 
 // Class to test out const
 class Foo
 {
   public:
-    Foo() 
-    { 
-      std::cout << "Foo::Foo  - address = " << this << std::endl;
-      std::cout << "Foo::Foo  - address of internal Bar pointer = " << Bptr_ << std::endl;
-    };
-    ~Foo() 
-    {
-      std::cout << "Foo::~Foo - address = " << this << std::endl;
-    };
-    void setBar(Bar * Bptr) 
-    { 
-      std::cout << "Foo::setBar" << std::endl;
-      Bptr_ = Bptr; 
-      std::cout << "Foo::setBar - address of internal Bar pointer = " << Bptr_ << std::endl;
-    };
-    void test1(Bar *Bptr1, Bar *Bptr2);
-//    void test2(const Bar *B);
-//    void test3(const Bar * const B);
+    Foo();
+    ~Foo();
+    void setBar(Bar * Bptr);
+    void test1(Bar * const Bptr);
+//    void test2(const Bar * Bptr); // also valid:  test2( Bar const * Bptr )
+    void test3(Bar * Bptr);
 //    void test4(const Bar * const B) const;
 
   protected:
@@ -53,21 +51,50 @@ class Foo
     Bar *Bptr_;
 
 };
-void Foo::test1(Bar *Bptr1, Bar *Bptr2)
+Foo::Foo() 
+{ 
+  std::cout << "Foo::Foo  - address = " << this << std::endl;
+  std::cout << "Foo::Foo  - address of internal Bar pointer = " << Bptr_ << std::endl;
+};
+Foo::~Foo() 
+{
+  std::cout << "Foo::~Foo - address = " << this << std::endl;
+};
+void Foo::setBar(Bar * Bptr) 
+{ 
+  std::cout << "Foo::setBar" << std::endl;
+  Bptr_ = Bptr; 
+  std::cout << "Foo::setBar - address of internal Bar pointer = " << Bptr_ << std::endl;
+};
+// test1 shows that if const comes after the *, the function can still modify
+// the underlying object.
+void Foo::test1(Bar * const Bptr)
 {
   std::cout << "Foo::test1" << std::endl;
-  Bar *Bptr_tmp;
-  Bptr_tmp = Bptr1;
-  Bptr1 = Bptr2; 
-  Bptr2 = Bptr_tmp;
+  Bptr->setx(15.0);
 };
 /*
-void Foo::test2(const Bar *B)
+// test2 shows that if const comes before the *, the function cannot modify the
+// underlying object.  This fails to compile.
+void Foo::test2(const Bar * Bptr)
 {
   std::cout << "Foo::test2" << std::endl;
-  Bar B2;
-  B2.setx(10.0);
-  B = B2; // copy of objects
+  Bptr->setx(15.0);
+};
+*/
+void Foo::test3(Bar * Bptr)
+{
+  std::cout << "Foo::test3" << std::endl;
+  std::cout << "Foo::test3 - Bptr address = " << Bptr << std::endl;
+  Bar *Bptr_tmp = new Bar;
+  Bptr = Bptr_tmp;
+  std::cout << "Foo::test3 - Bptr address = " << Bptr << std::endl;
+};
+/*
+void Foo::test2(const Bar * Bptr)
+{
+  std::cout << "Foo::test2" << std::endl;
+  Bptr->setx(20.0);
 };
 */
 
@@ -77,25 +104,21 @@ int main(int argc, char *argv[])
   std::cout << "main:  This routine tests const conditions." << std::endl;
 
   Foo F;
-  Bar *Bptr1 = new Bar; 
-  Bar *Bptr2 = new Bar; 
-  std::cout << "main:  Address of Bar pointer 1 before test1 = " << Bptr1 << std::endl;
-  std::cout << "main:  Address of Bar pointer 2 before test1 = " << Bptr2 << std::endl;
+  Bar *Bptr = new Bar;
+  Bptr->setx(10.0);
+  F.setBar(Bptr);
+  std::cout << "Correct output is x = 10." << std::endl;
+  std::cout << "x = " << Bptr->getx() << std::endl;
 
-  F.test1(Bptr1,Bptr2);
-  std::cout << "main:  Address of Bar pointer 1  after test1  = " << Bptr1 << std::endl;
-  std::cout << "main:  Address of Bar pointer 2  after test1  = " << Bptr2 << std::endl;
+  F.test1(Bptr);
+  std::cout << "address of Bptr = " << Bptr << std::endl;
+  std::cout << "Correct output is x = 15." << std::endl;
+  std::cout << "x = " << Bptr->getx() << std::endl;
 
-  Bar *Bptr_tmp;
-  Bptr_tmp = Bptr1;
-  Bptr1 = Bptr2;
-  Bptr2 = Bptr_tmp;
-  std::cout << "main:  Address of Bar pointer 1  after swap   = " << Bptr1 << std::endl;
-  std::cout << "main:  Address of Bar pointer 2  after swap   = " << Bptr2 << std::endl;
-
-  delete Bptr1;
-  delete Bptr2;
-
+  Bar *Bptr_tmp(NULL);
+  std::cout << "address of Bptr_tmp = " << Bptr_tmp << std::endl;
+  F.test3(Bptr_tmp);
+  std::cout << "address of Bptr_tmp = " << Bptr_tmp << std::endl;
   /*
   F.test2(B);
   */
