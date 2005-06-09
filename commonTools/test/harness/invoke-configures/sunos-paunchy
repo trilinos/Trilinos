@@ -1,49 +1,47 @@
 ../configure \
---with-libs="-L/local/proj/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB -ldsc \
--L/local/homes/jmwille/Trilinos3PL/SuperLU -lsuperlu \
--L/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib -lumfpack \
--L/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Lib -lamd" \
---with-incdirs="-I/local/proj/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB \
--I/local/homes/jmwille/Trilinos3PL/SuperLU/SRC \
--I/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include \
--I/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Include" \
+--with-libs="/local/proj/trilinos/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_paunchy.a \
+/local/proj/trilinos/Trilinos3PL/prebuilt/superlu-3.0/libsuperlu_paunchy.a" \
+--with-incdirs="-I/local/proj/trilinos/Trilinos3PL/prebuilt/dscpack-1.0 \
+-I/local/proj/trilinos/Trilinos3PL/prebuilt/superlu-3.0" \
 LDFLAGS="-xlic_lib=sunperf" \
 CXXFLAGS="-g -pto" \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
---enable-amesos-klu \
---enable-new_package \
---enable-new_swahili \
---enable-amesos-umfpack \
---enable-teuchos \
---enable-tpetra \
---enable-belos \
+--disable-amesos-klu \
+--enable-amesos-superlu \
 --enable-anasazi \
---enable-teuchos-extended \
---enable-teuchos-abc \
---enable-teuchos-complex \
---enable-nox \
---enable-nox-epetra \
---enable-nox-tests \
+--enable-aztecoo \
+--enable-belos \
+--enable-claps \
+--enable-didasko \
+--enable-epetra \
+--enable-epetra-abc \
+--enable-epetra-thyra \
+--enable-epetraext \
+--enable-epetraext-inout \
+--enable-epetraext-coloring \
+--enable-epetraext-transform \
+--enable-ifpack \
+--enable-kokkos \
+--enable-komplex \
 --enable-loca \
 --with-loca-anasazi \
---enable-komplex \
 --enable-meros \
+--enable-ml \
+--enable-new_package \
+--enable-new_swahili \
+--enable-nox \
+--enable-nox-epetra \
 --enable-nox-epetra-examples \
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
---enable-tsf \
---enable-ml \
---enable-epetra \
---enable-epetra-abc \
---enable-epetraext \
---enable-epetraext-transform \
---enable-epetraext-inout \
---enable-epetraext-coloring \
---enable-kokkos \
---enable-ifpack \
---enable-aztecoo \
---enable-triutils \
+--enable-nox-tests \
+--enable-teuchos \
+--enable-teuchos-abc \
+--enable-teuchos-complex \
+--enable-teuchos-extended \
 --enable-thyra \
---enable-epetra-thyra
+--enable-tpetra \
+--enable-triutils \
+--enable-tsf
