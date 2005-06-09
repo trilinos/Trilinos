@@ -33,6 +33,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 #include "Epetra_LAPACK.h"
+using namespace Teuchos;
 
 //=============================================================================
 Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
