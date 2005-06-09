@@ -357,16 +357,17 @@ exit $exitStatus;
         }
                                                 
         # Grab general information values for inclusion in machine info file.        
-        chomp (my $hostName=`hostname -s`);     if ($?) { $hostName = ""; }
-        chomp (my $dnsName=`hostname -d`);      if ($?) { $dnsName = ""; }
-        chomp (my $ipAddress=`hostname -i`);    if ($?) { $ipAddress = ""; }
-        chomp (my $operatingSystem=`uname -o`); if ($?) { $operatingSystem = ""; }
-        chomp (my $kernelName=`uname -s`);      if ($?) { $kernelName = ""; }
-        chomp (my $kernelRelease=`uname -r`);   if ($?) { $kernelRelease = ""; }
-        chomp (my $kernelVersion=`uname -v`);   if ($?) { $kernelVersion = ""; }
-        chomp (my $processor=`uname -p`);       if ($?) { $processor = ""; }
-        chomp (my $machineHardware=`uname -m`); if ($?) { $machineHardware = ""; }
-        chomp (my $hardwarePlatform=`uname -i`);if ($?) { $hardwarePlatform = ""; }
+        chomp (my $hostName=`hostname -s`);     
+        if ($?) { chomp ($hostName=`uname -n`); }   if ($?) { $hostName = ""; }
+        chomp (my $dnsName=`hostname -d`);          if ($?) { $dnsName = ""; }
+        chomp (my $ipAddress=`hostname -i`);        if ($?) { $ipAddress = ""; }
+        chomp (my $operatingSystem=`uname -o`);     if ($?) { $operatingSystem = ""; }
+        chomp (my $kernelName=`uname -s`);          if ($?) { $kernelName = ""; }
+        chomp (my $kernelRelease=`uname -r`);       if ($?) { $kernelRelease = ""; }
+        chomp (my $kernelVersion=`uname -v`);       if ($?) { $kernelVersion = ""; }
+        chomp (my $processor=`uname -p`);           if ($?) { $processor = ""; }
+        chomp (my $machineHardware=`uname -m`);     if ($?) { $machineHardware = ""; }
+        chomp (my $hardwarePlatform=`uname -i`);    if ($?) { $hardwarePlatform = ""; }
             
         # Create machine info file for database.
         my $machineInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/machine.txt";
