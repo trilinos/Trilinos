@@ -59,6 +59,7 @@ class Foo
     const RefCountPtr<Bar> test8();
     RefCountPtr<Bar> test9();
     RefCountPtr<Bar> &test10();
+    RefCountPtr<Bar> &test11();
 
   protected:
     double t_;
@@ -117,11 +118,17 @@ const RefCountPtr<Bar> Foo::test8()
 };
 RefCountPtr<Bar> Foo::test9()
 {
-  return(rcp(new Bar(55.0)));
+//  return(rcp(new Bar(55.0))); // allowed also
+  return(Bptr_);
 };
 RefCountPtr<Bar> &Foo::test10()
 {
   return(Bptr_);
+};
+RefCountPtr<Bar> &Foo::test11()
+{
+//  return(rcp(new Bar(75.0))); // not allowed because I'm passing out a
+  // reference to an internal object
 };
 // ------------------------------------------------------------
 
@@ -165,7 +172,9 @@ int main(int argc, char *argv[])
   cout << "x = " << Bptr->getx() << endl;  
   //F.test8() = rcp(new Bar(50.0)); // not allowed because output is const.
 
-  F.test9() = rcp(new Bar(60.0)); // allowed because output is nonconst, but this is crazy.
+  F.test9() = rcp(new Bar(60.0)); // allowed because output is nonconst, but
+  // this is crazy.  Especially since the object that is modified is a copied
+  // object, so we don't have access to it after this call.
 
   F.test10() = rcp(new Bar(65.0));  // allowed because output is nonconst, and
   //this does something strange, as it modifies the internal data to the class
