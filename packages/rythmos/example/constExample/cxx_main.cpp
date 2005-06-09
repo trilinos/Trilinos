@@ -1,6 +1,8 @@
 
-//#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include<iostream>
+
+using namespace Teuchos;
 
 // Dummy class to contain a double 
 class Bar 
@@ -17,12 +19,12 @@ class Bar
 };
 Bar::Bar()
 { 
-  std::cout << "Bar::Bar  - address = " << this << std::endl;
+  cout << "Bar::Bar  - address = " << this << endl;
   x_ = 5.0; 
 };
 Bar::~Bar() 
 { 
-  std::cout << "Bar::~Bar - address = " << this << std::endl;
+  cout << "Bar::~Bar - address = " << this << endl;
   x_ = 0.0; 
 };
 void Bar::setx(double x)
@@ -40,60 +42,64 @@ class Foo
   public:
     Foo();
     ~Foo();
-    void setBar(Bar * Bptr);
-    void test1(Bar * const Bptr);
+    void setBar(RefCountPtr<Bar> &Bptr);
+//    void test1(RefCountPtr<Bar> &Bptr);
 //    void test2(const Bar * Bptr); // also valid:  test2( Bar const * Bptr )
-    void test3(Bar * Bptr);
+//    void test3(Bar * Bptr);
 //    void test4(const Bar * const B) const;
 
   protected:
     double t_;
-    Bar *Bptr_;
+    RefCountPtr<Bar> Bptr_;
 
 };
 Foo::Foo() 
 { 
-  std::cout << "Foo::Foo  - address = " << this << std::endl;
-  std::cout << "Foo::Foo  - address of internal Bar pointer = " << Bptr_ << std::endl;
+  cout << "Foo::Foo  - address = " << this << endl;
+  cout << "Foo::Foo  - address of internal Bar pointer = " << &*Bptr_ << endl;
 };
 Foo::~Foo() 
 {
-  std::cout << "Foo::~Foo - address = " << this << std::endl;
+  cout << "Foo::~Foo - address = " << this << endl;
 };
-void Foo::setBar(Bar * Bptr) 
+void Foo::setBar(RefCountPtr<Bar> &Bptr) 
 { 
-  std::cout << "Foo::setBar" << std::endl;
+  cout << "Foo::setBar" << endl;
   Bptr_ = Bptr; 
-  std::cout << "Foo::setBar - address of internal Bar pointer = " << Bptr_ << std::endl;
+  cout << "Foo::setBar - address of internal Bar pointer = " << &*Bptr_ << endl;
 };
 // test1 shows that if const comes after the *, the function can still modify
 // the underlying object.
+/*
 void Foo::test1(Bar * const Bptr)
 {
-  std::cout << "Foo::test1" << std::endl;
+  cout << "Foo::test1" << endl;
   Bptr->setx(15.0);
 };
+*/
 /*
 // test2 shows that if const comes before the *, the function cannot modify the
 // underlying object.  This fails to compile.
 void Foo::test2(const Bar * Bptr)
 {
-  std::cout << "Foo::test2" << std::endl;
+  cout << "Foo::test2" << endl;
   Bptr->setx(15.0);
 };
 */
+/*
 void Foo::test3(Bar * Bptr)
 {
-  std::cout << "Foo::test3" << std::endl;
-  std::cout << "Foo::test3 - Bptr address = " << Bptr << std::endl;
+  cout << "Foo::test3" << endl;
+  cout << "Foo::test3 - Bptr address = " << Bptr << endl;
   Bar *Bptr_tmp = new Bar;
   Bptr = Bptr_tmp;
-  std::cout << "Foo::test3 - Bptr address = " << Bptr << std::endl;
+  cout << "Foo::test3 - Bptr address = " << Bptr << endl;
 };
+*/
 /*
 void Foo::test2(const Bar * Bptr)
 {
-  std::cout << "Foo::test2" << std::endl;
+  cout << "Foo::test2" << endl;
   Bptr->setx(20.0);
 };
 */
@@ -101,24 +107,26 @@ void Foo::test2(const Bar * Bptr)
 
 int main(int argc, char *argv[])
 {
-  std::cout << "main:  This routine tests const conditions." << std::endl;
+  cout << "main:  This routine tests const conditions." << endl;
 
   Foo F;
-  Bar *Bptr = new Bar;
+  RefCountPtr<Bar> Bptr = rcp(new Bar);
   Bptr->setx(10.0);
   F.setBar(Bptr);
-  std::cout << "Correct output is x = 10." << std::endl;
-  std::cout << "x = " << Bptr->getx() << std::endl;
+  cout << "Correct output is x = 10." << endl;
+  cout << "x = " << Bptr->getx() << endl;
 
+  /*
   F.test1(Bptr);
-  std::cout << "address of Bptr = " << Bptr << std::endl;
-  std::cout << "Correct output is x = 15." << std::endl;
-  std::cout << "x = " << Bptr->getx() << std::endl;
+  cout << "address of Bptr = " << Bptr << endl;
+  cout << "Correct output is x = 15." << endl;
+  cout << "x = " << Bptr->getx() << endl;
 
   Bar *Bptr_tmp(NULL);
-  std::cout << "address of Bptr_tmp = " << Bptr_tmp << std::endl;
+  cout << "address of Bptr_tmp = " << Bptr_tmp << endl;
   F.test3(Bptr_tmp);
-  std::cout << "address of Bptr_tmp = " << Bptr_tmp << std::endl;
+  cout << "address of Bptr_tmp = " << Bptr_tmp << endl;
+  */
   /*
   F.test2(B);
   */
