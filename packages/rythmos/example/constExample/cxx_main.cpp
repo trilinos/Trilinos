@@ -56,6 +56,9 @@ class Foo
     RefCountPtr<Bar> &test5();
     RefCountPtr<const Bar> &test6();
     const RefCountPtr<Bar> &test7();
+    const RefCountPtr<Bar> test8();
+    RefCountPtr<Bar> test9();
+    RefCountPtr<Bar> &test10();
 
   protected:
     double t_;
@@ -108,6 +111,18 @@ const RefCountPtr<Bar> &Foo::test7()
 {
   return(Bptr_);
 };
+const RefCountPtr<Bar> Foo::test8()
+{
+  return(rcp(new Bar(45.0)));
+};
+RefCountPtr<Bar> Foo::test9()
+{
+  return(rcp(new Bar(55.0)));
+};
+RefCountPtr<Bar> &Foo::test10()
+{
+  return(Bptr_);
+};
 // ------------------------------------------------------------
 
 
@@ -143,7 +158,24 @@ int main(int argc, char *argv[])
 
   Bptr = F.test7();
   cout << "Correct output is x = 35." << endl;
-  cout << "x = " << Bptr->getx() << endl;  // valid because we put const after Bar::getx
+  cout << "x = " << Bptr->getx() << endl;  
+
+  Bptr = F.test8();
+  cout << "Correct output is x = 45." << endl;
+  cout << "x = " << Bptr->getx() << endl;  
+  //F.test8() = rcp(new Bar(50.0)); // not allowed because output is const.
+
+  F.test9() = rcp(new Bar(60.0)); // allowed because output is nonconst, but this is crazy.
+
+  F.test10() = rcp(new Bar(65.0));  // allowed because output is nonconst, and
+  //this does something strange, as it modifies the internal data to the class
+  //  through a nonconst reference passed out.
+  Bptr = F.test7(); // grab it back out with const output
+  cout << "Correct output is x = 65." << endl;
+  cout << "x = " << Bptr->getx() << endl;  
+
+//  F.test7() = rcp(new Bar(70.0));  // not allowed because output is const, this
+  // is the expected behavior.  You shouldn't be able to do assignments like this.
 
   return(0);
 };
