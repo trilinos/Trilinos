@@ -60,6 +60,10 @@ class Foo
     RefCountPtr<Bar> test9();
     RefCountPtr<Bar> &test10();
     RefCountPtr<Bar> &test11();
+    const RefCountPtr<const Bar> &test12();
+    const RefCountPtr<const Bar> &test13() const;
+    const RefCountPtr<Bar> &test14() const;
+    const RefCountPtr<Bar> test15() const;
 
   protected:
     double t_;
@@ -130,6 +134,22 @@ RefCountPtr<Bar> &Foo::test11()
 //  return(rcp(new Bar(75.0))); // not allowed because I'm passing out a
   // reference to an internal object
 };
+const RefCountPtr<const Bar> &Foo::test12()
+{
+  return(BptrConst_);
+};
+const RefCountPtr<const Bar> &Foo::test13() const
+{
+  return(BptrConst_);
+};
+const RefCountPtr<Bar> &Foo::test14() const
+{
+  return(Bptr_);
+};
+const RefCountPtr<Bar> Foo::test15() const
+{
+  return(Bptr_);
+};
 // ------------------------------------------------------------
 
 
@@ -188,6 +208,24 @@ int main(int argc, char *argv[])
 
 //  F.test7() = rcp(new Bar(70.0));  // not allowed because output is const, this
   // is the expected behavior.  You shouldn't be able to do assignments like this.
+
+  BptrConst = F.test12();
+  cout << "Correct output is x = 40." << endl;
+  cout << "x = " << BptrConst->getx() << endl;  
+  //Bptr = F.test12(); // not allowed because Bptr is nonconst
+
+  BptrConst = F.test13(); // this is okay.
+  cout << "Correct output is x = 40." << endl;
+  cout << "x = " << BptrConst->getx() << endl;  
+
+  Bptr = F.test14(); // this is okay.
+  cout << "Correct output is x = 65." << endl;
+  cout << "x = " << Bptr->getx() << endl;  
+
+  Bptr = F.test15(); // this is okay.
+  cout << "Correct output is x = 65." << endl;
+  cout << "x = " << Bptr->getx() << endl;  
+
 
   return(0);
 };
