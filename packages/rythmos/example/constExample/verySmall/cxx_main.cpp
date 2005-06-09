@@ -14,6 +14,7 @@ class Foo
     Foo() { };
     ~Foo() { };
     const Bar &getBar() { return(B_); };
+//    const Bar &getBar() const { return(B_); }; // this allows the line below to work.
   protected:
     Bar B_;
 };
@@ -27,7 +28,8 @@ const Bar &somefunction(const Foo &F)
 int main(int argc, char *argv[])
 {
   Foo F;
-  const Bar &B = somefunction(F);
+  const Bar &B1 = F.getBar(); // This works.
+  const Bar &B2 = somefunction(F);
 
   return(0);
 }
