@@ -49,6 +49,7 @@ class Foo
     ~Foo();
     void setBar(const RefCountPtr<Bar> &Bptr);
     void setConstBar(const RefCountPtr<const Bar> &Bptr);
+    const RefCountPtr<Bar> &getBar();
     void test1(const RefCountPtr<Bar> &Bptr);
     void test2();
     void test3(RefCountPtr<Bar> &Bptr);
@@ -64,6 +65,7 @@ class Foo
     const RefCountPtr<const Bar> &test13() const;
     const RefCountPtr<Bar> &test14() const;
     const RefCountPtr<Bar> test15() const;
+    double test16(const Bar &B);
 
   protected:
     double t_;
@@ -82,6 +84,10 @@ void Foo::setConstBar(const RefCountPtr<const Bar> &Bptr)
   BptrConst_ = Bptr; 
   //Bptr_ = Bptr;  // not allowed because Bptr_ is nonconst
   //Bptr->setx(12.0); // not allowed because Bptr is const Bar RefCountPtr
+};
+const RefCountPtr<Bar> &Foo::getBar()
+{
+  return(Bptr_);
 };
 void Foo::test1(const RefCountPtr<Bar> &Bptr)
 {
@@ -149,6 +155,15 @@ const RefCountPtr<Bar> &Foo::test14() const
 const RefCountPtr<Bar> Foo::test15() const
 {
   return(Bptr_);
+};
+double Foo::test16(const Bar &B)
+{
+  return(B.getx());
+};
+// ------------------------------------------------------------
+void somefunction(const Foo &F)
+{
+//  RefCountPtr<Bar> Bptr = F.getBar(); // not allowed.  Why?
 };
 // ------------------------------------------------------------
 
