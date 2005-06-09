@@ -49,7 +49,7 @@ class Foo
     ~Foo();
     void setBar(const RefCountPtr<Bar> &Bptr);
     void setConstBar(const RefCountPtr<const Bar> &Bptr);
-    const RefCountPtr<Bar> &getBar();
+    const RefCountPtr<Bar> &getBar() const;
     void test1(const RefCountPtr<Bar> &Bptr);
     void test2();
     void test3(RefCountPtr<Bar> &Bptr);
@@ -85,7 +85,7 @@ void Foo::setConstBar(const RefCountPtr<const Bar> &Bptr)
   //Bptr_ = Bptr;  // not allowed because Bptr_ is nonconst
   //Bptr->setx(12.0); // not allowed because Bptr is const Bar RefCountPtr
 };
-const RefCountPtr<Bar> &Foo::getBar()
+const RefCountPtr<Bar> &Foo::getBar() const
 {
   return(Bptr_);
 };
@@ -163,7 +163,7 @@ double Foo::test16(const Bar &B)
 // ------------------------------------------------------------
 void somefunction(const Foo &F)
 {
-//  RefCountPtr<Bar> Bptr = F.getBar(); // not allowed.  Why?
+  RefCountPtr<Bar> Bptr = F.getBar(); // only allowed if getBar has const after it in definition
 };
 // ------------------------------------------------------------
 
