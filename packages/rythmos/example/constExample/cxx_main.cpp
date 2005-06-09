@@ -148,6 +148,9 @@ int main(int argc, char *argv[])
   cout << "Correct output is x = 15." << endl;
   cout << "x = " << Bptr->getx() << endl;
 
+  // This demonstrates that Bptr was overwritten in this member fcn call with a
+  // different RefCountPtr object, which is only possible because the argument
+  // list definition was nonconst.
   F.test3(Bptr);
   cout << "Correct output is x = 25." << endl;
   cout << "x = " << Bptr->getx() << endl;
