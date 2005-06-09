@@ -11,7 +11,7 @@
 BUILD_DIR=`pwd`
 
 ../configure --enable-mpi --with-mpi-compilers \
-CXXFLAGS="-O3 -finline-functions -funroll-loops" \
+CXXFLAGS="-O3 -finline-functions -funroll-loops -Wreturn-type" \
 --with-libs="-lexpat" \
 --enable-tsfextended \
 --enable-tsfcore \
