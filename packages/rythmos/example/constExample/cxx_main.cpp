@@ -5,36 +5,41 @@
 using namespace Teuchos;
 
 // Dummy class to contain a double 
+// ------------------------------------------------------------
 class Bar 
 {
   public:
     // Constructor
     Bar();
+    Bar(double x);
     // Destructor
     ~Bar();
     void setx(double x);
-    double getx(); 
+    double getx() const; 
   protected:
     double x_;
 };
 Bar::Bar()
 { 
-  cout << "Bar::Bar  - address = " << this << endl;
   x_ = 5.0; 
+};
+Bar::Bar(double x)
+{ 
+  x_ = x; 
 };
 Bar::~Bar() 
 { 
-  cout << "Bar::~Bar - address = " << this << endl;
   x_ = 0.0; 
 };
 void Bar::setx(double x)
 {
   x_ = x;
 };
-double Bar::getx() 
+double Bar::getx() const
 { 
   return(x_); 
 };
+// ------------------------------------------------------------
 
 // Class to test out const
 class Foo
@@ -42,67 +47,68 @@ class Foo
   public:
     Foo();
     ~Foo();
-    void setBar(RefCountPtr<Bar> &Bptr);
-//    void test1(RefCountPtr<Bar> &Bptr);
-//    void test2(const Bar * Bptr); // also valid:  test2( Bar const * Bptr )
-//    void test3(Bar * Bptr);
-//    void test4(const Bar * const B) const;
+    void setBar(const RefCountPtr<Bar> &Bptr);
+    void setConstBar(const RefCountPtr<const Bar> &Bptr);
+    void test1(const RefCountPtr<Bar> &Bptr);
+    void test2();
+    void test3(RefCountPtr<Bar> &Bptr);
+    void test4(const RefCountPtr<Bar> &Bptr);
+    RefCountPtr<Bar> &test5();
+    RefCountPtr<const Bar> &test6();
+    const RefCountPtr<Bar> &test7();
 
   protected:
     double t_;
     RefCountPtr<Bar> Bptr_;
+    RefCountPtr<const Bar> BptrConst_;
 
 };
-Foo::Foo() 
+Foo::Foo() { };
+Foo::~Foo() { };
+void Foo::setBar(const RefCountPtr<Bar> &Bptr) 
 { 
-  cout << "Foo::Foo  - address = " << this << endl;
-  cout << "Foo::Foo  - address of internal Bar pointer = " << &*Bptr_ << endl;
+  Bptr_ = Bptr;  
 };
-Foo::~Foo() 
-{
-  cout << "Foo::~Foo - address = " << this << endl;
-};
-void Foo::setBar(RefCountPtr<Bar> &Bptr) 
+void Foo::setConstBar(const RefCountPtr<const Bar> &Bptr) 
 { 
-  cout << "Foo::setBar" << endl;
-  Bptr_ = Bptr; 
-  cout << "Foo::setBar - address of internal Bar pointer = " << &*Bptr_ << endl;
+  BptrConst_ = Bptr; 
+  //Bptr_ = Bptr;  // not allowed because Bptr_ is nonconst
+  //Bptr->setx(12.0); // not allowed because Bptr is const Bar RefCountPtr
 };
-// test1 shows that if const comes after the *, the function can still modify
-// the underlying object.
-/*
-void Foo::test1(Bar * const Bptr)
+void Foo::test1(const RefCountPtr<Bar> &Bptr)
 {
-  cout << "Foo::test1" << endl;
   Bptr->setx(15.0);
 };
-*/
-/*
-// test2 shows that if const comes before the *, the function cannot modify the
-// underlying object.  This fails to compile.
-void Foo::test2(const Bar * Bptr)
+void Foo::test2()
 {
-  cout << "Foo::test2" << endl;
-  Bptr->setx(15.0);
+//  BptrConst_->setx(20.0); // not allowed because BptrConst_ is const
 };
-*/
-/*
-void Foo::test3(Bar * Bptr)
+void Foo::test3(RefCountPtr<Bar> &Bptr)
 {
-  cout << "Foo::test3" << endl;
-  cout << "Foo::test3 - Bptr address = " << Bptr << endl;
-  Bar *Bptr_tmp = new Bar;
-  Bptr = Bptr_tmp;
-  cout << "Foo::test3 - Bptr address = " << Bptr << endl;
+  RefCountPtr<Bar> Bptr_temp = rcp(new Bar);
+  Bptr_temp->setx(25.0);
+  Bptr = Bptr_temp;
 };
-*/
-/*
-void Foo::test2(const Bar * Bptr)
+void Foo::test4(const RefCountPtr<Bar> &Bptr)
 {
-  cout << "Foo::test2" << endl;
-  Bptr->setx(20.0);
+  RefCountPtr<Bar> Bptr_temp = rcp(new Bar);
+  Bptr_temp->setx(30.0);
+//  Bptr = Bptr_temp; // not allowed because input is const
 };
-*/
+RefCountPtr<Bar> &Foo::test5()
+{
+  return(Bptr_);
+};
+RefCountPtr<const Bar> &Foo::test6()
+{
+  //return(Bptr_); // not allowed because Bptr is nonconst
+  return(BptrConst_);
+};
+const RefCountPtr<Bar> &Foo::test7()
+{
+  return(Bptr_);
+};
+// ------------------------------------------------------------
 
 
 int main(int argc, char *argv[])
@@ -116,20 +122,28 @@ int main(int argc, char *argv[])
   cout << "Correct output is x = 10." << endl;
   cout << "x = " << Bptr->getx() << endl;
 
-  /*
   F.test1(Bptr);
-  cout << "address of Bptr = " << Bptr << endl;
   cout << "Correct output is x = 15." << endl;
   cout << "x = " << Bptr->getx() << endl;
 
-  Bar *Bptr_tmp(NULL);
-  cout << "address of Bptr_tmp = " << Bptr_tmp << endl;
-  F.test3(Bptr_tmp);
-  cout << "address of Bptr_tmp = " << Bptr_tmp << endl;
-  */
-  /*
-  F.test2(B);
-  */
+  F.test3(Bptr);
+  cout << "Correct output is x = 25." << endl;
+  cout << "x = " << Bptr->getx() << endl;
+
+  Bptr = F.test5();
+  cout << "Correct output is x = 15." << endl;
+  cout << "x = " << Bptr->getx() << endl;
+
+  Bptr->setx(35.0);
+//  Bptr = F.test6(); // not allowed because Bptr is nonconst and output of test6 is const
+  RefCountPtr<const Bar> BptrConst = rcp(new Bar(40.0));
+  F.setConstBar(BptrConst);
+  cout << "Correct output is x = 40." << endl;
+  cout << "x = " << F.test6()->getx() << endl;  // valid because we put const after Bar::getx
+
+  Bptr = F.test7();
+  cout << "Correct output is x = 35." << endl;
+  cout << "x = " << Bptr->getx() << endl;  // valid because we put const after Bar::getx
 
   return(0);
 };
