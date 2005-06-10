@@ -327,14 +327,10 @@ int SubMain( Epetra_Comm &Comm ) {
   Epetra_RowMatrix* RowC = GalleryC.GetLinearProblem()->GetMatrix();
 
   Amesos_TestRowMatrix A(RowA);
-  cout << " A= " ; 
-  dynamic_cast<Epetra_CrsMatrix *>(RowA)->Print( cout ) ; 
+  //  cout << " A= " ; 
+  //  dynamic_cast<Epetra_CrsMatrix *>(RowA)->Print( cout ) ; 
   Amesos_TestRowMatrix B(RowB);
-  cout << " B= " ; 
-  dynamic_cast<Epetra_CrsMatrix *>(RowB)->Print( cout ) ; 
   Amesos_TestRowMatrix C(RowC);
-  cout << " C= " ; 
-  dynamic_cast<Epetra_CrsMatrix *>(RowC)->Print( cout ) ; 
 
   Epetra_MultiVector x_A(A.OperatorDomainMap(),NumVectors_AB);
   Epetra_MultiVector x_exactA(A.OperatorDomainMap(),NumVectors_AB);
