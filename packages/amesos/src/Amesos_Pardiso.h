@@ -46,8 +46,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
-using namespace Teuchos;
-
 //! Amesos_Pardiso: Interface to the PARDISO package.
 
 /*!
@@ -158,10 +156,10 @@ private:
   int PerformSymbolicFactorization();
   int PerformNumericFactorization(); 
 
-  RefCountPtr<Epetra_Map> SerialMap_;
-  RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrix_;
-  RefCountPtr<Epetra_RowMatrix> SerialMatrix_;
-  RefCountPtr<Epetra_Import> Importer_;
+  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrix_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> SerialMatrix_;
+  Teuchos::RefCountPtr<Epetra_Import> Importer_;
 
   const Epetra_Map* Map_;
   const Epetra_RowMatrix* Matrix_;

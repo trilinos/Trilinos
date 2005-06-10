@@ -47,6 +47,8 @@ extern "C" int F77_PARDISO
 
 #define IPARM(I) iparm_[(I) - 1]
 
+using namespace Teuchos;
+
 //=============================================================================
 Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   UseTranspose_(false),

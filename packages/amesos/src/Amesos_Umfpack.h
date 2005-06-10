@@ -58,8 +58,6 @@
 #include "Epetra_Comm.h"
 #endif
 
-using namespace Teuchos;
-
 //! Class Amesos_Umfpack:  An object-oriented wrapper for UMFPACK.
 /*!  Amesos_Umfpack will solve a linear systems of equations: <TT>A X = B</TT>
    using Epetra objects and the UMFPACK solver library, where
@@ -228,14 +226,14 @@ private:
   int NumGlobalElements_;
 
   //! Points to a Serial Map (unused if IsLocal == 1 ) 
-  RefCountPtr<Epetra_Map> SerialMap_;
+  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
   //! Points to a Serial Copy of A
   /* If IsLocal==1 - Points to the original matrix 
    * If  IsLocal==0 - Points to SerialCrsMatrixA
    */
   Epetra_RowMatrix* SerialMatrix_;
 
-  RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
 
   //! If \c true, solve the problem with the transpose.
   bool UseTranspose_;
@@ -246,7 +244,7 @@ private:
   //  True if Rcond_ is the same on all processes
   mutable bool RcondValidOnAllProcs_;
   //! Importer from distributed to serial (all rows on process 0).
-  RefCountPtr<Epetra_Import> ImportToSerial_;
+  Teuchos::RefCountPtr<Epetra_Import> ImportToSerial_;
   
 };  // class Amesos_Umfpack  
 #endif /* AMESOS_UMFPACK_H */

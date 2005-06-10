@@ -33,6 +33,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 
+using namespace Teuchos;
+
 //=============================================================================
 Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
   Problem_(&prob),
