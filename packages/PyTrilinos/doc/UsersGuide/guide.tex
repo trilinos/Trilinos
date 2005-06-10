@@ -186,6 +186,11 @@ version of some PyTrilinos modules is currently under development; please
 contact the PyTrilinos developers for more details.
 \end{remark}
 
+To give even a short introduction to Python is out of the scope of this
+document. We refer to the official Python web site, to the Python
+tutorial~\cite{python-tutorial}, the Python Library
+Reference~\cite{python-library-reference}.
+
 %-----------------------------------------------------------------------------
 \subsection{Covered Modules}
 %-----------------------------------------------------------------------------
@@ -429,6 +434,56 @@ which returns an Epetra.SerialComm if PyTrilinos has been compiled in serial
 mode, or an Epetra.MpiComm if PyTrilinos has support for MPI. By using
 Epetra.PyComm, PyTrilinos scripts are virtually identical for both serial and
 parallel runs.
+ A linear maps containing 10
+elements and with 0 as base index can be created as 
+\verb!Map = Epetra.Map(10, 0, Comm)!. An example of creation of a more
+realistic map is now reported. Let us suppose that the map is 
+composed by 9 elements, so that elements 0, 1, 5 and 6
+are assigned to processor 0, and elements 2, 3, 4, 7 and 8 to processor 1. We
+can create a script file, here called {\tt verb exMap.py} as follows:
+\begin{verbatim}
+# script exMap.py
+from PyTrilinos import  Epetra
+Epetra.Init()
+Comm = Epetra.PyComm()
+if Comm.NumProc() != 2:
+  raise Exception, "Must run w/ two processors"
+
+if Comm.MyPID() == 0:
+  MyGlobalElements = [0, 1, 5, 6];
+else:
+  MyGlobalElements = [2, 3, 4, 7, 8];
+Map = Epetra.Map(-1, MyGlobalElements, 0, Comm);
+X = Epetra.MultiVector(Map, 2)
+for v in [0, 1]:
+  for i in range(0,X.MyLength()):
+    X[v,i] = 10 * v + i
+
+print X
+\end{verbatim}
+By executing the program, we get:
+\begin{verbatim}
+[msala]> mpirun -np 2 ./exMap.py
+     MyPID           GID               Value               Value  
+         0             0                       0                  10
+         0             1                       1                  11
+         0             5                       2                  12
+         0             6                       3                  13
+         1             2                       0                  10
+         1             3                       1                  11
+         1             4                       2                  12
+         1             7                       3                  13
+         1             8                       4                  14
+\end{verbatim}
+
+A list of elements assigned to the calling processor can be obtained by method
+\verb!MyGlobalElements()!; for example, the instruction 
+{\tt print Map.MyGlobalElements()} results in the output
+\begin{verbatim}
+[0, 1, 5, 6]
+[2, 3, 4, 7, 8]
+\end{verbatim}
+
 
 \medskip
 
