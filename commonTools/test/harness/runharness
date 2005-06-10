@@ -56,6 +56,7 @@ my @programArguments = @ARGV;
 ################################################################################
 
 getArgs();
+cvsUpdate();
 init();
 
 my $exitStatus = run();
@@ -157,40 +158,6 @@ exit $exitStatus;
     } # getArgs()
 
     ############################################################################
-    # init()
-    #
-    # Prepares varibles.
-    #
-    #   - args:     NONE
-    #
-    #   - returns:  NONE
-    #
-
-    sub init {
-    
-        # Capture and format run start time.
-        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
-        $yr = sprintf("%02d", $yr % 100);
-        $mo = sprintf("%02d", $mo+1);
-        $da = sprintf("%02d", $da);
-        $hr = sprintf("%02d", $hr);
-        $mn = sprintf("%02d", $mn);
-        $se = sprintf("%02d", $se);
-        $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
-        $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
-        
-        # Print list of variables for debugging.
-        my $message = "";
-        $message .= "init():\n";
-        $message .= "  \$trilinosDir = $trilinosDir\n";
-        $message .= "  \$verbosity = $verbosity\n";
-        $message .= "  \$logVerbosity = $logVerbosity\n";
-        $message .= "  \n";
-        printMessage($message, $v3);
-        
-    } # init()
-
-    ############################################################################
     # cvsUpdate()
     #
     # Updates Trilinos from the CVS repository.
@@ -223,6 +190,40 @@ exit $exitStatus;
         }
         
     } # cvsUpdate()
+
+    ############################################################################
+    # init()
+    #
+    # Prepares varibles.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub init {
+    
+        # Capture and format run start time.
+        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+        $yr = sprintf("%02d", $yr % 100);
+        $mo = sprintf("%02d", $mo+1);
+        $da = sprintf("%02d", $da);
+        $hr = sprintf("%02d", $hr);
+        $mn = sprintf("%02d", $mn);
+        $se = sprintf("%02d", $se);
+        $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+        $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        
+        # Print list of variables for debugging.
+        my $message = "";
+        $message .= "init():\n";
+        $message .= "  \$trilinosDir = $trilinosDir\n";
+        $message .= "  \$verbosity = $verbosity\n";
+        $message .= "  \$logVerbosity = $logVerbosity\n";
+        $message .= "  \n";
+        printMessage($message, $v3);
+        
+    } # init()
     
     ############################################################################
     # run()
