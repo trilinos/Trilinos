@@ -1,5 +1,8 @@
+--prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.3/serial/debug
 --cache-file=config.cache
 --with-install="/usr/bin/install -p"
+--enable-export-makefiles
+--with-gnumake
 CXX=/usr/local/gcc-3.4.3/bin/g++
 CC=/usr/local/gcc-3.4.3/bin/gcc
 F77=/usr/local/gcc-3.4.3/bin/g77
