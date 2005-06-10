@@ -71,6 +71,7 @@ int SetNPRowAndCol(const int MaxProcesses, int& nprow, int& npcol)
 	 << ") or npcol (" << npcol << ")" << endl;
     AMESOS_CHK_ERR(-1);
   }
+  return(0);
 }
 
 //=============================================================================
