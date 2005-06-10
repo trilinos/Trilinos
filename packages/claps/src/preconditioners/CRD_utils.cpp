@@ -395,5 +395,4 @@ void subspace_iteration(int n, int rowbeg[], int colidx[],
   delete [] X; delete [] LAMBDA;
 }
 
-
 } // end of namespace CRD_utils

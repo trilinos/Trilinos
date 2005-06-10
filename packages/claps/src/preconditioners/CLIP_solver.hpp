@@ -109,6 +109,10 @@ class CLIP_solver
   void gmres_givens(double a, double b, double & c, double & s);
   void construct_solution(int gmres_iter, double normb);
   void spmat_datfile(const Epetra_CrsMatrix & A, char fname[], int opt);
+  void CLIP_solver::calc_resids(Epetra_Vector *R, 
+				Epetra_IntVector *NDofs,
+				double & res_disp, 
+				double & res_press);
 
  private: // variables
   const Epetra_CrsMatrix *ASub, *ConStandard;
@@ -134,7 +138,7 @@ class CLIP_solver
   Epetra_Map *StandardMap, *SubMap, *RowMapMyCon, *MapB_Sub, *MapB_St;
   Epetra_CrsMatrix *CtT, *Tran, *Block_Stiff, *PhiB;
   Epetra_MultiVector *Coords_red, *Phir_St;
-  Epetra_IntVector *NodalDofs_red;
+  Epetra_IntVector *NodalDofs_red, *NodalDofs_St;
   CLAPS_sparse_lu *AR, *AI, *AKc;
   int MyPID, NumProc, ndof_sub, ndof_global, print_flag, ncomp, ncomp_sum;
   int *comp1, *comp2, *sub1, *sub2, *dset1, *dset2, ndof_set, *corner_flag;
@@ -142,7 +146,7 @@ class CLIP_solver
   int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR, sub_begin;
   int num_tied_down, *tied_down;
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
-  double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
+  double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc, error_fac;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
   double *P_ortho, *AP_ortho, *orth1, *orth2, *PhirTPhir;
   double *VV, *RR, *HH, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;

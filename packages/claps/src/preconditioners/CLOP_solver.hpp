@@ -76,6 +76,10 @@ class CLOP_solver
   void gmres_givens(double a, double b, double & c, double & s);
   void construct_solution(int gmres_iter, double normb);
   void spmat_datfile(const Epetra_CrsMatrix & A, char fname[], int opt);
+  void calc_resids(Epetra_Vector *R, 
+		   Epetra_IntVector *NDofs,
+		   double & res_disp, 
+		   double & res_press);
 
  private: // variables
   const Epetra_CrsMatrix *AStandard, *ConStandard;
@@ -87,7 +91,7 @@ class CLOP_solver
 
   Epetra_CrsMatrix *AOverlap, *Tran, *ASt_red_keep;
   const Epetra_CrsMatrix *ASt_red;
-  Epetra_IntVector *LDOverlap, *GNOverlap;
+  Epetra_IntVector *LDOverlap, *GNOverlap, *NodalDofs_St;
   Epetra_MultiVector *COverlap, *AP_matrix, *P_matrix;
   Epetra_Import *ImporterST2O, *Importer_coarse;
   Epetra_Export *ExporterO2ST, *ExporterSub2ST, *Exporter_lam;
@@ -115,6 +119,7 @@ class CLOP_solver
   double *rhoa, *betaa, *pApa, *Etri, *Dtri, *econa, *lambda_local;
   double *lambda, *ortho_vec, *pAp_vec, *ortho_sum, *PAP, *PAP_sum, *PAP_store;
   double *VV, *HH, *RR, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
+  double error_fac;
   ofstream fout;
   CLOP_sub *Asub;
   CLAPS_sparse_lu *Kc_fac;

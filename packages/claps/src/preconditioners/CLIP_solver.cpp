@@ -148,6 +148,7 @@ CLIP_solver::~CLIP_solver()
   delete [] VV; delete [] RR; delete [] HH; delete [] zz; delete [] cc;
   delete [] ss; delete [] norms; delete [] gmres_vec; delete [] gmres_sum;
   delete [] tied_down; delete Phir_St; delete [] PhirTPhir; delete Rhs_null;
+  delete NodalDofs_St;
   zero_pointers();
 }
 
@@ -1547,7 +1548,7 @@ void CLIP_solver::zero_pointers()
   Etri = 0; econa = 0; P_ortho = 0; AP_ortho = 0; orth1 = 0; orth2 = 0; 
   owner_flag = 0; VV = 0; RR = 0; HH = 0; zz = 0; cc = 0; ss = 0; norms = 0; 
   gmres_vec = 0; gmres_sum = 0; tied_down = 0; Phir_St = 0; PhirTPhir = 0;
-  Rhs_null = 0;
+  Rhs_null = 0; NodalDofs_St = 0;
 }
 
 void CLIP_solver::construct_subdomains()
@@ -1602,6 +1603,11 @@ void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 
 void CLIP_solver::pcg_init()
 {
+  error_fac = 5;
+
+  NodalDofs_St = new Epetra_IntVector(*StandardMap);
+  NodalDofs_St->Export(*NodalDofs, *Exporter, Insert);
+
   pB_Sub  = new Epetra_Vector(*MapB_Sub);
   pB_St   = new Epetra_Vector(*MapB_St);
   zB_Sub  = new Epetra_Vector(*MapB_Sub);
@@ -1833,7 +1839,8 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   work_St2->Update(1.0, *r_St, -1.0);
   work_St2->Dot(*work_St2, &ractual);
   ractual = sqrt(ractual);
-  if ((ractual/rorig > 10*solver_tol) && (num_tied_down == 0)) pcg_status = 1;
+  if ((ractual/rorig > error_fac*solver_tol) && 
+      (num_tied_down == 0)) pcg_status = 1;
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -1884,6 +1891,7 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   int i, iflag(1), gmres_iter;
   double dprod, rorig, normb, rcurr, ractual, rnorm;
   double norm_rconstraint, norm_conerror, *vals;
+  double res_press, res_press_0, res_disp, res_disp_0, norm_disp, norm_press;
   //
   // determine residual for constrained problem
   //
@@ -1898,6 +1906,7 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   if (print_flag > 0) {
     fout << "original residual                          = " << rorig << endl;
   }
+  calc_resids(r_St, NodalDofs_St, res_disp_0, res_press_0);
   //
   // calculate residual at boundary following initial static condensation
   //
@@ -1970,7 +1979,10 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   work_St2->Update(1.0, *r_St, -1.0);
   work_St2->Dot(*work_St2, &ractual);
   ractual = sqrt(ractual);
-  if (ractual/rorig > 10*solver_tol) gmres_status = 1;
+  calc_resids(work_St2, NodalDofs_St, res_disp, res_press);
+  calc_resids(u_St, NodalDofs_St, norm_disp, norm_press);
+  if ((ractual/rorig > error_fac*solver_tol) && 
+      (num_tied_down == 0)) gmres_status = 1;
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -1987,6 +1999,20 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
       if (ncon_global > 0) {
 	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
 	fout << "constraint error norm = " << norm_conerror << endl;
+      }
+      if ((res_press > 0) && (print_flag == 7)) {
+        fout << "norm_disp, norm_press = " << norm_disp << " "
+	     << norm_press << endl;
+        if (res_disp_0 > 0)
+	  fout << "res_disp, rel_res_disp   = " << res_disp << " "
+	       <<  res_disp/res_disp_0 << endl;
+	else
+	  fout << "res_disp                 = " << res_disp << endl;
+        if (res_press_0 > 0)
+	  fout << "res_press, rel_res_press = " << res_press << " "
+	       <<  res_press/res_press_0 << endl;
+	else
+	  fout << "res_press                = " << res_press << endl;
       }
       fout << "number of iterations  = " << num_iter << endl;
       fout << "solver tolerance      = " << solver_tol << endl;
@@ -2555,4 +2581,26 @@ void CLIP_solver::spmat_datfile(const Epetra_CrsMatrix & A, char fname[],
     }
   }
   ffout.close();
+}
+
+void CLIP_solver::calc_resids(Epetra_Vector *R, 
+			      Epetra_IntVector *NDofs,
+			      double & res_disp, 
+			      double & res_press)
+{
+  double res_disp_loc(0), res_press_loc(0), *rval;
+  int i, n, *nodaldofs;
+  R->ExtractView(&rval);
+  n = R->MyLength();
+  NDofs->ExtractView(&nodaldofs);
+  for (i=0; i<n; i++) {
+    if (nodaldofs[i] == 7)
+      res_press_loc += rval[i]*rval[i];
+    else
+      res_disp_loc += rval[i]*rval[i];
+  }
+  Comm.SumAll(&res_disp_loc, &res_disp, 1);
+  res_disp = sqrt(res_disp);
+  Comm.SumAll(&res_press_loc, &res_press, 1);
+  res_press = sqrt(res_press);
 }

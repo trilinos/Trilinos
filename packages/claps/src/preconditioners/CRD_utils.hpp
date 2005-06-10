@@ -9,6 +9,8 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Vector.h"
 #include "sparse_lu.hpp"
 #include "myzero.hpp"
 
