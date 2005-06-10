@@ -201,30 +201,32 @@ Algorithmic capabilities are defined within independent packages; a {\sl
   package} is an integral unit usually developed by a small team of experts in
   a particular area. 
 
-The modules of \PyTrilinos\ covered in this document are:
-\begin{itemize}
-\item {\tt Epetra.} Python wrapper for Epetra. Epetra is a collection
+The modules of \PyTrilinos\ covered in this document are reported in
+Table~\ref{tab:modulues}.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| p{2cm} | p{12cm} |}
+\hline
+Epetra &  Python wrapper for Epetra. Epetra is a collection
 of concrete classes that supports the construction and use of vectors, sparse
 graphs, and dense and sparse matrices. It provides serial, parallel and
 distributed memory capabilities. It uses the BLAS and LAPACK where possible,
-  and as a result has good performance characteristics.
-
-Epetra is the
-``language'' of Trilinos, and offers a convenient set of interfaces to define
-distributed linear algebra objects. Epetra supports double-precision floating
-point daata only (no single-precision or complex). 
-It is not possible to use \PyTrilinos\ without the \epetra\ module.
+  and as a result has good performance characteristics. \\
+  \hline
 %
-\item {\tt EpetraExt.} This module offers input/output
+EpetraExt & This module offers input/output
 capabilities, making it possible to read a matrix in Harwell/Boeing or
 MatrixMarket format, or to read and write generic Epetra objects 
-(like maps, matrices and vectors).
+(like maps, matrices and vectors). \\
+  \hline
 %
-\item {\tt Triutils.} This module allows the creation of several matrices, 
+Triutils & This module allows the creation of several matrices, 
   like the MATLAB's {\tt gallery} function, and it can be useful for examples
-  and testing.
+  and testing. \\
+  \hline
 %
-\item {\tt Amesos.} This module contains a set of clear and consistent
+Amesos & This module contains a set of clear and consistent
 interfaces with several third-party serial and parallel sparse direct solvers
 (in particular,
 UMFPACK~\cite{umfpack-manual},
@@ -232,30 +234,43 @@ PARDISO~\cite{pardiso-manual},
 TAUCS~\cite{taucs-manual},
 SuperLU and SuperLU\_DIST~\cite{superlu-manual},
 DSCPACK~\cite{dscpack-manual}, and 
-MUMPS~\cite{mumps-manual}). As such, PyTrilinos makes it possible to access
-state-of-the-art direct solver algorithms developed by group of specialists,
-  and written in different languages (C, FORTRAN77, FORTRAN90).
-We refer to the Amesos reference guide~\cite{Amesos-Reference-Guide} for more details.
+MUMPS~\cite{mumps-manual}). \\
+  \hline
 %
-\item {\tt AztecOO.} This module contains preconditioned Krylov accelerators,
-  like CG, GMRES and several others, based on the popular Aztec library.
-  One-level domain decomposition preconditioners based on incomplete
-  factorizations are available.
+AztecOO & This module contains preconditioned Krylov accelerators,
+like CG, GMRES and several others, based on the popular Aztec library.
+One-level domain decomposition preconditioners based on incomplete
+factorizations are available. \\
+\hline
 %
-\item {\tt IFPACK.} This module contain object-oriented algebraic preconditioing
+IFPACK & This module contain object-oriented algebraic preconditioing
 classes, compatible with Epetra and AztecOO.
 It supports construction and use of parallel distributed memory preconditioners
-such as overlapping Schwarz domain decomposition with several local solvers.
-{\tt IFPACK} can take advantage of SPARSKIT~\cite{sparskit}.
+such as overlapping Schwarz domain decomposition with several local solvers. 
+\\
+\hline
 %
-\item {\tt ML.} This module contains a set of multilevel preconditioners based
+ML & This module contains a set of multilevel preconditioners based
 on aggregation procedures for serial and vector problems. {\tt ML} can take
 advantage of the 
 METIS~\cite{metis}
 ParMETIS~\cite{parmetis} libraries to create the aggregates.
 For a general introduction to ML and its applications, we refer to
-the ML Users Guide~\cite{ml-guide}, and to the ML web site.
-\end{itemize}
+the ML Users Guide~\cite{ml-guide}, and to the ML web site. \\
+\hline
+\end{tabular}
+\caption{Covered PyTrilinos modules.}
+\label{tab:modules}
+\end{center}
+\end{table}
+
+\begin{remark}
+Epetra is the
+``language'' of Trilinos, and offers a convenient set of interfaces to define
+distributed linear algebra objects. Epetra supports double-precision floating
+point daata only (no single-precision or complex). 
+It is not possible to use \PyTrilinos\ without the \epetra\ module.
+\end{remark}
 
 %-----------------------------------------------------------------------------
 \subsection{Getting Information on \PyTrilinos}
