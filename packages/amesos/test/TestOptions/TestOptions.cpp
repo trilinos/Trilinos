@@ -475,7 +475,7 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
 #endif
 
-#if 0
+#if 1
 #ifdef HAVE_AMESOS_KLU
   AmesosClasses.push_back( "Amesos_Klu" );
 #endif
