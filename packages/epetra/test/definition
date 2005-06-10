@@ -15,7 +15,7 @@
 	         ImportExport,
 	         IntSerialDense,
 	         Map,
-	         MapColoring,
+	       # MapColoring, --> removed this, it's been hanging in MPI.
 	         MultiVector,
 	         Object,
 	         SerialDense,
