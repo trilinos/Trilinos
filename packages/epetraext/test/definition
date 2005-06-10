@@ -4,7 +4,7 @@
 
 (FRAMEWORK) {
     DIRS = Composite,
-           MapColoring,
+         # MapColoring, --> removing for now because it's been hanging in MPI.
            Matlab,
            MatrixMatrix,
            Overlap,
