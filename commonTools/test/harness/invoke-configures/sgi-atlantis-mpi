@@ -1,45 +1,58 @@
 ../configure \
+CFLAGS="-O2 -64" \
+FFLAGS="-O2 -64" \
+CXXFLAGS="-O2 -64 -LANG:std  -LANG:ansi-for-init-scope=ON \
+-ptused -DMPI_NO_CPPBIND"  \
+LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:std" \
+--with-libs="/scratch1/mnpheno/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1/libumfpack_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1/libamd_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libmumps_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libpord_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/scalapack-1.7/libscalapack_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libblacs_atlantis.a \
+-lfortran -lmpi" \
+--with-incdirs="-I/scratch1/mnpheno/Trilinos3PL/prebuilt/dscpack-1.0 \
+-I/scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1 \
+-I/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3" \
 --enable-mpi \
 --with-mpi-libs=-lmpi \
 --cache-file=config.cache \
 --disable-default-packages \
---enable-amesos-dscpack \
---enable-amesos-umfpack \
 --enable-amesos \
 --enable-amesos-klu \
+--enable-amesos-dscpack \
+--enable-amesos-mumps \
+--enable-amesos-scalapack \
+--enable-amesos-umfpack \
 --enable-anasazi \
+--enable-aztecoo \
+--enable-belos \
+--enable-claps \
+--enable-didasko \
+--enable-epetra \
+--enable-epetra-abc \
+--enable-epetraext-inout \
+--enable-epetraext-coloring \
+--enable-epetraext-transform \
+--enable-ifpack \
+--enable-kokkos \
+--enable-komplex \
 --enable-loca \
 --with-loca-anasazi \
---enable-tsf \
---disable-tsfcore \
---disable-tsfcoreutils \
---disable-tsfextended \
---enable-tpetra \
---enable-triutils \
---enable-ml \
---enable-teuchos \
---enable-teuchos-abc \
---enable-teuchos-extended \
---enable-teuchos-complex \
---enable-komplex \
 --enable-meros \
+--enable-ml \
+--enable-new_package \
+--enable-new_swahili \
+--enable-nox \
 --enable-nox-epetra \
 --enable-nox-epetra-examples \
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
---enable-nox \
---enable-epetra \
---enable-epetra-abc \
---enable-epetraext-transform \
---enable-epetraext-inout \
---enable-epetraext-coloring \
---enable-belos \
---enable-aztecoo \
---enable-ifpack \
---enable-kokkos \
---enable-new_package \
---enable-new_swahili \
---enable-thyra \
---enable-epetra-thyra \
---disable-default-packages
+--enable-teuchos \
+--enable-teuchos-abc \
+--enable-teuchos-complex \
+--enable-teuchos-extended \
+--enable-tpetra \
+--enable-triutils
