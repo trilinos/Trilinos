@@ -298,7 +298,9 @@ exit $exitStatus;
             $cmd .= "--verbosity=$argVerbosity ";
             $cmd .= "--log-verbosity=$argLogVerbosity ";
             $status = system($cmd);
-            if ($status != 0 && !$recover) { 
+            if ($status == 86) {
+                return 86;
+            } elsif ($status != 0 && !$recover) { 
                 return 1;
             }
                             

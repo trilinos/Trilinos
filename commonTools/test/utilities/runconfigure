@@ -295,7 +295,8 @@ exit $exitStatus;
                 or die "can't copy invoke-configure, died";
                     
             removeBrokenPackage($failedPackage{$makeFailure});
-            cleanInvokeConfigure($failedPackage{$makeFailure});
+            my $result = cleanInvokeConfigure($failedPackage{$makeFailure});
+            if ($result == 86) { return 86; }
         }
         
         chdir $buildDir or die "cannot chdir to $buildDir, died";
@@ -356,7 +357,8 @@ exit $exitStatus;
                 # remove appropriate configure flags.
                 $brokenPackage = detectBrokenPackage($configureOutput);
                 removeBrokenPackage($brokenPackage);
-                cleanInvokeConfigure($brokenPackage);
+                my $result = cleanInvokeConfigure($brokenPackage);
+                if ($result == 86) { return 86; }
                 
                 $message = sprintf("%-25s", " broken: $brokenPackage ");
                 printMessage($message, $v1+$v2+$v3);
@@ -613,7 +615,7 @@ exit $exitStatus;
         if (!$changeMade) {
             my $message = "error fixing invoke-configure--no changes made ($brokenPackage broke)\n";
             printMessage($message, $v1+$v2+$v3);
-            return $brokenPackage;
+            return 86;
         }
         
         # Prepare new invoke-configure.
