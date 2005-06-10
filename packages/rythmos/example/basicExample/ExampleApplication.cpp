@@ -105,7 +105,7 @@ ExampleApplication::ExampleApplication(double lambda, int numElements)
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector const &x, double t)
+int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t)
 {
   y->Scale(lambda_,x); // y = lambda*x
   return 0;

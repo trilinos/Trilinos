@@ -93,9 +93,9 @@ int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> 
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<Thyra::VectorBase<double> > & ExampleApplicationRythmosInterface::get_vector()
+const Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterface::get_vector()
 {
-  return(Thyra::create_MPIVectorBase((*problem_).get_x0(),thyra_vs_));
+  return(Thyra::create_MPIVectorBase(problem_->get_x0(),thyra_vs_));
 }
 
 //-----------------------------------------------------------------------------
