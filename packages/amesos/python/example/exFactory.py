@@ -29,26 +29,33 @@
 # @header
 
 # PyTrilinos imports
-import setpath
-import Amesos
-import Epetra
+try:
+  from PyTrilinos import Amesos, Epetra
+except ImportError:
+  raise ImportError, "error w/ Amesos or Epetra"
 
 def main(Type):
-  n = 10;
-  Comm = Epetra.SerialComm();
-  Map = Epetra.Map(n, 0, Comm);
-  LHS_exact = Epetra.Vector(Map);
-  LHS = Epetra.Vector(Map);
-  RHS = Epetra.Vector(Map);
-  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
+  # Initializes MPI (or do-nothing in serial)
+  Epetra.Init()
+  # dimension of the problem
+  NumGlobalRows = 10
+  Comm = Epetra.PyComm()
+  Map = Epetra.Map(NumGlobalRows, 0, Comm)
+  LHS_exact = Epetra.Vector(Map)
+  LHS = Epetra.Vector(Map)
+  RHS = Epetra.Vector(Map)
+  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
+
+  NumLocalRows = Map.NumMyElements()
 
   # Populates the matrix by inserting one row at-a-time. Indices and Values
   # are defined as Python's lists (of the same length).
-  for i in range(0, n):
+  for ii in range(0, NumLocalRows):
+    i = Map.GID(ii)
     if i == 0:
       Indices = [i, i + 1];
       Values  = [2.0, -1.0];
-    elif i == n - 1:
+    elif i == NumGlobalRows - 1:
       Indices = [i, i - 1];
       Values  = [2.0, -1.0];
     else:
@@ -56,10 +63,10 @@ def main(Type):
       Values  = [2.0,   -1.0,  -1.0];
     Matrix.InsertGlobalValues(i, Values, Indices);
   ierr = Matrix.FillComplete();
-
+ 
   # Builds a solution that is `i' at node `i', then the
   # corresponding right-hand side, then set the solution to 0
-  for i in range(0, n):
+  for i in range(0, NumLocalRows):
     LHS[i] = i;
   Matrix.Multiply(False, LHS, RHS);
   LHS.PutScalar(0.0);
@@ -74,16 +81,19 @@ def main(Type):
   Solver = Factory.Create(Type, Problem);
   AmesosList = {
     "PrintTiming": ("bool", "true"),
-    "PrintStatus": ("bool", "true")
+    "PrintStatus": ("bool", "true"),
+    "ComputeTrueResidual": ("bool", "true")
   }
   Solver.SetParameters(AmesosList);
   ierr = Solver.Solve();
   del Solver
 
   error = 0.0;
-  for i in range(0, n):
+  for i in range(0, NumLocalRows):
     error = error + abs(LHS[i] - i);
   print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
+
+  Epetra.Finalize();
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

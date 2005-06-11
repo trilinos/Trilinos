@@ -97,8 +97,6 @@ Amesos_Klu::~Amesos_Klu(void) {
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
-
-
 }
 
 //=============================================================================
@@ -627,7 +625,7 @@ int Amesos_Klu::Solve()
 void Amesos_Klu::PrintStatus() const
 {
 
-  if( iam != 0  ) return;
+  if (iam) return;
 
   PrintLine();
 
@@ -649,8 +647,7 @@ void Amesos_Klu::PrintStatus() const
 
 void Amesos_Klu::PrintTiming() const
 {
-  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
-    return;
+  if (iam) return;
 
   double ConTime = GetTime("matrix conversion");
   double MatTime = GetTime("matrix redistribution");

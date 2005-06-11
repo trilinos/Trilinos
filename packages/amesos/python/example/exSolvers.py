@@ -32,26 +32,42 @@
 import sys
 
 # PyTrilinos imports
-import setpath
-import Amesos
-import Epetra
+try:
+  from PyTrilinos import Amesos, Epetra
+except ImportError:
+  raise ImportError, "error w/ Amesos or Epetra"
 
 def PrintHelp():
+  print ' '
   print 'Usage is: ./exSolvers.py <solver-type>'
-  print 'where <solver-type> can be: Amesos_Lapack, Amesos_Klu'
-  print 'Amesos_Umfpack, Amesos_Superlu'
+  print 'where <solver-type> can be:'
+  print '- Amesos_Lapack'
+  print '- Amesos_Klu'
+  print '- Amesos_Umfpack'
+  print '- Amesos_Pardiso'
+  print '- Amesos_Taucs'
+  print '- Amesos_Superlu'
+  print '- Amesos_Superludist'
+  print '- Amesos_Dscpack'
+  print '- Amesos_Mumps'
 
 def main():
+  # Initialize the communicator (does nothing in serial)
+  # and creates an Epetra communicator
+  Epetra.Init()
+  Comm = Epetra.PyComm();
+
   args = sys.argv[1:]
   if len(args) == 0:
-    PrintHelp();
+    if Comm.MyPID() == 0:
+      PrintHelp();
+    Epetra.Finalize()
     sys.exit(-2);
   else:
     Type = args[0];
 
-  n = 10;
-  Comm = Epetra.SerialComm();
-  Map = Epetra.Map(n, 0, Comm);
+  NumGlobalRows = 10;
+  Map = Epetra.Map(NumGlobalRows, 0, Comm);
   LHS_exact = Epetra.MultiVector(Map, 1);
   LHS = Epetra.MultiVector(Map, 1);
   RHS = Epetra.MultiVector(Map, 1);
@@ -60,13 +76,16 @@ def main():
   Values = Epetra.SerialDenseVector(3);
   Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0;
 
+  NumLocalRows = Map.NumMyElements()
+
   # Builds the matrix (1D Laplacian)
-  for i in range(0, n):
+  for ii in range(0, NumLocalRows):
+    i = Map.GID(ii)
     Indices[0] = i;
     if i == 0:
       NumEntries = 2;
       Indices[1] = i + 1;
-    elif i == n - 1:
+    elif i == NumGlobalRows - 1:
       NumEntries = 2;
       Indices[1] = i - 1;
     else:
@@ -88,6 +107,10 @@ def main():
     Solver = Amesos.Klu(Problem);
   elif Type == "Amesos_Umfpack":
     Solver = Amesos.Umfpack(Problem);
+  elif Type == "Amesos_Pardiso":
+    Solver = Amesos.Umfpack(Problem);
+  elif Type == "Amesos_Taucs":
+    Solver = Amesos.Umfpack(Problem);
   elif Type == "Amesos_Superlu":
     Solver = Amesos.Superlu(Problem);
   elif Type == "Amesos_Superludist":
@@ -102,7 +125,7 @@ def main():
     sys.exit(-2);
   
   AmesosList = {
-    "PrintOutput": ("bool", "true"), 
+    "PrintStatus": ("bool", "true"), 
     "PrintTiming": ("bool", "true"),
   };
   Solver.SetParameters(AmesosList);
@@ -110,6 +133,7 @@ def main():
   Solver.NumericFactorization();
   Solver.Solve();
   del Solver
+  Epetra.Finalize()
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
