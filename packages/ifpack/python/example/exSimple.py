@@ -1,8 +1,13 @@
 #! /usr/bin/env python
-from PyTrilinos import Triutils, IFPACK, AztecOO, Epetra
+try:
+  from PyTrilinos import IFPACK, Triutils, AztecOO, Epetra
+except:
+  raise ImportError, "error w/ IFPACK or Triutils or AztecOO or Epetra"
+
 
 # read the matrix from file, here `bcsstk01.rsa' in HB format
-Comm = Epetra.SerialComm();
+Epetra.Init()
+Comm = Epetra.PyComm();
 Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB("bcsstk01.rsa", Comm);
 
 # Creates the IFPACK preconditioner, in this case an incomplete
@@ -28,5 +33,9 @@ print Prec
 
 # Computes the 2-norm of the true residual
 LHS.Update(1.0, Exact, -1.0);
-print "After solution of the linear system:"
-print "||x - x_exact||_2 / ||b||_2 = ", LHS.Norm2()[1] / RHS.Norm2()[1]
+norm = LHS.Norm2()[1] / RHS.Norm2()[1]
+if Comm.MyPID() == 0:
+  print "After solution of the linear system:"
+  print "||x - x_exact||_2 / ||b||_2 = ", norm
+
+Epetra.Finalize()
