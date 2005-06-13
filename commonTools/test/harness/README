@@ -1,33 +1,14 @@
 ###############################################################################
 # runharness - The Trilinos Framework test harness manager                    #
 #                                                                             #
-# The Trilinos Project                                                        #
-#                                                                             #
-#   Mike Phenow, Jim Willenbring                                              #
+# The Trilinos Project - Mike Phenow, Jim Willenbring                         #
 #                                                                             #
 ###############################################################################
 
-  This document describes the usage of runharness, the Trilinos Framework test
-  harness manager.
+  For more information about runharness, visit:
   
--------------------------------------------------------------------------------
-I.  Prerequisites
-
-  In order for the test harness to work, you must have the following in place:
+    http://software.sandia.gov/trilinos/developer/test_harness
+    
+  or run:
   
-    1.  A well-formed runharness config file.
-    2.  The appropriate files refered to by your config file.
-       
--------------------------------------------------------------------------------
-II.  Execution
-
-  To execute the Trilinos Framework test harness, simply type:
-  
-    cd /PATH/TO/Trilinos/commonTools/test/harness/
-    perl unharness --help
-            
-  Refer to this help output for the most up-to-date information on usage and
-  available options.  (You can use "./" instead of "perl " if your system's
-  perl interpreter resides at /usr/bin/perl)
-
--------------------------------------------------------------------------------
+    perl runharness --help
