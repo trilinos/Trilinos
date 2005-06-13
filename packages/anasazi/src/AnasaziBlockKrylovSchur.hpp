@@ -102,7 +102,7 @@ namespace Anasazi {
       and orthogonalization costs.  For other eigensolvers that don't
       perform restarts (i.e. LOBPCG), this is not a valid stopping criteria.
     */
-    int GetNumRestarts() const { return(_restarts); };
+    int GetNumRestarts() const { return(_numRestarts); };
   
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
     int GetBlockSize() const { return(_blockSize); }
@@ -1580,10 +1580,41 @@ namespace Anasazi {
     // Sort the eigenvalues
     //---------------------------------------------------
     //
-    if (_problem->IsSymmetric())
+    if (_problem->IsSymmetric()) {
+      if (_om->isVerbosityAndPrint( Debug )) {
+	_os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values Before Sorting (from SortManager) ]"<<endl;
+	for(i=0; i<n; i++) {
+	  _os << (*_ritzvalues)[i] << endl;
+	}
+	_os <<endl;
+      }
+      //
       _sm->sort( this, n, &(*_ritzvalues)[0], &_order );
-    else
+      //
+      if (_om->isVerbosityAndPrint( Debug )) {
+	_os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values After Sorting (from SortManager) ]"<<endl;
+	for(i=0; i<n; i++)
+	  _os << (*_ritzvalues)[i] << "\t" << _order[i] << endl;
+	_os <<endl;
+      }
+      //
+    } else {
+      if (_om->isVerbosityAndPrint( Debug )) {
+	_os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values Before Sorting (from SortManager) ]"<<endl;
+	for(i=0; i<n; i++)
+	  _os << (*_ritzvalues)[i] << "\t" << (*_ritzvalues)[_totallength+i] << endl;
+	_os <<endl;
+      }
+      //
       _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], &_order );
+      //
+      if (_om->isVerbosityAndPrint( Debug )) {
+	_os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values After Sorting (from SortManager) ]"<<endl;
+	for(i=0; i<n; i++)
+	  _os << (*_ritzvalues)[i] << "\t" << (*_ritzvalues)[_totallength+i] << "\t" << _order[i] << endl;
+	_os <<endl;
+      }
+    }
     //
     // Re-sort _ritzresiduals based on _order
     //
