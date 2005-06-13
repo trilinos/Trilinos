@@ -37,8 +37,56 @@ while ($i < $numinputs) {
 		$output = $output . $newfilename . " ";
 	# Fix the -l problem
 	} elsif (index($ARGV[$i],"-l")==0) {
-		$output = $output . "/link " . " " . $ARGV[$i+1] . " ";
-		$i++; 
+		$newlib = "";
+		$arg_length = length($ARGV[$i]);
+		if ($arg_length > 2) {
+			# Check rest of argument, library is tacked on (ex. -lteuchos)
+			$templib = substr($ARGV[$i], 2, 100);
+			if (index($templib,".lib")>=0) {
+				$newlib = $templib;
+			} else {
+				$newlib = "lib" . $templib . ".a";  # lib<library_name>.a			
+				#$newlib = $newlib . " lib" . $templib . ".so";  # lib<library_name>.so			
+			}
+		} else {
+			$newlib = $ARGV[$i+1];
+			$i++; 
+		}
+		$output = $output . " " . $newlib . " ";
+	# Fix the -L problem
+	} elsif (index($ARGV[$i],"-L")==0) {
+		$newlibpath = "";
+		$pathpart = substr($ARGV[$i], 2, 100);
+		# Check to see if this is a cygwin path (ex. /cygdrive/c/Trilinos/...)
+		$wherebeg=index($ARGV[$i],"/cygdrive");
+		if ($wherebeg >= 0) {
+			# Grab the name of the disk, which is expected to be the next directory
+			# after cygdrive (ex. /cygdrive/c/Trilinos/..., "c" is the disk name)
+			$part = "";
+			$where=index($ARGV[$i],"/",$wherebeg+10);
+			$newlibpath=$newlibpath . substr($ARGV[$i], $wherebeg+10, $where-$wherebeg-10);
+			$wherebeg=$where + 1;
+		
+			# Add colon and backslashes before appending directories
+			$newlibpath= $newlibpath . ":\\\\";
+
+			# Find directories and insert in windows' style path
+			while ($where >=0) {
+				$where = index($ARGV[$i],"/",$wherebeg);
+				if ($where < 0) {
+					$part = substr($ARGV[$i], $wherebeg, 100);
+				$newlibpath = $newlibpath . $part;
+				} else {
+					$part = substr($ARGV[$i], $wherebeg, $where-$wherebeg);
+					$newlibpath = $newlibpath . $part . "\\\\";
+				}
+				$wherebeg = $where + 1;
+			}		
+		} else {
+			# Assume already have windows path
+			$newlibpath = $pathpart;
+		}
+		$output = $output . "/link /libpath:" . $newlibpath . " ";
 	# Fix the -g problem
 	} elsif (index($ARGV[$i],"-g")==0) {
 		#Do nothing for now -g only generates debugging information for GDB
