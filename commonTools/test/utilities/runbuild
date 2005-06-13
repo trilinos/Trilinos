@@ -298,6 +298,7 @@ exit $exitStatus;
             $cmd .= "--verbosity=$argVerbosity ";
             $cmd .= "--log-verbosity=$argLogVerbosity ";
             $status = system($cmd);
+            $status = $status >> 8;
             if ($status == 86) {
                 return 86;
             } elsif ($status != 0 && !$recover) { 
@@ -313,12 +314,13 @@ exit $exitStatus;
             $cmd .= "--verbosity=$argVerbosity ";
             $cmd .= "--log-verbosity=$argLogVerbosity ";
             $status = system($cmd);
+            $status = $status >> 8;
             $makeAttempted = 1;
             if ($status == 0) { 
                 $makePassed = 1;
             } else {
                 if ($recover) {
-                    $makeFailureCode = $status >> 8;
+                    $makeFailureCode = $status;
                 } else {
                     return 1; 
                 }
