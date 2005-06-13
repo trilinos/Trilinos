@@ -36,7 +36,7 @@
 --enable-ifpack
 --enable-komplex
 --enable-nox
---enable-python
+--disable-python
 --enable-thyra
 --enable-epetra-thyra
 --disable-default-packages
