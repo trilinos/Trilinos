@@ -475,8 +475,10 @@ fi
 
 if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
 
-  AC_TRY_LINK_FUNC(umfdi_local_search,,
-  AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs="/home/username/lib/libumfpack.a /home/username/lib/libamd.a", or use --with-libs="-lumfpack -lamd" --with-ldflags=-L/home/username/lib).]]))
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+    AC_TRY_LINK_FUNC(umfdi_local_search,,
+    AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs="/home/username/lib/libumfpack.a /home/username/lib/libamd.a", or use --with-libs="-lumfpack -lamd" --with-ldflags=-L/home/username/lib).]]))
+  fi
 
   AC_CHECK_HEADER([umfpack.h],,AC_MSG_ERROR([[Cannot find header files for UMFPACK (umfpack.h), specify a location using --with-incdirs (ex. --with-incdirs=-I/home/username/include).]]))
 
@@ -492,8 +494,10 @@ fi
 
 if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
 
-  AC_TRY_LINK_FUNC(SuperLU_timer_,,
-  AC_MSG_ERROR([[Cannot find the SuperLU library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperlupack.a, or use --with-libs=-lsuperlupack --with-ldflags=-L/home/username/lib).]]))  
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+    AC_TRY_LINK_FUNC(SuperLU_timer_,,
+    AC_MSG_ERROR([[Cannot find the SuperLU library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperlupack.a, or use --with-libs=-lsuperlupack --with-ldflags=-L/home/username/lib).]]))  
+  fi
 
   AC_CHECK_HEADER([Cnames.h],,AC_MSG_ERROR([[Cannot find header files for SuperLU (Cnames.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include).]])) 
 
@@ -513,18 +517,23 @@ if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
     AC_MSG_ERROR([[Amesos_Superludist requires MPI.]])
   fi
 
-  AC_TRY_LINK_FUNC(pdgssvx,,
-  AC_MSG_ERROR([[Cannot find the SuperLU_dist library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperludist.a, or use --with-libs=-lsuperludist --with-ldflags=-L/home/username/lib).]]))  
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
+    AC_TRY_LINK_FUNC(pdgssvx,,
+    AC_MSG_ERROR([[Cannot find the SuperLU_dist library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperludist.a, or use --with-libs=-lsuperludist --with-ldflags=-L/home/username/lib).]]))  
+  fi
 
   AC_CHECK_HEADER([superlu_ddefs.h],,AC_MSG_ERROR([[Cannot find SuperLU_dist header files (superlu_ddefs.h), specify a location using --with-incdirs (ex.  --with-incdirs=/home/username/include).]]))
 
   # some versions of SuperLU_DIST need to call set_default_options_dist(),
   # others have set_default_options()
-  AC_TRY_LINK_FUNC(set_default_options_dist,amesos_slu_old="yes",
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+    AC_TRY_LINK_FUNC(set_default_options_dist,amesos_slu_old="yes",
                    amesos_slu_old="no")
 
-  if test "X$amesos_slu_old" != "Xno"; then
-    AC_DEFINE(AMESOS_SUPERLUDIST_OLD,[],[Need set_default_options_dist()])
+    if test "X$amesos_slu_old" != "Xno"; then
+      AC_DEFINE(AMESOS_SUPERLUDIST_OLD,[],[Need set_default_options_dist()])
+    fi
   fi
 
   AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, true ) 
@@ -539,8 +548,11 @@ fi
 
 if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
 
-  AC_TRY_LINK_FUNC(DSC_CloseSolver,,
-  AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdscpack.a, or use --with-libs=-ldscpack --with-ldflags=-L/home/username/lib).]]))  
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
+    AC_TRY_LINK_FUNC(DSC_CloseSolver,,
+    AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdscpack.a, or use --with-libs=-ldscpack --with-ldflags=-L/home/username/lib).]]))  
+  fi
 
   AC_CHECK_HEADER([dscmain.h],,AC_MSG_ERROR([[Cannot find DSCPACK header files (dscmain.h), specify a location using --with-incdirs (ex., --with-incdirs=-I/home/username/include).]]))
 
@@ -558,10 +570,13 @@ fi
 if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
    test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-  AC_F77_FUNC(dgebs2d)
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-  AC_TRY_LINK_FUNC($dgebs2d,,
-  AC_MSG_ERROR([[Cannot find the BLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))  
+    AC_F77_FUNC(dgebs2d)
+
+    AC_TRY_LINK_FUNC($dgebs2d,,
+    AC_MSG_ERROR([[Cannot find the BLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))  
+  fi
 
 fi
 		
@@ -573,8 +588,12 @@ fi
 #   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-  AC_TRY_LINK_FUNC(Cdgebs2d,,
-  AC_MSG_ERROR([[Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))  
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
+    AC_TRY_LINK_FUNC(Cdgebs2d,,
+    AC_MSG_ERROR([[Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))  
+
+  fi
 
 fi
 		
@@ -584,9 +603,14 @@ fi
 
 
 if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
+
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
   AC_F77_FUNC(pdgetrf)
   AC_TRY_LINK_FUNC($pdgetrf,,
   AC_MSG_ERROR([[Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib).]]))  
+  fi
+
   AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
 else
@@ -602,8 +626,11 @@ fi
 if test "X$ac_cv_use_amesos_mumps" != "Xno" || 
   test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
 
-  AC_TRY_LINK_FUNC(newMultisector,,
-  AC_MSG_ERROR([[Cannot find the PORD library (the default ordering, required by MUMPS), specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libpord.a, or use --with-libs=-lpord --with-ldflags=-L/home/username/lib).]]))  
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
+    AC_TRY_LINK_FUNC(newMultisector,,
+    AC_MSG_ERROR([[Cannot find the PORD library (the default ordering, required by MUMPS), specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libpord.a, or use --with-libs=-lpord --with-ldflags=-L/home/username/lib).]]))  
+  fi
 
 fi
 
@@ -611,7 +638,9 @@ fi
 
 if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-  AC_TRY_LINK_FUNC(dmumps_c,, AC_MSG_ERROR([[Cannot find the double precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdmumps.a, or use --with-libs=-ldmumps --with-ldflags=-L/hhome/username/lib).]]))  
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+    AC_TRY_LINK_FUNC(dmumps_c,, AC_MSG_ERROR([[Cannot find the double precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdmumps.a, or use --with-libs=-ldmumps --with-ldflags=-L/hhome/username/lib).]]))  
+  fi
 
 AC_CHECK_HEADER([dmumps_c.h],,AC_MSG_ERROR([[Cannot find header files for MUMPS (dmumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include).]]))
 
@@ -625,8 +654,11 @@ fi
 
 if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
 
-  AC_TRY_LINK_FUNC(smumps_c,,
-  AC_MSG_ERROR([[Cannot find the single precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsmumps.a, or use --with-libs=-lsmumps --with-ldflags=-L/home/username/lib).]]))  
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
+    AC_TRY_LINK_FUNC(smumps_c,,
+    AC_MSG_ERROR([[Cannot find the single precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsmumps.a, or use --with-libs=-lsmumps --with-ldflags=-L/home/username/lib).]]))  
+  fi
 
   AC_CHECK_HEADER([smumps_c.h],,AC_MSG_ERROR([[Cannot find header files for MUMPS (smumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include).]]))
 
