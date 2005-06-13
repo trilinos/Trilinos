@@ -212,6 +212,7 @@ AC_CXX_MUTABLE
 # ---------------------------------------------------------------------
 AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_SPRINTF
+AC_CXX_STD_NEW_COUNT_SYNTAX
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built
