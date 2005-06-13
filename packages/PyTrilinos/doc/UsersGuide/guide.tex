@@ -4,8 +4,6 @@
 %            Trilinos: An Object-Oriented Solver Framework
 %                 Copyright (2001) Sandia Corporation
 % 
-\bigskip
-
 % Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 % license for use of this work by or on behalf of the U.S. Government.
 % 
@@ -44,7 +42,7 @@ P.O. Box 5800 \\
 Albuquerque, NM 87185-1110
 }
 
-\title{Sparse Linear Algebra with PyTrilinos}
+\title{Distributed Sparse Linear Algebra with PyTrilinos}
 \SANDnum{SAND2005-XXXX}
 \SANDauthor{Marzio Sala}
 
@@ -253,6 +251,18 @@ Users can decide to enable or disable any given module/package; however,
   interfaces to define distributed linear algebra objects. Epetra supports
   double-precision floating point data only (no single-precision or complex). 
 
+A description of the organization of  the linear algebra modules of
+PyTrilinos, with some of the third-party libraries can be accessed,
+is reported in Figure~\ref{fig:organization}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=12cm]{organization.eps}
+\caption{Organization of the linear algebra modules of PyTrilinos.}
+\label{fig:organization}
+\end{center}
+\end{figure}
+
 %-----------------------------------------------------------------------------
 \subsection{Getting Information on \PyTrilinos}
 %-----------------------------------------------------------------------------
@@ -306,7 +316,7 @@ The PyTrilinos project can be referenced by using the following BiBTeX
 citation information: 
 \begin{verbatim}
 @techreport{sparse05sala,
-  title = "Sparse Linear Algebra With {P}y{T}rilinos",
+  title = "Distributed Sparse Linear Algebra With {P}y{T}rilinos",
   author = "Marzio Sala",
   institution = "Sandia National Laboratories",
   number = "SAND2005-XXXX",
@@ -430,7 +440,7 @@ Within PyTrilinos, all intra-processor communication are handled though the
 communicator object Epetra.Comm, a pure virtual class. A concrete object can
 simply be defined using a PyComm object:
 \begin{verbatim}
-Comm = Epetra.PyComm()
+>>> Comm = Epetra.PyComm()
 \end{verbatim}
 which returns an Epetra.SerialComm if PyTrilinos has been compiled in serial
 mode, or an Epetra.MpiComm if PyTrilinos has support for MPI, using the
@@ -441,7 +451,18 @@ MPI\_COMM\_WORLD communicator. Start-up operations like a call to MPI\_Init()
   before the construction of the communicator, and to call Epetra.Finalize()
   as last Python instruction. Using this approach, 
 PyTrilinos scripts are virtually identical for both serial and
-parallel runs.
+parallel runs. A pictorial representation of how communication are handled in
+the case of two  processors is given in Figure~\ref{fig:distributed}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[height=5cm]{distributed_object.eps}
+\caption{All distributed PyTrilinos objects are based on the Epetra.MpiComm
+  object, which takes care of calling MPI functions for intra-processor
+    communications.}
+\label{fig:distributed}
+\end{center}
+\end{figure}
 
 %-----------------------------------------------------------------------------
 \subsection{Maps}
@@ -455,10 +476,10 @@ called a {\sl map}. PyTrilinos supports all maps allowed by Epetra. Here, we
 report two examples, one for a simple linear map, and another for a more
 realistic, non-structured map.
 
- A linear maps containing 10
+A linear maps containing 10
 elements and with 0 as base index can be created as 
 \begin{verbatim}
-\verb!Map = Epetra.Map(10, 0, Comm)!
+>>> Map = Epetra.Map(10, 0, Comm)
 \end{verbatim}
 The creation of a more realistic map is now reported. Let us suppose that the
 map is composed by 9 elements, so that elements 0, 1, 5 and 6 are assigned to
@@ -596,7 +617,9 @@ of nonzeros per row. In general, this can be done in two ways:
   \verb!NumMyElements()!, containing the nonzero elements of each row.
 \end{enumerate}
 
-We present here how to proceed using the first approach:
+We present here how to proceed using the first approach. The storage format is
+inherited from the Epetra\_CrsMatrix class, which stores the matrix
+row-by-row. 
 \begin{verbatim}
 >>> A = Epetra.CrsMatrix A(Epetra.Copy,Map,3);
 \end{verbatim}
@@ -623,8 +646,8 @@ indices, and \verb!Values! the correspondingly values.
 >>> ierr = Matrix.FillComplete()
 \end{verbatim}
 Finally, we
-transform the matrix representation into one based on local indexes. The
-transformation in required in order to perform efficient parallel
+transform the matrix representation into one based on local indices. The
+transformation is required in order to perform efficient parallel
 matrix-vector products and other matrix operations.
 \begin{verbatim}
 >>> A.FillComplete()
@@ -657,10 +680,10 @@ complex cases can be handled as well.
 ...     Values = [1.0]
 ...     Matrix.InsertGlobalValues(i, Indices, Values)
 ...
-... Matrix.GlobalAssemble() 
-... Matrix.FillComplete()
+>>> Matrix.GlobalAssemble() 
+>>> Matrix.FillComplete()
 \end{verbatim}
-The Function \verb!SumIntoGlobalValues! adds the coefficients specified
+Function \verb!SumIntoGlobalValues! adds the coefficients specified
 in \verb!indices! (as pair row-column) to the matrix, adding them to any
 coefficient that may exist at the specified location. In a finite
 element code, the user will probably insert more than one coefficient
@@ -674,7 +697,9 @@ process 0 could be sent to the owner, as specified by \verb!Map!.
 \label{sec:generation}
 %-----------------------------------------------------------------------------
 
-Several matrices can be easily generated using module {\tt Triutils}. For
+It is often convenient to generate matrices and linear systems corresponding
+to well-known problems. Module Triutils makes it as simple as using the
+MATLAB's {\tt gallery} function. For
 details, we refer to the Trilinos tutorial~\cite[Chapter
 5]{Trilinos-tutorial}. Here, we just show how to generate a matrix
 corresponding to a 3D Laplacian on a structured Cartesian grid.  First, we
@@ -707,7 +732,12 @@ These objects are automatically destroyed then the Gallery object is deleted.
 %-----------------------------------------------------------------------------
 
 Module EpetraExt contains several utilities to read and write Epetra objects,
-  in particular maps, vectors, and matrices.
+  in particular maps, vectors, and matrices. One of the goals of this module
+  is to provide basic tools to facilitate exchange of data from codes based on
+  Trilinos to codes based on PyTrilinos. For example, users may save on file
+  the linear system produced by an application, then use an interactive Python
+  session to optimize the parameters for its solution, or analyze the matrix
+  (as explained in Section~\ref{sec:analyze}).
 
 A {\tt Epetra.Map} object can be saved on file using the command
 \begin{verbatim}
@@ -730,8 +760,6 @@ then read as
 (ierr, X2) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", Map)
 (ierr, A2) = EpetraExt.MatrixMarketFileToCrsMatrix("A.mm", Map)
 \end{verbatim}
-These functions are a powerful tool to exchange data from a code based on
-Trilinos and PyTrilinos.
 
 %-----------------------------------------------------------------------------
 \section{Solving Sparse Linear Systems}
@@ -857,6 +885,8 @@ maximum iterations and a tolerance of $10^{-5}$ on the relative residual,
 >>> Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
 >>> Solver.Iterate(1550, 1e-5)
 \end{verbatim}
+Other solvers can be used by replacing \verb!AZ_cg! with, for example,
+  \verb!AZ_gmres!, \verb!AZ_bicgstab!, \verb!AZ_tfqmr!.
 
 Unfortunately, the convergence of
 iterative methods is determined by the spectral properties of the matrix
@@ -1014,6 +1044,133 @@ preconditioner:
 %-----------------------------------------------------------------------------
 
 %-----------------------------------------------------------------------------
+\subsection{Reading Harwell/Boeing Matrices}
+\label{sec:hb}
+%-----------------------------------------------------------------------------
+
+The Triutils package makes it very easy to read a matrix stored in the popular
+Harwell/Boeing format~\cite{hb}. The following lines read matrix {\tt
+  fidap05}, which is freely available from the Matrix Market web site.
+\begin{verbatim}
+>>> from PyTrilinos import Triutils, Epetra
+>>> Epetra.Init()
+>>> Comm = Epetra.PyComm();
+>>> Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB("bcsstk01.rsa", Comm);
+\end{verbatim}
+
+%-----------------------------------------------------------------------------
+\subsection{Matrix and Vectors Analysis}
+\label{sec:analyze}
+%-----------------------------------------------------------------------------
+
+When working with linear systems, it is sometimes informative to be able to
+obtain some basic statistical properties of the linear system matrix and
+the corresponding vectors. 
+The IFPACK package furnishes several utilities to accomplish this task.
+Printed information concern the total number of rows and nonzeros, the average
+number of nonzero elements per row, the band size, the number of (weakly)
+  diagonally dominant rows, and the Frobenius norm of the matrix. These
+  information are cheap to compute and sometimes useful to understand the
+  structure of a given matrix.
+
+For example, after having loaded matrix as reported in Section~\ref{sec:hb},
+  we can analyze the structure of the matrix with the command
+\begin{verbatim}
+IFPACK.AnalyzeMatrix(Matrix)
+\end{verbatim}
+which results in the following output:
+\begin{verbatim}
+================================================================================
+Label                          = Epetra::CrsMatrix
+Global rows                    = 27
+Global columns                 = 27
+Stored nonzeros                = 279
+Nonzeros / row                 = 10
+Estimated storage (Mbytes)     = 0.003456
+
+Actual nonzeros                = 279
+Nonzeros in strict lower part  = 126
+Nonzeros in strict upper part  = 126
+
+Empty rows                     = 0                    ( 0 %)
+Dirichlet rows                 = 0                    ( 0 %)
+Diagonally dominant rows       = 0                    ( 0 %)
+Weakly diag. dominant rows     = 0                    ( 0 %)
+
+Maximum bandwidth              = 20
+
+                                 one-norm       inf-norm       Frobenius
+                                 ========       ========       =========
+
+A                              = 7.11112e+06    7.11112e+06    9.08534e+06
+A + A^T                        = 7.11112e+06    7.11112e+06    9.08534e+06
+A - A^T                        = 0              0              0
+
+                                 min            avg            max
+                                 ===            ===            ===
+
+ A(i,j)                        = -1.18519e+06   0.0167264      2.37038e+06
+|A(i,j)|                       = 259259         345679         2.37038e+06
+
+ A(k,k)                        = 296298         954735         2.37038e+06
+|A(k,k)|                       = 296298         954735         2.37038e+06
+
+ sum_j A(k,j)                  = 1.96297e+06    3.57202e+06    7.11112e+06
+================================================================================
+\end{verbatim}
+
+Command \verb!IFPACK.AnalyzeMatrixElements(Matrix)! and
+\verb!IFPACK.AnalyzeVectorElements(RHS)! will produce the output:
+\begin{verbatim}
+================================================================================
+Label of matrix = Epetra::CrsMatrix
+
+Elements in [-1.185186e+06, -8.296300e+05) =         20 ( =  7.17 %)
+Elements in [-8.296300e+05, -4.740738e+05) =          0 ( =  0.00 %)
+Elements in [-4.740738e+05, -1.185176e+05) =         88 ( = 31.54 %)
+Elements in [-1.185176e+05, +2.370387e+05) =         96 ( = 34.41 %)
+Elements in [+2.370387e+05, +5.925949e+05) =         60 ( = 21.51 %)
+Elements in [+5.925949e+05, +9.481511e+05) =          0 ( =  0.00 %)
+Elements in [+9.481511e+05, +1.303707e+06) =         10 ( =  3.58 %)
+Elements in [+1.303707e+06, +1.659264e+06) =          0 ( =  0.00 %)
+Elements in [+1.659264e+06, +2.014820e+06) =          0 ( =  0.00 %)
+Elements in [+2.014820e+06, +2.370376e+06) =          4 ( =  1.43 %)
+================================================================================
+\end{verbatim}
+
+\begin{verbatim}
+================================================================================
+Vector label = Epetra::Vector
+
+Elements in [+0.000000e+00, +2.666667e-03) =         18 ( = 66.67 %)
+Elements in [+2.666667e-03, +5.333333e-03) =          0 ( =  0.00 %)
+Elements in [+5.333333e-03, +8.000000e-03) =          0 ( =  0.00 %)
+Elements in [+8.000000e-03, +1.066667e-02) =          0 ( =  0.00 %)
+Elements in [+1.066667e-02, +1.333333e-02) =          1 ( =  3.70 %)
+Elements in [+1.333333e-02, +1.600000e-02) =          3 ( = 11.11 %)
+Elements in [+1.600000e-02, +1.866667e-02) =          0 ( =  0.00 %)
+Elements in [+1.866667e-02, +2.133333e-02) =          0 ( =  0.00 %)
+Elements in [+2.133333e-02, +2.400000e-02) =          0 ( =  0.00 %)
+Elements in [+2.400000e-02, +2.666667e-02) =          4 ( = 14.81 %)
+================================================================================
+\end{verbatim}
+
+Finally, it is possible to print on file the sparsity pattern of the matrix
+(here reported in Figure~\ref{fig:sparsity}) using the instruction
+\begin{verbatim}
+IFPACK.PrintSparsity(Matrix, "matrix.ps")
+\end{verbatim}
+
+\begin{figure}
+\begin{center}
+\includegraphics[height=5cm]{sparsity.ps}
+\caption{Sparsity pattern of matrix {\tt fidap05} obtained using {\tt
+  IFPACK.PrintSparsity()}.}
+\label{fig:sparsity}
+\end{center}
+\end{figure}
+
+%-----------------------------------------------------------------------------
 \subsection{Timing}
 %-----------------------------------------------------------------------------
 
@@ -1041,3 +1198,12 @@ EpetraExt.Add(A, False, 1.0, B, -1.0)
 \bibliography{guide}
 %-----------------------------------------------------------------------------%
 \end{document}
+
+
+Still to do:
+- ExtractDiagonalCopy()
+  - Solve triangular (lower and upper) linear system with Epetra.CrsMatrix
+  - Add VBR??
+  - Example of Matrix-vector product
+  - Something more on matrix-matrix add and product
+
