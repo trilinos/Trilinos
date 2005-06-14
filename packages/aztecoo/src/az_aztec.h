@@ -1065,8 +1065,10 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 
   extern void AZ_matfree_2_msr(AZ_MATRIX *Amat,double *val, int *bindx, int N_nz);
 
+#ifdef AZ_COL_REORDER
   extern void AZ_mat_colperm(int N, int bindx2[], double val2[],
                              int **inv_ordering, int name, struct context *);
+#endif
 
   extern void AZ_mat_reorder(int n, int bindx[], double val[], int perm[],
                              int invp[]);

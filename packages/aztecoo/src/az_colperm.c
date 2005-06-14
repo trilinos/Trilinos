@@ -48,6 +48,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#ifdef AZ_COL_REORDER
 /*extern void mc64ad_(int *, int *, int *, int *, int *, double*,
  *                    int *, int *, int *, int *, int *, double*,
  *                    int *, int *);
@@ -252,4 +253,4 @@ void AZ_mat_colperm(int n, int bindx[], double val[], int **invp,
   AZ_free(rowptr);
   return;
 }
-
+#endif 
