@@ -121,10 +121,11 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Mumps" ) {
 	bool RunMumpsTest = true;
-	if ( ( ReindexRowMap || ReindexColMap ) && row_map.DistributedGlobal() ) 
+	if ( ( ReindexRowMap || ReindexColMap ) ) 
 	  RunMumpsTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunMumpsTest = false ;   //  Bug #1403
 	if (  RunMumpsTest && verbose) cout << " Testing MUMPS " << endl ; 
+	if ( MissingADiagonal ) RunMumpsTest = false ; // Bug #1435
 
 	if ( RunMumpsTest ) errors += TestOtherClasses("Amesos_Mumps",
 							 EpetraMatrixType,

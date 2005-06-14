@@ -38,6 +38,12 @@ int TestOtherClasses( const char* AmesosClass,
     double relerror;
     double relresidual;
    
+    if (verbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+		      << " ParamList = " << ParamList 
+		      << " transpose = " << transpose 
+		      << " Levels = " << Levels 
+		      << endl ; 
+
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
 					Comm, 
@@ -49,6 +55,8 @@ int TestOtherClasses( const char* AmesosClass,
 					Rcond, 
 					relerror, 
 					relresidual ) ; 
+
+    if (verbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass << endl ; 
 
     if ( Errors < 0 ) {
       NumErrors++;
@@ -63,13 +71,13 @@ int TestOtherClasses( const char* AmesosClass,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestOtherClasses relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestOtherClasses maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses maxrelerror = " << maxrelerror << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relerror = " << relerror << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelerror = " << maxrelerror << endl ; 
 
     }
-    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -114,13 +122,13 @@ int TestOtherClasses( const char* AmesosClass,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestOtherClasses relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestOtherClasses maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses maxrelerror = " << maxrelerror << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relerror = " << relerror << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelerror = " << maxrelerror << endl ; 
 
     }
-    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -173,7 +181,7 @@ int TestOtherClasses( const char* AmesosClass,
       if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
 	
     }
-    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -225,7 +233,7 @@ int TestOtherClasses( const char* AmesosClass,
       if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
 	
     }
-    if (verbose)  cout << " TestOtherClasses" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  

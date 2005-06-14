@@ -86,7 +86,6 @@ int CreateCrsMatrix( char *filename, const Epetra_Comm &Comm,
   Epetra_Vector * readb = 0;
   Epetra_Vector * readxexact = 0;
 
-  symmetric = false ; 
   string FileName = filename ;
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
@@ -319,6 +318,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		if ( ( iterColindex == 0 && distribute ) || iterDiagonalOpts == 0 ) { 
 		  for ( int EpetraMatrixType = 0 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
 		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
+				     " filename = " << filename <<
 				     " distribute = " << distribute <<
 				     " iterRowindex = " << iterRowindex <<
 				     " iterColindex = " << iterColindex <<
@@ -470,12 +470,16 @@ int NextMain( int argc, char *argv[] ) {
   Epetra_SerialComm Comm;
 #endif
 
+#ifdef HAVE_AMESOS_MUMPS
+  AmesosClasses.push_back( "Amesos_Mumps" );
+#endif
 
+
+#if 1
 #ifdef HAVE_AMESOS_SCALAPACK
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
 #endif
 
-#if 1
 #ifdef HAVE_AMESOS_KLU
   AmesosClasses.push_back( "Amesos_Klu" );
 #endif
@@ -498,10 +502,6 @@ int NextMain( int argc, char *argv[] ) {
 #ifdef HAVE_AMESOS_UMFPACK
   AmesosClasses.push_back( "Amesos_Umfpack" );
 #endif
-#ifdef HAVE_AMESOS_MUMPS
-  AmesosClasses.push_back( "Amesos_Mumps" );
-#endif
-
 #ifdef HAVE_AMESOS_SUPERLU
   AmesosClasses.push_back( "Amesos_Superlu" );
 #endif
@@ -552,10 +552,12 @@ int NextMain( int argc, char *argv[] ) {
 
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
+#if 0
   if ( Comm.MyPID() == 0 ) {
     char what; 
-    //    cin >> what ; 
+    cin >> what ; 
   }
+#endif
 
 
 
@@ -587,10 +589,7 @@ int NextMain( int argc, char *argv[] ) {
   int result = 0 ; 
   int numtests = 0 ;
 
-  bool symmetric ; 
-
   result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/Diagonal.mtx", Comm, verbose, false, 1e-6 , numtests ) ;
-  symmetric = false ; 
   result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/MissingADiagonal.mtx", Comm, verbose, false, 1e-6 , numtests ) ;
 #if 0
   //
