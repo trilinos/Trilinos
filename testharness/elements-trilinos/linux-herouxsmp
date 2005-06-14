@@ -32,6 +32,7 @@
 --enable-epetra-abc
 --enable-aztecoo
 --enable-ml
+--with-ml_metis
 --enable-nox
 --enable-ifpack
 --enable-komplex
