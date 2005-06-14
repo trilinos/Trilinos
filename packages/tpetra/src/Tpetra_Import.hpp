@@ -207,11 +207,11 @@ namespace Tpetra {
       // getRemoteIDList will return -1 for the ImageID for any GIDs where this is the case
       if(data().numRemoteIDs_ > Teuchos::OrdinalTraits<OrdinalType>::zero()) {
         OrdinalType const negOne = Teuchos::OrdinalTraits<OrdinalType>::zero() - Teuchos::OrdinalTraits<OrdinalType>::one();
-#ifdef __sun
-	OrdinalType count = 0;
-	std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne, count);
+#ifdef HAVE_STD_NEW_COUNT_SYNTAX
+		OrdinalType count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne);
 #else
-        OrdinalType count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne); // count = number of occurances of -1 in remoteImageIDs
+		OrdinalType count = 0;
+		std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne, count);
 #endif
         if(count > Teuchos::OrdinalTraits<OrdinalType>::zero()) {
           throw reportError("Target has GIDs not found in Source.", 1);
