@@ -46,17 +46,6 @@ int main(int argc, char* argv[]) {
 	const ORDINALTYPE INDEXBASE = 0;
 	const ORDINALTYPE NUMELEMENTS = 5;
 	const ORDINALTYPE ELEMENTSIZE = 2;
-  
-	bool verbose = false;
-	bool debug = false;
-	if(argc > 1) {
-		if(argv[1][0] == '-' && argv[1][1] == 'v')
-			verbose = true;
-		if(argv[1][0] == '-' && argv[1][1] == 'd') {
-			debug = true;
-			verbose = true;
-		}
-	}
 
   int rank = 0; // assume we are on serial
   int size = 1; // if MPI, will be reset later
@@ -68,6 +57,20 @@ int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif // TPETRA_MPI
+
+	bool verbose = false;
+	bool debug = false;
+	if(argc > 1) {
+		if(argv[1][0] == '-' && argv[1][1] == 'v')
+			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
+	}
+
+#ifdef TPETRA_MPI
   if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
   MPI_Barrier(MPI_COMM_WORLD);
 #endif // TPETRA_MPI

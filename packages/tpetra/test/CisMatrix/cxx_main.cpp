@@ -48,6 +48,18 @@ template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug);
 
 int main(int argc, char* argv[]) {
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
+  
+  // initialize MPI if needed
+#ifdef TPETRA_MPI
+  size = -1;
+  rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif // TPETRA_MPI
+
 	// initialize verbose & debug flags
 	bool verbose = false;
 	bool debug = false;
@@ -60,16 +72,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-  int rank = 0; // assume we are on serial
-  int size = 1; // if MPI, will be reset later
-  
-  // initialize MPI if needed
 #ifdef TPETRA_MPI
-  size = -1;
-  rank = -1;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
   MPI_Barrier(MPI_COMM_WORLD);
 #endif // TPETRA_MPI

@@ -40,18 +40,6 @@ template <typename PacketType, typename OrdinalType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
 
 int main(int argc, char* argv[]) {
-  // initialize verbose & debug flags
-	bool verbose = false;
-	bool debug = false;
-	if(argc > 1) {
-		if(argv[1][0] == '-' && argv[1][1] == 'v')
-			verbose = true;
-		if(argv[1][0] == '-' && argv[1][1] == 'd') {
-			debug = true;
-			verbose = true;
-		}
-	}
-
   int myImageID = 0; // assume we are on serial
   int numImages = 1; // if MPI, will be reset later
   
@@ -63,6 +51,18 @@ int main(int argc, char* argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &numImages);
   MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // TPETRA_MPI
+
+  // initialize verbose & debug flags
+	bool verbose = false;
+	bool debug = false;
+	if(argc > 1) {
+		if(argv[1][0] == '-' && argv[1][1] == 'v')
+			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
+	}
   
   // change verbose to only be true on Image 0
   // if debug is enabled, it will still output on all nodes
