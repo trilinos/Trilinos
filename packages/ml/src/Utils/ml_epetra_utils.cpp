@@ -1340,7 +1340,10 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 	  }
 	}
 
-	double d2 = pow(coord_i[0]-coord_j[0],2) + pow(coord_i[1]-coord_j[1],2) + pow(coord_i[2]-coord_j[2],2);
+	double tmp1=coord_i[0]-coord_j[0];
+	double tmp2=coord_i[1]-coord_j[1];
+	double tmp3=coord_i[2]-coord_j[2];
+	double d2 = tmp1*tmp1 + tmp2*tmp2 + tmp3*tmp3;
 	if( d2 == 0.0 ) {
 	  cerr << endl;
 	  cerr << "distance between node " << i/NumPDEEqns << " and node " 
