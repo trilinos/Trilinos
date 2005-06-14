@@ -310,6 +310,8 @@ exit $exitStatus;
         close INVOKE_CONFIGURE;
             
         my $configurePassed = 0;
+        my $eightySix;
+        my $configLog = "";
         
         # Attempt to configure.  If --recover flag was passed, we will
         # continue to attempt to recover and reconfigure until it passes.
@@ -355,10 +357,20 @@ exit $exitStatus;
             
                 # Detect broken package, remove broken package directory, and
                 # remove appropriate configure flags.
-                $brokenPackage = detectBrokenPackage($configureOutput);
+                $brokenPackage = detectBrokenPackage($configureOutput);                                
+            
+                # grab contents of broken package's config.log
+                if ($brokenPackage ne "NONE" && $brokenPackage ne "UNKNOWN") {                
+                    open (CONFIG_LOG, "<$buildDir/packages/$brokenPackage/config.log");
+                    undef $/;                   # undefine input record separator
+                    $configLog=<CONFIG_LOG>;    # copy entire file
+                    $/ = "\n";                  # restore it to default newline
+                    close CONFIG_LOG;
+                }
+                
                 removeBrokenPackage($brokenPackage);
                 my $result = cleanInvokeConfigure($brokenPackage);
-                if ($result == 86) { return 86; }
+                if ($result == 86) { $eightySix = 1; }
                 
                 $message = sprintf("%-25s", " broken: $brokenPackage ");
                 printMessage($message, $v1+$v2+$v3);
@@ -406,16 +418,6 @@ exit $exitStatus;
                 }      
             } else {
                 $branchTag = "unknown";
-            }
-            
-            # grab contents of broken package's config.log
-            my $configLog = "";
-            if ($brokenPackage ne "NONE" && $brokenPackage ne "UNKNOWN") {                
-                open (CONFIG_LOG, "<$buildDir/packages/$brokenPackage/config.log");
-                undef $/;                   # undefine input record separator
-                $configLog=<CONFIG_LOG>;    # copy entire file
-                $/ = "\n";                  # restore it to default newline
-                close CONFIG_LOG;
             }
             
             # grab contents of dependencies for reporting purposes.
@@ -486,6 +488,8 @@ exit $exitStatus;
             }
                 
             if (!$recover && $configureExitStatus) { return $failureCode{"$brokenPackage"}; }
+                
+            if ($eightySix) { return 86; }
             
         } # while(!$configurePassed)
         
