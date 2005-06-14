@@ -3,17 +3,10 @@
 #
 
 (FRAMEWORK) {
-    DIRS = Composite,
-         # MapColoring, --> removing for now because it's been hanging in MPI.
-           Matlab,
+    DIRS = MapColoring,
            MatrixMatrix,
-           Overlap,
            Permutation,
-           SingletonFilter,
-           SymmRCM,
            Transpose,
-           View,
-           Zoltan,
            inout;
     ARGS = -v;
     COMM = SERIAL, MPI;
