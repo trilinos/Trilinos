@@ -3,11 +3,18 @@
 #
 
 (FRAMEWORK) {
-    DIRS = MapColoring,
-           MatrixMatrix,
+    DIRS = MatrixMatrix,
            Permutation,
            Transpose,
            inout;
     ARGS = -v;
     COMM = SERIAL, MPI;
+}
+
+# Removed MapColoring from MPI because it always seems to hang.
+
+(FRAMEWORK) {
+    DIRS = MapColoring;
+    ARGS = -v;
+    COMM = SERIAL;
 }
