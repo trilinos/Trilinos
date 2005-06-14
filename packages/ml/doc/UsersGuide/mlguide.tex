@@ -1380,11 +1380,6 @@ The following option can be used:
 the use of 
 matrix~(\ref{eq:discrete_laplacian}).  Default: {\tt false}.}
 
-\choicebox{\tt aggregation: theta}{[{\tt double}]. If $\theta$ is 
-different from zero, the
-code create the aggregates using matrix $\theta A + (1 - \theta)L$. 
-Default: {\tt 0.0}.}
-
 %--------------------------------------------------------------%
 \subsection{Default Parameter Settings for Common Problem Types}
 %--------------------------------------------------------------%
@@ -1508,10 +1503,9 @@ be prematurely destroyed or permitted to go out of scope.)
 \label{sec:MLP:analyze}
 
 A successful multilevel preconditioner require the careful choice
-of a large variety of parameters,
-from each level's smoother, to the aggregation scheme, and a lot of others 
-others.
-Often, for non-standard problems, there is no theory to support this choice.
+of a large variety of parameters, for instance 
+each level's smoother, the aggregation schemes, or the coarse solver.
+Often, for non-standard problems, there is no theory to support these choices.
 Also, sometimes it is difficult to understand which component of the
 multilevel cycle is not properly working. To help to set the multilevel
 components, \ML~offers a set of tools, to (empirically)
@@ -1579,125 +1573,9 @@ for both serial and parallel runs.
 %%%
 %%%
 
-\subsubsection{Eigenvalue Computations}
-
-\ML~can be used to compute the eigenvalues of the non-preconditioned and
-the preconditioned finest-level matrix. In the following fragment of code,
-we compute all the eigenvalues of the finest-level matrix $A$, and all the
-eigenvalues of $P^{-1}A$, where $P$ is the already computed \ML~preconditioner:
-\begin{verbatim}
-  // MLPrec is a ML_Epetra::MultiLevelPreconditioner pointer
-  // first compute the eigenvalues of the finest-level matrix A
-  MLPrec->AnalyzeMatrixEigenvaluesDense("A");
-
-  // now the eigenvalues of A, with the ML preconditioner
-  MLPrec->AnalyzeMatrixEigenvaluesDense("P^{-1}A");
-\end{verbatim}
-On standard output, the code will print out information of this kind:
-\begin{verbatim}
-------------------------------------------------------------------------------
-*** ************************************************ ***
-*** Analysis of the spectral properties using LAPACK ***
-*** ************************************************ ***
-*** Operator = A
-
-        *** Computing eigenvalues of finest-level matrix
-        *** using LAPACK. This may take some time...
-        *** results are on file `eig_A.m'.
-
-        min |lambda_i(A)|         = 0.155462
-        max |lambda_i(A)|         = 26.3802
-        spectral condition number = 169.689
-
-** Total time = 0.305511(s)
-------------------------------------------------------------------------------
-
-
-------------------------------------------------------------------------------
-*** ************************************************ ***
-*** Analysis of the spectral properties using LAPACK ***
-*** ************************************************ ***
-*** Operator = P^{-1}A
-
-        *** Computing eigenvalues of ML^{-1}A
-        *** using LAPACK. This may take some time...
-        *** results are on file `eig_PA.m'.
-
-        min |lambda_i(ML^{-1}A)|  = 0.776591
-        max |lambda_i(ML^{-1}A)|  = 1.09315
-        spectral condition number = 1.40762
-
-** Total time = 0.730494(s)
-------------------------------------------------------------------------------
-\end{verbatim}
-The eigenvalues of $A$ are saved in file
-\verb!eig_A.m!, while those of $P^{-1}A$ in file \verb!eig_PA.m!.
-The file contains, on line \verb!i!, the real and the imaginary component of
-the \verb!i!-th eigenvalue, computed using LAPACK.
-
-Figure~\ref{fig:analysis_dense} shows the eigenvalue distribution of the
-non-preconditioned and the preconditioned operator.
-\begin{figure}
-\centering
-\includegraphics[height=6cm,width=5cm,angle=-90]{analysis_dense_A.ps} \hspace{0.5cm}
-\includegraphics[height=6cm,width=5cm,angle=-90]{analysis_dense_PA.ps} 
-\caption{Eigenvalue distribution on the complex plane of the
-non-preconditioned (left) and the preconditioned operator (right), obtained by calling {\tt
-AnalyzeMatrixEigenvaluesDense()}, and post-processing with {\tt octave}.}
-\label{fig:analysis_dense}
-\end{figure}
-
-Method \verb!AnalyzeMatrixEigenvaluesDense()! can be used only for serial
-runs. Alternatively, methods \verb!AnalyzeMatrixEigenvaluesSparse()! can be
-used to compute the lowest-magnitude and the largest-magnitude of the
-spectrum. This method requires \ML\ to be configured with support for
-\anasazi\
-(see Section~\ref{sec:configure:3pl}). The following options, that must be set
-{\sl before} the construction of the preconditioner, can be used to
-tune the sparse eigensolver:
-
-\smallskip
-
-\choicebox{\tt analysis: eigenvalues}{[{\tt int}] 
-  Number of eigenvalues to compute.
-  Default = {\tt 128}.}
-
-\choicebox{\tt analysis: tolerance}{[{\tt double}]
-  Tolerance for eigensolver. Default =
-  {\tt 1e-2}.}
-
-\choicebox{\tt analysis: anasazi restart}{[{\tt int}]
-  Maximum number of restarts. Default =
-{\tt 2}.}
-
-\choicebox{\tt analysis: anasazi output}{[{\tt int}]
-  Output level, from 0 to 10 
-  (10 being verbose). Default = {\tt 0}.}
-
-\choicebox{\tt analysis: print anasazi status}{[{\tt bool}]
-  If {\tt true}, prints out the status of the eigensolver after
-    convergence. Default: {\tt false}.}
-
-This fragment of code computes the eigenvalues of $A$ and $P^{-1}A$ using
-\anasazi:
-\begin{verbatim}
-  // first compute the eigenvalues of the finest-level matrix A
-  MLPrec->AnalyzeMatrixEigenvaluesSparse("A");
-
-  // now the eigenvalues of A, with the ML preconditioner
-  MLPrec->AnalyzeMatrixEigenvaluesSparse("P^{-1}A");
-\end{verbatim}
-
-As for the dense case, the (computed) eigenvalues of $A$ are saved in file
-\verb!eig_A.m!, while those of $P^{-1}A$ in file \verb!eig_PA.m!.
-
-%%%
-%%%
-%%%
-
 \subsubsection{Analyze the Effect of Smoothers}
 
-For each level, method \verb!AnalyzeSmoothersDense()! computes the eigenvectors of the matrix (say, $A$). 
+For each level, method \verb!AnalyzeSmoothers()! computes the eigenvectors of the matrix (say, $A$). 
 Then, for each eigenvector (say, $v$) of $A$, the smoother is applied to the solution of the homogeneous system
 \[
 A e = 0
@@ -1706,13 +1584,9 @@ with starting solution $e_0 = v$. The code reports on file the real and
 imaginary values of the eigenvalue corresponding to eigenvector $v$, and the
 $||e|| / ||e_0||$. 
 
-The syntax is \verb!AnalyzeSmoothersDense(NumPre, NumPost)!. \verb!NumPre! is the number of pre-smoother applications, and
+The syntax is \verb!AnalyzeSmoothers(NumPre, NumPost)!. \verb!NumPre! is the number of pre-smoother applications, and
 \verb!NumPost! the number of post-smoother applications.  
-
-Method \verb!AnalyzeSmoothersDense()! can be used only for serial
-runs. Alternatively, method \verb!AnalyzeSmoothersSparse(NumPre, NumPost)! can
-be used. This
-function reports on the standard output the following information:
+This method reports on the standard output the following information:
 \begin{verbatim}
 Solving Ae = 0, with a random initial guess
 - number of pre-smoother cycle(s) = 5
