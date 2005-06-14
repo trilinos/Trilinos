@@ -355,13 +355,13 @@ operations in group (2) in well defined functions (or classes).
 
 Ideally, the code should not look too different from what we have just
 presented, which in turn is just a modest change with respect to the
-mathematical standpoint to define a multilevel method. Unfortunately, this is
-not what happens in most codes.  Traditionally, coding is made complex by
-``details'' inessential to the algorithm.  These details are, for example, the
-dimension of the input and output vector, of flags for the smoother or the
-matrix-matrix product, or the parallel data layout.
+mathematical standpoint used to define a multilevel method. Unfortunately,
+  this is not what happens in most codes.  Traditionally, coding is made
+  complex by ``details'' inessential to the algorithm, like, for example, the
+  dimension of the input and output vector, of flags for the smoother or the
+  matrix-matrix product, or the parallel data layout.
 
-Since there ``details'' are necessary to compile and run the program, our aim
+Since these ``details'' are necessary to compile and run the program, our aim
 is the following: {\em let the compiler take care of the details, and let the
   programmer-developer to focus on the algorithm}. For example, any well
   designed implementation of a linear operator already contains the number of
@@ -416,8 +416,8 @@ widely available and accepted by users of parallel applications. As a result,
 \bigskip
 
 \noindent
-{\bf Clarity.} Implementations of numerical algorithm should resemble
-the mathematical algorithm on which they are based. This is in contrast to
+{\bf Clarity.} Implementations of numerical algorithms should resemble
+the mathematical formulation on which they are based. This is in contrast to
 FORTRAN and C, which can require complicated subroutines or function calls,
   with a long parameter list.
 A key design for \MLAPI was a user interface that is
@@ -460,12 +460,11 @@ desired parameters in a parameter list.
 \bigskip
 
 \noindent
-{\bf High performance.} A good numerical package that utilizes
-OO programming must exhibit a computational efficiency that is comparable to FORTRAN and
-C codes. This puts severe limitations to the OO design. It is certain easy to
-generate elegant but inefficient C++ code. 
-We implemented \MLAPI as a light layer of
-C++, on the top of
+{\bf High performance.} A good numerical package that utilizes OO programming
+must exhibit a computational efficiency that is comparable to that of FORTRAN
+and C codes. This puts severe limitations to the OO design. It is certain easy
+to generate elegant but inefficient C++ code.  We implemented \MLAPI as a
+light layer of C++, on the top of
 a mixture of FORTRAN77 kernels (BLAS~\cite{dongarra90set} and
                                 LAPACK~\cite{demmel89lapack}) 
 for all dense matrix
@@ -493,7 +492,7 @@ if the capability of allocating memory. Unfortunately, this is also the
 area where most bugs are found -- not to mention memory leaks. We have adopted
 smart pointers to manage memory~\cite{barlett04teuchos}.
 \MLAPI objects should never be allocated using {\tt new}, and therefore never
-free them using {\tt delete}. The code will automatically delete memory
+free them using {\tt delete}. The code automatically deletes memory
 when it is no longer referenced by any object. Besides, functions or methods
 that need to return \MLAPI objects, should always return an instance of the
 required object, and not a pointer or a reference.
@@ -534,7 +533,7 @@ partially used in the scientific computing community. We do not adopt expression
 templates (see for instance~\cite{vandevoorde03cpp}); instead, we
 create temporary vectors, then perform vector operations (like updates,
 scaling, or DAXPY operations) using optimized BLAS routines 
-(which use would not be possible using expressions templates). 
+(whose use would not be possible using expressions templates). 
 However, each overloaded operator can be replaced, in a secondary
 optimization phase, by class methods, therefore
 avoiding the creation of temporary objects, at the price of a more
@@ -632,12 +631,12 @@ MultiVector foo(int NumGlobalElements)
   return(V)
 }
 \end{verbatim}
-Clearly, object {\tt S} will go out of scope after returning from {\tt
-  foo}. However, the code will do the following:
-as {\tt V} is created, a {\tt Space} object, say {\tt V2}, is defined
-within {\tt V}, so that {\tt V2 = V}. All smart pointers in {\tt V} are copied
-within {\tt V2}, and {\tt V} can go out of scope without damaging the
-returned vector (and without memory leaks).
+Clearly, object {\tt S} will go out of scope after returning from {\tt foo}.
+However, the code will do the following: as {\tt V} is created, a {\tt Space}
+object, say {\tt V2}, is defined within {\tt V}, so that {\tt V2 = V}
+(light-weight copy). All smart pointers in {\tt V} are copied within {\tt V2},
+and {\tt V} can go out of scope without damaging the returned vector 
+(and without memory leaks).
 
 %-----------------------------------------------------------------------------%
 \subsection{The {\tt MultiVector} Class}
@@ -958,7 +957,7 @@ It is often convenient to use MATLAB to analyze matrices and
 vectors. Distributed \MLAPI objects can dumped to a single, MATLAB compatible
 ASCII file, by using class {\tt MATLABStream}.
 Note that both serial and distributed objects 
-can be save in just one file, which will contain the global object
+are saved in just one file, which will contain the global object
 (for example, a distributed matrix will be dumped using global row and
  column ordering). {\tt MATLABStream} behaves like a ``normal'' 
 stream.  Objects can be saved in file by using the operator \verb!<<!.
@@ -1192,7 +1191,7 @@ $p$ & {\tt const}  & {\tt iter}  & {\tt constr}
 \end{center}
 \end{table}
 
-We now report some numerical results to compare the \mlapi implementation with
+We now report some numerical results that compare the \mlapi implementation with
 a more ``standard'' C code based on the \ML\ library. 
 A list of symbols used in this Section in reported in Table~\ref{tab:symbol},
 and the computers used in the numerical experiments are described in
