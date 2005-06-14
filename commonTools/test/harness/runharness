@@ -299,7 +299,7 @@ exit $exitStatus;
         $cmd .= "--log-verbosity=$argLogVerbosity ";
         $status = system("$cmd");
         my $skipTests = 0;
-        if ($status == 0) { 
+        if ($status != 0) { 
             $skipTests = 1;
         }
     
