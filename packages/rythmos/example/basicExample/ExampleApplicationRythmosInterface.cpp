@@ -48,7 +48,7 @@ ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
   double lambda = -0.5;
   int numelements = 1;
   problem_ = Teuchos::rcp(new ExampleApplication(lambda,numelements));
-  epetra_map_ = (*problem_).get_epetra_map();
+  epetra_map_ = problem_->get_epetra_map();
   thyra_vs_ = Thyra::create_MPIVectorSpaceBase(epetra_map_);
 }
 
@@ -75,7 +75,7 @@ ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
 int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> &inargs, const Rythmos::OutArgs<double> &outargs)
 {
   // input arguments:
-  Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x = inargs.get_x();
+  Teuchos::RefCountPtr<Thyra::VectorBase<double> > x = inargs.get_x();
   double t = inargs.get_t();
 
   // output arguments:

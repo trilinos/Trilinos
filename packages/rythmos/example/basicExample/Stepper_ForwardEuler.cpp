@@ -27,6 +27,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stepper_ForwardEuler.hpp"
+
 namespace Rythmos {
 
 //-----------------------------------------------------------------------------
@@ -37,13 +39,14 @@ namespace Rythmos {
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ForwardEuler::ForwardEuler(const Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> > &model)
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> > &model)
 {
   model_ = model;
-  t_ = 0.0; // this should come from Scalar class
+  t_ = Scalar::zero();
   solution_vector_ = (*model_).get_vector();
   residual_vector_ = (*model_).get_vector();
-}
+};
 //
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::ForwardEuler
@@ -53,9 +56,10 @@ ForwardEuler::ForwardEuler(const Teuchos::RefCountPtr<Rythmos::NonlinearModel<Sc
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ForwardEuler::ForwardEuler()
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler()
 {
-}
+};
 
 //-----------------------------------------------------------------------------
 // Function      : ~ForwardEuler::ForwardEuler
@@ -65,9 +69,10 @@ ForwardEuler::ForwardEuler()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ForwardEuler::~ForwardEuler()
+template<class Scalar>
+ForwardEuler<Scalar>::~ForwardEuler()
 {
-}
+};
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::TakeStep
@@ -77,11 +82,12 @@ ForwardEuler::~ForwardEuler()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Scalar ForwardEuler::TakeStep()
+template<class Scalar>
+Scalar ForwardEuler<Scalar>::TakeStep()
 {
   // print something out about this method not supporting automatic variable step-size
   return(-1);
-}
+};
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::TakeStep
@@ -91,7 +97,8 @@ Scalar ForwardEuler::TakeStep()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Scalar ForwardEuler::TakeStep(Scalar dt)
+template<class Scalar>
+Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 {
   InArgs<Scalar> inargs;
   OutArgs<Scalar> outargs;
@@ -108,7 +115,7 @@ Scalar ForwardEuler::TakeStep(Scalar dt)
   t_ += dt;
 
   return(dt);
-}
+};
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::get_solution
@@ -118,7 +125,8 @@ Scalar ForwardEuler::TakeStep(Scalar dt)
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get_solution()
+template<class Scalar>
+const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler<Scalar>::get_solution()
 {
   return(solution_vector_);
 };
@@ -131,9 +139,11 @@ const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get_residual()
+template<class Scalar>
+const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler<Scalar>::get_residual()
 {
   return(residual_vector_);
 };
 
-} // namespace Rythmos
+} //  namespace Rythmos 
+

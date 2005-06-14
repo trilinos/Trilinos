@@ -41,7 +41,7 @@
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
-//#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
 
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -64,13 +64,12 @@ class ExampleApplicationRythmosInterface : public virtual Rythmos::NonlinearMode
 
     const Teuchos::RefCountPtr<Thyra::VectorBase<double> > get_vector();
 
-    const Teuchos::RefCountPtr<const Epetra_Map> & get_Epetra_Map() 
-      { return(epetra_map_); };
+    const Teuchos::RefCountPtr<const Epetra_Map> & get_Epetra_Map();
 
   protected:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
-    Teuchos::RefCountPtr<Thyra::VectorSpaceBase<double> > thyra_vs_;
+    Teuchos::RefCountPtr<const Epetra_Map> epetra_map_;
+    Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > thyra_vs_;
 
 };
 
