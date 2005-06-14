@@ -341,7 +341,7 @@ exit $exitStatus;
             my $configureExitStatus = $?;
         
             # Capture and format make stop time.
-            (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+            ($se, $mn, $hr, $da, $mo, $yr) = (localtime)[0..5];
             $yr = sprintf("%02d", $yr % 100);
             $mo = sprintf("%02d", $mo+1);
             $da = sprintf("%02d", $da);
