@@ -148,7 +148,7 @@ discretizations.  While technically any linear system can be considered,
 well with multigrid methods (e.g. elliptic PDEs).  \ML\ can be used as a
 stand-alone package or to generate preconditioners for a traditional
 iterative solver package (e.g. Krylov methods). We have supplied support
-for working with the {\sc Aztec 2.1} and {\sc AztecOO} iterative package
+for working with the {\sc Aztec 2.1} and {\sc AztecOO} iterative packages
 \cite{Aztec}.  However, other solvers can be used by supplying a few
 functions.
 
@@ -225,7 +225,9 @@ can be used to solve linear systems.
 \medskip
 
 This manual is structured as follows.  Multigrid and multilevel methods
-are briefly recalled in Section~\ref{multigrid}.  The process of
+are briefly recalled in Section~\ref{multigrid}.  
+A quick start is reported in Section~\ref{quick start}.
+The process of
 configuring and building \ML\ is outlined in Section~\ref{configure}.
 Section~\ref{sec:getting_started} shows the basic usage of \ML\ as a
 black-box preconditioner for {\sc Epetra} matrices. The definition of
@@ -233,7 +235,9 @@ black-box preconditioner for {\sc Epetra} matrices. The definition of
 detailed. This class only requires the linear system matrix, and a list
 of options.  Available parameters for
 ML\_Epetra::MultiLevelPreconditioner are reported in Section
-\ref{all possible parameters}.  More advanced uses of \ML\ are presented in
+\ref{all possible parameters}.  
+Section~\ref{maxwell solver} reports how to use the Maxwell solvers of \ML.
+More advanced uses of \ML\ are presented in
 Section~\ref{high level sample}. Here, we present how to define and
 fine-tune smoothers, coarse grid solver, and the multilevel hierarchy.
 Multigrid options are reported in Section~\ref{multigrid options}.
@@ -374,6 +378,7 @@ Table~\ref{tab:compilers}).
     Operating System & Compilers(s) \\
     \hline
     Linux  & GNU and Intel  \\
+    MAC OS X  & GNU  \\
     IRIX N32, IRIX 64, HPUX, Solaris, DEC & Native  \\
     ASCI Red & Native and Portland Group \\
     CPlant & Native \\
@@ -467,7 +472,10 @@ and MPI.
 % cd $TRILINOS_HOME
 % mkdir LINUX_MPI
 % cd LINUX_MPI
-% $TRILINOS_HOME/configure  --with-mpi-compilers \
+% $TRILINOS_HOME/configure \
+    --enable-teuchos \
+    --enable-amesos \
+    --with-mpi-compilers \
     --prefix=$TRILINOS_HOME/LINUX_MPI
 % make
 % make install
@@ -486,7 +494,7 @@ can also find a complete list and explanations by typing {\tt
 \ML\ can be configured with the following third party libraries (TPLs):
 \superlu, \superludist, \parasails, \zoltan, \metis, and \parmetis. It can take advantage of
 the following \trilinos~packages: \ifpack, \teuchos, \triutils,
-\amesos. Through \amesos, \ML\ can interface with the direct solvers
+\amesos, \epetraext. Through \amesos, \ML\ can interface with the direct solvers
 \klu, \umfpack, \superlu, \superludist\footnote{Currently, \ML\ can
   support \superludist~directly (without \amesos~support), or through
   \amesos.}, \mumps.  It is assumed that you have already built the
@@ -550,7 +558,7 @@ $TRILINOS_HOME/configure --help
 \end{verbatim}
 
 The following configure line options enable interfaces in \ML\ to certain
-TPLs. By default, all the {\tt --with-ml-}{\sl TPL} options are disabled.
+TPLs. By default, all the {\tt --with-ml\_}{\sl TPL} options are disabled.
 \smallskip
 
 %
@@ -959,7 +967,7 @@ processes. May provide better quality aggregates than either \verb!Coupled! or
 Computationally more expensive than either because it requires
 matrix-matrix product. \\
 \verb!Uncoupled-MIS! & Uses \verb!Uncoupled! for all levels until there is $1$
-aggregate per processor.  Then switches over to \verb!MIS!.
+aggregate per processor,  then switches over to \verb!MIS!.
 The coarsening scheme on a given level cannot be specified with this option.\\
 \verb!METIS! & Use a graph partitioning algorithm to creates the
 aggregates, working process-wise. The number of nodes in each aggregate
@@ -1024,7 +1032,7 @@ parameter {\tt coarse: damping parameter}) as a solver. \\
 \verb!Amesos-Superludist! & Use \superludist\ through \amesos. \\
 \verb!Amesos-MUMPS! & Use double precision version of \mumps~through
 \amesos. \\
-\verb!SuperLU! & Use \ML\ interface to \superlu. \\
+\verb!SuperLU! & Use \ML\ interface to \superlu (depreacated). \\
 \hline
 \end{tabular}
 \caption{ML\_Epetra::MultiLevelPreconditioner: Some of the available coarse
@@ -1055,7 +1063,7 @@ only if \ML\ has been properly configured. In particular:
   {\tt --with-ml\_parmetis3x}. 
 \item \amesos~coarse solvers require \verb!--enable-amesos --enable-epetra --enable-teuchos!. Moreover,
   \amesos~must have been configure to support the requested coarse
-  solver. Please refer to the \amesos~documentation for more details;
+  solver. Please refer to the \amesos~documentation for more details.
 \item \ifpack~smoothers require {\tt --enable-ifpack --enable-epetra
   --enable-teuchos}.
 \item \parasails~smoother requires \verb!--with-ml_parasails!.
@@ -1252,11 +1260,11 @@ Damping factor in the coarse solver. Default: 0.67.}
     optimal number of processors to be used. Default: -1.}
 
 %------------------------------------%
-\subsubsection{Load-balancing Options}
+\subsubsection{Load-balancing Options (for Maxwell Equations Only)}
 %------------------------------------%
 
 \choicebox{\tt repartition: enable}{[{\tt bool}] Enable/disable repartitioning.
-Default: {\tt true}.}
+Default: {\tt falsfalse}.}
 
 \choicebox{\tt repartition: partitioner}{[{\tt string}] Partitioning package
 to use. Can assume the following values: {\tt Zoltan, ParMETIS}. Default: {\tt
@@ -1353,10 +1361,9 @@ double* y_coord; // set to to 0 for 1D problems
 double* z_coord; // set to to 0 for 2D problems
 // here we define the nodal coordinates...
 
-MLList.set("aggregation: x-coordinates", x_coord );
-MLList.set("aggregation: y-coordinates", y_coord );
-MLList.set("aggregation: z-coordinates", z_coord );
-MLList.set("aggregation: use auxiliary matrix", true);
+MLList.set("x-coordinates", x_coord );
+MLList.set("y-coordinates", y_coord );
+MLList.set("z-coordinates", z_coord );
 \end{verbatim}
 The double vectors \verb!y_coord! and/or \verb!z_coord! can be set to \verb!0!.
 \verb!x_coord! (and \verb!y_coord! if 2D, and
@@ -1366,23 +1373,17 @@ systems of PDE equations, the coordinates must refer to the block nodes (that
 is, x-coordinate of local row \verb!i! will be reported in
 \verb!x_coord[i/NumPDEEqns]!.
 
-The following options can be used:
+The following option can be used:
 \smallskip
 
-\choicebox{\tt aggregation: use auxiliary matrix}{[{\tt bool}]. Enable/disable
+\choicebox{\tt aggregation: aux: enable}{[{\tt bool}]. Enable/disable
 the use of 
-matrix~(\ref{eq:discrete_laplacian}). Ignored if the input matrix is an
-        Epetra\_VbrMatrix. Default: {\tt false}.}
-
-\choicebox{\tt aggregation: use symmetric pattern}{[{\tt bool}]. If
-{\tt true}, matrix~(\ref{eq:discrete_laplacian}) will have a symmetric
-pattern. Ignored if the input matrix is an Epetra\_VbrMatrix. Default: {\tt
-false}.}
+matrix~(\ref{eq:discrete_laplacian}).  Default: {\tt false}.}
 
 \choicebox{\tt aggregation: theta}{[{\tt double}]. If $\theta$ is 
 different from zero, the
-code create the aggregates using matrix $\theta A + (1 - \theta)L$. Ignored if the input matrix is an Epetra\_VbrMatrix. Default:
-{\tt 0.0}.}
+code create the aggregates using matrix $\theta A + (1 - \theta)L$. 
+Default: {\tt 0.0}.}
 
 %--------------------------------------------------------------%
 \subsection{Default Parameter Settings for Common Problem Types}
