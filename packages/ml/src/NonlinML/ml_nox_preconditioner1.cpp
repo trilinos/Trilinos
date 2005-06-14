@@ -940,7 +940,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
       // so we must not destroy the ML_Nox_MatrixfreeLevel class unless the ML-hierarchy 
       // is no longer needed
       ML_Operator* tmpOperator = ML_Operator_Create(ml_->comm);
-      Epetra2MLMatrix(tmpMat,tmpOperator);
+      ML_Operator_WrapEpetraMatrix(tmpMat,tmpOperator);
       // move it to the hierarchy, this destroys tmpOperator
       ML_Operator_Move2HierarchyAndDestroy(&tmpOperator,&(ml_->Amat[i]));
    }

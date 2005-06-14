@@ -700,7 +700,11 @@ int ML_Operator_Print(ML_Operator *matrix, const char label[])
    FILE   *fid;
    char   filename[80];
 
-   if ( matrix->getrow == NULL) return(1);
+   if ( matrix->getrow == NULL)
+   {
+     if (matrix->comm->ML_mypid == 0) printf("getrow is null\n");
+     return(1);
+   }
 
    allocated = 100;
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
@@ -1413,7 +1417,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
 /*        into one by doing:                                        */
 /*          tmp = (Epetra_CrsMatrix *) C->data;                     */
 /*          C->data = NULL;                                         */
-/*          Epetra2MLMatrix(tmp, C);                                */
+/*          ML_Operator_WrapEpetraMatrix(tmp, C);                   */
 /* ---------------------------------------------------------------- */
 int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 		    int matrix_type, double scalar)
@@ -1868,9 +1872,9 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
 
-   if ( (void *)Op->matvec->func_ptr == (void *)Epetra_ML_matvec )
+   if ( (void *)Op->matvec->func_ptr == (void *)ML_Epetra_matvec )
      /* WKC  Call the new blocked function!! */
-     Epetra_ML_matvec_WKC (Op, inlen,
+     ML_Epetra_matvec_WKC (Op, inlen,
                (double *)&ep_din, olen, (double *)&ep_dout );
 
    else if ( (void *)Op->matvec->func_ptr == (void *) MSR_matvec )

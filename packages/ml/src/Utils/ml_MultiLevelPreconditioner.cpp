@@ -813,7 +813,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
     
-    ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
+    const Epetra_VbrMatrix *Avbr =
+              dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+    const Epetra_CrsMatrix *Acrs =
+              dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
+    if (Avbr)
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Avbr);
+    else if (Acrs)
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Acrs);
+    else
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows,(void *) RowMatrix_);
     // set the number of nonzeros
     ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumGlobalNonzeros();
 
@@ -878,19 +887,37 @@ ComputePreconditioner(const bool CheckPreconditioner)
       List_.set("filter: equations", NumPDEEqns_);
 
       ML_Set_Filter(List_);
-      // FIXME // not so sure that Epetra_ML_matvec_Filter is not
+      // FIXME // not so sure that ML_Epetra_matvec_Filter is not
       // FIXME // more appropriate
-      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow_Filter,
-                            Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow_Filter,
+                            ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
     
-      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec_Filter);
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec_Filter);
 
     }
     else {
-      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
-                            Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+      //*Avbr = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+      //*Acrs = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
+      if (Avbr) {
+        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_VbrMatrix_getrow,
+                              ML_Epetra_VbrMatrix_comm_wrapper,
+                              NumMyRows+N_ghost);
 
-      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+        ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_VbrMatrix_matvec);
+      }
+      else if (Acrs) {
+        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
+			                  ML_Epetra_CrsMatrix_comm_wrapper,
+                              NumMyRows+N_ghost);
+
+        ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+      }
+      else {
+        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow,
+                              ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+
+        ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
+      }
     }
 
     // ========================================= //
@@ -950,12 +977,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
     
-    ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows,
-		    NumMyRows, (void *) EdgeMatrix_);
-    ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
-			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+    const Epetra_CrsMatrix *Acrs = dynamic_cast<const Epetra_CrsMatrix*>(EdgeMatrix_);
 
-    ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+    if (Acrs != 0) {
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Acrs);
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
+			  ML_Epetra_CrsMatrix_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+    }
+    else {
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows,NumMyRows,(void *) EdgeMatrix_);
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow,
+			  ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
+    }
 
     // create hierarchy for nodes
     
@@ -965,13 +1000,22 @@ ComputePreconditioner(const bool CheckPreconditioner)
     N_ghost   = NodeMatrix_->NumMyCols() - NumMyRows;
     
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
-    
-    ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
-		    (void *) NodeMatrix_);
-    ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], Epetra_ML_getrow,
-			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
-    
-    ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
+
+    Acrs = dynamic_cast<const Epetra_CrsMatrix*>(NodeMatrix_);
+
+    if (Acrs != 0) {
+      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows,NumMyRows,(void *) Acrs);
+      ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
+			    ML_Epetra_CrsMatrix_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+    }
+    else {
+      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
+		              (void *) NodeMatrix_);
+      ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_getrow,
+			    ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_matvec);
+    }
     ml_nodes_->Amat[LevelID_[0]].N_nonzeros = NodeMatrix_->NumMyNonzeros();
 
     // check whether coarse grid operators should be repartitioned among
@@ -1279,7 +1323,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       TMatrixML_ = ML_Operator_Create(ml_->comm);
 
-      Epetra2MLMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),TMatrixML_);
+      ML_Operator_WrapEpetraMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),
+                                   TMatrixML_);
 
     }
 

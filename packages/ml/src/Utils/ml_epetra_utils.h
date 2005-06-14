@@ -46,11 +46,15 @@ extern "C" {
 //! Matrix-vector function for Epetra matrices.
 /*! This is the ML matrix-vector wrap for Epetra matrices.
  */
-int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out,
-                 double *ap);
+int ML_Epetra_matvec(ML_Operator *data, int in, double *p,
+                                        int out, double *ap);
+int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
+                                                  int out, double *ap);
+int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
+                                                  int out, double *ap);
 
 #ifdef WKC
-int Epetra_ML_matvec_WKC(ML_Operator *data, int in, double *p, int out,
+int ML_Epetra_matvec_WKC(ML_Operator *data, int in, double *p, int out,
                  double *ap);
 #endif 
 
@@ -82,16 +86,26 @@ int Epetra_ML_matvec_WKC(ML_Operator *data, int in, double *p, int out,
          'values' for storing nonzeros. If more space is needed,
          return 0.
  */
-int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows,
+int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows,
                  int requested_rows[], int allocated_space, int columns[],
                  double values[], int row_lengths[]);
 
+int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
+            int requested_rows[], 
+		    int allocated_space, int columns[], double values[],
+		    int row_lengths[]);
+
+int ML_Epetra_VbrMatrix_getrow(ML_Operator *data,
+            int N_requested_rows, int requested_rows[], 
+		    int allocated_space, int columns[], double values[],
+		    int row_lengths[]);
+
 void ML_Set_Filter(Teuchos::ParameterList& List);
 
-int Epetra_ML_matvec_Filter(ML_Operator *data, int in, double *p, 
+int ML_Epetra_matvec_Filter(ML_Operator *data, int in, double *p, 
                             int out, double *ap);
 
-int Epetra_ML_getrow_Filter(ML_Operator *data, int N_requested_rows,
+int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
                             int requested_rows[], int allocated_space, int columns[],
                             double values[], int row_lengths[]);
 //! Update vec's ghost node via communication.
@@ -107,7 +121,9 @@ int Epetra_ML_getrow_Filter(ML_Operator *data, int N_requested_rows,
   \param data  points to user's data containing matrix values.
                    and communication information.
  */ 
-int Epetra_ML_comm_wrapper(double vec[], void *data);
+int ML_Epetra_comm_wrapper(double vec[], void *data);
+int ML_Epetra_CrsMatrix_comm_wrapper(double vec[], void *data);
+int ML_Epetra_VbrMatrix_comm_wrapper(double vec[], void *data);
 
 #ifndef ML_CPP
 }
@@ -133,7 +149,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
  *
  *  \note ML requires A->RowMatrixRowMap() == A->OperatorRangeMap()
  */
-int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
+int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
 
 //! Multiplies two Epetra_RowMatrix's, returns the results as an Epetra_CrsMatrix.
 Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B, Epetra_RowMatrix *Bt);

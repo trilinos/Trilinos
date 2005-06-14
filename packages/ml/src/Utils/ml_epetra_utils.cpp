@@ -10,6 +10,7 @@
 /*           Jonathan Hu  (SNL)                                         */
 /*           Ray Tuminaro (SNL)                                         */
 /*           Marzio Sala (SNL)                                          */
+/*           Michael Gee (SNL)                                          */
 /************************************************************************/
 
 #include "ml_common.h"
@@ -50,7 +51,7 @@ static ML_Filter_Data Filter_;
 
 // ====================================================================== 
 
-int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
+int ML_Epetra_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
 {
   ML_Operator *mat_in;
 
@@ -80,7 +81,46 @@ int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
 
 // ====================================================================== 
 
-int Epetra_ML_matvec_Filter(ML_Operator *mat_in, int in, double *p, 
+int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
+                                                  int out, double *ap)
+{
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+  /* ML matvec wrapper for Epetra matrices. */
+
+  Epetra_CrsMatrix *A = (Epetra_CrsMatrix *) ML_Get_MyMatvecData(mat_in);
+
+  Epetra_Vector X(View, A->OperatorDomainMap(), p);
+  Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
+  
+  A->Multiply(false, X, Y);
+
+  return 1;
+}
+
+// ====================================================================== 
+
+int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
+                                                  int out, double *ap)
+{
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+  /* ML matvec wrapper for Epetra matrices. */
+
+  Epetra_VbrMatrix *A = (Epetra_VbrMatrix *) ML_Get_MyMatvecData(mat_in);
+
+  Epetra_Vector X(View, A->DomainMap(), p);
+  Epetra_Vector Y(View, A->RangeMap(), ap);
+  A->Multiply(false, X, Y);
+
+  return 1;
+}
+
+// ====================================================================== 
+
+int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p, 
                             int out, double *ap)
 {
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
@@ -97,7 +137,7 @@ int Epetra_ML_matvec_Filter(ML_Operator *mat_in, int in, double *p,
   for (int i = 0 ; i < NumMyRows ; ++i) {
     ap[i] = 0.0;
     int ierr;
-    ierr = Epetra_ML_getrow_Filter(mat_in, 1, &i, allocated_space, 
+    ierr = ML_Epetra_getrow_Filter(mat_in, 1, &i, allocated_space, 
                                    &columns[0], &values[0], &row_lengths);
     assert (ierr == 1);
 
@@ -109,8 +149,10 @@ int Epetra_ML_matvec_Filter(ML_Operator *mat_in, int in, double *p,
 }
 
 // ====================================================================== 
+// General getrow for Epetra matrix classes.
+// ====================================================================== 
 
-int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[], 
+int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[], 
 		    int allocated_space, int columns[], double values[],
 		    int row_lengths[])
 {
@@ -197,7 +239,7 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
       }
       row_lengths[i] = NumBlockEntries*NumPDEEqns;      
     }
-    else 
+    else
       ierr = Abase->ExtractMyRowCopy(LocalRow, MaxPerRow, NumEntries,
                                       Values, Indices);
     if (ierr) {
@@ -234,6 +276,106 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
   return(1);
 }
 
+// ====================================================================== 
+// Specialized getrow for Epetra_CrsMatrix class.
+// ====================================================================== 
+
+int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
+            int requested_rows[], 
+		    int allocated_space, int columns[], double values[],
+		    int row_lengths[])
+{
+  int nz_ptr = 0;
+  int NumEntries;
+  int MaxPerRow = 0;
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+
+  Epetra_CrsMatrix *Acrs =  (Epetra_CrsMatrix *) ML_Get_MyGetrowData(mat_in);
+  
+  for (int i = 0; i < N_requested_rows; i++)
+  {
+    int LocalRow = requested_rows[i];
+    int *Indices;
+    double *Values;
+
+    int ierr = Acrs->ExtractMyRowView(LocalRow, NumEntries, Values, Indices);
+    if (ierr)
+      return(0); //JJH I think this is the correct thing to return if
+                 //    A->ExtractMyRowCopy returns something nonzero ..
+
+    row_lengths[i] = NumEntries;
+    if (nz_ptr + NumEntries > allocated_space)
+      return(0);
+      
+    for (int j=0; j<NumEntries; j++) {
+      columns[nz_ptr] = Indices[j];
+      values[nz_ptr++] = Values[j];
+    }
+  }
+
+  return(1);
+} //ML_Epetra_CrsMatrix_getrow
+
+// ====================================================================== 
+// Specialized getrow for Epetra_VbrMatrix class.
+// ====================================================================== 
+
+int ML_Epetra_VbrMatrix_getrow(ML_Operator *data,
+            int N_requested_rows, int requested_rows[], 
+		    int allocated_space, int columns[], double values[],
+		    int row_lengths[])
+{
+  int nz_ptr = 0;
+  int NumEntries;
+  int NumPDEEqns=1;
+  int * BlockIndices;
+  Epetra_SerialDenseMatrix ** Entries;
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+  Epetra_VbrMatrix * Avbr = (Epetra_VbrMatrix *) ML_Get_MyGetrowData(mat_in);
+
+  // for Vbr we need to know the number of PDE for each row
+  if( Avbr->NumMyRows() % Avbr->NumMyBlockRows() != 0 ){
+    cerr << "Error : NumPDEEqns does not seem to be constant\n";
+    exit( EXIT_FAILURE );
+  }
+  NumPDEEqns = (Avbr->NumMyRows())/(Avbr->NumMyBlockRows());
+
+  for (int i = 0; i < N_requested_rows; i++)
+  {
+    int LocalRow = requested_rows[i];
+    // for vbr, we recover the local number of the BlockRow
+    // (dividing by NumPDEEqns). In this way, we can get a view
+    // of the local row (no memory allocation occurs).
+    int PDEEqn = LocalRow % NumPDEEqns;
+    int LocalBlockRow = LocalRow/NumPDEEqns;
+    
+    int RowDim;
+    int NumBlockEntries;    
+    int ierr = Avbr->ExtractMyBlockRowView(LocalBlockRow,RowDim,
+                   NumBlockEntries, BlockIndices, Entries);
+    if (ierr) return(0); 
+    NumEntries = NumBlockEntries*NumPDEEqns;
+    if (nz_ptr + NumEntries > allocated_space)
+      return(0);
+
+    for( int j=0 ; j<NumBlockEntries ; ++j ) {
+      for( int k=0 ; k<NumPDEEqns ; ++k ) {
+        columns[nz_ptr] = BlockIndices[j]*NumPDEEqns+k;
+        values[nz_ptr++] = (*Entries[j])(PDEEqn,k);
+      }
+    }
+    row_lengths[i] = NumBlockEntries*NumPDEEqns;      
+  }
+
+  return(1);
+} //ML_Epetra_VbrMatrix_getrow
+
+// ====================================================================== 
+
 #ifdef HAVE_ML_TEUCHOS
 void ML_Set_Filter(Teuchos::ParameterList& List)
 {
@@ -249,12 +391,12 @@ void ML_Set_Filter(Teuchos::ParameterList& List)
 
 // ====================================================================== 
 
-int Epetra_ML_getrow_Filter(ML_Operator *data, int N_requested_rows, 
+int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows, 
                             int requested_rows[], int allocated_space, 
                             int columns[], double values[], int row_lengths[])
 {
   int ierr, eqn;
-  ierr = Epetra_ML_getrow(data, N_requested_rows, requested_rows, allocated_space,
+  ierr = ML_Epetra_getrow(data, N_requested_rows, requested_rows, allocated_space,
                           columns, values, row_lengths);
 
   if (ierr == 0)
@@ -357,7 +499,7 @@ int Epetra_ML_getrow_Filter(ML_Operator *data, int N_requested_rows,
 
 // ====================================================================== 
 
-int Epetra_ML_comm_wrapper(double vec[], void *data)
+int ML_Epetra_comm_wrapper(double vec[], void *data)
 {
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
 
@@ -379,9 +521,57 @@ int Epetra_ML_comm_wrapper(double vec[], void *data)
   return(1);
 }
 
+// ====================================================================== 
+
+int ML_Epetra_CrsMatrix_comm_wrapper(double vec[], void *data)
+{
+  Epetra_CrsMatrix *A = (Epetra_CrsMatrix *) data;
+
+  if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
+
+//  Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(), vec); //ghosted
+//  Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(), vec); //loc only
+
+  if( A->RowMatrixImporter() != 0 ) {
+    Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(),
+			   vec); //ghosted
+    Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
+			   vec); //loc only
+  
+//  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
+    X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
+  }
+  
+  return(1);
+}
+
+// ====================================================================== 
+
+int ML_Epetra_VbrMatrix_comm_wrapper(double vec[], void *data)
+{
+  Epetra_VbrMatrix *A = (Epetra_VbrMatrix *) data;
+
+  if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
+
+//  Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(), vec); //ghosted
+//  Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(), vec); //loc only
+
+  if( A->RowMatrixImporter() != 0 ) {
+    Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(),
+			   vec); //ghosted
+    Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
+			   vec); //loc only
+  
+//  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
+    X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
+  }
+  
+  return(1);
+}
+
 // ======================================================================
 
-int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
+int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 {
   int isize, osize;
 
@@ -394,18 +584,37 @@ int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
-  ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,
-                              (void*) A, osize,
-                              NULL, 0);
+  Epetra_CrsMatrix *Acrs = dynamic_cast<Epetra_CrsMatrix*>(A);
 
-  ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
-                        Epetra_ML_comm_wrapper, (void *) A, 
-                        newMatrix->comm, isize, N_ghost);
+  if (Acrs) { // Epetra_CrsMatrix
+    ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,
+                                (void*) Acrs, osize,
+                                NULL, 0);
 
-  ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
-                         Epetra_ML_getrow);
+    ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
+                          ML_Epetra_CrsMatrix_comm_wrapper, (void *) Acrs, 
+                          newMatrix->comm, isize, N_ghost);
 
-  ML_Operator_Set_ApplyFunc (newMatrix, Epetra_ML_matvec);
+    ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
+                           ML_Epetra_CrsMatrix_getrow);
+
+    ML_Operator_Set_ApplyFunc (newMatrix, ML_Epetra_CrsMatrix_matvec);
+  }
+  // TODO implement functionality for Epetra_VbrMatrix
+  else { // RowMatrix
+    ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,
+                                (void*) A, osize,
+                                NULL, 0);
+
+    ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
+                          ML_Epetra_comm_wrapper, (void *) A, 
+                          newMatrix->comm, isize, N_ghost);
+
+    ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
+                           ML_Epetra_getrow);
+
+    ML_Operator_Set_ApplyFunc (newMatrix, ML_Epetra_matvec);
+  }
 
   return 0;
 }
@@ -424,10 +633,10 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
   ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) A);
-  ML_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
-                        Epetra_ML_comm_wrapper, isize+N_ghost);
+  ML_Set_Amatrix_Getrow(ml_handle, level, ML_Epetra_getrow,
+                        ML_Epetra_comm_wrapper, isize+N_ghost);
 
-  ML_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
+  ML_Set_Amatrix_Matvec(ml_handle,  level, ML_Epetra_matvec);
 
   return 1;
 }
@@ -466,7 +675,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     EPETRA_CHK_ERR(ierr);
   }
 
-  Epetra2MLMatrix((Epetra_RowMatrix *) Result_epet, Result);
+  ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix *) Result_epet, Result);
 
   return 1;
 }
@@ -484,8 +693,8 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *B
   B_ml  = ML_Operator_Create(comm);
   Bt_ml = ML_Operator_Create(comm);
   BBt_ml  = ML_Operator_Create(comm);
-  Epetra2MLMatrix(B_crs, B_ml);
-  Epetra2MLMatrix(Bt_crs, Bt_ml);
+  ML_Operator_WrapEpetraMatrix(B_crs, B_ml);
+  ML_Operator_WrapEpetraMatrix(Bt_crs, Bt_ml);
   ML_2matmult(B_ml, Bt_ml, BBt_ml, ML_EpetraCRS_MATRIX);
 
   ML_Comm_Destroy(&comm);
@@ -514,8 +723,8 @@ Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt
   B_ml  = ML_Operator_Create(comm);
   Bt_ml = ML_Operator_Create(comm);
   BBt_ml  = ML_Operator_Create(comm);
-  Epetra2MLMatrix(B_crs, B_ml);
-  Epetra2MLMatrix(Bt_crs, Bt_ml);
+  ML_Operator_WrapEpetraMatrix(B_crs, B_ml);
+  ML_Operator_WrapEpetraMatrix(Bt_crs, Bt_ml);
   Epetra_CrsMatrix *BBt_crs = new Epetra_CrsMatrix(Copy,
 				            B_crs->RowMatrixRowMap(),
 					    B_crs->RowMatrixColMap(), 0);
@@ -678,7 +887,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
   ML_Q2 = ML_Operator_Create( ml_communicator );  
   
-  Epetra2MLMatrix(Q, ML_Q2);
+  ML_Operator_WrapEpetraMatrix(Q, ML_Q2);
 
   for( int i=0 ; i<ReorderedNumElements ; ++i ) {
     ReorderedBdry[i] = yyy[i*NumPDEEqns];
@@ -818,7 +1027,7 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
   
   ML_Qt2 = ML_Operator_Create( ml_communicator );
 
-  Epetra2MLMatrix( Qt, ML_Qt2);
+  ML_Operator_WrapEpetraMatrix( Qt, ML_Qt2);
 
   return ML_Qt2;
 #endif
@@ -1131,7 +1340,7 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
 } /* ML_Operator2EpetraCrsMatrix */
 
 #ifdef WKC
-int Epetra_ML_matvec_WKC (ML_Operator *data, int in, double *p, int out, double *ap)
+int ML_Epetra_matvec_WKC (ML_Operator *data, int in, double *p, int out, double *ap)
 {
   ML_Operator *mat_in;
 
@@ -1442,7 +1651,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
   // create a new ML_Operator from this Epetra Matrix.
 
   *NewOp = ML_Operator_Create(Op->comm);
-  Epetra2MLMatrix(FakeMatrix,*NewOp);
+  ML_Operator_WrapEpetraMatrix(FakeMatrix,*NewOp);
   
   return(0);
 }
