@@ -98,13 +98,19 @@ int main(int argc, char *argv[])
   // class are based on Epetra_CrsMatrix. Example
   // `ml/examples/MatrixFormats/ml_EpetraVbr.cpp' shows how to define a
   // Epetra_VbrMatrix.
+
+  int i;
+  if (argc > 1)
+    i = (int) strtol(argv[1],NULL,10);
+  else
+    i = 10000;
   
   // `laplace_2d' is a symmetric matrix; an example of non-symmetric
   // matrix is `recirc_2d' (advection-diffusion in a box, with
   // recirculating flow). In both cases, the global number of nodes 
   // must be a square number
   CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 10000);
+  Gallery.Set("problem_size", i);
   
   // The following methods of CrsMatrixGallery are used to get pointers
   // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.

@@ -98,9 +98,15 @@ int main(int argc, char *argv[])
   // refer to the Trilinos tutorial for more details.
   //
   // Note also that this gallery matrix have no boundary nodes.
+
+  int i;
+  if (argc > 1)
+    i = (int) strtol(argv[1],NULL,10);
+  else
+    i = 900;
   
   VbrMatrixGallery Gallery("laplace_2d_9pt", Comm);
-  Gallery.Set("problem_size", 900);
+  Gallery.Set("problem_size", i);
   
   // retrive pointers for linear system matrix and linear problem
   Epetra_RowMatrix * A = Gallery.GetVbrMatrix(NumPDEEqns);
