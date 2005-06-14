@@ -496,6 +496,8 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
       return ml_;
     else if (WhichML == 0)
       return ml_nodes_;
+    else
+      return(0);
   }
 
   const bool SolvingMaxwell() const
