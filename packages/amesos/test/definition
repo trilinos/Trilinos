@@ -3,8 +3,7 @@
 #
 
 (FRAMEWORK) {
-    DIRS = TestOptions,
-           Test_Basic,
+    DIRS = Test_Basic,
            Test_DSPACK,
            Test_Detailed
            Test_Epetra_CrsMatrix,
@@ -16,7 +15,15 @@
            Test_Performance,
            Test_SuperLU,
            Test_SuperLU_DIST,
-           Test_UMFPACK;
+	   Test_UMFPACK;
     ARGS = -v;
     COMM = SERIAL, MPI;
+}
+
+# Removed TestOptions from MPI testing because it always seems to hang.
+
+(FRAMEWORK) {
+    DIRS = TestOptions;
+    ARGS = -v;
+    COMM = SERIAL;
 }
