@@ -316,6 +316,17 @@ exit $exitStatus;
         # Attempt to configure.  If --recover flag was passed, we will
         # continue to attempt to recover and reconfigure until it passes.
         while (!$configurePassed) {
+    
+            # Capture and format make start time.
+            (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+            $yr = sprintf("%02d", $yr % 100);
+            $mo = sprintf("%02d", $mo+1);
+            $da = sprintf("%02d", $da);
+            $hr = sprintf("%02d", $hr);
+            $mn = sprintf("%02d", $mn);
+            $se = sprintf("%02d", $se);
+            $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+            $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
             
             # Print progress message.
             my $message = "Configuring Trilinos...";
