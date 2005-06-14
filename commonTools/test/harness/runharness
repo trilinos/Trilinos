@@ -298,8 +298,9 @@ exit $exitStatus;
         $cmd .= "--verbosity=$argVerbosity ";
         $cmd .= "--log-verbosity=$argLogVerbosity ";
         $status = system("$cmd");
-        if ($status != 0) { 
-            return 1;
+        my $skipTests = 0;
+        if ($status == 0) { 
+            $skipTests = 1;
         }
     
         # Capture and format build end time.
@@ -329,32 +330,34 @@ exit $exitStatus;
         system("$cmd");
                         
         # Run runtests
-        $cmd  = "perl runtests ";
-        $cmd .= "--trilinos-dir=$trilinosDir ";
-        $cmd .= "--build-dir=".$buildOptions{'BUILD-DIR'}." ";
-        $cmd .= "--comm=".$buildOptions{'COMM'}." ";
-        $cmd .= "--category=".$buildOptions{'TEST-CATEGORY'}." ";
-        if ($buildOptions{'MAX-PROC'}) {    
-            $cmd .= "--max-proc=".$buildOptions{'MAX-PROC'}." ";   
-        }
-        if ($buildOptions{'MPI-START'}) {   
-            $cmd .= "--mpi-start=".$buildOptions{'MPI-START'}." ";       
-        }
-        if ($buildOptions{'MPI-STOP'}) {   
-            $cmd .= "--mpi-stop=".$buildOptions{'MPI-STOP'}." ";       
-        }
-        if ($buildOptions{'MPI-GO'}) {   
-            $cmd .= "--mpi-go=".$buildOptions{'MPI-GO'}." ";       
-        }
-        $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results/";
-        $cmd .= "$runStartTimeForFilename-build ";
-        $cmd .= "--simple-dir-name ";
-        $cmd .= "--verbosity=$argVerbosity ";
-        $cmd .= "--log-verbosity=$argLogVerbosity ";
-        $output = `$cmd`;
-        $status = $?;
-        if ($status != 0) { 
-            return 1;
+        if (!$skipTests) {
+            $cmd  = "perl runtests ";
+            $cmd .= "--trilinos-dir=$trilinosDir ";
+            $cmd .= "--build-dir=".$buildOptions{'BUILD-DIR'}." ";
+            $cmd .= "--comm=".$buildOptions{'COMM'}." ";
+            $cmd .= "--category=".$buildOptions{'TEST-CATEGORY'}." ";
+            if ($buildOptions{'MAX-PROC'}) {    
+                $cmd .= "--max-proc=".$buildOptions{'MAX-PROC'}." ";   
+            }
+            if ($buildOptions{'MPI-START'}) {   
+                $cmd .= "--mpi-start=".$buildOptions{'MPI-START'}." ";       
+            }
+            if ($buildOptions{'MPI-STOP'}) {   
+                $cmd .= "--mpi-stop=".$buildOptions{'MPI-STOP'}." ";       
+            }
+            if ($buildOptions{'MPI-GO'}) {   
+                $cmd .= "--mpi-go=".$buildOptions{'MPI-GO'}." ";       
+            }
+            $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results/";
+            $cmd .= "$runStartTimeForFilename-build ";
+            $cmd .= "--simple-dir-name ";
+            $cmd .= "--verbosity=$argVerbosity ";
+            $cmd .= "--log-verbosity=$argLogVerbosity ";
+            $output = `$cmd`;
+            $status = $?;
+            if ($status != 0) { 
+                return 1;
+            }
         }
                                                 
         # Grab general information values for inclusion in machine info file.        
