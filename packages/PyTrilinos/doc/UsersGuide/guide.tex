@@ -198,7 +198,7 @@ the ML Users Guide~\cite{ml-guide}, and to the ML web site.
 
 A description of the organization of  the linear algebra modules of
 PyTrilinos, with some of the third-party libraries can be accessed,
-is reported in Figure~\ref{fig:organization}.
+is reported in Figure~\ref{fig:organization} and Table~\ref{tab:dependency}.
 
 \begin{figure}
 \begin{center}
@@ -207,6 +207,35 @@ is reported in Figure~\ref{fig:organization}.
 \label{fig:organization}
 \end{center}
 \end{figure}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| p{3cm}| c | c | c | c | c | c | c |}
+\hline
+          & \rotatebox{90}{Epetra}
+          & \rotatebox{90}{EpetraExt} 
+          & \rotatebox{90}{Triutils} 
+          & \rotatebox{90}{Amesos} 
+          & \rotatebox{90}{IFPACK} 
+          & \rotatebox{90}{ML} 
+          & \rotatebox{90}{AztecOO} \\
+          \hline
+Epetra    & --&   &   &   &   &   &   \\  
+EpetraExt & R & --&   &   &   &   &   \\
+Triutils  & R &   & --&   &   &   &   \\
+Amesos    & R &   & E & --&   &   &   \\
+IFPACK    & R &   & E & A & --&   &   \\
+ML        & R &   & E & A & A & --&   \\
+AztecOO   & R &   & E & A & A & A & --\\
+\hline
+\end{tabular}
+\caption{Dependency among PyTrilinos packages. For a given row, ``R'' means
+  that the package in this column is required, ``A'' means that the package in
+    this column can be used but it is not necessary, ``E'' means that the
+    package can be used in some examples.}
+\label{tab:dependency}
+\end{center}
+\end{table}
 
 %-----------------------------------------------------------------------------
 \subsection{Suggested Configuration Options}
@@ -1222,4 +1251,5 @@ Still to do:
   - Add VBR??
   - Example of Matrix-vector product
   - Something more on matrix-matrix add and product
-
+- talk about help functions, like help(), dir(), with examples
+- visualization: Python Imaging Library, GNUPLOT, add the spy of a matrix
