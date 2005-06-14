@@ -3,7 +3,35 @@
 #
 
 (FRAMEWORK) {
-    DIRS = ana/operator_vector;
-    ARGS = -v;
-    COMM = SERIAL, MPI;
+    TESTS = ../example/ana/operator_vector/sillyCgSolve_mpi.exe;
+    ARGS = --verbose;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK) {
+    TESTS = ana/operator_vector/test_composite_linear_ops.exe;
+    ARGS = --use-mpi --verbose;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK) {
+    TESTS = ana/operator_vector/test_product_space.exe,
+	    ana/operator_vector/test_scalar_product.exe,
+	    ana/operator_vector/test_std_ops.exe,
+	    ../example/ana/operator_vector/sillyCgSolve_serial.exe,
+	    ../example/ana/operator_vector/sillyPowerMethod_serial.exe;
+    ARGS = --verbose;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK) {
+    TESTS = ana/operator_vector/test_composite_linear_ops.exe;
+    ARGS = --use-serial --verbose;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK) {
+    TESTS = ../example/ana/operator_vector/sillyCgSolve_serial.exe;
+    ARGS = --unsym-op --diag-scale=1.05 --verbose;
+    COMM = SERIAL;
 }

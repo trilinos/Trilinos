@@ -3,16 +3,30 @@
 #
 
 (FRAMEWORK) {
-    DIRS = BLAS,
-           Containers,
-	         DenseMatrix,
-	         LAPACK,
-	         ParameterList,
-	         RefCountPtr,
-	       # Time, --> removed this, it's been hanging in MPI.
-	         Workspace,
-	         XML,
-	         dyn_cast;
+    TESTS = RefCountPtr/RefCountPtr_test.exe;
+    COMM = MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = ParameterList/ParameterList_test.exe,
+            Time/Time_test.exe;
+    ARGS = --v;
+    COMM = MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = RefCountPtr/RefCountPtr_test.exe,
+            Workspace/workspace_test.exe,
+	    dyn_case/dyn_cast_test.exe;
+    ARGS = --verbose;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK) {
+    TESTS = BLAS/BLAS_test.exe,
+            LAPACK/LAPACK_test.exe,
+	    DenseMatrix/DenseMatrix_test.exe,
+	    ParameterList/ParameterList_test.exe;
     ARGS = -v;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
