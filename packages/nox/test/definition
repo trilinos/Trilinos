@@ -16,11 +16,18 @@
            lapack/LOCA_Group,
            lapack/LOCA_NewTest,
            lapack/LOCA_TestProblems,
-           lapack/LOCA_UnitTests,
            lapack/LOCA_python,
            lapack/NOX,
            lapack/NOX_Group,
            lapack/NOX_NewTest;
     ARGS = -v;
     COMM = SERIAL, MPI;
+}
+
+# Removed lapack/LOCA_UnitTests for now because it appeared to be hanging in MPI
+
+(FRAMEWORK) {
+    DIRS = lapack/LOCA_UnitTests;
+    ARGS = -v;
+    COMM = SERIAL;
 }
