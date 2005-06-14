@@ -29,7 +29,8 @@
 // Goal of this example is to show the (limited) ML analysis capabilities.
 //
 // \author Marzio Sala, SNL 9214
-// \date Last modified on 17-Nov-04
+//
+// \date Last modified on 14-Jun-05
 
 #include "ml_include.h"
 
@@ -38,7 +39,7 @@
 // configured with --enable-epetra --enable-teuchos. This example
 // required --enable-triutils (for the definition of the linear systems)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(FIXME)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -50,7 +51,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "ml_MultiLevelPreconditioner.h"
 
@@ -71,7 +71,8 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
+  // Creates the linear problem using the class 
+  // `Trilinos_Util::CrsMatrixGallery.'
   // Several matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
   // Most of the examples using the ML_Epetra::MultiLevelPreconditioner
@@ -81,20 +82,14 @@ int main(int argc, char *argv[])
   // `laplace_2d' is a symmetric matrix; an example of non-symmetric
   // matrices is `recirc_2d' (advection-diffusion in a box, with
   // recirculating flow). The number of nodes must be a square number
-
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   int ProblemSize = 256;
   Gallery.Set("problem_size", ProblemSize);
   
   // The following methods of CrsMatrixGallery are used to get pointers
   // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
-
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
+  Epetra_RowMatrix*     A       = Gallery.GetMatrix();
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-
-  // As we wish to use AztecOO, we need to construct a solver object 
-  // for this problem
-  AztecOO solver(*Problem);
 
   // create a parameter list for ML options
   ParameterList MLList;
@@ -210,8 +205,10 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -220,4 +217,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)

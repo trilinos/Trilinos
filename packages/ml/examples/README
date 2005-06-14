@@ -38,12 +38,20 @@ README.AddingExamples       (for developers) instructions on adding examples
 
 Files in ml/examples/BasicExamples/
 
+*) ml_preconditioner.cpp (RECOMMENDED, START HERE):
+
+The goal of this example is to present the basic usage of the
+ML_Epetra::MultiLevelPreconditioner class.  The example builds a simple matrix
+and solves the corresponding linear system using AztecOO and ML as a
+preconditioner. It finally checks the accuracy of the computed solution. 
+This is the simplest way of using ML.
+
 *) ml_aztec_simple.c:
 
 This example creates a simple matrix, corresponding to a 2D Laplacian on a
 structured grid, as an Aztec matrix. This matrix is wrapped as an ML_Operator,
 then the V-cycle is built, and the resulting preconditioner is used within
-Aztec (C version). The example works with the AztecOO distributed withint
+Aztec (C version). The example works with the AztecOO distributed within
 Trilinos.
 
 *) ml_operator.cpp:
@@ -53,13 +61,6 @@ ML_Epetra::MultiLevelOperator class. This can should be used if the
 user wants to build all the ML components by him/herself (starting
 from an Epetra_RowMatrix), then use the resulting ML preconditioner within 
 AztecOO. 
-
-*) ml_preconditioner.cpp (RECOMMENDED):
-
-The goal of this example is to present the basic usage of the
-ML_Epetra::MultiLevelPreconditioner class.  The example builds a simple matrix
-and solves the corresponding linear system using AztecOO and ML as a
-preconditioner. It finally checks the accuracy of the computed solution.
 
 *) ml_readex.c:
 
@@ -102,12 +103,12 @@ files in ml/examples/StandAlone/
 *) mlguide.c
 
 description of the ML interface functions for a simple, 1D problem. Must be run
-with one processor.
+with one processor. This example does not require any other Trilinos packages.
 
 *) mlguide_par.c
 
 description of the ML interface functions in parallel. Must be run with two
-processors.
+processors. This example does not require any other Trilinos packages.
 
 ===============================================================================
 
@@ -115,8 +116,9 @@ files in ml/examples/TwoLevelDD
 
 *) ml_2level_DD.cpp
 
-Goal of this example is to present how to define domain decomposition
-preconditioner using class ML_Epetra::MultiLevelPreconditioner.
+Goal of this example is to present how to define two-level domain decomposition
+preconditioner based on aggregation procedures using class 
+ML_Epetra::MultiLevelPreconditioner.
 
 ===============================================================================
 
@@ -144,7 +146,7 @@ Goal of this example if to show how to take advantage of the getrow()
 to define matrix-free operator using the MultiLevelPreconditioner class.
 The example defines a 3D Laplacian on a structured Cartesian grid; the  
 problem is discretized using a classical 7-point formula, but the values
-of the matrix are not stored, and the rows are created "on-the-fly" at
+of the matrix are never stored, and the rows are created "on-the-fly" at
 each call to getrow().
 
 ===============================================================================

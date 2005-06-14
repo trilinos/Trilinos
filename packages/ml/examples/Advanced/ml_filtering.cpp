@@ -51,6 +51,10 @@
 using namespace Teuchos;
 using namespace Trilinos_Util;
 
+// =========== //
+// main driver //
+// =========== //
+
 int main(int argc, char *argv[])
 {
   
@@ -63,7 +67,8 @@ int main(int argc, char *argv[])
 
   Epetra_Time Time(Comm);
 
-  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
+  // Creates the linear problem using the class 
+  // `Trilinos_Util::CrsMatrixGallery.'
   // Various matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
   
@@ -71,8 +76,8 @@ int main(int argc, char *argv[])
   Gallery.Set("problem_size", 900);
   
   // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix * A = Gallery.GetMatrix();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  Epetra_RowMatrix*     A       = Gallery.GetMatrix();
+  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
@@ -130,8 +135,7 @@ int main(int argc, char *argv[])
   MPI_Finalize() ;
 #endif
 
-  return(0);
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -148,14 +152,18 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils --enable-anasazi");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
+  puts("--enable-triutils");
+  puts("--enable-anasazi");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   
-  return(0);
+  return(EXIT_SUCCESS);
 }
 
 #endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */

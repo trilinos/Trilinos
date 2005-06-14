@@ -228,7 +228,6 @@ int main(int argc, char *argv[])
 #endif
 
   return(EXIT_SUCCESS);
-  
 }
 
 #else
@@ -245,14 +244,16 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
+  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
-  return 0;
+  return(EXIT_SUCCESS);
 }
 
 #endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */

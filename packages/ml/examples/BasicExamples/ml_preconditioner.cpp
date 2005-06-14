@@ -41,14 +41,16 @@
 //   4             15               2.20
 
 // \author Marzio Sala, SNL 9214
+//
 // \data Last modified on 19-Jan-05
 
 #include "ml_include.h"
 
 // The C++ interface of ML (more precisely,
-// ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
-// configured with --enable-epetra --enable-teuchos. This example
-// required --enable-triutils (for the definition of the linear systems)
+// ML_Epetra::MultiLevelPreconditioner), requires Trilinos to be
+// configured with --enable-epetra --enable-teuchos. This example also
+// requires --enable-triutils (for the definition of the linear systems)
+// and --enable-aztecoo (to solve the linear system)
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
 
@@ -87,29 +89,30 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
+  // Creates the linear problem using the class 
+  // `Trilinos_Util::CrsMatrixGallery.'
+  //
   // Several matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
   // Most of the examples using the ML_Epetra::MultiLevelPreconditioner
   // class are based on Epetra_CrsMatrix. Example
-  // `ml_preconditioner_vbr.cpp' shows how to define a
+  // `ml/examples/MatrixFormats/ml_EpetraVbr.cpp' shows how to define a
   // Epetra_VbrMatrix.
   
   // `laplace_2d' is a symmetric matrix; an example of non-symmetric
   // matrix is `recirc_2d' (advection-diffusion in a box, with
   // recirculating flow). In both cases, the global number of nodes 
   // must be a square number
-
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", 10000);
   
   // The following methods of CrsMatrixGallery are used to get pointers
   // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
+  Epetra_RowMatrix*     A       = Gallery.GetMatrix();
+  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
-  Epetra_RowMatrix * A = Gallery.GetMatrix();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
-
-  // As we wish to use AztecOO, we need to construct a solver object for this problem
+  // As we wish to use AztecOO, we need to construct a solver object 
+  // for this problem
   AztecOO solver(*Problem);
 
   // =========================== begin of ML part ===========================
@@ -117,8 +120,8 @@ int main(int argc, char *argv[])
   // create a parameter list for ML options
   ParameterList MLList;
 
-  // set defaults for classic smoothed aggregation. After this class,
-  // MLList will contain the default values for the ML parameters,
+  // Sets default parameters for classic smoothed aggregation. After this
+  // call, MLList contains the default values for the ML parameters,
   // as required by typical smoothed aggregation for symmetric systems.
   // Other sets of parameters are available for non-symmetric systems
   // ("DD" and "DD-ML"), and for the Maxwell equations ("maxwell").
@@ -142,7 +145,8 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type (level 3)", "MIS");
 
   // smoother is symmetric Gauss-Seidel. Example file 
-  // ml_2level_DD.cpp shows how to use AZTEC's preconditioners as smoothers
+  // `ml/examples/TwoLevelDD/ml_2level_DD.cpp' shows how to use
+  // AZTEC's preconditioners as smoothers
   MLList.set("smoother: type","symmetric Gauss-Seidel");
 
   // use both pre and post smoothing
@@ -160,11 +164,11 @@ int main(int argc, char *argv[])
   MLList.set("coarse: type","Jacobi");
 #endif
 
-  // create the preconditioning object. We suggest to use `new' and
+  // Creates the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
   // required by ML and possibly Amesos). This is an issue only if the
   // destructor is called **after** MPI_Finalize().
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // verify unused parameters on process 0 (put -1 to print on all
@@ -234,8 +238,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
+  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize();

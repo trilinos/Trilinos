@@ -27,27 +27,27 @@
 //@HEADER
 
 // Goal of this example is to present the usage of the
-// ML_Epetra::MultiLevelOperator class. This can should be used if the
+// ML_Epetra::MultiLevelOperator class. This class should be used if the
 // user wants to build all the ML components by him/herself (starting
 // from an Epetra_RowMatrix), then use
 // the resulting ML preconditioner within AztecOO.
 //
-// This file reads a matrix in Harwell/Boeing format from the
-// specified file, and solves the corresponding linear system using
-// ML as a preconditioner. 
+// This file creates a matrix from the Triutils Gallery, 
+// then solves the corresponding linear system using ML as a preconditioner. 
 //
 // From the command line, you may try something like that:
-// $ mpirun -np 4 ./ml_operator.exe -matrix_name=<matrix>
+// $ mpirun -np 4 ./ml_operator.exe
 //
 // For more options for Trilinos_Util::CrsMatrixGallery, consult the
 // Trilinos 4.0 tutorial
 //
 // \author Marzio Sala, SNL 9214
-// \date Last modified on 19-Jan-05
+//
+// \date Last modified on 14-Jun-05
 
 #include "ml_include.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -63,10 +63,8 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelOperator.h"
-#include "Teuchos_ParameterList.hpp"
 
 using namespace ML_Epetra;
-using namespace Teuchos;
 using namespace Trilinos_Util;
 
 // =========== //
@@ -85,9 +83,10 @@ int main(int argc, char *argv[])
   
   Epetra_Time Time(Comm);
   
-  // to read MatrixMarket matrices, simply change "hb" to "matrix_market"
+  // Creates a matrix corresponding to a 2D Laplacian on a
+  // Cartesian grid, with nx * nx rows.
   CrsMatrixGallery Gallery("laplace_2d", Comm);
-  int nx = 10;
+  int nx = 10; 
   Gallery.Set("problem_size", nx * nx);
 
   // get pointer to the linear system matrix
@@ -141,7 +140,7 @@ int main(int argc, char *argv[])
 
   // set up some smoothers. Here we suppose a symmetric problem
   int nits = 1;
-  for(int level = maxMgLevels-1; level > coarsestLevel; level--)
+  for (int level = maxMgLevels-1; level > coarsestLevel; level--)
     ML_Gen_Smoother_MLS(ml_handle, level, ML_BOTH, 30., 3);
 
   // simple coarse solver. You may want to use Amesos to access
@@ -175,7 +174,8 @@ int main(int argc, char *argv[])
   Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
   
   (Gallery.GetExactSolution())->Norm2(&res2);
-  if( Comm.MyPID()==0 ) {
+  if (Comm.MyPID() == 0) 
+  {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "||x_exact - x||_2 = " << diff/res2 << endl;
     cout << "Total Time = " << Time.ElapsedTime() << endl;
@@ -210,8 +210,10 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-aztecoo");
+  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -220,5 +222,4 @@ int main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
 }
 
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
-
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */

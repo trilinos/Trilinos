@@ -70,7 +70,8 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
+  // Creates the linear problem using the class 
+  // `Trilinos_Util::CrsMatrixGallery.'
   // Various matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
   // This matrix is a simple VBR matrix, constructed by replicating
@@ -80,11 +81,11 @@ int main(int argc, char *argv[])
   // hardwired as 5, but any positive number (including 1) can be
   // specified.
   //
-  // NOTE: The epetra interface of ML cannot work with block matrices 
-  // with variable block size (that is, the number of equations for 
-  // each block row MUST be constant). ML has some variable-block
-  // capabilites, see file ml/src/Coarsen/ml_agg_VBMETIS.c.
-  // this example)
+  // NOTE: The epetra interface of ML has only limited capabilites
+  // for matrices with variable block size (that is, 
+  // best is if the number of equations for 
+  // each block row is constant). If you are interested in variable
+  // block capabilites, please contact the ML developers.
   
   int NumPDEEqns = 5;
 
@@ -138,8 +139,6 @@ int main(int argc, char *argv[])
 
   MLList.set("aggregation: type (level 0)", "Uncoupled");
   MLList.set("aggregation: type (level 1)", "MIS");
-  MLList.set("aggregation: type (level 2)", "METIS");
-  MLList.set("aggregation: type (level 3)", "ParMETIS");
   
   // this is recognized by `METIS' and `ParMETIS' only
   MLList.set("aggregation: nodes per aggregate", 9);
@@ -193,7 +192,6 @@ int main(int argc, char *argv[])
 #endif
 
   exit(EXIT_SUCCESS);
-  
 }
 
 #else
@@ -210,8 +208,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
+  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
