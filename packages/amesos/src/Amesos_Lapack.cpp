@@ -345,6 +345,8 @@ int Amesos_Lapack::DistributedToSerial()
 // ====================================================================== 
 int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
 {
+  if (IsSymbolicFactorizationOK() == false)
+    AMESOS_CHK_ERR(SymbolicFactorization());
 
   if (Comm().MyPID() == 0)
     AMESOS_CHK_ERR(DenseMatrix_.Shape(NumGlobalRows(),NumGlobalRows()));
@@ -352,11 +354,22 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
   AMESOS_CHK_ERR(DistributedToSerial());
   AMESOS_CHK_ERR(SerialToDense());
 
-  Epetra_Vector LocalEr(*SerialMap_);
-  Epetra_Vector LocalEi(*SerialMap_);
+  Teuchos::RefCountPtr<Epetra_Vector> LocalEr;
+  Teuchos::RefCountPtr<Epetra_Vector> LocalEi;
 
-  if (Comm().MyPID() == 0) {
+  if (Comm().NumProc() == 1)
+  {
+    LocalEr = Teuchos::rcp(&Er, false);
+    LocalEi = Teuchos::rcp(&Ei, false);
+  }
+  else
+  {
+    LocalEr = Teuchos::rcp(new Epetra_Vector(*SerialMap_));
+    LocalEi = Teuchos::rcp(new Epetra_Vector(*SerialMap_));
+  }
 
+  if (Comm().MyPID() == 0) 
+  {
     int n = NumGlobalRows();
     char jobvl = 'N'; /* V/N to calculate/not calculate left eigenvectors
                          of matrix H.*/
@@ -374,7 +387,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
     int lwork = -1;
 
     LAPACK.GEEV(jobvl, jobvr, n, DenseMatrix_.A(), n, 
-                LocalEr.Values(), LocalEi.Values(), NULL,
+                LocalEr->Values(), LocalEi->Values(), NULL,
                 ldvl, NULL, 
                 ldvr, &work[0], 
                 lwork, &info);
@@ -382,7 +395,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
     lwork = (int)work[0];
     work.resize(lwork);
     LAPACK.GEEV(jobvl, jobvr, n, DenseMatrix_.A(), n, 
-                LocalEr.Values(), LocalEi.Values(), NULL,
+                LocalEr->Values(), LocalEi->Values(), NULL,
                 ldvl, NULL, 
                 ldvr, &work[0], 
                 lwork, &info);
@@ -391,10 +404,13 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
       AMESOS_CHK_ERR(info);
   }
 
-  // I am not really sure that exporting the results make sense... 
-  // It is just to be coherent with the other parts of the code.
-  Er.Export(LocalEr, Importer(), Insert);
-  Ei.Export(LocalEi, Importer(), Insert);
+  if (Comm().NumProc() != 1)
+  {
+    // I am not really sure that exporting the results make sense... 
+    // It is just to be coherent with the other parts of the code.
+    Er.Export(*LocalEr, Importer(), Insert);
+    Ei.Export(*LocalEi, Importer(), Insert);
+  }
 
   return(0);
 }
