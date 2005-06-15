@@ -40,12 +40,13 @@ namespace Rythmos {
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> > &model)
+ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const Rythmos::NonlinearModel<Scalar> > &model)
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
-  t_ = Scalar::zero();
-  solution_vector_ = (*model_).get_vector();
-  residual_vector_ = (*model_).get_vector();
+  t_ = ST::zero();
+  solution_vector_ = model_->get_vector();
+  residual_vector_ = model_->get_vector();
 };
 //
 //-----------------------------------------------------------------------------
@@ -86,7 +87,8 @@ template<class Scalar>
 Scalar ForwardEuler<Scalar>::TakeStep()
 {
   // print something out about this method not supporting automatic variable step-size
-  return(-1);
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return(-ST::one());
 };
 
 //-----------------------------------------------------------------------------
@@ -108,7 +110,7 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 
   outargs.set_F(residual_vector_);
 
-  (*problem_).evalModel(inargs,outargs);
+  problem_->evalModel(inargs,outargs);
 
   // solution_vector = solution_vector + dt*residual_vector
   Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
@@ -126,7 +128,7 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler<Scalar>::get_solution()
+const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &ForwardEuler<Scalar>::get_solution() const
 {
   return(solution_vector_);
 };
@@ -140,7 +142,7 @@ const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler<Scal
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler<Scalar>::get_residual()
+const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &ForwardEuler<Scalar>::get_residual() const
 {
   return(residual_vector_);
 };
