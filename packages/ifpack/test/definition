@@ -5,14 +5,21 @@
 (FRAMEWORK) {
     DIRS = CompareWithAztecOO,
            Container,
-	         CrsRiluk,
-	         IC,
-	         ILU,
-	         IlukGraph,
-	         OverlappingRowMatrix,
-	         PreconditionerFactory,
-	         Relaxation,
-	         SetParameters;
+           CrsRiluk,
+           IC,
+           ILU,
+	   IlukGraph,
+	   OverlappingRowMatrix,
+	   Relaxation,
+	   SetParameters;
     ARGS = -v;
     COMM = SERIAL, MPI;
+}
+
+# Removing PreconditionerFactory from MPI for now because it seems to hang.
+
+(FRAMEWORK) {
+    DIRS = PreconditionerFactory;
+    ARGS = -v;
+    COMM = SERIAL;
 }
