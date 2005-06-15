@@ -819,14 +819,8 @@ namespace Anasazi {
       // Sort the eigenvalues
       _order.resize(_knownEV);
       _sm->sort( this, _knownEV, &(*_evals)[0], &_order );
-      // make copy of _resids and reorder
-      std::vector<ScalarType> residsCopy(_resids);;
-      for (i=0; i<_knownEV; i++) {
-        _resids[i] = residsCopy[_order[i]];
-      }
-      // make copy of _evecs and reorder
-      Teuchos::RefCountPtr<MV> evecsCopy = MVT::CloneCopy(*_evecs);
-      MVT::SetBlock(*evecsCopy,_order,*_evecs);
+      // use _order to permute _evecs and _resids
+      _MSUtils.permuteVectors(_knownEV,_order,*_evecs,&_resids);
     }
     //
     // Print out a final summary if necessary
