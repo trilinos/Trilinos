@@ -34,6 +34,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
+#include "AnasaziBasicSort.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef EPETRA_MPI
@@ -264,9 +265,14 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 	MyOM->SetVerbosity( Anasazi::FinalSummary );	
+
+  // Create a sort manager
+  std::string which("SM");
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 	
 	// Initialize the Block Davidson solver
-	Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
+	Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
 	
 	// Solve the problem to the specified tolerances or length
 	returnCode = MySolver.solve();
