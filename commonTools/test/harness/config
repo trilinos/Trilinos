@@ -143,6 +143,7 @@ RUN (stratus-nightly-mpi) {
     MAX-PROC            = 16;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
+    MPI-GO              = prun -n;
     TTR-DIR             = /projects/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
