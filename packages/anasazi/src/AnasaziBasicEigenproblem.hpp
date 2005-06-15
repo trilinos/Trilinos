@@ -237,7 +237,7 @@ namespace Anasazi {
   //=============================================================================
   
   template <class ScalarType, class MV, class OP>
-  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem(void) : 
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem() : 
     _nev(0), 
     _isSym(false),
     _isSet(false)

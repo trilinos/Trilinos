@@ -58,7 +58,7 @@ namespace Anasazi {
     Operator() {};
     
     //! Destructor.
-    virtual ~Operator(void) {};
+    virtual ~Operator() {};
     //@}
     
     //@{ \name Operator application method.

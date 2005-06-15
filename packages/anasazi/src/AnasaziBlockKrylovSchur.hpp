@@ -426,22 +426,6 @@ namespace Anasazi {
     _isdecompcurrent=false; _isevecscurrent=false; _exit_flg=false; _dep_flg=false;
     _schurerror=1.0; 
     //
-    // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
-    // NOTE: An additional block is kept if _nev is a perfect multiple of _blockSize because of the
-    // potential presence of complex eigenvalue pairs.  Additional blocks can be retained, up to
-    // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
-    //
-    _nevblock = _nev/_blockSize + 1;
-    //
-    // Use alternate settings if the number of eigenvalues requested is equal to the dimension
-    if ( _nev == dim ) {
-      _nevblock = _nev/_blockSize;  
-      if (_nev%_blockSize) 
-	_nevblock++;    
-    }
-    _maxoffset = (_maxBlocks-_nevblock)/2;
-    _totallength = _blockSize*_maxBlocks;
-    //
     // Make room for the Arnoldi vectors and F.
     //
     _basisvecs = MVT::Clone( *ivec, (_maxBlocks+1)*_blockSize );

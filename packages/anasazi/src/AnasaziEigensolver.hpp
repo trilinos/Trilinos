@@ -35,6 +35,9 @@
 */
 
 #include "AnasaziEigenproblem.hpp"
+#include "AnasaziSortManager.hpp"
+#include "AnasaziOutputManager.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 /*! \class Anasazi::Eigensolver
@@ -52,13 +55,24 @@ class Eigensolver {
     
   public:
 
-  //@{ \name Constructor/Destructor.
+  //@{ \name Constructors/Destructor.
 
   //! Default Constructor.
-  Eigensolver(void) {};
+  Eigensolver() {};
+
+  //! Basic Constructor.
+  /*! This constructor, implemented by all Anasazi eigensolvers, takes an Anasazi::Eigenproblem,
+    Anasazi::SortManager, Anasazi::OutputManager, and Teuchos::ParameterList as input.  These
+    four arguments are sufficient enough for constructing an Anasazi::Eigensolver object.
+  */
+  Eigensolver( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+	       const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
+	       const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
+	       Teuchos::ParameterList &pl
+	       );
 
   //! Destructor.
-  virtual ~Eigensolver(void) {};
+  virtual ~Eigensolver() {};
   //@}
   
   //@{ \name Accessor methods

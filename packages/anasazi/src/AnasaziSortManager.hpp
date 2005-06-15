@@ -45,9 +45,11 @@
 */
 
 #include "AnasaziReturnType.hpp"
-#include "AnasaziEigensolver.hpp"
 
 namespace Anasazi {
+
+  template<class ScalarType, class MV, class OP>
+  class Eigensolver;
 
   template<class ScalarType, class MV, class OP>
   class SortManager {
