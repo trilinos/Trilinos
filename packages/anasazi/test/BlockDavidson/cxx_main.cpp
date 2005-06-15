@@ -34,6 +34,7 @@
 #include "AnasaziBlockDavidson.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "AnasaziBasicSort.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -66,10 +67,27 @@ int main(int argc, char *argv[])
   
   bool testFailed = false;
   bool verbose = 0;
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+  std::string which("SM");
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+    else {
+      which = &argv[1][1];
+    }
+  }
+  if (argc>2) {
+    if (argv[2][0]=='-' && argv[2][1]=='v') {
+      verbose = true;
+    }
+    else {
+      which = &argv[2][1];
+    }
+  }
   
-  if (verbose && MyPID == 0)
+  if (verbose && MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
+  }
   
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
@@ -131,8 +149,13 @@ int main(int argc, char *argv[])
   if (info)
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
+  // Create the sort manager
+  cout << "Sort type: " << which << endl;  
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
+     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
+
   // Create the eigensolver  
-  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
+  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
   
   // Solve the problem to the specified tolerances or length
   
