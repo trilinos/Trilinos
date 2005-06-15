@@ -72,7 +72,7 @@ ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> &inargs, const Rythmos::OutArgs<double> &outargs)
+int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> &inargs, const Rythmos::OutArgs<double> &outargs) const
 {
   // input arguments:
   Teuchos::RefCountPtr<Thyra::VectorBase<double> > x = inargs.get_x();
@@ -93,7 +93,7 @@ int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> 
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterface::get_vector()
+Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterface::get_vector() const
 {
   return(Thyra::create_MPIVectorBase(problem_->get_x0(),thyra_vs_));
 }
@@ -106,7 +106,7 @@ Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterf
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
-Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_Epetra_Map() 
+Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_Epetra_Map() const
 { 
   return(epetra_map_); 
 }
