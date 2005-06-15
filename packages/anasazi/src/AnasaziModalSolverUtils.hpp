@@ -77,6 +77,9 @@ namespace Anasazi {
     //! Sort the vector of eigenvalues \c lambda, and optionally the corresponding multi-vector \c Q and residual vector \c resids. 
     int sortScalars_Vectors(int n, ScalarType* lambda, MV* Q, std::vector<ScalarType>* resids = 0) const;
 
+    //! Permute the vectors according to the permutation vector \c perm, and optionally the residual vector \c resids
+    int permuteVectors(const int n, const std::vector<int> &perm, MV &Q, std::vector<ScalarType>* resids = 0) const;
+
     //@} 
 
     //@{ \name Eigensolver Projection Methods
@@ -321,6 +324,83 @@ namespace Anasazi {
     } // if ( Q )
     
     return info;  
+  }
+
+  template<class ScalarType, class MV, class OP>
+  int ModalSolverUtils<ScalarType, MV, OP>::permuteVectors(
+              const int n,
+              const std::vector<int> &perm, 
+              MV &Q, 
+              std::vector<ScalarType>* resids) const
+  {
+    // Permute the vectors according to the permutation vector \c perm, and
+    // optionally the residual vector \c resids
+    
+    int i, j;
+    std::vector<int> permcopy(perm), swapvec(n-1);
+    std::vector<int> index(1);
+    int tmpi;
+    ScalarType tmp;
+    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+
+    if ( n > MVT::GetNumberVecs( Q ) ) { return -1; }
+
+    // We want to recover the elementary permutations (individual swaps) 
+    // from the permutation vector. Do this by constructing the inverse
+    // of the permutation, by sorting them to {1,2,...,n}, and recording
+    // the elementary permutations of the inverse.
+    for (i=0; i<n-1; i++) {
+      
+      // find i in the permcopy vector
+      for (j=i; j<n; j++) {
+
+        if (permcopy[j] == i) {
+          // found it at index j
+          break;
+        }
+
+        if (j == n-1) {
+          // perm must contain {1,...,n}
+          // we should have found (i+1) by now
+          return -1;
+        }
+      }
+
+      // Swap two scalars
+      tmpi = permcopy[j];
+      permcopy[j] = permcopy[i];
+      permcopy[i] = tmpi;
+
+      swapvec[i] = j;
+    }
+      
+    // now apply the elementary permutations of the inverse in reverse order
+    for (i=n-2; i>=0; i--) {
+
+      j = swapvec[i];
+
+      // Swap (i,j)
+
+      // Swap residuals (if they exist)
+      if (resids) {
+        tmp = (*resids)[j];
+        (*resids)[j] = (*resids)[i];
+        (*resids)[i] = tmp;
+      }
+
+      // Swap corresponding vectors
+      index[0] = j;
+      Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( Q, index );
+      Teuchos::RefCountPtr<MV> tmpQj = MVT::CloneView( Q, index );
+      index[0] = i;
+      Teuchos::RefCountPtr<MV> tmpQi = MVT::CloneView( Q, index );
+      MVT::MvAddMv( one, *tmpQi, zero, *tmpQi, *tmpQj );
+      MVT::MvAddMv( one, *tmpQ, zero, *tmpQ, *tmpQi );
+
+    }
+    
+    return 0;  
   }
   
   //-----------------------------------------------------------------------------
