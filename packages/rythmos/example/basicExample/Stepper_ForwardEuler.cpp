@@ -108,9 +108,9 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
   inargs.set_x(solution_vector_);
   inargs.set_t(t_+dt);
 
-  outargs.set_F(residual_vector_);
+  outargs.request_F(residual_vector_);
 
-  problem_->evalModel(inargs,outargs);
+  model_->evalModel(inargs,outargs);
 
   // solution_vector = solution_vector + dt*residual_vector
   Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
