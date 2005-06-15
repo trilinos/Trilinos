@@ -61,10 +61,10 @@ class Stepper
     virtual Scalar TakeStep()=0;
 
     // Get solution vector
-    virtual const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution() const = 0;
+    virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const = 0;
     
     // Get residual vector
-    virtual const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual() const = 0;
+    virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const = 0;
 
 };
 

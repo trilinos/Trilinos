@@ -128,7 +128,7 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &ForwardEuler<Scalar>::get_solution() const
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_solution() const
 {
   return(solution_vector_);
 }
@@ -142,7 +142,7 @@ const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &ForwardEuler<Scala
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &ForwardEuler<Scalar>::get_residual() const
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_residual() const
 {
   return(residual_vector_);
 }

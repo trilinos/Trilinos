@@ -63,10 +63,10 @@ class ForwardEuler : public virtual Stepper<Scalar>
     Scalar TakeStep();
 
     // Get solution vector
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution() const;
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
     // Get residual vector
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual() const;
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
   protected:
 

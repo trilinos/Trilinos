@@ -62,9 +62,9 @@ class ExampleApplicationRythmosInterface : public virtual Rythmos::NonlinearMode
 
     int evalModel(const Rythmos::InArgs<double> & inargs, const Rythmos::OutArgs<double> & outargs);
 
-    const Teuchos::RefCountPtr<Thyra::VectorBase<double> > get_vector();
+    Teuchos::RefCountPtr<Thyra::VectorBase<double> > get_vector();
 
-    const Teuchos::RefCountPtr<const Epetra_Map> & get_Epetra_Map();
+    Teuchos::RefCountPtr<const Epetra_Map> get_Epetra_Map();
 
   protected:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
