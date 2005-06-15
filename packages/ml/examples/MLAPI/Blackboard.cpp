@@ -56,14 +56,16 @@ int main(int argc, char *argv[])
     // in several ways. The simplest is to specify the number of global
     // elements:
     
-    Space MySpace(2 * GetNumProcs());
+    Space MySpace(4 * GetNumProcs());
 
-    // MLAPI::SerialMatrix is a very simple and convenient Epetra_RowMatrix derived
-    // class. Inserting a new element is just A(row, col) = val.
-    // Most of the methods of Epetra_RowMatrix are implemented in MLAPI::SerialMatrix.
+    // MLAPI::SerialMatrix is a very simple and convenient Epetra_RowMatrix 
+    // derived class. Inserting a new element is just A(row, col) = val.
+    // Most of the methods of Epetra_RowMatrix are implemented in 
+    // MLAPI::SerialMatrix.
     //
-    // MLAPI::SerialMatrix can be used for serial computations only. Furthermore, it
-    // is *not* meant to be efficient, just easy-to-use. Users should consider
+    // MLAPI::SerialMatrix can be used for serial computations only. 
+    // Furthermore, it is *not* meant to be efficient, just easy-to-use. 
+    // Users should consider
     // other Epetra_RowMatrix derived classes (like Epetra_CrsMatrix or
     // Epetra_VbrMatrix) in order to define parallel and scalable matrices.
     // Function Gallery() returns some parallel matrices, see one of the
