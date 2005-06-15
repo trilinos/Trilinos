@@ -42,7 +42,6 @@
 #include "Stepper_ForwardEuler.hpp"
 
 //#include "ExampleApplication.hpp"
-#include "ExampleApplicationRythmosInterface.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
