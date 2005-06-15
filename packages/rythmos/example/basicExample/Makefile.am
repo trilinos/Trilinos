@@ -41,6 +41,8 @@ noinst_PROGRAMS = $(EXAMPLE)
 #np# List all source files needed to compile the exe.
 basicExample_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/ExampleApplication.cpp $(srcdir)/ExampleApplicationRythmosInterface.cpp $(srcdir)/Stepper_ForwardEuler.cpp $(srcdir)/InOutArgs.cpp
 
+basicExample_INCLUDES= $(srcdir)/ExampleApplication.hpp $(srcdir)/InOutArgs.hpp $(srcdir)/Stepper.hpp $(srcdir)/Stepper_ForwardEuler.hpp $(srcdir)/ExampleApplicationRythmosInterface.hpp $(srcdir)/NonlinearModel.hpp $(srcdir)/Stepper_ExplicitRK.hpp
+
 #np# One DEPENDENCIES primary is needed for each exe listed above.  List any
 #np# libraries that the exe depends on.  (This primary is not absolutely
 #np# essential.)
@@ -71,10 +73,10 @@ common_dependencies=$(top_builddir)/src/librythmos.a \
 include $(top_builddir)/Makefile.export.rythmos
 
 if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES)) $(basicExample_INCLUDES)
 EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
 else
-EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
+EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(basicExample_INCLUDES)
 EXPORT_LIBS = $(RYTHMOS_LIBS)
 endif
 

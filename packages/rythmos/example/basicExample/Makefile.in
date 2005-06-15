@@ -279,6 +279,7 @@ EXAMPLE = basicExample
 #np# "(Exe_name)_(PRIMARY_NAME) = ").
 #np# List all source files needed to compile the exe.
 basicExample_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/ExampleApplication.cpp $(srcdir)/ExampleApplicationRythmosInterface.cpp $(srcdir)/Stepper_ForwardEuler.cpp $(srcdir)/InOutArgs.cpp
+basicExample_INCLUDES = $(srcdir)/ExampleApplication.hpp $(srcdir)/InOutArgs.hpp $(srcdir)/Stepper.hpp $(srcdir)/Stepper_ForwardEuler.hpp $(srcdir)/ExampleApplicationRythmosInterface.hpp $(srcdir)/NonlinearModel.hpp $(srcdir)/Stepper_ExplicitRK.hpp
 
 #np# One DEPENDENCIES primary is needed for each exe listed above.  List any
 #np# libraries that the exe depends on.  (This primary is not absolutely
@@ -307,8 +308,8 @@ basicExample_LDADD = \
 common_dependencies = $(top_builddir)/src/librythmos.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(basicExample_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES)) $(basicExample_INCLUDES)
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(RYTHMOS_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
