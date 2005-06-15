@@ -31,7 +31,6 @@
 #define Rythmos_INOUT_ARGS_H
 
 #include "Thyra_VectorBase.hpp"
-//#include "Epetra_Vector.h"
 #include "Teuchos_RefCountPtr.hpp"
 
 namespace Rythmos {
@@ -49,19 +48,24 @@ class InArgs
   public:
     
     // Destructor
-    ~InArgs();
+    ~InArgs() {};
 
     // Constructor
-    InArgs(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x, Scalar t);
-    InArgs();
+    InArgs(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x, Scalar t)
+      { x_ = x; t_ = t; };
+    InArgs() {};
 
     // Specify solution vector
-    void set_x(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x);
-    const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_x() const;
+    void set_x(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x)
+      { x_ = x; };
+    const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_x() const
+      { return(x_); };
 
     // Specify time
-    void set_t(Scalar t);
-    Scalar get_t() const;
+    void set_t(Scalar t)
+      { t_ = t; };
+    Scalar get_t() const
+      { return(t_); };
 
   protected:
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
@@ -82,14 +86,16 @@ class OutArgs
   public:
     
     // Destructor
-    ~OutArgs();
+    ~OutArgs() {};
 
     // Constructor
-    OutArgs();
+    OutArgs() {};
 
     // Request residual:
-    void request_F(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &F);
-    const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_F() const;
+    void request_F(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &F)
+      { F_ = F; };
+    const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &get_F() const
+      { return(F_); };
 
   protected:
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > F_;

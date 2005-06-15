@@ -159,7 +159,7 @@ Scalar ExplicitRK::TakeStep(Scalar dt)
 const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get_solution()
 {
   return(solution_vector_);
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ExplicitRK::get_residual
@@ -183,6 +183,6 @@ const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get
   outargs.set_F(residual_vector_);
   problem_->evalModel(inargs,outargs);
   return(residual_vector_);
-};
+}
 
 } // namespace Rythmos

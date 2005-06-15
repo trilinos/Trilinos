@@ -83,7 +83,7 @@ ExampleApplication::ExampleApplication(double lambda, int numElements)
   // Construct a Map with NumElements and index base of 0
   Teuchos::RefCountPtr<Epetra_Map> epetra_map_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_) );
   
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::~ExampleApplication
@@ -95,7 +95,7 @@ ExampleApplication::ExampleApplication(double lambda, int numElements)
 //-----------------------------------------------------------------------------
 //ExampleApplication::~ExampleApplication()
 //{
-//};
+//}
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::evalResidual
@@ -109,7 +109,7 @@ int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, d
 {
   y->Scale(lambda_,x); // y = lambda*x
   return 0;
-};
+}
 
 
 //-----------------------------------------------------------------------------
@@ -123,7 +123,7 @@ int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, d
 double ExampleApplication::getCoeff()
 {
   return lambda_;
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::get_epetra_map
@@ -136,7 +136,7 @@ double ExampleApplication::getCoeff()
 //const Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplication::get_epetra_map()
 //{
 //  return(epetra_map_);
-//};
+//}
 //
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::get_epetra_comm
@@ -149,7 +149,7 @@ double ExampleApplication::getCoeff()
 //const Teuchos::RefCountPtr<const Epetra_Comm> &ExampleApplication::get_epetra_comm()
 //{
 //  return(epetra_comm_);
-//};
+//}
 
 
 //-----------------------------------------------------------------------------
@@ -165,5 +165,5 @@ const Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0()
   Teuchos::RefCountPtr<Epetra_Vector> x0 = Teuchos::rcp(new Epetra_Vector(*epetra_map_));
   x0->Random();
   return(x0);
-};
+}
 

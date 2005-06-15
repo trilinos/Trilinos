@@ -109,5 +109,5 @@ const Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmos
 const Teuchos::RefCountPtr<const Epetra_Map> & ExampleApplicationRythmosInterface::get_Epetra_Map() 
 { 
   return(epetra_map_); 
-};
+}
 

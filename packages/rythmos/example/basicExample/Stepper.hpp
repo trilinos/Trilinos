@@ -33,7 +33,6 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "NonlinearModel.hpp"
 
 namespace Rythmos {
 

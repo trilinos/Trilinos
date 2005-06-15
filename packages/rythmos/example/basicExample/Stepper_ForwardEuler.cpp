@@ -47,7 +47,7 @@ ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const Rythmos::Non
   t_ = ST::zero();
   solution_vector_ = model_->get_vector();
   residual_vector_ = model_->get_vector();
-};
+}
 //
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::ForwardEuler
@@ -60,7 +60,7 @@ ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const Rythmos::Non
 template<class Scalar>
 ForwardEuler<Scalar>::ForwardEuler()
 {
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ~ForwardEuler::ForwardEuler
@@ -73,7 +73,7 @@ ForwardEuler<Scalar>::ForwardEuler()
 template<class Scalar>
 ForwardEuler<Scalar>::~ForwardEuler()
 {
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::TakeStep
@@ -89,7 +89,7 @@ Scalar ForwardEuler<Scalar>::TakeStep()
   // print something out about this method not supporting automatic variable step-size
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return(-ST::one());
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::TakeStep
@@ -117,7 +117,7 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
   t_ += dt;
 
   return(dt);
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::get_solution
@@ -131,7 +131,7 @@ template<class Scalar>
 const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &ForwardEuler<Scalar>::get_solution() const
 {
   return(solution_vector_);
-};
+}
 
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::get_residual
@@ -145,7 +145,7 @@ template<class Scalar>
 const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &ForwardEuler<Scalar>::get_residual() const
 {
   return(residual_vector_);
-};
+}
 
 } //  namespace Rythmos 
 
