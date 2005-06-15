@@ -39,6 +39,7 @@
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziOutputManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
+#include "AnasaziSortManager.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -64,6 +65,7 @@ namespace Anasazi {
     
     //! %Anasazi::BlockDavidson constructor.
     BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+                   const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
                    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
                    Teuchos::ParameterList &pl
                    );
@@ -122,8 +124,9 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
-    const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
+    Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
+    Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
+    Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm; 
     Teuchos::ParameterList _pl;
     //
     // Information obtained from the eigenproblem
@@ -157,12 +160,14 @@ namespace Anasazi {
   //
   template <class ScalarType, class MV, class OP>
   BlockDavidson<ScalarType,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+                                                 const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
                                                  const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
                                                  Teuchos::ParameterList &pl
                                                  ):
     _problem(problem), 
     _om(om),
     _pl(pl),
+    _sm(sm),
     _Op(_problem->GetOperator()),
     _MOp(_problem->GetM()),
     _Prec(_problem->GetPrec()),
@@ -307,7 +312,7 @@ namespace Anasazi {
         _os << "WARNING : numBlocks reset to "<< _numBlocks << endl;
     }
     //
-    // Reinitialize internal data and pointers, preparse for solve
+    // Reinitialize internal data and pointers, prepare for solve
     //
     _numRestarts = 0; 
     _iter = 0; 
@@ -326,6 +331,7 @@ namespace Anasazi {
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::BLAS<int,ScalarType> blas;
     Teuchos::LAPACK<int,ScalarType> lapack;
+    std::vector<int> _order;
     //
     // Define local block vectors
     //
@@ -342,12 +348,14 @@ namespace Anasazi {
     // Check to see if there is a mass matrix, so we know how much space is required.
     // [ If there isn't a mass matrix we can use a view of X.]
     //
-    if (_MOp.get())
+    if (_MOp.get()) {
       MX = MVT::Clone( *iVec, _blockSize );
+    }
     else {
       std::vector<int> index( _blockSize );
-      for (int i=0; i<_blockSize; i++)
+      for (int i=0; i<_blockSize; i++) {
         index[i] = i;
+      }
       MX = MVT::CloneView( *X, index );
     }
     //
@@ -414,7 +422,7 @@ namespace Anasazi {
               info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xcurrent, nFound, 2 );
             }
             else {
-              info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev, nFound, 0 );
+              info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev,    nFound, 0 );
             }
           }
           nFound = 0;
@@ -445,8 +453,9 @@ namespace Anasazi {
         // Note:  Only the upper half of the matrix is stored in KK
         //
         index.resize( localSize + _blockSize );
-        for (i=0; i < localSize + _blockSize; i++)
+        for (i=0; i < localSize + _blockSize; i++) {
           index[i] = _knownEV + i;
+        }
         Xtotal = MVT::CloneView( *X, index );
         Teuchos::SerialDenseMatrix<int,ScalarType> subKK( Teuchos::View, KK, localSize+_blockSize, _blockSize, 0, localSize );
         MVT::MvTransMv( one, *Xtotal, *KX, subKK );
@@ -481,10 +490,26 @@ namespace Anasazi {
           break;
         }
         //
-        // Update the search space :
+        //---------------------------------------------------
+        // Sort the ritz values using the sort manager
+        //---------------------------------------------------
+        _order.resize(localSize+_blockSize);
+        _sm->sort( this, localSize+_blockSize, &(_theta[0]), &_order );
+        // Sort the primitive ritz vectors
+        // We need the first _blockSize vectors ordered to generate the next
+        // columns immediately below, as well as when/if we restart.
+        Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
+        for (i=0; i<localSize+_blockSize; i++) {
+          blas.COPY(localSize+_blockSize, copyS[_order[i]], 1, S[i], 1);
+        }
+        // Create a view matrix of the first _blockSize vectors
+        Teuchos::SerialDenseMatrix<int,ScalarType> subS( Teuchos::View, S, localSize+_blockSize, _blockSize );
+        //
+        //---------------------------------------------------
+        // Update the search space 
+        //---------------------------------------------------
         // KX = Xtotal * S where S is the eigenvectors of the projected problem.
         //
-        Teuchos::SerialDenseMatrix<int,ScalarType> subS( Teuchos::View, S, localSize+_blockSize, _blockSize );
         MVT::MvTimesMatAddMv( one, *Xtotal, subS, zero, *KX );
         //
         // Apply the mass matrix for the next block
@@ -497,7 +522,7 @@ namespace Anasazi {
         OPT::Apply( *_Op, *KX, *R );
         //
         // Compute the residual :
-        // R = KX - diag(theta)*MX
+        // R = KX - MX*diag(theta)
         // 
         Teuchos::SerialDenseMatrix<int,ScalarType> D(_blockSize, _blockSize);
         for (i=0; i<_blockSize; i++ )
@@ -583,9 +608,9 @@ namespace Anasazi {
         if (_Prec.get()) {
           OPT::Apply( *_Prec, *R, *Xnext );
         }
-        else 
+        else {
           MVT::MvAddMv( one, *R, zero, *R, *Xnext );
-        
+        }
       } // for (nb = bStart; nb < maxBlock; nb++)
 
       //
@@ -738,8 +763,9 @@ namespace Anasazi {
       // Define the restarting space and local stiffness matrix
       //
       KK.putScalar( zero );
-      for (j=0; j<bStart*_blockSize; j++)
+      for (j=0; j<bStart*_blockSize; j++) {
         KK(j,j) = _theta[j + nFound];
+      }
       //
       // Form the restarting space
       //
@@ -749,12 +775,14 @@ namespace Anasazi {
       std::vector<int> index( oldCol );
       lapack.GEQRF(oldCol, newCol, S.values(), S.stride(), &_theta[0], &work[0], lwork, &info);
       lapack.ORGQR(oldCol, newCol, newCol, S.values(), S.stride(), &_theta[0], &work[0], lwork, &info);      
-      for (i=0; i<oldCol; i++)
+      for (i=0; i<oldCol; i++) {
         index[i] = _knownEV + i;
+      }
       Teuchos::RefCountPtr<MV> oldX = MVT::CloneView( *X, index );
       index.resize( newCol );
-      for (i=0; i<newCol; i++)
+      for (i=0; i<newCol; i++) {
         index[i] = _knownEV + i; 
+      }
       Teuchos::RefCountPtr<MV> newX = MVT::CloneView( *X, index );
       Teuchos::RefCountPtr<MV> temp_newX = MVT::Clone( *X, newCol );
       Teuchos::SerialDenseMatrix<int,ScalarType> _Sview( Teuchos::View, S, oldCol, newCol );
@@ -785,10 +813,21 @@ namespace Anasazi {
       //
     } // while (_iter < _maxIter)
     //
-    // Sort the eigenvectors
+    // Sort the computed eigenvalues, eigenvectors, and residuals
     //
-    if ((info==0) && (_knownEV > 0))
-      _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get(), &_resids); 
+    if ((info==0) && (_knownEV > 0)) {
+      // Sort the eigenvalues
+      _order.resize(_knownEV);
+      _sm->sort( this, _knownEV, &(*_evals)[0], &_order );
+      // make copy of _resids and reorder
+      std::vector<ScalarType> residsCopy(_resids);;
+      for (i=0; i<_knownEV; i++) {
+        _resids[i] = residsCopy[_order[i]];
+      }
+      // make copy of _evecs and reorder
+      Teuchos::RefCountPtr<MV> evecsCopy = MVT::CloneCopy(*_evecs);
+      MVT::SetBlock(*evecsCopy,_order,*_evecs);
+    }
     //
     // Print out a final summary if necessary
     //
@@ -857,6 +896,3 @@ namespace Anasazi {
 #endif
 
 // End of file AnasaziBlockDavidson.hpp
-
-
-
