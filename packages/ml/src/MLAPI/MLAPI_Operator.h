@@ -118,7 +118,7 @@ public:
     RCPAuxOperatorBox_ = AuxOp;
 
     RCPRowMatrix_ = Teuchos::rcp(Matrix,Ownership);
-    Epetra2MLMatrix(RCPRowMatrix_.get(), GetML_Operator());
+    ML_Operator_WrapEpetraMatrix(RCPRowMatrix_.get(), GetML_Operator());
 
     StackPop();
   }

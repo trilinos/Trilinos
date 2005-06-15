@@ -500,7 +500,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
       return(0);
   }
 
-  const bool SolvingMaxwell() const
+  bool SolvingMaxwell() const
   {
     return SolvingMaxwell_;
   }

@@ -479,11 +479,11 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
 int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
 {
-  ML*     ml_ptr;
+  ML*     ml_ptr = 0;
   int     NumDimensions;
-  double* in_x_coord;
-  double* in_y_coord;
-  double* in_z_coord;
+  double* in_x_coord = 0;
+  double* in_y_coord = 0;
+  double* in_z_coord = 0;
 
   // Check first for node coordinates, then for edge coordinates
   for (int ii=0; ii<2; ii++)
