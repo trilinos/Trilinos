@@ -136,10 +136,10 @@ namespace Anasazi {
     Teuchos::LAPACK<int,ScalarType> lapack;
     //
     // Reset the permutation if it is required.
-    //		
+    //
     if (perm) {
       for (i=0; i < n; i++) {
-	(*perm)[i] = i;
+        (*perm)[i] = i;
       }
     }
     //
@@ -149,18 +149,19 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("SM")) {
       for (j=1; j < n; ++j) {
-	temp = evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	temp2 = evals[j]*evals[j];
-	for (i=j-1; i>=0 && (evals[i]*evals[i])>temp2; --i) {
-	  evals[i+1]=evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	evals[i+1] = temp; 
-	if (perm) 
-	  (*perm)[i+1] = tempord;	
+        temp = evals[j]; 
+        if (perm) {
+          tempord = (*perm)[j];
+        }
+        temp2 = evals[j]*evals[j];
+        for (i=j-1; i>=0 && (evals[i]*evals[i])>temp2; --i) {
+          evals[i+1]=evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        evals[i+1] = temp; 
+        if (perm) 
+          (*perm)[i+1] = tempord;
       }
       return Ok;
     }
@@ -169,17 +170,17 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("SR")) {
       for (j=1; j < n; ++j) {
-	temp = evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	for (i=j-1; i>=0 && evals[i]>temp; --i) {
-	  evals[i+1]=evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	evals[i+1] = temp; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
+        temp = evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        for (i=j-1; i>=0 && evals[i]>temp; --i) {
+          evals[i+1]=evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        evals[i+1] = temp; 
+        if (perm)
+          (*perm)[i+1] = tempord;
       }
       return Ok;
     }
@@ -196,19 +197,19 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("LM")) {
       for (j=1; j < n; ++j) {
-	temp = evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	temp2 = evals[j]*evals[j];
-	for (i=j-1; i>=0 && (evals[i]*evals[i])<temp2; --i) {
-	  evals[i+1]=evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	evals[i+1] = temp; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
-      }
+        temp = evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        temp2 = evals[j]*evals[j];
+        for (i=j-1; i>=0 && (evals[i]*evals[i])<temp2; --i) {
+          evals[i+1]=evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        evals[i+1] = temp; 
+        if (perm)
+          (*perm)[i+1] = tempord;
+        }
       return Ok;
     }
     //---------------------------------------------------------------
@@ -216,17 +217,17 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("LR")) {
       for (j=1; j < n; ++j) {
-	temp = evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	for (i=j-1; i>=0 && evals[i]<temp; --i) {
-	  evals[i+1]=evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	evals[i+1] = temp; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
+        temp = evals[j]; 
+        if (perm)
+        tempord = (*perm)[j];
+        for (i=j-1; i>=0 && evals[i]<temp; --i) {
+          evals[i+1]=evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        evals[i+1] = temp; 
+        if (perm)
+          (*perm)[i+1] = tempord;
       }
       return Ok;
     }
@@ -251,10 +252,10 @@ namespace Anasazi {
     Teuchos::LAPACK<int,ScalarType> lapack;
     //
     // Reset the index
-    //		
+    //
     if (perm) {
       for (i=0; i < n; i++) {
-	(*perm)[i] = i;
+        (*perm)[i] = i;
       }
     }
     //
@@ -264,19 +265,19 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("SM")) {
       for (j=1; j < n; ++j) {
-	tempr = r_evals[j]; tempi = i_evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	temp=lapack.LAPY2(r_evals[j],i_evals[j]);
-	for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])>temp; --i) {
-	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
-      }	
+        tempr = r_evals[j]; tempi = i_evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        temp=lapack.LAPY2(r_evals[j],i_evals[j]);
+        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])>temp; --i) {
+          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+        if (perm)
+          (*perm)[i+1] = tempord;
+      }
       return Ok;
     }
     //---------------------------------------------------------------
@@ -284,18 +285,18 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("SR")) {
       for (j=1; j < n; ++j) {
-	tempr = r_evals[j]; tempi = i_evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	for (i=j-1; i>=0 && r_evals[i]>tempr; --i) {
-	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
-      }	
+        tempr = r_evals[j]; tempi = i_evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        for (i=j-1; i>=0 && r_evals[i]>tempr; --i) {
+          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+        if (perm)
+          (*perm)[i+1] = tempord;
+      }
       return Ok;
     }
     //---------------------------------------------------------------
@@ -303,17 +304,17 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("SI")) {
       for (j=1; j < n; ++j) {
-	tempr = r_evals[j]; tempi = i_evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	for (i=j-1; i>=0 && i_evals[i]>tempi; --i) {
-	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
+        tempr = r_evals[j]; tempi = i_evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        for (i=j-1; i>=0 && i_evals[i]>tempi; --i) {
+          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+        if (perm)
+          (*perm)[i+1] = tempord;
       }
       return Ok;
     }
@@ -322,19 +323,19 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("LM")) {
       for (j=1; j < n; ++j) {
-	tempr = r_evals[j]; tempi = i_evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	temp=lapack.LAPY2(r_evals[j],i_evals[j]);
-	for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])<temp; --i) {
-	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
-      }	
+        tempr = r_evals[j]; tempi = i_evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        temp=lapack.LAPY2(r_evals[j],i_evals[j]);
+        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])<temp; --i) {
+          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+        if (perm)
+          (*perm)[i+1] = tempord;
+      }        
       return Ok;
     }
     //---------------------------------------------------------------
@@ -342,18 +343,18 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("LR")) {
       for (j=1; j < n; ++j) {
-	tempr = r_evals[j]; tempi = i_evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	for (i=j-1; i>=0 && r_evals[i]<tempr; --i) {
-	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
-      }	
+        tempr = r_evals[j]; tempi = i_evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        for (i=j-1; i>=0 && r_evals[i]<tempr; --i) {
+          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+        if (perm)
+          (*perm)[i+1] = tempord;
+      }        
       return Ok;
     }
     //---------------------------------------------------------------
@@ -361,17 +362,17 @@ namespace Anasazi {
     //---------------------------------------------------------------
     if (!_which.compare("LI")) {
       for (j=1; j < n; ++j) {
-	tempr = r_evals[j]; tempi = i_evals[j]; 
-	if (perm)
-	  tempord = (*perm)[j];
-	for (i=j-1; i>=0 && i_evals[i]<tempi; --i) {
-	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-	  if (perm)
-	    (*perm)[i+1]=(*perm)[i];
-	}
-	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-	if (perm)
-	  (*perm)[i+1] = tempord;	
+        tempr = r_evals[j]; tempi = i_evals[j]; 
+        if (perm)
+          tempord = (*perm)[j];
+        for (i=j-1; i>=0 && i_evals[i]<tempi; --i) {
+          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+          if (perm)
+            (*perm)[i+1]=(*perm)[i];
+        }
+        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+        if (perm)
+          (*perm)[i+1] = tempord;
       }
       return Ok;
     }
