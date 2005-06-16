@@ -61,6 +61,10 @@
 
 namespace Anasazi {
   
+  /*  template <class OrdinalType, class ScalarType>
+  pointer_to_binary_function<OrdinalType,ScalarType> ptr_fun( OrdinalType (*f)(ScalarType*, ScalarType*) );
+  */
+
   template <class ScalarType, class MV, class OP>
   class BlockKrylovSchur : public Eigensolver<ScalarType,MV,OP> { 
   public:
@@ -174,6 +178,9 @@ namespace Anasazi {
     Teuchos::SerialDenseMatrix<int,ScalarType> _hessmatrix;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _ritzresiduals, _ritzvalues;
     
+    // Pointer to dummy function required by lapack.GEES/TREVC call
+    int (*dummyFunc)(ScalarType*, ScalarType*);
+
     // Output stream from the output manager
     std::ostream& _os;
     
@@ -1216,13 +1223,12 @@ namespace Anasazi {
       //
       int lwork = 4*n;
       std::vector<ScalarType> work( lwork );
-      std::vector<int> select( n );
       char side = 'R';
       char howmny = 'A';
       int mm; 
       const int ldvl = 1;
       ScalarType vl[ ldvl ];
-      lapack.TREVC( side, howmny, &select[0], n, Hj.values(), Hj.stride(), vl, ldvl,
+      lapack.TREVC( side, howmny, dummyFunc, n, Hj.values(), Hj.stride(), vl, ldvl,
 		    Q.values(), Q.stride(), n, &mm, &work[0], &info );
       assert(info==0);
       //
@@ -1461,12 +1467,11 @@ namespace Anasazi {
     //
     int lwork = 4*n;
     std::vector<ScalarType> work( lwork );
-    std::vector<int> select( n );
     std::vector<int> bwork( n );
     int sdim = 0; 
     char jobvs = 'V';
     char sort = 'N';
-    lapack.GEES( jobvs, sort, &select[0], n, ptr_h, ldh, &sdim, &(*_ritzvalues)[0],
+    lapack.GEES( jobvs, sort, dummyFunc, n, ptr_h, ldh, &sdim, &(*_ritzvalues)[0],
 		 &(*_ritzvalues)[_totallength], ptr_q, ldq, &work[0], lwork, &bwork[0], &info );
     assert(info==0);
     //
@@ -1503,7 +1508,6 @@ namespace Anasazi {
       // 's' is the i-th canonical basis vector.
       //
       for (i=0; i<n ; i++) {
-	//_ritzresiduals[i] = blas.NRM2(_blockSize, b_ptr + i*_blockSize, 1);
 	(*_ritzresiduals)[i] = blas.NRM2(_blockSize, b_ptr + i*_blockSize, 1);
       }   
     } else {
@@ -1517,8 +1521,8 @@ namespace Anasazi {
       ScalarType vl[ ldvl ];
       Teuchos::SerialDenseMatrix<int,ScalarType> Q_temp( n, n );
       Teuchos::SerialDenseMatrix<int,ScalarType> S( _blockSize, n );
-      lapack.TREVC( side, howmny, &select[0], n, H.values(), H.stride(), vl, ldvl,
-		  Q_temp.values(), Q_temp.stride(), n, &mm, &work[0], &info );
+      lapack.TREVC( side, howmny, dummyFunc, n, H.values(), H.stride(), vl, ldvl,
+		    Q_temp.values(), Q_temp.stride(), n, &mm, &work[0], &info );
       assert(info==0);
       //
       // Scale the eigenvectors so that their euclidean norms are all one.
