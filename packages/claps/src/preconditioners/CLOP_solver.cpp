@@ -131,7 +131,7 @@ CLOP_solver::~CLOP_solver()
   delete [] zz; delete [] cc; delete [] ss; delete [] norms;
   delete [] gmres_vec; delete [] gmres_sum; delete gSt_red; delete [] PAP;
   delete [] PAP_sum; delete [] IPIV; delete [] PAP_store; delete [] tied_down;
-  delete NodalDofs_St;
+  delete [] IPIV_gmres; delete [] WAMiW; delete [] WAMiW_proc;
   zero_pointers();
 }
 
@@ -154,7 +154,7 @@ void CLOP_solver::zero_pointers()
   CtT = 0; AP_matrix = 0; P_matrix = 0; pAp_vec = 0; ortho_vec = 0;
   ortho_sum = 0; VV = 0; HH = 0; RR = 0; zz = 0; cc = 0; ss = 0; norms = 0;
   gmres_sum = 0; gmres_vec = 0; gSt_red = 0; PAP = 0; PAP_sum = 0; IPIV = 0;
-  PAP_store = 0; tied_down = 0; NodalDofs_St;
+  PAP_store = 0; tied_down = 0; IPIV_gmres = 0; WAMiW = 0; WAMiW_proc = 0;
 }
 
 void CLOP_solver::process_constraints()
@@ -1054,10 +1054,7 @@ void CLOP_solver::factor_coarse_stiff()
 
 void CLOP_solver::solve_init()
 {
-  error_fac = 5;
-
-  NodalDofs_St = new Epetra_IntVector(ASt_red->RowMap());
-  NodalDofs_St->Export(*LDOverlap, *ExporterO2ST, Insert);
+  error_fac = 2;
 
   int ncdof_sol = Kc_gathered->NumMyRows();
   rhs_coarse  = new double[ncdof_sol];
@@ -1322,7 +1319,6 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   int i, iflag(1), gmres_iter;
   double dprod, rorig, normb, rcurr, ractual;
   double norm_rconstraint, norm_conerror;
-  double res_press, res_press_0, res_disp, res_disp_0, norm_disp, norm_press;
   //
   // determine reduced residual
   //
@@ -1335,7 +1331,6 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   rorig = sqrt(dprod);
   if (print_flag > 0) fout << "rorig = " << rorig << endl;
   uSt_red->PutScalar(0);
-  calc_resids(rSt_red, NodalDofs_St, res_disp_0, res_press_0);
   //
   // gmres iterations
   //
@@ -1391,8 +1386,6 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   zSt_red->Update(1.0, *rSt_red, -1.0);
   zSt_red->Dot(*zSt_red, &ractual);
   ractual = sqrt(ractual);
-  calc_resids(zSt_red, NodalDofs_St, res_disp, res_press);
-  calc_resids(uSt_red, NodalDofs_St, norm_disp, norm_press);
   if ((ractual/rorig > error_fac*solver_tol) && 
       (num_tied_down == 0)) gmres_status = 1;
   //
@@ -1411,20 +1404,6 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
       if (ncon_global > 0) {
 	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
 	fout << "constraint error norm = " << norm_conerror << endl;
-      }
-      if ((res_press > 0) && (print_flag == 7)) {
-        fout << "norm_disp, norm_press = " << norm_disp << " "
-	     << norm_press << endl;
-        if (res_disp_0 > 0)
-	  fout << "res_disp, rel_res_disp   = " << res_disp << " "
-	       <<  res_disp/res_disp_0 << endl;
-	else
-	  fout << "res_disp                 = " << res_disp << endl;
-        if (res_press_0 > 0)
-	  fout << "res_press, rel_res_press = " << res_press << " "
-	       <<  res_press/res_press_0 << endl;
-	else
-	  fout << "res_press                = " << res_press << endl;
       }
       fout << "number of iterations  = " << num_iter << endl;
       fout << "solver tolerance      = " << solver_tol << endl;
@@ -1904,26 +1883,4 @@ void CLOP_solver::spmat_datfile(const Epetra_CrsMatrix & A, char fname[],
     }
   }
   ffout.close();
-}
-
-void CLOP_solver::calc_resids(Epetra_Vector *R, 
-			      Epetra_IntVector *NDofs,
-			      double & res_disp, 
-			      double & res_press)
-{
-  double res_disp_loc(0), res_press_loc(0), *rval;
-  int i, n, *nodaldofs;
-  R->ExtractView(&rval);
-  n = R->MyLength();
-  NDofs->ExtractView(&nodaldofs);
-  for (i=0; i<n; i++) {
-    if (nodaldofs[i] == 7)
-      res_press_loc += rval[i]*rval[i];
-    else
-      res_disp_loc += rval[i]*rval[i];
-  }
-  Comm.SumAll(&res_disp_loc, &res_disp, 1);
-  res_disp = sqrt(res_disp);
-  Comm.SumAll(&res_press_loc, &res_press, 1);
-  res_press = sqrt(res_press);
 }

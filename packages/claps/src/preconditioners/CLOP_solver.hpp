@@ -76,10 +76,6 @@ class CLOP_solver
   void gmres_givens(double a, double b, double & c, double & s);
   void construct_solution(int gmres_iter, double normb);
   void spmat_datfile(const Epetra_CrsMatrix & A, char fname[], int opt);
-  void calc_resids(Epetra_Vector *R, 
-		   Epetra_IntVector *NDofs,
-		   double & res_disp, 
-		   double & res_press);
 
  private: // variables
   const Epetra_CrsMatrix *AStandard, *ConStandard;
@@ -91,7 +87,7 @@ class CLOP_solver
 
   Epetra_CrsMatrix *AOverlap, *Tran, *ASt_red_keep;
   const Epetra_CrsMatrix *ASt_red;
-  Epetra_IntVector *LDOverlap, *GNOverlap, *NodalDofs_St;
+  Epetra_IntVector *LDOverlap, *GNOverlap;
   Epetra_MultiVector *COverlap, *AP_matrix, *P_matrix;
   Epetra_Import *ImporterST2O, *Importer_coarse;
   Epetra_Export *ExporterO2ST, *ExporterSub2ST, *Exporter_lam;
@@ -113,13 +109,13 @@ class CLOP_solver
   int ndof_Standard, *sub_gdofs, nsub_gdofs, ncon_global, nx2, nx2_global;
   int *x2_dof, nmycon, *mycdof, gmres_flag, n_orthog_used;
   int pre_type_orthog, pre_type_coarse, orthog_option, *IPIV, ndof_global;
-  int ndof_global_red, print_flag, num_tied_down, *tied_down;
+  int ndof_global_red, print_flag, num_tied_down, *tied_down, *IPIV_gmres;
   double *xcent, *ycent, *zcent, *sol_coarse, *temp_coarse, *rhs_coarse;
   double *rcurra, *r_overlap, *z_overlap, *rhs_work, *sol_work, *tmp_work;
   double *rhoa, *betaa, *pApa, *Etri, *Dtri, *econa, *lambda_local;
   double *lambda, *ortho_vec, *pAp_vec, *ortho_sum, *PAP, *PAP_sum, *PAP_store;
   double *VV, *HH, *RR, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
-  double error_fac;
+  double error_fac, *WAMiW, *WAMiW_proc;
   ofstream fout;
   CLOP_sub *Asub;
   CLAPS_sparse_lu *Kc_fac;
