@@ -323,6 +323,9 @@ int Zoltan_PHG_Partition (
     Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
      "coarsening plot");
 
+  /* free array that may have been allocated in matching */
+  if (hgp->vtx_scal) ZOLTAN_FREE(&(hgp->vtx_scal));
+
   /****** Coarse Partitioning ******/
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
