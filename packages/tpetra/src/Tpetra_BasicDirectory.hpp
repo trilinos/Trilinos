@@ -65,7 +65,7 @@ namespace Tpetra {
         // directory from the minMyGID value from each image.
         if(ElementSpace.isContiguous()) {
           OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
-          allMinGIDs_.reserve(ElementSpace.platform().getNumImages() + one);
+          allMinGIDs_.resize(ElementSpace.platform().getNumImages() + one);
           OrdinalType minMyGID = ElementSpace.getMinMyGID();
           ElementSpace.comm().gatherAll(&minMyGID, &allMinGIDs_.front(), one);
           allMinGIDs_.back() = ElementSpace.getMaxAllGID() + one; // Set max cap
