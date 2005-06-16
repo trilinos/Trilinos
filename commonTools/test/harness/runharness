@@ -290,7 +290,7 @@ exit $exitStatus;
         $cmd .= "--invoke-configure=$trilinosDir/commonTools/test/harness/";
         $cmd .= "invoke-configures/".$buildOptions{'INVOKE-CONFIGURE'}." ";
         if ($buildOptions{'MAKE-COMMAND'}) {
-            $cmd .= "--make-cmd=".$buildOptions{'MAKE-COMMAND'}." ";
+            $cmd .= "--make-cmd=\"".$buildOptions{'MAKE-COMMAND'}."\" ";
         }
         $cmd .= "--recover ";
         $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results ";
@@ -330,7 +330,7 @@ exit $exitStatus;
         system("$cmd");
                         
         # Run runtests
-        if (!$skipTests && !$buildOptions{'BUILD-ONLY'} == "YES") {
+        if (!$skipTests && !$buildOptions{'BUILD-ONLY'} =~ m/"YES"/i) {
             $cmd  = "perl runtests ";
             $cmd .= "--trilinos-dir=$trilinosDir ";
             $cmd .= "--build-dir=".$buildOptions{'BUILD-DIR'}." ";
@@ -346,7 +346,7 @@ exit $exitStatus;
                 $cmd .= "--mpi-stop=".$buildOptions{'MPI-STOP'}." ";       
             }
             if ($buildOptions{'MPI-GO'}) {   
-                $cmd .= "--mpi-go='".$buildOptions{'MPI-GO'}."' ";       
+                $cmd .= "--mpi-go=\"".$buildOptions{'MPI-GO'}."\" ";       
             }
             $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results/";
             $cmd .= "$runStartTimeForFilename-build ";
