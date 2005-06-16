@@ -37,6 +37,7 @@ my $configFile;         # Config file to use            (default: ./config)
 my $verbosity;          # verbosity level               (default: 1)
 my $logVerbosity;       # log file verbosity level      (default: 0)
 
+my $noUpdate;		# don't update
 my $updated;            # have we been updated yet?
 
 my $runStartTime;
@@ -56,7 +57,7 @@ my @programArguments = @ARGV;
 ################################################################################
 
 getArgs();
-cvsUpdate();
+if(!$noUpdate) { cvsUpdate(); }
 init();
 
 my $exitStatus = run();
@@ -88,6 +89,7 @@ exit $exitStatus;
                     "config-file=s" => \$configFile,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
+                    "no-update" => \$noUpdate,
                     "updated" => \$updated,
                     "quiet" => \$quiet,
                     "help" => \$help );
