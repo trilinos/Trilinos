@@ -201,7 +201,7 @@ namespace Anasazi {
     // Input:
     //
     // n    (integer ) = Size of the array (input)
-    // y    (double* ) = Array of length n to be sorted (input/output)
+    // y    (ScalarType* ) = Array of length n to be sorted (input/output)
     // perm (integer*) = Array of length n with the permutation (input/output)
     //                   Optional argument
     
@@ -224,7 +224,7 @@ namespace Anasazi {
       for (i=igap; i<n; ++i) {
         for (j=i-igap; j>=0; j-=igap) {
           if (y[j] > y[j+igap]) {
-            double tmpD = y[j];
+            ScalarType tmpD = y[j];
             y[j] = y[j+igap];
             y[j+igap] = tmpD;
             if (perm) {
