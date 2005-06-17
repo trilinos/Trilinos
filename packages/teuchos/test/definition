@@ -8,16 +8,15 @@
 }
 
 (FRAMEWORK) {
-    TESTS = ParameterList/ParameterList_test.exe,
-            Time/Time_test.exe;
-    ARGS = --v;
+    TESTS = Time/Time_test.exe;
+    ARGS = -v;
     COMM = MPI;
 }
 
 (FRAMEWORK) {
     TESTS = RefCountPtr/RefCountPtr_test.exe,
             Workspace/workspace_test.exe,
-	    dyn_case/dyn_cast_test.exe;
+            dyn_cast/dyn_cast_test.exe;
     ARGS = --verbose;
     COMM = SERIAL;
 }
@@ -25,8 +24,13 @@
 (FRAMEWORK) {
     TESTS = BLAS/BLAS_test.exe,
             LAPACK/LAPACK_test.exe,
-	    DenseMatrix/DenseMatrix_test.exe,
-	    ParameterList/ParameterList_test.exe;
+            DenseMatrix/DenseMatrix_test.exe;
     ARGS = -v;
     COMM = SERIAL;
+}
+
+(FRAMEWORK) {
+    TESTS = ParameterList/ParameterList_test.exe;
+    ARGS = --v;
+    COMM = MPI,SERIAL;
 }
