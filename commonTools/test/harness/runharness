@@ -332,7 +332,7 @@ exit $exitStatus;
         system("$cmd");
                         
         # Run runtests
-        if (!$skipTests && !$buildOptions{'BUILD-ONLY'} =~ m/"YES"/i) {
+        if (!($skipTests || $buildOptions{'BUILD-ONLY'} =~ m/"YES"/i)) {
             $cmd  = "perl runtests ";
             $cmd .= "--trilinos-dir=$trilinosDir ";
             $cmd .= "--build-dir=".$buildOptions{'BUILD-DIR'}." ";
