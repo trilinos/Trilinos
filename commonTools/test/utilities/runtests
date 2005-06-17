@@ -416,7 +416,6 @@ cleanUp();
 	            $testExitStatus = 13 ;
 		}
             }
-	    print "testExitStatus = ".$testExitStatus."\n";
             
             if (!defined $testOutput) { 
                 print "\n\n";
