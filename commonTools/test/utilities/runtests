@@ -337,18 +337,37 @@ cleanUp();
         }
         $message .= "\n";
         printMessage($message, $v3);
-        
-        # Grab general information values for inclusion in test results files.        
-        chomp (my $hostName=`uname -n`);
-        chomp (my $dnsName=`hostname -d`);
-        chomp (my $ipAddress=`hostname -i`);
-        chomp (my $operatingSystem=`uname -o`);
-        chomp (my $kernelName=`uname -s`);
-        chomp (my $kernelRelease=`uname -r`);
-        chomp (my $kernelVersion=`uname -v`);
-        chomp (my $processor=`uname -p`);
-        chomp (my $machineHardware=`uname -m`);
-        chomp (my $hardwarePlatform=`uname -i`);
+                                                
+        # Grab general information values for inclusion in machine info file. 
+        my $hostName = "";          my $dnsName = "";           my $ipAddress = "";     
+        my $operatingSystem = "";   my $kernelName = "";        my $kernelRelease = "";
+        my $kernelVersion = "";     my $processor = "";         my $machineHardware = "";
+        my $hardwarePlatform = "";  my $badCmd = 0;          
+        $badCmd = system('hostname -s > /dev/null 2>&1');
+        if (!$badCmd) { 
+            chomp($hostName=`hostname -s`); 
+        } else { 
+            $badCmd = system('uname -n > /dev/null 2>&1');
+            if (!$badCmd) { chomp($hostName=`uname -n`); }
+        }
+        $badCmd = system('hostname -d > /dev/null 2>&1');
+        if (!$badCmd) { chomp($dnsName=`hostname -d`); }
+        $badCmd = system('hostname -i > /dev/null 2>&1');
+        if (!$badCmd) { chomp($ipAddress=`hostname -i`); }
+        $badCmd = system('uname -o > /dev/null 2>&1');
+        if (!$badCmd) { chomp($operatingSystem=`uname -o`); }
+        $badCmd = system('uname -s > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelName=`uname -s`); }
+        $badCmd = system('uname -r > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelRelease=`uname -r`); }
+        $badCmd = system('uname -v > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelVersion=`uname -v`); }
+        $badCmd = system('uname -p > /dev/null 2>&1');
+        if (!$badCmd) { chomp($processor=`uname -p`); }
+        $badCmd = system('uname -m > /dev/null 2>&1');
+        if (!$badCmd) { chomp($machineHardware=`uname -m`); }
+        $badCmd = system('uname -i > /dev/null 2>&1');
+        if (!$badCmd) { chomp($hardwarePlatform=`uname -i`); }
         
         # Grab the repository branch tag
         my $branchTag = "";

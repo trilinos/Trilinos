@@ -37,7 +37,7 @@ my $configFile;         # Config file to use            (default: ./config)
 my $verbosity;          # verbosity level               (default: 1)
 my $logVerbosity;       # log file verbosity level      (default: 0)
 
-my $noUpdate;		# don't update
+my $noUpdate;		    # don't update
 my $updated;            # have we been updated yet?
 
 my $runStartTime;
@@ -362,18 +362,36 @@ exit $exitStatus;
             }
         }
                                                 
-        # Grab general information values for inclusion in machine info file.        
-        chomp (my $hostName=`hostname -s`);     
-        if ($?) { chomp ($hostName=`uname -n`); }   if ($?) { $hostName = ""; }
-        chomp (my $dnsName=`hostname -d`);          if ($?) { $dnsName = ""; }
-        chomp (my $ipAddress=`hostname -i`);        if ($?) { $ipAddress = ""; }
-        chomp (my $operatingSystem=`uname -o`);     if ($?) { $operatingSystem = ""; }
-        chomp (my $kernelName=`uname -s`);          if ($?) { $kernelName = ""; }
-        chomp (my $kernelRelease=`uname -r`);       if ($?) { $kernelRelease = ""; }
-        chomp (my $kernelVersion=`uname -v`);       if ($?) { $kernelVersion = ""; }
-        chomp (my $processor=`uname -p`);           if ($?) { $processor = ""; }
-        chomp (my $machineHardware=`uname -m`);     if ($?) { $machineHardware = ""; }
-        chomp (my $hardwarePlatform=`uname -i`);    if ($?) { $hardwarePlatform = ""; }
+        # Grab general information values for inclusion in machine info file. 
+        my $hostName = "";          my $dnsName = "";           my $ipAddress = "";     
+        my $operatingSystem = "";   my $kernelName = "";        my $kernelRelease = "";
+        my $kernelVersion = "";     my $processor = "";         my $machineHardware = "";
+        my $hardwarePlatform = "";  my $badCmd = 0;          
+        $badCmd = system('hostname -s > /dev/null 2>&1');
+        if (!$badCmd) { 
+            chomp($hostName=`hostname -s`); 
+        } else { 
+            $badCmd = system('uname -n > /dev/null 2>&1');
+            if (!$badCmd) { chomp($hostName=`uname -n`); }
+        }
+        $badCmd = system('hostname -d > /dev/null 2>&1');
+        if (!$badCmd) { chomp($dnsName=`hostname -d`); }
+        $badCmd = system('hostname -i > /dev/null 2>&1');
+        if (!$badCmd) { chomp($ipAddress=`hostname -i`); }
+        $badCmd = system('uname -o > /dev/null 2>&1');
+        if (!$badCmd) { chomp($operatingSystem=`uname -o`); }
+        $badCmd = system('uname -s > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelName=`uname -s`); }
+        $badCmd = system('uname -r > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelRelease=`uname -r`); }
+        $badCmd = system('uname -v > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelVersion=`uname -v`); }
+        $badCmd = system('uname -p > /dev/null 2>&1');
+        if (!$badCmd) { chomp($processor=`uname -p`); }
+        $badCmd = system('uname -m > /dev/null 2>&1');
+        if (!$badCmd) { chomp($machineHardware=`uname -m`); }
+        $badCmd = system('uname -i > /dev/null 2>&1');
+        if (!$badCmd) { chomp($hardwarePlatform=`uname -i`); }
             
         # Create machine info file for database.
         my $machineInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/machine.txt";
