@@ -217,7 +217,7 @@ RUN (s858352-nightly-serial) {
 
     BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
-    INVOKE-CONFIGURE    = darwin-s858352-mpi;
+    INVOKE-CONFIGURE    = darwin-s858352;
     TEST-CATEGORY       = FRAMEWORK;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;
