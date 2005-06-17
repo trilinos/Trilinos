@@ -1,9 +1,9 @@
 ../configure \
 CPPFLAGS="-D__USE_STD_IOSTREAM" \
-CXXFLAGS="-O3 -DMPICH_SKIP_MPICXX" \
+CXXFLAGS="-g3 -DMPICH_SKIP_MPICXX" \
 TRILINOS_TEMPLATE_OBJS="cxx_repository" \
-CFLAGS=-O3 \
-FFLAGS=-O3 \
+CFLAGS=-g3 \
+FFLAGS=-g3 \
 --with-ar="/projects/trilinos/Trilinos/sampleScripts/stratus_ar.pl ar cru" \
 --with-libs="/projects/trilinos/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_stratus.a  \
 /projects/trilinos/Trilinos3PL/prebuilt/umfpack-4.1/libumfpack_stratus.a  \
@@ -27,6 +27,7 @@ FFLAGS=-O3 \
 --enable-didasko \
 --enable-epetra \
 --enable-epetra-abc \
+--enable-epetra-thyra \
 --enable-epetraext \
 --enable-epetraext-transform \
 --enable-epetraext-inout \
@@ -49,4 +50,5 @@ FFLAGS=-O3 \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
 --enable-teuchos-experimental \
+--enable-thyra \
 --enable-triutils
