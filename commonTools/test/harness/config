@@ -206,3 +206,42 @@ RUN (redstormXcompile-nightly-mpi) {
     SSG-USERNAME        = jmwille;
 
 }
+
+###############################################################################
+#
+# s858352 nightly serial
+#
+###############################################################################
+
+RUN (s858352-nightly-serial) {
+
+    BUILD-DIR           = SERIAL-NEW;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = darwin-s858352-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MPI-START           = lamboot;
+    MPI-STOP            = lamhalt;
+    TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# s858352 nightly mpi
+#
+###############################################################################
+
+RUN (s858352-nightly-mpi) {
+
+    BUILD-DIR           = MPI-NEW;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = darwin-s858352-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 1;
+    MPI-START           = lamboot;
+    MPI-STOP            = lamhalt;
+    TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnphenow;
+
+}
