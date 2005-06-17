@@ -101,11 +101,10 @@ public:
 
   bool MatrixShapeOK() const;
 
-  //! Not supported (only symmetric matrices).
-  int SetUseTranspose(bool UseTranspose) 
-  {
-    AMESOS_CHK_ERR(-1);
-  }
+  //!  Amesos_Taucs does not support transpose at this time.
+  /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
+   */
+  int SetUseTranspose(bool UseTranspose) { return( UseTranspose?1:0 );};
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const 

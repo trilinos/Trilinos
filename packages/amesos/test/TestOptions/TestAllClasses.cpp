@@ -79,10 +79,11 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Taucs" ) {
 	bool RunTaucsTest = true;
-	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
+	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) ) 
 	  RunTaucsTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunTaucsTest = false ;   //  Bug #1403
+	if ( MissingADiagonal ) RunTaucsTest = false ; // Bug #1449
 
 	if ( RunTaucsTest && verbose) cout << " Testing TAUCS " << endl ; 
 	
