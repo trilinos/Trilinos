@@ -405,6 +405,18 @@ cleanUp();
         
             # Trim $testOutput.
             $testOutput = substr ($testOutput, -1000000);
+            #
+            #  On some platforms, mpirun returns 0 when run on 
+            #  non-binary files, such as scripts.  The following 
+            #  hack tests for this and changes the exit status from 
+            #  0 to 13.
+            #
+	    if ($testOutput =~ "process did not invoke MPI_INIT" ) {
+	        if ( !$testExitStatus )  {
+	            $testExitStatus = 13 ;
+		}
+            }
+	    print "testExitStatus = ".$testExitStatus."\n";
             
             if (!defined $testOutput) { 
                 print "\n\n";
