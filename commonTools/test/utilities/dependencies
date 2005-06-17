@@ -17,6 +17,9 @@ aztecoo = \
 belos = \
 --enable-belos
 
+claps = \
+--enable-claps
+
 didasko = \
 --enable-didasko
 
