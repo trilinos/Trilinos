@@ -293,13 +293,13 @@ LOCA::BorderedSystem::Bordering::solveBZero(
     Y.assign(*G);
     L.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
 	   Y.values(), Y.stride(), &info);
+    delete [] ipiv;
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
       finalStatus = 
 	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						     callingFunction);
     }
-    delete [] ipiv;
   }
 
   // Now compute X
@@ -328,6 +328,7 @@ LOCA::BorderedSystem::Bordering::solveBZero(
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
+    delete RHS;
   }
 
   return finalStatus;
@@ -391,13 +392,13 @@ LOCA::BorderedSystem::Bordering::solveAZero(
     int info;
     L.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
 	   Y.values(), Y.stride(), &info);
+    delete [] ipiv;
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
       finalStatus = 
 	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						     callingFunction);
     }
-    delete [] ipiv;
   }
 
   return finalStatus;
@@ -454,6 +455,7 @@ LOCA::BorderedSystem::Bordering::solveFZero(
   int info;
   L.GESV(t.numRows(), Y.numCols(), t.values(), t.stride(), ipiv, 
 	 Y.values(), Y.stride(), &info);
+  delete [] ipiv;
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
     finalStatus = 
@@ -519,6 +521,7 @@ LOCA::BorderedSystem::Bordering::solveContiguous(
   int info;
   L.GESV(t2.numRows(), Y.numCols(), t2.values(), t2.stride(), ipiv, 
 	 Y.values(), Y.stride(), &info);
+  delete [] ipiv;
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
     finalStatus = 
