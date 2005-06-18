@@ -1478,6 +1478,9 @@ AC_CONFIG_FILES([
                 test/epetra/NOX_NewTest/Makefile
                 test/epetra/NOX_Vector/Makefile
                 test/epetra/NOX_Group/Makefile
+		test/epetra/LOCA_TestProblems/Makefile
+		test/epetra/LOCA_TestProblems/Tcubed/Makefile
+		test/epetra/LOCA_UnitTests/Makefile
                 test/epetra/LOCA_NewTest/Makefile
                 test/epetra/LOCA_Group/Makefile
 		test/epetra/LOCA_Pitchfork/Makefile

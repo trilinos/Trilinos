@@ -27,16 +27,4 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_EPETRA_TESTS
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem DS6.5.1 MultiPhysics
-else
-NOX_SUBDIRS = 
-endif
-
-if BUILD_LOCA_EPETRA_TESTS
-LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Pitchfork
-else
-LOCA_SUBDIRS =
-endif
-
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+SUBDIRS = Tcubed

@@ -48,7 +48,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ../../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -63,7 +63,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = test/epetra
+subdir = test/epetra/LOCA_TestProblems
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
@@ -100,8 +100,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem DS6.5.1 \
-	MultiPhysics LOCA_TestProblems LOCA_UnitTests LOCA_Pitchfork
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
@@ -321,11 +320,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_EPETRA_TESTS_FALSE@NOX_SUBDIRS = 
-@BUILD_EPETRA_TESTS_TRUE@NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem DS6.5.1 MultiPhysics
-@BUILD_LOCA_EPETRA_TESTS_FALSE@LOCA_SUBDIRS = 
-@BUILD_LOCA_EPETRA_TESTS_TRUE@LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Pitchfork
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+SUBDIRS = Tcubed
 all: all-recursive
 
 .SUFFIXES:
@@ -338,9 +333,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/epetra/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/epetra/LOCA_TestProblems/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/epetra/Makefile
+	  $(AUTOMAKE) --foreign  test/epetra/LOCA_TestProblems/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -512,7 +507,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || mkdir "$(distdir)/$$subdir" \
