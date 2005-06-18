@@ -372,6 +372,7 @@ int Zoltan_PHG_Redistribute(
     char * yo = "Zoltan_PHG_Redistribute";
     PHGComm *ocomm = ohg->comm;
     int     *v2Col, *n2Row, ierr=ZOLTAN_OK, i, *ranks;
+    int     reqx=hgp->nProc_x_req, reqy=hgp->nProc_y_req;
     float   frac;
     MPI_Group allgrp, newgrp;
     MPI_Comm  nmpicomm;
@@ -392,10 +393,15 @@ int Zoltan_PHG_Redistribute(
     MPI_Group_free(&newgrp);
     MPI_Group_free(&allgrp);   
     ZOLTAN_FREE(&ranks);
+
+    if (reqx==1 || reqy==1)
+        ;
+    else
+        reqx = reqy = -1;
     
     /* fill ncomm */
     ierr = Zoltan_PHG_Set_2D_Proc_Distrib(ocomm->zz, nmpicomm, ocomm->myProc-lo, hi-lo+1, 
-                                          hgp->nProc_x_req, hgp->nProc_y_req, 
+                                          reqx, reqy, 
                                           ncomm);
     
     /* if new communicator is not NULL; this process is in that group
