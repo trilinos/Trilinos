@@ -604,3 +604,11 @@ LOCA::EpetraNew::Group::augmentJacobianForHomotopy(double conParamValue)
 //   else
 //     return NOX::Abstract::Group::NotConverged;
 // }
+
+void
+LOCA::EpetraNew::Group::setJacobianOperatorForSolve(
+					      const Epetra_Operator& op) const
+{
+  // Set Jacobian operator for solve
+  sharedLinearSystem.getObject(this).setJacobianOperatorForSolve(op);
+}

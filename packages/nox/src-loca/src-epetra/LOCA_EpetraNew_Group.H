@@ -388,6 +388,9 @@ namespace LOCA {
       //! Sets the scale vector.  
       void setScaleVector(const NOX::Abstract::Vector& s);
 
+      //! Sets the Jacobian operator
+      void setJacobianOperatorForSolve(const Epetra_Operator& op) const;
+
     protected:
 
       //! Parameter vector
