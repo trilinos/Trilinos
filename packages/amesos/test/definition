@@ -5,6 +5,6 @@
 (FRAMEWORK) {
     TESTS = scripts/daily/mpi/TestAmesos.exe;
     COMM = CUSTOM-MPI;
-    ARGS = TestAmesos.exe True;
+    ARGS = TestAmesos.exe True True;
 }
 

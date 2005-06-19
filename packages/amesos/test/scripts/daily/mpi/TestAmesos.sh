@@ -39,6 +39,8 @@
 #      run.  This assists a developer in figuring out which tests failed.
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
+# $3 - Indiciates if the test is being called by commonTools/test/utilities/runtests, 
+#      the new automated nightly test script
 
 ## Some machines use a command different than mpirun to run mpi jobs.  The
 ## test-harness.plx script sets the environment variable
@@ -160,6 +162,14 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPA
   endif
   cd ..
 end
+
+cpoy $file1 and $file2 to standard out
+if ( "$3" == "True" ) then
+    echo "@#@#@#@#  Summary file @#@#@#@#@"
+    cat ../$file
+    echo "@#@#@#@# Error file @#@#@#@#@"
+    cat ../$file2
+endif
 
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
