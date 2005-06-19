@@ -42,15 +42,12 @@
 #include "Teuchos_Array.hpp"
 
 #define TEUCHOS_TIMER(funcName, strName) \
-static Teuchos::Time& funcName() \
-{static Teuchos::RefCountPtr<Time> rtn = \
+static Teuchos::Time& funcName()       \
+{static Teuchos::RefCountPtr<Time> rtn =        \
 Teuchos::TimeMonitor::getNewTimer(strName); return *rtn;}
 
 namespace Teuchos
 {
-
-  using std::string;
-
   /** 
    * \brief A timer class that starts when constructed and stops when the 
    * destructor is called. 

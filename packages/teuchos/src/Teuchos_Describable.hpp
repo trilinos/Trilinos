@@ -49,14 +49,14 @@ enum EVerbosityLevel {
  * allowing subclasses to optionally provide detailed debug-style
  * information about their current state.  This interface has just two
  * virtual member functions, <tt>describe(void)</tt> and
- * <tt>describe()</tt>, which both have default implementations.  The
+ * <tt>description()</tt>, which both have default implementations.  The
  * shorter version of <tt>describe(void)</tt> (which takes no arguments
  * and returns an <tt>std::string</tt> object) is meant for very short
- * descriptions while the longer version of <tt>describe()</tt> takes
+ * descriptions while the longer version of <tt>description()</tt> takes
  * and returns an <tt>std::ostream</tt> argument and is designed for
  * more detailed formated output.
  *
- * Since both of these <tt>describe()</tt> functions have reasonable
+ * Since both of these <tt>description()</tt> functions have reasonable
  * default implementations, when a subclass inherits from this base
  * class, no virtual functions need to be overridden to start with.
  * However, when debugging time comes, one or both of these functions
@@ -68,11 +68,11 @@ enum EVerbosityLevel {
 class Describable {
 public:
 
-	/// Default value for <tt>verLevel</tt> in <tt>describe()</tt>
+	/// Default value for <tt>verLevel</tt> in <tt>description()</tt>
 	static const EVerbosityLevel   verbLevel_default;
-	/// Default value for <tt>leadingIndent</tt> in <tt>describe()</tt>
+	/// Default value for <tt>leadingIndent</tt> in <tt>description()</tt>
 	static const std::string       leadingIndent_default;
-	/// Default value for <tt>indentSpacer</tt> in <tt>describe()</tt>
+	/// Default value for <tt>indentSpacer</tt> in <tt>description()</tt>
 	static const std::string       indentSpacer_default;
 
 	/** \brief . */
@@ -92,7 +92,7 @@ public:
 	 * human-readable name for a subclass, especially if templating is
 	 * used.
 	 */
-	virtual std::string describe() const;
+	virtual std::string description() const;
 
 	/** \brief Print the object using given indentation with some
 	 * verbosity level to an <tt>std::ostream</tt> object.
@@ -126,7 +126,7 @@ public:
 	 * performs:
    \verbatim
 
-   return out << leadingIndent << this->describe() << std::endl; \endverbatim
+   return out << leadingIndent << this->description() << std::endl; \endverbatim
 	 *
 	 * A subclass should override this function to provide more
 	 * interesting and more useful information about the object.

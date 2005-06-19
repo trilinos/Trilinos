@@ -36,7 +36,7 @@ const std::string     Describable::leadingIndent_default  = "";
 
 const std::string     Describable::indentSpacer_default   = "  ";
 
-std::string Describable::describe() const
+std::string Describable::description() const
 {
 	return typeid(*this).name();
 }
@@ -48,7 +48,7 @@ std::ostream& Describable::describe(
 	,const std::string          indentSpacer
 	) const
 {
-	return out << leadingIndent << indentSpacer << this->describe() << std::endl;
+	return out << leadingIndent << indentSpacer << this->description() << std::endl;
 }
 
 } // namespace Teuchos
