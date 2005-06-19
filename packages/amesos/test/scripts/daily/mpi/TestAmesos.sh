@@ -114,6 +114,7 @@ echo `uname -a` >>& $file
 setenv MPI_COMM_MAX 4096
 setenv MPI_GROUP_MAX 4096
 foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+# foreach f ( Test_Epetra_RowMatrix )
   cd $f
   set exefiles = (*.exe)
   if ( "${exefiles}X" != 'X' ) then
@@ -163,12 +164,14 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPA
   cd ..
 end
 
-cpoy $file1 and $file2 to standard out
+#  copy $file1 and $file2 to standard out
 if ( "$3" == "True" ) then
     echo "@#@#@#@#  Summary file @#@#@#@#@"
-    cat ../$file
-    echo "@#@#@#@# Error file @#@#@#@#@"
-    cat ../$file2
+    cat $file
+    if ( -f $file2 ) then
+        echo "@#@#@#@# Error file @#@#@#@#@"
+        cat $file2
+    endif
 endif
 
 ## At this point, it is assumed that the current directory is

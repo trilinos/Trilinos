@@ -580,8 +580,8 @@ int NextMain( int argc, char *argv[] ) {
       if ( verbose ) cout << " Testing " << AmesosClasses[i] << endl ;
       AmesosClassesInstalled[i] = true;
       Teuchos::ParameterList ParamList ;
-      ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
-      Abase->SetParameters( ParamList );
+      ParamList.set( "NoDestroy", true );    // Prevents Amesos_Mumps from deleting data
+      Abase->SetParameters( ParamList );     // which causes Amesos_Mumps to crash  on this trivial instantiation 
     }
     delete Abase ; 
     }
