@@ -90,11 +90,11 @@ namespace Teuchos {
   {
     //! Madatory typedef for result of magnitude
     typedef T magnitudeType;
-		//! Determines of scalar type is complex
+		//! Determines if scalar type is complex
 		static const bool isComplex = false;
-		//! Determines of scalar type supports relational operators such as <, >, <=, >=.
+		//! Determines if scalar type supports relational operators such as <, >, <=, >=.
 		static const bool isComparable = false;
-    //! Does this scalar type have machine-specific parameters (i.e. eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax() are supported)
+    //! Determines if scalar type have machine-specific parameters (i.e. eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax() are supported)
 		static const bool hasMachineParameters = false;
     //! Returns relative machine precision.
     static inline magnitudeType eps()   { return UndefinedScalarTraits<T>::notDefined(); };
