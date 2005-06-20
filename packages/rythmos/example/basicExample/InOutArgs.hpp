@@ -48,24 +48,26 @@ class InArgs
   public:
     
     // Destructor
-    ~InArgs() {};
+    ~InArgs();
+// {};
 
     // Constructor
-    InArgs(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x, Scalar t)
-      { x_ = x; t_ = t; };
-    InArgs() {};
+    InArgs(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x, Scalar t);
+//      { x_ = x; t_ = t; };
+    InArgs();
+// {};
 
     // Specify solution vector
-    void set_x(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x)
-      { x_ = x; };
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > get_x() const
-      { return(x_); };
+    void set_x(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x);
+//      { x_ = x; };
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > get_x() const;
+//      { return(x_); };
 
     // Specify time
-    void set_t(Scalar t)
-      { t_ = t; };
-    Scalar get_t() const
-      { return(t_); };
+    void set_t(Scalar t);
+//      { t_ = t; };
+    Scalar get_t() const;
+//      { return(t_); };
 
   protected:
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
@@ -86,16 +88,18 @@ class OutArgs
   public:
     
     // Destructor
-    ~OutArgs() {};
+    ~OutArgs();
+// {};
 
     // Constructor
-    OutArgs() {};
+    OutArgs();
+// {};
 
     // Request residual:
-    void request_F(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &F)
-      { F_ = F; };
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > get_F() const
-      { return(F_); };
+    void request_F(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &F);
+//      { F_ = F; };
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > get_F() const;
+//      { return(F_); };
 
   protected:
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > F_;

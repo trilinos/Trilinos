@@ -63,7 +63,7 @@ ForwardEuler<Scalar>::ForwardEuler()
 }
 
 //-----------------------------------------------------------------------------
-// Function      : ~ForwardEuler::ForwardEuler
+// Function      : ForwardEuler::~ForwardEuler
 // Purpose       : destructor
 // Special Notes :
 // Scope         : public

@@ -52,7 +52,7 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-class ExampleApplicationRythmosInterface : public virtual Rythmos::NonlinearModel<double>
+class ExampleApplicationRythmosInterface : public Rythmos::NonlinearModel<double>
 {
   public:
 
