@@ -102,7 +102,8 @@ tpetra = \
 --enable-tpetra
 
 thyra = \
---enable-thyra
+--enable-thyra \
+--enable-epetra-thyra
 
 triutils = \
 --enable-triutils \
