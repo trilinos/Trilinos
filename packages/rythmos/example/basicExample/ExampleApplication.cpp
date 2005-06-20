@@ -47,13 +47,8 @@
 // Current Owner  : $Author$
 //-----------------------------------------------------------------------------
 
-#include "Epetra_Map.h"
-#include "Epetra_SerialComm.h"
-#include "Epetra_Vector.h"
-#include "Rythmos_ConfigDefs.h"
 
 #include "ExampleApplication.hpp"
-//#include "Thyra_EpetraThyraWrappers.hpp"
 
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplication
