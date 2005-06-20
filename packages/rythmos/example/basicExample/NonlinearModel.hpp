@@ -32,16 +32,16 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-//#include "InOutArgs.hpp"
+#include "InOutArgs.hpp"
 
 
 namespace Rythmos {
 
-  template<class Scalar>
-    class InArgs;
- 
-  template<class Scalar>
-    class OutArgs;
+//  template<class Scalar>
+//    class InArgs;
+// 
+//  template<class Scalar>
+//    class OutArgs;
   
 //-----------------------------------------------------------------------------
 // Class         : NonlinearModel

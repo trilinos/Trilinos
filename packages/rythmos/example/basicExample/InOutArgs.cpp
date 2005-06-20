@@ -41,36 +41,36 @@ namespace Rythmos {
 
 template<class Scalar> 
 InArgs<Scalar>::~InArgs()
-{};
+{}
 template<class Scalar> 
 InArgs<Scalar>::InArgs(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x, Scalar t)
 { 
   x_ = x; 
   t_ = t; 
-};
+}
 template<class Scalar> 
 InArgs<Scalar>::InArgs()
-{};
+{}
 template<class Scalar> 
 void InArgs<Scalar>::set_x(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x)
 { 
   x_ = x; 
-};
+}
 template<class Scalar> 
 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > InArgs<Scalar>::get_x() const
 { 
   return(x_); 
-};
+}
 template<class Scalar> 
 void InArgs<Scalar>::set_t(Scalar t)
 { 
   t_ = t; 
-};
+}
 template<class Scalar> 
 Scalar InArgs<Scalar>::get_t() const
 { 
   return(t_); 
-};
+}
 
 
 //-----------------------------------------------------------------------------
@@ -83,20 +83,20 @@ Scalar InArgs<Scalar>::get_t() const
 
 template<class Scalar> 
 OutArgs<Scalar>::~OutArgs()
-{};
+{}
 template<class Scalar> 
 OutArgs<Scalar>::OutArgs()
-{};
+{}
 template<class Scalar> 
 void OutArgs<Scalar>::request_F(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &F) 
 { 
   F_ = F; 
-};
+}
 template<class Scalar> 
 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > OutArgs<Scalar>::get_F() const
 { 
   return(F_); 
-};
+}
 
 }// namespace Rythmos 
 
