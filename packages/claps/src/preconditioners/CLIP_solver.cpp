@@ -116,8 +116,10 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
     endtime = MPI_Wtime();
     fout << "elapsed time for clip solver init  = " 
 	 << endtime-starttime << " seconds" << endl;
-    if (krylov_method != 1) fout << "pcg solver will be used" << endl;
+    if (krylov_method == 0) fout << "pcg solver will be used" << endl;
     if (krylov_method == 1) fout << "gmres solver will be used" << endl;
+    if (krylov_method == 2) fout << "pcg solver will be used" << endl;
+    if (krylov_method == 3) fout << "gcr solver will be used" << endl;
     fout.close();
   }
 }
@@ -149,6 +151,7 @@ CLIP_solver::~CLIP_solver()
   delete [] ss; delete [] norms; delete [] gmres_vec; delete [] gmres_sum;
   delete [] tied_down; delete Phir_St; delete [] PhirTPhir; delete Rhs_null;
   delete [] IPIV_gmres; delete [] WAMiW; delete [] WAMiW_proc;
+  delete [] C_gcr; delete [] U_gcr;
   zero_pointers();
 }
 
@@ -1548,7 +1551,8 @@ void CLIP_solver::zero_pointers()
   Etri = 0; econa = 0; P_ortho = 0; AP_ortho = 0; orth1 = 0; orth2 = 0; 
   owner_flag = 0; VV = 0; RR = 0; HH = 0; zz = 0; cc = 0; ss = 0; norms = 0; 
   gmres_vec = 0; gmres_sum = 0; tied_down = 0; Phir_St = 0; PhirTPhir = 0;
-  Rhs_null = 0; IPIV_gmres = 0; WAMiW = 0; WAMiW_proc = 0;
+  Rhs_null = 0; IPIV_gmres = 0; WAMiW = 0; WAMiW_proc = 0; C_gcr = 0;
+  U_gcr = 0;
 }
 
 void CLIP_solver::construct_subdomains()
@@ -1578,19 +1582,23 @@ void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 			int & num_iter, int & solver_status,
 			int & max_added_cor)
 {
-  int pcg_status, gmres_status;
+  int pcg_status, gmres_status, gcr_status;
   double starttime, endtime;
   max_added_cor = max_added_corner;
   Comm.Barrier();
   if (MyPID == 0) starttime = MPI_Wtime();
   if (print_flag >= 0) fout.open("CLIP_solver.data", ios::app);
-  if (krylov_method != 1) {
+  if ((krylov_method == 0) || (krylov_method == 2)) {
     pcg_solve(uStand, fStand, num_iter, pcg_status);
     solver_status = pcg_status;
   }
   if (krylov_method == 1) {
     gmres_solve(uStand, fStand, num_iter, gmres_status);
     solver_status = gmres_status;
+  }
+  if (krylov_method == 3) {
+    gcr_solve(uStand, fStand, num_iter, gcr_status);
+    solver_status = gcr_status;
   }
   Comm.Barrier();
   if (print_flag > 0) {
@@ -1604,6 +1612,7 @@ void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 void CLIP_solver::pcg_init()
 {
   error_fac = 2;
+  if (krylov_method == 1) max_orthog = 0;
 
   pB_Sub  = new Epetra_Vector(*MapB_Sub);
   pB_St   = new Epetra_Vector(*MapB_St);
@@ -1631,17 +1640,25 @@ void CLIP_solver::pcg_init()
   int nrB_St = rB_St->GlobalLength();
   if (nrB_St < max_orthog) max_orthog = nrB_St - 1; 
 
-  P_ortho  = new double[max_orthog*nB_own];
-  AP_ortho = new double[max_orthog*nB_own];
-  orth1 = new double[max_orthog];
-  orth2 = new double[max_orthog];
-  if (krylov_method != 1) {
+  if ((krylov_method == 0) || (krylov_method == 2)) {
+    P_ortho  = new double[max_orthog*nB_own];
+    AP_ortho = new double[max_orthog*nB_own];
+    orth1 = new double[max_orthog];
+    orth2 = new double[max_orthog];
     rhoa = new double[maxiter+2];
     betaa = new double[maxiter+2];
     pApa = new double[maxiter+2];
     Dtri = new double[maxiter+2];
     Etri = new double[maxiter+2];
     econa = new double[maxiter+2];
+  }
+  if (krylov_method == 3) {
+    int m = max_orthog+maxiter;
+    C_gcr = new double[m*nB_own];
+    U_gcr = new double[m*nB_own];
+    orth1 = new double[m];
+    orth2 = new double[m];
+    c_remove = -1;
   }
   if (krylov_method == 1) {
     int m = nB_own*(maxiter+1);
@@ -2010,6 +2027,156 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   // update factorization of WAMiW
   //
   update_WAMiW(n_orthog_added);
+  //
+  // calculate Lagrange multipliers and check residual for full system
+  //
+  if (ncon_global > 0) {
+    calculate_AuStand(uStand, vStand);
+    vStand->Update(1.0, *fStand, -1.0);
+    calculate_multipliers(uStand, norm_rconstraint, norm_conerror);
+  }
+  if (MyPID == 0) {
+    //    cout << "rorig                 = " << rorig << endl;
+    if (print_flag > 0) {
+      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << endl;
+      fout << "rcurr(actual)         = " << ractual << endl;
+      if (ncon_global > 0) {
+	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
+	fout << "constraint error norm = " << norm_conerror << endl;
+      }
+      fout << "number of iterations  = " << num_iter << endl;
+      fout << "solver tolerance      = " << solver_tol << endl;
+    }
+  }
+}
+
+void CLIP_solver::gcr_solve(Epetra_Vector* uStand, 
+          const Epetra_Vector* fStand, int & num_iter, int & gcr_status)
+{
+  int i, iflag(1), gcr_iter;
+  double dprod, rorig, normb, rcurr, ractual, rnorm;
+  double norm_rconstraint, norm_conerror;
+  //
+  // determine residual for constrained problem
+  //
+  if (ncon_global >  0) Tran->Multiply(true, *fStand, *r_St);
+  if (ncon_global == 0) r_St->Update(1.0, *fStand, 0.0);
+  uB_St->PutScalar(0);
+  //
+  // calculate initial residual
+  //
+  r_St->Norm2(&rorig);
+  rcurra[0] = rorig;
+  if (print_flag > 0) {
+    fout << "original residual                          = " << rorig << endl;
+  }
+  //
+  // calculate residual at boundary following initial static condensation
+  //
+  stat_cond();
+  rB_St->Norm2(&rnorm);
+  if (print_flag > 0) {
+    fout << "----------after initial static condensation---------" << endl;
+    fout << "residual                                   = " << rnorm << endl;
+    if (n_orthog_used == 0)
+      fout << "----------------------------------------------------" << endl;
+  }
+  //
+  // remove part of residual parallel to null space for mode acceleration
+  // technique
+  //
+  if (num_tied_down > 0) {
+    remove_orthog_null(rB_St);
+    if (print_flag > 0) fout << "singular system being solved" << endl;
+  }
+  //
+  // used stored vectors to minimize initial residual
+  //
+  if (n_orthog_used > 0) {
+    initial_update_gcr();
+    rB_St->Norm2(&rnorm);
+    if (print_flag > 0) {
+      fout << "----------after using stored search directions------" << endl;
+      fout << "number of search dirs used for init sol    = " 
+	   << n_orthog_used << endl;
+      fout << "residual                                   = " << rnorm
+	   << endl;
+      fout << "----------------------------------------------------" << endl;
+    }
+  }
+  //
+  // gcr iterations
+  //
+  gcr_status = 1;
+  if (rnorm/rorig <= solver_tol) {
+    gcr_status = 0;
+    num_iter = 0;
+  }
+  if (gcr_status == 1) {
+    for (gcr_iter=0; gcr_iter<maxiter; gcr_iter++) {
+      if (MyPID == -1) cout << "iteration " << gcr_iter+1 
+			    << " of maxiter = " << maxiter << endl;
+      
+      apply_preconditioner();
+      
+      determine_AxB(zB_St, ApB_St);
+      
+      pB_St->Update(1.0, *rB_St, 0.0);
+      
+      orthogonalize_gcr(ApB_St, pB_St, n_orthog_used+gcr_iter, -1);
+      
+      store_gcr(        ApB_St, pB_St, n_orthog_used+gcr_iter);
+      
+      update_gcr(       uB_St, rB_St,  n_orthog_used+gcr_iter+1);
+      
+      rB_St->Norm2(&rcurr);
+      num_iter = gcr_iter+1;
+      if ((iflag > 0) && (rcurr/rorig <= solver_tol)) {
+	gcr_status = 0;
+	break;
+      }
+    }
+  }
+  //
+  // construct the solution by applying preconditioner to uB_St
+  //
+  pB_St->Update(1.0, *uB_St, 0.0);
+  rB_St->Update(1.0, *uB_St, 0.0);
+  apply_preconditioner();
+  uB_St->Update(1.0, *zB_St, 0.0);
+  //
+  // calculate uStand
+  //
+  if (ncon_global == 0) r_St->Update(1.0, *fStand, 0.0);
+  if (ncon_global >  0) Tran->Multiply(true, *fStand, *r_St);
+  calculate_u_St();
+  if (ncon_global == 0) uStand->Update(1.0, *u_St, 0.0);
+  if (ncon_global > 0) Tran->Multiply(false, *u_St, *uStand);
+  //
+  // calculate actual residual for reduced system
+  //
+  calculate_Au(u_St, work_St2);
+  work_St2->Update(1.0, *r_St, -1.0);
+  work_St2->Dot(*work_St2, &ractual);
+  ractual = sqrt(ractual);
+  if ((ractual/rorig > error_fac*solver_tol) &&
+      (num_tied_down ==0)) gcr_status = 1;
+  //
+  // add solution vector (prior to applying preconditioner) to stored space
+  //
+  if ((num_iter > 0) && (max_orthog > 0)) {
+    determine_AxB(uB_St, ApB_St);
+    orthogonalize_gcr(ApB_St, pB_St, n_orthog_used, c_remove);
+    int icol = n_orthog_used;
+    if (c_remove >= 0) icol = c_remove;
+    store_gcr(        ApB_St, pB_St, icol);
+    n_orthog_used++;
+    if (n_orthog_used >= max_orthog) {
+      n_orthog_used = max_orthog;
+      c_remove++;
+      if (c_remove == max_orthog) c_remove = 0;
+    }
+  }
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -2729,8 +2896,9 @@ void CLIP_solver::update_WAMiW(int n_orthog_added)
   char TRANSA = 'T'; char TRANSB = 'N';
   double ALPHA(1), BETA(0);
   //  if (MyPID == 0) cout << "n_orthog_added = " << n_orthog_added << endl;
-  if (n_orthog_added > 0) {
-    n_orthog_used += n_orthog_added;
+  int n_new = n_orthog_used + n_orthog_added;
+  if ((n_orthog_added > 0) && (n_new <= max_orthog)) {
+    n_orthog_used = n_new;
     /*
     if (nB_own > 0)
       EB.GEMM(TRANSA, TRANSB, n_orthog_used, n_orthog_used, nB_own, ALPHA,
@@ -2780,3 +2948,106 @@ void CLIP_solver::check_orthogonality(Epetra_Vector *Vec)
   norm_orthog = sqrt(norm_orthog)/norm_vec;
   if (MyPID == 0) cout << "norm_orthog = " << norm_orthog << endl;
 }
+
+void CLIP_solver::initial_update_gcr()
+{
+  int i, INFO;
+  double *rbst, *pbst, *apbst;
+  Epetra_BLAS EB;
+  char TRANS = 'T'; double ALPHA(1); double BETA(0);
+  char TRANS_solver = 'N';
+  rB_St->ExtractView(&rbst);
+  pB_St->ExtractView(&pbst);
+  ApB_St->ExtractView(&apbst);
+  int nn = n_orthog_used;
+  if (nB_own > 0) 
+    EB.GEMV(TRANS, nB_own, nn, ALPHA, C_gcr, nB_own, rbst, BETA, orth1);
+  else
+    myzero(orth1, nn);
+  Comm.SumAll(orth1, orth2, nn);
+  TRANS = 'N';
+  if (nB_own > 0) {
+    EB.GEMV(TRANS, nB_own, nn, ALPHA, U_gcr, nB_own, orth2, BETA, pbst);
+    EB.GEMV(TRANS, nB_own, nn, ALPHA, C_gcr, nB_own, orth2, BETA, apbst);
+  }
+  rB_St->Update(-1.0, *ApB_St, 1.0);
+  uB_St->Update( 1.0,  *pB_St, 0.0);
+}
+
+void CLIP_solver::orthogonalize_gcr(Epetra_Vector *c_i, 
+				    Epetra_Vector *u_i,
+				    int n, int col_ignore)
+{
+  int i, M, N;
+  double *ci, *ui, norm_ci;
+  Epetra_BLAS EB;
+  c_i->ExtractView(&ci);
+  u_i->ExtractView(&ui);
+  M = c_i->MyLength();
+  N = n;
+  char TRANS = 'T'; double ALPHA(1); double BETA(0);
+  if (N > 0) {
+    if (M > 0) 
+      EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, ci, BETA, orth1);
+    else  myzero(orth1, N);
+    Comm.SumAll(orth1, orth2, N);
+    if (col_ignore >= 0) orth2[col_ignore] = 0;
+    TRANS = 'N'; ALPHA = -1; BETA = 1;
+    if (M > 0) {
+      EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, orth2, BETA, ci);
+      EB.GEMV(TRANS, M, N, ALPHA, U_gcr, M, orth2, BETA, ui);
+    }
+    TRANS = 'T'; ALPHA =  1; BETA = 0;
+    if (M > 0) 
+      EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, ci, BETA, orth1);
+    else myzero(orth1, N);
+    Comm.SumAll(orth1, orth2, N);
+    if (col_ignore >= 0) orth2[col_ignore] = 0;
+    TRANS = 'N'; ALPHA = -1; BETA = 1;
+    if (M > 0) {
+      EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, orth2, BETA, ci);
+      EB.GEMV(TRANS, M, N, ALPHA, U_gcr, M, orth2, BETA, ui);
+    }
+  }
+  c_i->Norm2(&norm_ci);
+  c_i->Scale(1/norm_ci);
+  u_i->Scale(1/norm_ci);
+}
+
+void CLIP_solver::update_gcr(Epetra_Vector *x_vec, Epetra_Vector *r_vec,
+			     int n)
+{
+ int i, M, N;
+  double *xvec, *rvec;
+  Epetra_BLAS EB;
+  r_vec->ExtractView(&rvec);
+  x_vec->ExtractView(&xvec);
+  M = r_vec->MyLength();
+  N = n;
+  char TRANS = 'T'; double ALPHA(1); double BETA(0);
+  if (M > 0) 
+    EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, rvec, BETA, orth1);
+  else  myzero(orth1, N);
+  Comm.SumAll(orth1, orth2, N);
+  TRANS = 'N'; ALPHA = -1; BETA = 1;
+  if (M > 0) {
+    EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, orth2, BETA, rvec);
+    ALPHA = 1;
+    EB.GEMV(TRANS, M, N, ALPHA, U_gcr, M, orth2, BETA, xvec);
+  }
+}
+
+void CLIP_solver::store_gcr(Epetra_Vector *c_i, 
+			    Epetra_Vector *u_i,
+			    int icol)
+{
+  int i, M, N;
+  double *ci, *ui;
+  c_i->ExtractView(&ci);
+  u_i->ExtractView(&ui);
+  M = c_i->MyLength();
+  int ibeg = M*icol;
+  memcpy(&C_gcr[ibeg], ci, M*sizeof(double));
+  memcpy(&U_gcr[ibeg], ui, M*sizeof(double));
+}
+

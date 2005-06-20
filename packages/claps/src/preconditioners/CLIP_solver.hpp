@@ -115,6 +115,17 @@ class CLIP_solver
   void update_WAMiW(int n_orthog_added);
   void check_orthogonality(Epetra_Vector *Vec);
 
+  void gcr_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand, 
+		 int & num_iter, int & gcr_status);
+  void initial_update_gcr();
+  void orthogonalize_gcr(Epetra_Vector *c_i, 
+			 Epetra_Vector *u_i,
+			 int n, int col_ignore);
+  void update_gcr(Epetra_Vector *x_vec, Epetra_Vector *r_vec, int n);
+  void store_gcr(Epetra_Vector *c_i, 
+		 Epetra_Vector *u_i,
+		 int icol);
+
  private: // variables
   const Epetra_CrsMatrix *ASub, *ConStandard;
   const Epetra_IntVector *NodalDofs;
@@ -145,13 +156,13 @@ class CLIP_solver
   int *comp1, *comp2, *sub1, *sub2, *dset1, *dset2, ndof_set, *corner_flag;
   int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global, max_added_corner;
   int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR, sub_begin;
-  int num_tied_down, *tied_down, *IPIV_gmres;
+  int num_tied_down, *tied_down, *IPIV_gmres, c_remove;
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
   double *P_ortho, *AP_ortho, *orth1, *orth2, *PhirTPhir;
   double *VV, *RR, *HH, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
-  double error_fac, *WAMiW, *WAMiW_proc;
+  double error_fac, *WAMiW, *WAMiW_proc, *C_gcr, *U_gcr;
   bool *owner_flag;
   ofstream fout;
 };
