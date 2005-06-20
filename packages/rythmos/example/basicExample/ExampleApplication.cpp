@@ -133,11 +133,11 @@ double ExampleApplication::getCoeff()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-//const Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplication::get_epetra_map()
-//{
-//  return(epetra_map_);
-//}
-//
+const Teuchos::RefCountPtr<const Epetra_Map> ExampleApplication::get_epetra_map()
+{
+  return(epetra_map_);
+}
+
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplication::get_epetra_comm
 // Purpose       : Return epetra_comm generated at construction time
@@ -146,10 +146,10 @@ double ExampleApplication::getCoeff()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/02/05
 //-----------------------------------------------------------------------------
-//const Teuchos::RefCountPtr<const Epetra_Comm> &ExampleApplication::get_epetra_comm()
-//{
-//  return(epetra_comm_);
-//}
+const Teuchos::RefCountPtr<const Epetra_Comm> ExampleApplication::get_epetra_comm()
+{
+  return(epetra_comm_);
+}
 
 
 //-----------------------------------------------------------------------------

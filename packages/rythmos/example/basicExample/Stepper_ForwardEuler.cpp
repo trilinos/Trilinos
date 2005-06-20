@@ -48,7 +48,7 @@ ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const Rythmos::Non
   solution_vector_ = model_->get_vector();
   residual_vector_ = model_->get_vector();
 }
-//
+
 //-----------------------------------------------------------------------------
 // Function      : ForwardEuler::ForwardEuler
 // Purpose       : constructor

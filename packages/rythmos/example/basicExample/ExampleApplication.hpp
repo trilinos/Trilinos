@@ -64,12 +64,12 @@ class ExampleApplication
     const Teuchos::RefCountPtr<Epetra_Vector> get_x0();
 
     // Return epetra_map 
-    const Teuchos::RefCountPtr<const Epetra_Map> get_epetra_map()
-      { return(epetra_map_); };
+    const Teuchos::RefCountPtr<const Epetra_Map> get_epetra_map();
+//      { return(epetra_map_); };
 
     // Return epetra_comm
-    const Teuchos::RefCountPtr<const Epetra_Comm> get_epetra_comm()
-      { return(epetra_comm_); };
+    const Teuchos::RefCountPtr<const Epetra_Comm> get_epetra_comm();
+//      { return(epetra_comm_); };
 
   protected:
 

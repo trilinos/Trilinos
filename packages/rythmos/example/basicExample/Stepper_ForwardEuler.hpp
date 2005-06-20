@@ -51,7 +51,7 @@ class ForwardEuler : public virtual Stepper<Scalar>
     
     // Constructor
     ForwardEuler();
-    ForwardEuler(const Teuchos::RefCountPtr<const NonlinearModel<Scalar> > &model_);
+    ForwardEuler(const Teuchos::RefCountPtr<const NonlinearModel<Scalar> > &model);
     
     // Destructor
     ~ForwardEuler();
