@@ -27,11 +27,7 @@
 // ***********************************************************************
 // @HEADER
 
-//#include "ExampleApplication.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "ExampleApplicationRythmosInterface.hpp"
-//#include "Thyra_EpetraLinearOp.hpp"
-//#include "Epetra_Map.h"
 
 //-----------------------------------------------------------------------------
 // Function      : ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface
