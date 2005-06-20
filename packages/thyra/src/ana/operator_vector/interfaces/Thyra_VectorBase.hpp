@@ -147,7 +147,7 @@ std::ostream& VectorBase<Scalar>::describe(
     ,const std::string                   indentSpacer
     ) const
 {
-  out << leadingIndent << indentSpacer << "type = \'" << this->describe()
+  out << leadingIndent << indentSpacer << "type = \'" << this->description()
       << "\', size = " << this->space()->dim() << "\n";
   if(verbLevel >= Teuchos::VERB_HIGH) {
     RTOpPack::SubVectorT<Scalar> sv;

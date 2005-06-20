@@ -84,13 +84,13 @@ original linear operator is returned from <tt>this->getOrigOp()</tt>.
 
 The operator most recently wrapped is returned from <tt>this->getOp()</tt>.
 The individual scalings and transformations are not exposed from this
-interface but can be viewed by calling <tt>this->describe()</tt> with a
+interface but can be viewed by calling <tt>this->description()</tt> with a
 verbosity level of ???.  The arguments passed into the constructor
 <tt>ScaledAdjointLinearOp()</tt> or <tt>initialize()</tt> can always be
 extracted using <tt>uninitialize()</tt>.
 
 This subclass keeps track of all of the individual scalings <tt>scalar_i</tt>
-and adjoining operations <tt>op_i(...)</tt> so that the <tt>describe()</tt>
+and adjoining operations <tt>op_i(...)</tt> so that the <tt>description()</tt>
 function can print this out and also so that the operations can be reversed.
 
 The copy constructor and assignment operators are declared private since some
@@ -191,10 +191,10 @@ public:
   //@{
                                                 
   /** \brief Outputs
-   * <tt>ScaledAdjointLinearOp<Scalar>{this->getOrigOp().describe())</tt>
+   * <tt>ScaledAdjointLinearOp<Scalar>{this->getOrigOp().description())</tt>
    * along with the dimensions.
    */
-  std::string describe() const;
+  std::string description() const;
 
   /** \brief Prints out the original operator as well as all of the scalings
    * and transpositions in the order that they occurred.

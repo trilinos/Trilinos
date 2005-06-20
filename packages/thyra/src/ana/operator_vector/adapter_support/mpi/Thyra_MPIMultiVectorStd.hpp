@@ -101,7 +101,7 @@ void MPIMultiVectorStd<Scalar>::uninitialize(
 // Overridden from Teuchos::Describable
 
 template<class Scalar>
-std::string MPIMultiVectorStd<Scalar>::describe() const
+std::string MPIMultiVectorStd<Scalar>::description() const
 {
   return (std::string("MPIMultiVectorStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }

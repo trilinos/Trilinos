@@ -90,7 +90,7 @@ void MPIVectorStd<Scalar>::uninitialize(
 // Overridden from Teuchos::Describable
 
 template<class Scalar>
-std::string MPIVectorStd<Scalar>::describe() const
+std::string MPIVectorStd<Scalar>::description() const
 {
   return (std::string("MPIVectorStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }

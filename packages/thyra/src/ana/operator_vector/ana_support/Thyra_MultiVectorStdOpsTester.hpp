@@ -60,7 +60,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
 
   if(out)
     *out << "\n*** Entering MultiVectorStdOpsTester<"<<ST::name()<<">::checkStdOps(...) ...\n"
-         << "using a \'" << vecSpc.describe() << "\' object ...\n";
+         << "using a \'" << vecSpc.description() << "\' object ...\n";
 
   bool success = true;
   if(out) *out << "\nvecSpc.dim() = " << vecSpc.dim() << std::endl;

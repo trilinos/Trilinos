@@ -199,7 +199,7 @@ public:
   /** \brief Prints just the name <tt>MultiplicativeLinearOp</tt> along with
    * the overall dimensions and the number of constituent operators.
    */
-  std::string describe() const;
+  std::string description() const;
 
   /** \brief Prints the details about the constituent linear operators.
    *

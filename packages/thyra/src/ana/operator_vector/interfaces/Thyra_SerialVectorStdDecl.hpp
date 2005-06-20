@@ -184,7 +184,7 @@ public:
   /** @name Overridden from Teuchos::Describable */
   //@{
   /** \brief . */
-  std::string describe() const;
+  std::string description() const;
   //@}
 
 private:

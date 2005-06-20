@@ -166,7 +166,7 @@ SerialVectorStd<Scalar>::space() const
 // Overridden from Teuchos::Describable
 
 template<class Scalar>
-std::string SerialVectorStd<Scalar>::describe() const
+std::string SerialVectorStd<Scalar>::description() const
 {
   return (std::string("SerialVectorStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }

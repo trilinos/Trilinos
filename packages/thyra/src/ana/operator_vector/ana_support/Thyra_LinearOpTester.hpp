@@ -109,7 +109,7 @@ bool LinearOpTester<Scalar>::check(
     if(show_all_tests())
       *out <<endl<<li<< "describe op:\n" << Teuchos::describe(op,verbLevel,li,is);
     else
-      *out <<endl<<li<< "describe op: " << op.describe() << endl;
+      *out <<endl<<li<< "describe op: " << op.description() << endl;
   }
 
   if(out)
@@ -459,11 +459,11 @@ bool LinearOpTester<Scalar>::compare(
     if(show_all_tests())
       *out <<endl<<li<< "describe op1:\n" << Teuchos::describe(op1,verbLevel,li,is);
     else
-      *out <<endl<<li<< "describe op1: " << op1.describe() << endl;
+      *out <<endl<<li<< "describe op1: " << op1.description() << endl;
     if(show_all_tests())
       *out <<endl<<li<< "describe op2:\n" << Teuchos::describe(op2,verbLevel,li,is);
     else
-      *out <<endl<<li<< "describe op2: " << op2.describe() << endl;
+      *out <<endl<<li<< "describe op2: " << op2.description() << endl;
   }
 
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >

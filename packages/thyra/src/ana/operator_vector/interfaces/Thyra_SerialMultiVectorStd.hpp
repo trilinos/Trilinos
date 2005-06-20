@@ -130,7 +130,7 @@ void SerialMultiVectorStd<Scalar>::uninitialize(
 // Overridden from Teuchos::Describable
 
 template<class Scalar>
-std::string SerialMultiVectorStd<Scalar>::describe() const
+std::string SerialMultiVectorStd<Scalar>::description() const
 {
   return (std::string("SerialMultiVectorStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }

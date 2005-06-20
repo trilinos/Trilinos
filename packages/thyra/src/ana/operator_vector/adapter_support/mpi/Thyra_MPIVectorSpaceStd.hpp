@@ -87,7 +87,7 @@ void MPIVectorSpaceStd<Scalar>::uninitialize( MPI_Comm *mpiComm, Index *localSub
 // Overridden from Teuchos::Describable
 
 template<class Scalar>
-std::string MPIVectorSpaceStd<Scalar>::describe() const
+std::string MPIVectorSpaceStd<Scalar>::description() const
 {
   return (std::string("MPIVectorSpaceStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }

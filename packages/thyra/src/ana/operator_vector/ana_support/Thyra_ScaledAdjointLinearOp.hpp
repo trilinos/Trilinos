@@ -114,14 +114,14 @@ void ScaledAdjointLinearOp<Scalar>::uninitialize(
 // Overridden from Teuchos::Describable
                                                 
 template<class Scalar>
-std::string ScaledAdjointLinearOp<Scalar>::describe() const
+std::string ScaledAdjointLinearOp<Scalar>::description() const
 {
   assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
   oss << "ScaledAdjointLinearOp<" << ST::name() << ">{overallScalar="
       << overallScalar() << ",overallTransp="<<toString(overallTransp())<<",origOp="
-      << origOp_->describe() << "}";
+      << origOp_->description() << "}";
   return oss.str();
 }
 
@@ -138,7 +138,7 @@ std::ostream& ScaledAdjointLinearOp<Scalar>::describe(
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
-      out << this->describe() << std::endl;
+      out << this->description() << std::endl;
       break;
     case Teuchos::VERB_MEDIUM:
     case Teuchos::VERB_HIGH:

@@ -119,7 +119,7 @@ public:
 
   // Overridden form Teuchos::Describable */
 
-  std::string describe() const
+  std::string description() const
     {
       return (std::string("SerialTridiagLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
     }

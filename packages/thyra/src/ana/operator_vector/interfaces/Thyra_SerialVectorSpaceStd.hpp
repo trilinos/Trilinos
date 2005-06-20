@@ -57,7 +57,7 @@ void SerialVectorSpaceStd<Scalar>::initialize( int dim )
 // Overridden from Teuchos::Describable
 
 template<class Scalar>
-std::string SerialVectorSpaceStd<Scalar>::describe() const
+std::string SerialVectorSpaceStd<Scalar>::description() const
 {
   return (std::string("SerialVectorSpaceStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }

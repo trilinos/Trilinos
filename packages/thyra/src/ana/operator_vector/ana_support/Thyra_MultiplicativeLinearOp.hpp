@@ -93,7 +93,7 @@ void MultiplicativeLinearOp<Scalar>::uninitialize(
 // Overridden from Teuchos::Describable
                                                 
 template<class Scalar>
-std::string MultiplicativeLinearOp<Scalar>::describe() const
+std::string MultiplicativeLinearOp<Scalar>::description() const
 {
   assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
@@ -116,7 +116,7 @@ std::ostream& MultiplicativeLinearOp<Scalar>::describe(
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
-      out << this->describe() << std::endl;
+      out << this->description() << std::endl;
       break;
     case Teuchos::VERB_MEDIUM:
     case Teuchos::VERB_HIGH:

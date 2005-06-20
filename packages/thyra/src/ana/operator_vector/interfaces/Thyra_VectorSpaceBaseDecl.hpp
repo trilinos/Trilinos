@@ -551,7 +551,7 @@ Thyra::makeHaveOwnership( const Teuchos::RefCountPtr<const VectorSpaceBase<Scala
   TEST_FOR_EXCEPTION(
     _vs.get() == NULL, std::logic_error
     ,"Thyra::makeHaveOwnership(vs): Error, the concrete VectorSpaceBase object identified as \'"
-    << vs->describe() << "\' does not support the clone() function!"
+    << vs->description() << "\' does not support the clone() function!"
     );
   return _vs;
 }
