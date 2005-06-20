@@ -101,6 +101,9 @@ teuchos = \
 tpetra = \
 --enable-tpetra
 
+thyra = \
+--enable-thyra
+
 triutils = \
 --enable-triutils \
 --enable-aztecoo \
