@@ -25,3 +25,16 @@
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
+
+(FRAMEWORK) {
+    TESTS = ../thyra/example/sillyCgSolve_epetra.exe,
+            ../thyra/example/sillyPowerMethod_epetra.exe;
+    ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = ../thyra/test/test_epetra_adapters.exe;
+    ARGS = --max-flop-rate=1 --verbose;
+    COMM = SERIAL, MPI;
+}

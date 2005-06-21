@@ -351,6 +351,8 @@ ANA_OPERATOR_VECTOR_INTERFACES_H = \
   $(srcdir)/ana/operator_vector/interfaces/Thyra_SerialVectorSpaceStdDecl.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_SerialVectorStd.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_SerialVectorStdDecl.hpp\
+  $(srcdir)/ana/operator_vector/interfaces/Thyra_SingleRhsLinearOpBase.hpp\
+  $(srcdir)/ana/operator_vector/interfaces/Thyra_SingleRhsLinearOpBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_OperatorVectorTypes.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorBase.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorBaseDecl.hpp\
