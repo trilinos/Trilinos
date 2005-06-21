@@ -32,20 +32,37 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
+Jun 2005
+
+        * Completed the ML wrapper for Python, using SWIG. The ML module
+          still requires a manual configuration of shared libraries,
+          as done (on Linux/GCC at the moment) with script
+          make_shared_linux.sh, located in the PyTrilinos directory.
+          The basic functionalities of the MultiLevelPreconditioner class
+          are available, for both serial and parallel runs. The ML module
+          is compatible with the Epetra and AztecOO modules.
+        * Changed the wrapper names and contents for Epetra matrices.
+          Now the dynamic cast to Epetra_CrsMatrix and/or Epetra_VbrMatrix
+          is done only once in the construction of the preconditioner. 
+          This results in an improvement of the performances up to
+          30% for smore test problems.
+
+------------------------------------------------------------------------------
+	
 Apr 2005
 
-	* Added a simple finite element code, that can be used to test
-	  ML and MLAPI preconditioners. The code offers a pure Galerkin and
-	  a SUPG discretization for second order PDEs, in 2D and 3D, using
-	  triangles, quads, tets, and hexahedra. L2 and H1 norms of the
-	  computed solution and error can be computed. Results can be
-	  visualized using MEDIT.
+        * Added a simple finite element code, that can be used to test
+       	  ML and MLAPI preconditioners. The code offers a pure Galerkin and
+       	  a SUPG discretization for second order PDEs, in 2D and 3D, using
+       	  triangles, quads, tets, and hexahedra. L2 and H1 norms of the
+       	  computed solution and error can be computed. Results can be
+       	  visualized using MEDIT.
 
 ------------------------------------------------------------------------------
 	
 Mar 2005
 
-        * In the MLAPI namspace, added class MultiLevelAdaptiveSA, which
+        * In the MLAPI namespace, added class MultiLevelAdaptiveSA, which
           implements the \alpha SA algorithm (computation of slow
           converging modes for problems with non-smooth kernels).
         * Added a class, Ifpack_ML, that wraps an MultiLevelPreconditioner
@@ -89,10 +106,10 @@ Jan 2005
 	
 Dec 2004
 
-        * improved the organization of the examples, introduces more
+        * Improved the organization of the examples, introduces more
           detailed comments and some README files. Deleted some outdated
           examples.
-        * bug fixes to the auxiliary matrix algorithm for problems defined
+        * Bug fixes to the auxiliary matrix algorithm for problems defined
           on stretched grids.
 
 ------------------------------------------------------------------------------
@@ -114,11 +131,11 @@ Nov 2004 (current version 3.1)
 	
 Oct 2004
 
-        * support for new IFPACK smoothers. ML now supports IFPACK's
+        * Support for new IFPACK smoothers. ML now supports IFPACK's
           variable block Jacobi, Gauss-Seidel and symmetric Gauss-Seidel
           preconditioners, as well as the IFPACK-Amesos preconditioners
           (subdomain-based exact LU factorizations)
-        * fixes support for Amesos solver (introducing LAPACK as coarse
+        * Fixes support for Amesos solver (introducing LAPACK as coarse
           solver)
 
 ------------------------------------------------------------------------------

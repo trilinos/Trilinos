@@ -16,6 +16,7 @@
 - \ref ml_ifpack
 - \ref ml_anasazi
 - \ref ml_mlapi_intro
+- \ref ml_python
 - \ref ml_debug 
 - \ref ml_changes
 - \ref ml_copyright
@@ -286,8 +287,18 @@ and in the ML_Anasazi namespace.
 \section ml_mlapi_intro Overview of MLAPI
 
 An object-oriented layer based on ML, called MLAPI, can be used to
-access most of the ML capabilites in a very way. Click \ref ml_mlapi to more
+access most of the ML capabilites in a very way. Click \ref ml_mlapi for more
 details.
+
+
+\section ml_python ML for Python's Applications
+
+ML is accessible from Python through the PyTrilinos package. Using PyTrilinos,
+ML can be used to create black-box preconditioners based on smoothed
+aggregation for both serial and parallel runs, using a standard Python
+interpreter.  Please refer to the PyTrilinos home page 
+http://software.sandia.gov/trilinos/packages/pytrilinos/overview.html
+for more details. 
 
 
 \section ml_debug Debugging Utilities
@@ -296,7 +307,8 @@ It is possible to instruct ML_Epetra::MultiLevelPreconditioner to print out the
 process ID, so that one can attach to the desired process. One can proceed as
 follows:
 - define the environmental variable ML_BREAK_FOR_DEBUGGER (example, in BASH, export
- ML_BREAK_FOR_DEBUGGER=1 )
+ ML_BREAK_FOR_DEBUGGER=1 ), or create a file called \c ML_debug_now in the
+ directory of the executable.
 - run the parallel code on a terminal (example, mpirun -np 4 ml_example.exe )
 - the code will stop in the first call to ComputePreconditioner(). This may occur
  in the construction phase. Few information about the ID number of each process

@@ -33,10 +33,7 @@
  * \note We experienced some problems with \c out on TFLOPS. These problems
  * were solved by replacing \c cout with \c puts().
  *
- * \note FIXME: Introduce a light-weight conversion from ML_Operator to
- * Epetra_RowMatrix.
- * 
- * \date Last update to Doxygen: 22-Jul-04
+ * \date Last update to Doxygen: 21-Jun-05
  *
  */
 

@@ -625,7 +625,9 @@ are still defined with the same \c Epetra_Map.
 Amesos has an interface to PyTrilinos, and therefore all the enabled
 third-party libraries can be used within Python to solve problems
 defined using Python/Epetra objects. Please refer to the PyTrilinos
-documentation for more details.
+documentation 
+http://software.sandia.gov/trilinos/packages/pytrilinos/overview.html
+for more details.
 
 \section am_future Known bugs and future developments
 
