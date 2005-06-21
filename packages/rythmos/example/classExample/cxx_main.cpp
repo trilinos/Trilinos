@@ -10,10 +10,11 @@
 //     needs to have const versions of its member functions in order to call
 //     them.
 // 3.  Separate into namespaces
+//     Done.  No errors.
 // 4.  Add in templating
 // 5.  Separate into files
 
-
+namespace Rythmos {
 class Stepper
 {
   public:
@@ -22,7 +23,9 @@ class Stepper
     virtual double TakeStep(double dt) = 0;
     virtual double get_solution() = 0;
 };
+} // namespace Rythmos
 
+namespace Rythmos {
 class ModelEvaluator
 {
   public:
@@ -31,9 +34,11 @@ class ModelEvaluator
     virtual double evalModel(double x, double t) const = 0;
     virtual double get_vector() const = 0;
 };
+} // namespace Rythmos
 
 #include "Teuchos_RefCountPtr.hpp"
 
+namespace Rythmos {
 class ForwardEuler : public Stepper
 {
   public:
@@ -71,8 +76,9 @@ double ForwardEuler::get_solution()
 {
   return(x_);
 }
+} // namespace Rythmos
 
-class LinearProblem : public ModelEvaluator
+class LinearProblem : public Rythmos::ModelEvaluator
 {
   public:
     LinearProblem();
@@ -104,7 +110,7 @@ double LinearProblem::get_vector() const
 int main(int argc, char *argv[])
 {
   Teuchos::RefCountPtr<LinearProblem> problem = Teuchos::rcp(new LinearProblem());
-  Teuchos::RefCountPtr<ForwardEuler> stepper = Teuchos::rcp(new ForwardEuler(problem));
+  Teuchos::RefCountPtr<Rythmos::ForwardEuler> stepper = Teuchos::rcp(new Rythmos::ForwardEuler(problem));
 
   double t0 = 0.0;
   double t1 = 1.0;
