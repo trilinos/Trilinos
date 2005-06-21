@@ -4,6 +4,7 @@
 //     virtual class Stepper with concrete derived class ForwardEuler
 //     virtual class NonlinearModel with concrete derived class ExampleApplicationRythmosInterface
 //     in main:  create object of type ExampleApplicationRythmosInterface and pass to constructer of ForwardEuler
+//     Done.  My mistake was not including default constructors & destructors for virtual base classes.
 // 2.  Add in RefCountPtr
 // 3.  Separate into namespaces
 // 4.  Add in templating
@@ -24,15 +25,17 @@ class ModelEvaluator
   public:
     ModelEvaluator() {};
     virtual ~ModelEvaluator() {};
-    virtual double evalModel(double x, double t) = 0;
-    virtual double get_vector() = 0;
+    virtual double evalModel(double x, double t) const = 0;
+    virtual double get_vector() const = 0;
 };
+
+#include "Teuchos_RefCountPtr.hpp"
 
 class ForwardEuler : public Stepper
 {
   public:
     ForwardEuler();
-    ForwardEuler(ModelEvaluator *model);
+    ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator> &model);
     ~ForwardEuler();
     double TakeStep(double dt);
     double get_solution();
@@ -40,12 +43,12 @@ class ForwardEuler : public Stepper
     double t_;
     double x_;
     double f_;
-    ModelEvaluator *model_;
+    Teuchos::RefCountPtr<const ModelEvaluator> model_;
 };
 ForwardEuler::ForwardEuler() 
 {
 }
-ForwardEuler::ForwardEuler(ModelEvaluator *model)
+ForwardEuler::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator> &model)
 {
   model_ = model;
   t_ = 0.0;
@@ -71,8 +74,8 @@ class LinearProblem : public ModelEvaluator
   public:
     LinearProblem();
     ~LinearProblem();
-    double evalModel(double x, double t);
-    double get_vector();
+    double evalModel(double x, double t) const;
+    double get_vector() const;
   protected:
     double lambda_;
 };
@@ -83,11 +86,11 @@ LinearProblem::LinearProblem()
 LinearProblem::~LinearProblem() 
 { 
 }
-double LinearProblem::evalModel(double x, double t) 
+double LinearProblem::evalModel(double x, double t) const
 {
   return(lambda_*x);
 }
-double LinearProblem::get_vector()
+double LinearProblem::get_vector() const
 {
   return(1.0);
 }
@@ -97,8 +100,8 @@ double LinearProblem::get_vector()
 
 int main(int argc, char *argv[])
 {
-  LinearProblem *problem = new LinearProblem();
-  ForwardEuler *stepper = new ForwardEuler(problem);
+  Teuchos::RefCountPtr<LinearProblem> problem = Teuchos::rcp(new LinearProblem());
+  Teuchos::RefCountPtr<ForwardEuler> stepper = Teuchos::rcp(new ForwardEuler(problem));
 
   double t0 = 0.0;
   double t1 = 1.0;
@@ -110,8 +113,6 @@ int main(int argc, char *argv[])
   }
   std::cout << "Computed x = " << stepper->get_solution() << std::endl;
   std::cout << "Exact    x = " << 1.0*std::exp(-0.5*1.0) << std::endl;
-  delete(stepper);
-  delete(problem);
   return(0);
 }
 
