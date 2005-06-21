@@ -15,7 +15,7 @@ Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB("bcsstk01.rsa", Comm);
 Factory = IFPACK.Factory();
 Prec = Factory.Create("IC", Matrix);
 IFPACKList = {
-  "fact: level-of-fill": ("int", "5")
+  "fact: level-of-fill": 5
 }
 Prec.SetParameters(IFPACKList);
 Prec.Initialize();
