@@ -1061,10 +1061,10 @@ This Section requires to import the {\tt ML}, {\tt AztecOO} and {\tt Epetra}
 modules. First, we set up the parameters for ML using a python dictionary:
 \begin{verbatim}
 >>> MLList = {
-...  "max levels"        : ("int", "3"),
-...  "output"            : ("int", "10"),
-...  "smoother: type"    : ("string", "symmetric Gauss-Seidel"),
-...  "aggregation: type" : ("string", "Uncoupled")
+...  "max levels"        : 3,
+...  "output"            : 10,
+...  "smoother: type"    : "symmetric Gauss-Seidel",
+...  "aggregation: type" : "Uncoupled"
 ... };
 \end{verbatim}
 Then, we create the preconditioner and compute it,
