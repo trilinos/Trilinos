@@ -45,6 +45,9 @@ ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
   int numelements = 1;
   problem_ = Teuchos::rcp(new ExampleApplication(lambda,numelements));
   epetra_map_ = problem_->get_epetra_map();
+//  std::cout << "ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()" << std::endl;
+//  std::cout << "epetra_map_.get() = " << std::endl;
+//  std::cout << epetra_map_.get() << std::endl;
   thyra_vs_ = Thyra::create_MPIVectorSpaceBase(epetra_map_);
 }
 
@@ -102,7 +105,7 @@ Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterf
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
-Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_Epetra_Map() const
+const Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplicationRythmosInterface::get_Epetra_Map() const
 { 
   return(epetra_map_); 
 }

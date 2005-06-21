@@ -50,7 +50,6 @@
 
 int main(int argc, char *argv[])
 {
-
   // create interface to problem
   Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface);
   

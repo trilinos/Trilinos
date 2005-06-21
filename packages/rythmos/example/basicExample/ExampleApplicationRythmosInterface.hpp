@@ -64,7 +64,7 @@ class ExampleApplicationRythmosInterface : public Rythmos::NonlinearModel<double
 
     Teuchos::RefCountPtr<Thyra::VectorBase<double> > get_vector() const;
 
-    Teuchos::RefCountPtr<const Epetra_Map> get_Epetra_Map() const;
+    const Teuchos::RefCountPtr<const Epetra_Map> &get_Epetra_Map() const;
 
   protected:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
