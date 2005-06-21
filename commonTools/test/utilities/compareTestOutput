@@ -1,0 +1,458 @@
+#!/usr/bin/env python
+
+"""
+This file defines the CompareFileTest class and an executable that uses it.
+The class may be used as code in a python program or the executable can be used
+as a standalone program.
+"""
+
+import re
+import sys
+import os
+
+class CompareFileTest:
+    """
+    This class performs a complex test to determine if the "test file"
+    is close enough to the "master file". This can be used to compare an
+    output from a test with a master file that has known correct information.
+    
+    The checks to be performed are defined in a third file, the "command file".
+    Each entry in this file contains two columns. The first column has the text
+    that is used to identify the lines to compare and must always
+    be surrounded by single or double quotes. The second entry will be used for
+    numerical comparison and defines a relative range between the master and
+    the test value that is considered acceptable. If the second entry has no digits
+    or does not exist a text comparison is performed. The text comparison requires
+    full match between the master and test text after the initial line match text.
+    The second column value is not used within the text match; it is assumed to 
+    be something like "text". 
+    
+    A line in the command file which has a "#" in the first column is considered
+    a comment and is ignored. Blank lines are also ignored.
+    
+    A line in the command file which begins with the unquoted phrase "option:"
+    will be processed to set an option that determines special processing.
+    """
+    
+    def __init__ (self, command_filename, master_filename, \
+                  test_result_output):
+        """
+        Perform only basic initialization of variables. Nothing should fail here.
+        """
+        self.command_filename = command_filename
+        self.master_filename = master_filename
+        #a list of all lines in the command file
+        self.command_lines = []
+        #a list of all lines in the master compare file
+        self.master_lines = []
+        self.reverse_master_lines = []
+        #a list of all lines in the test results file
+        self.test_lines = test_result_output
+        self.reverse_test_lines = test_result_output.reverse()
+        self.error_text = "Error in comparison test action:\n"
+        self.error_occured = False
+        self.test_failure_text = "Comparison test shows test failure(s):\n"
+        self.test_failure_occured = False
+        self.options = {}
+        self.options["in_order"] = False
+        self.options["line_must_exist"] = True
+        #some problem in defining or running the test
+        self.object_error = False
+        #some match failure found in the test
+        self.test_result_error = False
+        self.current_command_line = ""
+        self.current_command = None
+        self.current_re = None
+        self.tests = []
+        
+        
+    def file_exists(self, filename):
+        """
+        Confirm that the named file actually exists. Print an error
+        if it does not.
+        """
+        if (not os.path.exists(filename)):
+            self.report_error("file '%s' does not exist" %filename)
+        return os.path.exists(filename)
+    
+    def read_file(self, filename, fileslist):
+        """
+        Read the file into a list. This first confirms the files existence
+        and then attempts the read. It will return true if successful.
+        """
+        if (self.file_exists(filename)):
+            try:
+                f = open(filename,"r")
+                for line in f.readlines():
+                    #remove empty lines
+                    cleaned_line = line.strip()
+                    if (cleaned_line):
+                        fileslist.append(cleaned_line)
+                f.close()
+                return True
+            except IOError, error:
+                self.report_error("file '%s' could not be read: %s" \
+                                  %(filename ,error))
+            return False    
+
+        
+    def build_re(self, compare_expression):
+        """
+        Build and return a compiled regular expression.
+        If the expression is already a regular expression, just
+        compile it. If is is purely a text comparison string build
+        a regular expression that will match from the front of
+        the line ignoring whitespace and return a second match 
+        part that will contain the value to be evaluated, then
+        compile
+        """
+        try:
+            #determine if it is a user defined regexp of the form "r'regexp'"
+            user_reg_exp_match = re.match("\"(r[\'].*\')\"", \
+                                          compare_expression)
+            if (user_reg_exp_match):
+                #if a match, strip the surrounding double quotes and use it 
+                #directly
+                reg_exp = user_reg_exp_match.group(1)
+            else:
+                #determine if this is a keyword or whole phrase match
+                #if in double quotes it is a keyword, if in single
+                #quotes it is an exact phrase
+                single_quote_match = re.match("\'(.*)\'", compare_expression)
+                if (single_quote_match != None):
+                    compare_expression = single_quote_match.group(1)
+                    #everything in the compare expression is to be 
+                    #considered text to be matched, not reg exp information
+                    #escape all non alphanumerics to assure this
+                    escaped_expression = re.escape(compare_expression)
+                    reg_exp = "^\s*(" + escaped_expression + ")(.*)"
+                else:
+                    double_quote_match = re.match('\"(.*)\"', \
+                                                  compare_expression)
+                    compare_expression = double_quote_match.group(1)
+                    escaped_expression = re.escape(compare_expression)
+                    reg_exp = "(" + escaped_expression + ")(.*)"
+            return re.compile(reg_exp)
+        except IndexError:
+            #this should never occur since this has been filtered earlier...
+            self.report_error(\
+                "The command file line with '%s' was not understood.\n" \
+                %compare_expression)
+    
+    def find_line(self, lines):
+        """
+        Find a line that matches the regular expression 'compare_re',
+        then return the second group that should normally be just the end of the 
+        line or at least a part that we wish to compare. This way the elements
+        of the match that is used to identify the line will not participate in
+        its evaluation. This is particularly important for a line that has an 
+        initial number that is used only for the match or for a text value 
+        that must be that same as the golden that has another instance as
+        part of the re match.
+        """ 
+        processed_lines = []
+        while (len(lines) > 0):
+            #build a list of the examined lines so that the entire
+            #list of lines can be rebuilt if necessary
+            line = lines.pop(0)
+            processed_lines.append(line)
+            match_obj = self.current_re.search(line)
+            if ( match_obj != None) :
+                if (not self.options["in_order"]):
+                    #rebuild list from the already scanned part
+                    #and the remaining part so that all lines 
+                    #can be scanned again
+                    #this convoluted process assures that we are operating
+                    #on the line that is the argument to the function.
+                    #first, construct a line that has everything except the
+                    #matched line
+                    processed_lines.pop()
+                    processed_lines.extend(lines)
+                    #now, clear out the original line
+                    while (len(lines) > 0):
+                        lines.pop()
+                    #finally, rebuild the original line
+                    lines.extend(processed_lines)
+                return line
+        #Nothing was found so the list was scanned to the end and is now empty.
+        #Even if the "in_order" option was set we don't want to wipe
+        #out the whole list. Change it back to the whole list again.
+        lines.extend(processed_lines)
+        return None
+    
+    def remove_matched_part(self, line, compiled_re):
+        """
+        
+        Strip the first matched part of the line to leave just
+        the portion needed for further processing
+        """
+        match_obj = compiled_re.search(line)
+        try:
+            return match_obj.group(1)
+        except IndexError:
+            return None
+        
+    def find_value(self, line):
+        """
+        Scan the line for numeric values which may be in scientific notation.
+        Return a floating point value from the last number found. If no
+        number can be found return 0
+        """
+        number_strings_list = re.findall(r'(\d+\.?\d*[eE]?[+-]?\d*)', line)
+        number_string = number_strings_list.pop()
+        number = float(number_string)
+        return number
+        
+    def close_enough(self, numerical_test, masters_value, tests_value):
+        """
+        Parse the numerical test string to determine how to compare.
+        Apply this rule to the two values to determine if the second is 
+        "close enough" to the first.
+        """
+        numerical_test = numerical_test.strip()
+        relative = numerical_test.endswith("%")
+        #clean this out just in case
+        numerical_test = numerical_test.replace("%","")
+        ceiling = numerical_test.startswith("+")
+        floor = numerical_test.startswith("-")
+        legal_range = abs(float(numerical_test))
+        if (relative):
+            legal_range = legal_range * 0.01 * masters_value
+        diff = masters_value - tests_value
+        result_text = ""
+        if (floor):
+            if (diff > legal_range):
+                result_text = "too small"
+        elif (ceiling):
+            if (-diff > legal_range):
+                result_text = "too large"
+        elif ((abs(diff) > legal_range)):
+            result_text = "not close enough"
+        return(result_text)
+    
+    def compare_values(self, numerical_test, masters_line, tests_line):
+        """
+        The true heart of the program. Compare the two
+        lines to determine if the values are adequately similar.
+        """
+        masters_value = self.find_value(masters_line)
+        tests_value = self.find_value(tests_line)
+        compare_result = self.close_enough(numerical_test, masters_value, \
+                                           tests_value)
+        if (compare_result != ""):
+            self.report_test_failure( \
+                "The test value is " + compare_result + ":\n\tMaster: " + \
+                masters_line + "\n\tTested: " + tests_line + "\n")
+     
+    def compare_text(self, masters_line, tests_line):
+        """
+        Compare the two strings to confirm that they are equal. Print a test 
+        error if they are not.
+        """
+        compare_result = (tests_line == masters_line)
+        if (not compare_result):
+            self.report_test_failure( \
+                "These lines do not match closely enough:\n\tMaster: " + \
+                masters_line + "\n\tTested: " + tests_line + "\n")
+    
+    def parse_command_file_line(self, line):
+        """
+        Split the line into parts then generate a compiled regular expression
+        from the first entry. Ignore lines that start with "#" If there is
+        only a single string on the line or if the second string has no numbers
+        assume that it is a text match
+        """
+        #ignore comment and empty lines.
+        if (line.startswith("#") or (len(line) == 0)):
+            return None
+        #check for options with the line form "option: option_name option_value"
+        option_match = re.match("option:\s*(\S+)\s+(\S+)", line)
+        if (option_match):
+            #values such as Y,y, yes, true, etc will set the option, others will
+            #clear it.
+            option_value = option_match.group(2)
+            option_name = option_match.group(1)
+            positive_match = re.match("[YyTt1]", option_match.group(2))
+            is_set = (positive_match != None)
+            self.options[option_name] = is_set
+            return None
+        testline_dict = {}
+        match_obj = re.match('\s*([\"\'].*[\"\'])\s*(.*)', line)
+        testline_dict["numeric test"] = False
+        testline_dict["test value"] = ""
+        testline_dict["search_text"] = ""
+        testline_dict["modifier"] = ""
+        if (not match_obj) :
+            error_text = \
+                "    Error in compare command file, cannot understand:  " + \
+                line + "\n    " + \
+                "Confirm that the match test value is surrounded by \" or \'\n" + \
+                "    This entry will be ignored."
+            self.report_error(error_text)
+            return None
+        line_parts = match_obj.groups()
+        testline_dict["search value"] = line_parts[0]
+        testline_dict["test value"] = line_parts[1]
+#        testline_dict["modifier"] = line_parts[3]
+        if (re.search('(\d)', line_parts[1])):
+            testline_dict["numeric test"] = True
+        else:
+            #text, interpret second value as modifier
+            testline_dict["modifier"] = testline_dict["test value"]        
+        return testline_dict
+    
+    def parse_commands(self):
+        """
+        Process each line in the command file. Comments and empty lines
+        are ignored. Option lines are used to set options but are not added to
+        the list of tests. True test commands are parsed and stored in
+        individual dictionaries keyed by parameter name.
+        """
+        for line in self.command_lines:
+            parsed_test = self.parse_command_file_line(line)
+            if (parsed_test):
+                #may be null if a comment line, empty line, or option
+                self.tests.append(parsed_test)
+        if (len(self.tests) == 0):
+            self.report_error("No test values are defined.")
+            self.error_occured = True
+            
+    def test_single_command(self, command):
+        """
+        The core of the testing. This performs the match test based upon a 
+        single line from the command file.
+        """
+        self.current_command = command
+        self.current_re = self.build_re(self.current_command["search value"])
+        if (self.current_command["modifier"] == "last"):
+            test_source_lines = self.reverse_test_lines
+            master_source_lines = self.reverse_master_lines
+        else:
+            test_source_lines = self.test_lines
+            master_source_lines = self.master_lines    
+        test_line = self.find_line(test_source_lines)
+        #perform special text searches on just the test file
+        if (self.current_command["modifier"] == "prohibited"):
+            if (test_line):
+                error_string = \
+                "The prohibited text %s was found in the test file.\n\tThe line was:\n\t%s\n" \
+                        %(self.current_command["search value"], test_line)
+                self.report_test_failure(error_string)
+        elif (self.current_command["modifier"] == "required"):
+            if (not test_line):
+                error_string = \
+                "The required text %s was not found in the test file.\n" \
+                        %self.current_command["search value"]  
+                self.report_test_failure(error_string)
+        else:
+            #look for lines to compare in the files
+            #Note: if a line cannot be found in the master file it need not be in
+            #the test file. This allows more general test definition files.
+            master_line = self.find_line(master_source_lines)
+            if (master_line != None):
+                if (test_line != None):
+                    #now we have the line from each file to process
+                    if (self.current_command["numeric test"]):
+                        self.compare_values(self.current_command["test value"], \
+                                       master_line, test_line)
+                    else:
+                        #compare ending text in both
+                        self.compare_text(master_line, test_line)
+                else:
+                    error_string = \
+                        "Could not find line with text %s in the tested file.\n" \
+                                  %self.current_command["search value"]
+                    self.report_test_failure(error_string)
+
+    def report_error(self, error_text):
+        """
+        Flag that an error occured and add the indented error text to the
+        error string. Errors are problems with the test itself, not match
+        failures detected by the test comparison.
+        """
+        self.error_occured = True
+        self. error_text = self.test_failure_text + \
+            "    " + error_text + "\n"
+        
+    def report_test_failure(self, error_text):
+        """
+        Flag that the a match failure occured and add the indented failure 
+        description text to the test failure string.
+        """
+        self.test_failure_occured = True
+        self. test_failure_text = self.test_failure_text + \
+            "    " + error_text + "\n"
+         
+    def get_error_strings(self):
+        """
+        Return an error string that contains the text of errors and test
+        failures. This will be called externally to get the text of all errors.
+        """
+        error_str = ""
+        if (self.error_occured):
+            error_str = self.error_text + "\n"
+        if (self.test_failure_occured):
+            error_str = error_str + self.test_failure_text
+        return error_str
+
+    def perform_test(self):  
+        """
+        The primary function for this class. This is the only one which is called
+        externally. It will True for a successful test completion. It will be
+        false for either an error in performing the comparison or for one or
+        more failed matches.
+        """
+        if (self.read_file(self.command_filename, self.command_lines) and \
+            self.read_file(self.master_filename, self.master_lines)):
+            self.reverse_master_lines = self.master_lines.reverse()
+            self.parse_commands()
+            for single_test in self.tests:
+                self.test_single_command(single_test)
+            return (not (self.test_failure_occured or self.error_occured))
+        else:
+            #one of the files could not be found. The error text has already
+            #been created
+            return False  
+        
+def read_open_file(file, filelist):
+    """
+    This function reads an already opened file into a list of lines. It
+    removes lines that are nothing but whitespace. If successful it returns
+    true. It will catch IOErrors and return false.
+    """
+    try:
+        for line in file.readlines():
+            #remove empty lines
+            cleaned_line = line.strip()
+            if (cleaned_line):
+                filelist.append(cleaned_line)
+            file.close()
+        return True
+    except IOError, error:
+        print("Could not read the file to be tested:\n" + error)
+        return False    
+
+if __name__ == "__main__":
+    if (len(sys.argv) < 4):
+        print "usage: compare_output commandfile masterfile testedfile"
+#        print "    If testedfile is not defined stdin will be used."
+        sys.exit(1)
+    command_file_name = sys.argv[1]
+    master_file_name = sys.argv[2]
+    if (len(sys.argv) > 3):
+        tested_filename = sys.argv[3]
+        if (not os.path.exists(tested_filename)):
+            print "Could not find "  + tested_filename
+            sys.exit(-1)
+        tested_file = open(tested_filename, "r")
+    else:
+        tested_file = sys.stdin
+    test_lines = []
+    if read_open_file(tested_file, test_lines):
+        tester = CompareFileTest(command_file_name, master_file_name,\
+                                 test_lines)   
+        if (tester.perform_test()):
+            print "Test passed."
+        else:
+            print tester.get_error_strings()
+            sys.exit(1)
