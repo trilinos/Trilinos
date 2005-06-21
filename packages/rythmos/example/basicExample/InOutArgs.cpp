@@ -41,7 +41,8 @@ namespace Rythmos {
 
 template<class Scalar> 
 InArgs<Scalar>::~InArgs()
-{}
+{
+}
 template<class Scalar> 
 InArgs<Scalar>::InArgs(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x, Scalar t)
 { 
@@ -50,7 +51,8 @@ InArgs<Scalar>::InArgs(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x
 }
 template<class Scalar> 
 InArgs<Scalar>::InArgs()
-{}
+{
+}
 template<class Scalar> 
 void InArgs<Scalar>::set_x(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x)
 { 
@@ -83,10 +85,12 @@ Scalar InArgs<Scalar>::get_t() const
 
 template<class Scalar> 
 OutArgs<Scalar>::~OutArgs()
-{}
+{
+}
 template<class Scalar> 
 OutArgs<Scalar>::OutArgs()
-{}
+{
+}
 template<class Scalar> 
 void OutArgs<Scalar>::request_F(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &F) 
 { 

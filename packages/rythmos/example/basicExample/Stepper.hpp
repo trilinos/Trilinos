@@ -49,10 +49,10 @@ class Stepper
   public:
     
     // Constructor
-    Stepper();
+    Stepper() {};
     
     // Destructor
-    virtual ~Stepper();
+    virtual ~Stepper() {};
 
     // Take a step _no larger_ than dt 
     virtual Scalar TakeStep(Scalar dt)=0;

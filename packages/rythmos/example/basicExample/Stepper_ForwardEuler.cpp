@@ -40,7 +40,7 @@ namespace Rythmos {
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const Rythmos::NonlinearModel<Scalar> > &model)
+ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const NonlinearModel<Scalar> > &model)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;

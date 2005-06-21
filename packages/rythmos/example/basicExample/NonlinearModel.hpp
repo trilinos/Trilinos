@@ -56,10 +56,10 @@ class NonlinearModel
   public:
     
     // Constructor
-    NonlinearModel();
+    NonlinearModel() {};
 
     // Destructor
-    virtual ~NonlinearModel();
+    virtual ~NonlinearModel() {};
 
     virtual int evalModel(const InArgs<Scalar> &inargs, const OutArgs<Scalar> &outargs) const = 0;
 
