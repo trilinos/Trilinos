@@ -18,12 +18,12 @@
 // 6.  Get rid of RefCountPtr
 //     Still have problems!
 // 7.  Get rid of templates
+//     This was the problem!  Now it works.
+// 8.  Put templates back and isolate the problem.
 
 #include "Stepper_ForwardEuler.hpp"
 
-#include "Teuchos_ScalarTraits.hpp"
-
-class LinearProblem : public Rythmos::ModelEvaluator<double>
+class LinearProblem : public Rythmos::ModelEvaluator
 {
   public:
     LinearProblem();
@@ -55,7 +55,7 @@ double LinearProblem::get_vector() const
 int main(int argc, char *argv[])
 {
   LinearProblem *problem = new LinearProblem();
-  Rythmos::ForwardEuler<double> *stepper = new Rythmos::ForwardEuler<double>(problem);
+  Rythmos::ForwardEuler *stepper = new Rythmos::ForwardEuler(problem);
 
   double t0 = 0.0;
   double t1 = 1.0;

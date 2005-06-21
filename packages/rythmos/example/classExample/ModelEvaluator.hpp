@@ -3,14 +3,13 @@
 #define RYTHMOS_MODELEVALUATOR
 
 namespace Rythmos {
-template<class Scalar>
 class ModelEvaluator
 {
   public:
     ModelEvaluator() {};
     virtual ~ModelEvaluator() {};
-    virtual Scalar evalModel(Scalar x, Scalar t) const = 0;
-    virtual Scalar get_vector() const = 0;
+    virtual double evalModel(double x, double t) const = 0;
+    virtual double get_vector() const = 0;
 };
 } // namespace Rythmos
 #endif // RYTHMOS_MODELEVALUATOR
