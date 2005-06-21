@@ -39,7 +39,7 @@ noinst_PROGRAMS = $(EXAMPLE)
 #np# of the  following primaries that the pattern is 
 #np# "(Exe_name)_(PRIMARY_NAME) = ").
 #np# List all source files needed to compile the exe.
-basicExample_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/ExampleApplication.cpp $(srcdir)/ExampleApplicationRythmosInterface.cpp $(srcdir)/Stepper_ForwardEuler.cpp $(srcdir)/InOutArgs.cpp
+basicExample_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/ExampleApplication.cpp $(srcdir)/ExampleApplicationRythmosInterface.cpp 
 
 basicExample_INCLUDES= -I$(srcdir)
 

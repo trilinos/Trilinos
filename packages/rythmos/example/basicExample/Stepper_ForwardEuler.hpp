@@ -77,6 +77,124 @@ class ForwardEuler : public Stepper<Scalar>
 
 };
 
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::ForwardEuler
+// Purpose       : constructor
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const NonlinearModel<Scalar> > &model)
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  model_ = model;
+  t_ = ST::zero();
+  solution_vector_ = model_->get_vector();
+  residual_vector_ = model_->get_vector();
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::ForwardEuler
+// Purpose       : constructor
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler()
+{
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::~ForwardEuler
+// Purpose       : destructor
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+template<class Scalar>
+ForwardEuler<Scalar>::~ForwardEuler()
+{
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::TakeStep
+// Purpose       : Take a step 
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+template<class Scalar>
+Scalar ForwardEuler<Scalar>::TakeStep()
+{
+  // print something out about this method not supporting automatic variable step-size
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return(-ST::one());
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::TakeStep
+// Purpose       : Take a step no larger than dt
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/26/05
+//-----------------------------------------------------------------------------
+template<class Scalar>
+Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
+{
+  InArgs<Scalar> inargs;
+  OutArgs<Scalar> outargs;
+
+  inargs.set_x(solution_vector_);
+  inargs.set_t(t_+dt);
+
+  outargs.request_F(residual_vector_);
+
+  model_->evalModel(inargs,outargs);
+
+  // solution_vector = solution_vector + dt*residual_vector
+  Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
+  t_ += dt;
+
+  return(dt);
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::get_solution
+// Purpose       : return current solution
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 06/07/05
+//-----------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_solution() const
+{
+  return(solution_vector_);
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ForwardEuler::get_residual
+// Purpose       : return current residual
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 06/07/05
+//-----------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_residual() const
+{
+  return(residual_vector_);
+}
+
+
 } // namespace Rythmos
 
 #endif //Rythmos_STEPPER_FORWARDEULER_H
