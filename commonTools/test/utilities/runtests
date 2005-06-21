@@ -41,7 +41,8 @@ my @testListAoH;        # test list array of hash
                         #   'type'          =>  MPI/
                         #   'name'          =>  test.exe
                         #   'command'       =>  mpi-go -np16 ./vector/test.exe myVector
-                        #   'parseOutput'   =>  [1,0]
+                        #   'exitStatus'    =>  [compareTestOutput,STRING-COMPARISON,RETURN-CODE]
+                        #   'passString'    =>  my test passed string
                         #   'commandFile'   =>  my_command_file
                         #   'masterFile'    =>  my_master_file
 
@@ -424,7 +425,7 @@ cleanUp();
             
             # If defined to do so, run compareTestOutput to get the correct
             # exit status.
-            if ($testListAoH[$i]{'parseOutput'}) {
+            if ($testListAoH[$i]{'exitStatus'} eq "compareTestOutput") {
                 
                 my $testOutputFile = $testListAoH[$i]{'directory'}."/".$testListAoH[$i]{'name'}.".out.tmp";
                 open (TEMP, ">$testOutputFile") 
@@ -445,26 +446,39 @@ cleanUp();
                 system("rm -f $testOutputFile > /dev/null 2>&1");
             } 
             
-            # Simple text-comparison options for those who don't want to use
-            # compareTestOutput.
+            # Do simple string comparison.
+            elsif ($testListAoH[$i]{'exitStatus'} eq "STRING-COMPARISON") {
+                if ($testListAoH[$i]{'passString'}) { 
+                    my $passString = $testListAoH[$i]{'passString'};   
+                    if ($testOutput =~ m/$passString/i) { 
+                        $testExitStatus = 0; 
+                    } else {
+                        $testExitStatus = 86; 
+                    }
+                } else {                
+                    if ($testOutput =~ m/End Result: TEST PASSED/i) { 
+                        $testExitStatus = 0; 
+                    } else {
+                        $testExitStatus = 86; 
+                    }
+                }
+            }
+            
+            # EXIT-STATUS is neither compareTestOutput or STRING-COMPARISON,
+            # so use the actual exit status...unless it is 0 and there is
+            # obvious fatal output.
             else {
-                              
-                if ($testOutput =~ m/End Result: TEST PASSED/i) { 
-                    $testExitStatus = 0; 
-                }
+                if (!$testExitStatus) { 
                 
-                if ($testOutput =~ m/End Result: TEST FAILED/i) { 
-                    if (!$testExitStatus) { $testExitStatus = 86; }
+                    #  On some platforms, mpirun returns 0 when run on 
+                    #  non-binary files, such as scripts.  The following 
+                    #  hack tests for this and changes the exit status from 
+                    #  0 to 13.
+                    if ($testOutput =~ m/process did not invoke MPI_INIT/) {
+                        $testExitStatus = 13;
+                    }
+                    
                 }
-            
-                #  On some platforms, mpirun returns 0 when run on 
-                #  non-binary files, such as scripts.  The following 
-                #  hack tests for this and changes the exit status from 
-                #  0 to 13.
-                if ($testOutput =~ m/process did not invoke MPI_INIT/) {
-                    if (!$testExitStatus) { $testExitStatus = 13; }
-                }
-            
             }
             
             if (!defined $testOutput) { 
@@ -683,7 +697,26 @@ cleanUp();
                     # the foreach loop and avoid using an uninitialized value
                     # concatenating the arg to the command string.
                     if (!defined @{ $definitionAoHoA[$i]{'ARGS'} }) {
-                        ${ @{ $definitionAoHoA[$i]{'ARGS'} } }[0] = ("");
+                    
+                        # If ARG-MASTER-PAIRS is being used, generate arguments.
+                        if (@{ $definitionAoHoA[$i]{'ARG-MASTER-PAIRS'} }[0]) {
+                            
+                            # We need to keep the master file with the argument
+                            # for now, but set it off somehow so as not to get
+                            # lost in the shuffle.
+                            foreach my $arg (@{ $definitionAoHoA[$i]{'ARG-MASTER-PAIRS'} }) {
+                                print "\n\$arg: $arg\n";
+                                $arg =~ s/^(.*?):(.*?)$/$1:::$2:::/;
+                                print "\n\$1: $1, \$2: $2\n";
+                                print "\n\$arg: $arg\n\n";
+                                push (@{ $definitionAoHoA[$i]{'ARGS'} }, $arg);
+                            }
+                        } 
+                        
+                        # Generate empty argument as described above.
+                        else {                        
+                            ${ @{ $definitionAoHoA[$i]{'ARGS'} } }[0] = ("");
+                        }
                     }
                     
                     # Since a user of this test utility can only specify a comm
@@ -725,7 +758,14 @@ cleanUp();
                     foreach my $test (@{ $definitionAoHoA[$i]{'TESTS'} }) {
                         
                         # Each argument specified gets its own test run.
-                        foreach my $arg (@{ $definitionAoHoA[$i]{'ARGS'} }) {
+                        foreach my $argOrig (@{ $definitionAoHoA[$i]{'ARGS'} }) {
+                        
+                            # Because modifying arg for one test appears to
+                            # leave it modified for the next test, we need to 
+                            # explicitly make a copy of it for each test.  This
+                            # is for the sake of the ARG-MASTER-PAIRS
+                            # functionality.
+                            my $arg = $argOrig;
                         
                             # Prepare the hash entry for this test that will
                             # end up in @testListAoH.
@@ -741,21 +781,49 @@ cleanUp();
                             $testEntry{'name'} = $testName;
                     
                             # Add values for compareTestOutput.
-                            if (@{ $definitionAoHoA[$i]{'PARSE-OUTPUT'} }[0] && 
-                                @{ $definitionAoHoA[$i]{'PARSE-OUTPUT'} }[0] =~ m/YES/i) {
-                                $testEntry{'parseOutput'} = 1;
+                            if (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] && 
+                                @{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/compareTestOutput/i) {
+                                $testEntry{'exitStatus'} = "compareTestOutput";
+                                
+                                # COMMAND-FILE
                                 if (@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0]) {
                                     $testEntry{'commandFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0];
                                 } else {
                                     $testEntry{'commandFile'} = "";
                                 }
+                                
+                                # MASTER-FILE...
                                 if (@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0]) {
                                     $testEntry{'masterFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0];
+                                }                                 
+                                # or ARG-MASTER-PAIR?
+                                elsif (@{ $definitionAoHoA[$i]{'ARG-MASTER-PAIRS'} }[0]) {
+                                    print "\n\$test: $test\n";
+                                    print "\$arg: $arg\n";
+                                    my $masterFile = $arg;
+                                    $masterFile =~ s/^.*?:::(.*?):::$/$1/;
+                                    print "\$1: $1\n";
+                                    $arg =~ s/:::.*?::://;
+                                    print "\$arg: $arg\n\n";
+                                    $testEntry{'masterFile'} = "$testDir/$masterFile";
                                 } else {
                                     $testEntry{'masterFile'} = "";
+                                } 
+                            } 
+                            
+                            # Add values for STRING-COMPARISON
+                            elsif (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] && 
+                                   @{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/STRING-COMPARISON/i) {
+                                $testEntry{'exitStatus'} = "STRING-COMPARISON";
+                                if (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/STRING-COMPARISON\((.*)\)/i) {
+                                    $testEntry{'passString'} = $1;                                
                                 }
-                            } else {
-                                $testEntry{'parseOutput'} = 0;
+                            } 
+                            
+                            # EXIT-STATUS is neither compareTestOutput or 
+                            # STRING-COMPARISON, so it defaults to RETURN-CODE.
+                            else {
+                                $testEntry{'exitStatus'} = "RETURN-CODE";                            
                             }
                         
                             # I'm not sure if there really needs to be a
@@ -1000,7 +1068,15 @@ cleanUp();
             }
             
             # Break raw values list string into array of values.
-            my @valueList = $valuesString =~ m/\s*(.+?)\s*[,;]/g;
+            # Don't break it into a list if it's the EXIT-STATUS value--doing
+            # so would break up a test-passed string appended to 
+            # STRING-COMPARISON.
+            my @valueList = ();
+            if ($key eq "EXIT-STATUS") {
+                push(@valueList, $valuesString);
+            } else {
+                @valueList = $valuesString =~ m/\s*(.+?)\s*[,;]/g;
+            }
             
             # Add new key=>(values) entry in array.
             $testGroupHoA{$key} = [ @valueList ];
@@ -1020,11 +1096,17 @@ cleanUp();
             $errorString .= "! Malformed test group:  no TESTS or DIRS properties.\n";
         }
         
-        # Enforce existance of COMMAND-FILE if PARSE-OUTPUT is present.
-        if ($testGroupHoA{'PARSE-OUTPUT'} && $testGroupHoA{'PARSE-OUTPUT'}[0] =~ m/YES/i) {
+        # Enforce existance of COMMAND-FILE if EXIT-STATUS is compareTestOutput
+        if ($testGroupHoA{'EXIT-STATUS'} && $testGroupHoA{'EXIT-STATUS'}[0] =~ m/compareTestOutput/i) {
             if (!$testGroupHoA{'COMMAND-FILE'}) {
                 $status++;
-                $errorString .= "! Malformed test group:  PARSE-OUTPUT=YES, but no COMMAND-FILE property.\n";
+                $errorString .= "! Malformed test group:  EXIT-STATUS=compareTestOutput, but no COMMAND-FILE property.\n";
+            }
+            if ($testGroupHoA{'ARG-MASTER-PAIRS'}) {
+                if ($testGroupHoA{'ARGS'} || $testGroupHoA{'MASTER-FILE'}) {
+                    $status++;
+                    $errorString .= "! Malformed test group:  if ARG-MASTER-PAIRS is present, neither ARGS or MASTER can be.\n";
+                }
             }
         }
         
