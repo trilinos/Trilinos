@@ -41,6 +41,9 @@ my @testListAoH;        # test list array of hash
                         #   'type'          =>  MPI/
                         #   'name'          =>  test.exe
                         #   'command'       =>  mpi-go -np16 ./vector/test.exe myVector
+                        #   'parseOutput'   =>  [1,0]
+                        #   'commandFile'   =>  my_command_file
+                        #   'masterFile'    =>  my_master_file
 
 my $resultsDir;         # absolute path to results directory
 
@@ -419,14 +422,49 @@ cleanUp();
             # Trim $testOutput.
             $testOutput = substr ($testOutput, -1000000);
             
-            #  On some platforms, mpirun returns 0 when run on 
-            #  non-binary files, such as scripts.  The following 
-            #  hack tests for this and changes the exit status from 
-            #  0 to 13.
-    	    if ($testOutput =~ "process did not invoke MPI_INIT" ) {
-    	        if ( !$testExitStatus )  {
-    	            $testExitStatus = 13 ;
-    		    }
+            # If defined to do so, run compareTestOutput to get the correct
+            # exit status.
+            if ($testListAoH[$i]{'parseOutput'}) {
+                
+                my $testOutputFile = $testListAoH[$i]{'directory'}."/".$testListAoH[$i]{'name'}.".out.tmp";
+                open (TEMP, ">$testOutputFile") 
+                    or die "can't open test result file $testOutputFile for writing, died";
+                print TEMP $testOutput;
+                close TEMP;
+                
+                my $ctoCommand = "$trilinosDir/commonTools/test/utilities/./compareTestOutput ";
+                $ctoCommand .= $testListAoH[$i]{'commandFile'}." ";
+                $ctoCommand .= $testListAoH[$i]{'masterFile'}." ";
+                $ctoCommand .= "$testOutputFile 2>&1";
+                my $ctoOutput = "";
+                $ctoOutput = `$ctoCommand`;
+                $testExitStatus = $?;
+                $testOutput .= "\n\n### compareTestOutput Output ###\n\n";
+                $testOutput .= $ctoOutput;
+                
+                system("rm -f $testOutputFile > /dev/null 2>&1");
+            } 
+            
+            # Simple text-comparison options for those who don't want to use
+            # compareTestOutput.
+            else {
+                              
+                if ($testOutput =~ m/End Result: TEST PASSED/i) { 
+                    $testExitStatus = 0; 
+                }
+                
+                if ($testOutput =~ m/End Result: TEST FAILED/i) { 
+                    if (!$testExitStatus) { $testExitStatus = 86; }
+                }
+            
+                #  On some platforms, mpirun returns 0 when run on 
+                #  non-binary files, such as scripts.  The following 
+                #  hack tests for this and changes the exit status from 
+                #  0 to 13.
+                if ($testOutput =~ m/process did not invoke MPI_INIT/) {
+                    if (!$testExitStatus) { $testExitStatus = 13; }
+                }
+            
             }
             
             if (!defined $testOutput) { 
@@ -563,7 +601,7 @@ cleanUp();
             if ($#packages >= 0) {
                 my $found = 0;
                 foreach my $testPackage (@packages) {
-                    if ($package =~ $testPackage) { $found = 1; }
+                    if ($package =~ m/^$testPackage$/i) { $found = 1; }
                 }
                 if (!$found) { return; }
             }
@@ -656,7 +694,7 @@ cleanUp();
                     my $isCustom = 0;
                     foreach my $item (@{ $definitionAoHoA[$i]{'COMM'} }) {
                         if ($item =~ m/CUSTOM/i) { $isCustom = 1; }
-                    }                   
+                    }                
                     
                     # Add a complete hash entry for each executable file found
                     # in the directories listed in DIRS.
@@ -701,6 +739,24 @@ cleanUp();
                             $testEntry{'definitionDir'} = $File::Find::dir;
                             $testEntry{'directory'} = $testDir;
                             $testEntry{'name'} = $testName;
+                    
+                            # Add values for compareTestOutput.
+                            if (@{ $definitionAoHoA[$i]{'PARSE-OUTPUT'} }[0] && 
+                                @{ $definitionAoHoA[$i]{'PARSE-OUTPUT'} }[0] =~ m/YES/i) {
+                                $testEntry{'parseOutput'} = 1;
+                                if (@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0]) {
+                                    $testEntry{'commandFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0];
+                                } else {
+                                    $testEntry{'commandFile'} = "";
+                                }
+                                if (@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0]) {
+                                    $testEntry{'masterFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0];
+                                } else {
+                                    $testEntry{'masterFile'} = "";
+                                }
+                            } else {
+                                $testEntry{'parseOutput'} = 0;
+                            }
                         
                             # I'm not sure if there really needs to be a
                             # CUSTOM-SERIAL value for comm.  I don't know how
@@ -927,7 +983,7 @@ cleanUp();
             
             # Grab property name.
             my $key = "";
-            if ($propertyString =~ m/\s*(\w+?)\s*=.*?;/) {
+            if ($propertyString =~ m/\s*((\w|-)+?)\s*=.*?;/) {
                 $key = $1;
             } else {
                 $status++;
@@ -962,6 +1018,14 @@ cleanUp();
         if (!($testGroupHoA{'TESTS'} || $testGroupHoA{'DIRS'})) {
             $status++;
             $errorString .= "! Malformed test group:  no TESTS or DIRS properties.\n";
+        }
+        
+        # Enforce existance of COMMAND-FILE if PARSE-OUTPUT is present.
+        if ($testGroupHoA{'PARSE-OUTPUT'} && $testGroupHoA{'PARSE-OUTPUT'}[0] =~ m/YES/i) {
+            if (!$testGroupHoA{'COMMAND-FILE'}) {
+                $status++;
+                $errorString .= "! Malformed test group:  PARSE-OUTPUT=YES, but no COMMAND-FILE property.\n";
+            }
         }
         
         # Enforce either all 'custom' or no 'custom'.
