@@ -3,6 +3,7 @@
 #define RYTHMOS_MODELEVALUATOR
 
 namespace Rythmos {
+template<class Scalar>
 class ModelEvaluator
 {
   public:

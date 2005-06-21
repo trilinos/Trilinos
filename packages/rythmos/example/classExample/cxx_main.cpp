@@ -24,7 +24,7 @@
 
 #include "Stepper_ForwardEuler.hpp"
 
-class LinearProblem : public Rythmos::ModelEvaluator
+class LinearProblem : public Rythmos::ModelEvaluator<double>
 {
   public:
     LinearProblem();
@@ -56,7 +56,7 @@ double LinearProblem::get_vector() const
 int main(int argc, char *argv[])
 {
   LinearProblem *problem = new LinearProblem();
-  Rythmos::ForwardEuler *stepper = new Rythmos::ForwardEuler(problem);
+  Rythmos::ForwardEuler<double> *stepper = new Rythmos::ForwardEuler<double>(problem);
 
   double t0 = 0.0;
   double t1 = 1.0;

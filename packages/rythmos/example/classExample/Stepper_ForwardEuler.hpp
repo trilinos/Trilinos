@@ -4,21 +4,23 @@
 
 #include "Stepper.hpp"
 #include "ModelEvaluator.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace Rythmos {
-class ForwardEuler : public Stepper
+template<class Scalar>
+class ForwardEuler : public Stepper<Scalar>
 {
   public:
     ForwardEuler();
-    ForwardEuler(ModelEvaluator *model);
+    ForwardEuler(ModelEvaluator<Scalar> *model);
     ~ForwardEuler();
-    double TakeStep(double dt);
-    double get_solution();
+    Scalar TakeStep(Scalar dt);
+    Scalar get_solution();
   protected:
-    double t_;
-    double x_;
-    double f_;
-    ModelEvaluator *model_;
+    Scalar t_;
+    Scalar x_;
+    Scalar f_;
+    ModelEvaluator<Scalar> *model_;
 };
 } // namespace Rythmos
 

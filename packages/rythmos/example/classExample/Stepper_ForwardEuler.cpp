@@ -3,26 +3,31 @@
 #include "Stepper_ForwardEuler.hpp"
 
 namespace Rythmos {
-ForwardEuler::ForwardEuler() 
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler() 
 {
 }
-ForwardEuler::ForwardEuler(ModelEvaluator *model)
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler(ModelEvaluator<Scalar> *model)
 {
   model_ = model;
-  t_ = 0.0;
+  t_ = Teuchos::ScalarTraits<Scalar>::zero();
   x_ = model_->get_vector();
 }
-ForwardEuler::~ForwardEuler() 
+template<class Scalar>
+ForwardEuler<Scalar>::~ForwardEuler() 
 {
 }
-double ForwardEuler::TakeStep(double dt)
+template<class Scalar>
+Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 {
   f_ = model_->evalModel(x_,t_);
   x_ = x_ + dt*f_;
   t_ = t_ + dt;
   return(dt);
 }
-double ForwardEuler::get_solution()
+template<class Scalar>
+Scalar ForwardEuler<Scalar>::get_solution()
 {
   return(x_);
 }

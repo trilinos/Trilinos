@@ -3,6 +3,7 @@
 #define RYTHMOS_STEPPER
 
 namespace Rythmos {
+template<class Scalar>
 class Stepper
 {
   public:
