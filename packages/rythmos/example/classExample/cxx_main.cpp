@@ -15,80 +15,12 @@
 //     Done.  No errors.
 // 5.  Separate into files
 //     Problems!  
+// 6.  Get rid of RefCountPtr
+//     Still have problems!
+// 7.  Get rid of templates
 
-//#include "Stepper_ForwardEuler.hpp"
+#include "Stepper_ForwardEuler.hpp"
 
-//-------------------------------------------------------------------------
-// Stepper_ForwardEuler.hpp
-//-------------------------------------------------------------------------
-//#ifndef RYTHMOS_STEPPER_FORWARDEULER
-//#define RYTHMOS_STEPPER_FORWARDEULER
-
-#include "Stepper.hpp"
-#include "ModelEvaluator.hpp"
-
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-
-namespace Rythmos {
-template<class Scalar>
-class ForwardEuler : public Stepper<Scalar>
-{
-  public:
-    ForwardEuler();
-    ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model);
-    ~ForwardEuler();
-    Scalar TakeStep(Scalar dt);
-    Scalar get_solution();
-  protected:
-    Scalar t_;
-    Scalar x_;
-    Scalar f_;
-    Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
-};
-} // namespace Rythmos
-
-//#endif // RYTHMOS_STEPPER_FORWARDEULER
-//-------------------------------------------------------------------------
-
-
-//-------------------------------------------------------------------------
-// Stepper_ForwardEuler.cpp
-//-------------------------------------------------------------------------
-//#include "Stepper_ForwardEuler.hpp"
-namespace Rythmos {
-template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler() 
-{
-}
-template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
-{
-  model_ = model;
-  t_ = Teuchos::ScalarTraits<Scalar>::zero();
-  x_ = model_->get_vector();
-}
-template<class Scalar>
-ForwardEuler<Scalar>::~ForwardEuler() 
-{
-}
-template<class Scalar>
-Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
-{
-  f_ = model_->evalModel(x_,t_);
-  x_ = x_ + dt*f_;
-  t_ = t_ + dt;
-  return(dt);
-}
-template<class Scalar>
-Scalar ForwardEuler<Scalar>::get_solution()
-{
-  return(x_);
-}
-} // namespace Rythmos
-//-------------------------------------------------------------------------
-
-#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 class LinearProblem : public Rythmos::ModelEvaluator<double>
@@ -122,8 +54,8 @@ double LinearProblem::get_vector() const
 
 int main(int argc, char *argv[])
 {
-  Teuchos::RefCountPtr<LinearProblem> problem = Teuchos::rcp(new LinearProblem());
-  Teuchos::RefCountPtr<Rythmos::ForwardEuler<double> > stepper = Teuchos::rcp(new Rythmos::ForwardEuler<double>(problem));
+  LinearProblem *problem = new LinearProblem();
+  Rythmos::ForwardEuler<double> *stepper = new Rythmos::ForwardEuler<double>(problem);
 
   double t0 = 0.0;
   double t1 = 1.0;
@@ -135,6 +67,8 @@ int main(int argc, char *argv[])
   }
   std::cout << "Computed x = " << stepper->get_solution() << std::endl;
   std::cout << "Exact    x = " << 1.0*std::exp(-0.5*1.0) << std::endl;
+  delete stepper;
+  delete problem;
   return(0);
 }
 
