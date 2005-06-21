@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
   AZ_MATRIX   *Amat = NULL;
   ML          *ml   = NULL;
   ML_Aggregate *ml_ag = NULL;
+  char filename[80];
 #ifdef ML_BENCHMARK
   char input[MAX_INPUT_STR_LN];
   FILE *ifp;
@@ -166,8 +167,10 @@ int main(int argc, char *argv[])
 
 #ifdef ML_BENCHMARK
    if (proc_config[AZ_node] == 0) {
-      ML_Reader_ReadInput("ml_inputfile", &context);
-      ifp = fopen("ml_inputfile", "r");
+      if (argc > 1) sprintf(filename,"%s",argv[1]);
+      else          sprintf(filename,"ml_inputfile");
+      ML_Reader_ReadInput(filename, &context);
+      ifp = fopen(filename, "r");
       if (!ML_Reader_LookFor(ifp, "number of x nodes per proc", input, '='))
 	proc_factor = 20;   /* Default */
       else {

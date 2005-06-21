@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
   char input[MAX_INPUT_STR_LN];
   FILE *ifp;
 #endif
+  char filename[80];
 
   /* ----------------------- execution begins --------------------------------*/
 
@@ -134,8 +135,10 @@ int main(int argc, char *argv[])
 
 #ifdef ML_BENCHMARK
    if (proc_config[AZ_node] == 0) {
-      ML_Reader_ReadInput("ml_inputfile", &context);
-      ifp = fopen("ml_inputfile", "r");
+      if (argc > 1) sprintf(filename,"%s",argv[1]);
+      else          sprintf(filename,"ml_inputfile");
+      ML_Reader_ReadInput(filename, &context);
+      ifp = fopen(filename, "r");
       if (!ML_Reader_LookFor(ifp, "number of x nodes per proc", input, '='))
 	proc_factor = 20;   /* Default */
       else {
