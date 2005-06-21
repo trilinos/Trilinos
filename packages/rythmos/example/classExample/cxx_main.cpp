@@ -12,6 +12,7 @@
 // 3.  Separate into namespaces
 //     Done.  No errors.
 // 4.  Add in templating
+//     Done.  No errors.
 // 5.  Separate into files
 
 namespace Rythmos {
@@ -21,8 +22,8 @@ class Stepper
   public:
     Stepper() {};
     virtual ~Stepper() {};
-    virtual double TakeStep(double dt) = 0;
-    virtual double get_solution() = 0;
+    virtual Scalar TakeStep(Scalar dt) = 0;
+    virtual Scalar get_solution() = 0;
 };
 } // namespace Rythmos
 
@@ -33,12 +34,13 @@ class ModelEvaluator
   public:
     ModelEvaluator() {};
     virtual ~ModelEvaluator() {};
-    virtual double evalModel(double x, double t) const = 0;
-    virtual double get_vector() const = 0;
+    virtual Scalar evalModel(Scalar x, Scalar t) const = 0;
+    virtual Scalar get_vector() const = 0;
 };
 } // namespace Rythmos
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace Rythmos {
 template<class Scalar>
@@ -48,12 +50,12 @@ class ForwardEuler : public Stepper<Scalar>
     ForwardEuler();
     ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model);
     ~ForwardEuler();
-    double TakeStep(double dt);
-    double get_solution();
+    Scalar TakeStep(Scalar dt);
+    Scalar get_solution();
   protected:
-    double t_;
-    double x_;
-    double f_;
+    Scalar t_;
+    Scalar x_;
+    Scalar f_;
     Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
 };
 template<class Scalar>
@@ -64,7 +66,7 @@ template<class Scalar>
 ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
 {
   model_ = model;
-  t_ = 0.0;
+  t_ = Teuchos::ScalarTraits<Scalar>::zero();
   x_ = model_->get_vector();
 }
 template<class Scalar>
@@ -72,7 +74,7 @@ ForwardEuler<Scalar>::~ForwardEuler()
 {
 }
 template<class Scalar>
-double ForwardEuler<Scalar>::TakeStep(double dt)
+Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 {
   f_ = model_->evalModel(x_,t_);
   x_ = x_ + dt*f_;
@@ -80,7 +82,7 @@ double ForwardEuler<Scalar>::TakeStep(double dt)
   return(dt);
 }
 template<class Scalar>
-double ForwardEuler<Scalar>::get_solution()
+Scalar ForwardEuler<Scalar>::get_solution()
 {
   return(x_);
 }
