@@ -1,0 +1,39 @@
+#sass2889 or sass3276
+#SunOS: /opt/SUNWspro/bin <path to mpich 1.2.5>
+#   cd /pr/alegra/TPL/trilinos/5.0/build/opt_sun7 && /pr/alegra/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
+../configure \
+        --prefix=/home/jmwille/TrilinostestHarness/install/sun \
+        --disable-loca \
+	--enable-nox-epetra \
+        --enable-aztecoo-azlu \
+        --enable-amesos \
+        --with-ml_superlu \
+        --with-ml_zoltan \
+        --enable-teuchos \
+        --enable-triutils \
+        --enable-anasazi \
+        --enable-epetraext-transform \
+        --disable-examples \
+        --disable-tests \
+        --disable-libcheck \
+        --disable-ml_enrich \
+        --disable-dependency-tracking \
+        --with-blas="-lsunperf -lsunperf" \
+        --with-lapack="-lsunperf -lsunperf" \
+        --with-incdirs="-I/pr/alegra/TPL/trilinos/5.0/DSuperLU/SRC" \
+        --with-ldflags="-L/pr/alegra/TPL/trilinos/5.0/y12m -L/pr/alegra/TPL/trilinos/5.0/DSuperLU" \
+        --with-libs="-lsuperlu -ly12m -L/dev/null" \
+        --enable-mpi \
+        --with-mpi-incdir="" \
+        --with-mpi-libdir="" \
+        --with-mpi-libs="" \
+        CC="mpicc -xO3 -ftrap=common" \
+        CXX="mpiCC -pto -library=stlport4 -xO3 -ftrap=common" \
+        F77="mpif77 -xO3 -ftrap=common" \
+        CPPFLAGS="-DCODE_MP -DMPICH_SKIP_MPICXX -DLC_FLINK -DCATCH_FPE -DNO_FCNTL -DNDEBUG -I/pr/alegra/TPL/zoltan/1.54/include -I/pr/alegra/TPL/trilinos/5.0/DSuperLU/SRC" \
+        CFLAGS="" \
+        CXXFLAGS="" \
+        FFLAGS="" \
+        LDFLAGS=" " \
+        --with-ar="CC -xar -o"
+
