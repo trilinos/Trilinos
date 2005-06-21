@@ -15,6 +15,7 @@
 // 5.  Separate into files
 
 namespace Rythmos {
+template<class Scalar>
 class Stepper
 {
   public:
@@ -26,6 +27,7 @@ class Stepper
 } // namespace Rythmos
 
 namespace Rythmos {
+template<class Scalar>
 class ModelEvaluator
 {
   public:
@@ -39,11 +41,12 @@ class ModelEvaluator
 #include "Teuchos_RefCountPtr.hpp"
 
 namespace Rythmos {
-class ForwardEuler : public Stepper
+template<class Scalar>
+class ForwardEuler : public Stepper<Scalar>
 {
   public:
     ForwardEuler();
-    ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator> &model);
+    ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model);
     ~ForwardEuler();
     double TakeStep(double dt);
     double get_solution();
@@ -51,34 +54,39 @@ class ForwardEuler : public Stepper
     double t_;
     double x_;
     double f_;
-    Teuchos::RefCountPtr<const ModelEvaluator> model_;
+    Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
 };
-ForwardEuler::ForwardEuler() 
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler() 
 {
 }
-ForwardEuler::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator> &model)
+template<class Scalar>
+ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
 {
   model_ = model;
   t_ = 0.0;
   x_ = model_->get_vector();
 }
-ForwardEuler::~ForwardEuler() 
+template<class Scalar>
+ForwardEuler<Scalar>::~ForwardEuler() 
 {
 }
-double ForwardEuler::TakeStep(double dt)
+template<class Scalar>
+double ForwardEuler<Scalar>::TakeStep(double dt)
 {
   f_ = model_->evalModel(x_,t_);
   x_ = x_ + dt*f_;
   t_ = t_ + dt;
   return(dt);
 }
-double ForwardEuler::get_solution()
+template<class Scalar>
+double ForwardEuler<Scalar>::get_solution()
 {
   return(x_);
 }
 } // namespace Rythmos
 
-class LinearProblem : public Rythmos::ModelEvaluator
+class LinearProblem : public Rythmos::ModelEvaluator<double>
 {
   public:
     LinearProblem();
@@ -110,7 +118,7 @@ double LinearProblem::get_vector() const
 int main(int argc, char *argv[])
 {
   Teuchos::RefCountPtr<LinearProblem> problem = Teuchos::rcp(new LinearProblem());
-  Teuchos::RefCountPtr<Rythmos::ForwardEuler> stepper = Teuchos::rcp(new Rythmos::ForwardEuler(problem));
+  Teuchos::RefCountPtr<Rythmos::ForwardEuler<double> > stepper = Teuchos::rcp(new Rythmos::ForwardEuler<double>(problem));
 
   double t0 = 0.0;
   double t1 = 1.0;
