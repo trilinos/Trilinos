@@ -6,6 +6,9 @@
 //     in main:  create object of type ExampleApplicationRythmosInterface and pass to constructer of ForwardEuler
 //     Done.  My mistake was not including default constructors & destructors for virtual base classes.
 // 2.  Add in RefCountPtr
+//     Done.  If I pass by const reference, with const object, then the object
+//     needs to have const versions of its member functions in order to call
+//     them.
 // 3.  Separate into namespaces
 // 4.  Add in templating
 // 5.  Separate into files
