@@ -31,9 +31,9 @@ void Zoltan_HG_Plot(
 )
 {
 /* Routine that produces gnuplot output of hypergraph in form of matrix.
- * One row for each vertex.
- * One column for each hyperedge.
- * Entries in matrix entry a[i,j] if vertex i is in hyperedge j.
+ * One column for each vertex.
+ * One row for each hyperedge.
+ * Entries in matrix entry a[j,i] if vertex i is in hyperedge j.
  * If part == NULL, a single file is produced with all information.
  * (Currently, this capability is serial only.)
  * If part != NULL, a separate file is produced for each partition.
@@ -78,15 +78,15 @@ int *vtx = NULL;
         prev_part = part[v];
       }
     }
-#undef KDDKDD_REGULAR
+#define KDDKDD_REGULAR
 #ifdef KDDKDD_REGULAR
     for (j = vindex[v]; j < vindex[v+1]; j++)
-      fprintf(fp, "%d %d\n", vedge[j], -v);
+      fprintf(fp, "%d %d\n", v, -vedge[j]);
 #else
     /* KDDKDD_BLOCKED */
     /* Block printout by partition; permute rows and columns */
     for (j = vindex[v]; j < vindex[v+1]; j++) 
-      fprintf(fp, "%d %d\n", invidx[vedge[j]], -i);
+      fprintf(fp, "%d %d\n", i, -invidx[vedge[j]]);
 #endif /* KDDKDD_BLOCKED */
   }
 
@@ -99,8 +99,8 @@ int *vtx = NULL;
     fprintf(fp, "set data style dots\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set title \"%s\"\n", str);
-    fprintf(fp, "set xlabel \"hyperedges\"\n");
-    fprintf(fp, "set ylabel \"-vertices\"\n");
+    fprintf(fp, "set xlabel \"vertices\"\n");
+    fprintf(fp, "set ylabel \"-hyperedges\"\n");
     fprintf(fp, "plot ");
     if (part != NULL) {
       for (i = 0; i < nparts; i++) {

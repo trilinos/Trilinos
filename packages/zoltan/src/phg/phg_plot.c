@@ -119,7 +119,7 @@ void Zoltan_PHG_Plot(
 /* Routine that produces gnuplot output of hypergraph in form of matrix.
  * One column for each vertex.
  * One row for each hyperedge.
- * Entries in matrix entry a[i,j] if vertex i is in hyperedge j.
+ * Entries in matrix entry a[j,i] if vertex i is in hyperedge j.
  * If part == NULL, a single file is produced with all information.
  * (Currently, this capability is serial only.)
  * If part != NULL, a separate file is produced for each partition.
@@ -160,7 +160,7 @@ int *vtx = NULL;
       }
     }
     for (j = vindex[v]; j < vindex[v+1]; j++)
-      fprintf(fp, "%d %d\n", vedge[j], -v);
+      fprintf(fp, "%d %d\n", v, -vedge[j]);
   }
 
   fclose(fp);
@@ -168,11 +168,11 @@ int *vtx = NULL;
   if (proc == 0) {
     sprintf(filename, "hgplot%02d.gnuload", cnt);
     fp = fopen(filename, "w");
-    fprintf(fp, "set data style points\n");
+    fprintf(fp, "set data style dots\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set title \"%s\"\n", str);
-    fprintf(fp, "set xlabel \"hyperedges\"\n");
-    fprintf(fp, "set ylabel \"-vertices\"\n");
+    fprintf(fp, "set xlabel \"vertices\"\n");
+    fprintf(fp, "set ylabel \"-hyperedges\"\n");
     fprintf(fp, "plot ");
     if (part != NULL) {
       for (i = 0; i < nparts; i++) {
