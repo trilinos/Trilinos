@@ -60,23 +60,6 @@ public:
   /** \brief . */
   virtual Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const = 0;
 
-  /** \brief Apply the linear operator to a vector with respect to a
-   * Euclidean vector space where the scalar product is the dot
-   * product.
-   */
-  virtual void euclideanApply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const = 0;
-
-  //@}
-
-  /** @name Virtual functions with default implementations */
-  //@{
-
   /** \brief Apply the linear operator to a multi-vector with respect
    * to a Euclidean vector space where the scalar product is the dot
    * product.
@@ -93,7 +76,7 @@ public:
     ,MultiVectorBase<Scalar>          *Y
     ,const Scalar                     alpha
     ,const Scalar                     beta
-    ) const;
+    ) const = 0;
 
   //@}
 
@@ -107,18 +90,6 @@ public:
 
   /** @name Overridden functions from LinearOpBase */
   //@{
-  /** \brief Apply the linear operator to a vector using an
-   * application-specific definition of the scalar product.
-   *
-   * ToDo: Finish Documentation!
-   */
-  void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const;
   /** \brief Apply the linear operator to a multi-vector using an
    * application-specific definition of the scalar product.
    *

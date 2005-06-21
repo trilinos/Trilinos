@@ -170,24 +170,6 @@ bool MultiplicativeLinearOp<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void MultiplicativeLinearOp<Scalar>::apply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-  this->apply(
-    M_trans
-    ,static_cast<const MultiVectorBase<Scalar>&>(x)
-    ,static_cast<MultiVectorBase<Scalar>*>(y)
-    ,alpha
-    ,beta
-    );
-}
-
-template<class Scalar>
-void MultiplicativeLinearOp<Scalar>::apply(
   const ETransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y

@@ -35,6 +35,7 @@
 #include "Thyra_VectorBaseDecl.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_SerialVectorSpaceStd.hpp"
 #include "RTOpPack_ROpGetSubVector.hpp"

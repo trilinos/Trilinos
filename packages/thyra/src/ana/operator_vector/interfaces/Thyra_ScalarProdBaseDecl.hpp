@@ -105,18 +105,17 @@ public:
    */
   virtual void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const = 0;
 
+
   /** \brief Modify the application of a Euclidean linear operator by
    * inserting the vector spaces scalar product.
    *
-   *
-   * The default implementation calls the single-vector version of
-   * this function.
+   * ToDo: Finish documentation!
    */
   virtual void apply(
     const EuclideanLinearOpBase<Scalar>   &M
     ,const ETransp                        M_trans
-    ,const VectorBase<Scalar>             &x
-    ,VectorBase<Scalar>                   *y
+    ,const MultiVectorBase<Scalar>        &X
+    ,MultiVectorBase<Scalar>              *Y
     ,const Scalar                         alpha
     ,const Scalar                         beta
     ) const = 0;
@@ -142,22 +141,6 @@ public:
    * <tt>scalarProds()</tt>.
    */
   virtual Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
-
-  /** \brief Modify the application of a Euclidean linear operator by
-   * inserting the vector spaces scalar product.
-   *
-   *
-   * The default implementation calls the single-vector version of
-   * this function.
-   */
-  virtual void apply(
-    const EuclideanLinearOpBase<Scalar>   &M
-    ,const ETransp                        M_trans
-    ,const MultiVectorBase<Scalar>        &X
-    ,MultiVectorBase<Scalar>              *Y
-    ,const Scalar                         alpha
-    ,const Scalar                         beta
-    ) const;
 
   //@}
 

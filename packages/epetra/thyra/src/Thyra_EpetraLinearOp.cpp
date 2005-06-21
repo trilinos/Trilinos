@@ -148,24 +148,6 @@ EpetraLinearOp::domainScalarProdVecSpc() const
 }
 
 void EpetraLinearOp::euclideanApply(
-	const ETransp                M_trans
-	,const VectorBase<Scalar>    &x
-	,VectorBase<Scalar>          *y
-	,const Scalar                alpha
-	,const Scalar                beta
-	) const
-{
-#ifdef THYRA_VECTOR_DERIVE_FROM_MULTI_VECTOR
-	Thyra::apply(*this,M_trans,static_cast<const MultiVectorBase<Scalar>&>(x),static_cast<MultiVectorBase<Scalar>*>(y),alpha,beta);
-#else
-	MultiVectorCols<Scalar>
-		X(Teuchos::rcp(const_cast<VectorBase<Scalar>*>(&x),false)),
-		Y(Teuchos::rcp(y,false));
-	Thyra::apply(*this,M_trans,X,&Y,alpha,beta);
-#endif
-}
-
-void EpetraLinearOp::euclideanApply(
 	const ETransp                     M_trans
 	,const MultiVectorBase<Scalar>    &X_in
 	,MultiVectorBase<Scalar>          *Y_inout

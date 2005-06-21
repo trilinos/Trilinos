@@ -101,18 +101,6 @@ bool VectorMultiVector<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void VectorMultiVector<Scalar>::apply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-  mv_->apply(M_trans,x,y,alpha,beta);
-}
-
-template<class Scalar>
-void VectorMultiVector<Scalar>::apply(
   const ETransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y

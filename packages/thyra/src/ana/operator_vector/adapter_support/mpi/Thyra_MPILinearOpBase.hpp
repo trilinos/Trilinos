@@ -53,33 +53,6 @@ MPILinearOpBase<Scalar>::domainScalarProdVecSpc() const
   return domain_;
 }
 
-// Overridden from LinearOpBase
-
-template<class Scalar>
-void MPILinearOpBase<Scalar>::euclideanApply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-#ifdef _DEBUG
-  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("MPILinearOpBase<Scalar>::apply()",*this,M_trans,x,y);
-#endif
-  const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >
-    &Op_range  = ( M_trans == NOTRANS ? range_  : domain_ ),
-    &Op_domain = ( M_trans == NOTRANS ? domain_ : range_  );
-  const Index
-    localOffsetRange  = Op_range->localOffset(), 
-    localDimRange     = Op_range->localSubDim(),
-    localOffsetDomain = Op_domain->localOffset(), 
-    localDimDomain    = Op_domain->localSubDim(); 
-  const ExplicitVectorView<Scalar>         local_x_ev(x,Range1D(localOffsetDomain+1,localOffsetDomain+localDimDomain),forceUnitStride());
-  const ExplicitMutableVectorView<Scalar>  local_y_ev(*y,Range1D(localOffsetRange+1,localOffsetRange+localDimRange),forceUnitStride());
-  this->euclideanApply(M_trans,local_x_ev.sv(),&local_y_ev.sv(),alpha,beta);
-}
-
 template<class Scalar>
 void MPILinearOpBase<Scalar>::euclideanApply(
   const ETransp                     M_trans
@@ -90,7 +63,7 @@ void MPILinearOpBase<Scalar>::euclideanApply(
   ) const
 {
 #ifdef _DEBUG
-  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("MPILinearOpBase<Scalar>::apply()",*this,M_trans,X,Y);
+  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("MPILinearOpBase<Scalar>::euclideanApply()",*this,M_trans,X,Y);
 #endif
   const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >
     &Op_range  = ( M_trans == NOTRANS ? range_  : domain_ ),

@@ -29,7 +29,7 @@
 #ifndef THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
 #define THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
 
-#include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -61,7 +61,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class DiagonalLinearOp : virtual public LinearOpBase<Scalar> {
+class DiagonalLinearOp : virtual public SingleRhsLinearOpBase<Scalar> {
 public:
 
   /** @name Constructors/initializers/accessors */
@@ -156,7 +156,14 @@ public:
 
   /** @name Overridden from LinearOpBase */
   //@{
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  //@}
 
+protected:
+
+  /** @name Overridden from SingleLinearOpBase */
+  //@{
   /** \brief . */
   void apply(
     const ETransp                M_trans
@@ -165,17 +172,6 @@ public:
     ,const Scalar                alpha
     ,const Scalar                beta
     ) const;
-  /** \brief . */
-  void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
-    ) const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
-
   //@}
 
 private:

@@ -56,18 +56,6 @@ SerialMultiVectorBase<Scalar>::SerialMultiVectorBase()
 
 template<class Scalar>
 void SerialMultiVectorBase<Scalar>::euclideanApply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-  this->euclideanApply(M_trans,static_cast<const MultiVectorBase<Scalar>&>(x),static_cast<MultiVectorBase<Scalar>*>(y),alpha,beta);
-}
-
-template<class Scalar>
-void SerialMultiVectorBase<Scalar>::euclideanApply(
   const ETransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
@@ -180,18 +168,6 @@ bool SerialMultiVectorBase<Scalar>::opSupported(ETransp M_trans) const
 }
 
 // Overridden from LinearOpBase
-
-template<class Scalar>
-void SerialMultiVectorBase<Scalar>::apply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-  Thyra::apply(*this,M_trans,static_cast<const MultiVectorBase<Scalar>&>(x),static_cast<MultiVectorBase<Scalar>*>(y),alpha,beta);
-}
 
 template<class Scalar>
 void SerialMultiVectorBase<Scalar>::apply(

@@ -31,6 +31,7 @@
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorBaseDecl.hpp"
+#include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
 namespace Thyra {
@@ -117,7 +118,8 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class Scalar>
-class VectorBase : virtual public MultiVectorBase<Scalar> {
+class VectorBase : virtual public MultiVectorBase<Scalar>, virtual public SingleRhsLinearOpBase<Scalar>
+{
 public:
 
   /** \brief . */
@@ -468,18 +470,6 @@ public:
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
   //@}
 
-  /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
-  //@{
-  /// Applies vector and its adjoint (transpose) as a linear operator.
-  void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const;
-  //@}
-
   /** @name Overridden from MultiVectorBase (should never need to be overridden in subclasses) */
   //@{
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
@@ -510,6 +500,20 @@ public:
     );
   /// Implemented in terms of <tt>this->commitSubVector()</tt>
   void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  //@}
+
+protected:
+
+  /** @name Overridden from SingleRhsLinearOpBase (should never need to be overridden in subclasses) */
+  //@{
+  /// Applies vector and its adjoint (transpose) as a linear operator.
+  void apply(
+    const ETransp                M_trans
+    ,const VectorBase<Scalar>    &x
+    ,VectorBase<Scalar>          *y
+    ,const Scalar                alpha
+    ,const Scalar                beta
+    ) const;
   //@}
 
 private:

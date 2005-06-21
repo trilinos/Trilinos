@@ -53,32 +53,13 @@ SerialLinearOpBase<Scalar>::domainScalarProdVecSpc() const
   return domain_;
 }
 
-// Overridden from LinearOpBase
-
 template<class Scalar>
 void SerialLinearOpBase<Scalar>::euclideanApply(
-  const ETransp            M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar            alpha
-  ,const Scalar            beta
-  ) const
-{
-#ifdef _DEBUG
-  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("SerialLinearOpBase<Scalar>::apply()",*this,M_trans,x,y);
-#endif
-  const ExplicitVectorView<Scalar>         x_ev(x,Range1D(),forceUnitStride());
-  const ExplicitMutableVectorView<Scalar>  y_ev(*y,Range1D(),forceUnitStride());
-  this->euclideanApply(M_trans,x_ev.sv(),&y_ev.sv(),alpha,beta);
-}
-
-template<class Scalar>
-void SerialLinearOpBase<Scalar>::euclideanApply(
-  const ETransp                 M_trans
+  const ETransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                 alpha
-  ,const Scalar                 beta
+  ,const Scalar                     alpha
+  ,const Scalar                     beta
   ) const
 {
 #ifdef _DEBUG

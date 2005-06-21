@@ -189,14 +189,6 @@ public:
 	Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
 	/** \brief . */
 	void euclideanApply(
-		const ETransp                M_trans
-		,const VectorBase<Scalar>    &x
-		,VectorBase<Scalar>          *y
-		,const Scalar                alpha
-		,const Scalar                beta
-		) const;
-	/** \brief . */
-	void euclideanApply(
 		const ETransp                     M_trans
 		,const MultiVectorBase<Scalar>    &X
 		,MultiVectorBase<Scalar>          *Y

@@ -213,17 +213,6 @@ public:
   /// Returns <tt>mpiSpace</tt>.
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
 
-  /** \brief Wraps the <tt>VectorBase</tt> objects in <tt>MultiVectorBase</tt> objects then calls
-   * the <tt>MultiVectorBase</tt> version of <tt>euclideanApply()</tt>
-   */
-  void euclideanApply(
-    const ETransp            M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar            alpha
-    ,const Scalar            beta
-    ) const;
-
   /** \brief Uses GEMM(...) and MPI_Allreduce(...) to implement.
    *
    * ToDo: Finish documentation!
@@ -240,16 +229,6 @@ public:
 
   /** @name Overridden from LinearOpBase */
   //@{
-
-  /** \brief Calls <tt>EuclideanLinearOpBase::apply()</tt> to disambiguate <tt>apply()</tt>
-   */
-  void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const;
 
   /** \brief Calls <tt>EuclideanLinearOpBase::apply()</tt> to disambiguate <tt>apply()</tt>
    */

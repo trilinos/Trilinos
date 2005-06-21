@@ -26,34 +26,32 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SCALAR_PROD_HPP
-#define THYRA_SCALAR_PROD_HPP
+#ifndef THYRA_SINGLE_RHS_LINEAR_OP_BASE_HPP
+#define THYRA_SINGLE_RHS_LINEAR_OP_BASE_HPP
 
-#include "Thyra_ScalarProdBaseDecl.hpp"
+#include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
+#include "Thyra_OpBase.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Thyra_LinearOpBase.hpp"
 
 namespace Thyra {
 
 template<class Scalar>
-Scalar ScalarProdBase<Scalar>::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const
+void SingleRhsLinearOpBase<Scalar>::apply(
+  const ETransp                     M_trans
+  ,const MultiVectorBase<Scalar>    &X
+  ,MultiVectorBase<Scalar>          *Y
+  ,const Scalar                     alpha
+  ,const Scalar                     beta
+  ) const
 {
-  Scalar scalar_prods[1];
-#ifdef THYRA_VECTOR_DERIVE_FROM_MULTI_VECTOR
-  this->scalarProds(
-    static_cast<const MultiVectorBase<Scalar>&>(x)
-    ,static_cast<const MultiVectorBase<Scalar>&>(y)
-    ,scalar_prods
-    );
-#else
-  const MultiVectorCols<Scalar>
-    X( Teuchos::rcp( const_cast<VectorBase<Scalar>*>(&x), false ) ),
-    Y( Teuchos::rcp( const_cast<VectorBase<Scalar>*>(&y), false ) );
-  this->scalarProds(X,Y,scalar_prods);
-#endif
-  return scalar_prods[0];
+  const VectorSpaceBase<Scalar> &space_mv_rows = *Y->domain();
+  const Index num_mv_cols    = space_mv_rows.dim();
+  for( Index j = 1; j <= num_mv_cols; ++j )
+    this->apply(M_trans,*X.col(j),Y->col(j).get(),alpha,beta);
 }
 
-} // end namespace Thyra
+}	// end namespace Thyra
 
-#endif  // THYRA_SCALAR_PROD_HPP
+#endif // THYRA_SINGLE_RHS_LINEAR_OP_BASE_HPP

@@ -35,48 +35,43 @@ namespace Thyra {
 
 /** \brief Base class for all linear operators.
  *
- * A linear operator can perform the following operations:
+ * A linear operator can perform the following operation:
  *
  * <ul>
- * <li><tt>y = alpha*op(M)*x + beta*y</tt>  (vector version)
- * <li><tt>Y = alpha*op(M)*X + beta*Y</tt>  (multi-vector version)
+ * <li><tt>Y = alpha*op(M)*X + beta*Y</tt>
  * </ul>
  *
- * through the <tt>apply()</tt> functions where <tt>y</tt> and
- * <tt>x</tt> are <tt>VectorBase</tt> objects while <tt>Y</tt> and
- * <tt>X</tt> are <tt>MultiVectorBase</tt> objects.  The reason for the
- * exact form of the above operations is that there are direct BLAS
- * and equivalent versions of these operations and performing a
- * sum-into multiplication is more efficient in general.
+ * through the <tt>apply()</tt> function where <tt>Y</tt> and <tt>X</tt> are
+ * <tt>MultiVectorBase</tt> objects.  The reason for the exact form of the
+ * above operations is that there are direct BLAS and equivalent versions of
+ * these operations and performing a sum-into multiplication is more efficient
+ * in general.
  *
  * A linear operator has vector spaces associated with it for the
- * vectors <tt>x</tt> and <tt>y</tt> that lie in the domain and the
- * range spaces of the non-transposed linear operator <tt>y = M*x</tt>
- * and these spaces are returned by <tt>domain()</tt> and
- * <tt>range()</tt>.
+ * multi-vectors <tt>X</tt> and <tt>Y</tt> that lie in the domain and the
+ * range spaces of the non-transposed linear operator <tt>y = M*x</tt> and
+ * these spaces are returned by <tt>domain()</tt> and <tt>range()</tt>.
  *
  * Note that the vector spaces returned from <tt>domain()</tt> and
- * <tt>range()</tt> may have specialized implementations of the scalar
- * product \f$<u,w>\f$ (i.e. \f$<u,w> \neq u^T w\f$ in general).  As a
- * result, the operator and adjoint operator must obey the defined
- * scalar product.  Specifically, for any two vectors \f$w\f$ (in the
- * domain space \f$\mathcal{D}\f$) and \f$u\f$ (in the range space
- * \f$\mathcal{R}\f$) the adjoint operation must obey:
+ * <tt>range()</tt> may have specialized implementations of the scalar product
+ * \f$<u,w>\f$ (i.e. \f$<u,w> \neq u^T w\f$ in general).  As a result, the
+ * operator and adjoint operator must obey the defined scalar product.
+ * Specifically, for any two vectors \f$w\f$ (in the domain space
+ * \f$\mathcal{D}\f$) and \f$u\f$ (in the range space \f$\mathcal{R}\f$) the
+ * adjoint operation must obey:
  *
  \f[
   <u,A v>_{\mathcal{R}} = <A^T u, v>_{\mathcal{D}}
  \f]
  *
  * where \f$<.,.>_{\mathcal{R}}\f$ is the scalar product defined by
- * <tt>this->range()->scalarProd()</tt> and \f$<.,.>_{\mathcal{D}}\f$
- * is the scalar product defined by
- * <tt>this->domain()->scalarProd()</tt>.  This property of the
- * adjoint can be checked numerically, if adjoints are supported,
- * using the testing utility class <tt>LinearOpTester</tt>.
+ * <tt>this->range()->scalarProd()</tt> and \f$<.,.>_{\mathcal{D}}\f$ is the
+ * scalar product defined by <tt>this->domain()->scalarProd()</tt>.  This
+ * property of the adjoint can be checked numerically, if adjoints are
+ * supported, using the testing utility class <tt>LinearOpTester</tt>.
  *
- * Note that it is strictly forbidden to alias the input/output
- * objects <tt>y</tt> and <tt>Y</tt> with the input objects <tt>x</tt>
- * and <tt>X</tt>.
+ * Note that it is strictly forbidden to alias the input/output object
+ * <tt>Y</tt> with the input object <tt>X</tt>.
  *
  * If a <tt>%LinearOpBase</tt> subclass can not support a particular value
  * of <tt>M_tans</tt> in the <tt>apply()</tt> functions, then the function
@@ -121,75 +116,8 @@ template<class Scalar>
 class LinearOpBase : virtual public OpBase<Scalar> {
 public:
 
-  /** \brief . */
-  using OpBase<Scalar>::describe;
-
   /** @name Pure virtual functions (must be overridden by subclass) */
   //@{
-
-  /** \brief Apply the linear operator (or its transpose) to a vector:
-   * <tt>y = alpha*op(M)*x + beta*y</tt>.
-   *
-   * @param  M_trans
-   *                [in] Determines whether the transposed or non-transposed
-   *                operator is applied as:
-   *                <ul>
-   *                <li> <tt>op(M) = M</tt>, for <tt>M_trans==NOTRANS</tt>
-   *                <li> <tt>op(M) = M'</tt>, for <tt>M_trans==TRANS</tt>
-   *                </ul>
-   *                where <tt>M == *this</tt>
-   * @param  x      [in] The right hand side vector 
-   * @param  y      [in/out] The target vector being transformed
-   * @param  alpha  [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
-     *                The default value of <tt>alpha</tt> is </tt>1.0</tt>
-   * @param  beta   [in] The multiplier for the target vector <tt>y</tt>.
-   *                The default value of <tt>beta</tt> is <tt>0.0</tt>.
-   * 
-   * Preconditions:<ul>
-   * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>this->opSupported(M_trans)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
-   * <li> <tt>y->space()->isCompatible(M_trans==NOTRANS ? *this->range() : *this->domain()) == true</tt>
-   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li> <tt>x.space()->isCompatible(M_trans==NOTRANS ? *this->domain() : *this->range()) == true</tt>
-   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li> <tt>y</tt> can not alias <tt>x</tt>.  It is up to the client to ensure that <tt>y</tt>
-   *      and <tt>x</tt> are distinct since in general this can not be verified by the implementation until,
-   *      perhaps, it is too late.  If possible, an exception will be thrown if aliasing is detected.
-   * </ul>
-   *
-   * Postconditions:<ul>
-   * <li> Is it not obvious?  After the function returns the vector <tt>y</tt>
-   *      is transformed as indicated above.
-   * </ul>
-   */
-  virtual void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha = Teuchos::ScalarTraits<Scalar>::one()
-    ,const Scalar                beta  = Teuchos::ScalarTraits<Scalar>::zero()
-    ) const = 0;
-
-  //@}
-
-  /** @name Virtual functions with default implementations */
-  //@{
-
-  /** \brief Clone the linear operator object (if supported).
-   *
-   * The primary purpose for this function is to allow a client to
-   * capture the current state of a linear operator object and be
-   * guaranteed that some other client will not alter its behavior.
-   * A smart implementation will use reference counting and lazy
-   * evaluation internally and will not actually copy any large
-   * amount of data unless it has to.
-   *
-   * The default implementation returns <tt>return.get()==NULL</tt>
-   * which is allowable by this specification.  A linear operator
-   * object is not required to return a non-NULL value but almost
-   * every good linear operator implementation should and will.
-   */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
 
   /** \brief Apply the linear operator (or its transpose) to a multi-vector :
    * <tt>Y = alpha*op(M)*X + beta*Y</tt>.
@@ -227,9 +155,6 @@ public:
    * <li> Is it not obvious?  After the function returns the multi-vector <tt>Y</tt>
    *      is transformed as indicated above.
    * </ul>
-   *
-   * This function has a default implementation in terms of the
-   * <tt>apply()</tt> function for vectors.
    */
   virtual void apply(
     const ETransp                     M_trans
@@ -237,7 +162,28 @@ public:
     ,MultiVectorBase<Scalar>          *Y
     ,const Scalar                     alpha = Teuchos::ScalarTraits<Scalar>::one()
     ,const Scalar                     beta  = Teuchos::ScalarTraits<Scalar>::zero()
-    ) const;
+    ) const = 0;
+
+  //@}
+
+  /** @name Virtual functions with default implementations */
+  //@{
+
+  /** \brief Clone the linear operator object (if supported).
+   *
+   * The primary purpose for this function is to allow a client to
+   * capture the current state of a linear operator object and be
+   * guaranteed that some other client will not alter its behavior.
+   * A smart implementation will use reference counting and lazy
+   * evaluation internally and will not actually copy any large
+   * amount of data unless it has to.
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * which is allowable by this specification.  A linear operator
+   * object is not required to return a non-NULL value but almost
+   * every good linear operator implementation should and will.
+   */
+  virtual Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -263,6 +209,9 @@ public:
      m:1:am1 m:2:am2 ... m:n:amn
    \endverbatim
    *
+   * The above matrix coefficients are with respect to the natural basis as
+   * defined by the scalar products.
+   *
    * Before <tt>type = 'this->description()'</tt> is printed and after
    * each newline, <tt>leadingIndent</tt> is output.  The
    * <tt>index:value</tt> lines are offset an additional
@@ -279,58 +228,6 @@ public:
   //@}
 
 };	// end class LinearOpBase
-
-/** \brief Call <tt>LinearOpBase<Scalar>::apply()</tt> as a global function call.
- *
- * Calls <tt>M.apply(M_trans,x,y,alpha,beta);</tt>
- *
- * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
- */
-template<class Scalar>
-inline void apply(
-  const LinearOpBase<Scalar>   &M
-  ,const ETransp               M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-#ifndef __sun
-                                          = Teuchos::ScalarTraits<Scalar>::one()
-#endif
-  ,const Scalar                beta
-#ifndef __sun
-                                          = Teuchos::ScalarTraits<Scalar>::zero()
-#endif
-  )
-{
-  M.apply(M_trans,x,y,alpha,beta);
-}
-
-#ifdef __sun
-
-template<class Scalar>
-inline void apply(
-  const LinearOpBase<Scalar>   &M
-  ,const ETransp               M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  )
-{
-  apply(M,M_trans,x,y,alpha,Teuchos::ScalarTraits<Scalar>::zero());
-}
-
-template<class Scalar>
-inline void apply(
-  const LinearOpBase<Scalar>   &M
-  ,const ETransp               M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  )
-{
-  apply(M,M_trans,x,y,Teuchos::ScalarTraits<Scalar>::one());
-}
-
-#endif
 
 /** \brief Call <tt>LinearOpBase<Scalar>::apply()</tt> as a global function call.
  *

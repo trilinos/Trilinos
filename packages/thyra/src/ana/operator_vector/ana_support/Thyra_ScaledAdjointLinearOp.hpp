@@ -203,19 +203,6 @@ bool ScaledAdjointLinearOp<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void ScaledAdjointLinearOp<Scalar>::apply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-  assertInitialized();
-  this->getOrigOp()->apply(trans_trans(M_trans,this->overallTransp()),x,y,(this->overallScalar()*alpha),beta);
-}
-
-template<class Scalar>
-void ScaledAdjointLinearOp<Scalar>::apply(
   const ETransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y

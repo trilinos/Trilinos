@@ -30,7 +30,7 @@
 #define THYRA_DIAGONAL_LINEAR_OP_HPP
 
 #include "Thyra_DiagonalLinearOpDecl.hpp"
-#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_VectorBase.hpp"
 
 namespace Thyra {
@@ -99,6 +99,16 @@ bool DiagonalLinearOp<Scalar>::opSupported(ETransp M_trans) const
 // Overridden from LinearOpBase
 
 template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+DiagonalLinearOp<Scalar>::clone() const
+{
+  return Teuchos::null; // Not supported yet but could be
+}
+
+
+// Overridden from SingleRhsLinearOpBase
+
+template<class Scalar>
 void DiagonalLinearOp<Scalar>::apply(
   const ETransp                M_trans
   ,const VectorBase<Scalar>    &x
@@ -114,24 +124,6 @@ void DiagonalLinearOp<Scalar>::apply(
   ele_wise_prod( Scalar(alpha*gamma_), x, *diag_, y );
 }
 
-template<class Scalar>
-void DiagonalLinearOp<Scalar>::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
-  ) const
-{
-  LinearOpBase<Scalar>::apply(M_trans,X,Y,alpha,beta); // ToDo: Specialize with a multi-vector call?
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-DiagonalLinearOp<Scalar>::clone() const
-{
-  return Teuchos::null; // Not supported yet but could be
-}
 
 }	// end namespace Thyra
 

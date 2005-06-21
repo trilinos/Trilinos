@@ -170,17 +170,6 @@ public:
   Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief Calls protected <tt>euclideanApply()</tt> function.
    *
-   * \anchor apply_vec
-   */
-  void euclideanApply(
-    const ETransp            M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar            alpha
-    ,const Scalar            beta
-    ) const;
-  /** \brief Calls protected <tt>euclideanApply()</tt> function.
-   *
    * \anchor apply_multi_vec
    */
   void euclideanApply(

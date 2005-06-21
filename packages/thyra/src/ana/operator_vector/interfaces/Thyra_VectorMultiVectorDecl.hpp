@@ -33,24 +33,22 @@
 
 namespace Thyra {
 
-/** \brief Generic adapter subclass that takes any
- * <tt>MultiVectorBase</tt> that into a <tt>VectorBase</tt> object where
- * columns vectors are stacked on top of one another to make
- * one big vector.
+/** \brief Generic adapter subclass that takes any <tt>MultiVectorBase</tt>
+ * and turns it into a <tt>VectorBase</tt> object where columns vectors are
+ * stacked on top of one another to make one big vector.
  *
- * There are two primary purposes for this concrete subclass.  The
- * first purpose of this subclass is to provide an implementation for
+ * There are two primary purposes for this concrete subclass.  The first
+ * purpose of this subclass is to provide an implementation for
  * <tt>VectorBase</tt> given that a concrete implementation for a
  * <tt>MultiVectorBase</tt> is already provided.  A linear algebra library
  * implementation should have to do almost nothing to get a
  * <tt>VectorBase</tt> implementation if a <tt>MultiVectorBase</tt> is already
  * supported.  The second purpose of this subclass is to take any
- * <tt>MultiVectorBase</tt> object with multiple columns and make it look
- * like one big vector.
+ * <tt>MultiVectorBase</tt> object with multiple columns and make it look like
+ * one big vector.
  *
- * To use this subclass for the primary purpose providing an
- * implementation for <tt>VectorBase</tt> use of this subclass is to
- * implement the override of <tt>VectorSpaceBase::createMember()</tt>
+ * To use this subclass to provide an implementation for <tt>VectorBase</tt>,
+ * implement the override of the <tt>VectorSpaceBase::createMember()</tt>
  * function as:
  *
  \code
@@ -133,14 +131,6 @@ public:
 
   /** @name Overridden from LinearOpBase (forwarded to this->mv()) */
   //@{
-  /** \brief . */
-  void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const;
   /** \brief . */
   void apply(
     const ETransp                     M_trans

@@ -119,8 +119,6 @@ public:
 
   /** \brief . */
   using LinearOpBase<Scalar>::describe;
-  /** \brief . */
-  using LinearOpBase<Scalar>::apply;
   
   /** @name Provide access to the columns as VectorBase objects */
   //@{
@@ -574,31 +572,6 @@ public:
 
   /** @name Overridden functions from LinearOpBase */
   //@{
-
-  /** \brief This function is implemented in terms of the multi-vector <tt>applyOp()</tt> function.
-   *
-   * The implementation takes care of two types of operations.  One
-   * (<tt>M_trans==TRANS</tt>) is the block dot product of two
-   * vectors to form scalar (stored as the vector <tt>y</tt> which
-   * as one component).  The other (<tt>M_trans==NOTRANS</tt>) is
-   * essentially an axpy operation where <tt>x</tt> is a vector with
-   * one element.  Both of these operations are performed using
-   * reduction/transformation operators.
-   *
-   * This implementation is near optimal but the default
-   * implementation of the multi-vector version of <tt>apply()</tt>
-   * as implemented in the base class <tt>LinearOpBase</tt> will not be
-   * a near optimal implementation in its current form do to
-   * multiple, sequential reductions but it could be made to be with
-   * a little work.
-   */
-  void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const;
 
   /// This function is simply overridden to return <tt>this->clone_mv()</tt>.
   Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;

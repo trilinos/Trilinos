@@ -76,16 +76,6 @@ public:
   void apply(
     const EuclideanLinearOpBase<Scalar>   &M
     ,const ETransp                        M_trans
-    ,const VectorBase<Scalar>             &x
-    ,VectorBase<Scalar>                   *y
-    ,const Scalar                         alpha
-    ,const Scalar                         beta
-    ) const;
-
-  /** \brief . */
-  void apply(
-    const EuclideanLinearOpBase<Scalar>   &M
-    ,const ETransp                        M_trans
     ,const MultiVectorBase<Scalar>        &X
     ,MultiVectorBase<Scalar>              *Y
     ,const Scalar                         alpha

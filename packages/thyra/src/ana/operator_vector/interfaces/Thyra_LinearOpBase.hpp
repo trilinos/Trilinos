@@ -46,21 +46,6 @@ LinearOpBase<Scalar>::clone() const
   return Teuchos::null;
 }
 
-template<class Scalar>
-void LinearOpBase<Scalar>::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
-  ) const
-{
-  const VectorSpaceBase<Scalar> &space_mv_rows = *Y->domain();
-  const Index               num_mv_cols    = space_mv_rows.dim();
-  for( Index j = 1; j <= num_mv_cols; ++j )
-    this->apply(M_trans,*X.col(j),Y->col(j).get(),alpha,beta);
-}
-
 // Overridden from Teuchos::Describable
 
 template<class Scalar>

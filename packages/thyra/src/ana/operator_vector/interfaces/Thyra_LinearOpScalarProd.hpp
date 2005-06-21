@@ -78,25 +78,6 @@ template<class Scalar>
 void LinearOpScalarProd<Scalar>::apply(
   const EuclideanLinearOpBase<Scalar>   &M
   ,const ETransp                        M_trans
-  ,const VectorBase<Scalar>             &x
-  ,VectorBase<Scalar>                   *y
-  ,const Scalar                         alpha
-  ,const Scalar                         beta
-  ) const
-{
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT(y==NULL);
-#endif
-  Teuchos::RefCountPtr<VectorBase<Scalar> >
-    t = createMember(x.space());
-  op_->apply(NOTRANS,x,&*t);
-  M.euclideanApply(M_trans,*t,y,alpha,beta);
-}
-
-template<class Scalar>
-void LinearOpScalarProd<Scalar>::apply(
-  const EuclideanLinearOpBase<Scalar>   &M
-  ,const ETransp                        M_trans
   ,const MultiVectorBase<Scalar>        &X
   ,MultiVectorBase<Scalar>              *Y
   ,const Scalar                         alpha

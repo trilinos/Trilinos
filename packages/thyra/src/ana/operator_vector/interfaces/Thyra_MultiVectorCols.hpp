@@ -114,7 +114,7 @@ void MultiVectorCols<Scalar>::set_uninitialized()
   domain_ = Teuchos::null;
 }
 
-// Overridden from LinearOpBase
+// Overridden from OpBase
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
@@ -128,6 +128,55 @@ Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
 MultiVectorCols<Scalar>::domain() const
 {
   return domain_;
+}
+
+// Overridden from LinearOpBase
+
+template<class Scalar>
+void MultiVectorCols<Scalar>::apply(
+  const ETransp                M_trans
+  ,const VectorBase<Scalar>    &x
+  ,VectorBase<Scalar>          *y
+  ,const Scalar                alpha
+  ,const Scalar                beta
+  ) const
+{
+#ifdef _DEBUG
+  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("MultiVectorBase<Scalar>::apply()",*this,M_trans,x,y);
+#endif
+  const Index nc = this->domain()->dim();
+  // y *= beta
+  Vt_S(y,beta);
+  // y += alpha*op(M)*x
+  if(M_trans == NOTRANS) {
+    //
+    // y += alpha*M*x = alpha*M.col(1)*x(1) + ... + alpha*M.col(nc)*x(nc)
+    //
+    // Extract an explicit view of x
+    RTOpPack::SubVectorT<Scalar> x_sub_vec;               
+    x.getSubVector(Range1D(),&x_sub_vec);
+    // Loop through and add the multiple of each column
+    for(Index j = 1; j <= nc; ++j )
+      Vp_StV( y, Scalar(alpha*x_sub_vec(j)), *this->col(j) );
+    // Release the view of x
+    x.freeSubVector(&x_sub_vec);
+  }
+  else {
+    //
+    //                   [ alpha*dot(M.col(1),x)  ]
+    // y += alpha*M'*x = [ alpha*dot(M.col(2),x)  ]
+    //                   [ ...                    ]
+    //                   [ alpha*dot(M.col(nc),x) ]
+    //
+    // Extract an explicit view of y
+    RTOpPack::MutableSubVectorT<Scalar> y_sub_vec;               
+    y->getSubVector(Range1D(),&y_sub_vec);
+    // Loop through and add to each element in y
+    for(Index j = 1; j <= nc; ++j )
+      y_sub_vec(j) += alpha*dot(*this->col(j),x);
+    // Commit explicit view of y
+    y->commitSubVector(&y_sub_vec);
+  }
 }
 
 // Overridden from MultiVectorBase

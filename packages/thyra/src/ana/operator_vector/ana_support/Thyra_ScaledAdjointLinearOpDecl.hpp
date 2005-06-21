@@ -248,22 +248,6 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
 
-  /** \brief Apply the logical linear operator (or its transpose) to a vector:
-   * <tt>y = alpha*op(M)*x + beta*y</tt>.
-   *
-   * Simply calls: \code
-
-   this->getOrigOp()->apply(trans_trans(M_trans,this->overallTransp()),x,y,(this->overallScalar()*alpha),beta)
-   \endcode
-   */
-  void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const;
-
   /** \brief Apply the linear operator (or its transpose) to a multi-vector :
    * <tt>Y = alpha*op(M)*X + beta*Y</tt>.
    *

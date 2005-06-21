@@ -75,21 +75,6 @@ EuclideanLinearOpBase<Scalar>::domain() const
 
 template<class Scalar>
 void EuclideanLinearOpBase<Scalar>::apply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-  if( M_trans==NOTRANS )
-    this->domainScalarProdVecSpc()->getScalarProd()->apply(*this,M_trans,x,y,alpha,beta);
-  else
-    this->rangeScalarProdVecSpc()->getScalarProd()->apply(*this,M_trans,x,y,alpha,beta);
-}
-
-template<class Scalar>
-void EuclideanLinearOpBase<Scalar>::apply(
   const ETransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
