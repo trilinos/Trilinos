@@ -224,7 +224,7 @@ void EpetraLinearOp::euclideanApply(
 			,*create_MPIMultiVectorBase(
 				Teuchos::rcp(&Teuchos::getConst(T),false)
 				,Teuchos::rcp_dynamic_cast<const MPIVectorSpaceBase<Scalar> >(Y_inout->range(),true)
-				,Teuchos::rcp_dynamic_cast<const MPIVectorSpaceBase<Scalar> >(Y_inout->domain(),true)
+				,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(Y_inout->domain(),true)
 				)
 			,Y_inout
 			);
