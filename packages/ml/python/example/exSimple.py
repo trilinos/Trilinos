@@ -12,29 +12,29 @@ Epetra.Init()
 
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
-nx = 100;
-ny = 100;
+nx = 100
+ny = 100
 Comm = Epetra.PyComm()
 
 Gallery = Triutils.CrsMatrixGallery("laplace_2d", Comm)
-Gallery.Set("nx", nx);
-Gallery.Set("ny", ny);
-Matrix = Gallery.GetMatrix();
-LHS = Gallery.GetStartingSolution();
-RHS = Gallery.GetRHS();
+Gallery.Set("nx", nx)
+Gallery.Set("ny", ny)
+Matrix = Gallery.GetMatrix()
+LHS = Gallery.GetStartingSolution()
+RHS = Gallery.GetRHS()
 
 # sets up the parameters for ML using a python dictionary
 MLList = {
-  "max levels"        : ("int", "3"), 
-  "output"            : ("int", "10"),
-  "smoother: type"    : ("string", "symmetric Gauss-Seidel"),
-  "aggregation: type" : ("string", "Uncoupled")
-};
+  "max levels"        : 3, 
+  "output"            : 10,
+  "smoother: type"    : "symmetric Gauss-Seidel",
+  "aggregation: type" : "Uncoupled"
+}
 
 # creates the preconditioner and computes it
-Prec = ML.MultiLevelPreconditioner(Matrix, False);
-Prec.SetParameterList(MLList);
-Prec.ComputePreconditioner();
+Prec = ML.MultiLevelPreconditioner(Matrix, False)
+Prec.SetParameterList(MLList)
+Prec.ComputePreconditioner()
 
 # sets up the solver, specifies Prec as preconditioner, and
 # solves using CG.

@@ -43,7 +43,7 @@ try:
     f.close()
     makeInfo = eval(string.join(makeInfo))
 except IOError:
-    print "WARNING: %s not found" % setup_filename
+    #print "WARNING: %s not found" % setup_filename
     makeInfo = { }
 
 # Build the command to get the build library name

@@ -68,7 +68,7 @@ using namespace std;
 %import "Epetra.i"
 
 // typemaps
-%typemap(in) Teuchos::ParameterList& List
+%typemap(in) const Teuchos::ParameterList& List
 {
   int i;
   if (!PyDict_Check($input)) {
@@ -81,55 +81,90 @@ using namespace std;
   PyObject* Keys = PyDict_Keys($input);
   PyObject* Values = PyDict_Values($input);
 
-  for (i = 0; i < size ; i++) {
+  for (i = 0; i < size ; i++) 
+  {
     PyObject *s = PyList_GetItem(Keys,i);
     PyObject *t = PyList_GetItem(Values,i);
+
+    // Get the parameter name
     if (!PyString_Check(s)) {
         PyErr_SetString(PyExc_ValueError, "Dictionary keys must be strings");
         return NULL;
     }
-    if (!PyTuple_Check(t)) {
-        PyErr_SetString(PyExc_ValueError, "Dictionary values must be tuples");
-        return NULL;
-    }
-    if (!PyString_Check(PyTuple_GetItem(t, 0)) ||
-        !PyString_Check(PyTuple_GetItem(t, 1))) {
-        PyErr_SetString(PyExc_ValueError, "tuples must contain strings");
-        return NULL;
-    }
     string ParameterName = PyString_AsString(s);
-    string ParameterType = PyString_AsString(PyTuple_GetItem(t, 0));
-    string ParameterValue = PyString_AsString(PyTuple_GetItem(t, 1));
-    if (ParameterType == "bool") 
+
+    // now parse for the parameter value and type
+    // This can be a "int", "double", "string", or a tuple
+    // for more general types
+
+    if (PyBool_Check(t)) 
     {
-      if (ParameterValue == "true")
+      if (t == Py_True)
         $1->set(ParameterName, true);
       else
         $1->set(ParameterName, false);
     }
-    else if (ParameterType == "int") 
+    else if (PyInt_Check(t)) 
     {
-      $1->set(ParameterName, (int)atoi(ParameterValue.c_str()));
+      int ParameterValue = PyInt_AsLong(t);
+      $1->set(ParameterName, ParameterValue);
     }
-    else if (ParameterType == "double") 
+    else if (PyFloat_Check(t)) 
     {
-      $1->set(ParameterName, (double)atof(ParameterValue.c_str()));
+      double ParameterValue = PyFloat_AsDouble(t);
+      $1->set(ParameterName, ParameterValue);
     }
-    else if (ParameterType == "string") 
+    else if (PyString_Check(t)) 
     {
-      $1->set(ParameterName, string(ParameterValue));
+      string ParameterValue = PyString_AsString(t);
+      $1->set(ParameterName, ParameterValue);
     }
-    else 
+    else if (PyTuple_Check(t)) 
     {
-      cout << "Parameter type not recognized" << endl;
-      exit(EXIT_FAILURE);
+      if (!PyString_Check(PyTuple_GetItem(t, 0)) ||
+          !PyString_Check(PyTuple_GetItem(t, 1))) {
+        PyErr_SetString(PyExc_ValueError, "tuples must contain strings");
+        return NULL;
+      }
+      string ParameterType = PyString_AsString(PyTuple_GetItem(t, 0));
+      string ParameterValue = PyString_AsString(PyTuple_GetItem(t, 1));
+      if (ParameterType == "bool") 
+      {
+        if (ParameterValue == "true")
+          $1->set(ParameterName, true);
+        else
+          $1->set(ParameterName, false);
+      }
+      else if (ParameterType == "int") 
+      {
+        $1->set(ParameterName, (int)atoi(ParameterValue.c_str()));
+      }
+      else if (ParameterType == "double") 
+      {
+        $1->set(ParameterName, (double)atof(ParameterValue.c_str()));
+      }
+      else if (ParameterType == "string") 
+      {
+        $1->set(ParameterName, string(ParameterValue));
+      }
+      else 
+      {
+        PyErr_SetString(PyExc_ValueError, "type in tuple not recognized");
+        return NULL;
+      }
+    }
+    else
+    {
+      PyErr_SetString(PyExc_ValueError, "Type in list not recognized");
+      return NULL;
     }
   }
 }
 
-%typemap(freearg) Teuchos::ParameterList& List
+%typemap(freearg) const Teuchos::ParameterList& List
 {
   delete($1);
 }
+
 // Amesos interface includes
 %include "ml_MultiLevelPreconditioner.h"
