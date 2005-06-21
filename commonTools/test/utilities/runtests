@@ -27,6 +27,7 @@ my $maxProc;            # maximum processors        (default: 4)
 my $mpiStart;           # mpi startup command       (default: NONE)
 my $mpiStop;            # mpi shutdown command      (default: NONE)
 my $mpiGo;              # mpi-go command            (default: mpirun -np )
+my @packages;           # array of packages to test
 
 my $outputDir;          # output directory          (default: .)
 my $simpleDirName;      # leave off timestamp for sake of database reporting
@@ -77,6 +78,7 @@ cleanUp();
         # Argument variables that don't need to be global.
         my $quiet;
         my $help;
+        my $packageList;
 
         # Gather command line arguments.
         use Getopt::Long;
@@ -88,6 +90,7 @@ cleanUp();
                     "mpi-start=s" => \$mpiStart,
                     "mpi-stop=s" => \$mpiStop,
                     "mpi-go=s" => \$mpiGo,
+                    "packages=s" => \$packageList,
                     "output-dir=s" => \$outputDir,
                     "simple-dir-name" => \$simpleDirName,
                     "verbosity=i" => \$verbosity,
@@ -139,19 +142,7 @@ cleanUp();
         # developers decide they want to define their own, non-standard groups.
         if (!$category) {
             die "category value required, see --help for more information\n"; 
-        } else {
-            if (!(  $category eq "FRAMEWORK" ||
-                    $category eq "CHECKIN" ||
-                    $category eq "PERFORMANCE" ||
-                    $category eq "SCALABILITY" ||
-                    $category eq "COVERAGE" ||
-                    $category eq "MEMORYLEAK" ||
-                    $category eq "MEMORYUSAGE" ||
-                    $category eq "ALL")) 
-            {
-                die "invalid category value: $category\n";        
-            }
-        }
+        } 
         
         # Check for existance of max-proc.
         if (!$maxProc) {
@@ -200,6 +191,9 @@ cleanUp();
                 $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpiGo;
             }
         }
+        
+        # Split up comma-separated list of packages
+        if ($packageList) { @packages = split(',',$packageList); }
         
         # Check for existance of output directory, use it to create the
         # complete path for the results directory, and create the results
@@ -424,16 +418,15 @@ cleanUp();
         
             # Trim $testOutput.
             $testOutput = substr ($testOutput, -1000000);
-            #
+            
             #  On some platforms, mpirun returns 0 when run on 
             #  non-binary files, such as scripts.  The following 
             #  hack tests for this and changes the exit status from 
             #  0 to 13.
-            #
-	    if ($testOutput =~ "process did not invoke MPI_INIT" ) {
-	        if ( !$testExitStatus )  {
-	            $testExitStatus = 13 ;
-		}
+    	    if ($testOutput =~ "process did not invoke MPI_INIT" ) {
+    	        if ( !$testExitStatus )  {
+    	            $testExitStatus = 13 ;
+    		    }
             }
             
             if (!defined $testOutput) { 
@@ -564,6 +557,16 @@ cleanUp();
             # Figure out package name for reporting's sake.
             (my $package = $File::Find::dir) =~ m/\.\/(.*?)\/.*test/;
             $package = $1;
+            
+            # If the user supplies a list of packages to test (to the exclusion
+            # of all others, return if this package isn't on that list.
+            if ($#packages >= 0) {
+                my $found = 0;
+                foreach my $testPackage (@packages) {
+                    if ($package =~ $testPackage) { $found = 1; }
+                }
+                if (!$found) { return; }
+            }
             
             # Parse definition file into array of hashes of arrays.
             my @definitionAoHoA;
@@ -1081,6 +1084,10 @@ cleanUp();
         print "\n";
         print "  --mpi-go=COMMAND       Specify the mpi-go command for this system.\n";
         print "                         Default: \"mpi-go -np \"\n";
+        print "\n";
+        print "  --packages=P1[,P2]     Specify the packages to test.  Separate multiple\n";
+        print "                         packages with commas.  Omit to test all built\n";
+        print "                         packages with tests defined.\n";
         print "\n";
         print "  --output-dir=DIR       Specify the directory in which to create the directory\n";
         print "                         containing the test results.\n";
