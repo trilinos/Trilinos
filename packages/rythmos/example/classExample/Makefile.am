@@ -30,7 +30,7 @@ EXAMPLE = classExample
 
 noinst_PROGRAMS = $(EXAMPLE)
 
-classExample_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/Stepper_ForwardEuler.cpp
+classExample_SOURCES = $(srcdir)/cxx_main.cpp 
 
 classExample_DEPENDENCIES = $(common_dependencies)
 
