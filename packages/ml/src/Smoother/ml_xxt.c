@@ -3,7 +3,7 @@
 #include "ml_utils.h"
 #include "ml_memory.h"
 
-void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
+void setup_henry_xxt(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,
         ML_Operator **matvec_data) {
 
