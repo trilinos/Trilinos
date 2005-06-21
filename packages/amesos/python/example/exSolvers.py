@@ -125,8 +125,8 @@ def main():
     sys.exit(-2);
   
   AmesosList = {
-    "PrintStatus": ("bool", "true"), 
-    "PrintTiming": ("bool", "true"),
+    "PrintStatus": True,
+    "PrintTiming": True
   };
   Solver.SetParameters(AmesosList);
   Solver.SymbolicFactorization();

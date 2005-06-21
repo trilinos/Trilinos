@@ -80,9 +80,9 @@ def main(Type):
 
   Solver = Factory.Create(Type, Problem);
   AmesosList = {
-    "PrintTiming": ("bool", "true"),
-    "PrintStatus": ("bool", "true"),
-    "ComputeTrueResidual": ("bool", "true")
+    "PrintTiming":         True,
+    "PrintStatus":         True,
+    "ComputeTrueResidual": True
   }
   Solver.SetParameters(AmesosList);
   ierr = Solver.Solve();
