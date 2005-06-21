@@ -247,7 +247,7 @@ static unsigned int hashValue(HGraph *hg, int n, int *ar)
 
 static int *idenOperandBuf=NULL;
 
-void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
+static void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
 {
     int *a=(int *)va, *b=(int *)vb; 
     int i, *x=a, *y=b;
