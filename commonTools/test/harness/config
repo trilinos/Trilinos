@@ -245,3 +245,25 @@ RUN (s858352-nightly-mpi) {
     SSG-USERNAME        = mnphenow;
 
 }
+
+###############################################################################
+#
+# sass2889 nightly mpi
+#
+###############################################################################
+                                                                                
+RUN (sass2889-nightly-mpi) {
+                                                                                
+    BUILD-DIR           = sass2889MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = sunos-sass2889-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+#    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+                                                                                
+}
+
