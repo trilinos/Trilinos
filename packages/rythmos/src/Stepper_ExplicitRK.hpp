@@ -74,10 +74,7 @@ class ExplicitRK : public Stepper<Scalar>
     Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > k1_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > k2_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > k3_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > k4_vector_;
+    vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
     vector<vector<Scalar> > b_A; // Butcher tableau A matrix
@@ -105,10 +102,11 @@ ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Rythmos::ModelEv
   solution_vector_ = (*model_).get_vector();
   residual_vector_ = (*model_).get_vector();
   int stages = 4; // 4 stage ERK
-  k1_vector_ = model_->get_vector();
-  k2_vector_ = model_->get_vector();
-  k3_vector_ = model_->get_vector();
-  k4_vector_ = model_->get_vector();
+  k_vector_.reserve(stages);
+  for (int i=0 ; i<stages ; ++i)
+  {
+    k_vector_.push_back(model_->get_vector());
+  }
   ktemp_vector_ = model_->get_vector();
 
   // Runge-Kutta methods in Butcher tableau form:
@@ -253,44 +251,44 @@ Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
   inargs.set_x(solution_vector_);
   double t1 = t_ + b_c[1-1]*dt;
   inargs.set_t(t1);
-  outargs.request_F(k1_vector_);
+  outargs.request_F(k_vector_[1-1]);
   model_->evalModel(inargs,outargs);
-  Thyra::Vt_S(&*k1_vector_,dt); // k_1 = k_1*dt
+  Thyra::Vt_S(&*k_vector_[1-1],dt); // k_1 = k_1*dt
   // k_2:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[2-1][1-1], *k1_vector_); // ktemp = ktemp + a_{2,1}*k_1
+  Thyra::Vp_StV(&*ktemp_vector_, b_A[2-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{2,1}*k_1
   inargs.set_x(ktemp_vector_);
   double t2 = t_ + b_c[2-1]*dt;
   inargs.set_t(t2);
-  outargs.request_F(k2_vector_);
+  outargs.request_F(k_vector_[2-1]);
   model_->evalModel(inargs,outargs);
-  Thyra::Vt_S(&*k2_vector_,dt); // k_2 = k_2*dt
+  Thyra::Vt_S(&*k_vector_[2-1],dt); // k_2 = k_2*dt
   // k_3:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][1-1], *k1_vector_); // ktemp = ktemp + a_{3,1}*k_1
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][2-1], *k2_vector_); // ktemp = ktemp + a_{3,2}*k_2
+  Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{3,1}*k_1
+  Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][2-1], *k_vector_[2-1]); // ktemp = ktemp + a_{3,2}*k_2
   inargs.set_x(ktemp_vector_);
   double t3 = t_ + b_c[3-1]*dt;
   inargs.set_t(t3);
-  outargs.request_F(k3_vector_);
+  outargs.request_F(k_vector_[3-1]);
   model_->evalModel(inargs,outargs);
-  Thyra::Vt_S(&*k3_vector_,dt); // k_3 = k_3*dt
+  Thyra::Vt_S(&*k_vector_[3-1],dt); // k_3 = k_3*dt
   // k_4:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][1-1], *k1_vector_); // ktemp = ktemp + a_{4,1}*k_1
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][2-1], *k2_vector_); // ktemp = ktemp + a_{4,2}*k_2
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][3-1], *k3_vector_); // ktemp = ktemp + a_{4,3}*k_3
+  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{4,1}*k_1
+  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][2-1], *k_vector_[2-1]); // ktemp = ktemp + a_{4,2}*k_2
+  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][3-1], *k_vector_[3-1]); // ktemp = ktemp + a_{4,3}*k_3
   inargs.set_x(ktemp_vector_);
   double t4 = t_ + b_c[4-1]*dt;
   inargs.set_t(t4);
-  outargs.request_F(k4_vector_);
+  outargs.request_F(k_vector_[4-1]);
   model_->evalModel(inargs,outargs);
-  Thyra::Vt_S(&*k4_vector_,dt); // k_4 = k_4*dt
+  Thyra::Vt_S(&*k_vector_[4-1],dt); // k_4 = k_4*dt
   // Sum for solution:
-  Thyra::Vp_StV(&*solution_vector_, b_b[1-1], *k1_vector_); // solution_vector += b_1*k_1
-  Thyra::Vp_StV(&*solution_vector_, b_b[2-1], *k2_vector_); // solution_vector += b_2*k_2
-  Thyra::Vp_StV(&*solution_vector_, b_b[3-1], *k3_vector_); // solution_vector += b_3*k_3
-  Thyra::Vp_StV(&*solution_vector_, b_b[4-1], *k4_vector_); // solution_vector += b_4*k_4
+  Thyra::Vp_StV(&*solution_vector_, b_b[1-1], *k_vector_[1-1]); // solution_vector += b_1*k_1
+  Thyra::Vp_StV(&*solution_vector_, b_b[2-1], *k_vector_[2-1]); // solution_vector += b_2*k_2
+  Thyra::Vp_StV(&*solution_vector_, b_b[3-1], *k_vector_[3-1]); // solution_vector += b_3*k_3
+  Thyra::Vp_StV(&*solution_vector_, b_b[4-1], *k_vector_[4-1]); // solution_vector += b_4*k_4
 
   // update current time:
   t_ = t_ + dt;
