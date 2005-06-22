@@ -756,159 +756,168 @@ cleanUp();
                     
                     # Add a complete hash entry for each test listed in TESTS.
                     foreach my $test (@{ $definitionAoHoA[$i]{'TESTS'} }) {
-                        
-                        # Each argument specified gets its own test run.
-                        foreach my $argOrig (@{ $definitionAoHoA[$i]{'ARGS'} }) {
-                        
-                            # Because modifying arg for one test appears to
-                            # leave it modified for the next test, we need to 
-                            # explicitly make a copy of it for each test.  This
-                            # is for the sake of the ARG-MASTER-PAIRS
-                            # functionality.
-                            my $arg = $argOrig;
-                        
-                            # Prepare the hash entry for this test that will
-                            # end up in @testListAoH.
-                            my %testEntry = ();                            
-                            $testEntry{'package'} = $package;
-                            
-                            use File::Basename;        
-                            my $testDir = dirname($test);
-                            my $testName = basename($test);
-                            
-                            $testEntry{'definitionDir'} = $File::Find::dir;
-                            $testEntry{'directory'} = $testDir;
-                            $testEntry{'name'} = $testName;
                     
-                            # Add values for compareTestOutput.
-                            if (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] && 
-                                @{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/compareTestOutput/i) {
-                                $testEntry{'exitStatus'} = "compareTestOutput";
-                                
-                                # COMMAND-FILE
-                                if (@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0]) {
-                                    $testEntry{'commandFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0];
-                                } else {
-                                    $testEntry{'commandFile'} = "";
-                                }
-                                
-                                # MASTER-FILE...
-                                if (@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0]) {
-                                    $testEntry{'masterFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0];
-                                }                                 
-                                # or ARG-MASTER-PAIR?
-                                elsif (@{ $definitionAoHoA[$i]{'ARG-MASTER-PAIRS'} }[0]) {
-                                    print "\n\$test: $test\n";
-                                    print "\$arg: $arg\n";
-                                    my $masterFile = $arg;
-                                    $masterFile =~ s/^.*?:::(.*?):::$/$1/;
-                                    print "\$1: $1\n";
-                                    $arg =~ s/:::.*?::://;
-                                    print "\$arg: $arg\n\n";
-                                    $testEntry{'masterFile'} = "$testDir/$masterFile";
-                                } else {
-                                    $testEntry{'masterFile'} = "";
-                                } 
-                            } 
-                            
-                            # Add values for STRING-COMPARISON
-                            elsif (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] && 
-                                   @{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/STRING-COMPARISON/i) {
-                                $testEntry{'exitStatus'} = "STRING-COMPARISON";
-                                if (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/STRING-COMPARISON\((.*)\)/i) {
-                                    $testEntry{'passString'} = $1;                                
-                                }
-                            } 
-                            
-                            # EXIT-STATUS is neither compareTestOutput or 
-                            # STRING-COMPARISON, so it defaults to RETURN-CODE.
-                            else {
-                                $testEntry{'exitStatus'} = "RETURN-CODE";                            
-                            }
+                        # Check the build directory to make sure that every test
+                        # is actually there and executable.  It is done above
+                        # for tests specified with "DIRS = ", but this is needed
+                        # here to make sure tests specified with "TESTS = " are
+                        # actually built too.
+                        if (-x "$buildDir/packages/$package/test/$test") {
                         
-                            # I'm not sure if there really needs to be a
-                            # CUSTOM-SERIAL value for comm.  I don't know how
-                            # it would be treated differently.  For now,
-                            # CUSTOM-SERIAL will be treated the same as SERIAL.
-                            # For that matter, it appears that CUSTOM-MPI is
-                            # the same as SERIAL and CUSTOM-SERIAL.
-                            if ($comm eq "serial") {
-                                if ($isCustom) {
-                                    $testEntry{'type'} = "CUSTOM-SERIAL";
-                                    $testEntry{'command'} = "./$test ".$arg;
-                                    push(@testListAoH, { %testEntry });
-                                } else {
-                                    $testEntry{'type'} = "SERIAL";
-                                    $testEntry{'command'} = "./$test ".$arg;
-                                    push(@testListAoH, { %testEntry });
-                                }
+                            # Each argument specified gets its own test run.
+                            foreach my $argOrig (@{ $definitionAoHoA[$i]{'ARGS'} }) {
+                            
+                                # Because modifying arg for one test appears to
+                                # leave it modified for the next test, we need to 
+                                # explicitly make a copy of it for each test.  This
+                                # is for the sake of the ARG-MASTER-PAIRS
+                                # functionality.
+                                my $arg = $argOrig;
+                            
+                                # Prepare the hash entry for this test that will
+                                # end up in @testListAoH.
+                                my %testEntry = ();                            
+                                $testEntry{'package'} = $package;
                                 
-                            } elsif ($comm eq "mpi") {
-                                if ($isCustom) {
-                                    $testEntry{'type'} = "CUSTOM-MPI";
-                                    $testEntry{'command'} = "./$test ".$arg;
-                                    push(@testListAoH, { %testEntry });
-                                } else {
-                                    $testEntry{'type'} = "MPI";
+                                use File::Basename;        
+                                my $testDir = dirname($test);
+                                my $testName = basename($test);
+                                
+                                $testEntry{'definitionDir'} = $File::Find::dir;
+                                $testEntry{'directory'} = $testDir;
+                                $testEntry{'name'} = $testName;
+                        
+                                # Add values for compareTestOutput.
+                                if (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] && 
+                                    @{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/compareTestOutput/i) {
+                                    $testEntry{'exitStatus'} = "compareTestOutput";
                                     
-                                    # Make decisions about the number of 
-                                    # prcessors to run on.
-                                    
-                                    my $mpiString = "";
-                                    foreach my $arg (@{ $definitionAoHoA[$i]{'COMM'} }) {
-                                        if ($arg =~ m/MPI/i) { $mpiString = $arg; }
+                                    # COMMAND-FILE
+                                    if (@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0]) {
+                                        $testEntry{'commandFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'COMMAND-FILE'} }[0];
+                                    } else {
+                                        $testEntry{'commandFile'} = "";
                                     }
                                     
-                                    # optional () present
-                                    if ($mpiString =~ m/MPI\((.*?\))/i) { 
-                        
-                                        my $rangeString = $1;
-                                        my @rangeList = $rangeString =~ m/(.*?)[ )]/g;
+                                    # MASTER-FILE...
+                                    if (@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0]) {
+                                        $testEntry{'masterFile'} = "$testDir/".@{ $definitionAoHoA[$i]{'MASTER-FILE'} }[0];
+                                    }                                 
+                                    # or ARG-MASTER-PAIR?
+                                    elsif (@{ $definitionAoHoA[$i]{'ARG-MASTER-PAIRS'} }[0]) {
+                                        print "\n\$test: $test\n";
+                                        print "\$arg: $arg\n";
+                                        my $masterFile = $arg;
+                                        $masterFile =~ s/^.*?:::(.*?):::$/$1/;
+                                        print "\$1: $1\n";
+                                        $arg =~ s/:::.*?::://;
+                                        print "\$arg: $arg\n\n";
+                                        $testEntry{'masterFile'} = "$testDir/$masterFile";
+                                    } else {
+                                        $testEntry{'masterFile'} = "";
+                                    } 
+                                } 
+                                
+                                # Add values for STRING-COMPARISON
+                                elsif (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] && 
+                                       @{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/STRING-COMPARISON/i) {
+                                    $testEntry{'exitStatus'} = "STRING-COMPARISON";
+                                    if (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] =~ m/STRING-COMPARISON\((.*)\)/i) {
+                                        $testEntry{'passString'} = $1;                                
+                                    }
+                                } 
+                                
+                                # EXIT-STATUS is neither compareTestOutput or 
+                                # STRING-COMPARISON, so it defaults to RETURN-CODE.
+                                else {
+                                    $testEntry{'exitStatus'} = "RETURN-CODE";                            
+                                }
+                            
+                                # I'm not sure if there really needs to be a
+                                # CUSTOM-SERIAL value for comm.  I don't know how
+                                # it would be treated differently.  For now,
+                                # CUSTOM-SERIAL will be treated the same as SERIAL.
+                                # For that matter, it appears that CUSTOM-MPI is
+                                # the same as SERIAL and CUSTOM-SERIAL.
+                                if ($comm eq "serial") {
+                                    if ($isCustom) {
+                                        $testEntry{'type'} = "CUSTOM-SERIAL";
+                                        $testEntry{'command'} = "./$test ".$arg;
+                                        push(@testListAoH, { %testEntry });
+                                    } else {
+                                        $testEntry{'type'} = "SERIAL";
+                                        $testEntry{'command'} = "./$test ".$arg;
+                                        push(@testListAoH, { %testEntry });
+                                    }
+                                    
+                                } elsif ($comm eq "mpi") {
+                                    if ($isCustom) {
+                                        $testEntry{'type'} = "CUSTOM-MPI";
+                                        $testEntry{'command'} = "./$test ".$arg;
+                                        push(@testListAoH, { %testEntry });
+                                    } else {
+                                        $testEntry{'type'} = "MPI";
                                         
-                                        foreach my $range (@rangeList) {
+                                        # Make decisions about the number of 
+                                        # prcessors to run on.
                                         
-                                            my $rangeMin = 1;
-                                            my $rangeMax = 1;
-                                            my $numProc = 1;
-                                            
-                                            if ($range =~ m/-/) {
-                                                $range =~ m/(\d*)-(\S*)/;
-                                                $rangeMin = $1;
-                                                $rangeMax = $2;
-                                                if ($rangeMax eq "*") { $rangeMax = $maxProc; }
-                                                if ($rangeMin <= $maxProc) { 
-                                                    if ($rangeMax <= $maxProc) { 
-                                                        $numProc = $rangeMax;
-                                                    } elsif ($rangeMax > $maxProc) {
-                                                        $numProc = $maxProc;
-                                                    }                                                        
-                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
-                                                    push(@testListAoH, { %testEntry });
-                                                }
-                                            } else {
-                                                if ($range eq "*") { $range = $maxProc; }
-                                                $numProc = $range;
-                                                if ($numProc <= $maxProc) { 
-                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
-                                                    push(@testListAoH, { %testEntry });
-                                                }
-                                            }                                        
+                                        my $mpiString = "";
+                                        foreach my $arg (@{ $definitionAoHoA[$i]{'COMM'} }) {
+                                            if ($arg =~ m/MPI/i) { $mpiString = $arg; }
                                         }
                                         
-                                    # no optional () present
-                                    } else { 
+                                        # optional () present
+                                        if ($mpiString =~ m/MPI\((.*?\))/i) { 
+                            
+                                            my $rangeString = $1;
+                                            my @rangeList = $rangeString =~ m/(.*?)[ )]/g;
+                                            
+                                            foreach my $range (@rangeList) {
+                                            
+                                                my $rangeMin = 1;
+                                                my $rangeMax = 1;
+                                                my $numProc = 1;
+                                                
+                                                if ($range =~ m/-/) {
+                                                    $range =~ m/(\d*)-(\S*)/;
+                                                    $rangeMin = $1;
+                                                    $rangeMax = $2;
+                                                    if ($rangeMax eq "*") { $rangeMax = $maxProc; }
+                                                    if ($rangeMin <= $maxProc) { 
+                                                        if ($rangeMax <= $maxProc) { 
+                                                            $numProc = $rangeMax;
+                                                        } elsif ($rangeMax > $maxProc) {
+                                                            $numProc = $maxProc;
+                                                        }                                                        
+                                                        $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                                        push(@testListAoH, { %testEntry });
+                                                    }
+                                                } else {
+                                                    if ($range eq "*") { $range = $maxProc; }
+                                                    $numProc = $range;
+                                                    if ($numProc <= $maxProc) { 
+                                                        $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                                        push(@testListAoH, { %testEntry });
+                                                    }
+                                                }                                        
+                                            }
+                                            
+                                        # no optional () present
+                                        } else { 
+                                            
+                                            my $numProc = $maxProc;
+                                            $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                            push(@testListAoH, { %testEntry });
                                         
-                                        my $numProc = $maxProc;
-                                        $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
-                                        push(@testListAoH, { %testEntry });
+                                        }
+                                        
+                                    } # non-CUSTOM MPI
                                     
-                                    }
-                                    
-                                } # non-CUSTOM MPI
-                                
-                            } # $comm eq MPI
+                                } # $comm eq MPI
                                                     
-                        } # foreach $arg
+                            } # foreach $arg
+                            
+                        } # if -x $test
                         
                     } # foreach $test
                 
