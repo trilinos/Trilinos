@@ -51,7 +51,7 @@ class ExplicitRK : public Stepper<Scalar>
     
     // Constructor
     ExplicitRK();
-    ExplicitRK(const Teuchos::RefCountPtr<NonlinearModel<Scalar> > &model_);
+    ExplicitRK(const Teuchos::RefCountPtr<const NonlinearModel<Scalar> > &model_);
     
     // Destructor
     ~ExplicitRK();
@@ -63,14 +63,14 @@ class ExplicitRK : public Stepper<Scalar>
     Scalar TakeStep();
 
     // Get solution vector
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_solution();
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
     // Get residual vector
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &get_residual();
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
   protected:
 
-    Teuchos::RefCountPtr<NonlinearModel<Scalar> > model_;
+    Teuchos::RefCountPtr<const NonlinearModel<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > k1_vector_;
@@ -91,10 +91,12 @@ class ExplicitRK : public Stepper<Scalar>
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/09/05
 //-----------------------------------------------------------------------------
-ExplicitRK::ExplicitRK(const Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar> > &model)
+template<class Scalar>
+ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Rythmos::NonlinearModel<Scalar> > &model)
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
-  t_ = 0.0; // this should come from Scalar class
+  t_ = ST::zero();
   solution_vector_ = (*model_).get_vector();
   residual_vector_ = (*model_).get_vector();
   k1_vector_ = model_->get_vector();
@@ -112,7 +114,8 @@ ExplicitRK::ExplicitRK(const Teuchos::RefCountPtr<Rythmos::NonlinearModel<Scalar
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ExplicitRK::ExplicitRK()
+template<class Scalar>
+ExplicitRK<Scalar>::ExplicitRK()
 {
 }
 
@@ -124,7 +127,8 @@ ExplicitRK::ExplicitRK()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-ExplicitRK::~ExplicitRK()
+template<class Scalar>
+ExplicitRK<Scalar>::~ExplicitRK()
 {
 }
 
@@ -136,10 +140,12 @@ ExplicitRK::~ExplicitRK()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Scalar ExplicitRK::TakeStep()
+template<class Scalar>
+Scalar ExplicitRK<Scalar>::TakeStep()
 {
   // print something out about this method not supporting automatic variable step-size
-  return(-1);
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return(-ST::one());
 }
 
 //-----------------------------------------------------------------------------
@@ -150,7 +156,8 @@ Scalar ExplicitRK::TakeStep()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-Scalar ExplicitRK::TakeStep(Scalar dt)
+template<class Scalar>
+Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
 {
   InArgs<Scalar> inargs;
   OutArgs<Scalar> outargs;
@@ -210,7 +217,8 @@ Scalar ExplicitRK::TakeStep(Scalar dt)
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get_solution()
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > Forward_Euler<Scalar>::get_solution() const
 {
   return(solution_vector_);
 }
@@ -223,7 +231,8 @@ const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &Forward_Euler::get_residual()
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > Forward_Euler<Scalar>::get_residual() const
 {
   // Since this RK method doesn't actually compute the residual, if you want
   // it, then I need to compute it on the fly.  Ideally, we'd keep track of
