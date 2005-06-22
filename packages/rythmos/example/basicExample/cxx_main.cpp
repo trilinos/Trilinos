@@ -52,13 +52,27 @@
 // Includes for Teuchos:
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 int main(int argc, char *argv[])
 {
+
   double lambda = -0.5; 
   int numElements = 1;
   double x0 = 10.0;
+  string method = "FE";  // other choice is method="ERK4"
 
+
+  // Parse the command-line options:
+  Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
+  clp.setOption( "lambda", &lambda, "ODE coefficient of decay or growth." );
+  clp.setOption( "x0", &x0, "ODE initial condition." );
+  clp.setOption( "method", &method, "Integration method:  FE, ERK4." );
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+  if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
+
+  // Set up the parameter list for the application:
   Teuchos::ParameterList params;
   params.set( "Lambda", lambda );
   params.set( "NumElements", numElements );
@@ -67,11 +81,18 @@ int main(int argc, char *argv[])
   // create interface to problem
   Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface(params));
   
-  // create forward Euler stepper object
-  Rythmos::ForwardEuler<double> stepper(problem);
-  string method = "Forward Euler";
-//  Rythmos::ExplicitRK<double> stepper(problem);
-//  string method = "Explicit Runge-Kutta of order 4";
+  // Create Stepper object depending on command-line input
+  Teuchos::RefCountPtr<Rythmos::Stepper<double> > stepper;
+  if (method == "ERK4") // Explicit Runge-Kutta 4 stage
+  {
+    stepper = Teuchos::rcp(new Rythmos::ExplicitRK<double>(problem));
+    method = "Explicit Runge-Kutta of order 4";
+  } else // Forward Euler
+  {
+    stepper = Teuchos::rcp(new Rythmos::ForwardEuler<double>(problem));
+    method = "Forward Euler";
+  }
+
 
   double t0 = 0.0;
   double t1 = 1.0;
@@ -81,7 +102,7 @@ int main(int argc, char *argv[])
   // Integrate forward with fixed step sizes:
   for (int i=1 ; i<=N ; ++i)
   {
-    double dt_taken = stepper.TakeStep(dt);
+    double dt_taken = stepper->TakeStep(dt);
     if (dt_taken != dt)
     {
       cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << endl;
@@ -89,7 +110,7 @@ int main(int argc, char *argv[])
     }
   }
   // Get solution out of stepper:
-  Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_t = stepper.get_solution();
+  Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_t = stepper->get_solution();
   // Convert Thyra::VectorBase to Epetra_Vector
   Teuchos::RefCountPtr<const Epetra_Vector> x = Thyra::get_Epetra_Vector(*(problem->get_Epetra_Map()),x_t);
 
