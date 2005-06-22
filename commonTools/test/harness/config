@@ -220,6 +220,7 @@ RUN (redstorm-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     BUILD-ONLY		= YES;
+    MPI-GO              = yod -sz;
 #    MPI-START           = lamboot;
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /ufs/home/users/jmwille/TrilinosTestHarness/TrilinosTestResults;
