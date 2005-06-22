@@ -11072,7 +11072,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/basicExample/Makefile example/verySimple/Makefile example/refCountPtrExample/Makefile example/refCountPtrExample2/Makefile example/constExample/Makefile test/Makefile"
+                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/basicExample/Makefile example/verySimple/Makefile example/refCountPtrExample/Makefile example/refCountPtrExample2/Makefile example/constExample/Makefile example/classExample/Makefile test/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11794,6 +11794,7 @@ do
   "example/refCountPtrExample/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/refCountPtrExample/Makefile" ;;
   "example/refCountPtrExample2/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/refCountPtrExample2/Makefile" ;;
   "example/constExample/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/constExample/Makefile" ;;
+  "example/classExample/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/classExample/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Rythmos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Rythmos_config.h:src/Rythmos_config.h.in" ;;
