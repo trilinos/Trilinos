@@ -277,16 +277,16 @@ simple_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
 	-I$(top_builddir)/../teuchos/src \
 	-I$(top_builddir)/../epetra/thyra/src \
 	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src 		
+	-I$(top_srcdir)/../thyra/src			
 
 
 #np# One LDADD primary can be defined for each exe listed above.  Include any
 #np# LDFLAGS  necessary for building the exe.
 simple_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../epetra/thyra/src/libEpetraThyra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../thyra/src/libthyra.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
 	-llapack -lblas -lg2c
 
 all: all-am

@@ -39,6 +39,8 @@ Author:    Joseph Simonis
 #include "Teuchos_RefCountPtr.hpp"
 #include "Capo_Integrator.hpp"
 #include "Capo_Parameter_List.hpp"
+#include "Capo_Solver.hpp"
+#include "Capo_Stepper.hpp"
 
 using namespace CAPO;
 
@@ -53,27 +55,16 @@ using namespace CAPO;
 Stepper::Stepper(Teuchos::RefCountPtr<Parameter_List> PL, \
 		 Teuchos::RefCountPtr<Solver> App_Solver)
 {
-  StepSize = PL.get_lambda_stepsize();
+  StepSize = PL->get_lambda_stepsize();
   PrevStepSize = StepSize;
   StepNumber = 0;
-  PrintProc = PL.get_printproc();
-  Problem_Type = Solver_Type;
+  PrintProc = PL->get_printproc();
+  MaxSteps = PL->get_MaxOuterIts();
 
   //Problem_Integrator = App_Int; included in solver...
   Problem_Parameters = PL;
   iteration_method = App_Solver;
 }
-
-//-----------------------------------------------------------------
-// Function      : Stepper::~Stepper
-// Purpose       : destructor
-// Special Notes :
-// Scope         : public
-// Creator       : J. Simonis, SNL
-// Creation Date : 06/10/05
-//------------------------------------------------------------------
-Stepper::~Stepper()
-{};
 
 //-----------------------------------------------------------------
 // Function      : Stepper::Done
@@ -85,7 +76,7 @@ Stepper::~Stepper()
 //------------------------------------------------------------------
 bool Stepper::Done() const
 {
-  if (StepNumber>Problem_Parameters.get_MaxOuterIts())
+  if (StepNumber>MaxSteps)
     return true;
   else 
     return false;
@@ -104,7 +95,7 @@ void Stepper::PrintStart() const
   if (PrintProc>0)
     {
       cout << endl <<"---------- Start of Continuation step " << StepNumber << "----------" << endl;
-      cout << "Param = " << (*Solver).getParam() << ", StepSize = " << StepSize << " ~~~~~~" << endl;
+      cout << "Param = " << iteration_method->Get_lambdafinal() << ", StepSize = " << StepSize << " ~~~~~~" << endl;
     }
 }
 //-----------------------------------------------------------------
@@ -119,16 +110,16 @@ void Stepper::PrintIter(const bool converged) const
 {
   if (PrintProc>0)
     {
-      cout <<"~~~~~~ Step "<< Step << " (Param = "<< (*Solver).getParam() <<"): ";
+      cout <<"~~~~~~ Step "<< StepNumber << " (Param = "<<iteration_method->Get_lambdafinal() <<"): ";
       
       if (converged) cout<<"*Converged* ";
       else           cout<<"##Failed## to Converge ";
       
-      int itr = (*Solver).getIter();
+      int itr = Problem_Parameters->get_MaxInnerIts();
       cout <<"in "<< itr <<" Iteration";
       if (itr != 1) cout << "s";
       cout << "  ~~~~~~" << endl;
-
+      
     }
 }
 
@@ -141,14 +132,14 @@ void Stepper::PrintIter(const bool converged) const
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/10/05
 //------------------------------------------------------------------
-void Stepper::StepParamAndPredict();
+void Stepper::StepParamAndPredict()
 {
   StepNumber++;
   
   // Adjust Step Size Here
   StepSize *= 1.0;
   
-  (*Solver).Predictor(StepSize, PrevStepSize);
+  iteration_method->Predictor(StepSize, PrevStepSize);
   PrevStepSize = StepSize;
 }
 
@@ -160,11 +151,11 @@ void Stepper::StepParamAndPredict();
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/10/05
 //------------------------------------------------------------------
-void Stepper::Run();
+void Stepper::Run()
 {
-  if (printProc>0) cout << "\n:::Starting CAPO Run:::" << endl;
+  if (PrintProc>0) cout << "\n:::Starting CAPO Run:::" << endl;
 
-  (*Solver).Initialize();
+  iteration_method->Initialize();
 
   do {
     bool converged;
@@ -172,7 +163,7 @@ void Stepper::Run();
     PrintStart();
 
     // Perform inner iteration
-    converged = (*Solver).InnerIteration();
+    converged = iteration_method->InnerIteration();
 
     PrintIter(converged);
 
@@ -181,12 +172,12 @@ void Stepper::Run();
       // Save converged solution
 
       //! J.Simonis June10 Must do something with this output function!!
-      (*Solver).get_xfinal().Output(Step, (*Solver).get_lambdafinal());
-      cout << "Period for parameter " << (*Solver).get_lambdafinal() << " is " << (*Solver).get_Tfinal() << endl;
+      //(*Solver).get_xfinal().Output(Step, (*Solver).get_lambdafinal());
+      cout << "Period for parameter " << iteration_method->Get_lambdafinal() << " is " << iteration_method->Get_Tfinal() << endl;
 
 
       // Some Solvers require work in between inner solves...
-      (*Solver).InnerFunctions();
+      iteration_method->InnerFunctions();
 
       // Check for basis decrease and maintain accuracy with subspace iter
       //if ((Step+1) % updateBasisFreq == 0)  rpm->UpdateBasis();
@@ -197,8 +188,8 @@ void Stepper::Run();
     else {
       // The inner iterations have failed.  Each Algorithm should
       // have a function too deal with an inner iteration failure.
-      cout << "Failed to solve for parameter value "  << (*Solver).get_lambdafinal() << endl;
-      (*Solver).IterationFailure();
+      cout << "Failed to solve for parameter value "  << iteration_method->Get_lambdafinal() << endl;
+      iteration_method->IterationFailure();
 
 
       //Increase m this is for Rpm method
@@ -211,8 +202,8 @@ void Stepper::Run();
 
   } while (!Done());
 
-  (*Solver).Finish();
+  iteration_method->Finish();
 
-  if (printProc>0) cout << "\n:::Ending CAPO Run:::\n" << endl;
+  if (PrintProc>0) cout << "\n:::Ending CAPO Run:::\n" << endl;
 
 }

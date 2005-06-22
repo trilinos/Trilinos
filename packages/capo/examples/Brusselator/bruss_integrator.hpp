@@ -27,60 +27,43 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Capo_STEPPER_H
-#define Capo_STEPPER_H
+
+#ifndef Capo_BRUSS_INTEGRATOR_H
+#define Capo_BRUSS_INTEGRATOR_H
 
 /************************************************************ 
-File:      Capo_Stepper.hpp
-Purpose:   The main capo driver program.
-Date:      6-10-05
+File:      BrussIntegrator.hpp
+Purpose:   Brusselator Integrator using Operator Splitting methods..
+Date:      6-20-05
 Author:    Joseph Simonis
 **************************************************************/
 
-/**** Includes ****/
-#include "Thyra_VectorBase.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Capo_Integrator.hpp"
-#include "Capo_Parameter_List.hpp"
-#include "Capo_Solver.hpp"
 
-namespace CAPO {
+/**** Include Files ****/
+
+
+/**** BrussIntegrator Class ****/
+class BrussIntegrator
+{
+public:
+  // Constructor
+  BrussIntegrator();
   
-  class Integrator;
-  class Parameter_List;
+  // Destructor
+  ~BrussIntegrator();
+  
+  // Integration function
+  bool Integrate(double *u_T, const double *u, double t, double lambda);
+  
+private:
+  int numElements_;
 
-  /**** Stepper Class ****/
-  class Stepper {
+  //! Tridiagonal system solver
+  bool thomas(double* a, double* b, double* c, double* r, int n);
+  
+  //! Runga-Kutta integrator
+  bool bruss_rungakutta(double T, double* u, int n);
 
-  public:
-    //! Constructor
-    Stepper(Teuchos::RefCountPtr<Parameter_List> PL, \
-	    Teuchos::RefCountPtr<Solver> App_Solver);
-
-    //! Destructor
-    ~Stepper() {};
-
-    void Run();
-    
-    void StepParamAndPredict();
-    
-    bool Done() const;
-    
-    void PrintStart() const;
-    
-    void PrintIter(const bool converged) const;
-    
-
-  private:
-    double StepSize;
-    double PrevStepSize;
-    int StepNumber;
-    int MaxSteps;
-    int PrintProc;
-
-    Teuchos::RefCountPtr<Parameter_List> Problem_Parameters;
-    Teuchos::RefCountPtr<Solver> iteration_method;
-
-  };
 };
-#endif
+
+#endif //Capo_BRUSS_INTEGRATOR_H

@@ -29,15 +29,15 @@
 
 
 /************************************************************ 
-File:      Example_Interface.cpp
-Purpose:   Create a class to wrap "Epetra-Integrators"
-Date:      6-09-05
+File:      Bruss_Interface.cpp
+Purpose:   Create a class to wrap the brusselator integroator.
+Date:      6-20-05
 Author:    Joseph Simonis
 **************************************************************/
 
 /**** Include Files ****/
-#include "Example_Interface.hpp"
-#include "ExampleIntegrator.hpp"
+#include "bruss_interface.hpp"
+#include "bruss_integrator.hpp"
 #include "Epetra_Map.h"
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -50,11 +50,10 @@ Author:    Joseph Simonis
 // Special Notes :
 // Scope         : public
 // Creator       : J. Simonis, SNL
-// Creation Date : 06/09/05
+// Creation Date : 06/20/05
 //------------------------------------------------------------------
-ThyraIntegrator::ThyraIntegrator(Teuchos::RefCountPtr<const Epetra_Map> EMap, Teuchos::RefCountPtr<ExampleIntegrator> problem)
+ThyraIntegrator::ThyraIntegrator(Teuchos::RefCountPtr<BrussIntegrator> problem)
 {
-  epetra_map = EMap;
   AppIntegrator = problem;
 }
 
@@ -66,14 +65,33 @@ ThyraIntegrator::ThyraIntegrator(Teuchos::RefCountPtr<const Epetra_Map> EMap, Te
 //                 declared in Capo_Integrate.hpp.
 // Scope         : public
 // Creator       : J. Simonis, SNL
-// Creation Date : 06/09/05
+// Creation Date : 06/20/05
 //------------------------------------------------------------------
 bool ThyraIntegrator::Integrate(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x,const double T, const double lambda)
 {
+  double *u;
+  double *u_T;
 
-  (*AppIntegrator).Integrate(&*(Thyra::get_Epetra_Vector(*epetra_map,x)), \
-		       *(Thyra::get_Epetra_Vector(*epetra_map,y)), \
-		       T,lambda);
+  u = new double[62];
+  u_T = new double[62];
+
+  for (int i=0;i<62;i++)
+    {
+      u[i]=Thyra::get_ele(*y,i+1);
+      //u_T[i]=Thyra::get_ele(*x, i);
+    }
+
+  AppIntegrator->Integrate(u_T, u, T, lambda);
+
+  for (int i=0;i<62;i++)
+    {
+      //Thyra::set_ele(i,u[i],&*y);
+      Thyra::set_ele(i+1,u_T[i],&*x);
+    }
+  delete [] u;
+  delete [] u_T;
+
   return true;
 
 }
+

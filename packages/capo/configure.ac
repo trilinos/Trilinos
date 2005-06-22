@@ -53,7 +53,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #auto np# - file name below
-AC_CONFIG_SRCDIR(/src/Capo.cpp)
+AC_CONFIG_SRCDIR(/src/Capo_Integrator.hpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -418,6 +418,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		examples/Makefile
 		examples/Simple/Makefile
+		examples/Brusselator/Makefile
 		])
 
 

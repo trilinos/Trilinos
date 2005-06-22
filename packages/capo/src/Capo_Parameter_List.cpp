@@ -192,7 +192,6 @@ void Parameter_List::set_param(string& name, double value)
     }
   if (!found)
     cout << "Parameter " << name << " not found!" << endl;
-  cerr << "Finished setParam function" << endl;
 }
 
 //-----------------------------------------------------------------

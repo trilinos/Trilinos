@@ -27,60 +27,42 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Capo_STEPPER_H
-#define Capo_STEPPER_H
+#ifndef Capo_BRUSSELATOR_INTERFACE_H
+#define Capo_BRUSSELATOR_INTERFACE_H
 
 /************************************************************ 
-File:      Capo_Stepper.hpp
-Purpose:   The main capo driver program.
-Date:      6-10-05
+File:      Brusselator_Interface.hpp
+Purpose:   Create a class to wrap "Epetra-Integrators"
+Date:      6-20-05
 Author:    Joseph Simonis
 **************************************************************/
 
-/**** Includes ****/
-#include "Thyra_VectorBase.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+/**** Include Files ****/
 #include "Capo_Integrator.hpp"
-#include "Capo_Parameter_List.hpp"
-#include "Capo_Solver.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "bruss_integrator.hpp"
 
-namespace CAPO {
+
+/**** ThyraIntegrator Class ****/
+class ThyraIntegrator : public CAPO::Integrator
+{
+  typedef double Scalar;
+public:
+
+  //!Constructor:
+  ThyraIntegrator(Teuchos::RefCountPtr<BrussIntegrator> problem);
   
-  class Integrator;
-  class Parameter_List;
+  //! Destructor
+  ~ThyraIntegrator() {};
+  
+  // User must compile in an ThyraIntegrator::Integrate function
+  bool Integrate(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y, 
+		 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x, 
+		 const double T,
+		 const double lambda);
+private:
+  Teuchos::RefCountPtr<BrussIntegrator> AppIntegrator;
 
-  /**** Stepper Class ****/
-  class Stepper {
-
-  public:
-    //! Constructor
-    Stepper(Teuchos::RefCountPtr<Parameter_List> PL, \
-	    Teuchos::RefCountPtr<Solver> App_Solver);
-
-    //! Destructor
-    ~Stepper() {};
-
-    void Run();
-    
-    void StepParamAndPredict();
-    
-    bool Done() const;
-    
-    void PrintStart() const;
-    
-    void PrintIter(const bool converged) const;
-    
-
-  private:
-    double StepSize;
-    double PrevStepSize;
-    int StepNumber;
-    int MaxSteps;
-    int PrintProc;
-
-    Teuchos::RefCountPtr<Parameter_List> Problem_Parameters;
-    Teuchos::RefCountPtr<Solver> iteration_method;
-
-  };
 };
+
 #endif

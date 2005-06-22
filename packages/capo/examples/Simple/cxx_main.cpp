@@ -53,8 +53,8 @@ Author:    Joseph Simonis
 #include "Example_Interface.hpp"
 #include "Capo_Integrator.hpp"
 #include "Capo_Parameter_List.hpp"
-//#include "Capo_Stepper.hpp"
 #include "Capo_Npgs.hpp"
+#include "Capo_Stepper.hpp"
 #include <string>
 
 int main(int argc, char *argv[])
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
   int MyPID = epetra_comm->MyPID();
 
-  int NumElements = 2;
+  int NumElements = 4;
 
   // Construct a Map with NumElements and index base of 0
   Teuchos::RefCountPtr<const Epetra_Map> epetra_map = Teuchos::rcp( new Epetra_Map(NumElements, 0, *epetra_comm) );
@@ -95,14 +95,20 @@ int main(int argc, char *argv[])
 
   Thyra::set_ele(1,1.0,&*xn);
   Thyra::set_ele(2,2.0,&*xn);
+  Thyra::set_ele(3,1.0,&*xn);
+  Thyra::set_ele(4,2.0,&*xn);
 
   Thyra::set_ele(1,0.0,&*x);
   Thyra::set_ele(2,0.0,&*x);
+  Thyra::set_ele(3,0.0,&*x);
+  Thyra::set_ele(4,0.0,&*x);
 
   if (MyPID == 0)
     {
       cout << "xn(0) = " << Thyra::get_ele(*xn,1) << endl;
       cout << "xn(1) = " << Thyra::get_ele(*xn,2) << endl;
+      cout << "xn(2) = " << Thyra::get_ele(*xn,3) << endl;
+      cout << "xn(3) = " << Thyra::get_ele(*xn,4) << endl;
     }
 
   double t0=3.2;
@@ -110,7 +116,7 @@ int main(int argc, char *argv[])
 
   // Create an Example Integrator Object...
   Teuchos::RefCountPtr<ExampleIntegrator> application;
-  application = Teuchos::rcp(new ExampleIntegrator(2));
+  application = Teuchos::rcp(new ExampleIntegrator(4));
   cerr << "Created an Integrator" << endl;
 
   // Create two epetra vectors...
@@ -129,6 +135,8 @@ int main(int argc, char *argv[])
       cout << "After Integration the vector returns:" << endl;
       cout << "x(0) = " << Thyra::get_ele(*x,1) << endl;
       cout << "x(1) = " << Thyra::get_ele(*x,2) << endl;
+      cout << "x(2) = " << Thyra::get_ele(*x,3) << endl;
+      cout << "x(3) = " << Thyra::get_ele(*x,4) << endl;
     }
 
   
@@ -181,5 +189,13 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<CAPO::Npgs> MySolver;
   MySolver = Teuchos::rcp(new CAPO::Npgs(PL,interfacetest,x,t0,lambda0));
 
+  cout << "The solver has been created.  Now time to test the solver " << endl;
+  cout << "functionality." << endl;
 
+  MySolver->Initialize();
+  double dummy1=1.0;
+  double dummy2=1.5;
+  MySolver->Predictor(dummy1,dummy2);
+  cout << MySolver->Get_Tfinal() << endl;
+  cout << MySolver->Get_lambdafinal() << endl;
 };

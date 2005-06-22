@@ -31,23 +31,23 @@
 EXEEXT = .exe
 
 #np# List the names of all exe's in this directory here
-noinst_PROGRAMS = simple
+noinst_PROGRAMS = branch1
 
 #np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 #np# of the  following primaries that the pattern is 
 #np# "(Exe_name)_(PRIMARY_NAME) = ").
 #np# List all source files needed to compile the exe.
-simple_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/ExampleIntegrator.cpp $(srcdir)/Example_Interface.cpp
+branch1_SOURCES = $(srcdir)/bruss_main1.cpp $(srcdir)/bruss_integrator.cpp $(srcdir)/bruss_interface.cpp
 
 #np# One DEPENDENCIES primary is needed for each exe listed above.  List any
 #np# libraries that the exe depends on.  (This primary is not absolutely
 #np# essential.)
-simple_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
+branch1_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
 	$(top_builddir)/../epetra/src/libepetra.a
 
 #np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
 #np# any -I's necessary for building the exe.
-simple_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
+branch1_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
 	-I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src \
 	-I$(top_srcdir)/../epetra/thyra/src \
@@ -81,7 +81,7 @@ simple_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
 
 #np# One LDADD primary can be defined for each exe listed above.  Include any
 #np# LDFLAGS  necessary for building the exe.
-simple_LDADD = $(top_builddir)/src/libcapo.a \
+branch1_LDADD = $(top_builddir)/src/libcapo.a \
 	$(top_builddir)/../epetra/thyra/src/libEpetraThyra.a \
 	$(top_builddir)/../thyra/src/libthyra.a \
 	$(top_builddir)/../epetra/src/libepetra.a \

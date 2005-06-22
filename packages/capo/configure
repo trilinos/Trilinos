@@ -273,7 +273,7 @@ PACKAGE_VERSION='1.0'
 PACKAGE_STRING='capo 1.0'
 PACKAGE_BUGREPORT='jpsimon@sandia.gov'
 
-ac_unique_file="/src/Capo.cpp"
+ac_unique_file="/src/Capo_Integrator.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -9801,7 +9801,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 		#examples/VanderPol/Makefile
 		#examples/Original_Examples/Makefile
 		#])
-                                        ac_config_files="$ac_config_files Makefile src/Makefile examples/Makefile examples/Simple/Makefile"
+                                                  ac_config_files="$ac_config_files Makefile src/Makefile examples/Makefile examples/Simple/Makefile examples/Brusselator/Makefile"
 
 
 
@@ -10400,6 +10400,7 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "examples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
   "examples/Simple/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Simple/Makefile" ;;
+  "examples/Brusselator/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Brusselator/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/capo_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/capo_config.h:src/capo_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

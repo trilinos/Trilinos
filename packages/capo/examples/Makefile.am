@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Simple
+SUBDIRS = Simple Brusselator

@@ -56,35 +56,37 @@ namespace CAPO {
   class Solver {
   public:
     //! Constructor
-    /*
+    
     Solver(Teuchos::RefCountPtr<Parameter_List> ParamList, \
 	   Teuchos::RefCountPtr<Integrator> App_Int, \
 	   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x0, \
 	   double lambda0, double T0);
-    */
-    Solver() {};
+    
+    Solver() {}
+
     //! Destructor
-    virtual ~Solver() {};
+    virtual ~Solver() {}
 
     //! Member Functions
-    virtual void Initialize();
+    
+    virtual void Initialize() = 0;
+    
+    virtual bool InnerIteration() = 0 ;
 
-    virtual bool InnerIteration();
+    virtual void InnerFunctions() = 0;
 
-    virtual void InnerFunctions();
+    virtual void IterationFailure() = 0;
 
-    virtual void IterationFailure();
+    virtual void Finish() = 0;
 
-    virtual void Finish();
+    virtual void Predictor(double& StepSize, double& PrevStepSize) = 0;
 
-    virtual void Predictor();
+    virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& Get_xfinal() = 0;
 
-    virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& Get_xfinal();
+    virtual double& Get_lambdafinal() = 0;
 
-    virtual double& Get_lambdafinal();
-
-    virtual double& Get_Tfinal();
-
+    virtual double& Get_Tfinal() = 0;
+    
   protected:
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xcurrent;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xfinal;
