@@ -185,24 +185,44 @@ RUN (atlantis-nightly-mpi) {
     SSG-USERNAME        = mnphenow;
 
 }
-
 ###############################################################################
 #
 # redstorm X compile nightly mpi
 #
 ###############################################################################
-
+                                                                                
 RUN (redstormXcompile-nightly-mpi) {
-    
+                                                                                
     BUILD-DIR           = redstormXcompileTH;
     COMM                = mpi;
     INVOKE-CONFIGURE    = redstormXcompile-reddish1;
     TEST-CATEGORY       = FRAMEWORK;
 #    MAX-PROC            = 16;
+    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /localhome/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+                                                                                                     
+}
+
+###############################################################################
+#
+# redstorm mpi
+#
+###############################################################################
+
+RUN (redstorm-nightly-mpi) {
+    
+    BUILD-DIR           = redstormMPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = redstorm-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
     BUILD-ONLY		= YES;
 #    MPI-START           = lamboot;
-#    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /localhome/jmwille/TrilinosTestHarness/TrilinosTestResults;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /ufs/home/users/jmwille/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
 
 }
