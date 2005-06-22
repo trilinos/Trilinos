@@ -31,7 +31,7 @@ EXEEXT = .exe
 # include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
 include $(top_builddir)/Makefile.export
 
-EXTRA_DIST= 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
+EXTRA_DIST= 2dPoissonEvaluateDefinitions baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
 
 noinst_PROGRAMS = 2d_Poisson
 
@@ -41,7 +41,7 @@ noinst_PROGRAMS = 2d_Poisson
 
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
-	@if test ! -e ./2d_Poisson.csh; then cp -f $(srcdir)/2d_Poisson.csh .; fi
+	@if test ! -e ./2dPoissonEvaluateDefinitions; then cp -f $(srcdir)/2dPoissonEvaluateDefinitions .; fi
 	@if test ! -e ./baseline1 ; then cp -f $(srcdir)/baseline1 .; fi
 	@if test ! -e ./baseline2 ; then cp -f $(srcdir)/baseline2 .; fi
 	@if test ! -e ./baseline3 ; then cp -f $(srcdir)/baseline3 .; fi
