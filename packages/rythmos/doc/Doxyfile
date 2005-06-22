@@ -95,7 +95,11 @@ EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
 # Links to other packages
 #
-TAGFILES               =
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html \
+                         ../../common/tag_files/ThyraUtils.tag=../../../thyra/src/utils/doc/html \
+                         ../../common/tag_files/ThyraRTOp.tag=../../../thyra/src/ana/rtop/doc/html \
+                         ../../common/tag_files/ThyraOperatorVector.tag=../../../thyra/src/ana/operator_vector/doc/html \
+                         ../../common/tag_files/epetra.tag=../../../epetra/doc/html
 GENERATE_TAGFILE       = ../../common/tag_files/rythmos.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
