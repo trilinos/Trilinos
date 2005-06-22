@@ -35,6 +35,8 @@
 #include "Tpetra_PacketTraits.hpp"
 #include "Tpetra_Util.hpp" // for toString
 #include "Tpetra_Version.hpp"
+#include "sys/types.h"
+#include "unistd.h"
 #ifdef TPETRA_MPI
 #include <mpi.h>
 #endif // TPETRA_MPI
@@ -52,6 +54,7 @@
 
 //! cin used as MPI breakpoint (used for debugging parallel code)
 void mpiBreakpoint(int myImageID) {
+	cout << "Image " << myImageID << " is alive, PID " << getpid() << endl;
   if(myImageID == 0) {
     cout << "[TPETRA-DEBUG mpiBreakpoint] ";
     cin >> myImageID;
