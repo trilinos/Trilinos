@@ -1,0 +1,34 @@
+../configure \
+        --prefix=/home/jmwille/TrilinosTestHarness/install \
+	--host=i686-intel-linux \
+        --enable-nox-epetra \
+        --disable-aztecoo-azlu \
+        --enable-amesos \
+        --without-ml_superlu \
+        --without-ml_zoltan \
+        --enable-teuchos \
+        --enable-triutils \
+         --enable-anasazi \
+        --enable-epetraext-transform \
+        --disable-examples \
+        --disable-tests \
+        --disable-libcheck \
+        --disable-ml_enrich \
+        --disable-dependency-tracking \
+        --with-blas="-L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
+        --with-lapack="-L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
+        --with-incdirs="-I/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU/SRC" \
+        --with-ldflags="-L/projects/alegra/rrdrake/TPL/trilinos/5.0/y12m -L/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU" \
+        --with-libs="-L/dev/null" \
+        --enable-mpi \
+        --with-mpi-libs="" CXXCPP="CC -tp k8-64 -fast -E" \
+        CC="cc -tp k8-64 -fast" \
+        CXX="CC -tp k8-64 -fast" \
+        F77="ftn -tp k8-64 -fast" \
+        CPPFLAGS="-DCODE_MP -DMPICH_SKIP_MPICXX -DLC_FLINK -DNDEBUG -I/projects/alegra/rrdrake/TPL/zoltan/1.54/include -I/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU/SRC" \
+        CFLAGS="" \
+        CXXFLAGS="" \
+        FFLAGS="" \
+        LDFLAGS=" "  FLIBS="-lpapi -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl -lpgc -lm -lcatamount -lsysio -lportals -lC -lcrtend" \
+        --with-ar="ar rcv"
+
