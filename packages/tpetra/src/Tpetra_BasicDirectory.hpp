@@ -326,7 +326,7 @@ namespace Tpetra {
 
       OrdinalType packetSize = one + one + one; // We will send GIDs, ImageIDs, and LIDs.
 
-      exportElements.reserve((one + one) * numMyElements);
+      exportElements.reserve(packetSize * numMyElements);
       for(OrdinalType i = zero; i < numMyElements; i++) {
         exportElements.push_back(myGlobalElements[i]);
         exportElements.push_back(myImageID);
