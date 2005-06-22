@@ -170,6 +170,10 @@ if BUILD_DIDASKO
 DIDASKO_SUBDIR = didasko
 endif
 
+if BUILD_CAPO
+CAPO_SUBDIR = capo
+endif
+
 # Must list the packages in the order that they are built!
 ## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
 ## above, to this list
@@ -183,6 +187,6 @@ SUBDIRS = $(TEUCHOS_SUBDIR) $(THYRA_SUBDIR) $(KOKKOS_SUBDIR) $(EPETRA_SUBDIR) \
 	  $(TSF_SUBDIR) $(TSFEXTENDED_SUBDIR) \
 	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) \
           $(NOX_SUBDIR) $(PYTRILINOS_SUBDIR) $(DIDASKO_SUBDIR) \
-	  $(RYTHMOS_SUBDIR)
+	  $(CAPO_SUBDIR) $(RYTHMOS_SUBDIR) 
 
 
