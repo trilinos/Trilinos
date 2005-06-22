@@ -51,6 +51,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo], AZTECOO)
 
 TAC_ARG_ENABLE_FEATURE(belos, [Build belos], BELOS, no)
 
+TAC_ARG_ENABLE_FEATURE(capo, [Build capo], CAPO, no)
+
 TAC_ARG_ENABLE_FEATURE(claps, [Build claps], CLAPS, no)
 
 TAC_ARG_ENABLE_FEATURE(didasko, [Build didasko (a Trilinos tutorial)], DIDASKO, no)
@@ -376,6 +378,20 @@ else
   BUILD_NEW_PACKAGE=no
 fi
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$BUILD_NEW_PACKAGE" != "Xno")
+
+if test "X$ac_cv_use_capo" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/capo])
+  BUILD_NEW_PACKAGE=yes
+  if test "X$ac_cv_use_capo_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-capo"
+  fi
+else
+  BUILD_NEW_PACKAGE=no
+fi
+AM_CONDITIONAL(BUILD_CAPO, test "X$BUILD_CAPO" != "Xno")
+
+
+
 
 if test "X$ac_cv_use_pytrilinos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/PyTrilinos])

@@ -12,6 +12,9 @@
 /* Define if want to build belos */
 #undef HAVE_BELOS
 
+/* Define if want to build capo */
+#undef HAVE_CAPO
+
 /* Define if want to build claps */
 #undef HAVE_CLAPS
 
