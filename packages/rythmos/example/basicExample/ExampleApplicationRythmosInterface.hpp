@@ -37,7 +37,7 @@
 #include "ExampleApplication.hpp"
 
 #include "InOutArgs.hpp"
-#include "NonlinearModel.hpp"
+#include "ModelEvaluator.hpp"
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
@@ -52,7 +52,7 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/17/05
 //-----------------------------------------------------------------------------
-class ExampleApplicationRythmosInterface : public Rythmos::NonlinearModel<double>
+class ExampleApplicationRythmosInterface : public Rythmos::ModelEvaluator<double>
 {
   public:
 
