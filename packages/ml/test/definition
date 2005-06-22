@@ -32,3 +32,75 @@
 	   ../examples/MLAPI;
     COMM = SERIAL, MPI;
 }
+
+#
+# 2d_Poisson group
+#
+
+(2d_Poisson) {
+    DIRS = 2d_Poisson;
+    COMM = SERIAL;
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 2dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile1:baseline1, ml_inputfile2:baseline2,
+                        ml_inputfile3:baseline3, ml_inputfile5:baseline5,
+                        ml_inputfile6:baseline6, ml_inputfile7:baseline7;
+}
+
+#
+# 2d_Poisson_parallel group
+#
+
+(2d_Poisson_parallel) {
+    DIRS = 2d_Poisson;
+    COMM = MPI(4);
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 2dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile7:baseline7;
+}
+
+#
+# 3d_Poisson group
+#
+
+(3d_Poisson) {
+    DIRS = 3d_Poisson;
+    COMM = SERIAL;
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 3dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile1:baseline1, ml_inputfile2:baseline2,
+                        ml_inputfile3:baseline3, ml_inputfile5:baseline5,
+                        ml_inputfile6:baseline6;
+}
+
+#
+# 3d_Poisson_parallel group
+#
+
+(3d_Poisson_parallel) {
+    DIRS = 3d_Poisson;
+    COMM = MPI(4);
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 3dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile7:baseline7;
+}
