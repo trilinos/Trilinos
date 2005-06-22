@@ -57,9 +57,10 @@
 int main(int argc, char *argv[])
 {
 
-  double lambda = -0.5; 
-  int numElements = 1;
-  double x0 = 10.0;
+  double lambda = -0.5;  // ODE coefficient
+  int numElements = 1; // number of elements in vector
+  double x0 = 10.0; // ODE initial condition
+  int N = 10;  // number of steps to take
   string method = "FE";  // other choice is method="ERK4"
 
 
@@ -68,6 +69,7 @@ int main(int argc, char *argv[])
   clp.setOption( "lambda", &lambda, "ODE coefficient of decay or growth." );
   clp.setOption( "x0", &x0, "ODE initial condition." );
   clp.setOption( "method", &method, "Integration method:  FE, ERK4." );
+  clp.setOption( "numsteps", &N, "Number of integration steps to take" );
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
   if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -96,7 +98,6 @@ int main(int argc, char *argv[])
 
   double t0 = 0.0;
   double t1 = 1.0;
-  int N = 10;
   double dt = (t1-t0)/N;
 
   // Integrate forward with fixed step sizes:
