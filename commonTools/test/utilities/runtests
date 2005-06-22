@@ -342,31 +342,20 @@ cleanUp();
         my $kernelVersion = "";     my $processor = "";         my $machineHardware = "";
         my $hardwarePlatform = "";  my $badCmd = 0;          
         $badCmd = system('hostname -s > /dev/null 2>&1');
-        if (!$badCmd) { 
-            chomp($hostName=`hostname -s`); 
-        } else { 
-            $badCmd = system('uname -n > /dev/null 2>&1');
-            if (!$badCmd) { chomp($hostName=`uname -n`); }
+        if (!$badCmd) {
+            chomp($hostName=`hostname -s`);
+        } else {
+            $hostName=getOptionalOutput("uname -n");
         }
-        $badCmd = system('hostname -d > /dev/null 2>&1');
-        if (!$badCmd) { chomp($dnsName=`hostname -d`); }
-        $badCmd = system('hostname -i > /dev/null 2>&1');
-        if (!$badCmd) { chomp($ipAddress=`hostname -i`); }
-        $badCmd = system('uname -o > /dev/null 2>&1');
-        if (!$badCmd) { chomp($operatingSystem=`uname -o`); }
-        $badCmd = system('uname -s > /dev/null 2>&1');
-        if (!$badCmd) { chomp($kernelName=`uname -s`); }
-        $badCmd = system('uname -r > /dev/null 2>&1');
-        if (!$badCmd) { chomp($kernelRelease=`uname -r`); }
-        $badCmd = system('uname -v > /dev/null 2>&1');
-        if (!$badCmd) { chomp($kernelVersion=`uname -v`); }
-        $badCmd = system('uname -p > /dev/null 2>&1');
-        if (!$badCmd) { chomp($processor=`uname -p`); }
-        $badCmd = system('uname -m > /dev/null 2>&1');
-        if (!$badCmd) { chomp($machineHardware=`uname -m`); }
-        $badCmd = system('uname -i > /dev/null 2>&1');
-        if (!$badCmd) { chomp($hardwarePlatform=`uname -i`); }
-        
+        $dnsName=getOptionalOutput("hostname -d");
+        $ipAddress=getOptionalOutput("hostname -i");
+        $operatingSystem=getOptionalOutput("uname -o");
+        $kernelName=getOptionalOutput("uname -s");
+        $kernelRelease=getOptionalOutput("uname -r");
+        $kernelVersion=getOptionalOutput("uname -v");
+        $processor=getOptionalOutput("uname -p");
+        $machineHardware=getOptionalOutput("uname -m");
+        $hardwarePlatform=getOptionalOutput("uname -i");
         # Grab the repository branch tag
         my $branchTag = "";
         my $homeDirContents = `ls $trilinosDir`;
@@ -647,7 +636,7 @@ cleanUp();
             
                 # Is this OS excluded?
                 if (!$skipThisGroup) {
-                    my $os = `uname -o`;
+                    my $os = getOptionalOutput("uname -o");
                     foreach my $x_os (@{ $definitionAoHoA[$i]{'X-OS'} }) {
                         if ($x_os =~ m/$os/) { $skipThisGroup = 1; }
                     } 
@@ -655,7 +644,7 @@ cleanUp();
             
                 # Is this architecture excluded?
                 if (!$skipThisGroup) {
-                    my $arch = `uname -m`;
+                    my $arch = getOptionalOutput("uname -m");
                     foreach my $x_arch (@{ $definitionAoHoA[$i]{'X-ARCH'} }) {
                         if ($x_arch =~ m/$arch/) { $skipThisGroup = 1; }
                     }
@@ -663,7 +652,7 @@ cleanUp();
             
                 # Is this host excluded?
                 if (!$skipThisGroup) {
-                    my $host = `uname -n`;
+                    my $host = getOptionalOutput("uname -n");
                     foreach my $x_host (@{ $definitionAoHoA[$i]{'X-HOST'} }) {
                         if ($x_host =~ m/$host/) { $skipThisGroup = 1; }
                     }
@@ -1268,3 +1257,24 @@ cleanUp();
         print "    or visit http://software.sandia.gov/trilinos/developer/\n";
         print "\n";
     } # printHelp()
+
+    ############################################################################
+    # getOptionalOutput()
+    #
+    # Runs a system command and gets its output if it succeeds then returns
+    # its output.  The program suppress output to stderr of the program does
+    # not run correctly.
+    #
+    #   - args:     the shell command
+    #
+    #   - returns:  the optional output string
+    #
+
+    sub getOptionalOutput {
+      my $cmnd_in = shift;
+      my $cmnd = "$cmnd_in > /dev/null 2>&1";
+      my $returnVal = system($cmnd);
+      my $outputStr="";
+      chomp($outputStr = `$cmnd_in`) if($returnVal == 0);
+      return $outputStr;
+    } # getOptionalOutput()
