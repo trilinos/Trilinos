@@ -47,7 +47,7 @@ WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc \
-                         ../src ../example
+                         ../src ../example/basicExample
 # Note: For now ../example is added just to make the code easy to browse
 FILE_PATTERNS          = *.h *.hpp *.cpp
 RECURSIVE              = YES
