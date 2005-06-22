@@ -269,6 +269,26 @@ RUN (sass2889-nightly-mpi) {
 
 ###############################################################################
 #
+# sasg1099 nightly mpi
+#
+###############################################################################
+                                                                                
+RUN (sasg1099-nightly-mpi) {
+                                                                                
+    BUILD-DIR           = sasg1099MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = sgi-sasg1099-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+#    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+                                                                                
+}
+
+###############################################################################
+#
 # nwcc nightly mpi
 #
 ###############################################################################
