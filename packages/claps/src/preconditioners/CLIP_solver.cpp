@@ -1658,7 +1658,6 @@ void CLIP_solver::pcg_init()
     U_gcr = new double[m*nB_own];
     orth1 = new double[m];
     orth2 = new double[m];
-    c_remove = -1;
   }
   if (krylov_method == 1) {
     int m = nB_own*(maxiter+1);
@@ -2055,7 +2054,7 @@ void CLIP_solver::gcr_solve(Epetra_Vector* uStand,
 {
   int i, iflag(1), gcr_iter;
   double dprod, rorig, normb, rcurr, ractual, rnorm;
-  double norm_rconstraint, norm_conerror;
+  double norm_rconstraint, norm_conerror, orthog_val, orthog_tol(0);
   //
   // determine residual for constrained problem
   //
@@ -2123,7 +2122,7 @@ void CLIP_solver::gcr_solve(Epetra_Vector* uStand,
       
       pB_St->Update(1.0, *rB_St, 0.0);
       
-      orthogonalize_gcr(ApB_St, pB_St, n_orthog_used+gcr_iter, -1);
+      orthogonalize_gcr(ApB_St, pB_St, n_orthog_used+gcr_iter);
       
       store_gcr(        ApB_St, pB_St, n_orthog_used+gcr_iter);
       
@@ -2164,17 +2163,14 @@ void CLIP_solver::gcr_solve(Epetra_Vector* uStand,
   //
   // add solution vector (prior to applying preconditioner) to stored space
   //
-  if ((num_iter > 0) && (max_orthog > 0)) {
+  if ((num_iter > 1) && (max_orthog > 0)) {
+    if (n_orthog_used == max_orthog) n_orthog_used = 0;
     determine_AxB(uB_St, ApB_St);
-    orthogonalize_gcr(ApB_St, pB_St, n_orthog_used, c_remove);
-    int icol = n_orthog_used;
-    if (c_remove >= 0) icol = c_remove;
-    store_gcr(        ApB_St, pB_St, icol);
-    n_orthog_used++;
-    if (n_orthog_used >= max_orthog) {
-      n_orthog_used = max_orthog;
-      c_remove++;
-      if (c_remove == max_orthog) c_remove = 0;
+    orthog_val = orthogonalize_gcr(ApB_St, pB_St, n_orthog_used);
+    //    if (MyPID == 0) cout << "orthog_val = " << orthog_val << endl;
+    if (orthog_val >= orthog_tol) {
+      store_gcr(        ApB_St, pB_St, n_orthog_used);
+      n_orthog_used++;
     }
   }
   //
@@ -2974,13 +2970,14 @@ void CLIP_solver::initial_update_gcr()
   uB_St->Update( 1.0,  *pB_St, 0.0);
 }
 
-void CLIP_solver::orthogonalize_gcr(Epetra_Vector *c_i, 
-				    Epetra_Vector *u_i,
-				    int n, int col_ignore)
+double CLIP_solver::orthogonalize_gcr(Epetra_Vector *c_i, 
+				      Epetra_Vector *u_i,
+				      int n)
 {
   int i, M, N;
-  double *ci, *ui, norm_ci;
+  double *ci, *ui, norm_ci, norm_ui, norm_ui_orig, norm_ratio(0);
   Epetra_BLAS EB;
+  //  u_i->Norm2(&norm_ui_orig);
   c_i->ExtractView(&ci);
   u_i->ExtractView(&ui);
   M = c_i->MyLength();
@@ -2991,7 +2988,6 @@ void CLIP_solver::orthogonalize_gcr(Epetra_Vector *c_i,
       EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, ci, BETA, orth1);
     else  myzero(orth1, N);
     Comm.SumAll(orth1, orth2, N);
-    if (col_ignore >= 0) orth2[col_ignore] = 0;
     TRANS = 'N'; ALPHA = -1; BETA = 1;
     if (M > 0) {
       EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, orth2, BETA, ci);
@@ -3002,7 +2998,6 @@ void CLIP_solver::orthogonalize_gcr(Epetra_Vector *c_i,
       EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, ci, BETA, orth1);
     else myzero(orth1, N);
     Comm.SumAll(orth1, orth2, N);
-    if (col_ignore >= 0) orth2[col_ignore] = 0;
     TRANS = 'N'; ALPHA = -1; BETA = 1;
     if (M > 0) {
       EB.GEMV(TRANS, M, N, ALPHA, C_gcr, M, orth2, BETA, ci);
@@ -3010,8 +3005,11 @@ void CLIP_solver::orthogonalize_gcr(Epetra_Vector *c_i,
     }
   }
   c_i->Norm2(&norm_ci);
+  //  u_i->Norm2(&norm_ui);
   c_i->Scale(1/norm_ci);
   u_i->Scale(1/norm_ci);
+  //  norm_ratio = norm_ui/norm_ui_orig;
+  return norm_ratio;
 }
 
 void CLIP_solver::update_gcr(Epetra_Vector *x_vec, Epetra_Vector *r_vec,

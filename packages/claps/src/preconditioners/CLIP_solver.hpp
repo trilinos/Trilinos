@@ -118,9 +118,9 @@ class CLIP_solver
   void gcr_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand, 
 		 int & num_iter, int & gcr_status);
   void initial_update_gcr();
-  void orthogonalize_gcr(Epetra_Vector *c_i, 
-			 Epetra_Vector *u_i,
-			 int n, int col_ignore);
+  double orthogonalize_gcr(Epetra_Vector *c_i, 
+			   Epetra_Vector *u_i,
+                           int n);
   void update_gcr(Epetra_Vector *x_vec, Epetra_Vector *r_vec, int n);
   void store_gcr(Epetra_Vector *c_i, 
 		 Epetra_Vector *u_i,
@@ -156,7 +156,7 @@ class CLIP_solver
   int *comp1, *comp2, *sub1, *sub2, *dset1, *dset2, ndof_set, *corner_flag;
   int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global, max_added_corner;
   int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR, sub_begin;
-  int num_tied_down, *tied_down, *IPIV_gmres, c_remove;
+  int num_tied_down, *tied_down, *IPIV_gmres;
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
