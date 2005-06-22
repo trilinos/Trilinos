@@ -10,6 +10,8 @@
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-belos \
+--enable-capo \
+--enable-claps \
 --enable-anasazi \
 --enable-teuchos-complex \
 --enable-komplex \
