@@ -3188,12 +3188,12 @@ if test "X$ac_cv_use_capo" != "Xno"; then
 
 subdirs="$subdirs packages/capo"
 
-  BUILD_NEW_PACKAGE=yes
+  BUILD_CAPO=yes
   if test "X$ac_cv_use_capo_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-capo"
   fi
 else
-  BUILD_NEW_PACKAGE=no
+  BUILD_CAPO=no
 fi
 
 

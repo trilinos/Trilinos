@@ -381,12 +381,12 @@ AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$BUILD_NEW_PACKAGE" != "Xno")
 
 if test "X$ac_cv_use_capo" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/capo])
-  BUILD_NEW_PACKAGE=yes
+  BUILD_CAPO=yes
   if test "X$ac_cv_use_capo_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-capo"
   fi
 else
-  BUILD_NEW_PACKAGE=no
+  BUILD_CAPO=no
 fi
 AM_CONDITIONAL(BUILD_CAPO, test "X$BUILD_CAPO" != "Xno")
 
