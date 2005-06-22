@@ -35,20 +35,28 @@
 // Special Notes :
 // Scope         : public
 // Creator       : Todd Coffey, SNL
-// Creation Date : 05/17/05
+// Creation Date : 06/22/05
 //-----------------------------------------------------------------------------
-ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
+ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface(Teuchos::ParameterList &params)
 {
-  // 05/26/05 tscoffe:  This is where a parameter list could be passed in and
-  // used in constructing the problem.
-  double lambda = -0.5;
-  int numelements = 1;
-  problem_ = Teuchos::rcp(new ExampleApplication(lambda,numelements));
+  problem_ = Teuchos::rcp(new ExampleApplication(params));
   epetra_map_ = problem_->get_epetra_map();
 //  std::cout << "ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()" << std::endl;
 //  std::cout << "epetra_map_.get() = " << std::endl;
 //  std::cout << epetra_map_.get() << std::endl;
   thyra_vs_ = Thyra::create_MPIVectorSpaceBase(epetra_map_);
+}
+
+//-----------------------------------------------------------------------------
+// Function      : ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface
+// Purpose       : constructor
+// Special Notes :
+// Scope         : public
+// Creator       : Todd Coffey, SNL
+// Creation Date : 05/17/05
+//-----------------------------------------------------------------------------
+ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
+{
 }
 
 //-----------------------------------------------------------------------------
@@ -109,4 +117,3 @@ Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_E
 { 
   return(epetra_map_); 
 }
-

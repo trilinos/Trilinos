@@ -37,23 +37,35 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Version.h"
 
+// Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
 #include "ExampleApplicationRythmosInterface.hpp"
 #include "Stepper_ForwardEuler.hpp"
 #include "Stepper_ExplicitRK.hpp"
 
-//#include "ExampleApplication.hpp"
-
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+
 #include <string>
 
+// Includes for Teuchos:
+#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 int main(int argc, char *argv[])
 {
+  double lambda = -0.5; 
+  int numElements = 1;
+  double x0 = 10.0;
+
+  Teuchos::ParameterList params;
+  params.set( "Lambda", lambda );
+  params.set( "NumElements", numElements );
+  params.set( "x0", x0 );
+  
   // create interface to problem
-  Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface);
+  Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface(params));
   
   // create forward Euler stepper object
   Rythmos::ForwardEuler<double> stepper(problem);
@@ -84,8 +96,7 @@ int main(int argc, char *argv[])
   // These values should be passed by parameter list:
   // hard-coded values in ExampleApplicationRythmosInterface:
   // double numelements = 1;
-  double lambda = -0.5;
-  double x_initial = 10;
+  double x_initial = x0;
 
   // check exact answer
   double x_star = x_initial*exp(lambda*t1);

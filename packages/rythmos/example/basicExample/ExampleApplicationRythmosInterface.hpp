@@ -44,6 +44,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplicationRythmosInterface
@@ -56,6 +57,7 @@ class ExampleApplicationRythmosInterface : public Rythmos::ModelEvaluator<double
 {
   public:
 
+    ExampleApplicationRythmosInterface(Teuchos::ParameterList &params);
     ExampleApplicationRythmosInterface();
 
     ~ExampleApplicationRythmosInterface();

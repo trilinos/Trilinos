@@ -66,10 +66,11 @@
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/05/05
 //-----------------------------------------------------------------------------
-ExampleApplication::ExampleApplication(double lambda, int numElements)
+ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
-  lambda_ = lambda;
-  numElements_ = numElements;
+  lambda_ = params.get( "Lambda", -0.5 );
+  numElements_ = params.get( "NumElements", 1 );
+  x0_ = params.get( "x0", 10.0 );
   // Serial only implementation here:
   // 05/26/05 tscoffe:  I haven't figured out how to get MPI_Init called with
   // argc and argv in such a way that MPI_COMM_WORLD is passed down here.
@@ -161,7 +162,7 @@ Teuchos::RefCountPtr<Epetra_Comm> ExampleApplication::get_epetra_comm()
 Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0()
 {
   Teuchos::RefCountPtr<Epetra_Vector> x0 = Teuchos::rcp(new Epetra_Vector(*epetra_map_));
-  (*x0)[0] = 10.0;
+  (*x0)[0] = x0_;
 //  x0->Random();
   return(x0);
 }

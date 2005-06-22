@@ -38,6 +38,7 @@
 
 #include "Rythmos_ConfigDefs.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 //-----------------------------------------------------------------------------
 // Class         : ExampleApplication
@@ -57,7 +58,7 @@ class ExampleApplication
     ExampleApplication() {};
 
     // Constructor
-    ExampleApplication(double lambda, int numElements);
+    ExampleApplication(Teuchos::ParameterList &params);
 
     // Evaluate residual:
     int evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t);
@@ -76,14 +77,17 @@ class ExampleApplication
 
   protected:
 
-    // Coefficient for ODE
-    double lambda_;
     // Epetra Comm:
     Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_;
     // Epetra Map:
     Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
+    
+    // Coefficient for ODE
+    double lambda_;
     // Number of unknowns:
     int numElements_;
+    // initial condition
+    double x0_;
 
 };
 
