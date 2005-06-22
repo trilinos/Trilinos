@@ -40,6 +40,7 @@
 #include "Rythmos_ConfigDefs.h"
 #include "ExampleApplicationRythmosInterface.hpp"
 #include "Stepper_ForwardEuler.hpp"
+//#include "Stepper_ExplicitRK.hpp"
 
 //#include "ExampleApplication.hpp"
 
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
   
   // create forward Euler stepper object
   Rythmos::ForwardEuler<double> stepper(problem);
+//  Rythmos::ExplicitRK<double> stepper(problem);
 
   double t0 = 0.0;
   double t1 = 1.0;

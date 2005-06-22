@@ -131,7 +131,7 @@ double ExampleApplication::getCoeff()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<Epetra_Map> &ExampleApplication::get_epetra_map()
+Teuchos::RefCountPtr<Epetra_Map> ExampleApplication::get_epetra_map()
 {
   return(epetra_map_);
 }
@@ -144,7 +144,7 @@ const Teuchos::RefCountPtr<Epetra_Map> &ExampleApplication::get_epetra_map()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/02/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<Epetra_Comm> &ExampleApplication::get_epetra_comm()
+Teuchos::RefCountPtr<Epetra_Comm> ExampleApplication::get_epetra_comm()
 {
   return(epetra_comm_);
 }
@@ -158,7 +158,7 @@ const Teuchos::RefCountPtr<Epetra_Comm> &ExampleApplication::get_epetra_comm()
 // Creator       : Todd Coffey, SNL
 // Creation Date : 05/26/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0()
+Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0()
 {
   Teuchos::RefCountPtr<Epetra_Vector> x0 = Teuchos::rcp(new Epetra_Vector(*epetra_map_));
   (*x0)[0] = 10.0;

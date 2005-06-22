@@ -159,16 +159,24 @@ Scalar ExplicitRK<Scalar>::TakeStep()
 template<class Scalar>
 Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   InArgs<Scalar> inargs;
   OutArgs<Scalar> outargs;
 
+#include<vector>
+  std::vector<std::vector<Scalar> > butcher_tableau;
+  std::vector<Scalar> butcher_b;
+  std::vector<Scalar> butcher_c;
+  
   // Fourth order Runge-Kutta 
+  
+
   // k1:
   inargs.set_x(solution_vector_);
-  double t1 = t_ + 0.0;
+  double t1 = t_ + ST::zero();
   inargs.set_t(t1);
-  outargs.set_F(k1_vector_);
-  problem_->evalModel(inargs,outargs);
+  outargs.request_F(k1_vector_);
+  model_->evalModel(inargs,outargs);
   Thyra::Vt_S(&*k1_vector_,dt); // k1 = k1*dt
   // k2:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
@@ -176,32 +184,32 @@ Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
   inargs.set_x(ktemp_vector_);
   double t2 = t_ + 0.5*dt;
   inargs.set_t(t2);
-  outargs.set_F(k2_vector_);
-  problem_->evalMoedl(inargs,outargs);
+  outargs.request_F(k2_vector_);
+  model_->evalModel(inargs,outargs);
   Thyra::Vt_S(&*k2_vector_,dt); // k2 = k2*dt
   // k3:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, 0.5, *k2_vector_); // ktemp = ktemp + k1*0.5
+  Thyra::Vp_StV(&*ktemp_vector_, 0.5, *k2_vector_); // ktemp = ktemp + k2*0.5
   inargs.set_x(ktemp_vector_);
   double t3 = t_ + 0.5*dt;
   inargs.set_t(t3);
-  outargs.set_F(k3_vector_);
-  problem_->evalModel(inargs,outargs);
+  outargs.request_F(k3_vector_);
+  model_->evalModel(inargs,outargs);
   Thyra::Vt_S(&*k3_vector_,dt); // k3 = k3*dt
   // k4:
-  Thyra::assign(&*ktemp_vector_, *solution_vector); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, 1.0, k3_vector_); // ktemp = ktemp + k3
+  Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
+  Thyra::Vp_StV(&*ktemp_vector_, 1.0, *k3_vector_); // ktemp = ktemp + k3*1.0
   inargs.set_x(ktemp_vector_);
   double t4 = t_ + dt;
   inargs.set_t(t4);
-  outargs.set_F(k4_vector_);
-  problem_->evalModel(inargs,outargs);
+  outargs.request_F(k4_vector_);
+  model_->evalModel(inargs,outargs);
   Thyra::Vt_S(&*k4_vector_,dt); // k4 = k4*dt
   // Sum for solution:
-  Thyra::Vp_StV(&*solution_vector_, 1/6, k1_vector_); // solution_vector += (1/6)*k1
-  Thyra::Vp_StV(&*solution_vector_, 1/3, k2_vector_); // solution_vector += (1/3)*k2
-  Thyra::Vp_StV(&*solution_vector_, 1/3, k3_vector_); // solution_vector += (1/3)*k3
-  Thyra::Vp_StV(&*solution_vector_, 1/6, k4_vector_); // solution_vector += (1/6)*k4
+  Thyra::Vp_StV(&*solution_vector_, 1/6, *k1_vector_); // solution_vector += (1/6)*k1
+  Thyra::Vp_StV(&*solution_vector_, 1/3, *k2_vector_); // solution_vector += (1/3)*k2
+  Thyra::Vp_StV(&*solution_vector_, 1/3, *k3_vector_); // solution_vector += (1/3)*k3
+  Thyra::Vp_StV(&*solution_vector_, 1/6, *k4_vector_); // solution_vector += (1/6)*k4
 
   // update current time:
   t_ = t_ + dt;
@@ -218,7 +226,7 @@ Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > Forward_Euler<Scalar>::get_solution() const
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRK<Scalar>::get_solution() const
 {
   return(solution_vector_);
 }
@@ -232,7 +240,7 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > Forward_Euler<Scalar>::ge
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > Forward_Euler<Scalar>::get_residual() const
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRK<Scalar>::get_residual() const
 {
   // Since this RK method doesn't actually compute the residual, if you want
   // it, then I need to compute it on the fly.  Ideally, we'd keep track of
@@ -243,8 +251,8 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > Forward_Euler<Scalar>::ge
   
   inargs.set_x(solution_vector_);
   inargs.set_t(t_);
-  outargs.set_F(residual_vector_);
-  problem_->evalModel(inargs,outargs);
+  outargs.request_F(residual_vector_);
+  model_->evalModel(inargs,outargs);
   return(residual_vector_);
 }
 

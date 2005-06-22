@@ -105,7 +105,7 @@ Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterf
 // Creator       : Todd Coffey, SNL
 // Creation Date : 06/07/05
 //-----------------------------------------------------------------------------
-const Teuchos::RefCountPtr<const Epetra_Map> &ExampleApplicationRythmosInterface::get_Epetra_Map() const
+Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_Epetra_Map() const
 { 
   return(epetra_map_); 
 }
