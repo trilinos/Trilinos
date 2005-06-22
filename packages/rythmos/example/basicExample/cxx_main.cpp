@@ -39,7 +39,7 @@
 
 #include "Rythmos_ConfigDefs.h"
 #include "ExampleApplicationRythmosInterface.hpp"
-//#include "Stepper_ForwardEuler.hpp"
+#include "Stepper_ForwardEuler.hpp"
 #include "Stepper_ExplicitRK.hpp"
 
 //#include "ExampleApplication.hpp"
@@ -47,6 +47,7 @@
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include <string>
 
 
 int main(int argc, char *argv[])
@@ -55,8 +56,10 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface);
   
   // create forward Euler stepper object
-//  Rythmos::ForwardEuler<double> stepper(problem);
-  Rythmos::ExplicitRK<double> stepper(problem);
+  Rythmos::ForwardEuler<double> stepper(problem);
+  string method = "Forward Euler";
+//  Rythmos::ExplicitRK<double> stepper(problem);
+//  string method = "Explicit Runge-Kutta of order 4";
 
   double t0 = 0.0;
   double t1 = 1.0;
@@ -104,7 +107,7 @@ int main(int argc, char *argv[])
          << "with initial x_0 = " << x_initial 
          << ", \\Delta t = " << dt 
          << ", and \\lambda = " << lambda << endl
-         << "using forward Euler." << endl;
+         << "using " << method << "." << endl;
 
     cout << "Computed: x(" << t1 << ") = " << (*x)[0] << endl;
     cout << "Exact:    x(" << t1 << ") = " << x_star << endl;
