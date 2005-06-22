@@ -286,9 +286,6 @@ target_vendor = @target_vendor@
 #np# --with-xyz or --without-xyz)
 #
 #np# Make sure to list all source files in one of the following categories.
-CORE_H = \
-	$(srcdir)/Rythmos_ConfigDefs.h
-
 CORE = \
 	$(srcdir)/Rythmos_Version.cpp
 

@@ -43,7 +43,12 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/Rythmos_ConfigDefs.h
+	$(srcdir)/Rythmos_ConfigDefs.h \
+	$(srcdir)/InOutArgs.hpp \
+	$(srcdir)/ModelEvaluator.hpp \
+	$(srcdir)/Stepper.hpp \
+	$(srcdir)/Stepper_ForwardEuler.hpp \
+	$(srcdir)/Stepper_ExplicitRK.hpp \
 
 CORE = \
 	$(srcdir)/Rythmos_Version.cpp
