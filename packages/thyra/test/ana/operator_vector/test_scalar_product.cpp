@@ -35,6 +35,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DiagonalLinearOp.hpp"
+#include "Thyra_SerialVectorSpaceConverterStd.hpp"
 #include "Thyra_ScaledAdjointLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -52,11 +53,12 @@ bool run_scalar_product_tests(
 {
 
   using Thyra::relErr;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType    ScalarMag;
+  typedef Teuchos::ScalarTraits<Scalar>    ST;
+  typedef typename ST::magnitudeType       ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  using Teuchos::rcp_static_cast;
+  using Teuchos::rcp_implicit_cast;
 
   if(out) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n";
 
@@ -71,15 +73,21 @@ bool run_scalar_product_tests(
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*op_coeff );
   if(out && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
+  RefCountPtr<const Thyra::VectorSpaceConverterBase<ScalarMag,Scalar> >
+    vecSpcConverterFromMag = rcp(new Thyra::SerialVectorSpaceConverterStd<ScalarMag,Scalar>());
+  RefCountPtr<const Thyra::VectorSpaceBase<ScalarMag> >
+    magDomain = vecSpcConverterFromMag->createVectorSpaceFrom(*rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)),
+    magRange  = vecSpcConverterFromMag->createVectorSpaceFrom(*rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(range));
+  RefCountPtr<Thyra::VectorBase<ScalarMag> >
+    _domainScalarProdDiag = createMember(magDomain),
+    _rangeScalarProdDiag  = createMember(*magRange);
+  Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), &*_domainScalarProdDiag );
+  Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), &*_rangeScalarProdDiag );
   RefCountPtr<Thyra::VectorBase<Scalar> >
-    _domainScalarProdDiag = createMember(rcp_static_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)),
-    domainScalarProdDiag  = createMember(rcp_static_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)),
-    _rangeScalarProdDiag  = createMember(rcp_static_cast<const Thyra::VectorSpaceBase<Scalar> >(range)),
-    rangeScalarProdDiag   = createMember(rcp_static_cast<const Thyra::VectorSpaceBase<Scalar> >(range));
-  Thyra::randomize( Scalar(Scalar(+1)*ST::one()), Scalar(Scalar(+2)*ST::one()), &*_domainScalarProdDiag );
-  Thyra::randomize( Scalar(Scalar(+1)*ST::one()), Scalar(Scalar(+2)*ST::one()), &*_rangeScalarProdDiag );
-  Thyra::abs( &*domainScalarProdDiag, *_domainScalarProdDiag ); // If complex then this must be real!
-  Thyra::abs( &*rangeScalarProdDiag,  *_rangeScalarProdDiag  ); // If complex then this must be real!
+    domainScalarProdDiag  = createMember(rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)),
+    rangeScalarProdDiag   = createMember(rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(range));
+  vecSpcConverterFromMag->convert( *_domainScalarProdDiag, &*domainScalarProdDiag );
+  vecSpcConverterFromMag->convert( *_rangeScalarProdDiag, &*rangeScalarProdDiag );
 
   const ScalarMag warning_tol = ScalarMag(1e-2)*tol, error_tol = tol;
   Thyra::LinearOpTester<Scalar> linearOpTester;
@@ -92,7 +100,7 @@ bool run_scalar_product_tests(
   if(out) *out << "\nTesting LinearOpBase with Euclidean domain and range scalar products ...\n";
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_static_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
  
@@ -108,7 +116,7 @@ bool run_scalar_product_tests(
   op->initialize(range,domain);
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_static_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
   
@@ -124,7 +132,7 @@ bool run_scalar_product_tests(
   op->initialize(range,domain);
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_static_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
   
@@ -146,15 +154,13 @@ bool run_scalar_product_tests(
   op->initialize(range,domain);
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_static_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
 
   if(out) *out << "\n*** Leaving run_scalar_product_tests<"<<ST::name()<<">(...) ...\n";
 
   return success;
-
-  assert(0); return false;
 
 } // end run_scalar_product_tests() [Doxygen looks for this!]
 

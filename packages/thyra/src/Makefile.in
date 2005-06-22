@@ -368,6 +368,7 @@ ANA_OPERATOR_VECTOR_INTERFACES_H = \
   $(srcdir)/ana/operator_vector/interfaces/Thyra_apply_op_helper_decl.hpp
 
 ANA_OPERATOR_VECTOR_EXTENDED_INTERFACES_H = \
+  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_VectorSpaceConverterBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductMultiVectorBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductVectorBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductVectorSpaceBase.hpp
@@ -402,6 +403,11 @@ ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorTesterDecl.hpp
 
 ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H = \
+  $(srcdir)/ana/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBase.hpp\
+  $(srcdir)/ana/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBaseDecl.hpp\
+  $(srcdir)/ana/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterStd.hpp\
+  $(srcdir)/ana/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterStdDecl.hpp\
+  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_VectorSpaceConverterBase.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/serial/Thyra_SerialLinearOpBase.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/serial/Thyra_SerialLinearOpBaseDecl.hpp
 
