@@ -81,6 +81,9 @@ on-line documentation for more in-depth information."
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_CombineMode.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Epetra_Time.h"
 
 // Local includes
@@ -262,6 +265,8 @@ extern "C" {
 %rename(IntSerialDenseVector) Epetra_IntSerialDenseVector;
 %rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
 %rename(LinearProblem       ) Epetra_LinearProblem;
+%rename(Import              ) Epetra_Import;
+%rename(Export              ) Epetra_Export;
 %rename(Time                ) Epetra_Time;
 %rename(NumPyVector         ) Epetra_NumPyVector;
 
@@ -333,6 +338,9 @@ using namespace std;
 %include "Epetra_IntSerialDenseMatrix.h"
 %include "Epetra_IntSerialDenseVector.h"
 %include "Epetra_LinearProblem.h"
+%include "Epetra_CombineMode.h"
+%include "Epetra_Import.h"
+%include "Epetra_Export.h"
 %include "Epetra_Time.h"
 
 // Local interface includes
