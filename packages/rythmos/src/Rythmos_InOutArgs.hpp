@@ -47,28 +47,28 @@ class InArgs
     InArgs() {};
 
     // Specify solution vector
-    void set_x(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x);
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > get_x() const;
+    void set_x(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x);
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_x() const;
 
     // Specify time
     void set_t(Scalar t);
     Scalar get_t() const;
 
   private:
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_;
     Scalar t_;
 
 };
 
 
 template<class Scalar> 
-void InArgs<Scalar>::set_x(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x)
+void InArgs<Scalar>::set_x(const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x)
 { 
   x_ = x; 
 }
 
 template<class Scalar> 
-Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > InArgs<Scalar>::get_x() const
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > InArgs<Scalar>::get_x() const
 { 
   return(x_); 
 }
@@ -84,6 +84,11 @@ Scalar InArgs<Scalar>::get_t() const
 { 
   return(t_); 
 }
+
+
+
+
+
 
 template<class Scalar> 
 class OutArgs

@@ -47,10 +47,11 @@ ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
 {
 }
 
+
 int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> &inargs, const Rythmos::OutArgs<double> &outargs) const
 {
   // input arguments:
-  Teuchos::RefCountPtr<Thyra::VectorBase<double> > x = inargs.get_x();
+  Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x = inargs.get_x();
   double t = inargs.get_t();
 
   // output arguments:
@@ -60,10 +61,12 @@ int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> 
   return 0;
 }
 
+
 Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterface::get_vector() const
 {
   return(Thyra::create_MPIVectorBase(problem_->get_x0(),thyra_vs_));
 }
+
 
 Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_Epetra_Map() const
 { 
