@@ -181,14 +181,14 @@ NOX::Epetra::MultiVector::random(bool useSeed, int seed)
 
 NOX::Abstract::MultiVector& 
 NOX::Epetra::MultiVector::setBlock(const NOX::Abstract::MultiVector& source, 
-				   vector<int>& index) {
+				   const vector<int>& index) {
   return setBlock(dynamic_cast<const NOX::Epetra::MultiVector&>(source),
 		  index);
 }
 
 NOX::Abstract::MultiVector& 
 NOX::Epetra::MultiVector::setBlock(const NOX::Epetra::MultiVector& source, 
-				   vector<int>& index) {
+				   const vector<int>& index) {
   double* vecPtr;
   double *sourceVecPtr;
   int ind;
@@ -381,22 +381,24 @@ NOX::Epetra::MultiVector::clone(int numvecs) const
 }
 
 NOX::Abstract::MultiVector* 
-NOX::Epetra::MultiVector::subCopy(vector<int>& index) const
+NOX::Epetra::MultiVector::subCopy(const vector<int>& index) const
 {
   int numvecs = index.size();
   NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector(numvecs);
   newVec->epetraMultiVec = new Epetra_MultiVector(Copy, *epetraMultiVec,
-						  &index[0], numvecs);
+						  const_cast<int*>(&index[0]), 
+						  numvecs);
   return newVec;
 }
 
 NOX::Abstract::MultiVector* 
-NOX::Epetra::MultiVector::subView(vector<int>& index) const
+NOX::Epetra::MultiVector::subView(const vector<int>& index) const
 {
   int numvecs = index.size();
   NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector(numvecs);
   newVec->epetraMultiVec = new Epetra_MultiVector(View, *epetraMultiVec,
-						  &index[0], numvecs);
+						  const_cast<int*>(&index[0]), 
+						  numvecs);
   return newVec;
 }
 

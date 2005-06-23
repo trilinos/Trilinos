@@ -89,9 +89,10 @@ namespace NOX {
      * vectors in \c *this indicated by the indices given in \c index.
      */
     virtual NOX::Abstract::MultiVector&
-    setBlock(const NOX::Abstract::MultiVector& source, vector<int>& index);
+    setBlock(const NOX::Abstract::MultiVector& source, 
+	     const vector<int>& index);
     virtual NOX::Abstract::MultiVector&
-    setBlock(const NOX::MultiVector& source, vector<int>& index);
+    setBlock(const NOX::MultiVector& source, const vector<int>& index);
 
     //! Append the vectors in \c source to \c *this
     virtual NOX::Abstract::MultiVector&
@@ -193,14 +194,14 @@ namespace NOX {
      * columns are copies of the columns of \c *this given by \c index.
      */
     virtual NOX::Abstract::MultiVector* 
-    subCopy(vector<int>& index) const;
+    subCopy(const vector<int>& index) const;
 
     /*! 
      * \brief Creates a new multi-vector with \c index.size() columns that 
      * shares the columns of \c *this given by \c index.
      */
     virtual NOX::Abstract::MultiVector* 
-    subView(vector<int>& index) const;
+    subView(const vector<int>& index) const;
 
     //@}
 

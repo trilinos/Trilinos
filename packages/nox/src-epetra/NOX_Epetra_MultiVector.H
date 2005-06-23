@@ -115,10 +115,10 @@ namespace NOX {
        */
       virtual NOX::Abstract::MultiVector&
       setBlock(const NOX::Abstract::MultiVector& source, 
-	       vector<int>& index);
+	       const vector<int>& index);
       virtual NOX::Abstract::MultiVector&
       setBlock(const NOX::Epetra::MultiVector& source, 
-	      vector<int>& index);
+	      const vector<int>& index);
 
       //! Append the vectors in \c source to \c *this
       virtual NOX::Abstract::MultiVector&
@@ -219,14 +219,14 @@ namespace NOX {
        * columns are copies of the columns of \c *this given by \c index.
        */
       virtual NOX::Abstract::MultiVector* 
-      subCopy(vector<int>& index) const;
+      subCopy(const vector<int>& index) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c ndex.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
       virtual NOX::Abstract::MultiVector* 
-      subView(vector<int>& index) const;
+      subView(const vector<int>& index) const;
 
       //@}
 

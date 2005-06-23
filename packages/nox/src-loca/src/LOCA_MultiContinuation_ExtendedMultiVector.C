@@ -78,7 +78,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
 
 LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
 		  const LOCA::MultiContinuation::ExtendedMultiVector& source, 
-		  vector<int>& index, bool view) :
+		  const vector<int>& index, bool view) :
   LOCA::Extended::MultiVector(source, index, view)
 {
 }
@@ -124,13 +124,15 @@ LOCA::MultiContinuation::ExtendedMultiVector::clone(int numvecs) const
 }
 
 NOX::Abstract::MultiVector* 
-LOCA::MultiContinuation::ExtendedMultiVector::subCopy(vector<int>& index) const
+LOCA::MultiContinuation::ExtendedMultiVector::subCopy(
+					       const vector<int>& index) const
 {
   return new LOCA::MultiContinuation::ExtendedMultiVector(*this, index, false);
 }
 
 NOX::Abstract::MultiVector* 
-LOCA::MultiContinuation::ExtendedMultiVector::subView(vector<int>& index) const
+LOCA::MultiContinuation::ExtendedMultiVector::subView(
+					      const vector<int>& index) const
 {
   return new LOCA::MultiContinuation::ExtendedMultiVector(*this, index, true);
 }

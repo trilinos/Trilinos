@@ -130,14 +130,14 @@ NOX::MultiVector::operator=(const NOX::MultiVector& source)
 
 NOX::Abstract::MultiVector&
 NOX::MultiVector::setBlock(const NOX::Abstract::MultiVector& source, 
-			   vector<int>& index)
+			   const vector<int>& index)
 {
   return setBlock(dynamic_cast<const NOX::MultiVector&>(source), index);
 }
 
 NOX::Abstract::MultiVector&
 NOX::MultiVector::setBlock(const NOX::MultiVector& source, 
-			   vector<int>& index)
+			   const vector<int>& index)
 {
   int ind;
 
@@ -324,7 +324,7 @@ NOX::MultiVector::clone(int numvecs) const
 }
 
 NOX::Abstract::MultiVector* 
-NOX::MultiVector::subCopy(vector<int>& index) const
+NOX::MultiVector::subCopy(const vector<int>& index) const
 {
   NOX::MultiVector* tmp = new NOX::MultiVector(index.size());
   int ind;
@@ -338,7 +338,7 @@ NOX::MultiVector::subCopy(vector<int>& index) const
 }
 
 NOX::Abstract::MultiVector* 
-NOX::MultiVector::subView(vector<int>& index) const
+NOX::MultiVector::subView(const vector<int>& index) const
 {
   NOX::MultiVector* tmp = new NOX::MultiVector(index.size());
   int ind;

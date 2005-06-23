@@ -82,7 +82,7 @@ LOCA::Extended::MultiVector::MultiVector(
 
 LOCA::Extended::MultiVector::MultiVector(
 				   const LOCA::Extended::MultiVector& source,
-				   vector<int>& index, bool view) :
+				   const vector<int>& index, bool view) :
   numColumns(index.size()),
   numMultiVecRows(source.numMultiVecRows),
   numScalarRows(source.numScalarRows),
@@ -221,7 +221,7 @@ LOCA::Extended::MultiVector::operator=(
 
 NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::setBlock(const NOX::Abstract::MultiVector& source,
-				      vector<int>& index)
+				      const vector<int>& index)
 {
   return setBlock(dynamic_cast<const LOCA::Extended::MultiVector&>(source), 
 		  index);
@@ -230,7 +230,7 @@ LOCA::Extended::MultiVector::setBlock(const NOX::Abstract::MultiVector& source,
 NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::setBlock(
 				   const LOCA::Extended::MultiVector& source, 
-				   vector<int>& index)
+				   const vector<int>& index)
 {
   // Verify dimensions are consistent
   if (source.numMultiVecRows != numMultiVecRows || 
@@ -455,13 +455,13 @@ LOCA::Extended::MultiVector::clone(int numvecs) const
 }
 
 NOX::Abstract::MultiVector* 
-LOCA::Extended::MultiVector::subCopy(vector<int>& index) const
+LOCA::Extended::MultiVector::subCopy(const vector<int>& index) const
 {
   return new LOCA::Extended::MultiVector(*this, index, false);
 }
 
 NOX::Abstract::MultiVector* 
-LOCA::Extended::MultiVector::subView(vector<int>& index) const
+LOCA::Extended::MultiVector::subView(const vector<int>& index) const
 {
   return new LOCA::Extended::MultiVector(*this, index, true);
 }
