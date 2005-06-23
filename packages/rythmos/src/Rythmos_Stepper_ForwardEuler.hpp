@@ -30,10 +30,10 @@
 #ifndef Rythmos_STEPPER_FORWARDEULER_H
 #define Rythmos_STEPPER_FORWARDEULER_H
 
-#include "Stepper.hpp"
+#include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "ModelEvaluator.hpp"
+#include "Rythmos_ModelEvaluator.hpp"
 
 namespace Rythmos {
 

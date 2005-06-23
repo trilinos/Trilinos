@@ -30,10 +30,10 @@
 #ifndef Rythmos_STEPPER_ExplicitRK_H
 #define Rythmos_STEPPER_ExplicitRK_H
 
-#include "Stepper.hpp"
+#include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "ModelEvaluator.hpp"
+#include "Rythmos_ModelEvaluator.hpp"
 #include <vector>
 
 namespace Rythmos {
@@ -74,12 +74,12 @@ class ExplicitRK : public Stepper<Scalar>
     Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
-    vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > k_vector_;
+    std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
-    vector<vector<Scalar> > b_A; // Butcher tableau A matrix
-    vector<Scalar> b_b; // Butcher b vector
-    vector<Scalar> b_c; // Butcher c vector
+    std::vector<std::vector<Scalar> > b_A; // Butcher tableau A matrix
+    std::vector<Scalar> b_b; // Butcher b vector
+    std::vector<Scalar> b_c; // Butcher c vector
 
     Scalar t_;
 

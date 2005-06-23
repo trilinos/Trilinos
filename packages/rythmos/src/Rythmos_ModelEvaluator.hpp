@@ -32,7 +32,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "InOutArgs.hpp"
+#include "Rythmos_InOutArgs.hpp"
 
 
 namespace Rythmos {
