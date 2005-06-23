@@ -165,7 +165,7 @@ void Npgs::Orthonormalize(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > 
     {
       for(int j=1;j<i;j++)
 	{
-	  temp = Thyra::dot(*(Basis->col(i)),*(Basis->col(j)));
+	  temp = sqrt( Thyra::dot(*(Basis->col(i)),*(Basis->col(j))) );
 	  Thyra::Vp_StV( &*(Basis->col(i)),-temp, *(Basis->col(j)) );
 	}
       temp = Thyra::norm( *(Basis->col(i)) );
@@ -490,20 +490,21 @@ void Npgs::SchurDecomp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
      in the matrix Se.
   */
 
-  RTOpPack::MutableSubMultiVectorT<Scalar> sub_mv1;
-  RTOpPack::MutableSubMultiVectorT<Scalar> sub_mv2;
-  Se->getSubMultiVector(Thyra::Range1D(1,m),Thyra::Range1D(1,m),&sub_mv1);
-  Re->getSubMultiVector(Thyra::Range1D(1,m),Thyra::Range1D(1,m),&sub_mv2);
-  for (int j=0;j<sub_mv.numSubCols();j++)
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tempcol1;
+  tempcol1 = createMember(Se->domain());
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tempcol2;
+  tempcol2 = createMember(Re->domain());
+
+  for (int i=0;i<m;i++)
     {
-      for (int i=0;i<sub_mv.subDim();i++)
+      for (int j=0;j<m;j++)
 	{
-	  sub_mv1.values()[i+j*sub_mv1.leadingDim()] = re[i+j*m];
-	  sub_mv2.values()[i+j*sub_mv2.leadingDim()] = se[i+j*m];
+	  Thyra::set_ele(j+1,se[j+i*m],&*tempcol1);
+	  Thyra::set_ele(j+1,re[j+i*m],&*tempcol2);
 	}
+      Thyra::assign(&*(Se->col(i+1)),*tempcol2);
+      Thyra::assign(&*(Re->col(i+1)),*tempcol1);
     }
-  Se->commitSubMultiVector(&sub_mv1);
-  Re->commitSubMultiVector(&sub_mv2);
 
   /* sdim tells us the number of eigenvalues that met the
      criteria of the selection function, in the case of 
@@ -516,7 +517,8 @@ void Npgs::SchurDecomp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
   delete [] bwork;
   delete [] wr;
   delete [] wi;
-
+  delete [] se;
+  delete [] re;
   if (info != 0)
     cout << "There was an error returned from the Schur decompostion." << endl;
 
