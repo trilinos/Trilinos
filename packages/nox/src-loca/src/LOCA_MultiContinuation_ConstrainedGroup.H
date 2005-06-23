@@ -63,6 +63,26 @@ namespace LOCA {
 
   namespace MultiContinuation {
 
+    /*!
+     * \brief Extended group representing a constrained nonlinear problem.
+     */
+    /*!
+     * This class represents a constrained system of nonlinear equations:
+     * \f[
+     *     \begin{split}
+     *         f(x,p) &= 0 \\
+     *         g(x,p) &= 0
+     *     \end{split}
+     * \f]
+     * where \f$x\in\Re^n\f$ is the solution vector, \f$p\in\Re^m\f$ is a 
+     * set of constraint parameters, \f$f(x,p)\in\Re^n\f$ is represented by 
+     * some LOCA::MultiContinuation::AbstractGroup, and \f$g(x,p)\in\Re^m\f$ 
+     * is a constraint represented by a 
+     * LOCA::MultiContinuation::ConstraintInterface object.  Newton steps
+     * for this system are computed via some 
+     * LOCA::BorderedSystem::AbstractStrategy which is specified via   
+     * the \c constraintParams argument to the constructor.
+     */
     class ConstrainedGroup : 
       public virtual LOCA::Extended::MultiAbstractGroup,
       public virtual LOCA::MultiContinuation::AbstractGroup {
@@ -70,6 +90,15 @@ namespace LOCA {
     public:
 
       //! Constructor 
+      /*!
+       * \param global_data [in] Global data object
+       * \param topParams [in] Parsed top-level parameter list.
+       * \param constraintParams [in] Parameter list determining the
+       * bordered solver method.
+       * \param grp [in] Group representing \f$f\f$.
+       * \param constraints [in] Constraint object representing \f$g\f$.
+       * \param paramIDs [in] Parameter IDs of the constraint parameters.
+       */
       ConstrainedGroup(
        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,

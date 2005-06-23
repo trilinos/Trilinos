@@ -43,7 +43,6 @@ namespace LOCA {
 
 namespace LOCA { 
 
-  //! %Extended groups and vectors
   namespace Extended { 
 
     /*! 

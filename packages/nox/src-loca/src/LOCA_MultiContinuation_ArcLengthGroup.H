@@ -96,6 +96,7 @@ namespace LOCA {
        * above.
        * \param grp [in] Group representing \f$F\f$.
        * \param pred [in] Predictor strategy.
+       * \param paramIDs [in] Parameter IDs of continuation parameters.
        */
       ArcLengthGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,

@@ -102,7 +102,7 @@ namespace LOCA {
      *     \end{bmatrix}
      * \f]
      * be the QR decomposition of the constraints matrix where 
-     * \f$Q\in\field{R}^{n+m\times n+m}\f$ and \f$R\in\field{R}^{m\times m}$.
+     * \f$Q\in\Re^{n+m\times n+m}\f$ and \f$R\in\Re^{m\times m}\f$.
      * Define
      * \f[
      *     \begin{bmatrix}
@@ -131,22 +131,24 @@ namespace LOCA {
      * \f]
      * and hence
      * \f[
-     *     Z_Y = R^{-T} G \\
+     *   \begin{split}
+     *     Z_Y &= R^{-T} G \\
      *     [A J] Q
      *     \begin{bmatrix}
      *        0 \\
      *        Z_X
-     *     \end{bmatrix} = F - [A J] Q 
+     *     \end{bmatrix} &= F - [A J] Q 
      *     \begin{bmatrix}
      *        Z_Y \\
      *        0
      *     \end{bmatrix}.
+     *   \end{split}
      * \f]
      * This last equation equation can be written
      * \f[ 
      *     P Z_X = \tilde{F}
      * \f]
-     * where \f$P\in\field{R}^{n\times n}\f$ is given by
+     * where \f$P\in\Re^{n\times n}\f$ is given by
      * \f[
      *     P Z_X = [A J] Q
      *     \begin{bmatrix}
@@ -179,7 +181,7 @@ namespace LOCA {
      * operator \f$Q\f$ is generated using the standard Householder QR
      * algorithm (Algorithm 5.2.1, G. Golub and C. Van Loan, "Matrix
      * Computations," 3rd Edition, Johns Hopkins, Baltimore, 1996) and is
-     * stored using the compact WY representation:  Q = I + Y^T T Y
+     * stored using the compact WY representation:  \f$Q = I + Y^T T Y\f$
      * (see R. Schreiver and C. Van Loan, "A Storage-Efficient WY Represntation
      * for Products of Householder Transformations," SIAM J. Sci. Stat. 
      * Comput., Vol. 10, No. 1, pp. 53-57, January 1989).  The operator

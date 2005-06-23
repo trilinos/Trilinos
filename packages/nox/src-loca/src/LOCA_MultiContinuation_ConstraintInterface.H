@@ -64,7 +64,7 @@ namespace LOCA {
      * where \f$f(x,y)\f$ is represented by a concrete implementation of
      * a LOCA::MultiContinuation::AbstractGroup and \f$g(x,y)\f$ (the
      * constraint) is represented by an implementation of this class.  Here
-     * it is assumed the resulting system is square, i.e., \fx\in\Re^n\f$,
+     * it is assumed the resulting system is square, i.e., \f$x\in\Re^n\f$,
      * \f$y\in\Re^m\f$, \f$f(x,y)\in\Re^n\f$ and \f$g(x,y)\in\Re^m\f$.
      *
      * This class provides an interface to evaluate \f$g(x,y)\f$, compute

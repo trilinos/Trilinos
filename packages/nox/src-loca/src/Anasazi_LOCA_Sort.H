@@ -63,7 +63,7 @@ namespace Anasazi {
     
     //! Constructor
     /*!
-     * @param sortStrategy [in] Ref-count ptr to LOCA sorting strategy
+     * @param strategy_ [in] Ref-count ptr to LOCA sorting strategy
      */
     LOCASort(const Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy_);
       

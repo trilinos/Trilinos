@@ -38,7 +38,6 @@
 
 namespace LOCA {
 
-  //! %Strategies for solving bordered systems of equations
   namespace BorderedSystem {
     
     //! %Generic bordered solver interface.

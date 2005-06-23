@@ -84,7 +84,7 @@ namespace LOCA {
       /*!
        * \param global_data [in] Global data object
        * \param topParams [in] Parsed top-level parameter list 
-       * \param predParams [in] Bordered solver parameters.  Currently none
+       * \param solverParams [in] Bordered solver parameters.  Currently none
        * are referenced.
        */
       LAPACKDirectSolve(
