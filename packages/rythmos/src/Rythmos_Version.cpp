@@ -31,7 +31,7 @@
 namespace Rythmos {
 
 	string Rythmos_Version() { 
-		return("Rythmos Version 0.1 - 05/02/2005"); 
+		return("Rythmos Version 0.1 - 06/23/2005"); 
 	};
 
 } // namespace Rythmos
