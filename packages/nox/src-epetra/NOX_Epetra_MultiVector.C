@@ -192,7 +192,7 @@ NOX::Epetra::MultiVector::setBlock(const NOX::Epetra::MultiVector& source,
   double* vecPtr;
   double *sourceVecPtr;
   int ind;
-  int vecLength = length();
+  int vecLength = epetraMultiVec->MyLength();
   
   source.checkIndex(index.size()-1);
   for (unsigned int i=0; i<index.size(); i++) {
@@ -216,7 +216,7 @@ NOX::Epetra::MultiVector::augment(const NOX::Epetra::MultiVector& source) {
   int numVecs = numVectors();
   int sourceNumVecs = source.numVectors();
   int totalNumVecs = numVecs + sourceNumVecs;
-  int vecLength = length();
+  int vecLength = epetraMultiVec->MyLength();
   double* vecPtr;
   double *tmpVecPtr;
   
@@ -444,7 +444,7 @@ NOX::Epetra::MultiVector::multiply(
 
 int NOX::Epetra::MultiVector::length() const
 {
-  return epetraMultiVec->MyLength();
+  return epetraMultiVec->GlobalLength();
 }
 
 int NOX::Epetra::MultiVector::numVectors() const
