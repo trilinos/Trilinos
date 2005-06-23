@@ -58,8 +58,8 @@ Npgs::Npgs(Teuchos::RefCountPtr<Parameter_List> ParamList,
 	   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x0, 
 	   double lambda0, double T0) 
 {
-  xcurrent = x0->space()->createMember();
-  xfinal = x0->space()->createMember();
+  xcurrent = createMember(x0->space());
+  xfinal = createMember(x0->space());
   Thyra::assign(&*xcurrent, *x0); 
   Thyra::assign(&*xfinal, *x0);
 
@@ -76,7 +76,7 @@ Npgs::Npgs(Teuchos::RefCountPtr<Parameter_List> ParamList,
   SolveParameters = ParamList;
 
   // Use the VectorBase xcurrent to create a MultiVector Base.
-  Ve = xcurrent->space()->createMembers(30);
+  Ve = Thyra::createMembers(xcurrent->space(),30);
 
 }
 
@@ -93,7 +93,7 @@ void Npgs::Initialize()
   unsigned int seedtime = time(NULL);
   Teuchos::ScalarTraits<Scalar>::seedrandom(seedtime);
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > TempVector;
-  TempVector = xcurrent->space()->createMember();
+  TempVector = createMember(xcurrent->space());
 
   /*
     J. Simonis Error Report
@@ -115,7 +115,7 @@ void Npgs::Initialize()
 
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
 
-  Ve_pe = xcurrent->space()->createMembers(SolveParameters->get_NumberXtraVecsSubspace());
+  Ve_pe = createMembers(xcurrent->space(),SolveParameters->get_NumberXtraVecsSubspace());
   Ve_pe = Ve->subView(Thyra::Range1D(1,SolveParameters->get_NumberXtraVecsSubspace()));
 
   Print(Ve_pe);
@@ -126,9 +126,9 @@ void Npgs::Initialize()
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We;
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re;
   
-  Se = Ve_pe->domain()->createMembers((*SolveParameters).get_NumberXtraVecsSubspace());
-  Re = Ve_pe->domain()->createMembers((*SolveParameters).get_NumberXtraVecsSubspace());
-  We = xcurrent->space()->createMembers((*SolveParameters).get_NumberXtraVecsSubspace());
+  Se = createMembers(Ve_pe->domain(),SolveParameters->get_NumberXtraVecsSubspace());
+  Re = createMembers(Ve_pe->domain(),SolveParameters->get_NumberXtraVecsSubspace());
+  We = createMembers(xcurrent->space(),SolveParameters->get_NumberXtraVecsSubspace());
 
   //Subspace Iterations
   for (int i=0;i<16;i++)
@@ -139,11 +139,11 @@ void Npgs::Initialize()
       if (i<15)
 	{
 	  (*We).apply(Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
-	  Orthonormalize(Ve_pe,(*SolveParameters).get_NumberXtraVecsSubspace());
+	  Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
 	}
     }
   
-  Orthonormalize(Ve_pe,(*SolveParameters).get_NumberXtraVecsSubspace());
+  Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
   // The Schur decomposition may have altered the Unstable basis size
   // so reset it to zero.
   Unstable_Basis_Size = 0;
@@ -265,11 +265,11 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > Npgs::MatVec(const Teuchos::Ref
 {
   double delta = 1.0e-5; /*Finite Difference constant */
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > upert;
-  upert = xcurrent->space()->createMember();
+  upert = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > phiupert;
-  phiupert = xcurrent->space()->createMember();
+  phiupert = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > phiu;
-  phiu = xcurrent->space()->createMember();
+  phiu = createMember(xcurrent->space());
 
   Thyra::assign(&*upert, 0.0);
   Thyra::Vp_StV(&*upert,delta,*y);
@@ -296,7 +296,7 @@ Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Npgs::MatVecs(const Teucho
 {
   int dimension = Y->domain()->dim();
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > result;
-  result = xcurrent->space()->createMembers(dimension);
+  result = createMembers(xcurrent->space(),dimension);
   for (int i=1;i<dimension+1;i++)
     {
       Thyra::assign(&*(result->col(i)),*(MatVec(Y->col(i))));
@@ -337,17 +337,17 @@ bool Npgs::InnerIteration()
   int Subspace_Size = 0;
 
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > finit;
-  finit = xcurrent->space()->createMember();
+  finit = createMember(xcurrent->space());
 
   App_Integrator->Integrate(xcurrent,finit,eps,lambdacurrent);
   Thyra::Vp_StV(&*finit,1.0,*xcurrent);
   Thyra::Vt_S(&*finit,1.0/eps);
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > v;
-  v = xcurrent->space()->createMember();
+  v = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > r;
-  r = xcurrent->space()->createMember();
+  r = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dq;
-  dq = xcurrent->space()->createMember();
+  dq = createMember(xcurrent->space());
 
   App_Integrator->Integrate(xcurrent,v,Tcurrent,lambdacurrent);
   Thyra::assign(&*r,*v); 
@@ -368,16 +368,16 @@ bool Npgs::InnerIteration()
       Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We;
       Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re;
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > TempVector;
-      TempVector = xcurrent->space()->createMember();
+      TempVector = createMember(xcurrent->space());
 
       // Setup
       Subspace_Size = SolveParameters->get_NumberXtraVecsSubspace()+Unstable_Basis_Size;
 
-      Ve_pe = xcurrent->space()->createMembers(Subspace_Size);
+      Ve_pe = createMembers(xcurrent->space(),Subspace_Size);
       Ve_pe = Ve->subView(Thyra::Range1D(1,Subspace_Size));
-      Se = Ve_pe->domain()->createMembers(Subspace_Size);
-      Re = Ve_pe->domain()->createMembers(Subspace_Size);
-      We = xcurrent->space()->createMembers(Subspace_Size);
+      Se = createMembers(Ve_pe->domain(),Subspace_Size);
+      Re = createMembers(Ve_pe->domain(),Subspace_Size);
+      We = createMembers(xcurrent->space(),Subspace_Size);
       
       // Algorithm
       Orthonormalize(Ve_pe,Subspace_Size);
@@ -387,14 +387,14 @@ bool Npgs::InnerIteration()
 	  cerr << "Need to perform a Newton step calculation" << endl;
 	  // Declarations (these change size with every go-around)
 	  Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp;
-	  Vp = xcurrent->space()->createMembers(Unstable_Basis_Size);
+	  Vp = createMembers(xcurrent->space(),Unstable_Basis_Size);
 
 	  ComputeVp(Se,Vp);
 	  cerr <<"computed Vp" << endl;
 	  Calculatedq(Vp,dq,r);
 	  cerr << "Calculated dq" << endl;
 	  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dp;
-	  dp = Vp->domain()->createMember();
+	  dp = createMember(Vp->domain());
 	  cerr << "created dp" << endl;
 	  Calculatedp(Vp,dq,dp,Re,v,finit,r,*deltaT);
 	  cerr << "Calculated dp" << endl;
@@ -533,7 +533,7 @@ void Npgs::SchurDecomp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
 void Npgs::Print(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Printme)
 {
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > TmpColumn;
-  TmpColumn = xcurrent->space()->createMember();
+  TmpColumn = createMember(xcurrent->space());
 
   int Column_Number = Printme->domain()->dim();
   int Row_Number = Printme->range()->dim();
@@ -586,7 +586,7 @@ bool Npgs::Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
 	       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y)
 {
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > differencevector;
-  differencevector = x->space()->createMember();
+  differencevector = createMember(x->space());
 
   Thyra::assign(&*differencevector,*x);
   Thyra::Vp_StV(&*differencevector,-1.0,*y);
@@ -609,7 +609,7 @@ void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar
   int Subspace_Size = SolveParameters->get_NumberXtraVecsSubspace()+Unstable_Basis_Size;
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
 
-  Ve_pe = xcurrent->space()->createMembers(Subspace_Size);
+  Ve_pe = createMembers(xcurrent->space(),Subspace_Size);
   Ve_pe = Ve->subView(Thyra::Range1D(1,Subspace_Size));
 
   Orthonormalize(Ve_pe,Subspace_Size);
@@ -621,7 +621,7 @@ void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar
       SchurDecomp(Se,Re);
       if (i<SolveParameters->get_SubspaceIterations()-1)
 	{
-	  (*We).apply(Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
+	  We->apply(Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
 	  Orthonormalize(Ve_pe,Subspace_Size);
 	}
     }
@@ -643,9 +643,9 @@ void Npgs::Calculatedq(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > TempVec1;
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > TempVec2;
 
-  q = r->space()->createMember();
-  TempVec1 = Vp->domain()->createMember();
-  TempVec2 = r->space()->createMember();
+  q = createMember(r->space());
+  TempVec1 = createMember(Vp->domain());
+  TempVec2 = createMember(r->space());
 
   Vp->apply(Thyra::TRANS,*r,&*TempVec1);
   Vp->apply(Thyra::NOTRANS,*TempVec1,&*q,1.0,1.0);
@@ -673,11 +673,11 @@ bool Npgs::ComputeVp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
 		     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp)
 {
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_p;
-  Ve_p = xcurrent->space()->createMembers(Unstable_Basis_Size);
+  Ve_p = createMembers(xcurrent->space(),Unstable_Basis_Size);
   Ve_p = Ve->subView(Thyra::Range1D(1,Unstable_Basis_Size));
   
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Yp;
-  Yp = Vp->domain()->createMembers(Unstable_Basis_Size);
+  Yp = createMembers(Vp->domain(),Unstable_Basis_Size);
   
   
   
@@ -715,7 +715,7 @@ bool Npgs::UpdateVe(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We,
 {
   int Size = We->domain()->dim();
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > TempMV;
-  TempMV = xcurrent->space()->createMembers(Size);
+  TempMV = createMembers(xcurrent->space(),Size);
   TempMV = Ve->subView(Thyra::Range1D(1,Size));
   We->apply(Thyra::NOTRANS,*Se,&*TempMV,1.0,1.0);
 
@@ -744,7 +744,7 @@ bool Npgs::Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
   cerr << "I have entered the calculatedp routine" << endl;
   // First need a p+1 by p+1 MultiVector...
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > TempMV;
-  TempMV = xcurrent->space()->createMembers(Unstable_Basis_Size+1);
+  TempMV = createMembers(xcurrent->space(),Unstable_Basis_Size+1);
   double *LHS;
   double *RHS;
   LHS = new double[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)];
@@ -780,9 +780,9 @@ bool Npgs::Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
   //Rightmost column of LHS.
 
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > fphi;
-  fphi = xcurrent->space()->createMember();
+  fphi = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > rightcol;
-  rightcol = TempMV->domain()->createMember();
+  rightcol = createMember(TempMV->domain());
   cerr << "Going to call dphi_dt" << endl;
   dphi_dt(fphi);
   cerr << "Applied dphidt" << endl;
@@ -854,7 +854,7 @@ bool Npgs::dphi_dt(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f)
 {
   double delta = 1.0e-5; /*Finite Difference constant*/
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > phi;
-  phi = f->space()->createMember();
+  phi = createMember(f->space());
 
   App_Integrator->Integrate(xfinal,f,Tcurrent+delta,lambdacurrent);
   App_Integrator->Integrate(xfinal,phi,Tcurrent,lambdacurrent);
