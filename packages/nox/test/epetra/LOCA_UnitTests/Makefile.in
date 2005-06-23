@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(householderBorderedSolve_exe_SOURCES)
+SOURCES = $(compositeConstraintMVDX_exe_SOURCES) $(compositeConstraint_exe_SOURCES) $(householderBorderedSolveContiguous_exe_SOURCES) $(householderBorderedSolve_exe_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,7 +66,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	$(am__EXEEXT_4)
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/config/libtool_macros.am
 subdir = test/epetra/LOCA_UnitTests
@@ -96,15 +97,36 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = householderBorderedSolve_exe$(EXEEXT)
+am__EXEEXT_2 = householderBorderedSolveContiguous_exe$(EXEEXT)
+am__EXEEXT_3 = compositeConstraint_exe$(EXEEXT)
+am__EXEEXT_4 = compositeConstraintMVDX_exe$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_compositeConstraintMVDX_exe_OBJECTS =  \
+	compositeConstraintMVDX_exe-CompositeConstraintMVDX.$(OBJEXT)
+compositeConstraintMVDX_exe_OBJECTS =  \
+	$(am_compositeConstraintMVDX_exe_OBJECTS)
+am__DEPENDENCIES_1 =
+am__DEPENDENCIES_2 = $(top_builddir)/test/epetra/LOCA_TestProblems/Tcubed/libtcubed.la \
+	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_compositeConstraint_exe_OBJECTS =  \
+	compositeConstraint_exe-CompositeConstraint.$(OBJEXT)
+compositeConstraint_exe_OBJECTS =  \
+	$(am_compositeConstraint_exe_OBJECTS)
+am_householderBorderedSolveContiguous_exe_OBJECTS = householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.$(OBJEXT)
+householderBorderedSolveContiguous_exe_OBJECTS =  \
+	$(am_householderBorderedSolveContiguous_exe_OBJECTS)
 am_householderBorderedSolve_exe_OBJECTS = householderBorderedSolve_exe-HouseholderBorderedSolve.$(OBJEXT)
 householderBorderedSolve_exe_OBJECTS =  \
 	$(am_householderBorderedSolve_exe_OBJECTS)
-am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/householderBorderedSolve_exe-HouseholderBorderedSolve.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/householderBorderedSolve_exe-HouseholderBorderedSolve.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -113,8 +135,14 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(householderBorderedSolve_exe_SOURCES)
-DIST_SOURCES = $(householderBorderedSolve_exe_SOURCES)
+SOURCES = $(compositeConstraintMVDX_exe_SOURCES) \
+	$(compositeConstraint_exe_SOURCES) \
+	$(householderBorderedSolveContiguous_exe_SOURCES) \
+	$(householderBorderedSolve_exe_SOURCES)
+DIST_SOURCES = $(compositeConstraintMVDX_exe_SOURCES) \
+	$(compositeConstraint_exe_SOURCES) \
+	$(householderBorderedSolveContiguous_exe_SOURCES) \
+	$(householderBorderedSolve_exe_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -343,6 +371,9 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve_exe
+HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous_exe
+COMPOSITECONSTRAINT = compositeConstraint_exe
+COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX_exe
 householderBorderedSolve_exe_SOURCES = \
 	$(srcdir)/HouseholderBorderedSolve.C 
 
@@ -373,6 +404,42 @@ householderBorderedSolve_exe_LDADD = \
 	-L$(top_builddir)/test/utils \
         -lnoxtestutils -lnoxepetra -lnox \
         $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+
+householderBorderedSolveContiguous_exe_SOURCES = \
+	$(srcdir)/HouseholderBorderedSolveContiguous.C 
+
+householderBorderedSolveContiguous_exe_DEPENDENCIES = \
+	$(householderBorderedSolve_exe_DEPENDENCIES)
+
+householderBorderedSolveContiguous_exe_CXXFLAGS = \
+	$(householderBorderedSolve_exe_CXXFLAGS)
+
+householderBorderedSolveContiguous_exe_LDADD = \
+	$(householderBorderedSolve_exe_LDADD)
+
+compositeConstraint_exe_SOURCES = \
+	$(srcdir)/CompositeConstraint.C
+
+compositeConstraint_exe_DEPENDENCIES = \
+	$(householderBorderedSolve_exe_DEPENDENCIES)
+
+compositeConstraint_exe_CXXFLAGS = \
+	$(householderBorderedSolve_exe_CXXFLAGS)
+
+compositeConstraint_exe_LDADD = \
+	$(householderBorderedSolve_exe_LDADD)
+
+compositeConstraintMVDX_exe_SOURCES = \
+	$(srcdir)/CompositeConstraintMVDX.C
+
+compositeConstraintMVDX_exe_DEPENDENCIES = \
+	$(householderBorderedSolve_exe_DEPENDENCIES)
+
+compositeConstraintMVDX_exe_CXXFLAGS = \
+	$(householderBorderedSolve_exe_CXXFLAGS)
+
+compositeConstraintMVDX_exe_LDADD = \
+	$(householderBorderedSolve_exe_LDADD)
 
 
 # ------------------------------------------------------------------------
@@ -424,6 +491,15 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+compositeConstraintMVDX_exe$(EXEEXT): $(compositeConstraintMVDX_exe_OBJECTS) $(compositeConstraintMVDX_exe_DEPENDENCIES) 
+	@rm -f compositeConstraintMVDX_exe$(EXEEXT)
+	$(CXXLINK) $(compositeConstraintMVDX_exe_LDFLAGS) $(compositeConstraintMVDX_exe_OBJECTS) $(compositeConstraintMVDX_exe_LDADD) $(LIBS)
+compositeConstraint_exe$(EXEEXT): $(compositeConstraint_exe_OBJECTS) $(compositeConstraint_exe_DEPENDENCIES) 
+	@rm -f compositeConstraint_exe$(EXEEXT)
+	$(CXXLINK) $(compositeConstraint_exe_LDFLAGS) $(compositeConstraint_exe_OBJECTS) $(compositeConstraint_exe_LDADD) $(LIBS)
+householderBorderedSolveContiguous_exe$(EXEEXT): $(householderBorderedSolveContiguous_exe_OBJECTS) $(householderBorderedSolveContiguous_exe_DEPENDENCIES) 
+	@rm -f householderBorderedSolveContiguous_exe$(EXEEXT)
+	$(CXXLINK) $(householderBorderedSolveContiguous_exe_LDFLAGS) $(householderBorderedSolveContiguous_exe_OBJECTS) $(householderBorderedSolveContiguous_exe_LDADD) $(LIBS)
 householderBorderedSolve_exe$(EXEEXT): $(householderBorderedSolve_exe_OBJECTS) $(householderBorderedSolve_exe_DEPENDENCIES) 
 	@rm -f householderBorderedSolve_exe$(EXEEXT)
 	$(CXXLINK) $(householderBorderedSolve_exe_LDFLAGS) $(householderBorderedSolve_exe_OBJECTS) $(householderBorderedSolve_exe_LDADD) $(LIBS)
@@ -434,6 +510,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/householderBorderedSolve_exe-HouseholderBorderedSolve.Po@am__quote@
 
 .C.o:
@@ -459,6 +538,78 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+compositeConstraintMVDX_exe-CompositeConstraintMVDX.o: $(srcdir)/CompositeConstraintMVDX.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraintMVDX_exe_CXXFLAGS) $(CXXFLAGS) -MT compositeConstraintMVDX_exe-CompositeConstraintMVDX.o -MD -MP -MF "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo" -c -o compositeConstraintMVDX_exe-CompositeConstraintMVDX.o `test -f '$(srcdir)/CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraintMVDX.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo" "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Po"; else rm -f "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraintMVDX.C' object='compositeConstraintMVDX_exe-CompositeConstraintMVDX.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Po' tmpdepfile='$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraintMVDX_exe_CXXFLAGS) $(CXXFLAGS) -c -o compositeConstraintMVDX_exe-CompositeConstraintMVDX.o `test -f '$(srcdir)/CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraintMVDX.C
+
+compositeConstraintMVDX_exe-CompositeConstraintMVDX.obj: $(srcdir)/CompositeConstraintMVDX.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraintMVDX_exe_CXXFLAGS) $(CXXFLAGS) -MT compositeConstraintMVDX_exe-CompositeConstraintMVDX.obj -MD -MP -MF "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo" -c -o compositeConstraintMVDX_exe-CompositeConstraintMVDX.obj `if test -f '$(srcdir)/CompositeConstraintMVDX.C'; then $(CYGPATH_W) '$(srcdir)/CompositeConstraintMVDX.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CompositeConstraintMVDX.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo" "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Po"; else rm -f "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraintMVDX.C' object='compositeConstraintMVDX_exe-CompositeConstraintMVDX.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Po' tmpdepfile='$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraintMVDX_exe_CXXFLAGS) $(CXXFLAGS) -c -o compositeConstraintMVDX_exe-CompositeConstraintMVDX.obj `if test -f '$(srcdir)/CompositeConstraintMVDX.C'; then $(CYGPATH_W) '$(srcdir)/CompositeConstraintMVDX.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CompositeConstraintMVDX.C'; fi`
+
+compositeConstraintMVDX_exe-CompositeConstraintMVDX.lo: $(srcdir)/CompositeConstraintMVDX.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraintMVDX_exe_CXXFLAGS) $(CXXFLAGS) -MT compositeConstraintMVDX_exe-CompositeConstraintMVDX.lo -MD -MP -MF "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo" -c -o compositeConstraintMVDX_exe-CompositeConstraintMVDX.lo `test -f '$(srcdir)/CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraintMVDX.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo" "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Plo"; else rm -f "$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraintMVDX.C' object='compositeConstraintMVDX_exe-CompositeConstraintMVDX.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.Plo' tmpdepfile='$(DEPDIR)/compositeConstraintMVDX_exe-CompositeConstraintMVDX.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraintMVDX_exe_CXXFLAGS) $(CXXFLAGS) -c -o compositeConstraintMVDX_exe-CompositeConstraintMVDX.lo `test -f '$(srcdir)/CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraintMVDX.C
+
+compositeConstraint_exe-CompositeConstraint.o: $(srcdir)/CompositeConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraint_exe_CXXFLAGS) $(CXXFLAGS) -MT compositeConstraint_exe-CompositeConstraint.o -MD -MP -MF "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo" -c -o compositeConstraint_exe-CompositeConstraint.o `test -f '$(srcdir)/CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo" "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Po"; else rm -f "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraint.C' object='compositeConstraint_exe-CompositeConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Po' tmpdepfile='$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraint_exe_CXXFLAGS) $(CXXFLAGS) -c -o compositeConstraint_exe-CompositeConstraint.o `test -f '$(srcdir)/CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraint.C
+
+compositeConstraint_exe-CompositeConstraint.obj: $(srcdir)/CompositeConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraint_exe_CXXFLAGS) $(CXXFLAGS) -MT compositeConstraint_exe-CompositeConstraint.obj -MD -MP -MF "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo" -c -o compositeConstraint_exe-CompositeConstraint.obj `if test -f '$(srcdir)/CompositeConstraint.C'; then $(CYGPATH_W) '$(srcdir)/CompositeConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CompositeConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo" "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Po"; else rm -f "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraint.C' object='compositeConstraint_exe-CompositeConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Po' tmpdepfile='$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraint_exe_CXXFLAGS) $(CXXFLAGS) -c -o compositeConstraint_exe-CompositeConstraint.obj `if test -f '$(srcdir)/CompositeConstraint.C'; then $(CYGPATH_W) '$(srcdir)/CompositeConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CompositeConstraint.C'; fi`
+
+compositeConstraint_exe-CompositeConstraint.lo: $(srcdir)/CompositeConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraint_exe_CXXFLAGS) $(CXXFLAGS) -MT compositeConstraint_exe-CompositeConstraint.lo -MD -MP -MF "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo" -c -o compositeConstraint_exe-CompositeConstraint.lo `test -f '$(srcdir)/CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo" "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Plo"; else rm -f "$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraint.C' object='compositeConstraint_exe-CompositeConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.Plo' tmpdepfile='$(DEPDIR)/compositeConstraint_exe-CompositeConstraint.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compositeConstraint_exe_CXXFLAGS) $(CXXFLAGS) -c -o compositeConstraint_exe-CompositeConstraint.lo `test -f '$(srcdir)/CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraint.C
+
+householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.o: $(srcdir)/HouseholderBorderedSolveContiguous.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(householderBorderedSolveContiguous_exe_CXXFLAGS) $(CXXFLAGS) -MT householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.o -MD -MP -MF "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo" -c -o householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.o `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo" "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Po"; else rm -f "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderBorderedSolveContiguous.C' object='householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Po' tmpdepfile='$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(householderBorderedSolveContiguous_exe_CXXFLAGS) $(CXXFLAGS) -c -o householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.o `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C
+
+householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.obj: $(srcdir)/HouseholderBorderedSolveContiguous.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(householderBorderedSolveContiguous_exe_CXXFLAGS) $(CXXFLAGS) -MT householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.obj -MD -MP -MF "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo" -c -o householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.obj `if test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderBorderedSolveContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderBorderedSolveContiguous.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo" "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Po"; else rm -f "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderBorderedSolveContiguous.C' object='householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Po' tmpdepfile='$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(householderBorderedSolveContiguous_exe_CXXFLAGS) $(CXXFLAGS) -c -o householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.obj `if test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderBorderedSolveContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderBorderedSolveContiguous.C'; fi`
+
+householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.lo: $(srcdir)/HouseholderBorderedSolveContiguous.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(householderBorderedSolveContiguous_exe_CXXFLAGS) $(CXXFLAGS) -MT householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.lo -MD -MP -MF "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo" -c -o householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.lo `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo" "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Plo"; else rm -f "$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderBorderedSolveContiguous.C' object='householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.Plo' tmpdepfile='$(DEPDIR)/householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(householderBorderedSolveContiguous_exe_CXXFLAGS) $(CXXFLAGS) -c -o householderBorderedSolveContiguous_exe-HouseholderBorderedSolveContiguous.lo `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C
 
 householderBorderedSolve_exe-HouseholderBorderedSolve.o: $(srcdir)/HouseholderBorderedSolve.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(householderBorderedSolve_exe_CXXFLAGS) $(CXXFLAGS) -MT householderBorderedSolve_exe-HouseholderBorderedSolve.o -MD -MP -MF "$(DEPDIR)/householderBorderedSolve_exe-HouseholderBorderedSolve.Tpo" -c -o householderBorderedSolve_exe-HouseholderBorderedSolve.o `test -f '$(srcdir)/HouseholderBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolve.C; \

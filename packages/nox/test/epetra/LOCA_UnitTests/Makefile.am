@@ -30,9 +30,15 @@
 #@HEADER
 
 HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve_exe
+HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous_exe
+COMPOSITECONSTRAINT = compositeConstraint_exe
+COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX_exe
 
 noinst_PROGRAMS = \
-	$(HOUSEHOLDERBORDEREDSOLVE)
+	$(HOUSEHOLDERBORDEREDSOLVE) \
+	$(HOUSEHOLDERBORDEREDSOLVECONTIGUOUS) \
+	$(COMPOSITECONSTRAINT) \
+	$(COMPOSITECONSTRAINTMVDX)
 
 householderBorderedSolve_exe_SOURCES = \
 	$(srcdir)/HouseholderBorderedSolve.C 
@@ -64,6 +70,42 @@ householderBorderedSolve_exe_LDADD = \
 	-L$(top_builddir)/test/utils \
         -lnoxtestutils -lnoxepetra -lnox \
         $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+
+householderBorderedSolveContiguous_exe_SOURCES = \
+	$(srcdir)/HouseholderBorderedSolveContiguous.C 
+
+householderBorderedSolveContiguous_exe_DEPENDENCIES = \
+	$(householderBorderedSolve_exe_DEPENDENCIES)
+
+householderBorderedSolveContiguous_exe_CXXFLAGS = \
+	$(householderBorderedSolve_exe_CXXFLAGS)
+
+householderBorderedSolveContiguous_exe_LDADD = \
+	$(householderBorderedSolve_exe_LDADD)
+
+compositeConstraint_exe_SOURCES = \
+	$(srcdir)/CompositeConstraint.C
+
+compositeConstraint_exe_DEPENDENCIES = \
+	$(householderBorderedSolve_exe_DEPENDENCIES)
+
+compositeConstraint_exe_CXXFLAGS = \
+	$(householderBorderedSolve_exe_CXXFLAGS)
+
+compositeConstraint_exe_LDADD = \
+	$(householderBorderedSolve_exe_LDADD)
+
+compositeConstraintMVDX_exe_SOURCES = \
+	$(srcdir)/CompositeConstraintMVDX.C
+
+compositeConstraintMVDX_exe_DEPENDENCIES = \
+	$(householderBorderedSolve_exe_DEPENDENCIES)
+
+compositeConstraintMVDX_exe_CXXFLAGS = \
+	$(householderBorderedSolve_exe_CXXFLAGS)
+
+compositeConstraintMVDX_exe_LDADD = \
+	$(householderBorderedSolve_exe_LDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

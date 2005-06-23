@@ -70,8 +70,10 @@ Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> F;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> G;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_bordering;
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_bordering_sol;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_bordering;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_householder;
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_householder_sol;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_householder;
 
 int  
@@ -129,7 +131,7 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   if (householderStatus == NOX::Abstract::Group::Failed)
     ++ierr;
 
-  ierr += testCompare->testMultiVector(*X_householder, *X_bordering,
+  ierr += testCompare->testMultiVector(*X_householder_sol, *X_bordering_sol,
 				       reltol, abstol, "Solution Component");
 
   ierr += testCompare->testMatrix(*Y_householder, *Y_bordering, 
@@ -244,7 +246,7 @@ int main(int argc, char *argv[])
     lsParams.setParameter("Aztec Solver", "GMRES");  
     lsParams.setParameter("Max Iterations", 100);  
     lsParams.setParameter("Tolerance", lstol);
-    lsParams.setParameter("Output Frequency", 50);    
+    lsParams.setParameter("Output Frequency", 1);    
     lsParams.setParameter("Scaling", "None");             
     lsParams.setParameter("Preconditioner", "Ifpack");
     //lsParams.setParameter("Preconditioner", "AztecOO");
@@ -360,10 +362,6 @@ int main(int argc, char *argv[])
     // Evaluate blocks
     grp->computeF();
     grp->computeJacobian();
-
-    // A
-    A = Teuchos::rcp(grp->getX().createMultiVector(nConstraints));
-    A->random();
     
     // B
     constraints->setX(grp->getX());
@@ -379,120 +377,61 @@ int main(int argc, char *argv[])
     C->random();
 
     // Set up left- and right-hand sides
-    F = Teuchos::rcp(grp->getX().createMultiVector(nRHS));
+    F = Teuchos::rcp(grp->getX().createMultiVector(nRHS+nConstraints));
     F->random();
     G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 								 nRHS));
     G->random();
-    X_bordering = Teuchos::rcp(F->clone(NOX::ShapeCopy));
+    X_bordering = Teuchos::rcp(F->clone(nRHS+nConstraints));
     Y_bordering = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
-    X_householder = Teuchos::rcp(F->clone(NOX::ShapeCopy));
+    X_householder = Teuchos::rcp(F->clone(nRHS+nConstraints));
     Y_householder = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
 
+    // Setup A block as a view of the last column of F
+    vector<int> indexF(nRHS);
+    vector<int> indexA(nConstraints); 
+    for (int i=0; i<nRHS; i++)
+      indexF[i] = i;
+    for (int i=0; i<nConstraints; i++)
+      indexA[i] = nRHS+i;
+    A = Teuchos::rcp(F->subView(indexA));
+    X_bordering_sol = Teuchos::rcp(X_bordering->subView(indexF));
+    X_householder_sol = Teuchos::rcp(X_householder->subView(indexF));
+
     string testName;
 
-    // Test all nonzero, noncontiguous
-    testName = "Testing all nonzero, noncontiguous";
-    ierr += testSolve(false, false, false, false, false, false,
+    // Test all nonzero, contiguous
+    testName = "Testing all nonzero, contiguous";
+    ierr += testSolve(false, false, false, false, false, true,
 		      reltol, abstol, testName);
 
-    // Test A = 0, noncontiguous
-    testName = "Testing A=0, noncontiguous";
-    ierr += testSolve(true, false, false, false, false, false,
+    // Test B = 0, contiguous
+    testName = "Testing B=0, contiguous";
+    ierr += testSolve(false, true, false, false, false, true,
 		      reltol, abstol, testName);
 
-    // Test B = 0, noncontiguous
-    testName = "Testing B=0, noncontiguous";
-    ierr += testSolve(false, true, false, false, false, false,
+    // Test C = 0, contiguous
+    testName = "Testing C=0, contiguous";
+    ierr += testSolve(false, false, true, false, false, true,
 		      reltol, abstol, testName);
 
-    // Test C = 0, noncontiguous
-    testName = "Testing C=0, noncontiguous";
-    ierr += testSolve(false, false, true, false, false, false,
+    // Test G = 0, contiguous
+    testName = "Testing G=0, contiguous";
+    ierr += testSolve(false, false, false, false, true, true,
 		      reltol, abstol, testName);
 
-    // Test F = 0, noncontiguous
-    testName = "Testing F=0, noncontiguous";
-    ierr += testSolve(false, false, false, true, false, false,
+    // Test B,G = 0, contiguous
+    testName = "Testing B,G=0, contiguous";
+    ierr += testSolve(false, true, false, false, true, true,
 		      reltol, abstol, testName);
 
-    // Test G = 0, noncontiguous
-    testName = "Testing G=0, noncontiguous";
-    ierr += testSolve(false, false, false, false, true, false,
-		      reltol, abstol, testName);
-
-    // Test A,B = 0, noncontiguous
-    testName = "Testing A,B=0, noncontiguous";
-    ierr += testSolve(true, true, false, false, false, false,
-		      reltol, abstol, testName);
-
-    // Test A,F = 0, noncontiguous
-    testName = "Testing A,F=0, noncontiguous";
-    ierr += testSolve(true, false, false, true, false, false,
-		      reltol, abstol, testName);
-
-    // Test A,G = 0, noncontiguous
-    testName = "Testing A,G=0, noncontiguous";
-    ierr += testSolve(true, false, false, false, true, false,
-		      reltol, abstol, testName);
-
-    // Test B,F = 0, noncontiguous
-    testName = "Testing B,F=0, noncontiguous";
-    ierr += testSolve(false, true, false, true, false, false,
-		      reltol, abstol, testName);
-
-    // Test B,G = 0, noncontiguous
-    testName = "Testing B,G=0, noncontiguous";
-    ierr += testSolve(false, true, false, false, true, false,
-		      reltol, abstol, testName);
-
-    // Test C,F = 0, noncontiguous
-    testName = "Testing C,F=0, noncontiguous";
-    ierr += testSolve(false, false, true, true, false, false,
-		      reltol, abstol, testName);
-
-    // Test C,G = 0, noncontiguous
-    testName = "Testing C,G=0, noncontiguous";
-    ierr += testSolve(false, false, true, false, true, false,
-		      reltol, abstol, testName);
-
-    // Test F,G = 0, noncontiguous
-    testName = "Testing F,G=0, noncontiguous";
-    ierr += testSolve(false, false, false, true, true, false,
-		      reltol, abstol, testName);
-
-    // Test A,B,F = 0, noncontiguous
-    testName = "Testing A,B,F=0, noncontiguous";
-    ierr += testSolve(true, true, false, true, false, false,
-		      reltol, abstol, testName);
-
-    // Test A,B,G = 0, noncontiguous
-    testName = "Testing A,B,G=0, noncontiguous";
-    ierr += testSolve(true, true, false, false, true, false,
-		      reltol, abstol, testName);
-
-    // Test A,F,G = 0, noncontiguous
-    testName = "Testing A,F,G=0, noncontiguous";
-    ierr += testSolve(true, false, false, true, true, false,
-		      reltol, abstol, testName);
-
-    // Test B,F,G = 0, noncontiguous
-    testName = "Testing B,F,G=0, noncontiguous";
-    ierr += testSolve(false, true, false, true, true, false,
-		      reltol, abstol, testName);
-
-    // Test C,F,G = 0, noncontiguous
-    testName = "Testing C,F,G=0, noncontiguous";
-    ierr += testSolve(false, false, true, true, true, false,
-		      reltol, abstol, testName);
-
-    // Test A,B,F,G = 0, noncontiguous
-    testName = "Testing A,B,F,G=0, noncontiguous";
-    ierr += testSolve(true, true, false, true, true, false,
+    // Test C,G = 0, contiguous
+    testName = "Testing C,G=0, contiguous";
+    ierr += testSolve(false, false, true, false, true, true,
 		      reltol, abstol, testName);
   }
 
