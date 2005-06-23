@@ -795,7 +795,9 @@ cleanUp();
                                         $masterFile =~ s/^.*?:::(.*?):::$/$1/;
                                         $testEntry{'masterFile'} = "$testDir/$masterFile";
                                         $arg =~ s/:::.*?::://;
-                                        $arg = "./$testDir/$arg";
+                                        if (-f "$buildDir/packages/$package/test/$testDir/$arg") {
+                                            $arg = "./$testDir/$arg";
+                                        }
                                         
                                     } else {
                                         $testEntry{'masterFile'} = "";
