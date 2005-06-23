@@ -694,10 +694,7 @@ cleanUp();
                             # for now, but set it off somehow so as not to get
                             # lost in the shuffle.
                             foreach my $arg (@{ $definitionAoHoA[$i]{'ARG-MASTER-PAIRS'} }) {
-                                print "\n\$arg: $arg\n";
                                 $arg =~ s/^(.*?):(.*?)$/$1:::$2:::/;
-                                print "\n\$1: $1, \$2: $2\n";
-                                print "\n\$arg: $arg\n\n";
                                 push (@{ $definitionAoHoA[$i]{'ARGS'} }, $arg);
                             }
                         } 
@@ -794,14 +791,12 @@ cleanUp();
                                     }                                 
                                     # or ARG-MASTER-PAIR?
                                     elsif (@{ $definitionAoHoA[$i]{'ARG-MASTER-PAIRS'} }[0]) {
-                                        print "\n\$test: $test\n";
-                                        print "\$arg: $arg\n";
                                         my $masterFile = $arg;
                                         $masterFile =~ s/^.*?:::(.*?):::$/$1/;
-                                        print "\$1: $1\n";
-                                        $arg =~ s/:::.*?::://;
-                                        print "\$arg: $arg\n\n";
                                         $testEntry{'masterFile'} = "$testDir/$masterFile";
+                                        $arg =~ s/:::.*?::://;
+                                        $arg = "./$testDir/$arg";
+                                        
                                     } else {
                                         $testEntry{'masterFile'} = "";
                                     } 
