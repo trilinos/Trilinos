@@ -163,7 +163,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
 
   isValidConstraints = true;
 
-  return status;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
