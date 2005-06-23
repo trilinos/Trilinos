@@ -40,8 +40,8 @@
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
 #include "ExampleApplicationRythmosInterface.hpp"
-#include "Stepper_ForwardEuler.hpp"
-#include "Stepper_ExplicitRK.hpp"
+#include "Rythmos_Stepper_ForwardEuler.hpp"
+#include "Rythmos_Stepper_ExplicitRK.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"

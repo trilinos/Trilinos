@@ -36,8 +36,8 @@
 
 #include "ExampleApplication.hpp"
 
-#include "InOutArgs.hpp"
-#include "ModelEvaluator.hpp"
+#include "Rythmos_InOutArgs.hpp"
+#include "Rythmos_ModelEvaluator.hpp"
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
