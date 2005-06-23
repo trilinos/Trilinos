@@ -44,11 +44,11 @@
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/Rythmos_ConfigDefs.h \
-	$(srcdir)/InOutArgs.hpp \
-	$(srcdir)/ModelEvaluator.hpp \
-	$(srcdir)/Stepper.hpp \
-	$(srcdir)/Stepper_ForwardEuler.hpp \
-	$(srcdir)/Stepper_ExplicitRK.hpp \
+	$(srcdir)/Rythmos_InOutArgs.hpp \
+	$(srcdir)/Rythmos_ModelEvaluator.hpp \
+	$(srcdir)/Rythmos_Stepper.hpp \
+	$(srcdir)/Rythmos_Stepper_ForwardEuler.hpp \
+	$(srcdir)/Rythmos_Stepper_ExplicitRK.hpp \
 
 CORE = \
 	$(srcdir)/Rythmos_Version.cpp
