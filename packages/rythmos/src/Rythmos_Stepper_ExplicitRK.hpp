@@ -62,7 +62,7 @@ class ExplicitRK : public Stepper<Scalar>
     // Get residual vector
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
-  protected:
+  private:
 
     Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;

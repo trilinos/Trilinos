@@ -61,7 +61,7 @@ class ExampleApplicationRythmosInterface : public Rythmos::ModelEvaluator<double
 
     Teuchos::RefCountPtr<const Epetra_Map> get_Epetra_Map() const;
 
-  protected:
+  private:
     Teuchos::RefCountPtr<ExampleApplication> problem_;
     Teuchos::RefCountPtr<const Epetra_Map> epetra_map_;
     Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > thyra_vs_;

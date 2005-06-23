@@ -68,7 +68,7 @@ class ExampleApplication
     // Return epetra_comm
     Teuchos::RefCountPtr<Epetra_Comm> get_epetra_comm();
 
-  protected:
+  private:
 
     // Epetra Comm:
     Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_;
