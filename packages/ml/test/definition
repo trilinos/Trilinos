@@ -3,9 +3,7 @@
 #
 
 (FRAMEWORK) {
-    DIRS = 2d_Poisson,
-           3d_Poisson,
-           AztecSimple,
+    DIRS = AztecSimple,
            Communicator,
            IFPACKSmoothers,
            MLAPICompare,
@@ -35,9 +33,10 @@
 
 #
 # 2d_Poisson group
+# Notice that this also runs in the nightly FRAMEWORK tests
 #
 
-(2d_Poisson) {
+(FRAMEWORK,2d_Poisson) {
     DIRS = 2d_Poisson;
     COMM = SERIAL;
     # use the compareTestOutput script
@@ -54,9 +53,10 @@
 
 #
 # 2d_Poisson_parallel group
+# Notice that this also runs in the nightly FRAMEWORK tests
 #
 
-(2d_Poisson_parallel) {
+(FRAMEWORK,2d_Poisson_parallel) {
     DIRS = 2d_Poisson;
     COMM = MPI(4);
     # use the compareTestOutput script
@@ -71,9 +71,10 @@
 
 #
 # 3d_Poisson group
+# Notice that this also runs in the nightly FRAMEWORK tests
 #
 
-(3d_Poisson) {
+(FRAMEWORK,3d_Poisson) {
     DIRS = 3d_Poisson;
     COMM = SERIAL;
     # use the compareTestOutput script
@@ -90,9 +91,10 @@
 
 #
 # 3d_Poisson_parallel group
+# Notice that this also runs in the nightly FRAMEWORK tests
 #
 
-(3d_Poisson_parallel) {
+(FRAMEWORK,3d_Poisson_parallel) {
     DIRS = 3d_Poisson;
     COMM = MPI(4);
     # use the compareTestOutput script
