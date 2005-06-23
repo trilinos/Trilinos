@@ -35,17 +35,22 @@
 #include "LOCA_Utils.H"
 
 LinearConstraint::LinearConstraint(int NumConstraints, 
+				   const LOCA::ParameterVector& pVec,
 				   NOX::Abstract::Vector& cloneVec) :
   m(NumConstraints),
   constraints(m,1),
   isValidConstraints(false),
   x(),
   dgdx(),
-  isZeroDgDx(false)
+  isZeroDgDx(false),
+  p(pVec),
+  pvec(Teuchos::View, p.getDoubleArrayPointer(), p.length(), p.length(), 1),
+  dgdp(NumConstraints, pVec.length())
 {
   constraints.putScalar(0.0);
   x = Teuchos::rcp(cloneVec.createMultiVector(1));
   dgdx = Teuchos::rcp(cloneVec.createMultiVector(m));
+  dgdp.putScalar(0.0);
 }
 
 LinearConstraint::LinearConstraint(const LinearConstraint& source, 
@@ -55,7 +60,10 @@ LinearConstraint::LinearConstraint(const LinearConstraint& source,
   isValidConstraints(false),
   x(Teuchos::rcp(source.x->clone(type))),
   dgdx(Teuchos::rcp(source.dgdx->clone(type))),
-  isZeroDgDx(source.isZeroDgDx)
+  isZeroDgDx(source.isZeroDgDx),
+  p(source.p),
+  pvec(source.pvec),
+  dgdp(source.dgdp)
 {
   if (source.isValidConstraints && type == NOX::DeepCopy)
     isValidConstraints = true;
@@ -75,6 +83,9 @@ LinearConstraint::operator=(const LinearConstraint& source)
     *x = *source.x;
     *dgdx = *source.dgdx;
     isZeroDgDx = source.isZeroDgDx;
+    p = source.p;
+    pvec.assign(source.pvec);
+    dgdp = source.dgdp;
   }
 
   return *this;
@@ -109,6 +120,7 @@ LinearConstraint::setX(const NOX::Abstract::Vector& y)
 void
 LinearConstraint::setParam(int paramID, double val)
 {
+  p[paramID] = val;
 }
 
 void
@@ -116,12 +128,18 @@ LinearConstraint::setParams(
 			 const vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
+  for (unsigned int i=0; i<paramIDs.size(); i++)
+    p[paramIDs[i]] = vals(i,0);
 }
 
 NOX::Abstract::Group::ReturnType
 LinearConstraint::computeConstraints()
 {
+  // compute dg/dx*x + dg/dp*p
   x->multiply(1.0, *dgdx, constraints);
+  if (pvec.numRows() > 0)
+    constraints.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, dgdp, 
+			 pvec, 1.0);
   isValidConstraints = true;
 
   return NOX::Abstract::Group::Ok;
@@ -135,17 +153,17 @@ LinearConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LinearConstraint::computeDP(const vector<int>& paramIDs, 
-			  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+			  NOX::Abstract::MultiVector::DenseMatrix& dp, 
 			  bool isValidG)
 {
   if (!isValidG) {
     for (int i=0; i<m; i++)
-      dgdp(i,0) = constraints(i,0);
+      dp(i,0) = constraints(i,0);
   }
 
   for (unsigned int i=0; i<paramIDs.size(); i++) {
     for (int j=0; j<m; j++)
-      dgdp(j,i+1) = 0.0;
+      dp(j,i+1) = dgdp(j,paramIDs[i]);
   }
 
   return NOX::Abstract::Group::Ok;
@@ -185,6 +203,13 @@ void
 LinearConstraint::setDgDx(const NOX::Abstract::MultiVector& A)
 {
   *dgdx = A;
+  isValidConstraints = false;
+}
+
+void
+LinearConstraint::setDgDp(const NOX::Abstract::MultiVector::DenseMatrix& A)
+{
+  dgdp.assign(A);
   isValidConstraints = false;
 }
 

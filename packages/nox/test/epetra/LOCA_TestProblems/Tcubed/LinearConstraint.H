@@ -50,7 +50,8 @@ class LinearConstraint :
 public:
   
   //! Constructor
-  LinearConstraint(int NumConstraints, NOX::Abstract::Vector& cloneVec);
+  LinearConstraint(int NumConstraints, const LOCA::ParameterVector& pVec,
+		   NOX::Abstract::Vector& cloneVec);
 
   //! Copy constructor
   LinearConstraint(const LinearConstraint& source, 
@@ -105,7 +106,7 @@ public:
    */
   virtual NOX::Abstract::Group::ReturnType
   computeDP(const vector<int>& paramIDs, 
-	    NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+	    NOX::Abstract::MultiVector::DenseMatrix& dp, 
 	    bool isValidG);
 
   //! Return \c true if constraint residuals are valid
@@ -133,6 +134,9 @@ public:
   //! Set solution component of constraint derivative
   void setDgDx(const NOX::Abstract::MultiVector& A);
 
+  //! Set parameter component of constraint derivative
+  void setDgDp(const NOX::Abstract::MultiVector::DenseMatrix& A);
+
   /*!
    * \brief Set the flag determinging whether isDXZero() 
    * returns true or false.  This is for testing bordered solvers when B
@@ -159,6 +163,15 @@ protected:
 
   //! Flag indicating whether dgdx is zero
   bool isZeroDgDx;
+
+  //! Parameter vector
+  LOCA::ParameterVector p;
+
+  //! Parameter vector as a DenseMatrix (view of p)
+  NOX::Abstract::MultiVector::DenseMatrix pvec;
+
+  //! Parameter component of constraint derivative
+  NOX::Abstract::MultiVector::DenseMatrix dgdp;
 
 };
 
