@@ -36,6 +36,7 @@
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
 #include "NOX_Abstract_Vector.H"
+#include "NOX_Abstract_MultiVector.H"
 
 namespace NOX {
 
@@ -95,6 +96,54 @@ namespace NOX {
     int testVector(const NOX::Abstract::Vector& vec, 
 		   const NOX::Abstract::Vector& vec_expected, 
 		   double rtol, double atol, const std::string& name);
+
+#ifdef HAVE_NOX_MULTIVECS
+    //! Compare two matrices
+    /*!
+     * @param \c mat [in] Computed matrix
+     * @param \c mat_expected [in] Matrix to be compared to
+     * @param \c rtol [in] Relative tolerance \f$\epsilon_r\f$
+     * @param \c atol [in] Absolute tolerance \f$\epsilon_a\f$
+     * @param \c name [in] Name for this test when printing details
+     * @return Returns 0 if
+     * \f[
+     *     \frac{|mat_{ij} - mat_expected_{ij}|}{\epsilon_a + \epsilon_r|mat_expected_{ij}|} < 1
+     * \f]
+     * for each $i$, $j$, and 1 otherwise.
+     */
+    int testMatrix(const NOX::Abstract::MultiVector::DenseMatrix& mat, 
+		   const NOX::Abstract::MultiVector::DenseMatrix& mat_expected,
+		   double rtol, double atol, const std::string& name);
+
+    //! Compare two multi-vectors
+    /*!
+     * @param \c mvec [in] Computed multi-vector
+     * @param \c mvec_expected [in] Multi-vector to be compared to
+     * @param \c rtol [in] Relative tolerance \f$\epsilon_r\f$
+     * @param \c atol [in] Absolute tolerance \f$\epsilon_a\f$
+     * @param \c name [in] Name for this test when printing details
+     * @return Returns 0 if
+     * \f[
+     *     \frac{|mvec_{ij} - mvec_expected_{ij}|}{\epsilon_a + \epsilon_r|mvec_expected_{ij}|} < 1
+     * \f]
+     * for each $i$, $j$, and 1 otherwise.
+     */
+    int testMultiVector(const NOX::Abstract::MultiVector& mvec, 
+			const NOX::Abstract::MultiVector& mvec_expected, 
+			double rtol, double atol, const std::string& name);
+#endif
+
+  protected:
+    
+    /*!
+     * Computes the vector norm
+     * \f[
+     *     \max_i \frac{|vec_i - vec_expected_i|}{\epsilon_a + \epsilon_r|vec_expected_i|}
+     * \f]
+     */
+    double computeVectorNorm(const NOX::Abstract::Vector& vec, 
+			     const NOX::Abstract::Vector& vec_expected, 
+			     double rtol, double atol);
 
   protected:
 
