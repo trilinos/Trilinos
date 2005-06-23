@@ -54,7 +54,7 @@ namespace LOCA {
      * using standard multi-vector operations.
      */
     class ConstraintInterfaceMVDX : 
-      public LOCA::MultiContinuation::ConstraintInterface {
+      public virtual LOCA::MultiContinuation::ConstraintInterface {
 
     public:
 
