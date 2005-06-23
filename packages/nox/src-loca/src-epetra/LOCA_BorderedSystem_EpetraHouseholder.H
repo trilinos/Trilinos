@@ -133,11 +133,11 @@ namespace LOCA {
      * \f[
      *   \begin{split}
      *     Z_Y &= R^{-T} G \\
-     *     [A J] Q
+     *     [A \;\; J] Q
      *     \begin{bmatrix}
      *        0 \\
      *        Z_X
-     *     \end{bmatrix} &= F - [A J] Q 
+     *     \end{bmatrix} &= F - [A \;\; J] Q 
      *     \begin{bmatrix}
      *        Z_Y \\
      *        0
@@ -150,7 +150,7 @@ namespace LOCA {
      * \f]
      * where \f$P\in\Re^{n\times n}\f$ is given by
      * \f[
-     *     P Z_X = [A J] Q
+     *     P Z_X = [A \;\; J] Q
      *     \begin{bmatrix}
      *        0 \\
      *        Z_X
@@ -158,7 +158,7 @@ namespace LOCA {
      * \f]
      * and 
      * \f[
-     *     \tilde{F} = F - [A J] Q 
+     *     \tilde{F} = F - [A \;\; J] Q 
      *     \begin{bmatrix}
      *        Z_Y \\
      *        0
