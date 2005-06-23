@@ -129,6 +129,8 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
@@ -229,6 +231,8 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
@@ -328,6 +332,8 @@ am__objects_6 = libloca_la-LOCA_MultiContinuation_ExtendedVector.lo \
 	libloca_la-LOCA_MultiContinuation_AbstractGroup.lo \
 	libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.lo \
 	libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.lo \
+	libloca_la-LOCA_MultiContinuation_CompositeConstraint.lo \
+	libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.lo \
 	libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo \
 	libloca_la-LOCA_MultiContinuation_ExtendedGroup.lo \
 	libloca_la-LOCA_MultiContinuation_NaturalGroup.lo \
@@ -477,6 +483,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_AbstractGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Plo \
@@ -557,6 +565,8 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
@@ -925,6 +935,8 @@ LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
@@ -940,6 +952,8 @@ LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
@@ -1348,6 +1362,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_AbstractGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthConstraint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ArcLengthGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedGroup.Plo@am__quote@
@@ -1868,6 +1884,54 @@ libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.lo: $(srcdir)/LOCA_Mul
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C
+
+libloca_la-LOCA_MultiContinuation_CompositeConstraint.o: $(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_CompositeConstraint.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' object='libloca_la-LOCA_MultiContinuation_CompositeConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C
+
+libloca_la-LOCA_MultiContinuation_CompositeConstraint.obj: $(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_CompositeConstraint.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' object='libloca_la-LOCA_MultiContinuation_CompositeConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C'; fi`
+
+libloca_la-LOCA_MultiContinuation_CompositeConstraint.lo: $(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_CompositeConstraint.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' object='libloca_la-LOCA_MultiContinuation_CompositeConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C
+
+libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.o: $(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo" -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.o `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C' object='libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.o `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C
+
+libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.obj: $(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo" -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C' object='libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C'; fi`
+
+libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.lo: $(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo" -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.lo `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C' object='libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.lo `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C
 
 libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o: $(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstrainedGroup.Tpo" -c -o libloca_la-LOCA_MultiContinuation_ConstrainedGroup.o `test -f '$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C; \

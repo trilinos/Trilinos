@@ -95,6 +95,8 @@ LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractStrategy.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
@@ -110,6 +112,8 @@ LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C \
+	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
