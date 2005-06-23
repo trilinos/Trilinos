@@ -29,14 +29,6 @@
 
 #include "ExampleApplicationRythmosInterface.hpp"
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/22/05
-//-----------------------------------------------------------------------------
 ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface(Teuchos::ParameterList &params)
 {
   problem_ = Teuchos::rcp(new ExampleApplication(params));
@@ -47,38 +39,14 @@ ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface(Teuchos::
   thyra_vs_ = Thyra::create_MPIVectorSpaceBase(epetra_map_);
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/17/05
-//-----------------------------------------------------------------------------
 ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
 {
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::~ExampleApplication
-// Purpose       : destructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
 ExampleApplicationRythmosInterface::~ExampleApplicationRythmosInterface()
 {
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::evalModel
-// Purpose       : Evaluate residual
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/17/05
-//-----------------------------------------------------------------------------
 int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> &inargs, const Rythmos::OutArgs<double> &outargs) const
 {
   // input arguments:
@@ -92,27 +60,11 @@ int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> 
   return 0;
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::get_vector
-// Purpose       : Get nominal vector
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterface::get_vector() const
 {
   return(Thyra::create_MPIVectorBase(problem_->get_x0(),thyra_vs_));
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::get_Epetra_Map
-// Purpose       : Get Epetra Map
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/07/05
-//-----------------------------------------------------------------------------
 Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_Epetra_Map() const
 { 
   return(epetra_map_); 

@@ -38,13 +38,6 @@
 namespace Rythmos {
 
   
-//-----------------------------------------------------------------------------
-// Class         : ModelEvaluator
-// Purpose       : Define interface to nonlinear models
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/20/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 class ModelEvaluator
 {

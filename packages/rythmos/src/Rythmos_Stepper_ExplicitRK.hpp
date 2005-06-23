@@ -38,13 +38,6 @@
 
 namespace Rythmos {
 
-//-----------------------------------------------------------------------------
-// Class         : ExplicitRK
-// Purpose       : Define explicit Runge-Kutta methods
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/09/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 class ExplicitRK : public Stepper<Scalar>
 {
@@ -85,14 +78,6 @@ class ExplicitRK : public Stepper<Scalar>
 
 };
 
-//-----------------------------------------------------------------------------
-// Function      : ExplicitRK::ExplicitRK
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/09/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Rythmos::ModelEvaluator<Scalar> > &model)
 {
@@ -189,41 +174,17 @@ ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Rythmos::ModelEv
   b_c[3] = one;
 
 }
-//
-//-----------------------------------------------------------------------------
-// Function      : ExplicitRK::ExplicitRK
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
+
 template<class Scalar>
 ExplicitRK<Scalar>::ExplicitRK()
 {
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ~ExplicitRK::ExplicitRK
-// Purpose       : destructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 ExplicitRK<Scalar>::~ExplicitRK()
 {
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExplicitRK::TakeStep
-// Purpose       : Take a step 
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Scalar ExplicitRK<Scalar>::TakeStep()
 {
@@ -232,14 +193,6 @@ Scalar ExplicitRK<Scalar>::TakeStep()
   return(-ST::one());
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExplicitRK::TakeStep
-// Purpose       : Take a step no larger than dt
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
 {
@@ -296,28 +249,12 @@ Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
   return(dt);
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExplicitRK::get_solution
-// Purpose       : return current solution
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/07/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRK<Scalar>::get_solution() const
 {
   return(solution_vector_);
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExplicitRK::get_residual
-// Purpose       : return current residual
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/07/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRK<Scalar>::get_residual() const
 {

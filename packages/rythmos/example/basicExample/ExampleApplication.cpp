@@ -28,44 +28,9 @@
 // @HEADER
 
 
-//-----------------------------------------------------------------------------
-// Filename      : $RCSfile$
-//
-// Purpose       : This file contains the functions which define the
-//                 example application differential equation
-// Special Notes :
-// Creator       : Todd Coffey
-// Creation Date : 05/05/05
-//
-// Revision Information:
-// ---------------------
-//
-// Revision Number: $Revision$
-//
-// Revision Date  : $Date$
-//
-// Current Owner  : $Author$
-//-----------------------------------------------------------------------------
-
-
 #include "ExampleApplication.hpp"
 
-//-----------------------------------------------------------------------------
-// Class         : ExampleApplication
-// Purpose       : Example application code with DE: \dot{x}=\lambda x
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::ExampleApplication
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
   lambda_ = params.get( "Lambda", -0.5 );
@@ -84,26 +49,6 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::~ExampleApplication
-// Purpose       : destructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
-//ExampleApplication::~ExampleApplication()
-//{
-//}
-
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::evalResidual
-// Purpose       : Evaluate problem residual
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
 int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t)
 {
   y->Scale(lambda_,x); // y = lambda*x
@@ -111,54 +56,22 @@ int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, d
 }
 
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::getCoeff
-// Purpose       : Return coefficient for ODE
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
 double ExampleApplication::getCoeff()
 {
   return lambda_;
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::get_epetra_map
-// Purpose       : Return epetra_map generated at construction time
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 Teuchos::RefCountPtr<Epetra_Map> ExampleApplication::get_epetra_map()
 {
   return(epetra_map_);
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::get_epetra_comm
-// Purpose       : Return epetra_comm generated at construction time
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/02/05
-//-----------------------------------------------------------------------------
 Teuchos::RefCountPtr<Epetra_Comm> ExampleApplication::get_epetra_comm()
 {
   return(epetra_comm_);
 }
 
 
-//-----------------------------------------------------------------------------
-// Function      : ExampleApplication::get_x0
-// Purpose       : Return nominal initial vector
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0()
 {
   Teuchos::RefCountPtr<Epetra_Vector> x0 = Teuchos::rcp(new Epetra_Vector(*epetra_map_));

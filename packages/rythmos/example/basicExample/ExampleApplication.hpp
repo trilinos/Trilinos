@@ -40,13 +40,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-//-----------------------------------------------------------------------------
-// Class         : ExampleApplication
-// Purpose       : Example application code with DE: \dot{x}=\lambda x
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/05/05
-//-----------------------------------------------------------------------------
 class ExampleApplication
 {
   public:

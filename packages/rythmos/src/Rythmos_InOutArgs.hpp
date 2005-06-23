@@ -35,13 +35,6 @@
 
 namespace Rythmos {
 
-//-----------------------------------------------------------------------------
-// Class         : InArgs
-// Purpose       : Input arguments class for ModelEvaluator evaluateModel function
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/20/05
-//-----------------------------------------------------------------------------
 template<class Scalar> 
 class InArgs
 {
@@ -72,45 +65,43 @@ template<class Scalar>
 InArgs<Scalar>::~InArgs()
 {
 }
+
 template<class Scalar> 
 InArgs<Scalar>::InArgs(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x, Scalar t)
 { 
   x_ = x; 
   t_ = t; 
 }
+
 template<class Scalar> 
 InArgs<Scalar>::InArgs()
 {
 }
+
 template<class Scalar> 
 void InArgs<Scalar>::set_x(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x)
 { 
   x_ = x; 
 }
+
 template<class Scalar> 
 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > InArgs<Scalar>::get_x() const
 { 
   return(x_); 
 }
+
 template<class Scalar> 
 void InArgs<Scalar>::set_t(Scalar t)
 { 
   t_ = t; 
 }
+
 template<class Scalar> 
 Scalar InArgs<Scalar>::get_t() const
 { 
   return(t_); 
 }
 
-//
-//-----------------------------------------------------------------------------
-// Class         : OutArgs
-// Purpose       : Output arguments class for ModelEvaluator evaluateModel function
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/25/05
-//-----------------------------------------------------------------------------
 template<class Scalar> 
 class OutArgs
 {
@@ -135,15 +126,18 @@ template<class Scalar>
 OutArgs<Scalar>::~OutArgs()
 {
 }
+
 template<class Scalar> 
 OutArgs<Scalar>::OutArgs()
 {
 }
+
 template<class Scalar> 
 void OutArgs<Scalar>::request_F(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &F) 
 { 
   F_ = F; 
 }
+
 template<class Scalar> 
 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > OutArgs<Scalar>::get_F() const
 { 

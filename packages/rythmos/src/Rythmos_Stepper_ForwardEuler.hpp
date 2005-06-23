@@ -37,13 +37,6 @@
 
 namespace Rythmos {
 
-//-----------------------------------------------------------------------------
-// Class         : FowardEuler
-// Purpose       : Base class for defining stepper functionality
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 class ForwardEuler : public Stepper<Scalar>
 {
@@ -78,14 +71,6 @@ class ForwardEuler : public Stepper<Scalar>
 };
 
 
-//-----------------------------------------------------------------------------
-// Function      : ForwardEuler::ForwardEuler
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
 {
@@ -96,40 +81,16 @@ ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluat
   residual_vector_ = model_->get_vector();
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ForwardEuler::ForwardEuler
-// Purpose       : constructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 ForwardEuler<Scalar>::ForwardEuler()
 {
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ForwardEuler::~ForwardEuler
-// Purpose       : destructor
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 ForwardEuler<Scalar>::~ForwardEuler()
 {
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ForwardEuler::TakeStep
-// Purpose       : Take a step 
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Scalar ForwardEuler<Scalar>::TakeStep()
 {
@@ -138,14 +99,6 @@ Scalar ForwardEuler<Scalar>::TakeStep()
   return(-ST::one());
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ForwardEuler::TakeStep
-// Purpose       : Take a step no larger than dt
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 {
@@ -166,28 +119,12 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
   return(dt);
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ForwardEuler::get_solution
-// Purpose       : return current solution
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/07/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_solution() const
 {
   return(solution_vector_);
 }
 
-//-----------------------------------------------------------------------------
-// Function      : ForwardEuler::get_residual
-// Purpose       : return current residual
-// Special Notes :
-// Scope         : public
-// Creator       : Todd Coffey, SNL
-// Creation Date : 06/07/05
-//-----------------------------------------------------------------------------
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_residual() const
 {

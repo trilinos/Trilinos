@@ -46,13 +46,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-//-----------------------------------------------------------------------------
-// Class         : ExampleApplicationRythmosInterface
-// Purpose       : Interface code to link EampleApplication to Rythmos
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/17/05
-//-----------------------------------------------------------------------------
 class ExampleApplicationRythmosInterface : public Rythmos::ModelEvaluator<double>
 {
   public:
