@@ -444,7 +444,7 @@ NOX::Epetra::MultiVector::multiply(
 
 int NOX::Epetra::MultiVector::length() const
 {
-  return epetraMultiVec->GlobalLength();
+  return epetraMultiVec->MyLength();
 }
 
 int NOX::Epetra::MultiVector::numVectors() const
