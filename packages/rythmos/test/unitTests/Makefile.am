@@ -1,7 +1,7 @@
 #@HEADER
 # ************************************************************************
 # 
-#                           Rythmos Package
+#                     Rythmos Package
 #                 Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,61 +26,11 @@
 # ************************************************************************
 #@HEADER
 
-#np# This file is an example of a typical Makefile.am to build an example exe. 
+#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
+#np# For packages whose tests are located in this directory, rather than
+#np# in a subdirectory of this directory, use the Makefile.am located in
+#np# test1/ rather than this file.
 
-EXAMPLE = test_InArgs
-
-EXEEXT = .exe
-
-#np# List the names of all exe's in this directory here
-noinst_PROGRAMS = $(EXAMPLE)
-
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
-test_InArgs_SOURCES = $(srcdir)/test_InArgs.cpp
-
-test_InArgs_INCLUDES= -I$(srcdir)
-
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
-test_InArgs_DEPENDENCIES = $(common_dependencies)
-
-
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
-test_InArgs_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src 
-
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
-test_InArgs_LDADD = \
-	$(top_builddir)/src/librythmos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../epetra/thyra/src/libEpetraThyra.a \
-	$(common_ldadd) \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
-
-common_dependencies=$(top_builddir)/src/librythmos.a \
-  $(top_builddir)/../epetra/src/libepetra.a
-
-include $(top_builddir)/Makefile.export.rythmos
-
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES)) 
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
-else
-EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) 
-EXPORT_LIBS = $(RYTHMOS_LIBS)
-endif
-
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
-
-common_ldadd = $(EXPORT_LIBS)
-
+SUBDIRS = InArgs OutArgs
