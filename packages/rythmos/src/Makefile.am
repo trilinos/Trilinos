@@ -48,7 +48,7 @@ CORE_H = \
 	$(srcdir)/Rythmos_ModelEvaluator.hpp \
 	$(srcdir)/Rythmos_Stepper.hpp \
 	$(srcdir)/Rythmos_Stepper_ForwardEuler.hpp \
-	$(srcdir)/Rythmos_Stepper_ExplicitRK.hpp \
+	$(srcdir)/Rythmos_Stepper_ExplicitRK.hpp 
 
 CORE = \
 	$(srcdir)/Rythmos_Version.cpp
