@@ -63,9 +63,6 @@ class Stepper
     // Get solution vector
     virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const = 0;
     
-    // Get residual vector
-    virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const = 0;
-
 };
 
 } // namespace Rythmos

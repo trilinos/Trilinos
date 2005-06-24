@@ -59,14 +59,11 @@ class ExplicitRK : public Stepper<Scalar>
     // Get solution vector
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
-    // Get residual vector
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
   private:
 
     Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
@@ -85,7 +82,6 @@ ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Rythmos::ModelEv
   model_ = model;
   t_ = ST::zero();
   solution_vector_ = (*model_).get_vector();
-  residual_vector_ = (*model_).get_vector();
   int stages = 4; // 4 stage ERK
   k_vector_.reserve(stages);
   for (int i=0 ; i<stages ; ++i)
@@ -253,23 +249,6 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRK<Scalar>::get_solution() const
 {
   return(solution_vector_);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRK<Scalar>::get_residual() const
-{
-  // Since this RK method doesn't actually compute the residual, if you want
-  // it, then I need to compute it on the fly.  Ideally, we'd keep track of
-  // whether we've already evaluated it so we don't keep hitting the nonlinear
-  // problem.
-  InArgs<Scalar> inargs;
-  OutArgs<Scalar> outargs;
-  
-  inargs.set_x(solution_vector_);
-  inargs.set_t(t_);
-  outargs.request_F(residual_vector_);
-  model_->evalModel(inargs,outargs);
-  return(residual_vector_);
 }
 
 } // namespace Rythmos
