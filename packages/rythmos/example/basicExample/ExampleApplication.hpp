@@ -33,7 +33,6 @@
 //#include "Thyra_VectorBase.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Map.h"
 #include "Epetra_SerialComm.h"
 
 #include "Rythmos_ConfigDefs.h"
