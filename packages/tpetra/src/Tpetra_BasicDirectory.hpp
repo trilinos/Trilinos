@@ -255,11 +255,15 @@ namespace Tpetra {
             exports.push_back(LIDs_[currLID]);
         }
         
+		OrdinalType* exportPtr = &exports.front();
+		char* export_objs = reinterpret_cast<char*>(exportPtr);
+		OrdinalType const lenExportObjs = packetSize * sizeof(OrdinalType);
+
         char* cImports = 0;
         OrdinalType* imports = 0;
         OrdinalType lenImports = zero;
         OrdinalType numRecv = numEntries - numMissing;
-        distor->doPostsAndWaits(reinterpret_cast<char*>(&exports.front()), packetSize * sizeof(OrdinalType), lenImports, cImports);
+        distor->doPostsAndWaits(export_objs, lenExportObjs, lenImports, cImports);
         imports = reinterpret_cast<OrdinalType*>(cImports);
 
         OrdinalType* ptr = imports;
@@ -320,10 +324,6 @@ namespace Tpetra {
       // Transfer GIDs, ImageIDs, and LIDs that we own to all images
       // End result is all images have list of all GIDs and corresponding ImageIDs and LIDs
       std::vector<OrdinalType> exportElements;
-      char* cImportElements = 0;
-      OrdinalType* importElements = 0;
-      OrdinalType lenImportElements;
-
       OrdinalType packetSize = one + one + one; // We will send GIDs, ImageIDs, and LIDs.
 
       exportElements.reserve(packetSize * numMyElements);
@@ -333,8 +333,16 @@ namespace Tpetra {
         exportElements.push_back(i);
       }
 
-      distor->doPostsAndWaits(reinterpret_cast<char*>(&exportElements.front()), packetSize * sizeof(OrdinalType), lenImportElements, cImportElements);
-      importElements = reinterpret_cast<OrdinalType*>(cImportElements);
+	  OrdinalType* exportPtr = &exportElements.front();
+
+	  char* export_objs = reinterpret_cast<char*>(exportPtr);
+	  OrdinalType const obj_size = packetSize * sizeof(OrdinalType);
+	  OrdinalType len_import_objs = 0;
+	  char* import_objs = 0;
+
+      distor->doPostsAndWaits(export_objs, obj_size, len_import_objs, import_objs);
+
+      OrdinalType* importElements = reinterpret_cast<OrdinalType*>(import_objs);
 
       OrdinalType currLID;
       OrdinalType* ptr = importElements;
@@ -345,7 +353,7 @@ namespace Tpetra {
         LIDs_[currLID] = *ptr++;
       }
         
-      delete[] cImportElements;
+      delete[] importElements;
     };
     
   }; // class MpiDirectory
