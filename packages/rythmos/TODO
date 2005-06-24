@@ -1,0 +1,12 @@
+06/23/05
+
+* Convert basicExample to R^n
+* Write Unit tests
+* Ross:  Create container class for passing vectors between steppers
+* Ross:  Rework ModelEvaluator to use vectorContainer class and then have derived classes for Epetra which do all the Thyra/Epetra conversion for the user automagically.
+* Ross:  Remove Stepper::TakeStep(void) and change Stepper::TakeStep( Scalar dt = LET_STEPPER_CHOSE_STEP ).  This will make it easier for subclasses to implement this interface.
+* Ross:  ModelEvaluator needs to expose vector spaces for various uses and initial guesses?
+* Ross:  ModelEvaluator should have a momento state (for stateful).
+* Add features to Stepper:  momento, restart, LTE, get_solution(dt), etc.
+* Add interpolation buffer class
+
