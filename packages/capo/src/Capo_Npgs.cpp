@@ -102,14 +102,14 @@ void Npgs::Initialize()
     so instead I must use the above seedrandom function.
   */
 
-
-
   for (int i=1;i<30+1;i++)
     {
-      Thyra::assign(&*TempVector,*Ve->col(i));
-      Thyra::randomize(0.1,1.1,&*TempVector);
+      //Thyra::assign(&*TempVector,*Ve->col(i));
+      //Thyra::randomize(0.1,1.1,&*TempVector);
       App_Integrator->Integrate(xcurrent,TempVector,20*(Tcurrent+rand()%10), 
 				lambdacurrent);
+      Thyra::Vt_S(&*TempVector,.01);
+      Thyra::Vp_S(&*TempVector,1.0);
       Thyra::assign(&*Ve->col(i),*TempVector);
     }
 
@@ -118,10 +118,8 @@ void Npgs::Initialize()
   Ve_pe = createMembers(xcurrent->space(),SolveParameters->get_NumberXtraVecsSubspace());
   Ve_pe = Ve->subView(Thyra::Range1D(1,SolveParameters->get_NumberXtraVecsSubspace()));
 
-  Print(Ve_pe);
   Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
-  
-  Print(Ve_pe);
+
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se;
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We;
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re;
@@ -131,14 +129,14 @@ void Npgs::Initialize()
   We = createMembers(xcurrent->space(),SolveParameters->get_NumberXtraVecsSubspace());
 
   //Subspace Iterations
-  for (int i=0;i<16;i++)
+  for (int i=0;i<15;i++)
     {
       We = MatVecs(Ve_pe);
-      (*Ve_pe).apply(Thyra::TRANS,*We,&*Se);
+      Ve_pe->apply(Thyra::TRANS,*We,&*Se);
       SchurDecomp(Se,Re);
-      if (i<15)
+      if (i<14)
 	{
-	  (*We).apply(Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
+	  We->apply(Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
 	  Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
 	}
     }
@@ -156,23 +154,30 @@ void Npgs::Initialize()
 // Special Notes :
 // Scope         : public
 // Creator       : J. Simonis, SNL
-// Creation Date : 06/13/05
+// Creation Date : 06/23/05
 //------------------------------------------------------------------
 void Npgs::Orthonormalize(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Basis, int Number_of_Columns)
 {
   double temp = 0;
-  for(int i=1;i<Number_of_Columns+1;i++)
+  temp = sqrt( Thyra::dot( *(Basis->col(1)),*(Basis->col(1))));
+  if (temp > 1.0e-12)
+    Thyra::Vt_S( &*(Basis->col(1)), 1.0/temp );
+  else
+    cout <<"WARNING Npgs::Orthonormalize: norm=0; No scaling done" << endl;
+
+
+  for(int i=2;i<Number_of_Columns+1;i++)
     {
       for(int j=1;j<i;j++)
 	{
-	  temp = sqrt( Thyra::dot(*(Basis->col(i)),*(Basis->col(j))) );
-	  Thyra::Vp_StV( &*(Basis->col(i)),-temp, *(Basis->col(j)) );
+	  temp = ( Thyra::dot(*(Basis->col(i)),*(Basis->col(j))) );
+	  Thyra::Vp_StV( &*(Basis->col(i)), -temp, *(Basis->col(j)) );
 	}
-      temp = Thyra::norm( *(Basis->col(i)) );
-      if (temp > 1.0e-12)
-	Thyra::Vt_S( &*(Basis->col(i)), 1.0/temp );
-      else
-	cout <<"WARNING Npgs::Orthonormalize: norm=0; No scaling done" << endl;
+      temp = ( Thyra::dot( *(Basis->col(i)),*(Basis->col(i)) ) );
+      //if (temp > 1.0e-12)
+	Thyra::Vt_S( &*(Basis->col(i)), 1.0/sqrt(temp) );
+	//else
+	//cout <<"WARNING Npgs::Orthonormalize: norm=0; No scaling done" << endl;
     }
 }
 //-----------------------------------------------------------------
@@ -279,7 +284,7 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > Npgs::MatVec(const Teuchos::Ref
   App_Integrator->Integrate(upert,phiupert,Tcurrent,lambdacurrent);
 
   Thyra::Vp_StV(&*phiupert,-1.0,*phiu);
-  Thyra::Vt_S(&*phiupert,1/delta);
+  Thyra::Vt_S(&*phiupert,1.0/delta);
 
   return phiupert;
 }
