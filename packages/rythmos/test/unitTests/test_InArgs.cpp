@@ -50,10 +50,9 @@ bool test1()
     Teuchos::RefCountPtr<Epetra_Map> epetra_map = Teuchos::rcp(new Epetra_Map(1,0,epetra_comm));
     Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > thyra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
     Teuchos::RefCountPtr<Thyra::VectorBase<double> > in_vector = Thyra::createMember(thyra_vs);
-    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > out_vector;
     Rythmos::InArgs<double> inargs;
     inargs.set_x(in_vector);
-    out_vector = inargs.get_x();
+    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > out_vector = inargs.get_x();
     if ( out_vector.get() == in_vector.get() )
       test = true; 
     return(test);
