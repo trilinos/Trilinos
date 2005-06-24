@@ -423,6 +423,7 @@ AC_CONFIG_FILES([
 		example/constExample/Makefile
 		example/classExample/Makefile
 		test/Makefile
+		test/unitTests/Makefile
 		])
 
 AC_OUTPUT()
