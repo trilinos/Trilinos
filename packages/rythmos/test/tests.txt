@@ -1,0 +1,21 @@
+06/23/05
+
+Integrate \dot{x} = lambda * x from 0 to 1 with FE
+  Substeps:  
+	Evaluate model
+	Take an integration step
+	
+Unit tests:  
+	InArgs class:  
+		set_x and get_x back
+		set_t and get_t back
+	OutArgs class:
+		request_F and get_F back
+	ModelEvaluator class:
+		evalModel
+		get_vector
+	Stepper class:
+		TakeStep
+		get_solution
+
+
