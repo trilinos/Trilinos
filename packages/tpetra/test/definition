@@ -3,25 +3,16 @@
 #
 
 (FRAMEWORK) {
-    DIRS = BasicPerfTest,
-           BlockElementSpace,
-           CisMatrix,
+    DIRS = Platform,
            Comm,
-           Directory,
            Distributor,
+           Directory,
            ElementSpace,
+           BlockElementSpace,
            ImportExport,
-           Platform,
-           Traits,
-           Vector;
+           VectorSpace,
+           Vector,
+           CisMatrix;
     ARGS = -v;
     COMM = SERIAL, MPI;
-}
-
-# Removing VectorSpace from MPI for now because it's been hanging.
-
-(FRAMEWORK) {
-    DIRS = VectorSpace;
-    ARGS = -v;
-    COMM = SERIAL;
 }
