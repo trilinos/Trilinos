@@ -68,8 +68,6 @@ int main(int argc, char* argv[])
   MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 #endif      
   
-  verbose = verbose && (procRank==0);
-
   try
     {
       double sqrtFunc();
@@ -98,8 +96,9 @@ int main(int argc, char* argv[])
     }
   catch(std::exception& e)
     {
-      if (verbose)
-	cerr << "caught exception " << e.what() << endl;
+      if (verbose && procRank==0)
+
+	cerr << "Caught exception [expected]:  " << e.what() << endl;
 
       // Return 0 since we caught the exception
       FailedTests = 0;
@@ -109,11 +108,13 @@ int main(int argc, char* argv[])
   if (verbose)
     TimeMonitor::summarize();
 
+  MPI_Barrier(MPI_COMM_WORLD);
+
 #ifdef HAVE_MPI
   /* clean up MPI if we are running in parallel*/
   MPI_Finalize();
 #endif
-  
+
   return FailedTests;
 }
 
