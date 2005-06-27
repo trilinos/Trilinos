@@ -223,6 +223,8 @@ namespace Tpetra {
       sortArrays(remoteImageIDs, data().remoteGIDs_);
 
       // create Distributor instance
+	  data().distributor_ = data().platform_->createDistributor();
+
       // call Distributor.createFromRecvs()
       // takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
       // returns numExportIDs_, exportLIDs_, and exportImageIDs_
