@@ -59,15 +59,15 @@ int main(int argc, char* argv[])
   // Check for verbose flag.
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-  if (verbose && procRank==0)
-    cout << Teuchos::Teuchos_Version() << endl << endl;
-
 #ifdef HAVE_MPI 
   /* initialize MPI if we are running in parallel */
   MPI_Init(&argc, &argv);
   MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 #endif      
   
+  if (verbose && procRank==0)
+    cout << Teuchos::Teuchos_Version() << endl << endl;
+
   try
     {
       double sqrtFunc();
@@ -108,8 +108,6 @@ int main(int argc, char* argv[])
   if (verbose)
     TimeMonitor::summarize();
 
-  MPI_Barrier(MPI_COMM_WORLD);
-
 #ifdef HAVE_MPI
   /* clean up MPI if we are running in parallel*/
   MPI_Finalize();
@@ -117,6 +115,8 @@ int main(int argc, char* argv[])
 
   if (FailedTests == 0 && procRank==0)
     cout << "End Result: TEST PASSED" << endl;
+
+  return FailedTests;
 }
 
 /* sum sqrt(x), x=[0, 10000). */
