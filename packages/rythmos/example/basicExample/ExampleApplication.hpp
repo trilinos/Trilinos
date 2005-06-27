@@ -33,7 +33,12 @@
 //#include "Thyra_VectorBase.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#include "mpi.h"
+#else
 #include "Epetra_SerialComm.h"
+#endif // HAVE_MPI
 
 #include "Rythmos_ConfigDefs.h"
 #include "Teuchos_RefCountPtr.hpp"

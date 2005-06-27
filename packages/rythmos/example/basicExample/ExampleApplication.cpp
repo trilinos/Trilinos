@@ -40,27 +40,30 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   // Serial only implementation here:
   // 05/26/05 tscoffe:  I haven't figured out how to get MPI_Init called with
   // argc and argv in such a way that MPI_COMM_WORLD is passed down here.
+#ifdef HAVE_MPI
+  int   argc = params.get( "main_argc" );
+  char *argv = params.get( "main_argv" );
+  MPI_Init(&argc,&argv);
+  MPI_Comm mpiComm = MPI_COMM_WORLD;
+  int procRank = 0;
+  int numProc;
+  MPI_Comm_size( mpiComm, &numProc );
+  MPI_Comm_rank( mpiComm, &procRank );
+  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_Comm(mpiComm) );
+#else
   epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
-//  std::cout << "ExampleApplication::ExampleApplication(double lambda, int numElements)" << std::endl;
-  
+#endif // HAVE_MPI
+
+
   // Construct a Map with NumElements and index base of 0
   epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_ptr_) );
-//  std::cout << "Epetra_Map address = " << std::endl;
-//  std::cout << epetra_map_ptr_.get() << std::endl;
 
   lambda_ptr_ = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   Epetra_Vector &lambda = *lambda_ptr_;
   unsigned int seed = time(NULL); 
   seed *= seed;
-//  cout << "seed = " << seed << endl;
-//  srand(seed);
-//  for (int i=0 ; i < lambda.MyLength() ; ++i)
-//  {
-//    cout << "rand = " << rand() << endl;
-//  }
   lambda.SetSeed(seed);
   lambda.Random(); // fill with random numbers in (-1,1)
-//  std::cout << "lambda = " << lambda << std::endl;
   // Scale random numbers to (lambda_min_,lambda_max_)
   lambda.Scale( (lambda_min_ - lambda_max_)/2.0);
   double tmp = (lambda_max_ + lambda_min_)/2.0;
@@ -68,7 +71,6 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   {
     lambda[i] += tmp;
   }
-//  std::cout << "lambda = " << lambda << std::endl;
   
 }
 

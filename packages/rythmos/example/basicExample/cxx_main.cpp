@@ -26,7 +26,7 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
 #else
@@ -102,6 +102,8 @@ int main(int argc, char *argv[])
     params.set( "Lambda_max", lambda_max );
     params.set( "NumElements", numElements );
     params.set( "x0", x0 );
+    params.set( "main_argc", argc );
+    params.set( "main_argv", argv );
     
     // create interface to problem
     Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem_ptr = Teuchos::rcp(new ExampleApplicationRythmosInterface(params));
@@ -130,7 +132,7 @@ int main(int argc, char *argv[])
       double dt_taken = stepper.TakeStep(dt);
       if (dt_taken != dt)
       {
-        cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << endl;
+        cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;
         break;
       }
     }
@@ -140,7 +142,7 @@ int main(int argc, char *argv[])
     Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(problem_ptr->get_Epetra_Map()),x_computed_thyra_ptr);
     const Epetra_Vector &x_computed = *x_computed_ptr;
 
-    // check exact answer
+    // compute exact answer
     Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = problem_ptr->get_coeff();
     const Epetra_Vector &lambda = *lambda_ptr;
     Epetra_Vector x_star(lambda.Map());
@@ -160,13 +162,13 @@ int main(int argc, char *argv[])
   //  int MyPID = epetra_comm->MyPID();
     if (MyPID == 0)
     {
-      cout << "Integrating \\dot{x}=\\lambda x from t = " << t0 
-           << " to t = " << t1 << endl;
-      cout << "using " << method << endl;
-      cout << "with initial x_0 = " << x0
-           << ", \\Delta t = " << dt 
-           << ", and \\lambda = " << endl;
-      cout << lambda << endl;
+      std::cout << "Integrating \\dot{x}=\\lambda x from t = " << t0 
+                << " to t = " << t1 << std::endl;
+      std::cout << "using " << method << std::endl;
+      std::cout << "with initial x_0 = " << x0
+                << ", \\Delta t = " << dt 
+                << ", and \\lambda = " << std::endl;
+      std::cout << lambda << std::endl;
 
       for (int i=0 ; i<x_computed.MyLength() ; ++i)
       {
