@@ -9,10 +9,17 @@
            Directory,
            ElementSpace,
            BlockElementSpace,
-           ImportExport,
-           VectorSpace,
+           VectorSpace;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+# Removing ImportExport, Vector, and CisMatrix from MPI for now because they hang the testharness.
+
+(FRAMEWORK) {
+    DIRS = ImportExport,
            Vector,
            CisMatrix;
     ARGS = -v;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
