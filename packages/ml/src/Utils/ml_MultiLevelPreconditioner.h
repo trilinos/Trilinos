@@ -354,6 +354,9 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   //! Recomputed the preconditioner (not implemented for Maxwell).
   int ReComputePreconditioner();
 
+  //! Print the individual operators in the multigrid hierarchy.
+  int Print();
+
   int ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
                                     double* TentativeNullSpace);
 

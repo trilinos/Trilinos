@@ -1487,58 +1487,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // ====================================================================== //
 
   bool PrintHierarchy = List_.get("print hierarchy", false);
-  
-  if( Comm().NumProc() > 1 && PrintHierarchy == true ) {
-    if( Comm().MyPID() == 0 ) {
-      cerr << endl;
-      cerr << ErrorMsg_ << "Option `print hierarchy' == `true' is available" << endl
-	<< ErrorMsg_ << "only for serial runs." << endl;
-      cerr << endl;
-    }
-  }
-  
-  if( PrintHierarchy == true && Comm().NumProc() == 1 ) {
-    if( Comm().MyPID() == 0 ) {
-      cout << endl;
-      cout << PrintMsg_ << "You are printing the entire hierarchy," << endl
-	   << PrintMsg_ << "from finest level (" << LevelID_[0] 
-	                << ") to coarsest (" << LevelID_[NumLevels_-1] << ")." << endl
-	   << PrintMsg_ << "MATLAB can be used to load the matrices, using spconvert()" << endl;
-      cout << endl;
-    }
-
-    // Amat (one for each level)
-    for( int i=0 ; i<NumLevels_ ; ++i ) {
-      char name[80];
-      sprintf(name,"Amat_%d", LevelID_[i]);
-      ML_Operator_Print(&(ml_->Amat[LevelID_[i]]), name);
-    }
-    
-    // Pmat (one for each level, except last)
-    for( int i=1 ; i<NumLevels_ ; ++i ) {
-      char name[80];
-      sprintf(name,"Pmat_%d", LevelID_[i]);
-      ML_Operator_Print(&(ml_->Pmat[LevelID_[i]]), name);
-    }
-
-    // Rmat (one for each level, except first)
-    for( int i=0 ; i<NumLevels_-1 ; ++i ) {
-      char name[80];
-      sprintf(name,"Rmat_%d", LevelID_[i]);
-      ML_Operator_Print(&(ml_->Rmat[LevelID_[i]]), name);
-    }
-
-    // Tmat (one for each level, except first)
-    if (SolvingMaxwell_)
-      for( int i=0 ; i<NumLevels_ ; ++i ) {
-        char name[80];
-        sprintf(name,"Tmat_%d", LevelID_[i]);
-        ML_Operator_Print(Tmat_array[LevelID_[i]], name);
-      }
-  
-  }
-
-
+  if ( PrintHierarchy == true ) Print();
 
   // ====================================================================== //
   // Other minor settings                                                   //
@@ -1729,6 +1678,65 @@ ReComputePreconditioner()
   return 0;
 
 }
+
+// ================================================ ====== ==== ==== == =
+
+int ML_Epetra::MultiLevelPreconditioner::
+Print()
+{
+  // ====================================================================== //
+  // One may decide to print out the entire hierarchy (to be analyzed in    //
+  // MATLAB, for instance).                                                 //
+  // ====================================================================== //
+
+  if( Comm().NumProc() > 1) {
+    if( Comm().MyPID() == 0 ) {
+      cerr << endl;
+      cerr << ErrorMsg_ << "The multigrid hierarchy can be printed only"
+                        << "for serial runs." << endl;
+      cerr << endl;
+    }
+  }
+  
+  if( Comm().NumProc() == 1 ) {
+      cout << endl;
+      cout << PrintMsg_ << "You are printing the entire hierarchy," << endl
+       << PrintMsg_ << "from finest level (" << LevelID_[0] 
+                    << ") to coarsest (" << LevelID_[NumLevels_-1] << ")." << endl
+       << PrintMsg_ << "MATLAB can be used to load the matrices, using spconvert()" << endl;
+      cout << endl;
+
+    // Amat (one for each level)
+    for( int i=0 ; i<NumLevels_ ; ++i ) {
+      char name[80];
+      sprintf(name,"Amat_%d", LevelID_[i]);
+      ML_Operator_Print(&(ml_->Amat[LevelID_[i]]), name);
+    }
+    
+    // Pmat (one for each level, except last)
+    for( int i=1 ; i<NumLevels_ ; ++i ) {
+      char name[80];
+      sprintf(name,"Pmat_%d", LevelID_[i]);
+      ML_Operator_Print(&(ml_->Pmat[LevelID_[i]]), name);
+    }
+
+    // Rmat (one for each level, except first)
+    for( int i=0 ; i<NumLevels_-1 ; ++i ) {
+      char name[80];
+      sprintf(name,"Rmat_%d", LevelID_[i]);
+      ML_Operator_Print(&(ml_->Rmat[LevelID_[i]]), name);
+    }
+
+    // Tmat (one for each level, except first)
+    if (SolvingMaxwell_)
+      for( int i=0 ; i<NumLevels_ ; ++i ) {
+        char name[80];
+        sprintf(name,"Tmat_%d", LevelID_[i]);
+        ML_Operator_Print(Tmat_array[LevelID_[i]], name);
+      }
+  
+  }
+} //Print() method
 
 // ============================================================================
 
