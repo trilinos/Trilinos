@@ -196,7 +196,7 @@ namespace Anasazi {
     //@{ \name Print method.
     /*! \brief Print \c *this EpetraMultiVec.
      */
-    void MvPrint() const { std::cout<< *this << endl; };
+    void MvPrint( ostream& os ) const { os << *this << endl; };
     //@}
 
   private:

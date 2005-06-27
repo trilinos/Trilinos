@@ -159,9 +159,9 @@ public:
 
 	//@}
 	//@{ \name Print method.
-	/*! \brief Print \c *this multivector.
+	/*! \brief Print \c *this multivector to the \c os output stream.
 	*/
-	virtual void MvPrint () const = 0;
+	virtual void MvPrint ( ostream& os ) const = 0;
 	//@}
 };
 
