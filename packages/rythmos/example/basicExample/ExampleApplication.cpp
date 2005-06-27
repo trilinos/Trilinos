@@ -33,50 +33,81 @@
 
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
-  lambda_ = params.get( "Lambda", -0.5 );
+  lambda_min_ = params.get( "Lambda_min", -0.9 );
+  lambda_max_ = params.get( "Lambda_max", -0.01 );
   numElements_ = params.get( "NumElements", 1 );
   x0_ = params.get( "x0", 10.0 );
   // Serial only implementation here:
   // 05/26/05 tscoffe:  I haven't figured out how to get MPI_Init called with
   // argc and argv in such a way that MPI_COMM_WORLD is passed down here.
-  epetra_comm_ = Teuchos::rcp( new Epetra_SerialComm  );
+  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
 //  std::cout << "ExampleApplication::ExampleApplication(double lambda, int numElements)" << std::endl;
   
   // Construct a Map with NumElements and index base of 0
-  epetra_map_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_) );
+  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_ptr_) );
 //  std::cout << "Epetra_Map address = " << std::endl;
-//  std::cout << epetra_map_.get() << std::endl;
+//  std::cout << epetra_map_ptr_.get() << std::endl;
+
+  lambda_ptr_ = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
+  Epetra_Vector &lambda = *lambda_ptr_;
+  unsigned int seed = time(NULL); 
+  seed *= seed;
+//  cout << "seed = " << seed << endl;
+//  srand(seed);
+//  for (int i=0 ; i < lambda.MyLength() ; ++i)
+//  {
+//    cout << "rand = " << rand() << endl;
+//  }
+  lambda.SetSeed(seed);
+  lambda.Random(); // fill with random numbers in (-1,1)
+//  std::cout << "lambda = " << lambda << std::endl;
+  // Scale random numbers to (lambda_min_,lambda_max_)
+  lambda.Scale( (lambda_min_ - lambda_max_)/2.0);
+  double tmp = (lambda_max_ + lambda_min_)/2.0;
+  for (int i=0 ; i<lambda.MyLength() ; ++i)
+  {
+    lambda[i] += tmp;
+  }
+//  std::cout << "lambda = " << lambda << std::endl;
   
 }
 
 int ExampleApplication::evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t)
 {
-  y->Scale(lambda_,x); // y = lambda*x
+  Epetra_Vector &lambda = *lambda_ptr_;
+  int localNumElements = x.MyLength();
+  for (int i=0 ; i<localNumElements ; ++i)
+  {
+    (*y)[i] = lambda[i]*x[i];
+  }
   return 0;
 }
 
 
-double ExampleApplication::getCoeff()
+Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_coeff() const
 {
-  return lambda_;
+  return(lambda_ptr_);
 }
 
-Teuchos::RefCountPtr<Epetra_Map> ExampleApplication::get_epetra_map()
+Teuchos::RefCountPtr<Epetra_Map> ExampleApplication::get_epetra_map() const
 {
-  return(epetra_map_);
+  return(epetra_map_ptr_);
 }
 
-Teuchos::RefCountPtr<Epetra_Comm> ExampleApplication::get_epetra_comm()
+Teuchos::RefCountPtr<Epetra_Comm> ExampleApplication::get_epetra_comm() const
 {
-  return(epetra_comm_);
+  return(epetra_comm_ptr_);
 }
 
 
-Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0()
+Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_x0() const
 {
-  Teuchos::RefCountPtr<Epetra_Vector> x0 = Teuchos::rcp(new Epetra_Vector(*epetra_map_));
-  (*x0)[0] = x0_;
-//  x0->Random();
-  return(x0);
+  Teuchos::RefCountPtr<Epetra_Vector> x0_ptr = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
+  Epetra_Vector &x0 = *x0_ptr;
+  for (int i=0 ; i<numElements_ ; ++i)
+  {
+    x0[i] = x0_;
+  }
+  return(x0_ptr);
 }
 

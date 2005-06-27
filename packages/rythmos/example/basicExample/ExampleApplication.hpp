@@ -39,6 +39,8 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include <vector>
+
 class ExampleApplication
 {
   public:
@@ -56,29 +58,31 @@ class ExampleApplication
     int evalResidual(Epetra_Vector *y, const Epetra_Vector &x, double t);
     
     // return ODE decay coefficient
-    double getCoeff();
+    Teuchos::RefCountPtr<const Epetra_Vector> get_coeff() const;
     
     // Return nominal x0 vector
-    Teuchos::RefCountPtr<Epetra_Vector> get_x0();
+    Teuchos::RefCountPtr<Epetra_Vector> get_x0() const;
 
     // Return epetra_map 
-    Teuchos::RefCountPtr<Epetra_Map> get_epetra_map();
+    Teuchos::RefCountPtr<Epetra_Map> get_epetra_map() const;
 
     // Return epetra_comm
-    Teuchos::RefCountPtr<Epetra_Comm> get_epetra_comm();
+    Teuchos::RefCountPtr<Epetra_Comm> get_epetra_comm() const;
 
   private:
 
     // Epetra Comm:
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_;
+    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_;
     // Epetra Map:
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map_;
+    Teuchos::RefCountPtr<Epetra_Map> epetra_map_ptr_;
     
-    // Coefficient for ODE
-    double lambda_;
-    // Number of unknowns:
+    // Global number of unknowns:
     int numElements_;
-    // initial condition
+    // Coefficients for ODE
+    double lambda_min_;
+    double lambda_max_;
+    Teuchos::RefCountPtr<Epetra_Vector> lambda_ptr_;
+    // Constant initial condition for the problem:
     double x0_;
 
 };

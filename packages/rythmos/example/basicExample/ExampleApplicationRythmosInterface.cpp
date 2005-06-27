@@ -31,12 +31,12 @@
 
 ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface(Teuchos::ParameterList &params)
 {
-  problem_ = Teuchos::rcp(new ExampleApplication(params));
-  epetra_map_ = problem_->get_epetra_map();
+  problem_ptr_ = Teuchos::rcp(new ExampleApplication(params));
+  epetra_map_ptr_ = problem_ptr_->get_epetra_map();
 //  std::cout << "ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()" << std::endl;
-//  std::cout << "epetra_map_.get() = " << std::endl;
-//  std::cout << epetra_map_.get() << std::endl;
-  thyra_vs_ = Thyra::create_MPIVectorSpaceBase(epetra_map_);
+//  std::cout << "epetra_map_ptr_.get() = " << std::endl;
+//  std::cout << epetra_map_ptr_.get() << std::endl;
+  thyra_vs_ptr_ = Thyra::create_MPIVectorSpaceBase(epetra_map_ptr_);
 }
 
 ExampleApplicationRythmosInterface::ExampleApplicationRythmosInterface()
@@ -57,18 +57,23 @@ int ExampleApplicationRythmosInterface::evalModel(const Rythmos::InArgs<double> 
   // output arguments:
   Teuchos::RefCountPtr<Thyra::VectorBase<double> > F = outargs.get_F();
 
-  (*problem_).evalResidual(&*(Thyra::get_Epetra_Vector(*epetra_map_,F)),*(Thyra::get_Epetra_Vector(*epetra_map_,x)),t);
+  (*problem_ptr_).evalResidual(&*(Thyra::get_Epetra_Vector(*epetra_map_ptr_,F)),*(Thyra::get_Epetra_Vector(*epetra_map_ptr_,x)),t);
   return 0;
 }
 
 
 Teuchos::RefCountPtr<Thyra::VectorBase<double> > ExampleApplicationRythmosInterface::get_vector() const
 {
-  return(Thyra::create_MPIVectorBase(problem_->get_x0(),thyra_vs_));
+  return(Thyra::create_MPIVectorBase(problem_ptr_->get_x0(),thyra_vs_ptr_));
 }
 
 
 Teuchos::RefCountPtr<const Epetra_Map> ExampleApplicationRythmosInterface::get_Epetra_Map() const
 { 
-  return(epetra_map_); 
+  return(epetra_map_ptr_); 
+}
+
+Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplicationRythmosInterface::get_coeff() const
+{
+  return(problem_ptr_->get_coeff());
 }

@@ -61,7 +61,8 @@ int main(int argc, char *argv[])
 
   try { // catch exceptions
 
-    double lambda = -0.5;  // ODE coefficient
+    double lambda_min = -0.9;   // min ODE coefficient
+    double lambda_max = -0.01;  // max ODE coefficient
     int numElements = 1; // number of elements in vector
     double x0 = 10.0; // ODE initial condition
     int N = 10;  // number of steps to take
@@ -71,8 +72,10 @@ int main(int argc, char *argv[])
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
-    clp.setOption( "lambda", &lambda, "ODE coefficient of decay or growth." );
-    clp.setOption( "x0", &x0, "ODE initial condition." );
+    clp.setOption( "x0", &x0, "Constant ODE initial condition." );
+    clp.setOption( "lambda_min", &lambda_min, "Lower bound for ODE coefficient");
+    clp.setOption( "lambda_max", &lambda_max, "Upper bound for ODE coefficient");
+    clp.setOption( "numelements", &numElements, "Problem size");
     clp.setOption( "method", &method, "Integration method:  FE, ERK4." );
     clp.setOption( "numsteps", &N, "Number of integration steps to take" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
@@ -86,26 +89,32 @@ int main(int argc, char *argv[])
       std::cout << "basicExample Version 0.1 - 06/23/05" << std::endl;
       return(0);
     }
-    
 
+    if (lambda_min > lambda_max)
+    {
+      std::cerr << "lamba_min must be less than lambda_max" << std::endl;
+      return(1);
+    }
+    
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
-    params.set( "Lambda", lambda );
+    params.set( "Lambda_min", lambda_min );
+    params.set( "Lambda_max", lambda_max );
     params.set( "NumElements", numElements );
     params.set( "x0", x0 );
     
     // create interface to problem
-    Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem = Teuchos::rcp(new ExampleApplicationRythmosInterface(params));
+    Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem_ptr = Teuchos::rcp(new ExampleApplicationRythmosInterface(params));
     
     // Create Stepper object depending on command-line input
     Teuchos::RefCountPtr<Rythmos::Stepper<double> > stepper_ptr;
     if (method == "ERK4") // Explicit Runge-Kutta 4 stage
     {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRK<double>(problem));
+      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRK<double>(problem_ptr));
       method = "Explicit Runge-Kutta of order 4";
     } else // Forward Euler
     {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEuler<double>(problem));
+      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEuler<double>(problem_ptr));
       method = "Forward Euler";
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
@@ -126,38 +135,44 @@ int main(int argc, char *argv[])
       }
     }
     // Get solution out of stepper:
-    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_t = stepper.get_solution();
+    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
     // Convert Thyra::VectorBase to Epetra_Vector
-    Teuchos::RefCountPtr<const Epetra_Vector> x = Thyra::get_Epetra_Vector(*(problem->get_Epetra_Map()),x_t);
-
-    // These values should be passed by parameter list:
-    // hard-coded values in ExampleApplicationRythmosInterface:
-    // double numelements = 1;
-    double x_initial = x0;
+    Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(problem_ptr->get_Epetra_Map()),x_computed_thyra_ptr);
+    const Epetra_Vector &x_computed = *x_computed_ptr;
 
     // check exact answer
-    double x_star = x_initial*exp(lambda*t1);
+    Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = problem_ptr->get_coeff();
+    const Epetra_Vector &lambda = *lambda_ptr;
+    Epetra_Vector x_star(lambda.Map());
+    for (int i=0 ; i < x_star.MyLength() ; ++i)
+    {
+      x_star[i] = x0*exp(lambda[i]*t1);
+    }
 
     // 06/03/05 tscoffe to get an Epetra_Map associated with an Epetra_Vector:
     // x.Map()
     // to get an Epetra_Comm associated with an Epetra_Vector:
     // x.Comm()
     
-  //  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*problem).get_epetra_comm();
-    //int MyPID = problem->get_Epetra_Map()->Comm()->MyPID();
-    int MyPID = (*x).Comm().MyPID();
+  //  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*problem_ptr).get_epetra_comm();
+    //int MyPID = problem_ptr->get_Epetra_Map()->Comm()->MyPID();
+    int MyPID = x_computed.Comm().MyPID();
   //  int MyPID = epetra_comm->MyPID();
     if (MyPID == 0)
     {
       cout << "Integrating \\dot{x}=\\lambda x from t = " << t0 
-          << " to t = " << t1 << endl
-          << "with initial x_0 = " << x_initial 
-          << ", \\Delta t = " << dt 
-          << ", and \\lambda = " << lambda << endl
-          << "using " << method << "." << endl;
+           << " to t = " << t1 << endl;
+      cout << "using " << method << endl;
+      cout << "with initial x_0 = " << x0
+           << ", \\Delta t = " << dt 
+           << ", and \\lambda = " << endl;
+      cout << lambda << endl;
 
-      cout << "Computed: x(" << t1 << ") = " << (*x)[0] << endl;
-      cout << "Exact:    x(" << t1 << ") = " << x_star << endl;
+      for (int i=0 ; i<x_computed.MyLength() ; ++i)
+      {
+        std::cout << "Computed: x[" << i << "](" << t1 << ") = " << x_computed[i] << "\t"  <<
+                     "Exact:    x[" << i << "](" << t1 << ") = " << x_star[i] << std::endl;
+      }
     }
     
    } // end try
