@@ -115,5 +115,8 @@ int main(int argc, char* argv[])
         return -1;
       }
     }
+  if(numberFailedTests==0)
+    cout << "End Result: TEST PASSED" << endl;
   return 0;
+
 }

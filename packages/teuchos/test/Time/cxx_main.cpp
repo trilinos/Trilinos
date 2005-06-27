@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   // Check for verbose flag.
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-  if (verbose)
+  if (verbose && procRank==0)
     cout << Teuchos::Teuchos_Version() << endl << endl;
 
 #ifdef HAVE_MPI 
@@ -115,7 +115,8 @@ int main(int argc, char* argv[])
   MPI_Finalize();
 #endif
 
-  return FailedTests;
+  if (FailedTests == 0 && procRank==0)
+    cout << "End Result: TEST PASSED" << endl;
 }
 
 /* sum sqrt(x), x=[0, 10000). */

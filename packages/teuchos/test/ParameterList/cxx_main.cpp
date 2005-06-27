@@ -48,13 +48,11 @@ int main(int argc, char *argv[])
 {
   bool verbose = false;
   int FailedTests = 0;
+  int procRank = 0;
 
 #ifdef HAVE_MPI
   MPI_Init( &argc, &argv );
-  int procRank = -1;
   MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
-
-  if (procRank == 0) {
 #endif
 
   // Read options from the command line. 
@@ -62,11 +60,17 @@ int main(int argc, char *argv[])
   clp.setOption( "v", "q", &verbose, "Set if output is printed or not." );
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
   if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+    cout << "Processor "<< procRank <<", parse_return "<< parse_return << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
+    //    MPI_Abort( MPI_COMM_WORLD, parse_return );
 #endif
     return parse_return;
   }
+
+  // Only print on 0 processor
+  if (procRank != 0 && verbose)
+    verbose = false;
 
   if (verbose)
     cout << Teuchos::Teuchos_Version() << endl << endl;
@@ -439,6 +443,7 @@ int main(int argc, char *argv[])
   //-----------------------------------------------------------
   // Print out main list
   //-----------------------------------------------------------
+
   if (verbose) {
 	print_break();
 	cout << "The Final Parameter List" << endl;
@@ -452,20 +457,21 @@ int main(int argc, char *argv[])
 	print_break();
   }
 
-
   //-----------------------------------------------------------
   // Return -1 if there are any failed tests, 
   // else 0 will be returned indicating a clean finish!  
   //-----------------------------------------------------------
 
 #ifdef HAVE_MPI
-} // end if ( procRank ==0 )
-  MPI_Finalize();
-  if ( FailedTests > 0 && procRank == 0 ) return(-1);
-  if ( procRank == 0 ) return 0;
-#else
-  if ( FailedTests > 0 ) { return (-1); }
-  return 0;
+    MPI_Finalize();  
 #endif
+
+  if ( FailedTests > 0 ) { return (-1); }
+
+  if ( FailedTests == 0 )
+    cout << "End Result: TEST PASSED" << endl;
+
+  return 0;
+
 }
 
