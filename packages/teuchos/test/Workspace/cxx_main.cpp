@@ -31,6 +31,7 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_Version.hpp"
 
 /** \brief This class implements a simple (useless) transformation that requires
  * workspace.
@@ -103,6 +104,9 @@ int main( int argc, char* argv[] )
         );
 
 		Teuchos::Time timer("");
+
+    if (verbose)
+      std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
     if(verbose) std::cout
       << "\n************************************************************************************"

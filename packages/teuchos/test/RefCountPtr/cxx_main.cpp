@@ -210,8 +210,9 @@ int main( int argc, char* argv[] ) {
 #endif
 			return parse_return;
 		}
-	if (verbose)
-		cout << Teuchos::Teuchos_Version() << endl << endl;
+
+    if (verbose)
+      std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
 		// Create some smart pointers
 
