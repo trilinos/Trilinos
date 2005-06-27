@@ -138,15 +138,18 @@ int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
   }
   gdegree = ldegree + hg->nVtx;
 
+  if (hgp->vtx_scaling<=2){
 
-  /* First compute local vertex degrees. */
-  for (i=0; i<hg->nVtx; i++){
-     ldegree[i] = hg->vindex[i+1] - hg->vindex[i]; /* local degree */
-  }
+    /* First compute local vertex degrees. */
+    for (i=0; i<hg->nVtx; i++){
+       ldegree[i] = hg->vindex[i+1] - hg->vindex[i]; /* local degree */
+    }
                                                                                 
-  /* Sum up along columns for global degrees. */
-  MPI_Allreduce(ldegree, gdegree, hg->nVtx, MPI_INT, MPI_SUM,
-        hg->comm->col_comm);
+    /* Sum up along columns for global degrees. */
+    MPI_Allreduce(ldegree, gdegree, hg->nVtx, MPI_INT, MPI_SUM,
+          hg->comm->col_comm);
+
+  }
 
 #ifdef DEBUG_EB
   /* Debug */
@@ -164,6 +167,16 @@ int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
   else if (hgp->vtx_scaling==2){  /* scale by degree */
     for (i=0; i<hg->nVtx; i++)
       hgp->vtx_scal[i] = 1. / gdegree[i];
+  }
+  else if (hgp->vtx_scaling==3){  /* scale by sqrt vertex weights */
+    if (hg->vwgt)
+      for (i=0; i<hg->nVtx; i++)
+        hgp->vtx_scal[i] = 1. / sqrt((double)hg->vwgt[i]);
+  }
+  else if (hgp->vtx_scaling==4){  /* scale by vertex weights */
+    if (hg->vwgt)
+      for (i=0; i<hg->nVtx; i++)
+        hgp->vtx_scal[i] = 1. / hg->vwgt[i];
   }
 
   ZOLTAN_FREE(&ldegree);
