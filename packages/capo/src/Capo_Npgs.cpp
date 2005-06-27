@@ -132,11 +132,11 @@ void Npgs::Initialize()
   for (int i=0;i<15;i++)
     {
       We = MatVecs(Ve_pe);
-      Ve_pe->apply(Thyra::TRANS,*We,&*Se);
+      Thyra::apply(*Ve_pe,Thyra::TRANS,*We,&*Se);
       SchurDecomp(Se,Re);
       if (i<14)
 	{
-	  We->apply(Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
+	  Thyra::apply(*We,Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
 	  Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
 	}
     }
@@ -405,7 +405,7 @@ bool Npgs::InnerIteration()
 	  cerr << "Calculated dp" << endl;
 
 	  Thyra::Vp_StV(&*xfinal,1.0,*dq);
-	  Vp->apply(Thyra::NOTRANS,*dp,&*TempVector,1.0,1.0);
+	  Thyra::apply(*Vp,Thyra::NOTRANS,*dp,&*TempVector,1.0,1.0);
 	  Thyra::Vp_StV(&*xfinal,1.0,*TempVector);
 	  Tfinal+=*deltaT;
 	}
@@ -624,11 +624,11 @@ void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar
   for (int i=0;i<SolveParameters->get_SubspaceIterations();i++)
     {
       We = MatVecs(Ve_pe);
-      (*Ve_pe).apply(Thyra::TRANS,*We,&*Se);
+      Thyra::apply(*Ve_pe,Thyra::TRANS,*We,&*Se);
       SchurDecomp(Se,Re);
       if (i<SolveParameters->get_SubspaceIterations()-1)
 	{
-	  We->apply(Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
+	  Thyra::apply(*We,Thyra::NOTRANS,*Se,&*Ve_pe,1.0);
 	  Orthonormalize(Ve_pe,Subspace_Size);
 	}
     }
@@ -654,16 +654,16 @@ void Npgs::Calculatedq(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp
   TempVec1 = createMember(Vp->domain());
   TempVec2 = createMember(r->space());
 
-  Vp->apply(Thyra::TRANS,*r,&*TempVec1);
-  Vp->apply(Thyra::NOTRANS,*TempVec1,&*q,1.0,1.0);
+  Thyra::apply(*Vp,Thyra::TRANS,*r,&*TempVec1);
+  Thyra::apply(*Vp,Thyra::NOTRANS,*TempVec1,&*q,1.0,1.0);
   Thyra::Vt_S(&*q,-1.0);
   Thyra::Vp_StV(&*q,1.0,*r);
 
   TempVec2 = MatVec(q);
   Thyra::Vp_StV(&*TempVec2,1.0,*r);
 
-  Vp->apply(Thyra::TRANS,*TempVec2,&*TempVec1);
-  Vp->apply(Thyra::NOTRANS,*TempVec1,&*q,1.0,1.0);
+  Thyra::apply(*Vp,Thyra::TRANS,*TempVec2,&*TempVec1);
+  Thyra::apply(*Vp,Thyra::NOTRANS,*TempVec1,&*q,1.0,1.0);
 
   Thyra::assign(&*dq,*TempVec2);
   Thyra::Vp_StV(&*dq,-1.0,*q);
@@ -705,7 +705,7 @@ bool Npgs::ComputeVp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
   Se->freeSubMultiVector(&sub_se);
   Yp->commitSubMultiVector(&sub_yp);
   
-  Ve_p->apply(Thyra::NOTRANS,*Yp,&*Vp,1.0,1.0); //Vp=Ve*Se[1..p,1..p]
+  Thyra::apply(*Ve_p,Thyra::NOTRANS,*Yp,&*Vp,1.0,1.0); //Vp=Ve*Se[1..p,1..p]
   
   return true;
 }
@@ -724,7 +724,7 @@ bool Npgs::UpdateVe(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We,
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > TempMV;
   TempMV = createMembers(xcurrent->space(),Size);
   TempMV = Ve->subView(Thyra::Range1D(1,Size));
-  We->apply(Thyra::NOTRANS,*Se,&*TempMV,1.0,1.0);
+  Thyra::apply(*We,Thyra::NOTRANS,*Se,&*TempMV,1.0,1.0);
 
   return true;
 
@@ -793,7 +793,7 @@ bool Npgs::Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
   cerr << "Going to call dphi_dt" << endl;
   dphi_dt(fphi);
   cerr << "Applied dphidt" << endl;
-  Vp->apply(Thyra::TRANS,*fphi,&*rightcol,1.0,1.0);
+  Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol,1.0,1.0);
   cerr << "applied vp' to fphi" << endl;
   for (int i=0;i<Unstable_Basis_Size;i++)
     {
@@ -803,7 +803,7 @@ bool Npgs::Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
 
   //Bottom left row.
 
-  Vp->apply(Thyra::TRANS,*finit,&*rightcol,1.0,1.0);
+  Thyra::apply(*Vp,Thyra::TRANS,*finit,&*rightcol,1.0,1.0);
 
   for (int i=0;i<Unstable_Basis_Size;i++)
     {
@@ -825,7 +825,7 @@ bool Npgs::Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
   Thyra::Vp_StV(&*fphi,1.0,*r);
   // I use the rightcol vector for storage, just so I don't have to
   // create an extra temporary vector...
-  Vp->apply(Thyra::TRANS,*fphi,&*rightcol,1.0,1.0);
+  Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol,1.0,1.0);
   // rightcol now contains the first p elements 
 
   for (int i=0;i<Unstable_Basis_Size;i++)
