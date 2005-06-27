@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     clp.setOption( "lambda", &lambda, "ODE coefficient of decay or growth." );
     clp.setOption( "x0", &x0, "ODE initial condition." );
     clp.setOption( "method", &method, "Integration method:  FE, ERK4." );
-    clp.setOption( "numsteps", &N, "Numbif( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;er of integration steps to take" );
+    clp.setOption( "numsteps", &N, "Number of integration steps to take" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
