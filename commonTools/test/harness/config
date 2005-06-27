@@ -179,8 +179,6 @@ RUN (atlantis-nightly-mpi) {
     INVOKE-CONFIGURE    = sgi-atlantis-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
-    MPI-START           = lamboot;
-    MPI-STOP            = lamhalt;
     TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
 
