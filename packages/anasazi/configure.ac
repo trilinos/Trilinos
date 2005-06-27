@@ -410,6 +410,7 @@ AC_CONFIG_FILES([
 		test/ModalSolverUtils/Makefile
 		test/BlockDavidson/Makefile
 		test/BlockKrylovSchur/Makefile
+		test/MVOPTester/Makefile
 		test/LOBPCG/Makefile
 	   	test/scripts/Makefile
 		test/scripts/daily/Makefile
