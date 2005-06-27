@@ -445,7 +445,7 @@ cleanUp();
                         $testExitStatus = 86; 
                     }
                 } else {                
-                    if ($testOutput =~ m/End Result: TEST PASSED/i) { 
+                    if ($testOutput =~ m/End Result:\s*TEST PASSED/i) { 
                         $testExitStatus = 0; 
                     } else {
                         $testExitStatus = 86; 
