@@ -138,7 +138,7 @@ int unitTests(bool verbose, bool debug) {
 		cout << "Overloaded << operator..." << endl;
 		cout << vectorspace << endl;
 	}
-
+	
 	// attribute access
 	if(verbose) cout << "Attribute access methods..." << endl;
 	OrdinalType temp = 0;
@@ -149,18 +149,20 @@ int unitTests(bool verbose, bool debug) {
 	temp = vectorspace.getMaxLocalIndex();
 	temp = vectorspace.getMinGlobalIndex();
 	temp = vectorspace.getMaxGlobalIndex();
-	temp = 0;
-	temp = vectorspace.getGlobalIndex(temp);
-	temp = vectorspace.getLocalIndex(temp);
-  bool tempB = vectorspace.isMyLocalIndex(temp);
-  tempB = vectorspace.isMyGlobalIndex(temp);
-
+	if(vectorspace.getNumMyEntries() > 0) {
+		temp = 0;
+		temp = vectorspace.getGlobalIndex(temp);
+		temp = vectorspace.getLocalIndex(temp);
+		bool tempB = vectorspace.isMyLocalIndex(temp);
+		tempB = vectorspace.isMyGlobalIndex(temp);
+	}
+  
 	// vector creation
 	if(verbose) cout << "Vector creation..." << endl;
 	Tpetra::Vector<OrdinalType, ScalarType>* vecptr = vectorspace.createVector();
 	temp = vecptr->getNumMyEntries();
 	delete vecptr;
-
+	
 	// accessors to other classes
 	if(verbose) cout << "Class member accessors..." << endl;
 	if(verbose) v2.platform().printInfo(cout);
@@ -171,7 +173,7 @@ int unitTests(bool verbose, bool debug) {
 	//
 	// actual testing section - affects return code
 	//
-
+	
 	if(verbose) cout << "Starting actual testing section..." << endl;
 
 	// isCompatible
@@ -191,7 +193,7 @@ int unitTests(bool verbose, bool debug) {
 			cout << "Failed" << endl;
 	returnierr += ierr;
 	ierr = 0;
-
+	
 	// isSameAs
 	if(verbose) cout << "Testing isSameAs... ";
 	bool same = vectorspace.isSameAs(v2);
@@ -224,6 +226,7 @@ int unitTests(bool verbose, bool debug) {
 			cout << "Failed" << endl;
 	returnierr += ierr;
 	ierr = 0;
+	
 	
 	// finish up
 	//char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
