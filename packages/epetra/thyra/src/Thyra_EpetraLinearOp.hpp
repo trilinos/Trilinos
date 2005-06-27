@@ -26,14 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-// //////////////////////////////////////////////////////////////////////////////////
-// TSFCoreEpetraLinearOp.hpp
-
 #ifndef THYRA_EPETRA_LINEAR_OP_HPP
 #define THYRA_EPETRA_LINEAR_OP_HPP
 
 #include "Thyra_EpetraTypes.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
 #include "Thyra_MPIVectorSpaceBase.hpp"
 
 namespace Thyra {
@@ -50,8 +47,11 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
-class EpetraLinearOp : public EuclideanLinearOpBase<RTOp_value_type> {
+class EpetraLinearOp : public SingleScalarEuclideanLinearOpBase<RTOp_value_type> {
 public:
+
+  /** \brief . */
+  using SingleScalarEuclideanLinearOpBase<RTOp_value_type>::euclideanApply;
 
 	/** @name Public types */
 	//@{

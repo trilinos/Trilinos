@@ -26,10 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SINGLE_RHS_LINEAR_OP_BASE_DECL_HPP
-#define THYRA_SINGLE_RHS_LINEAR_OP_BASE_DECL_HPP
+#ifndef THYRA_SINGLE_RHS_EUCLIDIEAN_LINEAR_OP_BASE_DECL_HPP
+#define THYRA_SINGLE_RHS_EUCLIDIEAN_LINEAR_OP_BASE_DECL_HPP
 
-#include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -44,17 +44,14 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
 template<class Scalar>
-class SingleRhsLinearOpBase : virtual public SingleScalarLinearOpBase<Scalar> {
+class SingleRhsEuclideanLinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<Scalar> {
 public:
 
-  /** \brief . */
-  using SingleScalarLinearOpBase<Scalar>::apply;
-
-  /** @name Overridden from LinearOpBase */
+  /** @name Overridden from EuclideanLinearOpBase */
   //@{
 
   /** \brief . */
-  void apply(
+  void euclideanApply(
     const ETransp                     M_trans
     ,const MultiVectorBase<Scalar>    &X
     ,MultiVectorBase<Scalar>          *Y
@@ -72,7 +69,7 @@ protected:
   /** \brief Apply the linear operator (or its transpose) to single vector
    * arguments.
    */
-  virtual void apply(
+  virtual void euclideanApply(
     const ETransp                M_trans
     ,const VectorBase<Scalar>    &x
     ,VectorBase<Scalar>          *y
@@ -86,4 +83,4 @@ protected:
 
 }	// end namespace Thyra
 
-#endif	// THYRA_SINGLE_RHS_LINEAR_OP_BASE_DECL_HPP
+#endif	// THYRA_SINGLE_RHS_EUCLIDIEAN_LINEAR_OP_BASE_DECL_HPP

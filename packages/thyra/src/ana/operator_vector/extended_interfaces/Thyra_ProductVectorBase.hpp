@@ -74,6 +74,9 @@ template<class Scalar>
 class ProductVectorBase : virtual public VectorBase<Scalar> {
 public:
 
+  /** \brief . */
+  using VectorBase<Scalar>::applyOp;
+
   /** \brief Returns the associated product vector space.
    *
    * If <tt>*this</tt> is uninitialized then

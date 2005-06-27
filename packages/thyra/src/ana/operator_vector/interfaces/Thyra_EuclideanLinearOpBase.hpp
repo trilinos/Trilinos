@@ -38,68 +38,90 @@ namespace Thyra {
 
 // Virtual functions with default implementations
 
-template<class Scalar>
-void EuclideanLinearOpBase<Scalar>::euclideanApply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
-    ) const
+template<class RangeScalar, class DomainScalar>
+void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclideanApplyTranspose(
+  const EConj                            conj
+  ,const MultiVectorBase<RangeScalar>    &X
+  ,MultiVectorBase<DomainScalar>         *Y
+  ,const Scalar                          alpha
+  ,const Scalar                          beta
+  ) const
 {
-#ifdef _DEBUG
-  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("EuclideanLinearOpBase<Scalar>::euclideanApply(...)",*this,M_trans,X,Y);
-#endif
-  const Index numMv = X.domain()->dim();
-  for( int j = 1; j <= numMv; ++j )
-    this->euclideanApply( M_trans, *X.col(j), &*Y->col(j), alpha, beta );
+  TEST_FOR_EXCEPTION(
+    true,std::logic_error
+    ,"EuclideanLinearOpBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::applyTranspose(...): "
+    "Error, the concrete subclass described as { " << this->description() << " } "
+    " with this->applyTransposeSupports("<<toString(conj)<<")="<<this->applyTransposeSupports(conj)
+    << " did not override this function and does not support transposes."
+    );
 }
 
 // Overridden functions from OpBase */
 
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-EuclideanLinearOpBase<Scalar>::range() const
+template<class RangeScalar, class DomainScalar>
+Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >
+EuclideanLinearOpBase<RangeScalar,DomainScalar>::range() const
 {
   return this->rangeScalarProdVecSpc();
 }
 
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-EuclideanLinearOpBase<Scalar>::domain() const
+template<class RangeScalar, class DomainScalar>
+Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >
+EuclideanLinearOpBase<RangeScalar,DomainScalar>::domain() const
 {
   return this->domainScalarProdVecSpc();
 }
 
 // Overridden functions from LinearOpBase
 
-template<class Scalar>
-void EuclideanLinearOpBase<Scalar>::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
+template<class RangeScalar, class DomainScalar>
+void EuclideanLinearOpBase<RangeScalar,DomainScalar>::apply(
+  const EConj                            conj
+  ,const MultiVectorBase<DomainScalar>   &X
+  ,MultiVectorBase<RangeScalar>          *Y
+  ,const Scalar                          alpha
+  ,const Scalar                          beta
   ) const
 {
-  euclidean_apply_impl(M_trans,X,Y,alpha,beta);
+  euclidean_apply_impl(conj,X,Y,alpha,beta);
+}
+
+template<class RangeScalar, class DomainScalar>
+void EuclideanLinearOpBase<RangeScalar,DomainScalar>::applyTranspose(
+  const EConj                            conj
+  ,const MultiVectorBase<RangeScalar>    &X
+  ,MultiVectorBase<DomainScalar>         *Y
+  ,const Scalar                          alpha
+  ,const Scalar                          beta
+  ) const
+{
+  euclidean_applyTranspose_impl(conj,X,Y,alpha,beta);
 }
 
 // protected
 
-template<class Scalar>
-void EuclideanLinearOpBase<Scalar>::euclidean_apply_impl(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
+template<class RangeScalar, class DomainScalar>
+void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclidean_apply_impl(
+  const EConj                            conj
+  ,const MultiVectorBase<DomainScalar>   &X
+  ,MultiVectorBase<RangeScalar>          *Y
+  ,const Scalar                          alpha
+  ,const Scalar                          beta
   ) const
 {
-  if( M_trans==NOTRANS )
-    this->domainScalarProdVecSpc()->getScalarProd()->apply(*this,M_trans,X,Y,alpha,beta);
-  else
-    this->rangeScalarProdVecSpc()->getScalarProd()->apply(*this,M_trans,X,Y,alpha,beta);
+  this->domainScalarProdVecSpc()->getScalarProd()->apply(*this,applyConjToTrans(conj),X,Y,alpha,beta);
+}
+
+template<class RangeScalar, class DomainScalar>
+void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclidean_applyTranspose_impl(
+  const EConj                            conj
+  ,const MultiVectorBase<RangeScalar>    &X
+  ,MultiVectorBase<DomainScalar>         *Y
+  ,const Scalar                          alpha
+  ,const Scalar                          beta
+  ) const
+{
+  this->rangeScalarProdVecSpc()->getScalarProd()->apply(*this,applyTransposeConjToTrans(conj),X,Y,alpha,beta);
 }
 
 } // namespace Thyra

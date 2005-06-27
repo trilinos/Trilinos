@@ -70,7 +70,7 @@ void LinearOpScalarProd<Scalar>::scalarProds( const MultiVectorBase<Scalar>& X, 
 {
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
     T = createMembers(Y.range(),Y.domain()->dim());
-  op_->apply(NOTRANS,Y,&*T);
+  Thyra::apply(*op_,NOTRANS,Y,&*T);
   dots(X,*T,scalar_prods);
 }
 
@@ -89,8 +89,8 @@ void LinearOpScalarProd<Scalar>::apply(
 #endif
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
     T = createMembers(X.range(),X.domain()->dim());
-  op_->apply(NOTRANS,X,&*T);
-  M.euclideanApply(M_trans,*T,Y,alpha,beta);
+  Thyra::apply(*op_,NOTRANS,X,&*T);
+  Thyra::euclideanApply(M,M_trans,*T,Y,alpha,beta);
 }
 
 } // end namespace Thyra

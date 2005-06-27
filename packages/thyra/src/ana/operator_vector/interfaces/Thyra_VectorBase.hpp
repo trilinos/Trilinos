@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_VECTOR_HPP
-#define THYRA_VECTOR_HPP
+#ifndef THYRA_VECTOR_BASE_HPP
+#define THYRA_VECTOR_BASE_HPP
 
 // Define to make some verbose output
 //#define THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -160,14 +160,7 @@ std::ostream& VectorBase<Scalar>::describe(
   return out;
 }
 
-// Overridden from OpBase
-
-template<class Scalar>
-bool VectorBase<Scalar>::opSupported(ETransp M_trans) const
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  return ( ST::isComplex ? ( M_trans==NOTRANS || M_trans==CONJTRANS ) : true );
-}
+// Overridden from LinearOpBase
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
@@ -191,7 +184,14 @@ VectorBase<Scalar>::domain() const
   return domain_;
 }
 
-// Overridden from LinearOpBase
+// Overridden from SingleRhsLinearOpBase
+
+template<class Scalar>
+bool VectorBase<Scalar>::opSupported(ETransp M_trans) const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return ( ST::isComplex ? ( M_trans==NOTRANS || M_trans==CONJTRANS ) : true );
+}
 
 template<class Scalar>
 void VectorBase<Scalar>::apply(
@@ -401,4 +401,4 @@ void VectorBase<Scalar>::commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<
 
 } // end namespace Thyra
 
-#endif  // THYRA_VECTOR_HPP
+#endif  // THYRA_VECTOR_BASE_HPP

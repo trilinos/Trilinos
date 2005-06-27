@@ -118,10 +118,12 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class Scalar>
-class VectorBase : virtual public MultiVectorBase<Scalar>, virtual public SingleRhsLinearOpBase<Scalar>
+class VectorBase : virtual public MultiVectorBase<Scalar>, virtual protected SingleRhsLinearOpBase<Scalar>
 {
 public:
 
+  /** \brief . */
+  using SingleRhsLinearOpBase<Scalar>::apply;
   /** \brief . */
   using MultiVectorBase<Scalar>::describe;
   /** \brief . */
@@ -457,13 +459,8 @@ public:
 
   //@}
 
-  /** @name Overridden from OpBase (should never need to be overridden in subclasses) */
+  /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
   //@{
-  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
-   * <tt>NOTRANS</tt> and <tt>CONJTRANS</tt> and for real types returns true
-   * for all values of <tt>M_trans</tt>.
-   */
-  bool opSupported(ETransp M_trans) const;
   /// Returns <tt>this->space()</tt>
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
   /// Returns a <tt>SerialVectorSpace</tt> object with dimension 1.
@@ -506,7 +503,14 @@ protected:
 
   /** @name Overridden from SingleRhsLinearOpBase (should never need to be overridden in subclasses) */
   //@{
-  /// Applies vector and its adjoint (transpose) as a linear operator.
+
+  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
+   * <tt>NOTRANS</tt> and <tt>CONJTRANS</tt> and for real types returns true
+   * for all values of <tt>M_trans</tt>.
+   */
+  bool opSupported(ETransp M_trans) const;
+
+  /** \brief. Applies vector and its adjoint (transpose) as a linear operator. */
   void apply(
     const ETransp                M_trans
     ,const VectorBase<Scalar>    &x
@@ -514,6 +518,7 @@ protected:
     ,const Scalar                alpha
     ,const Scalar                beta
     ) const;
+
   //@}
 
 private:

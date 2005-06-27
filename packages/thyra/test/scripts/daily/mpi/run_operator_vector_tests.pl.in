@@ -39,6 +39,7 @@ my $test_dir = "${top_build_dir}/test/ana/operator_vector";
 my $example_dir = "${top_build_dir}/example/ana/operator_vector";
 
 run_test("$mpirun $example_dir/sillyCgSolve_mpi.exe","--quiet","--verbose");
+run_test("$mpirun $example_dir/sillyCgSolve_mpi.exe --local-dim=2 --dump-all","--quiet","--verbose");
 
 if($ierr) {
   print "\n***\n*** Oh no, at least one of the Thyra Operator/Vector testing programs failed!\n***\n";

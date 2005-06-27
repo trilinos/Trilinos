@@ -54,7 +54,7 @@ class ProductVector : virtual public ProductVectorBase<Scalar> {
 public:
 
   /** \brief . */
-  //using MultiVectorBase<Scalar>::applyOp;
+  using ProductVectorBase<Scalar>::applyOp;
 
   /** @name Constructors/initializers/accessors */
   //@{

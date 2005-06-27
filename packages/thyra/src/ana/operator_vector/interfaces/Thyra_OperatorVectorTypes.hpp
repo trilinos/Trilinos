@@ -50,8 +50,29 @@ typedef RTOp_index_type  Index;
 /// Type for a range of indices
 typedef RangePack::Range1D   Range1D;
 
-/** \brief Enumeration for determining how an operator is applied.
+/** \brief Enumeration for determining how a linear operator is applied.
  */
+enum EConj {
+  NONCONJ_ELE     ///< Use the linear operator with non-conjugate elements.
+  ,CONJ_ELE       ///< Use the linear operator with conjugate elements.
+};
+
+/** \brief Return a string name for a <tt>ETransp</tt> value.
+ */
+inline
+const char* toString(EConj conj)
+{
+  switch(conj) {
+    case NONCONJ_ELE:    return "NONCONJ_ELE";
+    case CONJ_ELE:       return "CONJ_ELE";
+    default: TEST_FOR_EXCEPT(true);
+  }
+  return "BAD"; // Should never be called!
+}
+
+/** \brief Enumeration for determining how a linear operator (with a single
+    scalar * type) is applied.
+*/
 enum ETransp {
   NOTRANS     ///< Use the non-transposed operator
   ,CONJ       ///< Use the non-transposed operator with complex-conjugate elements (same as <tt>NOTRANS</tt> for real scalar types)
@@ -127,6 +148,45 @@ ETransp trans_trans( ETransp trans1, ETransp trans2 )
   return NOTRANS; // Will never be executed!
 }
 
+/** \brief Convert from <tt>ETransp</tt> to <tt>EConj</tt>.
+ */
+inline
+EConj transToConj( ETransp trans )
+{
+  switch(trans) {
+    case NOTRANS:    return NONCONJ_ELE;
+    case CONJ:       return CONJ_ELE;
+    case TRANS:      return NONCONJ_ELE;
+    case CONJTRANS:  return CONJ_ELE;
+    default: TEST_FOR_EXCEPT(true);
+  }
+  return NONCONJ_ELE; // Will never be called!
+}
+
+/** \brief Convert from <tt>EConj</tt> to <tt>ETransp</tt> for forward apply.
+ */
+inline
+ETransp applyConjToTrans( EConj conj ) {
+  switch(conj) {
+    case NONCONJ_ELE: return NOTRANS;
+    case CONJ_ELE:    return CONJ;
+    default: TEST_FOR_EXCEPT(true);
+  }
+  return NOTRANS; // Will never be called!
+}
+
+/** \brief Convert from <tt>EConj</tt> to <tt>ETransp</tt> for forward apply.
+ */
+inline
+ETransp applyTransposeConjToTrans( EConj conj ) {
+  switch(conj) {
+    case NONCONJ_ELE: return TRANS;
+    case CONJ_ELE:    return CONJTRANS;
+    default: TEST_FOR_EXCEPT(true);
+  }
+  return NOTRANS; // Will never be called!
+}
+
 //@}
 
 namespace Exceptions {
@@ -161,19 +221,19 @@ class OpNotSupported : public std::logic_error
 
 // Core abstract interface classes
 
-template<class Scalar> class VectorSpaceFactoryBase;
-template<class Scalar> class VectorSpaceBase;
-template<class Scalar> class VectorBase;
-template<class Scalar> class LinearOpBase;
-template<class Scalar> class MultiVectorBase;
+template<class Scalar>                                        class VectorSpaceFactoryBase;
+template<class Scalar>                                        class VectorSpaceBase;
+template<class RangeScalar, class DomainScalar = RangeScalar> class LinearOpBase;
+template<class Scalar>                                        class MultiVectorBase;
+template<class Scalar>                                        class VectorBase;
 
 // Basic node support subclasses and interfaces
 
-template<class Scalar> class ScalarProdBase;
-template<class Scalar> class ScalarProdVectorSpaceBase;
-template<class Scalar> class EuclideanLinearOpBase;
-template<class Scalar> class SerialVectorSpaceBase;
-template<class Scalar> class SerialVectorBase;
+template<class Scalar>                                        class ScalarProdBase;
+template<class Scalar>                                        class ScalarProdVectorSpaceBase;
+template<class RangeScalar, class DomainScalar = RangeScalar> class EuclideanLinearOpBase;
+template<class Scalar>                                        class SerialVectorSpaceBase;
+template<class Scalar>                                        class SerialVectorBase;
 
 // Basic concrete support subclasses
 

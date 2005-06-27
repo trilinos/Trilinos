@@ -68,7 +68,7 @@ bool sillyPowerMethod(
   for( int iter = 0; iter < maxNumIters; ++iter ) {
     const ScalarMag z_nrm = Thyra::norm(*z);          // Compute natural norm of z
     Thyra::V_StV( &*q, Scalar(ST::one()/z_nrm), *z ); // q = (1/||z}*z 
-    A.apply( Thyra::NOTRANS , *q, &*z );              // z = A*q
+    Thyra::apply( A, Thyra::NOTRANS , *q, &*z );      // z = A*q
     *lambda = A.range()->scalarProd(*q,*z);           // lambda = <q,z> : Approximate maximum absolute eigenvalue
     if( iter%(maxNumIters/10) == 0 || iter+1 == maxNumIters ) {
       Thyra::linear_combination(                      // r = z - lambda*q : Compute residual of eigenvalue equation

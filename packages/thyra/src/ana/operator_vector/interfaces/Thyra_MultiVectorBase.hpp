@@ -30,8 +30,9 @@
 #define THYRA_MULTI_VECTOR_HPP
 
 #include "Thyra_MultiVectorBaseDecl.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_LinearOpBase.hpp"
+#include "Thyra_SingleScalarLinearOpBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_AssertOp.hpp"

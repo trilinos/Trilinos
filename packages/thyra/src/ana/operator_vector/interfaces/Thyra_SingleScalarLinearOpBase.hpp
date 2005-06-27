@@ -26,37 +26,52 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_EUCLIDEAN_SCALAR_PROD_HPP
-#define THYRA_EUCLIDEAN_SCALAR_PROD_HPP
+#ifndef THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_HPP
+#define THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_HPP
 
-#include "Thyra_EuclideanScalarProdDecl.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
+#include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 namespace Thyra {
 
+// Overridden from LinearOpBase
+
 template<class Scalar>
-void EuclideanScalarProd<Scalar>::scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const
+bool SingleScalarLinearOpBase<Scalar>::applySupports( const EConj conj ) const
 {
-  dots(X,Y,scalar_prods);
+  return this->opSupported(applyConjToTrans(conj));
 }
 
 template<class Scalar>
-void EuclideanScalarProd<Scalar>::apply(
-  const EuclideanLinearOpBase<Scalar>   &M
-  ,const ETransp                        M_trans
-  ,const MultiVectorBase<Scalar>        &X
-  ,MultiVectorBase<Scalar>              *Y
-  ,const Scalar                         alpha
-  ,const Scalar                         beta
+bool SingleScalarLinearOpBase<Scalar>::applyTransposeSupports( const EConj conj ) const
+{
+  return this->opSupported( applyTransposeConjToTrans(conj) );
+}
+
+template<class Scalar>
+void SingleScalarLinearOpBase<Scalar>::apply(
+  const EConj                       conj
+  ,const MultiVectorBase<Scalar>    &X
+  ,MultiVectorBase<Scalar>          *Y
+  ,const Scalar                     alpha
+  ,const Scalar                     beta
   ) const
 {
-  if(real_trans(M_trans)==NOTRANS)
-    M.euclideanApply(transToConj(M_trans),X,Y,alpha,beta);
-  else
-    M.euclideanApplyTranspose(transToConj(M_trans),X,Y,alpha,beta);
+  this->apply(applyConjToTrans(conj),X,Y,alpha,beta);
 }
 
-} // end namespace Thyra
+template<class Scalar>
+void SingleScalarLinearOpBase<Scalar>::applyTranspose(
+  const EConj                       conj
+  ,const MultiVectorBase<Scalar>    &X
+  ,MultiVectorBase<Scalar>          *Y
+  ,const Scalar                     alpha
+  ,const Scalar                     beta
+  ) const
+{
+  this->apply(applyTransposeConjToTrans(conj),X,Y,alpha,beta);
+}
 
-#endif  // THYRA_EUCLIDEAN_SCALAR_PROD_HPP
+}	// end namespace Thyra
+
+#endif	// THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_HPP

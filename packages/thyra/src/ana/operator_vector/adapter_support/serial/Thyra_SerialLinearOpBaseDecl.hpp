@@ -29,7 +29,7 @@
 #ifndef THYRA_SERIAL_LINEAR_OP_BASE_DECL_HPP
 #define THYRA_SERIAL_LINEAR_OP_BASE_DECL_HPP
 
-#include "Thyra_EuclideanLinearOpBaseDecl.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 
 namespace Thyra {
@@ -159,8 +159,12 @@ protected:
  * \ingroup Thyra_Op_Vec_adapters_serial_support_grp
  */
 template<class Scalar>
-class SerialLinearOpBase : virtual public EuclideanLinearOpBase<Scalar> {
+class SerialLinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<Scalar>
+{
 public:
+
+  /** \brief . */
+  using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
 
   /** @name Overridden from EuclideanLinearOpBase */
   //@{
@@ -173,11 +177,11 @@ public:
    * \anchor apply_multi_vec
    */
   void euclideanApply(
-    const ETransp                 M_trans
+    const ETransp                     M_trans
     ,const MultiVectorBase<Scalar>    &X
     ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                 alpha
-    ,const Scalar                 beta
+    ,const Scalar                     alpha
+    ,const Scalar                     beta
     ) const;
   //@}
 

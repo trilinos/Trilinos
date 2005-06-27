@@ -145,8 +145,8 @@ bool LinearOpTester<Scalar>::check(
     std::ostringstream oss;
     bool these_results = true;
 
-    oss <<endl<<li<< "op.opSupported(NOTRANS) == true ? ";
-    result = op.opSupported(NOTRANS);
+    oss <<endl<<li<< "opSupported(op,NOTRANS) == true ? ";
+    result = opSupported(op,NOTRANS);
     if(!result) these_results = false;
     oss << passfail(result) << endl;
     
@@ -223,8 +223,8 @@ bool LinearOpTester<Scalar>::check(
     std::ostringstream oss;
     bool these_results = true;
 
-    oss <<endl<<li<< "op.opSupported(CONJTRANS) == true ? ";
-    result = op.opSupported(CONJTRANS);
+    oss <<endl<<li<< "opSupported(op,CONJTRANS) == true ? ";
+    result = opSupported(op,CONJTRANS);
     if(!result) these_results = false;
     oss << passfail(result) << endl;
     
@@ -301,8 +301,8 @@ bool LinearOpTester<Scalar>::check(
     std::ostringstream oss;
     bool these_results = true;
     
-    oss <<endl<<li<< "op.opSupported(CONJTRANS) == true ? ";
-    result = op.opSupported(CONJTRANS);
+    oss <<endl<<li<< "opSupported(op,CONJTRANS) == true ? ";
+    result = opSupported(op,CONJTRANS);
     if(!result) these_results = false;
     oss << passfail(result) << endl;
     

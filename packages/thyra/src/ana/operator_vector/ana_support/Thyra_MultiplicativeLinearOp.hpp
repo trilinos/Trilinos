@@ -161,7 +161,7 @@ bool MultiplicativeLinearOp<Scalar>::opSupported(ETransp M_trans) const
 {
   bool opSupported = true;
   for( int k = 0; k < static_cast<int>(Ops_.size()); ++k )
-    if(!Ops_[k]->opSupported(M_trans)) opSupported = false;
+    if(!Thyra::opSupported(*Ops_[k],M_trans)) opSupported = false;
   return opSupported;
   // ToDo: Cache these?
 }
@@ -194,9 +194,9 @@ void MultiplicativeLinearOp<Scalar>::apply(
       if(k==0)        Y_k = rcp(Y,false);  else Y_k = T_k = createMembers(Ops_[k]->range(),m);
       if(k==numOps-1) X_k = rcp(&X,false); else X_k = T_kp1;
       if( k > 0 )
-        Ops_[k]->apply(M_trans,*X_k,&*Y_k);
+        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k);
       else
-        Ops_[k]->apply(M_trans,*X_k,&*Y_k,(alpha*gamma_),beta);
+        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k,(alpha*gamma_),beta);
       T_kp1 = T_k;
     }
   }
@@ -213,9 +213,9 @@ void MultiplicativeLinearOp<Scalar>::apply(
       if(k==numOps-1)   Y_k = rcp(Y,false);  else Y_k = T_k = createMembers(Ops_[k]->domain(),m);
       if(k==0)          X_k = rcp(&X,false); else X_k = T_km1;
       if( k < numOps-1 )
-        Ops_[k]->apply(M_trans,*X_k,&*Y_k);
+        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k);
       else
-        Ops_[k]->apply(M_trans,*X_k,&*Y_k,(alpha*gamma_),beta);
+        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k,(alpha*gamma_),beta);
       T_km1 = T_k;
     }
   }

@@ -30,7 +30,6 @@
 #define THYRA_MULTI_VECTOR_DECL_HPP
 
 #include "Thyra_LinearOpBaseDecl.hpp"
-//#include "Thyra_LinearOpBase.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
 namespace Thyra {
@@ -38,83 +37,77 @@ namespace Thyra {
 /** \brief Interface for a collection of column vectors called a multi-vector.
  *
  * The primary purpose for this interface is to allow for convenient
- * aggregations of column vectors.  Such an orderly arrangement of
- * column vectors into a single aggregate object allows for better
- * optimized linear algebra operations such as matrix-matrix
- * multiplication and the solution of linear systems for multiple
- * right hand sides.  Every computing environment (serial, parallel,
- * out-of-core etc.) should be able to define at least one reasonably
- * efficient implementation of <tt>%MultiVectorBase</tt>.
+ * aggregations of column vectors.  Such an orderly arrangement of column
+ * vectors into a single aggregate object allows for better optimized linear
+ * algebra operations such as matrix-matrix multiplication and the solution of
+ * linear systems for multiple right hand sides.  Every computing environment
+ * (serial, parallel, out-of-core etc.) should be able to define at least one
+ * reasonably efficient implementation of <tt>%MultiVectorBase</tt>.
  *
  * The <tt>%MultiVectorBase</tt> interface is derived from the
  * <tt>LinearOpBase</tt> interface and therefore a <tt>%MultiVectorBase</tt>
  * can be considered as a linear operator which has some interesting
  * implications.
  *
- * Note that since, this interface is derived from <tt>LinearOpBase</tt>
- * that it must support the functions <tt>domain()</tt> and
- * <tt>range()</tt>.
+ * Note that since, this interface is derived from <tt>LinearOpBase</tt> that
+ * it must support the functions <tt>domain()</tt> and <tt>range()</tt>.
  *
- * Another very powerful feature of this interface is the ability to
- * apply reduction/transformation operators over a sub-set of rows and
- * columns in a set of multi-vector objects.  The behavior is
- * identical to the client extracted the rows or columns in a set of
- * multi-vectors and called <tt>VectorBase::applyOp()</tt> itself.
- * However, the advantage of using the multi-vector functions is that
- * there may be greater opportunities for increased performance in a
- * number of respects.  Also, the intermediate reduction objects over
- * a set of rows or columns can be reduced by a secondary reduction
- * object.
+ * Another very powerful feature of this interface is the ability to apply
+ * reduction/transformation operators over a sub-set of rows and columns in a
+ * set of multi-vector objects.  The behavior is identical to the client
+ * extracted the rows or columns in a set of multi-vectors and called
+ * <tt>VectorBase::applyOp()</tt> itself.  However, the advantage of using the
+ * multi-vector functions is that there may be greater opportunities for
+ * increased performance in a number of respects.  Also, the intermediate
+ * reduction objects over a set of rows or columns can be reduced by a
+ * secondary reduction object.
  *
- * This interface also allows a client to extract a sub-set of
- * elements in an explicit form as non-mutable
- * <tt>RTOpPack::SubMultiVectorT<Scalar></tt> or mutable
- * <tt>RTOpPack::MutableSubMultiVectorT<Scalar></tt> objects using the
- * operations <tt>getSubMultiVector()</tt>.  In general, this is a
- * very bad thing to do and should be avoided at all costs.  However,
- * there are some situations where this is needed and therefore it is
- * supported.  The default implementation of these operations use
- * reduction/transformation operators with <tt>applyOp()</tt> in order
- * to extract and set the needed elements and therefore all
- * <tt>%MultiVectorBase</tt> subclasses automatically support these
- * operations (even if it is a bad idea to use them).  <b>Heads
- * Up!</b> Note that client code in general should not directly call
- * the above explicit sub-vector access functions but should use the
- * utility classes <tt>ExplicitMultiVectorView</tt> and
- * <tt>ExplicitMutableMultiVectorView</tt> instead since these are
- * easier an safer in the event that an exception is thrown.
+ * This interface also allows a client to extract a sub-set of elements in an
+ * explicit form as non-mutable <tt>RTOpPack::SubMultiVectorT<Scalar></tt> or
+ * mutable <tt>RTOpPack::MutableSubMultiVectorT<Scalar></tt> objects using the
+ * operations <tt>getSubMultiVector()</tt>.  In general, this is a very bad
+ * thing to do and should be avoided at all costs.  However, there are some
+ * situations where this is needed and therefore it is supported.  The default
+ * implementation of these operations use reduction/transformation operators
+ * with <tt>applyOp()</tt> in order to extract and set the needed elements and
+ * therefore all <tt>%MultiVectorBase</tt> subclasses automatically support
+ * these operations (even if it is a bad idea to use them).  <b>Heads Up!</b>
+ * Note that client code in general should not directly call the above
+ * explicit sub-vector access functions but should use the utility classes
+ * <tt>ExplicitMultiVectorView</tt> and
+ * <tt>ExplicitMutableMultiVectorView</tt> instead since these are easier an
+ * safer in the event that an exception is thrown.
  *
  * <b>Notes for subclass developers</b>
  *
- * Only one function override is required (in addition to the functions
- * that must be overridden from <tt>LinearOpBase</tt>, except
- * <tt>apply()</tt>, see below) to create a concrete
- * <tt>MultiVectorBase</tt> subclass and that is the non-constant version
- * of <tt>col()</tt>.  All of the other functions have default
- * implementations that are quite good in many use cases.
+ * Only one function override is required (in addition to the functions that
+ * must be overridden from <tt>LinearOpBase</tt>, except <tt>apply()</tt>, see
+ * below) to create a concrete <tt>MultiVectorBase</tt> subclass and that is
+ * the non-constant version of <tt>col()</tt>.  All of the other functions
+ * have default implementations that are quite good in many use cases.
  *
- * Note that through the magic of the <tt>applyOp()</tt> functions that
- * this interface is able to implement the pure virtual
- * <tt>apply()</tt> function from the <tt>LinearOpBase</tt> interface.  This
- * implementation is not optimal, but will be sufficient in many
- * different contexts.
+ * Note that through the magic of the <tt>applyOp()</tt> functions that this
+ * interface is able to implement the pure virtual <tt>apply()</tt> function
+ * from the <tt>LinearOpBase</tt> interface.  This implementation is not
+ * optimal, but will be sufficient in many different contexts.
  *
- * The <tt>applyOp()</tt> functions should only be overridden if the
- * subclass can do something more efficient than simply applying the
+ * The <tt>applyOp()</tt> functions should only be overridden if the subclass
+ * can do something more efficient than simply applying the
  * reduction/transformation operators one column at a time.
  *
- * The non-const versions of <tt>subView()</tt> should be overridden
- * if the performance of these functions are important.  The default
- * implementation will not achieve near-optimal performance.
+ * The non-const versions of <tt>subView()</tt> should be overridden if the
+ * performance of these functions are important.  The default implementation
+ * will not achieve near-optimal performance.
  *
- * Functions that subclasses should almost never need (or want) to
- * override are the const version of <tt>col()</tt> or the the const
- * versions of <tt>subView()</tt>.
+ * Functions that subclasses should almost never need (or want) to override
+ * are the const version of <tt>col()</tt> or the the const versions of
+ * <tt>subView()</tt>.
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class Scalar>
-class MultiVectorBase : virtual public LinearOpBase<Scalar> {
+class MultiVectorBase : virtual public LinearOpBase<Scalar>
+{
 public:
 
   /** \brief . */

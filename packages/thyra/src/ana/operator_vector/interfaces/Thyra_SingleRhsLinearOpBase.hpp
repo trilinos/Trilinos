@@ -30,7 +30,7 @@
 #define THYRA_SINGLE_RHS_LINEAR_OP_BASE_HPP
 
 #include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
-#include "Thyra_OpBase.hpp"
+#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_AssertOp.hpp"

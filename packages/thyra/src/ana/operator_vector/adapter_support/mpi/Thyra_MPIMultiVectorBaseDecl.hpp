@@ -30,7 +30,7 @@
 #define THYRA_MPI_MULTI_VECTOR_BASE_DECL_HPP
 
 #include "Thyra_MultiVectorBaseDecl.hpp"
-#include "Thyra_EuclideanLinearOpBaseDecl.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 #include "Teuchos_BLAS.hpp"
 
 namespace Thyra {
@@ -108,9 +108,12 @@ template<class Scalar> class MPIVectorSpaceBase;
 template<class Scalar>
 class MPIMultiVectorBase
   : virtual public MultiVectorBase<Scalar>
-  , virtual public EuclideanLinearOpBase<Scalar>
+  , virtual public SingleScalarEuclideanLinearOpBase<Scalar>
 {
 public:
+
+  /** \brief . */
+  using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
 
   /** \brief . */
   using EuclideanLinearOpBase<Scalar>::apply;
@@ -213,18 +216,6 @@ public:
   /// Returns <tt>mpiSpace</tt>.
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
 
-  /** \brief Uses GEMM(...) and MPI_Allreduce(...) to implement.
-   *
-   * ToDo: Finish documentation!
-   */
-  void euclideanApply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
-    ) const;
-
   //@}
 
   /** @name Overridden from LinearOpBase */
@@ -278,6 +269,32 @@ public:
 
 protected:
 
+  /** @name Overridden from SingleScalarEuclideanLinearOpBase */
+  //@{
+
+  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
+   * <tt>NOTRANS</tt>, <tt>TRANS</tt>, and <tt>CONJTRANS</tt> and for real
+   * types returns <tt>true</tt> for all values of <tt>M_trans</tt>.
+   */
+  bool opSupported(ETransp M_trans) const;
+
+  /** \brief Uses GEMM(...) and MPI_Allreduce(...) to implement.
+   *
+   * ToDo: Finish documentation!
+   */
+  void euclideanApply(
+    const ETransp                     M_trans
+    ,const MultiVectorBase<Scalar>    &X
+    ,MultiVectorBase<Scalar>          *Y
+    ,const Scalar                     alpha
+    ,const Scalar                     beta
+    ) const;
+
+  //@}
+
+  /** @name Protected functions for subclasses to call. */
+  //@{
+
   /** \brief Subclasses should call whenever the structure of the VectorSpaceBase changes.
    *
    * This function can be overridden by subclasses but this
@@ -297,6 +314,8 @@ protected:
    * This function throws an exception if the input range is invalid
    */
   Range1D validateColRange( const Range1D& rowCol ) const;
+
+  //@}
   
 private:
   

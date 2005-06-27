@@ -30,8 +30,8 @@
 #define THYRA_SERIAL_MULTI_VECTOR_BASE_HPP
 
 #include "Thyra_SerialMultiVectorBaseDecl.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
 #include "Thyra_SerialVectorSpaceBase.hpp"
 #include "Thyra_ExplicitMultiVectorView.hpp"
 #include "Thyra_apply_op_helper.hpp"
@@ -52,122 +52,9 @@ SerialMultiVectorBase<Scalar>::SerialMultiVectorBase()
   ,numCols_(0)
 {}
 
-// Overridden from EuclideanLinearOpBase
-
-template<class Scalar>
-void SerialMultiVectorBase<Scalar>::euclideanApply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
-  ) const
-{
-
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-
-#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
-  Teuchos::Time timerTotal("dummy",true);
-  Teuchos::Time timer("dummy");
-#endif
-
-  //
-  // This function performs one of two operations.
-  //
-  // The first operation (M_trans == NOTRANS) is:
-
-  //     Y = beta * Y + alpha * M * X
-  //
-  // The second operation (M_trans == TRANS) is:
-  //
-  //     Y = beta * Y + alpha * M' * X
-  //
-
-#ifdef _DEBUG
-  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("SerialMultiVectorBase<Scalar>::euclideanApply()",*this,M_trans,X,Y);
-#endif
-
-  //
-  // Get explicit views of Y, M and X
-  //
-
-#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
-  timer.start();
-#endif
-  ExplicitMutableMultiVectorView<Scalar>  Y_local(*Y);
-  ExplicitMultiVectorView<Scalar>         M_local(*this);
-  ExplicitMultiVectorView<Scalar>         X_local(X);
-#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
-  timer.stop();
-  std::cout << "\nSerialMultiVectorBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";
-#endif
-    
-  //
-  // Perform the multiplication:
-  //
-  //     Y(local) = localBeta * Y(local) + alpha * op(M(local)) * X(local)
-  //
-  // or in BLAS lingo:
-  //
-  //     C        = beta      * C        + alpha * op(A)        * op(B)
-  //
-
-#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
-  timer.start();
-#endif
-  Teuchos::ETransp t_transp;
-  if(ST::isComplex) {
-    switch(M_trans) {
-      case NOTRANS:   t_transp = Teuchos::NO_TRANS;     break;
-      case TRANS:     t_transp = Teuchos::TRANS;        break;
-      case CONJTRANS: t_transp = Teuchos::CONJ_TRANS;   break;
-      default: TEST_FOR_EXCEPT(true);
-    }
-  }
-  else {
-    switch(real_trans(M_trans)) {
-      case NOTRANS:   t_transp = Teuchos::NO_TRANS;     break;
-      case TRANS:     t_transp = Teuchos::TRANS;        break;
-      default: TEST_FOR_EXCEPT(true);
-    }
-  }
-  blas_.GEMM(
-    t_transp                                                                 // TRANSA
-    ,Teuchos::NO_TRANS                                                       // TRANSB
-    ,Y_local.subDim()                                                        // M
-    ,Y_local.numSubCols()                                                    // N
-    ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim()  // K
-    ,alpha                                                                   // ALPHA
-    ,const_cast<Scalar*>(M_local.values())                                   // A
-    ,M_local.leadingDim()                                                    // LDA
-    ,const_cast<Scalar*>(X_local.values())                                   // B
-    ,X_local.leadingDim()                                                    // LDB
-    ,beta                                                                    // BETA
-    ,Y_local.values()                                                        // C
-    ,Y_local.leadingDim()                                                    // LDC
-    );
-#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
-  timer.stop();
-  std::cout << "\nSerialMultiVectorBase<Scalar>::apply(...): Time for GEMM = " << timer.totalElapsedTime() << " seconds\n";
-#endif
-
-#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
-  timer.stop();
-  std::cout << "\nSerialMultiVectorBase<Scalar>::apply(...): Total time = " << timerTotal.totalElapsedTime() << " seconds\n";
-#endif
-
-}
-
-// Overridden from OpBase
-
-template<class Scalar>
-bool SerialMultiVectorBase<Scalar>::opSupported(ETransp M_trans) const
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  return ( ST::isComplex ? ( M_trans!=CONJ ) : true );
-}
-
 // Overridden from LinearOpBase
+
+/*
 
 template<class Scalar>
 void SerialMultiVectorBase<Scalar>::apply(
@@ -178,8 +65,10 @@ void SerialMultiVectorBase<Scalar>::apply(
   ,const Scalar                     beta
   ) const
 {
-  this->euclidean_apply_impl(M_trans,X,Y,alpha,beta);
+  this->single_scalar_euclidean_apply_impl(M_trans,X,Y,alpha,beta);
 }
+
+*/
 
 // Overridden from MultiVectorBase
 
@@ -288,6 +177,122 @@ void SerialMultiVectorBase<Scalar>::commitSubMultiVector(
 }
 
 // protected
+
+
+// Overridden from SingleScalarEuclideanLinearOpBase
+
+template<class Scalar>
+bool SerialMultiVectorBase<Scalar>::opSupported(ETransp M_trans) const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return ( ST::isComplex ? ( M_trans!=CONJ ) : true );
+}
+
+template<class Scalar>
+void SerialMultiVectorBase<Scalar>::euclideanApply(
+  const ETransp                     M_trans
+  ,const MultiVectorBase<Scalar>    &X
+  ,MultiVectorBase<Scalar>          *Y
+  ,const Scalar                     alpha
+  ,const Scalar                     beta
+  ) const
+{
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
+  Teuchos::Time timerTotal("dummy",true);
+  Teuchos::Time timer("dummy");
+#endif
+
+  //
+  // This function performs one of two operations.
+  //
+  // The first operation (M_trans == NOTRANS) is:
+
+  //     Y = beta * Y + alpha * M * X
+  //
+  // The second operation (M_trans == TRANS) is:
+  //
+  //     Y = beta * Y + alpha * M' * X
+  //
+
+#ifdef _DEBUG
+  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("SerialMultiVectorBase<Scalar>::euclideanApply()",*this,M_trans,X,Y);
+#endif
+
+  //
+  // Get explicit views of Y, M and X
+  //
+
+#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
+  timer.start();
+#endif
+  ExplicitMutableMultiVectorView<Scalar>  Y_local(*Y);
+  ExplicitMultiVectorView<Scalar>         M_local(*this);
+  ExplicitMultiVectorView<Scalar>         X_local(X);
+#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
+  timer.stop();
+  std::cout << "\nSerialMultiVectorBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";
+#endif
+    
+  //
+  // Perform the multiplication:
+  //
+  //     Y(local) = localBeta * Y(local) + alpha * op(M(local)) * X(local)
+  //
+  // or in BLAS lingo:
+  //
+  //     C        = beta      * C        + alpha * op(A)        * op(B)
+  //
+
+#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
+  timer.start();
+#endif
+  Teuchos::ETransp t_transp;
+  if(ST::isComplex) {
+    switch(M_trans) {
+      case NOTRANS:   t_transp = Teuchos::NO_TRANS;     break;
+      case TRANS:     t_transp = Teuchos::TRANS;        break;
+      case CONJTRANS: t_transp = Teuchos::CONJ_TRANS;   break;
+      default: TEST_FOR_EXCEPT(true);
+    }
+  }
+  else {
+    switch(real_trans(M_trans)) {
+      case NOTRANS:   t_transp = Teuchos::NO_TRANS;     break;
+      case TRANS:     t_transp = Teuchos::TRANS;        break;
+      default: TEST_FOR_EXCEPT(true);
+    }
+  }
+  blas_.GEMM(
+    t_transp                                                                 // TRANSA
+    ,Teuchos::NO_TRANS                                                       // TRANSB
+    ,Y_local.subDim()                                                        // M
+    ,Y_local.numSubCols()                                                    // N
+    ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim()  // K
+    ,alpha                                                                   // ALPHA
+    ,const_cast<Scalar*>(M_local.values())                                   // A
+    ,M_local.leadingDim()                                                    // LDA
+    ,const_cast<Scalar*>(X_local.values())                                   // B
+    ,X_local.leadingDim()                                                    // LDB
+    ,beta                                                                    // BETA
+    ,Y_local.values()                                                        // C
+    ,Y_local.leadingDim()                                                    // LDC
+    );
+#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
+  timer.stop();
+  std::cout << "\nSerialMultiVectorBase<Scalar>::apply(...): Time for GEMM = " << timer.totalElapsedTime() << " seconds\n";
+#endif
+
+#ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
+  timer.stop();
+  std::cout << "\nSerialMultiVectorBase<Scalar>::apply(...): Total time = " << timerTotal.totalElapsedTime() << " seconds\n";
+#endif
+
+}
+
+// Miscellaneous functions for subclasses to call
 
 template<class Scalar>
 void SerialMultiVectorBase<Scalar>::updateSpace()

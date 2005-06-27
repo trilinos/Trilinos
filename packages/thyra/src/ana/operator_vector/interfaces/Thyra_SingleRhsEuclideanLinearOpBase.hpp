@@ -26,37 +26,31 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_EUCLIDEAN_SCALAR_PROD_HPP
-#define THYRA_EUCLIDEAN_SCALAR_PROD_HPP
+#ifndef THYRA_SINGLE_RHS_EUCLIDEAN_LINEAR_OP_BASE_HPP
+#define THYRA_SINGLE_RHS_EUCLIDEAN_LINEAR_OP_BASE_HPP
 
-#include "Thyra_EuclideanScalarProdDecl.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
+#include "Thyra_SingleRhseuclideanApplyLinearOpBaseDecl.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_AssertOp.hpp"
 
 namespace Thyra {
 
 template<class Scalar>
-void EuclideanScalarProd<Scalar>::scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const
-{
-  dots(X,Y,scalar_prods);
-}
-
-template<class Scalar>
-void EuclideanScalarProd<Scalar>::apply(
-  const EuclideanLinearOpBase<Scalar>   &M
-  ,const ETransp                        M_trans
-  ,const MultiVectorBase<Scalar>        &X
-  ,MultiVectorBase<Scalar>              *Y
-  ,const Scalar                         alpha
-  ,const Scalar                         beta
+void SingleRhsLinearOpBase<Scalar>::euclideanApply(
+  const ETransp                     M_trans
+  ,const MultiVectorBase<Scalar>    &X
+  ,MultiVectorBase<Scalar>          *Y
+  ,const Scalar                     alpha
+  ,const Scalar                     beta
   ) const
 {
-  if(real_trans(M_trans)==NOTRANS)
-    M.euclideanApply(transToConj(M_trans),X,Y,alpha,beta);
-  else
-    M.euclideanApplyTranspose(transToConj(M_trans),X,Y,alpha,beta);
+  const VectorSpaceBase<Scalar> &space_mv_rows = *Y->domain();
+  const Index num_mv_cols    = space_mv_rows.dim();
+  for( Index j = 1; j <= num_mv_cols; ++j )
+    this->euclideanApply(M_trans,*X.col(j),Y->col(j).get(),alpha,beta);
 }
 
-} // end namespace Thyra
+}	// end namespace Thyra
 
-#endif  // THYRA_EUCLIDEAN_SCALAR_PROD_HPP
+#endif // THYRA_SINGLE_RHS_EUCLIDEAN_LINEAR_OP_BASE_HPP

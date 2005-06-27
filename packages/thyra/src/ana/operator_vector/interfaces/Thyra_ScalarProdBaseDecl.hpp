@@ -35,37 +35,37 @@ namespace Thyra {
 
 /** \brief Abstract interface for scalar products.
  * 
- * This interface is not considered a user-level interface.  Instead,
- * this interface is designed to be sub-classed off of and used with
- * <tt>VectorSpaceStdBase</tt> subclasses.  Applications should create
- * subclasses of this interface to define application-specific scalar
- * products (i.e. such as PDE code often do).
+ * This interface is not considered a user-level interface.  Instead, this
+ * interface is designed to be sub-classed off of and used with
+ * <tt>ScalarProdVectorSpaceBase</tt> objects to define their scalar products.
+ * Applications should create subclasses of this interface to define
+ * application-specific scalar products (i.e. such as PDE finite-element codes
+ * often do).
  *
- * This interface requires subclasses to override the multi-vector
- * version of scalar product function <tt>scalarProds()</tt> since
- * this will yield the most efficient implementation in a distributed
- * memory environment by requiring only a single global reduction
- * operation and a single communication.
+ * This interface requires subclasses to override a multi-vector version of
+ * the scalar product function <tt>scalarProds()</tt>.  This version yields
+ * the most efficient implementation in a distributed memory environment by
+ * requiring only a single global reduction operation and a single
+ * communication.
  *
- * Note that one of the preconditions on the vector and multi-vector
- * arguments in <tt>scalarProd()</tt> and <tt>scalarProds()</tt> is a
- * little vague in stating that the vector or multi-vector objects
- * must be "compatible" with the underlying implementation of
- * <tt>*this</tt>.  The reason that this precondition must be vague is
- * that we can not expose a method to return a <tt>VectorSpaceBase</tt>
- * object that could be checked for compatibility since
- * <tt>%ScalarProdBase</tt> is used to define a <tt>VectorSpaceBase</tt>
- * object (through the <tt>VectorSpaceStdBase</tt> node subclass).
- * Also, some definitions of <tt>%ScalarProdBase</tt>
- * (i.e. <tt>DotProd</tt>) can work for any vector space
- * implementation since they only rely on <tt>RTOp</tt> operators.  In
- * other cases, however, an application-specific scalar product may
- * a have dependency of the data-structure of vector and multi-vector
- * objects.
+ * Note that one of the preconditions on the vector and multi-vector arguments
+ * in <tt>scalarProds()</tt> is a little vague in stating that the vector or
+ * multi-vector objects must be "compatible" with the underlying
+ * implementation of <tt>*this</tt>.  The reason that this precondition must
+ * be vague is that we can not expose a method to return a
+ * <tt>VectorSpaceBase</tt> object that could be checked for compatibility
+ * since <tt>%ScalarProdBase</tt> is used to define a <tt>VectorSpaceBase</tt>
+ * object (through the <tt>VectorSpaceStdBase</tt> node subclass).  Also, some
+ * definitions of <tt>%ScalarProdBase</tt> (i.e. <tt>EuclideanScalarProd</tt>)
+ * will work for any vector space implementation since they only rely on
+ * <tt>RTOp</tt> operators.  In other cases, however, an application-specific
+ * scalar product may a have dependency of the data-structure of vector and
+ * multi-vector objects in which case one can not use this with any vector or
+ * multi-vector.
  *
- * This interface class also defines functions to modify the
- * application of a Euclidean linear operator to insert the definition
- * of the application specific scalar product.
+ * This interface class also defines functions to modify the application of a
+ * Euclidean linear operator to insert the definition of the application
+ * specific scalar product.
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
@@ -107,7 +107,7 @@ public:
 
 
   /** \brief Modify the application of a Euclidean linear operator by
-   * inserting the vector spaces scalar product.
+   * inserting the vector space's scalar product.
    *
    * ToDo: Finish documentation!
    */

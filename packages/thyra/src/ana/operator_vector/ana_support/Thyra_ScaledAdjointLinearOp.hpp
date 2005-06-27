@@ -30,7 +30,6 @@
 #define THYRA_SCALED_ADJOINT_LINEAR_OP_HPP
 
 #include "Thyra_ScaledAdjointLinearOpDecl.hpp"
-#include "Thyra_LinearOpBase.hpp"
 
 namespace Thyra {
 
@@ -196,7 +195,7 @@ template<class Scalar>
 bool ScaledAdjointLinearOp<Scalar>::opSupported(ETransp M_trans) const
 {
   assertInitialized();
-  return this->getOrigOp()->opSupported(trans_trans(this->overallTransp(),M_trans));
+  return Thyra::opSupported(*this->getOrigOp(),trans_trans(this->overallTransp(),M_trans));
 }
 
 // Overridden from LinearOpBase
@@ -211,7 +210,7 @@ void ScaledAdjointLinearOp<Scalar>::apply(
   ) const
 {
   assertInitialized();
-  this->getOrigOp()->apply(trans_trans(M_trans,this->overallTransp()),X,Y,(this->overallScalar()*alpha),beta);
+  Thyra::apply(*this->getOrigOp(),trans_trans(M_trans,this->overallTransp()),X,Y,(this->overallScalar()*alpha),beta);
 }
 
 } // namespace Thyra

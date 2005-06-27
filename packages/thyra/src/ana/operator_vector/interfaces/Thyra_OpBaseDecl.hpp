@@ -43,7 +43,7 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-template<class Scalar>
+template<class RangeScalar, class DomainScalar = RangeScalar>
 class OpBase : virtual public Teuchos::Describable {
 public:
 
@@ -71,7 +71,7 @@ public:
    * object embedded in <tt>return</tt> to be valid past the lifetime
    * of <tt>*this</tt>.
    */
-  virtual Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const = 0;
+  virtual Teuchos::RefCountPtr< const VectorSpaceBase<RangeScalar> > range() const = 0;
 
   /** \brief Return a smart pointer for the domain space for <tt>this</tt> operator.
    *
@@ -89,26 +89,7 @@ public:
    * object embedded in <tt>return</tt> to be valid past the lifetime
    * of <tt>*this</tt>.
    */
-  virtual Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const = 0;
-
-  //@}
-
-  /** @name Virtual functions with default implementations */
-  //@{
-
-  /** \brief Return if the <tt>M_trans</tt> operation is supported or not.
-   *
-   * Preconditions:<ul>
-   * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * </ul>
-   *
-   * The default implementation returns <tt>true</tt>.
-   *
-   * Note that an operator must support at least one of the values
-   * of <tt>ETrans</tt> (i.e. the transposed or the non-transposed
-   * operations must be supported, both can not be unsupported)
-   */
-  virtual bool opSupported(ETransp M_trans) const;
+  virtual Teuchos::RefCountPtr< const VectorSpaceBase<DomainScalar> > domain() const = 0;
 
   //@}
 

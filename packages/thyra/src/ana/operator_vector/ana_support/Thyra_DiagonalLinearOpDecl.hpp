@@ -64,6 +64,9 @@ template<class Scalar>
 class DiagonalLinearOp : virtual public SingleRhsLinearOpBase<Scalar> {
 public:
 
+  /** \brief . */
+  SingleRhsLinearOpBase<Scalar>::apply;
+
   /** @name Constructors/initializers/accessors */
   //@{
 

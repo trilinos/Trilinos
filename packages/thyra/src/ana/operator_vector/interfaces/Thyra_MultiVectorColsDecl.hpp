@@ -49,8 +49,14 @@ namespace Thyra {
  * object.
  */
 template<class Scalar>
-class MultiVectorCols : virtual public MultiVectorBase<Scalar>, virtual public SingleRhsLinearOpBase<Scalar> {
+class MultiVectorCols
+  : virtual public MultiVectorBase<Scalar>
+  , virtual protected SingleRhsLinearOpBase<Scalar>
+{
 public:
+
+  /** \brief . */
+  using SingleRhsLinearOpBase<Scalar>::apply;
 
   /** \brief . */
   using MultiVectorBase<Scalar>::col; // Inject *all* functions!
@@ -165,6 +171,13 @@ protected:
 
   /** @name Overridden from SingleRhsLinearOpBase */
   //@{
+
+  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
+   * <tt>NOTRANS</tt> and <tt>CONJTRANS</tt> and for real types returns true
+   * for all values of <tt>M_trans</tt>.
+   */
+  bool opSupported(ETransp M_trans) const;
+
   /** \brief This function is implemented in terms of the multi-vector
    * <tt>applyOp()</tt> function.
    *
@@ -188,6 +201,7 @@ protected:
     ,const Scalar                alpha
     ,const Scalar                beta
     ) const;
+
   //@}
 
 private:

@@ -105,7 +105,7 @@ bool runCgSolveExample(
     if(verbose) std::cout << "\nSetting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...\n";
     RefCountPtr<const Thyra::LinearOpBase<Scalar> > AtA = multiply(adjoint(A),A);      // A^H*A
     RefCountPtr<Thyra::VectorBase<Scalar> >         nb = createMember(AtA->range());   // A^H*b
-    A->apply(Thyra::CONJTRANS,*b,&*nb);
+    Thyra::apply(*A,Thyra::CONJTRANS,*b,&*nb);
     A = AtA;
     b = nb;
   }
@@ -123,8 +123,8 @@ bool runCgSolveExample(
   // (C) Check that the linear system was solved to the specified tolerance
   //
   RefCountPtr<Thyra::VectorBase<Scalar> > r = createMember(A->range());                     
-  Thyra::assign(&*r,*b);                                        // r = b
-  A->apply(Thyra::NOTRANS,*x,&*r,Scalar(-ST::one()),ST::one()); // r = -A*x + r
+  Thyra::assign(&*r,*b);                                               // r = b
+  Thyra::apply(*A,Thyra::NOTRANS,*x,&*r,Scalar(-ST::one()),ST::one()); // r = -A*x + r
   const ScalarMag r_nrm = Thyra::norm(*r), b_nrm = Thyra::norm(*b);
   const ScalarMag rel_err = r_nrm/b_nrm, relaxTol = ScalarMag(10.0)*tolerance;
   result = rel_err <= relaxTol;

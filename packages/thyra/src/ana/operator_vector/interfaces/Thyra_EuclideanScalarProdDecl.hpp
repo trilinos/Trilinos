@@ -50,15 +50,6 @@ public:
 
   /// Simply calls <tt>dots(X,Y,scalar_prods)</tt>
   void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
-  /// Simply calls <tt>M.euclideanApply(M_trans,x,y,alpha,beta)</tt>
-  void apply(
-    const EuclideanLinearOpBase<Scalar>   &M
-    ,const ETransp                        M_trans
-    ,const VectorBase<Scalar>             &x
-    ,VectorBase<Scalar>                   *y
-    ,const Scalar                         alpha
-    ,const Scalar                         beta
-    ) const;
   /// Simply calls <tt>M.euclideanApply(M_trans,X,Y,alpha,beta)</tt>
   void apply(
     const EuclideanLinearOpBase<Scalar>   &M

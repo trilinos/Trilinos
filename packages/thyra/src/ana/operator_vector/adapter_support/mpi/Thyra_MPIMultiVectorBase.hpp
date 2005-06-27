@@ -66,6 +66,211 @@ MPIMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
   return mpiSpace();
 }
 
+// Overridden from LinearOpBase
+
+template<class Scalar>
+void MPIMultiVectorBase<Scalar>::apply(
+  const ETransp                     M_trans
+  ,const MultiVectorBase<Scalar>    &X
+  ,MultiVectorBase<Scalar>          *Y
+  ,const Scalar                     alpha
+  ,const Scalar                     beta
+  ) const
+{
+  this->single_scalar_euclidean_apply_impl(M_trans,X,Y,alpha,beta);
+}
+
+// Overridden from MultiVectorBase
+
+template<class Scalar>
+void MPIMultiVectorBase<Scalar>::applyOp(
+  const RTOpPack::RTOpT<Scalar>   &pri_op
+  ,const int                      num_multi_vecs
+  ,const MultiVectorBase<Scalar>* multi_vecs[]
+  ,const int                      num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
+  ,RTOpPack::ReductTarget*        reduct_objs[]
+  ,const Index                    pri_first_ele_in
+  ,const Index                    pri_sub_dim_in
+  ,const Index                    pri_global_offset_in
+  ,const Index                    sec_first_ele_in
+  ,const Index                    sec_sub_dim_in
+  ) const
+{
+  using Teuchos::dyn_cast;
+  using Teuchos::Workspace;
+  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
+  const Index numCols = this->domain()->dim();
+  const MPIVectorSpaceBase<Scalar> &mpiSpc = *mpiSpace();
+#ifdef _DEBUG
+  TEST_FOR_EXCEPTION(
+    in_applyOp_, std::invalid_argument
+    ,"MPIMultiVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
+    "clear sign that one of the methods getSubMultiVector(...), freeSubMultiVector(...) or commitSubMultiVector(...) "
+    "was not implemented properly!"
+    );
+  apply_op_validate_input(
+    "MPIMultiVectorBase<>::applyOp(...)", *domain(), *range()
+    ,pri_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
+    ,reduct_objs,pri_first_ele_in,pri_sub_dim_in,pri_global_offset_in
+    ,sec_first_ele_in,sec_sub_dim_in
+    );
+#endif
+  // Flag that we are in applyOp()
+  in_applyOp_ = true;
+  // First see if this is a locally replicated vector in which case
+  // we treat this as a local operation only.
+  const bool locallyReplicated = (localSubDim_ == globalDim_);
+  // Get the overlap in the current process with the input logical sub-vector
+  // from (first_ele_in,sub_dim_in,global_offset_in)
+  RTOp_index_type  overlap_first_local_ele  = 0;
+  RTOp_index_type  overalap_local_sub_dim   = 0;
+  RTOp_index_type  overlap_global_offset    = 0;
+  RTOp_parallel_calc_overlap(
+    globalDim_, localSubDim_, localOffset_, pri_first_ele_in, pri_sub_dim_in, pri_global_offset_in
+    ,&overlap_first_local_ele, &overalap_local_sub_dim, &overlap_global_offset
+    );
+  const Range1D
+    local_rng = (
+      overlap_first_local_ele!=0
+      ? Range1D( localOffset_ + overlap_first_local_ele, localOffset_ + overlap_first_local_ele + overalap_local_sub_dim - 1 )
+      : Range1D::Invalid
+      ),
+    col_rng(
+      sec_first_ele_in
+      ,sec_sub_dim_in ? sec_first_ele_in + sec_sub_dim_in - 1 : numCols
+      );
+  // Create sub-vector views of all of the *participating* local data
+  Workspace<RTOpPack::SubMultiVectorT<Scalar> > sub_multi_vecs(wss,num_multi_vecs);
+  Workspace<RTOpPack::MutableSubMultiVectorT<Scalar> > targ_sub_multi_vecs(wss,num_targ_multi_vecs);
+  if( overlap_first_local_ele != 0 ) {
+    for(int k = 0; k < num_multi_vecs; ++k ) {
+      multi_vecs[k]->getSubMultiVector( local_rng, col_rng, &sub_multi_vecs[k] );
+      sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
+    }
+    for(int k = 0; k < num_targ_multi_vecs; ++k ) {
+      targ_multi_vecs[k]->getSubMultiVector( local_rng, col_rng, &targ_sub_multi_vecs[k] );
+      targ_sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
+    }
+  }
+  // Apply the RTOp operator object (all processors must participate)
+  RTOpPack::MPI_apply_op(
+    locallyReplicated ? MPI_COMM_NULL : mpiSpc.mpiComm()                               // comm
+    ,pri_op                                                                            // op
+    ,-1                                                                                // root_rank (perform an all-reduce)
+    ,col_rng.size()                                                                    // num_cols
+    ,num_multi_vecs                                                                    // num_multi_vecs
+    ,num_multi_vecs && overlap_first_local_ele ? &sub_multi_vecs[0] : NULL             // sub_multi_vecs
+    ,num_targ_multi_vecs                                                               // num_targ_multi_vecs
+    ,num_targ_multi_vecs && overlap_first_local_ele ? &targ_sub_multi_vecs[0] : NULL   // targ_sub_multi_vecs
+    ,reduct_objs                                                                       // reduct_objs
+    );
+  // Free and commit the local data
+  if( overlap_first_local_ele != 0 ) {
+    for(int k = 0; k < num_multi_vecs; ++k ) {
+      sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      multi_vecs[k]->freeSubMultiVector( &sub_multi_vecs[k] );
+    }
+    for(int k = 0; k < num_targ_multi_vecs; ++k ) {
+      targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      targ_multi_vecs[k]->commitSubMultiVector( &targ_sub_multi_vecs[k] );
+    }
+  }
+  // Flag that we are leaving applyOp()
+  in_applyOp_ = false;
+}
+
+template<class Scalar>
+void MPIMultiVectorBase<Scalar>::getSubMultiVector(
+  const Range1D                       &rowRng_in
+  ,const Range1D                      &colRng_in
+  ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+  ) const
+{
+  const Range1D rowRng = validateRowRange(rowRng_in);
+  const Range1D colRng = validateColRange(colRng_in);
+  if( rowRng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rowRng.ubound() ) {
+    // rng consists of off-processor elements so use the default implementation!
+    MultiVectorBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
+    return;
+  }
+  // rng consists of all local data so get it!
+  const Scalar *localValues = NULL;
+  int leadingDim = 0;
+  this->getLocalData(&localValues,&leadingDim);
+  sub_mv->initialize(
+    rowRng.lbound()-1                             // globalOffset
+    ,rowRng.size()                                // subDim
+    ,colRng.lbound()-1                            // colOffset
+    ,colRng.size()                                // numSubCols
+    ,localValues
+    +(rowRng.lbound()-localOffset_-1)
+    +(colRng.lbound()-1)*leadingDim               // values
+    ,leadingDim                                   // leadingDim
+    );
+}
+
+template<class Scalar>
+void MPIMultiVectorBase<Scalar>::freeSubMultiVector(
+  RTOpPack::SubMultiVectorT<Scalar>* sub_mv
+  ) const
+{
+  if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
+    // Let the default implementation handle it!
+    MultiVectorBase<Scalar>::freeSubMultiVector(sub_mv);
+    return;
+  }
+  freeLocalData( sub_mv->values() );
+  sub_mv->set_uninitialized();
+}
+
+template<class Scalar>
+void MPIMultiVectorBase<Scalar>::getSubMultiVector(
+  const Range1D                                &rowRng_in
+  ,const Range1D                               &colRng_in
+  ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+  )
+{
+  const Range1D rowRng = validateRowRange(rowRng_in);
+  const Range1D colRng = validateColRange(colRng_in);
+  if( rowRng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rowRng.ubound() ) {
+    // rng consists of off-processor elements so use the default implementation!
+    MultiVectorBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
+    return;
+  }
+  // rng consists of all local data so get it!
+  Scalar *localValues = NULL;
+  int leadingDim = 0;
+  this->getLocalData(&localValues,&leadingDim);
+  sub_mv->initialize(
+    rowRng.lbound()-1                             // globalOffset
+    ,rowRng.size()                                // subDim
+    ,colRng.lbound()-1                            // colOffset
+    ,colRng.size()                                // numSubCols
+    ,localValues
+    +(rowRng.lbound()-localOffset_-1)
+    +(colRng.lbound()-1)*leadingDim               // values
+    ,leadingDim                                   // leadingDim
+    );
+}
+
+template<class Scalar>
+void MPIMultiVectorBase<Scalar>::commitSubMultiVector(
+  RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv
+  )
+{
+  if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
+    // Let the default implementation handle it!
+    MultiVectorBase<Scalar>::commitSubMultiVector(sub_mv);
+    return;
+  }
+  commitLocalData( sub_mv->values() );
+  sub_mv->set_uninitialized();
+}
+
+// protected
+
+
 template<class Scalar>
 void MPIMultiVectorBase<Scalar>::euclideanApply(
   const ETransp                     M_trans
@@ -336,209 +541,14 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
 
 }
 
-// Overridden from LinearOpBase
+// Overridden from SingleScalarEuclideanLinearOpBase
 
 template<class Scalar>
-void MPIMultiVectorBase<Scalar>::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
-  ) const
+bool MPIMultiVectorBase<Scalar>::opSupported(ETransp M_trans) const
 {
-  this->euclidean_apply_impl(M_trans,X,Y,alpha,beta);
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return ( ST::isComplex ? ( M_trans!=CONJ ) : true );
 }
-
-// Overridden from MultiVectorBase
-
-template<class Scalar>
-void MPIMultiVectorBase<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>   &pri_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    pri_first_ele_in
-  ,const Index                    pri_sub_dim_in
-  ,const Index                    pri_global_offset_in
-  ,const Index                    sec_first_ele_in
-  ,const Index                    sec_sub_dim_in
-  ) const
-{
-  using Teuchos::dyn_cast;
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-  const Index numCols = this->domain()->dim();
-  const MPIVectorSpaceBase<Scalar> &mpiSpc = *mpiSpace();
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(
-    in_applyOp_, std::invalid_argument
-    ,"MPIMultiVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
-    "clear sign that one of the methods getSubMultiVector(...), freeSubMultiVector(...) or commitSubMultiVector(...) "
-    "was not implemented properly!"
-    );
-  apply_op_validate_input(
-    "MPIMultiVectorBase<>::applyOp(...)", *domain(), *range()
-    ,pri_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-    ,reduct_objs,pri_first_ele_in,pri_sub_dim_in,pri_global_offset_in
-    ,sec_first_ele_in,sec_sub_dim_in
-    );
-#endif
-  // Flag that we are in applyOp()
-  in_applyOp_ = true;
-  // First see if this is a locally replicated vector in which case
-  // we treat this as a local operation only.
-  const bool locallyReplicated = (localSubDim_ == globalDim_);
-  // Get the overlap in the current process with the input logical sub-vector
-  // from (first_ele_in,sub_dim_in,global_offset_in)
-  RTOp_index_type  overlap_first_local_ele  = 0;
-  RTOp_index_type  overalap_local_sub_dim   = 0;
-  RTOp_index_type  overlap_global_offset    = 0;
-  RTOp_parallel_calc_overlap(
-    globalDim_, localSubDim_, localOffset_, pri_first_ele_in, pri_sub_dim_in, pri_global_offset_in
-    ,&overlap_first_local_ele, &overalap_local_sub_dim, &overlap_global_offset
-    );
-  const Range1D
-    local_rng = (
-      overlap_first_local_ele!=0
-      ? Range1D( localOffset_ + overlap_first_local_ele, localOffset_ + overlap_first_local_ele + overalap_local_sub_dim - 1 )
-      : Range1D::Invalid
-      ),
-    col_rng(
-      sec_first_ele_in
-      ,sec_sub_dim_in ? sec_first_ele_in + sec_sub_dim_in - 1 : numCols
-      );
-  // Create sub-vector views of all of the *participating* local data
-  Workspace<RTOpPack::SubMultiVectorT<Scalar> > sub_multi_vecs(wss,num_multi_vecs);
-  Workspace<RTOpPack::MutableSubMultiVectorT<Scalar> > targ_sub_multi_vecs(wss,num_targ_multi_vecs);
-  if( overlap_first_local_ele != 0 ) {
-    for(int k = 0; k < num_multi_vecs; ++k ) {
-      multi_vecs[k]->getSubMultiVector( local_rng, col_rng, &sub_multi_vecs[k] );
-      sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
-    }
-    for(int k = 0; k < num_targ_multi_vecs; ++k ) {
-      targ_multi_vecs[k]->getSubMultiVector( local_rng, col_rng, &targ_sub_multi_vecs[k] );
-      targ_sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
-    }
-  }
-  // Apply the RTOp operator object (all processors must participate)
-  RTOpPack::MPI_apply_op(
-    locallyReplicated ? MPI_COMM_NULL : mpiSpc.mpiComm()                               // comm
-    ,pri_op                                                                            // op
-    ,-1                                                                                // root_rank (perform an all-reduce)
-    ,col_rng.size()                                                                    // num_cols
-    ,num_multi_vecs                                                                    // num_multi_vecs
-    ,num_multi_vecs && overlap_first_local_ele ? &sub_multi_vecs[0] : NULL             // sub_multi_vecs
-    ,num_targ_multi_vecs                                                               // num_targ_multi_vecs
-    ,num_targ_multi_vecs && overlap_first_local_ele ? &targ_sub_multi_vecs[0] : NULL   // targ_sub_multi_vecs
-    ,reduct_objs                                                                       // reduct_objs
-    );
-  // Free and commit the local data
-  if( overlap_first_local_ele != 0 ) {
-    for(int k = 0; k < num_multi_vecs; ++k ) {
-      sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
-      multi_vecs[k]->freeSubMultiVector( &sub_multi_vecs[k] );
-    }
-    for(int k = 0; k < num_targ_multi_vecs; ++k ) {
-      targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
-      targ_multi_vecs[k]->commitSubMultiVector( &targ_sub_multi_vecs[k] );
-    }
-  }
-  // Flag that we are leaving applyOp()
-  in_applyOp_ = false;
-}
-
-template<class Scalar>
-void MPIMultiVectorBase<Scalar>::getSubMultiVector(
-  const Range1D                       &rowRng_in
-  ,const Range1D                      &colRng_in
-  ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
-  ) const
-{
-  const Range1D rowRng = validateRowRange(rowRng_in);
-  const Range1D colRng = validateColRange(colRng_in);
-  if( rowRng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rowRng.ubound() ) {
-    // rng consists of off-processor elements so use the default implementation!
-    MultiVectorBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
-    return;
-  }
-  // rng consists of all local data so get it!
-  const Scalar *localValues = NULL;
-  int leadingDim = 0;
-  this->getLocalData(&localValues,&leadingDim);
-  sub_mv->initialize(
-    rowRng.lbound()-1                             // globalOffset
-    ,rowRng.size()                                // subDim
-    ,colRng.lbound()-1                            // colOffset
-    ,colRng.size()                                // numSubCols
-    ,localValues
-    +(rowRng.lbound()-localOffset_-1)
-    +(colRng.lbound()-1)*leadingDim               // values
-    ,leadingDim                                   // leadingDim
-    );
-}
-
-template<class Scalar>
-void MPIMultiVectorBase<Scalar>::freeSubMultiVector(
-  RTOpPack::SubMultiVectorT<Scalar>* sub_mv
-  ) const
-{
-  if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
-    // Let the default implementation handle it!
-    MultiVectorBase<Scalar>::freeSubMultiVector(sub_mv);
-    return;
-  }
-  freeLocalData( sub_mv->values() );
-  sub_mv->set_uninitialized();
-}
-
-template<class Scalar>
-void MPIMultiVectorBase<Scalar>::getSubMultiVector(
-  const Range1D                                &rowRng_in
-  ,const Range1D                               &colRng_in
-  ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
-  )
-{
-  const Range1D rowRng = validateRowRange(rowRng_in);
-  const Range1D colRng = validateColRange(colRng_in);
-  if( rowRng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rowRng.ubound() ) {
-    // rng consists of off-processor elements so use the default implementation!
-    MultiVectorBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
-    return;
-  }
-  // rng consists of all local data so get it!
-  Scalar *localValues = NULL;
-  int leadingDim = 0;
-  this->getLocalData(&localValues,&leadingDim);
-  sub_mv->initialize(
-    rowRng.lbound()-1                             // globalOffset
-    ,rowRng.size()                                // subDim
-    ,colRng.lbound()-1                            // colOffset
-    ,colRng.size()                                // numSubCols
-    ,localValues
-    +(rowRng.lbound()-localOffset_-1)
-    +(colRng.lbound()-1)*leadingDim               // values
-    ,leadingDim                                   // leadingDim
-    );
-}
-
-template<class Scalar>
-void MPIMultiVectorBase<Scalar>::commitSubMultiVector(
-  RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv
-  )
-{
-  if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
-    // Let the default implementation handle it!
-    MultiVectorBase<Scalar>::commitSubMultiVector(sub_mv);
-    return;
-  }
-  commitLocalData( sub_mv->values() );
-  sub_mv->set_uninitialized();
-}
-
-// protected
 
 template<class Scalar>
 void MPIMultiVectorBase<Scalar>::updateMpiSpace()

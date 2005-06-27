@@ -32,7 +32,7 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Thyra_OpBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
 #include "Teuchos_TestForException.hpp"
 
 namespace Thyra {
@@ -94,9 +94,9 @@ enum EM_VS { VS_RANGE, VS_DOMAIN };
  */
 template<class Scalar>
 const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
-  const Thyra::OpBase<Scalar>&     M
-  ,Thyra::ETransp                  M_trans
-  ,EM_VS                           M_VS
+  const Thyra::LinearOpBase<Scalar>&     M
+  ,Thyra::ETransp                        M_trans
+  ,EM_VS                                 M_VS
   )
 {
   if(real_trans(M_trans) == NOTRANS && M_VS == VS_RANGE)

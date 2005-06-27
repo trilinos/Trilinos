@@ -126,6 +126,10 @@ public:
 
 protected:
 
+  // Overridden from SingleScalarEuclideanLinearOpBase
+
+  bool opSupported(Thyra::ETransp M_trans) const { return true; }  // This class supports everything!
+
   // Overridden from SerialLinearOpBase
 
   void euclideanApply(

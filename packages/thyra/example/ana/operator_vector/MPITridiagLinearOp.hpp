@@ -204,7 +204,8 @@ public:
 
 protected:
 
-  // Overridden from OpBase
+
+  // Overridden from SingleScalarEuclideanLinearOpBase
 
   bool opSupported( Thyra::ETransp M_trans ) const
     {

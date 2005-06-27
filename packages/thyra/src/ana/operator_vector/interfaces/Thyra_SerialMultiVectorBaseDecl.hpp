@@ -30,7 +30,7 @@
 #define THYRA_SERIAL_MULTI_VECTOR_BASE_DECL_HPP
 
 #include "Thyra_MultiVectorBaseDecl.hpp"
-#include "Thyra_EuclideanLinearOpBaseDecl.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 #include "Teuchos_BLAS.hpp"
 
 namespace Thyra {
@@ -65,12 +65,12 @@ namespace Thyra {
 template<class Scalar>
 class SerialMultiVectorBase
   : virtual public MultiVectorBase<Scalar>
-  , virtual public EuclideanLinearOpBase<Scalar>
+  , virtual protected SingleScalarEuclideanLinearOpBase<Scalar>
 {
 public:
 
   /** \brief . */
-  using EuclideanLinearOpBase<Scalar>::apply;
+  using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
   /** \brief . */
   using MultiVectorBase<Scalar>::applyOp;
 
@@ -125,39 +125,12 @@ public:
 
   //@}
 
-  /** @name Overridden from EuclideanLinearOpBase */
-  //@{
-
-  /** \brief Uses GEMM(...) to implement.
-   *
-   * ToDo: Finish documentation!
-   */
-  void euclideanApply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
-    ) const;
-
-  //@}
-
-  /** @name Overridden from OpBase */
-  //@{
-
-  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
-   * <tt>NOTRANS</tt>, <tt>TRANS</tt>, and <tt>CONJTRANS</tt> and for real
-   * types returns <tt>true</tt> for all values of <tt>M_trans</tt>.
-   */
-  bool opSupported(ETransp M_trans) const;
-
-  //@}
-
   /** @name Overridden from LinearOpBase */
   //@{
 
   /** \brief Calls <tt>EuclideanLinearOpBase::apply()</tt> to disambiguate <tt>apply()</tt>
    */
+  /*
   void apply(
     const ETransp                     M_trans
     ,const MultiVectorBase<Scalar>    &X
@@ -165,6 +138,7 @@ public:
     ,const Scalar                     alpha
     ,const Scalar                     beta
     ) const;
+  */
 
   //@}
 
@@ -204,6 +178,32 @@ public:
 
 protected:
 
+  /** @name Overridden from SingleScalarEuclideanLinearOpBase */
+  //@{
+
+  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
+   * <tt>NOTRANS</tt>, <tt>TRANS</tt>, and <tt>CONJTRANS</tt> and for real
+   * types returns <tt>true</tt> for all values of <tt>M_trans</tt>.
+   */
+  bool opSupported(ETransp M_trans) const;
+
+  /** \brief Uses GEMM(...) to implement.
+   *
+   * ToDo: Finish documentation!
+   */
+  void euclideanApply(
+    const ETransp                     M_trans
+    ,const MultiVectorBase<Scalar>    &X
+    ,MultiVectorBase<Scalar>          *Y
+    ,const Scalar                     alpha
+    ,const Scalar                     beta
+    ) const;
+
+  //@}
+
+  /** @name Miscellaneous functions for subclasses to call */
+  //@{
+
   /** \brief Subclasses should call whenever the structure of any
    * <tt>VectorSpaceBase</tt> changes.
    *
@@ -224,6 +224,8 @@ protected:
    * This function throws an exception if the input range is invalid
    */
   Range1D validateColRange( const Range1D& rowCol ) const;
+
+  //@}
   
 private:
   

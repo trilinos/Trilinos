@@ -29,7 +29,7 @@
 #ifndef THYRA_MULTIPLICATIVE_LINEAR_OP_DECL_HPP
 #define THYRA_MULTIPLICATIVE_LINEAR_OP_DECL_HPP
 
-#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_arrayArg.hpp"
 
 namespace Thyra {
@@ -98,8 +98,11 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class MultiplicativeLinearOp : virtual public LinearOpBase<Scalar> {
+class MultiplicativeLinearOp : virtual public SingleScalarLinearOpBase<Scalar> {
 public:
+
+  /** \brief . */
+  using SingleScalarLinearOpBase<Scalar>::apply;
 
   /** @name Constructors/initializers/accessors */
   //@{

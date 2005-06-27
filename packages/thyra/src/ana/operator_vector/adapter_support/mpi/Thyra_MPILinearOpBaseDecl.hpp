@@ -29,7 +29,7 @@
 #ifndef THYRA_MPI_LINEAR_OP_BASE_DECL_HPP
 #define THYRA_MPI_LINEAR_OP_BASE_DECL_HPP
 
-#include "Thyra_EuclideanLinearOpBaseDecl.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 
 namespace Thyra {
@@ -167,8 +167,11 @@ protected:
  * \ingroup Thyra_Op_Vec_adapters_MPI_support_grp
  */
 template<class Scalar>
-class MPILinearOpBase : virtual public EuclideanLinearOpBase<Scalar> {
+class MPILinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<Scalar> {
 public:
+
+  /** \brief . */
+  using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
 
   /** @name Overridden from EuclideanLinearOpBase */
   //@{

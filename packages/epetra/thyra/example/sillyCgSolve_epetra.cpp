@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 		//
 		RefCountPtr<Thyra::VectorBase<double> > r = createMember(A->range());                     
 		Thyra::assign(&*r,*b);                                        // r = b
-		A->apply(Thyra::NOTRANS,*x,&*r,-1.0,+1.0);                    // r = -A*x + r
+		Thyra::apply(*A,Thyra::NOTRANS,*x,&*r,-1.0,+1.0);             // r = -A*x + r
 		const double r_nrm = Thyra::norm(*r), b_nrm =Thyra:: norm(*b);
 		const double rel_err = r_nrm/b_nrm, relaxTol = 2.0*tolerance;
 		result = rel_err <= relaxTol;

@@ -29,7 +29,9 @@
 #ifndef THYRA_LINEAR_OP_DECL_HPP
 #define THYRA_LINEAR_OP_DECL_HPP
 
-#include "Thyra_OpBaseDecl.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Teuchos_PromotionTraits.hpp"
 
 namespace Thyra {
 
@@ -50,7 +52,9 @@ namespace Thyra {
  * A linear operator has vector spaces associated with it for the
  * multi-vectors <tt>X</tt> and <tt>Y</tt> that lie in the domain and the
  * range spaces of the non-transposed linear operator <tt>y = M*x</tt> and
- * these spaces are returned by <tt>domain()</tt> and <tt>range()</tt>.
+ * these spaces are returned by <tt>domain()</tt> and <tt>range()</tt>.  The
+ * scalar types for the domain and range spaces, <tt>DomainScalar</tt> and
+ * <tt>RangeScalar</tt> can be different.
  *
  * Note that the vector spaces returned from <tt>domain()</tt> and
  * <tt>range()</tt> may have specialized implementations of the scalar product
@@ -112,24 +116,62 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-template<class Scalar>
-class LinearOpBase : virtual public OpBase<Scalar> {
+template<class RangeScalar, class DomainScalar>
+class LinearOpBase : virtual public Teuchos::Describable {
 public:
+
+  /** @name Public types */
+  //@{
+
+  /** \brief . */
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote Scalar;
+
+  //@}
 
   /** @name Pure virtual functions (must be overridden by subclass) */
   //@{
 
-  /** \brief Apply the linear operator (or its transpose) to a multi-vector :
-   * <tt>Y = alpha*op(M)*X + beta*Y</tt>.
+  /** \brief Return a smart pointer for the range space for <tt>this</tt> operator.
    *
-   * @param  M_trans
-   *                [in] Determines whether the transposed or non-transposed
-   *                operator is applied as:
-   *                <ul>
-   *                <li> <tt>op(M) = M</tt>, for <tt>M_trans==NOTRANS</tt>
-   *                <li> <tt>op(M) = M'</tt>, for <tt>M_trans==TRANS</tt>
-   *                </ul>
-   *                where <tt>M == *this</tt>
+   * Note that a return value of <tt>return.get()==NULL</tt> is a flag
+   * that <tt>*this</tt> is not fully initialized.
+   *
+   * If <tt>return.get()!=NULL</tt>, it is required that the object
+   * referenced by <tt>*return.get()</tt> must have lifetime that
+   * extends past the lifetime of the returned smart pointer object.
+   * However, the object referenced by <tt>*return.get()</tt> may
+   * change if <tt>*this</tt> modified so this reference should not
+   * be maintained for too long.
+   *
+   * Once more, the client should not expect the <tt>%VectorSpaceBase</tt>
+   * object embedded in <tt>return</tt> to be valid past the lifetime
+   * of <tt>*this</tt>.
+   */
+  virtual Teuchos::RefCountPtr< const VectorSpaceBase<RangeScalar> > range() const = 0;
+
+  /** \brief Return a smart pointer for the domain space for <tt>this</tt> operator.
+   *
+   * Note that a return value of <tt>return.get()==NULL</tt> is a flag
+   * that <tt>*this</tt> is not fully initialized.
+   *
+   * If <tt>return.get()!=NULL</tt>, it is required that the object
+   * referenced by <tt>*return.get()</tt> must have lifetime that
+   * extends past the lifetime of the returned smart pointer object.
+   * However, the object referenced by <tt>*return.get()</tt> may
+   * change if <tt>*this</tt> modified so this reference should not
+   * be maintained for too long.
+   *
+   * Once more, the client should not expect the <tt>%VectorSpaceBase</tt>
+   * object embedded in <tt>return</tt> to be valid past the lifetime
+   * of <tt>*this</tt>.
+   */
+  virtual Teuchos::RefCountPtr< const VectorSpaceBase<DomainScalar> > domain() const = 0;
+
+  /** \brief Apply the non-transposed linear operator to a multi-vector :
+   * <tt>Y = alpha*M*X + beta*Y</tt>.
+   *
+   * @param  conj
+   *                [in] Determines whether the elements are non-conjugate or conjugate.
    * @param  X      [in] The right hand side multi-vector 
    * @param  Y      [in/out] The target multi-vector being transformed
    * @param  alpha  [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
@@ -138,13 +180,13 @@ public:
    *                The default value of <tt>beta</tt> is <tt>0.0</tt>.
    * 
    * Preconditions:<ul>
+   * <li> <tt>this->applySupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>this->opSupported(M_trans)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
-   * <li> <tt>Y->range()->isCompatible(M_trans==NOTRANS ? *this->range() : *this->domain()) == true</tt>
+   * <li> <tt>Y->range()->isCompatible(*this->range()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y->domain()->isCompatible(*X.domain()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li> <tt>X.range()->isCompatible(M_trans==NOTRANS ? *this->domain() : *this->range()) == true</tt>
+   * <li> <tt>X.range()->isCompatible(this->domain()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y</tt> can not alias <tt>X</tt>.  It is up to the client to ensure that <tt>Y</tt>
    *      and <tt>X</tt> are distinct since in general this can not be verified by the implementation until,
@@ -157,17 +199,72 @@ public:
    * </ul>
    */
   virtual void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha = Teuchos::ScalarTraits<Scalar>::one()
-    ,const Scalar                     beta  = Teuchos::ScalarTraits<Scalar>::zero()
+    const EConj                             conj
+    ,const MultiVectorBase<DomainScalar>    &X
+    ,MultiVectorBase<RangeScalar>           *Y
+    ,const Scalar                           alpha = Teuchos::ScalarTraits<Scalar>::one()
+    ,const Scalar                           beta  = Teuchos::ScalarTraits<Scalar>::zero()
     ) const = 0;
 
   //@}
 
   /** @name Virtual functions with default implementations */
   //@{
+
+  /** \brief Determines if <tt>apply()</tt> supports this <tt>conj</tt> argument.
+   *
+   * The default implementation returns <tt>true</tt>.
+   */
+  virtual bool applySupports( const EConj conj ) const;
+
+  /** \brief Determines if <tt>apply()</tt> supports this <tt>conj</tt> argument.
+   *
+   * The default implementation returns <tt>false</tt>.
+   */
+  virtual bool applyTransposeSupports( const EConj conj ) const;
+
+  /** \brief Apply the transposed linear operator to a multi-vector : <tt>Y =
+   * alpha*trans(M)*X + beta*Y</tt>.
+   *
+   * @param  conj
+   *                [in] Determines whether the elements are non-conjugate or conjugate.
+   * @param  X      [in] The right hand side multi-vector 
+   * @param  Y      [in/out] The target multi-vector being transformed
+   * @param  alpha  [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
+     *                The default value of <tt>alpha</tt> is </tt>1.0</tt>
+   * @param  beta   [in] The multiplier for the target multi-vector <tt>y</tt>.
+   *                The default value of <tt>beta</tt> is <tt>0.0</tt>.
+   * 
+   * Preconditions:<ul>
+   * <li> <tt>this->applyTransposeSupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
+   * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
+   * <li> <tt>Y->range()->isCompatible(*this->domain()) == true</tt>
+   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   * <li> <tt>Y->domain()->isCompatible(*X.domain()) == true</tt>
+   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   * <li> <tt>X.range()->isCompatible(this->range()) == true</tt>
+   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   * <li> <tt>Y</tt> can not alias <tt>X</tt>.  It is up to the client to ensure that <tt>Y</tt>
+   *      and <tt>X</tt> are distinct since in general this can not be verified by the implementation until,
+   *      perhaps, it is too late.  If possible, an exception will be thrown if aliasing is detected.
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * <li> Is it not obvious?  After the function returns the multi-vector <tt>Y</tt>
+   *      is transformed as indicated above.
+   * </ul>
+   *
+   * The default implementation throws an exception but gives a very good
+   * error message.  The assumption here is that most linear operators will
+   * not be able to support an tranpose apply.
+   */
+  virtual void applyTranspose(
+    const EConj                            conj
+    ,const MultiVectorBase<RangeScalar>    &X
+    ,MultiVectorBase<DomainScalar>         *Y
+    ,const Scalar                          alpha = Teuchos::ScalarTraits<Scalar>::one()
+    ,const Scalar                          beta  = Teuchos::ScalarTraits<Scalar>::zero()
+    ) const;
 
   /** \brief Clone the linear operator object (if supported).
    *
@@ -183,7 +280,7 @@ public:
    * object is not required to return a non-NULL value but almost
    * every good linear operator implementation should and will.
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> > clone() const;
 
   //@}
 
@@ -229,9 +326,24 @@ public:
 
 };	// end class LinearOpBase
 
-/** \brief Call <tt>LinearOpBase<Scalar>::apply()</tt> as a global function call.
+
+/** \brief Determines if an operation is supported for a single scalar type.
  *
- * Calls <tt>M.apply(M_trans,X,Y,alpha,beta);</tt>
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+template<class Scalar>
+inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
+{
+  if(real_trans(M_trans)==NOTRANS)
+    return M.applySupports(transToConj(M_trans));
+  return M.applyTransposeSupports(transToConj(M_trans));
+}
+
+/** \brief Call <tt>LinearOpBase<Scalar>::apply()</tt> as a global function
+ *    call (for a single scalar type).
+ *
+ * Calls <tt>M.apply(...,X,Y,alpha,beta)</tt> or
+ * <tt>M.applyTranspose(...,X,Y,alpha,beta)</tt>.
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
@@ -251,7 +363,12 @@ inline void apply(
 #endif
   )
 {
-  M.apply(M_trans,X,Y,alpha,beta);
+  if(real_trans(M_trans)==NOTRANS) {
+    M.apply(transToConj(M_trans),X,Y,alpha,beta);
+  }
+  else {
+    M.applyTranspose(transToConj(M_trans),X,Y,alpha,beta);
+  }
 }
 
 #ifdef __sun

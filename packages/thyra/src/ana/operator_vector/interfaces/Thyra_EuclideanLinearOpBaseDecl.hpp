@@ -44,77 +44,145 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
-template<class Scalar>
-class EuclideanLinearOpBase : virtual public LinearOpBase<Scalar> {
+template<class RangeScalar, class DomainScalar>
+class EuclideanLinearOpBase : virtual public LinearOpBase<RangeScalar, DomainScalar> {
 public:
-
-  /** \brief . */
-  using LinearOpBase<Scalar>::apply;
 
   /** @name Pure virtual functions to override in subclasses */
   //@{
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const = 0;
+  virtual Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<RangeScalar> > rangeScalarProdVecSpc() const = 0;
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const = 0;
+  virtual Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<DomainScalar> > domainScalarProdVecSpc() const = 0;
 
   /** \brief Apply the linear operator to a multi-vector with respect
    * to a Euclidean vector space where the scalar product is the dot
    * product.
    *
-   * The default implementation calls the single-vector version
-   * <tt>this->euclideanApply()</tt>.  A subclass should only override
-   * this version if it can do something more intelligent with
-   * multi-vectors that simply applying the operator one column at a
-   * time.
+   * Preconditions:<ul>
+   * <li><tt>this->applySupports(conj)==true</tt>
+   * </ul>
    */
   virtual void euclideanApply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const EConj                            conj
+    ,const MultiVectorBase<DomainScalar>   &X
+    ,MultiVectorBase<RangeScalar>          *Y
+    ,const Scalar                          alpha
+    ,const Scalar                          beta
     ) const = 0;
+
+  //@}
+
+  /** @name Virtual functions with default implementations. */
+  //@{
+
+  /** \brief Apply the linear operator to a multi-vector with respect
+   * to a Euclidean vector space where the scalar product is the dot
+   * product.
+   *
+   * Preconditions:<ul>
+   * <li><tt>this->applyTransposeSupports(conj)==true</tt>
+   * </ul>
+   *
+   * The default implementation throws an exception with a very good error
+   * message.
+   */
+  virtual void euclideanApplyTranspose(
+    const EConj                            conj
+    ,const MultiVectorBase<RangeScalar>    &X
+    ,MultiVectorBase<DomainScalar>         *Y
+    ,const Scalar                          alpha
+    ,const Scalar                          beta
+    ) const;
 
   //@}
 
   /** @name Overridden functions from OpBase */
   //@{
   /// Returns <tt>this->rangeScalarProdVecSpc()</tt>
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> > range() const;
   /// Returns <tt>this->domainScalarProdVecSpc()</tt>
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> > domain() const;
   //@}
 
   /** @name Overridden functions from LinearOpBase */
   //@{
-  /** \brief Apply the linear operator to a multi-vector using an
-   * application-specific definition of the scalar product.
+
+  /** \brief Apply the non-transposed linear operator to a multi-vector using
+   * an application-specific definition of the scalar product.
    *
    * ToDo: Finish Documentation!
    */
   void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const EConj                            conj
+    ,const MultiVectorBase<DomainScalar>   &X
+    ,MultiVectorBase<RangeScalar>          *Y
+    ,const Scalar                          alpha
+    ,const Scalar                          beta
     ) const;
+
+  /** \brief Apply the transposed linear operator to a multi-vector using
+   * an application-specific definition of the scalar product.
+   *
+   * ToDo: Finish Documentation!
+   */
+  void applyTranspose(
+    const EConj                            conj
+    ,const MultiVectorBase<RangeScalar>    &X
+    ,MultiVectorBase<DomainScalar>         *Y
+    ,const Scalar                          alpha
+    ,const Scalar                          beta
+    ) const;
+
   //@}
 
 protected:
   
   void euclidean_apply_impl(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const EConj                            conj
+    ,const MultiVectorBase<DomainScalar>   &X
+    ,MultiVectorBase<RangeScalar>          *Y
+    ,const Scalar                          alpha
+    ,const Scalar                          beta
+    ) const;
+  
+  void euclidean_applyTranspose_impl(
+    const EConj                            conj
+    ,const MultiVectorBase<RangeScalar>    &X
+    ,MultiVectorBase<DomainScalar>         *Y
+    ,const Scalar                          alpha
+    ,const Scalar                          beta
     ) const;
 
 }; // end class EuclideanLinearOpBase<Scalar>
+
+/** \brief Call <tt>EuclideanLinearOpBase<Scalar>::euclideanApply()</tt> as a
+ *    global function call (for a single scalar type).
+ *
+ * Calls <tt>M.euclideanApply(...,X,Y,alpha,beta)</tt> or
+ * <tt>M.euclideanApplyTranspose(...,X,Y,alpha,beta)</tt>.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+template<class Scalar>
+inline void euclideanApply(
+  const EuclideanLinearOpBase<Scalar>        &M
+  ,const ETransp                             M_trans
+  ,const MultiVectorBase<Scalar>             &X
+  ,MultiVectorBase<Scalar>                   *Y
+  ,const Scalar                              alpha
+  ,const Scalar                              beta
+  )
+{
+  if(real_trans(M_trans)==NOTRANS) {
+    M.euclideanApply(transToConj(M_trans),X,Y,alpha,beta);
+  }
+  else {
+    M.euclideanApplyTranspose(transToConj(M_trans),X,Y,alpha,beta);
+  }
+}
 
 } // namespace Thyra
 

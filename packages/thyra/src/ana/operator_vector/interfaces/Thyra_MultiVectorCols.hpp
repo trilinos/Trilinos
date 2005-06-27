@@ -130,7 +130,14 @@ MultiVectorCols<Scalar>::domain() const
   return domain_;
 }
 
-// Overridden from LinearOpBase
+// Overridden from SingleRhsLinearOpBase
+
+template<class Scalar>
+bool MultiVectorCols<Scalar>::opSupported(ETransp M_trans) const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return ( ST::isComplex ? ( M_trans==NOTRANS || M_trans==CONJTRANS ) : true );
+}
 
 template<class Scalar>
 void MultiVectorCols<Scalar>::apply(

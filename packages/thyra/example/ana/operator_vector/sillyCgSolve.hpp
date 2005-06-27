@@ -66,10 +66,10 @@ bool sillyCgSolve(
   RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > space = A.domain();
   // Compute initial residual : r = b - A*x
   RefCountPtr<Thyra::VectorBase<Scalar> > r = createMember(space);                     
-  Thyra::assign(&*r,b);                               // r = b
-  A.apply(Thyra::NOTRANS,*x,&*r,-ST::one(),ST::one());// r = -A*x + r
-  const ScalarMag r0_nrm = Thyra::norm(*r);           // Compute ||r0|| = sqrt(<r0,r0>) for convergence test
-  if(r0_nrm == ST::zero()) return true;               // Trivial RHS and initial LHS guess?
+  Thyra::assign(&*r,b);                                      // r = b
+  Thyra::apply(A,Thyra::NOTRANS,*x,&*r,-ST::one(),ST::one());// r = -A*x + r
+  const ScalarMag r0_nrm = Thyra::norm(*r);                  // Compute ||r0|| = sqrt(<r0,r0>) for convergence test
+  if(r0_nrm == ST::zero()) return true;                      // Trivial RHS and initial LHS guess?
   // Create workspace vectors and scalars
   RefCountPtr<Thyra::VectorBase<Scalar> > p = createMember(space), q = createMember(space);
   Scalar rho_old;
@@ -86,7 +86,7 @@ bool sillyCgSolve(
     const Scalar rho = space->scalarProd(*r,*r);      // <r,r>              -> rho
     if(iter==0) Thyra::assign(&*p,*r);                // r                  -> p   (iter == 0)
     else Thyra::Vp_V( &*p, *r, Scalar(rho/rho_old) ); // r+(rho/rho_old)*p  -> p   (iter  > 0)
-    A.apply(Thyra::NOTRANS,*p,&*q);                   // A*p                -> q
+    Thyra::apply(A,Thyra::NOTRANS,*p,&*q);            // A*p                -> q
     const Scalar alpha = rho/space->scalarProd(*p,*q);// rho/<p,q>          -> alpha
     Thyra::Vp_StV( x,   Scalar(+alpha), *p );         // +alpha*p + x       -> x
     Thyra::Vp_StV( &*r, Scalar(-alpha), *q );         // -alpha*q + r       -> r
