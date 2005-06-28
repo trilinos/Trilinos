@@ -44,33 +44,37 @@
 #include "Epetra_Map.h"
 
 #include "ModeLaplace1DQ1.h"
-#include "BlockPCGSolver.h"
 
 int main(int argc, char *argv[]) 
 {
+  int i;
   int info = 0;
   
 #ifdef EPETRA_MPI
-  
+
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  
-#endif
-  
-#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
 #else
+
   Epetra_SerialComm Comm;
+
 #endif
   
   int MyPID = Comm.MyPID();
   
   bool testFailed = false;
   bool verbose = 0;
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
-  
-  if (verbose && MyPID == 0)
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+  }
+
+  if (verbose && MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
+  }
   
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
   
@@ -82,14 +86,14 @@ int main(int argc, char *argv[])
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 50;
+  elements[0] = 100;
 
   // Create default output manager 
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   // Set verbosity level
   if (verbose)
-    MyOM->SetVerbosity( Anasazi::FinalSummary );
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::IterationDetails + Anasazi::OrthoDetails );
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -98,17 +102,11 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_Operator> K = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
   Teuchos::RefCountPtr<Epetra_Operator> M = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
 
-  // Create preconditioner
-  int maxIterCG = 100;
-  double tolCG = 1e-05;
-  
-  Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, K.get(), tolCG, maxIterCG, 3) );
-  opStiffness->setPreconditioner( 0 );
-
+  // Eigensolver parameters
   int nev = 4;
   int blockSize = 5;
   int maxIters = 500;
-  double tol = tolCG * 10.0;
+  double tol = 1.0e-6;
 
   // Create parameter list to pass into solver
   Teuchos::ParameterList MyPL;
@@ -122,8 +120,8 @@ int main(int argc, char *argv[])
   ivec->Random();
   
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(opStiffness, M, ivec) );
-  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
+  //  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
   
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(true);
@@ -143,6 +141,37 @@ int main(int argc, char *argv[])
   returnCode = MySolver.solve();
   if (returnCode != Anasazi::Ok)
     testFailed = true;
+
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
+  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
+  
+  if (verbose)
+    info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+  
+  // Compute the direct residual
+  std::vector<double> normV( evecs->NumVectors() );
+  Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
+  for (int i=0; i<evecs->NumVectors(); i++)
+    T(i,i) = (*evals)[i];
+  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
+  K->Apply( *evecs, Kvec );  
+  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
+  M->Apply( *evecs, Mvec );  
+  Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
+  info = Kvec.Norm2( &normV[0] );
+  assert( info==0 );
+  
+  for ( i=0; i<nev; i++ ) {
+    if ( Teuchos::ScalarTraits<double>::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 )
+      testFailed = true;
+  }
+
+#ifdef EPETRA_MPI
+
+  MPI_Finalize() ;
+
+#endif
 
   if (testFailed)
     return 1;

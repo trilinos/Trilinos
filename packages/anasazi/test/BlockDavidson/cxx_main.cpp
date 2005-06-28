@@ -150,15 +150,13 @@ int main(int argc, char *argv[])
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
   // Create the sort manager
-  cout << "Sort type: " << which << endl;  
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
      Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 
   // Create the eigensolver  
   Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
   
-  // Solve the problem to the specified tolerances or length
-  
+  // Solve the problem to the specified tolerances or length  
   returnCode = MySolver.solve();
   if (returnCode != Anasazi::Ok)
     testFailed = true;

@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 	// Diffusion coefficient, can be set by user.
 	// When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
 	// When rho*h/2 > 1, the operator has complex eigenvalues.
-	double rho = 0.0;  
+	double rho = 2*(nx+2);  
 
 	// Compute coefficients for discrete convection-diffution operator
 	const double one = 1.0;
@@ -230,11 +230,11 @@ int main(int argc, char *argv[]) {
 	//  Variables used for the Block Krylov Schur Method
 	//	  
 	int nev = 4;
-	int blockSize = 5;
-	int maxBlocks = 8;
-	int maxRestarts = 300;
-	int step = 1;
-	double tol = 1e-6;
+	int blockSize = 1;
+	int maxBlocks = 20;
+	int maxRestarts = 500;
+	//	int step = 1;
+	double tol = 1e-8;
 	string which="SM";	
 	//
 	// Create parameter list to pass into solver
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
 	MyPL.set( "Max Blocks", maxBlocks );
 	MyPL.set( "Max Restarts", maxRestarts );
 	MyPL.set( "Tol", tol );
-	MyPL.set( "Step Size", step );
+	// MyPL.set( "Step Size", step );
 
 	typedef Epetra_MultiVector MV;
 	typedef Epetra_Operator OP;
@@ -278,6 +278,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 	MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary );	
+	//MyOM->SetVerbosity( Anasazi::Warning + Anasazi::OrthoDetails + Anasazi::IterationDetails + Anasazi::Debug + Anasazi::FinalSummary );	
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);

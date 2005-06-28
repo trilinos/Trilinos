@@ -383,7 +383,7 @@ namespace Anasazi {
     //    
     for ( _iter=0; _iter <= _maxIter; _iter++ ) {
       
-      if (_iter || (reStart == true) ) {
+      if ( (_iter==0) || (reStart == true) ) {
 	
 	reStart = false;
 	localSize = _blockSize;
@@ -432,7 +432,8 @@ namespace Anasazi {
 	  
 	} // if (nFound > 0)
 	
-      } 
+      } // if ( (_iter==0) || reStart == true)
+
       else {
 	
 	// Apply the preconditioner on the residuals
@@ -465,6 +466,7 @@ namespace Anasazi {
 	  //timeOrtho -= MyWatch.WallTime();
 	  _MSUtils.massOrthonormalize( *H, *MH, _MOp.get(), *copyQ, _blockSize, 1);
 	  //timeOrtho += MyWatch.WallTime();
+
 	} // if (knownEV > 0)
 	
 	// Apply the stiffness matrix to H
@@ -476,8 +478,10 @@ namespace Anasazi {
 	if (localSize == _blockSize)
 	  localSize += _blockSize;
 
-      } // if (_iter || (reStart==true))
-    
+      } // if ( (_iter==0) || (reStart==true))
+
+      cout << "Local size : "<< localSize << endl;
+
       // Form "local" mass and stiffness matrices
       //timeLocalProj -= MyWatch.WallTime();
       Teuchos::SerialDenseMatrix<int,ScalarType> KK11( Teuchos::View, KK, _blockSize, _blockSize );
@@ -536,8 +540,7 @@ namespace Anasazi {
           
       // Perform a spectral decomposition
       //timeLocalSolve -= MyWatch.WallTime();
-      int nevLocal = localSize;
-      info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, nevLocal, 
+      info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, localSize, 
 				   (_blockSize == 1) ? 1 : 0);
       //timeLocalSolve += MyWatch.WallTime();
       
@@ -547,7 +550,7 @@ namespace Anasazi {
       } // if (info < 0)
       
       // Check for restarting
-      if ((_theta[0] < 0.0) || (nevLocal < _blockSize)) {
+      if ((_theta[0] < 0.0) || (localSize < _blockSize)) {
 	if (_om->isVerbosityAndPrint( IterationDetails ) ) {
 	  _os << " Iteration " << _iter;
 	  _os << "- Failure for spectral decomposition - RESTART with new random search\n";
@@ -568,19 +571,19 @@ namespace Anasazi {
 	_numRestarts += 1;
 	info = 0;
 	continue;
-      } // if ((theta[0] < 0.0) || (nevLocal < _blockSize))
+      } // if ((theta[0] < 0.0) || (localSize < _blockSize))
     
-      if ((localSize == twoBlocks) && (nevLocal == _blockSize)) {
-	//for (j = 0; j < nevLocal; ++j) 
+      if ((localSize == twoBlocks) && (localSize == _blockSize)) {
+	//for (j = 0; j < localSize; ++j) 
 	//memcpy(S + j*_blockSize, S + j*twoBlocks, _blockSize*sizeof(double)); 
-	_os << "localSize == twoBlocks && nevLocal == _blockSize"<<endl;
+	_os << "localSize == twoBlocks && localSize == _blockSize"<<endl;
 	localSize = _blockSize;
       }
       
-      if ((localSize == threeBlocks) && (nevLocal <= twoBlocks)) {
-	//for (j = 0; j < nevLocal; ++j) 
+      if ((localSize == threeBlocks) && (localSize <= twoBlocks)) {
+	//for (j = 0; j < localSize; ++j) 
 	// memcpy(S + j*twoBlocks, S + j*threeBlocks, twoBlocks*sizeof(double)); 
-	_os << "localSize == threeBlocks && nevLocal <= twoBlocks"<<endl;
+	_os << "localSize == threeBlocks && localSize <= twoBlocks"<<endl;
 	localSize = twoBlocks;
       }
       
@@ -630,7 +633,7 @@ namespace Anasazi {
       for (j = 0; j < _blockSize; ++j) {
 	_normR[j] = (_theta[j] == 0.0) ? _normR[j] : _normR[j]/_theta[j];
 	if (_normR[j] < _residual_tolerance) 
-	  nFound += 1;
+	  nFound ++;
       }
    
       //timeNorm += MyWatch.WallTime();
@@ -644,18 +647,17 @@ namespace Anasazi {
       
       // Print information on current iteration
       if (_om->isVerbosityAndPrint( IterationDetails )) {
+
 	_os << " Iteration " << _iter << " - Number of converged eigenvectors ";
 	_os << _knownEV + nFound << endl;
-      }
-      
-      if (_om->isVerbosityAndPrint( IterationDetails )) {
 	_os << endl;
+
 	cout.precision(2);
 	cout.setf(ios::scientific, ios::floatfield);
 	for (i=0; i<_blockSize; ++i) {
 	  _os << " Iteration " << _iter << " - Scaled Norm of Residual " << i;
 	  _os << " = " << _normR[i] << endl;
-	}
+      	}
 	_os << endl;
 	cout.precision(2);
 	for (i=0; i<_blockSize; ++i) {
@@ -698,7 +700,8 @@ namespace Anasazi {
 	} // if (localSize == twoBlocks)
 	
 	if (localSize == threeBlocks) {	  
-	  Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );	  Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );	  
+	  Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );	  
+	  Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );	  
 	  MVT::MvAddMv( one, *P, zero, *P, *R );
 	  MVT::MvTimesMatAddMv( one, *R, S31, zero, *P );
 	  MVT::MvTimesMatAddMv( one, *H, S21, one, *P );
@@ -771,10 +774,12 @@ namespace Anasazi {
 	    blas.COPY(localSize, S[ j ], 1, &tmp_swap_vec[0], 1);
 	    blas.COPY(localSize, S[ firstIndex ], 1, S[ j ], 1 );
 	    blas.COPY(localSize, &tmp_swap_vec[0], 1, S[ firstIndex ], 1 );
+
 	    // Swap _theta
 	    tmp_swap = _theta[j];
 	    _theta[j] = _theta[firstIndex];
 	    _theta[firstIndex] = tmp_swap;
+
 	    // Swap _normR
 	    tmp_swap = _normR[j];
 	    _normR[j] = _normR[firstIndex];
@@ -793,7 +798,9 @@ namespace Anasazi {
       // Copy the converged eigenvalues and residuals.
       //
       if (nFound > 0) {
-	int leftOver = ((_nev - (_knownEV + nFound )) > 0 ) ? (_nev - (_knownEV + nFound )) : 0;
+	int leftOver = 0;
+	if ( _knownEV + nFound  > _nev ) 
+	  leftOver = _knownEV + nFound -_nev;
 	blas.COPY( nFound-leftOver, &_theta[0], 1, &(*_evals)[_knownEV], 1 ); 
 	blas.COPY( nFound-leftOver, &_normR[0], 1, &_resids[_knownEV], 1 );
       }
@@ -813,9 +820,11 @@ namespace Anasazi {
       }
       
       // Convergence test
-      if (_knownEV + nFound >= _nev) {
+      if ( _knownEV + nFound  >= _nev) {
 	// Store the converged eigenvectors 
-	int leftOver = ((_nev - (_knownEV + nFound )) > 0 ) ? (_nev - (_knownEV + nFound )) : 0;
+	int leftOver = 0;
+	if ( _knownEV + nFound  > _nev )
+	  leftOver = _knownEV + nFound - _nev;
 	_os << "leftOver = "<< leftOver << endl;
 	std::vector<int> index2( nFound - leftOver );
 	for(j=0; j<nFound-leftOver; j++)
@@ -837,7 +846,7 @@ namespace Anasazi {
 	  _os << endl;
 	}
 	break;
-      } // if (_knownEV + nFound >= _nev )   
+      } // if ( _knownEV + nFound >= _nev )   
       //
       // Set converged eigenvalues before continuing.
       //
@@ -860,7 +869,7 @@ namespace Anasazi {
       
       // Define the restarting vectors
       //timeRestart -= MyWatch.WallTime();
-      int leftOver = (nevLocal < _blockSize + nFound) ? nevLocal - nFound : _blockSize;
+      int leftOver = (localSize < _blockSize + nFound) ? localSize - nFound : _blockSize;
       Teuchos::SerialDenseMatrix<int,ScalarType> S11new( Teuchos::View, S, _blockSize, leftOver, 0, nFound );
       
       MVT::MvAddMv( one, *X, zero, *X, *R );
@@ -889,7 +898,7 @@ namespace Anasazi {
 	    MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MX );
         }
       }
-      if (nevLocal < _blockSize + nFound) {
+      if (localSize < _blockSize + nFound) {
 	// Put new random vectors at the end of the block
 	std::vector<int> index2( _blockSize - leftOver );
 	for (j=0; j<_blockSize-leftOver; j++)
