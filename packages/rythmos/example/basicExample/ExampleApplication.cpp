@@ -69,19 +69,17 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   else // if ( lambda_fit_ == "random" )
   {
     int MyPID = lambda.Comm().MyPID();
-    if (MyPID == 0)
-    {
-      unsigned int seed = time(NULL); 
-      seed *= seed;
-      lambda.SetSeed(seed);
-    }
+    unsigned int seed = time(NULL)+10*MyPID; 
+    seed *= seed;
+    lambda.SetSeed(seed);
     lambda.Random(); // fill with random numbers in (-1,1)
     // Scale random numbers to (lambda_min_,lambda_max_)
-    lambda.Scale( (lambda_min_ - lambda_max_)/2.0);
+    double slope = (lambda_min_ - lambda_max_)/2.0;
     double tmp = (lambda_max_ + lambda_min_)/2.0;
-    for (int i=0 ; i<lambda.MyLength() ; ++i)
+    int MyLength = lambda.MyLength();
+    for (int i=0 ; i<MyLength ; ++i)
     {
-      lambda[i] += tmp;
+      lambda[i] = slope*lambda[i] + tmp;
     }
   }
   
