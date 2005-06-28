@@ -1,32 +1,35 @@
+ // $Id$
+// $Source$
+
 //@HEADER
 // ************************************************************************
-// 
-//            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2002) Sandia Corporation
-// 
+//
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
-// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-// (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // 1D Finite Element Test Problem
 /* Solves continuation problem (Parameter c="Right BC")
  *
@@ -126,16 +129,16 @@ int main(int argc, char *argv[])
     // Begin LOCA Solver ************************************
 
     // Create parameter list
-    NOX::Parameter::List paramList;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList =
+      Teuchos::rcp(new NOX::Parameter::List);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
     //locaStepperList.setParameter("Continuation Method", "Natural");
     locaStepperList.setParameter("Continuation Method", "Arc Length");
-    //locaStepperList.setParameter("Continuation Method", "Householder Arc Length");
     locaStepperList.setParameter("Continuation Parameter", "lambda");
     locaStepperList.setParameter("Initial Value", lambda);
     locaStepperList.setParameter("Max Value", 4.0);
@@ -208,7 +211,7 @@ int main(int argc, char *argv[])
       locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
     // Create the NOX printing parameter list
@@ -289,19 +292,21 @@ int main(int argc, char *argv[])
     NOX::Epetra::Vector locaSoln(soln);
 
     // Create the Group
-    LOCA::EpetraNew::Group grp(nlPrintParams, interface, locaSoln, linsys,
-			       pVector);
-    grp.computeF();
+    Teuchos::RefCountPtr<LOCA::EpetraNew::Group> grp = 
+      Teuchos::rcp(new LOCA::EpetraNew::Group(nlPrintParams, interface, 
+					      locaSoln, linsys, pVector));
+    grp->computeF();
 
     // Create the Solver convergence test
     NOX::StatusTest::NormF wrms(1.0e-8);
     NOX::StatusTest::MaxIters maxiters(maxNewtonIters);
-    NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-    combo.addStatusTest(wrms);
-    combo.addStatusTest(maxiters);
+    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+    combo->addStatusTest(wrms);
+    combo->addStatusTest(maxiters);
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, combo, paramList);
+    LOCA::NewStepper stepper(grp, combo, paramList);
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished) {
@@ -311,16 +316,16 @@ int main(int argc, char *argv[])
     }
 
     // Get the final solution from the stepper
-    const LOCA::EpetraNew::Group& finalGroup = 
-      dynamic_cast<const LOCA::EpetraNew::Group&>(stepper.getSolutionGroup());
+    Teuchos::RefCountPtr<const LOCA::EpetraNew::Group> finalGroup = 
+      Teuchos::rcp_dynamic_cast<const LOCA::EpetraNew::Group>(stepper.getSolutionGroup());
     const NOX::Epetra::Vector& finalSolution = 
-      dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX());
+      dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 
     // Output the parameter list
     if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
       cout << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      stepper.getParameterList().print(cout);
+      stepper.getParameterList()->print(cout);
       cout << endl;
     }
 
@@ -346,7 +351,7 @@ int main(int argc, char *argv[])
 				  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
-    double alpha_final = finalGroup.getParam("lambda");
+    double alpha_final = finalGroup->getParam("lambda");
     double alpha_expected = -4.0;
     ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-14,
 				  "final value of continuation parameter", 
