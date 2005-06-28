@@ -54,7 +54,11 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   if ( lambda_fit_ == "linear" )
   {
     int N = lambda.GlobalLength();
-    double tmp = (lambda_max_ - lambda_min_)/(N-1);
+    double tmp;
+    if (N == 1)
+      tmp = 0; // lambda[0] = lambda_min_
+    else
+      tmp = (lambda_max_ - lambda_min_)/(N-1);
     int MyLength = lambda.MyLength();
     int MyPID = lambda.Comm().MyPID();
     for (int i=0 ; i<MyLength ; ++i)
