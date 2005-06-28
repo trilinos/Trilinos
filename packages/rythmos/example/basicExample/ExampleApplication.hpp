@@ -45,6 +45,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include <vector>
+#include <string>
 
 class ExampleApplication
 {
@@ -86,6 +87,7 @@ class ExampleApplication
     // Coefficients for ODE
     double lambda_min_;
     double lambda_max_;
+    std::string lambda_fit_;
     Teuchos::RefCountPtr<Epetra_Vector> lambda_ptr_;
     // Constant initial condition for the problem:
     double x0_;

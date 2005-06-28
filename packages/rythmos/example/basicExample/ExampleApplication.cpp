@@ -35,6 +35,7 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
   lambda_min_ = params.get( "Lambda_min", -0.9 );
   lambda_max_ = params.get( "Lambda_max", -0.01 );
+  lambda_fit_ = params.get( "Lambda_fid", "random" );
   numElements_ = params.get( "NumElements", 1 );
   x0_ = params.get( "x0", 10.0 );
   // Serial only implementation here:
@@ -60,16 +61,28 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 
   lambda_ptr_ = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   Epetra_Vector &lambda = *lambda_ptr_;
-  unsigned int seed = time(NULL); 
-  seed *= seed;
-  lambda.SetSeed(seed);
-  lambda.Random(); // fill with random numbers in (-1,1)
-  // Scale random numbers to (lambda_min_,lambda_max_)
-  lambda.Scale( (lambda_min_ - lambda_max_)/2.0);
-  double tmp = (lambda_max_ + lambda_min_)/2.0;
-  for (int i=0 ; i<lambda.MyLength() ; ++i)
+  if ( lambda_fit == "linear" )
   {
-    lambda[i] += tmp;
+    int N = lambda.GlobalLength();
+    double tmp = (lambda_max_ - lambda_min_)/(N-1);
+    for (int i=0 ; i<N ; ++i)
+    {
+      lambda[i] = tmp*i+lambda_min_;
+    }
+  }
+  else // if ( lambda_fit == "random" )
+  {
+    unsigned int seed = time(NULL); 
+    seed *= seed;
+    lambda.SetSeed(seed);
+    lambda.Random(); // fill with random numbers in (-1,1)
+    // Scale random numbers to (lambda_min_,lambda_max_)
+    lambda.Scale( (lambda_min_ - lambda_max_)/2.0);
+    double tmp = (lambda_max_ + lambda_min_)/2.0;
+    for (int i=0 ; i<lambda.MyLength() ; ++i)
+    {
+      lambda[i] += tmp;
+    }
   }
   
 }

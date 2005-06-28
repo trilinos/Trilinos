@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
 
     double lambda_min = -0.9;   // min ODE coefficient
     double lambda_max = -0.01;  // max ODE coefficient
+    std::string lambda_fit = "random"; // Lambda model
     int numElements = 1; // number of elements in vector
     double x0 = 10.0; // ODE initial condition
     int N = 10;  // number of steps to take
@@ -75,6 +76,7 @@ int main(int argc, char *argv[])
     clp.setOption( "x0", &x0, "Constant ODE initial condition." );
     clp.setOption( "lambda_min", &lambda_min, "Lower bound for ODE coefficient");
     clp.setOption( "lambda_max", &lambda_max, "Upper bound for ODE coefficient");
+    clp.setOption( "lambda_fit", &lambda_fit, "Lambda model:  random, linear");
     clp.setOption( "numelements", &numElements, "Problem size");
     clp.setOption( "method", &method, "Integration method:  FE, ERK4." );
     clp.setOption( "numsteps", &N, "Number of integration steps to take" );
@@ -100,6 +102,7 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList params;
     params.set( "Lambda_min", lambda_min );
     params.set( "Lambda_max", lambda_max );
+    params.set( "Lambda_fit", lambda_fit );
     params.set( "NumElements", numElements );
     params.set( "x0", x0 );
     params.set( "main_argc", argc );
