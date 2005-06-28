@@ -106,6 +106,7 @@ teuchos = \
 --enable-anasazi \
 --with-loca-anasazi \
 --enable-capo \
+--enable-rythmos \
 --enable-thyra
 
 tpetra = \
@@ -114,7 +115,8 @@ tpetra = \
 thyra = \
 --enable-thyra \
 --enable-epetra-thyra \
---enable-capo
+--enable-capo \
+--enable-rythmos
 
 triutils = \
 --enable-triutils \
