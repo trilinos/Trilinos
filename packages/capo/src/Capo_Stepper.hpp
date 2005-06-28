@@ -82,5 +82,7 @@ namespace CAPO {
     Teuchos::RefCountPtr<Solver> iteration_method;
 
   };
-};
+
+}
+
 #endif

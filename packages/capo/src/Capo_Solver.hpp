@@ -101,6 +101,7 @@ namespace CAPO {
     Teuchos::RefCountPtr<Integrator> App_Integrator;
     Teuchos::RefCountPtr<Parameter_List> SolveParameters;
   };
-};
+
+}
 
 #endif

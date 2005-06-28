@@ -10,7 +10,7 @@ namespace CAPO {
   public:
     Integrator() {};
     
-    ~Integrator() {};
+    virtual ~Integrator() {};
     
     //! Perform picard iteration: given current guess y, param value param,
     //! and previously-converged solution in ynew (needed for converging
@@ -19,6 +19,7 @@ namespace CAPO {
     
     virtual bool Integrate(Teuchos::RefCountPtr<Thyra::VectorBase<double> >& y, Teuchos::RefCountPtr<Thyra::VectorBase<double> >& ynew, const double T, const double lambda) = 0;
   };
-};
+
+}
 
 #endif

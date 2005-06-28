@@ -101,6 +101,7 @@ namespace CAPO {
     int UpdateBasisFreq;
 
   };
-};
+
+}
 
 #endif

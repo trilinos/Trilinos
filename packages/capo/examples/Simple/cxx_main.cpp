@@ -198,4 +198,5 @@ int main(int argc, char *argv[])
   MySolver->Predictor(dummy1,dummy2);
   cout << MySolver->Get_Tfinal() << endl;
   cout << MySolver->Get_lambdafinal() << endl;
-};
+
+}
