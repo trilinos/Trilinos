@@ -129,7 +129,7 @@ fi
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$BUILD_TEUCHOS" != "Xno")
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
-	test "X$ac_cv_use_capo" != "Xno"; then
+	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/thyra])
   BUILD_THYRA=yes
