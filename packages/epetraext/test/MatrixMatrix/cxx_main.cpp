@@ -62,7 +62,8 @@ int read_matrix(const char* filename,
                 const Epetra_Map* domainmap,
                 Epetra_CrsMatrix*& mat);
 
-int run_test(Epetra_Comm& Comm, const char* filename,
+int run_test(Epetra_Comm& Comm,
+             const char* filename,
              bool result_mtx_to_file=false,
              bool verbose=false);
 
@@ -70,6 +71,11 @@ int two_proc_test(Epetra_Comm& Comm,
                   bool verbose=false);
 
 int test_find_rows(Epetra_Comm& Comm);
+
+/////////////////////////////////////
+//Global variable!!!!
+char* path;
+////////////////////////////////////
 
 int main(int argc, char** argv) {
 
@@ -83,6 +89,7 @@ int main(int argc, char** argv) {
   bool write_result_mtx = false;
   bool verbose = false;
   int write = 0;
+  bool path_specified = false;
   char* input_file = NULL;
   bool input_file_specified = false;
 
@@ -94,6 +101,10 @@ int main(int argc, char** argv) {
         input_file = argv[ii+1];
         input_file_specified = true;
       }
+      if (!strcmp("-d",argv[ii])) {
+        path = argv[ii+1];
+        path_specified = true;
+      }
     }
     write = write_result_mtx ? 1 : 0;
   }
@@ -102,6 +113,11 @@ int main(int argc, char** argv) {
   if (write) write_result_mtx = true;
 #endif
 
+  if (!path_specified) {
+    path = new char[32];
+    sprintf(path, ".");
+  }
+
   int err = two_proc_test(Comm, verbose);
   if (err != 0) {
     std::cout << "two_proc_test returned err=="<<err<<std::endl;
@@ -109,8 +125,8 @@ int main(int argc, char** argv) {
   }
 
   if (!input_file_specified) {
-    input_file = new char[16];
-    sprintf(input_file, "./infiles");
+    input_file = new char[64];
+    sprintf(input_file, "infiles");
   }
 
   const char** filenames = NULL;
@@ -118,10 +134,12 @@ int main(int argc, char** argv) {
   int numfilenames_allocated = 0;
 
   err = read_input_file(Comm, input_file,
-                            filenames, numfiles, numfilenames_allocated);
+                        filenames, numfiles, numfilenames_allocated);
   if (err != 0) {
-    std::cout << "read_input_file returned err=="<<err<<std::endl;
-    return(err);
+    if (path_specified) path_specified = false;
+    sprintf(path, "./MatrixMatrix");
+    read_input_file(Comm, input_file,
+                    filenames, numfiles, numfilenames_allocated);
   }
 
   err = test_find_rows(Comm);
@@ -143,6 +161,7 @@ int main(int argc, char** argv) {
   delete [] filenames;
 
   if (!input_file_specified) delete [] input_file;
+  if (!path_specified) delete [] path;
 
 #ifdef EPETRA_MPI
   MPI_Finalize();
@@ -252,21 +271,53 @@ int read_input_file(Epetra_Comm& Comm,
                     int& numfiles,
                     int& numfilenames_allocated)
 {
+  int local_err = 0, global_err = 0;
+  ifstream* infile = NULL;
+  int pathlen = path != 0 ? strlen(path): 0;
+
   if (Comm.MyPID() == 0) {
-    ifstream infile(input_file_name);
-    if (!infile) {
-      std::cout << "ERROR opening file "<<input_file_name << std::endl;
-      std::cout << "Specify an input file using '-i <input-file>'."<< std::endl;
-      return(-1);
+    char* full_name = NULL;
+    int filenamelen = input_file_name != 0 ? strlen(input_file_name) : 0;
+
+    full_name = new char[pathlen+filenamelen+2];
+    if (path != 0) {
+      sprintf(full_name, "%s/%s",path,input_file_name);
+    }
+    else {
+      sprintf(full_name, input_file_name);
     }
 
-    int linelen = 256;
+    infile = new ifstream(full_name);
+    if (!(*infile)) {
+      local_err = -1;
+      delete infile;
+    }
+    delete [] full_name;
+  }
+
+  Comm.SumAll(&local_err, &global_err, 1);
+
+  if (global_err != 0) {
+    return(global_err);
+  }
+
+
+  if (Comm.MyPID() == 0) {
+    int linelen = 512;
     char* line = NULL;
 
-    while(!infile.eof()) {
-      line = new char[linelen];
-      infile.getline(line, linelen);
-      if (infile.fail()) {
+    ifstream& ifile = *infile;
+    while(!ifile.eof()) {
+      line = new char[pathlen+1+linelen];
+      if (pathlen>0) {
+        sprintf(line,"%s/",path);
+        ifile.getline(&(line[pathlen+1]), linelen);
+      }
+      else {
+        ifile.getline(line, linelen);
+      }
+
+      if (ifile.fail()) {
 	delete [] line;
         break;
       }
@@ -284,6 +335,8 @@ int read_input_file(Epetra_Comm& Comm,
     for(int i=0; i<numfiles; ++i) {
       broadcast_name(Comm, filenames[i]);
     }
+
+    delete infile;
   }
   else {
 #ifdef EPETRA_MPI
@@ -299,7 +352,8 @@ int read_input_file(Epetra_Comm& Comm,
   return(0);
 }
 
-int run_test(Epetra_Comm& Comm, const char* filename,
+int run_test(Epetra_Comm& Comm,
+             const char* filename,
              bool result_mtx_to_file,
              bool verbose)
 {
@@ -452,6 +506,8 @@ int read_matrix_file_names(Epetra_Comm& Comm,
                            bool& transB,
                            char*& C_file)
 {
+  int pathlen = path!=0 ? strlen(path) : 0;
+
   if (Comm.MyPID()==0) {
     ifstream infile(input_file_name);
     if (!infile) {
@@ -459,17 +515,18 @@ int read_matrix_file_names(Epetra_Comm& Comm,
       return(-1);
     }
 
-    char line[256];
+    int linelen = 512;
+    char line[linelen];
 
-    infile.getline(line, 256);
+    infile.getline(line, linelen);
     if (!infile.eof()) {
       if (strchr(line, '#') == NULL) {
-        A_file = new char[strlen(line)+1];
-        sprintf(A_file, line);
+        A_file = new char[pathlen+strlen(line)+2];
+        sprintf(A_file, "%s/%s",path,line);
       }
     }
 
-    infile.getline(line, 256);
+    infile.getline(line, linelen);
     if (!infile.eof()) {
       if (!strcmp(line, "TRANSPOSE")) {
         transA = true;
@@ -477,15 +534,15 @@ int read_matrix_file_names(Epetra_Comm& Comm,
       else transA = false;
     }
 
-    infile.getline(line, 256);
+    infile.getline(line, linelen);
     if (!infile.eof()) {
       if (strchr(line, '#') == NULL) {
-        B_file = new char[strlen(line)+1];
-        sprintf(B_file, line);
+        B_file = new char[pathlen+strlen(line)+2];
+        sprintf(B_file, "%s/%s",path,line);
       }
     }
 
-    infile.getline(line, 256);
+    infile.getline(line, linelen);
     if (!infile.eof()) {
       if (!strcmp(line, "TRANSPOSE")) {
         transB = true;
@@ -493,11 +550,11 @@ int read_matrix_file_names(Epetra_Comm& Comm,
       else transB = false;
     }
 
-    infile.getline(line, 256);
+    infile.getline(line, linelen);
     if (!infile.eof()) {
       if (strchr(line, '#') == NULL) {
-        C_file = new char[strlen(line)+1];
-        sprintf(C_file, line);
+        C_file = new char[pathlen+strlen(line)+2];
+        sprintf(C_file, "%s/%s", path, line);
       }
     }
 

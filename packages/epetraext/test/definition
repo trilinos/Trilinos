@@ -3,14 +3,15 @@
 #
 
 (FRAMEWORK) {
-    DIRS = Permutation,
+    DIRS = MatrixMatrix,
+           Permutation,
            Transpose,
            inout;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
 
-# Removed MapColoring & MatrixMatrix from MPI for now because they always seems to hang.
+# Removed MapColoring & MatrixMatrix from MPI for now because they always seem to hang.
 
 (FRAMEWORK) {
     DIRS = MatrixMatrix,
