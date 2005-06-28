@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 
   // Build Solver
   Teuchos::RefCountPtr<CAPO::Npgs> MySolver;
-  MySolver = Teuchos::rcp(new CAPO::Npgs(PL,Integrator_Interface,x,t0,Param0));
+  MySolver = Teuchos::rcp(new CAPO::Npgs(PL,Integrator_Interface,x,Param0,t0));
   cout << "Built the Solver." << endl;
 
   // Build a Stepper
