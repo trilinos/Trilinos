@@ -66,14 +66,16 @@ meros = \
 --enable-meros
 
 ml = \
---enable-ml
+--enable-ml \
+--enable-nox
 
 new_package = \
 --enable-new_package
 
 nox = \
 --enable-nox \
---enable-loca
+--enable-loca \
+--enable-ml
 
 loca = \
 --enable-loca
