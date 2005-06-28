@@ -365,7 +365,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 					cout << "Failed" << endl;
 	returnierr += ierr;
 	ierr = 0;
-	/*
+	
 	// changing data
 	if(verbose) cout << "Changing data... ";
 	OrdinalType nME = testVector1.getNumMyEntries();
@@ -396,7 +396,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 		ierr++;
 	}
 	}
-
+	
 	if(verbose)
 		if(ierr == 0) 
 			cout << "Passed" << endl;
@@ -409,15 +409,39 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 	Tpetra::Vector<OrdinalType, ScalarType> u1(vectorspace);
 	Tpetra::Vector<OrdinalType, ScalarType> u2(vectorspace);
 	Tpetra::Vector<OrdinalType, ScalarType> u3(vectorspace);
-	
-	u1[0] = -1; u1[1] = 2; u1[2] = -1;
-	u1[3] = -1; u1[4] = 2; u1[5] = -1;
-	u1[6] = -1; u1[7] = 2; u1[8] = -1;
-	u1[9] = 2;
-	
-	u2[0] = 2; u2[1] = 3; u2[2] = 4; u2[3] = 5;
-	u2[4] = 4; u2[5] = 3; u2[6] = 2; u2[7] = 1;
-	u2[8] = 8; u2[9] = 9;
+	int const uLength = 10;
+
+	std::vector<ScalarType> u1Vals(uLength);
+	u1Vals[0] = -1;
+	u1Vals[1] = 2;
+	u1Vals[2] = -1;
+	u1Vals[3] = -1;
+	u1Vals[4] = 2;
+	u1Vals[5] = -1;
+	u1Vals[6] = -1;
+	u1Vals[7] = 2;
+	u1Vals[8] = -1;
+	u1Vals[9] = 2;
+	std::vector<ScalarType> u2Vals(uLength);
+	u2Vals[0] = 2;
+	u2Vals[1] = 3;
+	u2Vals[2] = 4;
+	u2Vals[3] = 5;
+	u2Vals[4] = 4;
+	u2Vals[5] = 3;
+	u2Vals[6] = 2;
+	u2Vals[7] = 1;
+	u2Vals[8] = 8;
+	u2Vals[9] = 9;
+
+	// u1 and u2 have the same distribution, so we can combine their calls
+	// into the same loopset
+	for(int i = 0; i < uLength; i++) {
+		if(vectorspace.isMyGlobalIndex(i)) {
+			u1[vectorspace.getLocalIndex(i)] = u1Vals[i];
+			u2[vectorspace.getLocalIndex(i)] = u2Vals[i];
+		}
+	}
 	
 	if(debug) {
 		cout << "before update:" << endl;
@@ -434,7 +458,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 		cout << "u2:" << endl << u2 << endl;
 		cout << "u3:" << endl << u3 << endl << endl;
 	}
-	*/
+	
 	// finish up
 	if(verbose)
 		if(returnierr == 0)
