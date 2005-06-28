@@ -35,7 +35,7 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
   lambda_min_ = params.get( "Lambda_min", -0.9 );
   lambda_max_ = params.get( "Lambda_max", -0.01 );
-  lambda_fit_ = params.get( "Lambda_fid", "random" );
+  lambda_fit_ = params.get( "Lambda_fit", "random" );
   numElements_ = params.get( "NumElements", 1 );
   x0_ = params.get( "x0", 10.0 );
   // Serial only implementation here:
@@ -61,7 +61,7 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 
   lambda_ptr_ = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   Epetra_Vector &lambda = *lambda_ptr_;
-  if ( lambda_fit == "linear" )
+  if ( lambda_fit_ == "linear" )
   {
     int N = lambda.GlobalLength();
     double tmp = (lambda_max_ - lambda_min_)/(N-1);
@@ -70,7 +70,7 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
       lambda[i] = tmp*i+lambda_min_;
     }
   }
-  else // if ( lambda_fit == "random" )
+  else // if ( lambda_fit_ == "random" )
   {
     unsigned int seed = time(NULL); 
     seed *= seed;
