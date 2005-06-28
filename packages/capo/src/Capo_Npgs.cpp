@@ -104,13 +104,17 @@ void Npgs::Initialize()
 
   for (int i=1;i<30+1;i++)
     {
-      //Thyra::assign(&*TempVector,*Ve->col(i));
-      //Thyra::randomize(0.1,1.1,&*TempVector);
+      Thyra::assign(&*TempVector,*Ve->col(i));
+      Thyra::randomize(0.1,1.1,&*TempVector);
+      Thyra::assign(&*Ve->col(i),*TempVector);
+
+      /*
       App_Integrator->Integrate(xcurrent,TempVector,20*(Tcurrent+rand()%10), 
 				lambdacurrent);
       Thyra::Vt_S(&*TempVector,.01);
       Thyra::Vp_S(&*TempVector,1.0);
       Thyra::assign(&*Ve->col(i),*TempVector);
+      */
     }
 
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
@@ -174,10 +178,10 @@ void Npgs::Orthonormalize(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > 
 	  Thyra::Vp_StV( &*(Basis->col(i)), -temp, *(Basis->col(j)) );
 	}
       temp = ( Thyra::dot( *(Basis->col(i)),*(Basis->col(i)) ) );
-      //if (temp > 1.0e-12)
+      if (temp > 1.0e-12)
 	Thyra::Vt_S( &*(Basis->col(i)), 1.0/sqrt(temp) );
-	//else
-	//cout <<"WARNING Npgs::Orthonormalize: norm=0; No scaling done" << endl;
+      else
+	cout <<"WARNING Npgs::Orthonormalize: norm=0; No scaling done" << endl;
     }
 }
 //-----------------------------------------------------------------
@@ -192,7 +196,7 @@ void Npgs::Finish()
 {
   if ((*SolveParameters).get_printproc() >0)
     cout <<"\n Writing columns of Ve:" << endl;
-  Print(Ve);
+  //Print(Ve);
 }
 //-----------------------------------------------------------------
 // Function      : Npgs::InnerFunctions
@@ -278,10 +282,10 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > Npgs::MatVec(const Teuchos::Ref
 
   Thyra::assign(&*upert, 0.0);
   Thyra::Vp_StV(&*upert,delta,*y);
-  Thyra::Vp_StV(&*upert,1.0,*xcurrent);
+  Thyra::Vp_StV(&*upert,1.0,*xfinal);
 
-  App_Integrator->Integrate(xcurrent,phiu,Tcurrent,lambdacurrent);
-  App_Integrator->Integrate(upert,phiupert,Tcurrent,lambdacurrent);
+  App_Integrator->Integrate(xfinal,phiu,Tfinal,lambdafinal);
+  App_Integrator->Integrate(upert,phiupert,Tfinal,lambdafinal);
 
   Thyra::Vp_StV(&*phiupert,-1.0,*phiu);
   Thyra::Vt_S(&*phiupert,1.0/delta);
@@ -360,11 +364,13 @@ bool Npgs::InnerIteration()
 
   // xfinal, Tfinal, and lambdafinal change... but start off at
   // same values as currents...
+
+
   Thyra::assign(&*xfinal,*xcurrent); 
   Tfinal = Tcurrent;
   lambdafinal = lambdacurrent;
   converged = Converged(xcurrent,v);
-
+  iter = 0;
   while ((iter<SolveParameters->get_MaxInnerIts()) && (!converged))
     {
       //Declarations
@@ -384,10 +390,11 @@ bool Npgs::InnerIteration()
       Re = createMembers(Ve_pe->domain(),Subspace_Size);
       We = createMembers(xcurrent->space(),Subspace_Size);
       
-      double deleteme = 0;
+
       // Algorithm
-      Orthonormalize(Ve_pe,Subspace_Size);
+      //Orthonormalize(Ve,Subspace_Size);
       SubspaceIterations(Se,We,Re);
+
       if (Unstable_Basis_Size > 0) // Need to include a Newton-Step.
 	{
 	  // Declarations (these change size with every go-around)
@@ -399,21 +406,13 @@ bool Npgs::InnerIteration()
 	  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dp;
 	  dp = createMember(Vp->domain());
 	  Calculatedp(Vp,dq,dp,Re,v,finit,r,*deltaT);
-	  cout << "dp is equal to " << endl;
-	  for (int i=0;i<Unstable_Basis_Size;i++)
-	    cout << Thyra::get_ele(*dp,i+1) << endl;;
-	  cout << *deltaT << endl;
 	  Thyra::Vp_StV(&*xfinal,1.0,*dq);
 	  Thyra::apply(*Vp,Thyra::NOTRANS,*dp,&*TempVector);
 	  Thyra::Vp_StV(&*xfinal,1.0,*TempVector);
 	  Tfinal+=*deltaT;
-	  cout << "Tfinal is " << Tfinal << endl;
-	  deleteme = Thyra::norm(*xfinal);
-	  cout << "Norm of solution is " << deleteme << endl;
 	}
       else
 	{
-	  cerr << "Straight Picard Operation" << endl;
 	  dq = MatVec(r);
 	  Thyra::Vp_StV(&*dq,1.0,*r);
 
@@ -422,17 +421,19 @@ bool Npgs::InnerIteration()
 	  Thyra::Vt_S(&*v,1.0/eps);
 	  double lhs = Thyra::dot(*finit,*v);
 
-	  Thyra::assign(&*TempVector,*xcurrent);
-	  Thyra::Vp_StV(&*TempVector,-1.0,*xfinal);
+	  Thyra::assign(&*TempVector,*xfinal);
+	  Thyra::Vp_StV(&*TempVector,-1.0,*xcurrent);
+	  Thyra::Vp_StV(&*TempVector,1.0,*dq);
 	  double rhs = Thyra::dot(*finit,*TempVector);
 
-	  *deltaT = rhs/lhs;
+	  *deltaT = -rhs/lhs;
 
 	  Tfinal +=(*deltaT);
 	  Thyra::Vp_StV(&*xfinal,1.0,*dq);
 	}
       UpdateVe(We,Se);
-      cerr << "Updated Ve" << endl;
+
+      Orthonormalize(Ve,Unstable_Basis_Size+SolveParameters->get_NumberXtraVecsSubspace());
       App_Integrator->Integrate(xfinal,v,Tfinal,lambdafinal);
       Thyra::assign(&*r,*v); 
       Thyra::Vp_StV(&*r,-1.0,*xfinal);
@@ -621,22 +622,21 @@ bool Npgs::Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/16/05
 //------------------------------------------------------------------
-void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re)
+void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re)
 {
   int Subspace_Size = SolveParameters->get_NumberXtraVecsSubspace()+Unstable_Basis_Size;
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
 
   Ve_pe = createMembers(xcurrent->space(),Subspace_Size);
   Ve_pe = Ve->subView(Thyra::Range1D(1,Subspace_Size));
-
   Orthonormalize(Ve_pe,Subspace_Size);
 
   for (int i=0;i<SolveParameters->get_SubspaceIterations();i++)
     {
-      We = MatVecs(Ve_pe);
+      We = (MatVecs(Ve_pe));
       Thyra::apply(*Ve_pe,Thyra::TRANS,*We,&*Se);
       SchurDecomp(Se,Re);
-      if (i<SolveParameters->get_SubspaceIterations()-1)
+      if (i<(SolveParameters->get_SubspaceIterations()-1))
 	{
 	  Thyra::apply(*We,Thyra::NOTRANS,*Se,&*Ve_pe);
 	  Orthonormalize(Ve_pe,Subspace_Size);
@@ -731,7 +731,6 @@ bool Npgs::UpdateVe(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We,
   TempMV = createMembers(xcurrent->space(),Size);
   TempMV = Ve->subView(Thyra::Range1D(1,Size));
   Thyra::apply(*We,Thyra::NOTRANS,*Se,&*TempMV);
-  
   return true;
 
 }
