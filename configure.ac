@@ -106,6 +106,7 @@ AC_ARG_ENABLE(aztecoo-teuchos,
  ac_cv_use_aztecoo_teuchos=$enableval, ac_cv_use_aztecoo_teuchos=no)
 
 if test "X$ac_cv_use_teuchos" != "Xno" ||
+	test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
         test "X$ac_cv_use_tsfextended" != "Xno" ||
  	test "X$ac_cv_use_tsfcore" != "Xno" ||
@@ -113,7 +114,8 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
-	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" || 
+	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
+	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
   BUILD_TEUCHOS=yes
@@ -125,7 +127,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$BUILD_TEUCHOS" != "Xno")
 
-if test "X$ac_cv_use_thyra" != "Xno"; then
+if test "X$ac_cv_use_thyra" != "Xno" ||
+	test "X$ac_cv_use_capo" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/thyra])
   BUILD_THYRA=yes
   if test "X$ac_cv_use_thyra_explicit" != "Xyes"; then

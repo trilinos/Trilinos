@@ -101,14 +101,17 @@ teuchos = \
 --enable-amesos \
 --with-ml_amesos \
 --enable-anasazi \
---with-loca-anasazi
+--with-loca-anasazi \
+--enable-capo \
+--enable-thyra
 
 tpetra = \
 --enable-tpetra
 
 thyra = \
 --enable-thyra \
---enable-epetra-thyra
+--enable-epetra-thyra \
+--enable-capo
 
 triutils = \
 --enable-triutils \
