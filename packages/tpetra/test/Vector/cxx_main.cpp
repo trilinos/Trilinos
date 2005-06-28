@@ -39,6 +39,7 @@
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Version.hpp"
+#include "../tpetra_test_util.hpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
@@ -88,11 +89,13 @@ int main(int argc, char* argv[]) {
     << "****************************************\n";
   }
   int ierr = 0;
+
+  //mpiBreakpoint(rank);
   
-	ierr += unitTests<int, float>(verbose, debug, rank, size);
-	ierr += unitTests<int, double>(verbose, debug, rank, size);
+  ierr += unitTests<int, float>(verbose, debug, rank, size);
+  ierr += unitTests<int, double>(verbose, debug, rank, size);
     
-	if(debug) 
+  if(debug) 
 		checkOutputs();
 
 	// finish up
@@ -146,26 +149,50 @@ void checkOutputs() {
 	cout << "v1(before): "; v1.printValues(cout);
 	v1.scale(2.0);
 	cout << "v1(after): "; v1.printValues(cout);
-	cout << "copying v1 to user array" << endl;
-	double* dblArray = new double[5];
-	v1.extractCopy(dblArray);
-	cout << "values of dblArray: ";
-	for(int i = 0; i < length; i++)
-		cout << dblArray[i] << " ";
-	cout << endl;
-	delete[] dblArray;
+
+	// extracting values should only be done if we own some
+	int const nME = v1.getNumMyEntries();
+	if(nME > 0) {
+		cout << "copying v1 to user array" << endl;
+		double* dblArray = new double[nME];
+		v1.extractCopy(dblArray);
+		cout << "values of dblArray: ";
+		for(int i = 0; i < nME; i++)
+			cout << dblArray[i] << " ";
+		cout << endl;
+		delete[] dblArray;
+	}
+
 	cout << "Setting v1 to reciprocal of v2" << endl;
-	v2[0] = 0.25;
-	v2[1] = 5.0;
-	v2[2] = 0.125;
-	v2[3] = 2.0;
-	v2[4] = 0.75;
+	// only set value of an entry on the Image that owns it
+	if(vectorspace.isMyGlobalIndex(0))
+		v2[0] = 0.25;
+	if(vectorspace.isMyGlobalIndex(1))
+		v2[1] = 5.0;
+	if(vectorspace.isMyGlobalIndex(2))
+		v2[2] = 0.125;
+	if(vectorspace.isMyGlobalIndex(3))
+		v2[3] = 2.0;
+	if(vectorspace.isMyGlobalIndex(4))
+		v2[4] = 0.75;
+
 	cout << "v2: "; v2.printValues(cout);
 	v1.reciprocal(v2);
 	cout << "v1: "; v1.printValues(cout);
 	
 	cout << "Elementwise multiply:" << endl;
-	v1[0] = 6.25; v1[1] = 18.0; v1[2] = 0.0; v1[3] = 3.0; v1[4] = 1.0;
+	// only set value of an entry on the Image that owns it
+	if(vectorspace.isMyGlobalIndex(0))
+		v1[0] = 6.25; 
+	if(vectorspace.isMyGlobalIndex(1))
+		v1[1] = 18.0; 
+	if(vectorspace.isMyGlobalIndex(2))
+		v1[2] = 0.0; 
+	if(vectorspace.isMyGlobalIndex(3))
+		v1[3] = 3.0; 
+	if(vectorspace.isMyGlobalIndex(4))
+		v1[4] = 1.0;
+
 	cout << "v3 = v1 @ v2" << endl;
 	Tpetra::Vector<int, double> v3(vectorspace);
 	v3.elementwiseMultiply(1.0, v1, v2, 1.0);
@@ -208,11 +235,12 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
 	Tpetra::Vector<OrdinalType, ScalarType> vector(vectorspace);
 	// taking a VectorSpace and a user array of entries
-  OrdinalType myLength = vectorspace.getNumMyEntries();
+	OrdinalType myLength = vectorspace.getNumMyEntries();
   std::vector<ScalarType> scalarArray(myLength); // allocate to size myLength
-	for(OrdinalType i = 0; i < ESlength; i++)
+	for(OrdinalType i = 0; i < myLength; i++)
 		scalarArray[i] = Teuchos::ScalarTraits<ScalarType>::random();
-  Tpetra::Vector<OrdinalType, ScalarType> vector1a(&scalarArray[0], myLength, vectorspace);
+
+	Tpetra::Vector<OrdinalType, ScalarType> vector1a(&scalarArray[0], myLength, vectorspace);
 	// cpy ctr
 	Tpetra::Vector<OrdinalType, ScalarType> v2(vector);
 	
@@ -337,27 +365,38 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 					cout << "Failed" << endl;
 	returnierr += ierr;
 	ierr = 0;
-	
+	/*
 	// changing data
 	if(verbose) cout << "Changing data... ";
+	OrdinalType nME = testVector1.getNumMyEntries();
+	
+	if(nME > 2) {
 	ScalarType value2 = Teuchos::ScalarTraits<ScalarType>::random();
-	ScalarType value5 = Teuchos::ScalarTraits<ScalarType>::random();
-	ScalarType value0 = Teuchos::ScalarTraits<ScalarType>::random();
 	testVector1[2] = value2;
-	testVector1[5] = value5;
-	testVector1[0] = value0;
 	if(testVector1[2] != value2) {
 		if(debug) cout << "element 2 = " << testVector1[2] << ", should be " << value2 << endl;
 		ierr++;
 	}
+	}
+
+	if(nME > 5) {
+	ScalarType value5 = Teuchos::ScalarTraits<ScalarType>::random();
+	testVector1[5] = value5;
 	if(testVector1[5] != value5) {
 		if(debug) cout << "element 5 = " << testVector1[5] << ", should be " << value5 << endl;
 		ierr++;
 	}
+	}
+
+	if(nME > 0) {
+	ScalarType value0 = Teuchos::ScalarTraits<ScalarType>::random();
+	testVector1[0] = value0;
 	if(testVector1[0] != value0) {
 		if(debug) cout << "element 0 = " << testVector1[0] << ", should be " << value0 << endl;
 		ierr++;
 	}
+	}
+
 	if(verbose)
 		if(ierr == 0) 
 			cout << "Passed" << endl;
@@ -395,7 +434,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 		cout << "u2:" << endl << u2 << endl;
 		cout << "u3:" << endl << u3 << endl << endl;
 	}
-	
+	*/
 	// finish up
 	if(verbose)
 		if(returnierr == 0)
