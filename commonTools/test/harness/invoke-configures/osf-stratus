@@ -35,17 +35,24 @@ FFLAGS=-g3 \
 --enable-komplex \
 --enable-loca \
 --with-loca-anasazi \
+--enable-meros \
 --enable-ml \
+--with-ml-64bit-integer="long long" \
 --enable-new_package \
 --enable-new_swahili \
 --enable-nox \
 --enable-nox-epetra \
+--enable-nox-epetra-examples \
 --enable-nox-lapack \
+--enable-nox-lapack-examples \
 --enable-nox-tests \
+--enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
 --enable-teuchos-experimental \
 --enable-thyra \
---enable-triutils
+--enable-tpetra \
+--enable-triutils \
+--enable-tsfextended

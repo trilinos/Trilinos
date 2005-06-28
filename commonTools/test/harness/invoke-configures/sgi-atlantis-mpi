@@ -32,6 +32,8 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-didasko \
 --enable-epetra \
 --enable-epetra-abc \
+--enable-epetra-thyra \
+--enable-epetraext \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
@@ -42,6 +44,7 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --with-loca-anasazi \
 --enable-meros \
 --enable-ml \
+--with-ml-64bit-integer="long long" \
 --enable-new_package \
 --enable-new_swahili \
 --enable-nox \
@@ -50,9 +53,13 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
+--enable-pliris \
+--enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
+--enable-thyra \
 --enable-tpetra \
---enable-triutils
+--enable-triutils \
+--enable-tsfextended

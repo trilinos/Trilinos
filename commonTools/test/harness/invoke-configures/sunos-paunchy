@@ -30,6 +30,7 @@ CXXFLAGS="-g -pto" \
 --with-loca-anasazi \
 --enable-meros \
 --enable-ml \
+--with-ml-64bit-integer="long long" \
 --enable-new_package \
 --enable-new_swahili \
 --enable-nox \
@@ -38,6 +39,7 @@ CXXFLAGS="-g -pto" \
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
+--enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
@@ -45,4 +47,4 @@ CXXFLAGS="-g -pto" \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsf
+--enable-tsfextended

@@ -24,16 +24,18 @@ FFLAGS=-O3 \
 --enable-komplex \
 --enable-loca \
 --with-loca-anasazi \
---disable-meros \
+--enable-meros \
 --enable-ml \
 --with-ml-64bit-integer="long long" \
 --enable-new_package \
 --enable-new_swahili \
 --enable-nox \
+--enable-nox-epetra \
 --enable-nox-epetra-examples \
+--enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
---enable-python \
+--enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
@@ -41,8 +43,4 @@ FFLAGS=-O3 \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---disable-tsf \
---enable-tsfcore \
---enable-tsfcore-epetra \
---enable-tsfcoreutils \
 --enable-tsfextended
