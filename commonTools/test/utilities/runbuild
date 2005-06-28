@@ -309,7 +309,7 @@ exit $exitStatus;
             $cmd  = "perl runmake ";
             $cmd .= "--trilinos-dir=$trilinosDir ";
             $cmd .= "--build-dir=$buildDir ";
-            $cmd .= ($makeCmd?"--make-cmd=$makeCmd ":"");
+            $cmd .= ($makeCmd?"--make-cmd=\"$makeCmd\" ":"");
             $cmd .= "--output-dir=$resultsDir ";
             $cmd .= "--verbosity=$argVerbosity ";
             $cmd .= "--log-verbosity=$argLogVerbosity ";
