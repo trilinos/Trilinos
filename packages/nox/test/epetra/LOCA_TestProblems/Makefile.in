@@ -14,11 +14,11 @@
 
 @SET_MAKE@
 
-#@HEADER
+# @HEADER
 # ************************************************************************
 # 
-#            NOX: An Object-Oriented Nonlinear Solver Package
-#                 Copyright (2002) Sandia Corporation
+#                  LOCA Continuation Algorithm Package
+#                 Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -32,16 +32,26 @@
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#                                                                                 
+#                                                                              
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA                                                                                
-# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-# (rppawlo@sandia.gov), Sandia National Laboratories.
+# USA                                                                          
+# Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+# (etphipp@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
-#@HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
+SOURCES = $(liblocatestproblems_la_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -63,8 +73,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/config/libtool_macros.am
 subdir = test/epetra/LOCA_TestProblems
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
@@ -90,17 +101,50 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-exec-recursive install-info-recursive \
-	install-recursive installcheck-recursive installdirs-recursive \
-	pdf-recursive ps-recursive uninstall-info-recursive \
-	uninstall-recursive
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+am__DEPENDENCIES_1 =
+liblocatestproblems_la_DEPENDENCIES =  \
+	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am__objects_1 = liblocatestproblems_la-Basis.lo \
+	liblocatestproblems_la-Problem_Interface.lo \
+	liblocatestproblems_la-Tcubed_FiniteElementProblem.lo \
+	liblocatestproblems_la-Pitchfork_FiniteElementProblem.lo \
+	liblocatestproblems_la-NormConstraint.lo \
+	liblocatestproblems_la-LinearConstraint.lo
+am__objects_2 =
+am_liblocatestproblems_la_OBJECTS = $(am__objects_1) $(am__objects_2)
+liblocatestproblems_la_OBJECTS = $(am_liblocatestproblems_la_OBJECTS)
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocatestproblems_la-Basis.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Plo
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(liblocatestproblems_la_SOURCES)
+DIST_SOURCES = $(liblocatestproblems_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
@@ -219,7 +263,13 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
+
+###############################################################################
+# Changes to the standard libtool command:
+# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
+#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
+###############################################################################
+LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
 LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
 LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
 LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
@@ -320,11 +370,56 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = Tcubed
-all: all-recursive
+LOCA_TESTPROBLEMS_H = \
+	$(srcdir)/Basis.H \
+	$(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Problem_Interface.H \
+	$(srcdir)/Tcubed_FiniteElementProblem.H \
+	$(srcdir)/Pitchfork_FiniteElementProblem.H \
+	$(srcdir)/NormConstraint.H \
+	$(srcdir)/LinearConstraint.H 
+
+LOCA_TESTPROBLEMS = \
+	$(srcdir)/Basis.C \
+	$(srcdir)/Problem_Interface.C \
+	$(srcdir)/Tcubed_FiniteElementProblem.C \
+	$(srcdir)/Pitchfork_FiniteElementProblem.C \
+	$(srcdir)/NormConstraint.C \
+	$(srcdir)/LinearConstraint.C
+
+
+# ------------------------------------------------------------------------
+# locatestproblems library specifications
+# ------------------------------------------------------------------------
+liblocatestproblems_la_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
+liblocatestproblems_la_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src-loca/src-epetra \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src-epetra \
+	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
+
+liblocatestproblems_la_LIBADD = \
+	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
+
+noinst_LTLIBRARIES = liblocatestproblems.la
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+MOSTLYCLEANFILES = $(CXXREPOS)
+all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+.SUFFIXES: .C .lo .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -354,6 +449,198 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" = "$$p" && dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
+liblocatestproblems.la: $(liblocatestproblems_la_OBJECTS) $(liblocatestproblems_la_DEPENDENCIES) 
+	$(CXXLINK)  $(liblocatestproblems_la_LDFLAGS) $(liblocatestproblems_la_OBJECTS) $(liblocatestproblems_la_LIBADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-Basis.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Plo@am__quote@
+
+.C.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.C.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.C.lo:
+@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+liblocatestproblems_la-Basis.o: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Basis.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo" -c -o liblocatestproblems_la-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo" "$(DEPDIR)/liblocatestproblems_la-Basis.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='liblocatestproblems_la-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Basis.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+liblocatestproblems_la-Basis.obj: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Basis.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo" -c -o liblocatestproblems_la-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo" "$(DEPDIR)/liblocatestproblems_la-Basis.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='liblocatestproblems_la-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Basis.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
+
+liblocatestproblems_la-Basis.lo: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Basis.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo" -c -o liblocatestproblems_la-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo" "$(DEPDIR)/liblocatestproblems_la-Basis.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='liblocatestproblems_la-Basis.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Basis.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Basis.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+liblocatestproblems_la-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo" -c -o liblocatestproblems_la-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo" "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='liblocatestproblems_la-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+liblocatestproblems_la-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo" -c -o liblocatestproblems_la-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo" "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='liblocatestproblems_la-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
+
+liblocatestproblems_la-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo" -c -o liblocatestproblems_la-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo" "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='liblocatestproblems_la-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Problem_Interface.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+liblocatestproblems_la-Tcubed_FiniteElementProblem.o: $(srcdir)/Tcubed_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Tcubed_FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo" -c -o liblocatestproblems_la-Tcubed_FiniteElementProblem.o `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo" "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_FiniteElementProblem.C' object='liblocatestproblems_la-Tcubed_FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Tcubed_FiniteElementProblem.o `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C
+
+liblocatestproblems_la-Tcubed_FiniteElementProblem.obj: $(srcdir)/Tcubed_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Tcubed_FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo" -c -o liblocatestproblems_la-Tcubed_FiniteElementProblem.obj `if test -f '$(srcdir)/Tcubed_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_FiniteElementProblem.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo" "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_FiniteElementProblem.C' object='liblocatestproblems_la-Tcubed_FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Tcubed_FiniteElementProblem.obj `if test -f '$(srcdir)/Tcubed_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_FiniteElementProblem.C'; fi`
+
+liblocatestproblems_la-Tcubed_FiniteElementProblem.lo: $(srcdir)/Tcubed_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Tcubed_FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo" -c -o liblocatestproblems_la-Tcubed_FiniteElementProblem.lo `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo" "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_FiniteElementProblem.C' object='liblocatestproblems_la-Tcubed_FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Tcubed_FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Tcubed_FiniteElementProblem.lo `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C
+
+liblocatestproblems_la-Pitchfork_FiniteElementProblem.o: $(srcdir)/Pitchfork_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Pitchfork_FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo" -c -o liblocatestproblems_la-Pitchfork_FiniteElementProblem.o `test -f '$(srcdir)/Pitchfork_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Pitchfork_FiniteElementProblem.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo" "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Pitchfork_FiniteElementProblem.C' object='liblocatestproblems_la-Pitchfork_FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Pitchfork_FiniteElementProblem.o `test -f '$(srcdir)/Pitchfork_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Pitchfork_FiniteElementProblem.C
+
+liblocatestproblems_la-Pitchfork_FiniteElementProblem.obj: $(srcdir)/Pitchfork_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Pitchfork_FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo" -c -o liblocatestproblems_la-Pitchfork_FiniteElementProblem.obj `if test -f '$(srcdir)/Pitchfork_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Pitchfork_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Pitchfork_FiniteElementProblem.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo" "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Pitchfork_FiniteElementProblem.C' object='liblocatestproblems_la-Pitchfork_FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Pitchfork_FiniteElementProblem.obj `if test -f '$(srcdir)/Pitchfork_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Pitchfork_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Pitchfork_FiniteElementProblem.C'; fi`
+
+liblocatestproblems_la-Pitchfork_FiniteElementProblem.lo: $(srcdir)/Pitchfork_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-Pitchfork_FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo" -c -o liblocatestproblems_la-Pitchfork_FiniteElementProblem.lo `test -f '$(srcdir)/Pitchfork_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Pitchfork_FiniteElementProblem.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo" "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Pitchfork_FiniteElementProblem.C' object='liblocatestproblems_la-Pitchfork_FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-Pitchfork_FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-Pitchfork_FiniteElementProblem.lo `test -f '$(srcdir)/Pitchfork_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Pitchfork_FiniteElementProblem.C
+
+liblocatestproblems_la-NormConstraint.o: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
+
+liblocatestproblems_la-NormConstraint.obj: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`
+
+liblocatestproblems_la-NormConstraint.lo: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
+
+liblocatestproblems_la-LinearConstraint.o: $(srcdir)/LinearConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-LinearConstraint.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo" -c -o liblocatestproblems_la-LinearConstraint.o `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearConstraint.C' object='liblocatestproblems_la-LinearConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-LinearConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-LinearConstraint.o `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C
+
+liblocatestproblems_la-LinearConstraint.obj: $(srcdir)/LinearConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-LinearConstraint.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo" -c -o liblocatestproblems_la-LinearConstraint.obj `if test -f '$(srcdir)/LinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearConstraint.C' object='liblocatestproblems_la-LinearConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-LinearConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-LinearConstraint.obj `if test -f '$(srcdir)/LinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearConstraint.C'; fi`
+
+liblocatestproblems_la-LinearConstraint.lo: $(srcdir)/LinearConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-LinearConstraint.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo" -c -o liblocatestproblems_la-LinearConstraint.lo `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearConstraint.C' object='liblocatestproblems_la-LinearConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-LinearConstraint.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-LinearConstraint.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-LinearConstraint.lo `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C
+
 mostlyclean-libtool:
 	-rm -f *.lo
 
@@ -363,65 +650,6 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
-
-mostlyclean-recursive clean-recursive distclean-recursive \
-maintainer-clean-recursive:
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
-	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -433,21 +661,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if (etags --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	else \
-	  include_option=--include; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -458,7 +675,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	     $$tags $$unique
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -481,6 +698,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -507,39 +725,26 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || mkdir "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="../$(top_distdir)" \
-	        distdir="../$(distdir)/$$subdir" \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
-all-am: Makefile
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+check: check-am
+all-am: Makefile $(LTLIBRARIES)
+installdirs:
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -549,22 +754,25 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
 
-clean-am: clean-generic clean-libtool mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
+	mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-libtool \
-	distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-libtool distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
@@ -572,45 +780,48 @@ install-data-am:
 
 install-exec-am:
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
 uninstall-am: uninstall-info-am
 
-uninstall-info: uninstall-info-recursive
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-libtool clean-noinstLTLIBRARIES ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags uninstall uninstall-am \
+	uninstall-info-am
 
-.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-libtool clean-recursive ctags \
-	ctags-recursive distclean distclean-generic distclean-libtool \
-	distclean-recursive distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic maintainer-clean-recursive \
-	mostlyclean mostlyclean-generic mostlyclean-libtool \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
 
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -1,10 +1,10 @@
 ## $Id$ 
 ## $Source$ 
-#@HEADER
+# @HEADER
 # ************************************************************************
 # 
-#            NOX: An Object-Oriented Nonlinear Solver Package
-#                 Copyright (2002) Sandia Corporation
+#                  LOCA Continuation Algorithm Package
+#                 Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -18,16 +18,16 @@
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#                                                                                 
+#                                                                              
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA                                                                                
-# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-# (rppawlo@sandia.gov), Sandia National Laboratories.
+# USA                                                                          
+# Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+# (etphipp@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
-#@HEADER
+# @HEADER
 
 HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve_exe
 HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous_exe
@@ -49,7 +49,7 @@ householderBorderedSolve_exe_DEPENDENCIES = \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/test/epetra/LOCA_TestProblems/Tcubed/libtcubed.la
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
 
 householderBorderedSolve_exe_CXXFLAGS = \
 	$(TRILINOS_CXXFLAGS) \
@@ -59,10 +59,10 @@ householderBorderedSolve_exe_CXXFLAGS = \
 	-I$(top_srcdir)/src-loca/src \
         -I$(top_srcdir)/src-loca/src-epetra \
         -I$(top_srcdir)/test/utils \
-	-I$(top_srcdir)/test/epetra/LOCA_TestProblems/Tcubed
+	-I$(top_srcdir)/test/epetra/LOCA_TestProblems
 
 householderBorderedSolve_exe_LDADD = \
-	$(top_builddir)/test/epetra/LOCA_TestProblems/Tcubed/libtcubed.la \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
         $(top_builddir)/src-loca/src/libloca.la \
 	-L$(top_builddir)/src \

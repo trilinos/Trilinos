@@ -58,7 +58,7 @@
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
-#include "FiniteElementProblem.H"              
+#include "Pitchfork_FiniteElementProblem.H"              
 
 using namespace std;
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     // Create the FiniteElementProblem class.  This creates all required
     // Epetra objects for the problem and allows calls to the 
     // function (RHS) and Jacobian evaluation routines.
-    FiniteElementProblem Problem(NumGlobalElements, Comm);
+    Pitchfork_FiniteElementProblem Problem(NumGlobalElements, Comm);
 
     // Get the vector from the Problem
     Epetra_Vector& soln = Problem.getSolution();

@@ -32,20 +32,15 @@
 noinst_PROGRAMS = pitchfork_exe
 
 pitchfork_exe_SOURCES = \
-	$(srcdir)/Pitchfork.C \
-	$(srcdir)/FiniteElementProblem.C \
-	$(srcdir)/FiniteElementProblem.H \
-	$(srcdir)/Basis.C \
-	$(srcdir)/Basis.H \
-	$(srcdir)/Problem_Interface.C \
-	$(srcdir)/Problem_Interface.H
+	$(srcdir)/Pitchfork.C 
 
 pitchfork_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
 
 pitchfork_exe_CXXFLAGS = \
 	$(TRILINOS_CXXFLAGS) \
@@ -54,9 +49,11 @@ pitchfork_exe_CXXFLAGS = \
         -I$(top_srcdir)/src-epetra \
 	-I$(top_srcdir)/src-loca/src \
         -I$(top_srcdir)/src-loca/src-epetra \
-	-I$(top_srcdir)/test/utils
+	-I$(top_srcdir)/test/utils \
+	-I$(top_srcdir)/test/epetra/LOCA_TestProblems
 
 pitchfork_exe_LDADD = \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la \
 	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
 	$(top_builddir)/src-loca/src/libloca.la \
 	$(top_builddir)/test/utils/libnoxtestutils.a \

@@ -1,32 +1,35 @@
+// $Id$
+// $Source$
+
 //@HEADER
 // ************************************************************************
-// 
-//            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2002) Sandia Corporation
-// 
+//
+//                  LOCA Continuation Algorithm Package
+//                 Copyright (2005) Sandia Corporation
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
-// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-// (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Common.H"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -36,11 +39,12 @@
 #include "Epetra_CrsMatrix.h"
 #include "Basis.H"
 
-#include "FiniteElementProblem.H"
+#include "Pitchfork_FiniteElementProblem.H"
 
 // Constructor - creates the Epetra objects (maps and vectors) 
-FiniteElementProblem::FiniteElementProblem(int numGlobalElements, 
-					   Epetra_Comm& comm) :
+Pitchfork_FiniteElementProblem::Pitchfork_FiniteElementProblem(
+						       int numGlobalElements, 
+						       Epetra_Comm& comm) :
   Comm(&comm),
   NumGlobalElements(numGlobalElements)
 {
@@ -107,7 +111,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements,
 }
 
 // Destructor
-FiniteElementProblem::~FiniteElementProblem()
+Pitchfork_FiniteElementProblem::~Pitchfork_FiniteElementProblem()
 {
   delete AA;
   delete A;
@@ -118,10 +122,11 @@ FiniteElementProblem::~FiniteElementProblem()
 }
 
 // Matrix and Residual Fills
-bool FiniteElementProblem::evaluate(FillType f, 
-				    const Epetra_Vector* soln, 
-				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+bool 
+Pitchfork_FiniteElementProblem::evaluate(FillType f, 
+					 const Epetra_Vector* soln, 
+					 Epetra_Vector* tmp_rhs, 
+					 Epetra_RowMatrix* tmp_matrix)
 {
   flag = f;
 
@@ -134,7 +139,7 @@ bool FiniteElementProblem::evaluate(FillType f,
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else {
-    cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
+    cout << "ERROR: Pitchfork_FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
     throw;
   }
 
@@ -251,17 +256,20 @@ bool FiniteElementProblem::evaluate(FillType f,
   return true;
 }
 
-Epetra_Vector& FiniteElementProblem::getSolution()
+Epetra_Vector& 
+Pitchfork_FiniteElementProblem::getSolution()
 {
   return *initialSolution;
 }
   
-Epetra_CrsMatrix& FiniteElementProblem::getJacobian()
+Epetra_CrsMatrix& 
+Pitchfork_FiniteElementProblem::getJacobian()
 {
   return *A;
 }
 
-bool FiniteElementProblem::setParameter(string label, double value)
+bool 
+Pitchfork_FiniteElementProblem::setParameter(string label, double value)
 {
   if (label == "lambda")
     lambda = value;
@@ -273,14 +281,15 @@ bool FiniteElementProblem::setParameter(string label, double value)
     // do nothing for now
   }
   else {
-    cout << "ERROR: FiniteElementProblem::setParameter() - label is invalid "
+    cout << "ERROR: Pitchfork_FiniteElementProblem::setParameter() - label is invalid "
 	 << "for this problem!" << endl;
     exit(-1);
   }
   return true;
 }
 
-Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)
+Epetra_CrsGraph& 
+Pitchfork_FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)
 {
   
   // Declare required variables
@@ -314,11 +323,11 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)
 }
 
 double
-FiniteElementProblem::source_term(double x) {
+Pitchfork_FiniteElementProblem::source_term(double x) {
   return lambda*x - alpha*x*x + beta*x*x*x;
 }
 
 double
-FiniteElementProblem::source_deriv(double x) {
+Pitchfork_FiniteElementProblem::source_deriv(double x) {
   return lambda - 2.0*alpha*x + 3.0*beta*x*x;
 }

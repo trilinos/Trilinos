@@ -96,19 +96,13 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_pitchfork_exe_OBJECTS = pitchfork_exe-Pitchfork.$(OBJEXT) \
-	pitchfork_exe-FiniteElementProblem.$(OBJEXT) \
-	pitchfork_exe-Basis.$(OBJEXT) \
-	pitchfork_exe-Problem_Interface.$(OBJEXT)
+am_pitchfork_exe_OBJECTS = pitchfork_exe-Pitchfork.$(OBJEXT)
 pitchfork_exe_OBJECTS = $(am_pitchfork_exe_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/pitchfork_exe-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pitchfork_exe-Pitchfork.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pitchfork_exe-Problem_Interface.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/pitchfork_exe-Pitchfork.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -116,14 +110,6 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(pitchfork_exe_SOURCES)
 DIST_SOURCES = $(pitchfork_exe_SOURCES)
@@ -355,20 +341,15 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 pitchfork_exe_SOURCES = \
-	$(srcdir)/Pitchfork.C \
-	$(srcdir)/FiniteElementProblem.C \
-	$(srcdir)/FiniteElementProblem.H \
-	$(srcdir)/Basis.C \
-	$(srcdir)/Basis.H \
-	$(srcdir)/Problem_Interface.C \
-	$(srcdir)/Problem_Interface.H
+	$(srcdir)/Pitchfork.C 
 
 pitchfork_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
 
 pitchfork_exe_CXXFLAGS = \
 	$(TRILINOS_CXXFLAGS) \
@@ -377,9 +358,11 @@ pitchfork_exe_CXXFLAGS = \
         -I$(top_srcdir)/src-epetra \
 	-I$(top_srcdir)/src-loca/src \
         -I$(top_srcdir)/src-loca/src-epetra \
-	-I$(top_srcdir)/test/utils
+	-I$(top_srcdir)/test/utils \
+	-I$(top_srcdir)/test/epetra/LOCA_TestProblems
 
 pitchfork_exe_LDADD = \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la \
 	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
 	$(top_builddir)/src-loca/src/libloca.la \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
@@ -447,10 +430,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pitchfork_exe-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pitchfork_exe-Pitchfork.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pitchfork_exe-Problem_Interface.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -499,78 +479,6 @@ pitchfork_exe-Pitchfork.lo: $(srcdir)/Pitchfork.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-Pitchfork.Plo' tmpdepfile='$(DEPDIR)/pitchfork_exe-Pitchfork.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-Pitchfork.lo `test -f '$(srcdir)/Pitchfork.C' || echo '$(srcdir)/'`$(srcdir)/Pitchfork.C
-
-pitchfork_exe-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo" -c -o pitchfork_exe-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo" "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='pitchfork_exe-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/pitchfork_exe-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-pitchfork_exe-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo" -c -o pitchfork_exe-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo" "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='pitchfork_exe-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/pitchfork_exe-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
-
-pitchfork_exe-FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo" -c -o pitchfork_exe-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo" "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='pitchfork_exe-FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/pitchfork_exe-FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-pitchfork_exe-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-Basis.o -MD -MP -MF "$(DEPDIR)/pitchfork_exe-Basis.Tpo" -c -o pitchfork_exe-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-Basis.Tpo" "$(DEPDIR)/pitchfork_exe-Basis.Po"; else rm -f "$(DEPDIR)/pitchfork_exe-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='pitchfork_exe-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-Basis.Po' tmpdepfile='$(DEPDIR)/pitchfork_exe-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-pitchfork_exe-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-Basis.obj -MD -MP -MF "$(DEPDIR)/pitchfork_exe-Basis.Tpo" -c -o pitchfork_exe-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-Basis.Tpo" "$(DEPDIR)/pitchfork_exe-Basis.Po"; else rm -f "$(DEPDIR)/pitchfork_exe-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='pitchfork_exe-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-Basis.Po' tmpdepfile='$(DEPDIR)/pitchfork_exe-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
-
-pitchfork_exe-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-Basis.lo -MD -MP -MF "$(DEPDIR)/pitchfork_exe-Basis.Tpo" -c -o pitchfork_exe-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-Basis.Tpo" "$(DEPDIR)/pitchfork_exe-Basis.Plo"; else rm -f "$(DEPDIR)/pitchfork_exe-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='pitchfork_exe-Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-Basis.Plo' tmpdepfile='$(DEPDIR)/pitchfork_exe-Basis.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-pitchfork_exe-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo" -c -o pitchfork_exe-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo" "$(DEPDIR)/pitchfork_exe-Problem_Interface.Po"; else rm -f "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='pitchfork_exe-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/pitchfork_exe-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-pitchfork_exe-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo" -c -o pitchfork_exe-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo" "$(DEPDIR)/pitchfork_exe-Problem_Interface.Po"; else rm -f "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='pitchfork_exe-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/pitchfork_exe-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-pitchfork_exe-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -MT pitchfork_exe-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo" -c -o pitchfork_exe-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo" "$(DEPDIR)/pitchfork_exe-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/pitchfork_exe-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='pitchfork_exe-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/pitchfork_exe-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/pitchfork_exe-Problem_Interface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pitchfork_exe_CXXFLAGS) $(CXXFLAGS) -c -o pitchfork_exe-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
 
 mostlyclean-libtool:
 	-rm -f *.lo

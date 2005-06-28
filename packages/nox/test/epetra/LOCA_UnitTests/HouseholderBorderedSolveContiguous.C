@@ -53,7 +53,7 @@
 
 // User's application specific files 
 #include "Problem_Interface.H" 
-#include "FiniteElementProblem.H"
+#include "Tcubed_FiniteElementProblem.H"
 #include "LinearConstraint.H"
 
 // Global variables used in main() and testSolve()
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
     // Create the FiniteElementProblem class.  This creates all required
     // Epetra objects for the problem and allows calls to the 
     // function (RHS) and Jacobian evaluation routines.
-    FiniteElementProblem Problem(NumGlobalElements, Comm);
+    Tcubed_FiniteElementProblem Problem(NumGlobalElements, Comm);
 
     // Get the vector from the Problem
     Epetra_Vector& soln = Problem.getSolution();
