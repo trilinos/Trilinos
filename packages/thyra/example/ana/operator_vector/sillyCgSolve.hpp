@@ -66,10 +66,10 @@ bool sillyCgSolve(
   RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > space = A.domain();
   // Compute initial residual : r = b - A*x
   RefCountPtr<Thyra::VectorBase<Scalar> > r = createMember(space);                     
-  Thyra::assign(&*r,b);                                      // r = b
-  Thyra::apply(A,Thyra::NOTRANS,*x,&*r,-ST::one(),ST::one());// r = -A*x + r
-  const ScalarMag r0_nrm = Thyra::norm(*r);                  // Compute ||r0|| = sqrt(<r0,r0>) for convergence test
-  if(r0_nrm == ST::zero()) return true;                      // Trivial RHS and initial LHS guess?
+  Thyra::assign(&*r,b);                                              // r = b
+  Thyra::apply(A,Thyra::NOTRANS,*x,&*r,Scalar(-ST::one()),ST::one());// r = -A*x + r
+  const ScalarMag r0_nrm = Thyra::norm(*r);      // Compute ||r0|| = sqrt(<r0,r0>) for convergence test
+  if(r0_nrm == ST::zero()) return true;          // Trivial RHS and initial LHS guess?
   // Create workspace vectors and scalars
   RefCountPtr<Thyra::VectorBase<Scalar> > p = createMember(space), q = createMember(space);
   Scalar rho_old;

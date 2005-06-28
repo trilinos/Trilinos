@@ -196,7 +196,7 @@ void MultiplicativeLinearOp<Scalar>::apply(
       if( k > 0 )
         Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k);
       else
-        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k,(alpha*gamma_),beta);
+        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k,Scalar(alpha*gamma_),beta);
       T_kp1 = T_k;
     }
   }
@@ -215,7 +215,7 @@ void MultiplicativeLinearOp<Scalar>::apply(
       if( k < numOps-1 )
         Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k);
       else
-        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k,(alpha*gamma_),beta);
+        Thyra::apply(*Ops_[k],M_trans,*X_k,&*Y_k,Scalar(alpha*gamma_),beta);
       T_km1 = T_k;
     }
   }
