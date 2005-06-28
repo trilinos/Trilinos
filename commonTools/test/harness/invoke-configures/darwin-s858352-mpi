@@ -8,7 +8,6 @@ RANLIB="ranlib -s" \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
---enable-amesos-umfpack \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \

@@ -15,7 +15,6 @@ FFLAGS=-O3 \
 --enable-amesos \
 --disable-amesos-pardiso \
 --enable-amesos-taucs \
---enable-amesos-umfpack \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
