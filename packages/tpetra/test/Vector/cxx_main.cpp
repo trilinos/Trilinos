@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
   ierr += unitTests<int, double>(verbose, debug, rank, size);
     
   if(debug) 
-		checkOutputs();
+  		checkOutputs();
 
 	// finish up
 #ifdef TPETRA_MPI
@@ -166,15 +166,15 @@ void checkOutputs() {
 	cout << "Setting v1 to reciprocal of v2" << endl;
 	// only set value of an entry on the Image that owns it
 	if(vectorspace.isMyGlobalIndex(0))
-		v2[0] = 0.25;
+		v2[vectorspace.getLocalIndex(0)] = 0.25;
 	if(vectorspace.isMyGlobalIndex(1))
-		v2[1] = 5.0;
+		v2[vectorspace.getLocalIndex(1)] = 5.0;
 	if(vectorspace.isMyGlobalIndex(2))
-		v2[2] = 0.125;
+		v2[vectorspace.getLocalIndex(2)] = 0.125;
 	if(vectorspace.isMyGlobalIndex(3))
-		v2[3] = 2.0;
+		v2[vectorspace.getLocalIndex(3)] = 2.0;
 	if(vectorspace.isMyGlobalIndex(4))
-		v2[4] = 0.75;
+		v2[vectorspace.getLocalIndex(4)] = 0.75;
 
 	cout << "v2: "; v2.printValues(cout);
 	v1.reciprocal(v2);
@@ -183,15 +183,15 @@ void checkOutputs() {
 	cout << "Elementwise multiply:" << endl;
 	// only set value of an entry on the Image that owns it
 	if(vectorspace.isMyGlobalIndex(0))
-		v1[0] = 6.25; 
+		v1[vectorspace.getLocalIndex(0)] = 6.25; 
 	if(vectorspace.isMyGlobalIndex(1))
-		v1[1] = 18.0; 
+		v1[vectorspace.getLocalIndex(1)] = 18.0; 
 	if(vectorspace.isMyGlobalIndex(2))
-		v1[2] = 0.0; 
+		v1[vectorspace.getLocalIndex(2)] = 0.0; 
 	if(vectorspace.isMyGlobalIndex(3))
-		v1[3] = 3.0; 
+		v1[vectorspace.getLocalIndex(3)] = 3.0; 
 	if(vectorspace.isMyGlobalIndex(4))
-		v1[4] = 1.0;
+		v1[vectorspace.getLocalIndex(4)] = 1.0;
 
 	cout << "v3 = v1 @ v2" << endl;
 	Tpetra::Vector<int, double> v3(vectorspace);
