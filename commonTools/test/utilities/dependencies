@@ -86,6 +86,9 @@ pliris = \
 pytrilinos = \
 --enable-pytrilinos
 
+rythmos = \
+--enable-rythmos
+
 superludist = \
 --enable-superludist
 
