@@ -25,6 +25,10 @@
 // 
 // ************************************************************************
 //@HEADER
+//
+//  This test uses the MVOPTester.hpp functions to test the Anasazi adapter
+//  to Epetra.
+//
 
 #include <stdio.h>
 #include <stdlib.h>
