@@ -91,8 +91,6 @@ std::ostream& LinearOpBase<RangeScalar,DomainScalar>::describe(
       << "\', rangeDim = " << dimRange
       << ", domainDim = " << dimDomain << "\n";
   if(verbLevel >= Teuchos::VERB_EXTREME) {
-    // We will extract by column if op==NOTRANS is supported and by row otherwise
-    const ETransp opM = NOTRANS;
     // Copy into dense matrix by column
     Teuchos::RefCountPtr<VectorBase<Scalar> >
       e_j = createMember(this->domain()),

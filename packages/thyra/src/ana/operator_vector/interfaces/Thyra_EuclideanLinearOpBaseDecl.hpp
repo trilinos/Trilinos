@@ -45,8 +45,11 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
 template<class RangeScalar, class DomainScalar>
-class EuclideanLinearOpBase : virtual public LinearOpBase<RangeScalar, DomainScalar> {
+class EuclideanLinearOpBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
 public:
+
+  /** \brief .*/
+  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
 
   /** @name Pure virtual functions to override in subclasses */
   //@{
