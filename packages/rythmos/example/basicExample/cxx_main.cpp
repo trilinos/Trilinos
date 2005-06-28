@@ -61,6 +61,15 @@ int main(int argc, char *argv[])
 
   try { // catch exceptions
 
+#ifdef HAVE_MPI
+    MPI_Init(&argc,&argv);
+    MPI_Comm mpiComm = MPI_COMM_WORLD;
+    int procRank = 0;
+    int numProc;
+    MPI_Comm_size( mpiComm, &numProc );
+    MPI_Comm_rank( mpiComm, &procRank );
+#endif // HAVE_MPI
+
     double lambda_min = -0.9;   // min ODE coefficient
     double lambda_max = -0.01;  // max ODE coefficient
     std::string lambda_fit = "random"; // Lambda model
@@ -105,8 +114,9 @@ int main(int argc, char *argv[])
     params.set( "Lambda_fit", lambda_fit );
     params.set( "NumElements", numElements );
     params.set( "x0", x0 );
-    params.set( "main_argc", argc );
-    params.set( "main_argv", argv );
+#ifdef HAVE_MPI
+    params.set( "MPIComm", mpiComm );
+#endif // HAVE_MPI
     
     // create interface to problem
     Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem_ptr = Teuchos::rcp(new ExampleApplicationRythmosInterface(params));
@@ -169,17 +179,23 @@ int main(int argc, char *argv[])
                 << " to t = " << t1 << std::endl;
       std::cout << "using " << method << std::endl;
       std::cout << "with initial x_0 = " << x0
-                << ", \\Delta t = " << dt 
-                << ", and \\lambda = " << std::endl;
-      std::cout << lambda << std::endl;
-
-      for (int i=0 ; i<x_computed.MyLength() ; ++i)
-      {
-        std::cout << "Computed: x[" << i << "](" << t1 << ") = " << x_computed[i] << "\t"  <<
-                     "Exact:    x[" << i << "](" << t1 << ") = " << x_star[i] << std::endl;
-      }
+                << ", \\Delta t = " << dt  << "." << std::endl;
+    }
+    int MyLength = x_computed.MyLength();
+    for (int i=0 ; i<MyLength ; ++i)
+    {
+      std::cout << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
+    }
+    for (int i=0 ; i<MyLength ; ++i)
+    {
+      std::cout << "Computed: x[" << MyPID*MyLength+i << "] = " << x_computed[i] << "\t" 
+                <<    "Exact: x[" << MyPID*MyLength+i << "] = " << x_star[i] << std::endl;
     }
     
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif // HAVE_MPI
+
    } // end try
    catch( const std::exception &excpt ) {
     if(verbose)

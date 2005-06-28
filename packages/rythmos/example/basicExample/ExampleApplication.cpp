@@ -33,24 +33,14 @@
 
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
-  lambda_min_ = params.get( "Lambda_min", -0.9 );
-  lambda_max_ = params.get( "Lambda_max", -0.01 );
-  lambda_fit_ = params.get( "Lambda_fit", "random" );
-  numElements_ = params.get( "NumElements", 1 );
-  x0_ = params.get( "x0", 10.0 );
-  // Serial only implementation here:
-  // 05/26/05 tscoffe:  I haven't figured out how to get MPI_Init called with
-  // argc and argv in such a way that MPI_COMM_WORLD is passed down here.
+  lambda_min_ = params.get<double>( "Lambda_min" );
+  lambda_max_ = params.get<double>( "Lambda_max" );
+  lambda_fit_ = params.get<std::string>( "Lambda_fit" );
+  numElements_ = params.get<int>( "NumElements" );
+  x0_ = params.get<double>( "x0" );
 #ifdef HAVE_MPI
-  int   argc = params.get( "main_argc" );
-  char *argv = params.get( "main_argv" );
-  MPI_Init(&argc,&argv);
-  MPI_Comm mpiComm = MPI_COMM_WORLD;
-  int procRank = 0;
-  int numProc;
-  MPI_Comm_size( mpiComm, &numProc );
-  MPI_Comm_rank( mpiComm, &procRank );
-  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_Comm(mpiComm) );
+  MPI_Comm mpiComm = params.get<MPI_Comm>( "MPIComm" );
+  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
 #else
   epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
 #endif // HAVE_MPI
@@ -65,16 +55,22 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   {
     int N = lambda.GlobalLength();
     double tmp = (lambda_max_ - lambda_min_)/(N-1);
-    for (int i=0 ; i<N ; ++i)
+    int MyLength = lambda.MyLength();
+    int MyPID = lambda.Comm().MyPID();
+    for (int i=0 ; i<MyLength ; ++i)
     {
-      lambda[i] = tmp*i+lambda_min_;
+      lambda[i] = tmp*(MyPID*MyLength+i)+lambda_min_;
     }
   }
   else // if ( lambda_fit_ == "random" )
   {
-    unsigned int seed = time(NULL); 
-    seed *= seed;
-    lambda.SetSeed(seed);
+    int MyPID = lambda.Comm().MyPID();
+    if (MyPID == 0)
+    {
+      unsigned int seed = time(NULL); 
+      seed *= seed;
+      lambda.SetSeed(seed);
+    }
     lambda.Random(); // fill with random numbers in (-1,1)
     // Scale random numbers to (lambda_min_,lambda_max_)
     lambda.Scale( (lambda_min_ - lambda_max_)/2.0);
