@@ -4,7 +4,6 @@
 
 (FRAMEWORK) {
     DIRS = Platform,
-           Comm,
            Distributor,
            Directory,
            ElementSpace,
@@ -15,7 +14,16 @@
     COMM = SERIAL, MPI;
 }
 
+# Comm will hang on some machines if run on more than 4 nodes. (See Bugzilla #1447)
+
+(FRAMEWORK) {
+    DIRS = Comm;
+    ARGS = -v;
+    COMM = SERIAL, MPI(1-4);
+}
+
 # Removing Vector and CisMatrix from MPI for now because they hang the testharness.
+# (See Bugzilla #1465 and #1468)
 
 (FRAMEWORK) {
     DIRS = Vector,
