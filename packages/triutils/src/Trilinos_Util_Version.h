@@ -33,7 +33,7 @@
 
 	string Triutils_Version() { 
 		return("Triutils Version 1.2d - 05/26/2004"); 
-	};
+	}
 
 #endif // TRILINOS_UTIL_VERSION_H
 
