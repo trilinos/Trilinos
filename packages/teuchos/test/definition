@@ -10,7 +10,7 @@
 (FRAMEWORK) {
     TESTS = Time/Time_test.exe;
     ARGS = -v;
-    EXIT-STATUS = STRING-COMPARISON
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;
 }
 
@@ -27,13 +27,13 @@
             LAPACK/LAPACK_test.exe,
             DenseMatrix/DenseMatrix_test.exe;
     ARGS = -v;
-    EXIT-STATUS = STRING-COMPARISON
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL;
 }
 
 (FRAMEWORK) {
     TESTS = ParameterList/ParameterList_test.exe;
     ARGS = --v;
-    EXIT-STATUS = STRING-COMPARISON
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;
 }
