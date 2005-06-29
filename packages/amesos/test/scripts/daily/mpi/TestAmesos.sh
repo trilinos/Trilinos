@@ -39,8 +39,6 @@
 #      run.  This assists a developer in figuring out which tests failed.
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
-# $3 - Indiciates if the test is being called by commonTools/test/utilities/runtests, 
-#      the new automated nightly test script
 
 ## Some machines use a command different than mpirun to run mpi jobs.  The
 ## test-harness.plx script sets the environment variable
@@ -113,12 +111,14 @@ echo `uname -a` >>& $file
 #  Set MPI_GROUP_MAX to allow this test to pass desipte bug #1210
 setenv MPI_COMM_MAX 4096
 setenv MPI_GROUP_MAX 4096
-# foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
-foreach f ( Test_Epetra_RowMatrix )
+foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+# foreach f ( Test_Epetra_RowMatrix )
+  set TestRan = False
   cd $f
   set exefiles = (*.exe)
   if ( "${exefiles}X" != 'X' ) then
     foreach g(*.exe)
+      set TestRan = True
       echo "" >>& ../$file
       echo "############" $g "##############" >>& ../$file
       if( "$2" == "True" ) then
@@ -162,15 +162,19 @@ foreach f ( Test_Epetra_RowMatrix )
     endif
   endif
   cd ..
+  if ( $TestRan != True ) then
+    echo "No executables were found in directory " $f 
+    set AnError = True
+  endif
 end
 
-#  copy $file1 and $file2 to standard out for the new test harness 
+# copy Summary file and Error file to standard out
 if ( "$3" == "True" ) then
     echo "@#@#@#@#  Summary file @#@#@#@#@"
     cat $file
-    if ( -f $file2 ) then
-        echo "@#@#@#@# Error file @#@#@#@#@"
-        cat $file2
+    if( "$AnError" == "True" ) then
+	echo "@#@#@#@# Error file @#@#@#@#@"
+	cat $file2
     endif
 endif
 
@@ -186,6 +190,7 @@ endif
 if ( "$AnError" == "True" ) then
     exit 1
 else
+    echo "End Result: TEST PASSED"
     exit 0
 endif
 

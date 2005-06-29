@@ -46,10 +46,13 @@
 #  TestExamples runs executables in the example directories 
 #  TestKlu.exe runs Test_Basic/AmesosKlu  
 #  TestDscpack.exe runs Test_Basic/AmesosDscpack  
-#  TestSuperlud.exe runs Test_Basic/AmesosSuperludist  
-#  TestSuperlu.exe runs Test_Basic/AmesosSuperlud
+#  TestSuperludist.exe runs Test_Basic/AmesosSuperludist  
+#  TestSuperlu.exe runs Test_Basic/AmesosSuperlu
 #  TestUmfpack.exe runs Test_Basic/AmesosUmfpack  
 #  TestMumps.exe runs Test_Basic/AmesosMumps  
+#  TestTaucs.exe runs Test_Basic/AmesosTaucs  
+#  TestPardiso.exe runs Test_Basic/AmesosPardiso  
+#  TestPastix.exe runs Test_Basic/AmesosPastix  
 #  TestKluSerial.exe runs Test_Basic/AmesosKluSerial
 #  TestSuperluSerial.exe runs Test_Basic/AmesosSuperluSerial
 #  TestUmpfpackSerial.exe runs Test_Basic/AmesosUmpfpackSerial
@@ -72,11 +75,11 @@ TestQuietAmesos$(EXEEXT): ${TestQuietAmesos_SOURCES}
 	cp $(srcdir)/TestQuietAmesos.sh TestQuietAmesos$(EXEEXT) 
 
 TestBasic_SOURCES = $(srcdir)/TestBasic.sh
-TestBasic$(EXEEXT):
+TestBasic$(EXEEXT): ${TestBasic_SOURCES}
 	cp $(srcdir)/TestBasic.sh TestBasic$(EXEEXT) 
 
 TestExamples_SOURCES = $(srcdir)/TestExamples.sh
-TestExamples$(EXEEXT):
+TestExamples$(EXEEXT): ${TestExamples_SOURCES}
 	cp $(srcdir)/TestExamples.sh TestExamples$(EXEEXT) 
 
 endif
@@ -131,7 +134,7 @@ KLU_TEST =
 endif
 
 if HAVE_AMESOS_SUPERLUDIST
-SUPERLUDIST_TEST = TestSuperlud
+SUPERLUDIST_TEST = TestSuperludist
 else
 SUPERLUDIST_TEST = 
 endif
@@ -167,6 +170,16 @@ else
 LAPACK_TEST = 
 endif
 
+if HAVE_AMESOS_PASTIX
+PASTIX_TEST = TestPastix
+TestPastix_SOURCES = $(srcdir)/TestPastix
+
+TestPastix$(EXEEXT): $(srcdir)/TestPastix
+	cp $(srcdir)/TestPastix TestPastix$(EXEEXT) 
+else
+PASTIX_TEST = 
+endif
+
 if HAVE_AMESOS_SCALAPACK
 SCALAPACK_TEST = TestScalapack
 TestScalapack_SOURCES = $(srcdir)/TestScalapack
@@ -177,14 +190,24 @@ else
 SCALAPACK_TEST = 
 endif
 
+if HAVE_AMESOS_TAUCS
+TAUCS_TEST = TestTaucs
+TestTaucs_SOURCES = $(srcdir)/TestTaucs
+
+TestTaucs$(EXEEXT): $(srcdir)/TestTaucs
+	cp $(srcdir)/TestTaucs TestTaucs$(EXEEXT) 
+else
+TAUCS_TEST = 
+endif
+
 if HAVE_AMESOS_KLU
 endif
 
 if HAVE_AMESOS_SUPERLUDIST
-TestSuperlud_SOURCES = $(srcdir)/TestSuperlud
+TestSuperludist_SOURCES = $(srcdir)/TestSuperludist
 
-TestSuperlud$(EXEEXT): $(srcdir)/TestSuperlud
-	cp $(srcdir)/TestSuperlud TestSuperlud$(EXEEXT) 
+TestSuperludist$(EXEEXT): $(srcdir)/TestSuperludist
+	cp $(srcdir)/TestSuperludist TestSuperludist$(EXEEXT) 
 endif
 
 if HAVE_AMESOS_MUMPS
@@ -199,5 +222,7 @@ endif
 #
 noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) \
 	$(SCALAPACK_TEST) $(LAPACK_TEST) $(UMFPACK_TEST) \
-	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(VALGRIND_TEST)  $(COVERAGE_TEST)
+	$(TAUCS_TEST) $(PARDISO_TEST) $(PASTIX_TEST) \
+	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) \
+	$(VALGRIND_TEST)  $(COVERAGE_TEST)
 

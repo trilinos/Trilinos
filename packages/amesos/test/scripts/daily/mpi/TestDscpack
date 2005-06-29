@@ -24,6 +24,11 @@
 # Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 # 
 # ************************************************************************
+#
+#  The only change that I made to change this from dscpack to dscpack
+#  was to replace the single occurence of dscpack with dscpack
+#  I also added HAVE_AMESOS_DSCPACK to Makefile.am in this directory.
+#
 ## NOTE: Those wishing to cusomize this script to run test exe's
 ## that have already been autotool'ed should read lines beginning with '##'
 
@@ -42,13 +47,22 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 			  # this is an automated test or not
     # file2 is the log that is created and put into a results email if 
     # errors occur.
-    set file2 = ../../../../logMpiErrors.txt
-    rm -f $file2
+    set file2 = ../logMpiErrors.txt
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
     #'file' is a shorter log that is retained even if all tests pass.
-    set file = ../../../../log`eval uname`.txt
-    rm -f $file
+    set file = ../log`eval uname`.txt
+else
+#
+#  No longer supported 
+#    cd 
+#   set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
+#    rm -f $file
+endif
+
+cd Test_Basic
+rm -f $file2
+rm -f $file
 ## IMPORTANT: Specify the script owner(s) on the following line
 ## For one owner type "owner@abc.com", for multiple owners
 ## "owner1@abc.com, owner2@def.com"
@@ -57,22 +71,8 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: Amesos  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
-    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
-    #of the longer log file (file2).
-    set file3 = tempfile
-    rm -f $file3
-    set file4 = tempfile2
-    rm -f $file4
-else
-    cd ../../../
-    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
-    rm -f $file
-endif
-echo $file
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
-echo `pwd` >>& $file
-cd Test_Basic
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 
 ## a direct subdirectory of 'epetra/test' 
@@ -101,17 +101,17 @@ foreach g  ( AmesosDscpack.csh )
 		    endif
 		else
 		# This is not an automated test.
-		    ( source $g > $file3 ) >>& $file4
+#  no longer supported		    ( source $g > $file3 ) >>& $file4
 		endif
 end
 
-#  copy $file1 and $file2 to standard out for the new test harness 
+# copy Summary file and Error file to standard out
 if ( "$3" == "True" ) then
     echo "@#@#@#@#  Summary file @#@#@#@#@"
     cat $file
-    if ( -f $file2 ) then
-        echo "@#@#@#@# Error file @#@#@#@#@"
-        cat $file2
+    if( "$AnError" == "True" ) then
+	echo "@#@#@#@# Error file @#@#@#@#@"
+	cat $file2
     endif
 endif
 
@@ -124,9 +124,9 @@ if ( "$2" == "True" ) then
     endif
 endif
 
+
 if ( "$AnError" == "True" ) then
     exit 1
 else
     exit 0
 endif
-

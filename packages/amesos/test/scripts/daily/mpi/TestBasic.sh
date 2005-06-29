@@ -37,8 +37,6 @@
 #      run.  This assists a developer in figuring out which tests failed.
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
-# $3 - Indiciates if the test is being called by commonTools/test/utilities/runtests, 
-#      the new automated nightly test script
 
 set error = None
 set AnError = False
@@ -47,12 +45,12 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 			  # this is an automated test or not
     # file2 is the log that is created and put into a results email if 
     # errors occur.
-    set file2 = ../../../../logMpiErrors.txt
+    set file2 = ../logMpiErrors.txt
     rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
     #'file' is a shorter log that is retained even if all tests pass.
-    set file = ../../../../log`eval uname`.txt
+    set file = ../log`eval uname`.txt
     rm -f $file
 ## IMPORTANT: Specify the script owner(s) on the following line
 ## For one owner type "owner@abc.com", for multiple owners
@@ -62,16 +60,6 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: Amesos  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
-    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
-    #of the longer log file (file2).
-    set file3 = tempfile
-    rm -f $file3
-    set file4 = tempfile2
-    rm -f $file4
-else
-    cd ../../../
-    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
-    rm -f $file
 endif
 echo $file
 echo "Date: " `eval date` >>& $file
@@ -87,38 +75,39 @@ echo `uname -a` >>& $file
 ## but are invoked from various build directories
 
 cd Test_Basic
+set TestRan = False
 foreach g  ( TestBasic.csh )
-		echo "############" $g " ##############" >>& $file
+                set TestRan = True
+		echo "############" $g " ##############" >>& ../$file
 		if( "$2" == "True" ) then
-                    echo "############ KLU ##############" >>& $file
+                    echo "############ KLU ##############" >>& ../$file
 		    source $g KLU
 		    if( $status != 0 ) then
 		    # A test failed.
 			set AnError = True
-			echo "  ******** Test failed ********" >>& $file
-			echo "Errors for script " $g " are listed above." >>& $file2
-			cat SST.summary >> $file
+			echo "  ******** Test failed ********" >>& ../$file
+			echo "Errors for script " $g " are listed above." >>& ../$file2
+			cat SST.summary >> ../$file
 		    else
 		    # Tests passed
-			echo "******** Test passed ********" >>& $file
+			echo "******** Test passed ********" >>& ../$file
 		    endif
-		else
-		# This is not an automated test.
-		    ( source $g > $file3 ) >>& $file4
 		endif
 end
+if ( $TestRan != True ) then
+  echo "No executables were found  " 
+  set AnError = True
+endif
 
+cd ..
 
-echo "  arg 3 =  $3 "
-echo " file = " $file 
-
-#  copy $file1 and $file2 to standard out for the new test harness 
+# copy Summary file and Error file to standard out
 if ( "$3" == "True" ) then
     echo "@#@#@#@#  Summary file @#@#@#@#@"
     cat $file
-    if ( -f $file2 ) then
-        echo "@#@#@#@# Error file @#@#@#@#@"
-        cat $file2
+    if( "$AnError" == "True" ) then
+	echo "@#@#@#@# Error file @#@#@#@#@"
+	cat $file2
     endif
 endif
 
@@ -134,6 +123,7 @@ endif
 if ( "$AnError" == "True" ) then
     exit 1
 else
+    echo "End Result: TEST PASSED"
     exit 0
 endif
 
