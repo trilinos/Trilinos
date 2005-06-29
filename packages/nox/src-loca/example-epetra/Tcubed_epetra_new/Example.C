@@ -220,10 +220,10 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 100);  
   lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 50);    
+  lsParams.setParameter("Output Frequency", 1);    
   lsParams.setParameter("Scaling", "None");             
-  //lsParams.setParameter("Preconditioner", "Ifpack");
-  lsParams.setParameter("Preconditioner", "AztecOO");
+  lsParams.setParameter("Preconditioner", "Ifpack");
+  //lsParams.setParameter("Preconditioner", "AztecOO");
   //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
   //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
   lsParams.setParameter("Aztec Preconditioner", "ilut"); 
