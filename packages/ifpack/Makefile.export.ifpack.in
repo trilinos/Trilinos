@@ -1,0 +1,25 @@
+## Always depends on epetra
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+## Optional dependencies
+@HAVE_IFPACK_AMESOS_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.amesos
+@HAVE_IFPACK_AZTECOO_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.aztecoo
+@HAVE_IFPACK_TEUCHOS_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.teuchos
+@HAVE_IFPACK_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetraext
+@HAVE_IFPACK_TRIUTILS_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.triutils
+
+IFPACK_INCLUDES= -I$(top_builddir)/src -I$(top_srcdir)/src \
+	         $(EPETRA_INCLUDES) \
+	         $(AZTECOO_INCLUDES) \
+	         $(TEUCHOS_INCLUDES) \
+	         $(AMESOS_INCLUDES) \
+	         $(EPETRAEXT_INCLUDES) \
+	         $(TRIUTILS_INCLUDES) 
+
+IFPACK_LIBS= $(top_builddir)/src/libifpack.a \
+	     $(AMESOS_LIB) \
+	     $(AZTECOO_LIB) \
+	     $(EPETRAEXT_LIB) \
+	     $(TRIUTILS_LIB) \
+	     $(EPETRA_LIB) \
+	     $(TEUCHOS_LIB)                            
