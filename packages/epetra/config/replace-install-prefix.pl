@@ -44,15 +44,21 @@ my $my_abs_export_makefile = "${exec_prefix}/include/${my_export_makefile}";
 my $cmnd_base = "${my_top_srcdir}/config/string-replace.pl ";
 #
 foreach(@dep_export_package_builddirs) {
-  run_cmnd($cmnd_base . "${_} ${exec_prefix}/include ${my_abs_export_makefile} ${my_abs_export_makefile}");
+  if($_ ne "") {
+    run_cmnd($cmnd_base . "${_} ${exec_prefix}/include ${my_abs_export_makefile} ${my_abs_export_makefile}");
+  }
 }
 #
 foreach(@my_incl_dirs) {
-  run_cmnd($cmnd_base . "-I${_} -I${exec_prefix}/include ${my_abs_export_makefile} ${my_abs_export_makefile}");
+  if($_ ne "") {
+    run_cmnd($cmnd_base . "-I${_} -I${exec_prefix}/include ${my_abs_export_makefile} ${my_abs_export_makefile}");
+  }
 }
 #
 foreach(@my_lib_dirs) {
-  run_cmnd($cmnd_base . "-L${_} -L${exec_prefix}/lib ${my_abs_export_makefile} ${my_abs_export_makefile}");
+  if($_ ne "") {
+    run_cmnd($cmnd_base . "-L${_} -L${exec_prefix}/lib ${my_abs_export_makefile} ${my_abs_export_makefile}");
+  }
 }
 #
 # Subroutines

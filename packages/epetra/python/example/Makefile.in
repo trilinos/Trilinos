@@ -255,7 +255,7 @@ AUTOMAKE_OPTIONS = foreign
 #       could get rid of these.
 #
 EXTRA_DIST = \
-	setpath.py exSimple.py
+	setpath.py exSimple.py exCrsMatrix.py exImportExport.py
 
 MAINTAINERCLEANFILES = Makefile.in
 

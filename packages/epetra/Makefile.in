@@ -290,15 +290,6 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @PYTHON_USE_TRUE@PYTHON_SUBDIR = python
 @ENABLE_EPETRA_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_EPETRA_THYRA_TRUE@THYRA_SUBDIR = thyra
-@ENABLE_EPETRA_THYRA_FALSE@EPETRA_THYRA_INCL_DIRS = 
-@ENABLE_EPETRA_THYRA_TRUE@EPETRA_THYRA_INCL_DIRS = @abs_top_srcdir@/thyra/src
-@ENABLE_EPETRA_THYRA_FALSE@EPETRA_THYRA_LIB_DIRS = 
-@ENABLE_EPETRA_THYRA_TRUE@EPETRA_THYRA_LIB_DIRS = @abs_top_builddir@/thyra/src
-@ENABLE_EPETRA_THYRA_FALSE@EPETRA_THYRA_DEP_PACKAGES = 
-@ENABLE_EPETRA_THYRA_TRUE@EPETRA_THYRA_DEP_PACKAGES = @abs_top_builddir@/../thyra
-EPETRA_INCL_DIRS = $(EPETRA_THYRA_INCL_DIRS):@abs_top_builddir@/src:@abs_top_srcdir@/src
-EPETRA_LIB_DIRS = $(EPETRA_THYRA_LIB_DIRS):@abs_top_builddir@/src
-EPETRA_DEP_PACKAGES = $(EPETRA_THYRA_DEP_PACKAGES)
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR) $(THYRA_SUBDIR)
 all: all-recursive
 
@@ -716,9 +707,9 @@ all-local:
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.epetra \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=$(EPETRA_INCL_DIRS) \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=$(EPETRA_LIB_DIRS) \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-pacakge-abs-builddirs=$(EPETRA_DEP_PACKAGES)
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_srcdir@/thyra/src:@abs_top_builddir@/src:@abs_top_srcdir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/thyra/src:@abs_top_builddir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-pacakge-abs-builddirs=@abs_top_builddir@/../thyra
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

@@ -78,19 +78,9 @@ endif
 
 if ENABLE_EPETRA_THYRA
 THYRA_SUBDIR=thyra
-EPETRA_THYRA_INCL_DIRS=@abs_top_srcdir@/thyra/src
-EPETRA_THYRA_LIB_DIRS=@abs_top_builddir@/thyra/src
-EPETRA_THYRA_DEP_PACKAGES=@abs_top_builddir@/../thyra
 else
 THYRA_SUBDIR=
-EPETRA_THYRA_INCL_DIRS=
-EPETRA_THYRA_LIB_DIRS=
-EPETRA_THYRA_DEP_PACKAGES=
 endif
-
-EPETRA_INCL_DIRS=$(EPETRA_THYRA_INCL_DIRS):@abs_top_builddir@/src:@abs_top_srcdir@/src
-EPETRA_LIB_DIRS=$(EPETRA_THYRA_LIB_DIRS):@abs_top_builddir@/src
-EPETRA_DEP_PACKAGES=$(EPETRA_THYRA_DEP_PACKAGES)
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR) $(THYRA_SUBDIR)
 
@@ -109,9 +99,9 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.epetra \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=$(EPETRA_INCL_DIRS) \
-		--my-abs-lib-dirs=$(EPETRA_LIB_DIRS) \
-		--dep-pacakge-abs-builddirs=$(EPETRA_DEP_PACKAGES)
+		--my-abs-incl-dirs=@abs_top_srcdir@/thyra/src:@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/thyra/src:@abs_top_builddir@/src \
+		--dep-pacakge-abs-builddirs=@abs_top_builddir@/../thyra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 uninstall-hook:
