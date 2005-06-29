@@ -462,7 +462,8 @@ namespace Anasazi {
         //
         // Perform spectral decomposition
         //
-        info = _MSUtils.directSolver(localSize+_blockSize, KK, 0, &S, &_theta, localSize+_blockSize, 10);
+	int nevLocal = localSize+_blockSize;
+        info = _MSUtils.directSolver(localSize+_blockSize, KK, 0, &S, &_theta, &nevLocal, 10);
         //
         // Exit the code if there has been a problem.
         //

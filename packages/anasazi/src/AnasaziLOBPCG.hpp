@@ -540,7 +540,8 @@ namespace Anasazi {
           
       // Perform a spectral decomposition
       //timeLocalSolve -= MyWatch.WallTime();
-      info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, localSize, 
+      int nevLocal = localSize;
+      info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, &nevLocal, 
 				   (_blockSize == 1) ? 1 : 0);
       //timeLocalSolve += MyWatch.WallTime();
       
@@ -550,7 +551,7 @@ namespace Anasazi {
       } // if (info < 0)
       
       // Check for restarting
-      if ((_theta[0] < 0.0) || (localSize < _blockSize)) {
+      if ((_theta[0] < 0.0) || (nevLocal < _blockSize)) {
 	if (_om->isVerbosityAndPrint( IterationDetails ) ) {
 	  _os << " Iteration " << _iter;
 	  _os << "- Failure for spectral decomposition - RESTART with new random search\n";
@@ -571,17 +572,17 @@ namespace Anasazi {
 	_numRestarts += 1;
 	info = 0;
 	continue;
-      } // if ((theta[0] < 0.0) || (localSize < _blockSize))
+      } // if ((theta[0] < 0.0) || (nevLocal < _blockSize))
     
-      if ((localSize == twoBlocks) && (localSize == _blockSize)) {
-	//for (j = 0; j < localSize; ++j) 
+      if ((localSize == twoBlocks) && (nevLocal == _blockSize)) {
+	//for (j = 0; j < nevLocal; ++j) 
 	//memcpy(S + j*_blockSize, S + j*twoBlocks, _blockSize*sizeof(double)); 
 	_os << "localSize == twoBlocks && localSize == _blockSize"<<endl;
 	localSize = _blockSize;
       }
       
-      if ((localSize == threeBlocks) && (localSize <= twoBlocks)) {
-	//for (j = 0; j < localSize; ++j) 
+      if ((localSize == threeBlocks) && (nevLocal <= twoBlocks)) {
+	//for (j = 0; j < nevLocal; ++j) 
 	// memcpy(S + j*twoBlocks, S + j*threeBlocks, twoBlocks*sizeof(double)); 
 	_os << "localSize == threeBlocks && localSize <= twoBlocks"<<endl;
 	localSize = twoBlocks;
@@ -869,7 +870,7 @@ namespace Anasazi {
       
       // Define the restarting vectors
       //timeRestart -= MyWatch.WallTime();
-      int leftOver = (localSize < _blockSize + nFound) ? localSize - nFound : _blockSize;
+      int leftOver = (nevLocal < _blockSize + nFound) ? nevLocal - nFound : _blockSize;
       Teuchos::SerialDenseMatrix<int,ScalarType> S11new( Teuchos::View, S, _blockSize, leftOver, 0, nFound );
       
       MVT::MvAddMv( one, *X, zero, *X, *R );
@@ -898,7 +899,7 @@ namespace Anasazi {
 	    MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MX );
         }
       }
-      if (localSize < _blockSize + nFound) {
+      if (nevLocal < _blockSize + nFound) {
 	// Put new random vectors at the end of the block
 	std::vector<int> index2( _blockSize - leftOver );
 	for (j=0; j<_blockSize-leftOver; j++)

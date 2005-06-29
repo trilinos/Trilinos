@@ -141,7 +141,7 @@ namespace Anasazi {
                      const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
                      Teuchos::SerialDenseMatrix<int,ScalarType> *EV,
                      std::vector<ScalarType>* theta,
-                     int nev, int esType = 0) const;
+                     int* nev, int esType = 0) const;
     //@}
 
     //@{ \name Sanity Checking Methods
@@ -729,7 +729,7 @@ namespace Anasazi {
                                                          const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
                                                          Teuchos::SerialDenseMatrix<int,ScalarType>* EV,
                                                          std::vector<ScalarType>* theta,
-                                                         int nev, int esType) const
+                                                         int* nev, int esType) const
   {
     // Routine for computing the first NEV generalized eigenpairs of the symmetric pencil (KK, MM)
     //
@@ -802,12 +802,13 @@ namespace Anasazi {
       //
       for (rank = size; rank > 0; --rank) {
 
-        U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );      
-        //
+	cout << "rank = "<<rank<<endl;
+
+        U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );              //
         // Copy KK & MM
         //
-        KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, rank, rank ) );
-        MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, rank, rank ) );
+        KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, size, size ) );
+        MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, size, size ) );
         //
         // Solve the generalized eigenproblem with LAPACK
         //
@@ -870,10 +871,10 @@ namespace Anasazi {
       // Copy the computed eigenvectors and eigenvalues
       // ( they may be less than the number requested because of deflation )
       //
-      nev = (rank < nev) ? rank : nev;
+      *nev = (rank < *nev) ? rank : *nev;
       EV->putScalar( zero );
-      blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
-      for (i = 0; i < nev; ++i) {
+      blas.COPY( *nev, &tt[0], 1, &(*theta)[0], 1 );
+      for (i = 0; i < *nev; ++i) {
         blas.COPY( rank, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
@@ -906,7 +907,7 @@ namespace Anasazi {
       }
       if (info > 0) {
         if (info > size)
-          nev = 0;
+          *nev = 0;
         else {
           //        if (verbose > 0) {
           cerr << endl;
@@ -919,8 +920,8 @@ namespace Anasazi {
       //
       // Copy the eigenvectors and eigenvalues
       //
-      blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
-      for (i = 0; i < nev; ++i) {
+      blas.COPY( *nev, &tt[0], 1, &(*theta)[0], 1 );
+      for (i = 0; i < *nev; ++i) {
         blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
@@ -954,8 +955,8 @@ namespace Anasazi {
       //
       // Copy the eigenvectors
       //
-      blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
-      for (i = 0; i < nev; ++i) {
+      blas.COPY( *nev, &tt[0], 1, &(*theta)[0], 1 );
+      for (i = 0; i < *nev; ++i) {
         blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
