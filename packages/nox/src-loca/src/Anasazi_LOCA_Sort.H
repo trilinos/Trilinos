@@ -32,8 +32,8 @@
 #ifndef ANASAZI_LOCA_SORT_HPP
 #define ANASAZI_LOCA_SORT_HPP
 
-#include "AnasaziSortManager.hpp"
 #include "AnasaziMultiVec.hpp"
+#include "AnasaziSortManager.hpp"
 #include "AnasaziOperator.hpp"
 
 // Forward declarations
