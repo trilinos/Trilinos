@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
   int ierr = 0;
   double reltol = 1.0e-14;
   double abstol = 1.0e-14;
+  int MyPID;
 
   try {
 
@@ -73,6 +74,8 @@ int main(int argc, char *argv[])
 #else
     Epetra_SerialComm Comm;
 #endif
+
+    MyPID = Comm.MyPID();
 
     // Create the map
     Epetra_Map map(n, 0, Comm);
@@ -331,10 +334,16 @@ int main(int argc, char *argv[])
     ierr = 1;
   }
 
-  if (ierr == 0)
-    cout << "All tests passed!" << endl;
-  else
-    cout << ierr << " test(s) failed!" << endl;
+  if (MyPID == 0) {
+    if (ierr == 0)
+      cout << "All tests passed!" << endl;
+    else
+      cout << ierr << " test(s) failed!" << endl;
+  }
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
 
   return ierr;
 }

@@ -43,9 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-#EXEEXT = .exe
-
-SOURCES = $(LOCA_Group_exe_SOURCES)
+SOURCES = $(tcubed_exe_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,9 +66,10 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = LOCA_Group_exe$(EXEEXT)
-subdir = test/epetra/LOCA_Group
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+noinst_PROGRAMS = tcubed_exe$(EXEEXT)
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/config/libtool_macros.am
+subdir = test/epetra/LOCA_Tcubed
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
@@ -97,13 +96,13 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_LOCA_Group_exe_OBJECTS = LOCA_Group_exe-test.$(OBJEXT)
-LOCA_Group_exe_OBJECTS = $(am_LOCA_Group_exe_OBJECTS)
+am_tcubed_exe_OBJECTS = tcubed_exe-Tcubed.$(OBJEXT)
+tcubed_exe_OBJECTS = $(am_tcubed_exe_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOCA_Group_exe-test.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/tcubed_exe-Tcubed.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -112,8 +111,8 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(LOCA_Group_exe_SOURCES)
-DIST_SOURCES = $(LOCA_Group_exe_SOURCES)
+SOURCES = $(tcubed_exe_SOURCES)
+DIST_SOURCES = $(tcubed_exe_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -234,7 +233,13 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
+
+###############################################################################
+# Changes to the standard libtool command:
+# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
+#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
+###############################################################################
+LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
 LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
 LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
 LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
@@ -335,35 +340,51 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-LOCA_Group_exe_SOURCES = $(srcdir)/test.C
-LOCA_Group_exe_DEPENDENCIES = \
-                          $(top_builddir)/src/libnox.a \
-                          $(top_builddir)/src-epetra/libnoxepetra.a \
-                          $(top_builddir)/src-loca/src/libloca.la \
-                          $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
+tcubed_exe_SOURCES = \
+	$(srcdir)/Tcubed.C 
 
-LOCA_Group_exe_CXXFLAGS = \
-                      -I$(top_srcdir)/src \
-                      -I$(top_srcdir)/src-epetra \
-                      -I$(top_srcdir)/src-loca/src \
-                      -I$(top_srcdir)/src-loca/src-epetra \
-                      -I$(top_srcdir)/test/utils \
-                      $(TRILINOS_CXXFLAGS)
+tcubed_exe_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
+	$(top_builddir)/src-loca/src/libloca.la \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
+
+tcubed_exe_CXXFLAGS = \
+	$(TRILINOS_CXXFLAGS) \
+	$(LIBTOOL_COMPILER_FLAGS) \
+	-I$(top_srcdir)/src \
+        -I$(top_srcdir)/src-epetra \
+	-I$(top_srcdir)/src-loca/src \
+        -I$(top_srcdir)/src-loca/src-epetra \
+	-I$(top_srcdir)/test/utils \
+	-I$(top_srcdir)/test/epetra/LOCA_TestProblems
+
+tcubed_exe_LDADD = \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la \
+	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
+	$(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/src/libnox.a \
+	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 
-#Unsure why this test need to link to the BLAS on an IBM.
-LOCA_Group_exe_LDADD = \
-                   $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-                   $(top_builddir)/src-loca/src/libloca.la $(BLAS_LIBS) \
-                   -L$(top_builddir)/src-epetra -lnoxepetra \
-                   -L$(top_builddir)/src -lnox $(LIBS) \
-	           $(BLAS_LIBS) $(FLIBS)
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
 
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -372,9 +393,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/epetra/LOCA_Group/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/epetra/LOCA_Tcubed/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/epetra/LOCA_Group/Makefile
+	  $(AUTOMAKE) --foreign  test/epetra/LOCA_Tcubed/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -399,9 +420,9 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-LOCA_Group_exe$(EXEEXT): $(LOCA_Group_exe_OBJECTS) $(LOCA_Group_exe_DEPENDENCIES) 
-	@rm -f LOCA_Group_exe$(EXEEXT)
-	$(CXXLINK) $(LOCA_Group_exe_LDFLAGS) $(LOCA_Group_exe_OBJECTS) $(LOCA_Group_exe_LDADD) $(LIBS)
+tcubed_exe$(EXEEXT): $(tcubed_exe_OBJECTS) $(tcubed_exe_DEPENDENCIES) 
+	@rm -f tcubed_exe$(EXEEXT)
+	$(CXXLINK) $(tcubed_exe_LDFLAGS) $(tcubed_exe_OBJECTS) $(tcubed_exe_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -409,7 +430,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Group_exe-test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcubed_exe-Tcubed.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -435,29 +456,29 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-LOCA_Group_exe-test.o: $(srcdir)/test.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOCA_Group_exe_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Group_exe-test.o -MD -MP -MF "$(DEPDIR)/LOCA_Group_exe-test.Tpo" -c -o LOCA_Group_exe-test.o `test -f '$(srcdir)/test.C' || echo '$(srcdir)/'`$(srcdir)/test.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Group_exe-test.Tpo" "$(DEPDIR)/LOCA_Group_exe-test.Po"; else rm -f "$(DEPDIR)/LOCA_Group_exe-test.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test.C' object='LOCA_Group_exe-test.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Group_exe-test.Po' tmpdepfile='$(DEPDIR)/LOCA_Group_exe-test.TPo' @AMDEPBACKSLASH@
+tcubed_exe-Tcubed.o: $(srcdir)/Tcubed.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_exe_CXXFLAGS) $(CXXFLAGS) -MT tcubed_exe-Tcubed.o -MD -MP -MF "$(DEPDIR)/tcubed_exe-Tcubed.Tpo" -c -o tcubed_exe-Tcubed.o `test -f '$(srcdir)/Tcubed.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tcubed_exe-Tcubed.Tpo" "$(DEPDIR)/tcubed_exe-Tcubed.Po"; else rm -f "$(DEPDIR)/tcubed_exe-Tcubed.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed.C' object='tcubed_exe-Tcubed.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tcubed_exe-Tcubed.Po' tmpdepfile='$(DEPDIR)/tcubed_exe-Tcubed.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOCA_Group_exe_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Group_exe-test.o `test -f '$(srcdir)/test.C' || echo '$(srcdir)/'`$(srcdir)/test.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_exe_CXXFLAGS) $(CXXFLAGS) -c -o tcubed_exe-Tcubed.o `test -f '$(srcdir)/Tcubed.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed.C
 
-LOCA_Group_exe-test.obj: $(srcdir)/test.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOCA_Group_exe_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Group_exe-test.obj -MD -MP -MF "$(DEPDIR)/LOCA_Group_exe-test.Tpo" -c -o LOCA_Group_exe-test.obj `if test -f '$(srcdir)/test.C'; then $(CYGPATH_W) '$(srcdir)/test.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Group_exe-test.Tpo" "$(DEPDIR)/LOCA_Group_exe-test.Po"; else rm -f "$(DEPDIR)/LOCA_Group_exe-test.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test.C' object='LOCA_Group_exe-test.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Group_exe-test.Po' tmpdepfile='$(DEPDIR)/LOCA_Group_exe-test.TPo' @AMDEPBACKSLASH@
+tcubed_exe-Tcubed.obj: $(srcdir)/Tcubed.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_exe_CXXFLAGS) $(CXXFLAGS) -MT tcubed_exe-Tcubed.obj -MD -MP -MF "$(DEPDIR)/tcubed_exe-Tcubed.Tpo" -c -o tcubed_exe-Tcubed.obj `if test -f '$(srcdir)/Tcubed.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tcubed_exe-Tcubed.Tpo" "$(DEPDIR)/tcubed_exe-Tcubed.Po"; else rm -f "$(DEPDIR)/tcubed_exe-Tcubed.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed.C' object='tcubed_exe-Tcubed.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tcubed_exe-Tcubed.Po' tmpdepfile='$(DEPDIR)/tcubed_exe-Tcubed.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOCA_Group_exe_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Group_exe-test.obj `if test -f '$(srcdir)/test.C'; then $(CYGPATH_W) '$(srcdir)/test.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_exe_CXXFLAGS) $(CXXFLAGS) -c -o tcubed_exe-Tcubed.obj `if test -f '$(srcdir)/Tcubed.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed.C'; fi`
 
-LOCA_Group_exe-test.lo: $(srcdir)/test.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOCA_Group_exe_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Group_exe-test.lo -MD -MP -MF "$(DEPDIR)/LOCA_Group_exe-test.Tpo" -c -o LOCA_Group_exe-test.lo `test -f '$(srcdir)/test.C' || echo '$(srcdir)/'`$(srcdir)/test.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Group_exe-test.Tpo" "$(DEPDIR)/LOCA_Group_exe-test.Plo"; else rm -f "$(DEPDIR)/LOCA_Group_exe-test.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test.C' object='LOCA_Group_exe-test.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Group_exe-test.Plo' tmpdepfile='$(DEPDIR)/LOCA_Group_exe-test.TPlo' @AMDEPBACKSLASH@
+tcubed_exe-Tcubed.lo: $(srcdir)/Tcubed.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_exe_CXXFLAGS) $(CXXFLAGS) -MT tcubed_exe-Tcubed.lo -MD -MP -MF "$(DEPDIR)/tcubed_exe-Tcubed.Tpo" -c -o tcubed_exe-Tcubed.lo `test -f '$(srcdir)/Tcubed.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tcubed_exe-Tcubed.Tpo" "$(DEPDIR)/tcubed_exe-Tcubed.Plo"; else rm -f "$(DEPDIR)/tcubed_exe-Tcubed.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed.C' object='tcubed_exe-Tcubed.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tcubed_exe-Tcubed.Plo' tmpdepfile='$(DEPDIR)/tcubed_exe-Tcubed.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOCA_Group_exe_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Group_exe-test.lo `test -f '$(srcdir)/test.C' || echo '$(srcdir)/'`$(srcdir)/test.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_exe_CXXFLAGS) $(CXXFLAGS) -c -o tcubed_exe-Tcubed.lo `test -f '$(srcdir)/Tcubed.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -516,6 +537,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -561,6 +583,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -570,6 +593,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
@@ -633,6 +657,10 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

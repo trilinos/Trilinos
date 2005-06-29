@@ -155,6 +155,8 @@ int main(int argc, char *argv[])
   double abstol = 1.0e-9;
   double lstol = 1.0e-11;
 
+  int MyPID;
+
   try {
 
     // Initialize MPI
@@ -170,6 +172,7 @@ int main(int argc, char *argv[])
 #endif
 
     // Get the total number of processors
+    MyPID = Comm.MyPID();
     int NumProc = Comm.NumProc();
     
     bool verbose = false;
@@ -244,7 +247,10 @@ int main(int argc, char *argv[])
     lsParams.setParameter("Aztec Solver", "GMRES");  
     lsParams.setParameter("Max Iterations", 100);  
     lsParams.setParameter("Tolerance", lstol);
-    lsParams.setParameter("Output Frequency", 50);    
+    if (verbose)
+      lsParams.setParameter("Output Frequency", 1);
+    else
+      lsParams.setParameter("Output Frequency", 0);
     lsParams.setParameter("Scaling", "None");             
     lsParams.setParameter("Preconditioner", "Ifpack");
     //lsParams.setParameter("Preconditioner", "AztecOO");
@@ -494,6 +500,7 @@ int main(int argc, char *argv[])
     testName = "Testing A,B,F,G=0, noncontiguous";
     ierr += testSolve(true, true, false, true, true, false,
 		      reltol, abstol, testName);
+
   }
 
   catch (const char *s) {
@@ -505,10 +512,16 @@ int main(int argc, char *argv[])
     ierr = 1;
   }
 
-  if (ierr == 0)
-    cout << "All tests passed!" << endl;
-  else
-    cout << ierr << " test(s) failed!" << endl;
+  if (MyPID == 0) {
+    if (ierr == 0)
+      cout << "All tests passed!" << endl;
+    else
+      cout << ierr << " test(s) failed!" << endl;
+  }
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
 
   return ierr;
 }

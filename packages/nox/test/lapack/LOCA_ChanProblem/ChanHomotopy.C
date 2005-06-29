@@ -211,19 +211,21 @@ int main(int argc, char *argv[])
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
 				  "norm of final solution", 
 				  NOX::TestCompare::Relative);
-
-    if (ierr == 0)
-      cout << "All tests passed!" << endl;
-    else
-      cout << ierr << " test(s) failed!" << endl;
   }
 
-  catch (char *s) {
+  catch (const char *s) {
     cout << s << endl;
+    ierr = 1;
   }
   catch (...) {
     cout << "Caught unknown exception!" << endl;
+    ierr = 1;
   }
+
+  if (ierr == 0)
+    cout << "All tests passed!" << endl;
+  else
+    cout << ierr << " test(s) failed!" << endl;
 
   return 0;
 }

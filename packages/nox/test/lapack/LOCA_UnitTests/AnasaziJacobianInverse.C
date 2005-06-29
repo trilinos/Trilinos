@@ -227,11 +227,7 @@ int main(int argc, char *argv[])
 
   }
 
-  catch (string& s) {
-    cout << s << endl;
-    ierr = 1;
-  }
-  catch (char *s) {
+  catch (const char *s) {
     cout << s << endl;
     ierr = 1;
   }
@@ -241,9 +237,9 @@ int main(int argc, char *argv[])
   }
 
    if (ierr == 0)
-      cout << "All tests passed!" << endl;
-    else
-      cout << ierr << " test(s) failed!" << endl;
+     cout << "All tests passed!" << endl;
+   else
+     cout << ierr << " test(s) failed!" << endl;
 
   return ierr;
 }

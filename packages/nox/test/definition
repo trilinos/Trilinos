@@ -2,21 +2,14 @@
 # FRAMEWORK group
 #
 
+# NOX tests
 (FRAMEWORK) {
     DIRS = epetra/1dfem,
            epetra/DS6.5.1,
-           epetra/LOCA_Group,
-           epetra/LOCA_NewTest,
-           epetra/LOCA_Pitchfork,
            epetra/MultiPhysics,
            epetra/NOX_Group,
            epetra/NOX_NewTest,
            epetra/NOX_Vector,
-           lapack/LOCA_ChanProblem,
-           lapack/LOCA_Group,
-           lapack/LOCA_NewTest,
-           lapack/LOCA_TestProblems,
-           lapack/LOCA_python,
            lapack/NOX,
            lapack/NOX_Group,
            lapack/NOX_NewTest;
@@ -24,10 +17,22 @@
     COMM = SERIAL, MPI;
 }
 
-# Removed lapack/LOCA_UnitTests for now because it appeared to be hanging in MPI
-
+# LOCA Epetra tests
 (FRAMEWORK) {
-    DIRS = lapack/LOCA_UnitTests;
+    DIRS = epetra/LOCA_UnitTests,
+           epetra/LOCA_Tcubed,
+           epetra/LOCA_Pitchfork;
+    EXIT-STATUS = STRING-COMPARISON(All tests passed)
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+# LOCA LAPACK tests
+(FRAMEWORK) {
+    DIRS = lapack/LOCA_UnitTests,
+           lapack/LOCA_ChanProblem,
+           lapack/LOCA_python;
+    EXIT-STATUS = STRING-COMPARISON(All tests passed)
     ARGS = -v;
     COMM = SERIAL;
 }

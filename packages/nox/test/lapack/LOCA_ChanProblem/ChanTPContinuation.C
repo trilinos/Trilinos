@@ -55,16 +55,8 @@ int main(int argc, char *argv[])
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
 
-    // Create output file to save solutions
-    ofstream outFile("ChanTPContinuation.dat");
-    outFile.setf(ios::scientific, ios::floatfield);
-    outFile.precision(14);
-
-    // Save size of discretizations
-    outFile << n << endl;
-
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale, outFile);
+    ChanProblemInterface chan(n, alpha, beta, scale);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
@@ -210,8 +202,6 @@ int main(int argc, char *argv[])
       cout << endl;
     }
 
-    outFile.close();
-
     // Check some statistics on the solution
     NOX::Utils utils(nlPrintParams);
     NOX::TestCompare testCompare(cout, utils);
@@ -253,19 +243,21 @@ int main(int argc, char *argv[])
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-4,
 				  "norm of final solution", 
 				  NOX::TestCompare::Relative);
-
-    if (ierr == 0)
-      cout << "All tests passed!" << endl;
-    else
-      cout << ierr << " test(s) failed!" << endl;
   }
 
-  catch (char *s) {
+  catch (const char *s) {
     cout << s << endl;
+    ierr = 1;
   }
   catch (...) {
     cout << "Caught unknown exception!" << endl;
+    ierr = 1;
   }
+
+  if (ierr == 0)
+    cout << "All tests passed!" << endl;
+  else
+    cout << ierr << " test(s) failed!" << endl;
 
   return ierr;
 }

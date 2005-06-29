@@ -34,7 +34,7 @@ NOX_SUBDIRS =
 endif
 
 if BUILD_LOCA_EPETRA_TESTS
-LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Pitchfork
+LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork
 else
 LOCA_SUBDIRS =
 endif

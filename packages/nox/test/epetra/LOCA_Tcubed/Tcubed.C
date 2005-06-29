@@ -27,17 +27,17 @@
 // Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
 // (etphipp@sandia.gov), Sandia National Laboratories.
 //
-// ************************************************************************
-//@HEADER
-
+// ******
+                                                                     
 // 1D Finite Element Test Problem
 /* Solves continuation problem (Parameter c="Right BC")
  *
  * d2u 
- * --- + lambda * u - alpha * u**2 + beta * u**3 = 0
+ * --- + a * u**3 = 0
  * dx2
  *
- * subject to the boundar conditions u(-1) = u(1) = beta.
+ * subject to @ x=0, u=b
+ * subject to @ x=1, u=c
  */
 
 // LOCA Objects
@@ -61,7 +61,7 @@
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
-#include "Pitchfork_FiniteElementProblem.H"              
+#include "Tcubed_FiniteElementProblem.H"              
 
 using namespace std;
 
@@ -71,6 +71,9 @@ int main(int argc, char *argv[])
   int MyPID;
 
   try {
+  
+    // scale factor to test arc-length scaling
+    double scale = 1.0;
 
     // Initialize MPI
 #ifdef HAVE_MPI
@@ -111,28 +114,23 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
-    int maxNewtonIters = 20;
-    double alpha = 1.0;
-    double beta = 0.0;
-    double lambda = -2.0;
-
     // Create the FiniteElementProblem class.  This creates all required
     // Epetra objects for the problem and allows calls to the 
     // function (RHS) and Jacobian evaluation routines.
-    Pitchfork_FiniteElementProblem Problem(NumGlobalElements, Comm);
+    Tcubed_FiniteElementProblem Problem(NumGlobalElements, Comm, scale);
 
     // Get the vector from the Problem
     Epetra_Vector& soln = Problem.getSolution();
 
     // Initialize Solution
-    soln.PutScalar(0.0);
+    soln.PutScalar(1.0);
   
     // Begin LOCA Solver ************************************
 
     // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList =
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
       Teuchos::rcp(new NOX::Parameter::List);
-
+  
     // Create LOCA sublist
     NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
@@ -140,14 +138,15 @@ int main(int argc, char *argv[])
     NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
     //locaStepperList.setParameter("Continuation Method", "Natural");
     locaStepperList.setParameter("Continuation Method", "Arc Length");
-    locaStepperList.setParameter("Continuation Parameter", "lambda");
-    locaStepperList.setParameter("Initial Value", lambda);
-    locaStepperList.setParameter("Max Value", 4.0);
-    locaStepperList.setParameter("Min Value", -4.0);
-    locaStepperList.setParameter("Max Steps", 50);
-    //locaStepperList.setParameter("Max Steps", 1);
-    locaStepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
-    locaStepperList.setParameter("Enable Arc Length Scaling", true);
+    locaStepperList.setParameter("Bordered Solver Method", "Householder");
+    locaStepperList.setParameter("Continuation Parameter", "Right BC");
+    //locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
+    locaStepperList.setParameter("Initial Value", 0.1/scale);
+    locaStepperList.setParameter("Max Value", 100.0/scale);
+    locaStepperList.setParameter("Min Value", 0.05/scale);
+    locaStepperList.setParameter("Max Steps", 30);
+    locaStepperList.setParameter("Max Nonlinear Iterations", 15);
+    locaStepperList.setParameter("Enable Arc Length Scaling", false);
     locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
     locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
     locaStepperList.setParameter("Initial Scale Factor", 1.0);
@@ -155,14 +154,12 @@ int main(int argc, char *argv[])
     locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
     locaStepperList.setParameter("Min Tangent Factor", 0.8);
     locaStepperList.setParameter("Tangent Factor Exponent",1.5);
-  
 
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
     bifurcationList.setParameter("Method", "None");
 
-#ifdef HAVE_LOCA_ANASAZI
     // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
     locaStepperList.setParameter("Compute Eigenvalues",true);
     NOX::Parameter::List& aList = locaStepperList.sublist("Eigensolver");
@@ -175,25 +172,22 @@ int main(int argc, char *argv[])
     aList.setParameter("Restarts",2);
     aList.setParameter("Frequency",1);
     aList.setParameter("Debug Level",0);
-#else
-    locaStepperList.setParameter("Compute Eigenvalues",false);
-#endif
   
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
     //predictorList.setParameter("Method", "Constant");
-    //predictorList.setParameter("Method", "Tangent");
-    predictorList.setParameter("Method", "Secant");
+    predictorList.setParameter("Method", "Tangent");
+    //predictorList.setParameter("Method", "Secant");
 
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
     //stepSizeList.setParameter("Method", "Constant");
     stepSizeList.setParameter("Method", "Adaptive");
-    stepSizeList.setParameter("Initial Step Size", -0.1);
-    stepSizeList.setParameter("Min Step Size", 1.0e-3);
-    stepSizeList.setParameter("Max Step Size", 10.0);
+    stepSizeList.setParameter("Initial Step Size", 0.1/scale);
+    stepSizeList.setParameter("Min Step Size", 1.0e-3/scale);
+    stepSizeList.setParameter("Max Step Size", 2000.0/scale);
     stepSizeList.setParameter("Aggressiveness", 0.1);
-    stepSizeList.setParameter("Failed Step Reduction Factor", 0.7);
+    stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
     stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
 
     // Set the LOCA Utilities
@@ -234,6 +228,10 @@ int main(int argc, char *argv[])
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
+    searchParams.setParameter("Max Iters", 7);
+    searchParams.setParameter("Default Step", 1.0000);
+    searchParams.setParameter("Recovery Step", 0.0001);
+    searchParams.setParameter("Minimum Step", 0.0001);
 
     // Create the "Direction" sublist for the "Line Search Based" solver
     NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
@@ -247,24 +245,24 @@ int main(int argc, char *argv[])
     lsParams.setParameter("Max Iterations", 100);  
     lsParams.setParameter("Tolerance", 1e-4);
     if (verbose)
-      lsParams.setParameter("Output Frequency", 50);
+      lsParams.setParameter("Output Frequency", 1);
     else
-      lsParams.setParameter("Output Frequency", 0);    
+      lsParams.setParameter("Output Frequency", 0);
     lsParams.setParameter("Scaling", "None");             
     lsParams.setParameter("Preconditioner", "Ifpack");
     //lsParams.setParameter("Preconditioner", "AztecOO");
     //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
     //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
-    //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
+    lsParams.setParameter("Aztec Preconditioner", "ilut"); 
     //lsParams.setParameter("Overlap", 2);   
     //lsParams.setParameter("Fill Factor", 2.0); 
     //lsParams.setParameter("Drop Tolerance", 1.0e-12);
 
     // Create and initialize the parameter vector
     LOCA::ParameterVector pVector;
-    pVector.addParameter("lambda",lambda);
-    pVector.addParameter("alpha", alpha);
-    pVector.addParameter("beta", beta);
+    pVector.addParameter("Nonlinear Factor",1.0);
+    pVector.addParameter("Left BC", 0.0);
+    pVector.addParameter("Right BC", 0.1);
 
     // Create the interface between the test problem and the nonlinear solver
     // This is created by the user using inheritance of the abstract base class:
@@ -300,7 +298,7 @@ int main(int argc, char *argv[])
 
     // Create the Solver convergence test
     NOX::StatusTest::NormF wrms(1.0e-8);
-    NOX::StatusTest::MaxIters maxiters(maxNewtonIters);
+    NOX::StatusTest::MaxIters maxiters(searchParams.getParameter("Max Iters", 10));
     Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(wrms);
@@ -343,7 +341,7 @@ int main(int argc, char *argv[])
 
     // Check number of steps
     int numSteps = stepper.getStepNumber();
-    int numSteps_expected = 13;
+    int numSteps_expected = 20;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
 				  "number of continuation steps",
 				  NOX::TestCompare::Absolute);
@@ -356,15 +354,15 @@ int main(int argc, char *argv[])
 				  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
-    double alpha_final = finalGroup->getParam("lambda");
-    double alpha_expected = -4.0;
-    ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-14,
+    double right_bc_final = finalGroup->getParam("Right BC");
+    double right_bc_expected = 0.05;
+    ierr += testCompare.testValue(right_bc_final, right_bc_expected, 1.0e-14,
 				  "final value of continuation parameter", 
 				  NOX::TestCompare::Relative);
  
     // Check norm of solution
     double norm_x = finalSolution.norm();
-    double norm_x_expected = 0.0;
+    double norm_x_expected = 25.00498021;
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
 				  "norm of final solution",
 				  NOX::TestCompare::Relative);
@@ -393,5 +391,5 @@ int main(int argc, char *argv[])
 
 /* end main
 */
-return ierr;
+  return ierr ;
 }
