@@ -193,7 +193,7 @@ RUN (redstormXcompile-nightly-mpi) {
                                                                                 
     BUILD-DIR           = redstormXcompileTH;
     COMM                = mpi;
-    INVOKE-CONFIGURE    = redstormXcompile-reddish1;
+    INVOKE-CONFIGURE    = redstormXcompile-reddish1-mpi;
     TEST-CATEGORY       = FRAMEWORK;
 #    MAX-PROC            = 16;
     BUILD-ONLY          = YES;
