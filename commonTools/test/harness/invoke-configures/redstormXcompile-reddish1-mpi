@@ -1,12 +1,17 @@
+#reddish.sandia.gov
+#PGI 6.0 cross for Red Storm:
+#module load compilers/pgi PrgEnv
+module load PrgEnv
+#  cd /projects/alegra/rrdrake/TPL/trilinos/5.0/build/opt_storm && /projects/alegra/rrdrake/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
 ../configure \
-        --prefix=/home/jmwille/TrilinosTestHarness/install \
-	--host=i686-intel-linux \
+        --prefix=/projects/alegra/rrdrake/TPL/trilinos/5.0/build/opt_storm \
+        --host=i686-intel-linux \
         --enable-nox-epetra \
-        --disable-aztecoo-azlu \
+        --enable-aztecoo-azlu \
         --enable-amesos \
         --without-ml_superlu \
-        --without-ml_zoltan \
-        --enable-teuchos \
+        --with-ml_zoltan \
+	--enable-teuchos \
         --enable-triutils \
          --enable-anasazi \
         --enable-epetraext-transform \
@@ -16,7 +21,7 @@
         --with-lapack="-L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
         --with-incdirs="-I/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU/SRC" \
         --with-ldflags="-L/projects/alegra/rrdrake/TPL/trilinos/5.0/y12m -L/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU" \
-        --with-libs="-L/dev/null" \
+        --with-libs="-ly12m -L/dev/null" \
         --enable-mpi \
         --with-mpi-libs="" CXXCPP="CC -tp k8-64 -fast -E" \
         CC="cc -tp k8-64 -fast" \
@@ -26,8 +31,8 @@
         CFLAGS="" \
         CXXFLAGS="" \
         FFLAGS="" \
-        LDFLAGS=" "  FLIBS="-lpapi -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl -lpgc -lm -lcatamount -lsysio -lportals -lC -lcrtend" \
-        --with-ar="ar rcv"
+        LDFLAGS=" "  FLIBS="-lpapi -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl -lpgc -lm -lcatamount -lsysio -lhcfs_clib -lportals -lC -lcrtend" \
+        --with-ar="ar rcv" \
 --enable-aztecoo \
 --enable-belos \
 --enable-capo \

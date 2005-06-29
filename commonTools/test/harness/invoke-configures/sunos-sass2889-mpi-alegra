@@ -13,6 +13,9 @@
         --enable-triutils \
         --enable-anasazi \
         --enable-epetraext-transform \
+        --disable-examples \
+        --disable-tests \
+        --disable-libcheck \
         --disable-ml_enrich \
         --disable-dependency-tracking \
         --with-blas="-lsunperf -lsunperf" \
@@ -32,25 +35,5 @@
         CXXFLAGS="" \
         FFLAGS="" \
         LDFLAGS=" " \
-        --with-ar="CC -xar -o" \
---enable-aztecoo \
---enable-belos \
---enable-capo \
---enable-claps \
---enable-didasko \
---enable-epetra \
---enable-epetraext \
---enable-ifpack \
---enable-kokkos \
---enable-komplex \
---enable-loca \
---enable-meros \
---enable-ml \
---enable-nox \
---enable-pliris \
---enable-rythmos \
---enable-thyra \
---enable-tpetra \
---enable-tsfextended \
---disable-default-packages
+        --with-ar="CC -xar -o"
 

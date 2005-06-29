@@ -14,6 +14,9 @@
         --enable-triutils \
         --enable-anasazi \
         --enable-epetraext-transform \
+        --disable-examples \
+        --disable-tests \
+        --disable-libcheck \
         --disable-ml_enrich \
         --disable-dependency-tracking \
         --with-blas="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -lblas" \
@@ -33,25 +36,5 @@
         CXXFLAGS="" \
         FFLAGS="" \
         LDFLAGS=" " \
-        --with-ar="ar -rcv" \
---enable-aztecoo \
---enable-belos \
---enable-capo \
---enable-claps \
---enable-didasko \
---enable-epetra \
---enable-epetraext \
---enable-ifpack \
---enable-kokkos \
---enable-komplex \
---enable-loca \
---enable-meros \
---enable-ml \
---enable-nox \
---enable-pliris \
---enable-rythmos \
---enable-thyra \
---enable-tpetra \
---enable-tsfextended \
---disable-default-packages
+        --with-ar="ar -rcv"
 
