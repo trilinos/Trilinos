@@ -4,8 +4,15 @@
 
 (FRAMEWORK) {
     DIRS = AztecOO,
-	         AztecOO_SetParameters,
-	         AztecOO_UserOpUserMat;
+	         AztecOO_SetParameters;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
+
+(FRAMEWORK) {
+    DIRS = ../example/AztecOO_UserOpUserMat;
+    ARGS = 21 21;
+    EXIT-STATUS = STRING-COMPARISON(Solver converged);
+    COMM = SERIAL, MPI;
+}
+
