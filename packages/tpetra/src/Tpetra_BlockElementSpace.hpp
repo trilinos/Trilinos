@@ -40,19 +40,20 @@ namespace Tpetra {
 
 	//! Tpetra::BlockElementSpace: A class for constructing and using template<OrdinalType> BlockElementSpaces.
 	/*! BlockElementSpace objects can have variable element sizes. (If variable element sizes are not needed, 
-		  an ElementSpace object should probably be used instead.) Some BlockElementSpace methods throw exceptions, 
-			and should be enclosed in a try/catch block. All BlockElementSpace objects require an ElementSpace object, 
-			which requires a Comm object. Point IDs are always in the range of [0, elementSize).
+	  an ElementSpace object should probably be used instead.) Some BlockElementSpace methods throw exceptions, 
+	  and should be enclosed in a try/catch block. All BlockElementSpace objects require an ElementSpace object, 
+	  which requires a Comm object. Point IDs are always in the range of [0, elementSize).
 		
-			BlockElementSpace error codes (positive for non-fatal, negative for fatal):
-			<ol>
-			<li> +1  Specified Point ID not found on this image.
-			<li> +2  Specified Local ID not found on this image.
-			<li> +3  elementSize requested in a variable-sized BlockElementSpace.
-			<li> +4  Pointer passed to getFirstPointInElementList, getElementSizeList, or getPointToElementList does not have child allocated. (Null pointer).
-			<li> -1  elementSize (or element in elementSizeList) <= 0.  Should be > 0.
-			<li> -99 Internal BlockElementSpace error.  Contact developer.
-			</ol>*/
+	  BlockElementSpace error codes (positive for non-fatal, negative for fatal):
+	  <ol>
+	  <li> +1  Specified Point ID not found on this image.
+	  <li> +2  Specified Local ID not found on this image.
+	  <li> +3  elementSize requested in a variable-sized BlockElementSpace.
+	  <li> +4  Pointer passed to getFirstPointInElementList, getElementSizeList, 
+	           or getPointToElementList does not have child allocated. (Null pointer).
+	  <li> -1  elementSize (or element in elementSizeList) <= 0.  Should be > 0.
+	  <li> -99 Internal BlockElementSpace error.  Contact developer.
+	  </ol>*/
 
 	template<typename OrdinalType> 
 	class BlockElementSpace : public Object {
@@ -94,8 +95,8 @@ namespace Tpetra {
 			
 			// call BESData constructor
 			BlockElementSpaceData_ = Teuchos::rcp(new BlockElementSpaceData<OrdinalType>(ElementSpace, true, elementSize, numMyPoints, 
-																																									 numGlobalPoints, minMySize, maxMySize, 
-																																									 minGlobalSize, maxGlobalSize, elementSizeList));
+																						 numGlobalPoints, minMySize, maxMySize, 
+																						 minGlobalSize, maxGlobalSize, elementSizeList));
 		};
 		
 		//! Tpetra::BlockElementSpace constructor with arbitrary element sizes.
@@ -109,7 +110,8 @@ namespace Tpetra {
 			// initial throws
 			for(OrdinalType i = 0; i < numMyElements; i++)
 				if(elementSizeList[i] <= 0)
-					throw reportError("An element in elementSizeList = " + toString(elementSizeList[i]) + ".  Should be > 0.", -1);
+					throw reportError("An element in elementSizeList = " + toString(elementSizeList[i]) 
+									  + ".  Should be > 0.", -1);
 			
 			// initialize elementSizeList and compute minMySize, MaxMySize, & numMyPoints
 			//   we copy elementSizeList into our own array because elementSizeList (the user's array)
@@ -143,8 +145,9 @@ namespace Tpetra {
 			
 			// call BESData constructor
 			BlockElementSpaceData_ = Teuchos::rcp(new BlockElementSpaceData<OrdinalType>(ElementSpace, false, 0, numMyPoints, 
-																																									 numGlobalPoints, minMySize, maxMySize, 
-																																									 minGlobalSize, maxGlobalSize, myElementSizeList));
+																						 numGlobalPoints, minMySize, maxMySize, 
+																						 minGlobalSize, maxGlobalSize, 
+																						 myElementSizeList));
 		};
 		
 		//! Tpetra::BlockElementSpace copy constructor.
@@ -163,9 +166,9 @@ namespace Tpetra {
 		
 		//! Returns the image IDs, corresponding local index values, and element sizes for a given list of global indices.
 		/*! Theimage IDs, local index values, and element sizes are placed into arrays passed in by the user. 
-			  The list of global indices used to create these is also passed in by the user. Exceptions might be thrown. */ 
+		    The list of global indices used to create these is also passed in by the user. Exceptions might be thrown. */ 
 		void getRemoteIDList(OrdinalType numIDs, OrdinalType* GIDList, OrdinalType* imageIDList, 
-												 OrdinalType* LIDList, OrdinalType* elementSizeList) const {
+							 OrdinalType* LIDList, OrdinalType* elementSizeList) const {
 			elementSpace().getRemoteIDList(numIDs, GIDList, imageIDList, LIDList);
 			
 			if(isConstantElementSize())
@@ -207,7 +210,8 @@ namespace Tpetra {
 			return(BlockElementSpaceData_->elementSize_);
 		};
 		
-		//! Returns the size of the element whose local ID is passed in. Throws an exception of +1 if the local ID is not found on the calling image.
+		//! Returns the size of the element whose local ID is passed in. 
+		/*! Throws an exception of +1 if the local ID is not found on the calling image. */
 		OrdinalType getElementSize(OrdinalType LID) const {
 			if(elementSpace().isMyLID(LID) == false)
 				throw reportError("Local ID " + toString(LID) + " was not found on this image.", 2);
@@ -245,7 +249,8 @@ namespace Tpetra {
 		//! Returns true if all elements have a constant size, returns false otherwise.
 		bool isConstantElementSize() const {return(BlockElementSpaceData_->constantSize_);};
 		
-		//! Returns true if this BlockElementSpace is identical to the one passed in, returns false otherwise. Also implemented through the == and != operators.
+		//! Returns true if this BlockElementSpace is identical to the one passed in, returns false otherwise. 
+		/*! Also implemented through the == and != operators. */
 		bool isSameAs(BlockElementSpace<OrdinalType> const& BlockElementSpace) const {
 			if(this == &BlockElementSpace)
 				return(true);
@@ -265,7 +270,8 @@ namespace Tpetra {
 				int mySameBES = 1;
 				OrdinalType nME = elementSpace().getNumMyElements();
 				for(OrdinalType i = 0; i < nME; i++)
-					if(BlockElementSpaceData_->elementSizeList_[i] != BlockElementSpace.BlockElementSpaceData_->elementSizeList_[i])
+					if(BlockElementSpaceData_->elementSizeList_[i] != 
+					   BlockElementSpace.BlockElementSpaceData_->elementSizeList_[i])
 						mySameBES = 0;
 				
 				int globalSameBES = 0;
@@ -280,7 +286,9 @@ namespace Tpetra {
 		//@}
 		
 		
-		//@{ \name Array Accessor Functions. Each of these methods is implemented twice, one that returns a pointer, and one that copies the array into one passed in by the user.
+		//@{ \name Array Accessor Functions. 
+		/*! Each of these methods is implemented twice, one that returns a pointer, 
+		    and one that copies the array into one passed in by the user. */
 		
 		//! Returns a pointer to array of the sizes of all the elements that belong to the calling image.
 		OrdinalType const* getElementSizeList() const {return(BlockElementSpaceData_->elementSizeList_);};
@@ -308,11 +316,11 @@ namespace Tpetra {
 			if(firstPointInElementList == 0) 
 				throw reportError("This pointer does not have a child allocated.", 4);
 			///OrdinalType iB = elementSpace().getIndexBase();
-					///firstPointInElementList[0] = iB;
-					firstPointInElementList[0] = 0;
-					OrdinalType nME = elementSpace().getNumMyElements();
-					for(OrdinalType i = 1; i < nME; i++)
-						firstPointInElementList[i] = firstPointInElementList[i-1] + BlockElementSpaceData_->elementSizeList_[i-1];
+				///firstPointInElementList[0] = iB;
+				firstPointInElementList[0] = 0;
+				OrdinalType nME = elementSpace().getNumMyElements();
+				for(OrdinalType i = 1; i < nME; i++)
+					firstPointInElementList[i] = firstPointInElementList[i-1] + BlockElementSpaceData_->elementSizeList_[i-1];
 		};
 		
 		//! Returns a pointer to an array that lists the LID of the element that each point belongs to.
@@ -409,8 +417,8 @@ namespace Tpetra {
 		/*! A "compatible" ElementSpace is defined as an ElementSpace 
 		  where there is a one to one correspondence between its elements
 		  and the points of this BlockElementSpace. 
-			The ElementSpace will be allocated on the heap, and it is the responsibility of the caller
-			to ensure that it is deallocated properly.
+		  The ElementSpace will be allocated on the heap, and it is the responsibility of the caller
+		  to ensure that it is deallocated properly.
 		*/
 		ElementSpace<OrdinalType>* generateCompatibleElementSpace() const {
 			OrdinalType nME = elementSpace().getNumMyElements();
@@ -418,7 +426,7 @@ namespace Tpetra {
 			OrdinalType const maxElementSize = getMaxElementSize();
 			OrdinalType const* const elementSizeList = getElementSizeList();
 			
-      std::vector<OrdinalType> VGID(VGIDSize);
+			std::vector<OrdinalType> VGID(VGIDSize);
 			OrdinalType curPos = 0;
 			
 			for(OrdinalType i = 0; i < nME; i++) { // i == current LID
@@ -430,17 +438,18 @@ namespace Tpetra {
 				}
 			}
 			
-			ElementSpace<OrdinalType>* compatibleES = new ElementSpace<OrdinalType> (-1, VGIDSize, VGID, elementSpace().getIndexBase(),
-																																								elementSpace().platform());
+			ElementSpace<OrdinalType>* compatibleES = new ElementSpace<OrdinalType> (-1, VGIDSize, 
+																					 VGID, elementSpace().getIndexBase(),
+																					 elementSpace().platform());
 			
 			return(compatibleES);
 		};
 
 		//! Assignment operator
 		BlockElementSpace<OrdinalType>& operator = (BlockElementSpace<OrdinalType> const& Source) {
-      BlockElementSpaceData_ = Source.BlockElementSpaceData_;
-      return(*this);
-    }
+			BlockElementSpaceData_ = Source.BlockElementSpaceData_;
+			return(*this);
+		}
 		
 		//@}
 		
