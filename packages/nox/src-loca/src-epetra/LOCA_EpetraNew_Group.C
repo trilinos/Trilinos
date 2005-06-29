@@ -611,4 +611,5 @@ LOCA::EpetraNew::Group::setJacobianOperatorForSolve(
 {
   // Set Jacobian operator for solve
   sharedLinearSystem.getObject(this).setJacobianOperatorForSolve(op);
+  isValidSolverJacOp = true;
 }
