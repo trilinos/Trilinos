@@ -516,7 +516,7 @@ int read_matrix_file_names(Epetra_Comm& Comm,
     }
 
     int linelen = 512;
-    char line[linelen];
+    char line[512];
 
     infile.getline(line, linelen);
     if (!infile.eof()) {
