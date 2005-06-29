@@ -229,21 +229,16 @@ int main(int argc, char *argv[]) {
 	// Create Epetra linear problem class to solve "Ax = b"
 	Epetra_LinearProblem precProblem;
 	precProblem.SetOperator(A.get());
-	precProblem.AssertSymmetric();
 	
-	double tol = 1.0e-4;
-
 	// Create AztecOO solver for solving "Ax = b" using an incomplete cholesky preconditioner
 	AztecOO precSolver(precProblem);
 	precSolver.SetPrecOperator(ICT.get());
 	precSolver.SetAztecOption(AZ_output, AZ_none);
 	precSolver.SetAztecOption(AZ_solver, AZ_cg);
-	precSolver.SetAztecOption(AZ_conv, AZ_r0);
 	
 	// Use AztecOO solver to create the AztecOO_Operator
-	// Note:  This solver is created to do as many iterations as necessary to achieve the given tolerance
 	Teuchos::RefCountPtr<AztecOO_Operator> precOperator =
-	  Teuchos::rcp( new AztecOO_Operator(&precSolver, NumGlobalElements-1, tol) );	
+	  Teuchos::rcp( new AztecOO_Operator(&precSolver, 100) );	
 	//
 	// ************************************
 	// Start the block Arnoldi iteration
@@ -256,6 +251,7 @@ int main(int argc, char *argv[]) {
 	int maxBlocks = 3*nev/blockSize;
 	int maxRestarts = 5;
 	int step = 5;
+	double tol = 1.0e-6;
 	string which="LM";
 	//
 	// Create parameter list to pass into solver
@@ -264,7 +260,7 @@ int main(int argc, char *argv[]) {
 	MyPL.set( "Block Size", blockSize );
 	MyPL.set( "Max Blocks", maxBlocks );
 	MyPL.set( "Max Restarts", maxRestarts );
-	MyPL.set( "Tol", tol*10 );
+	MyPL.set( "Tol", tol );
 	MyPL.set( "Step Size", step );
 	
 	typedef Anasazi::MultiVec<double> MV;
@@ -275,30 +271,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = 
 	  Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
 	ivec->MvRandom();
-
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> bvec = 
-	  Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
-	A->Apply( *ivec, *bvec );
-
-	precSolver.SetAztecOption(AZ_output, AZ_last);
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> tempyvec = 
-	  Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
-	precOperator->ApplyInverse( *ivec, *tempyvec );
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> resvec = 
-	  Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
-	A->Apply( *tempyvec, *resvec );
-	resvec->MvAddMv( 1.0, *resvec, -1.0, *ivec );       
-	std::vector<double> resnormvec( blockSize );
-	std::vector<double> initnormvec( blockSize );
-	resvec->MvNorm( &resnormvec );
-	ivec->MvNorm( &initnormvec );
-	for (i=0; i<blockSize; i++) {
-          cout << "Initial residual for vector "<< i << " is : " << initnormvec[i] << endl;	
-          cout << "Relative residual for vector "<< i << " is : " << resnormvec[i]/initnormvec[i] << endl;	
-	}
-	precSolver.SetAztecOption(AZ_output, AZ_none);
-	ivec->MvRandom();
-
+	
 	// Call the ctor that calls the petra ctor for a matrix
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
