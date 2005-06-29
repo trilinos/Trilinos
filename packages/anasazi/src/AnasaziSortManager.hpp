@@ -45,6 +45,7 @@
 */
 
 #include "AnasaziReturnType.hpp"
+#include "AnasaziConfigDefs.hpp"
 
 namespace Anasazi {
 

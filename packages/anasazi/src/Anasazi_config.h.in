@@ -131,6 +131,12 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
+
+/* Define to 1 if you have the <vector.h> header file. */
+#undef HAVE_VECTOR_H
+
 /* Name of package */
 #undef PACKAGE
 

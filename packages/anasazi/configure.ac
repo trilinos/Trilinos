@@ -166,6 +166,7 @@ AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([vector vector.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  New_Package requires at least one or the other.]])
@@ -183,8 +184,12 @@ if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "
   AC_MSG_ERROR([[Cannot find string or string.h.  New_Package requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  New_Package requires at least one or the other.]])
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find string or string.h.  New_Package requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find vector or vector.h.  New_Package requires at least one or the other.]])
 fi
 
 if test "X${host}" != "Xtflop"; then

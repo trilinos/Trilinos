@@ -105,6 +105,12 @@
 #include <string.h>
 #endif
 
+#ifdef HAVE_VECTOR
+#include <vector>
+#else
+#include <vector.h>
+#endif
+
 #ifdef HAVE_IOSTREAM
 #include <iostream>
 #else
