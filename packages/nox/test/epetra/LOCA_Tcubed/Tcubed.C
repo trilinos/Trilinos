@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
     locaStepperList.setParameter("Min Value", 0.05/scale);
     locaStepperList.setParameter("Max Steps", 30);
     locaStepperList.setParameter("Max Nonlinear Iterations", 15);
-    locaStepperList.setParameter("Enable Arc Length Scaling", false);
+    locaStepperList.setParameter("Enable Arc Length Scaling", true);
     locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
     locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
     locaStepperList.setParameter("Initial Scale Factor", 1.0);
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 
     // Check number of steps
     int numSteps = stepper.getStepNumber();
-    int numSteps_expected = 20;
+    int numSteps_expected = 23;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
 				  "number of continuation steps",
 				  NOX::TestCompare::Absolute);
