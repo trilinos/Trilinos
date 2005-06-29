@@ -31,51 +31,54 @@
 
 namespace Tpetra {
 
-  //! Tpetra::Directory - Directory abstract base class
+	//! Tpetra::Directory - Directory abstract base class
   
-  /*! A Directory object must be created by a call to the Platform createDirectory method. 
-      The Directory is needed to allow referencing of non-local elements.
-  */
+	/*! A Directory object must be created by a call to the Platform createDirectory method. 
+        The Directory is needed to allow referencing of non-local elements.
+	*/
   
-  template<typename OrdinalType>
-  class Directory {
-  public:
+	template<typename OrdinalType>
+	class Directory {
+	public:
     
-    //@{ \name Constructors/Destructor.
-    //! Directory destructor.
-    virtual ~Directory() {};
-    //@}
+		//@{ \name Constructors/Destructor.
+		//! Directory destructor.
+		virtual ~Directory() {};
+		//@}
     
-    //@{ \name Query methods.
+		//@{ \name Query methods.
     
-    //! getDirectoryEntries : Returns image info for non-local ElementSpace entries
-    /*! Given a list of Global Entry IDs, this function returns the list of
-        IDs of the owning memory image that correspond to the list of entries.
-      \param In
-             globalEntries - List of Global IDs being passed in.
-      \param Out
-             imageIDs - On return contains list of Image IDs owning the Global IDs in question.
-    */
-    virtual void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, std::vector<OrdinalType>& images) const = 0;
+		//! getDirectoryEntries : Returns image info for non-local ElementSpace entries
+		/*! Given a list of Global Entry IDs, this function returns the list of
+		    IDs of the owning memory image that correspond to the list of entries.
+		  \param globalEntries In
+		         List of Global IDs being passed in.
+		  \param imageIDs Out
+		         On return contains list of Image IDs owning the Global IDs in question.
+		*/
+		virtual void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, 
+										 std::vector<OrdinalType>& images) const = 0;
     
-    //! getDirectoryEntries : Returns image and local id info for non-local ElementSpace entries
-    /*! Given a list of Global Entry IDs, this function returns the list of
-        image IDs and local IDs on the owning memory image that correspond
-        to the list of entries.  If LocalEntries is 0, then local IDs are 
-        not returned.  If EntrySizes is nonzero, it will contain a list of corresponding 
-        element sizes for the requested global entries.
-      \param In
-             globalEntries - List of Global IDs being passed in.
-      \param Out
-             imageIDs - On return contains list of Image IDs owning the Global IDs in question.
-      \param Out
-             localEntries - On return contains the local ID of the global on the owning image. 
-    */
-    virtual void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, std::vector<OrdinalType>& images, std::vector<OrdinalType>& localEntries) const = 0;
+		//! getDirectoryEntries : Returns image and local id info for non-local ElementSpace entries
+		/*! Given a list of Global Entry IDs, this function returns the list of
+		    image IDs and local IDs on the owning memory image that correspond
+		    to the list of entries.  If LocalEntries is 0, then local IDs are 
+		    not returned.  If EntrySizes is nonzero, it will contain a list of corresponding 
+		    element sizes for the requested global entries.
+		  \param globalEntries In
+		         List of Global IDs being passed in.
+		  \param imageIDs Out
+		         On return contains list of Image IDs owning the Global IDs in question.
+		  \param localEntries Out
+		         On return contains the local ID of the global on the owning image. 
+		*/
+		virtual void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, 
+										 std::vector<OrdinalType>& images, 
+										 std::vector<OrdinalType>& localEntries) const = 0;
 
-    //@}
+		//@}
     
-  }; // class Directory
+	}; // class Directory
   
 } // namespace Tpetra
 

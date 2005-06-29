@@ -34,51 +34,51 @@
 
 namespace Tpetra {
 	
-  //! MpiData: Inner data class for MpiPlatform, MpiComm, and MpiDistributor.
-  /*! Basically a wrapper for an MPI Communicator object which can be shared
-      among multiple Tpetra objects.
-  */
+	//! MpiData: Inner data class for MpiPlatform, MpiComm, and MpiDistributor.
+	/*! Basically a wrapper for an MPI Communicator object which can be shared
+        among multiple Tpetra objects.
+	*/
 
-  class MpiData : public Object {
-  public:
-    // default constructor
-    MpiData(MPI_Comm Comm)
-      : Object("Tpetra::MpiData")
-      , MpiComm_(Comm)
-      , curTag_(minTag_)
-  	{
-      // we would prefer to do this in a member initialization, but that's not possible
-      MPI_Comm_size(Comm, &size_);
-      MPI_Comm_rank(Comm, &rank_);
-    };
+	class MpiData : public Object {
+	public:
+		// default constructor
+		MpiData(MPI_Comm Comm)
+			: Object("Tpetra::MpiData")
+			, MpiComm_(Comm)
+			, curTag_(minTag_)
+		{
+			// we would prefer to do this in a member initialization, but that's not possible
+			MPI_Comm_size(Comm, &size_);
+			MPI_Comm_rank(Comm, &rank_);
+		};
     
-    // destructor
-    ~MpiData() {};
+		// destructor
+		~MpiData() {};
 
-    int getMyImageID() const {return(rank_);};
-    int getNumImages() const {return(size_);};
-    MPI_Comm getMpiComm() const {return(MpiComm_);};
-    int getMpiTag() {
-      if(curTag_ > maxTag_)
-        curTag_ = minTag_;
-      return(curTag_++);
-    };
+		int getMyImageID() const {return(rank_);};
+		int getNumImages() const {return(size_);};
+		MPI_Comm getMpiComm() const {return(MpiComm_);};
+		int getMpiTag() {
+			if(curTag_ > maxTag_)
+				curTag_ = minTag_;
+			return(curTag_++);
+		};
     
-  private:
-    MPI_Comm MpiComm_;
-    int rank_;
-    int size_;
+	private:
+		MPI_Comm MpiComm_;
+		int rank_;
+		int size_;
     
-    static int const minTag_ = 26000; // these are somewhat
-    static int const maxTag_ = 26099; // magic numbers
-    int curTag_;
+		static int const minTag_ = 26000; // these are somewhat
+		static int const maxTag_ = 26099; // magic numbers
+		int curTag_;
     
-    //! Copy constructor (declared but not defined, do not use)
-    MpiData(MpiData const& rhs);
-    //! Assignment operator (declared but not defined, do not use)
-    MpiData& operator = (MpiData const& rhs);
+		//! Copy constructor (declared but not defined, do not use)
+		MpiData(MpiData const& rhs);
+		//! Assignment operator (declared but not defined, do not use)
+		MpiData& operator = (MpiData const& rhs);
     
-  }; // class MpiData
+	}; // class MpiData
   
 } // namespace Tpetra
 
