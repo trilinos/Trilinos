@@ -199,6 +199,12 @@ LOCA::MultiContinuation::ConstrainedGroup::getConstraints() const
   return constraintsPtr;
 }
 
+const vector<int>&
+LOCA::MultiContinuation::ConstrainedGroup::getConstraintParamIDs() const
+{
+  return constraintParamIDs;
+}
+
 NOX::Abstract::Group&
 LOCA::MultiContinuation::ConstrainedGroup::operator=(
 					  const NOX::Abstract::Group& source)

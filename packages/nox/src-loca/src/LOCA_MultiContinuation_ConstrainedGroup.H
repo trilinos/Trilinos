@@ -133,6 +133,10 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
       getConstraints() const;
 
+      //! Get constraint parameter IDs
+      virtual const vector<int>&
+      getConstraintParamIDs() const;
+
       /*! 
        * @name Implementation of NOX::Abstract::Group virtual methods 
        */
