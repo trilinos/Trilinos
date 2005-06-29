@@ -56,7 +56,7 @@ void SMPcClear();
 int SMPcLUfac();
 int SMPcProdDiag();
 int SMPcReorder();
-void SMPcSolve();
+int SMPcSolve();
 void SMPclear();
 void SMPcolSwap();
 void SMPdestroy();
