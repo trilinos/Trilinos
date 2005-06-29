@@ -1696,7 +1696,7 @@ ReComputePreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Epetra::MultiLevelPreconditioner::
+void ML_Epetra::MultiLevelPreconditioner::
 Print()
 {
   // ====================================================================== //
