@@ -31,33 +31,34 @@
 
 namespace Tpetra {
 
-template<typename OrdinalType, typename ScalarType>
-class VectorData : public Object {
-	friend class Vector<OrdinalType, ScalarType>;
- public:
-	VectorData(VectorSpace<OrdinalType, ScalarType> const& VectorSpace, OrdinalType length, ScalarType seed) 
-		: Object("Tpetra::VectorData")
-		, BLAS_()
-		, VectorSpace_(VectorSpace)
-    , scalarArray_(length, Teuchos::ScalarTraits<ScalarType>::zero())
-		, seed_(seed)
-	{};
+	template<typename OrdinalType, typename ScalarType>
+	class VectorData : public Object {
+		friend class Vector<OrdinalType, ScalarType>;
+	public:
+		VectorData(VectorSpace<OrdinalType, ScalarType> const& VectorSpace, 
+				   OrdinalType length, ScalarType seed) 
+			: Object("Tpetra::VectorData")
+			, BLAS_()
+			, VectorSpace_(VectorSpace)
+			, scalarArray_(length, Teuchos::ScalarTraits<ScalarType>::zero())
+			, seed_(seed)
+		{};
 
-	~VectorData() {};
+		~VectorData() {};
 
- protected:
-	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
-	VectorSpace<OrdinalType, ScalarType> VectorSpace_;
-	std::vector<ScalarType> scalarArray_;
-	ScalarType seed_;
+	protected:
+		Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
+		VectorSpace<OrdinalType, ScalarType> VectorSpace_;
+		std::vector<ScalarType> scalarArray_;
+		ScalarType seed_;
 	
- private:
-	//! Copy constructor (declared but not defined, do not use)
-	VectorData(VectorData<OrdinalType, ScalarType> const& Source);
-	//! Assignment operator (declared but not defined, do not use)
-	VectorData<OrdinalType, ScalarType>& operator = (VectorData<OrdinalType, ScalarType> const& Source);
+	private:
+		//! Copy constructor (declared but not defined, do not use)
+		VectorData(VectorData<OrdinalType, ScalarType> const& Source);
+		//! Assignment operator (declared but not defined, do not use)
+		VectorData<OrdinalType, ScalarType>& operator = (VectorData<OrdinalType, ScalarType> const& Source);
 
-}; // class VectorData
+	}; // class VectorData
 
 } // namespace Tpetra
 

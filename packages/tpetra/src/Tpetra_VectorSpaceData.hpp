@@ -31,47 +31,47 @@
 
 namespace Tpetra {
 
-template<typename OrdinalType, typename ScalarType>
-class VectorSpaceData : public Object {
-	friend class VectorSpace<OrdinalType, ScalarType>;
- public:
-    // default constructor
-  VectorSpaceData(bool blockspace, 
-		  OrdinalType indexBase, 
-		  OrdinalType numMyEntries, 
-		  OrdinalType numGlobalEntries, 
-		  Platform<OrdinalType, ScalarType> const& platform) 
-    : Object("Tpetra::VectorSpaceData")
-    , blockspace_(blockspace)
-    , indexBase_(indexBase)
-    , numMyEntries_(numMyEntries)
-    , numGlobalEntries_(numGlobalEntries)
-    , Platform_(platform.clone())
-    , Comm_(platform.createScalarComm())
-		, ElementSpace_()
-		, BlockElementSpace_()
-    {};
+	template<typename OrdinalType, typename ScalarType>
+	class VectorSpaceData : public Object {
+		friend class VectorSpace<OrdinalType, ScalarType>;
+	public:
+		// default constructor
+		VectorSpaceData(bool blockspace, 
+						OrdinalType indexBase, 
+						OrdinalType numMyEntries, 
+						OrdinalType numGlobalEntries, 
+						Platform<OrdinalType, ScalarType> const& platform) 
+			: Object("Tpetra::VectorSpaceData")
+			, blockspace_(blockspace)
+			, indexBase_(indexBase)
+			, numMyEntries_(numMyEntries)
+			, numGlobalEntries_(numGlobalEntries)
+			, Platform_(platform.clone())
+			, Comm_(platform.createScalarComm())
+			, ElementSpace_()
+			, BlockElementSpace_()
+		{};
 
-    // destructor. no heap-data, so no need to override
-	~VectorSpaceData() {};
+		// destructor. no heap-data, so no need to override
+		~VectorSpaceData() {};
 
- protected:
-	bool blockspace_;
-	OrdinalType const indexBase_;
-	OrdinalType const numMyEntries_;
-	OrdinalType const numGlobalEntries_;
-	Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
-	Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_; // Comm is <ST, OT> because ST represents PT
-	Teuchos::RefCountPtr< ElementSpace<OrdinalType> const > ElementSpace_;
-	Teuchos::RefCountPtr< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
+	protected:
+		bool blockspace_;
+		OrdinalType const indexBase_;
+		OrdinalType const numMyEntries_;
+		OrdinalType const numGlobalEntries_;
+		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
+		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_; // Comm is <ST, OT> because ST represents PT
+		Teuchos::RefCountPtr< ElementSpace<OrdinalType> const > ElementSpace_;
+		Teuchos::RefCountPtr< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
 
- private:
-	//! Copy constructor (declared but not defined, do not use)
-	VectorSpaceData(VectorSpaceData<OrdinalType, ScalarType> const& Source);
-	//! Assignment operator (declared but not defined, do not use)
-	VectorSpaceData<OrdinalType, ScalarType>& operator = (VectorSpaceData<OrdinalType, ScalarType> const& Source);
+	private:
+		//! Copy constructor (declared but not defined, do not use)
+		VectorSpaceData(VectorSpaceData<OrdinalType, ScalarType> const& Source);
+		//! Assignment operator (declared but not defined, do not use)
+		VectorSpaceData<OrdinalType, ScalarType>& operator = (VectorSpaceData<OrdinalType, ScalarType> const& Source);
 
-}; // class VectorSpaceData
+	}; // class VectorSpaceData
 
 } // namespace Tpetra
 

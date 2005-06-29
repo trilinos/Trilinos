@@ -38,12 +38,12 @@
 
 namespace Tpetra {
 
-// forward definition
-template<typename OrdinalType> class ElementSpace;
+	// forward definition
+	template<typename OrdinalType> class ElementSpace;
 
 	//! Tpetra::SerialPlatform: Serial Implementation of the Platform class.
 
- template<typename OrdinalType, typename ScalarType>
+	template<typename OrdinalType, typename ScalarType>
 	class SerialPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
 	public:
 
@@ -51,52 +51,54 @@ template<typename OrdinalType> class ElementSpace;
 		//! Constructor
 		SerialPlatform() : Object("Tpetra::SerialPlatform") {};
 		//! Copy constructor
-		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) : Object(platform.label()) {};
+		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) 
+			: Object(platform.label()) 
+		{};
 		//! Destructor
 		~SerialPlatform() {};
 		//! Clone constructor
 		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
-      Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > platform;
-      platform = Teuchos::rcp(new SerialPlatform<OrdinalType, ScalarType>(*this));
+			Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > platform;
+			platform = Teuchos::rcp(new SerialPlatform<OrdinalType, ScalarType>(*this));
 			return(platform);
 		};
 		//@}
 
-    //@{ \name Image Info Methods
+		//@{ \name Image Info Methods
 
-    //! getMyImageID - In serial mode, always returns 0.
-    int getMyImageID() const {return(0);};
+		//! getMyImageID - In serial mode, always returns 0.
+		int getMyImageID() const {return(0);};
 
-    //! getNumImages - In serial mode, always returns 1.
-    int getNumImages() const {return(1);};
+		//! getNumImages - In serial mode, always returns 1.
+		int getNumImages() const {return(1);};
 
-    //@}
+		//@}
 
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
 		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const {
 			Teuchos::RefCountPtr< SerialComm<ScalarType, OrdinalType> > comm;
-      comm = Teuchos::rcp(new SerialComm<ScalarType, OrdinalType>());
+			comm = Teuchos::rcp(new SerialComm<ScalarType, OrdinalType>());
 			return(comm);
 		};
 		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
 			Teuchos::RefCountPtr< SerialComm<OrdinalType, OrdinalType> > comm;
-      comm = Teuchos::rcp(new SerialComm<OrdinalType, OrdinalType>());
+			comm = Teuchos::rcp(new SerialComm<OrdinalType, OrdinalType>());
 			return(comm);
 		};
 
 		//! Distributor Instance
 		Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const {
 			Teuchos::RefCountPtr< SerialDistributor<OrdinalType> > distributor;
-      distributor = Teuchos::rcp(new SerialDistributor<OrdinalType>());
+			distributor = Teuchos::rcp(new SerialDistributor<OrdinalType>());
 			return(distributor);
 		};
 
 		//! Directory Instance
 		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-      Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
-      directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
+			Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
+			directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
 			return(directory);
 		};
 

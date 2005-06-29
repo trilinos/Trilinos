@@ -34,107 +34,119 @@
 
 namespace Tpetra {
 
-//! Tpetra::SerialDistributor:  The Tpetra Serial implementation of the Tpetra::Distributor Gather/Scatter Setup Class.
-/*! The SerialDistributor class is an Serial implement of Tpetra::Distributor that is essentially a trivial class
-    since a serial machine is a trivial parallel machine.
+	//! Tpetra::SerialDistributor:  The Tpetra Serial implementation of the Tpetra::Distributor Gather/Scatter Setup Class.
+	/*! The SerialDistributor class is an Serial implement of Tpetra::Distributor that is essentially a trivial class
+	    since a serial machine is a trivial parallel machine.
 		An SerialDistributor object is actually produced by calling a method in the Tpetra::SerialPlatform class.
 
 		Most SerialDistributor methods throw an error of -1, since they should never be called.
-*/
+	*/
 
 	template<typename OrdinalType>
 	class SerialDistributor : public Object, public virtual Distributor<OrdinalType> {
-  public:
+	public:
 
-    //@{ \name Constructor/Destructor
+		//@{ \name Constructor/Destructor
     
-    //! Default Constructor.
-    SerialDistributor() : Object("Tpetra::SerialDistributor") {};
+		//! Default Constructor.
+		SerialDistributor() : Object("Tpetra::SerialDistributor") {};
     
-    //! Copy Constructor
-    SerialDistributor(SerialDistributor<OrdinalType> const& plan) : Object(plan.label()) {};
+		//! Copy Constructor
+		SerialDistributor(SerialDistributor<OrdinalType> const& plan) : Object(plan.label()) {};
     
-    //! Clone method
-    Distributor<OrdinalType>* clone() {
-      SerialDistributor<OrdinalType>* distributor = new SerialDistributor<OrdinalType>(*this); 
-      return(distributor); 
-    };
+		//! Clone method
+		Distributor<OrdinalType>* clone() {
+			SerialDistributor<OrdinalType>* distributor = new SerialDistributor<OrdinalType>(*this); 
+			return(distributor); 
+		};
     
-    //! Destructor.
-    virtual ~SerialDistributor() {};
+		//! Destructor.
+		virtual ~SerialDistributor() {};
 
-    //@}
+		//@}
     
-    //@{ \name Gather/Scatter Constructors
+		//@{ \name Gather/Scatter Constructors
 
-    //! Create Distributor object using list of Image IDs to send to
-    void createFromSends(OrdinalType const& numExportIDs, 
-                         std::vector<OrdinalType> const& exportImageIDs,
-                         bool const& deterministic,
-                         OrdinalType& numRemoteIDs) 
+		//! Create Distributor object using list of Image IDs to send to
+		void createFromSends(OrdinalType const& numExportIDs, 
+							 std::vector<OrdinalType> const& exportImageIDs,
+							 bool const& deterministic,
+							 OrdinalType& numRemoteIDs) 
 		{
-      throw reportError("This method should never be called.", -1);
-    };
+			throw reportError("This method should never be called.", -1);
+		};
 
-    //! Create Distributor object using list of Image IDs to receive from
-    void createFromRecvs(OrdinalType const& numRemoteIDs, 
-                         std::vector<OrdinalType> const& remoteGIDs, 
-                         std::vector<OrdinalType> const& remoteImageIDs, 
-                         bool const& deterministic, 
-                         OrdinalType& numExportIDs, 
-                         std::vector<OrdinalType>& exportGIDs, 
-                         std::vector<OrdinalType>& exportImageIDs)
+		//! Create Distributor object using list of Image IDs to receive from
+		void createFromRecvs(OrdinalType const& numRemoteIDs, 
+							 std::vector<OrdinalType> const& remoteGIDs, 
+							 std::vector<OrdinalType> const& remoteImageIDs, 
+							 bool const& deterministic, 
+							 OrdinalType& numExportIDs, 
+							 std::vector<OrdinalType>& exportGIDs, 
+							 std::vector<OrdinalType>& exportImageIDs)
 		{
-      throw reportError("This method should never be called.", -1);
-    };
+			throw reportError("This method should never be called.", -1);
+		};
 
-    //@}
+		//@}
     
-    //@{ \name Execute Gather/Scatter Operations (Constant size objects)
+		//@{ \name Execute Gather/Scatter Operations (Constant size objects)
 
-    //! doPostsAndWaits
-    void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
-      throw reportError("This method should never be called.", -1);
-    };
+		//! doPostsAndWaits
+		void doPostsAndWaits(char* export_objs, 
+							 OrdinalType const& obj_size, 
+							 OrdinalType& len_import_objs, 
+							 char*& import_objs) {
+			throw reportError("This method should never be called.", -1);
+		};
     
-    //! doPosts
-    void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
-      throw reportError("This method should never be called.", -1);
-    };
+		//! doPosts
+		void doPosts(char* export_objs, 
+					 OrdinalType const& obj_size, 
+					 OrdinalType& len_import_objs, 
+					 char*& import_objs) {
+			throw reportError("This method should never be called.", -1);
+		};
 
-    //! doWaits
-    void doWaits() {
-      throw reportError("This method should never be called.", -1);
-    };
+		//! doWaits
+		void doWaits() {
+			throw reportError("This method should never be called.", -1);
+		};
 
-    //! doReversePostsAndWaits
-    void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
-      throw reportError("This method should never be called.", -1);
-    };
+		//! doReversePostsAndWaits
+		void doReversePostsAndWaits(char* export_objs, 
+									OrdinalType const& obj_size, 
+									OrdinalType& len_import_objs, 
+									char*& import_objs) {
+			throw reportError("This method should never be called.", -1);
+		};
     
-    //! doReversePosts
-    void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
-      throw reportError("This method should never be called.", -1);
-    };
+		//! doReversePosts
+		void doReversePosts(char* export_objs, 
+							OrdinalType const& obj_size, 
+							OrdinalType& len_import_objs, 
+							char*& import_objs) {
+			throw reportError("This method should never be called.", -1);
+		};
 
-    //! doReverseWaits
-    void doReverseWaits() {
-      throw reportError("This method should never be called.", -1);
-    };
+		//! doReverseWaits
+		void doReverseWaits() {
+			throw reportError("This method should never be called.", -1);
+		};
 
-    //@}
+		//@}
     
-    //@{ \name I/O Methods
+		//@{ \name I/O Methods
 
-    //! print method inherited from Object
-    void print(ostream& os) const {};
+		//! print method inherited from Object
+		void print(ostream& os) const {};
 
-    //! printInfo method inherited from Distributor
-    void printInfo(ostream& os) const {os << *this;};
+		//! printInfo method inherited from Distributor
+		void printInfo(ostream& os) const {os << *this;};
 
-    //@}
+		//@}
     
-  }; // class SerialDistributor
+	}; // class SerialDistributor
   
 } // namespace Tpetra
 
