@@ -42,12 +42,14 @@
 #
 
 SOURCE_H = \
+	$(srcdir)/Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp \
 	$(srcdir)/Thyra_EpetraTypes.hpp \
 	$(srcdir)/Thyra_EpetraLinearOp.hpp \
 	$(srcdir)/Thyra_EpetraThyraWrappers.hpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.hpp
 
 SOURCE = \
+	$(srcdir)/Thyra_DiagonalEpetraLinearOpWithSolveFactory.cpp \
 	$(srcdir)/Thyra_EpetraLinearOp.cpp \
 	$(srcdir)/Thyra_EpetraThyraWrappers.cpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.cpp

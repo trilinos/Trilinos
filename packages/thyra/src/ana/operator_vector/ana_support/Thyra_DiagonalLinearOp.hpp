@@ -30,7 +30,7 @@
 #define THYRA_DIAGONAL_LINEAR_OP_HPP
 
 #include "Thyra_DiagonalLinearOpDecl.hpp"
-#include "Thyra_SingleRhsLinearOpBase.hpp"
+#include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
 #include "Thyra_VectorBase.hpp"
 
 namespace Thyra {
@@ -74,7 +74,7 @@ void DiagonalLinearOp<Scalar>::uninitialize(
   diag_ = Teuchos::null;
 }
 
-// Overridden from OpBase
+// Overridden from LinearOpBase
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
@@ -91,20 +91,21 @@ DiagonalLinearOp<Scalar>::domain() const
 }
 
 template<class Scalar>
-bool DiagonalLinearOp<Scalar>::opSupported(ETransp M_trans) const
-{
-  return true;
-}
-
-// Overridden from LinearOpBase
-
-template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 DiagonalLinearOp<Scalar>::clone() const
 {
   return Teuchos::null; // Not supported yet but could be
 }
 
+// protected
+
+// Overridden from SingleScalarLinearOpBase
+
+template<class Scalar>
+bool DiagonalLinearOp<Scalar>::opSupported(ETransp M_trans) const
+{
+  return true; // ToDo: Update this!
+}
 
 // Overridden from SingleRhsLinearOpBase
 
@@ -124,6 +125,35 @@ void DiagonalLinearOp<Scalar>::apply(
   ele_wise_prod( Scalar(alpha*gamma_), x, *diag_, y );
 }
 
+// Overridden from SingleScalarLinearOpWithSolveBase
+
+template<class Scalar>
+bool DiagonalLinearOp<Scalar>::solveSupported(ETransp M_trans) const
+{
+  return true; // ToDo: Update this!
+}
+
+// Overridden from SingleRhsLinearOpWithSolveBase
+
+template<class Scalar>
+SolveReturn<Scalar> DiagonalLinearOp<Scalar>::solve(
+  const ETransp                         M_trans
+  ,const VectorBase<Scalar>             &b
+  ,VectorBase<Scalar>                   *x
+  ,const SolveTolerance<Scalar>         *solveTolerance
+  ) const
+{
+  // RAB: 4/16/2005: Warning! this does not work if Scalar is a complex type
+  // and M_trans==CONJTRANS!
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  assign(x,ST::zero());
+  ele_wise_divide( gamma_, b, *diag_, x );
+  SolveReturn<Scalar> solveReturn;
+  solveReturn.achievedTol       = ScalarMag(2)*ST::eps();
+  solveReturn.solveReturnStatus = SOLVE_STATUS_CONVERGED;
+  return solveReturn;
+}
 
 }	// end namespace Thyra
 

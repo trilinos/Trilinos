@@ -44,7 +44,7 @@ public:
   Scalar alpha() const { return this->scalarData(); }
   /** \brief . */
   TOpEleWiseDivide( const Scalar &alpha = Teuchos::ScalarTraits<Scalar>::one() )
-    : ROpScalarTransformationBase<Scalar>(alpha), RTOpT<Scalar>("TOpEleWiseDivide")
+    : RTOpT<Scalar>("TOpEleWiseDivide"), ROpScalarTransformationBase<Scalar>(alpha)
     {}
   /** @name Overridden from RTOpT */
   //@{

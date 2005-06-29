@@ -29,8 +29,8 @@
 #ifndef THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
 #define THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
 
-#include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
-//#include "Thyra_LinearOpWithSolveBaseDecl.hpp"
+#include "Thyra_LinearOpWithSolveBaseDecl.hpp"
+#include "Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -62,7 +62,10 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class DiagonalLinearOp : virtual public SingleRhsLinearOpBase<Scalar> {
+class DiagonalLinearOp
+  : virtual public LinearOpWithSolveBase<Scalar>
+  , virtual protected SingleRhsLinearOpWithSolveBase<Scalar>
+{
 public:
 
   /** \brief . */
@@ -135,9 +138,7 @@ public:
     ,Scalar                                          *gamma  = NULL
     );
 
-  //@}
-
-  /** @name Overridden from OpBase */
+  /** @name Overridden from LinearOpBase */
   //@{
   /** \brief Returns <tt>this->getDiag()->space()</tt>.
    *
@@ -153,20 +154,19 @@ public:
    * </ul>
    */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
-  /** \brief Returns <tt>true</tt>.
-   */
-  bool opSupported(ETransp M_trans) const;
-  //@}
-
-  /** @name Overridden from LinearOpBase */
-  //@{
   /** \brief . */
   Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
   //@}
 
 protected:
 
-  /** @name Overridden from SingleLinearOpBase */
+  /** @name Overridden from SingleScalarLinearOpBase */
+  //@{
+  /** \brief . */
+  bool opSupported(ETransp M_trans) const;
+  //@}
+
+  /** @name Overridden from SingleRhsLinearOpBase */
   //@{
   /** \brief . */
   void apply(
@@ -175,6 +175,23 @@ protected:
     ,VectorBase<Scalar>          *y
     ,const Scalar                alpha
     ,const Scalar                beta
+    ) const;
+  //@}
+
+  /** @name Overridden from SingleScalarLinearOpWithSolveBase */
+  //@{
+  /** \brief . */
+  bool solveSupported(ETransp M_trans) const;
+  //@}
+
+  /** @name Overridden from SingleRhsLinearOpWithSolveBase */
+  //@{
+  /** \brief . */
+  SolveReturn<Scalar> solve(
+    const ETransp                         M_trans
+    ,const VectorBase<Scalar>             &b
+    ,VectorBase<Scalar>                   *x
+    ,const SolveTolerance<Scalar>         *solveTolerance
     ) const;
   //@}
 

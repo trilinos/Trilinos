@@ -30,6 +30,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
@@ -779,6 +780,70 @@ int main( int argc, char* argv[] )
            ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)
         ) success=false;
 
+    }
+
+		if(verbose) out << "\n*** (B.12) Test DiagonalEpetraLinearOpWithSolveFactory \n";
+
+    if(1) {
+
+      Thyra::DiagonalEpetraLinearOpWithSolveFactory diagLOWSFactory;
+      
+      Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
+        diagLOWS = diagLOWSFactory.createOp();
+      
+      diagLOWSFactory.initializeOp( Op, &*diagLOWS );
+
+      RefCountPtr<Thyra::VectorBase<Scalar> >
+        v1  = createMember(epetra_vs);
+      Thyra::randomize( -ST::one(), ST::one(), &*v1 );
+
+      if(verbose) out << "\nsum(v1) = " << sum(*v1) << std::endl;
+
+      if(verbose && dumpAll) out << "\nv1 =\n" << *v1;
+
+      RefCountPtr<Thyra::VectorBase<Scalar> >
+        v2  = createMember(epetra_vs);
+
+      apply( *diagLOWS, Thyra::NOTRANS, *v1, &*v2 );
+    
+      if(verbose) out << "\nsum(v2) = " << sum(*v2) << std::endl;
+
+      if(verbose && dumpAll) out << "\nv2 =\n" << *v2;
+
+      RefCountPtr<Thyra::VectorBase<Scalar> >
+        v1_again  = createMember(epetra_vs);
+
+      Thyra::SolveReturn<Scalar>
+        solveReturn = solve( *diagLOWS, Thyra::NONCONJ_ELE, *v2, &*v1_again );
+
+      if(verbose) out << "\nsum(v1_again) = " << sum(*v1_again) << std::endl;
+
+      if(verbose && dumpAll) out << "\nv1_again =\n" << *v1_again;
+
+      TEST_FOR_EXCEPT( solveReturn.solveReturnStatus != Thyra::SOLVE_STATUS_CONVERGED );
+
+      RefCountPtr<Thyra::VectorBase<Scalar> >
+        diff = createMember(epetra_vs);
+
+      Thyra::linear_combination(
+        2
+        ,Teuchos::arrayArg<Scalar>( ST::one(), Scalar(-ST::one()) )()
+        ,Teuchos::arrayArg<const Thyra::VectorBase<Scalar>*>( &*v1, &*v1_again )()
+        ,ST::zero()
+        ,&*diff
+        );
+
+      if(verbose) out << "\nnorm(diff) = " << norm(*diff) << std::endl;
+
+      if(verbose && dumpAll) out << "\ndiff =\n" << *diff;
+
+      if(!testRelErr(
+           "sum(v1)",sum(*v1)
+           ,"sum(v1_again)",sum(*v1_again)
+           ,"achievedTol",solveReturn.achievedTol
+           ,"10*achievedTol",Scalar(10)*solveReturn.achievedTol
+           ,verbose?&out:NULL)) success=false;
+    
     }
 
 		if(verbose)

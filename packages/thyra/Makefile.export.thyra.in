@@ -2,6 +2,7 @@
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 THYRA_INCLUDES = \
+  -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/mpi \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/serial \
   -I@abs_top_srcdir@/src/ana/operator_vector/ana_support \
