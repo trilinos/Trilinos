@@ -370,25 +370,35 @@ EPETRAEXT_H = \
      $(BLOCK_H)
 
 #We need the following to support separate build directories
-AM_CPPFLAGS = \
-     -I$(top_builddir)/../epetra/src \
-     -I$(top_srcdir)/../epetra/src \
-     -I$(top_builddir)/../epetraext/src \
-     -I$(top_srcdir)/../epetraext/src \
-     -I$(top_builddir)/../epetraext/src/transform \
-     -I$(top_srcdir)/../epetraext/src/transform \
-     -I$(top_builddir)/../epetraext/src/btf \
-     -I$(top_srcdir)/../epetraext/src/btf \
-     -I$(top_builddir)/../epetraext/src/inout \
-     -I$(top_srcdir)/../epetraext/src/inout \
-     -I$(top_builddir)/../epetraext/src/zoltan \
-     -I$(top_srcdir)/../epetraext/src/zoltan \
-     -I$(top_builddir)/../epetraext/src/coloring \
-     -I$(top_srcdir)/../epetraext/src/coloring \
-     -I$(top_builddir)/../epetraext/src/matlab \
-     -I$(top_srcdir)/../epetraext/src/matlab \
-     -I$(top_builddir)/../epetraext/src/block \
-     -I$(top_srcdir)/../epetraext/src/block
+#AM_CPPFLAGS = \
+#     -I$(top_builddir)/../epetra/src \
+#     -I$(top_srcdir)/../epetra/src \
+#     -I$(top_builddir)/../epetraext/src \
+#     -I$(top_srcdir)/../epetraext/src \
+#     -I$(top_builddir)/../epetraext/src/transform \
+#     -I$(top_srcdir)/../epetraext/src/transform \
+#     -I$(top_builddir)/../epetraext/src/btf \
+#     -I$(top_srcdir)/../epetraext/src/btf \
+#     -I$(top_builddir)/../epetraext/src/inout \
+#     -I$(top_srcdir)/../epetraext/src/inout \
+#     -I$(top_builddir)/../epetraext/src/zoltan \
+#     -I$(top_srcdir)/../epetraext/src/zoltan \
+#     -I$(top_builddir)/../epetraext/src/coloring \
+#     -I$(top_srcdir)/../epetraext/src/coloring \
+#     -I$(top_builddir)/../epetraext/src/matlab \
+#     -I$(top_srcdir)/../epetraext/src/matlab \
+#     -I$(top_builddir)/../epetraext/src/block \
+#     -I$(top_srcdir)/../epetraext/src/block
+
+include $(top_builddir)/Makefile.export.epetraext
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
+else
+EXPORT_INCLUDES = $(EPETRAEXT_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # For using a special archiver

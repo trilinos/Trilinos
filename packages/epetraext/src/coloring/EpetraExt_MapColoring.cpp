@@ -315,12 +315,12 @@ operator()( OriginalTypeRef orig  )
       if( verbosity_ > 0 )
         cout << "Num LUBI Colors: " << ColorMap->NumColors() << endl;
 
-      if( distributedGraph ) delete base;
-      if( !distance1_ ) delete Adj2;
     }
     else
       abort(); //UNKNOWN ALGORITHM
 
+    if( distributedGraph ) delete base;
+    if( !distance1_ ) delete Adj2;
   }
   else
   {

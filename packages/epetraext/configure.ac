@@ -150,6 +150,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Build Tests?
 # ------------------------------------------------------------------------
 
@@ -317,8 +322,8 @@ AM_CONDITIONAL(BUILD_BLOCK, [test "X$ac_cv_use_epetraext_block" != "Xno"])
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Build examples and tests which use Triutils], EPETRAEXT_TRIUTILS, no)
-AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, triutils, EPETRAEXT_TRIUTILS, BUILD_TRIUTILS, yes, [Build triutils support in epetraext.], [Build triutils support in epetraext. Can be overridden with --disable-epetraext-triutils.])
+                               
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built
@@ -471,7 +476,8 @@ AC_SUBST(ac_aux_dir)
 # ------------------------------------------------------------------------
 ##
 AC_CONFIG_FILES([
-		Makefile 
+		Makefile
+                Makefile.export.epetraext
 		src/Makefile
                 test/Makefile
                 test/BTF/Makefile

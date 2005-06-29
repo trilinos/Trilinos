@@ -38,17 +38,16 @@ MapColoring_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
-MapColoring_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
-                            -I$(top_srcdir)/src/coloring \
-                            -I$(top_srcdir)/src \
-                            -I$(top_builddir)/src \
-                            -I$(top_srcdir)/../epetra/src \
-                            -I$(top_builddir)/../epetra/src
+include $(top_builddir)/Makefile.export.epetraext
 
-MapColoring_test_LDADD = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(LIBS) \
-  $(BLAS_LIBS) \
-  $(FLIBS)
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
+else
+EXPORT_LIBS = $(EPETRAEXT_LIBS)
+EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
+endif
 
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
+MapColoring_test_LDADD = $(EXPORT_LIBS)

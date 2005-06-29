@@ -56,7 +56,7 @@
 /* Define if want to build epetraext-tests */
 #undef HAVE_EPETRAEXT_TESTS
 
-/* Define if want to build with triutils enabled */
+/* Define if want to build with epetraext enabled */
 #undef HAVE_EPETRAEXT_TRIUTILS
 
 /* Define if want to build examples */
@@ -65,11 +65,17 @@
 /* Define if want to build epetraext-experimental */
 #undef HAVE_EXPERIMENTAL
 
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
 /* Define if want to build with fatal_messages enabled */
 #undef HAVE_FATAL_MESSAGES
 
 /* Define if want to build with format_io enabled */
 #undef HAVE_FORMAT_IO
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
 
 /* Define if want to build epetraext-coloring */
 #undef HAVE_INOUT
