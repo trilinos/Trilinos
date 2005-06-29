@@ -74,9 +74,9 @@ int main()
 
     // Create the constraints object & constraint param IDs list
     Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraints = Teuchos::rcp(new ChanConstraint(n, p));
-    Teuchos::RefCountPtr< vector<int> > constraintParamIDs = 
-      Teuchos::rcp(new vector<int>(1));
-    (*constraintParamIDs)[0] = p.getIndex("gamma");
+    Teuchos::RefCountPtr< vector<string> > constraintParamNames = 
+      Teuchos::rcp(new vector<string>(1));
+    (*constraintParamNames)[0] = "gamma";
 
     // Create parameter list
     Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
@@ -110,8 +110,8 @@ int main()
     NOX::Parameter::List& constraintsList = 
       locaParamsList.sublist("Constraints");
     constraintsList.setParameter("Constraint Object", constraints);
-    constraintsList.setParameter("Constraint Parameter IDs", 
-				 constraintParamIDs);
+    constraintsList.setParameter("Constraint Parameter Names", 
+				 constraintParamNames);
 
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 

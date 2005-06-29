@@ -638,7 +638,7 @@ LOCA::NewStepper::buildConstrainedGroup(
   string methodName = "LOCA::NewStepper::buildConstrainedGroup()";
 
   Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraints;
-  Teuchos::RefCountPtr< vector<int> > constraintParamIDs;
+  Teuchos::RefCountPtr< vector<string> > constraintParamNames;
 
   // Get constraint object
   if (constraintsList->isParameterRcp<LOCA::MultiContinuation::ConstraintInterface>("Constraint Object"))
@@ -647,12 +647,18 @@ LOCA::NewStepper::buildConstrainedGroup(
     globalData->locaErrorCheck->throwError(methodName,
 	  "\"Constraint Object\" parameter is not of type Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>!");
 
-  // Get parameter id's for constraints
-  if (constraintsList->isParameterRcp< vector<int> > ("Constraint Parameter IDs"))
-    constraintParamIDs = constraintsList->getRcpParameter< vector<int> > ("Constraint Parameter IDs");
+  // Get parameter names for constraints
+  if (constraintsList->isParameterRcp< vector<string> > ("Constraint Parameter Names"))
+    constraintParamNames = constraintsList->getRcpParameter< vector<string> > ("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter IDs\" parameter is not of type Teuchos::RefCountPtr< vector<int> >!");
+	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RefCountPtr< vector<string> >!");
+
+  // Convert names to integer IDs
+  vector<int> constraintParamIDs(constraintParamNames->size());
+  const LOCA::ParameterVector& pvec = grp->getParams();
+  for (unsigned int i=0; i<constraintParamIDs.size(); i++)
+    constraintParamIDs[i] = pvec.getIndex((*constraintParamNames)[i]);
 
   // Create constrained group
   return 
@@ -662,7 +668,7 @@ LOCA::NewStepper::buildConstrainedGroup(
 							constraintsList,
 							grp,
 							constraints,
-							*constraintParamIDs));
+							constraintParamIDs));
 }
 
 LOCA::Abstract::Iterator::StepStatus
