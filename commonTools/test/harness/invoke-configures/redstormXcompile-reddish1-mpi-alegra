@@ -34,6 +34,6 @@ module load PrgEnv
         CFLAGS="" \
         CXXFLAGS="" \
         FFLAGS="" \
-        LDFLAGS=" "  FLIBS="-lpapi -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl -lpgc -lm -lcatamount -lsysio -lhcfs_clib -lportals -lC -lcrtend" \
+        LDFLAGS=" "  FLIBS="-lpapi -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl -lpgc -lm -lcatamount -lsysio -lportals -lC -lcrtend" \
         --with-ar="ar rcv"
 
