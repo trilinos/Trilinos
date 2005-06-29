@@ -319,7 +319,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 
 ML_Epetra::MultiLevelPreconditioner::
 MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-			 const bool ComputePrec ) :
+			 const bool ComputePrec) :
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
 {
@@ -584,6 +584,8 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
 int ML_Epetra::MultiLevelPreconditioner::
 ComputePreconditioner(const bool CheckPreconditioner)
 {
+
+ try {
 
   BreakForDebugger();
 
@@ -1553,9 +1555,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   ConstructionTime_ += Time.ElapsedTime();
   ++NumConstructions_;
+
+ } 
+ catch(...)
+ {
+   ML_CHK_ERR(-1);
+ }
   
-  return 0;
-  
+ return(0);
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1563,6 +1570,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
 int ML_Epetra::MultiLevelPreconditioner::
 ReComputePreconditioner()
 {
+
+ try{
 
   if (SolvingMaxwell_ == true)
     ML_CHK_ERR(-1);
@@ -1675,7 +1684,13 @@ ReComputePreconditioner()
   ConstructionTime_ += InitialTime.ElapsedTime();
   ++NumConstructions_;
 
-  return 0;
+ }
+ catch(...)
+ {
+   ML_CHK_ERR(-1);
+ }
+
+ return(0);
 
 }
 
@@ -1736,6 +1751,7 @@ Print()
       }
   
   }
+  return(0);
 } //Print() method
 
 // ============================================================================
