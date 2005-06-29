@@ -98,6 +98,7 @@ using std::rand;
 
 #ifdef HAVE_CSTDIO
 #include <cstdio>
+#ifndef AVOID_BUG1472
 using std::fopen;
 using std::fclose;
 using std::FILE;
@@ -106,6 +107,7 @@ using std::fscanf;
 using std::printf;
 using std::perror;
 using std::feof;
+#endif
 #else
 #include <stdio.h>
 #endif
