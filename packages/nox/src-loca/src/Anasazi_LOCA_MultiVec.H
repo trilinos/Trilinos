@@ -137,8 +137,8 @@ namespace Anasazi {
     //! initializes each element of (*this) with alpha
     virtual void MvInit (const double alpha);
 
-    //! print (*this)
-    virtual void MvPrint() const;
+    //! print (*this) to output stream \c os
+    virtual void MvPrint(ostream& os) const;
 
     //! Return a reference to NOX::Abstract::Vector
     virtual NOX::Abstract::Vector& GetNOXVector(int index);

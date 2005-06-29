@@ -252,7 +252,7 @@ Anasazi::LOCAMultiVec::MvInit(double alpha)
 }
 
 void 
-Anasazi::LOCAMultiVec::MvPrint() const
+Anasazi::LOCAMultiVec::MvPrint(ostream& os) const
 {
 }
 
