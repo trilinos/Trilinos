@@ -231,7 +231,7 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 # Checks for Makefile.export related systems
 # ------------------------------------------------------------------------
-TAC_ARG_ENABLE_EXPORT_MAKEFILES
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 # ------------------------------------------------------------------------
 # Checks for special package flags

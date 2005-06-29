@@ -17,9 +17,9 @@ dnl
 AC_DEFUN([TAC_ARG_ENABLE_EXPORT_MAKEFILES],
 [
 AC_ARG_ENABLE(export-makefiles,
-AC_HELP_STRING([--enable-export-makefiles],[Creates export makefiles in the install (prefix) directory.  This option requires perl to be set in your path or defined with --with-perl=<perl executable>(default is no)]),
+AC_HELP_STRING([--enable-export-makefiles],[Creates export makefiles in the install (prefix) directory.  This option requires perl to be set in your path or defined with --with-perl=<perl executable>. Note that the export makefiles are always created and used in the build directory, but will not be installable without this option to change the paths. (default is $1)]),
 ac_cv_use_export_makefiles=$enableval, 
-ac_cv_use_export_makefiles=no)
+ac_cv_use_export_makefiles=$1)
 
 AC_MSG_CHECKING(whether to build export makefiles)
 
@@ -42,7 +42,7 @@ TAC_ARG_WITH_PERL
 if test "X$HAVE_PERL" != "Xyes" && 
    test "X$ac_cv_use_export_makefiles" != "Xno"; then
   AC_MSG_RESULT(no)
-  AC_MSG_ERROR([Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>.])
+  AC_MSG_ERROR([Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles.])
 fi
 
 # Check for using gnumake to clean up link lines via 
@@ -50,7 +50,7 @@ fi
 AC_DEFUN([TAC_ARG_WITH_GNUMAKE],
 [
 AC_ARG_WITH(gnumake,
-AC_HELP_STRING([--with-gnumake],[Gnu's make has special functions we can use to clean up build and link lines. Enable this if you use gnu-make to build Trilinos. This requires that perl is in your path or that you have specified the perl executable with --with-perl=<perl executable>.  Configure will check for the existence of the perl executable and quit with an error if it is not found. Default is no.]),
+AC_HELP_STRING([--with-gnumake],[Gnu's make has special functions we can use to eliminate redundant paths in the build and link lines. Enable this if you use gnu-make to build Trilinos. This requires that perl is in your path or that you have specified the perl executable with --with-perl=<perl executable>.  Configure will check for the existence of the perl executable and quit with an error if it is not found. (default is no)]),
 ac_cv_use_gnumake=$withval, ac_cv_use_gnumake=no)
 
 AC_MSG_CHECKING(whether gnumake specific code should be enabled)

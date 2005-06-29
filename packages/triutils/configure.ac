@@ -150,7 +150,7 @@ TAC_ARG_CHECK_MPI
 # ------------------------------------------------------------------------
 # Checks for Makefile.export related systems
 # ------------------------------------------------------------------------
-TAC_ARG_ENABLE_EXPORT_MAKEFILES
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 # ------------------------------------------------------------------------
 # Checks for header files

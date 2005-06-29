@@ -853,7 +853,10 @@ Optional Features:
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
                           your path or defined with --with-perl=<perl
-                          executable>(default is no)
+                          executable>. Note that the export makefiles are
+                          always created and used in the build directory, but
+                          will not be installable without this option to
+                          change the paths. (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -890,14 +893,14 @@ Optional Packages:
                           format
   --with-perl             supply a perl executable. For example
                           --with-perl=/usr/bin/perl.
-  --with-gnumake          Gnu's make has special functions we can use to clean
-                          up build and link lines. Enable this if you use
-                          gnu-make to build Trilinos. This requires that perl
-                          is in your path or that you have specified the perl
-                          executable with --with-perl=<perl executable>.
-                          Configure will check for the existence of the perl
-                          executable and quit with an error if it is not
-                          found. Default is no.
+  --with-gnumake          Gnu's make has special functions we can use to
+                          eliminate redundant paths in the build and link
+                          lines. Enable this if you use gnu-make to build
+                          Trilinos. This requires that perl is in your path or
+                          that you have specified the perl executable with
+                          --with-perl=<perl executable>. Configure will check
+                          for the existence of the perl executable and quit
+                          with an error if it is not found. (default is no)
 
 Some influential environment variables:
   CC          C compiler command
@@ -3776,7 +3779,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3779:" \
+echo "$as_me:3782:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5166,7 +5169,7 @@ if test "${enable_export_makefiles+set}" = set; then
   enableval="$enable_export_makefiles"
   ac_cv_use_export_makefiles=$enableval
 else
-  ac_cv_use_export_makefiles=no
+  ac_cv_use_export_makefiles=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to build export makefiles" >&5
@@ -5304,8 +5307,8 @@ if test "X$HAVE_PERL" != "Xyes" &&
    test "X$ac_cv_use_export_makefiles" != "Xno"; then
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
-echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
+  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&5
+echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -5418,7 +5421,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5421: \"$ac_link\") >&5
+(eval echo $as_me:5424: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5496,7 +5499,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5499: \"$ac_link\") >&5
+(eval echo $as_me:5502: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
