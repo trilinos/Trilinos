@@ -9,7 +9,8 @@
            ElementSpace,
            BlockElementSpace,
            ImportExport,
-           VectorSpace;
+           VectorSpace,
+           Vector;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
@@ -31,12 +32,11 @@
     COMM = SERIAL;
 }
 
-# Removing Vector and CisMatrix from MPI for now because they hang the testharness.
-# (See Bugzilla #1465 and #1468)
+# Removing CisMatrix from MPI for now because it hangs the testharness.
+# (See Bugzilla #1468)
 
 (FRAMEWORK) {
-    DIRS = Vector,
-           CisMatrix;
+    DIRS = CisMatrix;
     ARGS = -v;
     COMM = SERIAL;
 }
