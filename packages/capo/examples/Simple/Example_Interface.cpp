@@ -68,7 +68,7 @@ ThyraIntegrator::ThyraIntegrator(Teuchos::RefCountPtr<const Epetra_Map> EMap, Te
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/09/05
 //------------------------------------------------------------------
-bool ThyraIntegrator::Integrate(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x,const double T, const double lambda)
+bool ThyraIntegrator::Integrate(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y,const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x,const double T, const double lambda)
 {
 
   (*AppIntegrator).Integrate(&*(Thyra::get_Epetra_Vector(*epetra_map,x)), \

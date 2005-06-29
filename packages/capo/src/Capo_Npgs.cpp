@@ -160,7 +160,7 @@ void Npgs::Initialize()
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/23/05
 //------------------------------------------------------------------
-void Npgs::Orthonormalize(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Basis, int Number_of_Columns)
+void Npgs::Orthonormalize(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Basis, int Number_of_Columns)
 {
   double temp = 0;
   temp = sqrt( Thyra::dot( *(Basis->col(1)),*(Basis->col(1))));
@@ -223,7 +223,7 @@ void Npgs::Predictor(double& StepSize,double& PrevStepSize)
 {
   lambdacurrent = lambdafinal+(*SolveParameters).get_lambda_stepsize();
   Tcurrent = Tfinal;
-  Thyra::assign(&*xfinal,*xcurrent);
+  Thyra::assign(&*xcurrent,*xfinal);
 }
 //-----------------------------------------------------------------
 // Function      : Npgs::Get_Tfinal
@@ -402,6 +402,7 @@ bool Npgs::InnerIteration()
 	  Vp = createMembers(xcurrent->space(),Unstable_Basis_Size);
 
 	  ComputeVp(Se,Vp);
+	  //Print(Vp);
 	  Calculatedq(Vp,dq,r);
 	  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dp;
 	  dp = createMember(Vp->domain());
@@ -410,6 +411,7 @@ bool Npgs::InnerIteration()
 	  Thyra::apply(*Vp,Thyra::NOTRANS,*dp,&*TempVector);
 	  Thyra::Vp_StV(&*xfinal,1.0,*TempVector);
 	  Tfinal+=*deltaT;
+	  UpdateVe(We,Se);
 	}
       else
 	{
@@ -431,12 +433,13 @@ bool Npgs::InnerIteration()
 	  Tfinal +=(*deltaT);
 	  Thyra::Vp_StV(&*xfinal,1.0,*dq);
 	}
-      UpdateVe(We,Se);
+
 
       Orthonormalize(Ve,Unstable_Basis_Size+SolveParameters->get_NumberXtraVecsSubspace());
       App_Integrator->Integrate(xfinal,v,Tfinal,lambdafinal);
       Thyra::assign(&*r,*v); 
       Thyra::Vp_StV(&*r,-1.0,*xfinal);
+
       converged = Converged(xfinal,v);
 
 
@@ -456,7 +459,7 @@ bool Npgs::InnerIteration()
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/15/05
 //------------------------------------------------------------------
-void Npgs::SchurDecomp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re)
+void Npgs::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se,const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re)
 {
   /* This function performs a Schur Decomposition.
      On return Mat contains the Upper Triangular matrix with 
@@ -622,7 +625,7 @@ bool Npgs::Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/16/05
 //------------------------------------------------------------------
-void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re)
+void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re)
 {
   int Subspace_Size = SolveParameters->get_NumberXtraVecsSubspace()+Unstable_Basis_Size;
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
@@ -652,9 +655,9 @@ void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/16/05
 //------------------------------------------------------------------
-void Npgs::Calculatedq(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp
-		       ,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dq,
-		       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > r)
+void Npgs::Calculatedq(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp
+		       ,const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
+		       const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r)
 {
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > q;
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > TempVec1;
@@ -666,6 +669,7 @@ void Npgs::Calculatedq(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp
 
   Thyra::apply(*Vp,Thyra::TRANS,*r,&*TempVec1);
   Thyra::apply(*Vp,Thyra::NOTRANS,*TempVec1,&*q);
+
   Thyra::Vt_S(&*q,-1.0);
   Thyra::Vp_StV(&*q,1.0,*r);
 
@@ -686,8 +690,8 @@ void Npgs::Calculatedq(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/17/05
 //------------------------------------------------------------------
-bool Npgs::ComputeVp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
-		     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp)
+bool Npgs::ComputeVp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se,
+		     const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp)
 {
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_p;
   Ve_p = createMembers(xcurrent->space(),Unstable_Basis_Size);
@@ -723,8 +727,8 @@ bool Npgs::ComputeVp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/17/05
 //------------------------------------------------------------------
-bool Npgs::UpdateVe(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We,
-		    Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se)
+bool Npgs::UpdateVe(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We,
+		    const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se)
 {
   int Size = We->domain()->dim();
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > TempMV;
@@ -742,13 +746,13 @@ bool Npgs::UpdateVe(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We,
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/17/05
 //------------------------------------------------------------------
-bool Npgs::Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
-		       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dq,
-		       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dp,
-		       Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re,
-		       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > v,
-		       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > finit,
-		       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > r,
+bool Npgs::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
+		       const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
+		       const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
+		       const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re,
+		       const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& v,
+		       const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& finit,
+		       const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r,
 		       double& deltaT)
 {
   double eps = 10e-5;
@@ -843,7 +847,7 @@ bool Npgs::Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/17/05
 //------------------------------------------------------------------
-bool Npgs::dphi_dt(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f)
+bool Npgs::dphi_dt(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f)
 {
   double delta = 1.0e-5; /*Finite Difference constant*/
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > phi;

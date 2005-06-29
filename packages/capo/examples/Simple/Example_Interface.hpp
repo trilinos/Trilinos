@@ -56,8 +56,8 @@ public:
   ~ThyraIntegrator() {};
   
   // User must compile in an ThyraIntegrator::Integrate function
-  bool Integrate(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y, 
-		 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x, 
+  bool Integrate(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y, 
+		 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x, 
 		 const double T,
 		 const double lambda);
 private:

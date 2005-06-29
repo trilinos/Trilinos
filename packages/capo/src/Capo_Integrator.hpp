@@ -17,7 +17,7 @@ namespace CAPO {
     //! implicit time steps), return next iterate ynew.
     
     
-    virtual bool Integrate(Teuchos::RefCountPtr<Thyra::VectorBase<double> >& y, Teuchos::RefCountPtr<Thyra::VectorBase<double> >& ynew, const double T, const double lambda) = 0;
+    virtual bool Integrate(const Teuchos::RefCountPtr<Thyra::VectorBase<double> >& y, const Teuchos::RefCountPtr<Thyra::VectorBase<double> >& ynew, const double T, const double lambda) = 0;
   };
 
 }

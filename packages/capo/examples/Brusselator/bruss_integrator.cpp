@@ -38,7 +38,6 @@ Author:    Joseph Simonis
 /**** Include Files ****/
 #include "bruss_integrator.hpp"
 
-
 //-----------------------------------------------------------------
 // Function      : BrussIntegrator::BrussIntegrator
 // Purpose       : constructor

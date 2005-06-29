@@ -95,7 +95,7 @@ void Stepper::PrintStart() const
   if (PrintProc>0)
     {
       cout << endl <<"---------- Start of Continuation step " << StepNumber << "----------" << endl;
-      cout << "Param = " << iteration_method->Get_lambdafinal() << ", StepSize = " << StepSize << " ~~~~~~" << endl;
+      //cout << "Param = " << iteration_method->Get_lambdafinal() << ", StepSize = " << StepSize << " ~~~~~~" << endl;
     }
 }
 //-----------------------------------------------------------------
@@ -114,12 +114,14 @@ void Stepper::PrintIter(const bool converged) const
       
       if (converged) cout<<"*Converged* ";
       else           cout<<"##Failed## to Converge ";
+      cout << endl;
       
+      /*
       int itr = Problem_Parameters->get_MaxInnerIts();
       cout <<"in "<< itr <<" Iteration";
       if (itr != 1) cout << "s";
       cout << "  ~~~~~~" << endl;
-      
+      */
     }
 }
 

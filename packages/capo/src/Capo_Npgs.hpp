@@ -82,48 +82,48 @@ namespace CAPO {
     virtual double& Get_lambdafinal();
     
     virtual double& Get_Tfinal();
-    
   private:
     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve;
 
     int Unstable_Basis_Size;
 
-    void Orthonormalize(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Basis, int Number_of_Columns);
+    void Orthonormalize(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Basis, int Number_of_Columns);
 
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > MatVec(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y);
 
     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > MatVecs(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Y);
 
-    void SchurDecomp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, 
-		     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re);
-
-    void Print(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Printme);
 
     bool Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
 		   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y);
 
-    void SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re);
+    void SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re);
 
-    void Calculatedq(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
-		     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dq, 
-		     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > r);
+    void Calculatedq(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
+		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq, 
+		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r);
 
-    bool ComputeVp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se,
-		   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp);
-    bool UpdateVe(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > We,
-		  Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se);
+    bool ComputeVp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se,
+		   const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp);
+    bool UpdateVe(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We,
+		  const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se);
 
-    bool Calculatedp(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Vp,
-		     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dq,
-		     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dp,
-		     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re,
-		     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > v,
-		     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > finit,
-		     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > r,
+    bool Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
+		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
+		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
+		     const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re,
+		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& v,
+		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& finit,
+		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r,
 		     double& deltaT);
-    bool dphi_dt(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f);
+    bool dphi_dt(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
 
     bool Solve_Linear(double *Mat,double *rhs, bool resolve, int m);
+    void SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, 
+		     const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
+
+    void Print(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Printme);
+    
   };
 }
 
