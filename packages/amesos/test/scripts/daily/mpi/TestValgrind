@@ -31,6 +31,8 @@
 #      run.  This assists a developer in figuring out which tests failed.
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
+# $3 - Indiciates if the test is being called by commonTools/test/utilities/runtests, 
+#      the new automated nightly test script
 
 set error = None
 set AnError = False
@@ -71,11 +73,8 @@ echo `uname -a` >>& $file
 #
 #  I thought that I had Test_Epetra_CrsMatrix working, but now it has a memory error in it.
 #
-#foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix ) 
-foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
-# foreach f ( Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK )  # passes 1 MARCH 2005
-# foreach f ( Test_Epetra_VbrMatrix ) 
-# foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_KLU Test_Epetra_VbrMatrix ) # test passes Mar 1 
+# foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+foreach f ( Test_Epetra_VbrMatrix ) 
    cd $f
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 
@@ -125,13 +124,21 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPA
    end
    cd ..
 end
-#
-#  I am not convinced that these do anything.  Perhaps they should be ../$file2 and ../$file3
-#
+
+#  copy $file1 and $file2 to standard out for the new test harness 
+if ( "$3" == "True" ) then
+    echo "@#@#@#@#  Summary file @#@#@#@#@"
+    cat $file
+    if ( -f $file2 ) then
+        echo "@#@#@#@# Error file @#@#@#@#@"
+        cat $file2
+    endif
+endif
+
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
 if ( "$2" == "True" ) then
-   rm -f $file3
+   rm -f $file
    if( "$AnError" != "True" ) then
       rm -f $file2
    endif

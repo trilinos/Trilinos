@@ -106,75 +106,75 @@ $mpigo 3 amesos_test.exe UMFPACK   fidapm05.rua 1 1 1 1 1000000000000000 1  >>SS
 #
 #  Test some more small matrices
 #
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolA.rua 0 1 1 0 1e-10 1e-12 >>SST.stdout
-$mpigo 3 amesos_test.exe UMFPACK   ImpcolA.rua 0 0 1 0 1e-10 1e-12  >>SST.stdout
-$mpigo 3 amesos_test.exe UMFPACK   ImpcolA.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
-$mpigo 3 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-$mpigo 3 amesos_test.exe UMFPACK   ImpcolC.rua 0 0 1 0 1e-13 1e-13  >>SST.stdout
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-$mpigo 3 amesos_test.exe UMFPACK   ImpcolD.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 1 0 1e-12 1e-11 >>SST.stdout
-$mpigo 3 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 1 0 1e-12 1e-11  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolA.rua 0 1 1 0 1e-10 1e-12 >>SST.stdout
+##ken## COMMENT  $mpigo 3 amesos_test.exe UMFPACK   ImpcolA.rua 0 0 1 0 1e-10 1e-12  >>SST.stdout
+##ken## COMMENT  $mpigo 3 amesos_test.exe UMFPACK   ImpcolA.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
+##ken## COMMENT  $mpigo 3 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+##ken## COMMENT  $mpigo 3 amesos_test.exe UMFPACK   ImpcolC.rua 0 0 1 0 1e-13 1e-13  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+##ken## COMMENT  $mpigo 3 amesos_test.exe UMFPACK   ImpcolD.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 1 0 1e-12 1e-11 >>SST.stdout
+##ken## COMMENT  $mpigo 3 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 1 0 1e-12 1e-11  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
 #
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
 #
-$mpigo 4 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
-$mpigo 4 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 1 1 1e-10 1e-12  >>SST.stdout
-$mpigo 4 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 3 1 1e-10 1e-12  >>SST.stdout
-$mpigo 4 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 -3 1 1e-10 1e-12  >>SST.stdout
+##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 1 1 1e-10 1e-12  >>SST.stdout
+##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 3 1 1e-10 1e-12  >>SST.stdout
+##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 -3 1 1e-10 1e-12  >>SST.stdout
 
 
 #
 #  Test blocked right hand sides
 #
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolA.rua 0 1 2 0 1e-10 1e-12 >>SST.stdout
-$mpigo 5 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
-$mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 5 1 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolA.rua 0 1 2 0 1e-10 1e-12 >>SST.stdout
+##ken## COMMENT  $mpigo 5 amesos_test.exe UMFPACK   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
+##ken## COMMENT  $mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 5 1 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
-$mpigo 5 amesos_test.exe UMFPACK   ImpcolD.rua 0 1 -2 1 1e-13 1e-13  >>SST.stdout
-$mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 0 1 -4 1 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
+##ken## COMMENT  $mpigo 5 amesos_test.exe UMFPACK   ImpcolD.rua 0 1 -2 1 1e-13 1e-13  >>SST.stdout
+##ken## COMMENT  $mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 0 1 -4 1 1e-6  1e-1 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test blocked right hand sides with distributed matrix input
 #
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 2 0 1e-10 1e-12 >>SST.stdout
-$mpigo 5 amesos_test.exe UMFPACK   ImpcolB.rua 1 1 4 0 1e-11 1e-14  >>SST.stdout
-$mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 1 1 6 0 1e-12 1e-11  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolA.rua 1 1 2 0 1e-10 1e-12 >>SST.stdout
+##ken## COMMENT  $mpigo 5 amesos_test.exe UMFPACK   ImpcolB.rua 1 1 4 0 1e-11 1e-14  >>SST.stdout
+##ken## COMMENT  $mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 1 1 6 0 1e-12 1e-11  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test multiple right hand sides with distributed matrix input
 #
-$mpigo 1 amesos_test.exe UMFPACK   ImpcolC.rua 1 1 -2 0 1e-13 1e-13 >>SST.stdout
-$mpigo 5 amesos_test.exe UMFPACK   ImpcolD.rua 1 1 -3 0 1e-13 1e-13  >>SST.stdout
-$mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 1 1 -1 0 1e-12 1e-11  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   ImpcolC.rua 1 1 -2 0 1e-13 1e-13 >>SST.stdout
+##ken## COMMENT  $mpigo 5 amesos_test.exe UMFPACK   ImpcolD.rua 1 1 -3 0 1e-13 1e-13  >>SST.stdout
+##ken## COMMENT  $mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 1 1 -1 0 1e-12 1e-11  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 4 amesos_test.exe UMFPACK   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
 
 
 #
@@ -182,19 +182,19 @@ $mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 1 1 -1 0 1e-12 1e-11  >>SST.stdou
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-$mpigo 1 amesos_test.exe UMFPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-$mpigo 3 amesos_test.exe UMFPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+##ken## COMMENT  $mpigo 3 amesos_test.exe UMFPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 2 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 2 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-# COMMENT $mpigo 1 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-# COMMENT $mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 1 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 6 amesos_test.exe UMFPACK K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 1 1e-10 1e-8 >>SST.stdout
+# COMMENT ##ken## COMMENT  $mpigo 6 amesos_test.exe UMFPACK K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
 
-$mpigo 1 amesos_test.exe UMFPACK Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+##ken## COMMENT  $mpigo 1 amesos_test.exe UMFPACK Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosUmfpack.exe" >> SST.summary 

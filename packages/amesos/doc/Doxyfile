@@ -118,6 +118,13 @@ INTERNAL_DOCS          = NO
 
 CLASS_DIAGRAMS         = YES
 
+
+# If set to YES, the inheritance and collaboration graphs will hide 
+# inheritance and usage relations if the target is undocumented 
+# or is not a class.
+
+HIDE_UNDOC_RELATIONS   = YES
+
 # If the SOURCE_BROWSER tag is set to YES then a list of source files will 
 # be generated. Documented entities will be cross-referenced with these sources. 
 

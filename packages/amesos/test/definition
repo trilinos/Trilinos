@@ -3,7 +3,11 @@
 #
 
 (FRAMEWORK) {
-    TESTS = scripts/daily/mpi/TestAmesos.exe;
+    TESTS = 
+scripts/daily/mpi/TestValgrind.exe,
+scripts/daily/mpi/TestLapack.exe,
+scripts/daily/mpi/TestScalapack.exe,
+scripts/daily/mpi/TestQuietAmesos.exe;
     COMM = CUSTOM-MPI;
     ARGS = TestAmesos.exe True True;
 }
