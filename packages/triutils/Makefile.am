@@ -71,3 +71,37 @@ PYTHON_SUBDIR=python
 endif
 
 SUBDIRS = src $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+
+## #######################################################################
+## Target for circular dependencies
+## #######################################################################
+all-libs:
+	cd src ; make all-libs
+
+## #######################################################################
+## Export Makefile Installation
+## #######################################################################
+if USING_EXPORT_MAKEFILES
+
+install-exec-hook:	
+	cp $(top_builddir)/Makefile.export.triutils $(exec_prefix)/include/.
+	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+		--exec-prefix=$(exec_prefix) \
+		--my-export-makefile=Makefile.export.triutils \
+		--my-abs-top-srcdir=@abs_top_srcdir@ \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--dep-pacakge-abs-builddirs=@abs_top_builddir@/../epetra
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile triutils > $(exec_prefix)/include/Makefile.export.triutils.macros
+
+uninstall-hook:
+	rm -f $(exec_prefix)/include/Makefile.export.epetraext
+	rm -f $(exec_prefix)/include/Makefile.export.epetraext.macros
+
+else 
+
+install-exec-hook:
+
+uninstall-hook:
+
+endif

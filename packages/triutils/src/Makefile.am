@@ -78,8 +78,16 @@ CORE = \
 	$(srcdir)/Trilinos_Util_CommandLineParser.cpp \
 	$(srcdir)/Trilinos_Util_CrsMatrixGallery.cpp
 
+include $(top_builddir)/Makefile.export.triutils
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TRIUTILS_INCLUDES))
+else
+EXPORT_INCLUDES = $(TRIUTILS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+##AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
 WITH_CPP_H =
 

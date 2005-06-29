@@ -148,6 +148,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES
+
+# ------------------------------------------------------------------------
 # Checks for header files
 # ------------------------------------------------------------------------
 
@@ -305,6 +310,7 @@ AC_SUBST(ac_aux_dir)
 ##
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.triutils
 		src/Makefile
 		test/Makefile
 		test/Read/Makefile

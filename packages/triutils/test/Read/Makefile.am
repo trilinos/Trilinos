@@ -56,20 +56,24 @@ read_test_SOURCES = 	 $(SRC_CXX)
 
 Dummy_SOURCES = Dummy
 
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
+include $(top_builddir)/Makefile.export.triutils
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(TRIUTILS_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TRIUTILS_INCLUDES))
+else
+EXPORT_LIBS = $(TRIUTILS_LIBS)
+EXPORT_INC_PATH = $(TRIUTILS_INCLUDES)
+endif
+
+read_test_LDADD = $(EXPORT_LIBS)
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 read_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libtriutils.a 
 
 read_test_CXXFLAGS = -I$(top_srcdir)/src
-
-read_test_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libtriutils.a \
-	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
 
 EXTRA_DIST = \
 	$(srcdir)/In_bcsstk01.rsa $(srcdir)/In_bcsstk01.mtx \

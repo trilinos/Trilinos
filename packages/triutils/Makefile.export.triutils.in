@@ -1,0 +1,9 @@
+# hard dependency on Epetra
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+TRIUTILS_INCLUDES = \
+        $(EPETRA_INCLUDES) \
+	-I@abs_top_srcdir@/src \
+	-I@abs_top_builddir@/src
+
+TRIUTILS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -ltriutils $(EPETRA_LIBS) @BLAS_LIBS@ @LIBS@ @FLIBS@ 
