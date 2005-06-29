@@ -213,7 +213,8 @@ public:
 
   /** \brief Determines if <tt>apply()</tt> supports this <tt>conj</tt> argument.
    *
-   * The default implementation returns <tt>true</tt>.
+   * The default implementation returns <tt>true</tt> for real valued scalar types
+   * or when <tt>conj==NONCONJ_ELE</tt> for complex valued types.
    */
   virtual bool applySupports( const EConj conj ) const;
 

@@ -6,7 +6,7 @@
 @ENABLE_EPETRA_THYRA_TRUE@	-I@abs_top_builddir@/thyra/src \
 @ENABLE_EPETRA_THYRA_TRUE@	$(THYRA_INCLUDES)
 
-@ENABLE_EPETRA_THYRA_TRUE@EPETRA_THYRA_LIBS = -L@abs_top_builddir@/thyra/src -lEpetraThyra $(THYRA_LIBS)
+@ENABLE_EPETRA_THYRA_TRUE@EPETRA_THYRA_LIBS = -L@abs_top_builddir@/thyra/src -lepetrathyra $(THYRA_LIBS)
 
 EPETRA_INCLUDES = \
   $(EPETRA_THYRA_INCLUDES) \

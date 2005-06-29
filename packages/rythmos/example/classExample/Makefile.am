@@ -43,7 +43,7 @@ classExample_CXXFLAGS = -I$(top_srcdir)/src \
 classExample_LDADD = \
 	$(top_builddir)/src/librythmos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../epetra/thyra/src/libEpetraThyra.a \
+	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
 	$(common_ldadd) \
 	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 

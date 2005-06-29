@@ -11,15 +11,15 @@ my $exec_prefix = "";           # [required] Abs path to base installation direc
 my $my_export_makefile = "";    # [required] Name only of installed Makefile.export.package file
 my $my_top_srcdir = "";         # [required] Abs path to this package's top source directory
 my $my_incl_dirs = "";          # [required] Abs path to this package's include directories
-my $my_lib_dirs = "";           # [optional] Abs path to this pacakge's library directories (if any exist)
-my $dep_pacakge_builddirs = ""; # [optional] Abs paths to other directly dependent framework pacakge build directories (if any exist)
+my $my_lib_dirs = "";           # [optional] Abs path to this package's library directories (if any exist)
+my $dep_package_builddirs = ""; # [optional] Abs paths to other directly dependent framework package build directories (if any exist)
 GetOptions(
   "exec-prefix=s"                   => \$exec_prefix,
   "my-export-makefile=s"            => \$my_export_makefile,
   "my-abs-top-srcdir=s"             => \$my_top_srcdir,
   "my-abs-incl-dirs=s"              => \$my_incl_dirs,
   "my-abs-lib-dirs=s"               => \$my_lib_dirs,
-  "dep-pacakge-abs-builddirs=s"     => \$dep_pacakge_builddirs
+  "dep-package-abs-builddirs=s"     => \$dep_package_builddirs
   );
 #
 # Validate commandline arguments
@@ -35,7 +35,7 @@ $my_incl_dirs ne "" || die;
 $exec_prefix = remove_rel_paths($exec_prefix);
 my @my_incl_dirs = split(":",$my_incl_dirs);
 my @my_lib_dirs = split(":",$my_lib_dirs);
-my @dep_export_package_builddirs = split(":",$dep_pacakge_builddirs);
+my @dep_export_package_builddirs = split(":",$dep_package_builddirs);
 #
 # Do the replacements
 #
@@ -82,6 +82,6 @@ sub remove_rel_paths {
 }
 sub run_cmnd {
   my $cmnd = shift;
-  print "\n", $cmnd, "\n";
+  #print "\n", $cmnd, "\n";
   system($cmnd)==0 || die;
 }

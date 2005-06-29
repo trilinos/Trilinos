@@ -283,7 +283,7 @@ branch1_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
 #np# One LDADD primary can be defined for each exe listed above.  Include any
 #np# LDFLAGS  necessary for building the exe.
 branch1_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libEpetraThyra.a \
+	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
 	$(top_builddir)/../thyra/src/libthyra.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \

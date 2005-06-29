@@ -289,7 +289,7 @@ test_epetra_adapters_LDADD = $(common_ldadd)
 # Common stuff
 #
 common_sources = 
-common_dependencies = $(top_builddir)/thyra/src/libEpetraThyra.a $(top_builddir)/src/libepetra.a
+common_dependencies = $(top_builddir)/thyra/src/libepetrathyra.a $(top_builddir)/src/libepetra.a
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(EPETRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(EPETRA_LIBS)

@@ -68,13 +68,13 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # Epetra Thyra library specifications
 # --------------------------------------------------------------------
 
-EPETRA_THYRA_LIB = libEpetraThyra.a
+EPETRA_THYRA_LIB = libepetrathyra.a
 
 EPETRA_THYRA_H = \
 	$(top_srcdir)/src/Epetra_ConfigDefs.h \
 	$(SOURCE_H)
 
-libEpetraThyra_a_SOURCES = \
+libepetrathyra_a_SOURCES = \
 	$(SOURCE)
 
 #We need the following to support separate build directories
@@ -89,11 +89,11 @@ libEpetraThyra_a_SOURCES = \
 
 if USE_ALTERNATE_AR
 
-libEpetraThyra_a_AR = $(ALTERNATE_AR)
+libepetrathyra_a_AR = $(ALTERNATE_AR)
 
 else
 
-libEpetraThyra_a_AR = $(AR) cru
+libepetrathyra_a_AR = $(AR) cru
 
 endif
 
@@ -105,7 +105,7 @@ endif
 # I have not been able to find any kind of "or" for Automake
 # conditionals. JW
 
- libEpetraThyra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+ libepetrathyra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # --------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

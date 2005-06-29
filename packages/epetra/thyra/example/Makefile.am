@@ -51,7 +51,7 @@ sillyPowerMethod_epetra_LDADD = $(common_ldadd)
 
 common_sources = $(srcdir)/createTridiagEpetraLinearOp.cpp
 
-common_dependencies = $(top_builddir)/thyra/src/libEpetraThyra.a $(top_builddir)/src/libepetra.a
+common_dependencies = $(top_builddir)/thyra/src/libepetrathyra.a $(top_builddir)/src/libepetra.a
 
 include $(top_builddir)/Makefile.export.epetra
 

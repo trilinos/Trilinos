@@ -44,7 +44,7 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template<class Scalar>
 class ProductMultiVectorBase : virtual public MultiVectorBase<Scalar> {

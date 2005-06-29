@@ -68,7 +68,7 @@ template <class Scalar> class ProductVectorSpaceBase;
  * interface that should be sufficient for 99% or so of use cases is
  * provided in the concrete subclass <tt>ProductVector</tt>.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template<class Scalar>
 class ProductVectorBase : virtual public VectorBase<Scalar> {

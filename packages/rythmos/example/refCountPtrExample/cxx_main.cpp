@@ -39,13 +39,13 @@ class PrintFoo
 // Print foo's x value when passed by RefCountPtr
 void printFooDirect(Teuchos::RefCountPtr<Foo> F)
 {
-std::cout << "x = " << F->getx() << "!" << std::endl;
-};
+  std::cout << "x = " << F->getx() << "!" << std::endl;
+}
 // Print foo's x value when passed by reference
 void printFooDirect(Foo &F)
 {
   std::cout << "x = " << F.getx() << "!" << std::endl;
-};
+}
 
 int main(int argc, char *argv[])
 {

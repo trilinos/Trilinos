@@ -22,23 +22,23 @@ class Bar
 Bar::Bar()
 { 
   x_ = 5.0; 
-};
+}
 Bar::Bar(double x)
 { 
   x_ = x; 
-};
+}
 Bar::~Bar() 
 { 
   x_ = 0.0; 
-};
+}
 void Bar::setx(double x)
 {
   x_ = x;
-};
+}
 double Bar::getx() const
 { 
   return(x_); 
-};
+}
 // ------------------------------------------------------------
 
 // Class to test out const
@@ -73,98 +73,98 @@ class Foo
     RefCountPtr<const Bar> BptrConst_;
 
 };
-Foo::Foo() { };
-Foo::~Foo() { };
+Foo::Foo() { }
+Foo::~Foo() { }
 void Foo::setBar(const RefCountPtr<Bar> &Bptr) 
 { 
   Bptr_ = Bptr;  
-};
+}
 void Foo::setConstBar(const RefCountPtr<const Bar> &Bptr) 
 { 
   BptrConst_ = Bptr; 
   //Bptr_ = Bptr;  // not allowed because Bptr_ is nonconst
   //Bptr->setx(12.0); // not allowed because Bptr is const Bar RefCountPtr
-};
+}
 const RefCountPtr<Bar> &Foo::getBar() const
 {
   return(Bptr_);
-};
+}
 void Foo::test1(const RefCountPtr<Bar> &Bptr)
 {
   Bptr->setx(15.0);
-};
+}
 void Foo::test2()
 {
 //  BptrConst_->setx(20.0); // not allowed because BptrConst_ is const
-};
+}
 void Foo::test3(RefCountPtr<Bar> &Bptr)
 {
   RefCountPtr<Bar> Bptr_temp = rcp(new Bar);
   Bptr_temp->setx(25.0);
   Bptr = Bptr_temp;
-};
+}
 void Foo::test4(const RefCountPtr<Bar> &Bptr)
 {
   RefCountPtr<Bar> Bptr_temp = rcp(new Bar);
   Bptr_temp->setx(30.0);
 //  Bptr = Bptr_temp; // not allowed because input is const
-};
+}
 RefCountPtr<Bar> &Foo::test5()
 {
   return(Bptr_);
-};
+}
 RefCountPtr<const Bar> &Foo::test6()
 {
   //return(Bptr_); // not allowed because Bptr is nonconst
   return(BptrConst_);
-};
+}
 const RefCountPtr<Bar> &Foo::test7()
 {
   return(Bptr_);
-};
+}
 const RefCountPtr<Bar> Foo::test8()
 {
   return(rcp(new Bar(45.0)));
-};
+}
 RefCountPtr<Bar> Foo::test9()
 {
 //  return(rcp(new Bar(55.0))); // allowed also
   return(Bptr_);
-};
+}
 RefCountPtr<Bar> &Foo::test10()
 {
   return(Bptr_);
-};
+}
 RefCountPtr<Bar> &Foo::test11()
 {
 //  return(rcp(new Bar(75.0))); // not allowed because I'm passing out a
   // reference to an internal object
-};
+}
 const RefCountPtr<const Bar> &Foo::test12()
 {
   return(BptrConst_);
-};
+}
 const RefCountPtr<const Bar> &Foo::test13() const
 {
   return(BptrConst_);
-};
+}
 const RefCountPtr<Bar> &Foo::test14() const
 {
   return(Bptr_);
-};
+}
 const RefCountPtr<Bar> Foo::test15() const
 {
   return(Bptr_);
-};
+}
 double Foo::test16(const Bar &B)
 {
   return(B.getx());
-};
+}
 // ------------------------------------------------------------
 void somefunction(const Foo &F)
 {
   RefCountPtr<Bar> Bptr = F.getBar(); // only allowed if getBar has const after it in definition
-};
+}
 // ------------------------------------------------------------
 
 
@@ -243,4 +243,4 @@ int main(int argc, char *argv[])
 
 
   return(0);
-};
+}

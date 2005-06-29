@@ -30,6 +30,7 @@
 #define THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
 
 #include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
+//#include "Thyra_LinearOpWithSolveBaseDecl.hpp"
 
 namespace Thyra {
 

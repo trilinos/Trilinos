@@ -280,27 +280,10 @@ RTOp interfaces described in the aforementioned paper.
 
 \section Thyra_Op_Vec_Interoperability_Extended_Interfaces_sec Extended Interfaces
 
-The %Thyra package also contains a set of extended interfaces that build on
+The %Thyra package also contains a set of
+\ref Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp "extended interfaces" that build on
 the above fundamental operator/vector interfaces that play a role in extended
 levels of interoperability.
-
-<ol>
-
-<li> <b>Interfaces to product vector spaces, vectors and multi-vectors</b>
-
-<ul>
-<li><tt>Thyra::ProductVectorSpaceBase</tt> defines an interface for a composite product vector space composed out of one
-    or more constituent <tt>Thyra::VectorSpaceBase</tt> objects.
-<li><tt>Thyra::ProductVectorBase</tt> defines an interface for a composite product vector composed out of one
-    or more constituent <tt>Thyra::VectorBase</tt> objects.
-<li><tt>Thyra::ProductMultiVectorBase</tt>  defines an interface for a composite product multi-vector composed out of one
-    or more constituent <tt>Thyra::MultiVectorBase</tt> objects.
-</ul>
-
-Concrete implementations of these basic interfaces are described \ref
-Thyra_Op_Vec_ANA_Development_overview_sec "here".
-
-</ol>
 
 \section Thyra_Op_Vec_ANA_Interoperability_other_sec Other Use Cases
 
@@ -320,6 +303,44 @@ Thyra_Op_Vec_ANA_Development_overview_sec "here".
 
 \brief These are the \ref Thyra_Op_Vec_foundational_interfaces_sec that
 provide the foundation for all ANAs.
+
+*/
+
+/** \defgroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp Extended Operator/Vector interfaces
+
+The %Thyra package also contains a set of
+extended interfaces that build on
+the \ref Thyra_Op_Vec_Interoperability_Fundamental_Interfaces_sec "fundamental"
+operator/vector interfaces that play a role in interoperability with extended levels of functionality.
+
+<ol>
+
+<li> <b>Interfaces to product vector spaces, vectors and multi-vectors</b>
+
+<ul>
+<li><tt>Thyra::ProductVectorSpaceBase</tt> defines an interface for a composite product vector space composed out of one
+    or more constituent <tt>Thyra::VectorSpaceBase</tt> objects.
+<li><tt>Thyra::ProductVectorBase</tt> defines an interface for a composite product vector composed out of one
+    or more constituent <tt>Thyra::VectorBase</tt> objects.
+<li><tt>Thyra::ProductMultiVectorBase</tt>  defines an interface for a composite product multi-vector composed out of one
+    or more constituent <tt>Thyra::MultiVectorBase</tt> objects.
+</ul>
+
+Concrete implementations of these basic interfaces are described \ref
+Thyra_Op_Vec_ANA_Development_overview_sec "here".
+
+<li> <b>Interfaces to invertible linear operators</b>
+
+<ul>
+<li><tt>Thyra::LinearOpWithSolveBase</tt> defines a simple interface for performing the inverse
+linear operator application.
+<tt><tt>Thyra::LinearOpWithSolveFactory<tt> defines an interface for generating or updating a
+<tt>Thyra::LinearOpWithSolveBase</tt> object out of a <tt>Thyra::LinearOpBase</tt> object.
+</ul>
+
+</ol>
+
+\ingroup Thyra_Op_Vec_ANA_Interoperability_grp
 
 */
 

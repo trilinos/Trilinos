@@ -5,10 +5,10 @@
 class objectA
 {
   public:
-    objectA() { valueA_ = 5.0; valueB_ = 10.0; };
-    ~objectA() { valueA_ = 0.0;  valueB_ = 0.0; };
-    double getA() { return(valueA_); };
-    double getB() { return(valueB_); };
+    objectA() { valueA_ = 5.0; valueB_ = 10.0; }
+    ~objectA() { valueA_ = 0.0;  valueB_ = 0.0; }
+    double getA() { return(valueA_); }
+    double getB() { return(valueB_); }
   protected:
     double valueA_;
     double valueB_;
@@ -84,7 +84,7 @@ void createObjectA(PrintA &PA, PrintB &PB, int TEST)
     PA.setA(OAptr);
     PB.setA(OAptr);
   } 
-};
+}
 
 
 int main(int argc, char *argv[])

@@ -101,7 +101,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_srcdir@/thyra/src:@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/thyra/src:@abs_top_builddir@/src \
-		--dep-pacakge-abs-builddirs=@abs_top_builddir@/../thyra
+		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 uninstall-hook:

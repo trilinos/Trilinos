@@ -58,7 +58,7 @@
 #
 
 
-SOURCES = $(libEpetraThyra_a_SOURCES)
+SOURCES = $(libepetrathyra_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -127,12 +127,12 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
-libEpetraThyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+libepetrathyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = Thyra_EpetraLinearOp.$(OBJEXT) \
 	Thyra_EpetraThyraWrappers.$(OBJEXT) \
 	Thyra_get_Epetra_Operator.$(OBJEXT)
-am_libEpetraThyra_a_OBJECTS = $(am__objects_1)
-libEpetraThyra_a_OBJECTS = $(am_libEpetraThyra_a_OBJECTS)
+am_libepetrathyra_a_OBJECTS = $(am__objects_1)
+libepetrathyra_a_OBJECTS = $(am_libepetrathyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -144,8 +144,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(libEpetraThyra_a_SOURCES)
-DIST_SOURCES = $(libEpetraThyra_a_SOURCES)
+SOURCES = $(libepetrathyra_a_SOURCES)
+DIST_SOURCES = $(libepetrathyra_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -313,15 +313,15 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # --------------------------------------------------------------------
 # Epetra Thyra library specifications
 # --------------------------------------------------------------------
-EPETRA_THYRA_LIB = libEpetraThyra.a
+EPETRA_THYRA_LIB = libepetrathyra.a
 EPETRA_THYRA_H = \
 	$(top_srcdir)/src/Epetra_ConfigDefs.h \
 	$(SOURCE_H)
 
-libEpetraThyra_a_SOURCES = \
+libepetrathyra_a_SOURCES = \
 	$(SOURCE)
 
-@USE_ALTERNATE_AR_FALSE@libEpetraThyra_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_FALSE@libepetrathyra_a_AR = $(AR) cru
 
 #We need the following to support separate build directories
 
@@ -332,7 +332,7 @@ libEpetraThyra_a_SOURCES = \
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@libEpetraThyra_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_TRUE@libepetrathyra_a_AR = $(ALTERNATE_AR)
 
 # --------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
@@ -341,7 +341,7 @@ libEpetraThyra_a_SOURCES = \
 
 # I have not been able to find any kind of "or" for Automake
 # conditionals. JW
-libEpetraThyra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+libepetrathyra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # --------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
@@ -424,10 +424,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libEpetraThyra.a: $(libEpetraThyra_a_OBJECTS) $(libEpetraThyra_a_DEPENDENCIES) 
-	-rm -f libEpetraThyra.a
-	$(libEpetraThyra_a_AR) libEpetraThyra.a $(libEpetraThyra_a_OBJECTS) $(libEpetraThyra_a_LIBADD)
-	$(RANLIB) libEpetraThyra.a
+libepetrathyra.a: $(libepetrathyra_a_OBJECTS) $(libepetrathyra_a_DEPENDENCIES) 
+	-rm -f libepetrathyra.a
+	$(libepetrathyra_a_AR) libepetrathyra.a $(libepetrathyra_a_OBJECTS) $(libepetrathyra_a_LIBADD)
+	$(RANLIB) libepetrathyra.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
