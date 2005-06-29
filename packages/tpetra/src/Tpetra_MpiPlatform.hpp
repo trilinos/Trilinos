@@ -47,77 +47,79 @@ namespace Tpetra {
 	class MpiPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
 	public:
 
-    //@{ \name Constructor/Destructor Methods
+		//@{ \name Constructor/Destructor Methods
 
 		//! Constructor
 		MpiPlatform(MPI_Comm Comm) 
-      : Object("Tpetra::MpiPlatform")
-      , MpiData_()
-    {
-      MpiData_ = Teuchos::rcp(new MpiData(Comm));
-    };
-
-    //! Copy Constructor
-    MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) 
-      : Object(platform.label())
-      , MpiData_(platform.MpiData_)
-    {};
-
-    //! Destructor
-		~MpiPlatform() {};
-
-    //! Clone Constructor - implements Tpetra::Platform virtual clone method.
-		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
-      Teuchos::RefCountPtr< MpiPlatform<OrdinalType, ScalarType> > platform;
-      platform = Teuchos::rcp(new MpiPlatform<OrdinalType, ScalarType>(*this));
-      return(platform);
+			: Object("Tpetra::MpiPlatform")
+			, MpiData_()
+		{
+			MpiData_ = Teuchos::rcp(new MpiData(Comm));
 		};
 
-    //@}
+		//! Copy Constructor
+		MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) 
+			: Object(platform.label())
+			, MpiData_(platform.MpiData_)
+		{};
 
-    //@{ \name Image Info Methods
+		//! Destructor
+		~MpiPlatform() {};
 
-    //! getMyImageID
-    /*! returns the rank of the calling image in the MPI communicator we are using. (Obtained by calling MPI_Comm_rank.)
-     */
-    int getMyImageID() const {return(data().getMyImageID());};
+		//! Clone Constructor - implements Tpetra::Platform virtual clone method.
+		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
+			Teuchos::RefCountPtr< MpiPlatform<OrdinalType, ScalarType> > platform;
+			platform = Teuchos::rcp(new MpiPlatform<OrdinalType, ScalarType>(*this));
+			return(platform);
+		};
 
-    //! getNumImages - returns the MPI size
-    /*! returns the size of the MPI communicator we are using. (Obtained by calling MPI_Comm_size.)
-     */
-    int getNumImages() const {return(data().getNumImages());};
+		//@}
 
-    //@}
+		//@{ \name Image Info Methods
 
-    //@{ \name Class Creation and Accessor Methods
+		//! getMyImageID
+		/*! returns the rank of the calling image in the MPI communicator we are using. 
+		    (Obtained by calling MPI_Comm_rank.)
+		 */
+		int getMyImageID() const {return(data().getMyImageID());};
+
+		//! getNumImages - returns the MPI size
+		/*! returns the size of the MPI communicator we are using. 
+		    (Obtained by calling MPI_Comm_size.)
+		 */
+		int getNumImages() const {return(data().getNumImages());};
+
+		//@}
+
+		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-    Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const {
+		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const {
 			Teuchos::RefCountPtr< MpiComm<ScalarType, OrdinalType> > comm;
-      comm = Teuchos::rcp(new MpiComm<ScalarType, OrdinalType>(MpiData_));
-      return(comm);
+			comm = Teuchos::rcp(new MpiComm<ScalarType, OrdinalType>(MpiData_));
+			return(comm);
 		};
 		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
 			Teuchos::RefCountPtr< MpiComm<OrdinalType, OrdinalType> > comm;
-      comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiData_));
-      return(comm);
+			comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiData_));
+			return(comm);
 		};
     
 		//! Distributor Instance
 		Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const {
-		  Teuchos::RefCountPtr< MpiDistributor<OrdinalType> > distributor;
-      distributor = Teuchos::rcp(new MpiDistributor<OrdinalType>(MpiData_)); 
-      return(distributor);
+			Teuchos::RefCountPtr< MpiDistributor<OrdinalType> > distributor;
+			distributor = Teuchos::rcp(new MpiDistributor<OrdinalType>(MpiData_)); 
+			return(distributor);
 		};
     
 		//! Directory Instance
 		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-		  Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
-      directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
-      return(directory);
+			Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
+			directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
+			return(directory);
 		};
 
-    //@}
+		//@}
 
 		//@{ \name I/O Methods
 
@@ -129,21 +131,21 @@ namespace Tpetra {
 
 		//@}
     
-    //@{ \name MPI-specific methods, not inherited from Tpetra::Platform
+		//@{ \name MPI-specific methods, not inherited from Tpetra::Platform
 
-    //! Access method to the MPI Communicator we're using.
-    MPI_Comm getMpiComm() const {
-      return(data().MpiComm_);
-    };
+		//! Access method to the MPI Communicator we're using.
+		MPI_Comm getMpiComm() const {
+			return(data().MpiComm_);
+		};
     
-    //@}
+		//@}
     
-  private:
-    Teuchos::RefCountPtr<MpiData> MpiData_;
+	private:
+		Teuchos::RefCountPtr<MpiData> MpiData_;
     
-    // convenience functions for returning inner data class, both const and nonconst versions.
-    MpiData& data() {return(*MpiData_);};
-    MpiData const& data() const {return(*MpiData_);};
+		// convenience functions for returning inner data class, both const and nonconst versions.
+		MpiData& data() {return(*MpiData_);};
+		MpiData const& data() const {return(*MpiData_);};
     
 	}; // MpiPlatform class
   

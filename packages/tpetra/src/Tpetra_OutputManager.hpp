@@ -34,104 +34,112 @@
 
 namespace Tpetra {
 
-//! Tpetra::OutputManager: Primary class for managing Tpetra object output content.
-/*!  Tpetra's basic output manager for sending information of select verbosity levels
-  to the appropriate output stream.
-
-  This output manager will remove the need for the derived class to know any information
-  about the required output.  Calling <tt>isVerbosity( MsgType type )</tt> will inform the solver if
-  it is supposed to output the information corresponding to the message type (\c type ).
+	//! Tpetra::OutputManager: Primary class for managing Tpetra object output content.
+	/*! Tpetra's basic output manager for sending information of select verbosity levels
+	    to the appropriate output stream.
+		
+		This output manager will remove the need for the derived class to know any information
+		about the required output.  Calling <tt>isVerbosity( MsgType type )</tt> will inform the solver if
+		it is supposed to output the information corresponding to the message type (\c type ).
   
-  \author Mike Heroux
-*/
+		\author Mike Heroux
+	*/
 
-class OutputManager {
+	class OutputManager {
+	public:
 
-public:
+		//@{ \name Constructors/Destructor.
 
-  //@{ \name Constructors/Destructor.
+		//! Default constructor
+		OutputManager();
 
-  //! Default constructor
-  OutputManager();
+		//! Basic constructor.
+		OutputManager(int myID, int vb = Tpetra::Signature, int printID = 0, ostream& os = std::cout);
 
-  //! Basic constructor.
-  OutputManager( int myID, int vb = Tpetra::Signature, int printID = 0, ostream& os = std::cout );
-
-  //! Destructor.
-  virtual ~OutputManager() {}
-  //@}
+		//! Destructor.
+		virtual ~OutputManager() {}
+		//@}
 	
-  //@{ \name Set methods.
+		//@{ \name Set methods.
 
-  //! Set the output stream for this manager.
-  //void setOstream ( const ostream & os ) { myOS_ = os; }
+		//! Set the output stream for this manager.
+		//void setOstream (const ostream & os) { myOS_ = os; }
 
-  //! Set the message output types for this manager.
-  void setVerbosity( int vb ) { vb_ = vb; }
+		//! Set the message output types for this manager.
+		void setVerbosity(int vb) { 
+			vb_ = vb; 
+		}
 
-  //@}
+		//@}
 
-  //@{ \name Get methods.
+		//@{ \name Get methods.
 
-  //! Get the output stream for this manager.
-  ostream& getOstream() { return myOS_; }
+		//! Get the output stream for this manager.
+		ostream& getOstream() { 
+			return myOS_; 
+		}
 
-  //@}
+		//@}
 
-  //@{ \name Query methods.
+		//@{ \name Query methods.
 
-  //! Find out whether we need to print out information for this message type.
-  /*! This method is used by the solver to determine whether computations are
-    necessary for this message type.
-  */
-  bool isVerbosity( MsgType type ) { return (( type == Tpetra::Signature ) || ( vb_ & type )); }
+		//! Find out whether we need to print out information for this message type.
+		/*! This method is used by the solver to determine whether computations are
+   		    necessary for this message type.
+		*/
+		bool isVerbosity(MsgType type) { 
+			return((type == Tpetra::Signature) || (vb_ & type));
+		}
 
-  //! Find out whether this processor needs to print out information for this message type.
-  /*! This method is used by the solver to determine whether this output stream has been
-    selected to output the information for this message type.
-  */		
-  bool isVerbosityAndPrint( MsgType type ) { return ( iPrint_ && isVerbosity( type ));}
+		//! Find out whether this processor needs to print out information for this message type.
+		/*! This method is used by the solver to determine whether this output stream has been
+		    selected to output the information for this message type.
+		*/		
+		bool isVerbosityAndPrint(MsgType type) { 
+			return(iPrint_ && isVerbosity(type));
+		}
 
-  //! Find out whether information can be outputted through this output stream.
-  bool doPrint( void ) { return (iPrint_);}	
+		//! Find out whether information can be outputted through this output stream.
+		bool doPrint() { 
+			return(iPrint_);
+		}	
 
-  //@}
+		//@}
 
-private:
+	private:
 
-  //@{ \name Undefined methods.
+		//@{ \name Undefined methods.
 
-  //! Copy constructor.
-  OutputManager( const OutputManager & om );
+		//! Copy constructor.
+		OutputManager(const OutputManager& om);
 
-  //! Assignment operator.
-  OutputManager& operator=( const OutputManager & om );
+		//! Assignment operator.
+		OutputManager& operator=(OutputManager const& om);
 
-  //@}
+		//@}
 
-  int myID_, printID_;
-  int vb_;
-  bool iPrint_;
-  ostream& myOS_;	
-};
+		int myID_;
+		int printID_;
+		int vb_;
+		bool iPrint_;
+		ostream& myOS_;	
+	};
 
-OutputManager::OutputManager() :
-  myID_(0),
-  printID_(0),
-  vb_(Tpetra::Signature),
-  iPrint_(true),
-  myOS_(std::cout)
-{
-}
+	OutputManager::OutputManager()
+		: myID_(0)
+		, printID_(0)
+		, vb_(Tpetra::Signature)
+		, iPrint_(true)
+		, myOS_(std::cout)
+	{}
 
-OutputManager::OutputManager( int myID, int vb, int printID, ostream& os ) :
-  myID_(myID),
-  printID_(printID),
-  vb_(vb),
-  iPrint_(myID == printID),
-  myOS_(os)
-{
-}
+	OutputManager::OutputManager(int myID, int vb, int printID, ostream& os) 
+		: myID_(myID)
+		, printID_(printID)
+		, vb_(vb)
+		, iPrint_(myID == printID)
+		, myOS_(os)
+	{}
 
 } // end Tpetra namespace
 

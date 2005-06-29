@@ -32,18 +32,18 @@
 #include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
-  /*! The Tpetra PacketTraits file.
+	/*! The Tpetra PacketTraits file.
 			
-    For the general type, or default implementation, an aborting function
-    is defined which should restrict implementations from using ordinal traits other than
-    the defined specializations.
-  */	
+        For the general type, or default implementation, an aborting function
+		is defined which should restrict implementations from using ordinal traits other than
+		the defined specializations.
+	*/	
 
-  template<typename T>
-  struct UndefinedPacketTraits {
-    //! This function should not compile if there is an attempt to instantiate!
-    static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
-  };
+	template<typename T>
+	struct UndefinedPacketTraits {
+		//! This function should not compile if there is an attempt to instantiate!
+		static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
+	};
   
 	template<typename T>
 	struct PacketTraits {
@@ -95,7 +95,7 @@ namespace Tpetra {
 		static inline std::string name()            {return("long double");};
 	};
 
-  template<typename T>
+	template<typename T>
 	struct PacketTraits< complex<T> > {
 		static inline int packetSize()              {return(sizeof(complex<T>));};
 		static inline std::string name()            {return("complex<" + PacketTraits<T>::name() + ">");};

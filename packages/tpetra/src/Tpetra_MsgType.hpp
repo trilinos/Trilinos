@@ -2,8 +2,8 @@
 /*
 ************************************************************************
 
-              Epetra: Linear Algebra Services Package 
-                Copyright (2001) Sandia Corporation
+Epetra: Linear Algebra Services Package 
+Copyright (2001) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 license for use of this work by or on behalf of the U.S. Government.
@@ -30,19 +30,21 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifndef TPETRA_MSGTYPE_H
 #define TPETRA_MSGTYPE_H
-namespace Tpetra {
-/*! \file Tpetra_MsgType.hpp
-    \brief Tpetra::MsgType Enum
- */
 
-  /*! \enum MsgType
-    Enumerated list of available message types recognized by Tpetra output object.
-  */
-  enum MsgType {	
-    Signature = 0x1, 	   /*!< Signature: brief, unique identification information */
-    Summary = 0x2,	        /*!< Summary information */
-    Watch = 0x4, 	        /*!< Print notification anytime the object is modified */
-  };
+namespace Tpetra {
+	/*! \file Tpetra_MsgType.hpp
+	    \brief Tpetra::MsgType Enum
+	*/
+
+	/*! \enum MsgType
+	    Enumerated list of available message types recognized by Tpetra output object.
+	*/
+	enum MsgType {	
+		Signature = 0x1,     /*!< Signature: brief, unique identification information */
+		Summary = 0x2,	     /*!< Summary information */
+		Watch = 0x4, 	     /*!< Print notification anytime the object is modified */
+	};
   
 }
+
 #endif // TPETRA_MSGTYPE_H

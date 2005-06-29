@@ -39,130 +39,132 @@
 
 namespace Tpetra {
 
-  /*! \struct Tpetra::MpiTraits
-			\brief This structure defins some basic traits for use with MPI.
+	/*! \struct Tpetra::MpiTraits
+	    \brief This structure defins some basic traits for use with MPI.
 
-      This is a traits file used by MpiComm. It provides traits
-      specializations for the built-in types that MPI can handle, 
-      and a potentially unsafe workaround for other types.
+		This is a traits file used by MpiComm. It provides traits
+		specializations for the built-in types that MPI can handle, 
+		and a potentially unsafe workaround for other types.
       
-      The built-in types currently supported intrinsicly are:
-      int, unsigned int, long int, unsigned long int, float,
-      double, and complex<T>.
-  */
+		The built-in types currently supported intrinsicly are:
+		int, unsigned int, long int, unsigned long int, float,
+		double, and complex<T>.
+	*/
   
 
-  template<typename T>
-  struct UndefinedMpiTraits {
-    //! This function should not compile if there is an attempt to instantiate!
-    static inline T notDefined() {return(T::this_type_is_missing_a_specialization());};
-  };
+	template<typename T>
+	struct UndefinedMpiTraits {
+		//! This function should not compile if there is an attempt to instantiate!
+		static inline T notDefined() {return(T::this_type_is_missing_a_specialization());};
+	};
 
 	template<class T>
 	struct MpiTraits {
-    //! Returns the MPI_Datatype that should be used for this type
-    static inline MPI_Datatype datatype()  {return(MPI_BYTE);};
-    static inline int count(int userCount) {return(sizeof(T) * userCount);};
-    static inline MPI_Op sumOp()           {return(UndefinedMpiTraits<T>::notDefined());};
-    static inline MPI_Op maxOp()           {return(UndefinedMpiTraits<T>::notDefined());};
-    static inline MPI_Op minOp()           {return(UndefinedMpiTraits<T>::notDefined());};
+		//! Returns the MPI_Datatype that should be used for this type
+		static inline MPI_Datatype datatype()  {return(MPI_BYTE);};
+		static inline int count(int userCount) {return(sizeof(T) * userCount);};
+		static inline MPI_Op sumOp()           {return(UndefinedMpiTraits<T>::notDefined());};
+		static inline MPI_Op maxOp()           {return(UndefinedMpiTraits<T>::notDefined());};
+		static inline MPI_Op minOp()           {return(UndefinedMpiTraits<T>::notDefined());};
 	};
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 	
-  //======================================================================
-  // intrinsic types
-  //======================================================================
+	//======================================================================
+	// intrinsic types
+	//======================================================================
 
 	template<>
 	struct MpiTraits<int> {
-    static inline MPI_Datatype datatype() {return(MPI_INT);};
-    static inline int count(int userCount) {return(userCount);};
-    static inline MPI_Op sumOp() {return(MPI_SUM);};
-    static inline MPI_Op maxOp() {return(MPI_MAX);};
-    static inline MPI_Op minOp() {return(MPI_MIN);};
+		static inline MPI_Datatype datatype() {return(MPI_INT);};
+		static inline int count(int userCount) {return(userCount);};
+		static inline MPI_Op sumOp() {return(MPI_SUM);};
+		static inline MPI_Op maxOp() {return(MPI_MAX);};
+		static inline MPI_Op minOp() {return(MPI_MIN);};
 	};
 
 	template<>
 	struct MpiTraits<unsigned int> {
-    static inline MPI_Datatype datatype() {return(MPI_UNSIGNED);};
-    static inline int count(int userCount) {return(userCount);};
-    static inline MPI_Op sumOp() {return(MPI_SUM);};
-    static inline MPI_Op maxOp() {return(MPI_MAX);};
-    static inline MPI_Op minOp() {return(MPI_MIN);};
-  };
+		static inline MPI_Datatype datatype() {return(MPI_UNSIGNED);};
+		static inline int count(int userCount) {return(userCount);};
+		static inline MPI_Op sumOp() {return(MPI_SUM);};
+		static inline MPI_Op maxOp() {return(MPI_MAX);};
+		static inline MPI_Op minOp() {return(MPI_MIN);};
+	};
 
 	template<>
 	struct MpiTraits<long int> {
-    static inline MPI_Datatype datatype() {return(MPI_LONG);};
-    static inline int count(int userCount) {return(userCount);};
-    static inline MPI_Op sumOp() {return(MPI_SUM);};
-    static inline MPI_Op maxOp() {return(MPI_MAX);};
-    static inline MPI_Op minOp() {return(MPI_MIN);};
+		static inline MPI_Datatype datatype() {return(MPI_LONG);};
+		static inline int count(int userCount) {return(userCount);};
+		static inline MPI_Op sumOp() {return(MPI_SUM);};
+		static inline MPI_Op maxOp() {return(MPI_MAX);};
+		static inline MPI_Op minOp() {return(MPI_MIN);};
 	};
 
 	template<>
 	struct MpiTraits<unsigned long int> {
-    static inline MPI_Datatype datatype() {return(MPI_UNSIGNED_LONG);};
-    static inline int count(int userCount) {return(userCount);};
-    static inline MPI_Op sumOp() {return(MPI_SUM);};
-    static inline MPI_Op maxOp() {return(MPI_MAX);};
-    static inline MPI_Op minOp() {return(MPI_MIN);};
+		static inline MPI_Datatype datatype() {return(MPI_UNSIGNED_LONG);};
+		static inline int count(int userCount) {return(userCount);};
+		static inline MPI_Op sumOp() {return(MPI_SUM);};
+		static inline MPI_Op maxOp() {return(MPI_MAX);};
+		static inline MPI_Op minOp() {return(MPI_MIN);};
 	};
 
 	template<>
 	struct MpiTraits<float> {
-    static inline MPI_Datatype datatype() {return(MPI_FLOAT);};
-    static inline int count(int userCount) {return(userCount);};
-    static inline MPI_Op sumOp() {return(MPI_SUM);};
-    static inline MPI_Op maxOp() {return(MPI_MAX);};
-    static inline MPI_Op minOp() {return(MPI_MIN);};
+		static inline MPI_Datatype datatype() {return(MPI_FLOAT);};
+		static inline int count(int userCount) {return(userCount);};
+		static inline MPI_Op sumOp() {return(MPI_SUM);};
+		static inline MPI_Op maxOp() {return(MPI_MAX);};
+		static inline MPI_Op minOp() {return(MPI_MIN);};
 	};
 
 	template<>
 	struct MpiTraits<double> {
-    static inline MPI_Datatype datatype() {return(MPI_DOUBLE);};
-    static inline int count(int userCount) {return(userCount);};
-    static inline MPI_Op sumOp() {return(MPI_SUM);};
-    static inline MPI_Op maxOp() {return(MPI_MAX);};
-    static inline MPI_Op minOp() {return(MPI_MIN);};
+		static inline MPI_Datatype datatype() {return(MPI_DOUBLE);};
+		static inline int count(int userCount) {return(userCount);};
+		static inline MPI_Op sumOp() {return(MPI_SUM);};
+		static inline MPI_Op maxOp() {return(MPI_MAX);};
+		static inline MPI_Op minOp() {return(MPI_MIN);};
 	};
 
-  //======================================================================
-  // custom specialization for complex<T>
-  //======================================================================
+	//======================================================================
+	// custom specialization for complex<T>
+	//======================================================================
   
-  template<typename T>
+	template<typename T>
     struct MpiTraits< complex<T> > {
-      static MPI_Datatype datatype() {return(MpiTraits<T>::datatype());};
-      static inline int count(int userCount) {return(userCount * 2);};
-      static MPI_Op sumOp() {return(MpiTraits<T>::sumOp());};
-      static MPI_Op maxOp() {
-        MPI_Op myOp;
-        MPI_Op_create((MPI_User_function*)complexMax, true, &myOp);
-        return(myOp);
-      };
-      static MPI_Op minOp() {
-        MPI_Op myOp;
-        MPI_Op_create((MPI_User_function*)complexMin, true, &myOp);
-        return(myOp);
-      };
-      static void complexMin(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
-        for(int i = 0; i < *len; i++) {
-          if(Teuchos::ScalarTraits< complex<T> >::magnitude(*in) < Teuchos::ScalarTraits< complex<T> >::magnitude(*inout))
-            *inout = *in;
-          in++;
-          inout++;
-        }
-      };
-      static void complexMax(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
-        for(int i = 0; i < *len; i++) {
-          if(Teuchos::ScalarTraits< complex<T> >::magnitude(*inout) < Teuchos::ScalarTraits< complex<T> >::magnitude(*in))
-            *inout = *in;
-          in++;
-          inout++;
-        }
-      };
+		static MPI_Datatype datatype() {return(MpiTraits<T>::datatype());};
+		static inline int count(int userCount) {return(userCount * 2);};
+		static MPI_Op sumOp() {return(MpiTraits<T>::sumOp());};
+		static MPI_Op maxOp() {
+			MPI_Op myOp;
+			MPI_Op_create((MPI_User_function*)complexMax, true, &myOp);
+			return(myOp);
+		};
+		static MPI_Op minOp() {
+			MPI_Op myOp;
+			MPI_Op_create((MPI_User_function*)complexMin, true, &myOp);
+			return(myOp);
+		};
+		static void complexMin(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
+			for(int i = 0; i < *len; i++) {
+				if(Teuchos::ScalarTraits< complex<T> >::magnitude(*in) < 
+				   Teuchos::ScalarTraits< complex<T> >::magnitude(*inout))
+					*inout = *in;
+				in++;
+				inout++;
+			}
+		};
+		static void complexMax(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
+			for(int i = 0; i < *len; i++) {
+				if(Teuchos::ScalarTraits< complex<T> >::magnitude(*inout) < 
+				   Teuchos::ScalarTraits< complex<T> >::magnitude(*in))
+					*inout = *in;
+				in++;
+				inout++;
+			}
+		};
     };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
