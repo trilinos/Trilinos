@@ -201,17 +201,6 @@ $mpigo 1 amesos_test.exe MUMPS   ImpcolA.rua 1 1 2 0 1e-10 13-10 >>SST.stdout
 $mpigo 1 amesos_test.exe MUMPS SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 $mpigo 3 amesos_test.exe MUMPS SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT $mpigo 1 amesos_test.exe MUMPS K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 2 amesos_test.exe MUMPS K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-
-# COMMENT $mpigo 1 amesos_test.exe MUMPS K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-
-# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 0 1 1 1 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 3 1 1e-10 1e-8 >>SST.stdout
-# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 -2 1 1e-10 1e-8 >>SST.stdout
-
 $mpigo 1 amesos_test.exe MUMPS Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 
@@ -232,9 +221,12 @@ endif
 #
 #  Prints out success or failure and exit 
 #
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed on all" $expected_lines[1] " tests"
+#  Any lines which are not blank and do not contain either "OK" or "COMMENT" 
+#  suggest an error:
+#
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "End Result: TEST PASSED - Mumps test passed on all" $expected_lines[1] " tests"
 #
 #  This should not generaly print anything as errors should have been caught in the if test above
 #
-grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
+grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "AmesosMumps Test FAILED" 
 exit($status == 0)

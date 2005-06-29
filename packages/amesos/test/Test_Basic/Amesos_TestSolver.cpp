@@ -79,6 +79,18 @@
 #ifdef HAVE_AMESOS_SCALAPACK
 #include "Amesos_Scalapack.h"
 #endif
+#ifdef HAVE_AMESOS_TAUCS
+#include "Amesos_Taucs.h"
+#endif
+#ifdef HAVE_AMESOS_PARDISO
+#include "Amesos_Pardiso.h"
+#endif
+#ifdef HAVE_AMESOS_PASTIX
+#include "Amesos_Pastix.h"
+#endif
+#ifdef HAVE_AMESOS_PARAKLETE
+#include "Amesos_Paraklete.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
@@ -321,6 +333,58 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( A_scalapack.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( A_scalapack.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( A_scalapack.Solve(  ) ); 
+
+#endif
+#ifdef HAVE_AMESOS_TAUCS
+    } else if ( SparseSolver == TAUCS ) {
+
+      Teuchos::ParameterList ParamList ;
+      Amesos_Taucs A_taucs( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_taucs.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_taucs.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_taucs.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_taucs.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_taucs.Solve(  ) ); 
+
+#endif
+#ifdef HAVE_AMESOS_PARDISO
+    } else if ( SparseSolver == PARDISO ) {
+
+      Teuchos::ParameterList ParamList ;
+      Amesos_Pardiso A_pardiso( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_pardiso.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_pardiso.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_pardiso.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_pardiso.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_pardiso.Solve(  ) ); 
+
+#endif
+#ifdef HAVE_AMESOS_PASTIX
+    } else if ( SparseSolver == PASTIX ) {
+
+      Teuchos::ParameterList ParamList ;
+      Amesos_Pastix A_pastix( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_pastix.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_pastix.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_pastix.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_pastix.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_pastix.Solve(  ) ); 
+
+#endif
+#ifdef HAVE_AMESOS_PARAKLETE
+    } else if ( SparseSolver == PARAKLETE ) {
+
+      Teuchos::ParameterList ParamList ;
+      Amesos_Paraklete A_paraklete( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_paraklete.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( A_paraklete.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_paraklete.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_paraklete.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_paraklete.Solve(  ) ); 
 
 #endif
 #ifdef HAVE_AMESOS_MUMPS

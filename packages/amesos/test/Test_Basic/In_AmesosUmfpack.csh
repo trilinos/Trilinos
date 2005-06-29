@@ -212,7 +212,11 @@ endif
 #
 #  Prints out success or failure and exit 
 #
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "AmesosUmfpack Test passed on all" $expected_lines[1] " tests"
+#
+#  Any lines which are not blank and do not contain either "OK" or "COMMENT" 
+#  suggest an error:
+#
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "End Result: TEST PASSED - Umfpack test passed on all" $expected_lines[1] " tests"
 #
 #  This should not generaly print anything as errors should have been caught in the if test above
 #

@@ -163,7 +163,7 @@ int main(int argc, char **argv)
       cerr << " argc = " << argc << " Sprogam= " << Sprogram << 
 	" SPOOLES? " << (int) (Sprogram=="SPOOLES") << endl ; 
       cerr << "Usage: " << argv[0] <<" SolverName InputMatrix special numsolves transpose maxerror maxresid" << endl ; 
-      cerr << "    Solvername = UMFPACK, SUPERLUDIST, MUMPS, KLU, SUPERLU" << endl;
+      cerr << "    Solvername = UMFPACK, SUPERLUDIST, TAUCS, PARDISO, PASTIX, PARAKLETE, MUMPS, KLU, SUPERLU" << endl;
       cerr << "    InputMatrix must be a file in Harwell Boeing format"<< endl;
       cerr << "    special = number of repeats (0 means run just once) " << endl ; 
       cerr << "    numsolves = number of right hand sidess (<0 means MRHS, >1 means BRHS) " << endl ; 
@@ -264,6 +264,14 @@ int main(int argc, char **argv)
     SparseSolver = SUPERLUDIST ; 
   else if  ( Sprogram == "DSCPACK" ) 
     SparseSolver = DSCPACK ; 
+  else if  ( Sprogram == "TAUCS" ) 
+    SparseSolver = TAUCS ; 
+  else if  ( Sprogram == "PARDISO" ) 
+    SparseSolver = PARDISO ; 
+  else if  ( Sprogram == "PASTIX" ) 
+    SparseSolver = PASTIX ; 
+  else if  ( Sprogram == "PARAKLETE" ) 
+    SparseSolver = PARAKLETE ; 
   else if  ( Sprogram == "MUMPS" ) 
     SparseSolver = MUMPS ; 
   else if  ( Sprogram == "SCALAPACK" ) 
@@ -296,6 +304,30 @@ int main(int argc, char **argv)
 #ifndef HAVE_AMESOS_SUPERLUDIST
   if (SparseSolver == SUPERLUDIST) {
     cerr << "SUPERLUDIST is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_TAUCS
+  if (SparseSolver == TAUCS) {
+    cerr << "TAUCS is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_PARDISO
+  if (SparseSolver == PARDISO) {
+    cerr << "PARDISO is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_PASTIX
+  if (SparseSolver == PASTIX) {
+    cerr << "PASTIX is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_PARAKLETE
+  if (SparseSolver == PARAKLETE) {
+    cerr << "PARAKLETE is not installed..." << endl;
     exit(EXIT_SUCCESS);
   }
 #endif
@@ -363,11 +395,15 @@ int main(int argc, char **argv)
        SparseSolver != DSCPACK && 
        SparseSolver != UMFPACK  && 
        SparseSolver != KLU && 
+       SparseSolver != TAUCS  && 
+       SparseSolver != PARDISO  && 
+       SparseSolver != PASTIX  && 
+       SparseSolver != PARAKLETE  && 
        SparseSolver != MUMPS  && 
        SparseSolver != SCALAPACK  && 
        SparseSolver != SUPERLU ) {
     if ( ( MyPID == 0 )  ) 
-      cerr << "Only LAPACK, SUPERLUDIST, UMFPACK, MUMPS, SCALAPACK, KLU and DSCPACK support MRHS and BRHS" << endl ;
+      cerr << "Only LAPACK, SUPERLUDIST, UMFPACK, TAUCS, PARDISO, PASTIX, PARAKLETE, MUMPS, SCALAPACK, KLU and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
     

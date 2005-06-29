@@ -197,16 +197,6 @@ $mpigo 2 amesos_test.exe LAPACK   ImpcolE.rua 1 1 -1 0 1e-9  1e-11  >>SST.stdout
 #
 $mpigo 1 amesos_test.exe LAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 $mpigo 3 amesos_test.exe LAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-
-# COMMENT fails on linux box $mpigo 1 amesos_test.exe LAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
-# COMMENT fails on linux box $mpigo 2 amesos_test.exe LAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
-
-# COMMENT fails on linux box $mpigo 1 amesos_test.exe LAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
-# COMMENT fails on linux box $mpigo 6 amesos_test.exe LAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
-
-# COMMENT fails on linux box $mpigo 6 amesos_test.exe LAPACK K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
-# COMMENT fails on linux box $mpigo 6 amesos_test.exe LAPACK K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
-
 $mpigo 1 amesos_test.exe LAPACK Khead.triS 0 1 1 0 2e-13 1e- >>SST.stdout
 
 #
@@ -229,10 +219,12 @@ if ($results[1] != $expected_lines[1] ) then
 endif
 #
 #  Prints out success or failure and exit 
+#  Any lines which are not blank and do not contain either "OK" or "COMMENT" 
+#  suggest an error:
 #
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed on all" $expected_lines[1] " tests"
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "End Result: TEST PASSED - Lapack test passed on all" $expected_lines[1] " tests"
 #
 #  This should not generaly print anything as errors should have been caught in the if test above
 #
-grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
+grep -v OK  SST.summary  | grep -v COMMENT | grep " " && echo "Lapack Test FAILED" 
 exit($status == 0)

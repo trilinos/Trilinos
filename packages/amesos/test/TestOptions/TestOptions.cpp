@@ -470,12 +470,20 @@ int NextMain( int argc, char *argv[] ) {
   Epetra_SerialComm Comm;
 #endif
 
+#ifdef HAVE_AMESOS_SUPERLU
+  AmesosClasses.push_back( "Amesos_Superlu" );
+#endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+  AmesosClasses.push_back( "Amesos_Superludist" );
+#endif
+
+
+#if 1
 #ifdef HAVE_AMESOS_MUMPS
   AmesosClasses.push_back( "Amesos_Mumps" );
 #endif
 
 
-#if 1
 #ifdef HAVE_AMESOS_SCALAPACK
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
 #endif
@@ -483,10 +491,6 @@ int NextMain( int argc, char *argv[] ) {
 #ifdef HAVE_AMESOS_KLU
   AmesosClasses.push_back( "Amesos_Klu" );
 #endif
-#ifdef HAVE_AMESOS_SUPERLUDIST
-  AmesosClasses.push_back( "Amesos_Superludist" );
-#endif
-
 #ifdef HAVE_AMESOS_PARDISO
   AmesosClasses.push_back( "Amesos_Pardiso" );
 #endif
@@ -501,9 +505,6 @@ int NextMain( int argc, char *argv[] ) {
 
 #ifdef HAVE_AMESOS_UMFPACK
   AmesosClasses.push_back( "Amesos_Umfpack" );
-#endif
-#ifdef HAVE_AMESOS_SUPERLU
-  AmesosClasses.push_back( "Amesos_Superlu" );
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
   //  This fails on my Fedora Core linux box

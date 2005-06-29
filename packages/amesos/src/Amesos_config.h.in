@@ -39,8 +39,14 @@
 /* Define if want to build amesos-mumps */
 #undef HAVE_AMESOS_MUMPS
 
+/* Define if want to build amesos-paraklete */
+#undef HAVE_AMESOS_PARAKLETE
+
 /* Define if want to build amesos-pardiso */
 #undef HAVE_AMESOS_PARDISO
+
+/* Define if want to build amesos-pastix */
+#undef HAVE_AMESOS_PASTIX
 
 /* Define if want to build amesos-scalapack */
 #undef HAVE_AMESOS_SCALAPACK

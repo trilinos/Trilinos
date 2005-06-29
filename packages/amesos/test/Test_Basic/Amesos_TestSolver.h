@@ -30,7 +30,7 @@
 
 #include "Epetra_Comm.h"
 enum SparseSolverType { DSCPACK, UMFPACK, 
-			SCALAPACK, MUMPS, KLU,
+			SCALAPACK, MUMPS, TAUCS, PARDISO, PASTIX, PARAKLETE, KLU,
                         LAPACK, SUPERLUDIST, SUPERLU } ; 
 enum AMESOS_MatrixType { AMESOS_Serial, AMESOS_Distributed } ; 
 

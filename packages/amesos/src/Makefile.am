@@ -224,6 +224,26 @@ TAUCS_H =
 TAUCS =
 endif
 
+if HAVE_AMESOS_PASTIX
+PASTIX_H = \
+	$(srcdir)/Amesos_Pastix.h
+PASTIX = \
+	$(srcdir)/Amesos_Pastix.cpp
+else
+PASTIX_H =
+PASTIX =
+endif
+
+if HAVE_AMESOS_PARAKLETE
+PARAKLETE_H = \
+	$(srcdir)/Amesos_Paraklete.h
+PARAKLETE = \
+	$(srcdir)/Amesos_Paraklete.cpp
+else
+PARAKLETE_H =
+PARAKLETE =
+endif
+
 
 
 
@@ -339,6 +359,8 @@ AMESOS_H = \
 	$(MUMPS_H) \
 	$(PARDISO_H) \
 	$(TAUCS_H) \
+	$(PASTIX_H) \
+	$(PARAKLETE_H) \
 	$(SCALAPACK_H) \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
@@ -359,6 +381,8 @@ libamesos_a_SOURCES = \
 	$(MUMPS) \
 	$(PARDISO) \
 	$(TAUCS) \
+	$(PASTIX) \
+	$(PARAKLETE) \
 	$(SCALAPACK) \
 	$(FACTORY) \
 	$(SUPERLU) \

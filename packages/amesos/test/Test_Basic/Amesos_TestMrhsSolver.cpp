@@ -54,6 +54,18 @@
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
 #endif
+#ifdef HAVE_AMESOS_TAUCS
+#include "Amesos_Taucs.h"
+#endif
+#ifdef HAVE_AMESOS_PARDISO
+#include "Amesos_Pardiso.h"
+#endif
+#ifdef HAVE_AMESOS_PASTIX
+#include "Amesos_Pastix.h"
+#endif
+#ifdef HAVE_AMESOS_PARAKLETE
+#include "Amesos_Paraklete.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
@@ -519,6 +531,122 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
 	EPETRA_CHK_ERR( lapack.Solve( ) ); 
 	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	else { 
+	  if ( i < numsolves-1 ) 
+	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	  else
+	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+	}
+
+      }
+#endif
+#ifdef HAVE_AMESOS_TAUCS
+    } else if ( SparseSolver == TAUCS ) { 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Taucs taucs( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( taucs.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( taucs.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( taucs.SymbolicFactorization( ) ); 
+      EPETRA_CHK_ERR( taucs.NumericFactorization( ) ); 
+
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( taucs.Solve( ) ); 
+	//	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	else { 
+	  if ( i < numsolves-1 ) 
+	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	  else
+	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+	}
+
+      }
+#endif
+#ifdef HAVE_AMESOS_PARDISO
+    } else if ( SparseSolver == PARDISO ) { 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Pardiso pardiso( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( pardiso.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( pardiso.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( pardiso.SymbolicFactorization( ) ); 
+      EPETRA_CHK_ERR( pardiso.NumericFactorization( ) ); 
+
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( pardiso.Solve( ) ); 
+	//	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	else { 
+	  if ( i < numsolves-1 ) 
+	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	  else
+	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+	}
+
+      }
+#endif
+#ifdef HAVE_AMESOS_PASTIX
+    } else if ( SparseSolver == PASTIX ) { 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Pastix pastix( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( pastix.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( pastix.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( pastix.SymbolicFactorization( ) ); 
+      EPETRA_CHK_ERR( pastix.NumericFactorization( ) ); 
+
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( pastix.Solve( ) ); 
+	//	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	else { 
+	  if ( i < numsolves-1 ) 
+	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	  else
+	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+	}
+
+      }
+#endif
+#ifdef HAVE_AMESOS_PARAKLETE
+    } else if ( SparseSolver == PARAKLETE ) { 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Paraklete paraklete( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( paraklete.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( paraklete.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( paraklete.SymbolicFactorization( ) ); 
+      EPETRA_CHK_ERR( paraklete.NumericFactorization( ) ); 
+
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( paraklete.Solve( ) ); 
+	//	factor = false; 
 	if ( i == 0 ) 
 	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
 	else { 

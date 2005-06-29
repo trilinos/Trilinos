@@ -188,8 +188,12 @@ HAVE_AMESOS_MERIKOS_FALSE = @HAVE_AMESOS_MERIKOS_FALSE@
 HAVE_AMESOS_MERIKOS_TRUE = @HAVE_AMESOS_MERIKOS_TRUE@
 HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
+HAVE_AMESOS_PARAKLETE_FALSE = @HAVE_AMESOS_PARAKLETE_FALSE@
+HAVE_AMESOS_PARAKLETE_TRUE = @HAVE_AMESOS_PARAKLETE_TRUE@
 HAVE_AMESOS_PARDISO_FALSE = @HAVE_AMESOS_PARDISO_FALSE@
 HAVE_AMESOS_PARDISO_TRUE = @HAVE_AMESOS_PARDISO_TRUE@
+HAVE_AMESOS_PASTIX_FALSE = @HAVE_AMESOS_PASTIX_FALSE@
+HAVE_AMESOS_PASTIX_TRUE = @HAVE_AMESOS_PASTIX_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
 HAVE_AMESOS_SCALAPACK_TRUE = @HAVE_AMESOS_SCALAPACK_TRUE@
 HAVE_AMESOS_SMUMPS_FALSE = @HAVE_AMESOS_SMUMPS_FALSE@
@@ -379,6 +383,10 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_AmesosKlu.csh $(srcdir)/In_AmesosSuperlu.csh \
 	$(srcdir)/In_AmesosScalapack.csh \
 	$(srcdir)/In_AmesosLapack.csh \
+	$(srcdir)/In_AmesosTaucs.csh \
+	$(srcdir)/In_AmesosPardiso.csh \
+	$(srcdir)/In_AmesosPastix.csh \
+	$(srcdir)/In_AmesosParaklete.csh \
 	$(srcdir)/In_AmesosMumps.csh \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
 	$(srcdir)/In_AmesosUmfpackSerial.csh \
@@ -716,6 +724,10 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	$(srcdir)/In_AmesosKlu.csh $(srcdir)/In_AmesosSuperlu.csh \
 	 $(srcdir)/In_AmesosScalapack.csh \
 	 $(srcdir)/In_AmesosLapack.csh \
+	  $(srcdir)/In_AmesosTaucs.csh \
+	  $(srcdir)/In_AmesosPardiso.csh \
+	  $(srcdir)/In_AmesosPastix.csh \
+	  $(srcdir)/In_AmesosParaklete.csh \
 	  $(srcdir)/In_AmesosMumps.csh \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
 	$(srcdir)/In_AmesosUmfpackSerial.csh 
@@ -727,6 +739,10 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	cp  $(srcdir)/In_AmesosSuperlu.csh AmesosSuperlu.csh 
 	cp  $(srcdir)/In_AmesosScalapack.csh AmesosScalapack.csh 
 	cp  $(srcdir)/In_AmesosLapack.csh AmesosLapack.csh 
+	cp  $(srcdir)/In_AmesosTaucs.csh AmesosTaucs.csh 
+	cp  $(srcdir)/In_AmesosPardiso.csh AmesosPardiso.csh 
+	cp  $(srcdir)/In_AmesosPastix.csh AmesosPastix.csh 
+	cp  $(srcdir)/In_AmesosParaklete.csh AmesosParaklete.csh 
 	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
 	cp  $(srcdir)/In_AmesosKluSerial.csh AmesosKluSerial.csh 
 	cp  $(srcdir)/In_AmesosSuperluSerial.csh AmesosSuperluSerial.csh 
@@ -785,6 +801,10 @@ clean:  clean-am
 	AmesosKlu.csh AmesosSuperlu.csh \
 	AmesosScalapack.csh \
 	AmesosLapack.csh \
+	AmesosTaucs.csh \
+	AmesosPardiso.csh \
+	AmesosPastix.csh \
+	AmesosParaklete.csh \
 	AmesosMumps.csh \
 	AmesosKluSerial.csh  AmesosSuperluSerial.csh \
 	AmesosUmfpackSerial.csh \

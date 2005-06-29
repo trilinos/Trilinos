@@ -3,12 +3,9 @@
 #
 
 (FRAMEWORK) {
-    TESTS = 
-scripts/daily/mpi/TestValgrind.exe,
-scripts/daily/mpi/TestLapack.exe,
-scripts/daily/mpi/TestScalapack.exe,
-scripts/daily/mpi/TestQuietAmesos.exe;
+    DIRS = scripts/daily/mpi;
     COMM = CUSTOM-MPI;
     ARGS = TestAmesos.exe True True;
+    EXIT-STATUS = STRING-COMPARISON ;
 }
 

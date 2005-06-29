@@ -233,9 +233,13 @@ endif
 #
 #  Prints out success or failure and exit 
 #
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed on all" $expected_lines[1] " tests"
+#
+#  Any lines which are not blank and do not contain either "OK" or "COMMENT" 
+#  suggest an error:
+#
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "End Result: TEST PASSED - Superludist test passed on all" $expected_lines[1] " tests"
 #
 #  This should not generaly print anything as errors should have been caught in the if test above
 #
-grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
+grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "AmesosSuperludist Test FAILED" 
 exit($status == 0)
