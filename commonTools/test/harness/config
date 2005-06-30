@@ -103,7 +103,7 @@ RUN (paunchy-nightly-mpi) {
     COMM                = mpi;
     INVOKE-CONFIGURE    = sunos-paunchy-mpi;
     TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 16;
+    MAX-PROC            = 4;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
