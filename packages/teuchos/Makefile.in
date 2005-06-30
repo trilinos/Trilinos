@@ -698,6 +698,9 @@ all-local:
 check:
 	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run-teuchos-tests.pl
 
+all-libs:
+	cd $(top_builddir)/src ; make all-libs
+
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.teuchos $(exec_prefix)/include/. ; \
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \

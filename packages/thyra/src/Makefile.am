@@ -327,3 +327,10 @@ nodist_execinclude_HEADERS = Thyra_Config.h $(THYRA_H)
 # --------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+all-libs:
+	$(MAKE) libthyra.a
+	cd $(top_builddir)/../teuchos ; make all-libs

@@ -919,6 +919,13 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 #Specify locations of include files within Trilinos
 
 include $(top_builddir)/Makefile.export.thyra
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+all-libs:
+	$(MAKE) libthyra.a
+	cd $(top_builddir)/../teuchos ; make all-libs
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

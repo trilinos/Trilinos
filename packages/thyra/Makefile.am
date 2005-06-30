@@ -97,6 +97,9 @@ SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 check:
 	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_operator_vector_tests.pl
 
+all-libs:
+	cd $(top_builddir)/src ; make all-libs
+
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	

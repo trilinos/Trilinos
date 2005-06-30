@@ -92,6 +92,9 @@ SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 check:
 	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run-teuchos-tests.pl
 
+all-libs:
+	cd $(top_builddir)/src ; make all-libs
+
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
