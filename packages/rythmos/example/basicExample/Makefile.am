@@ -38,7 +38,7 @@ noinst_PROGRAMS = $(EXAMPLE)
 
 basicExample_SOURCES = \
 	 $(srcdir)/cxx_main.cpp \
-	 $(srcdir)/ExampleApplication2.cpp 
+	 $(srcdir)/ExampleApplication.cpp 
 
 basicExample_DEPENDENCIES = $(common_dependencies)
 

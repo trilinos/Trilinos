@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "ExampleApplication2.hpp"
+#include "ExampleApplication.hpp"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -34,7 +34,7 @@
 #include "Epetra_SerialComm.h"
 #endif // HAVE_MPI
 
-ExampleApplication2::ExampleApplication2(Teuchos::ParameterList &params)
+ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
   lambda_min_ = params.get<double>( "Lambda_min" );
   lambda_max_ = params.get<double>( "Lambda_max" );
@@ -88,7 +88,7 @@ ExampleApplication2::ExampleApplication2(Teuchos::ParameterList &params)
   
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication2::get_coeff() const
+Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_coeff() const
 {
   return(lambda_ptr_);
 }
@@ -96,19 +96,19 @@ Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication2::get_coeff() const
 // Overridden from EpetraExt::ModelEvaluator
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ExampleApplication2::get_x_map() const
+ExampleApplication::get_x_map() const
 {
   return epetra_map_ptr_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ExampleApplication2::get_f_map() const
+ExampleApplication::get_f_map() const
 {
   return epetra_map_ptr_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
-ExampleApplication2::get_x_init() const
+ExampleApplication::get_x_init() const
 {
   Teuchos::RefCountPtr<Epetra_Vector> x_init = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   x_init->PutScalar(x0_);
@@ -116,7 +116,7 @@ ExampleApplication2::get_x_init() const
 }
 
 EpetraExt::ModelEvaluator::InArgs
-ExampleApplication2::createInArgs() const
+ExampleApplication::createInArgs() const
 {
   InArgsSetup inArgs;
   inArgs.setSupports(IN_ARG_x,true);
@@ -124,14 +124,14 @@ ExampleApplication2::createInArgs() const
 }
 
 EpetraExt::ModelEvaluator::OutArgs
-ExampleApplication2::createOutArgs() const
+ExampleApplication::createOutArgs() const
 {
   OutArgsSetup outArgs;
   outArgs.setSupports(OUT_ARG_f,true);
   return outArgs;
 }
 
-void ExampleApplication2::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
+void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 {
   const Epetra_Vector &x = *inArgs.get_x();
   Epetra_Vector       &f = *outArgs.get_f();

@@ -37,7 +37,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Version.h"
 
-#include "ExampleApplication2.hpp"
+#include "ExampleApplication.hpp"
 
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
@@ -122,8 +122,8 @@ int main(int argc, char *argv[])
 #endif // HAVE_MPI
 
     // create interface to problem
-    Teuchos::RefCountPtr<ExampleApplication2>
-      epetraModel = Teuchos::rcp(new ExampleApplication2(params));
+    Teuchos::RefCountPtr<ExampleApplication>
+      epetraModel = Teuchos::rcp(new ExampleApplication(params));
     Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel));
     

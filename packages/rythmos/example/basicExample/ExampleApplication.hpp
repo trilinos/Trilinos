@@ -40,11 +40,11 @@
  *
  * ToDo: Finish Documentation!
  */
-class ExampleApplication2 : public EpetraExt::ModelEvaluator {
+class ExampleApplication : public EpetraExt::ModelEvaluator {
 public:
 
   // Constructor
-  ExampleApplication2(Teuchos::ParameterList &params);
+  ExampleApplication(Teuchos::ParameterList &params);
 
   // return ODE decay coefficient
   Teuchos::RefCountPtr<const Epetra_Vector> get_coeff() const;
