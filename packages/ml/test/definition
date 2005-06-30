@@ -18,7 +18,7 @@
            Zoltan,
 	   ../examples/Advanced,
 	  #../examples/BasicExamples,
-	   ../examples/Elasticity,
+	  #../examples/Elasticity,
 	   ../examples/MatrixFormats,
 	  #../examples/MatrixReading,
 	   ../examples/Maxwell,
