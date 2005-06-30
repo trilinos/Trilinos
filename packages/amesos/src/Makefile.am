@@ -330,19 +330,29 @@ else
 KUNDERT_CPPFLAGS = 
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
-	-I$(top_srcdir)/../epetraext/src \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_srcdir)/src/AMD/Include \
-	-I$(top_srcdir)/src/AMD/Source \
-	-I$(top_srcdir)/src/colamd \
-	-I$(top_srcdir)/src/btf \
-	-I$(top_srcdir)/src/klu_btf \
-	-I$(top_srcdir)/src/klu_kernel \
-	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetraext/src \
-	-I$(top_builddir)/../epetra/src \
-	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+#AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
+#	-I$(top_srcdir)/../epetraext/src \
+#	-I$(top_srcdir)/../epetra/src \
+#	-I$(top_srcdir)/src/AMD/Include \
+#	-I$(top_srcdir)/src/AMD/Source \
+#	-I$(top_srcdir)/src/colamd \
+#	-I$(top_srcdir)/src/btf \
+#	-I$(top_srcdir)/src/klu_btf \
+#	-I$(top_srcdir)/src/klu_kernel \
+#	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
+#	-I$(top_builddir)/../epetraext/src \
+#	-I$(top_builddir)/../epetra/src \
+#	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+
+include $(top_builddir)/Makefile.export.amesos
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES))
+else
+EXPORT_INCLUDES = $(AMESOS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
 # ------------------------------------------------------------------------
 # Amesos library specifications
@@ -452,6 +462,14 @@ nodist_execinclude_HEADERS = Amesos_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+all-libs:
+	$(MAKE) libamesos.a
+	cd $(top_builddir)/../teuchos ; make all-libs 
+	cd $(top_builddir)/../epetra ; make all-libs 
 
 
 

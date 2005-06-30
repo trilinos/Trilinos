@@ -91,6 +91,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
@@ -102,6 +103,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -380,6 +382,7 @@ HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERFORMANCE_FALSE = @HAVE_PERFORMANCE_FALSE@
 HAVE_PERFORMANCE_TRUE = @HAVE_PERFORMANCE_TRUE@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 HAVE_VALGRIND_FALSE = @HAVE_VALGRIND_FALSE@
@@ -412,6 +415,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PYTHON = @PYTHON@
 PYTHON_CSPEC = @PYTHON_CSPEC@
 PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
@@ -430,6 +434,12 @@ SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_SWIG = @WITH_SWIG@
 XTRALDADD = @XTRALDADD@
@@ -736,20 +746,9 @@ FACTORY = \
 # SLUSERIAL_CPPFLAGS = 
 # endif
 @HAVE_AMESOS_KUNDERT_TRUE@KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
-AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
-	-I$(top_srcdir)/../epetraext/src \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_srcdir)/src/AMD/Include \
-	-I$(top_srcdir)/src/AMD/Source \
-	-I$(top_srcdir)/src/colamd \
-	-I$(top_srcdir)/src/btf \
-	-I$(top_srcdir)/src/klu_btf \
-	-I$(top_srcdir)/src/klu_kernel \
-	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetraext/src \
-	-I$(top_builddir)/../epetra/src \
-	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
-
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(AMESOS_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
 # ------------------------------------------------------------------------
 # Amesos library specifications
@@ -2073,6 +2072,30 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
+
+#AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
+#	-I$(top_srcdir)/../epetraext/src \
+#	-I$(top_srcdir)/../epetra/src \
+#	-I$(top_srcdir)/src/AMD/Include \
+#	-I$(top_srcdir)/src/AMD/Source \
+#	-I$(top_srcdir)/src/colamd \
+#	-I$(top_srcdir)/src/btf \
+#	-I$(top_srcdir)/src/klu_btf \
+#	-I$(top_srcdir)/src/klu_kernel \
+#	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
+#	-I$(top_builddir)/../epetraext/src \
+#	-I$(top_builddir)/../epetra/src \
+#	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+
+include $(top_builddir)/Makefile.export.amesos
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+all-libs:
+	$(MAKE) libamesos.a
+	cd $(top_builddir)/../teuchos ; make all-libs 
+	cd $(top_builddir)/../epetra ; make all-libs 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

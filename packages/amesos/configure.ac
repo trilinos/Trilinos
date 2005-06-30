@@ -165,6 +165,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Special check for case of running on TFLOP - not needed for now
 # ------------------------------------------------------------------------
 #AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
@@ -275,6 +280,11 @@ AM_CONDITIONAL(HAVE_VALGRIND, test "X$ac_cv_use_valgrind" != "Xno")
 TAC_ARG_ENABLE_FEATURE(coverage, [Check to make sure that our test coverage has not dropped (not all packages are sensitive to this option)], COVERAGE, no)
 AM_CONDITIONAL(HAVE_COVERAGE, test "X$ac_cv_use_coverage" != "Xno")
 
+
+# ------------------------------------------------------------------------
+# Epetraext and Triutils are only required for tests and examples,
+# so they will NOT to added as part of the Makefile.export.amesos file.
+# ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(epetraext,
  [AC_HELP_STRING([--enable-epetraext],[Allow Amesos tests and examples to use Epetraext to build matrices.   Default is no. Requires Epetraext package.])],
@@ -866,7 +876,8 @@ AC_SUBST(ac_aux_dir)
 ##
 #
 AC_CONFIG_FILES([
-		Makefile 
+		Makefile
+		Makefile.export.amesos 
 		src/Makefile
                 doc/Makefile
 		example/Makefile

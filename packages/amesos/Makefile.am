@@ -87,3 +87,38 @@ endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
 
+
+## #######################################################################
+## Target for circular dependencies
+## #######################################################################
+all-libs:
+	cd src ; make all-libs
+
+## #######################################################################
+## Export Makefile Installation
+## #######################################################################
+if USING_EXPORT_MAKEFILES
+
+install-exec-hook:	
+	cp $(top_builddir)/Makefile.export.amesos $(exec_prefix)/include/.
+	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+		--exec-prefix=$(exec_prefix) \
+		--my-export-makefile=Makefile.export.amesos \
+		--my-abs-top-srcdir=@abs_top_srcdir@ \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src/klu_btf:@abs_top_srcdir@/src/klu_kernel:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/AMD:@abs_top_srcdir@/src/AMD/Include:@abs_top_srcdir@/src/AMD/Source:@abs_top_srcdir@/src/colamd:@abs_top_srcdir@/src/ksparse \
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile triutils > $(exec_prefix)/include/Makefile.export.triutils.macros
+
+uninstall-hook:
+	rm -f $(exec_prefix)/include/Makefile.export.amesos
+	rm -f $(exec_prefix)/include/Makefile.export.amesos.macros
+
+else 
+
+install-exec-hook:
+
+uninstall-hook:
+
+endif
+
