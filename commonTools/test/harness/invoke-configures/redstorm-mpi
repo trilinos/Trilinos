@@ -27,7 +27,7 @@
         CXXFLAGS="" \
         FFLAGS="" \
         LDFLAGS=" "  FLIBS="-lpapi -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl -lpgc -lm -lcatamount -lsysio -lportals -lC -lcrtend" \
-        --with-ar="ar rcv"
+        --with-ar="ar rcv" \
 --enable-aztecoo \
 --enable-belos \
 --enable-capo \
