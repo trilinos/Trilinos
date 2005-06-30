@@ -579,7 +579,7 @@ exit $exitStatus;
         my $configuredPackages = "";
         
         # Compile list of all "Finished Running PACKAGE Configure Script" strings.        
-        my @finishedStrings = $configureOutput =~ m/(Finished Running \w*? Configure Script)/g;        
+        my @finishedStrings = $configureOutput =~ m/(Finished( Running)? \w*? Configure Script)/g;        
         foreach my $finishedString (@finishedStrings) {
                             
             # Grab package name.
