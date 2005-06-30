@@ -802,9 +802,8 @@ namespace Anasazi {
       //
       for (rank = size; rank > 0; --rank) {
 
-	cout << "rank = "<<rank<<endl;
-
-        U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );              //
+        U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );              
+	//
         // Copy KK & MM
         //
         KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, size, size ) );
@@ -827,6 +826,7 @@ namespace Anasazi {
           return -20;
         }
         if (info > 0) {
+	  cout << "info = " << info << endl;
           if (info > rank)
             rank = info - rank;
           continue;
