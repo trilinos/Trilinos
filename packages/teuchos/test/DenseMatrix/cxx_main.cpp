@@ -93,11 +93,11 @@ int main(int argc, char* argv[])
       a[i] = i;
     }
   DMatrix Con2Test1ExpRes;
-  Con2Test1ExpRes.shape(2, 2);
-  Con2Test1ExpRes(0, 0) = 0;  Con2Test1ExpRes(0, 1) = 2; 
-  Con2Test1ExpRes(1, 0) = 1;  Con2Test1ExpRes(1, 1) = 3; 
+  Con2Test1ExpRes.shape(2, 3);
+  Con2Test1ExpRes(0, 0) = 0;  Con2Test1ExpRes(0, 1) = 2; Con2Test1ExpRes(0, 2) = 4;
+  Con2Test1ExpRes(1, 0) = 1;  Con2Test1ExpRes(1, 1) = 3; Con2Test1ExpRes(1, 2) = 5;
   
-  DMatrix Con2Test1(Copy, a, 2, 2, 2);
+  DMatrix Con2Test1(Copy, a, 2, 2, 3);
   numberFailedTests += PrintTestResults("constructor 2 -- construct matrix from array subrange", Con2Test1, Con2Test1ExpRes, verbose);
   
   
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 
   DMatrix Con3TestCopyTrans( Con2Test1ExpRes, Teuchos::TRANS );
   if(verbose) cout <<"constructor 3 -- copy constructor (transposed) "; 
-  if ( Con3TestCopyTrans(0,1) != Con2Test1ExpRes(1,0) ) {
+  if ( Con3TestCopyTrans(2, 0) != Con2Test1ExpRes(0, 2) ) {
 	if (verbose) cout << "unsuccessful."<<endl;
 	numberFailedTests++;
   } else {

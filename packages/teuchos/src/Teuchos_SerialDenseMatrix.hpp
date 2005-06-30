@@ -390,9 +390,9 @@ namespace Teuchos {
 	numCols_ = Source.numRows_;
 	stride_ = numRows_;
 	values_ = new ScalarType[stride_*numCols_];
-	for (int i=0; i<numRows_; i++) {
-	  for (int j=0; j<numCols_; j++) {
-	    values_[i*stride_ + j] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.values_[j*Source.stride_ + i]);
+	for (int j=0; j<numCols_; j++) {
+	  for (int i=0; i<numRows_; i++) {
+	    values_[j*stride_ + i] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.values_[i*Source.stride_ + j]);
 	  }
 	}
       } 
@@ -402,9 +402,9 @@ namespace Teuchos {
 	numCols_ = Source.numRows_;
 	stride_ = numRows_;
 	values_ = new ScalarType[stride_*numCols_];
-	for (int i=0; i<numRows_; i++) {
-	  for (int j=0; j<numCols_; j++) {
-	    values_[i*stride_ + j] = Source.values_[j*Source.stride_ + i];
+	for (int j=0; j<numCols_; j++) {
+	  for (int i=0; i<numRows_; i++) {
+	    values_[j*stride_ + i] = Source.values_[i*Source.stride_ + j];
 	  }
 	}
       }
