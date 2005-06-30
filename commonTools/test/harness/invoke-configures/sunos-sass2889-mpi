@@ -46,6 +46,7 @@
 --enable-loca \
 --enable-meros \
 --enable-ml \
+--enable-new-package \
 --enable-nox \
 --enable-pliris \
 --enable-rythmos \
