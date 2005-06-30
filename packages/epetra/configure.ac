@@ -381,6 +381,8 @@ AC_CONFIG_FILES([
 		test/CrsMatrix/Makefile.include
 		test/CrsRectMatrix/Makefile
 		test/CrsRectMatrix/Makefile.include
+		test/Directory/Makefile
+		test/Directory/Makefile.include
 		test/FECrsGraph/Makefile
 		test/FECrsGraph/Makefile.include
 		test/FECrsMatrix/Makefile

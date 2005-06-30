@@ -26,7 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = src BlockMap CrsGraph CrsMatrix CrsRectMatrix \
+SUBDIRS = src BlockMap CrsGraph CrsMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
 MultiVector Object SerialDense SerialSpdDense \
@@ -38,6 +38,7 @@ Comm/Comm_test.exe \
 CrsGraph/CrsGraph_test.exe \
 CrsMatrix/CrsMatrix_test.exe \
 CrsRectMatrix/CrsRectMatrix_test.exe \
+Directory/Directory_test.exe \
 FECrsGraph/FECrsGraph_test.exe \
 FECrsMatrix/FECrsMatrix_test.exe \
 FEVbrMatrix/FEVbrMatrix_test.exe \
