@@ -148,7 +148,9 @@ namespace Tpetra {
 			return(myOp);
 		};
 		static void complexMin(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
-			for(int i = 0; i < *len; i++) {
+			// The number of complex elements is half the number of primitives MPI thinks we have
+			int const trueLen = (*len) / 2;
+			for(int i = 0; i < trueLen; i++) {
 				if(Teuchos::ScalarTraits< complex<T> >::magnitude(*in) < 
 				   Teuchos::ScalarTraits< complex<T> >::magnitude(*inout))
 					*inout = *in;
@@ -157,7 +159,9 @@ namespace Tpetra {
 			}
 		};
 		static void complexMax(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
-			for(int i = 0; i < *len; i++) {
+			// The number of complex elements is half the number of primitives MPI thinks we have
+			int const trueLen = (*len) / 2;
+			for(int i = 0; i < trueLen; i++) {
 				if(Teuchos::ScalarTraits< complex<T> >::magnitude(*inout) < 
 				   Teuchos::ScalarTraits< complex<T> >::magnitude(*in))
 					*inout = *in;
