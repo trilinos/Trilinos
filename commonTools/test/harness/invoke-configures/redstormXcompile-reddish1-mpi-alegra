@@ -10,7 +10,7 @@ module load PrgEnv
         --enable-aztecoo-azlu \
         --enable-amesos \
         --without-ml_superlu \
-        --with-ml_zoltan \
+        --without-ml_zoltan \
 	--enable-teuchos \
         --enable-triutils \
          --enable-anasazi \
