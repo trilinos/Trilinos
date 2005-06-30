@@ -37,15 +37,18 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Version.h"
 
+#include "ExampleApplication2.hpp"
+
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
-#include "ExampleApplicationRythmosInterface.hpp"
+//#include "ExampleApplicationRythmosInterface.hpp"
 #include "Rythmos_Stepper_ForwardEuler.hpp"
 #include "Rythmos_Stepper_ExplicitRK.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_EpetraModelEvaluator.hpp"
 
 #include <string>
 
@@ -79,7 +82,6 @@ int main(int argc, char *argv[])
     std::string method = "FE";  // other choice is method="ERK4"
     bool version = false;  // display version information 
 
-
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.setOption( "x0", &x0, "Constant ODE initial condition." );
@@ -91,6 +93,7 @@ int main(int argc, char *argv[])
     clp.setOption( "numsteps", &N, "Number of integration steps to take" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
+
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -117,19 +120,22 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
     params.set( "MPIComm", mpiComm );
 #endif // HAVE_MPI
-    
+
     // create interface to problem
-    Teuchos::RefCountPtr<ExampleApplicationRythmosInterface> problem_ptr = Teuchos::rcp(new ExampleApplicationRythmosInterface(params));
+    Teuchos::RefCountPtr<ExampleApplication2>
+      epetraModel = Teuchos::rcp(new ExampleApplication2(params));
+    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
+      model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel));
     
     // Create Stepper object depending on command-line input
     Teuchos::RefCountPtr<Rythmos::Stepper<double> > stepper_ptr;
     if (method == "ERK4") // Explicit Runge-Kutta 4 stage
     {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRK<double>(problem_ptr));
+      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRK<double>(model));
       method = "Explicit Runge-Kutta of order 4";
     } else // Forward Euler
     {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEuler<double>(problem_ptr));
+      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEuler<double>(model));
       method = "Forward Euler";
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
@@ -152,11 +158,12 @@ int main(int argc, char *argv[])
     // Get solution out of stepper:
     Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
     // Convert Thyra::VectorBase to Epetra_Vector
-    Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(problem_ptr->get_Epetra_Map()),x_computed_thyra_ptr);
+    Teuchos::RefCountPtr<const Epetra_Vector>
+      x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
     const Epetra_Vector &x_computed = *x_computed_ptr;
 
     // compute exact answer
-    Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = problem_ptr->get_coeff();
+    Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
     const Epetra_Vector &lambda = *lambda_ptr;
     Epetra_Vector x_star(lambda.Map());
     for (int i=0 ; i < x_star.MyLength() ; ++i)
@@ -169,8 +176,8 @@ int main(int argc, char *argv[])
     // to get an Epetra_Comm associated with an Epetra_Vector:
     // x.Comm()
     
-  //  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*problem_ptr).get_epetra_comm();
-    //int MyPID = problem_ptr->get_Epetra_Map()->Comm()->MyPID();
+  //  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*epetraModel).get_epetra_comm();
+    //int MyPID = epetraModel->get_Epetra_Map()->Comm()->MyPID();
     int MyPID = x_computed.Comm().MyPID();
   //  int MyPID = epetra_comm->MyPID();
     if (MyPID == 0)

@@ -88,6 +88,11 @@ ExampleApplication2::ExampleApplication2(Teuchos::ParameterList &params)
   
 }
 
+Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication2::get_coeff() const
+{
+  return(lambda_ptr_);
+}
+
 // Overridden from EpetraExt::ModelEvaluator
 
 Teuchos::RefCountPtr<const Epetra_Map>

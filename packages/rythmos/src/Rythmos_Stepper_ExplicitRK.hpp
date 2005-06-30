@@ -33,8 +33,7 @@
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Rythmos_ModelEvaluator.hpp"
-#include <vector>
+#include "Thyra_ModelEvaluator.hpp"
 
 namespace Rythmos {
 
@@ -45,7 +44,7 @@ class ExplicitRK : public Stepper<Scalar>
     
     // Constructor
     ExplicitRK();
-    ExplicitRK(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model_);
+    ExplicitRK(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_);
     
     // Destructor
     ~ExplicitRK();
@@ -62,7 +61,7 @@ class ExplicitRK : public Stepper<Scalar>
 
   private:
 
-    Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
+    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ktemp_vector_;
@@ -76,19 +75,21 @@ class ExplicitRK : public Stepper<Scalar>
 };
 
 template<class Scalar>
-ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Rythmos::ModelEvaluator<Scalar> > &model)
+ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
-  solution_vector_ = (*model_).get_vector();
+  solution_vector_ = model_->get_x_init()->clone_v();
   int stages = 4; // 4 stage ERK
   k_vector_.reserve(stages);
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+    f_space = model_->get_f_space();
   for (int i=0 ; i<stages ; ++i)
   {
-    k_vector_.push_back(model_->get_vector());
+    k_vector_.push_back(Thyra::createMember(f_space));
   }
-  ktemp_vector_ = model_->get_vector();
+  ktemp_vector_ = Thyra::createMember(f_space);
 
   // Runge-Kutta methods in Butcher tableau form:
   //  c | A    A = sxs matrix
@@ -193,45 +194,45 @@ template<class Scalar>
 Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  InArgs<Scalar> inargs;
-  OutArgs<Scalar> outargs;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs  = model_->createInArgs();
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs = model_->createOutArgs();
 
   // k_1:
-  inargs.set_x(solution_vector_);
+  inArgs.set_x(solution_vector_);
   double t1 = t_ + b_c[1-1]*dt;
-  inargs.set_t(t1);
-  outargs.request_F(k_vector_[1-1]);
-  model_->evalModel(inargs,outargs);
+  inArgs.set_t(t1);
+  outArgs.set_f(k_vector_[1-1]);
+  model_->evalModel(inArgs,outArgs);
   Thyra::Vt_S(&*k_vector_[1-1],dt); // k_1 = k_1*dt
   // k_2:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
   Thyra::Vp_StV(&*ktemp_vector_, b_A[2-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{2,1}*k_1
-  inargs.set_x(ktemp_vector_);
+  inArgs.set_x(ktemp_vector_);
   double t2 = t_ + b_c[2-1]*dt;
-  inargs.set_t(t2);
-  outargs.request_F(k_vector_[2-1]);
-  model_->evalModel(inargs,outargs);
+  inArgs.set_t(t2);
+  outArgs.set_f(k_vector_[2-1]);
+  model_->evalModel(inArgs,outArgs);
   Thyra::Vt_S(&*k_vector_[2-1],dt); // k_2 = k_2*dt
   // k_3:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
   Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{3,1}*k_1
   Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][2-1], *k_vector_[2-1]); // ktemp = ktemp + a_{3,2}*k_2
-  inargs.set_x(ktemp_vector_);
+  inArgs.set_x(ktemp_vector_);
   double t3 = t_ + b_c[3-1]*dt;
-  inargs.set_t(t3);
-  outargs.request_F(k_vector_[3-1]);
-  model_->evalModel(inargs,outargs);
+  inArgs.set_t(t3);
+  outArgs.set_f(k_vector_[3-1]);
+  model_->evalModel(inArgs,outArgs);
   Thyra::Vt_S(&*k_vector_[3-1],dt); // k_3 = k_3*dt
   // k_4:
   Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
   Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{4,1}*k_1
   Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][2-1], *k_vector_[2-1]); // ktemp = ktemp + a_{4,2}*k_2
   Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][3-1], *k_vector_[3-1]); // ktemp = ktemp + a_{4,3}*k_3
-  inargs.set_x(ktemp_vector_);
+  inArgs.set_x(ktemp_vector_);
   double t4 = t_ + b_c[4-1]*dt;
-  inargs.set_t(t4);
-  outargs.request_F(k_vector_[4-1]);
-  model_->evalModel(inargs,outargs);
+  inArgs.set_t(t4);
+  outArgs.set_f(k_vector_[4-1]);
+  model_->evalModel(inArgs,outArgs);
   Thyra::Vt_S(&*k_vector_[4-1],dt); // k_4 = k_4*dt
   // Sum for solution:
   Thyra::Vp_StV(&*solution_vector_, b_b[1-1], *k_vector_[1-1]); // solution_vector += b_1*k_1

@@ -62,7 +62,7 @@ public:
     Teuchos::RefCountPtr<const Epetra_Vector> get_x() const;
     void set_t( double t );
     double get_t() const;
-    bool supports(EInArgsMembers arg);
+    bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
@@ -85,7 +85,7 @@ public:
     OutArgs();
     void set_f( const Teuchos::RefCountPtr<Epetra_Vector> &f );
     Teuchos::RefCountPtr<Epetra_Vector> get_f() const;
-    bool supports(EOutArgsMembers arg);
+    bool supports(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
@@ -164,17 +164,23 @@ protected:
 
 // ModelEvaluator::InArgs
 
+inline
 ModelEvaluator::InArgs::InArgs() { std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false); }
 
+inline
 void ModelEvaluator::InArgs::set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x ) { x_ = x; }
 
+inline
 Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_x() const { return x_; }
 
+inline
 void ModelEvaluator::InArgs::set_t( double t ) { t_ = t; }
 
+inline
 double ModelEvaluator::InArgs::get_t() const { return t_; }
 
-bool ModelEvaluator::InArgs::supports(EInArgsMembers arg)
+inline
+bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
@@ -182,6 +188,7 @@ bool ModelEvaluator::InArgs::supports(EInArgsMembers arg)
   return supports_[arg];
 }
 
+inline
 void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
 {
 #ifdef _DEBUG
@@ -192,13 +199,17 @@ void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
 
 // ModelEvaluator::OutArgs
 
+inline
 ModelEvaluator::OutArgs::OutArgs() { std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
 
+inline
 void ModelEvaluator::OutArgs::set_f( const Teuchos::RefCountPtr<Epetra_Vector> &f ) { f_ = f; }
 
+inline
 Teuchos::RefCountPtr<Epetra_Vector> ModelEvaluator::OutArgs::get_f() const { return f_; }
 
-bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg)
+inline
+bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
@@ -206,6 +217,7 @@ bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg)
   return supports_[arg];
 }
 
+inline
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 {
 #ifdef _DEBUG
@@ -216,10 +228,12 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 
 // ModelEvaluator
 
+inline
 Teuchos::RefCountPtr<const Epetra_Vector>
 ModelEvaluator::get_x_init() const
 { return Teuchos::null; }
 
+inline
 double ModelEvaluator::get_t_init() const
 { return 0.0; }
 

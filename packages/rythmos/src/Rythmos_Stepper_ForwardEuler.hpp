@@ -33,7 +33,7 @@
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Rythmos_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 
 namespace Rythmos {
 
@@ -44,7 +44,7 @@ class ForwardEuler : public Stepper<Scalar>
     
     // Constructor
     ForwardEuler();
-    ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model);
+    ForwardEuler(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
     
     // Destructor
     ~ForwardEuler();
@@ -63,7 +63,7 @@ class ForwardEuler : public Stepper<Scalar>
 
   private:
 
-    Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
+    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
@@ -71,13 +71,13 @@ class ForwardEuler : public Stepper<Scalar>
 };
 
 template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
+ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
-  solution_vector_ = model_->get_vector();
-  residual_vector_ = model_->get_vector();
+  solution_vector_ = model_->get_x_init()->clone_v();
+  residual_vector_ = Thyra::createMember(model_->get_f_space());
 }
 
 template<class Scalar>
@@ -101,15 +101,15 @@ Scalar ForwardEuler<Scalar>::TakeStep()
 template<class Scalar>
 Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 {
-  InArgs<Scalar> inargs;
-  OutArgs<Scalar> outargs;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs  = model_->createInArgs();
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs = model_->createOutArgs();
 
-  inargs.set_x(solution_vector_);
-  inargs.set_t(t_+dt);
+  inArgs.set_x(solution_vector_);
+  inArgs.set_t(t_+dt);
 
-  outargs.request_F(residual_vector_);
+  outArgs.set_f(residual_vector_);
 
-  model_->evalModel(inargs,outargs);
+  model_->evalModel(inArgs,outArgs);
 
   // solution_vector = solution_vector + dt*residual_vector
   Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 

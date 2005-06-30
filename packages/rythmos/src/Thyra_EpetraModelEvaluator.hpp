@@ -39,7 +39,7 @@ namespace Thyra {
 class EpetraModelEvaluator : public ModelEvaluator<double> {
 public:
 
-  /** \name Constructors/initializers/accessors. */
+  /** \name Constructors/initializers/accessors/utilities. */
   //@{
 
   /** \brief . */
@@ -57,15 +57,21 @@ public:
   /** \brief . */
   void uninitialize( Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>* epetraModel = NULL );
 
+  /** \brief . */
+  Teuchos::RefCountPtr<const Epetra_Vector> thyraToEpetra( const Teuchos::RefCountPtr<const VectorBase<double> > &v ) const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<Epetra_Vector> thyraToEpetra( const Teuchos::RefCountPtr<VectorBase<double> > &v ) const;
+
   //@}
 
   /** \name Overridden from ModelEvaulator. */
   //@{
 
-  /** \breif . */
+  /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_x_space() const;
 
-  /** \breif . */
+  /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_f_space() const;
 
   /** \brief . */
@@ -88,8 +94,10 @@ public:
 private:
 
   Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>     epetraModel_;
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   space_x_;
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   space_f_;
+  Teuchos::RefCountPtr<const Epetra_Map>                    x_map_;
+  Teuchos::RefCountPtr<const Epetra_Map>                    f_map_;
+  Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   x_space_;
+  Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   f_space_;
   
 };
 

@@ -57,7 +57,7 @@ public:
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x() const;
     void set_t( ScalarMag t );
     ScalarMag get_t() const;
-    bool supports(EInArgsMembers arg);
+    bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
@@ -80,7 +80,7 @@ public:
     OutArgs();
     void set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f );
     Teuchos::RefCountPtr<VectorBase<Scalar> > get_f() const;
-    bool supports(EOutArgsMembers arg);
+    bool supports(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
@@ -199,7 +199,7 @@ ModelEvaluatorBase::InArgs<Scalar>::get_t() const
 { return t_; }
 
 template<class Scalar>
-bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg)
+bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
@@ -231,7 +231,7 @@ Teuchos::RefCountPtr<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f() const { return f_; }
 
 template<class Scalar>
-bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg)
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");

@@ -45,8 +45,8 @@ EpetraModelEvaluator::EpetraModelEvaluator( const Teuchos::RefCountPtr<const Epe
 void EpetraModelEvaluator::initialize( const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>& epetraModel )
 {
   epetraModel_ = epetraModel;
-  space_x_ = create_MPIVectorSpaceBase(epetraModel_->get_x_map());
-  space_f_ = create_MPIVectorSpaceBase(epetraModel_->get_f_map());
+  x_space_ = create_MPIVectorSpaceBase( x_map_ = epetraModel_->get_x_map() );
+  f_space_ = create_MPIVectorSpaceBase( f_map_ = epetraModel_->get_f_map() );
 }
 
 Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> EpetraModelEvaluator::getEpetraModel() const
@@ -65,19 +65,19 @@ void EpetraModelEvaluator::uninitialize( Teuchos::RefCountPtr<const EpetraExt::M
 Teuchos::RefCountPtr<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_x_space() const
 {
-  return space_x_;
+  return x_space_;
 }
 
 Teuchos::RefCountPtr<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_f_space() const
 {
-  return space_f_;
+  return f_space_;
 }
 
 Teuchos::RefCountPtr<const VectorBase<double> >
 EpetraModelEvaluator::get_x_init() const
 {
-  return create_MPIVectorBase( epetraModel_->get_x_init(), space_x_ );
+  return create_MPIVectorBase( epetraModel_->get_x_init(), x_space_ );
 }
 
 double EpetraModelEvaluator::get_t_init() const
@@ -100,16 +100,42 @@ EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() cons
 {
   OutArgsSetup<double> outArgs;
   typedef EpetraExt::ModelEvaluator EME;
-  EME::OutArgs
-    epetraOutArgs = epetraModel_->createOutArgs();
+  EME::OutArgs epetraOutArgs = epetraModel_->createOutArgs();
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
   return outArgs;
 }
 
 void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArgs<double>& outArgs ) const
 {
-  // ToDo: Fill in!
-  TEST_FOR_EXCEPT(true);
+
+  using Thyra::get_Epetra_Vector;
+  using Teuchos::RefCountPtr;
+
+  typedef EpetraExt::ModelEvaluator EME;
+
+  // InArgs
+
+  EME::InArgs epetraInArgs = epetraModel_->createInArgs();
+
+  RefCountPtr<const VectorBase<double> > x;
+  if( inArgs.supports(IN_ARG_x) && (x = inArgs.get_x()).get() )
+    epetraInArgs.set_x(get_Epetra_Vector(*x_map_,x));
+
+  if( inArgs.supports(IN_ARG_t) )
+    epetraInArgs.set_t(inArgs.get_t());
+
+  // OutArgs
+
+  EME::OutArgs epetraOutArgs = epetraModel_->createOutArgs();
+
+  RefCountPtr<VectorBase<double> > f;
+  if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
+    epetraOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
+
+  // Do the evaluation
+
+  epetraModel_->evalModel(epetraInArgs,epetraOutArgs);
+
 }
 
 } // namespace Thyra

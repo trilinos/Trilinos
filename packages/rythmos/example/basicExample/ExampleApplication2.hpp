@@ -46,6 +46,9 @@ public:
   // Constructor
   ExampleApplication2(Teuchos::ParameterList &params);
 
+  // return ODE decay coefficient
+  Teuchos::RefCountPtr<const Epetra_Vector> get_coeff() const;
+
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 
