@@ -305,7 +305,7 @@ LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
        RHS = Teuchos::rcp(x->clone(NOX::ShapeCopy));
 
        // Compute Z_y = R^-T * G
-       Y = *G;
+       Y.assign(*G);
        dblas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, 
 		  Teuchos::NON_UNIT_DIAG,
 		  G->numRows(), G->numCols(), 1.0, R.values(), 
