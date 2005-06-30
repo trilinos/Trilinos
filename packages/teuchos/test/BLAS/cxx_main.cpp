@@ -1538,10 +1538,12 @@ int main(int argc, char *argv[])
       cout << GoodTestCount << " of " << (TotalTestCount - 1) << " total tests were successful." << endl;
     }
 
-  if ((TotalTestCount-1) == GoodTestCount)
+  if ((TotalTestCount-1) == GoodTestCount) {
     cout << "End Result: TEST PASSED" << endl;
+    return 0;
+  }
 
-  return GoodTestCount;
+  return (TotalTestCount-GoodTestCount-1);
 }
 
 template<typename TYPE>
