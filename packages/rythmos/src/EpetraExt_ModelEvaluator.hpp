@@ -70,6 +70,7 @@ public:
     Teuchos::RefCountPtr<const Epetra_Vector>  x_;
     double                                     t_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
+    void assert_supports(EInArgsMembers arg) const;
   };
 
   /** \brief.  */
@@ -92,6 +93,7 @@ public:
   private:
     Teuchos::RefCountPtr<Epetra_Vector>  f_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
+    void assert_supports(EOutArgsMembers arg) const;
   };
 
   //@}
@@ -165,19 +167,24 @@ protected:
 // ModelEvaluator::InArgs
 
 inline
-ModelEvaluator::InArgs::InArgs() { std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false); }
+ModelEvaluator::InArgs::InArgs()
+{ std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false); }
 
 inline
-void ModelEvaluator::InArgs::set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x ) { x_ = x; }
+void ModelEvaluator::InArgs::set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x )
+{ assert_supports(IN_ARG_x); x_ = x; }
 
 inline
-Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_x() const { return x_; }
+Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_x() const
+{ assert_supports(IN_ARG_x); return x_; }
 
 inline
-void ModelEvaluator::InArgs::set_t( double t ) { t_ = t; }
+void ModelEvaluator::InArgs::set_t( double t )
+{ assert_supports(IN_ARG_t); t_ = t; }
 
 inline
-double ModelEvaluator::InArgs::get_t() const { return t_; }
+double ModelEvaluator::InArgs::get_t() const
+{ assert_supports(IN_ARG_t); return t_; }
 
 inline
 bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
@@ -195,6 +202,16 @@ void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
 #endif
   supports_[arg] = supports;
+}
+
+inline
+void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
+{
+  TEST_FOR_EXCEPTION(
+    !supports_[arg], std::logic_error
+    ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(arg), Error, "
+    "The argument arg = " << arg << " is not supported!"
+    );
 }
 
 // ModelEvaluator::OutArgs
@@ -224,6 +241,16 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
 #endif
   supports_[arg] = supports;
+}
+
+inline
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
+{
+  TEST_FOR_EXCEPTION(
+    !supports_[arg], std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(arg), Error, "
+    "The argument arg = " << arg << " is not supported!"
+    );
 }
 
 // ModelEvaluator

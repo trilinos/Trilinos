@@ -66,6 +66,7 @@ class ExplicitRK : public Stepper<Scalar>
     std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
+    int stages_; // Number of stages of RK
     std::vector<std::vector<Scalar> > b_A; // Butcher tableau A matrix
     std::vector<Scalar> b_b; // Butcher b vector
     std::vector<Scalar> b_c; // Butcher c vector
@@ -81,45 +82,21 @@ ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Thyra::ModelEval
   model_ = model;
   t_ = ST::zero();
   solution_vector_ = model_->get_x_init()->clone_v();
-  int stages = 4; // 4 stage ERK
-  k_vector_.reserve(stages);
+  stages_ = 4; // 4 stage ERK
+  k_vector_.reserve(stages_);
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
     f_space = model_->get_f_space();
-  for (int i=0 ; i<stages ; ++i)
+  for (int i=0 ; i<stages_ ; ++i)
   {
     k_vector_.push_back(Thyra::createMember(f_space));
   }
   ktemp_vector_ = Thyra::createMember(f_space);
 
-  // Runge-Kutta methods in Butcher tableau form:
-  //  c | A    A = sxs matrix
-  //   -|---   b = s vector
-  //      b'   c = s vector
-  
-  // 3/8 Rule Runge-Kutta Method: (not implemented yet)
-  // c = [  0  1/3 2/3  1  ]'
-  // A = [  0              ]
-  //     [ 1/3  0          ]
-  //     [-1/3  1   0      ]
-  //     [  1  -1   1   0  ]
-  // b = [ 1/8 3/8 3/8 1/8 ]'
-
-  
-  // "The" Runge-Kutta Method: (implemented below)
-  // c = [  0  1/2 1/2  1  ]'
-  // A = [  0              ] 
-  //     [ 1/2  0          ]
-  //     [  0  1/2  0      ]
-  //     [  0   0   1   0  ]
-  // b = [ 1/6 1/3 1/3 1/6 ]'
+  // initialize the Butcher tableau and its vectors
   Scalar zero = ST::zero();
-  Scalar one = ST::one();
-  Scalar onehalf = ST::one()/(2*ST::one());
-  Scalar onesixth = ST::one()/(6*ST::one());
-  Scalar onethird = ST::one()/(3*ST::one());
-  b_A.reserve(stages);
-  b_b.reserve(stages);
-  b_c.reserve(stages);
+  b_A.reserve(stages_);
+  b_b.reserve(stages_);
+  b_c.reserve(stages_);
 
   // fill b with zeros
   b_b.push_back(zero); 
@@ -132,10 +109,76 @@ ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Thyra::ModelEval
   b_c.push_back(zero);
   b_c.push_back(zero);
   // fill A with zeros
-  for (int i=0 ; i<stages ; ++i)
+  for (int i=0 ; i<stages_ ; ++i)
   {
     b_A.push_back(b_b);
   }
+
+  // Runge-Kutta methods in Butcher tableau form:
+  //  c | A    A = sxs matrix
+  //   -|---   b = s vector
+  //      b'   c = s vector
+  
+/*
+  // 3/8 Rule Runge-Kutta Method: (not implemented yet)
+  // c = [  0  1/3 2/3  1  ]'
+  // A = [  0              ]
+  //     [ 1/3  0          ]
+  //     [-1/3  1   0      ]
+  //     [  1  -1   1   0  ]
+  // b = [ 1/8 3/8 3/8 1/8 ]'
+  Scalar one = ST::one();
+  Scalar one_third    = Scalar(ST::one()/(3*ST::one()));
+  Scalar two_third    = Scalar(2*ST::one()/(3*ST::one()));
+  Scalar one_eighth   = Scalar(ST::one()/(8*ST::one()));
+  Scalar three_eighth = Scalar(3*ST::one()/(8*ST::one()));
+
+  // fill b_A
+  b_A[0][0] = zero;
+  b_A[0][1] = zero;
+  b_A[0][2] = zero;
+  b_A[0][3] = zero;
+
+  b_A[1][0] = one_third;
+  b_A[1][1] = zero;
+  b_A[1][2] = zero;
+  b_A[1][3] = zero;
+
+  b_A[2][0] = Scalar(-one_third);
+  b_A[2][1] = one;
+  b_A[2][2] = zero;
+  b_A[2][3] = zero;
+
+  b_A[3][0] = one;
+  b_A[3][1] = Scalar(-one);
+  b_A[3][2] = one;
+  b_A[3][3] = zero;
+
+  // fill b_b
+  b_b[0] = one_eighth;
+  b_b[1] = three_eighth;
+  b_b[2] = three_eighth;
+  b_b[3] = one_eighth;
+  
+  // fill b_c
+  b_c[0] = zero;
+  b_c[1] = one_third;
+  b_c[2] = two_third;
+  b_c[3] = one;
+*/
+
+
+  // "The" Runge-Kutta Method: (implemented below)
+  // c = [  0  1/2 1/2  1  ]'
+  // A = [  0              ] 
+  //     [ 1/2  0          ]
+  //     [  0  1/2  0      ]
+  //     [  0   0   1   0  ]
+  // b = [ 1/6 1/3 1/3 1/6 ]'
+  Scalar one = ST::one();
+  Scalar onehalf = ST::one()/(2*ST::one());
+  Scalar onesixth = ST::one()/(6*ST::one());
+  Scalar onethird = ST::one()/(3*ST::one());
 
   // fill b_A
   b_A[0][0] = zero;
@@ -194,51 +237,28 @@ template<class Scalar>
 Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs  = model_->createInArgs();
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs = model_->createOutArgs();
+  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
 
-  // k_1:
-  inArgs.set_x(solution_vector_);
-  double t1 = t_ + b_c[1-1]*dt;
-  inArgs.set_t(t1);
-  outArgs.set_f(k_vector_[1-1]);
-  model_->evalModel(inArgs,outArgs);
-  Thyra::Vt_S(&*k_vector_[1-1],dt); // k_1 = k_1*dt
-  // k_2:
-  Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[2-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{2,1}*k_1
-  inArgs.set_x(ktemp_vector_);
-  double t2 = t_ + b_c[2-1]*dt;
-  inArgs.set_t(t2);
-  outArgs.set_f(k_vector_[2-1]);
-  model_->evalModel(inArgs,outArgs);
-  Thyra::Vt_S(&*k_vector_[2-1],dt); // k_2 = k_2*dt
-  // k_3:
-  Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{3,1}*k_1
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[3-1][2-1], *k_vector_[2-1]); // ktemp = ktemp + a_{3,2}*k_2
-  inArgs.set_x(ktemp_vector_);
-  double t3 = t_ + b_c[3-1]*dt;
-  inArgs.set_t(t3);
-  outArgs.set_f(k_vector_[3-1]);
-  model_->evalModel(inArgs,outArgs);
-  Thyra::Vt_S(&*k_vector_[3-1],dt); // k_3 = k_3*dt
-  // k_4:
-  Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][1-1], *k_vector_[1-1]); // ktemp = ktemp + a_{4,1}*k_1
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][2-1], *k_vector_[2-1]); // ktemp = ktemp + a_{4,2}*k_2
-  Thyra::Vp_StV(&*ktemp_vector_, b_A[4-1][3-1], *k_vector_[3-1]); // ktemp = ktemp + a_{4,3}*k_3
-  inArgs.set_x(ktemp_vector_);
-  double t4 = t_ + b_c[4-1]*dt;
-  inArgs.set_t(t4);
-  outArgs.set_f(k_vector_[4-1]);
-  model_->evalModel(inArgs,outArgs);
-  Thyra::Vt_S(&*k_vector_[4-1],dt); // k_4 = k_4*dt
+  // Compute stage solutions
+  for (int s=0 ; s < stages_ ; ++s)
+  {
+    Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
+    for (int j=0 ; j < s ; ++j) // assuming Butcher matix is strictly lower triangular
+    {
+      if (b_A[s][j] != ST::zero())
+        Thyra::Vp_StV(&*ktemp_vector_, b_A[s][j], *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
+    }
+    ScalarMag ts = t_ + b_c[s]*dt;
+    Thyra::eval_f<Scalar>(*model_,*ktemp_vector_,ts,&*k_vector_[s]);
+    Thyra::Vt_S(&*k_vector_[s],dt); // k_s = k_s*dt
+  
+  } 
   // Sum for solution:
-  Thyra::Vp_StV(&*solution_vector_, b_b[1-1], *k_vector_[1-1]); // solution_vector += b_1*k_1
-  Thyra::Vp_StV(&*solution_vector_, b_b[2-1], *k_vector_[2-1]); // solution_vector += b_2*k_2
-  Thyra::Vp_StV(&*solution_vector_, b_b[3-1], *k_vector_[3-1]); // solution_vector += b_3*k_3
-  Thyra::Vp_StV(&*solution_vector_, b_b[4-1], *k_vector_[4-1]); // solution_vector += b_4*k_4
+  for (int s=0 ; s < stages_ ; ++s)
+  {
+    if (b_b[s] != ST::zero())
+      Thyra::Vp_StV(&*solution_vector_, b_b[s], *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
+  }
 
   // update current time:
   t_ = t_ + dt;

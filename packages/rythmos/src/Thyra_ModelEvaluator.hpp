@@ -65,6 +65,7 @@ public:
     Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_;
     Scalar                                           t_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
+    void assert_supports(EInArgsMembers arg) const;
   };
 
   /** \brief.  */
@@ -87,6 +88,7 @@ public:
   private:
     Teuchos::RefCountPtr<VectorBase<Scalar> >  f_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
+    void assert_supports(EOutArgsMembers arg) const;
   };
 
   //@}
@@ -172,6 +174,33 @@ public:
 };
 
 // //////////////////////////////////
+// Helper functions
+
+template<class Scalar>
+inline 
+void eval_f(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const VectorBase<Scalar>                                       &x
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
+  ,VectorBase<Scalar>                                             *f
+  )
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+
+  inArgs.set_x(Teuchos::rcp(&x,false));
+  if(inArgs.supports(MEB::IN_ARG_t))
+    inArgs.set_t(t);
+
+  outArgs.set_f(Teuchos::rcp(f,false));
+
+  model.evalModel(inArgs,outArgs);
+
+}
+
+// //////////////////////////////////
 // Definitions
 
 // ModelEvaluatorBase::InArgs
@@ -182,21 +211,21 @@ ModelEvaluatorBase::InArgs<Scalar>::InArgs()
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x )
-{ x_ = x; }
+{ assert_supports(IN_ARG_x); x_ = x; }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_x() const
-{ return x_; }
+{ assert_supports(IN_ARG_x); return x_; }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_t( ScalarMag t )
-{ t_ = t; }
+{ assert_supports(IN_ARG_t); t_ = t; }
 
 template<class Scalar>
 typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag
 ModelEvaluatorBase::InArgs<Scalar>::get_t() const
-{ return t_; }
+{ assert_supports(IN_ARG_t); return t_; }
 
 template<class Scalar>
 bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
@@ -214,6 +243,16 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( EInArgsMembers arg, bool 
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
 #endif
   supports_[arg] = supports;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(EInArgsMembers arg) const
+{
+  TEST_FOR_EXCEPTION(
+    !supports_[arg], std::logic_error
+    ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg), Error, "
+    "The argument arg = " << arg << " is not supported!"
+    );
 }
 
 // ModelEvaluatorBase::OutArgs
@@ -246,6 +285,16 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsMembers arg, boo
   TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
 #endif
   supports_[arg] = supports;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsMembers arg) const
+{
+  TEST_FOR_EXCEPTION(
+    !supports_[arg], std::logic_error
+    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg), Error, "
+    "The argument arg = " << arg << " is not supported!"
+    );
 }
 
 // ModelEvaluator

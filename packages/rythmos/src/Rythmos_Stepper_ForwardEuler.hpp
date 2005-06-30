@@ -101,6 +101,7 @@ Scalar ForwardEuler<Scalar>::TakeStep()
 template<class Scalar>
 Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 {
+/*
   Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs  = model_->createInArgs();
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs = model_->createOutArgs();
 
@@ -110,6 +111,8 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
   outArgs.set_f(residual_vector_);
 
   model_->evalModel(inArgs,outArgs);
+*/
+  Thyra::eval_f<Scalar>(*model_,*solution_vector_,t_+dt,&*residual_vector_);
 
   // solution_vector = solution_vector + dt*residual_vector
   Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
