@@ -651,8 +651,9 @@ cleanUp();
                 } 
             
                 # Is this host excluded?
+                my $host = "";  # we need this a little further on to coerce atlantis to work
                 if (!$skipThisGroup) {
-                    my $host = getOptionalOutput("uname -n");
+                    $host = getOptionalOutput("uname -n");
                     foreach my $x_host (@{ $definitionAoHoA[$i]{'X-HOST'} }) {
                         if ($x_host =~ m/$host/) { $skipThisGroup = 1; }
                     }
@@ -874,15 +875,23 @@ cleanUp();
                                                             $numProc = $rangeMax;
                                                         } elsif ($rangeMax > $maxProc) {
                                                             $numProc = $maxProc;
+                                                        }
+                                                        if ($host =~ m/atlantis/) {
+                                                            $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/$test ".$arg;
+                                                        } else {
+    `                                                        $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
                                                         }                                                        
-                                                        $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
                                                         push(@testListAoH, { %testEntry });
                                                     }
                                                 } else {
                                                     if ($range eq "*") { $range = $maxProc; }
                                                     $numProc = $range;
                                                     if ($numProc <= $maxProc) { 
-                                                        $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                                        if ($host =~ m/atlantis/) {
+                                                            $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/$test ".$arg;
+                                                        } else {
+                                                            $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                                        }
                                                         push(@testListAoH, { %testEntry });
                                                     }
                                                 }                                        
@@ -892,7 +901,11 @@ cleanUp();
                                         } else { 
                                             
                                             my $numProc = $maxProc;
-                                            $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                            if ($host =~ m/atlantis/) {
+                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/$test ".$arg;
+                                            } else {
+                                                $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                            }
                                             push(@testListAoH, { %testEntry });
                                         
                                         }
