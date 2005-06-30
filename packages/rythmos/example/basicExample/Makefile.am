@@ -26,57 +26,40 @@
 # ************************************************************************
 #@HEADER
 
-#np# This file is an example of a typical Makefile.am to build an example exe. 
+EXEEXT = .exe
+
+#
+# Actual programs
+#
 
 EXAMPLE = basicExample
 
-EXEEXT = .exe
-
-#np# List the names of all exe's in this directory here
 noinst_PROGRAMS = $(EXAMPLE)
 
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
-basicExample_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/ExampleApplication.cpp $(srcdir)/ExampleApplicationRythmosInterface.cpp 
+basicExample_SOURCES = \
+	 $(srcdir)/cxx_main.cpp \
+	 $(srcdir)/ExampleApplication.cpp \
+	 $(srcdir)/ExampleApplication2.cpp \
+	 $(srcdir)/ExampleApplicationRythmosInterface.cpp 
 
-basicExample_INCLUDES= -I$(srcdir)
-
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
 basicExample_DEPENDENCIES = $(common_dependencies)
 
+basicExample_LDADD = $(common_ldadd)
 
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
-basicExample_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src 
+#
+# Common stuff
+#
 
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
-basicExample_LDADD = \
-	$(top_builddir)/src/librythmos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(common_ldadd) \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
-
-common_dependencies=$(top_builddir)/src/librythmos.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+common_dependencies = \
+  $(top_builddir)/src/librythmos.a
 
 include $(top_builddir)/Makefile.export.rythmos
 
 if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES)) 
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
 EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
 else
-EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) 
+EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
 EXPORT_LIBS = $(RYTHMOS_LIBS)
 endif
 
@@ -84,3 +67,5 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
+# This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
+LIBS =

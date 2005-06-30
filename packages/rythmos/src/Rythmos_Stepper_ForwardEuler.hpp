@@ -70,7 +70,6 @@ class ForwardEuler : public Stepper<Scalar>
 
 };
 
-
 template<class Scalar>
 ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
 {

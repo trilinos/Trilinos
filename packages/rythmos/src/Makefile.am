@@ -48,10 +48,13 @@ CORE_H = \
 	$(srcdir)/Rythmos_ModelEvaluator.hpp \
 	$(srcdir)/Rythmos_Stepper.hpp \
 	$(srcdir)/Rythmos_Stepper_ForwardEuler.hpp \
-	$(srcdir)/Rythmos_Stepper_ExplicitRK.hpp 
+	$(srcdir)/Rythmos_Stepper_ExplicitRK.hpp \
+	$(srcdir)/Thyra_EpetraModelEvaluator.hpp \
+	$(srcdir)/Thyra_ModelEvaluator.hpp
 
 CORE = \
-	$(srcdir)/Rythmos_Version.cpp
+	$(srcdir)/Rythmos_Version.cpp \
+	$(srcdir)/Thyra_EpetraModelEvaluator.cpp
 
 UTIL_H =
 
@@ -106,13 +109,17 @@ COMP_H =
 
 COMP = 
 
+#Specify locations of include files within Trilinos
 
-#np# List locations of include files within Trilinos but outside of this 
-#np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+include $(top_builddir)/Makefile.export.rythmos
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
+else
+EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
