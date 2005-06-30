@@ -419,6 +419,8 @@ AC_CONFIG_FILES([
 		examples/Makefile
 		examples/Simple/Makefile
 		examples/Brusselator/Makefile
+		examples/Reed/Makefile	
+		examples/VanderPol/Makefile	
 		])
 
 

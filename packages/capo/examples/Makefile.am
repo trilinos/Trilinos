@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Simple Brusselator
+SUBDIRS = Simple Brusselator Reed VanderPol

@@ -53,9 +53,9 @@ int Select(double *x, double *y);
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/13/05
 //------------------------------------------------------------------
-Npgs::Npgs(Teuchos::RefCountPtr<Parameter_List> ParamList, 
-	   Teuchos::RefCountPtr<Integrator> App_Int, 
-	   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x0, 
+Npgs::Npgs(const Teuchos::RefCountPtr<Parameter_List>& ParamList, 
+	   const Teuchos::RefCountPtr<Integrator>& App_Int, 
+	   const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x0, 
 	   double lambda0, double T0) 
 {
   xcurrent = createMember(x0->space());
@@ -107,14 +107,6 @@ void Npgs::Initialize()
       Thyra::assign(&*TempVector,*Ve->col(i));
       Thyra::randomize(0.1,1.1,&*TempVector);
       Thyra::assign(&*Ve->col(i),*TempVector);
-
-      /*
-      App_Integrator->Integrate(xcurrent,TempVector,20*(Tcurrent+rand()%10), 
-				lambdacurrent);
-      Thyra::Vt_S(&*TempVector,.01);
-      Thyra::Vp_S(&*TempVector,1.0);
-      Thyra::assign(&*Ve->col(i),*TempVector);
-      */
     }
 
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
@@ -152,6 +144,8 @@ void Npgs::Initialize()
   cout << "Initial subspace created. " << endl;
 
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Orthonormalize
 // Purpose       : Orthonormalize the Vectors of a MultiVectorBase.
@@ -184,6 +178,8 @@ void Npgs::Orthonormalize(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scal
 	cout <<"WARNING Npgs::Orthonormalize: norm=0; No scaling done" << endl;
     }
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Finish
 // Purpose       : Print the Basis Matrix
@@ -195,7 +191,8 @@ void Npgs::Orthonormalize(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scal
 void Npgs::Finish()
 {
   if ((*SolveParameters).get_printproc() >0)
-    cout <<"\n Writing columns of Ve:" << endl;
+    cout << "\n NPGS finished " << endl;
+    //cout <<"\n Writing columns of Ve:" << endl;
   //Print(Ve);
 }
 //-----------------------------------------------------------------
@@ -237,6 +234,8 @@ double& Npgs::Get_Tfinal()
 {
   return Tfinal;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Get_lambdafinal
 // Purpose       : Returns lambdafinal
@@ -249,6 +248,8 @@ double& Npgs::Get_lambdafinal()
 {
   return lambdafinal;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Get_xfinal
 // Purpose       : Returns xfinal
@@ -261,6 +262,8 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& Npgs::Get_xfinal()
 {
   return xfinal;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::MatVec
 // Purpose       : returns M*y, a matrix vector product obtained
@@ -270,7 +273,7 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& Npgs::Get_xfinal()
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/13/05
 //------------------------------------------------------------------
-Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > Npgs::MatVec(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y)
+Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > Npgs::MatVec(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y)
 {
   double delta = 1.0e-5; /*Finite Difference constant */
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > upert;
@@ -292,6 +295,8 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > Npgs::MatVec(const Teuchos::Ref
 
   return phiupert;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::MatVecs
 // Purpose       : returns M*Y, a matrix vector product obtained
@@ -301,7 +306,7 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > Npgs::MatVec(const Teuchos::Ref
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/13/05
 //------------------------------------------------------------------
-Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Npgs::MatVecs(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Y)
+Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Npgs::MatVecs(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Y)
 {
   int dimension = Y->domain()->dim();
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > result;
@@ -312,6 +317,8 @@ Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Npgs::MatVecs(const Teucho
     }
   return result;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::IterationFailure
 // Purpose       : If the inner iteration function fails to find a
@@ -327,6 +334,8 @@ void Npgs::IterationFailure()
   cout << "I should find a better way of doing this..." << endl;
   abort();
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::InnerIteration
 // Purpose       : The Npgs algorithm  
@@ -351,6 +360,7 @@ bool Npgs::InnerIteration()
   App_Integrator->Integrate(xcurrent,finit,eps,lambdacurrent);
   Thyra::Vp_StV(&*finit,-1.0,*xcurrent);
   Thyra::Vt_S(&*finit,1.0/eps);
+
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > v;
   v = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > r;
@@ -364,11 +374,10 @@ bool Npgs::InnerIteration()
 
   // xfinal, Tfinal, and lambdafinal change... but start off at
   // same values as currents...
-
-
   Thyra::assign(&*xfinal,*xcurrent); 
   Tfinal = Tcurrent;
   lambdafinal = lambdacurrent;
+
   converged = Converged(xcurrent,v);
   iter = 0;
   while ((iter<SolveParameters->get_MaxInnerIts()) && (!converged))
@@ -402,7 +411,6 @@ bool Npgs::InnerIteration()
 	  Vp = createMembers(xcurrent->space(),Unstable_Basis_Size);
 
 	  ComputeVp(Se,Vp);
-	  //Print(Vp);
 	  Calculatedq(Vp,dq,r);
 	  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dp;
 	  dp = createMember(Vp->domain());
@@ -449,6 +457,8 @@ bool Npgs::InnerIteration()
   return true;
 
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::SchurDecomposition
 // Purpose       : One Multivector comes in, Schur Decomposition
@@ -539,8 +549,9 @@ void Npgs::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
   if (info != 0)
     cout << "There was an error returned from the Schur decompostion." << endl;
 
-
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Print
 // Purpose       : Print a MultiVector
@@ -549,7 +560,7 @@ void Npgs::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/13/05
 //------------------------------------------------------------------
-void Npgs::Print(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Printme)
+void Npgs::Print(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Printme)
 {
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > TmpColumn;
   TmpColumn = createMember(xcurrent->space());
@@ -567,6 +578,8 @@ void Npgs::Print(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Printme)
     }
 
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Select
 // Purpose       : A necessary function for the Schur Decomposition
@@ -593,6 +606,8 @@ int Select(double *x, double *y)
   else
     return 0;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Converged
 // Purpose       : Checks to see if the norm(x-y)<tol
@@ -601,8 +616,8 @@ int Select(double *x, double *y)
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/15/05
 //------------------------------------------------------------------
-bool Npgs::Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
-	       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y)
+bool Npgs::Converged(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x,
+	       const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y)
 {
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > differencevector;
   differencevector = createMember(x->space());
@@ -611,12 +626,13 @@ bool Npgs::Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
   Thyra::assign(&*differencevector,*x);
   Thyra::Vp_StV(&*differencevector,-1.0,*y);
   double diffnorm = (sqrt( Thyra::dot(*differencevector,*differencevector) ) )/ (double) n;
-  cout << "The norm of the error is " << diffnorm << endl;
+  cout << "The norm of the residual is " << diffnorm << endl;
   if (diffnorm < SolveParameters->get_tol())
     return true;
   else
     return false;
 }
+
 //-----------------------------------------------------------------
 // Function      : Npgs::SubspaceIterations
 // Purpose       : See Lust et.al.
@@ -625,7 +641,7 @@ bool Npgs::Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/16/05
 //------------------------------------------------------------------
-void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re)
+void Npgs::SubspaceIterations(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re)
 {
   int Subspace_Size = SolveParameters->get_NumberXtraVecsSubspace()+Unstable_Basis_Size;
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
@@ -647,6 +663,7 @@ void Npgs::SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar
     }
   Orthonormalize(Ve_pe,Subspace_Size);
 }
+
 //-----------------------------------------------------------------
 // Function      : Npgs::Calculatedq
 // Purpose       : Perform the Picard iterations
@@ -682,6 +699,8 @@ void Npgs::Calculatedq(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
   Thyra::assign(&*dq,*TempVec2);
   Thyra::Vp_StV(&*dq,-1.0,*q);
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::ComputeVp
 // Purpose       : Extract Vp from Ve and multiply it by Se.
@@ -719,6 +738,8 @@ bool Npgs::ComputeVp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
   Thyra::apply(*Ve_p,Thyra::NOTRANS,*Yp,&*Vp); //Vp=Ve*Se[1..p,1..p]
   return true;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::UpdateVe
 // Purpose       : Update the Basis
@@ -839,6 +860,8 @@ bool Npgs::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
 
   return true;
 }
+
+
 //-----------------------------------------------------------------
 // Function      : Npgs::dphi_dt
 // Purpose       : Use finite differences to calculate f(phi).
@@ -870,7 +893,6 @@ bool Npgs::dphi_dt(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f)
 //------------------------------------------------------------------
 bool Npgs::Solve_Linear(double *Mat, double *rhs, bool resolve, int m)
 {
-  cerr << "Solving linear system" << endl;
   int info=0, nrhs=1, l=m;
   char *cc="N";
   int *ipiv;

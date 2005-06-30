@@ -9801,7 +9801,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 		#examples/VanderPol/Makefile
 		#examples/Original_Examples/Makefile
 		#])
-                                                  ac_config_files="$ac_config_files Makefile src/Makefile examples/Makefile examples/Simple/Makefile examples/Brusselator/Makefile"
+                                                                      ac_config_files="$ac_config_files Makefile src/Makefile examples/Makefile examples/Simple/Makefile examples/Brusselator/Makefile examples/Reed/Makefile examples/VanderPol/Makefile"
 
 
 
@@ -10401,6 +10401,8 @@ do
   "examples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
   "examples/Simple/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Simple/Makefile" ;;
   "examples/Brusselator/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Brusselator/Makefile" ;;
+  "examples/Reed/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Reed/Makefile" ;;
+  "examples/VanderPol/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/VanderPol/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/capo_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/capo_config.h:src/capo_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

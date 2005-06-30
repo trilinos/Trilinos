@@ -53,9 +53,9 @@ namespace CAPO {
   {
   public:
     //! Constructor
-    Npgs(Teuchos::RefCountPtr<Parameter_List> ParamList, \
-	 Teuchos::RefCountPtr<Integrator> App_Int, \
-	 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x0,\
+    Npgs(const Teuchos::RefCountPtr<Parameter_List>& ParamList, \
+	 const Teuchos::RefCountPtr<Integrator>& App_Int, \
+	 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x0,\
 	 double lambda0, double T0);
     
     Npgs() {}
@@ -89,15 +89,15 @@ namespace CAPO {
 
     void Orthonormalize(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Basis, int Number_of_Columns);
 
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > MatVec(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y);
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > MatVec(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y);
 
-    Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > MatVecs(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Y);
+    Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > MatVecs(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Y);
 
 
-    bool Converged(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x,
-		   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y);
+    bool Converged(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x,
+		   const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y);
 
-    void SubspaceIterations(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Re);
+    void SubspaceIterations(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
 
     void Calculatedq(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq, 
@@ -122,7 +122,7 @@ namespace CAPO {
     void SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, 
 		     const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
 
-    void Print(Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Printme);
+    void Print(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Printme);
     
   };
 }
