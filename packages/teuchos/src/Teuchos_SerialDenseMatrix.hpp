@@ -89,7 +89,7 @@ namespace Teuchos {
 	Creates a shaped matrix with \c numRows rows and \c numCols cols.  All values are initialized to 0.
 	Values of this matrix should be set using the [] or the () operators.
     */
-    SerialDenseMatrix( int numRows, int numCols);
+    SerialDenseMatrix(int numRows, int numCols);
 
     //! Shaped Constructor with Values
     /*!
@@ -103,7 +103,12 @@ namespace Teuchos {
     SerialDenseMatrix(DataAccess CV, ScalarType* values, int stride, int numRows, int numCols);
 
     //! Copy Constructor
-    SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source);
+    /*! \note A deep copy of the \c Source transposed can be obtained if \c trans=Teuchos::TRANS, \c else
+      a non-transposed copy of \c Source is made.  There is no storage of the transpose state of the matrix
+      within the SerialDenseMatrix class, so this information will not propogate to any operation performed
+      on a matrix that has been copy constructed in transpose.
+    */
+    SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans = Teuchos::NO_TRANS);
 
     //! Submatrix Copy Constructor
     /*! 
@@ -369,11 +374,40 @@ namespace Teuchos {
   }
   
   template<typename OrdinalType, typename ScalarType>
-  SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source) : CompObject(), numRows_(Source.numRows_), numCols_(Source.numCols_), stride_(Source.stride_), valuesCopied_(true), values_(Source.values_)
+  SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
   {
-    stride_ = numRows_;
-    values_ = new ScalarType[stride_*numCols_];
-    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, false);
+    if ( trans == Teuchos::NO_TRANS ) 
+      {
+	numRows_ = Source.numRows_;
+	numCols_ = Source.numCols_;
+	stride_ = numRows_;
+	values_ = new ScalarType[stride_*numCols_];
+	copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, false);
+      } 
+    else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex ) 
+      {	  
+	numRows_ = Source.numCols_;
+	numCols_ = Source.numRows_;
+	stride_ = numRows_;
+	values_ = new ScalarType[stride_*numCols_];
+	for (int i=0; i<numRows_; i++) {
+	  for (int j=0; j<numCols_; j++) {
+	    values_[i*stride_ + j] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.values_[j*Source.stride_ + i]);
+	  }
+	}
+      } 
+    else 
+      {
+	numRows_ = Source.numCols_;
+	numCols_ = Source.numRows_;
+	stride_ = numRows_;
+	values_ = new ScalarType[stride_*numCols_];
+	for (int i=0; i<numRows_; i++) {
+	  for (int j=0; j<numCols_; j++) {
+	    values_[i*stride_ + j] = Source.values_[j*Source.stride_ + i];
+	  }
+	}
+      }
   }
   
   template<typename OrdinalType, typename ScalarType>

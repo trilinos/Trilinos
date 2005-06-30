@@ -111,7 +111,15 @@ int main(int argc, char* argv[])
   } else {
 	if (verbose) cout << "successful."<<endl;
   }
-  
+
+  DMatrix Con3TestCopyTrans( Con2Test1ExpRes, Teuchos::TRANS );
+  if(verbose) cout <<"constructor 3 -- copy constructor (transposed) "; 
+  if ( Con3TestCopyTrans(0,1) != Con2Test1ExpRes(1,0) ) {
+	if (verbose) cout << "unsuccessful."<<endl;
+	numberFailedTests++;
+  } else {
+	if (verbose) cout << "successful."<<endl;
+  }  
 
   // constructor 4 (submatrix)
 
