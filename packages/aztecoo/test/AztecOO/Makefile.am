@@ -34,10 +34,20 @@ AztecOO_SOURCES = $(srcdir)/cxx_main.cpp
 
 AztecOO_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
 
-AztecOO_CXXFLAGS = -I$(top_srcdir)/src \
-	$(AZTECOO_INCLUDES) $(TEUCHOS_INCLUDES)
+include $(top_builddir)/Makefile.export.aztecoo
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AZTECOO_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AZTECOO_INCLUDES))
+else
+EXPORT_LIBS = $(AZTECOO_LIBS)
+EXPORT_INC_PATH = $(AZTECOO_INCLUDES)
+endif
+
+##AztecOO_CXXFLAGS = -I$(top_srcdir)/src 
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 #Unsure why this test need to link to the BLAS on an IBM.
-AztecOO_LDADD = $(AZTECOO_LIBS) \
-	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+AztecOO_LDADD = $(EXPORT_LIBS)
 

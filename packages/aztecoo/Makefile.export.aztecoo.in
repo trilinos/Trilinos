@@ -1,0 +1,14 @@
+## Required dependency on Epetra and triutils
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+include @abs_top_builddir@/../triutils/Makefile.export.triutils
+
+## Optional dependency on Teuchos
+@HAVE_AZTECOO_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+
+AZTECOO_INCLUDES = -I$(top_builddir)/src -I$(top_srcdir)/src \
+	           $(TRIUTILS_INCLUDES) $(EPETRA_INCLUDES) \
+                   $(TEUCHOS_INCLUDES) 
+
+AZTECOO_LIBS = @LDFLAGS@ -L$(top_builddir)/src/ -laztecoo \
+	       $(TRIUTILS_INCLUDES) $(EPETRA_LIBS) $(TEUCHOS_LIBS) \
+               @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@

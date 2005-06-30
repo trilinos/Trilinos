@@ -33,6 +33,6 @@
 
 	string AztecOO_Version() { 
 		return("AztecOO Version 3.4d - 03/01/2005"); 
-	};
+	}
 
 #endif /* AZTECOO_VERSION_H */

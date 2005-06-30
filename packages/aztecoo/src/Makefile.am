@@ -67,8 +67,18 @@ CORE = \
 ### Eventually make the following an option (default is to include)
 ### Making this optional is one step toward removing the current
 ### dependency on Epetra when only Aztec is needed
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src $(TEUCHOS_INCLUDES)
+##AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+##	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src $(TEUCHOS##_INCLUDES)
+include $(top_builddir)/Makefile.export.aztecoo
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AZTECOO_INCLUDES))
+else
+EXPORT_INCLUDES = $(AZTECOO_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
 
 WITH_CPP_H = \
 	$(srcdir)/AztecOO.h \
@@ -318,3 +328,18 @@ nodist_execinclude_HEADERS = AztecOO_config.h
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+if HAVE_AZTECOO_TEUCHOS
+HAVE_AZTECOO_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; make all-libs 
+else
+HAVE_AZTECOO_TEUCHOS_LIBS = 
+endif
+
+all-libs:
+	$(MAKE) libaztecoo.a
+	cd $(top_builddir)/../epetra ; make all-libs
+	cd $(top_builddir)/../triutils ; make all-libs
+	$(HAVE_AZTECOO_TEUCHOS_LIBS)

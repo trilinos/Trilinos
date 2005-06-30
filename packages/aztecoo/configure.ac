@@ -148,6 +148,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Checks for header files
 # ------------------------------------------------------------------------
 
@@ -233,22 +238,13 @@ else
   AC_MSG_RESULT(no)
 fi
 
+# ------------------------------------------------------------------------
+# Optional package dependency
+# ------------------------------------------------------------------------
 # The following section is required to decide if the AztecOO ParameterList
 # interface should be built.
-AC_ARG_ENABLE(teuchos,
- [AC_HELP_STRING([--enable-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
- ac_cv_use_teuchos=$enableval, ac_cv_use_teuchos=no)
 
-AC_MSG_CHECKING(whether to use aztecoo-teuchos)
-
-if test "X$ac_cv_use_teuchos" != "Xno"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE([HAVE_AZTECOO_TEUCHOS],,[Define if you want to build AztecOO's ParameterList interface])
-else
- AC_MSG_RESULT(no)
-fi
-
-AM_CONDITIONAL(HAVE_AZTECOO_TEUCHOS, [test "X$ac_cv_use_teuchos" != "Xno"])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, teuchos, AZTECOO_TEUCHOS, HAVE_AZTECOO_TEUCHOS, yes, [Build Teuchos ParameterList support in AztecOO.], [Build Teuchos ParameterList support in AztecOO.  Can be overridden with --disable-aztecoo-teuchos.])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -371,6 +367,7 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile
 		Makefile.export
+		Makefile.export.aztecoo
                 src/Makefile
 		example/Makefile
                 example/UG_Ex1/Makefile
@@ -383,7 +380,6 @@ AC_CONFIG_FILES([
                 example/AztecOO/Makefile.include
 		test/Makefile
 		test/AztecOO/Makefile
-		test/AztecOO/Makefile.include
 		test/AztecOO_SetParameters/Makefile
 		test/AztecOO_SetParameters/Makefile.include
 		test/AztecOO_UserOpUserMat/Makefile
