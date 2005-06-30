@@ -91,6 +91,9 @@ else
 check:
 endif
 
+all-libs:
+	cd $(top_builddir)/src ; make all-libs
+
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
