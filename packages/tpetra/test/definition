@@ -15,23 +15,6 @@
     COMM = SERIAL, MPI;
 }
 
-# Comm will hang on some machines if run on more than 4 nodes. (See Bugzilla #1447)
-
-# Comm still hangs on pauchy when run on 4 nodes. Removing from MPI for now.
-# -mnp
-
-#(FRAMEWORK) {
-#    DIRS = Comm;
-#    ARGS = -v;
-#    COMM = SERIAL, MPI(1-4);
-#}
-
-(FRAMEWORK) {
-    DIRS = Comm;
-    ARGS = -v;
-    COMM = SERIAL;
-}
-
 # Removing CisMatrix from MPI for now because it hangs the testharness.
 # (See Bugzilla #1468)
 
