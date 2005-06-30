@@ -233,6 +233,12 @@ nodist_execinclude_HEADERS = Triutils_config.h
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+all-libs:
+	$(MAKE) libtriutils.a
+	cd $(top_builddir)/../epetra ; make all-libs
 
 
 
