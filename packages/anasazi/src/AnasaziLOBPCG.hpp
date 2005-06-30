@@ -301,6 +301,7 @@ namespace Anasazi {
     int bStart = 0, offSet = 0;
     bool reStart = false;
     bool criticalExit = false;
+    bool haveMass = (_MOp.get()!=0);
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::BLAS<int,ScalarType> blas;
@@ -323,7 +324,7 @@ namespace Anasazi {
     // Check to see if there is a mass matrix, so we know how much space is required.
     // [ If there isn't a mass matrix we can use a view of X.]
     //
-    if (_MOp.get())
+    if (haveMass)
       MX = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -338,7 +339,7 @@ namespace Anasazi {
     H = MVT::Clone( *iVec, _blockSize );
     KH = MVT::Clone( *iVec, _blockSize );
     //
-    if (_MOp.get())
+    if (haveMass)
       MH = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -353,7 +354,7 @@ namespace Anasazi {
     P = MVT::Clone( *iVec, _blockSize );
     KP = MVT::Clone( *iVec, _blockSize );
     //
-    if (_MOp.get())
+    if (haveMass)
       MP = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -412,7 +413,7 @@ namespace Anasazi {
 	  
 	  // Apply the mass matrix to X
 	  //timeMassOp -= MyWatch.WallTime();
-	  if (_MOp.get())
+	  if (haveMass)
 	    OPT::Apply( *_MOp, *X2, *MX2 );
 	  //timeMassOp += MyWatch.WallTime();
 	  //massOp += _nFound;
@@ -462,7 +463,7 @@ namespace Anasazi {
 
 	// Apply the mass matrix on H
 	// timeMassOp -= MyWatch.WallTime();
-	if (_MOp.get())
+	if (haveMass)
 	  OPT::Apply( *_MOp, *H, *MH);
 	//timeMassOp += MyWatch.WallTime();
 	//massOp += blockSize;
@@ -675,7 +676,7 @@ namespace Anasazi {
 	MVT::MvAddMv( one, *KX, zero, *KX, *R );
 	MVT::MvTimesMatAddMv( one, *R, S11, zero, *KX );
 	
-	if (_MOp.get()) {
+	if (haveMass) {
 	  MVT::MvAddMv( one, *MX, zero, *MX, *R );
 	  MVT::MvTimesMatAddMv( one, *R, S11, zero, *MX );
 	}
@@ -688,7 +689,7 @@ namespace Anasazi {
 	  MVT::MvTimesMatAddMv( one, *KH, S21, zero, *KP );
 	  MVT::MvAddMv( one, *KP, one, *KX, *KX );
 	  
-	  if (_MOp.get()) {
+	  if (haveMass) {
 	    MVT::MvTimesMatAddMv( one, *MH, S21, zero, *MP );
 	    MVT::MvAddMv( one, *MP, one, *MX, *MX );
 	  }
@@ -707,7 +708,7 @@ namespace Anasazi {
 	  MVT::MvTimesMatAddMv( one, *KH, S21, one, *KP );
 	  MVT::MvAddMv( one, *KP, one, *KX, *KX );
 	  
-	  if (_MOp.get()) {
+	  if (haveMass) {
 	    MVT::MvAddMv( one, *MP, zero, *MP, *R );
 	    MVT::MvTimesMatAddMv( one, *R, S31, zero, *MP );
 	    MVT::MvTimesMatAddMv( one, *MH, S21, one, *MP );
@@ -789,6 +790,7 @@ namespace Anasazi {
 	  }
 	} // for (j = 0; j < _blockSize; ++j)
       } // while (firstIndex < _nFound)      
+
       //
       // Copy the converged eigenvalues and residuals.
       //
@@ -799,56 +801,44 @@ namespace Anasazi {
 	blas.COPY( _nFound-leftOver, &_theta[0], 1, &(*_evals)[_knownEV], 1 ); 
 	blas.COPY( _nFound-leftOver, &_normR[0], 1, &_resids[_knownEV], 1 );
       }
+
       //
-      // Compute the current eigenvector estimates
+      // Compute and store the converged eigenvectors 
       //
-      MVT::MvTimesMatAddMv( one, *X, S11, zero, *R );
-      
-      if (localSize >= twoBlocks) {
-	Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );	  
-	MVT::MvTimesMatAddMv( one, *H, S21, one, *R );
-	
-	if (localSize == threeBlocks) {
-	  Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );
-	  MVT::MvTimesMatAddMv( one, *P, S31, one, *R );
-	}
-      }
-      
-      // Store the converged eigenvectors 
       if (_nFound) {
 
-	leftOver = 0;
-	if ( _knownEV + _nFound  > _nev)
-	  leftOver = _knownEV + _nFound - _nev;
-	
-	// Get a view of the converged eigenvectors
-	std::vector<int> index2( _nFound - leftOver );
-	for(j=0; j<_nFound-leftOver; j++)
-	  index2[j] = j;
-	Teuchos::RefCountPtr<MV> Rconv = MVT::CloneView( *R, index2 );
-	
 	// Get a view of the eigenvector storage where the new eigenvectors will be put.
+	std::vector<int> index2( _nFound - leftOver );
 	for(j=0; j<_nFound-leftOver; j++)
 	  index2[j] = _knownEV + j;
 	Teuchos::RefCountPtr<MV> EVconv = MVT::CloneView( *_evecs, index2 );
 	
-	// Put the converged eigenvectors in the storage
-	MVT::MvAddMv( one, *Rconv, zero, *Rconv, *EVconv );
-
+	Teuchos::SerialDenseMatrix<int,ScalarType> S11conv( Teuchos::View, S, _blockSize, _nFound-leftOver );
+	MVT::MvTimesMatAddMv( one, *X, S11conv, zero, *EVconv );
+	
+	if (localSize >= twoBlocks) {
+	  Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _nFound-leftOver, _blockSize );	  
+	  MVT::MvTimesMatAddMv( one, *H, S21, one, *EVconv );
+	  
+	  if (localSize == threeBlocks) {
+	    Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _nFound-leftOver, twoBlocks  );
+	    MVT::MvTimesMatAddMv( one, *P, S31, one, *EVconv );
+	  }
+	}
+      
 	// Sort the eigenpairs
 	//timePostProce -= MyWatch.WallTime();
 	if ((info==0) && (_knownEV > 0))
 	  _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get(), &_resids);     
 	//timePostProce += MyWatch.WallTime();
-
+	
 	// Increment number of known eigenpairs.
 	_knownEV += (_nFound-leftOver);
-
+	
+	// We don't need to define restarting vectors, so break out of this loop.
+	if ( _knownEV >= _nev )
+	  break;
       }
-
-      // We don't need to define restarting vectors, so break out of this loop.
-      if ( _knownEV >= _nev )
-	break;
 
       // Define the restarting vectors
       //timeRestart -= MyWatch.WallTime();
@@ -861,7 +851,7 @@ namespace Anasazi {
       MVT::MvAddMv( one, *KX, zero, *KX, *R );
       MVT::MvTimesMatAddMv( one, *R, S11new, zero, *KX );
       
-      if (_MOp.get()) {
+      if (haveMass) {
 	MVT::MvAddMv( one, *MX, zero, *MX, *R );
 	MVT::MvTimesMatAddMv( one, *R, S11new, zero, *MX );
       }
@@ -870,14 +860,14 @@ namespace Anasazi {
 	Teuchos::SerialDenseMatrix<int,ScalarType> S21new( Teuchos::View, S, _blockSize, leftOver, _blockSize, _nFound );	
 	MVT::MvTimesMatAddMv( one, *H, S21new, one, *X );
 	MVT::MvTimesMatAddMv( one, *KH, S21new, one, *KX );
-	if (_MOp.get()) 
+	if (haveMass) 
 	  MVT::MvTimesMatAddMv( one, *MH, S21new, one, *MX );
 	
 	if (localSize >= threeBlocks) {
 	  Teuchos::SerialDenseMatrix<int,ScalarType> S31new( Teuchos::View, S, _blockSize, leftOver, twoBlocks, _nFound );
 	  MVT::MvTimesMatAddMv( one, *P, S31new, one, *X );
 	  MVT::MvTimesMatAddMv( one, *KP, S31new, one, *KX );
-	  if (_MOp.get())
+	  if (haveMass)
 	    MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MX );
         }
       }
@@ -918,11 +908,12 @@ namespace Anasazi {
   {    
     cout.precision(2);
     cout.setf(ios::scientific, ios::floatfield);
+    bool haveMass = (_MOp.get()!=0);
     ScalarType tmp;
     
     _os << " Checking Orthogonality after Iteration : "<< _iter << endl;
     if (X) {
-      if (_MOp.get()) {
+      if (haveMass) {
 	if (MX) {
 	  tmp = _MSUtils.errorEquality(X, MX, _MOp.get());
 	  if (_om->doPrint())
@@ -948,7 +939,7 @@ namespace Anasazi {
     if (Q == 0)
       return;
     
-    if (_MOp.get()) {
+    if (haveMass) {
       tmp = _MSUtils.errorOrthonormality(Q, _MOp.get());
       if (_om->doPrint())
 	_os << " >> Error in Q^T M Q - I = " << tmp << endl;

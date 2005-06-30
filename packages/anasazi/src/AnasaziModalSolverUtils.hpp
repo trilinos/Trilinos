@@ -826,7 +826,6 @@ namespace Anasazi {
           return -20;
         }
         if (info > 0) {
-	  cout << "info = " << info << endl;
           if (info > rank)
             rank = info - rank;
           continue;
