@@ -62,6 +62,8 @@ namespace CAPO {
     double get_tol();
     int get_printproc();
     double get_lambda_stepsize();
+    bool Periodic();
+    bool Arc_Length();
 
     //! Member functions that will be used by Newton-Picard Gauss-Seidel
     int get_SubspaceIterations();
@@ -69,7 +71,6 @@ namespace CAPO {
     int get_NumberXtraVecsSubspace();
 
     //! Member functions that will be used by Recursive Projection Method
-    bool get_EnableArclength();
     double get_Mplus2tol();
     int get_ModifiedNewtFlag();
     int get_UpdateBasisFreq();
@@ -88,6 +89,9 @@ namespace CAPO {
     double tol;
     int printproc;
     double lambda_stepsize;
+    bool EnablePeriodicity;
+    bool EnableArclength;
+
 
     //! Parameters for Newton-Picard Gauss-Seidel
     int SubspaceIterations;
@@ -95,7 +99,6 @@ namespace CAPO {
     int NumberXtraVecsSubspace;
 
     //! Parameters for Recursive Projection Method
-    bool EnableArclength;
     double Mplus2tol;
     int ModifiedNewtFlag;
     int UpdateBasisFreq;

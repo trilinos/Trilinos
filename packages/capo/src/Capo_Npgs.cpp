@@ -778,56 +778,74 @@ bool Npgs::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
 {
   double eps = 10e-5;
 
+
+  // Dimension of the linear system depends on whether we are looking 
+  // for a periodic solution and/or performing psuedo-arclength
+  // continuation.
+  int LS_size = Unstable_Basis_Size;
+
+  if (SolveParameters->Periodic())
+    LS_size++;
+    
+  if (SolveParameters->Arc_Length())
+    LS_size++;
+
+
   // First need a p+1 by p+1 MultiVector...
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > TempMV;
-  TempMV = createMembers(xcurrent->space(),Unstable_Basis_Size+1);
+  TempMV = createMembers(xcurrent->space(),LS_size);
   double *LHS;
   double *RHS;
-  LHS = new double[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)];
-  RHS = new double[Unstable_Basis_Size+1];
+  LHS = new double[(LS_size)*(LS_size)];
+  RHS = new double[LS_size];
 
   /*Upper left corner of the lhs */
   for (int j=0;j<Unstable_Basis_Size;j++)
     for (int i=0;i<Unstable_Basis_Size;i++)
       {
-	LHS[i+j*(Unstable_Basis_Size+1)]=Thyra::get_ele(*Re->col(j+1),i+1);
+	LHS[i+j*(LS_size)]=Thyra::get_ele(*Re->col(j+1),i+1);
 	if (i==j)
-	  LHS[i+j*(Unstable_Basis_Size+1)]+=-1.0;
+	  LHS[i+j*(LS_size)]+=-1.0;
       }
-
-
-  //Rightmost column of LHS.
-
+  
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > fphi;
   fphi = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > rightcol;
   rightcol = createMember(TempMV->domain());
-  dphi_dt(fphi);
+  
+  //Rightmost column of LHS.
+  if (SolveParameters->Periodic())
+    {
+      // If periodic solution we add a column and a row...
+      dphi_dt(fphi);
 
-
-  Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
+      Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
  
+      for (int i=0;i<Unstable_Basis_Size;i++)
+	{
+	  LHS[i+(Unstable_Basis_Size)*(LS_size)]=Thyra::get_ele(*rightcol,i+1);
+	}
 
-  for (int i=0;i<Unstable_Basis_Size;i++)
-    {
-      LHS[i+(Unstable_Basis_Size)*(Unstable_Basis_Size+1)]=Thyra::get_ele(*rightcol,i+1);
+      //add a row.
+
+      Thyra::apply(*Vp,Thyra::TRANS,*finit,&*rightcol);
+      for (int i=0;i<Unstable_Basis_Size;i++)
+	{
+	  LHS[Unstable_Basis_Size+i*(LS_size)]=Thyra::get_ele(*rightcol,i+1);
+	}
+
+      // and the corner
+      
+      App_Integrator->Integrate(xfinal,fphi,eps,lambdacurrent);
+      Thyra::Vp_StV(&*fphi,-1.0,*xfinal);
+      Thyra::Vt_S(&*fphi,1.0/eps);
+      
+      LHS[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)-1]=Thyra::dot(*finit,*fphi);
+
     }
+  // When psuedo-arclength continuation is added in, I'll need another row and 
+  // column here, but for now I'll ignore these.
 
-  //Bottom left row.
-
-  Thyra::apply(*Vp,Thyra::TRANS,*finit,&*rightcol);
-  for (int i=0;i<Unstable_Basis_Size;i++)
-    {
-      LHS[Unstable_Basis_Size+i*(Unstable_Basis_Size+1)]=Thyra::get_ele(*rightcol,i+1);
-    }
-
-  // Bottom right corner
-
-  App_Integrator->Integrate(xfinal,fphi,eps,lambdacurrent);
-  Thyra::Vp_StV(&*fphi,-1.0,*xfinal);
-  Thyra::Vt_S(&*fphi,1.0/eps);
-
-  LHS[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)-1]=Thyra::dot(*finit,*fphi);
   //Have Built the Left hand side, now need the right hand side.
 
   fphi = MatVec(dq);
@@ -842,18 +860,23 @@ bool Npgs::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
       RHS[i]=-Thyra::get_ele(*rightcol,i+1);
     }
 
-  Thyra::assign(&*fphi,*xfinal);
-  Thyra::Vp_StV(&*fphi,-1.0,*xcurrent);
-  Thyra::Vp_StV(&*fphi,1.0,*dq);
+  if (SolveParameters->Periodic())
+    {
+      Thyra::assign(&*fphi,*xfinal);
+      Thyra::Vp_StV(&*fphi,-1.0,*xcurrent);
+      Thyra::Vp_StV(&*fphi,1.0,*dq);
+      
+      RHS[Unstable_Basis_Size]=-Thyra::dot(*finit,*fphi);
+    }
 
-  RHS[Unstable_Basis_Size]=-Thyra::dot(*finit,*fphi);
-
-  Solve_Linear(LHS,RHS, false ,Unstable_Basis_Size+1);
+  Solve_Linear(LHS,RHS, false ,LS_size);
   for (int j=0;j<Unstable_Basis_Size;j++)
     {
       Thyra::set_ele(j+1,RHS[j],&*dp);
     }
-  deltaT = RHS[Unstable_Basis_Size];
+
+  if (SolveParameters->Periodic())
+    deltaT = RHS[Unstable_Basis_Size];
 
   delete [] LHS;
   delete [] RHS;

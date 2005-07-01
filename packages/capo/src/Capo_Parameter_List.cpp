@@ -59,6 +59,8 @@ Parameter_List::Parameter_List()
   tol = 1.0e-5;
   printproc = 1;
   lambda_stepsize = .1;
+  EnablePeriodicity = false;
+  EnableArclength = false;
 
   // Parameters for Newton-Picard Gauss-Seidel
   SubspaceIterations = 10;
@@ -66,7 +68,6 @@ Parameter_List::Parameter_List()
   NumberXtraVecsSubspace = 4;
   
   // Parameters for Recursive Projection Method
-  EnableArclength = false;
   Mplus2tol = .1;
   ModifiedNewtFlag = 0;
   UpdateBasisFreq =2;
@@ -153,6 +154,11 @@ void Parameter_List::set_param(string& name, bool value)
       EnableArclength = value;
       found = true;
     }
+  if (name=="EnablePeriodicity")
+    {
+      EnablePeriodicity = value;
+      found = true;
+    }
   if (!found)
     cout << "Parameter " << name << " not found!" << endl;
 
@@ -221,8 +227,6 @@ double Parameter_List::get_FloquetTolerence()
 int Parameter_List::get_NumberXtraVecsSubspace()
 { return NumberXtraVecsSubspace;}
 
-bool Parameter_List::get_EnableArclength()
-{ return EnableArclength;}
 double Parameter_List::get_Mplus2tol()
 { return Mplus2tol;}
 int Parameter_List::get_ModifiedNewtFlag()
@@ -230,3 +234,25 @@ int Parameter_List::get_ModifiedNewtFlag()
 int Parameter_List::get_UpdateBasisFreq()
 { return UpdateBasisFreq;}
 
+//-----------------------------------------------------------------
+// Function      : Parameter_List::Periodic
+// Purpose       : Returns the value of EnablePeriodicty
+// Special Notes :
+// Scope         : public
+// Creator       : J. Simonis, SNL
+// Creation Date : 07/01/05
+//------------------------------------------------------------------
+bool Parameter_List::Periodic()
+{ return EnablePeriodicity;}
+
+
+//-----------------------------------------------------------------
+// Function      : Parameter_List::Arc_Length
+// Purpose       : Returns the value of EnableArclength
+// Special Notes :
+// Scope         : public
+// Creator       : J. Simonis, SNL
+// Creation Date : 07/01/05
+//------------------------------------------------------------------
+bool Parameter_List::Arc_Length()
+{ return EnableArclength;}

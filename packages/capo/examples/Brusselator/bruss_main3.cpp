@@ -187,6 +187,8 @@ Thyra::set_ele(62, 2.6980000000000000, &*x);
   PL->set_param(temp_string,.015);
   temp_string ="MaxOuterIts";
   PL->set_param(temp_string,30);
+  temp_string ="EnablePeriodicity";
+  PL->set_param(temp_string, true);
 
   cout << "Successfully Created a Parameter List" << endl;
 

@@ -127,6 +127,8 @@ int main(int argc, char *argv[])
   PL->set_param(temp_string,-0.0001);
   temp_string ="MaxOuterIts";
   PL->set_param(temp_string,800);
+  temp_string ="EnablePeriodicity";
+  PL->set_param(temp_string, true);
 
   cout << "Successfully Created a Parameter List" << endl;
 
