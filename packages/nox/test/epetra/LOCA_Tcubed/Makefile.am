@@ -29,7 +29,7 @@
 # ************************************************************************
 #@HEADER
 
-noinst_PROGRAMS = tcubed_exe
+noinst_PROGRAMS = tcubed_exe tcubed_constraint_exe
 
 tcubed_exe_SOURCES = \
 	$(srcdir)/Tcubed.C 
@@ -60,6 +60,18 @@ tcubed_exe_LDADD = \
 	$(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/src/libnox.a \
 	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+
+tcubed_constraint_exe_SOURCES = \
+	$(srcdir)/Tcubed_constraint.C 
+
+tcubed_constraint_exe_DEPENDENCIES = \
+        $(tcubed_exe_DEPENDENCIES)
+
+tcubed_constraint_exe_CXXFLAGS = \
+	$(tcubed_exe_CXXFLAGS)
+
+tcubed_constraint_exe_LDADD = \
+	$(tcubed_exe_LDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
