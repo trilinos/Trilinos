@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_IMPORT_HPP
-#define TPETRA_IMPORT_HPP
+#ifndef TPETRA_EXPORT_HPP
+#define TPETRA_EXPORT_HPP
 
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
@@ -36,32 +36,31 @@
 
 namespace Tpetra {
 	
-	// forward declaration of ImportData, needed to prevent circular inclusions
+	// forward declaration of ExportData, needed to prevent circular inclusions
 	// actual #include statement at the end of this file
-	template<typename OrdinalType> class ImportData;
+	template<typename OrdinalType> class ExportData;
 	
-	//! Tpetra::Import: This class builds an import object for efficient importing of off-processor elements.
+	//! Tpetra::Export: This class builds an export object for efficient exporting of off-processor elements.
   
-	/*! Import is used to construct a communication plan that can be called repeatedly by computational
-        classes such the Tpetra CisMatrix and Vector classes to efficiently obtain off-processor
-        elements.
+	/*! Export is used to construct a communication plan that can be called repeatedly by computational
+        classes such the Tpetra CisMatrix and Vector classes to efficiently export elements.
     
 		This class currently has one constructor, taking two ElementSpace objects.
 		The first ElementSpace specifies the distribution we have now. The second 
-		ElementSpace specifies the distribution we want to have after importing.
+		ElementSpace specifies the distribution we want to have after exporting.
 	*/
   
 	template <typename OrdinalType>
-	class Import: public Object {
+	class Export: public Object {
     
 	public:
     
-		//! Constructs a Import object from the source and target ElementSpaces.
-		Import(ElementSpace<OrdinalType> const& source, ElementSpace<OrdinalType> const& target)
-			: Object("Tpetra::Import")
-			, ImportData_()
+		//! Constructs a Export object from the source and target ElementSpaces.
+		Export(ElementSpace<OrdinalType> const& source, ElementSpace<OrdinalType> const& target)
+			: Object("Tpetra::Export")
+			, ExportData_()
 		{
-			ImportData_ = Teuchos::rcp(new ImportData<OrdinalType>(source, target));
+			ExportData_ = Teuchos::rcp(new ExportData<OrdinalType>(source, target));
       
 			// call subfunctions
 			setupSamePermuteRemote();
@@ -70,13 +69,13 @@ namespace Tpetra {
 		}
     
 		//! copy constructor. 
-		Import(Import<OrdinalType> const& import)
-			: Object(import.label())
-			, ImportData_(import.ImportData_)
+		Export(Export<OrdinalType> const& export)
+			: Object(export.label())
+			, ExportData_(export.ExportData_)
 		{}
     
 		//! destructor.
-		~Import() {};
+		~Export() {};
     
 		//! Returns the number of elements that are identical between the source and target spaces, up to the first different ID.
 		OrdinalType getNumSameIDs() const {return(data().numSameIDs_);};
@@ -105,24 +104,24 @@ namespace Tpetra {
 		//! List of images to which elements will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i].
 		std::vector<OrdinalType> const& getExportImageIDs() const {return(data().exportImageIDs_);};
 
-		//! Returns the Source ElementSpace used to construct this importer.
+		//! Returns the Source ElementSpace used to construct this exporter.
 		ElementSpace<OrdinalType> const& getSourceSpace() const {return(data().source_);};
 
-		//! Returns the Target ElementSpace used to construct this importer.
+		//! Returns the Target ElementSpace used to construct this exporter.
 		ElementSpace<OrdinalType> const& getTargetSpace() const {return(data().target_);};
     
 		//Distributor<ScalarType, OrdinalType>const& getDistributor() const {return(data().distributor_);}; // ST is PT
   	
 		//! Assignment operator
-		Import<OrdinalType>& operator = (Import<OrdinalType> const& Source) {
-			ImportData_ = Source.ImportData_;
+		Export<OrdinalType>& operator = (Export<OrdinalType> const& Source) {
+			ExportData_ = Source.ExportData_;
 			return(*this);
 		}
     
 		//@{ \name I/O Methods
 		//! print method inherited from Object
 		virtual void print(ostream& os) const {
-			os << "Import Data Members:" << endl;
+			os << "Export Data Members:" << endl;
 			os << "permuteToLIDs_: " << toString(getPermuteToLIDs()) << endl;;
 			os << "permuteFromLIDs_: " << toString(getPermuteFromLIDs()) << endl;
 			os << "remoteLIDs_: " << toString(getRemoteLIDs()) << endl;
@@ -140,11 +139,11 @@ namespace Tpetra {
     
 	private:
  
-		Teuchos::RefCountPtr< ImportData<OrdinalType> > ImportData_;
+		Teuchos::RefCountPtr< ExportData<OrdinalType> > ExportData_;
     
 		// convenience functions for returning inner data class, both const and nonconst versions.
-		ImportData<OrdinalType>& data() {return(*ImportData_);}
-		ImportData<OrdinalType> const& data() const {return(*ImportData_);}
+		ExportData<OrdinalType>& data() {return(*ExportData_);}
+		ExportData<OrdinalType> const& data() const {return(*ExportData_);}
 
 		// subfunctions used by constructor
 		//==============================================================================
@@ -243,6 +242,6 @@ namespace Tpetra {
   
 } // namespace Tpetra
 
-#include "Tpetra_ImportData.hpp"
+#include "Tpetra_ExportData.hpp"
 
-#endif // TPETRA_IMPORT_HPP
+#endif // TPETRA_EXPORT_HPP
