@@ -52,7 +52,10 @@ Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
   Label_ = "2D Poisson Operator";
   int numProc = comm.NumProc(); // Get number of processors
   int myPID = comm.MyPID(); // My rank
-  if (2*numProc > ny) abort(); // ny must be >= 2*numProc (to avoid degenerate cases)
+  if (2*numProc > ny) { // ny must be >= 2*numProc (to avoid degenerate cases)
+    ny = 2*numProc; ny_ = ny;
+    cout << " Increasing ny to " << ny << " to avoid degenerate distribution on " << numProc << " processors." << endl;
+  }
   
   int chunkSize = ny/numProc;
   int remainder = ny%numProc;
