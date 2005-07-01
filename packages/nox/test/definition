@@ -22,7 +22,7 @@
     DIRS = epetra/LOCA_UnitTests,
            epetra/LOCA_Tcubed,
            epetra/LOCA_Pitchfork;
-    EXIT-STATUS = STRING-COMPARISON(All tests passed)
+    EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
@@ -32,7 +32,7 @@
     DIRS = lapack/LOCA_UnitTests,
            lapack/LOCA_ChanProblem,
            lapack/LOCA_python;
-    EXIT-STATUS = STRING-COMPARISON(All tests passed)
+    EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
     COMM = SERIAL;
 }
