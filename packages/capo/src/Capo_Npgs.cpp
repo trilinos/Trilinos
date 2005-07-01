@@ -454,7 +454,7 @@ bool Npgs::InnerIteration()
       iter++;
     }//end while
 
-  return true;
+  return converged;
 
 }
 

@@ -66,7 +66,7 @@ namespace CAPO {
     //! Member Functions
     virtual void Initialize();
     
-    virtual void InnerIteration();
+    virtual bool InnerIteration();
     
     virtual void InnerFunctions();
     
@@ -74,7 +74,7 @@ namespace CAPO {
     
     virtual void Finish();
     
-    virtual void Predictor();
+    virtual void Predictor(double& StepSize, double& PrevStepSize);
     
     virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& Get_xfinal();
     

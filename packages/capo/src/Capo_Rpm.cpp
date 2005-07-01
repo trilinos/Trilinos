@@ -43,6 +43,8 @@ Author:    Joseph Simonis
 
 using namespace CAPO;
 
+int Select(double *x, double *y);
+
 //-----------------------------------------------------------------
 // Function      : Rpm::Rpm
 // Purpose       : constructor
@@ -375,6 +377,13 @@ bool Rpm::InnerIteration()
   Thyra::assign(&*xfinal,*xcurrent); 
   Tfinal = Tcurrent;
   lambdafinal = lambdacurrent;
+  for (int i=0;i<10;i++)
+    cout << Thyra::get_ele(*xcurrent,i+1) << " ";
+  cout << endl;
+  for (int i=0;i<10;i++)
+    cout << Thyra::get_ele(*v,i+1) << " ";
+
+
 
   converged = Converged(xcurrent,v);
   iter = 0;
@@ -452,7 +461,7 @@ bool Rpm::InnerIteration()
       iter++;
     }//end while
 
-  return true;
+  return converged;
 
 }
 
@@ -792,7 +801,7 @@ bool Rpm::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> 
   TempMV = createMembers(xcurrent->space(),LS_size);
   double *LHS;
   double *RHS;
-  LHS = new double[(LS_size)*(LS_Size)];
+  LHS = new double[(LS_size)*(LS_size)];
   RHS = new double[LS_size];
 
   /*Upper left corner of the lhs */
@@ -804,15 +813,15 @@ bool Rpm::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> 
 	  LHS[i+j*(LS_size)]+=-1.0;
       }
 
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > fphi;
+  fphi = createMember(xcurrent->space());
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > rightcol;
+  rightcol = createMember(TempMV->domain());
 
   //Rightmost column of LHS.
   if (SolveParameters->Periodic())
     {
       // If periodic solution we add a column and a row...
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > fphi;
-      fphi = createMember(xcurrent->space());
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > rightcol;
-      rightcol = createMember(TempMV->domain());
       dphi_dt(fphi);
 
       Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
@@ -840,15 +849,13 @@ bool Rpm::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> 
 
     }
   // When psuedo-arclength continuation is added in, I'll need another row and 
-  // column here, but for now I'll ignore these.
+  // column here, but for now I'll ignore these for now.
 
   //Have Built the Left hand side, now need the right hand side.
 
-  fphi = MatVec(dq);
-  Thyra::Vp_StV(&*fphi,1.0,*r);
   // I use the rightcol vector for storage, just so I don't have to
   // create an extra temporary vector...
-  Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
+  Thyra::apply(*Vp,Thyra::TRANS,*r,&*rightcol);
   // rightcol now contains the first p elements 
 
   for (int i=0;i<Unstable_Basis_Size;i++)
@@ -860,7 +867,6 @@ bool Rpm::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> 
     {
       Thyra::assign(&*fphi,*xfinal);
       Thyra::Vp_StV(&*fphi,-1.0,*xcurrent);
-      Thyra::Vp_StV(&*fphi,1.0,*dq);
       
       RHS[Unstable_Basis_Size]=-Thyra::dot(*finit,*fphi);
     }
@@ -873,6 +879,8 @@ bool Rpm::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> 
 
   if (SolveParameters->Periodic())
     deltaT = RHS[Unstable_Basis_Size];
+  else
+    deltaT = 0;
 
   delete [] LHS;
   delete [] RHS;
@@ -931,7 +939,3 @@ bool Rpm::Solve_Linear(double *Mat, double *rhs, bool resolve, int m)
 }
 
 
-
-
-
-}

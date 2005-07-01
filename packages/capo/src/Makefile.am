@@ -43,9 +43,9 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = Capo_Integrator.hpp Capo_Parameter_List.hpp Capo_Solver.hpp \
-	Capo_Npgs.hpp Capo_Stepper.hpp
+	Capo_Npgs.hpp Capo_Rpm.hpp Capo_Stepper.hpp
 
-CORE = Capo_Parameter_List.cpp Capo_Npgs.cpp Capo_Stepper.cpp
+CORE = Capo_Parameter_List.cpp Capo_Npgs.cpp Capo_Rpm.cpp Capo_Stepper.cpp
 
 UTIL_H = 
 UTIL = 

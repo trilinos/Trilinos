@@ -216,7 +216,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = Simple Brusselator Reed VanderPol
+SUBDIRS = Simple Brusselator Reed VanderPol Rpm_Test
 all: all-recursive
 
 .SUFFIXES:

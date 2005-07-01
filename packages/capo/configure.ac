@@ -420,7 +420,8 @@ AC_CONFIG_FILES([
 		examples/Simple/Makefile
 		examples/Brusselator/Makefile
 		examples/Reed/Makefile	
-		examples/VanderPol/Makefile	
+		examples/VanderPol/Makefile
+		examples/Rpm_Test/Makefile	
 		])
 
 
