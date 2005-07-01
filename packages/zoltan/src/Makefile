@@ -137,7 +137,7 @@ endif
 # KDD -- does not work with zscript yet.
 ifdef PARKWAY_LIBPATH
   GDEFINES     += -DZOLTAN_PARKWAY
-  THIRD_PARTY_LIBS += -lparkway -lmpich++ -lstdc++
+  THIRD_PARTY_LIBS += -lparkway -lpmpich++ -lstdc++
   THIRD_PARTY_LIBPATH += $(PARKWAY_LIBPATH)
   THIRD_PARTY_INCPATH += $(PARKWAY_INCPATH)
 endif
@@ -165,21 +165,21 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #   Paths to submodules
 #
 SUB_VPATH	= ../include ../Utilities/shared \
-		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
+		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../bsfc ../hsfc \
 		  ../phg  ../hg \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory ../Utilities/Timer
 SUBINCPATH	= -I../include -I../Utilities/shared \
-		  -I../zz -I../all -I../lb -I../par -I../rcb  -I../oct  \
+		  -I../zz -I../all -I../lb -I../par -I../rcb -I../coloring -I../oct  \
 		  -I../order -I../bsfc -I../hsfc -I../phg -I../hg \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
 		  -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
-SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct phg hg\
+SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb coloring oct phg hg\
                   bsfc hsfc parmetis params \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
@@ -207,6 +207,9 @@ RCB_CSRC	= rcb.c rcb_util.c rcb_box.c box_assign.c point_assign.c \
                   create_proc_list.c rib.c rib_util.c \
                   inertial1d.c inertial2d.c inertial3d.c shared.c
 RCB_INC		= rcb_const.h create_proc_list.h rib_const.h shared_const.h
+
+COLOR_CSRC      = coloring.c
+COLOR_INC       = coloring.h
 
 ifdef ZOLTAN_OCT
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
@@ -314,7 +317,7 @@ endif
 ##############################################################################
 
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
-ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
+ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(COLOR_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
@@ -356,7 +359,7 @@ endif
 #
 LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
-		  -Iorder -Ipar -Ircb -Iparams \
+		  -Iorder -Ipar -Ircb -Icoloring -Iparams \
 		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
 		  -Iphg -Ihg \
 		  -IUtilities/shared -IUtilities/Memory \
@@ -531,6 +534,10 @@ zscript:
 	@echo "echo 'Zoltan:  Compiling Zoltan/rcb'" >> zoltan_script
 	@for iii in $(RCB_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../rcb/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/coloring'" >> zoltan_script
+	@for iii in $(COLOR_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../coloring/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/oct'" >> zoltan_script
 	@for iii in $(OCT_CSRC) ; do \
