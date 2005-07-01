@@ -126,7 +126,8 @@ NormConstraint::setParams(
 NOX::Abstract::Group::ReturnType
 NormConstraint::computeConstraints()
 {
-  constraints(0,0) = 0.5 * n * (*x)[0].dot((*x)[0]) - p.getValue("Left BC");
+  constraints(0,0) = 0.5 * n * (*x)[0].dot((*x)[0]) - p.getValue("Constraint Param");
+
   isValidConstraints = true;
 
   return NOX::Abstract::Group::Ok;
@@ -148,7 +149,7 @@ NormConstraint::computeDP(const vector<int>& paramIDs,
   }
 
   for (unsigned int i=0; i<paramIDs.size(); i++) {
-    if (p.getLabel(paramIDs[i]) == "Left BC") {
+    if (p.getLabel(paramIDs[i]) == "Constraint Param") {
       dgdp(0,i+1) = -1.0;
     }
     else {
