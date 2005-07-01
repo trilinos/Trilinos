@@ -281,9 +281,7 @@ Pitchfork_FiniteElementProblem::setParameter(string label, double value)
     // do nothing for now
   }
   else {
-    cout << "ERROR: Pitchfork_FiniteElementProblem::setParameter() - label is invalid "
-	 << "for this problem!" << endl;
-    exit(-1);
+    // do nothing (may be a constraint parameter that we don't know about)
   }
   return true;
 }
