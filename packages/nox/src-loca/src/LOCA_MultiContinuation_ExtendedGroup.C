@@ -514,88 +514,79 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
 void
 LOCA::MultiContinuation::ExtendedGroup::setConstraints(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints)
 {
-  bool is_con_ug = false;
-  Teuchos::RefCountPtr<LOCA::Extended::MultiAbstractGroup> ext_ug;
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstrainedGroup> con_ug;
+//   bool is_con_ug = false;
+//   Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstrainedGroup> con_ug;
 
-  // Test if underlying group is extended
-  ext_ug = 
-    Teuchos::rcp_dynamic_cast<LOCA::Extended::MultiAbstractGroup>(grpPtr);
-  if (ext_ug.get() != NULL) {
+//   con_ug = 
+//     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstrainedGroup>(
+// 								       grpPtr);
+//   if (con_ug.get() != NULL)
+//     is_con_ug = true;
 
-    // Test if underlying group is a constrained group
-    con_ug = 
-      Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstrainedGroup>(
-						 ext_ug->getUnderlyingGroup());
-    if (con_ug.get() != NULL)
-      is_con_ug = true;
-  }
+//   if (is_con_ug) {
 
-  if (is_con_ug) {
+//     // Get constraints of underlying group
+//     Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> con_ug_constraints = con_ug->getConstraints();
 
-    // Get constraints of underlying group
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> con_ug_constraints = con_ug->getConstraints();
+//     Teuchos::RefCountPtr<LOCA::MultiContinuation::CompositeConstraint> composite_constraint;
 
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::CompositeConstraint> composite_constraint;
+//     // Check if constraints are all MVDX
+//     Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = 
+//       Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraints);
+//     Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> con_ug_constraints_mvdx = 
+//       Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstraintInterfaceMVDX>(con_ug_constraints);
 
-    // Check if constraints are all MVDX
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = 
-      Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraints);
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> con_ug_constraints_mvdx = 
-      Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstraintInterfaceMVDX>(con_ug_constraints);
+//     if (constraints_mvdx.get() != NULL && con_ug_constraints_mvdx.get() != NULL) {
 
-    if (constraints_mvdx.get() != NULL && con_ug_constraints_mvdx.get() != NULL) {
+//       // Form composite constraint array
+//       vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> > composite_constraint_ptrs(2);
+//       composite_constraint_ptrs[0] = con_ug_constraints_mvdx;
+//       composite_constraint_ptrs[1] = constraints_mvdx;
 
-      // Form composite constraint array
-      vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> > composite_constraint_ptrs(2);
-      composite_constraint_ptrs[0] = con_ug_constraints_mvdx;
-      composite_constraint_ptrs[1] = constraints_mvdx;
-
-      // Form composite constraint
-      composite_constraint =
-	Teuchos::rcp(new LOCA::MultiContinuation::CompositeConstraintMVDX(
-						   globalData,
-						   composite_constraint_ptrs));
+//       // Form composite constraint
+//       composite_constraint =
+// 	Teuchos::rcp(new LOCA::MultiContinuation::CompositeConstraintMVDX(
+// 						   globalData,
+// 						   composite_constraint_ptrs));
       
-    }
-    else {
+//     }
+//     else {
 
-      // Form composite constraint array
-      vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> > composite_constraint_ptrs(2);
-      composite_constraint_ptrs[0] = con_ug_constraints;
-      composite_constraint_ptrs[1] = constraints;
+//       // Form composite constraint array
+//       vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> > composite_constraint_ptrs(2);
+//       composite_constraint_ptrs[0] = con_ug_constraints;
+//       composite_constraint_ptrs[1] = constraints;
 
-      // Form composite constraint
-      composite_constraint =
-	Teuchos::rcp(new LOCA::MultiContinuation::CompositeConstraint(
-						   globalData,
-						   composite_constraint_ptrs));
-    }
+//       // Form composite constraint
+//       composite_constraint =
+// 	Teuchos::rcp(new LOCA::MultiContinuation::CompositeConstraint(
+// 						   globalData,
+// 						   composite_constraint_ptrs));
+//     }
 
-    // Form composite constraint paramIDs
-    const vector<int>& con_ug_paramIDs = con_ug->getConstraintParamIDs();
-    vector<int> composite_paramIDs(con_ug_paramIDs.size() + 
-				   conParamIDs.size());
-    copy(con_ug_paramIDs.begin(), con_ug_paramIDs.end(), 
-	 composite_paramIDs.begin());
-    copy(conParamIDs.begin(), conParamIDs.end(), 
-	 composite_paramIDs.begin()+con_ug_paramIDs.size());
+//     // Form composite constraint paramIDs
+//     const vector<int>& con_ug_paramIDs = con_ug->getConstraintParamIDs();
+//     vector<int> composite_paramIDs(con_ug_paramIDs.size() + 
+// 				   conParamIDs.size());
+//     copy(con_ug_paramIDs.begin(), con_ug_paramIDs.end(), 
+// 	 composite_paramIDs.begin());
+//     copy(conParamIDs.begin(), conParamIDs.end(), 
+// 	 composite_paramIDs.begin()+con_ug_paramIDs.size());
     
-    
-    // Form constrained group using composite constraint
-    conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
-						 continuationParams,
-						 con_ug->getUnderlyingGroup(), 
-						 composite_constraint,
-						 composite_paramIDs));
-  }
-  else {
+//     // Form constrained group using composite constraint
+//     conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
+// 						 continuationParams,
+// 						 con_ug->getUnderlyingGroup(), 
+// 						 composite_constraint,
+// 						 composite_paramIDs));
+//   }
+//   else {
 
     // Form constrained group using original group and continuation constraints
     conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
 						 continuationParams,
 						 grpPtr, constraints,
 						 conParamIDs));
-  }
+//   }
   grpPtr = conGroup->getGroup();
 }
