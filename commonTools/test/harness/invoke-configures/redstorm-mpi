@@ -47,6 +47,7 @@
 --enable-rythmos \
 --enable-thyra \
 --enable-tpetra \
+--enable-teuchos-complex \
 --enable-tsfextended \
 --disable-default-packages
 
