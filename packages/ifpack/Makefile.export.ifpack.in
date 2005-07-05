@@ -1,14 +1,18 @@
-## Always depends on epetra
+## Required dependency on epetra
 include @abs_top_builddir@/../epetra/Makefile.export.epetra
 
 ## Optional dependencies
-@HAVE_IFPACK_AMESOS_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.amesos
-@HAVE_IFPACK_AZTECOO_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.aztecoo
-@HAVE_IFPACK_TEUCHOS_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.teuchos
-@HAVE_IFPACK_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetraext
-@HAVE_IFPACK_TRIUTILS_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.triutils
+@HAVE_IFPACK_AMESOS_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
+@HAVE_IFPACK_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
+@HAVE_IFPACK_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
-IFPACK_INCLUDES= -I$(top_builddir)/src -I$(top_srcdir)/src \
+## Also has optional dependencies on triutils and epetraext, but only for 
+## the examples, not the library. They do not have to be included here,
+## but for now, to be consistent with the old Makefile.export system.
+@HAVE_IFPACK_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
+@HAVE_IFPACK_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+IFPACK_INCLUDES= -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 	         $(EPETRA_INCLUDES) \
 	         $(AZTECOO_INCLUDES) \
 	         $(TEUCHOS_INCLUDES) \
@@ -16,10 +20,10 @@ IFPACK_INCLUDES= -I$(top_builddir)/src -I$(top_srcdir)/src \
 	         $(EPETRAEXT_INCLUDES) \
 	         $(TRIUTILS_INCLUDES) 
 
-IFPACK_LIBS= $(top_builddir)/src/libifpack.a \
-	     $(AMESOS_LIB) \
-	     $(AZTECOO_LIB) \
-	     $(EPETRAEXT_LIB) \
-	     $(TRIUTILS_LIB) \
-	     $(EPETRA_LIB) \
-	     $(TEUCHOS_LIB)                            
+IFPACK_LIBS= @abs_top_builddir@/src/libifpack.a \
+	     $(AMESOS_LIBS) \
+	     $(AZTECOO_LIBS) \
+	     $(EPETRAEXT_LIBS) \
+	     $(TRIUTILS_LIBS) \
+	     $(EPETRA_LIBS) \
+	     $(TEUCHOS_LIBS)                            

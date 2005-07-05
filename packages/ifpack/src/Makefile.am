@@ -48,13 +48,6 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Ifpack_Version.h
 
-### add in paths as needed - trying to prevent 
-### unnecessary paths from being listed - see old.Makefile for ideas
-### Should I add a dependence on AztecOO??  Library doesn't necessarily have
-### to be built - just need some headers???
-
-AM_CPPFLAGS = $(IFPACK_INCLUDES)
-
 SERIAL_H = 
 
 SERIAL = 
@@ -229,6 +222,19 @@ libifpack_a_AR = $(AR) cru
 endif
 
 # ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.ifpack
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES))
+else
+EXPORT_INCLUDES = $(IFPACK_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+# ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
@@ -266,6 +272,47 @@ nodist_execinclude_HEADERS = Ifpack_config.h
 MAINTAINERCLEANFILES = Makefile.in 
 
 
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+if HAVE_IFPACK_AZTECOO
+HAVE_IFPACK_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; make all-libs
+else
+HAVE_IFPACK_AZTECOO_LIBS =
+endif
+
+if HAVE_IFPACK_TRIUTILS
+HAVE_IFPACK_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; make all-libs
+else
+HAVE_IFPACK_TRIUTILS_LIBS =
+endif
+
+if HAVE_IFPACK_TEUCHOS
+HAVE_IFPACK_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; make all-libs
+else
+HAVE_IFPACK_TEUCHOS_LIBS =
+endif
+
+if HAVE_IFPACK_AMESOS
+HAVE_IFPACK_AMESOS_LIBS = cd $(top_builddir)/../amesos ; make all-libs
+else
+HAVE_IFPACK_AMESOS_LIBS =
+endif
+
+if HAVE_IFPACK_EPETRAEXT
+HAVE_IFPACK_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; make all-libs
+else
+HAVE_IFPACK_EPETRAEXT_LIBS =
+endif
+
+all-libs:
+	$(MAKE) libifpack.a
+	cd $(top_builddir)/../epetra ; make all-libs
+	$(HAVE_IFPACK_AZTECOO_LIBS)
+	$(HAVE_IFPACK_TRIUTILS_LIBS)
+	$(HAVE_IFPACK_TEUCHOS_LIBS)
+	$(HAVE_IFPACK_AMESOS_LIBS)
+	$(HAVE_IFPACK_EPETRAEXT_LIBS)
 
 
 

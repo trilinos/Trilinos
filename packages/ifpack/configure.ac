@@ -148,6 +148,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Special check for case of running on TFLOP
 # ------------------------------------------------------------------------
 AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
@@ -226,20 +231,15 @@ AC_CXX_STD_SPRINTF
 # - EpetraExt is used in some examples
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system.], IFPACK_AZTECOO)
-AM_CONDITIONAL(HAVE_IFPACK_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, aztecoo, IFPACK_AZTECOO, HAVE_IFPACK_AZTECOO, yes, [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system.], [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system. Can be overridden with --disable-ifpack-aztecoo.])
 #
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system.], IFPACK_TRIUTILS)
-AM_CONDITIONAL(HAVE_IFPACK_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, triutils, IFPACK_TRIUTILS, HAVE_IFPACK_TRIUTILS, yes, [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system.], [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system. Can be overridden with --disable-ifpack-triutils.])
 #
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes.], IFPACK_TEUCHOS)
-AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, test "X$ac_cv_use_teuchos" = "Xyes")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, teuchos, IFPACK_TEUCHOS, HAVE_IFPACK_TEUCHOS, yes, [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes.], [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes. Can be overridden with --disable-ifpack-teuchos.])
 #
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be adopted as local solver for additive Schwarz preconditioners.  ], IFPACK_AMESOS)
-AM_CONDITIONAL(HAVE_IFPACK_AMESOS, test "X$ac_cv_use_amesos" = "Xyes")
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, [Enable EpetraExt support. EpetraExt, a Trilinos package, can be used to read matrices, maps and multivectors from file], IFPACK_EPETRAEXT)
-AM_CONDITIONAL(HAVE_IFPACK_EPETRAEXT, test "X$ac_cv_use_epetraext" = "Xyes")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, amesos, IFPACK_AMESOS, HAVE_IFPACK_AMESOS, yes, [Enable AMESOS support. Amesos, a Trilinos package, can be adopted as local solver for additive Schwarz preconditioners.], [Enable AMESOS support. Amesos, a Trilinos package, can be adopted as local solver for additive Schwarz preconditioners. Can be overridden with --disable-ifpack-amesos.])
+#
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, epetraext, IFPACK_EPETRAEXT, HAVE_IFPACK_EPETRAEXT, [Enable EpetraExt support. EpetraExt, a Trilinos package, can be used to read matrices, maps and multivectors from a file.], [Enable EpetraExt support. EpetraExt, a Trilinos package, can be used to read matrices, maps and multivectors from a file. Can be overridden with --disable-ifpack-epetraext.])
 
 # ------------------------------------------------------------------------
 # Checks for special package flags
@@ -408,8 +408,8 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
                 Makefile.export
+                Makefile.export.ifpack
 		src/Makefile
-		src/Makefile.include
 		example/Makefile
 		example/Makefile.include
                 doc/Makefile
@@ -433,7 +433,6 @@ AC_CONFIG_FILES([
 		test/CompareWithAztecOO/Makefile
 		test/CompareWithAztecOO/Makefile.include
 		test/ILU/Makefile
-		test/ILU/Makefile.include
 		test/IC/Makefile
 		test/IC/Makefile.include
                 test/scripts/Makefile

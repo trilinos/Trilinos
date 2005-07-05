@@ -47,13 +47,19 @@
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
-/* Define if want to build with amesos enabled */
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
+/* Define if want to build with ifpack enabled */
 #undef HAVE_IFPACK_AMESOS
 
-/* Define if want to build with aztecoo enabled */
+/* Define if want to build with ifpack enabled */
 #undef HAVE_IFPACK_AZTECOO
 
-/* Define if want to build with epetraext enabled */
+/* Define if want to build with ifpack enabled */
 #undef HAVE_IFPACK_EPETRAEXT
 
 /* Define if want to build ifpack-examples */
@@ -65,10 +71,10 @@
 /* Define if want to build ifpack-tests */
 #undef HAVE_IFPACK_TESTS
 
-/* Define if want to build with teuchos enabled */
+/* Define if want to build with ifpack enabled */
 #undef HAVE_IFPACK_TEUCHOS
 
-/* Define if want to build with triutils enabled */
+/* Define if want to build with ifpack enabled */
 #undef HAVE_IFPACK_TRIUTILS
 
 /* Define to 1 if you have the <inttypes.h> header file. */
