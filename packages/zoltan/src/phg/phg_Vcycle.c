@@ -205,7 +205,6 @@ int Zoltan_PHG_Partition (
   }
 
 
-  hgp->bal_tol = 1.0 + (hgp->bal_tol - 1.0)*0.75;
   /****** Coarsening ******/    
   while ((hg->dist_x[hgc->nProc_x] > hg->redl)
       && (hg->dist_x[hgc->nProc_x] < 0.9 * prevVcnt)
