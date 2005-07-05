@@ -44,10 +44,10 @@ ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char *str)
 
 
 /****************************************************************************/
-int Zoltan_PHG_Refinement (ZZ *zz, HGraph *hg, int p, Partition part,
+int Zoltan_PHG_Refinement (ZZ *zz, HGraph *hg, int p, float *part_sizes, Partition part,
                            PHGPartParams *hgp)
 {
-    return hgp->Refinement(zz, hg, p, part, hgp, hgp->bal_tol);
+    return hgp->Refinement(zz, hg, p, part_sizes, part, hgp, hgp->bal_tol);
 }
 
 
@@ -56,6 +56,7 @@ int Zoltan_PHG_Refinement (ZZ *zz, HGraph *hg, int p, Partition part,
 static int refine_no (ZZ *zz,     /* Zoltan data structure */
                       HGraph *hg,
                       int p,
+                      float *part_sizes,
                       Partition part,
                       PHGPartParams *hgp,
                       float bal_tol
@@ -282,6 +283,7 @@ static void fm2_move_vertex(int v, HGraph *hg, Partition part, float *gain,
 static int refine_fm2 (ZZ *zz,
                        HGraph *hg,
                        int p,
+                       float *part_sizes,
                        Partition part,
                        PHGPartParams *hgp,
                        float bal_tol
@@ -294,7 +296,7 @@ static int refine_fm2 (ZZ *zz,
     double total_weight, weights[2], lweights[2],
         max_weight[2], lmax_weight[2];
     double targetw0, ltargetw0, minvw=DBL_MAX;
-    double cutsize, best_cutsize, ratio = hg->ratio,
+    double cutsize, best_cutsize, 
         best_imbal, best_limbal, imbal, limbal;
     HEAP   heap[2];
     char   *yo="refine_fm2";
@@ -345,10 +347,10 @@ static int refine_fm2 (ZZ *zz,
 
     MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
     total_weight = weights[0] + weights[1];
-    targetw0 = total_weight * ratio; /* global target weight for part 0 */
+    targetw0 = total_weight * part_sizes[0]; /* global target weight for part 0 */
 
-    max_weight[0] = total_weight * bal_tol *      ratio;
-    max_weight[1] = total_weight * bal_tol * (1 - ratio);
+    max_weight[0] = total_weight * bal_tol * part_sizes[0];
+    max_weight[1] = total_weight * bal_tol * part_sizes[1]; /* should be (1 - part_sizes[0]) */
 
     if (weights[0]==0.0) 
         ltargetw0 = lmax_weight[0] = 0.0;

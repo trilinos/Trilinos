@@ -263,7 +263,7 @@ static int timer_cpart=-1, timer_gather=-1;
       }
 
       /* Refine new candidate. */
-      Zoltan_PHG_Refinement(zz, shg, numPart, new_part, hgp);
+      Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
 
       /* Decide if candidate is in the top tier or not. */
       /* Selection criteria should be the same as in pick_best()! */

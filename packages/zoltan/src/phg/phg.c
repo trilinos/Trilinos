@@ -187,9 +187,15 @@ int **exp_to_part )         /* list of partitions to which exported objs
           }
           for (i = 0; i < hg->nVtx; ++i)
               hg->vmap[i] = i;
-          
+
+
+#if 0
+          /* UVCUVC: We now have "Adaptive Balance Adjustment" during
+             recursive bisection, hence we don't need the following code */
+             
           /* tighten balance tolerance for recursive bisection process */
           hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
+#endif
           
           /* partition hypergraph */
           err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);

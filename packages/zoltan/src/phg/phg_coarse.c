@@ -133,87 +133,6 @@ static void uqsorti(int n, int *arr)
     }
 }
 
-#define SWAP3(key1, key2, ids, x, y) \
-{ temp1=key1[x]; key1[x]= key1[y]; key1[y]=temp1; \
-  temp2=key2[x]; key2[x]= key2[y]; key1[y]=temp2; \
-  tempid=ids[x]; ids[x]= ids[y]; ids[y]=tempid; }
-
-
-#define LESSEQ(key1, key2, i, a1, a2) ((key1[i] < a1) || (key1[i] == a1 && key2[i] <=a2))
-#define GREATER(key1, key2, x, y) ((key1[x] > key1[y]) || (key1[x] == key1[y] && key2[x] > key2[y]))
-#define LESS(key1, key2, i, a1, a2) ((key1[i] < a1) || (key1[i] == a1 && key2[i] <a2))
-#define GREATERV(key1, key2, i, a1, a2) ((key1[i] > a1) || (key1[i] == a1 && key2[i] >a2))
-
-/* UVC TODO BUGBUG: uqsort_ptr_uint_int is UNTESTED!!! */
-static void uqsort_ptr_uint_int(int n, unsigned int *key1, int *key2, int *ids)
-{
-    int         i, ir=n, j, k, l=1;
-    int         jstack=0, istack[NSTACK];
-    int         a1, temp1;
-    int         a2, id, temp2, tempid;
-    
-    --key1; --key2;
-    for (;;) {
-        if (ir-l < M) {
-            for (j=l+1;j<=ir;j++) {
-                a1=key1[j]; a2=key2[j]; id=ids[j];
-                for (i=j-1;i>=1;i--) {
-                    if (LESSEQ(key1, key2, i, a1, a2))
-                        break;
-                    key1[i+1] = key1[i];
-                    key2[i+1] = key2[i];
-                    ids[i+1] = ids[i];
-                }
-                key1[i+1]=a1;
-                key2[i+1]=a2;
-                ids[i]=id;
-            }
-            if (jstack == 0) 
-                break;
-            ir=istack[jstack--];
-            l=istack[jstack--];
-        } else {
-            k=(l+ir) >> 1;
-            SWAP3(key1, key2, ids, k, l+1);
-            if (GREATER(key1, key2, l+1, ir))
-                SWAP3(key1, key2, ids, l+1, ir);
-            if (GREATER(key1, key2, l, ir)) 
-                SWAP3(key1, key2, ids, l, ir);
-            if (GREATER(key1, key2, l+1, l))
-                SWAP3(key1, key2, ids, l+1, l);
-            i=l+1;
-            j=ir;
-            a1=key1[l]; a2=key2[l]; id=ids[l];
-            for (;;) {
-                do i++; while (LESS(key1, key2, i, a1, a2));
-                do j--; while (GREATERV(key1, key2, i, a1, a2));
-                if (j < i) break;
-                SWAP3(key1, key2, ids, i, j);
-            }
-            key1[l] = key1[j]; key2[l] = key2[j]; ids[l] = ids[j];
-            key1[j] = a1; key2[j] = a2; ids[j] = id;
-            jstack += 2;
-            if (jstack > NSTACK) 
-                errexit("uqsort: NSTACK too small in sort.");
-            if (ir-i+1 >= j-l) {
-                istack[jstack]=ir;
-                istack[jstack-1]=i;
-                ir=j-1;
-            } else {
-                istack[jstack]=j-1;
-                istack[jstack-1]=l;
-                l=i;
-            }
-        }
-    }
-}
-
-#undef SWAP3
-#undef LESSEQ
-#undef LESS
-#undef GREATER
-#undef GREATERV
-
 
 #undef M
 #undef NSTACK
@@ -322,7 +241,6 @@ int Zoltan_PHG_Coarsening
   c_hg->coor    = NULL;             /* currently we don't use coordinates */
   c_hg->nDim    = hg->nDim;    
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
-  c_hg->ratio   = hg->ratio;        /* for "global" recursive bisectioning */
   c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   
@@ -841,7 +759,6 @@ int Zoltan_PHG_Coarsening
   c_hg->coor    = NULL;             /* currently we don't use coordinates */
   c_hg->nDim    = hg->nDim;    
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
-  c_hg->ratio   = hg->ratio;        /* for "global" recursive bisectioning */
   c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   

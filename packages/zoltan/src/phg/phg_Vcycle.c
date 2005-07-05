@@ -203,7 +203,9 @@ int Zoltan_PHG_Partition (
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
     return ZOLTAN_MEMERR;
   }
-          
+
+
+  hgp->bal_tol = 1.0 + (hgp->bal_tol - 1.0)*0.75;
   /****** Coarsening ******/    
   while ((hg->dist_x[hgc->nProc_x] > hg->redl)
       && (hg->dist_x[hgc->nProc_x] < 0.9 * prevVcnt)
@@ -352,7 +354,7 @@ int Zoltan_PHG_Partition (
                          hg->comm->Communicator);
     }
 
-    err = Zoltan_PHG_Refinement (zz, hg, p, vcycle->Part, hgp);
+    err = Zoltan_PHG_Refinement (zz, hg, p, part_sizes, vcycle->Part, hgp);
         
     if (hgp->use_timers > 1)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hg->comm->Communicator);

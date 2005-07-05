@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the README file in the top-level Zoltan directory.     *
+ * For more info, see the RADME file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -22,7 +22,7 @@
 */
 
 
-static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*);
+static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*, double *, double *);
 
 
 static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
@@ -44,13 +44,14 @@ int Zoltan_PHG_rdivide(
 )
 {
   char *yo = "Zoltan_PHG_rdivide";
-  int i, j, mid, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
+  int i, j, mid, p=hi-lo+1, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
   Partition part=NULL;
   HGraph *left=NULL, *right=NULL;
   int    *proclist=NULL, *sendbuf=NULL, *recvbuf=NULL, nsend, msg_tag=7777;
   PHGComm *hgc = hg->comm;
-  float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
-                                     because we are doing bisection */
+  double leftw=0.0, rightw=0.0;
+  float  bisec_part_sizes[2]={0.0,0.0};   /* Target partition sizes; dimension is 2 
+                                        because we are doing bisection */
   static int timer_rdivide=-1;      /* Timer; declared static to accumulate
                                        times over multiple runs. 
                                        Tricky to get right because of the
@@ -77,17 +78,16 @@ int Zoltan_PHG_rdivide(
 
   /* bipartition current hypergraph with appropriate split ratio */
   mid = (lo+hi)/2;
-  tgpartsize[0] = tgpartsize[1] = 0.;
-  for (i = lo; i <= mid; i++)  tgpartsize[0] += hgp->part_sizes[i];
-  for (i = lo; i <= hi;  i++)  tgpartsize[1] += hgp->part_sizes[i];
-  hg->ratio = (double) tgpartsize[0] / (double) tgpartsize[1];
-  tgpartsize[0] = hg->ratio;
-  tgpartsize[1] = 1. - tgpartsize[0];
+  bisec_part_sizes[0] = bisec_part_sizes[1] = 0.;
+  for (i = lo; i <= mid; i++)  bisec_part_sizes[0] += hgp->part_sizes[i];
+  for (i = lo; i <= hi;  i++)  bisec_part_sizes[1] += hgp->part_sizes[i];
+  bisec_part_sizes[0] = (double) bisec_part_sizes[0] / (double) bisec_part_sizes[1];
+  bisec_part_sizes[1] = 1. - bisec_part_sizes[0];
 
   if (hgp->use_timers > 1)  /* Don't include partitioning time in rdivide */
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
 
-  ierr = Zoltan_PHG_Partition (zz, hg, 2, tgpartsize, part, hgp, level);
+  ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
   if (ierr != ZOLTAN_OK)
       goto End;
 
@@ -130,7 +130,7 @@ int Zoltan_PHG_rdivide(
       if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
       
-      ierr = split_hypergraph (pins, hg, left, part, 0, zz);
+      ierr = split_hypergraph (pins, hg, left, part, 0, zz, &leftw, &rightw);
       if (ierr != ZOLTAN_OK) 
           goto End;
   } else {
@@ -142,7 +142,7 @@ int Zoltan_PHG_rdivide(
   if (hi>mid+1) { /* only split if we need it */
       if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
-      ierr = split_hypergraph (pins, hg, right, part, 1, zz);
+      ierr = split_hypergraph (pins, hg, right, part, 1, zz, &rightw, &leftw);
   
       if (ierr != ZOLTAN_OK)
           goto End;
@@ -191,28 +191,40 @@ int Zoltan_PHG_rdivide(
           (hg->nVtx && !recvbuf))
           MEMORY_ERROR;
       if (hgc->myProc<=procmid) {
+          float save_bal_tol=hgp->bal_tol;
+              
           /* I'm on the left part so I should partition newleft */
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
-                                hg->comm->Communicator);
+                                hg->comm->Communicator);          
 
+          hgp->bal_tol = ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[0]) / leftw;
+/*          uprintf(hgc, "LEFT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
           ierr = rdivide_and_prepsend (lo, mid, part, zz, &newleft, hgp, 
                                        level+1, proclist, sendbuf, 
                                        leftdest, leftvmap, &nsend);
+          hgp->bal_tol = save_bal_tol;
 
           if (hgp->use_timers > 1)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
                                  hg->comm->Communicator);
 
           Zoltan_HG_HGraph_Free (&newright); /* free dist_x and dist_y allocated in Redistribute*/
-      } else { 
+      } else {
+          float save_bal_tol=hgp->bal_tol;
+          
           /* I'm on the right part so I should partition newright */
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
                                 hg->comm->Communicator);
+          
+          hgp->bal_tol = ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[1]) / rightw;
+/*          uprintf(hgc, "RIGHT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
           ierr |= rdivide_and_prepsend (mid+1, hi, part, zz, &newright, hgp, 
                                         level+1, proclist, sendbuf, 
                                         rightdest, rightvmap, &nsend);
+          hgp->bal_tol = save_bal_tol;
+          
           if (hgp->use_timers > 1)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
                                  hg->comm->Communicator);
@@ -256,24 +268,37 @@ int Zoltan_PHG_rdivide(
       Zoltan_Comm_Destroy(&plan);
   } else {
       if (left) {
+          float save_bal_tol=hgp->bal_tol;
+          
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Left: H(%d, %d, %d)\n", left->nVtx, left->nEdge, left->nPins);
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
                                 hg->comm->Communicator);
+          
+          hgp->bal_tol = ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[0]) / leftw;
+/*          uprintf(hgc, "LEFT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);          */
           ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
+          hgp->bal_tol = save_bal_tol;
+                    
           if (hgp->use_timers > 1)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
                                 hg->comm->Communicator);
           Zoltan_HG_HGraph_Free (left);
       }
       if (right) {
+          float save_bal_tol=hgp->bal_tol;
+          
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Right: H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins);
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
                                 hg->comm->Communicator);
+          
+          hgp->bal_tol = ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[1]) / rightw;
+/*          uprintf(hgc, "RIGHT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
           ierr |= Zoltan_PHG_rdivide(mid+1, hi, final, zz, right, hgp, level+1);
+          hgp->bal_tol = save_bal_tol;
           if (hgp->use_timers > 1)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
                                 hg->comm->Communicator);
@@ -327,8 +352,14 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz, HGraph 
 
 
 
-
-
+#if 0
+/* UVCUVC: TODO CHECK
+   this old code is not used anymore, it is the version that
+   doesn't do processor split. If processor split becomes
+   overhead in some systems when we decide not to use it;
+   then this code needs to be revised to make sure that
+   it has all the "new" features; such as adaptive balance adjustment.
+*/
 
 /* recursively divides problem into 2 parts until all p found */
 int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
@@ -339,7 +370,7 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
   Partition part=NULL;
   HGraph *left=NULL, *right=NULL;
   PHGComm *hgc = hg->comm;
-  float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
+  float bisec_part_sizes[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
                                      because we are doing bisection */
 
   hg->redl = hgp->redl;
@@ -358,14 +389,14 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
 
   /* bipartition current hypergraph with appropriate split ratio */
   mid = (lo+hi)/2;
-  tgpartsize[0] = tgpartsize[1] = 0.;
-  for (i = lo; i <= mid; i++)  tgpartsize[0] += hgp->part_sizes[i];
-  for (i = lo; i <= hi;  i++)  tgpartsize[1] += hgp->part_sizes[i];
-  hg->ratio = (double) tgpartsize[0] / (double) tgpartsize[1];
-  tgpartsize[0] = hg->ratio;
-  tgpartsize[1] = 1. - tgpartsize[0];
+  bisec_part_sizes[0] = bisec_part_sizes[1] = 0.;
+  for (i = lo; i <= mid; i++)  bisec_part_sizes[0] += hgp->part_sizes[i];
+  for (i = lo; i <= hi;  i++)  bisec_part_sizes[1] += hgp->part_sizes[i];
+  hg->ratio = (double) bisec_part_sizes[0] / (double) bisec_part_sizes[1];
+  bisec_part_sizes[0] = hg->ratio;
+  bisec_part_sizes[1] = 1. - bisec_part_sizes[0];
 
-  ierr = Zoltan_PHG_Partition (zz, hg, 2, tgpartsize, part, hgp, level);
+  ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
   if (ierr != ZOLTAN_OK)
       goto End;
 
@@ -443,19 +474,21 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
   return ierr;
 }
 
-
+#endif
 
 
 
 
 static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition part,
-                             int partid, ZZ *zz)
+                             int partid, ZZ *zz, double *splitpw, double *otherpw)
 {
   int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
   int edge, i, ierr=ZOLTAN_OK;  
   PHGComm *hgc = ohg->comm;
   char *yo = "split_hypergraph";
+  double pw[2], tpw[2];
 
+  pw[0] = pw[1] = 0; /* 0 is the part being splitted, 1 is the other part(s) */
   Zoltan_HG_HGraph_Init (nhg);
   nhg->comm = ohg->comm;
   nhg->info               = ohg->info;
@@ -481,12 +514,23 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
       int v=tmap[i];
       if (v!=-1) {
           nhg->vmap[v] = ohg->vmap[i];
-          if (nhg->vwgt)
-              memcpy(&nhg->vwgt[v*nhg->VtxWeightDim], &ohg->vwgt[i*nhg->VtxWeightDim],
-                     nhg->VtxWeightDim * sizeof(float));
+          if (nhg->vwgt) {
+              /* UVC: TODO CHECK we're only using 1st weight! Right now this will be used
+                 to compute balance ratio! Check this code when multiconstraint is added!
+              */              
+              pw[0] += (double) ohg->vwgt[i*nhg->VtxWeightDim];
+              memcpy(&nhg->vwgt[v*nhg->VtxWeightDim], &ohg->vwgt[i*nhg->VtxWeightDim], 
+                     nhg->VtxWeightDim * sizeof(float)); 
+          } else
+              pw[0] += 1.0;
+      } else {
+          pw[1] += (nhg->vwgt) ? ohg->vwgt[i*nhg->VtxWeightDim] : 1.0;
       }
+      
   }
-    
+  MPI_Allreduce(pw, tpw, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+  *splitpw = tpw[0];  *otherpw = tpw[1];
+  
   /* fill in hindex and hvertex arrays in new HGraph */
   nhg->nEdge = 0;
   nhg->nPins = 0;

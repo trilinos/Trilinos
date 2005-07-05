@@ -72,7 +72,7 @@ typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching,
                                    struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, float *, Partition,
                                           struct PHGPartParamsStruct*);
-typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, Partition,
+typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, float *, Partition,
                                      struct PHGPartParamsStruct*, float);
 
 
@@ -183,7 +183,7 @@ ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*,
 /************************/
 /* Refinement functions */ 
 /************************/
-int Zoltan_PHG_Refinement (ZZ*, HGraph*, int, Partition, PHGPartParams*);
+int Zoltan_PHG_Refinement (ZZ*, HGraph*, int, float *, Partition, PHGPartParams*);
 ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 
 /*******************/
