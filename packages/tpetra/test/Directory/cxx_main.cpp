@@ -38,6 +38,9 @@
 #endif // TPETRA_MPI
 
 template <typename OrdinalType>
+int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages);
+
+template <typename OrdinalType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
 
 int main(int argc, char* argv[]) {
@@ -73,8 +76,12 @@ int main(int argc, char* argv[]) {
 	if(verbose) outputStartMessage("Directory");
 	int ierr = 0;
   
+	//mpiBreakpoint(myImageID);
+
+	simpleTest<int>(verbose, debug, myImageID, numImages);
+
 	// call the actual test routines
-	ierr += unitTests<int>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<int>(verbose, debug, myImageID, numImages);
 	//ierr += unitTests<unsigned int>(verbose, debug, myImageID, numImages);
   
 	// finish up
@@ -83,6 +90,44 @@ int main(int argc, char* argv[]) {
 #endif
 	if(verbose) outputEndMessage("Directory", (ierr == 0));
 	return(ierr);
+}
+
+//======================================================================
+template <typename OrdinalType>
+int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages) {
+
+	// create platform needed for elementspace construction
+
+#ifdef TPETRA_MPI
+	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
+#else
+	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
+#endif
+
+	// create elementspace needed for directory construction
+
+	OrdinalType const indexBase = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	OrdinalType const numMyElements = intToOrdinal<OrdinalType>(5); // give each image 5 elements
+	OrdinalType const numGlobalElements = numMyElements * numImages;
+
+	// use generator to create GIDs
+	std::vector<OrdinalType> myGIDs(numMyElements);
+	generateColumn(myGIDs, myImageID, numMyElements);
+
+	Tpetra::ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, myGIDs, indexBase, platform);
+
+	// need to create & initialize vectors to pass to getDirectoryEntries
+	std::vector<OrdinalType> allGIDs;
+	std::vector<OrdinalType> imageIDs;
+	allGIDs.push_back(10);
+    allGIDs.push_back(0);
+
+	// create directory and call getDirectoryEntries
+
+	Tpetra::BasicDirectory<OrdinalType> directory (elementspace);
+	directory.getDirectoryEntries(allGIDs, imageIDs);
+
+	return(0);
 }
 
 //======================================================================
@@ -211,7 +256,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	
 	// numGlobalElements will be (1 + 2 + 3 + 4 ... + numImages)
 	// The formula for (1 + 2 + 3 ... + n) = (n^2 + n) / 2
-	numGlobalElements = (numImages * numImages + numImages) / intToOrdinal<OrdinalType>(2);
+	numGlobalElements = (numImages * numImages + numImages) / 2;
 	
 	Tpetra::ElementSpace<OrdinalType> es2(numGlobalElements, numMyElements, indexBase, platform);
 	Tpetra::BasicDirectory<OrdinalType> directory2(es2);
@@ -280,6 +325,47 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 		if(verbose) cout << "getDirectoryEntries(imageIDs and LIDs) test ";
 	}
 	if(LIDs != expectedLIDs) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+
+	// ========================================
+	// test with a non-contiguous ES
+	// ========================================
+  
+	if(verbose) cout << "Testing Directory using a non-contiguous ElementSpace (ES ctr 3)... " << endl;
+
+	// give each image 5 elements
+	numMyElements = intToOrdinal<OrdinalType>(5);
+	numGlobalElements = numMyElements * numImages;
+
+	// use generator to create GIDs
+	std::vector<OrdinalType> myGIDs(numMyElements);
+	generateColumn(myGIDs, myImageID, numMyElements);
+
+	Tpetra::ElementSpace<OrdinalType> es3(numGlobalElements, numMyElements, myGIDs, indexBase, platform);
+	Tpetra::BasicDirectory<OrdinalType> directory3(es3);
+
+	// fill allGIDs with values from generator
+	generateMultipleColumns(allGIDs, 0, numImages-1, numMyElements);
+
+	// fill expectedImageIDs with what should be the values
+	generateXCoords(allGIDs, expectedImageIDs);
+
+	if(verbose) cout << "Testing getDirectoryEntries(imageIDs only)... ";
+	directory3.getDirectoryEntries(allGIDs, imageIDs);
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "GIDs: " + Tpetra::toString(allGIDs));
+		outputData(myImageID, numImages, "imageIDs: " + Tpetra::toString(imageIDs));
+		outputData(myImageID, numImages, "Expected: " + Tpetra::toString(expectedImageIDs));
+		if(verbose) cout << "getDirectoryEntries(imageIDs only) test ";
+	}
+	if(imageIDs != expectedImageIDs) {
 		if(verbose) cout << "failed" << endl;
 		ierr++;
 	}
