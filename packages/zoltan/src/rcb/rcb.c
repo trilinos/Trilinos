@@ -95,6 +95,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
                   { "AVERAGE_CUTS", NULL, "INT", 0 },
                   { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
+                  { "SKIP_DIMENSIONS", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
