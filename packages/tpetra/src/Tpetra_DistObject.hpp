@@ -86,12 +86,30 @@ namespace Tpetra {
 
 		//! Import
 		int doImport(DistObject<OrdinalType, ScalarType> const& sourceObj, 
-					 Import<OrdinalType> const& importer, CombineMode CM) {
+					 Import<OrdinalType> const& importer, 
+					 CombineMode CM) 
+		{
 			// throw exception if my ElementSpace != importer.getTargetSpace()
 			// throw exception if sourceObj's ElementSpace != importer.getSourceSpace()
 
-			// ...
+			// copy variables from importer
+			OrdinalType numSameIDs = importer.getNumSameIDs();
+			OrdinalType numPermuteIDs = importer.getNumPermuteIDs();
+			OrdinalType numRemoteIDs = importer.getNumRemoteIDs();
+			OrdinalType numExportIDs = importer.getNumExportIDs();
+			std::vector<OrdinalType> exportLIDs = importer.getExportLIDs();
+			std::vector<OrdinalType> remoteLIDs = importer.getRemoteLIDs();
+			std::vector<OrdinalType> permuteToLIDs = importer.getPermuteToLIDs();
+			std::vector<OrdinalType> permuteFromLIDs = importer.getPermuteFromLIDs();
+
+			// call doTransfer
+			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+					   permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+					   ordinalExports_, scalarExports_, ordinalImports_, scalarImports_, 
+					   importer.getDistributor(), false);
 		}
+
+		// ** TO DO: Add the three other forms of doImport/doExport **
 
 		//! print method
 		virtual void print(ostream& os) const {
@@ -111,25 +129,61 @@ namespace Tpetra {
 	protected:
  
 		//! Perform actual transfer (redistribution) of data across memory images.
-		virtual int doTransfer() {
+		virtual int doTransfer(DistObject<OrdinalType, ScalarType> const& sourceObj,
+							   CombineMode CM,
+							   OrdinalType numSameIDs,
+							   OrdinalType numPermuteIDs,
+							   OrdinalType numRemoteIDs,
+							   OrdinalType numExportIDs,
+							   std::vector<OrdinalType> permuteToLIDs,
+							   std::vector<OrdinalType> permuteFromLIDs,
+							   std::vector<OrdinalType> remoteLIDs,
+							   std::vector<OrdinalType> exportLIDs,
+							   std::vector<OrdinalType> ordinalExports,
+							   std::vector<ScalarType> scalarExports,
+							   std::vector<OrdinalType> ordinalImports,
+							   std::vector<ScalarType> scalarImports,
+							   Distributor<OrdinalType>& distor,
+							   bool doReverse) {
 			// ...
 		}
 
+		// The following four methods must be implemented by the derived class
+
 		//! Allows the source and target (\e this) objects to be compared for compatibility, return false if not.
-		virtual bool checkCompatibility() = 0;
+		virtual bool checkCompatibility(DistObject<OrdinalType, ScalarType> const& sourceObj) = 0;
 
 		//! Perform copies and permutations that are local to this image.
-		virtual int copyAndPermute() = 0;
+		virtual int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
+								   OrdinalType numImportIDs,
+								   OrdinalType numPermuteIDs,
+								   std::vector<OrdinalType> permuteToLIDs,
+								   std::vector<OrdinalType> permuteFromLIDs) = 0;
 
 		//! Perform any packing or preparation required for call to doTransfer().
-		virtual int packAndPrepare() = 0;
+		virtual int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
+								   OrdinalType numExportIDs,
+								   std::vector<OrdinalType> exportLIDs,
+								   std::vector<OrdinalType> ordinalExports,
+								   std::vector<ScalarType> scalarExports,
+								   Distributor<OrdinalType>& distor) = 0;
   
 		//! Perform any unpacking and combining after call to doTransfer().
-		virtual int unpackAndCombine() = 0;
+		virtual int unpackAndCombine(DistObject<OrdinalType, ScalarType> const& sourceObj,
+									 OrdinalType numImportIDs,
+									 std::vector<OrdinalType> importLIDs,
+									 std::vector<OrdinalType> ordinalImports,
+									 std::vector<ScalarType> scalarImports,
+									 Distributor<OrdinalType>& distor,
+									 CombineMode CM) = 0;
 
 	private:
 		
 		ElementSpace<OrdinalType> const ElementSpace_;
+		std::vector<OrdinalType> ordinalImports_;
+		std::vector<ScalarType> scalarImports_;
+		std::vector<OrdinalType> ordinalExports_;
+		std::vector<ScalarType> scalarExports_;
 
 	}; // class DistObject
 

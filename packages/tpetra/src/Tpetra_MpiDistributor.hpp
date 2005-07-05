@@ -538,7 +538,7 @@ namespace Tpetra {
 			std::vector<OrdinalType> importObjs;
 
 			imageIDList = importImageIDs; // assumes importImageIDs is of length numImports
-			if(importImageIDs.size() != numImports) // hence the error-checking
+			if(static_cast<OrdinalType>(importImageIDs.size()) != numImports) // hence the error-checking
 				throw reportError("Internal error in MpiDistributor::computeSends", -99);
       
 			importObjs.resize(two * numImports);
