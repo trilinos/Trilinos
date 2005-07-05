@@ -9,6 +9,6 @@ AZTECOO_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 	           $(TRIUTILS_INCLUDES) $(EPETRA_INCLUDES) \
                    $(TEUCHOS_INCLUDES) 
 
-AZTECOO_LIBS = @LDFLAGS@ -L$(top_builddir)/src/ -laztecoo \
+AZTECOO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -laztecoo \
 	       $(TRIUTILS_INCLUDES) $(EPETRA_LIBS) $(TEUCHOS_LIBS) \
                @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@
