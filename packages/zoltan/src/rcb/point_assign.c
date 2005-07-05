@@ -23,6 +23,21 @@ extern "C" {
 #include "rcb.h"
 #include "rib.h"
 
+static void transform_coord(double *p, double (*M)[3], int ncoords)
+{
+  double v[3];
+
+  v[0] = p[0];
+  v[1] = p[1];
+  v[2] = p[2];
+
+  p[1] = p[2] = 0.0;
+
+  p[0] = M[0][0]*v[0] + M[0][1]*v[1] + M[0][2]*v[2];
+  if (ncoords == 2){
+    p[1] = M[1][0]*v[0] + M[1][1]*v[1] + M[1][2]*v[2];
+  }
+}
 
 int Zoltan_RB_Point_Assign(
 ZZ       *zz,                   /* The Zoltan structure */
@@ -63,6 +78,10 @@ int      *part                  /* partition that point lands in;
            goto End;
         }
 
+        if (rcb->Skip_Dimensions > 0){
+          transform_coord(coords, rcb->Transformation, 3 - rcb->Skip_Dimensions);
+        }
+
         partmid = treept[0].right_leaf;
 
         while (partmid > 0)
@@ -79,6 +98,10 @@ int      *part                  /* partition that point lands in;
                                      "Must set parameter KEEP_CUTS to 1.");
            ierr = ZOLTAN_FATAL;
            goto End;
+        }
+
+        if (rib->Skip_Dimensions > 0){
+          transform_coord(coords, rib->Transformation, 3 - rib->Skip_Dimensions);
         }
 
         switch (rib->Num_Geom) {

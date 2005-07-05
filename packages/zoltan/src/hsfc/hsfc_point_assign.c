@@ -45,6 +45,21 @@ int Zoltan_HSFC_Point_Assign (
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,
        "No Decomposition Data available; use KEEP_CUTS parameter.");
 
+   if (d->Skip_Dimensions > 0){
+     scaled[0] = x[0];  
+     scaled[1] = x[1];
+     scaled[2] = x[2];
+     x[1] = x[2] = 0.0;
+     x[0] = d->Transformation[0][0]*scaled[0] +
+            d->Transformation[0][1]*scaled[1] +
+            d->Transformation[0][2]*scaled[2];
+     if (d->Skip_Dimensions == 1){
+       x[1] = d->Transformation[1][0]*scaled[0] +
+              d->Transformation[1][1]*scaled[1] +
+              d->Transformation[1][2]*scaled[2];
+     }
+   }
+
    /* Calculate scaled coordinates, calculate HSFC coordinate */
    for (i = 0; i < d->ndimension; i++)
       {
