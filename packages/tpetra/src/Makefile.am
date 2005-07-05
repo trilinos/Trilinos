@@ -35,6 +35,7 @@
 
 CORE_H = \
 	$(srcdir)/Tpetra_Object.hpp \
+	$(srcdir)/Tpetra_DistObject.hpp \
 	$(srcdir)/Tpetra_OutputObject.hpp \
 	$(srcdir)/Tpetra_OutputManager.hpp \
 	$(srcdir)/Tpetra_MsgType.hpp \
