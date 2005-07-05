@@ -111,7 +111,7 @@ namespace Tpetra {
 		//! Returns the Target ElementSpace used to construct this importer.
 		ElementSpace<OrdinalType> const& getTargetSpace() const {return(data().target_);};
     
-		//Distributor<ScalarType, OrdinalType>const& getDistributor() const {return(data().distributor_);}; // ST is PT
+		Distributor<OrdinalType>const& getDistributor() const {return(data().distributor_);};
   	
 		//! Assignment operator
 		Import<OrdinalType>& operator = (Import<OrdinalType> const& Source) {
