@@ -39,6 +39,10 @@
 Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
   : DirectoryMap_(0),
     ProcList_(0),
+    ProcListLists_(0),
+    ProcListLens_(0),
+    numProcLists_(0),
+    entryOnMultipleProcs_(false),
     LocalIndexList_(0),
     SizeList_(0),
     SizeIsConst_(true),
@@ -78,6 +82,10 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
 Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Directory)
   : DirectoryMap_(0),
     ProcList_(0),
+    ProcListLists_(0),
+    ProcListLens_(0),
+    numProcLists_(0),
+    entryOnMultipleProcs_(false),
     LocalIndexList_(0),
     SizeList_(0),
     SizeIsConst_(Directory.SizeIsConst_),
@@ -107,12 +115,43 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     for (int i=0; i<NumProc+1; i++) AllMinGIDs_[i] = Directory.AllMinGIDs_[i];
     }
 
+  if (Directory.numProcLists_ > 0) {
+    int num = Directory.numProcLists_;
+    ProcListLens_ = new int[num];
+    ProcListLists_ = new int*[num];
+    numProcLists_ = num;
+
+    for(int i=0; i<num; ++i) {
+      int len = Directory.ProcListLens_[i];
+      ProcListLens_[i] = len;
+
+      if (len > 0) {
+	ProcListLists_[i] = new int[len];
+	const int* dir_list = Directory.ProcListLists_[i];
+	for(int j=0; j<len; ++j) {
+	  ProcListLists_[i][j] = dir_list[j];
+	}
+      }
+      else ProcListLists_[i] = 0;
+    }
+  }
+
+  entryOnMultipleProcs_ = Directory.entryOnMultipleProcs_;
 }
 
 //==============================================================================
 // Epetra_BasicDirectory destructor 
 Epetra_BasicDirectory::~Epetra_BasicDirectory()
 {
+  if (numProcLists_>0) {
+    for(int i=0; i<numProcLists_; ++i) {
+      if (ProcListLens_[i] > 0) delete [] ProcListLists_[i];
+    }
+    delete [] ProcListLists_; ProcListLists_ = 0;
+    delete [] ProcListLens_;  ProcListLens_ = 0;
+    numProcLists_ = 0;
+  }
+
   if( DirectoryMap_ != 0 ) delete DirectoryMap_;
   if( ProcList_ != 0 ) delete [] ProcList_;
   if( LocalIndexList_ != 0 ) delete [] LocalIndexList_;
@@ -124,6 +163,32 @@ Epetra_BasicDirectory::~Epetra_BasicDirectory()
   LocalIndexList_ = 0;
   SizeList_ = 0;
   AllMinGIDs_ = 0;
+}
+
+//==============================================================================
+void Epetra_BasicDirectory::create_ProcListArrays()
+{
+  numProcLists_ = DirectoryMap_->NumMyElements();
+  ProcListLens_ = new int[numProcLists_];
+  ProcListLists_ = new int*[numProcLists_];
+
+  for(int i=0; i<numProcLists_; ++i) {
+    ProcListLens_[i] = 0;
+    ProcListLists_[i] = 0;
+  }
+}
+
+//==============================================================================
+void Epetra_BasicDirectory::addProcToList(int proc, int LID)
+{
+  int insertPoint = -1;
+  int index = Epetra_Util_binary_search(proc, ProcListLists_[LID],
+				    ProcListLens_[LID], insertPoint);
+  if (index < 0) {
+    int tmp = ProcListLens_[LID];
+    Epetra_Util_insert(proc, insertPoint, ProcListLists_[LID],
+		       ProcListLens_[LID], tmp, 1);
+  }
 }
 
 //==============================================================================
@@ -225,10 +290,31 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
     curr_LID = DirectoryMap_->LID(*ptr++); // Convert incoming GID to Directory LID
     //if (MYPID) cout << " Receive ID = " << i << "  GID = " << import_elements[3*i] << "  LID = " << curr_LID << endl << flush;
     assert(curr_LID !=-1); // Internal error
-    ProcList_[ curr_LID ] = *ptr++;
+    int proc = *ptr++;
+    if (ProcList_[curr_LID] >= 0) {
+      if (ProcList_[curr_LID] != proc) {
+	if (numProcLists_ < 1) {
+	  create_ProcListArrays();
+	}
+
+	addProcToList(ProcList_[curr_LID], curr_LID);
+	addProcToList(proc, curr_LID);
+
+	//leave the lowest-numbered proc in ProcList_[curr_LID].
+	ProcList_[curr_LID] = ProcListLists_[curr_LID][0];
+      }
+    }
+    else {
+      ProcList_[curr_LID] = proc;
+    }
     LocalIndexList_[ curr_LID ] = *ptr++;
     if (!SizeIsConst_) SizeList_[ curr_LID ] = *ptr++;
   }
+
+  int localval, globalval;
+  localval = numProcLists_;
+  DirectoryMap_->Comm().MaxAll(&localval, &globalval, 1);
+  entryOnMultipleProcs_ = globalval > 0 ? true : false;
 
   if (len_import_elements!=0) delete [] c_import_elements;
   if (export_elements!=0) delete [] export_elements;
@@ -236,6 +322,13 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   delete Distor;
   return(0);
 }
+
+//==============================================================================
+bool Epetra_BasicDirectory::GIDsAllUniquelyOwned() const
+{
+  return( !entryOnMultipleProcs_ );
+}
+
 //==============================================================================
 // GetDirectoryEntries: Get non-local GID references ( procID and localID )
 // 			Space should already be allocated for Procs and
@@ -425,7 +518,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   // Get directory locations for the requested list of entries
   DirectoryMap_->RemoteIDList(NumEntries, GlobalEntries, dir_procs, 0);
 
-  //Check for unfound GlobalEntries and set cooresponding Procs to -1
+  //Check for unfound GlobalEntries and set corresponding Procs to -1
   int NumMissing = 0;
   {for( int i = 0; i < NumEntries; ++i )
     if( dir_procs[i] == -1 )

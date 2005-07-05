@@ -786,10 +786,9 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   EPETRA_CHK_ERR( A.InsertGlobalValues(numGlobalRows, globalRows,
                                        numcols, cols, coefs));
 
-  //Since the matrix is rectangular, we need to call FillComplete with
-  //a domain-map and a range-map before we call GlobalAssemble. Otherwise,
-  //GlobalAssemble has no way of knowing what the domain-map and range-map
-  //should be.
+  //Since the matrix is rectangular, we need to call GlobalAssemble with
+  //a domain-map and a range-map. Otherwise, GlobalAssemble has no way of
+  //knowing what the domain-map and range-map should be.
   //We'll use a linear distribution of the columns for a domain-map, and
   //our original row-map for the range-map.
   int numMyCols = numcols/numprocs;
@@ -797,9 +796,7 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   if (localproc<rem) ++numMyCols;
   Epetra_Map domainmap(numcols, numMyCols, 0, Comm);
 
-  EPETRA_CHK_ERR( A.FillComplete(domainmap, map) );
-
-  EPETRA_CHK_ERR( A.GlobalAssemble() );
+  EPETRA_CHK_ERR( A.GlobalAssemble(domainmap, map) );
 
   int numGlobalCols = A.NumGlobalCols();
   int numGlobalNNZ = A.NumGlobalNonzeros();

@@ -4,24 +4,25 @@
 
 (FRAMEWORK) {
     DIRS = BlockMap,
-           Comm,
-           CrsGraph,
-	         CrsMatrix,
-	         CrsRectMatrix,
-	         FECrsGraph,
-	         FECrsMatrix,
-	         FEVbrMatrix,
-	         FEVector,
-	         ImportExport,
-	         IntSerialDense,
-	         Map,
-	       # MapColoring, --> removed this, it's been hanging in MPI.
-	         MultiVector,
-	         Object,
-	         SerialDense,
-	         SerialSpdDense,
-	         VbrMatrix,
-	         Vector;
+          Comm,
+         CrsGraph,
+         CrsMatrix,
+         CrsRectMatrix,
+         Directory,
+         FECrsGraph,
+         FECrsMatrix,
+         FEVbrMatrix,
+         FEVector,
+         ImportExport,
+         IntSerialDense,
+         Map,
+       # MapColoring, --> removed this, it's been hanging in MPI.
+         MultiVector,
+         Object,
+         SerialDense,
+         SerialSpdDense,
+         VbrMatrix,
+         Vector;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }

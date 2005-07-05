@@ -81,6 +81,7 @@ class Epetra_Directory {
 				   int * LocalEntries,
 				   int * EntrySizes) const = 0;
 
+  virtual bool GIDsAllUniquelyOwned() const = 0;
   //@}
 };
 

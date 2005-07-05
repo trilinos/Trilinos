@@ -55,7 +55,7 @@ class Epetra_SrcDistObject {
 
   
   //@{ \name Attribute accessor methods.
-  //! Returns the address of the Epetra_BlockMap for this multi-vector.
+  //! Returns a reference to the Epetra_BlockMap for this object.
   virtual const Epetra_BlockMap & Map() const = 0;
 };
 

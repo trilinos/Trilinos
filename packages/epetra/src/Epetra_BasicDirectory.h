@@ -61,7 +61,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   
   //! Epetra_BasicDirectory destructor.
   
-  ~Epetra_BasicDirectory(void);
+  virtual ~Epetra_BasicDirectory(void);
   //@}
   
   //@{ \name Query method.
@@ -77,7 +77,8 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
            GlobalEntries - List of Global IDs being passed in.
     \param InOut
            Procs - User allocated array of length at least NumEntries.  On return contains list of processors
-	   owning the Global IDs in question.
+	   owning the Global IDs in question. If any of the GIDs is owned by more than
+	   one processor, then the lowest-numbered processor is listed in this array.
     \param InOut
            LocalEntries - User allocated array of length at least NumEntries.  On return contains the local ID of
 	   the global on the owning processor. If LocalEntries is zero, no local ID information is returned.
@@ -92,6 +93,11 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 			   const int * GlobalEntries,
 			   int * Procs,
 			   int * LocalEntries, int * EntrySizes) const;
+
+  //!GIDsAllUniquelyOwned: returns true if all GIDs appear on just one processor.
+  /*! If any GIDs are owned by multiple processors, returns false.
+   */
+  bool GIDsAllUniquelyOwned() const;
   //@}
 
   //@{ \name I/O Methods.
@@ -107,7 +113,10 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
       return( *this );
     }
 
- // These need to be accessible to derived map classes.
+  void create_ProcListArrays();
+
+  void addProcToList(int proc, int LID);
+
   //! Generate: Sets up Directory tables.
   int Generate(const Epetra_BlockMap& Map);
 
@@ -116,7 +125,39 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
   Epetra_Map* DirectoryMap_;
 
+  //ProcList_ is a list containing the associated processor for each
+  //directory entry. If any directory entry has more than one associated
+  //processor, then the corresponding ProcList_ entry will be the lowest-
+  //numbered of those processors. In that case, refer to ProcListLists_
+  //for more info.
+
   int * ProcList_;
+
+  //ProcListLists_ will usually be unallocated, and set to NULL. But if
+  //at least one directory entry is associcated with more than one proc,
+  //then ProcListLists_ is a list of lists -- it holds, for each
+  //directory-entry, a list of processors.
+  //But even then, it will have a NULL list for all directory entries that
+  //are associated with only one processor.
+  //
+  //Each list's length will be stored in ProcListLens_.
+  //Example:
+  //
+  //if (numProcLists_ > 0) {
+  //  int entry_LID = DirectoryMap_->LID(GID);
+  //
+  //  for(int i=0; i<ProcListLens_[entry_LID]; ++i) {
+  //    cout << "entry "<<GID<<" associated with proc "
+  //          <<ProcListLists_[entry_LID][i]<<endl;
+  //  }
+  //}
+  int** ProcListLists_;
+  int* ProcListLens_;
+  int numProcLists_;
+
+  //true if any directory entry appears on multiple processors
+  bool entryOnMultipleProcs_;
+
   int * LocalIndexList_;
   int * SizeList_;
   bool SizeIsConst_;
