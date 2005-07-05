@@ -3,6 +3,6 @@
 #
 
 (FRAMEWORK) {
-    TESTS = Read;
+    DIRS = Read;
     COMM = SERIAL, MPI;
 }
