@@ -43,6 +43,8 @@ typedef struct RIB_Struct {
     struct Dot_Struct *Dots;
     struct rib_tree   *Tree_Ptr;
     int                Num_Geom;
+    double Transformation[3][3];   /* From SKIP_DIMENSIONS parameter */
+    int Skip_Dimensions;             
 } RIB_STRUCT;
 
 extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, int);
@@ -59,6 +61,12 @@ extern int Zoltan_RIB_inertial3d(int, struct Dot_Struct *, int *, int, int, doub
                          double *, double *, MPI_Comm, int, int, int);
 extern void Zoltan_RIB_reduce_double(double *, double *, int, MPI_Comm, int, int, int,
                              int);
+
+extern void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
+
+extern void Zoltan_RIB_inertial3d_all( int, double *,
+     int, double *cm, double (*evec)[3], 
+     MPI_Comm , int , int , int );
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -57,9 +57,6 @@ static int serial_rib(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   int, double, int, int, int *, int *, int, int, int, int, int, int, int,
   int *, struct rib_tree *, double *, double *, float *);
 
-/* for Tflops_Special */
-static void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
-
 /*---------------------------------------------------------------------------*/
 /*  Parameters structure for RIB method.  Used in  */
 /*  Zoltan_RIB_Set_Param and Zoltan_RIB.                      */
@@ -69,6 +66,7 @@ static PARAM_VARS RIB_params[] = {
                { "RIB_OUTPUT_LEVEL", NULL, "INT", 0 },
                { "AVERAGE_CUTS", NULL, "INT", 0 },
                { "KEEP_CUTS", NULL, "INT", 0 },
+               { "SKIP_DIMENSIONS", NULL, "INT", 0 },
                { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
@@ -127,6 +125,7 @@ int Zoltan_RIB(
                               later for point and box drop. */
   int average_cuts;           /* (0) don't (1) compute the cut to be the
                               average of the closest dots. */
+  int dummy;
   int ierr;
 
   Zoltan_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
@@ -134,6 +133,7 @@ int Zoltan_RIB(
   Zoltan_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
   Zoltan_Bind_Param(RIB_params, "AVERAGE_CUTS", (void *) &average_cuts);
   Zoltan_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
+  Zoltan_Bind_Param(RIB_params, "SKIP_DIMENSIONS", (void *) &dummy);
 
   overalloc = RIB_DEFAULT_OVERALLOC;
   check_geom = DEFAULT_CHECK_GEOM;
@@ -787,7 +787,7 @@ struct rib_tree *treept = treept_arr;
 
 /*****************************************************************************/
 
-static void Zoltan_RIB_min_max(
+void Zoltan_RIB_min_max(
    double   *min,             /* minimum value */
    double   *max,             /* maximum value */
    int      proclower,        /* smallest processor in partition */
