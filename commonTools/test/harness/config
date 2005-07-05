@@ -331,9 +331,9 @@ RUN (nwcc-nightly-mpi) {
 # qt alegra mpi
 #
 ###############################################################################
-                                                                                
+
 RUN (qt-alegra-mpi) {
-                                                                                
+
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = qt-mpi-alegra;
@@ -344,6 +344,24 @@ RUN (qt-alegra-mpi) {
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /scratch_qt/jmwille/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
-                                                                                
+
+}
+
+###############################################################################
+#
+# qt mpi
+#
+###############################################################################
+
+RUN (qt-mpi) {
+
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = qt-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 2;
+    TTR-DIR             = /scratch_qt/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
 }
 
