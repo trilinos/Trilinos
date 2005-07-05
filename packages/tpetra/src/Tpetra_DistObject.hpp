@@ -29,10 +29,11 @@
 #ifndef TPETRA_DISTOBJECT_HPP
 #define TPETRA_DISTOBJECT_HPP
 
-#include "Tpetra_ConfigDefs.h"
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_CombineMode.hpp"
+#include "Tpetra_Import.hpp"
 
 namespace Tpetra {
 
@@ -107,6 +108,8 @@ namespace Tpetra {
 					   permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
 					   ordinalExports_, scalarExports_, ordinalImports_, scalarImports_, 
 					   importer.getDistributor(), false);
+
+			return(0);
 		}
 
 		// ** TO DO: Add the three other forms of doImport/doExport **
@@ -143,15 +146,16 @@ namespace Tpetra {
 							   std::vector<ScalarType> scalarExports,
 							   std::vector<OrdinalType> ordinalImports,
 							   std::vector<ScalarType> scalarImports,
-							   Distributor<OrdinalType>& distor,
+							   Distributor<OrdinalType> const& distor,
 							   bool doReverse) {
 			// ...
+			return(0);
 		}
 
 		// The following four methods must be implemented by the derived class
 
 		//! Allows the source and target (\e this) objects to be compared for compatibility, return false if not.
-		virtual bool checkCompatibility(DistObject<OrdinalType, ScalarType> const& sourceObj) = 0;
+		virtual bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) = 0;
 
 		//! Perform copies and permutations that are local to this image.
 		virtual int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
@@ -166,7 +170,7 @@ namespace Tpetra {
 								   std::vector<OrdinalType> exportLIDs,
 								   std::vector<OrdinalType> ordinalExports,
 								   std::vector<ScalarType> scalarExports,
-								   Distributor<OrdinalType>& distor) = 0;
+								   Distributor<OrdinalType> const& distor) = 0;
   
 		//! Perform any unpacking and combining after call to doTransfer().
 		virtual int unpackAndCombine(DistObject<OrdinalType, ScalarType> const& sourceObj,
@@ -174,7 +178,7 @@ namespace Tpetra {
 									 std::vector<OrdinalType> importLIDs,
 									 std::vector<OrdinalType> ordinalImports,
 									 std::vector<ScalarType> scalarImports,
-									 Distributor<OrdinalType>& distor,
+									 Distributor<OrdinalType> const& distor,
 									 CombineMode CM) = 0;
 
 	private:
