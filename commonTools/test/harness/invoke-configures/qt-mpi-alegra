@@ -2,11 +2,11 @@
 #qt: /bin
 #   cd /projects/alegra/rich_work/TPL/trilinos/5.0/build/qt && /projects/alegra/rich_work/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
 ../configure \
-        --prefix=/projects/alegra/rich_work/TPL/trilinos/5.0/build/qt \
+        --prefix=/scratch_qt/jmwille/TrilinosTestHarness/TrilinosDevelopment/install \
         --enable-nox-epetra \
         --enable-aztecoo-azlu \
         --enable-amesos \
-        --with-ml_superlu \
+        --without-ml_superlu \
         --enable-teuchos \
         --enable-triutils \
         --enable-anasazi \
@@ -20,7 +20,7 @@
         --with-lapack="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/qt -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/qt -lblas" \
         --with-incdirs="-I/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU/SRC" \
         --with-ldflags="-L/projects/alegra/rich_work/TPL/trilinos/5.0/y12m -L/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU" \
-        --with-libs="-lsuperlu -ly12m -L/dev/null" \
+        --with-libs="-L/dev/null" \
         --enable-mpi \
         --with-mpi-incdir="" \
         --with-mpi-libdir="" \

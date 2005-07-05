@@ -325,4 +325,25 @@ RUN (nwcc-nightly-mpi) {
     TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
                                                                                 
 }
+                                                                                
+###############################################################################
+#
+# qt alegra mpi
+#
+###############################################################################
+                                                                                
+RUN (qt-alegra-mpi) {
+                                                                                
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = qt-mpi-alegra;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 2;
+#    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /scratch_qt/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+                                                                                
+}
 
