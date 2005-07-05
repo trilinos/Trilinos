@@ -266,7 +266,7 @@ private:
   Teuchos::ParameterList MLList_;
 }; // class Ifpack_ML
 
-}; // namespace ML_Epetra
+} // namespace ML_Epetra
 
 #endif
 #endif
