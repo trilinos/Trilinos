@@ -78,7 +78,6 @@ bool RpmtestIntegrator::Integrate(double *ynew, const double *y, const double t,
   int m = n/2;
   double deltat = 0.002;
   double invdx_sq = (double) ((m-1)*(m-1)) / 400.0;
-  
   // v is temporary for y at each explicit time step j
   double* v;
   v = new double[n];
@@ -108,8 +107,9 @@ bool RpmtestIntegrator::Integrate(double *ynew, const double *y, const double t,
     
     // Increment to new explicit step
    for (int k=0;k<n;k++)
-    v[k]=ynew[k];
+     v[k]=ynew[k];
 
-   return true;
   }
+   return true;
+
 };

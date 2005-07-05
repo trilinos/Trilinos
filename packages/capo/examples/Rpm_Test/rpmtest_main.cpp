@@ -231,9 +231,9 @@ int main(int argc, char *argv[])
   temp_string ="printproc";
   PL->set_param(temp_string,1);
   temp_string ="lambda_stepsize";
-  PL->set_param(temp_string,-.002);
+  PL->set_param(temp_string,-.001);
   temp_string ="MaxOuterIts";
-  PL->set_param(temp_string,24);
+  PL->set_param(temp_string,48);
   temp_string ="EnablePeriodicity";
   PL->set_param(temp_string, false);
 

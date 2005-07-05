@@ -377,13 +377,6 @@ bool Rpm::InnerIteration()
   Thyra::assign(&*xfinal,*xcurrent); 
   Tfinal = Tcurrent;
   lambdafinal = lambdacurrent;
-  for (int i=0;i<10;i++)
-    cout << Thyra::get_ele(*xcurrent,i+1) << " ";
-  cout << endl;
-  for (int i=0;i<10;i++)
-    cout << Thyra::get_ele(*v,i+1) << " ";
-
-
 
   converged = Converged(xcurrent,v);
   iter = 0;
