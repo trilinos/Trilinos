@@ -78,6 +78,8 @@ typedef struct HSFC_Data {
    double     bbox_extent[3];    /* length of each side of bounding box */
    int        ndimension;        /* number of dimensions in problem (2 or 3) */
    double    (*fhsfc)(ZZ*, double*);  /* space filling curve function */
+   double Transformation[3][3];   /* From SKIP_DIMENSIONS parameter */
+   int Skip_Dimensions;             
    } HSFC_Data;                  /* data preserved for point & box drop later */
 
 
