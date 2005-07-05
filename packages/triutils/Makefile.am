@@ -95,8 +95,8 @@ install-exec-hook:
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile triutils > $(exec_prefix)/include/Makefile.export.triutils.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.epetraext
-	rm -f $(exec_prefix)/include/Makefile.export.epetraext.macros
+	rm -f $(exec_prefix)/include/Makefile.export.triutils
+	rm -f $(exec_prefix)/include/Makefile.export.triutils.macros
 
 else 
 
