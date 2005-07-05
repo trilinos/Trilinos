@@ -31,5 +31,5 @@
 
 string Ifpack_Version() { 
   return("Ifpack Version 3.0 -- 24-Jan-2005"); 
-};
+}
 
