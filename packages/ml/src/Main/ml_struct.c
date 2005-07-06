@@ -1047,6 +1047,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
    int         *bindx;
    double      *nums, **sgs_nums = NULL, *num2;
    double      *val = NULL, temp_omega;
+   double       tomega, spectral_radius;
    ML_Operator *Amat;
    int         (*fun)(ML_Smoother *, int, double *, int, double *);
    void        (*fun2)(void *) = NULL;
@@ -1060,11 +1061,14 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
       return 1;
    }
 
+   tomega = omega;
    for (i = start_level; i <= end_level; i++) {
-
-      if (omega == ML_DEFAULT) omega = 1.;
-      fun  = ML_Smoother_SGS;
       Amat = &(ml->Amat[i]);
+
+     if (omega == ML_DEFAULT) 
+       ML_Smoother_ComputeOmegaViaSpectralradius(Amat, ML_Smoother_GaussSeidel,
+                                               NULL, &spectral_radius, &tomega);
+     fun  = ML_Smoother_SGS;
 
       if (Amat->getrow->func_ptr == MSR_getrows){
          ptr   = (struct ML_CSR_MSRdata *) Amat->data;
@@ -1077,7 +1081,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 #endif
       if (val != NULL) {
          fun = ML_Smoother_MSR_SGS;
-	 if (omega != 1.0) {
+	 if (tomega != 1.0) {
 	   sgs_nums = (double **) ML_allocate( sizeof(double)*2);
 	   Nrows    = Amat->getrow->Nrows;
 	   nums     = (double *) ML_allocate( Nrows * sizeof(double));
@@ -1091,7 +1095,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 	       */
 
 	     if (bindx[j] != bindx[j+1])
-               temp_omega = omega*(1.0 - .5*((double) count) /
+               temp_omega = tomega*(1.0 - .5*((double) count) /
 				   ((double) (bindx[j+1]-bindx[j])));
 	     else temp_omega = 1.;
 
@@ -1109,22 +1113,22 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
       if (pre_or_post == ML_PRESMOOTHER) {
          sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
-                                  sgs_nums, fun, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, tomega, str);
 	 ml->pre_smoother[i].data_destroy = fun2;
       }
       else if (pre_or_post == ML_POSTSMOOTHER) {
          sprintf(str,"SGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
-                                  sgs_nums, fun, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, tomega, str);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
       else if (pre_or_post == ML_BOTH) {
          sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
-                                  sgs_nums, fun, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, tomega, str);
          sprintf(str,"SGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
-                                  sgs_nums, fun, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, tomega, str);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
       else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1324,14 +1328,33 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
 /* ------------------------------------------------------------------------- */
 /* generate the block Gauss Seidel smoother (fixed size block)               */
 /* ------------------------------------------------------------------------- */
+int ML_Gen_Smoother_SymBlockGaussSeidel(ML *ml , int nl, int pre_or_post,
+                                        int ntimes, double omega, int blocksize)
+{
+   int start_level, end_level, i;
+
+   ML_Gen_Smoother_BlockGaussSeidel(ml,nl,pre_or_post,ntimes,omega,blocksize);
+   if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+
+   for (i = start_level; i <= end_level; i++) {
+     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].symmetric_sweep=1;
+     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].symmetric_sweep=1;
+     if (pre_or_post == ML_BOTH) {
+	ml->pre_smoother[i].symmetric_sweep=1;
+	ml->post_smoother[i].symmetric_sweep=1;
+     }
+   }
+}
 
 int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
                                      int ntimes, double omega, int blocksize)
 {
    int            (*fun)(ML_Smoother *, int, double *, int, double *);
-   ML_Sm_BGS_Data *data;
+   ML_Sm_BGS_Data *data = NULL;
    int            start_level, end_level, i, status = 1;
    char           str[80];
+   double         spectral_radius, tomega;
 #ifdef ML_TIMING
    double         t0;
    t0 = GetClock();
@@ -1345,16 +1368,22 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
    }
 
    fun = ML_Smoother_BlockGS;
-   if (omega == ML_DEFAULT) omega = 1.;
+   tomega  = omega;
 
    if (pre_or_post == ML_PRESMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
+	 ML_permute_for_dgetrs_special(data->blockfacts, 
+				       ml->Amat[i].invec_leng/blocksize,blocksize);
 	 ml->pre_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_pre%d",i);
+     	 if (omega == ML_DEFAULT) 
+       	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
+					 ML_Smoother_BlockGS,(void *) data, 
+					 &spectral_radius, &tomega);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
-		                 (void *) data, fun, ntimes, omega, str);
+		                 (void *) data, fun, ntimes, tomega, str);
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
@@ -1365,10 +1394,17 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
       for (i = start_level; i <= end_level; i++) {
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
+	 ML_permute_for_dgetrs_special(data->blockfacts, 
+				       ml->Amat[i].invec_leng/blocksize,blocksize);
+
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_post%d",i);
+     	 if (omega == ML_DEFAULT) 
+       	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
+					 ML_Smoother_BlockGS,(void *) data, 
+					 &spectral_radius, &tomega);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
-			      (void *) data, fun, ntimes, omega, str);
+			      (void *) data, fun, ntimes, tomega, str);
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
@@ -1379,16 +1415,22 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
       for (i = start_level; i <= end_level; i++) {
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
+	 ML_permute_for_dgetrs_special(data->blockfacts, 
+				       ml->Amat[i].invec_leng/blocksize,blocksize);
          sprintf(str,"BGS_pre%d",i);
+     	 if (omega == ML_DEFAULT) 
+       	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
+					 ML_Smoother_BlockGS,(void *) data, 
+					 &spectral_radius, &tomega);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
-		                 (void *) data, fun, ntimes, omega, str);
+		                 (void *) data, fun, ntimes, tomega, str);
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
 #endif
          sprintf(str,"BGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
-			      (void *) data, fun, ntimes, omega, str);
+			      (void *) data, fun, ntimes, tomega, str);
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
       }
    }
@@ -2120,8 +2162,15 @@ int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
   if ((Amat->lambda_max < -666.) && (Amat->lambda_max > -667)) {
      kdata = ML_Krylov_Create( Amat->comm );
      if (scale_by_diag == 0) ML_Krylov_Set_DiagScaling_Eig(kdata, 0);
-     if (matrix_is_nonsymmetric && (symmetrize_matrix == 0))
+     if (matrix_is_nonsymmetric && (symmetrize_matrix == 0)) {
 #if defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI)
+       printf("rst: I am turning off Anasazi for now and using the old power\n");
+       printf("     I am concerned about this interface to anasazi as it \n");
+       printf("     looks like the power method is called anyway. Further.\n");
+       printf("     ML_Anasazi_Get_SpectralNorm_Anasazi() requires a getrow\n");
+       printf("     function (i.e. an epetra row matrix).\n");
+#endif
+#if defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA) && defined(HAVE_MUL_ANASAZI)
        /* Ray, this is how the function is organized:
 	  - 10 is the maximum number of iterations
 	  - 1e10 a tolerance
@@ -2129,12 +2178,20 @@ int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
 	  - ML_TRUE because you want diagonal scaling
 	  (the function is in ml_anasazi.cpp)
        */
-       ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,0,10,1e-10,
-					   ML_FALSE, ML_TRUE,
-					   &(Amat->lambda_max) );
+       /* rst: Marzio I'm changing this for the diagonal */
+       /* scaling. Tell me if I'm doing something wrong  */
+       if (scale_by_diag == 0) 
+           ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,0,10,1e-10,
+                                           ML_FALSE, ML_FALSE,
+                                           &(Amat->lambda_max) );
+       else
+           ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,0,10,1e-10,
+                                           ML_FALSE, ML_TRUE,
+                                           &(Amat->lambda_max) );
 #else
        ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
 #endif
+     }
      else 
        ML_Krylov_Set_ComputeEigenvalues( kdata );
 

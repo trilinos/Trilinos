@@ -270,6 +270,8 @@ extern int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_pos
 extern int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
    int sym, double thresh, int num_levels, double filter, int , int);
 
+extern int ML_Gen_Smoother_SymBlockGaussSeidel(ML*,int nl,int pre_post,
+		     int ntimes, double omega, int blocksize);
 extern int ML_Gen_Smoother_BlockGaussSeidel(ML*,int nl,int pre_post,int ntimes,
 		     double omega, int blocksize);
 extern void BGS_Clean(void *data);
