@@ -27,27 +27,27 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Rythmos_STEPPER_FORWARDEULER_H
-#define Rythmos_STEPPER_FORWARDEULER_H
+#ifndef Rythmos_STEPPER_BACKWARDEULER_H
+#define Rythmos_STEPPER_BACKWARDEULER_H
 
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Thyra_ModelEvaluator.hpp"
+#include "Rythmos_ModelEvaluator.hpp"
 
 namespace Rythmos {
 
 template<class Scalar>
-class ForwardEuler : public Stepper<Scalar>
+class BackwardEulerStepper : public Stepper<Scalar>
 {
   public:
     
     // Constructor
-    ForwardEuler();
-    ForwardEuler(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+    BackwardEulerStepper() {};
+    BackwardEulerStepper(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model);
     
     // Destructor
-    ~ForwardEuler();
+    ~BackwardEulerStepper() {};
 
     // Take a step _no larger_ than dt 
     Scalar TakeStep(Scalar dt);
@@ -58,40 +58,28 @@ class ForwardEuler : public Stepper<Scalar>
     // Get solution vector
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
-    // Get residual vector
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
-
   private:
 
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
+    Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
 
 };
 
+
 template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+BackwardEulerStepper<Scalar>::BackwardEulerStepper(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
-  solution_vector_ = model_->get_x_init()->clone_v();
-  residual_vector_ = Thyra::createMember(model_->get_f_space());
+  solution_vector_ = model_->get_vector();
+  residual_vector_ = model_->get_vector();
 }
 
 template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler()
-{
-}
-
-template<class Scalar>
-ForwardEuler<Scalar>::~ForwardEuler()
-{
-}
-
-template<class Scalar>
-Scalar ForwardEuler<Scalar>::TakeStep()
+Scalar BackwardEulerStepper<Scalar>::TakeStep()
 {
   // print something out about this method not supporting automatic variable step-size
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -99,20 +87,23 @@ Scalar ForwardEuler<Scalar>::TakeStep()
 }
 
 template<class Scalar>
-Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
+Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
 {
-/*
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs  = model_->createInArgs();
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs = model_->createOutArgs();
+  InArgs<Scalar> inargs;
+  OutArgs<Scalar> outargs;
 
-  inArgs.set_x(solution_vector_);
-  inArgs.set_t(t_+dt);
+  // Currently this is exactly the same as ForwardEulerStepper
+  // Basically we need to write a new residual function for the nonlinear solver of the form:
+  // f(x) = x(t+dt)-x(t)-dt*model(x(t+dt),t+dt) = 0
+  // with Jacobian:
+  // f'(x) = I - dt*model'(x(t+dt),t+dt)
+  //
+  inargs.set_x(solution_vector_);
+  inargs.set_t(t_+dt);
 
-  outArgs.set_f(residual_vector_);
+  outargs.request_F(residual_vector_);
 
-  model_->evalModel(inArgs,outArgs);
-*/
-  Thyra::eval_f<Scalar>(*model_,*solution_vector_,t_+dt,&*residual_vector_);
+  model_->evalModel(inargs,outargs);
 
   // solution_vector = solution_vector + dt*residual_vector
   Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
@@ -122,18 +113,13 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_solution() const
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scalar>::get_solution() const
 {
   return(solution_vector_);
 }
 
-template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEuler<Scalar>::get_residual() const
-{
-  return(residual_vector_);
-}
 
 
 } // namespace Rythmos
 
-#endif //Rythmos_STEPPER_FORWARDEULER_H
+#endif //Rythmos_STEPPER_BACKWARDEULER_H

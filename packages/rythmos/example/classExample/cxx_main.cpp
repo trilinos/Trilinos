@@ -1,9 +1,9 @@
 
 // This example is to debug why my code isn't compiling.
 // 1.  Set up basic class structure here all in one file
-//     virtual class Stepper with concrete derived class ForwardEuler
+//     virtual class Stepper with concrete derived class ForwardEulerStepper
 //     virtual class NonlinearModel with concrete derived class LinearProblem
-//     in main:  create object of type LinearProblem and pass to constructer of ForwardEuler
+//     in main:  create object of type LinearProblem and pass to constructer of ForwardEulerStepper
 //     Done.  My mistake was not including default constructors & destructors for virtual base classes.
 // 2.  Add in RefCountPtr
 //     Done.  Note:  if I pass by const reference, with const object, then the object
@@ -56,7 +56,7 @@ double LinearProblem::get_vector() const
 int main(int argc, char *argv[])
 {
   LinearProblem *problem = new LinearProblem();
-  Rythmos::ForwardEuler<double> *stepper = new Rythmos::ForwardEuler<double>(problem);
+  Rythmos::ForwardEulerStepper<double> *stepper = new Rythmos::ForwardEulerStepper<double>(problem);
 
   double t0 = 0.0;
   double t1 = 1.0;

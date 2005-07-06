@@ -9,12 +9,12 @@
 namespace Rythmos {
 
 template<class Scalar>
-class ForwardEuler : public Stepper<Scalar>
+class ForwardEulerStepper : public Stepper<Scalar>
 {
   public:
-    ForwardEuler();
-    ForwardEuler(ModelEvaluator<Scalar> *model);
-    ~ForwardEuler();
+    ForwardEulerStepper();
+    ForwardEulerStepper(ModelEvaluator<Scalar> *model);
+    ~ForwardEulerStepper();
     Scalar TakeStep(Scalar dt);
     Scalar get_solution();
   protected:
@@ -26,22 +26,22 @@ class ForwardEuler : public Stepper<Scalar>
 
 
 template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler() 
+ForwardEulerStepper<Scalar>::ForwardEulerStepper() 
 {
 }
 template<class Scalar>
-ForwardEuler<Scalar>::ForwardEuler(ModelEvaluator<Scalar> *model)
+ForwardEulerStepper<Scalar>::ForwardEulerStepper(ModelEvaluator<Scalar> *model)
 {
   model_ = model;
   t_ = Teuchos::ScalarTraits<Scalar>::zero();
   x_ = model_->get_vector();
 }
 template<class Scalar>
-ForwardEuler<Scalar>::~ForwardEuler() 
+ForwardEulerStepper<Scalar>::~ForwardEulerStepper() 
 {
 }
 template<class Scalar>
-Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
+Scalar ForwardEulerStepper<Scalar>::TakeStep(Scalar dt)
 {
   f_ = model_->evalModel(x_,t_);
   x_ = x_ + dt*f_;
@@ -49,7 +49,7 @@ Scalar ForwardEuler<Scalar>::TakeStep(Scalar dt)
   return(dt);
 }
 template<class Scalar>
-Scalar ForwardEuler<Scalar>::get_solution()
+Scalar ForwardEulerStepper<Scalar>::get_solution()
 {
   return(x_);
 }

@@ -38,16 +38,16 @@
 namespace Rythmos {
 
 template<class Scalar>
-class ExplicitRK : public Stepper<Scalar>
+class ExplicitRKStepper : public Stepper<Scalar>
 {
   public:
     
     // Constructor
-    ExplicitRK();
-    ExplicitRK(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_);
+    ExplicitRKStepper();
+    ExplicitRKStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_);
     
     // Destructor
-    ~ExplicitRK();
+    ~ExplicitRKStepper();
 
     // Take a step _no larger_ than dt 
     Scalar TakeStep(Scalar dt);
@@ -76,7 +76,7 @@ class ExplicitRK : public Stepper<Scalar>
 };
 
 template<class Scalar>
-ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
@@ -216,17 +216,17 @@ ExplicitRK<Scalar>::ExplicitRK(const Teuchos::RefCountPtr<const Thyra::ModelEval
 }
 
 template<class Scalar>
-ExplicitRK<Scalar>::ExplicitRK()
+ExplicitRKStepper<Scalar>::ExplicitRKStepper()
 {
 }
 
 template<class Scalar>
-ExplicitRK<Scalar>::~ExplicitRK()
+ExplicitRKStepper<Scalar>::~ExplicitRKStepper()
 {
 }
 
 template<class Scalar>
-Scalar ExplicitRK<Scalar>::TakeStep()
+Scalar ExplicitRKStepper<Scalar>::TakeStep()
 {
   // print something out about this method not supporting automatic variable step-size
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -234,7 +234,7 @@ Scalar ExplicitRK<Scalar>::TakeStep()
 }
 
 template<class Scalar>
-Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
+Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
@@ -267,7 +267,7 @@ Scalar ExplicitRK<Scalar>::TakeStep(Scalar dt)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRK<Scalar>::get_solution() const
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRKStepper<Scalar>::get_solution() const
 {
   return(solution_vector_);
 }

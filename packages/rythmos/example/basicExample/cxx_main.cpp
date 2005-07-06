@@ -42,8 +42,8 @@
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
 //#include "ExampleApplicationRythmosInterface.hpp"
-#include "Rythmos_Stepper_ForwardEuler.hpp"
-#include "Rythmos_Stepper_ExplicitRK.hpp"
+#include "Rythmos_ForwardEulerStepper.hpp"
+#include "Rythmos_ExplicitRKStepper.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -131,11 +131,11 @@ int main(int argc, char *argv[])
     Teuchos::RefCountPtr<Rythmos::Stepper<double> > stepper_ptr;
     if (method == "ERK4") // Explicit Runge-Kutta 4 stage
     {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRK<double>(model));
+      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
       method = "Explicit Runge-Kutta of order 4";
     } else // Forward Euler
     {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEuler<double>(model));
+      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
       method = "Forward Euler";
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;

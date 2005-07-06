@@ -293,8 +293,9 @@ CORE_H = \
 	$(srcdir)/Rythmos_InOutArgs.hpp \
 	$(srcdir)/Rythmos_ModelEvaluator.hpp \
 	$(srcdir)/Rythmos_Stepper.hpp \
-	$(srcdir)/Rythmos_Stepper_ForwardEuler.hpp \
-	$(srcdir)/Rythmos_Stepper_ExplicitRK.hpp \
+	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
+	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
+	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \
 	$(srcdir)/Thyra_EpetraModelEvaluator.hpp \
 	$(srcdir)/Thyra_ModelEvaluator.hpp
 
