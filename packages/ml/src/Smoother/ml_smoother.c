@@ -56,6 +56,72 @@
 #include "ml_utils.h"
 #include "ml_op_utils.h"
 
+/* A special version of dgetrs which is supposed to be optimized. */
+/* NOTE: it is assumed that ML_permute_for_dgetrs_special() has   */
+/* been called before to shuffle around the LU factors produced by*/
+/* LAPACK.                                                        */
+
+int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv, double *correc  )
+{
+  int ii, jj, pivot;
+  double tmp;
+    
+    /* Apply row interchanges to the right hand sides. */
+
+    for (ii = 0; ii < blocksize; ii++) {
+      pivot         = ipiv[ii] - 1;
+      tmp           = correc[ii];
+      correc[   ii] = correc[pivot];
+      correc[pivot] = tmp;
+    }
+
+    /* Solve L*X = CORREC, overwriting CORREC with X. */
+    for (ii = 1; ii < blocksize ; ii++) {
+      for (jj = 0; jj < ii ; jj++) {
+        correc[ii] -= (*ablock++)*correc[jj];
+      }
+    }
+    /* Solve U*X = CORREC, overwriting CORREC with X. */
+    for (ii = blocksize-1; ii >= 0; ii--) {
+      for (jj = ii+1; jj < blocksize; jj++) {
+	correc[ii] -= correc[jj]*(*ablock++); 
+      }
+      correc[ii] /= *ablock++;
+    }
+
+    return 0;
+} 
+
+/* Permute a Nblocks sets of LAPACK factors in ablock[] so that */
+/* ML_dgetrs_special() can be used to solve them quickly.       */
+
+int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize)
+ {
+   double *newZ;
+   int    count, i,j,k;
+   newZ = (double *) ML_allocate(sizeof(double)*(blocksize*blocksize+1));
+
+   for (k = 0; k < Nblocks; k++) {
+     count = 0;
+     for (i = 1; i < blocksize; i++) {
+       for (j = 0; j < i; j++) {
+	 newZ[count] = Z[k][ (j)*blocksize+i ];
+	 count = count + 1;
+       }
+     }
+     for (i = blocksize-1; i >= 0; i--) {
+       for (j = i+1; j < blocksize; j++) {
+	 newZ[count] = Z[k][ (j)*blocksize+i];
+	 count = count + 1;
+       }
+       newZ[count]  = Z[k][ (i)*blocksize + i ];
+       count = count + 1;
+     }
+     for (i = 0; i < blocksize*blocksize; i++) Z[k][i] = newZ[i];
+   }
+   ML_free(newZ);
+}
+
 #ifdef out
 /* ************************************************************************* */
 /* include files for SuperLU and MPI                                         */
@@ -108,6 +174,7 @@ int ML_Smoother_Init(ML_Smoother *ml_sm, ML_1Level *mylevel)
    ml_sm->label      = NULL;
    ml_sm->pre_or_post = 0;
    ml_sm->envelope = NULL;
+   ml_sm->symmetric_sweep = 0;
    return 0;
 } 
 
@@ -220,6 +287,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    ml_sm->pre_or_post = 0;
    ml_sm->init_guess = ML_NONZERO;
    ml_sm->tol = 0;
+   ml_sm->symmetric_sweep = 0;
    if ((ml_sm->data_destroy != NULL) && (ml_sm->smoother->data != NULL)) {
       ml_sm->data_destroy( ml_sm->smoother->data );
       ml_sm->smoother->data = NULL;
@@ -1843,18 +1911,22 @@ int ML_Smoother_SGSSequential(ML_Smoother *sm,int inlen,double x[],int outlen,
 int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
                         double rhs[])
 {
-   int            iter, i, j, k, length, allocated_space, *cols, col, one;
-   double         *vals, omega;
+  int            iter, i, j, k, length, allocated_space, *cols=NULL;
+   double         *vals = NULL, omega;
    ML_Operator    *Amat;
    ML_Comm        *comm;
    ML_CommInfoOP  *getrow_comm;
-   int Nrows,     **perms, blocksize, Nblocks, row, info;
-   double *x2,    **blockdata, *Atimesx, *correc;
+   int            Nrows, **perms, blocksize, Nblocks, row;
+   double        *x2, **blockdata, *correc;
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
-   char           N[2];
-   /*unsigned int   itmp=0;*/
-	 
+   struct ML_CSR_MSRdata *ptr;
+   double *Amat_val = NULL;
+   int    *Amat_bindx = NULL;
+
+   int *oldcols, blocksizeminusone;
+   double *oldvals, *xptr, dtemp;
+
    smooth_ptr = (ML_Smoother *) sm;
 
    omega = smooth_ptr->omega;
@@ -1864,11 +1936,6 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    dataptr=(ML_Sm_BGS_Data *)smooth_ptr->smoother->data;
    perms = dataptr->perms;
    blockdata = dataptr->blockfacts;
-   one=1; /* fortran needs pointers to everything.  I want to be able to
-	     pass it a 1, indicating that I want solve matrix-vector systems.
-	     I also need to pass fortran an "N": */
-   strcpy(N,"N");
-
    blocksize=dataptr->blocksize;
    Nblocks=Nrows/blocksize;
 
@@ -1876,22 +1943,26 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
       pr_error("Error(ML_blockGaussSeidel): Need getrow() for smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
+   if (Amat->getrow->func_ptr == MSR_getrows){
+      ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+      Amat_val   = ptr->values;
+      Amat_bindx = ptr->columns;
+   }
+#ifdef AZTEC
+   else AZ_get_MSR_arrays(Amat, &Amat_bindx, &Amat_val);
+#endif
 
    allocated_space = Amat->max_nz_per_row+2;
-   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
-   vals = (double *) ML_allocate(allocated_space*sizeof(double));
-   /* this is very space inefficient, but since lapack doesn't do sparsity,
-      I'm not sure how to do better without rewriting their solver routine */
-   Atimesx = (double *) ML_allocate(blocksize*sizeof(double));
+   if (Amat_bindx == NULL) {
+     cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+     vals = (double *) ML_allocate(allocated_space*sizeof(double));
+     oldcols = cols;  oldvals = vals;
+   }
+
    correc = (double *) ML_allocate(blocksize*sizeof(double));
    if (correc == NULL) pr_error("Error in ML_BlockGaussSeidel:Not enough space\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for BGS smoother\n");
-
-   /* right now, I'm not sure how this will work - need to look up the
-      matvec stuff.  It needs to be able to mutliply a set of rows of A
-      by x.  Since matvec presumably won't do that, I'm not sure what to
-      do about that */
 
    getrow_comm= Amat->getrow->pre_comm;
    if (getrow_comm != NULL) 
@@ -1911,47 +1982,70 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
       if (getrow_comm != NULL)
          ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
-      for (i = 0; i < Nblocks; i++) 
-      {
-	 for (k = 0; k < blocksize; k++) Atimesx[k]=0.0;
-	 for (k = 0; k < blocksize; k++) 
-         {
-	    row=i*blocksize+k;
-	    ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
-	                                       &length, 0);
-	    for (j = 0; j < length; j++) 
-            {
-               col = cols[j];
-               Atimesx[k] += vals[j]*x2[col];
-	    }
-	    correc[k]=rhs[row]-Atimesx[k];
-	 }
-				
-	 DGETRS_F77(N, &blocksize, &one, blockdata[i], &blocksize, perms[i],
-			   correc, &blocksize, &info);
-	 for (k = 0; k < blocksize; k++)
-	    x2[k+i*blocksize] += omega*correc[k];
-      }
-/* symmetrize it
-      for (i = Nblocks-1; i >= 0; i--) {
-         for (k = 0; k < blocksize; k++) Atimesx[k]=0.0;
-         for (k = 0; k < blocksize; k++) {
-            row=i*blocksize+k;
-            ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
-                                               &length, 0);
-            for (j = 0; j < length; j++) {
-               col = cols[j];
-               Atimesx[k] += vals[j]*x2[col];
-            }
-            correc[k]=rhs[row]-Atimesx[k];
-         }
+      row = 0;
+      xptr = x2;
 
-         MLFORTRAN(dgetrs)(N, &blocksize, &one, blockdata[i], &blocksize, perms[i],
-                           correc, &blocksize, &info, itmp);
-         for (k = 0; k < blocksize; k++)
-            x2[k+i*blocksize] += omega*correc[k];
+      if (Amat_bindx != NULL) {
+	cols = &(Amat_bindx[Amat_bindx[0]]);
+	vals = &(Amat_val[Amat_bindx[0]]);
+	for (i = 0; i < Nblocks; i++) {
+	  for (k = 0; k < blocksize; k++) {
+	    length = Amat_bindx[row+1] -  Amat_bindx[row];
+	    dtemp  = Amat_val[row]*x2[row];
+	    for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++];
+	    correc[k]=rhs[row++]-dtemp;
+	  }
+	  ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+	  for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+	}
       }
-*/
+      else {
+	for (i = 0; i < Nblocks; i++) {
+	  for (k = 0; k < blocksize; k++) {
+	    dtemp = 0.;
+	    vals = oldvals; cols = oldcols;
+	    ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
+			      &length, 0);
+	    for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++];
+	    correc[k]=rhs[row++]-dtemp;
+	  }
+	  ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+	  for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+	}
+      }
+      /* symmetrize it  */
+      if (smooth_ptr->symmetric_sweep == 1) {
+	blocksizeminusone = blocksize - 1;
+	row = Nblocks*blocksize - 1;
+	xptr = &(x2[row]);
+	if (Amat_bindx != NULL) {
+	  cols = &(Amat_bindx[Amat_bindx[row+1]]);  cols--;
+	  vals = &(Amat_val[Amat_bindx[row+1]]);   vals--;
+	  for (i = Nblocks-1; i >= 0; i--) {
+	    for (k = blocksizeminusone; k >= 0; k--) {
+	      length = Amat_bindx[row+1] -  Amat_bindx[row];
+	      dtemp = Amat_val[row]*x2[row];
+	      for (j = 0; j < length; j++) dtemp += (*vals--)*x2[*cols--];
+	      correc[k]=rhs[row--]-dtemp;
+	    }
+	    ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+	    for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
+	  }
+	}
+	else {
+	  for (i = Nblocks-1; i >= 0; i--) {
+	    for (k = blocksizeminusone; k >= 0; k--) {
+	      dtemp = 0.;
+	      vals = oldvals; cols = oldcols;
+	      ML_get_matrix_row(Amat,1,&row,&allocated_space,&cols,&vals,&length, 0);
+	      for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++];
+	      correc[k]=rhs[row--]-dtemp;
+	    }
+	    ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+	    for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
+	  }
+	}
+      }
    }
 	 
    if (getrow_comm != NULL) 
@@ -1962,9 +2056,10 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    if (allocated_space != Amat->max_nz_per_row+2) {
       Amat->max_nz_per_row = allocated_space;
    }
-	 
-   ML_free(vals); ML_free(cols); ML_free(Atimesx); ML_free(correc);
-	 
+   if (Amat_bindx == NULL) {
+     ML_free(oldvals); ML_free(oldcols); 
+   }
+   ML_free(correc);
    return 0;
 }
 
@@ -4131,6 +4226,88 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    return 0;
 }
 #endif /* ifdef MatrixFreeHiptmair */
+
+/* This function is used by ML_Smoother_ComputeOmegaViaSpectralradius(). */
+/* This is a matvec function for (I-G) where G is the iteration operator */
+/* of a smoother object contained in Amat->data                          */
+/*                                                                       */
+/* Note: the iteration operator is obtained by setting the right hand    */
+/* side to zero.                                                         */
+
+int ML_EyeMinusIterationOperator_Matvec(ML_Operator *Amat, int ilen, 
+        double p[], int olen, double ap[])
+{
+  double *zeros;
+  int    i;
+  
+  zeros = (double *) ML_allocate(sizeof(double)*(ilen + 1));
+  for (i = 0; i < ilen; i++) zeros[i] = 0.;
+  for (i = 0; i < ilen; i++) ap[i] = p[i]; 
+
+  ML_Smoother_Apply((ML_Smoother *) Amat->data, ilen, ap, olen, 
+                    zeros, ML_NONZERO);
+  for (i = 0; i < ilen; i++) ap[i] = p[i] - ap[i];
+
+  ML_free(zeros);
+  return 0;
+}
+
+/* Compute the spectral radius (I-G) where G is the iteration operator */
+/* corresponding to 'smoothing_function'. Use this spectral radius to  */
+/* generate a damping parameter for the smoother. In generating the    */
+/* damping paramter we assume that G = G(1) with G(w) = I - w Gbar.    */
+/* Unfortunately, it is not clear what is the best omega given only the*/
+/* spectral radius of Gbar. Ideally, it would be nice to also know the */
+/* lowest eigenvalue associated with the space that needs to be        */
+/* smoothed, lambda_lowest. In this case, the optimal would be given by*/
+/* balancing the reduction over [lambda_lowest, spectral_raidus]. That */
+/* is                                                                  */
+/*            1 - w lambda_lowest = -(1 - w spectral_radius)           */
+/*        =>                                                           */
+/*            w = 2/(lambda_lowest + spectral_radius)                  */
+/* Here we estimate lambda_lowest by a simple conservative fraction of */
+/* the spectral radius.                                                */
+
+int ML_Smoother_ComputeOmegaViaSpectralradius(ML_Operator *Amat, 
+    int (*smoothing_function)(ML_Smoother *, int, double *, int, double *),
+    void *data, double *spectral_radius, double *omega)
+{
+   double       lambda_lowest;
+   ML_Operator *EyeMinusItOperator;
+   ML_1Level   *SingleLevel;
+   ML_Smoother *tmp_smoother;
+
+   SingleLevel           = (ML_1Level *) ML_allocate(sizeof(ML_1Level));
+   SingleLevel->comm     = Amat->comm;
+   SingleLevel->Amat     = Amat;
+   SingleLevel->levelnum = 0;
+   ML_Smoother_Create(&tmp_smoother, SingleLevel);
+
+   /* Take one step of smoother with w = 1 to get the iteration operator */
+
+   ML_Smoother_Set(tmp_smoother,data,smoothing_function,1,1.0,"tmp Smooth");
+
+   EyeMinusItOperator = ML_Operator_Create(Amat->comm);
+   ML_Operator_Set_ApplyFuncData(EyeMinusItOperator,Amat->invec_leng, 
+                                 Amat->outvec_leng, tmp_smoother,
+                                 Amat->outvec_leng, NULL,0);
+   ML_Operator_Set_ApplyFunc (EyeMinusItOperator, ML_EyeMinusIterationOperator_Matvec);
+
+   ML_Gimmie_Eigenvalues(EyeMinusItOperator, ML_NO_SCALE, ML_NONSYMM, ML_NO_SYMMETRIZE);
+   *spectral_radius = EyeMinusItOperator->lambda_max;
+
+   lambda_lowest = *spectral_radius/1.2;
+   *omega = 2./(lambda_lowest + *spectral_radius);
+   /* how about this instead */
+   *omega = ML_min(1.25/(*spectral_radius),1.);
+   
+   ML_Operator_Destroy(&EyeMinusItOperator);
+   ML_Smoother_Destroy(&tmp_smoother);
+   ML_free(SingleLevel);
+
+   return 0;
+}
+
 
 /* ************************************************************************* */
 /* function to generate the factorizations of the diagonal blocks of A.      */

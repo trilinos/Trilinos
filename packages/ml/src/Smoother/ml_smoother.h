@@ -79,6 +79,10 @@ struct ML_Smoother_Struct
    int                     pre_or_post;
    ML_Comm_Envelope        *envelope;
    int                     output_level;
+   int                     symmetric_sweep;
+	                     /* When block GS is used, 1 indicates symmetric */
+                             /* block Gauss-Seidel and 0 indicates standard  */
+                             /* block Gauss-Seidel.                          */
 };
 
 struct ML_Sm_BGS_Data_Struct 
@@ -268,6 +272,12 @@ extern int ML_Smoother_ApplySubdomainOverlap(ML_Smoother *sm, int inlen,
 
 extern void ML_Smoother_DestroySubdomainOverlap(void *data);
 
+extern int ML_EyeMinusIterationOperator_Matvec(ML_Operator *Amat, int ilen, 
+		       double p[], int olen, double ap[]);
+
+extern int ML_Smoother_ComputeOmegaViaSpectralradius(ML_Operator *Amat, 
+    int (*smoothing_function)(ML_Smoother *, int, double *, int, double *),
+    void *data, double *spectral_radius, double *omega);
 
 
 /* ******************************************************************** */
@@ -328,7 +338,12 @@ extern  int ML_Smoother_GetRowLengths(ML_CommInfoOP *, ML_Comm *,
                   ML_Operator *, int *, int **);
 extern  int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *, ML_Comm *,
                   int *, int **, int **, double **, int **, int **, int *);
-extern   ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int);
+extern  ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int);
+extern  int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv, 
+			      double *correc);
+extern  int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize);
+
+
 
 /* -------------------------------------------------------------------- */
 /* Ray's functions                                                      */
@@ -351,6 +366,7 @@ extern int ML_Smoother_MSR_SGSdamping(void *,int ,double *,int , double *);
 extern void ML_Smoother_Clean_MSR_GS(void *data);
 
 extern int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[]);
+
 
 #ifndef ML_CPP
 #ifdef __cplusplus
