@@ -49,6 +49,7 @@ int            i, ierr = 0;
     rib->Global_IDs = NULL;
     rib->Local_IDs = NULL;
     rib->Dots = NULL;
+    rib->Skip_Dimensions = 0;
 
     rib->Tree_Ptr = (struct rib_tree *)
               ZOLTAN_MALLOC(zz->LB.Num_Global_Parts* sizeof(struct rib_tree));
@@ -134,6 +135,7 @@ int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
   int num_obj, max_obj, rc;
   RIB_STRUCT *to, *from;
   ZOLTAN_ID_PTR gids, lids;
+  int i, j;
 
   from = (RIB_STRUCT *)fromZZ->LB.Data_Structure;
   Zoltan_RIB_Free_Structure(toZZ);
@@ -178,6 +180,14 @@ int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
   }
 
   to->Num_Geom = from->Num_Geom;
+
+  to->Skip_Dimensions = from->Skip_Dimensions;
+ 
+  for (i=0; i<3; i++){
+    for (j=0; j<3; j++){
+      to->Transformation[i][j] = from->Transformation[i][j];
+    }
+  }
 
   return ZOLTAN_OK;
 }
