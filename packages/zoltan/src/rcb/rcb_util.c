@@ -55,6 +55,7 @@ int i, ierr = 0;
     rcb->Global_IDs = NULL;
     rcb->Local_IDs = NULL;
     rcb->Dots = NULL;
+    rcb->Skip_Dimensions = 0;
 
     rcb->Tree_Ptr = (struct rcb_tree *)
       ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(struct rcb_tree));
@@ -146,6 +147,7 @@ int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
   int num_obj, max_obj, rc;
   RCB_STRUCT *to, *from;
   ZOLTAN_ID_PTR gids, lids;
+  int i,j;
 
   from = (RCB_STRUCT *)fromZZ->LB.Data_Structure;
   Zoltan_RCB_Free_Structure(toZZ);
@@ -190,6 +192,14 @@ int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
   COPY_BUFFER(Box, struct rcb_box, 1, 1);
 
   to->Num_Dim = from->Num_Dim;
+
+  to->Skip_Dimensions = from->Skip_Dimensions;
+
+  for (i=0; i<3; i++){
+    for (j=0; j<3; j++){
+      to->Transformation[i][j] = from->Transformation[i][j];
+    }
+  }
 
   return ZOLTAN_OK;
 }
