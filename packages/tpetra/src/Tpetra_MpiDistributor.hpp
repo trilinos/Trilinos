@@ -64,6 +64,8 @@ namespace Tpetra {
 			, status_(0)
 			, totalReceiveLength_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, tag_(data->getMpiTag())
+			, sendArraySize_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+			, sendArray_(0)
 		{};
     
 		//! Copy Constructor
@@ -79,6 +81,8 @@ namespace Tpetra {
 			, status_(distributor.status_) // Is this correct?
 			, totalReceiveLength_(distributor.totalReceiveLength_)
 			, tag_(distributor.tag_) // Is this correct?
+			, sendArraySize_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+			, sendArray_(0)
 		{};
 
 		//! Clone constructor
