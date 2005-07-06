@@ -55,6 +55,7 @@ class Flops
   public:
 
   //@{ \name Constructor/Destructor.
+
   //! Default Constructor.
   /*! Creates a Flops instance. This instance can be queried for
       the number of floating point operations performed for the associated
@@ -71,23 +72,27 @@ class Flops
   /*! Completely deletes a Flops object.
   */
   virtual ~Flops();
+
   //@}
 
   //@{ \name Accessor methods.
 
   //! Returns the number of floating point operations with \e this object and resets the count.
-  double flops() const {double tmp = flops_; flops_= 0.0; return(tmp); };
+  double flops() const { return flops_; };
+
   //@}
 
   //@{ \name Reset methods.
 
   //! Resets the number of floating point operations to zero for \e this multi-vector.
   void resetFlops() {flops_ = 0.0;};
+
   //@}
 
   friend class CompObject;
 
  protected:
+
   mutable double flops_;
 
   //@{ \name Updating methods.
