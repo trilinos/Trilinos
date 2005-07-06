@@ -90,12 +90,15 @@ namespace CAPO {
   protected:
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xcurrent;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xfinal;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xstep;
 
     double lambdacurrent;
     double lambdafinal;
+    double lambdastep;
 
     double Tcurrent;
     double Tfinal;
+    double Tstep;
 
     int iter;
     Teuchos::RefCountPtr<Integrator> App_Integrator;
