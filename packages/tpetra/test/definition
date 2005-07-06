@@ -5,6 +5,7 @@
 (FRAMEWORK) {
     DIRS = Platform,
            Distributor,
+           Directory,
            ElementSpace,
            BlockElementSpace,
            ImportExport,
@@ -18,8 +19,7 @@
 # (See Bugzilla #1468)
 
 (FRAMEWORK) {
-    DIRS = CisMatrix,
-           Directory;
+    DIRS = CisMatrix;
     ARGS = -v;
     COMM = SERIAL;
 }

@@ -169,7 +169,6 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   returnierr += ierr;
   ierr = 0;
 
-  /*
   // test getRemoteIDList
   if(verbose) cout << "Testing getRemoteIDList... ";
   std::vector<OrdinalType> allGIDs(nGE);
@@ -198,7 +197,6 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
     if(verbose) cout << "passed" << endl;
   returnierr += ierr;
   ierr = 0;
-  */
   
   // test isSameAs (contig)
   comm.barrier();

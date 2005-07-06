@@ -38,9 +38,6 @@
 #endif // TPETRA_MPI
 
 template <typename OrdinalType>
-int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages);
-
-template <typename OrdinalType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
 
 int main(int argc, char* argv[]) {
@@ -75,13 +72,9 @@ int main(int argc, char* argv[]) {
 	// start the testing
 	if(verbose) outputStartMessage("Directory");
 	int ierr = 0;
-  
-	//mpiBreakpoint(myImageID);
-
-	simpleTest<int>(verbose, debug, myImageID, numImages);
 
 	// call the actual test routines
-	//ierr += unitTests<int>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int>(verbose, debug, myImageID, numImages);
 	//ierr += unitTests<unsigned int>(verbose, debug, myImageID, numImages);
   
 	// finish up
@@ -90,44 +83,6 @@ int main(int argc, char* argv[]) {
 #endif
 	if(verbose) outputEndMessage("Directory", (ierr == 0));
 	return(ierr);
-}
-
-//======================================================================
-template <typename OrdinalType>
-int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages) {
-
-	// create platform needed for elementspace construction
-
-#ifdef TPETRA_MPI
-	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
-#else
-	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
-#endif
-
-	// create elementspace needed for directory construction
-
-	OrdinalType const indexBase = Teuchos::OrdinalTraits<OrdinalType>::zero();
-	OrdinalType const numMyElements = intToOrdinal<OrdinalType>(5); // give each image 5 elements
-	OrdinalType const numGlobalElements = numMyElements * numImages;
-
-	// use generator to create GIDs
-	std::vector<OrdinalType> myGIDs(numMyElements);
-	generateColumn(myGIDs, myImageID, numMyElements);
-
-	Tpetra::ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, myGIDs, indexBase, platform);
-
-	// need to create & initialize vectors to pass to getDirectoryEntries
-	std::vector<OrdinalType> allGIDs;
-	std::vector<OrdinalType> imageIDs;
-	allGIDs.push_back(10);
-    allGIDs.push_back(0);
-
-	// create directory and call getDirectoryEntries
-
-	Tpetra::BasicDirectory<OrdinalType> directory (elementspace);
-	directory.getDirectoryEntries(allGIDs, imageIDs);
-
-	return(0);
 }
 
 //======================================================================
