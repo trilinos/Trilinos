@@ -703,11 +703,13 @@ static int rib_fn(
 
     MPI_Allgatherv(&treetmp[fp], sendcount, MPI_BYTE, treept, recvcount, displ,
                    MPI_BYTE, zz->Communicator);
-    for (i = 1; i < zz->LB.Num_Global_Parts; i++)
+    for (i = 1; i < zz->LB.Num_Global_Parts; i++){
       if (treept[i].parent > 0)
         treept[treept[i].parent - 1].left_leaf = i;
       else if (treept[i].parent < 0)
         treept[-treept[i].parent - 1].right_leaf = i;
+    }
+
     ZOLTAN_FREE(&displ);
     ZOLTAN_FREE(&treetmp);
   }
@@ -878,6 +880,14 @@ static int compute_rib_direction(
 {
 int i, ierr;
 double tmp;
+RIB_STRUCT *rib;
+
+  rib = (RIB_STRUCT *)zz->LB.Data_Structure;
+
+  if (rib->Skip_Dimensions > 0){
+    /* All z-coordinates, or all y- and z-coordinates, are zero. */
+    num_geom = 3 - rib->Skip_Dimensions;
+  }
 
   switch (num_geom) {
   case 3:
