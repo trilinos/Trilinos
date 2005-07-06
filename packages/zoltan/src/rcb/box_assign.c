@@ -28,12 +28,16 @@ static void Box_Assign(ZZ *, struct rcb_tree *, struct rcb_box *,
   int, int, int *, int *, int *, int);
 static void Box_Assign3(ZZ *, struct rib_tree *,struct rcb_box *,
   int, int, int *, int *, int *, int);
+static void Transformed_Box_Assign3(ZZ *, struct rib_tree *, double (*p)[3],
+  int, int, int, int *, int *, int *, int);
 static void Box_Assign2(ZZ *, struct rib_tree *,struct rcb_box *,
   int, int, int *, int *, int *, int);
 static void Box_Assign1(ZZ *, struct rib_tree *,struct rcb_box *,
   int, int, int *, int *, int *, int);
 static void add_to_list(ZZ *, int, int, int *, int *, int *, int);
-
+static void transform_box( struct rcb_box  *, double (*m)[3], int) ;
+static void transform_box_points( struct rcb_box *, 
+  double (*v)[3], double (*m)[3], int);
 /****************************************************************************/
 int Zoltan_RB_Box_Assign(
 ZZ             *zz,             /* The Zoltan structure */
@@ -68,6 +72,7 @@ int            *numparts)       /* number of partitions in part list */
      int               include_parts = (parts != NULL);
      int               ierr = ZOLTAN_OK;
      int               i;
+     double            p[8][3];
 
      if (zz->LB.Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
@@ -103,6 +108,10 @@ int            *numparts)       /* number of partitions in part list */
         box.hi[1] = ymax;
         box.hi[2] = zmax;
 
+        if (rcb->Skip_Dimensions > 0){
+          transform_box(&box, rcb->Transformation, 3 - rcb->Skip_Dimensions);
+        }
+
         Box_Assign(zz, treept, &box, include_procs, include_parts, 
                    proc_array, parts, numparts, treept[0].right_leaf);
      }
@@ -126,8 +135,18 @@ int            *numparts)       /* number of partitions in part list */
               box.hi[1] = ymax;
               box.hi[2] = zmax;
 
-              Box_Assign3(zz, itree, &box, include_procs, include_parts, 
+              if (rib->Skip_Dimensions == 0){
+                Box_Assign3(zz, itree, &box, include_procs, include_parts, 
                           proc_array, parts, numparts, itree[0].right_leaf);
+              }
+              else{
+                transform_box_points(&box, p, 
+                  rib->Transformation, 3 - rib->Skip_Dimensions);
+
+                Transformed_Box_Assign3(zz, itree, p, 3 - rib->Skip_Dimensions,
+                  include_procs, include_parts, proc_array, parts, numparts, 
+                  itree[0].right_leaf);
+              }
 
               break;
            case 2:
@@ -172,7 +191,6 @@ End:
         if (include_parts) *parts = -1;
         *numparts = 0;
      }
-     
      return ierr;
 }
 
@@ -298,6 +316,64 @@ int              partmid)       /* 1st partition in upper half */
      if (max >= cut)
         Box_Assign3(zz, itree, box, include_procs, include_parts, proc_array,
                     parts, numparts, itree[partmid].right_leaf);
+}
+static void Transformed_Box_Assign3(
+ZZ              *zz,
+struct rib_tree *itree,         /* RIB tree */
+double          (*p)[3],        /* 8 transformed vertices of the box */
+int              ndims,         /* partition reduced to 2 or 1 dimensions */
+int              include_procs, /* Flag:  Compute proc lists. */
+int              include_parts, /* Flag:  Compute part lists. */
+int             *proc_array,    /* Array of size Num_Proc; entry i is
+                                   incremented if a found partition is on 
+                                   proc i. */
+int             *parts,         /* partitions that box is in */
+int             *numparts,      /* current number of partitions on list */
+int              partmid)       /* 1st partition in upper half */
+{
+     volatile double proj, min, max;  /* values for two points */
+     double cut;                      /* current cut */
+     int i;
+
+     if (partmid <= 0) {
+        add_to_list(zz, include_procs, include_parts, proc_array, 
+                    parts, numparts, -partmid);
+        return;
+     }
+
+     for (i=0; i<8; i++){
+       if (ndims == 2){
+         proj = ((p[i][0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
+                ((p[i][1] - itree[partmid].cm[1])*itree[partmid].ev[1]);
+       }
+       else{
+         proj = p[i][0];
+       }
+
+       if (i){
+         if (proj < min) min = proj;
+         else if (proj > max) max = proj;
+       }
+       else{
+         min = max = proj;
+       }
+     }
+
+     /* order the points */
+     if (min > max) {
+        cut = min;
+        min = max;
+        max = cut;
+     }
+
+     cut = itree[partmid].cut;
+
+     if (min <= cut)
+        Transformed_Box_Assign3(zz, itree, p, ndims, include_procs, include_parts, 
+             proc_array, parts, numparts, itree[partmid].left_leaf);
+     if (max >= cut)
+        Transformed_Box_Assign3(zz, itree, p, ndims, include_procs, include_parts, 
+             proc_array, parts, numparts, itree[partmid].right_leaf);
 }
 
 /****************************************************************************/
@@ -446,6 +522,96 @@ int i;
      }
 }
 
+/****************************************************************************/
+static void transform_box_points(
+struct rcb_box  *boxpt,
+double          (*v)[3],
+double          (*m)[3],
+int             ndims)
+{
+     double temp[3];
+     int i, j;
+
+     v[0][0] = boxpt->lo[0]; v[0][1] = boxpt->lo[1]; v[0][2] = boxpt->lo[2];
+     v[1][0] = boxpt->lo[0]; v[1][1] = boxpt->hi[1]; v[1][2] = boxpt->lo[2];
+     v[2][0] = boxpt->lo[0]; v[2][1] = boxpt->hi[1]; v[2][2] = boxpt->hi[2];
+     v[3][0] = boxpt->lo[0]; v[3][1] = boxpt->lo[1]; v[3][2] = boxpt->hi[2];
+     v[4][0] = boxpt->hi[0]; v[4][1] = boxpt->lo[1]; v[4][2] = boxpt->lo[2];
+     v[5][0] = boxpt->hi[0]; v[5][1] = boxpt->hi[1]; v[5][2] = boxpt->lo[2];
+     v[6][0] = boxpt->hi[0]; v[6][1] = boxpt->hi[1]; v[6][2] = boxpt->hi[2];
+     v[7][0] = boxpt->hi[0]; v[7][1] = boxpt->lo[1]; v[7][2] = boxpt->hi[2];
+
+     for (i=0; i<8; i++){
+       for (j=0; j<3; j++){
+         temp[j] = v[i][j];
+       }
+       v[i][0] = m[0][0]*temp[0] + m[0][1]*temp[1] + m[0][2]*temp[2];
+       if (ndims == 2){
+         v[i][1] = m[1][0]*temp[0] + m[1][1]*temp[1] + m[1][2]*temp[2];
+       }
+       else{
+         v[i][1] = 0.0;
+       }
+       v[i][2] = 0.0;
+     }
+}
+static void transform_box(
+struct rcb_box  *boxpt,
+double          (*m)[3],
+int             ndims)
+{
+     double v[8][3];
+     double temp[3];
+     double xmin, xmax, ymin, ymax;
+     int i, j;
+
+     /*
+     ** Calculate transformed box vertices.  They represent a convex
+     ** polygon in the plane after transformation.  It's sufficient
+     ** to take the polygon's bounding box for the Box_Assign
+     ** computation.
+     */
+     v[0][0] = boxpt->lo[0]; v[0][1] = boxpt->lo[1]; v[0][2] = boxpt->lo[2];
+     v[1][0] = boxpt->lo[0]; v[1][1] = boxpt->hi[1]; v[1][2] = boxpt->lo[2];
+     v[2][0] = boxpt->lo[0]; v[2][1] = boxpt->hi[1]; v[2][2] = boxpt->hi[2];
+     v[3][0] = boxpt->lo[0]; v[3][1] = boxpt->lo[1]; v[3][2] = boxpt->hi[2];
+     v[4][0] = boxpt->hi[0]; v[0][1] = boxpt->lo[1]; v[0][2] = boxpt->lo[2];
+     v[5][0] = boxpt->hi[0]; v[1][1] = boxpt->hi[1]; v[1][2] = boxpt->lo[2];
+     v[6][0] = boxpt->hi[0]; v[2][1] = boxpt->hi[1]; v[2][2] = boxpt->hi[2];
+     v[7][0] = boxpt->hi[0]; v[3][1] = boxpt->lo[1]; v[3][2] = boxpt->hi[2];
+
+     for (i=0; i<8; i++){
+       for (j=0; j<3; j++){
+         temp[j] = v[i][j];
+       }
+       v[i][0] = m[0][0]*temp[0] + m[0][1]*temp[1] + m[0][2]*temp[2];
+       if (ndims == 2){
+         v[i][1] = m[1][0]*temp[0] + m[1][1]*temp[1] + m[1][2]*temp[2];
+       }
+       else{
+         v[i][1] = 0.0;
+       }
+       v[i][2] = 0.0;
+
+       if (i){
+         if (v[i][0] < xmin) xmin = v[i][0];
+         else if (v[i][0] > xmax) xmax = v[i][0];
+         if (v[i][1] < ymin) ymin = v[i][1];
+         else if (v[i][1] > ymax) ymax = v[i][1];
+       }
+       else{
+         xmin = xmax = v[i][0];
+         ymin = ymax = v[i][1];
+       }
+     }
+
+     boxpt->lo[0] = xmin;
+     boxpt->hi[0] = xmax;
+     boxpt->lo[1] = ymin;
+     boxpt->hi[1] = ymax;
+     boxpt->lo[2] = 0.0;
+     boxpt->hi[2] = 0.0;
+}
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

@@ -23,19 +23,13 @@ extern "C" {
 #include "rcb.h"
 #include "rib.h"
 
-static void transform_coord(double *p, double (*M)[3], int ncoords)
+static void transform_coord(double *p, double *v, double (*M)[3], int ncoords)
 {
-  double v[3];
+  v[1] = v[2] = 0.0;
 
-  v[0] = p[0];
-  v[1] = p[1];
-  v[2] = p[2];
-
-  p[1] = p[2] = 0.0;
-
-  p[0] = M[0][0]*v[0] + M[0][1]*v[1] + M[0][2]*v[2];
+  v[0] = M[0][0]*p[0] + M[0][1]*p[1] + M[0][2]*p[2];
   if (ncoords == 2){
-    p[1] = M[1][0]*v[0] + M[1][1]*v[1] + M[1][2]*v[2];
+    v[1] = M[1][0]*p[0] + M[1][1]*p[1] + M[1][2]*p[2];
   }
 }
 
@@ -58,8 +52,12 @@ int      *part                  /* partition that point lands in;
      RIB_STRUCT        *rib;    /* Pointer to data structures for RIB. */
      struct rib_tree   *itree;  /* tree of RIB cuts */
      int ierr = ZOLTAN_OK;
+     int num_geom;
      volatile double t;         /* Temporary variable; volatile to get matching
                                    results with and without optimization. */
+     double cnew[3];
+     double *c = coords;
+
 
      if (zz->LB.Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
@@ -79,13 +77,14 @@ int      *part                  /* partition that point lands in;
         }
 
         if (rcb->Skip_Dimensions > 0){
-          transform_coord(coords, rcb->Transformation, 3 - rcb->Skip_Dimensions);
+          transform_coord(coords, cnew, rcb->Transformation, 3 - rcb->Skip_Dimensions);
+          c = cnew;
         }
 
         partmid = treept[0].right_leaf;
 
         while (partmid > 0)
-           if (coords[treept[partmid].dim] <= treept[partmid].cut)
+           if (c[treept[partmid].dim] <= treept[partmid].cut)
               partmid = treept[partmid].left_leaf;
            else
               partmid = treept[partmid].right_leaf;
@@ -101,15 +100,20 @@ int      *part                  /* partition that point lands in;
         }
 
         if (rib->Skip_Dimensions > 0){
-          transform_coord(coords, rib->Transformation, 3 - rib->Skip_Dimensions);
+          num_geom = 3 - rib->Skip_Dimensions;
+          transform_coord(coords, cnew, rib->Transformation, num_geom);
+          c = cnew;
+        }
+        else{
+          num_geom = rib->Num_Geom;
         }
 
-        switch (rib->Num_Geom) {
+        switch (num_geom) {
            case 3:
               while (partmid > 0) {
-                 t = ((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
-                     ((coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1]) +
-                     ((coords[2] - itree[partmid].cm[2])*itree[partmid].ev[2]);
+                 t = ((c[0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
+                     ((c[1] - itree[partmid].cm[1])*itree[partmid].ev[1]) +
+                     ((c[2] - itree[partmid].cm[2])*itree[partmid].ev[2]);
                  if (t <= itree[partmid].cut)
                     partmid = itree[partmid].left_leaf;
                  else
@@ -118,8 +122,8 @@ int      *part                  /* partition that point lands in;
               break;
            case 2:
               while (partmid > 0) {
-                 t = ((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
-                     ((coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1]);
+                 t = ((c[0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
+                     ((c[1] - itree[partmid].cm[1])*itree[partmid].ev[1]);
                  if (t <= itree[partmid].cut)
                     partmid = itree[partmid].left_leaf;
                  else
@@ -127,11 +131,14 @@ int      *part                  /* partition that point lands in;
               }
               break;
            case 1:
-              while (partmid > 0)
-                 if (coords[0] <= itree[partmid].cut)
+              while (partmid > 0){
+                 if (c[0] <= itree[partmid].cut){
                     partmid = itree[partmid].left_leaf;
-                 else
+                 }
+                 else{
                     partmid = itree[partmid].right_leaf;
+                 }
+              }
               break;
         }
      }
