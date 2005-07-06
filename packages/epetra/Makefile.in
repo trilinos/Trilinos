@@ -735,8 +735,8 @@ all-libs:
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.thyra
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.thyra.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.epetra
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.epetra.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 

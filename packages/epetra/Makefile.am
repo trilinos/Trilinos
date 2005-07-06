@@ -134,8 +134,8 @@ install-exec-hook:
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.thyra
-	rm -f $(exec_prefix)/include/Makefile.export.thyra.macros
+	rm -f $(exec_prefix)/include/Makefile.export.epetra
+	rm -f $(exec_prefix)/include/Makefile.export.epetra.macros
 
 else 
 
