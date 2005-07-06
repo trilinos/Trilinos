@@ -832,13 +832,8 @@ bool Rpm::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> 
 	  LHS[Unstable_Basis_Size+i*(LS_size)]=Thyra::get_ele(*rightcol,i+1);
 	}
 
-      // and the corner
-      
-      App_Integrator->Integrate(xfinal,fphi,eps,lambdacurrent);
-      Thyra::Vp_StV(&*fphi,-1.0,*xfinal);
-      Thyra::Vt_S(&*fphi,1.0/eps);
-      
-      LHS[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)-1]=Thyra::dot(*finit,*fphi);
+      // and the corner      
+      LHS[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)-1]=0.0;
 
     }
   // When psuedo-arclength continuation is added in, I'll need another row and 
