@@ -470,15 +470,20 @@ int NextMain( int argc, char *argv[] ) {
   Epetra_SerialComm Comm;
 #endif
 
+#ifdef HAVE_AMESOS_TAUCS
+  AmesosClasses.push_back( "Amesos_Taucs" );
+#endif
+
+#if 1
 #ifdef HAVE_AMESOS_SUPERLU
   AmesosClasses.push_back( "Amesos_Superlu" );
 #endif
+
 #ifdef HAVE_AMESOS_SUPERLUDIST
   AmesosClasses.push_back( "Amesos_Superludist" );
 #endif
 
 
-#if 1
 #ifdef HAVE_AMESOS_MUMPS
   AmesosClasses.push_back( "Amesos_Mumps" );
 #endif
@@ -493,10 +498,6 @@ int NextMain( int argc, char *argv[] ) {
 #endif
 #ifdef HAVE_AMESOS_PARDISO
   AmesosClasses.push_back( "Amesos_Pardiso" );
-#endif
-
-#ifdef HAVE_AMESOS_TAUCS
-  AmesosClasses.push_back( "Amesos_Taucs" );
 #endif
 
 #ifdef HAVE_AMESOS_LAPACK

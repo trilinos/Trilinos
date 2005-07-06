@@ -67,6 +67,7 @@
 #  TestUmfpack.exe runs Test_Basic/AmesosUmfpack  
 #  TestMumps.exe runs Test_Basic/AmesosMumps  
 #  TestTaucs.exe runs Test_Basic/AmesosTaucs  
+#  TestParaklete.exe runs Test_Basic/AmesosParaklete  
 #  TestPardiso.exe runs Test_Basic/AmesosPardiso  
 #  TestPastix.exe runs Test_Basic/AmesosPastix  
 #  TestKluSerial.exe runs Test_Basic/AmesosKluSerial
@@ -77,7 +78,7 @@
 #
 #
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) $(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) $(TestParaklete_SOURCES) $(TestPardiso_SOURCES) $(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -105,7 +106,7 @@ noinst_PROGRAMS = TestAmesos$(EXEEXT) TestQuietAmesos$(EXEEXT) \
 	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4) \
 	$(am__EXEEXT_5) $(am__EXEEXT_6) $(am__EXEEXT_7) \
 	$(am__EXEEXT_8) $(am__EXEEXT_9) $(am__EXEEXT_10) \
-	$(am__EXEEXT_11)
+	$(am__EXEEXT_11) $(am__EXEEXT_12) $(am__EXEEXT_13)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -148,12 +149,15 @@ CONFIG_CLEAN_FILES =
 @HAVE_AMESOS_LAPACK_TRUE@am__EXEEXT_3 = TestLapack$(EXEEXT)
 @HAVE_AMESOS_UMFPACK_TRUE@am__EXEEXT_4 = TestUmfpack$(EXEEXT)
 @HAVE_AMESOS_TAUCS_TRUE@am__EXEEXT_5 = TestTaucs$(EXEEXT)
-@HAVE_AMESOS_PASTIX_TRUE@am__EXEEXT_6 = TestPastix$(EXEEXT)
-@HAVE_AMESOS_MUMPS_TRUE@am__EXEEXT_7 = TestMumps$(EXEEXT)
-@HAVE_AMESOS_KLU_TRUE@am__EXEEXT_8 = TestKlu$(EXEEXT)
-@HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_9 = TestSuperludist$(EXEEXT)
-@HAVE_VALGRIND_TRUE@am__EXEEXT_10 = TestValgrind$(EXEEXT)
-@HAVE_COVERAGE_TRUE@am__EXEEXT_11 = TestCoverage$(EXEEXT)
+@HAVE_AMESOS_PARDISO_TRUE@am__EXEEXT_6 = TestPardiso$(EXEEXT)
+@HAVE_AMESOS_PASTIX_TRUE@am__EXEEXT_7 = TestPastix$(EXEEXT)
+@HAVE_AMESOS_MUMPS_TRUE@am__EXEEXT_8 = TestMumps$(EXEEXT)
+@HAVE_AMESOS_PARAKLETE_TRUE@am__EXEEXT_9 = TestParaklete$(EXEEXT)
+@HAVE_AMESOS_KLU_TRUE@am__EXEEXT_10 = TestKlu$(EXEEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_11 =  \
+@HAVE_AMESOS_SUPERLUDIST_TRUE@	TestSuperludist$(EXEEXT)
+@HAVE_VALGRIND_TRUE@am__EXEEXT_12 = TestValgrind$(EXEEXT)
+@HAVE_COVERAGE_TRUE@am__EXEEXT_13 = TestCoverage$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestAmesos_SOURCES_DIST = $(srcdir)/TestAmesos.sh
 am_TestAmesos_OBJECTS =
@@ -187,6 +191,14 @@ am__TestMumps_SOURCES_DIST = $(srcdir)/TestMumps
 am_TestMumps_OBJECTS =
 TestMumps_OBJECTS = $(am_TestMumps_OBJECTS)
 TestMumps_LDADD = $(LDADD)
+am__TestParaklete_SOURCES_DIST = $(srcdir)/TestParaklete
+am_TestParaklete_OBJECTS =
+TestParaklete_OBJECTS = $(am_TestParaklete_OBJECTS)
+TestParaklete_LDADD = $(LDADD)
+am__TestPardiso_SOURCES_DIST = $(srcdir)/TestPardiso
+am_TestPardiso_OBJECTS =
+TestPardiso_OBJECTS = $(am_TestPardiso_OBJECTS)
+TestPardiso_LDADD = $(LDADD)
 am__TestPastix_SOURCES_DIST = $(srcdir)/TestPastix
 am_TestPastix_OBJECTS =
 TestPastix_OBJECTS = $(am_TestPastix_OBJECTS)
@@ -224,6 +236,7 @@ SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
 	$(TestCoverage_SOURCES) $(TestDscpack_SOURCES) \
 	$(TestExamples_SOURCES) $(TestKlu_SOURCES) \
 	$(TestLapack_SOURCES) $(TestMumps_SOURCES) \
+	$(TestParaklete_SOURCES) $(TestPardiso_SOURCES) \
 	$(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) \
 	$(TestScalapack_SOURCES) $(TestSuperludist_SOURCES) \
 	$(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) \
@@ -233,7 +246,8 @@ DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
 	$(am__TestDscpack_SOURCES_DIST) \
 	$(am__TestExamples_SOURCES_DIST) $(am__TestKlu_SOURCES_DIST) \
 	$(am__TestLapack_SOURCES_DIST) $(am__TestMumps_SOURCES_DIST) \
-	$(am__TestPastix_SOURCES_DIST) \
+	$(am__TestParaklete_SOURCES_DIST) \
+	$(am__TestPardiso_SOURCES_DIST) $(am__TestPastix_SOURCES_DIST) \
 	$(am__TestQuietAmesos_SOURCES_DIST) \
 	$(am__TestScalapack_SOURCES_DIST) \
 	$(am__TestSuperludist_SOURCES_DIST) \
@@ -456,6 +470,12 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_PASTIX_FALSE@PASTIX_TEST = 
 @HAVE_AMESOS_PASTIX_TRUE@PASTIX_TEST = TestPastix
 @HAVE_AMESOS_PASTIX_TRUE@TestPastix_SOURCES = $(srcdir)/TestPastix
+@HAVE_AMESOS_PARDISO_FALSE@PARDISO_TEST = 
+@HAVE_AMESOS_PARDISO_TRUE@PARDISO_TEST = TestPardiso
+@HAVE_AMESOS_PARDISO_TRUE@TestPardiso_SOURCES = $(srcdir)/TestPardiso
+@HAVE_AMESOS_PARAKLETE_FALSE@PARAKLETE_TEST = 
+@HAVE_AMESOS_PARAKLETE_TRUE@PARAKLETE_TEST = TestParaklete
+@HAVE_AMESOS_PARAKLETE_TRUE@TestParaklete_SOURCES = $(srcdir)/TestParaklete
 @HAVE_AMESOS_SCALAPACK_FALSE@SCALAPACK_TEST = 
 @HAVE_AMESOS_SCALAPACK_TRUE@SCALAPACK_TEST = TestScalapack
 @HAVE_AMESOS_SCALAPACK_TRUE@TestScalapack_SOURCES = $(srcdir)/TestScalapack
@@ -523,6 +543,12 @@ clean-noinstPROGRAMS:
 @HAVE_AMESOS_MUMPS_FALSE@TestMumps$(EXEEXT): $(TestMumps_OBJECTS) $(TestMumps_DEPENDENCIES) 
 @HAVE_AMESOS_MUMPS_FALSE@	@rm -f TestMumps$(EXEEXT)
 @HAVE_AMESOS_MUMPS_FALSE@	$(LINK) $(TestMumps_LDFLAGS) $(TestMumps_OBJECTS) $(TestMumps_LDADD) $(LIBS)
+@HAVE_AMESOS_PARAKLETE_FALSE@TestParaklete$(EXEEXT): $(TestParaklete_OBJECTS) $(TestParaklete_DEPENDENCIES) 
+@HAVE_AMESOS_PARAKLETE_FALSE@	@rm -f TestParaklete$(EXEEXT)
+@HAVE_AMESOS_PARAKLETE_FALSE@	$(LINK) $(TestParaklete_LDFLAGS) $(TestParaklete_OBJECTS) $(TestParaklete_LDADD) $(LIBS)
+@HAVE_AMESOS_PARDISO_FALSE@TestPardiso$(EXEEXT): $(TestPardiso_OBJECTS) $(TestPardiso_DEPENDENCIES) 
+@HAVE_AMESOS_PARDISO_FALSE@	@rm -f TestPardiso$(EXEEXT)
+@HAVE_AMESOS_PARDISO_FALSE@	$(LINK) $(TestPardiso_LDFLAGS) $(TestPardiso_OBJECTS) $(TestPardiso_LDADD) $(LIBS)
 @HAVE_AMESOS_PASTIX_FALSE@TestPastix$(EXEEXT): $(TestPastix_OBJECTS) $(TestPastix_DEPENDENCIES) 
 @HAVE_AMESOS_PASTIX_FALSE@	@rm -f TestPastix$(EXEEXT)
 @HAVE_AMESOS_PASTIX_FALSE@	$(LINK) $(TestPastix_LDFLAGS) $(TestPastix_OBJECTS) $(TestPastix_LDADD) $(LIBS)
@@ -698,6 +724,12 @@ uninstall-am: uninstall-info-am
 
 @HAVE_AMESOS_PASTIX_TRUE@TestPastix$(EXEEXT): $(srcdir)/TestPastix
 @HAVE_AMESOS_PASTIX_TRUE@	cp $(srcdir)/TestPastix TestPastix$(EXEEXT) 
+
+@HAVE_AMESOS_PARDISO_TRUE@TestPardiso$(EXEEXT): $(srcdir)/TestPardiso
+@HAVE_AMESOS_PARDISO_TRUE@	cp $(srcdir)/TestPardiso TestPardiso$(EXEEXT) 
+
+@HAVE_AMESOS_PARAKLETE_TRUE@TestParaklete$(EXEEXT): $(srcdir)/TestParaklete
+@HAVE_AMESOS_PARAKLETE_TRUE@	cp $(srcdir)/TestParaklete TestParaklete$(EXEEXT) 
 
 @HAVE_AMESOS_SCALAPACK_TRUE@TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
 @HAVE_AMESOS_SCALAPACK_TRUE@	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 

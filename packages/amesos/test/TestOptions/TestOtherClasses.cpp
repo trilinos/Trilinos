@@ -144,6 +144,7 @@ int TestOtherClasses( const char* AmesosClass,
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
     ParamList.set( "Refactorize", true );
       
     double relerror;
@@ -198,6 +199,7 @@ int TestOtherClasses( const char* AmesosClass,
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
     ParamList.set( "ComputeTrueResidual", true );
       
     double relerror;

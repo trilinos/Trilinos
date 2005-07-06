@@ -66,6 +66,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
     ParamList.set( "MaxProcs", 100000 );
     //  ParamList.print( cerr, 10 ) ; 
       
@@ -119,6 +120,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
     //  ParamList.print( cerr, 10 ) ; 
@@ -169,6 +171,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
     //  ParamList.print( cerr, 10 ) ; 
@@ -222,6 +225,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
     ParamList.set( "MaxProcs", 1000 );
     ParamList.set( "ComputeTrueResidual", true );
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
@@ -274,6 +278,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
     ParamList.set( "MaxProcs", 1000 );
     ParamList.set( "ComputeTrueResidual", true );
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
@@ -328,6 +333,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    else ParamList.set( "OutputLevel", 2 );
       
     double relerror;
     double relresidual;

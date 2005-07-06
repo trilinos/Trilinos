@@ -38,6 +38,7 @@ using namespace Teuchos;
 //=============================================================================
 Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
   Problem_(&prob),
+  Matrix_(0),
   A_(0),
   L_(0)
 { }
@@ -45,6 +46,7 @@ Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
 //=============================================================================
 Amesos_Taucs::~Amesos_Taucs(void) 
 {
+
   // print out some information if required by the user
   if ((verbose_ && PrintTiming_) || verbose_ == 2) PrintTiming();
   if ((verbose_ && PrintStatus_) || verbose_ == 2) PrintStatus();
@@ -254,6 +256,7 @@ bool Amesos_Taucs::MatrixShapeOK() const
 //=============================================================================
 int Amesos_Taucs::SymbolicFactorization() 
 {
+  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering SymbolicFactorization()" << endl ; 
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
@@ -290,12 +293,14 @@ int Amesos_Taucs::SymbolicFactorization()
 
   IsSymbolicFactorizationOK_ = true;
 
+  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving SymbolicFactorization()" << endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::NumericFactorization() 
 {
+  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
   IsNumericFactorizationOK_ = false;
 
   if (IsSymbolicFactorizationOK_ == false)
@@ -311,12 +316,14 @@ int Amesos_Taucs::NumericFactorization()
 
   IsNumericFactorizationOK_ = true;
 
+  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving NumericFactorization()" << endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::Solve() 
 {
+  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering Solve()" << endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
 
@@ -395,6 +402,7 @@ int Amesos_Taucs::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*X, *B, "Amesos_Taucs");
 
+  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving Solve()" << endl ; 
   return(0) ;
 }
 
@@ -407,17 +415,23 @@ void Amesos_Taucs::PrintStatus() const
   string p = "Amesos_Taucs : ";
   PrintLine();
 
-  int n = Matrix().NumGlobalRows();
-  int nnz = Matrix().NumGlobalNonzeros();
-
-  cout << p << "Matrix has " << n << " rows"
-       << " and " << nnz << " nonzeros" << endl;
-  cout << p << "Nonzero elements per row = "
-       << 1.0 *  nnz / n << endl;
-  cout << p << "Percentage of nonzero elements = "
-       << 100.0 * nnz /(pow(n,2.0)) << endl;
-
-  PrintLine();
+  const Epetra_RowMatrix& A = Matrix() ;
+  if ( Matrix_ != 0 ) { 
+    
+    int n = Matrix().NumGlobalRows();
+    int nnz = Matrix().NumGlobalNonzeros();
+    
+    cout << p << "Matrix has " << n << " rows"
+	 << " and " << nnz << " nonzeros" << endl;
+    if ( n > 0 ) { 
+      cout << p << "Nonzero elements per row = "
+	   << 1.0 *  nnz / n << endl;
+      cout << p << "Percentage of nonzero elements = "
+	   << 100.0 * nnz /(pow(n,2.0)) << endl;
+    }
+    
+    PrintLine();
+  }
 
   return;
 }

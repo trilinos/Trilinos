@@ -181,7 +181,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     //
     if ( transpose ) OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
     if (verbose) ParamList.set( "DebugLevel", 1 );
-    if (verbose) ParamList.set( "OutputLevel", 1 );
+    if (verbose) ParamList.set( "OutputLevel", 2 );
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 

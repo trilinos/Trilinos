@@ -51,6 +51,7 @@
 #  TestUmfpack.exe runs Test_Basic/AmesosUmfpack  
 #  TestMumps.exe runs Test_Basic/AmesosMumps  
 #  TestTaucs.exe runs Test_Basic/AmesosTaucs  
+#  TestParaklete.exe runs Test_Basic/AmesosParaklete  
 #  TestPardiso.exe runs Test_Basic/AmesosPardiso  
 #  TestPastix.exe runs Test_Basic/AmesosPastix  
 #  TestKluSerial.exe runs Test_Basic/AmesosKluSerial
@@ -180,6 +181,28 @@ else
 PASTIX_TEST = 
 endif
 
+
+if HAVE_AMESOS_PARDISO
+PARDISO_TEST = TestPardiso
+TestPardiso_SOURCES = $(srcdir)/TestPardiso
+
+TestPardiso$(EXEEXT): $(srcdir)/TestPardiso
+	cp $(srcdir)/TestPardiso TestPardiso$(EXEEXT) 
+else
+PARDISO_TEST = 
+endif
+
+
+if HAVE_AMESOS_PARAKLETE
+PARAKLETE_TEST = TestParaklete
+TestParaklete_SOURCES = $(srcdir)/TestParaklete
+
+TestParaklete$(EXEEXT): $(srcdir)/TestParaklete
+	cp $(srcdir)/TestParaklete TestParaklete$(EXEEXT) 
+else
+PARAKLETE_TEST = 
+endif
+
 if HAVE_AMESOS_SCALAPACK
 SCALAPACK_TEST = TestScalapack
 TestScalapack_SOURCES = $(srcdir)/TestScalapack
@@ -223,6 +246,6 @@ endif
 noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) \
 	$(SCALAPACK_TEST) $(LAPACK_TEST) $(UMFPACK_TEST) \
 	$(TAUCS_TEST) $(PARDISO_TEST) $(PASTIX_TEST) \
-	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) \
+	$(MUMPS_TEST) $(PARAKLETE_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) \
 	$(VALGRIND_TEST)  $(COVERAGE_TEST)
 
