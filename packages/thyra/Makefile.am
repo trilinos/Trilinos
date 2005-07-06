@@ -94,8 +94,40 @@ endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
-check:
-	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_operator_vector_tests.pl
+
+
+## #######################################################################
+## The below targets allow you to use the new
+## testharness to run the test suite as make targets
+## #######################################################################
+
+TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
+
+runtests-serial :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=serial \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=FRAMEWORK \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=thyra
+
+runtests-mpi :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=mpi \
+  --mpi-go=$(TRILINOS_MPI_GO) \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=FRAMEWORK \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=thyra
+
+## #######################################################################
+## Export makefile stuff
+## #######################################################################
 
 all-libs:
 	cd $(top_builddir)/src ; make all-libs

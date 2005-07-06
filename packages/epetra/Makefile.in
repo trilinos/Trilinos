@@ -291,6 +291,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @ENABLE_EPETRA_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_EPETRA_THYRA_TRUE@THYRA_SUBDIR = thyra
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR) $(THYRA_SUBDIR)
+TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 all: all-recursive
 
 .SUFFIXES:
@@ -697,9 +699,26 @@ uninstall-info: uninstall-info-recursive
 all-local:
 	@echo "Trilinos package epetra built successfully"
 
-@ENABLE_EPETRA_THYRA_TRUE@check:
-@ENABLE_EPETRA_THYRA_TRUE@	$(PERL_EXE) $(top_builddir)/test/scripts/daily/serial/run_epetra_thyra_tests.pl
-@ENABLE_EPETRA_THYRA_FALSE@check:
+runtests-serial :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=serial \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=FRAMEWORK \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=epetra
+
+runtests-mpi :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=mpi \
+  --mpi-go=$(TRILINOS_MPI_GO) \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=FRAMEWORK \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=epetra
 
 all-libs:
 	cd $(top_builddir)/src ; make all-libs
