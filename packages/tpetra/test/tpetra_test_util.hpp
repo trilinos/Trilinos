@@ -55,12 +55,12 @@
 //! cin used as MPI breakpoint (used for debugging parallel code)
 void mpiBreakpoint(int myImageID) {
 	cout << "Image " << myImageID << " is alive, PID " << getpid() << endl;
-  if(myImageID == 0) {
-    cout << "[TPETRA-DEBUG mpiBreakpoint] ";
-    cin >> myImageID;
-  }
+	if(myImageID == 0) {
+		cout << "[TPETRA-DEBUG mpiBreakpoint] ";
+		cin >> myImageID;
+	}
 #ifdef TPETRA_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
 
@@ -72,31 +72,31 @@ void mpiBreakpoint(int myImageID) {
 //! safely converts an int value to any defined OrdinalType
 template <typename T>
 T intToOrdinal(int n) {
-  T result = Teuchos::OrdinalTraits<T>::zero();
-  while(n > 0) {
-    result += Teuchos::OrdinalTraits<T>::one();
-    n--;
-  }
-  while(n < 0) {
-    result -= Teuchos::OrdinalTraits<T>::one();
-    n++;
-  }
-  return(result);
+	T result = Teuchos::OrdinalTraits<T>::zero();
+	while(n > 0) {
+		result += Teuchos::OrdinalTraits<T>::one();
+		n--;
+	}
+	while(n < 0) {
+		result -= Teuchos::OrdinalTraits<T>::one();
+		n++;
+	}
+	return(result);
 };
 
 //! safely converts an int value to any defined ScalarType
 template <typename T>
 T intToScalar(int n) {
-  T result = Teuchos::ScalarTraits<T>::zero();
-  while(n > 0) {
-    result += Teuchos::ScalarTraits<T>::one();
-    n--;
-  }
-  while(n < 0) {
-    result -= Teuchos::ScalarTraits<T>::one();
-    n++;
-  }
-  return(result);
+	T result = Teuchos::ScalarTraits<T>::zero();
+	while(n > 0) {
+		result += Teuchos::ScalarTraits<T>::one();
+		n--;
+	}
+	while(n < 0) {
+		result -= Teuchos::ScalarTraits<T>::one();
+		n++;
+	}
+	return(result);
 };
 
 //======================================================================
@@ -105,47 +105,48 @@ T intToScalar(int n) {
 
 //! Message outputed at beginning of a test program
 void outputStartMessage(std::string const className) {
-  cout << "\n************************************************************" << endl;
-  cout << "Starting " << className << "Test..." << endl;
-  cout << Tpetra::Tpetra_Version() << endl;
-  cout << "************************************************************" << endl;
+	cout << "\n************************************************************" << endl;
+	cout << "Starting " << className << "Test..." << endl;
+	cout << Tpetra::Tpetra_Version() << endl;
+	cout << "************************************************************" << endl;
 };
 
 //! Message outputed at end of a test program
 void outputEndMessage(std::string const className, bool passed) {
-  cout << "************************************************************" << endl;
-  cout << className << " test ";
-  if(passed)
-    cout << "passed." << endl;
-  else
-    cout << "failed." << endl;
-  cout << "************************************************************\n" << endl;
+	cout << "************************************************************" << endl;
+	cout << className << " test ";
+	if(passed)
+		cout << "passed." << endl;
+	else
+		cout << "failed." << endl;
+	cout << "************************************************************\n" << endl;
 };
 
 //! Merssage outputed to seperate sections
 void outputHeading(std::string const message) {
-  cout << "**************************************************" << endl;
-  cout << message << endl;
-  cout << "**************************************************" << endl;
+	cout << "**************************************************" << endl;
+	cout << message << endl;
+	cout << "**************************************************" << endl;
 };
 
 //! Message outputed to seperate subsections
 void outputSubHeading(std::string const message) {
-  cout << message << endl;
+	cout << message << endl;
 };
 
 //! Outputs a message from all images in deterministic order
+/** Each image's string is printed on a seperate line, preceded by its ImageID */
 void outputData(int const myImageID, int const numImages, std::string const message) {
 #ifdef TPETRA_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 #endif
-  for(int i = 0; i < numImages; i++) {
-    if(myImageID == i)
-      cout << "[Image " << myImageID << "] " << message << endl;
+	for(int i = 0; i < numImages; i++) {
+		if(myImageID == i)
+			cout << "[Image " << myImageID << "] " << message << endl;
 #ifdef TPETRA_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
 #endif
-  }
+	}
 };
 
 //======================================================================
@@ -154,112 +155,112 @@ void outputData(int const myImageID, int const numImages, std::string const mess
 
 template <typename T>
 T generateValue(T const x, T const y) {
-  T const two = intToScalar<T>(2);
+	T const two = intToScalar<T>(2);
 
-  // formula for z(x,y) = 0.5(x^2 + y^2 + 3x + y) + xy
-  return(((x*x + y*y + x+x+x + y) / two) + (x*y));
+	// formula for z(x,y) = 0.5(x^2 + y^2 + 3x + y) + xy
+	return(((x*x + y*y + x+x+x + y) / two) + (x*y));
 }
 
 // specialization for complex so that both real and imaginary portions get written to
 // the real portion gets generateValue(x, 2y), and the imaginary portion gets generateValue(x, 2y+1)
 template <typename T>
 complex<T> generateValue(complex<T> const x, complex<T> const y) {
-  T twoY = y.real() * intToScalar<T>(2);
-  T real = generateValue(x.real(), twoY);
-  T imag = generateValue(x.real(), (twoY + Teuchos::ScalarTraits<T>::one()));
-  return(complex<T>(real, imag));
+	T twoY = y.real() * intToScalar<T>(2);
+	T real = generateValue(x.real(), twoY);
+	T imag = generateValue(x.real(), (twoY + Teuchos::ScalarTraits<T>::one()));
+	return(complex<T>(real, imag));
 }
 
 // puts the generated values for (x, 0) ... (x, length-1) into vector
 template <typename T>
 void generateColumn(std::vector<T>& vector, int const x, int const length) {
-  vector.resize(length);
-  for(int y = 0; y < length; y++)
-    vector[y] = generateValue(intToScalar<T>(x), intToScalar<T>(y));
+	vector.resize(length);
+	for(int y = 0; y < length; y++)
+		vector[y] = generateValue(intToScalar<T>(x), intToScalar<T>(y));
 }
 
 // puts the generated values for (firstx, 0)...(firstx, length-1),(firstx+1, 0),(firstx+1, length-1)...(lastx, length-1) into vector
 template <typename T>
 void generateMultipleColumns(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
-  vector.resize(length * (lastx - firstx + 1));
-  typename std::vector<T>::iterator i = vector.begin();
-  for(int x = firstx; x <= lastx; x++)
-    for(int y = 0; y < length; y++) {
-      *i = generateValue(intToScalar<T>(x), intToScalar<T>(y));
-      i++;
-    }
+	vector.resize(length * (lastx - firstx + 1));
+	typename std::vector<T>::iterator i = vector.begin();
+	for(int x = firstx; x <= lastx; x++)
+		for(int y = 0; y < length; y++) {
+			*i = generateValue(intToScalar<T>(x), intToScalar<T>(y));
+			i++;
+		}
 }
 
 // puts the sum of (firstx, i) to (lastx, i) into vector[i], for i = 0 to length-1
 template <typename T>
 void generateRowSums(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
-  vector.assign(length, Teuchos::ScalarTraits<T>::zero());
-  for(int x = firstx; x <= lastx; x++)
-    for(int y = 0; y < length; y++)
-      vector[y] += generateValue(intToScalar<T>(x), intToScalar<T>(y));
+	vector.assign(length, Teuchos::ScalarTraits<T>::zero());
+	for(int x = firstx; x <= lastx; x++)
+		for(int y = 0; y < length; y++)
+			vector[y] += generateValue(intToScalar<T>(x), intToScalar<T>(y));
 }
 
 template <typename T>
 void generateRowMaxs(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
-  generateColumn(vector, lastx, length); // for this generator, row max is right-most entry
+	generateColumn(vector, lastx, length); // for this generator, row max is right-most entry
 }
 
 template <typename T>
 void generateRowMins(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
-  generateColumn(vector, firstx, length); // for this generator, row min is left-most entry
+	generateColumn(vector, firstx, length); // for this generator, row min is left-most entry
 }
 
 template <typename T>
 T generateAreaMin(int const firstx, int const firsty, int const lastx, int const lasty) {
-  return(generateValue(intToScalar<T>(firstx), intToScalar<T>(firsty))); // for this generator, area min is top left entry
+	return(generateValue(intToScalar<T>(firstx), intToScalar<T>(firsty))); // for this generator, area min is top left entry
 }
 
 template <typename T>
 T generateAreaMax(int const firstx, int const firsty, int const lastx, int const lasty) {
-  return(generateValue(intToScalar<T>(lastx), intToScalar<T>(lasty))); // for this generator, area max is bottom right entry
+	return(generateValue(intToScalar<T>(lastx), intToScalar<T>(lasty))); // for this generator, area max is bottom right entry
 }
 
 template <typename T>
 void generateXCoords(std::vector<T> const& values, std::vector<T>& xCoords) {
-  xCoords.resize(values.size());
-  typename std::vector<T>::const_iterator inPtr = values.begin();
-  typename std::vector<T>::iterator outPtr = xCoords.begin();
-  for(; inPtr != values.end(); inPtr++, outPtr++) {
-    T value = Teuchos::ScalarTraits<T>::zero(); // current generated value
-    T x = Teuchos::ScalarTraits<T>::zero(); // xcoord for current value
-    T max = Teuchos::ScalarTraits<T>::zero(); // right-most xcoord of current diagonal
-    while(value < *inPtr) {
-      value++;
-      x++;
-      if(x > max) {
-        max++;
-        x = Teuchos::ScalarTraits<T>::zero();
-      }
-    }
-    *outPtr = x;
-  }
+	xCoords.resize(values.size());
+	typename std::vector<T>::const_iterator inPtr = values.begin();
+	typename std::vector<T>::iterator outPtr = xCoords.begin();
+	for(; inPtr != values.end(); inPtr++, outPtr++) {
+		T value = Teuchos::ScalarTraits<T>::zero(); // current generated value
+		T x = Teuchos::ScalarTraits<T>::zero(); // xcoord for current value
+		T max = Teuchos::ScalarTraits<T>::zero(); // right-most xcoord of current diagonal
+		while(value < *inPtr) {
+			value++;
+			x++;
+			if(x > max) {
+				max++;
+				x = Teuchos::ScalarTraits<T>::zero();
+			}
+		}
+		*outPtr = x;
+	}
 }
 
 template <typename T>
 void generateYCoords(std::vector<T> const& values, std::vector<T>& yCoords) {
-  yCoords.resize(values.size());
-  typename std::vector<T>::const_iterator inPtr = values.begin();
-  typename std::vector<T>::iterator outPtr = yCoords.begin();
-  for(; inPtr != values.end(); inPtr++, outPtr++) {
-    T value = Teuchos::ScalarTraits<T>::zero(); // current generated value
-    T y = Teuchos::ScalarTraits<T>::zero(); // ycoord for current value
-    T max = Teuchos::ScalarTraits<T>::zero(); // bottom-most ycoord of current diagonal
-    while(value < *inPtr) {
-      value++;
-      if(y == Teuchos::ScalarTraits<T>::zero()) {
-        max++;
-        y = max;
-      }
-      else
-        y--;
-    }
-    *outPtr = y;
-  }
+	yCoords.resize(values.size());
+	typename std::vector<T>::const_iterator inPtr = values.begin();
+	typename std::vector<T>::iterator outPtr = yCoords.begin();
+	for(; inPtr != values.end(); inPtr++, outPtr++) {
+		T value = Teuchos::ScalarTraits<T>::zero(); // current generated value
+		T y = Teuchos::ScalarTraits<T>::zero(); // ycoord for current value
+		T max = Teuchos::ScalarTraits<T>::zero(); // bottom-most ycoord of current diagonal
+		while(value < *inPtr) {
+			value++;
+			if(y == Teuchos::ScalarTraits<T>::zero()) {
+				max++;
+				y = max;
+			}
+			else
+				y--;
+		}
+		*outPtr = y;
+	}
 }
 
 // generator tester function - kept around just in case
@@ -267,31 +268,31 @@ void generateYCoords(std::vector<T> const& values, std::vector<T>& yCoords) {
 /*
 template <typename T>
 void testGenerator() {
-  int length = 10;
-  int length2 = 4;
+	int length = 10;
+	int length2 = 4;
   
-  cout << "\nTesting generateValue..." << endl;
-  T tlength = intToScalar<T>(length);
-  for(T y = Teuchos::ScalarTraits<T>::zero(); y < tlength; y++) {
-    for(T x = Teuchos::ScalarTraits<T>::zero(); x < tlength; x++)
-      cout << generateValue(x,y) << "\t";
-    cout << endl;
-  }
+	cout << "\nTesting generateValue..." << endl;
+	T tlength = intToScalar<T>(length);
+	for(T y = Teuchos::ScalarTraits<T>::zero(); y < tlength; y++) {
+		for(T x = Teuchos::ScalarTraits<T>::zero(); x < tlength; x++)
+			cout << generateValue(x,y) << "\t";
+		cout << endl;
+	}
   
-  cout << "\nTesting generateColumn..." << endl;
-  std::vector< std::vector<T> > columns(length);
-  for(int i = 0; i < length; i++) {
-    generateColumn(columns[i], i, length);
-    cout << "Column " << i << ": " << columns[i] << endl;
-  }
+	cout << "\nTesting generateColumn..." << endl;
+	std::vector< std::vector<T> > columns(length);
+	for(int i = 0; i < length; i++) {
+		generateColumn(columns[i], i, length);
+		cout << "Column " << i << ": " << columns[i] << endl;
+	}
 
-  cout << "\nTesting generateMultipleColumns..." << endl;
-  std::vector<T> multColumns;
-  generateMultipleColumns(multColumns, 0, length2, length2);
-  cout << "array bounds = (0,0) to (" << length2 << "," << length2 << ")"  << endl;
-  cout << "array contents = " << multColumns << endl;
+	cout << "\nTesting generateMultipleColumns..." << endl;
+	std::vector<T> multColumns;
+	generateMultipleColumns(multColumns, 0, length2, length2);
+	cout << "array bounds = (0,0) to (" << length2 << "," << length2 << ")"  << endl;
+	cout << "array contents = " << multColumns << endl;
   
-  cout << endl;
+	cout << endl;
 }
 */
 
