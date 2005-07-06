@@ -37,22 +37,24 @@ namespace Thyra {
 // Overridden from SingleScalarLinearOpWithSolveBase
 
 template <class Scalar>
-SolveReturn<Scalar> SingleRhsLinearOpWithSolveBase<Scalar>::solve(
+void SingleRhsLinearOpWithSolveBase<Scalar>::solve(
   const ETransp                         M_trans
   ,const MultiVectorBase<Scalar>        &B
   ,MultiVectorBase<Scalar>              *X
   ,const int                            numBlocks
-  ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
+  ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+  ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
-  TEST_FOR_EXCEPT( blockSolveTolerances != NULL ); // Can't handle this yet!
+  TEST_FOR_EXCEPT( numBlocks > 0 ); // ToDo: Handle the more general case!
   const VectorSpaceBase<Scalar> &space_mv_rows = *B.domain();
-  const Index num_mv_cols    = space_mv_rows.dim();
-  TEST_FOR_EXCEPT( num_mv_cols != 1 ); // ToDo: Support the more general case!
-  SolveReturn<Scalar> solveReturn;     // ToDo: accumulate the right things!
+  const Index num_mv_cols = space_mv_rows.dim();
+  SolveStatus<Scalar> dummySolveStatus;
   for( Index j = 1; j <= num_mv_cols; ++j )
-    solveReturn = this->solve(M_trans,*B.col(j),&*X->col(j),NULL); // ToDo: Pass in tolerances!
-  return solveReturn;
+    this->solve(
+      M_trans,*B.col(j),&*X->col(j)
+      ,NULL
+      );
 }
 
 } // namespace Thyra

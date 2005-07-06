@@ -32,6 +32,7 @@
 #include "Thyra_DiagonalLinearOpDecl.hpp"
 #include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_TestingTools.hpp" // ToDo: I need to have a better way to get eps()!
 
 namespace Thyra {
 
@@ -136,23 +137,37 @@ bool DiagonalLinearOp<Scalar>::solveSupported(ETransp M_trans) const
 // Overridden from SingleRhsLinearOpWithSolveBase
 
 template<class Scalar>
-SolveReturn<Scalar> DiagonalLinearOp<Scalar>::solve(
+SolveStatus<Scalar> DiagonalLinearOp<Scalar>::solve(
   const ETransp                         M_trans
   ,const VectorBase<Scalar>             &b
   ,VectorBase<Scalar>                   *x
-  ,const SolveTolerance<Scalar>         *solveTolerance
+  ,const SolveCriteria<Scalar>          *solveCriteria
   ) const
 {
   // RAB: 4/16/2005: Warning! this does not work if Scalar is a complex type
   // and M_trans==CONJTRANS!
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   assign(x,ST::zero());
-  ele_wise_divide( gamma_, b, *diag_, x );
-  SolveReturn<Scalar> solveReturn;
-  solveReturn.achievedTol       = ScalarMag(2)*ST::eps();
-  solveReturn.solveReturnStatus = SOLVE_STATUS_CONVERGED;
-  return solveReturn;
+  ele_wise_divide( Scalar(ST::one()/gamma_), b, *diag_, x );
+  SolveStatus<Scalar> solveStatus;
+  if( solveCriteria && solveCriteria->requestedTol!=SolveCriteria<Scalar>::defaultTolerance() ) {
+    const ScalarMag eps = relErrSmallNumber<SMT::hasMachineParameters,ScalarMag>::smallNumber();
+    if( solveCriteria->requestedTol <= eps ) {
+      solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
+    }
+    else {
+      solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
+    }
+    solveStatus.achievedTol = ScalarMag(2)*relErrSmallNumber<SMT::hasMachineParameters,ScalarMag>::smallNumber();
+  }
+  else {
+    solveStatus.solveStatus = SOLVE_STATUS_UNKNOWN;
+    solveStatus.achievedTol = SolveStatus<Scalar>::unknownTolerance();
+  }
+  solveStatus.numIterations   = 1;
+  return solveStatus;
 }
 
 }	// end namespace Thyra

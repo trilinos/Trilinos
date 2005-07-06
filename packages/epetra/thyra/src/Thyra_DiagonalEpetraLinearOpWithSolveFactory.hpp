@@ -41,12 +41,15 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<double,double> > createOp() const;
+  bool isCompatible( const LinearOpBase<double> &fwdOp ) const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > createOp() const;
 
   /** \brief . */
   void initializeOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double,double> >    &fwdOp
-    ,LinearOpWithSolveBase<double,double>                             *Op
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
+    ,LinearOpWithSolveBase<double>                             *Op
     ) const;
 
   //@}

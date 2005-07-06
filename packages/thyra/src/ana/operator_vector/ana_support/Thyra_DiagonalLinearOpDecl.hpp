@@ -34,25 +34,40 @@
 
 namespace Thyra {
 
-/** \brief Concrete <tt>LinearOpBase</tt> subclass for diagonal linear operators.
+/** \brief Concrete <tt>LinearOpBase</tt> subclass for diagonal linear
+ * operators.
  *
  * This class represents a diagonal linear operator <tt>M</tt> of the form:
  \verbatim
- 
+
  M = gamma*diag(diag)
  \endverbatim
  *
  * where <tt>diag</tt> is a <tt>VectorBase</tt> object and <tt>gamma</tt>
  * is a <tt>Scalar</tt>.
  *
- * The defined operator implements <tt>apply()</tt> as follows:
+ * The defined operator implements <tt>this->apply()</tt> as follows:
  *
  \verbatim
- y = (alpha*gamma)*op(M)*x + beta*y
+
+ y = alpha*op(M)*x + beta*y
  
  =>
 
  y(i) = (alpha*gamma)*diag(i)*x(i) + beta*y(i), for i = 1 ... n
+ \endverbatim
+ *
+ * where <tt>n = this->domain()->dim()</tt>.
+ *
+ * The defined operator implements <tt>this->solve()</tt> as follows:
+ *
+ \verbatim
+
+ x = inv(op(M))*b
+ 
+ =>
+
+ x(i) = (1/gamma)*b(i)/diag(i), for i = 1 ... n
  \endverbatim
  *
  * where <tt>n = this->domain()->dim()</tt>.
@@ -187,11 +202,11 @@ protected:
   /** @name Overridden from SingleRhsLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  SolveReturn<Scalar> solve(
+  SolveStatus<Scalar> solve(
     const ETransp                         M_trans
     ,const VectorBase<Scalar>             &b
     ,VectorBase<Scalar>                   *x
-    ,const SolveTolerance<Scalar>         *solveTolerance
+    ,const SolveCriteria<Scalar>          *solveCriteria
     ) const;
   //@}
 

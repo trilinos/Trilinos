@@ -130,6 +130,7 @@ std::ostream& operator<<( std::ostream& o, const LinearOpBase<Scalar>& M );
 // //////////////////////////
 // Inline functions                        
 
+inline
 void Thyra::printTestResults(
   const bool              result
   ,const std::string      &test_summary

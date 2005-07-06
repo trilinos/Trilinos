@@ -46,12 +46,13 @@ public:
   //@{
 
   /** \brief . */
-  SolveReturn<Scalar> solve(
+  void solve(
     const ETransp                         M_trans
     ,const MultiVectorBase<Scalar>        &B
     ,MultiVectorBase<Scalar>              *X
     ,const int                            numBlocks
-    ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
+    ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+    ,SolveStatus<Scalar>                  blockSolveStatus[]
     ) const;
 
   //@}
@@ -62,11 +63,11 @@ protected:
   //@{
 
   /** \brief . */
-  virtual SolveReturn<Scalar> solve(
+  virtual SolveStatus<Scalar> solve(
     const ETransp                         M_trans
     ,const VectorBase<Scalar>             &b
     ,VectorBase<Scalar>                   *x
-    ,const SolveTolerance<Scalar>         *solveTolerance
+    ,const SolveCriteria<Scalar>          *solveCriteria
     ) const = 0;
 
   //@}

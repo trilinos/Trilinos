@@ -33,7 +33,25 @@
 
 namespace Thyra {
 
-/** \brief Factory interface for creating <tt>LinearOpWithSolveBase</tt> objects. */
+/** \brief Factory interface for creating <tt>LinearOpWithSolveBase</tt>
+ * objects from <tt>LinearOpBase</tt> objects.
+ *
+ * This strategy interface allows a client to take one or more "compatible"
+ * <tt>LinearOpBase</tt> objects and then create one or more
+ * <tt>LinearOpWithSolveBase</tt> objects that can then be used to solve for
+ * linear systems.  This interface carefully separates the construction from
+ * the initialization of a <tt>LinearOpWithSolveBase</tt> object.
+ *
+ * Note that the non-member functions defined
+ * \ref Thyra_LinearOpWithSolveFactoryBase_helper_grp "here" provide for
+ * simpler use cases and are recommended as a way to access the capabilities
+ * of this interface.
+ *
+ * This interface can be implemented by both direct and iterative linear
+ * solvers.
+ *
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ */
 template <class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpWithSolveFactoryBase {
 public:
@@ -44,16 +62,53 @@ public:
   /** @name Pure virtual functions that must be overridden in subclasses */
   //@{
 
-  /** \brief Create an (uninitialized) <tt>LinearOpWithSolveBase</tt> object to be
-   * initialized later.
+  /** \brief Check that a <tt>LinearOpBase</tt> objects is compatible with
+   * <tt>*this</tt> factory object.
+   */
+  virtual bool isCompatible( const LinearOpBase<RangeScalar,DomainScalar> &fwdOp ) const = 0;
+
+  /** \brief Create an (uninitialized) <tt>LinearOpWithSolveBase</tt> object
+   * to be initialized later in <tt>this->initializeOp()</tt>.
+   *
+   * Note that on output <tt>return->domain().get()==NULL</tt> may be true
+   * which means that the operator is not fully initialized.  In fact, the
+   * output operator object is not guaranteed to be fully initialized until
+   * after it is passed through <tt>this->initializeOp()</tt>.
    */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> > createOp() const = 0;
 
-  /** \brief Initalize a precreated <tt>LinearOpWithSolveBase</tt> object
-   * given a "compatible" <tt>LinearOpBase</tt>.
+  /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
+   * given a "compatible" <tt>LinearOpBase</tt> object.
    *
-   * The assumption is that the output <tt>Op</tt> object may keep a memory to
-   * the input <tt>fwdOp</tt> object but the factory itself may not.
+   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   *                the output <tt>LinearOpWithSolveBase</tt> object.
+   * \param  Op     [out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
+   *                be created first by <tt>this->createOp()</tt>.  The object may have also
+   *                already been passed through this function several times.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->isCompatible(*fwdOp)==true</tt>
+   * <li><tt>Op!=NULL</tt>
+   * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
+   *     this function.
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
+   * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
+   * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
+   *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   * <li>If <tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
+   *     just before this call then the client can assume that the <tt>*fwdOp</tt> object will 
+   *     be remembered by the <tt>*Op</tt> object.  In this case, the client must be careful
+   *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
+   *     be modified.  This would be a typical case for an iterative linear solver for instance.
+   * <li>If <tt>fwdOp.count()</tt> after output is the same <tt>fwdOp.count()</tt>
+   *     just before this call then the client can assume that the <tt>*Op</tt> object
+   *     will be completely independent from the input <tt>*fwdOp</tt> object and the
+   *     two objects can have completely independent lifetimes.  This would be a typical
+   *     case for a direct linear solver that did not use an in-place factorization for instance.
+   * </ul>
    */
   virtual void initializeOp(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
@@ -65,6 +120,34 @@ public:
 };
 
 //@}
+
+/** \defgroup Thyra_LinearOpWithSolveFactoryBase_helper_grp Non-member LinearOpWithSolveFactoryBase helper functions.
+ *
+ * These functions provide for simpler use cases for the use of
+ * <tt>LinearOpWithSolveFactoryBase</tt> objects. and provide some
+ * documentation for the various use cases.
+ *
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ */
+
+/** \brief Create and initialize a <tt>LinearOpWithSolveBase</tt> object from
+ * a <tt>LinearOpBase</tt> object using a
+ * <tt>LinearOpWithSolveFactoryBase</tt> strategy object.
+ *
+ * \ingroup Thyra_LinearOpWithSolveFactoryBase_helper_grp
+ */
+template<class RangeScalar, class DomainScalar>
+Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+createAndInitializeLinearOpWithSolve(
+  const LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>                  &factory
+  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
+  )
+{
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+    Op = factory.createOp();
+  factory.initializeOp(fwdOp,&*Op);
+  return Op;
+}
 
 } // namespace Thyra
 

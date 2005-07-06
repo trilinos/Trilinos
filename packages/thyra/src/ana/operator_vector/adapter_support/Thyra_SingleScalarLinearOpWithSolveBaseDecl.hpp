@@ -52,21 +52,23 @@ public:
   bool solveTransposeSupports(EConj conj) const;
 
   /** \brief . */
-  SolveReturn<Scalar> solve(
+  void solve(
     const EConj                           conj
     ,const MultiVectorBase<Scalar>        &B
     ,MultiVectorBase<Scalar>              *X
     ,const int                            numBlocks
-    ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
+    ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+    ,SolveStatus<Scalar>                  blockSolveStatus[]
     ) const;
 
   /** \brief . */
-  SolveReturn<Scalar> solveTranspose(
+  void solveTranspose(
     const EConj                           conj
     ,const MultiVectorBase<Scalar>        &B
     ,MultiVectorBase<Scalar>              *X
     ,const int                            numBlocks
-    ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
+    ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+    ,SolveStatus<Scalar>                  blockSolveStatus[]
     ) const;
 
   //@}
@@ -80,12 +82,13 @@ protected:
   virtual bool solveSupported(ETransp M_trans) const = 0;
 
   /** \brief . */
-  virtual SolveReturn<Scalar> solve(
+  virtual void solve(
     const ETransp                         M_trans
     ,const MultiVectorBase<Scalar>        &B
     ,MultiVectorBase<Scalar>              *X
     ,const int                            numBlocks
-    ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
+    ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+    ,SolveStatus<Scalar>                  blockSolveStatus[]
     ) const = 0;
 
   //@}

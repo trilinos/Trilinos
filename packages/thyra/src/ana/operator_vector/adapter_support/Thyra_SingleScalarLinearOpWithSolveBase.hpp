@@ -50,27 +50,29 @@ bool SingleScalarLinearOpWithSolveBase<Scalar>::solveTransposeSupports(EConj con
 }
 
 template <class Scalar>
-SolveReturn<Scalar> SingleScalarLinearOpWithSolveBase<Scalar>::solve(
+void SingleScalarLinearOpWithSolveBase<Scalar>::solve(
   const EConj                           conj
   ,const MultiVectorBase<Scalar>        &B
   ,MultiVectorBase<Scalar>              *X
   ,const int                            numBlocks
-  ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
+  ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+  ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
-  return this->solve(applyConjToTrans(conj),B,X,numBlocks,blockSolveTolerances);
+  this->solve(applyConjToTrans(conj),B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
 }
 
 template <class Scalar>
-SolveReturn<Scalar> SingleScalarLinearOpWithSolveBase<Scalar>::solveTranspose(
-    const EConj                           conj
-    ,const MultiVectorBase<Scalar>        &B
-    ,MultiVectorBase<Scalar>              *X
-    ,const int                            numBlocks
-    ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
-    ) const
+void SingleScalarLinearOpWithSolveBase<Scalar>::solveTranspose(
+  const EConj                           conj
+  ,const MultiVectorBase<Scalar>        &B
+  ,MultiVectorBase<Scalar>              *X
+  ,const int                            numBlocks
+  ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+  ,SolveStatus<Scalar>                  blockSolveStatus[]
+  ) const
 {
-  return this->solve(applyTransposeConjToTrans(conj),B,X,numBlocks,blockSolveTolerances);
+  this->solve(applyTransposeConjToTrans(conj),B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
 }
 
 } // namespace Thyra

@@ -38,15 +38,27 @@
 
 namespace Thyra {
 
-Teuchos::RefCountPtr<LinearOpWithSolveBase<double,double> >
+bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
+  const LinearOpBase<double> &fwdOp
+  ) const
+{
+  const EpetraLinearOp *eFwdOp = NULL;
+  if( ! (eFwdOp = dynamic_cast<const EpetraLinearOp*>(&fwdOp)) )
+    return false;
+  if( !dynamic_cast<const Epetra_RowMatrix*>(&*eFwdOp->epetra_op()) )
+    return false;
+  return true;
+}
+
+Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
 DiagonalEpetraLinearOpWithSolveFactory::createOp() const
 {
   return Teuchos::rcp(new DiagonalLinearOp<double>());
 }
 
 void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double,double> >    &fwdOp
-  ,LinearOpWithSolveBase<double,double>                             *Op
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
+  ,LinearOpWithSolveBase<double>                             *Op
   ) const
 {
   TEST_FOR_EXCEPT(Op==NULL);

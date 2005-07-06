@@ -34,14 +34,6 @@
 
 namespace Thyra {
 
-template <class Scalar>
-const typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-SolveTolerance<Scalar>::DEFAULT_SOLVE_TOLERANCE = -1;
-
-template <class Scalar>
-const typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-SolveReturn<Scalar>::UNKNOWN_SOLVE_TOLERANCE = -1;
-
 template <class RangeScalar, class DomainScalar>
 bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveSupports(EConj conj) const
 {
@@ -55,13 +47,13 @@ bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupports(ECo
 }
 
 template <class RangeScalar, class DomainScalar>
-SolveReturn<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
-LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTranspose(
+void LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTranspose(
   const EConj                           conj
   ,const MultiVectorBase<DomainScalar>  &B
   ,MultiVectorBase<RangeScalar>         *X
   ,const int                            numBlocks
-  ,const BlockSolveTolerance<Scalar>    blockSolveTolerances[]
+  ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
+  ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
   TEST_FOR_EXCEPTION(

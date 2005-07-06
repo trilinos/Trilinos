@@ -51,7 +51,6 @@ The most fundamental abstract interfaces contained in the %Thyra package
 <li><tt>Thyra::VectorSpaceBase</tt> is the fundamental abstract interface for a vector space that defines
     the scalar product and factory functions for creating <tt>Thyra::VectorBase</tt> and <tt>Thyra::MultiVectorBase</tt> objects.
 <li><tt>Thyra::VectorBase</tt> is the fundamental abstract interface for finite-dimensional vectors.
-<li><tt>Thyra::OpBase</tt> is a base interface that defines functions for returning domain and range spaces for operators.
 <li><tt>Thyra::LinearOpBase</tt> is the fundamental abstract interface for linear operators.
 <li><tt>Thyra::MultiVectorBase</tt> is the fundamental abstract interface for collections of column vectors.
 <li><tt>RTOpPack::RTOpT</tt> is the fundamental abstract interface to all diagonal vector reduction/transformation operations.
@@ -260,7 +259,6 @@ shown in the above UML class diagram are described below:
 <li><tt>Thyra::VectorSpaceBase</tt> is the fundamental abstract interface for a vector space that defines
     the scalar product and factory functions for creating <tt>Thyra::VectorBase</tt> and <tt>Thyra::MultiVectorBase</tt> objects.
 <li><tt>Thyra::VectorBase</tt> is the fundamental abstract interface for finite-dimensional vectors.
-<li><tt>Thyra::OpBase</tt> is a base interface that defines functions for returning domain and range spaces for operators.
 <li><tt>Thyra::LinearOpBase</tt> is the fundamental abstract interface for linear operators.
 <li><tt>Thyra::MultiVectorBase</tt> is the fundamental abstract interface for collections of column vectors.
 </ul>
@@ -334,7 +332,7 @@ Thyra_Op_Vec_ANA_Development_overview_sec "here".
 <ul>
 <li><tt>Thyra::LinearOpWithSolveBase</tt> defines a simple interface for performing the inverse
 linear operator application.
-<tt><tt>Thyra::LinearOpWithSolveFactory<tt> defines an interface for generating or updating a
+<li><tt>Thyra::LinearOpWithSolveFactoryBase</tt> defines an interface for generating or updating a
 <tt>Thyra::LinearOpWithSolveBase</tt> object out of a <tt>Thyra::LinearOpBase</tt> object.
 </ul>
 

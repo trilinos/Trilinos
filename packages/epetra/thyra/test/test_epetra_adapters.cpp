@@ -100,6 +100,8 @@ int main( int argc, char* argv[] )
 
 	typedef double Scalar;
 	typedef Teuchos::ScalarTraits<Scalar> ST;
+	typedef ST::magnitudeType ScalarMag;
+	typedef Teuchos::ScalarTraits<ScalarMag> SMT;
 
 	using Teuchos::dyn_cast;
 	using Teuchos::CommandLineProcessor;
@@ -787,11 +789,9 @@ int main( int argc, char* argv[] )
     if(1) {
 
       Thyra::DiagonalEpetraLinearOpWithSolveFactory diagLOWSFactory;
-      
+
       Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
-        diagLOWS = diagLOWSFactory.createOp();
-      
-      diagLOWSFactory.initializeOp( Op, &*diagLOWS );
+        diagLOWS = Thyra::createAndInitializeLinearOpWithSolve(diagLOWSFactory,Op);
 
       RefCountPtr<Thyra::VectorBase<Scalar> >
         v1  = createMember(epetra_vs);
@@ -804,7 +804,7 @@ int main( int argc, char* argv[] )
       RefCountPtr<Thyra::VectorBase<Scalar> >
         v2  = createMember(epetra_vs);
 
-      apply( *diagLOWS, Thyra::NOTRANS, *v1, &*v2 );
+      apply( *diagLOWS, NOTRANS, *v1, &*v2 );
     
       if(verbose) out << "\nsum(v2) = " << sum(*v2) << std::endl;
 
@@ -813,14 +813,17 @@ int main( int argc, char* argv[] )
       RefCountPtr<Thyra::VectorBase<Scalar> >
         v1_again  = createMember(epetra_vs);
 
-      Thyra::SolveReturn<Scalar>
-        solveReturn = solve( *diagLOWS, Thyra::NONCONJ_ELE, *v2, &*v1_again );
+      Thyra::SolveCriteria<Scalar>
+        solveCriteria( Thyra::SOLVE_TOL_REL_RESIDUAL_NORM, SMT::eps() );
+
+      Thyra::SolveStatus<Scalar>
+        solveStatus = solve( *diagLOWS, NOTRANS, *v2, &*v1_again, &solveCriteria );
 
       if(verbose) out << "\nsum(v1_again) = " << sum(*v1_again) << std::endl;
 
       if(verbose && dumpAll) out << "\nv1_again =\n" << *v1_again;
 
-      TEST_FOR_EXCEPT( solveReturn.solveReturnStatus != Thyra::SOLVE_STATUS_CONVERGED );
+      TEST_FOR_EXCEPT( solveStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED );
 
       RefCountPtr<Thyra::VectorBase<Scalar> >
         diff = createMember(epetra_vs);
@@ -840,8 +843,8 @@ int main( int argc, char* argv[] )
       if(!testRelErr(
            "sum(v1)",sum(*v1)
            ,"sum(v1_again)",sum(*v1_again)
-           ,"achievedTol",solveReturn.achievedTol
-           ,"10*achievedTol",Scalar(10)*solveReturn.achievedTol
+           ,"achievedTol",solveStatus.achievedTol
+           ,"10*achievedTol",Scalar(10)*solveStatus.achievedTol
            ,verbose?&out:NULL)) success=false;
     
     }
