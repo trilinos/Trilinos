@@ -30,8 +30,9 @@
 #define THYRA_EPETRA_MODEL_EVALUATOR_HPP
 
 #include "Thyra_ModelEvaluator.hpp"
-#include "EpetraExt_ModelEvaluator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "EpetraExt_ModelEvaluator.hpp"
+#include "Epetra_Map.h"
 
 namespace Thyra {
 
