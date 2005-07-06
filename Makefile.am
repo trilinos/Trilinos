@@ -99,7 +99,7 @@ install-exec-hook:
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/strip_dup_incl_paths.pl
-	rm -f $(exec_prefix)/include/strip_dup_incl_paths.pl
+	rm -f $(exec_prefix)/include/strip_dup_libs.pl
 
 
 #
