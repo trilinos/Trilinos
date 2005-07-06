@@ -45,5 +45,4 @@ noinst_PROGRAMS = TestILU
 TestILU_SOURCES      = $(srcdir)/cxx_main.cpp
 TestILU_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
 ##TestILU_CXXFLAGS     = $(EXPORT_INCLUDES)
-TestILU_LDADD        = $(EXPORT_LIBS) $(LAPACK_LIBS) \
-                       $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+TestILU_LDADD        = $(EXPORT_LIBS)
