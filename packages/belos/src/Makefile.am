@@ -35,8 +35,19 @@ UTIL = \
 
 ### add in paths as needed
 
-AM_CPPFLAGS =-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-#	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.belos
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+else
+EXPORT_INCLUDES = $(BELOS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+# ------------------------------------------------------------------------
 
 SERIAL_H = 
 
@@ -165,4 +176,27 @@ nodist_execinclude_HEADERS = Belos_config.h
 MAINTAINERCLEANFILES = Makefile.in 
 
 
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+if BUILD_IFPACK
+BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; make all-libs
+else
+BUILD_IFPACK_LIBS =
+endif
 
+# RPP: Commenting out TSFCore support since it is depricated and the 
+# doesn't have the new export makefile system installed.
+##if BUILD_TSFCORE_EPETRA
+##BUILD_TSFCORE_EPETRA_LIBS = cd $(top_builddir)/../tsfcore ; make all-libs
+##else
+##BUILD_TSFCORE_EPETRA_LIBS =
+##endif
+
+all-libs:
+	$(MAKE) libbelos.a
+	cd $(top_builddir)/../epetra ; make all-libs
+	cd $(top_builddir)/../triutils ; make all-libs
+	cd $(top_builddir)/../teuchos ; make all-libs
+	$(BUILD_IFPACK_LIBS)
+#	$(BUILD_TSFCORE_EPETRA_LIBS)

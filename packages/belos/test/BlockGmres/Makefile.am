@@ -1,6 +1,18 @@
 #@HEADER
 #@HEADER
 
+include $(top_builddir)/Makefile.export.belos
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+else
+EXPORT_LIBS = $(BELOS_LIBS)
+EXPORT_INC_PATH = $(BELOS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
 EXEEXT = .exe
 
 #if BUILD_TRIUTILS
@@ -78,22 +90,15 @@ bl_gmres_tsfcore_CXXFLAGS = 	-I$(top_srcdir)/src \
 		-I$(top_srcdir)/../teuchos/src \
 		-I$(top_builddir)/../teuchos/src
 
-bl_pgmres_hb_LDADD = $(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../ifpack/src/libifpack.a \
-		$(top_builddir)/../epetra/src/libepetra.a \
-		$(top_builddir)/../teuchos/src/libteuchos.a \
-		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
 
-bl_gmres_hb_LDADD = $(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../epetra/src/libepetra.a \
-		$(top_builddir)/../teuchos/src/libteuchos.a \
-		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+bl_gmres_hb_LDADD = $(EXPORT_LIBS)
 
-bl_gmres_tsfcore_LDADD = $(top_builddir)/../triutils/src/libtriutils.a \
+bl_gmres_tsfcore_LDADD = \
 		$(top_builddir)/../TSFCore/src/libTSFCore.a \
 		$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
-		$(top_builddir)/../epetra/src/libepetra.a \
-		$(top_builddir)/../teuchos/src/libteuchos.a \
-		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+                $(EXPORT_LIBS) 
 
+# Dummy for new export makefiles
+LIBS = 
 #

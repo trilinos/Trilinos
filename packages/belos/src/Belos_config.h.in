@@ -38,7 +38,13 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build with ifpack enabled */
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
+/* Define if want to build with belos enabled */
 #undef HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -107,7 +113,7 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
-/* Define if want to build with tsfcore enabled */
+/* Define if want to build with belos enabled */
 #undef HAVE_TSFCORE
 
 /* Define if want to build tsfcore-epetra */

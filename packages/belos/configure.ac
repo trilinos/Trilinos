@@ -133,6 +133,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Checks for header files
 # ------------------------------------------------------------------------
 
@@ -199,19 +204,20 @@ AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno" ])
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Build tests that use Ifpack], IFPACK)
-AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
+# ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: Epetra, Teuchos, Triutils
+# Optional: Ifpack, TSFCore
+# ------------------------------------------------------------------------
 
-#TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
-#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack.], [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(tsfcore, [Build tests that use TSFCore], TSFCORE)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, tsfcore, TSFCORE, BUILD_TSFCORE, yes, [Build tests that use TSFCore.], [Build tests that use TSFCore. Can be overridden with --disable-belos-tsfcore.])
+
 TAC_ARG_CHECK_FEATURE_SUB(tsfcore, epetra, TSFCORE_EPETRA)
 AM_CONDITIONAL(BUILD_TSFCORE_EPETRA, test "X$ac_cv_use_tsfcore" != "Xno" &&
 					test "X$ac_cv_use_tsfcore_epetra" != "Xno")
 				
-
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -302,6 +308,7 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.belos
 		src/Makefile
 		test/Makefile
 		test/BlockCG/Makefile

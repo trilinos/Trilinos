@@ -56,6 +56,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
@@ -63,6 +64,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -78,6 +80,9 @@ Dummy_LDADD = $(LDADD)
 am_bl_cg_hb_OBJECTS = bl_cg_hb-test_bl_cg_hb.$(OBJEXT)
 bl_cg_hb_OBJECTS = $(am_bl_cg_hb_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(BELOS_LIBS))
 am_bl_pcg_hb_OBJECTS = bl_pcg_hb-test_bl_pcg_hb.$(OBJEXT)
 bl_pcg_hb_OBJECTS = $(am_bl_pcg_hb_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
@@ -116,6 +121,8 @@ BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 BUILD_TSFCORE_EPETRA_FALSE = @BUILD_TSFCORE_EPETRA_FALSE@
 BUILD_TSFCORE_EPETRA_TRUE = @BUILD_TSFCORE_EPETRA_TRUE@
+BUILD_TSFCORE_FALSE = @BUILD_TSFCORE_FALSE@
+BUILD_TSFCORE_TRUE = @BUILD_TSFCORE_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -137,6 +144,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -144,7 +152,9 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# Dummy for new export makefiles
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -163,12 +173,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -215,6 +232,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 #if BUILD_TRIUTILS
 @BUILD_IFPACK_TRUE@BELOS_BCG_IFPACK_EX = bl_pcg_hb
@@ -248,17 +270,8 @@ bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../teuchos/src \
 		-I$(top_builddir)/../teuchos/src
 
-bl_pcg_hb_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
-		$(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../ifpack/src/libifpack.a  \
-		$(top_builddir)/../teuchos/src/libteuchos.a \
-		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-
-bl_cg_hb_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
-		$(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../teuchos/src/libteuchos.a \
-		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-
+bl_pcg_hb_LDADD = $(EXPORT_LIBS)
+bl_cg_hb_LDADD = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -521,6 +534,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb
