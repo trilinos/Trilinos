@@ -60,7 +60,7 @@ namespace Tpetra {
 	*/
 
 	template<typename OrdinalType, typename ScalarType>
-	class DistObject: public Object {
+	class DistObject: public virtual Object {
 
 	public:
 

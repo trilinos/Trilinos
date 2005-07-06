@@ -31,6 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Object.hpp"
+#include "Tpetra_DistObject.hpp"
 #include "Tpetra_OutputObject.hpp" // for STL vector, algorithm, numeric
 #include "Tpetra_VectorSpace.hpp"
 #include <Teuchos_CompObject.hpp>
@@ -70,7 +71,7 @@ namespace Tpetra {
 	*/
 	
 	template<typename OrdinalType, typename ScalarType>
-	class Vector : public Teuchos::CompObject, public Object, public virtual OutputObject {
+	class Vector : public Teuchos::CompObject, public virtual DistObject<OrdinalType, ScalarType>, public virtual OutputObject {
 
 	public:
   
@@ -78,7 +79,7 @@ namespace Tpetra {
 
 		//! Sets all vector entries to zero.
 		Vector(VectorSpace<OrdinalType, ScalarType> const& VectorSpace) 
-			: Object("Tpetra::Vector")
+			: DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), "Tpetra::Vector")
 			, VectorData_()
 		{
 			ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -90,7 +91,7 @@ namespace Tpetra {
   
 		//! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
 		Vector(ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
-			: Object("Tpetra::Vector")
+			: DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), "Tpetra::Vector")
 			, VectorData_()
 		{
 			ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -107,7 +108,7 @@ namespace Tpetra {
 
 		//! Copy constructor.
 		Vector(Vector<OrdinalType, ScalarType> const& Source)
-			: Object(Source.label())
+			: DistObject<OrdinalType, ScalarType>(Source.vectorSpace().elementSpace(), Source.label())
 			, VectorData_(Source.VectorData_)
 		{};
 
@@ -170,7 +171,7 @@ namespace Tpetra {
 		//! Returns result of dot product, \e result = this.x
 		ScalarType dotProduct(Vector<OrdinalType, ScalarType> const& x) const {
 			if(! vectorSpace().isCompatible(x.vectorSpace()))
-				throw reportError("Vector sizes do not match.", 2);
+				throw Object::reportError("Vector sizes do not match.", 2);
 		
 			OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 			OrdinalType const length = getNumMyEntries();
@@ -200,7 +201,7 @@ namespace Tpetra {
 		//! Changes this vector to element-wise reciprocal values of x.
 		void reciprocal(Vector<OrdinalType, ScalarType> const& x) {
 			if(! vectorSpace().isCompatible(x.vectorSpace()))
-				throw reportError("Vector sizes do not match.", 2);
+				throw Object::reportError("Vector sizes do not match.", 2);
 
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 			ScalarType const scalarOne = Teuchos::ScalarTraits<ScalarType>::one();
@@ -241,7 +242,7 @@ namespace Tpetra {
 		//! Update vector values with scaled values of x, \e this = scalarThis*\e this + scalarX*x.
 		void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis) {
 			if(! vectorSpace().isCompatible(x.vectorSpace()))
-				throw reportError("Vector sizes do not match.", 2);
+				throw Object::reportError("Vector sizes do not match.", 2);
 	  
 			OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 			OrdinalType const length = getNumMyEntries();
@@ -261,7 +262,7 @@ namespace Tpetra {
 					Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
 			if(!vectorSpace().isCompatible(x.vectorSpace()) ||
 			   !vectorSpace().isCompatible(y.vectorSpace()))
-				throw reportError("Vector sizes do not match.", 2);
+				throw Object::reportError("Vector sizes do not match.", 2);
 	  
 			OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 			OrdinalType const length = getNumMyEntries();
@@ -327,7 +328,7 @@ namespace Tpetra {
 		//! Compute Weighted 2-norm (RMS Norm) of vector.
 		ScalarType normWeighted(Vector<OrdinalType, ScalarType> const& weights) const {
 			if(!vectorSpace().isCompatible(weights.vectorSpace()))
-				throw reportError("Vector sizes do not match.", 2);
+				throw Object::reportError("Vector sizes do not match.", 2);
 		
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 			OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -382,7 +383,7 @@ namespace Tpetra {
 								 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
 			if(!vectorSpace().isCompatible(x.vectorSpace()) ||
 			   !vectorSpace().isCompatible(y.vectorSpace()))
-				throw reportError("Vector sizes do not match.", 2);
+				throw Object::reportError("Vector sizes do not match.", 2);
 
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 			OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -412,7 +413,7 @@ namespace Tpetra {
 										   ScalarType scalarThis) {
 			if(!vectorSpace().isCompatible(x.vectorSpace()) ||
 			   !vectorSpace().isCompatible(y.vectorSpace()))
-				throw reportError("Vector sizes do not match.", 2);
+				throw Object::reportError("Vector sizes do not match.", 2);
 		
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 			OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -554,6 +555,38 @@ namespace Tpetra {
 		}
 
 		Teuchos::RefCountPtr< VectorData<OrdinalType, ScalarType> > VectorData_;
+
+		// four functions needed for DistObject derivation
+		bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) {
+			return(false);
+		}
+
+		int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
+						   OrdinalType numImportIDs,
+						   OrdinalType numPermuteIDs,
+						   std::vector<OrdinalType> permuteToLIDs,
+						   std::vector<OrdinalType> permuteFromLIDs) {
+			return(0);
+		}
+
+		int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
+						   OrdinalType numExportIDs,
+						   std::vector<OrdinalType> exportLIDs,
+						   std::vector<OrdinalType> ordinalExports,
+						   std::vector<ScalarType> scalarExports,
+						   Distributor<OrdinalType> const& distor) {
+			return(0);
+		}
+  
+		int unpackAndCombine(DistObject<OrdinalType, ScalarType> const& sourceObj,
+							 OrdinalType numImportIDs,
+							 std::vector<OrdinalType> importLIDs,
+							 std::vector<OrdinalType> ordinalImports,
+							 std::vector<ScalarType> scalarImports,
+							 Distributor<OrdinalType> const& distor,
+							 CombineMode CM) {
+			return(0);
+		}
 
 	}; // class Vector
 
