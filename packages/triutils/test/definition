@@ -2,7 +2,12 @@
 # FRAMEWORK group
 #
 
+# Removing Read from MPI testing for now because it's been hanging on paunchy.
+# It only recently started actually trying to test.  It had previously been
+# incorrectly defined.
+
 (FRAMEWORK) {
     DIRS = Read;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
+#   COMM = SERIAL, MPI;
 }
