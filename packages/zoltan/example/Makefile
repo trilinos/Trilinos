@@ -80,6 +80,12 @@ ifdef JOSTLE_LIBPATH
   LIBDIR += $(JOSTLE_LIBPATH)
 endif
 
+ifdef PATOH_LIBPATH
+  THIRD_PARTY_LIBS += -lpatoh
+  LIBDIR += $(PATOH_LIBPATH)
+endif
+
+
 LIBS = -lexzoltan -lzoltan $(THIRD_PARTY_LIBS) $(MPI_LIB) -lm
 
 ZOLTAN_INCLUDE= -I$(ZUTIL)/Communication \
