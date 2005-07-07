@@ -2,7 +2,6 @@
 CXXFLAGS=-O3 \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
---enable-valgrind \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
