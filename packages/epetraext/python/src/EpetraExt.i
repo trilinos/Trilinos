@@ -28,7 +28,34 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") EpetraExt
+%define EPETRAEXT_DOCSTRING
+"The EpetraExt module allows access to The Trilinos package EpetraExt.  Note
+that the 'EpetraExt_' prefix has been stripped from all EpetraExt objects,
+but that if imported with 'from PyTrilinos import EpetraExt', these
+objects exist in the 'EpetraExt' python namespace.  Use the python help()
+facility for local documentation on classes and methods, or see the
+on-line documentation for more in-depth information.
+
+The most important classes of the EpetraExt module are:
+*) Graph coloring:
+   - MapColoring
+   - MapColoringIndex
+*) Input functions:
+   - BlockMapToMatrixMarketFile()
+   - MatrixMarketFileToMultiVector()
+   - MatrixMarketFileToBlockMap()
+   - MatrixMarketFileToCrsMatrix()
+*) Output functions:
+   - BlockMapToMatrixMarketFile()
+   - RowMatrixToMatrixMarketFile()
+   - MultiVectorToMatrixMarketFile()
+*) Matrix-Matrix operations:
+   - Add()
+   - Multiply()
+"
+%enddef
+
+%module(package="PyTrilinos", docstring=EPETRAEXT_DOCSTRING) EpetraExt
 
 %{
 // System includes
