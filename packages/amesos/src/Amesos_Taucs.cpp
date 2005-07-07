@@ -37,8 +37,8 @@ using namespace Teuchos;
 
 //=============================================================================
 Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
-  Problem_(&prob),
   Matrix_(0),
+  Problem_(&prob),
   A_(0),
   L_(0)
 { }
@@ -413,25 +413,24 @@ void Amesos_Taucs::PrintStatus() const
     return;
 
   string p = "Amesos_Taucs : ";
-  PrintLine();
 
-  const Epetra_RowMatrix& A = Matrix() ;
-  if ( Matrix_ != 0 ) { 
+  if (Matrix_ == 0) return;
+
+  
+  PrintLine();
+  int n = Matrix().NumGlobalRows();
+  int nnz = Matrix().NumGlobalNonzeros();
     
-    int n = Matrix().NumGlobalRows();
-    int nnz = Matrix().NumGlobalNonzeros();
-    
-    cout << p << "Matrix has " << n << " rows"
-	 << " and " << nnz << " nonzeros" << endl;
-    if ( n > 0 ) { 
-      cout << p << "Nonzero elements per row = "
-	   << 1.0 *  nnz / n << endl;
-      cout << p << "Percentage of nonzero elements = "
-	   << 100.0 * nnz /(pow(n,2.0)) << endl;
-    }
-    
-    PrintLine();
+  cout << p << "Matrix has " << n << " rows"
+       << " and " << nnz << " nonzeros" << endl;
+  if (n > 0) 
+  { 
+    cout << p << "Nonzero elements per row = "
+         << 1.0 *  nnz / n << endl;
+    cout << p << "Percentage of nonzero elements = "
+         << 100.0 * nnz /(pow(n,2.0)) << endl;
   }
+  PrintLine();
 
   return;
 }
