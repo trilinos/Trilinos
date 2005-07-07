@@ -157,7 +157,7 @@ ZT_DRIVER_CPP	= zCPPdrive_timer
 ZT_DRIVER_CPP_CSRC = timer_main_2.cpp
 
 ZT_DRIVER_LIBS 	= -L. -l$(ZT_TARGET) -l$(MEM_TARGET) \
-                  $(MPI_LIBPATH) $(MPI_LIB)
+                  $(MPI_LIBPATH) $(MPI_LIB) -lm
 ZT_DRIVER_DEP  	= $(ZT_LIB) $(MEM_LIB) 
 
 ##############################################################################
