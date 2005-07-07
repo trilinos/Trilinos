@@ -35,8 +35,9 @@ EXEEXT = .exe
 SILLY_CG_SOLVE_SERIAL = sillyCgSolve_serial
 SILLY_CG_SOLVE_MPI = sillyCgSolve_mpi
 SILLY_POWER_METHOD_SERIAL = sillyPowerMethod_serial
+SILLY_1D_FFT_SERIAL = silly1DFFT_serial
 
-noinst_PROGRAMS = $(SILLY_CG_SOLVE_SERIAL) $(SILLY_CG_SOLVE_MPI) $(SILLY_POWER_METHOD_SERIAL)
+noinst_PROGRAMS = $(SILLY_CG_SOLVE_SERIAL) $(SILLY_CG_SOLVE_MPI) $(SILLY_POWER_METHOD_SERIAL) $(SILLY_1D_FFT_SERIAL)
 
 sillyCgSolve_serial_SOURCES = $(srcdir)/sillyCgSolve_serial.cpp
 sillyCgSolve_serial_DEPENDENCIES = $(common_dependencies)
@@ -49,6 +50,10 @@ sillyCgSolve_mpi_LDADD = $(common_ldadd)
 sillyPowerMethod_serial_SOURCES = $(srcdir)/sillyPowerMethod_serial.cpp
 sillyPowerMethod_serial_DEPENDENCIES = $(common_dependencies)
 sillyPowerMethod_serial_LDADD = $(common_ldadd)
+
+silly1DFFT_serial_SOURCES = $(srcdir)/silly1DFFT_serial.cpp
+silly1DFFT_serial_DEPENDENCIES = $(common_dependencies)
+silly1DFFT_serial_LDADD = $(common_ldadd)
 
 #
 # Common stuff
