@@ -389,6 +389,10 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   if( ParameterList.isParameter("OutputLevel") )
     verbose_ = ParameterList.get("OutputLevel",1);
 
+  if ( verbose_ >= 1 ) 
+    MDS.ICNTL(2)=6; // Turn on Mumps verbose output 
+
+
   // retrive MUMPS' specific parameters
   
   if (ParameterList.isSublist("mumps") ) {
@@ -626,6 +630,10 @@ int Amesos_Mumps::NumericFactorization()
 #else
   SVal.resize(Val.size());
 
+
+  //
+  //  Pass the numeric values
+  //
   if (Comm().MyPID() < MaxProcs_) 
     for (int i = 0 ; i < Val.size() ; ++i) 
       SVal[i] = (float)(Val[i]);

@@ -180,6 +180,51 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				     maxrelresidual, 
 				     NumTests ) ;
 	}
+      } else if ( AmesosClasses[i] == "Amesos_Pastix" ) {
+	bool RunPastixTest = true;
+	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
+	  RunPastixTest = false ;   //  Bug #969
+	if ( MissingADiagonal ) RunPastixTest = false ; // Bug #1404
+	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
+	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunPastixTest = false ;   //  Bug #1403
+
+	if ( RunPastixTest ) {
+	  if ( verbose) cout << " Testing Pastix " << endl ; 
+	  errors += TestOtherClasses("Amesos_Pastix",
+							 EpetraMatrixType,
+				     Amat, 
+				     transpose, 
+				     verbose, 
+				     Levels, 
+				     Rcond, 
+				     RowMapEqualsColMap,
+				     maxrelerror, 
+				     maxrelresidual, 
+				     NumTests ) ;
+	}
+
+      } else if ( AmesosClasses[i] == "Amesos_Paraklete" ) {
+	bool RunParakleteTest = true;
+	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
+	  RunParakleteTest = false ;   //  Bug #969
+	if ( MissingADiagonal ) RunParakleteTest = false ; // Bug #1404
+	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
+	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunParakleteTest = false ;   //  Bug #1403
+
+	if ( RunParakleteTest ) {
+	  if ( verbose) cout << " Testing Paraklete " << endl ; 
+	  errors += TestOtherClasses("Amesos_Paraklete",
+							 EpetraMatrixType,
+				     Amat, 
+				     transpose, 
+				     verbose, 
+				     Levels, 
+				     Rcond, 
+				     RowMapEqualsColMap,
+				     maxrelerror, 
+				     maxrelresidual, 
+				     NumTests ) ;
+	}
 
       } else if ( AmesosClasses[i] == "Amesos_Dscpack" ) {
 	//

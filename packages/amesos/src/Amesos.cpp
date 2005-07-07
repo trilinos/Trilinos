@@ -29,6 +29,9 @@
 #include "Amesos_config.h"
 #include "Amesos.h"
 #include "Amesos_Klu.h"
+#ifdef HAVE_AMESOS_PASTIX
+#include "Amesos_Pastix.h"
+#endif
 #ifdef HAVE_AMESOS_LAPACK
 #include "Amesos_Lapack.h"
 #endif
@@ -55,6 +58,9 @@
 #endif
 #ifdef HAVE_AMESOS_TAUCS
 #include "Amesos_Taucs.h"
+#endif
+#ifdef HAVE_AMESOS_PARAKLETE
+#include "Amesos_Paraklete.h"
 #endif
 #include "Epetra_Object.h"
 
@@ -85,6 +91,15 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
     return new Amesos_Klu(LinearProblem); 
 #else
     if (verbose) cerr << "Amesos_Klu is not implemented" << endl ; 
+    return(0); 
+#endif
+  } 
+  
+  if ((CT == "Amesos_Pastix") || (CT == "Pastix")) { 
+#ifdef HAVE_AMESOS_PASTIX
+    return new Amesos_Pastix(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Pastix is not implemented" << endl ; 
     return(0); 
 #endif
   } 
@@ -152,6 +167,15 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #endif
   } 
   
+  if ((CT == "Amesos_Paraklete") || (CT == "Paraklete")) { 
+#ifdef HAVE_AMESOS_PARAKLETE
+    return new Amesos_Paraklete(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Paraklete is not implemented" << endl ; 
+    return(0); 
+#endif
+  }
+
   if ((CT == "Amesos_Taucs") || (CT == "Taucs")) { 
 #ifdef HAVE_AMESOS_TAUCS
     return new Amesos_Taucs(LinearProblem); 
@@ -179,6 +203,14 @@ bool Amesos::Query(const string CT)
   if ((CT == "Amesos_Lapack") || (CT == "Lapack")) { 
 #ifdef HAVE_AMESOS_LAPACK
     return true;
+#else
+    return false;
+#endif
+  } 
+  
+  if ((CT == "Amesos_Pastix") || (CT == "Pastix")) { 
+#ifdef HAVE_AMESOS_PASTIX
+    return true; 
 #else
     return false;
 #endif
@@ -250,6 +282,14 @@ bool Amesos::Query(const string CT)
   
   if ((CT == "Amesos_Taucs") || (CT == "Taucs")) { 
 #ifdef HAVE_AMESOS_TAUCS
+    return true;
+#else
+    return false;
+#endif
+  }
+
+  if ((CT == "Amesos_Paraklete") || (CT == "Paraklete")) { 
+#ifdef HAVE_AMESOS_PARAKLETE
     return true;
 #else
     return false;
