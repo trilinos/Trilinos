@@ -33,7 +33,7 @@ SWIG_CXXFLAGS = -I$(srcdir) \
                 -I$(top_srcdir)/../epetra/python/src
 
 # basic definitions for IFPACK
-include  $(top_builddir)/Makefile.export
+include  $(top_builddir)/Makefile.export.ifpack
 
 # Default make target
 all-am: build

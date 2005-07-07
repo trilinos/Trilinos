@@ -11769,7 +11769,7 @@ fi
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.ifpack src/Makefile example/Makefile example/Makefile.include doc/Makefile test/Makefile test/PreconditionerFactory/Makefile test/PreconditionerFactory/Makefile.include test/TestAll/Makefile test/TestAll/Makefile.include test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/Relaxation/Makefile test/Relaxation/Makefile.include test/Container/Makefile test/Container/Makefile.include test/OverlappingRowMatrix/Makefile test/OverlappingRowMatrix/Makefile.include test/CompareWithAztecOO/Makefile test/CompareWithAztecOO/Makefile.include test/ILU/Makefile test/IC/Makefile test/IC/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy python/example/Makefile"
+                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile Makefile.export.ifpack src/Makefile example/Makefile doc/Makefile test/Makefile test/PreconditionerFactory/Makefile test/TestAll/Makefile test/CrsRiluk/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/Relaxation/Makefile test/Container/Makefile test/OverlappingRowMatrix/Makefile test/CompareWithAztecOO/Makefile test/ILU/Makefile test/IC/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12518,34 +12518,22 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-  "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "Makefile.export.ifpack" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.ifpack" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-  "example/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES example/Makefile.include" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/PreconditionerFactory/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/PreconditionerFactory/Makefile" ;;
-  "test/PreconditionerFactory/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/PreconditionerFactory/Makefile.include" ;;
   "test/TestAll/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/TestAll/Makefile" ;;
-  "test/TestAll/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/TestAll/Makefile.include" ;;
   "test/CrsRiluk/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsRiluk/Makefile" ;;
-  "test/CrsRiluk/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsRiluk/Makefile.include" ;;
   "test/IlukGraph/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/IlukGraph/Makefile" ;;
-  "test/IlukGraph/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/IlukGraph/Makefile.include" ;;
   "test/SetParameters/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile" ;;
-  "test/SetParameters/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile.include" ;;
   "test/Relaxation/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Relaxation/Makefile" ;;
-  "test/Relaxation/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/Relaxation/Makefile.include" ;;
   "test/Container/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile" ;;
-  "test/Container/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile.include" ;;
   "test/OverlappingRowMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/OverlappingRowMatrix/Makefile" ;;
-  "test/OverlappingRowMatrix/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/OverlappingRowMatrix/Makefile.include" ;;
   "test/CompareWithAztecOO/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CompareWithAztecOO/Makefile" ;;
-  "test/CompareWithAztecOO/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CompareWithAztecOO/Makefile.include" ;;
   "test/ILU/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ILU/Makefile" ;;
   "test/IC/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/IC/Makefile" ;;
-  "test/IC/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/IC/Makefile.include" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;

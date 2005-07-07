@@ -27,3 +27,9 @@ IFPACK_LIBS= @abs_top_builddir@/src/libifpack.a \
 	     $(TRIUTILS_LIBS) \
 	     $(EPETRA_LIBS) \
 	     $(TEUCHOS_LIBS)                            
+
+IFPACK_EXTRA_INCLUDES= $(EPETRAEXT_INCLUDES) \
+	               $(TRIUTILS_INCLUDES) 
+
+IFPACK_EXTRA_LIBS= $(EPETRAEXT_LIBS) \
+	           $(TRIUTILS_LIBS)

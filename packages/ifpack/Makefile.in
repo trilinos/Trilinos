@@ -35,8 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.export.ifpack.in \
-	$(srcdir)/Makefile.export.in $(srcdir)/Makefile.in \
+	$(srcdir)/Makefile.export.ifpack.in $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure \
 	$(top_srcdir)/python/src/.deps/dummy.in ChangeLog \
 	config/config.guess config/config.sub config/depcomp \
@@ -77,8 +76,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
-CONFIG_CLEAN_FILES = Makefile.export Makefile.export.ifpack \
-	python/src/.deps/dummy
+CONFIG_CLEAN_FILES = Makefile.export.ifpack python/src/.deps/dummy
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -331,8 +329,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-Makefile.export: $(top_builddir)/config.status $(srcdir)/Makefile.export.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 Makefile.export.ifpack: $(top_builddir)/config.status $(srcdir)/Makefile.export.ifpack.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 python/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src/.deps/dummy.in
@@ -458,7 +454,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/example $(distdir)/python/src $(distdir)/python/src/.deps $(distdir)/test/CompareWithAztecOO $(distdir)/test/Container $(distdir)/test/CrsRiluk $(distdir)/test/IC $(distdir)/test/IlukGraph $(distdir)/test/OverlappingRowMatrix $(distdir)/test/PreconditionerFactory $(distdir)/test/Relaxation $(distdir)/test/SetParameters $(distdir)/test/TestAll
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

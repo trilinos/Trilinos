@@ -29,14 +29,14 @@
 include $(top_builddir)/Makefile.export.ifpack
 
 if USING_GNUMAKE
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS))
-EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES))
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES))
 else
-EXPORT_LIBS = $(IFPACK_LIBS)
-EXPORT_INC_PATH = $(IFPACK_INCLUDES)
+EXAMPLE_LIBS     = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INC_PATH)
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -44,5 +44,4 @@ noinst_PROGRAMS = TestILU
 
 TestILU_SOURCES      = $(srcdir)/cxx_main.cpp
 TestILU_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
-##TestILU_CXXFLAGS     = $(EXPORT_INCLUDES)
-TestILU_LDADD        = $(EXPORT_LIBS)
+TestILU_LDADD        = $(EXAMPLE_LIBS)

@@ -407,34 +407,22 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
-                Makefile.export
                 Makefile.export.ifpack
 		src/Makefile
 		example/Makefile
-		example/Makefile.include
                 doc/Makefile
 		test/Makefile
 		test/PreconditionerFactory/Makefile
-		test/PreconditionerFactory/Makefile.include
 		test/TestAll/Makefile
-		test/TestAll/Makefile.include
 		test/CrsRiluk/Makefile
-		test/CrsRiluk/Makefile.include
 		test/IlukGraph/Makefile
-		test/IlukGraph/Makefile.include
 		test/SetParameters/Makefile
-		test/SetParameters/Makefile.include
 		test/Relaxation/Makefile
-		test/Relaxation/Makefile.include
 		test/Container/Makefile
-		test/Container/Makefile.include
 		test/OverlappingRowMatrix/Makefile
-		test/OverlappingRowMatrix/Makefile.include
 		test/CompareWithAztecOO/Makefile
-		test/CompareWithAztecOO/Makefile.include
 		test/ILU/Makefile
 		test/IC/Makefile
-		test/IC/Makefile.include
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile

@@ -108,7 +108,7 @@ TestILU_OBJECTS = $(am_TestILU_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(IFPACK_LIBS))
+@USING_GNUMAKE_TRUE@	$(IFPACK_EXTRA_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -274,14 +274,14 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(IFPACK_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(IFPACK_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES))
-AM_CPPFLAGS = $(EXPORT_INC_PATH)
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 TestILU_SOURCES = $(srcdir)/cxx_main.cpp
 TestILU_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
-TestILU_LDADD = $(EXPORT_LIBS)
+TestILU_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
