@@ -629,7 +629,7 @@ solve(
   if(solveCriteria)
     blockSolveCriteria[0] = BSC(*solveCriteria,B.domain()->dim());
     A.solve(
-      conj,B,X,1
+      conj,B,X,solveCriteria?1:0
       ,solveCriteria ? blockSolveCriteria : NULL
       ,solveCriteria ? blockSolveStatus   : NULL
       );
@@ -661,7 +661,7 @@ solveTranspose(
   if(solveCriteria)
     blockSolveCriteria[0] = BSC(*solveCriteria,B.domain()->dim());
     A.solveTranspose(
-      conj,B,X,1
+      conj,B,X,solveCriteria?1:0
       ,solveCriteria ? blockSolveCriteria : NULL
       ,solveCriteria ? blockSolveStatus   : NULL
       );
