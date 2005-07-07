@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define DOCSTRING
+%define EPETRA_DOCSTRING
 "The Epetra module allows access to The Trilinos package Epetra.  Note
 that the 'Epetra_' prefix has been stripped from all Epetra objects,
 but that if imported with 'from PyTrilinos import Epetra', these
@@ -37,7 +37,7 @@ facility for local documentation on classes and methods, or see the
 on-line documentation for more in-depth information."
 %enddef
 
-%module(package="PyTrilinos", docstring=DOCSTRING) Epetra
+%module(package="PyTrilinos", docstring=EPETRA_DOCSTRING) Epetra
 
 %{
 // System includes
