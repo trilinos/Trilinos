@@ -94,7 +94,7 @@ foreach g  ( TestBasic.csh )
 		    endif
 		endif
 end
-if ( $TestRan != True ) then
+if ( $TestRan != "True" ) then
   echo "No executables were found  " 
   set AnError = True
 endif

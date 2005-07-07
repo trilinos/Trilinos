@@ -56,12 +56,12 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 			  # this is an automated test or not
     # file2 is the log that is created and put into a results email if 
     # errors occur.
-    set file2 = ../../../../logMpiErrors.txt
+    set file2 = ../logMpiErrors.txt
     rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
     #'file' is a shorter log that is retained even if all tests pass.
-    set file = ../../../../log`eval uname`.txt
+    set file = ../log`eval uname`.txt
     rm -f $file
 ## IMPORTANT: Specify the script owner(s) on the following line
 ## For one owner type "owner@abc.com", for multiple owners
@@ -71,16 +71,8 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: Amesos  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
-    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
-    #of the longer log file (file2).
-#    set file3 = tempfile
-#    rm -f $file3
+    #  tempfile2 (file4) is used only in the creation of the longer file, $file2
     set file4 = tempfile2
-    rm -f $file4
-else
-    cd ../../../
-    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
-    rm -f $file
 endif
 echo $file
 echo $file2
@@ -113,8 +105,10 @@ setenv MPI_GROUP_MAX 4096
 foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
   cd $f
   set exefiles = (*.exe)
+  set TestRan = False 
   if ( "${exefiles}X" != 'X' ) then
     foreach g(*.exe)
+    set TestRan = True
       echo "" >>& ../$file
       echo "############" $g "##############" >>& ../$file
       if( "$2" == "True" ) then
@@ -164,10 +158,11 @@ foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
         endif
         /bin/rm -f Amesos_OK
       end
-    else
-      # This is not an automated test.
-      ./$g -v >>& ../$file
     endif
+  endif
+  if ( $TestRan != "True" ) then
+    echo "No executables were found  " 
+    set AnError = True
   endif
   cd ..
 end
@@ -175,8 +170,12 @@ end
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
 if ( "$2" == "True" ) then
-#    rm $file3
+    echo "@#@#@#@#  Summary file @#@#@#@#@"
+    cat $file
+    rm $file
     if( "$AnError" != "True" ) then
+	echo "@#@#@#@# Error file @#@#@#@#@"
+	cat $file2
 	rm -f $file2
     endif
 endif
@@ -184,6 +183,7 @@ endif
 if ( "$AnError" == "True" ) then
     exit 1
 else
+    echo "End Result: TEST PASSED"
     exit 0
 endif
 

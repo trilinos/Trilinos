@@ -5,7 +5,7 @@
 (FRAMEWORK) {
     DIRS = scripts/daily/mpi;
     COMM = CUSTOM-MPI;
-    ARGS = TestAmesos.exe True True;
+    ARGS = NightlyTest True True;
     EXIT-STATUS = STRING-COMPARISON ;
 }
 

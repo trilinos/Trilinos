@@ -58,12 +58,12 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 			  # this is an automated test or not
     # file2 is the log that is created and put into a results email if 
     # errors occur.
-    set file2 = ../../../../logMpiErrors.txt
+    set file2 = ../logMpiErrors.txt
     rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
     #'file' is a shorter log that is retained even if all tests pass.
-    set file = ../../../../log`eval uname`.txt
+    set file = ../log`eval uname`.txt
     rm -f $file
 ## IMPORTANT: Specify the script owner(s) on the following line
 ## For one owner type "owner@abc.com", for multiple owners
@@ -73,16 +73,6 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: Amesos  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
-    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
-    #of the longer log file (file2).
-#    set file3 = tempfile
-#    rm -f $file3
-#    set file4 = tempfile2
-#    rm -f $file4
-else
-    cd ../../../
-    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
-    rm -f $file
 endif
 echo $file
 echo $file2
@@ -162,7 +152,7 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPA
     endif
   endif
   cd ..
-  if ( $TestRan != True ) then
+  if ( $TestRan != "True" ) then
     echo "No executables were found in directory " $f 
     set AnError = True
   endif
@@ -193,4 +183,3 @@ else
     echo "End Result: TEST PASSED"
     exit 0
 endif
-
