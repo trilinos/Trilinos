@@ -28,7 +28,33 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") ML
+%define ML_DOCSTRING
+"The ML module allows access to The Trilinos package ML.  Note
+that the 'ML_' prefix has been stripped from all ML objects,
+but that if imported with 'from PyTrilinos import ML', these
+objects exist in the 'ML' python namespace.  Use the python help()
+facility for local documentation on classes and methods, or see the
+on-line documentation for more in-depth information.
+
+The most important class of the ML module is:
+- MultiLevelPreconditioner
+
+Example of usage:
+1) Creates an ML preconditioner for the already created Epetra.CrsMatrix 
+   Matrix. The parameters are set using a dictionary. 
+
+   Prec = ML.MultiLevelPreconditioner(Matrix, False)
+   MLList = {
+     "max levels"        : 3,
+     "smoother: type"    : "symmetric Gauss-Seidel",
+     "aggregation: type" : "Uncoupled"
+   }
+   Prec.SetParameterList(MLList)
+   Prec.ComputePreconditioner()
+"
+%enddef
+
+%module(package="PyTrilinos", docstring=ML_DOCSTRING) ML
 
 %{
 // System includes
