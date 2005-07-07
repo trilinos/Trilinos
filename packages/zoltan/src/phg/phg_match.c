@@ -556,6 +556,7 @@ static int pmatching_ipm(
   char *yo = "pmatching_ipm";
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   int cFLAG, edge;                 /* column match only if user requested */
+static int development_timers[2] = {-1, -1};
 
   
   /* this restriction will be removed later, but for now NOTE this test */
@@ -738,7 +739,13 @@ skip_phase1:
         
         if (cFLAG)
           gno = permute[k];                  /* need to use next local vertex */
-           
+ 
+if (hgp->use_timers > 3)  {
+  if (development_timers[0] < 0)
+    development_timers[0] = Zoltan_Timer_Init (zz->ZTime, 1, "inner products");
+  ZOLTAN_TIMER_START(zz->ZTime, development_timers[0], hg->comm->Communicator);
+  }
+                  
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
         if (!cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
@@ -807,7 +814,9 @@ skip_phase1:
                *hg->ewgt[edge];
             }
           }
-        
+if (hgp->use_timers > 3)
+  ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[0], hg->comm->Communicator);
+          
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
           sums [gno] = 0.0;             /* here gno is really a local id */
@@ -865,6 +874,12 @@ skip_phase1:
         }  
       }                  /* DONE: loop over k */                    
 
+if (hgp->use_timers > 3)  {
+  if (development_timers[1] < 0)
+    development_timers[1] = Zoltan_Timer_Init (zz->ZTime, 1, "build totals");
+  ZOLTAN_TIMER_START(zz->ZTime, development_timers[1], hg->comm->Communicator);
+  }      
+      
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
@@ -1018,7 +1033,11 @@ skip_phase1:
       if (cFLAG && hgc->nProc_y > 1)  {
         /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
-      }    
+      }
+      
+if (hgp->use_timers > 3)
+  ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1], hg->comm->Communicator);      
+          
     }                                       /* DONE: kstart < nTotal loop */
     if (cFLAG)  {
       break;      /* done, no more phases (3 or 4) or rounds */
@@ -1162,6 +1181,12 @@ if (count)
   uprintf (hgc, "RTHRTH %d FINAL MATCH ERRORS of %d\n", count, recsize); 
 }
 
+if (hgp->use_timers > 3)
+  if (zz->Proc == 0) {
+     Zoltan_Timer_Print (zz->ZTime, development_timers[0], zz->Proc, stdout);
+     Zoltan_Timer_Print (zz->ZTime, development_timers[1], zz->Proc, stdout);
+     }
+     
 fini:
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
    &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
