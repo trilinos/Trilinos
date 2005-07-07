@@ -22,9 +22,11 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
-static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_col_ipm;   /* OLD column ipm, will be phased out */
 
+#ifdef ALT_IPM
+static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
+#endif
 
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
@@ -517,11 +519,14 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
  int scale, int* send, int* reccnt, int* recsize, int* nRec, int** rec,
  MPI_Comm comm, int tag);
  
+/****************************************************************************/
 /* Because this calculation is done in two locations it has been converted to
 ** a subroutine to assure it is always consistant. Inline is not yet legal! */
 static int calc_nCandidates (int num_vtx, int procs)
- /* 2 below because each match pairs 2 vertices */
- {return num_vtx ? 1 + num_vtx/(2 * procs * ROUNDS_CONSTANT) : 0;}
+{
+/* 2 below because each match pairs 2 vertices */
+return num_vtx ? 1 + num_vtx/(2 * procs * ROUNDS_CONSTANT) : 0;
+}
  
 
 /****************************************************************************/
@@ -556,7 +561,7 @@ static int pmatching_ipm(
   char *yo = "pmatching_ipm";
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   int cFLAG, edge;                 /* column match only if user requested */
-static int development_timers[2] = {-1, -1};
+  static int development_timers[2] = {-1, -1};
 
   
   /* this restriction will be removed later, but for now NOTE this test */
@@ -656,11 +661,12 @@ static int development_timers[2] = {-1, -1};
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
                 
     /* Select upto nCandidates unmatched vertices to globally match. */
-    for (sendcnt = 0; sendcnt < nCandidates && pvisit < hg->nVtx; pvisit++)
+    for (sendcnt = 0; sendcnt < nCandidates && pvisit < hg->nVtx; pvisit++) {
       if (cmatch[visit[pvisit]] == visit[pvisit])  {         /* unmatched */
         select[sendcnt++] = visit[pvisit];      /* select it as a candidate */
         cmatch[visit[pvisit]] = -1;             /* mark it as a pending match */
       }  
+    }
     nselect = sendcnt;                          /* save for later use */
                         
     /* fill send buff as list of <gno, gno's edge count, list of edge lno's> */
@@ -740,18 +746,20 @@ skip_phase1:
         if (cFLAG)
           gno = permute[k];                  /* need to use next local vertex */
  
-if (hgp->use_timers > 3)  {
-  if (development_timers[0] < 0)
-    development_timers[0] = Zoltan_Timer_Init (zz->ZTime, 0, "inner products");
-  ZOLTAN_TIMER_START(zz->ZTime, development_timers[0], hg->comm->Communicator);
-  }
+        if (hgp->use_timers > 3)  {
+          if (development_timers[0] < 0)
+            development_timers[0] = Zoltan_Timer_Init(zz->ZTime, 0, 
+                                                      "inner products");
+          ZOLTAN_TIMER_START(zz->ZTime, development_timers[0], 
+                             hg->comm->Communicator);
+        }
                   
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
         if (!cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
           for (i = 0; i < count; r++, i++)
             for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++) {
-              if (sums [hg->hvertex[j]] == 0.0)
+              if (sums [hg->hvertex[j]] == 0.0) 
                 index [m++] = hg->hvertex[j];
               sums [hg->hvertex[j]] += 1.0;
             }
@@ -814,8 +822,9 @@ if (hgp->use_timers > 3)  {
                *hg->ewgt[edge];
             }
           }
-if (hgp->use_timers > 3)
-  ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[0], hg->comm->Communicator);
+
+        if (hgp->use_timers > 3)
+          ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[0]);
           
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
@@ -828,9 +837,9 @@ if (hgp->use_timers > 3)
         for (i = 0; i < m; i++)  {
           lno = index[i];
           if (match[lno] == lno  &&  sums[lno] > PSUM_THRESHOLD)
-            aux[count++] = lno;        /* save lno for significant partial sum */
+            aux[count++] = lno;      /* save lno for significant partial sum */
           else
-            sums[lno] = 0.0;           /* clear unwanted entries */  
+            sums[lno] = 0.0;         /* clear unwanted entries */  
         }     
         if (count == 0)
           continue;
@@ -874,11 +883,13 @@ if (hgp->use_timers > 3)
         }  
       }                  /* DONE: loop over k */                    
 
-if (hgp->use_timers > 3)  {
-  if (development_timers[1] < 0)
-    development_timers[1] = Zoltan_Timer_Init (zz->ZTime, 0, "build totals");
-  ZOLTAN_TIMER_START(zz->ZTime, development_timers[1], hg->comm->Communicator);
-  }      
+      if (hgp->use_timers > 3)  {
+        if (development_timers[1] < 0)
+          development_timers[1] = Zoltan_Timer_Init(zz->ZTime, 0, 
+                                                   "build totals");
+        ZOLTAN_TIMER_START(zz->ZTime, development_timers[1], 
+                           hg->comm->Communicator);
+      }      
       
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
@@ -1035,8 +1046,8 @@ if (hgp->use_timers > 3)  {
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       }
       
-if (hgp->use_timers > 3)
-  ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1], hg->comm->Communicator);      
+      if (hgp->use_timers > 3)
+        ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1]);
           
     }                                       /* DONE: kstart < nTotal loop */
     if (cFLAG)  {
@@ -1181,11 +1192,12 @@ if (count)
   uprintf (hgc, "RTHRTH %d FINAL MATCH ERRORS of %d\n", count, recsize); 
 }
 
-if (hgp->use_timers > 3)
-  if (zz->Proc == 0) {
-     Zoltan_Timer_Print (zz->ZTime, development_timers[0], zz->Proc, stdout);
-     Zoltan_Timer_Print (zz->ZTime, development_timers[1], zz->Proc, stdout);
-     }
+  if (hgp->use_timers > 3) {
+    Zoltan_Timer_Print(zz->ZTime, development_timers[0], zz->Proc, 
+                       hg->comm->Communicator, stdout);
+    Zoltan_Timer_Print(zz->ZTime, development_timers[1], zz->Proc, 
+                       hg->comm->Communicator, stdout);
+  }
      
 fini:
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,

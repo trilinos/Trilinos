@@ -139,7 +139,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   }
 
   if (hgp.use_timers > 1)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build);
    
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->HG.nVtx;
@@ -163,7 +163,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     if (err != ZOLTAN_OK) 
         goto End;
     if (hgp.use_timers > 1)
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway);
   } else { /* it must be PHG */
       /* UVC: if it is bisection anyways; no need to create vmap etc; 
          rdivide is going to call Zoltan_PHG_Partition anyways... */
@@ -231,7 +231,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
    exp_lids, exp_procs, exp_to_part);
     
   if (hgp.use_timers > 1) 
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist, zz->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist);
 
 End:
   if (err == ZOLTAN_MEMERR)
@@ -240,7 +240,7 @@ End:
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error partitioning hypergraph.")
     
   if (hgp.use_timers)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all);
 
   /* KDDKDD The following code prints a final quality result even when
    * KDDKDD phg_output_level is zero.  It is useful for our tests and
@@ -305,8 +305,8 @@ End:
   ZOLTAN_FREE(&parts);
   Zoltan_HG_Free_Structure(zz);
 
-  if (hgp.use_timers && zz->Proc == 0)
-    Zoltan_Timer_PrintAll(zz->ZTime, zz->Proc, stdout);
+  if (hgp.use_timers)
+    Zoltan_Timer_PrintAll(zz->ZTime, 0, zz->Communicator, stdout);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
@@ -396,12 +396,12 @@ static int Zoltan_PHG_Initialize_Params(
                            zz->Debug_Proc);
 
   if (zz->LB.Method == PARKWAY) {
-      if (hgp->nProc_x_req>1) {
-          err = ZOLTAN_FATAL;
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParKway only works nProc_x=1 (or -1).");
-              goto End;
-      }
-      hgp->nProc_x_req = 1;
+    if (hgp->nProc_x_req>1) {
+      err = ZOLTAN_FATAL;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParKway requires nProc_x=1 or -1.");
+      goto End;
+    }
+    hgp->nProc_x_req = 1;
   }
 
   err = Zoltan_PHG_Set_2D_Proc_Distrib(zz, zz->Communicator, zz->Proc, 

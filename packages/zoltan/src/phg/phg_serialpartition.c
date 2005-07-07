@@ -209,7 +209,7 @@ static int timer_cpart=-1, timer_gather=-1;
        * serial hypergraph shg.
        */
       if (hgp->use_timers > 1) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart);
         if (timer_gather < 0)
           timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Gather");
         ZOLTAN_TIMER_START(zz->ZTime, timer_gather, phg->comm->Communicator);
@@ -222,7 +222,7 @@ static int timer_cpart=-1, timer_gather=-1;
       }
 
       if (hgp->use_timers > 1) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_gather, phg->comm->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_gather);
         ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
       }
 
@@ -336,7 +336,7 @@ static int timer_cpart=-1, timer_gather=-1;
   
 End:
   if (hgp->use_timers > 1) 
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart);
 
   return ierr;
 }
