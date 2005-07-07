@@ -2044,6 +2044,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if( CoarseSolution == "Amesos-ScaLAPACK" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
+  else if( CoarseSolution == "block Gauss-Seidel" ) 
+    ML_Gen_Smoother_SymBlockGaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+                                        NumSmootherSteps, Omega, NumPDEEqns_);
   else if( CoarseSolution == "do-nothing" ) {
     // do nothing, ML will not use any coarse solver 
   } else {
