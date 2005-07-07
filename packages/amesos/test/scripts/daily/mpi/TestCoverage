@@ -1,4 +1,7 @@
 #!/bin/csh
+#
+#   This does not work in the new nightly test system yet.  
+#
 # ************************************************************************
 # 
 #                 Amesos: Direct Sparse Solver Package

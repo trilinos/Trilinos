@@ -129,7 +129,7 @@ if ( "$2" == "True" ) then
    echo "@#@#@#@#  Summary file @#@#@#@#@"
    cat $file
    rm -f $file
-   if( "$AnError" != "True" ) then
+   if( "$AnError" == "True" ) then
       echo "@#@#@#@# Error file @#@#@#@#@"
       cat $file2
       rm -f $file2

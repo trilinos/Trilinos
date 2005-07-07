@@ -99,9 +99,6 @@ foreach g  ( AmesosKlu.csh )
 		    # Tests passed
 			echo "******** Test passed ********" >>& $file
 		    endif
-		else
-		# This is not an automated test.
-#  no longer supported		    ( source $g > $file3 ) >>& $file4
 		endif
 end
 
@@ -119,9 +116,7 @@ endif
 ## 'package_name/test'
 if ( "$2" == "True" ) then
     rm $file
-    if( "$AnError" != "True" ) then
-	rm -f $file2
-    endif
+    rm -f $file2
 endif
 
 

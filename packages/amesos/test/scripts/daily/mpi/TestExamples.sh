@@ -56,12 +56,6 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: ML  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
-    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
-    #of the longer log file (file2).
-#    set file3 = tempfile
-#    rm -f $file3
-#    set file4 = tempfile2
-#    rm -f $file4
 else
     #cd ../../../
     set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
@@ -147,10 +141,8 @@ endif
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
 if ( "$2" == "True" ) then
-#    rm $file3
-    if( "$AnError" != "True" ) then
-	/bin/rm -f $file2
-    endif
+    rm $file1
+    rm -f $file2
 endif
 
 if ( "$AnError" == "True" ) then

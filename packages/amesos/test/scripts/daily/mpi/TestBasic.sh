@@ -115,9 +115,7 @@ endif
 ## 'package_name/test'
 if ( "$2" == "True" ) then
     rm $file
-    if( "$AnError" != "True" ) then
-	rm -f $file2
-    endif
+    rm -f $file2
 endif
 
 if ( "$AnError" == "True" ) then

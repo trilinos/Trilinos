@@ -110,10 +110,14 @@ end
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
 if ( "$2" == "True" ) then
-    rm $file3
-    if( "$AnError" != "True" ) then
-	rm -f $file2
-    endif
+   echo "@#@#@#@#  Summary file @#@#@#@#@"
+   cat $file
+   rm -f $file
+   if( "$AnError" == "True" ) then
+      echo "@#@#@#@# Error file @#@#@#@#@"
+      cat $file2
+      rm -f $file2
+   endif
 endif
 
 
