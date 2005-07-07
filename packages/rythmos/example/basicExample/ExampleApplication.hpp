@@ -35,6 +35,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
+#include "Epetra_CrsGraph.h"
 
 /** \brief Base interface for evaluating a stateless "model".
  *
@@ -62,6 +63,9 @@ public:
   Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
 
   /** \brief . */
+  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+
+  /** \brief . */
   InArgs createInArgs() const;
 
   /** \brief . */
@@ -79,6 +83,8 @@ private:
     // Epetra Map:
     Teuchos::RefCountPtr<Epetra_Map> epetra_map_ptr_;
     
+    // Mode
+    bool implicit_;
     // Global number of unknowns:
     int numElements_;
     // Coefficients for ODE
@@ -88,6 +94,8 @@ private:
     Teuchos::RefCountPtr<Epetra_Vector> lambda_ptr_;
     // Constant initial condition for the problem:
     double x0_;
+
+    Teuchos::RefCountPtr<Epetra_CrsGraph> W_graph_;
 
 };
 

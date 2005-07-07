@@ -27,13 +27,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Rythmos_STEPPER_BACKWARDEULER_H
-#define Rythmos_STEPPER_BACKWARDEULER_H
+#ifndef Rythmos_BACKWARD_EULER_STEPPER_H
+#define Rythmos_BACKWARD_EULER_STEPPER_H
 
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Rythmos_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_NonlinearSolverBase.hpp"
+#include "Thyra_SingleResidSSDAEModelEvaluator.hpp"
 
 namespace Rythmos {
 
@@ -41,13 +43,18 @@ template<class Scalar>
 class BackwardEulerStepper : public Stepper<Scalar>
 {
   public:
-    
-    // Constructor
-    BackwardEulerStepper() {};
-    BackwardEulerStepper(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model);
-    
-    // Destructor
-    ~BackwardEulerStepper() {};
+
+    //
+    BackwardEulerStepper(
+      const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >        &model
+      ,const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >  &solver
+      );
+
+    //
+    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+
+    //
+    void setSolver(const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     // Take a step _no larger_ than dt 
     Scalar TakeStep(Scalar dt);
@@ -58,24 +65,53 @@ class BackwardEulerStepper : public Stepper<Scalar>
     // Get solution vector
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
+    // Get residual vector
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
+
   private:
 
-    Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > model_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
+    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
+    Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > solver_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f_;
     Scalar t_;
+    Scalar t_old_;
+
+    Thyra::SingleResidSSDAEModelEvaluator<Scalar>   neModel_;
 
 };
 
+// ////////////////////////////
+// Defintions
 
 template<class Scalar>
-BackwardEulerStepper<Scalar>::BackwardEulerStepper(const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model)
+BackwardEulerStepper<Scalar>::BackwardEulerStepper(
+  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  ,const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver
+  )
+{
+  setModel(model);
+  setSolver(solver);
+}
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
-  solution_vector_ = model_->get_vector();
-  residual_vector_ = model_->get_vector();
+  x_ = model_->get_x_init()->clone_v();
+  f_ = Thyra::createMember(model_->get_f_space());
+
+  scaled_x_old_ = x_->clone_v();
+  
+}
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver)
+{
+  solver_ = solver;
 }
 
 template<class Scalar>
@@ -89,24 +125,22 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep()
 template<class Scalar>
 Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
 {
-  InArgs<Scalar> inargs;
-  OutArgs<Scalar> outargs;
-
-  // Currently this is exactly the same as ForwardEulerStepper
-  // Basically we need to write a new residual function for the nonlinear solver of the form:
-  // f(x) = x(t+dt)-x(t)-dt*model(x(t+dt),t+dt) = 0
-  // with Jacobian:
-  // f'(x) = I - dt*model'(x(t+dt),t+dt)
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   //
-  inargs.set_x(solution_vector_);
-  inargs.set_t(t_+dt);
-
-  outargs.request_F(residual_vector_);
-
-  model_->evalModel(inargs,outargs);
-
-  // solution_vector = solution_vector + dt*residual_vector
-  Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
+  // Setup the nonlinear equations:
+  //
+  //   f( (1/dt)* x + (-1/dt)*x_old), x, t ) = 0
+  //
+  V_StV( &*scaled_x_old_, Scalar(-ST::one()/dt), *x_ );
+  t_old_ = t_;
+  neModel_.initialize(model_,Scalar(ST::one()/dt),scaled_x_old_,ST::one(),Teuchos::null,t_old_+dt,Teuchos::null);
+  //
+  // Solve the implicit nonlinear system to a tolerance of ???
+  //
+  solver_->solve( neModel_, &*x_ ); // Note that x in input is x_old!
+  //
+  // Update the step
+  //
   t_ += dt;
 
   return(dt);
@@ -115,11 +149,16 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scalar>::get_solution() const
 {
-  return(solution_vector_);
+  return(x_);
 }
 
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scalar>::get_residual() const
+{
+  return(f_);
+}
 
 
 } // namespace Rythmos
 
-#endif //Rythmos_STEPPER_BACKWARDEULER_H
+#endif //Rythmos_BACKWARD_EULER_STEPPER_H

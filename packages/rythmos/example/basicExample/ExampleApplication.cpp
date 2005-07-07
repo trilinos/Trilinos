@@ -28,14 +28,16 @@
 
 #include "ExampleApplication.hpp"
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#include "mpi.h"
+#  include "Epetra_MpiComm.h"
+#  include "mpi.h"
 #else
-#include "Epetra_SerialComm.h"
+#  include "Epetra_SerialComm.h"
 #endif // HAVE_MPI
+#include "Epetra_CrsMatrix.h"
 
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
+  implicit_ = params.get<bool>( "implicit" );
   lambda_min_ = params.get<double>( "Lambda_min" );
   lambda_max_ = params.get<double>( "Lambda_max" );
   lambda_fit_ = params.get<std::string>( "Lambda_fit" );
@@ -85,7 +87,24 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
       lambda[i] = slope*lambda[i] + tmp;
     }
   }
-  
+
+
+  if(implicit_) {
+    int localNumElements = lambda.MyLength();
+    W_graph_ = Teuchos::rcp(new Epetra_CrsGraph(::Copy,*epetra_map_ptr_,1));
+    int indices[1];
+    const int IB = epetra_map_ptr_->IndexBase();
+    for( int i = 0; i < localNumElements; ++i ) {
+      indices[0] = i + IB;  // global column
+      W_graph_->InsertGlobalIndices(
+        i + IB              // GlobalRow
+        ,1                  // NumEntries
+        ,indices            // Indices
+        );
+    }
+    W_graph_->FillComplete();
+  }
+ 
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_coeff() const
@@ -115,11 +134,24 @@ ExampleApplication::get_x_init() const
   return x_init;
 }
 
+Teuchos::RefCountPtr<Epetra_Operator>
+ExampleApplication::create_W() const
+{
+  if(implicit_)
+    return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
+  return Teuchos::null;
+}
+
 EpetraExt::ModelEvaluator::InArgs
 ExampleApplication::createInArgs() const
 {
   InArgsSetup inArgs;
   inArgs.setSupports(IN_ARG_x,true);
+  if(implicit_) {
+    inArgs.setSupports(IN_ARG_x_dot,true);
+    inArgs.setSupports(IN_ARG_alpha,true);
+    inArgs.setSupports(IN_ARG_beta,true);
+  }
   return inArgs;
 }
 
@@ -128,17 +160,52 @@ ExampleApplication::createOutArgs() const
 {
   OutArgsSetup outArgs;
   outArgs.setSupports(OUT_ARG_f,true);
+  if(implicit_) {
+    outArgs.setSupports(OUT_ARG_W,true);
+  }
   return outArgs;
 }
 
 void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 {
   const Epetra_Vector &x = *inArgs.get_x();
-  Epetra_Vector       &f = *outArgs.get_f();
-  Epetra_Vector &lambda = *lambda_ptr_;
+  const Epetra_Vector &lambda = *lambda_ptr_;
   int localNumElements = x.MyLength();
-  for (int i=0 ; i<localNumElements ; ++i)
-  {
-    f[i] = lambda[i]*x[i];
+  if(implicit_) {
+    const Epetra_Vector &x_dot = *inArgs.get_x_dot();
+    if(outArgs.get_f().get()) {
+      Epetra_Vector &f = *outArgs.get_f();
+      for (int i=0 ; i<localNumElements ; ++i)
+      {
+        f[i] = x_dot[i] - lambda[i]*x[i];
+      }
+    }
+    Teuchos::RefCountPtr<Epetra_Operator> W;
+    if( (W = outArgs.get_W()).get() ) {
+      const double alpha = inArgs.get_alpha();
+      const double beta = inArgs.get_beta();
+      Epetra_CrsMatrix &crsW = Teuchos::dyn_cast<Epetra_CrsMatrix>(*W);
+			double values[1];
+			int indices[1];
+			const int IB = epetra_map_ptr_->IndexBase();
+			for( int i = 0; i < localNumElements; ++i ) {
+        values[0] = alpha - beta*lambda[i];
+				indices[0] = i + IB;  // global column
+				crsW.ReplaceGlobalValues(
+					i + IB              // GlobalRow
+					,1                  // NumEntries
+					,values             // Values
+					,indices            // Indices
+					);
+			}
+    }
+  }
+  else {
+    Epetra_Vector &f = *outArgs.get_f();
+    int localNumElements = x.MyLength();
+    for (int i=0 ; i<localNumElements ; ++i)
+    {
+      f[i] = lambda[i]*x[i];
+    }
   }
 }

@@ -29,7 +29,7 @@
 #ifndef THYRA_MODEL_EVALUATOR_HPP
 #define THYRA_MODEL_EVALUATOR_HPP
 
-#include "Thyra_OperatorVectorTypes.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 
 namespace Thyra {
 
@@ -42,10 +42,13 @@ public:
 
   /** \brief.  */
   enum EInArgsMembers {
-    IN_ARG_x
+    IN_ARG_x_dot
+    ,IN_ARG_x
     ,IN_ARG_t
+    ,IN_ARG_alpha
+    ,IN_ARG_beta
   };
-  static const int NUM_E_IN_ARGS_MEMBERS=2;
+  static const int NUM_E_IN_ARGS_MEMBERS=5;
 
   /** \brief . */
   template<class Scalar>
@@ -53,17 +56,26 @@ public:
   public:
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     InArgs();
+    void set_x_dot( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x_dot );
+    Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_dot() const;
     void set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x );
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x() const;
     void set_t( ScalarMag t );
     ScalarMag get_t() const;
+    void set_alpha( Scalar alpha );
+    Scalar get_alpha() const;
+    void set_beta( Scalar beta );
+    Scalar get_beta() const;
     bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
   private:
+    Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_dot_;
     Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_;
-    Scalar                                           t_;
+    ScalarMag                                        t_;
+    Scalar                                           alpha_;
+    Scalar                                           beta_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
     void assert_supports(EInArgsMembers arg) const;
   };
@@ -71,8 +83,9 @@ public:
   /** \brief.  */
   enum EOutArgsMembers {
     OUT_ARG_f
+    ,OUT_ARG_W
   };
-  static const int NUM_E_OUT_ARGS_MEMBERS=1;
+  static const int NUM_E_OUT_ARGS_MEMBERS=2;
 
   /** \brief . */
   template<class Scalar>
@@ -81,12 +94,15 @@ public:
     OutArgs();
     void set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f );
     Teuchos::RefCountPtr<VectorBase<Scalar> > get_f() const;
+    void set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W );
+    Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_W() const;
     bool supports(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
   private:
-    Teuchos::RefCountPtr<VectorBase<Scalar> >  f_;
+    Teuchos::RefCountPtr<VectorBase<Scalar> >             f_;
+    Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >  W_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
     void assert_supports(EOutArgsMembers arg) const;
   };
@@ -169,6 +185,14 @@ public:
    */
   virtual ScalarMag get_t_init() const;
 
+  /** \brief If supported, create a <tt>LinearOpWithSolveBase</tt> object for
+   * <tt>W</tt> to be evaluated.
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * (i.e. implicit solvers are not supported by default).
+   */
+  virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+
   //@}
 
 };
@@ -176,6 +200,7 @@ public:
 // //////////////////////////////////
 // Helper functions
 
+/** \brief . */
 template<class Scalar>
 inline 
 void eval_f(
@@ -185,6 +210,7 @@ void eval_f(
   ,VectorBase<Scalar>                                             *f
   )
 {
+
   typedef Thyra::ModelEvaluatorBase MEB;
 
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
@@ -200,6 +226,96 @@ void eval_f(
 
 }
 
+/** \brief . */
+template<class Scalar>
+inline 
+void eval_f(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const VectorBase<Scalar>                                       &x_dot
+  ,const VectorBase<Scalar>                                       &x
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
+  ,VectorBase<Scalar>                                             *f
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+
+  inArgs.set_x_dot(Teuchos::rcp(&x_dot,false));
+  inArgs.set_x(Teuchos::rcp(&x,false));
+  if(inArgs.supports(MEB::IN_ARG_t))
+    inArgs.set_t(t);
+
+  outArgs.set_f(Teuchos::rcp(f,false));
+
+  model.evalModel(inArgs,outArgs);
+
+}
+
+/** \brief . */
+template<class Scalar>
+inline 
+void eval_f_W(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const VectorBase<Scalar>                                       &x_dot
+  ,const VectorBase<Scalar>                                       &x
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
+  ,const Scalar                                                   &alpha
+  ,const Scalar                                                   &beta
+  ,VectorBase<Scalar>                                             *f
+  ,LinearOpWithSolveBase<Scalar>                                  *W
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+
+  inArgs.set_x_dot(Teuchos::rcp(&x_dot,false));
+  inArgs.set_x(Teuchos::rcp(&x,false));
+  if(inArgs.supports(MEB::IN_ARG_t))
+    inArgs.set_t(t);
+  inArgs.set_alpha(alpha);
+  inArgs.set_beta(beta);
+
+  if(f) outArgs.set_f(Teuchos::rcp(f,false));
+  if(W) outArgs.set_W(Teuchos::rcp(W,false));
+
+  model.evalModel(inArgs,outArgs);
+
+}
+
+/** \brief . */
+template<class Scalar>
+inline 
+void eval_f_W(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const VectorBase<Scalar>                                       &x
+  ,const Scalar                                                   &beta
+  ,VectorBase<Scalar>                                             *f
+  ,LinearOpWithSolveBase<Scalar>                                  *W
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+
+  inArgs.set_x(Teuchos::rcp(&x,false));
+  inArgs.set_beta(beta);
+
+  outArgs.set_f(Teuchos::rcp(f,false));
+  if(W) outArgs.set_W(Teuchos::rcp(W,false));
+
+  model.evalModel(inArgs,outArgs);
+
+}
+
+
 // //////////////////////////////////
 // Definitions
 
@@ -207,7 +323,23 @@ void eval_f(
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>::InArgs()
-{ std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false); }
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Teuchos::ScalarTraits<typename ST::magnitudeType> SMT;
+  std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false);
+  t_     = SMT::zero();
+  alpha_ = ST::zero();
+  beta_  = ST::zero();
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x_dot )
+{ assert_supports(IN_ARG_x_dot); x_dot_ = x_dot; }
+
+template<class Scalar>
+Teuchos::RefCountPtr<const VectorBase<Scalar> >
+ModelEvaluatorBase::InArgs<Scalar>::get_x_dot() const
+{ assert_supports(IN_ARG_x_dot); return x_dot_; }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x )
@@ -226,6 +358,22 @@ template<class Scalar>
 typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag
 ModelEvaluatorBase::InArgs<Scalar>::get_t() const
 { assert_supports(IN_ARG_t); return t_; }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_alpha( Scalar alpha )
+{ assert_supports(IN_ARG_alpha); alpha_ = alpha; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_alpha() const
+{ assert_supports(IN_ARG_alpha); return alpha_; }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_beta( Scalar beta )
+{ assert_supports(IN_ARG_beta); beta_ = beta; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_beta() const
+{ assert_supports(IN_ARG_beta); return beta_; }
 
 template<class Scalar>
 bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
@@ -270,6 +418,14 @@ Teuchos::RefCountPtr<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f() const { return f_; }
 
 template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W )
+{ W_ = W; }
+
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_W() const { return W_; }
+
+template<class Scalar>
 bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
 {
 #ifdef _DEBUG
@@ -308,6 +464,11 @@ template<class Scalar>
 typename ModelEvaluator<Scalar>::ScalarMag
 ModelEvaluator<Scalar>::get_t_init() const
 { return 0.0; }
+
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+ModelEvaluator<Scalar>::create_W() const
+{ return Teuchos::null; }
 
 } // namespace Thyra
 

@@ -31,6 +31,7 @@
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "EpetraExt_ModelEvaluator.hpp"
 #include "Epetra_Map.h"
 
@@ -47,22 +48,25 @@ public:
   EpetraModelEvaluator();
 
   /** \brief . */
-  EpetraModelEvaluator( const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>& epetraModel );
+  EpetraModelEvaluator(
+    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               &epetraModel
+    ,const Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  &W_factory
+    );
 
   /** \brief . */
-  void initialize( const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>& epetraModel );
+  void initialize(
+    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               &epetraModel
+    ,const Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  &W_factory
+    );
 
   /** \brief . */
   Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> getEpetraModel() const;
 
   /** \brief . */
-  void uninitialize( Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>* epetraModel = NULL );
-
-  /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> thyraToEpetra( const Teuchos::RefCountPtr<const VectorBase<double> > &v ) const;
-
-  /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Vector> thyraToEpetra( const Teuchos::RefCountPtr<VectorBase<double> > &v ) const;
+  void uninitialize(
+    Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               *epetraModel = NULL
+    ,Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  *W_factory   = NULL
+    );
 
   //@}
 
@@ -82,6 +86,9 @@ public:
   double get_t_init() const;
 
   /** \brief . */
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > create_W() const;
+
+  /** \brief . */
   InArgs<double> createInArgs() const;
 
   /** \brief . */
@@ -94,7 +101,8 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>     epetraModel_;
+  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>              epetraModel_;
+  Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  W_factory_;
   Teuchos::RefCountPtr<const Epetra_Map>                    x_map_;
   Teuchos::RefCountPtr<const Epetra_Map>                    f_map_;
   Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   x_space_;

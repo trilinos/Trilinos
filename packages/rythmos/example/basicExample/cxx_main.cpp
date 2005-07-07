@@ -43,12 +43,15 @@
 #include "Rythmos_ConfigDefs.h"
 //#include "ExampleApplicationRythmosInterface.hpp"
 #include "Rythmos_ForwardEulerStepper.hpp"
+#include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
+#include "Thyra_LinearNonlinearSolver.hpp"
+#include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 
 #include <string>
 
@@ -56,6 +59,8 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+
+enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK };
 
 int main(int argc, char *argv[])
 {
@@ -79,7 +84,10 @@ int main(int argc, char *argv[])
     int numElements = 1; // number of elements in vector
     double x0 = 10.0; // ODE initial condition
     int N = 10;  // number of steps to take
-    std::string method = "FE";  // other choice is method="ERK4"
+    const int num_methods = 3;
+    const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK };
+    const char * method_names[] = { "FE", "BE", "ERK" };
+    EMethod method_val = METHOD_FE;
     bool version = false;  // display version information 
 
     // Parse the command-line options:
@@ -89,7 +97,7 @@ int main(int argc, char *argv[])
     clp.setOption( "lambda_max", &lambda_max, "Upper bound for ODE coefficient");
     clp.setOption( "lambda_fit", &lambda_fit, "Lambda model:  random, linear");
     clp.setOption( "numelements", &numElements, "Problem size");
-    clp.setOption( "method", &method, "Integration method:  FE, ERK4." );
+    clp.setOption( "method", &method_val, num_methods, method_values, method_names, "Integration method" );
     clp.setOption( "numsteps", &N, "Number of integration steps to take" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
@@ -112,6 +120,7 @@ int main(int argc, char *argv[])
     
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
+    params.set( "implicit", method_val==METHOD_BE );
     params.set( "Lambda_min", lambda_min );
     params.set( "Lambda_max", lambda_max );
     params.set( "Lambda_fit", lambda_fit );
@@ -121,25 +130,36 @@ int main(int argc, char *argv[])
     params.set( "MPIComm", mpiComm );
 #endif // HAVE_MPI
 
+    // Create the factory for the LinearOpWithSolveBase object
+    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+      W_factory;
+    if(method_val == METHOD_BE)
+      W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
+
     // create interface to problem
     Teuchos::RefCountPtr<ExampleApplication>
       epetraModel = Teuchos::rcp(new ExampleApplication(params));
     Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
-      model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel));
-    
+      model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
+
     // Create Stepper object depending on command-line input
+    std::string method;
     Teuchos::RefCountPtr<Rythmos::Stepper<double> > stepper_ptr;
-    if (method == "ERK4") // Explicit Runge-Kutta 4 stage
-    {
+    if ( method_val == METHOD_ERK ) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
       method = "Explicit Runge-Kutta of order 4";
-    } else // Forward Euler
-    {
+    } else if (method_val == METHOD_FE) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
       method = "Forward Euler";
+    } else if (method_val == METHOD_BE) {
+      Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<double> >
+        nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
+      stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
+      method = "Backward Euler";
+    } else {
+      TEST_FOR_EXCEPT(true);
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
-
 
     double t0 = 0.0;
     double t1 = 1.0;

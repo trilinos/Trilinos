@@ -33,6 +33,7 @@
 
 class Epetra_Map;
 class Epetra_Vector;
+class Epetra_Operator;
 
 namespace EpetraExt {
 
@@ -48,27 +49,39 @@ public:
 
   /** \brief.  */
   enum EInArgsMembers {
-    IN_ARG_x
+    IN_ARG_x_dot
+    ,IN_ARG_x
     ,IN_ARG_t
+    ,IN_ARG_alpha
+    ,IN_ARG_beta
   };
-  static const int NUM_E_IN_ARGS_MEMBERS=2;
+  static const int NUM_E_IN_ARGS_MEMBERS=5;
 
   /** \brief . */
   class InArgs {
   public:
     /** \brief. */
     InArgs();
+    void set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot );
+    Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot() const;
     void set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x );
     Teuchos::RefCountPtr<const Epetra_Vector> get_x() const;
     void set_t( double t );
+    double get_alpha() const;
+    void set_alpha( double alpha );
+    double get_beta() const;
+    void set_beta( double beta );
     double get_t() const;
     bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
   private:
+    Teuchos::RefCountPtr<const Epetra_Vector>  x_dot_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_;
     double                                     t_;
+    double                                     alpha_;
+    double                                     beta_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
     void assert_supports(EInArgsMembers arg) const;
   };
@@ -76,8 +89,9 @@ public:
   /** \brief.  */
   enum EOutArgsMembers {
     OUT_ARG_f
+    ,OUT_ARG_W
   };
-  static const int NUM_E_OUT_ARGS_MEMBERS=1;
+  static const int NUM_E_OUT_ARGS_MEMBERS=2;
 
   /** \brief . */
   class OutArgs {
@@ -86,12 +100,15 @@ public:
     OutArgs();
     void set_f( const Teuchos::RefCountPtr<Epetra_Vector> &f );
     Teuchos::RefCountPtr<Epetra_Vector> get_f() const;
+    void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
+    Teuchos::RefCountPtr<Epetra_Operator> get_W() const;
     bool supports(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
   private:
-    Teuchos::RefCountPtr<Epetra_Vector>  f_;
+    Teuchos::RefCountPtr<Epetra_Vector>    f_;
+    Teuchos::RefCountPtr<Epetra_Operator>  W_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
     void assert_supports(EOutArgsMembers arg) const;
   };
@@ -136,6 +153,14 @@ public:
    */
   virtual double get_t_init() const;
 
+  /** \brief If supported, create a <tt>Epetra_Operator</tt> object for
+   * <tt>W</tt> to be evaluated.
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * (i.e. implicit solvers are not supported by default).
+   */
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+
   //@}
 
 protected:
@@ -168,7 +193,20 @@ protected:
 
 inline
 ModelEvaluator::InArgs::InArgs()
-{ std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false); }
+{
+  std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false);
+  t_     = 0.0;
+  alpha_ = 0.0;
+  beta_  = 0.0;
+}
+
+inline
+void ModelEvaluator::InArgs::set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot )
+{ assert_supports(IN_ARG_x_dot); x_dot_ = x_dot; }
+
+inline
+Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_x_dot() const
+{ assert_supports(IN_ARG_x_dot); return x_dot_; }
 
 inline
 void ModelEvaluator::InArgs::set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x )
@@ -185,6 +223,22 @@ void ModelEvaluator::InArgs::set_t( double t )
 inline
 double ModelEvaluator::InArgs::get_t() const
 { assert_supports(IN_ARG_t); return t_; }
+
+inline
+void ModelEvaluator::InArgs::set_alpha( double alpha )
+{ assert_supports(IN_ARG_alpha); alpha_ = alpha; }
+
+inline
+double ModelEvaluator::InArgs::get_alpha() const
+{ assert_supports(IN_ARG_alpha); return alpha_; }
+
+inline
+void ModelEvaluator::InArgs::set_beta( double beta )
+{ assert_supports(IN_ARG_beta); beta_ = beta; }
+
+inline
+double ModelEvaluator::InArgs::get_beta() const
+{ assert_supports(IN_ARG_beta); return beta_; }
 
 inline
 bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
@@ -217,13 +271,22 @@ void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
 // ModelEvaluator::OutArgs
 
 inline
-ModelEvaluator::OutArgs::OutArgs() { std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
+ModelEvaluator::OutArgs::OutArgs()
+{
+  std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);
+}
 
 inline
 void ModelEvaluator::OutArgs::set_f( const Teuchos::RefCountPtr<Epetra_Vector> &f ) { f_ = f; }
 
 inline
 Teuchos::RefCountPtr<Epetra_Vector> ModelEvaluator::OutArgs::get_f() const { return f_; }
+
+inline
+void ModelEvaluator::OutArgs::set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W ) { W_ = W; }
+
+inline
+Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_W() const { return W_; }
 
 inline
 bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
@@ -263,6 +326,11 @@ ModelEvaluator::get_x_init() const
 inline
 double ModelEvaluator::get_t_init() const
 { return 0.0; }
+
+inline
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_W() const
+{ return Teuchos::null; }
 
 } // namespace EpetraExt
 
