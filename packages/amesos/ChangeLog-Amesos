@@ -30,6 +30,18 @@ This file reports (some of) the visible changes to Amesos.
 Please submit Amesos bugs at software.sandia.gov/buzgilla.
 
 ------------------------------------------------------------------------------
+
+July 2005
+
+*) Added Makefile.export.amesos. Users who want to take advantage of
+   Amesos in their codes only have to import this file in the application's
+   Makefile, then use the variables AMESOS_INCLUDES and AMESOS_LIBS to
+   specify the location of the header files and the location and name of
+   all libraries required to link with Amesos.
+   [M. Sala and R. Pawlowsky]
+
+
+------------------------------------------------------------------------------
 	
 June 2005
 
