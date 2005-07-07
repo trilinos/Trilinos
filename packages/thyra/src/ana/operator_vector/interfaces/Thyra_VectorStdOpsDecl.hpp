@@ -134,6 +134,11 @@ void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar
 template<class Scalar>
 void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta );
 
+/** \brief Scale and update: <tt>z(i) = alpha*x(i) + y(i), i = 1...z->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
 /** \brief Element-wise absolute value<tt>y(i) = abs(x(i)), i = 1...y->space()->dim()</tt>.
  */
 template<class Scalar>

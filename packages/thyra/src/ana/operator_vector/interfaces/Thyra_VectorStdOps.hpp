@@ -234,6 +234,16 @@ void Thyra::Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scal
 }
 
 template<class Scalar>
+void Thyra::V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
+{
+  linear_combination(
+    2,Teuchos::arrayArg<Scalar>(alpha,Teuchos::ScalarTraits<Scalar>::one())()
+    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
+    ,Teuchos::ScalarTraits<Scalar>::one(),z
+    );
+}
+
+template<class Scalar>
 void Thyra::abs( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 {
 #ifdef _DEBUG

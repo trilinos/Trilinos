@@ -96,7 +96,7 @@ void SerialMultiVectorBase<Scalar>::applyOp(
     "was not implemented properly!"
     );
   apply_op_validate_input(
-    "SerialMultiVectorBase<Scalar>::applyOp(...)", *domain(), *range()
+    "SerialMultiVectorBase<Scalar>::applyOp(...)", *this->domain(), *this->range()
     ,pri_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
     ,reduct_objs,pri_first_ele_in,pri_sub_dim_in,pri_global_offset_in
     ,sec_first_ele_in,sec_sub_dim_in

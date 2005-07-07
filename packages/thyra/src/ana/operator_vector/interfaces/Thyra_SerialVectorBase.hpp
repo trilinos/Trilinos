@@ -75,7 +75,7 @@ void SerialVectorBase<Scalar>::applyOp(
     in_applyOp_, std::logic_error
     ,"SerialVectorBase::applyOp(...): Error, something is not right here!" );
   Thyra::apply_op_validate_input(
-    "SerialVectorBase<>::applyOp(...)",*space()
+    "SerialVectorBase<>::applyOp(...)",*this->space()
     ,op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele,sub_dim,global_offset
     );
 #endif
