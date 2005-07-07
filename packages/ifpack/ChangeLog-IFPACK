@@ -31,6 +31,25 @@ Please submit IFPACK bugs at software.sandia.gov/buzgilla.
 
 ------------------------------------------------------------------------------
 	
+Jun 2005:
+
+*) Added Makefile.export.ifpack. Users who want to take advantage of
+   IFPACK in their codes only have to import this file in the application's
+   Makefile, then use the variables IFPACK_INCLUDES and IFPACK_LIBS to
+   specify the location of the header files and the location and name of all
+   libraries required to link with IFPACK.
+
+------------------------------------------------------------------------------
+	
+May 2005:
+
+*) Added module IFPACK to PyTrilinos. Now the IFPACK factory, and
+   most of the IFPACK classes and functions are avaiable through python,
+   for both serial and parallel computations (requires IFPACK as shared
+   library)
+
+------------------------------------------------------------------------------
+	
 Jan 2005 --> version 3.0
 
 *) Added support for EpetraExt
