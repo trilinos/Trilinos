@@ -28,7 +28,32 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") IFPACK
+%define IFPACK_DOCSTRING
+"The IFPACK module allows access to The Trilinos package IFPACK.  Note
+that the 'Ifpack_' prefix has been stripped from all IFPACK objects,
+but that if imported with 'from PyTrilinos import IFPACK', these
+objects exist in the 'IFPACK' python namespace.  Use the python help()
+facility for local documentation on classes and methods, or see the
+on-line documentation for more in-depth information.
+
+The most important classes of the IFPACK module are:
+- IC
+- ICT
+- ILU
+- ILUT
+- PointRelaxation
+
+Alternatively, one can use the factory class to create a larger variety of
+preconditioners; see the Doxygen documentation of Ifpack for more details.
+Finally, the following functions are avaiable in the IFPACK module:
+- AnalyzeMatrix()
+- AnalyzeMatrixElements()
+- AnalyzeVectoElements()
+- PrintSparsity()
+"
+%enddef
+
+%module(package="PyTrilinos", docstring=IFPACK_DOCSTRING) IFPACK
 
 %{
 // System includes
@@ -70,6 +95,8 @@ extern "C" {
 
 // Auto-documentation feature
 %feature("autodoc", "1");
+
+%ignore operator<<(ostream &, const Ifpack_Preconditioner &);// From python, use __str__
 
 %rename(Factory               ) Ifpack;
 %rename(Preconditioner        ) Ifpack_Preconditioner;

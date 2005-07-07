@@ -68,10 +68,7 @@ extraArgs      = []
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
 am_libs     = makeInfo.get("LDFLAGS"      ,"").split() + \
-              makeInfo.get("IFPACK_LIBS" ,"").split() + \
-              makeInfo.get("BLAS_LIBS"    ,"").split() + \
-              makeInfo.get("LAPACK_LIBS"  ,"").split() + \
-              makeInfo.get("FLIBS"        ,"").split()
+              makeInfo.get("IFPACK_LIBS" ,"").split()
 am_includes = makeInfo.get("IFPACK_INCLUDES" ,"").split()
 
 for lib in am_libs:
