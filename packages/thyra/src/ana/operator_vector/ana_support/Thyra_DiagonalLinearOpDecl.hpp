@@ -196,7 +196,9 @@ protected:
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  bool solveSupported(ETransp M_trans) const;
+  bool solveSupportsTrans(ETransp M_trans) const;
+  /** \brief . */
+  bool solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpWithSolveBase */

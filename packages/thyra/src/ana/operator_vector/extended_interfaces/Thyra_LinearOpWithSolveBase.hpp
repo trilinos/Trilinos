@@ -35,15 +35,27 @@
 namespace Thyra {
 
 template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveSupports(EConj conj) const
+bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveSupportsConj(EConj conj) const
 {
   return true;
 }
 
 template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupports(EConj conj) const
+bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupportsConj(EConj conj) const
 {
-  return true;
+  return false;
+}
+
+template <class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+{
+  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
+}
+
+template <class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+{
+  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
 }
 
 template <class RangeScalar, class DomainScalar>
@@ -60,7 +72,7 @@ void LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTranspose(
     true,std::logic_error
     ,"LinearOpWithSolveBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::solveTranspose(...): "
     "Error, the concrete subclass described as { " << this->description() << " } "
-    " with this->solveTransposeSupports("<<toString(conj)<<")="<<this->solveTransposeSupports(conj)
+    " with this->solveTransposeSupportsConj("<<toString(conj)<<")="<<this->solveTransposeSupportsConj(conj)
     << " did not override this function and does not support transposes."
     );
 }

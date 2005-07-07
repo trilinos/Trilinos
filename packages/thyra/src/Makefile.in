@@ -378,7 +378,8 @@ ANA_OPERATOR_VECTOR_EXTENDED_INTERFACES_H = \
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_VectorSpaceConverterBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductMultiVectorBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductVectorBase.hpp\
-  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductVectorSpaceBase.hpp
+  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductVectorSpaceBase.hpp\
+  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_SolveSupportTypes.hpp
 
 ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_DiagonalLinearOp.hpp\

@@ -30,120 +30,9 @@
 #define THYRA_LINEAR_OP_WITH_SOLVE_BASE_DECL_HPP
 
 #include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_SolveSupportTypes.hpp"
 
 namespace Thyra {
-
-/** \defgroup Equation_solve_foundation_code_grp  Equation solve foundational code
- *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
- */
-
-/** \brief The type of the tolerance for the solve
- *
- * \ingroup Equation_solve_foundation_code_grp
- */
-enum ESolveTolType {
-  SOLVE_TOL_REL_RESIDUAL_NORM           ///< Enforce the tolerance on the relative natural norm in the residual vector
-  ,SOLVE_TOL_REL_SOLUTION_ERR_NORM      ///< Enforce the tolerance on the relative natural norm in the error in the solution vector
-};
-
-/** \brief Simple struct that defines the requested solution criteria for a solve.
- *
- * \ingroup Equation_solve_foundation_code_grp
- */
-template <class Scalar>
-struct SolveCriteria {
-  /** \brief . */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  /** \brief . */
-  static const ScalarMag defaultTolerance() { return ScalarMag(-1); }
-  /** \brief The type of solve tolerance requested. */
-  ESolveTolType    solveTolType;
-  /** \brief The requested solve tolerance (what the client would like to see).
-   *
-   * A value of <tt>defaultTolerance()</tt> means that the solver
-   * implementation can define convergence any way it sees fit.
-   */
-  ScalarMag        requestedTol;  
-  /** \brief . */
-  SolveCriteria()
-    : solveTolType(SOLVE_TOL_REL_RESIDUAL_NORM), requestedTol(defaultTolerance())
-    {}
-  /** \brief . */
-  SolveCriteria(ESolveTolType _solveTolType, ScalarMag _requestedTol)
-    : solveTolType(_solveTolType), requestedTol(_requestedTol)
-    {}
-};
-
-/** \brief Simple struct that defines the requested solution criteria for a block solve.
- *
- * \ingroup Equation_solve_foundation_code_grp
- */
-template <class Scalar>
-struct BlockSolveCriteria {
-  /** \brief Solve tolerance struct */
-  SolveCriteria<Scalar>   solveCriteria;
-  /** \brief Number of RHS that solve tolerance applies to. */
-  int                     numRhs;
-  /** \brief . */
-  BlockSolveCriteria()
-    : solveCriteria(), numRhs(1)
-    {}
-  /** \brief . */
-  BlockSolveCriteria( const SolveCriteria<Scalar> &_solveCriteria, int _numRhs )
-    : solveCriteria(_solveCriteria), numRhs(_numRhs)
-    {}
-};
-
-/** \brief Solution status
- *
- * \ingroup Equation_solve_foundation_code_grp
- */
-enum ESolveStatus {
-  SOLVE_STATUS_CONVERGED        ///< The requested solution criteria has likely been achieved
-  ,SOLVE_STATUS_UNCONVERGED     ///< The requested solution criteria has likely not been achieved
-  ,SOLVE_STATUS_UNKNOWN         ///< The final solution status is unknown but he solve did not totally fail
-};
-
-/** \brief Simple struct for the return status from a solve.
- *
- * In the future, more fields may be added to aid in user diagnostics.
- *
- * \ingroup Equation_solve_foundation_code_grp
- */
-template <class Scalar>
-struct SolveStatus {
-  /** \brief . */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  /** \brief . */
-  static const ScalarMag unknownTolerance() { return ScalarMag(-1); }
-  /** \brief The return status of the solve. */
-  ESolveStatus    solveStatus;
-  /** \brief The maximum final tolerance actually achieved by the (block) linear solve.
-   *
-   * A value of <tt>unknownTolerance()</tt> means that even an estimate of the
-   * the final value of the tolerance is unknown.
-   */
-  ScalarMag       achievedTol;
-  /** \brief The number of iterations taken.
-   *
-   * This number is totally implementation dependent and should only be used
-   * for user diagnostics and not for any algorithmic purpose.
-   */
-  int             numIterations;
-  /** \brief . */
-  SolveStatus()
-    :solveStatus(SOLVE_STATUS_UNKNOWN), achievedTol(unknownTolerance())
-    ,numIterations(0)
-    {}
-};
-
-/** \brief Exception type thrown on an catastrophic solve failure.
- *
- * \ingroup Equation_solve_foundation_code_grp
- */
-class CatastrophicSolveFailure : public std::runtime_error
-{public: CatastrophicSolveFailure(const std::string& what_arg) : std::runtime_error(what_arg) {}};
 
 /** \brief Base class for all linear operators that can support a high-level
  * solve operation.
@@ -203,12 +92,16 @@ class CatastrophicSolveFailure : public std::runtime_error
  * 
  * <b>Solve Criteria</b>
  * 
- * This interface allows clients to specify a relative tolerance on either the
- * relative residual norm or the relative norm of the solution error and can
- * target different solution criteria to different blocks of linear system.
- * This interface tries to allow for mathematically rigorous solution
- * tolerances that are not based only any implementation-dependent features
- * like the number of iterations of some solver algorithm.
+ * This interface potentially allows clients to specify a relative tolerance
+ * on either the relative residual norm or the relative norm of the solution
+ * error and can target different solution criteria to different blocks of
+ * linear system.  This interface tries to allow for mathematically rigorous
+ * solution tolerances that are not based only any implementation-dependent
+ * features like the number of iterations of some solver algorithm.  This
+ * interface, however, allows <tt>*this</tt> operator to exclude support for
+ * either or both types of solution tolerances (see the functions
+ * <tt>solveSupportsSolveTolType()</tt> and
+ * <tt>solveTransposeSupportsSolveTolType()</tt>).
  * 
  * This interface is meant to support direct and iterative linear solvers as
  * well as combinations of the two in a variety of configurations.  Because of
@@ -444,7 +337,7 @@ public:
    *               means that the client is not interested in solution status of the linear systems.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>this->solveSupports(conj)==true</tt>
+   * <li><tt>this->solveSupportsConj(conj)==true</tt>
    * <li><tt>X!=NULL</tt>
    * <li><tt>this->range()->isCompatible(*B.range())==true</tt>
    * <li><tt>this->domain()->isCompatible(*X->range())==true</tt>
@@ -453,6 +346,8 @@ public:
    * <li>[<tt>numBlocks == 0</tt>] <tt>blockSolveCriteria==NULL && blockSolveStatus==NULL</tt>.
    * <li>[<tt>numBlocks > 0</tt>] <tt>blockSolveCriteria!=NULL</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.
+   * <li>[<tt>numBlocks > 0</tt>] <tt>this->solveSupportsSolveTolType(conj,blockSolveCriteria[k].solveTolType)==true</tt>,
+   *     for <tt>k = 0...numBlocks-1</tt>.
    * <li>[<tt>blockSolveStatus!=NULL</tt>] <tt>blockSolveStatus</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.
    * </ul>
@@ -491,13 +386,33 @@ public:
    * The default implementation returns <tt>true</tt> for real valued scalar types
    * or when <tt>conj==NONCONJ_ELE</tt> for complex valued types.
    */
-  virtual bool solveSupports(EConj conj) const;
+  virtual bool solveSupportsConj(EConj conj) const;
 
   /** \brief Return if <tt>solveTranspose()</tt> supports the argument <tt>conj</tt>.
    *
    * The default implementation returns <tt>false</tt>.
    */
-  virtual bool solveTransposeSupports(EConj conj) const;
+  virtual bool solveTransposeSupportsConj(EConj conj) const;
+
+  /** \brief Return if <tt>solve()</tt> supports the solve tolerance type
+   * <tt>ESolveTolType</tt>.
+   *
+   * The default implementation returns <tt>true</tt> for
+   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
+   * assumed by default that the solver implementation will only be able to
+   * check for and enforce a tolerance on the residual.
+   */
+  virtual bool solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
+
+  /** \brief Return if <tt>solveTranspose()</tt> supports the solve tolerance
+   * type <tt>ESolveTolType</tt>.
+   *
+   * The default implementation returns <tt>true</tt> for
+   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
+   * assumed by default that the solver implementation will only be able to
+   * check for and enforce a tolerance on the residual.
+   */
+  virtual bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
 
   /** \brief Request the transpose (or adjoint) solution of a block system
    * with different targeted solution criteria.
@@ -525,7 +440,7 @@ public:
    *               means that the client is not interested in solution status of the linear systems.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>this->solveTransposeSupports(conj)==true</tt>
+   * <li><tt>this->solveTransposeSupportsConj(conj)==true</tt>
    * <li><tt>X!=NULL</tt>
    * <li><tt>this->domain()->isCompatible(*B.range())==true</tt>
    * <li><tt>this->range()->isCompatible(*X->range())==true</tt>
@@ -534,6 +449,8 @@ public:
    * <li>[<tt>numBlocks == 0</tt>] <tt>blockSolveCriteria==NULL && blockSolveStatus==NULL</tt>.
    * <li>[<tt>numBlocks > 0</tt>] <tt>blockSolveCriteria!=NULL</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.
+   * <li>[<tt>numBlocks > 0</tt>] <tt>this->solveTransposeSupportsSolveTolType(conj,blockSolveCriteria[k].solveTolType)==true</tt>,
+   *     for <tt>k = 0...numBlocks-1</tt>.
    * <li>[<tt>blockSolveStatus!=NULL</tt>] <tt>blockSolveStatus</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.
    * </ul>

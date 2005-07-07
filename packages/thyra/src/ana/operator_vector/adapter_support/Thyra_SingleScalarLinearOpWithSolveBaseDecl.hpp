@@ -46,11 +46,13 @@ public:
   //@{
 
   /** \brief . */
-  bool solveSupports(EConj conj) const;
-
+  bool solveSupportsConj(EConj conj) const;
   /** \brief . */
-  bool solveTransposeSupports(EConj conj) const;
-
+  bool solveTransposeSupportsConj(EConj conj) const;
+  /** \brief . */
+  bool solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
+  /** \brief . */
+  bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
   /** \brief . */
   void solve(
     const EConj                           conj
@@ -60,7 +62,6 @@ public:
     ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
     ,SolveStatus<Scalar>                  blockSolveStatus[]
     ) const;
-
   /** \brief . */
   void solveTranspose(
     const EConj                           conj
@@ -79,8 +80,9 @@ protected:
   //@{
 
   /** \brief . */
-  virtual bool solveSupported(ETransp M_trans) const = 0;
-
+  virtual bool solveSupportsTrans(ETransp M_trans) const = 0;
+  /** \brief . */
+  virtual bool solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const = 0;
   /** \brief . */
   virtual void solve(
     const ETransp                         M_trans

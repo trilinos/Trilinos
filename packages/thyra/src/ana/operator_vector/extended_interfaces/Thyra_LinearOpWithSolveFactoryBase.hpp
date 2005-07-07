@@ -113,19 +113,25 @@ public:
   /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return its
    * remembered forward linear operator.
    *
-   * \param  Op     [in/out] 
+   * \param  Op     [in/out] On input, <tt>*Op</tt> is an initialized or uninitialized
+   *                object and on output is uninitialized.
    *
    * <b>Preconditions:</b><ul>
-   * <li> ...
+   * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
+   *     this function.
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li>...
+   * <li>If <tt>*Op</tt> on input was initialized through a call to <tt>this->initializeOp()</tt>
+   *     then <tt>return.get()!=NULL</tt>.
+   * <li>If <tt>*Op</tt> was uninitialized on input then <tt>return.get()==NULL</tt>.
+   * <li>On output, <tt>*Op</tt> can be considered to be uninitialized and
+   *     it is save to modify the <tt>fwdOp</tt> returned from this function.
    * </ul>
    */
   virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
   uninitializeOp(
-    LinearOpWithSolveBase<RangeScalar,DomainScalar>*Op
+    LinearOpWithSolveBase<RangeScalar,DomainScalar> *Op
     ) const = 0;
   
   //@}

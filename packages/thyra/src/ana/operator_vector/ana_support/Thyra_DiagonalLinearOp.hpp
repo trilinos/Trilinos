@@ -129,9 +129,15 @@ void DiagonalLinearOp<Scalar>::apply(
 // Overridden from SingleScalarLinearOpWithSolveBase
 
 template<class Scalar>
-bool DiagonalLinearOp<Scalar>::solveSupported(ETransp M_trans) const
+bool DiagonalLinearOp<Scalar>::solveSupportsTrans(ETransp M_trans) const
 {
   return true; // ToDo: Update this!
+}
+
+template<class Scalar>
+bool DiagonalLinearOp<Scalar>::solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const
+{
+  return true;
 }
 
 // Overridden from SingleRhsLinearOpWithSolveBase

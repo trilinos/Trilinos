@@ -38,15 +38,27 @@ namespace Thyra {
 // Overridden from LinearOpWithSolveBase
 
 template <class Scalar>
-bool SingleScalarLinearOpWithSolveBase<Scalar>::solveSupports(EConj conj) const
+bool SingleScalarLinearOpWithSolveBase<Scalar>::solveSupportsConj(EConj conj) const
 {
-  return this->solveSupported(applyConjToTrans(conj));
+  return this->solveSupportsTrans(applyConjToTrans(conj));
 }
 
 template <class Scalar>
-bool SingleScalarLinearOpWithSolveBase<Scalar>::solveTransposeSupports(EConj conj) const
+bool SingleScalarLinearOpWithSolveBase<Scalar>::solveTransposeSupportsConj(EConj conj) const
 {
-  return this->solveSupported( applyTransposeConjToTrans(conj) );
+  return this->solveSupportsTrans(applyTransposeConjToTrans(conj));
+}
+
+template <class Scalar>
+bool SingleScalarLinearOpWithSolveBase<Scalar>::solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+{
+  return this->solveSupportsSolveTolType(applyConjToTrans(conj),solveTolType);
+}
+
+template <class Scalar>
+bool SingleScalarLinearOpWithSolveBase<Scalar>::solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+{
+  return this->solveSupportsSolveTolType(applyTransposeConjToTrans(conj),solveTolType);
 }
 
 template <class Scalar>
