@@ -26,10 +26,21 @@
 # ************************************************************************
 #@HEADER
 
-EXEEXT = .exe
-EXAMPLE = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag compare_solvers
+include $(top_builddir)/Makefile.export.amesos
 
-noinst_PROGRAMS = $(EXAMPLE)
+if USING_GNUMAKE
+EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+else
+EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
+EXEEXT = .exe
+
+noinst_PROGRAMS = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag compare_solvers
 
 EXTRA_DIST = 662_bus.rsa
 
@@ -37,96 +48,21 @@ EXTRA_DIST = 662_bus.rsa
 GetNecessaryFiles: $(EXTRA_DIST)
 	        cp -f $(srcdir)/662_bus.rsa 662_bus_out.rsa
 
-if HAVE_AMESOS_TRIUTILS
-TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
-TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
-else
-TRIUTILS_INCDIR = 
-TRIUTILS_LIBS = 
-endif
-
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	      -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	      ${TRIUTILS_INCDIR}
-
 example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
-
-example_AmesosFactory_DEPENDENCIES = \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	${TRIUTILS_LIBS} \
-	GetNecessaryFiles
-
-example_AmesosFactory_CXXFLAGS = -I$(top_srcdir)/src \
-				 ${TRIUTILS_INCDIR}
-
-example_AmesosFactory_LDADD = $(top_builddir)/src/libamesos.a \
-	$(AMESOS_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+example_AmesosFactory_LDADD = $(EXAMPLE_LIBS)
 
 example_AmesosFactory_Tridiag_SOURCES = $(srcdir)/example_AmesosFactory_Tridiag.cpp
-
-example_AmesosFactory_Tridiag_DEPENDENCIES = \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	${TRIUTILS_LIBS} \
-	GetNecessaryFiles
-
-example_AmesosFactory_Tridiag_CXXFLAGS = -I$(top_srcdir)/src \
-				 ${TRIUTILS_INCDIR}
-
-example_AmesosFactory_Tridiag_LDADD = $(top_builddir)/src/libamesos.a \
-	$(AMESOS_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+example_AmesosFactory_Tridiag_DEPENDENCIES = $(top_builddir)/src/libamesos.a
+example_AmesosFactory_Tridiag_LDADD = $(EXAMPLE_LIBS)
 
 example_AmesosFactory_HB_SOURCES = $(srcdir)/example_AmesosFactory_HB.cpp
-
-example_AmesosFactory_HB_DEPENDENCIES = \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	${TRIUTILS_LIBS}
-
-example_AmesosFactory_HB_CXXFLAGS = -I$(top_srcdir)/src \
-				 ${TRIUTILS_INCDIR}
-
-example_AmesosFactory_HB_LDADD = $(top_builddir)/src/libamesos.a \
-	$(AMESOS_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+example_AmesosFactory_HB_DEPENDENCIES = $(top_builddir)/src/libamesos.a
+example_AmesosFactory_HB_LDADD = $(EXAMPLE_LIBS)
 
 compare_solvers_SOURCES = $(srcdir)/compare_solvers.cpp
-
-compare_solvers_DEPENDENCIES = \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	${TRIUTILS_LIBS}
-
-compare_solvers_CXXFLAGS = -I$(top_srcdir)/src \
-				 ${TRIUTILS_INCDIR}
-
-compare_solvers_LDADD = $(top_builddir)/src/libamesos.a \
-	$(AMESOS_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+compare_solvers_LDADD = $(EXAMPLE_LIBS)
 
 clean:  clean-am
 	rm -f  662_bus_out.rsa

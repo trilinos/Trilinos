@@ -176,12 +176,8 @@ int main(int argc, char *argv[]) {
   AMESOS_CHK_ERR(Solver.NumericFactorization());
   AMESOS_CHK_ERR(Solver.Solve());
 
-  bool TestPassed = true;
-
-  TestPassed = TestPassed &&
-    CheckError(Matrix,x,b,x_exact);
-
-  AMESOS_CHK_ERR( ! TestPassed ) ; 
+  if (!CheckError(Matrix,x,b,x_exact))
+    AMESOS_CHK_ERR(-1);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

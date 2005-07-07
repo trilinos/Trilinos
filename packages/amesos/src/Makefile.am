@@ -352,7 +352,13 @@ else
 EXPORT_INCLUDES = $(AMESOS_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) \
+	      -I$(top_srcdir)/src/AMD/Include \
+	      -I$(top_srcdir)/src/AMD/Source \
+	      -I$(top_srcdir)/src/colamd \
+	      -I$(top_srcdir)/src/btf \
+	      -I$(top_srcdir)/src/klu_btf \
+	      -I$(top_srcdir)/src/klu_kernel 
 
 # ------------------------------------------------------------------------
 # Amesos library specifications

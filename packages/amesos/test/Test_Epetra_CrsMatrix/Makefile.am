@@ -1,43 +1,23 @@
 #@HEADER
 #@HEADER
 
+include $(top_builddir)/Makefile.export.amesos
+
+if USING_GNUMAKE
+EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+else
+EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
 EXEEXT = .exe
 TEST = Test_Epetra_CrsMatrix
 
 noinst_PROGRAMS = $(TEST)
 
-if HAVE_AMESOS_TRIUTILS
-TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
-TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
-else
-TRIUTILS_INCDIR = 
-TRIUTILS_LIBS = 
-endif
-
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = $(TRIUTILS_INCDIR) \
-	-I$(top_builddir)/../epetra/src  -I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
-
 Test_Epetra_CrsMatrix_SOURCES = $(srcdir)/cxx_main.cpp
-
-Test_Epetra_CrsMatrix_DEPENDENCIES = \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(TRIUTILS_LIBS)
-
-Test_Epetra_CrsMatrix_CXXFLAGS = -I$(top_srcdir)/src
-
-#
-#  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
-#
-Test_Epetra_CrsMatrix_LDADD = $(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(TRIUTILS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(AMESOS_LIBS) \
-	$(top_builddir)/src/libamesos.a \
-        $(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
+Test_Epetra_CrsMatrix_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+Test_Epetra_CrsMatrix_LDADD = $(EXAMPLE_LIBS)
