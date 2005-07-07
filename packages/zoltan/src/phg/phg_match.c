@@ -742,7 +742,7 @@ skip_phase1:
  
 if (hgp->use_timers > 3)  {
   if (development_timers[0] < 0)
-    development_timers[0] = Zoltan_Timer_Init (zz->ZTime, 1, "inner products");
+    development_timers[0] = Zoltan_Timer_Init (zz->ZTime, 0, "inner products");
   ZOLTAN_TIMER_START(zz->ZTime, development_timers[0], hg->comm->Communicator);
   }
                   
@@ -876,7 +876,7 @@ if (hgp->use_timers > 3)
 
 if (hgp->use_timers > 3)  {
   if (development_timers[1] < 0)
-    development_timers[1] = Zoltan_Timer_Init (zz->ZTime, 1, "build totals");
+    development_timers[1] = Zoltan_Timer_Init (zz->ZTime, 0, "build totals");
   ZOLTAN_TIMER_START(zz->ZTime, development_timers[1], hg->comm->Communicator);
   }      
       
