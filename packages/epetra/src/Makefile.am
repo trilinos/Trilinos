@@ -331,7 +331,7 @@ MAINTAINERCLEANFILES = Makefile.in
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
 if ENABLE_EPETRA_THYRA
-ENABLE_EPETRA_THYRA_LIBS = cd $(top_builddir)/../thyra ; make all-libs
+ENABLE_EPETRA_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
 else
 ENABLE_EPETRA_THYRA_LIBS = 
 endif
