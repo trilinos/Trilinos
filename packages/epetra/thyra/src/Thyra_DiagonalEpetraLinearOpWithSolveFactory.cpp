@@ -72,7 +72,27 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
     space = create_MPIVectorSpaceBase(Teuchos::rcp(new Epetra_Map(map)));
   Teuchos::RefCountPtr< const MPIVectorBase<double> >
     diag = create_MPIVectorBase(e_diag,space);
+  Teuchos::set_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
+    fwdOp, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp", &diag
+    );
   Teuchos::dyn_cast< DiagonalLinearOp<double> >(*Op).initialize(diag);
+}
+
+Teuchos::RefCountPtr<const LinearOpBase<double> >
+DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
+  LinearOpWithSolveBase<double> *Op
+  ) const
+{
+  using Teuchos::get_extra_data;
+  TEST_FOR_EXCEPT(Op==NULL);
+  DiagonalLinearOp<double> &diagOp = Teuchos::dyn_cast<DiagonalLinearOp<double> >(*Op);
+  Teuchos::RefCountPtr< const VectorBase<double> > diag = diagOp.diag();
+  if(diag.get()) {
+    return get_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
+      diag,"Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp"
+      );
+  }
+  return Teuchos::null;
 }
 
 } // namespace Thyra

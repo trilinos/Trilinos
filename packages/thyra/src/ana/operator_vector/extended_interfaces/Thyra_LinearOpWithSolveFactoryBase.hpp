@@ -98,16 +98,11 @@ public:
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
    *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
-   * <li>If <tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
-   *     just before this call then the client can assume that the <tt>*fwdOp</tt> object will 
-   *     be remembered by the <tt>*Op</tt> object.  In this case, the client must be careful
+   * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
+   *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
+   *     be remembered by the <tt>*Op</tt> object.  The client must be careful
    *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
-   *     be modified.  This would be a typical case for an iterative linear solver for instance.
-   * <li>If <tt>fwdOp.count()</tt> after output is the same <tt>fwdOp.count()</tt>
-   *     just before this call then the client can assume that the <tt>*Op</tt> object
-   *     will be completely independent from the input <tt>*fwdOp</tt> object and the
-   *     two objects can have completely independent lifetimes.  This would be a typical
-   *     case for a direct linear solver that did not use an in-place factorization for instance.
+   *     be modified.
    * </ul>
    */
   virtual void initializeOp(
@@ -115,6 +110,24 @@ public:
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
     ) const = 0;
 
+  /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return its
+   * remembered forward linear operator.
+   *
+   * \param  Op     [in/out] 
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> ...
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li>...
+   * </ul>
+   */
+  virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+  uninitializeOp(
+    LinearOpWithSolveBase<RangeScalar,DomainScalar>*Op
+    ) const = 0;
+  
   //@}
 
 };

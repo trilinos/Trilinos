@@ -52,6 +52,12 @@ public:
     ,LinearOpWithSolveBase<double>                             *Op
     ) const;
 
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+  uninitializeOp(
+    LinearOpWithSolveBase<double>*Op
+    ) const;
+
   //@}
 
 };
