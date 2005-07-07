@@ -466,7 +466,7 @@ MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
 if BUILD_TRIUTILS
-BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; make all-libs 
+BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
 else
 BUILD_TRIUTILS_LIBS = 
 endif

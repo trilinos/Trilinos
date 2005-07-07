@@ -861,7 +861,7 @@ MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
 # ------------------------------------------------------------------------
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
-@BUILD_TRIUTILS_TRUE@BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; make all-libs 
+@BUILD_TRIUTILS_TRUE@BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
 all: EpetraExt_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
