@@ -80,9 +80,8 @@ typedef struct TimeStruct {
   int Stop_Line;          /* Line # in Stop_File for most recent Stop */
   double My_Tot_Time;     /* Sum of stop_time-start_time over all invocations
                              of this timer */
-  double Global_Tot_Time; /* Sum of max stop_time-start_time over all procs
-                             (in communicator) over all invocations of this 
-                             timer */
+  double Global_Tot_Time; /* Max of My_Tot_Time over all procs in communicator;
+                             Computed when info is printed. */
   int Use_Barrier;        /* Flag indicating whether to perform a barrier
                              operation before starting the timer. */
   int Status;             /* Flag indicating status of TimeStruct:
@@ -280,7 +279,6 @@ static char *yo = "Zoltan_Timer_Start";
 int Zoltan_Timer_Stop(
   ZTIMER *zt,            /* Ptr to Timer object */
   int ts_idx,            /* Index of the timer to use */
-  MPI_Comm comm,         /* Communicator to use for AllReduce */
   char *filename,        /* Filename of file calling the Stop */
   int lineno             /* Line number where Stop was called */
 )
@@ -288,7 +286,7 @@ int Zoltan_Timer_Stop(
 /* Function to stop a timer and accrue its information */
 ZTIMER_TS *ts;
 static char *yo = "Zoltan_Timer_Stop";
-double my_time, global_time;
+double my_time;
 
   TESTTIMER(zt, yo);
   TESTINDEX(zt, ts_idx, yo);
@@ -315,9 +313,6 @@ double my_time, global_time;
 
   ts->My_Tot_Time += my_time;
 
-  MPI_Allreduce(&my_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, comm);
-  ts->Global_Tot_Time += global_time;
-
   return ZOLTAN_OK;
 }
 
@@ -326,27 +321,39 @@ double my_time, global_time;
 int Zoltan_Timer_Print(
   ZTIMER *zt,
   int ts_idx,
-  int proc,
+  int proc,  /* Rank of the processor (in comm) that should print the data. */
+  MPI_Comm comm,
   FILE *fp
 )
 {
-/* Print a single timer's information */
+/* Accrues a single timer's values across a communicator and prints 
+ * its information.  This function must be called by all processors
+ * within the communicator.  
+ */
 static char *yo = "Zoltan_Timer_Print";
 ZTIMER_TS *ts;
+int my_proc;
 
   TESTTIMER(zt, yo);
   TESTINDEX(zt, ts_idx, yo);
   ts = &(zt->Times[ts_idx]);
 
-  fprintf(fp, "%3d ZOLTAN_TIMER %3d %23s:  ProcTime %7.4lf  GlobalTime %7.4lf\n", 
-         proc, ts_idx, ts->Name, ts->My_Tot_Time, ts->Global_Tot_Time);
+  MPI_Allreduce(&(ts->My_Tot_Time), &(ts->Global_Tot_Time), 1, MPI_DOUBLE, 
+                MPI_MAX, comm);
+
+  MPI_Comm_rank(comm, &my_proc);
+  if (proc == my_proc) 
+    fprintf(fp,
+            "%3d ZOLTAN_TIMER %3d %23s:  MyTime %7.4lf  GlobalMaxTime %7.4lf\n",
+            proc, ts_idx, ts->Name, ts->My_Tot_Time, ts->Global_Tot_Time);
   return ZOLTAN_OK;
 }
 
 /****************************************************************************/
 int Zoltan_Timer_PrintAll(
   ZTIMER *zt,
-  int proc,
+  int proc,    /* Rank of the processor (in comm) that should print the data. */
+  MPI_Comm comm, 
   FILE *fp
 )
 {
@@ -356,7 +363,7 @@ int i, ierr = ZOLTAN_OK;
 
   TESTTIMER(zt, yo);
   for (i = 0; i < zt->NextTimeStruct; i++) 
-    if ((ierr = Zoltan_Timer_Print(zt, i, proc, fp)) != ZOLTAN_OK)
+    if ((ierr = Zoltan_Timer_Print(zt, i, proc, comm, fp)) != ZOLTAN_OK)
       break;
 
   return ierr;

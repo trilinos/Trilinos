@@ -48,9 +48,9 @@ const int MAINLOOP=20;
   }
 
   printf("\n\nFINAL RESULTS -- FIRST TEST:\n");
-  Zoltan_Timer_PrintAll(zt1, me, stdout);
+  Zoltan_Timer_PrintAll(zt1, me, MPI_COMM_WORLD, stdout);
   printf("\n\nFINAL RESULTS -- SECOND TEST:\n");
-  Zoltan_Timer_PrintAll(zt2, me, stdout);
+  Zoltan_Timer_PrintAll(zt2, me, MPI_COMM_WORLD, stdout);
   printf("\n\nTHE END\n");
 
   Zoltan_Timer_Destroy(&zt1);
@@ -86,37 +86,37 @@ static int t1=-1, t2=-1, t3=-1;
     if (firsttime)
       t1 = Zoltan_Timer_Init(zt, USE_BARRIER, "Loop 1");
 
-    Zoltan_Timer_Start(zt, t1, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_START(zt, t1, MPI_COMM_WORLD);
     for (j = 0; j < LOOP1; j++) {
       double a;
       a = sqrt((double) (j * LOOP1));
     }
-    Zoltan_Timer_Stop(zt, t1, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_STOP(zt, t1);
 
     if (firsttime)
       t2 = Zoltan_Timer_Init(zt, USE_BARRIER, "Loop 2");
 
-    Zoltan_Timer_Start(zt, t2, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_START(zt, t2, MPI_COMM_WORLD);
     for (j = 0; j < LOOP2; j++) {
       double a;
       a = sqrt((double) (j * LOOP2));
     }
-    Zoltan_Timer_Stop(zt, t2, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_STOP(zt, t2);
 
     if (firsttime)
       t3 = Zoltan_Timer_Init(zt, USE_BARRIER, "Loop 3");
 
-    Zoltan_Timer_Start(zt, t3, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_START(zt, t3, MPI_COMM_WORLD);
     for (j = 0; j < LOOP3; j++) {
       double a;
       a = sqrt((double) (j * LOOP3));
     }
-    Zoltan_Timer_Stop(zt, t3, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_STOP(zt, t3);
 
     firsttime=0;
   }
 
-  Zoltan_Timer_PrintAll(zt, me, stdout);
+  Zoltan_Timer_PrintAll(zt, me, MPI_COMM_WORLD, stdout);
 
 }
 
@@ -150,29 +150,29 @@ static int cnt = 0;
   cnt++;
 
   for (i = 0; i < MAINLOOP; i++) {
-    Zoltan_Timer_Start(zt, t1, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_START(zt, t1, MPI_COMM_WORLD);
     for (j = 0; j < LOOP1; j++) {
       double a;
       a = sqrt((double) (j * LOOP1));
     }
-    Zoltan_Timer_Stop(zt, t1, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_STOP(zt, t1);
 
-    Zoltan_Timer_Start(zt, t2, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_START(zt, t2, MPI_COMM_WORLD);
     for (j = 0; j < LOOP2; j++) {
       double a;
       a = sqrt((double) (j * LOOP2));
     }
-    Zoltan_Timer_Stop(zt, t2, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_STOP(zt, t2);
 
-    Zoltan_Timer_Start(zt, t3, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_START(zt, t3, MPI_COMM_WORLD);
     for (j = 0; j < LOOP3; j++) {
       double a;
       a = sqrt((double) (j * LOOP3));
     }
-    Zoltan_Timer_Stop(zt, t3, MPI_COMM_WORLD);
+    ZOLTAN_TIMER_STOP(zt, t3);
   }
 
-  Zoltan_Timer_PrintAll(zt, me, stdout);
+  Zoltan_Timer_PrintAll(zt, me, MPI_COMM_WORLD, stdout);
 }
 
 

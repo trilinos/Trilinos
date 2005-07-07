@@ -58,18 +58,19 @@ public:
     return Zoltan_Timer_Start(this->ZTStruct, ts_idx, comm);
   }
 
-  int Stop(const int &ts_idx, const MPI_Comm &comm) {
-    return Zoltan_Timer_Stop(this->ZTStruct, ts_idx, comm);
+  int Stop(const int &ts_idx) {
+    return Zoltan_Timer_Stop(this->ZTStruct, ts_idx);
   }
 
-  int Print(const int &ts_idx, const int &proc, FILE *os) const {
+  int Print(const int &ts_idx, const int &proc, 
+            const MPI_Comm &comm, FILE *os) const {
     // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
-    return Zoltan_Timer_Print(this->ZTStruct, ts_idx, proc, os);
+    return Zoltan_Timer_Print(this->ZTStruct, ts_idx, proc, comm, os);
   }
 
-  int PrintAll(const int &proc, FILE *os) const {
+  int PrintAll(const int &proc, const MPI_Comm &comm, FILE *os) const {
     // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
-    return Zoltan_Timer_PrintAll(this->ZTStruct, proc, os);
+    return Zoltan_Timer_PrintAll(this->ZTStruct, proc, comm, os);
   }
 
 private:
