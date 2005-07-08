@@ -145,8 +145,10 @@ Thyra::set_ele(31, 1.9563000000000000, &*x);
 Thyra::set_ele(62, 2.7329000000000000, &*x);
 
   // Set Stepper Parameters
-  double Param0 =1.0361;
-  double t0 = 2.9529;
+  //double Param0 =1.0361;
+ double Param0 =1.04;
+ //double t0 = 2.9529;
+  double t0 = 2.948;
 
 
   if (MyPID == 0) 
@@ -176,7 +178,7 @@ Thyra::set_ele(62, 2.7329000000000000, &*x);
   temp_string ="FloquetTolerence";
   PL->set_param(temp_string,0.5); // Not properly implemented yet.
   temp_string ="tol";
-  PL->set_param(temp_string,1.0e-4);
+  PL->set_param(temp_string,1.0e-5);
   temp_string ="SubspaceIterations";
   PL->set_param(temp_string, 1);
   temp_string ="NumberXtraVecsSubspace";
@@ -185,10 +187,14 @@ Thyra::set_ele(62, 2.7329000000000000, &*x);
   PL->set_param(temp_string,1);
   temp_string ="lambda_stepsize";
   PL->set_param(temp_string,.005);
+  temp_string ="lambda_extend_tol";
+  PL->set_param(temp_string,4);
   temp_string ="MaxOuterIts";
   PL->set_param(temp_string,190);
   temp_string ="EnablePeriodicity";
   PL->set_param(temp_string, true);
+  temp_string ="EnableArclength";
+  PL->set_param(temp_string, false);
 
   cout << "Successfully Created a Parameter List" << endl;
 

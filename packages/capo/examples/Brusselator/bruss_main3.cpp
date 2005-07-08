@@ -180,7 +180,7 @@ Thyra::set_ele(62, 2.6980000000000000, &*x);
   temp_string ="SubspaceIterations";
   PL->set_param(temp_string, 1);
   temp_string ="NumberXtraVecsSubspace";
-  PL->set_param(temp_string,4);
+  PL->set_param(temp_string,6);
   temp_string ="printproc";
   PL->set_param(temp_string,1);
   temp_string ="lambda_stepsize";

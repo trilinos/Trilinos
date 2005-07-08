@@ -177,18 +177,20 @@ int main(int argc, char *argv[])
   temp_string ="FloquetTolerence";
   PL->set_param(temp_string,0.5); // Not properly implemented yet.
   temp_string ="tol";
-  PL->set_param(temp_string,1.0e-4);
+  PL->set_param(temp_string,1.0e-6);
   temp_string ="SubspaceIterations";
-  PL->set_param(temp_string, 1);
+  PL->set_param(temp_string, 2);
   temp_string ="NumberXtraVecsSubspace";
   PL->set_param(temp_string,4);
   temp_string ="printproc";
   PL->set_param(temp_string,1);
   temp_string ="lambda_stepsize";
-  PL->set_param(temp_string,.02);
+  PL->set_param(temp_string,.01);
   temp_string ="MaxOuterIts";
-  PL->set_param(temp_string,71);
+  PL->set_param(temp_string,300);
   temp_string ="EnablePeriodicity";
+  PL->set_param(temp_string, true);
+  temp_string ="EnableArclength";
   PL->set_param(temp_string, true);
 
   cout << "Successfully Created a Parameter List" << endl;
