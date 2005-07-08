@@ -7,7 +7,7 @@
 #include "myzero.hpp"
 #include <algorithm>
 
-#include "Claps_ConfigDefs.h"  // for definition of F77_FUNC
+#include "Claps_ConfigDefs.hpp"  // for definition of F77_FUNC
 
 #define DSTEV_F77 F77_FUNC(dstev,DSTEV)
 

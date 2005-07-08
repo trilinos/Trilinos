@@ -3,7 +3,7 @@
 //#include "../include/sort_prototypes.h"
 #include <assert.h>
 
-#include "Claps_ConfigDefs.h"  // for definition of F77_FUNC
+#include "Claps_ConfigDefs.hpp"  // for definition of F77_FUNC
 
 #define DGELSS_F77 F77_FUNC(dgelss,DGELSS)
 #define DGEQPF_F77 F77_FUNC(dgeqpf,DGEQPF)

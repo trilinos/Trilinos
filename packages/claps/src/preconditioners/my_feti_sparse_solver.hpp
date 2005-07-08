@@ -1,7 +1,7 @@
 #ifndef MY_SPAK_H
 #define MY_SPAK_H
 
-#include "Claps_ConfigDefs.h"  // for definition of F77_FUNC
+#include "Claps_ConfigDefs.hpp"  // for definition of F77_FUNC
 
 #define ORDMMD2_F77 F77_FUNC(ordmmd2,ORDMMD2)
 #define SFINIT_F77 F77_FUNC(sfinit,SFINIT)

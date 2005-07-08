@@ -42,6 +42,13 @@
 #np# --with-xyz or --without-xyz)
 #
 #np# Make sure to list all source files in one of the following categories.
+
+CORE_H = \
+	$(srcdir)/Claps_ConfigDefs.hpp
+
+CORE = \
+	$(srcdir)/Claps_Version.cpp
+
 EXTRA_CLAPS_H = \
 	$(srcdir)/preconditioners/CLOP_constraint.hpp \
 	$(srcdir)/preconditioners/CLOP_graph.hpp \
@@ -122,20 +129,18 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(
 #np# make sure to list the correct categories with each library.
 #np# replace new_package with the name of the package being autotool'ed here
 # ------------------------------------------------------------------------
-# New_Package library specifications
+# Claps library specifications
 # ------------------------------------------------------------------------
-#np# replace new_package with the name of the package being autotool'ed here
 CLAPS_LIB = libclaps.a
 
-#np# replace new_package with the name of the package being autotool'ed here
 CLAPS_H = \
+	$(CORE_H) \
 	$(MPI_H) 
 
-#np# replace new_package with the name of the package being autotool'ed here
 libclaps_a_SOURCES = \
+	$(CORE) \
 	$(MPI) 
 
-#np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libclaps_a_SOURCES = \
 	$(EXTRA_CLAPS) \
 	$(EXTRA_CLAPS_H) \

@@ -50,6 +50,15 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+#
+#np# There is, at present, no distinction between most of the categories, 
+#np# other than those which start with EXTRA_.  All categories which do not
+#np# start with EXTRA_ are included in all builds.  Categories which start
+#np# with EXTRA_ are included in some builds (typically controlled by 
+#np# --with-xyz or --without-xyz)
+#
+#np# Make sure to list all source files in one of the following categories.
+
 
 SOURCES = $(libclaps_a_SOURCES) $(EXTRA_libclaps_a_SOURCES)
 
@@ -109,7 +118,7 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libclaps_a_DEPENDENCIES =
-am__libclaps_a_SOURCES_DIST =  \
+am__libclaps_a_SOURCES_DIST = $(srcdir)/Claps_Version.cpp \
 	$(srcdir)/preconditioners/CLOP_constraint.cpp \
 	$(srcdir)/preconditioners/CLOP_graph.cpp \
 	$(srcdir)/preconditioners/CLOP_solver.cpp \
@@ -122,15 +131,16 @@ am__libclaps_a_SOURCES_DIST =  \
 	$(srcdir)/salinas/SCLOP_solver.cpp \
 	$(srcdir)/salinas/SCLIP_interface.cpp \
 	$(srcdir)/salinas/SCLIP_solver.cpp
-am__objects_1 = CLOP_constraint.$(OBJEXT) CLOP_graph.$(OBJEXT) \
+am__objects_1 = Claps_Version.$(OBJEXT)
+am__objects_2 = CLOP_constraint.$(OBJEXT) CLOP_graph.$(OBJEXT) \
 	CLOP_solver.$(OBJEXT) CLOP_sub.$(OBJEXT) CRD_utils.$(OBJEXT) \
 	EpetraExtCD_MatrixMatrix.$(OBJEXT) sparse_lu.$(OBJEXT) \
 	CLIP_solver.$(OBJEXT)
-am__objects_2 = SCLOP_interface.$(OBJEXT) SCLOP_solver.$(OBJEXT) \
+am__objects_3 = SCLOP_interface.$(OBJEXT) SCLOP_solver.$(OBJEXT) \
 	SCLIP_interface.$(OBJEXT) SCLIP_solver.$(OBJEXT)
-@HAVE_SCLAPS_TRUE@am__objects_3 = $(am__objects_2)
-@HAVE_MPI_TRUE@am__objects_4 = $(am__objects_1) $(am__objects_3)
-am_libclaps_a_OBJECTS = $(am__objects_4)
+@HAVE_SCLAPS_TRUE@am__objects_4 = $(am__objects_3)
+@HAVE_MPI_TRUE@am__objects_5 = $(am__objects_2) $(am__objects_4)
+am_libclaps_a_OBJECTS = $(am__objects_1) $(am__objects_5)
 libclaps_a_OBJECTS = $(am_libclaps_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -140,6 +150,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/CLOP_graph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CLOP_solver.Po ./$(DEPDIR)/CLOP_sub.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CRD_utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Claps_Version.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SCLIP_interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SCLIP_solver.Po \
@@ -158,7 +169,7 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libclaps_a_SOURCES) $(EXTRA_libclaps_a_SOURCES)
 DIST_SOURCES = $(am__libclaps_a_SOURCES_DIST) \
 	$(EXTRA_libclaps_a_SOURCES)
-am__include_HEADERS_DIST =  \
+am__include_HEADERS_DIST = $(srcdir)/Claps_ConfigDefs.hpp \
 	$(srcdir)/preconditioners/CLOP_constraint.hpp \
 	$(srcdir)/preconditioners/CLOP_graph.hpp \
 	$(srcdir)/preconditioners/CLOP_solver.hpp \
@@ -288,15 +299,12 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+CORE_H = \
+	$(srcdir)/Claps_ConfigDefs.hpp
 
-#
-#np# There is, at present, no distinction between most of the categories, 
-#np# other than those which start with EXTRA_.  All categories which do not
-#np# start with EXTRA_ are included in all builds.  Categories which start
-#np# with EXTRA_ are included in some builds (typically controlled by 
-#np# --with-xyz or --without-xyz)
-#
-#np# Make sure to list all source files in one of the following categories.
+CORE = \
+	$(srcdir)/Claps_Version.cpp
+
 EXTRA_CLAPS_H = \
 	$(srcdir)/preconditioners/CLOP_constraint.hpp \
 	$(srcdir)/preconditioners/CLOP_graph.hpp \
@@ -366,22 +374,17 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(
 #np# make sure to list the correct categories with each library.
 #np# replace new_package with the name of the package being autotool'ed here
 # ------------------------------------------------------------------------
-# New_Package library specifications
+# Claps library specifications
 # ------------------------------------------------------------------------
-#np# replace new_package with the name of the package being autotool'ed here
 CLAPS_LIB = libclaps.a
-
-#np# replace new_package with the name of the package being autotool'ed here
 CLAPS_H = \
+	$(CORE_H) \
 	$(MPI_H) 
 
-
-#np# replace new_package with the name of the package being autotool'ed here
 libclaps_a_SOURCES = \
+	$(CORE) \
 	$(MPI) 
 
-
-#np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libclaps_a_SOURCES = \
 	$(EXTRA_CLAPS) \
 	$(EXTRA_CLAPS_H) \
@@ -543,6 +546,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_sub.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRD_utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Claps_Version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLIP_interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLIP_solver.Po@am__quote@
@@ -565,6 +569,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Claps_Version.o: $(srcdir)/Claps_Version.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Claps_Version.o -MD -MP -MF "$(DEPDIR)/Claps_Version.Tpo" -c -o Claps_Version.o `test -f '$(srcdir)/Claps_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Claps_Version.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Claps_Version.Tpo" "$(DEPDIR)/Claps_Version.Po"; else rm -f "$(DEPDIR)/Claps_Version.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Claps_Version.cpp' object='Claps_Version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Claps_Version.Po' tmpdepfile='$(DEPDIR)/Claps_Version.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Claps_Version.o `test -f '$(srcdir)/Claps_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Claps_Version.cpp
+
+Claps_Version.obj: $(srcdir)/Claps_Version.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Claps_Version.obj -MD -MP -MF "$(DEPDIR)/Claps_Version.Tpo" -c -o Claps_Version.obj `if test -f '$(srcdir)/Claps_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Claps_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Claps_Version.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Claps_Version.Tpo" "$(DEPDIR)/Claps_Version.Po"; else rm -f "$(DEPDIR)/Claps_Version.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Claps_Version.cpp' object='Claps_Version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Claps_Version.Po' tmpdepfile='$(DEPDIR)/Claps_Version.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Claps_Version.obj `if test -f '$(srcdir)/Claps_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Claps_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Claps_Version.cpp'; fi`
 
 CLOP_constraint.o: $(srcdir)/preconditioners/CLOP_constraint.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_constraint.o -MD -MP -MF "$(DEPDIR)/CLOP_constraint.Tpo" -c -o CLOP_constraint.o `test -f '$(srcdir)/preconditioners/CLOP_constraint.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/CLOP_constraint.cpp; \
