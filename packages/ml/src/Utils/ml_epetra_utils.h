@@ -52,6 +52,7 @@ int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
                                                   int out, double *ap);
 int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
                                                   int out, double *ap);
+int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int **rowptr);
 
 #ifdef WKC
 int ML_Epetra_matvec_WKC(ML_Operator *data, int in, double *p, int out,

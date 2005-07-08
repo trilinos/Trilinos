@@ -50,6 +50,35 @@ typedef struct {
 static ML_Filter_Data Filter_;
 
 // ====================================================================== 
+int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int **rowptr)
+{
+  ML_Operator *mat_in;
+
+  *values = NULL;
+  *cols   = NULL;
+  mat_in = (ML_Operator *) data;
+
+  if ( mat_in->matvec->func_ptr != Epetra_ML_matvec) return 0;
+
+  Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
+
+  Epetra_CrsMatrix * CrsA = NULL;
+
+  CrsA = dynamic_cast<Epetra_CrsMatrix *>(A);
+  if( CrsA != NULL ) {
+     CrsA->OptimizeStorage();
+/*   These are commented out for now until we get an epetra call to 
+     return the data pointer arrays. If you want to use these, uncomment
+     this code and make All_Values_ public in Epetra_CrsMatrix.h and
+     make All_Indices_ and IndexOffset_ public in Epetra_CrsGraphData.h
+
+     *values = CrsA->All_Values_;
+     *cols = (int *) CrsA->Graph().DataPtr()->All_Indices_.Values();
+     *rowptr = (int *) CrsA->Graph().DataPtr()->IndexOffset_.Values();
+*/
+  }
+  return 0;
+}
 
 int ML_Epetra_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
 {
