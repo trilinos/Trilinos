@@ -48,6 +48,7 @@ static void tred2(double (*a)[3], double *d, double *e);
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
         double *cm, double (*evecs)[3], double *d);
 static void order_decreasing(double *d, int *order);
+static void update_bbox(double x, double y, double z, double *lo, double *hi);
 
 int Zoltan_Get_Coordinates(
   ZZ *zz, 
@@ -71,9 +72,10 @@ int Zoltan_Get_Coordinates(
   double M[3][3], im[3][3];
   double (*sav)[3];
   double max_ratio = 10.0;
-  double x, y, *cold;
+  double x, y, z, *cold;
+  double bbox_lo[3], bbox_hi[3];
   int order[3];
-  int keep_cuts, skip_dimensions;
+  int keep_cuts, skip_dimensions, save_bbox;
   int num_skip_dimensions = 0;
   RCB_STRUCT *rcb;
   RIB_STRUCT *rib;
@@ -178,6 +180,7 @@ int Zoltan_Get_Coordinates(
        * three orthonormal eigenvectors.  These usually indicate the 
        * orientation of the geometry.
        */
+
       rc = eigenvectors(im, evecs);
 
       if (rc){
@@ -189,6 +192,7 @@ int Zoltan_Get_Coordinates(
       /*
        * Calculate the extent of the geometry along the three lines defined
        * by the direction of the eigenvectors through the center of mass.
+       * (Are the eigenvector magnitudes enough here?)
        */
 
       projected_distances(zz, *coords, num_obj, cm, evecs, dist); 
@@ -216,29 +220,54 @@ int Zoltan_Get_Coordinates(
         }
       }
 
+      /*
+      ** If "keep_cuts" is set, it's possible that the caller will try
+      ** to call the "box assign" function later on, which returns all
+      ** partitions which intersect an axis-aligned box in the original
+      ** problem coordinates.  Doing this calculation is a special
+      ** problem in HSFC when the HSFC was calculated on transformed
+      ** coordinates.  The box in problem coordinates is no longer axis
+      ** aligned in the HSFC coordinates, and the box assign algorithm for
+      ** HSFC only works on axis aligned boxes.  We'll save some extra
+      ** information now to be used if a "box assign" function is called
+      ** later on.  See hsfc_box_assign.c for more information.
+      */
+  
+      if ((save_bbox = ((zz->LB.Method == HSFC) && keep_cuts))){
+        for (i=0; i<3; i++){
+          bbox_lo[i] = HUGE_VAL;
+          bbox_hi[i] = -HUGE_VAL;
+        }
+      }
+
       if (num_skip_dimensions > 0){
 
         /*
          * Reorder the eigenvectors (they're the columns of evecs) from 
          * longest projected distance to shorted projected distance.  Compute
          * the transpose (the inverse) of the matrix.  This will transform
-         * the geometry to align along the X-Y plane.  In practice we'll
-         * only need the first two rows or first one row of the inverse.
+         * the geometry to align along the X-Y plane.  
          */
+        for (i=0; i<2; i++){
+          for (j=0; j<3; j++){
+            M[i][j] = evecs[order[j]][i];
+          }
+        }
          
         if (num_skip_dimensions == 1){
           /*
            * Orient points to lie along XY plane, major direction along X,
            * secondary along Y.  So it's mostly flat along Z.
            */
-          for (i=0; i<2; i++){
-            for (j=0; j<3; j++){
-              M[i][j] = evecs[order[j]][i];
-            }
-          }
           for (i=0, cold = *coords; i<num_obj; i++, cold += 3){
             x = M[0][0]*cold[0] + M[0][1]*cold[1] + M[0][2]*cold[2];
             y = M[1][0]*cold[0] + M[1][1]*cold[1] + M[1][2]*cold[2];
+
+            if (save_bbox){
+              z = M[2][0]*cold[0] + M[2][1]*cold[1] + M[2][2]*cold[2];
+              update_bbox(x, y, z, bbox_lo, bbox_hi);
+            }
+
             cold[0] = x;
             cold[1] = y;
             cold[2] = 0;
@@ -248,11 +277,15 @@ int Zoltan_Get_Coordinates(
           /*
            * Orient points to lie along X axis.  Mostly flat along Y and Z.
            */
-          for (j=0; j<3; j++){ 
-            M[0][j] = evecs[order[j]][0];
-          }
           for (i=0, cold = *coords; i<num_obj; i++, cold+= 3){
-            cold[0] = M[0][0]*cold[0] + M[0][1]*cold[1] + M[0][2]*cold[2];
+            x = M[0][0]*cold[0] + M[0][1]*cold[1] + M[0][2]*cold[2];
+
+            if (save_bbox){
+              y = M[1][0]*cold[0] + M[1][1]*cold[1] + M[1][2]*cold[2];
+              z = M[2][0]*cold[0] + M[2][1]*cold[1] + M[2][2]*cold[2];
+              update_bbox(x, y, z, bbox_lo, bbox_hi);
+            }
+            cold[0] = x;
             cold[1] = cold[2] = 0;
           }
         }
@@ -272,6 +305,10 @@ int Zoltan_Get_Coordinates(
             hsfc = (HSFC_Data *)zz->LB.Data_Structure;
             hsfc->Skip_Dimensions = num_skip_dimensions;
             sav = hsfc->Transformation;
+            for (i=0; save_bbox && (i<3); i++){
+              hsfc->trans_bbox_lo[i] = bbox_lo[i];
+              hsfc->trans_bbox_hi[i] = bbox_hi[i];
+            }
           }
           for (i=0; i<3; i++){
             for (j=0; j<3; j++){
@@ -484,7 +521,7 @@ static void tred2(double (*a)[3],  /* Q on output */
   /*
    * Householder reduction from "Numerical Recipes in C". 
    * Take a real symmetric 3x3 matrix "a" and decompose it into
-   * an orthogonal and a tridiagonal matrix.
+   * an orthogonal Q and a tridiagonal matrix T.
    */
 
   for (i=2; i>=1; i--){
@@ -625,6 +662,15 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
     } while (m != l);
   }
   return 0;
+}
+static void update_bbox(double x, double y, double z, double *lo, double *hi)
+{
+ if (x < lo[0])      lo[0] = x;
+ else if (x > hi[0]) hi[0] = x;
+ if (y < lo[1])      lo[1] = y;
+ else if (y > hi[1]) hi[1] = y;
+ if (z < lo[2])      lo[2] = z;
+ else if (z > hi[2]) hi[2] = z;
 }
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
