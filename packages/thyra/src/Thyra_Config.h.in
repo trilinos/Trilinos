@@ -15,6 +15,9 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
+/* Define if want to build teuchos-complex */
+#undef HAVE_TEUCHOS_COMPLEX
+
 /* Define if want to build thyra-examples */
 #undef HAVE_THYRA_EXAMPLES
 

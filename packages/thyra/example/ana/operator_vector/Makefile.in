@@ -74,6 +74,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -89,7 +90,7 @@ CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = sillyCgSolve_serial$(EXEEXT)
 am__EXEEXT_2 = sillyCgSolve_mpi$(EXEEXT)
 am__EXEEXT_3 = sillyPowerMethod_serial$(EXEEXT)
-am__EXEEXT_4 = silly1DFFT_serial$(EXEEXT)
+@HAVE_TEUCHOS_COMPLEX_TRUE@am__EXEEXT_4 = silly1DFFT_serial$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_silly1DFFT_serial_OBJECTS = silly1DFFT_serial.$(OBJEXT)
 silly1DFFT_serial_OBJECTS = $(am_silly1DFFT_serial_OBJECTS)
@@ -161,6 +162,8 @@ FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
+HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
+HAVE_TEUCHOS_COMPLEX_TRUE = @HAVE_TEUCHOS_COMPLEX_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -255,7 +258,8 @@ target_vendor = @target_vendor@
 SILLY_CG_SOLVE_SERIAL = sillyCgSolve_serial
 SILLY_CG_SOLVE_MPI = sillyCgSolve_mpi
 SILLY_POWER_METHOD_SERIAL = sillyPowerMethod_serial
-SILLY_1D_FFT_SERIAL = silly1DFFT_serial
+@HAVE_TEUCHOS_COMPLEX_FALSE@SILLY_1D_FFT_SERIAL = 
+@HAVE_TEUCHOS_COMPLEX_TRUE@SILLY_1D_FFT_SERIAL = silly1DFFT_serial
 sillyCgSolve_serial_SOURCES = $(srcdir)/sillyCgSolve_serial.cpp
 sillyCgSolve_serial_DEPENDENCIES = $(common_dependencies)
 sillyCgSolve_serial_LDADD = $(common_ldadd)

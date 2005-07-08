@@ -176,6 +176,9 @@ AC_C_INLINE
 # Checks if examples should be built
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, complex, [Enable Teuchos complex code], TEUCHOS_COMPLEX, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
+
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( thyra, tests, [Build Thyra tests], THYRA_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_thyra_tests" != "Xno")
