@@ -474,8 +474,8 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 all-libs:
 	$(MAKE) libamesos.a
-	cd $(top_builddir)/../teuchos ; make all-libs 
-	cd $(top_builddir)/../epetra ; make all-libs 
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs 
 
 
 
