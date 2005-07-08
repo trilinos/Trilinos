@@ -5,7 +5,7 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 # Optional dependence on ifpack and tsfcore
 @BUILD_IFPACK_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
-# TSFCore doesn't have new makefile export supportso we block this for now.
+# TSFCore doesn't have new makefile export support so we ignore this for now.
 ##@BUILD_TSFCORE_EPETRA_TRUE@include @abs_top_builddir@/../tsfcore/Makefile.export.tsfcore
 
 BELOS_INCLUDES = \
