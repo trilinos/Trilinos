@@ -43,8 +43,9 @@ typedef struct RIB_Struct {
     struct Dot_Struct *Dots;
     struct rib_tree   *Tree_Ptr;
     int                Num_Geom;
-    double Transformation[3][3];   /* From SKIP_DIMENSIONS parameter */
-    int Skip_Dimensions;             
+    int Skip_Dimensions;           /* if degenerate geometry, skip 1 or 2 dims */
+    double Transformation[3][3];   /* to align deg. geom along XY plane */
+
 } RIB_STRUCT;
 
 extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, int);

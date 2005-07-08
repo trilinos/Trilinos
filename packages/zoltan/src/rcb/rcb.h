@@ -64,8 +64,8 @@ typedef struct RCB_Struct {
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
   int Num_Dim;               /* Number of dimensions in the input geometry. */
-  double Transformation[3][3];   /* From SKIP_DIMENSIONS parameter */
-  int Skip_Dimensions;
+  int Skip_Dimensions;           /* if degenerate geometry, skip 1 or 2 dims */
+  double Transformation[3][3];   /* to align deg. geom along XY plane */
 } RCB_STRUCT;
 
 extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, int);
