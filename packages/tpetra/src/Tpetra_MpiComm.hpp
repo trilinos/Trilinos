@@ -39,9 +39,19 @@
 
 namespace Tpetra {
 
-	// forward declaration of MpiData, needed to prevent circular inclusions
-	// actual #include statement at the end of this file
-	class MpiData;
+	//! Tpetra::MpiComm:  The Tpetra MPI Communication Class.
+	/*! The MpiComm class is an implementation of Tpetra::Comm, providing the general
+	    information and services needed for other Tpetra classes to run on 
+		a parallel computer using MPI.
+
+		MpiComm error codes (positive for non-fatal, negative for fatal):
+		<ol>
+		<li> +1  Pointer to buffer is null.
+		<li> +2  Specified source ImageID does not exist.
+		<li> +3  Specified destination ImageID does not exist.
+		<li> -99 Internal MpiComm error.  Contact developer.
+		</ol>
+	*/
 
 	template<typename PacketType, typename OrdinalType>
 	class MpiComm : public Object, public virtual Comm<PacketType, OrdinalType> {
@@ -56,8 +66,10 @@ namespace Tpetra {
 		MpiComm(MPI_Comm Comm) 
 			: Object("Tpetra::MpiComm") 
 			, MpiData_()
+			, tag_(-1)
 		{
 			MpiData_ = Teuchos::rcp(new MpiData(Comm));
+			tag_ = data().getMpiTag();
 		};
 
 		//! platform constructor
@@ -66,16 +78,22 @@ namespace Tpetra {
 		  \param MpiData In
 		         MpiData inner data class passed in by MpiPlatform.
 		*/
-		MpiComm(Teuchos::RefCountPtr<MpiData> const& data)
+		MpiComm(Teuchos::RefCountPtr<MpiData> const& mpidata)
 			: Object("Tpetra::MpiComm")
-			, MpiData_(data)
-		{};
+			, MpiData_(mpidata)
+			, tag_(-1)
+		{
+			tag_ = data().getMpiTag();
+		};
 
 		//! copy constructor
 		MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
 			: Object(comm.label())
 			, MpiData_(comm.MpiData_)
-		{};
+			, tag_(-1)
+		{
+			tag_ = data().getMpiTag();
+		};
 
 		~MpiComm() {};
 		//@}
@@ -189,6 +207,71 @@ namespace Tpetra {
 					 MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
 		};
 		//@}
+
+		//@{ \name Point-to-Point Methods
+
+		//! MpiComm Blocking Send function
+		/*! Sends a list of values to another image. Control will not exit this function until
+		    the data have been acknowledged by the receiving image.
+		  \param myVals In
+		         On entry, contains the list of values to be sent.
+		  \param count In
+		         On entry, contains the length of myVals.
+		  \param destImageID In
+		         On entry, contains the ImageID of the image to send the values to.
+		*/
+		void send(PacketType* myVals, OrdinalType const count, int destImageID) const {
+			// Throw an exception if myVals is null.
+			if(myVals == 0)
+				throw reportError("myVals is null.", 1);
+			// Throw an exception if destImageID is not a valid ID.
+			if(destImageID < 0 || destImageID >= data().getNumImages())
+				throw reportError("Invalid destImageID specified. Should be in the range [0," +
+								  toString(data().getNumImages()) + ").", 3);
+			
+			int err = MPI_Send(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(),
+							   destImageID, tag_, data().getMpiComm());
+			if(err != 0)
+				cerr << "MpiComm error on image " << data().getMyImageID() << ", code = " << err << endl;
+			
+		}
+
+		//! MpiComm Blocking Receive function
+		/*! Receive a list of values from another image. Control will not exit this function until
+		    data has been received from the source image specified.
+		  \param myVals Out
+			     On exit, contains the list of values received.
+		  \param count In
+		         On entry, contains the length (capacity) of myVals.
+		  \param sourceImageID In
+		         On entry, contains the ImageID of the image to receive the values from.
+				 (A sourceImageID of -1 means receive values from any image.)
+		*/
+		void receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const {
+			// Throw an exception if myVals is null.
+			if(myVals == 0)
+				throw reportError("myVals is null.", 1);
+			// Throw an exception if sourceImageID is not a valid ID.
+			if(sourceImageID < -1 || sourceImageID >= data().getNumImages())
+				throw reportError("Invalid sourceImageID specified. Should be in the range [-1," +
+								  toString(data().getNumImages()) + ").", 2);
+			
+			// Because MPI_ANY_SOURCE is an MPI constant, we have the caller pass 
+			// the generic value -1 instead. Here we convert that to the value MPI expects.
+			if(sourceImageID == -1)
+				sourceImageID = MPI_ANY_SOURCE;
+
+			MPI_Status status; // A dummy MPI_Status object, needed for the MPI_Recv call.
+
+			int err = MPI_Recv(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(),
+							   sourceImageID, tag_, data().getMpiComm(), &status);
+
+			if(err != 0)
+				cerr << "MpiComm error on image " << data().getMyImageID() << ", code = " << err << endl;
+			
+		}
+
+		//@}
     
 		//@{ \name I/O Methods
 		//! Print methods
@@ -212,6 +295,7 @@ namespace Tpetra {
 
 		// private data members
 		Teuchos::RefCountPtr<MpiData> MpiData_;
+		int tag_;
     
 	}; // MpiComm class
   

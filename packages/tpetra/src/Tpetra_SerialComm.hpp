@@ -162,6 +162,39 @@ namespace Tpetra {
 		};
 		//@}
 
+		//@{ \name Point-to-Point Methods
+
+		//! SerialComm Blocking Send function
+		/*! Sends a list of values to another image. Control will not exit this function until
+		    the data have been acknowledged by the receiving image.
+		  \param myVals In
+		         On entry, contains the list of values to be sent.
+		  \param count In
+		         On entry, contains the length of myVals.
+		  \param destImageID In
+		         On entry, contains the ImageID of the image to send the values to.
+		*/
+		void send(PacketType* myVals, OrdinalType const count, int destImageID) const {
+			throw reportError("This method should never be called.", -1);
+		}
+
+		//! SerialComm Blocking Receive function
+		/*! Receive a list of values from another image. Control will not exit this function until
+		    data has been received from the source image specified.
+		  \param myVals Out
+			     On exit, contains the list of values received.
+		  \param count In
+		         On entry, contains the length (capacity) of myVals.
+		  \param sourceImageID In
+		         On entry, contains the ImageID of the image to receive the values from.
+				 (A sourceImageID of -1 means receive values from any image.)
+		*/
+		void receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const {
+			throw reportError("This method should never be called.", -1);
+		}
+
+		//@}
+
 		//@{ \name I/O Methods
 		//! Print methods
 		void print(ostream& os) const {};

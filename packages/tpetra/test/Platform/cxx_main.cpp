@@ -43,19 +43,19 @@ template <typename OrdinalType, typename ScalarType>
 void codeCoverage(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
-  int myImageID = 0; // assume we are on serial
-  int numImages = 1; // if MPI, will be reset later
+	int myImageID = 0; // assume we are on serial
+	int numImages = 1; // if MPI, will be reset later
   
-  // initialize MPI if needed
+	// initialize MPI if needed
 #ifdef TPETRA_MPI
-  numImages = -1;
-  myImageID = -1;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &numImages);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
+	numImages = -1;
+	myImageID = -1;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &numImages);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // TPETRA_MPI
   
-  // initialize verbose & debug flags
+	// initialize verbose & debug flags
 	bool verbose = false;
 	bool debug = false;
 	if(argc > 1) {
@@ -67,22 +67,22 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-  // change verbose to only be true on Image 0
-  // if debug is enabled, it will still output on all nodes
-  verbose = (verbose && (myImageID == 0));
+	// change verbose to only be true on Image 0
+	// if debug is enabled, it will still output on all nodes
+	verbose = (verbose && (myImageID == 0));
   
-  // start the testing
+	// start the testing
 	if(verbose) outputStartMessage("Platform");
-  int ierr = 0;
+	int ierr = 0;
   
-  // call the actual test routines
-  ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+	// call the actual test routines
+	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
 	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
-  ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
-  MPI_Finalize();
+	MPI_Finalize();
 #endif
 	if(verbose) outputEndMessage("Platform", (ierr == 0));
 	return(ierr);
@@ -91,129 +91,129 @@ int main(int argc, char* argv[]) {
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
-  std::string className = "Platform<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
-  if(verbose) outputHeading("Stating unit tests for " + className);
+	std::string className = "Platform<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
+	if(verbose) outputHeading("Stating unit tests for " + className);
 
-  int ierr = 0;
-  int returnierr = 0;
+	int ierr = 0;
+	int returnierr = 0;
 
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================
-  codeCoverage<OrdinalType, ScalarType>(verbose, debug, myImageID, numImages);
+	codeCoverage<OrdinalType, ScalarType>(verbose, debug, myImageID, numImages);
 	
 	// ======================================================================
 	// actual testing section - affects return code
 	// ======================================================================
 
-  if(verbose && debug) outputSubHeading("Starting actual testing section...");
+	if(verbose && debug) outputSubHeading("Starting actual testing section...");
 
 #ifdef TPETRA_MPI
-  Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
-  Tpetra::MpiComm<ScalarType, OrdinalType> comm(MPI_COMM_WORLD);
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
+	Tpetra::MpiComm<ScalarType, OrdinalType> comm(MPI_COMM_WORLD);
 #else
-  Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
-  Tpetra::SerialComm<ScalarType, OrdinalType> comm;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
+	Tpetra::SerialComm<ScalarType, OrdinalType> comm;
 #endif
 
-  // test getMyImageID
-  if(verbose) cout << "Testing getMyImageID... ";
-  int platform_myImageID = platform.getMyImageID();
-  if(debug) {
-    if(verbose) cout << endl;
-    comm.barrier();
-    cout << "[Image " << myImageID << "] getMyImageID: " << platform_myImageID << endl;
-    cout << "[Image " << myImageID << "] Expected: " << myImageID << endl;
-    comm.barrier();
-    if(verbose) cout << "getMyImageID test ";
-  }
-  if(platform_myImageID != myImageID) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test getMyImageID
+	if(verbose) cout << "Testing getMyImageID... ";
+	int platform_myImageID = platform.getMyImageID();
+	if(debug) {
+		if(verbose) cout << endl;
+		comm.barrier();
+		cout << "[Image " << myImageID << "] getMyImageID: " << platform_myImageID << endl;
+		cout << "[Image " << myImageID << "] Expected: " << myImageID << endl;
+		comm.barrier();
+		if(verbose) cout << "getMyImageID test ";
+	}
+	if(platform_myImageID != myImageID) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
 
-  // test getNumImages
-  if(verbose) cout << "Testing getNumImages... ";
-  int platform_numImages = platform.getNumImages();
-  if(debug) {
-    if(verbose) cout << endl;
-    comm.barrier();
-    cout << "[Image " << myImageID << "] getNumImages: " << platform_numImages << endl;
-    cout << "[Image " << myImageID << "] Expected: " << numImages << endl;
-    comm.barrier();
-    if(verbose) cout << "getNumImages test ";
-  }
-  if(platform_numImages != numImages) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test getNumImages
+	if(verbose) cout << "Testing getNumImages... ";
+	int platform_numImages = platform.getNumImages();
+	if(debug) {
+		if(verbose) cout << endl;
+		comm.barrier();
+		cout << "[Image " << myImageID << "] getNumImages: " << platform_numImages << endl;
+		cout << "[Image " << myImageID << "] Expected: " << numImages << endl;
+		comm.barrier();
+		if(verbose) cout << "getNumImages test ";
+	}
+	if(platform_numImages != numImages) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
 
 	// ======================================================================
 	// finish up
 	// ======================================================================
   
-  comm.barrier();
+	comm.barrier();
 	if(verbose) {
 		if(returnierr == 0)
-      outputHeading("Unit tests for " + className + " passed.");
+			outputHeading("Unit tests for " + className + " passed.");
 		else
-      outputHeading("Unit tests for " + className + " failed.");
-  }
+			outputHeading("Unit tests for " + className + " failed.");
+	}
 	return(returnierr);
 }
 
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
 void codeCoverage(bool verbose, bool debug, int myImageID, int numImages) { 
-  if(verbose) outputSubHeading("Starting code coverage section...");
+	if(verbose) outputSubHeading("Starting code coverage section...");
 
 #ifdef TPETRA_MPI
-  // default constructor
+	// default constructor
 	if(verbose) cout << "MpiPlatform default constructor..." << endl;
 	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
-  // copy constructor
-  if(verbose) cout << "MpiPlatform copy constructor..." << endl;
-  Tpetra::MpiPlatform<OrdinalType, ScalarType> platform2(platform);
+	// copy constructor
+	if(verbose) cout << "MpiPlatform copy constructor..." << endl;
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform2(platform);
 #else
-  // default constructor
+	// default constructor
 	if(verbose) cout << "SerialPlatform default constructor..." << endl;
 	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
-  // copy constructor
-  if(verbose) cout << "SerialPlatform copy constructor..." << endl;
-  Tpetra::SerialPlatform<OrdinalType, ScalarType> platform2(platform);
+	// copy constructor
+	if(verbose) cout << "SerialPlatform copy constructor..." << endl;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform2(platform);
 #endif
 
-  // clone
-  if(verbose) cout << "clone..." << endl;
-  Teuchos::RefCountPtr< Tpetra::Platform<OrdinalType, ScalarType> > platform3 = platform.clone();
+	// clone
+	if(verbose) cout << "clone..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Platform<OrdinalType, ScalarType> > platform3 = platform.clone();
 
-  // createScalarComm
+	// createScalarComm
 	if(verbose) cout << "createScalarComm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<ScalarType, OrdinalType> > comm1 = platform.createScalarComm();
   
-  // createOrdinalComm
-  if(verbose) cout << "createOrdinalComm..." << endl;
+	// createOrdinalComm
+	if(verbose) cout << "createOrdinalComm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, OrdinalType> > comm2 = platform.createOrdinalComm();
 
-  // createDistributor
+	// createDistributor
 	if(verbose) cout << "createDistributor..." << endl;
 #ifdef TPETRA_MPI
-  Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformO(MPI_COMM_WORLD);
+	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformO(MPI_COMM_WORLD);
 #else
-  Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
+	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
 #endif
 	Teuchos::RefCountPtr< Tpetra::Distributor<OrdinalType> > distributor = platform.createDistributor();
 
-  // create Directory
-  if(verbose) cout << "createDirectory..." << endl;
-  Tpetra::ElementSpace<OrdinalType> elementspace(10, 0, platformO);
-  Teuchos::RefCountPtr< Tpetra::Directory<OrdinalType> > directory = platform.createDirectory(elementspace);
+	// create Directory
+	if(verbose) cout << "createDirectory..." << endl;
+	Tpetra::ElementSpace<OrdinalType> elementspace(10, 0, platformO);
+	Teuchos::RefCountPtr< Tpetra::Directory<OrdinalType> > directory = platform.createDirectory(elementspace);
 }

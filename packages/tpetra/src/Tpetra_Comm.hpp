@@ -37,7 +37,7 @@ namespace Tpetra {
 	/*! The Tpetra Comm class is an interface that encapsulates the general
 	    information and services needed for other Tpetra classes to run on a parallel computer.
 		
-		Comm currently has one default implementation, via SerialComm, for serial execution.
+		Comm currently has two default implementations, via SerialComm, for serial execution.
 		(A second default implementation is planned. MpiComm will be for MPI
 		distributed memory execution.)  It is meant to insulate the user from
 		the specifics of communication that are not required for normal
@@ -146,6 +146,48 @@ namespace Tpetra {
 		         On entry, contains the length of myVals.
 		*/
 		virtual void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const = 0;
+		//@}
+
+		//@{ \name Point-to-Point Methods
+
+		//! Blocking Send function
+		/*! Sends a list of values to another image. Control will not exit this function until
+		    the data have been acknowledged by the receiving image.
+		  \param myVals In
+		         On entry, contains the list of values to be sent.
+		  \param count In
+		         On entry, contains the length of myVals.
+		  \param destImageID In
+		         On entry, contains the ImageID of the image to send the values to.
+		*/
+		virtual void send(PacketType* myVals, OrdinalType const count, int destImageID) const = 0;
+
+		//! Blocking Receive function
+		/*! Receive a list of values from another image. Control will not exit this function until
+		    data has been received from the source image specified.
+		  \param myVals Out
+			     On exit, contains the list of values received.
+		  \param count In
+		         On entry, contains the length (capacity) of myVals.
+		  \param sourceImageID In
+		         On entry, contains the ImageID of the image to receive the values from.
+				 (A sourceImageID of -1 means receive values from any image.)
+		*/
+		virtual void receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const = 0;
+
+		//! Reduce & Scatter function
+		/*! Take a list of input values from each image, compute the global sums, and distribute 
+		    the list of sums across all images.
+		  \param sendVals In
+		         On entry, contains the list of values to sum from this image.
+		  \param recvVals Out
+		         On exit, contains the list of sums distributed to this image.
+		  \param count In
+		         On entry, contains the size (capacity) of the recvVals buffer. This is how many
+				 global sums will be given to this image.
+		*/
+		//virtual void sumAllAndScatter(PacketType* sendVals, PacketType* recvVals, OrdinalType const count) const = 0;
+
 		//@}
 
 		//@{ \name I/O Methods

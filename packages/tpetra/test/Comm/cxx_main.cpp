@@ -40,19 +40,19 @@ template <typename PacketType, typename OrdinalType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
 
 int main(int argc, char* argv[]) {
-  int myImageID = 0; // assume we are on serial
-  int numImages = 1; // if MPI, will be reset later
+	int myImageID = 0; // assume we are on serial
+	int numImages = 1; // if MPI, will be reset later
   
-  // initialize MPI if needed
+	// initialize MPI if needed
 #ifdef TPETRA_MPI
-  numImages = -1;
-  myImageID = -1;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &numImages);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
+	numImages = -1;
+	myImageID = -1;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &numImages);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // TPETRA_MPI
 
-  // initialize verbose & debug flags
+	// initialize verbose & debug flags
 	bool verbose = false;
 	bool debug = false;
 	if(argc > 1) {
@@ -64,23 +64,23 @@ int main(int argc, char* argv[]) {
 		}
 	}
   
-  // change verbose to only be true on Image 0
-  // if debug is enabled, it will still output on all nodes
-  verbose = (verbose && (myImageID == 0));
+	// change verbose to only be true on Image 0
+	// if debug is enabled, it will still output on all nodes
+	verbose = (verbose && (myImageID == 0));
   
-  // start the testing
+	// start the testing
 	if(verbose) outputStartMessage("Comm");
-  int ierr = 0;
+	int ierr = 0;
   
-  // call the actual test routines
-  ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+	// call the actual test routines
+	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
 	ierr += unitTests<double, int>(verbose, debug, myImageID, numImages);
-  ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
-  ierr += unitTests<complex<float>, int>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<complex<float>, int>(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
-  MPI_Finalize();
+	MPI_Finalize();
 #endif
 	if(verbose) outputEndMessage("Comm", (ierr == 0));
 	return(ierr);
@@ -89,181 +89,181 @@ int main(int argc, char* argv[]) {
 //======================================================================
 template <typename PacketType, typename OrdinalType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages) {
-  std::string className = "Comm<" + Tpetra::PacketTraits<PacketType>::name() + "," + Teuchos::OrdinalTraits<OrdinalType>::name() + ">";
-  if(verbose) outputHeading("Stating unit tests for " + className);
+	std::string className = "Comm<" + Tpetra::PacketTraits<PacketType>::name() + "," + Teuchos::OrdinalTraits<OrdinalType>::name() + ">";
+	if(verbose) outputHeading("Stating unit tests for " + className);
 
-  int ierr = 0;
-  int returnierr = 0;
+	int ierr = 0;
+	int returnierr = 0;
 
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================
   
 #ifdef TPETRA_MPI
-  // default constructor
+	// default constructor
 	if(verbose) cout << "Calling MpiComm default constructor..." << endl;
 	Tpetra::MpiComm<PacketType, OrdinalType> comm(MPI_COMM_WORLD);
-  // copy constructor
-  if(verbose) cout << "Calling MpiComm copy constructor..." << endl;
-  Tpetra::MpiComm<PacketType, OrdinalType> comm2(comm);
+	// copy constructor
+	if(verbose) cout << "Calling MpiComm copy constructor..." << endl;
+	Tpetra::MpiComm<PacketType, OrdinalType> comm2(comm);
 #else
-  // default constructor
+	// default constructor
 	if(verbose) cout << "Calling SerialComm default constructor..." << endl;
 	Tpetra::SerialComm<PacketType, OrdinalType> comm;
-  // copy constructor
-  if(verbose) cout << "Calling SerialComm copy constructor..." << endl;
-  Tpetra::SerialComm<PacketType, OrdinalType> comm2(comm);
+	// copy constructor
+	if(verbose) cout << "Calling SerialComm copy constructor..." << endl;
+	Tpetra::SerialComm<PacketType, OrdinalType> comm2(comm);
 #endif
   
 	// ======================================================================
 	// actual testing section - affects return code
 	// ======================================================================
   
-  // fixtures
-  int const root = 0; // root image for broadcast
-  OrdinalType const length = 5; // length of arrays used for Comm operations
-  std::vector<PacketType> myVals(length);
-  std::vector<PacketType> allVals(length);
-  std::vector<PacketType> expected(length);
+	// fixtures
+	int const root = 0; // root image for broadcast
+	OrdinalType const length = 5; // length of arrays used for Comm operations
+	std::vector<PacketType> myVals(length);
+	std::vector<PacketType> allVals(length);
+	std::vector<PacketType> expected(length);
 
-  // test broadcast
-  if(verbose) cout << "Testing broadcast... ";
-  generateColumn(myVals, myImageID, length); // set myVals
-  if(debug) {
-    if(verbose) cout << endl;
-    outputData(myImageID, numImages, "Values prior to broadcast: " + Tpetra::toString(myVals));
-  }
-  comm.broadcast(&myVals.front(), length, root);
-  generateColumn(expected, root, length);
-  if(debug) {
-    outputData(myImageID, numImages, "Values after broadcast:    " + Tpetra::toString(myVals));
-    if(verbose) cout << "[  All  ] Expected values:           " << Tpetra::toString(expected) << endl;
-    if(verbose) cout << "Broadcast test ";
-  }
-  if(myVals != expected) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test broadcast
+	if(verbose) cout << "Testing broadcast... ";
+	generateColumn(myVals, myImageID, length); // set myVals
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "Values prior to broadcast: " + Tpetra::toString(myVals));
+	}
+	comm.broadcast(&myVals.front(), length, root);
+	generateColumn(expected, root, length);
+	if(debug) {
+		outputData(myImageID, numImages, "Values after broadcast:    " + Tpetra::toString(myVals));
+		if(verbose) cout << "[  All  ] Expected values:           " << Tpetra::toString(expected) << endl;
+		if(verbose) cout << "Broadcast test ";
+	}
+	if(myVals != expected) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
   
-  // test gatherAll
-  if(verbose) cout << "Testing gatherAll... ";
-  generateColumn(myVals, myImageID, length); // reset myVals
-  allVals.resize(length * numImages); // allVals needs to be larger for this test
-  comm.gatherAll(&myVals.front(), &allVals.front(), length);
-  generateMultipleColumns(expected, 0, (numImages-1), length);
-  if(debug) {
-    if(verbose) cout << endl;
-    outputData(myImageID, numImages, "myVals:   " + Tpetra::toString(myVals));
-    outputData(myImageID, numImages, "allVals:  " + Tpetra::toString(allVals));
-    if(verbose) cout << "[  All  ] Expected: " << Tpetra::toString(expected) << endl;
-    if(verbose) cout << "GatherAll test ";
-  }
-  if(allVals != expected) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test gatherAll
+	if(verbose) cout << "Testing gatherAll... ";
+	generateColumn(myVals, myImageID, length); // reset myVals
+	allVals.resize(length * numImages); // allVals needs to be larger for this test
+	comm.gatherAll(&myVals.front(), &allVals.front(), length);
+	generateMultipleColumns(expected, 0, (numImages-1), length);
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "myVals:   " + Tpetra::toString(myVals));
+		outputData(myImageID, numImages, "allVals:  " + Tpetra::toString(allVals));
+		if(verbose) cout << "[  All  ] Expected: " << Tpetra::toString(expected) << endl;
+		if(verbose) cout << "GatherAll test ";
+	}
+	if(allVals != expected) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
   
-  // test sumAll
-  if(verbose) cout << "Testing sumAll... ";
-  allVals.resize(length); // resize allVals back down
-  comm.sumAll(&myVals.front(), &allVals.front(), length);
-  generateRowSums(expected, 0, numImages-1, length);
-  if(debug) {
-    if(verbose) cout << endl;
-    outputData(myImageID, numImages, "localSums:  " + Tpetra::toString(myVals));
-    outputData(myImageID, numImages, "globalSums: " + Tpetra::toString(allVals));
-    if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
-    if(verbose) cout << "SumAll test ";
-  }
-  if(allVals != expected) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test sumAll
+	if(verbose) cout << "Testing sumAll... ";
+	allVals.resize(length); // resize allVals back down
+	comm.sumAll(&myVals.front(), &allVals.front(), length);
+	generateRowSums(expected, 0, numImages-1, length);
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "localSums:  " + Tpetra::toString(myVals));
+		outputData(myImageID, numImages, "globalSums: " + Tpetra::toString(allVals));
+		if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
+		if(verbose) cout << "SumAll test ";
+	}
+	if(allVals != expected) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
   
-  // test maxAll
-  if(verbose) cout << "Testing maxAll... ";
-  comm.maxAll(&myVals.front(), &allVals.front(), length);
-  generateRowMaxs(expected, 0, numImages-1, length);
-  if(debug) {
-    if(verbose) cout << endl;
-    outputData(myImageID, numImages, "localMaxs:  " + Tpetra::toString(myVals));
-    outputData(myImageID, numImages, "globalMaxs: " + Tpetra::toString(allVals));
-    if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
-    if(verbose) cout << "MaxAll test ";
-  }
-  if(allVals != expected) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test maxAll
+	if(verbose) cout << "Testing maxAll... ";
+	comm.maxAll(&myVals.front(), &allVals.front(), length);
+	generateRowMaxs(expected, 0, numImages-1, length);
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "localMaxs:  " + Tpetra::toString(myVals));
+		outputData(myImageID, numImages, "globalMaxs: " + Tpetra::toString(allVals));
+		if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
+		if(verbose) cout << "MaxAll test ";
+	}
+	if(allVals != expected) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
 
-  // test minAll
-  if(verbose) cout << "Testing minAll... ";
-  comm.minAll(&myVals.front(), &allVals.front(), length);
-  generateRowMins(expected, 0, numImages-1, length);
-  if(debug) {
-    if(verbose) cout << endl;
-    comm.barrier();
-    outputData(myImageID, numImages, "localMins:  " + Tpetra::toString(myVals));
-    outputData(myImageID, numImages, "globalMins: " + Tpetra::toString(allVals));
-    if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
-    comm.barrier();
-    if(verbose) cout << "MinAll test ";
-  }
-  if(allVals != expected) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test minAll
+	if(verbose) cout << "Testing minAll... ";
+	comm.minAll(&myVals.front(), &allVals.front(), length);
+	generateRowMins(expected, 0, numImages-1, length);
+	if(debug) {
+		if(verbose) cout << endl;
+		comm.barrier();
+		outputData(myImageID, numImages, "localMins:  " + Tpetra::toString(myVals));
+		outputData(myImageID, numImages, "globalMins: " + Tpetra::toString(allVals));
+		if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
+		comm.barrier();
+		if(verbose) cout << "MinAll test ";
+	}
+	if(allVals != expected) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
   
-  // test scanSum
-  if(verbose) cout << "Testing scanSum... ";
-  comm.scanSum(&myVals.front(), &allVals.front(), length);
-  generateRowSums(expected, 0, myImageID, length);
-  if(debug) {
-    if(verbose) cout << endl;
-    outputData(myImageID, numImages, "localScanSums:  " + Tpetra::toString(myVals));
-    outputData(myImageID, numImages, "globalScanSums: " + Tpetra::toString(allVals));
-    outputData(myImageID, numImages, "Expected:  " + Tpetra::toString(expected));
-    if(verbose) cout << "ScanSum test ";
-  }
-  if(allVals != expected) {
-    if(verbose) cout << "failed" << endl;
-    ierr++;
-  }
-  else
-    if(verbose) cout << "passed" << endl;
-  returnierr += ierr;
-  ierr = 0;
+	// test scanSum
+	if(verbose) cout << "Testing scanSum... ";
+	comm.scanSum(&myVals.front(), &allVals.front(), length);
+	generateRowSums(expected, 0, myImageID, length);
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "localScanSums:  " + Tpetra::toString(myVals));
+		outputData(myImageID, numImages, "globalScanSums: " + Tpetra::toString(allVals));
+		outputData(myImageID, numImages, "Expected:  " + Tpetra::toString(expected));
+		if(verbose) cout << "ScanSum test ";
+	}
+	if(allVals != expected) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
   
 	// ======================================================================
 	// finish up
 	// ======================================================================
   
-  comm.barrier();
+	comm.barrier();
 	if(verbose) {
 		if(returnierr == 0)
-      outputHeading("Unit tests for " + className + " passed.");
+			outputHeading("Unit tests for " + className + " passed.");
 		else
-      outputHeading("Unit tests for " + className + " failed.");
-  }
+			outputHeading("Unit tests for " + className + " failed.");
+	}
 	return(returnierr);
 }
