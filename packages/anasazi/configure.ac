@@ -152,6 +152,11 @@ TAC_ARG_WITH_AR
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
 
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
 #  #np# - Customize the checks for headers needed in package being added.
 #NOTE: This section still needs to be updated for new_package, it is still 
 # code from Epetra
@@ -287,17 +292,19 @@ AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_anasazi_tests" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Build examples which use Triutils], ANASAZI_TRIUTILS, no)
-AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+# ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: Epetra, Teuchos
+# Optional: Triutils, Belos, AztecOO, and Ifpack
+# ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, [Build examples which use Belos], ANASAZI_BELOS)
-AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, triutils, ANASAZI_TRIUTILS, BUILD_TRIUTILS, yes, [Build examples which use Triutils.], [Build examples which use Triutils. Can be overridden with --disable-anasazi-triutils.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Build examples which use AztecOO], ANASAZI_AZTECOO)
-AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, belos, ANASAZI_BELOS, BUILD_BELOS, yes, [Build examples which use Belos.], [Build examples which use Belos. Can be overridden with --disable-anasazi-belos.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Build examples which use Ifpack], ANASAZI_IFPACK)
-AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, aztecoo, ANASAZI_AZTECOO, BUILD_AZTECOO, yes, [Build examples which use AztecOO.], [Build examples which use AztecOO. Can be overridden with --disable-anasazi-aztecoo.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, ifpack, ANASAZI_IFPACK, BUILD_IFPACK, yes, [Build examples which use Ifpack.], [Build examples which use Ifpack. Can be overridden with --disable-anasazi-ifpack.])
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -404,6 +411,7 @@ AC_SUBST(ac_aux_dir)
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.anasazi
 		src/Makefile
 		util/Makefile
 		util/ModeLaplace/Makefile

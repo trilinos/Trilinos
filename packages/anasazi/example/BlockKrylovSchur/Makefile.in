@@ -57,6 +57,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
@@ -64,6 +65,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -82,6 +84,9 @@ am__DEPENDENCIES_1 =
 am_BlockKrylovSchurEpetraExGen_OBJECTS = BlockKrylovSchurEpetraExGen-BlockKrylovSchurEpetraExGen.$(OBJEXT)
 BlockKrylovSchurEpetraExGen_OBJECTS =  \
 	$(am_BlockKrylovSchurEpetraExGen_OBJECTS)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
 am_BlockKrylovSchurEpetraExHB_OBJECTS = BlockKrylovSchurEpetraExHB-BlockKrylovSchurEpetraExHB.$(OBJEXT)
 BlockKrylovSchurEpetraExHB_OBJECTS =  \
 	$(am_BlockKrylovSchurEpetraExHB_OBJECTS)
@@ -161,6 +166,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -168,7 +174,9 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# Dummy for new export makefiles
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -187,6 +195,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -194,6 +203,12 @@ STRIP = @STRIP@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -240,20 +255,17 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ANASAZI_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)  
 @BUILD_AZTECOO_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BIRAM_EX_SI_IFPACK = BlockKrylovSchurEpetraExGen
 @BUILD_TRIUTILS_TRUE@ANASAZI_BIRAM_EX_HB = BlockKrylovSchurEpetraExHB
 BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 BlockKrylovSchurEpetraExSVD_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExSVD.cpp
 BlockKrylovSchurEpetraExHB_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExHB.cpp
 BlockKrylovSchurEpetraExGen_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGen.cpp
-
-#np# Specify locations of include files within Trilinos, but outside np
-#np# Add packages that np is dependent on; remove epetra if np does not need it
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
-		-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
-
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -279,12 +291,7 @@ BlockKrylovSchurEpetraExSVD_DEPENDENCIES = \
 BlockKrylovSchurEpetraExSVD_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExSVD_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
+BlockKrylovSchurEpetraExSVD_LDADD = $(EXPORT_LIBS)
 BlockKrylovSchurEpetraExHB_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -296,13 +303,7 @@ BlockKrylovSchurEpetraExHB_CXXFLAGS = -I$(top_srcdir)/src \
 
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExHB_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
+BlockKrylovSchurEpetraExHB_LDADD = $(EXPORT_LIBS)
 BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
@@ -313,14 +314,7 @@ BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
 BlockKrylovSchurEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExGen_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
+BlockKrylovSchurEpetraExGen_LDADD = $(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
@@ -720,6 +714,8 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.anasazi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

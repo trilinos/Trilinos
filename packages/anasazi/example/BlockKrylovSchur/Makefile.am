@@ -1,6 +1,18 @@
 #@HEADER
 #@HEADER
 
+include $(top_builddir)/Makefile.export.anasazi
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ANASAZI_TEST_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
+else
+EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
+EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)  
+
 EXEEXT = .exe
 
 if BUILD_AZTECOO
@@ -22,14 +34,6 @@ BlockKrylovSchurEpetraExSVD_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExSVD.cpp
 BlockKrylovSchurEpetraExHB_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExHB.cpp
 
 BlockKrylovSchurEpetraExGen_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGen.cpp
-
-#np# Specify locations of include files within Trilinos, but outside np
-#np# Add packages that np is dependent on; remove epetra if np does not need it
-
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
-		-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -55,11 +59,7 @@ BlockKrylovSchurEpetraExSVD_DEPENDENCIES = \
 BlockKrylovSchurEpetraExSVD_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExSVD_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+BlockKrylovSchurEpetraExSVD_LDADD = $(EXPORT_LIBS)
 
 BlockKrylovSchurEpetraExHB_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
@@ -71,12 +71,7 @@ BlockKrylovSchurEpetraExHB_CXXFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExHB_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+BlockKrylovSchurEpetraExHB_LDADD = $(EXPORT_LIBS)
 
 BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
@@ -88,13 +83,7 @@ BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
 BlockKrylovSchurEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExGen_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+BlockKrylovSchurEpetraExGen_LDADD = $(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
@@ -104,3 +93,6 @@ BlockKrylovSchurEpetraExGen_LDADD = \
 #np# example1/ rather than this file.
 # SUBDIRS = example1
 SUBDIRS = 
+
+# Dummy for new export makefiles
+LIBS = 

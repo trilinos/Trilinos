@@ -98,17 +98,21 @@ COMP_H = \
 COMP = 
 
 
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
 #np# List locations of include files within Trilinos but outside of this 
 #np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src	
+include $(top_builddir)/Makefile.export.anasazi
 
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_INCLUDES))
+else
+EXPORT_INCLUDES = $(ANASAZI_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+# ------------------------------------------------------------------------	
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
 #np# replace new_package with the name of the package being autotool'ed here
@@ -206,6 +210,42 @@ nodist_execinclude_HEADERS = Anasazi_config.h
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+if BUILD_TRIUTILS
+BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs
+else
+BUILD_TRIUTILS_LIBS =
+endif
+
+if BUILD_BELOS
+BUILD_BELOS_LIBS = cd $(top_builddir)/../belos ; $(MAKE) all-libs
+else
+BUILD_BELOS_LIBS =
+endif
+
+if BUILD_AZTECOO
+BUILD_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
+else
+BUILD_AZTECOO_LIBS =
+endif
+
+if BUILD_IFPACK
+BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
+else
+BUILD_IFPACK_LIBS =
+endif
+
+all-libs:
+	$(MAKE) libanasazi.a
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
+	$(BUILD_TRIUTILS_LIBS)
+	$(BUILD_BELOS_LIBS)
+	$(BUILD_AZTECOO_LIBS)
+	$(BUILD_IFPACK_LIBS)
 
 
 

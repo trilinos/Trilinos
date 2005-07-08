@@ -110,3 +110,37 @@ endif
 SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 
+## #######################################################################
+## Target for circular dependencies
+## #######################################################################
+all-libs:
+	cd src ; make all-libs
+
+## #######################################################################
+## Export Makefile Installation
+## #######################################################################
+if USING_EXPORT_MAKEFILES
+
+install-exec-hook:	
+	cp $(top_builddir)/Makefile.export.anasazi $(exec_prefix)/include/.
+	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+		--exec-prefix=$(exec_prefix) \
+		--my-export-makefile=Makefile.export.anasazi \
+		--my-abs-top-srcdir=@abs_top_srcdir@ \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile anasazi > $(exec_prefix)/include/Makefile.export.anasazi.macros
+
+uninstall-hook:
+	rm -f $(exec_prefix)/include/Makefile.export.anasazi
+	rm -f $(exec_prefix)/include/Makefile.export.anasazi.macros
+
+else 
+
+install-exec-hook:
+
+uninstall-hook:
+
+endif
+

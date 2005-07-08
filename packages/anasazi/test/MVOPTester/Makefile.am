@@ -26,6 +26,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.anasazi
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ANASAZI_TEST_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
+else
+EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
+EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
 EXEEXT = .exe
 
 #np# List all executable names here
@@ -35,13 +47,6 @@ noinst_PROGRAMS = MVOPTester
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 MVOPTester_SOURCES = $(srcdir)/cxx_main.cpp
-
-#np# Specify locations of include files within Trilinos, but outside np
-#np# Add packages that np is dependent on; remove epetra if np does not need it
-
-AM_CPPFLAGS = \
-	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-        -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
@@ -56,10 +61,9 @@ MVOPTester_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-MVOPTester_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+MVOPTester_LDADD = $(EXPORT_LIBS) 
+
+# Dummy for new export makefiles
+LIBS = 
 
 

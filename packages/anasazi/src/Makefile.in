@@ -64,6 +64,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
@@ -71,6 +72,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -153,6 +155,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -179,6 +182,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -186,6 +190,12 @@ STRIP = @STRIP@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -300,19 +310,10 @@ COMP_H = \
 	$(srcdir)/AnasaziLOBPCG.hpp
 
 COMP = 
-
-#np# List locations of include files within Trilinos but outside of this 
-#np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src	
-
-
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ANASAZI_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+# ------------------------------------------------------------------------	
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
 #np# replace new_package with the name of the package being autotool'ed here
@@ -405,6 +406,18 @@ nodist_execinclude_HEADERS = Anasazi_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
+@BUILD_TRIUTILS_FALSE@BUILD_TRIUTILS_LIBS = 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+@BUILD_TRIUTILS_TRUE@BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs
+@BUILD_BELOS_FALSE@BUILD_BELOS_LIBS = 
+@BUILD_BELOS_TRUE@BUILD_BELOS_LIBS = cd $(top_builddir)/../belos ; $(MAKE) all-libs
+@BUILD_AZTECOO_FALSE@BUILD_AZTECOO_LIBS = 
+@BUILD_AZTECOO_TRUE@BUILD_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
+@BUILD_IFPACK_FALSE@BUILD_IFPACK_LIBS = 
+@BUILD_IFPACK_TRUE@BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
 all: Anasazi_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -750,6 +763,22 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+#np# List locations of include files within Trilinos but outside of this 
+#np# package
+include $(top_builddir)/Makefile.export.anasazi
+
+all-libs:
+	$(MAKE) libanasazi.a
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
+	$(BUILD_TRIUTILS_LIBS)
+	$(BUILD_BELOS_LIBS)
+	$(BUILD_AZTECOO_LIBS)
+	$(BUILD_IFPACK_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

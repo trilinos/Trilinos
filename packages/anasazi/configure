@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -875,6 +875,14 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
+  --enable-export-makefiles
+                          Creates export makefiles in the install (prefix)
+                          directory. This option requires perl to be set in
+                          your path or defined with --with-perl=<perl
+                          executable>. Note that the export makefiles are
+                          always created and used in the build directory, but
+                          will not be installable without this option to
+                          change the paths. (default is yes)
   --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -890,10 +898,20 @@ Optional Features:
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
-  --enable-triutils       Build examples which use Triutils
-  --enable-belos          Build examples which use Belos
-  --enable-aztecoo        Build examples which use AztecOO
-  --enable-ifpack         Build examples which use Ifpack
+  --enable-triutils       Build examples which use Triutils. Can be overridden
+                          with --disable-anasazi-triutils.
+  --enable-anasazi-triutils
+                          Build examples which use Triutils.
+  --enable-belos          Build examples which use Belos. Can be overridden
+                          with --disable-anasazi-belos.
+  --enable-anasazi-belos  Build examples which use Belos.
+  --enable-aztecoo        Build examples which use AztecOO. Can be overridden
+                          with --disable-anasazi-aztecoo.
+  --enable-anasazi-aztecoo
+                          Build examples which use AztecOO.
+  --enable-ifpack         Build examples which use Ifpack. Can be overridden
+                          with --disable-anasazi-ifpack.
+  --enable-anasazi-ifpack Build examples which use Ifpack.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -926,6 +944,16 @@ Optional Packages:
   --with-ldflags          additional LDFLAGS flags to be added: will prepend
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
+  --with-perl             supply a perl executable. For example
+                          --with-perl=/usr/bin/perl.
+  --with-gnumake          Gnu's make has special functions we can use to
+                          eliminate redundant paths in the build and link
+                          lines. Enable this if you use gnu-make to build
+                          Trilinos. This requires that perl is in your path or
+                          that you have specified the perl executable with
+                          --with-perl=<perl executable>. Configure will check
+                          for the existence of the perl executable and quit
+                          with an error if it is not found. (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -3807,7 +3835,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3810:" \
+echo "$as_me:3838:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4541,6 +4569,210 @@ rm -f conftest.err conftest.$ac_ext
 #   )
 
 fi
+
+
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+
+# Check whether --enable-export-makefiles or --disable-export-makefiles was given.
+if test "${enable_export_makefiles+set}" = set; then
+  enableval="$enable_export_makefiles"
+  ac_cv_use_export_makefiles=$enableval
+else
+  ac_cv_use_export_makefiles=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to build export makefiles" >&5
+echo $ECHO_N "checking whether to build export makefiles... $ECHO_C" >&6
+
+if test "X$ac_cv_use_export_makefiles" != "Xno"; then
+
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EXPORT_MAKEFILES
+_ACEOF
+
+
+else
+
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi
+
+
+
+if test X${ac_cv_use_export_makefiles} = Xyes; then
+  USING_EXPORT_MAKEFILES_TRUE=
+  USING_EXPORT_MAKEFILES_FALSE='#'
+else
+  USING_EXPORT_MAKEFILES_TRUE='#'
+  USING_EXPORT_MAKEFILES_FALSE=
+fi
+
+
+# Check for perl to run scripts (Required dependency)
+
+
+
+# Check whether --with-perl or --without-perl was given.
+if test "${with_perl+set}" = set; then
+  withval="$with_perl"
+
+echo "$as_me:$LINENO: checking for user supplied perl executable" >&5
+echo $ECHO_N "checking for user supplied perl executable... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${withval}" >&5
+echo "${ECHO_T}${withval}" >&6
+USER_SPECIFIED_PERL=yes
+PERL_EXE="${withval}"
+
+else
+
+USER_SPECIFIED_PERL=no
+
+fi;
+
+if test "X${USER_SPECIFIED_PERL}" = "Xyes"; then
+  as_ac_File=`echo "ac_cv_file_${PERL_EXE}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${PERL_EXE}" >&5
+echo $ECHO_N "checking for ${PERL_EXE}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${PERL_EXE}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HAVE_PERL=yes
+else
+  HAVE_PERL=no
+fi
+
+  PERL_EXE=${PERL_EXE}
+
+else
+  # Extract the first word of "perl", so it can be a program name with args.
+set dummy perl; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_HAVE_PERL+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$HAVE_PERL"; then
+  ac_cv_prog_HAVE_PERL="$HAVE_PERL" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_HAVE_PERL="yes"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_HAVE_PERL" && ac_cv_prog_HAVE_PERL="no"
+fi
+fi
+HAVE_PERL=$ac_cv_prog_HAVE_PERL
+if test -n "$HAVE_PERL"; then
+  echo "$as_me:$LINENO: result: $HAVE_PERL" >&5
+echo "${ECHO_T}$HAVE_PERL" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  PERL_EXE=perl
+
+fi
+
+
+if test X${HAVE_PERL} = Xyes; then
+  USING_PERL_TRUE=
+  USING_PERL_FALSE='#'
+else
+  USING_PERL_TRUE='#'
+  USING_PERL_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_export_makefiles" != "Xno"; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&5
+echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+# Check for using gnumake to clean up link lines via
+# gnumake's "shell" command. Optional dependency.
+
+
+
+
+# Check whether --with-gnumake or --without-gnumake was given.
+if test "${with_gnumake+set}" = set; then
+  withval="$with_gnumake"
+  ac_cv_use_gnumake=$withval
+else
+  ac_cv_use_gnumake=no
+fi;
+
+echo "$as_me:$LINENO: checking whether gnumake specific code should be enabled" >&5
+echo $ECHO_N "checking whether gnumake specific code should be enabled... $ECHO_C" >&6
+
+if test "X$ac_cv_use_gnumake" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GNUMAKE
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+if test "X$ac_cv_use_gnumake" = "Xyes"; then
+  USING_GNUMAKE_TRUE=
+  USING_GNUMAKE_FALSE='#'
+else
+  USING_GNUMAKE_TRUE='#'
+  USING_GNUMAKE_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_gnumake" != "Xno"; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  { { echo "$as_me:$LINENO: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
+echo "$as_me: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
 
 
 #  #np# - Customize the checks for headers needed in package being added.
@@ -7014,17 +7246,38 @@ echo "${ECHO_T}no" >&6
 fi
 
 
+# ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: Epetra, Teuchos
+# Optional: Triutils, Belos, AztecOO, and Ifpack
+# ------------------------------------------------------------------------
+
+
 
 # Check whether --enable-triutils or --disable-triutils was given.
 if test "${enable_triutils+set}" = set; then
   enableval="$enable_triutils"
-  ac_cv_use_triutils=$enableval
+  ac_cv_implicit_use_triutils=$enableval
 else
-  ac_cv_use_triutils=no
+  ac_cv_implicit_use_triutils=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional triutils dependent code" >&5
-echo $ECHO_N "checking whether to build optional triutils dependent code... $ECHO_C" >&6
+if test "Xyes" != "Xno"; then
+  ac_cv_anasazi_using_triutils_default=$ac_cv_implicit_use_triutils
+else
+  ac_cv_anasazi_using_triutils_default=no
+fi
+
+# Check whether --enable-anasazi-triutils or --disable-anasazi-triutils was given.
+if test "${enable_anasazi_triutils+set}" = set; then
+  enableval="$enable_anasazi_triutils"
+  ac_cv_use_triutils=$enableval
+else
+  ac_cv_use_triutils=$ac_cv_anasazi_using_triutils_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional triutils dependent code in anasazi" >&5
+echo $ECHO_N "checking whether to build optional triutils dependent code in anasazi... $ECHO_C" >&6
 
 if test "X$ac_cv_use_triutils" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -7041,7 +7294,7 @@ fi
 
 
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
+if test "X$ac_cv_use_triutils" = "Xyes"; then
   BUILD_TRIUTILS_TRUE=
   BUILD_TRIUTILS_FALSE='#'
 else
@@ -7051,16 +7304,33 @@ fi
 
 
 
+
+
+
 # Check whether --enable-belos or --disable-belos was given.
 if test "${enable_belos+set}" = set; then
   enableval="$enable_belos"
-  ac_cv_use_belos=$enableval
+  ac_cv_implicit_use_belos=$enableval
 else
-  ac_cv_use_belos=no
+  ac_cv_implicit_use_belos=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional belos dependent code" >&5
-echo $ECHO_N "checking whether to build optional belos dependent code... $ECHO_C" >&6
+if test "Xyes" != "Xno"; then
+  ac_cv_anasazi_using_belos_default=$ac_cv_implicit_use_belos
+else
+  ac_cv_anasazi_using_belos_default=no
+fi
+
+# Check whether --enable-anasazi-belos or --disable-anasazi-belos was given.
+if test "${enable_anasazi_belos+set}" = set; then
+  enableval="$enable_anasazi_belos"
+  ac_cv_use_belos=$enableval
+else
+  ac_cv_use_belos=$ac_cv_anasazi_using_belos_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional belos dependent code in anasazi" >&5
+echo $ECHO_N "checking whether to build optional belos dependent code in anasazi... $ECHO_C" >&6
 
 if test "X$ac_cv_use_belos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -7077,7 +7347,7 @@ fi
 
 
 
-if test "X$ac_cv_use_belos" != "Xno"; then
+if test "X$ac_cv_use_belos" = "Xyes"; then
   BUILD_BELOS_TRUE=
   BUILD_BELOS_FALSE='#'
 else
@@ -7087,16 +7357,33 @@ fi
 
 
 
+
+
+
 # Check whether --enable-aztecoo or --disable-aztecoo was given.
 if test "${enable_aztecoo+set}" = set; then
   enableval="$enable_aztecoo"
-  ac_cv_use_aztecoo=$enableval
+  ac_cv_implicit_use_aztecoo=$enableval
 else
-  ac_cv_use_aztecoo=no
+  ac_cv_implicit_use_aztecoo=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional aztecoo dependent code" >&5
-echo $ECHO_N "checking whether to build optional aztecoo dependent code... $ECHO_C" >&6
+if test "Xyes" != "Xno"; then
+  ac_cv_anasazi_using_aztecoo_default=$ac_cv_implicit_use_aztecoo
+else
+  ac_cv_anasazi_using_aztecoo_default=no
+fi
+
+# Check whether --enable-anasazi-aztecoo or --disable-anasazi-aztecoo was given.
+if test "${enable_anasazi_aztecoo+set}" = set; then
+  enableval="$enable_anasazi_aztecoo"
+  ac_cv_use_aztecoo=$enableval
+else
+  ac_cv_use_aztecoo=$ac_cv_anasazi_using_aztecoo_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional aztecoo dependent code in anasazi" >&5
+echo $ECHO_N "checking whether to build optional aztecoo dependent code in anasazi... $ECHO_C" >&6
 
 if test "X$ac_cv_use_aztecoo" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -7113,7 +7400,7 @@ fi
 
 
 
-if test "X$ac_cv_use_aztecoo" != "Xno"; then
+if test "X$ac_cv_use_aztecoo" = "Xyes"; then
   BUILD_AZTECOO_TRUE=
   BUILD_AZTECOO_FALSE='#'
 else
@@ -7123,16 +7410,33 @@ fi
 
 
 
+
+
+
 # Check whether --enable-ifpack or --disable-ifpack was given.
 if test "${enable_ifpack+set}" = set; then
   enableval="$enable_ifpack"
-  ac_cv_use_ifpack=$enableval
+  ac_cv_implicit_use_ifpack=$enableval
 else
-  ac_cv_use_ifpack=no
+  ac_cv_implicit_use_ifpack=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional ifpack dependent code" >&5
-echo $ECHO_N "checking whether to build optional ifpack dependent code... $ECHO_C" >&6
+if test "Xyes" != "Xno"; then
+  ac_cv_anasazi_using_ifpack_default=$ac_cv_implicit_use_ifpack
+else
+  ac_cv_anasazi_using_ifpack_default=no
+fi
+
+# Check whether --enable-anasazi-ifpack or --disable-anasazi-ifpack was given.
+if test "${enable_anasazi_ifpack+set}" = set; then
+  enableval="$enable_anasazi_ifpack"
+  ac_cv_use_ifpack=$enableval
+else
+  ac_cv_use_ifpack=$ac_cv_anasazi_using_ifpack_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional ifpack dependent code in anasazi" >&5
+echo $ECHO_N "checking whether to build optional ifpack dependent code in anasazi... $ECHO_C" >&6
 
 if test "X$ac_cv_use_ifpack" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -7149,13 +7453,15 @@ fi
 
 
 
-if test "X$ac_cv_use_ifpack" != "Xno"; then
+if test "X$ac_cv_use_ifpack" = "Xyes"; then
   BUILD_IFPACK_TRUE=
   BUILD_IFPACK_FALSE='#'
 else
   BUILD_IFPACK_TRUE='#'
   BUILD_IFPACK_FALSE=
 fi
+
+
 
 
 # ------------------------------------------------------------------------
@@ -7256,7 +7562,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7259: \"$ac_link\") >&5
+(eval echo $as_me:7565: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7334,7 +7640,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7337: \"$ac_link\") >&5
+(eval echo $as_me:7643: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10173,7 +10479,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10176: \"$ac_link\") >&5
+(eval echo $as_me:10482: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10251,7 +10557,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10254: \"$ac_link\") >&5
+(eval echo $as_me:10560: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10477,7 +10783,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile"
+                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10617,6 +10923,27 @@ if test -z "${USE_ALTERNATE_AR_TRUE}" && test -z "${USE_ALTERNATE_AR_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_EXPORT_MAKEFILES_TRUE}" && test -z "${USING_EXPORT_MAKEFILES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_PERL_TRUE}" && test -z "${USING_PERL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_PERL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_PERL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_GNUMAKE_TRUE}" && test -z "${USING_GNUMAKE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_GNUMAKE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_GNUMAKE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11107,6 +11434,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "Makefile.export.anasazi" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.anasazi" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "util/Makefile" ) CONFIG_FILES="$CONFIG_FILES util/Makefile" ;;
   "util/ModeLaplace/Makefile" ) CONFIG_FILES="$CONFIG_FILES util/ModeLaplace/Makefile" ;;
@@ -11284,6 +11612,14 @@ s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
+s,@USING_EXPORT_MAKEFILES_TRUE@,$USING_EXPORT_MAKEFILES_TRUE,;t t
+s,@USING_EXPORT_MAKEFILES_FALSE@,$USING_EXPORT_MAKEFILES_FALSE,;t t
+s,@PERL_EXE@,$PERL_EXE,;t t
+s,@HAVE_PERL@,$HAVE_PERL,;t t
+s,@USING_PERL_TRUE@,$USING_PERL_TRUE,;t t
+s,@USING_PERL_FALSE@,$USING_PERL_FALSE,;t t
+s,@USING_GNUMAKE_TRUE@,$USING_GNUMAKE_TRUE,;t t
+s,@USING_GNUMAKE_FALSE@,$USING_GNUMAKE_FALSE,;t t
 s,@EGREP@,$EGREP,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
