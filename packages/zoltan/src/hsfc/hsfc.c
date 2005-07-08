@@ -102,6 +102,7 @@ int Zoltan_HSFC(
    double     temp, in[9], out[9];
    int        err;
    int        param;
+   int        dim;
    char      *yo = "Zoltan_HSFC";
 
    /* begin program with trace, timing, and initializations */
@@ -155,9 +156,16 @@ int Zoltan_HSFC(
    if (err != 0) 
       ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Error in Zoltan_Get_Coordinates.");
 
+   if (d->Skip_Dimensions > 0){  /* calculated in Zoltan_Get_Coordinates */
+     dim = d->ndimension - d->Skip_Dimensions;
+   }
+   else{
+     dim = d->ndimension;
+   }
+
    for (i = 0; i < ndots; i++) {
       tmp = i*d->ndimension;
-      for (j = 0; j < d->ndimension; j++)
+      for (j = 0; j < dim; j++)
          dots[i].x[j] = geom_vec[tmp + j];
    }
 
@@ -193,27 +201,27 @@ int Zoltan_HSFC(
       }
 
    /* Get bounding box, smallest coordinate aligned box containing all dots */
-   for (i =  0;              i <   d->ndimension; i++) 
+   for (i =  0;              i <   dim; i++) 
       out[i] = in[i] =  0.0;
-   for (i =   d->ndimension; i < 2*d->ndimension; i++) 
+   for (i =   dim; i < 2*dim; i++) 
       out[i] = in[i] = -HUGE_VAL;
-   for (i = 2*d->ndimension; i < 3*d->ndimension; i++) 
+   for (i = 2*dim; i < 3*dim; i++) 
       out[i] = in[i] =  HUGE_VAL;
    for (i = 0; i < ndots; i++)
-     for (j = 0; j < d->ndimension; j++) {
+     for (j = 0; j < dim; j++) {
        /* get maximum and minimum bound box coordinates: */
-       if(dots[i].x[j]>in[j+  d->ndimension]) in[j+  d->ndimension]=dots[i].x[j];
-       if(dots[i].x[j]<in[j+2*d->ndimension]) in[j+2*d->ndimension]=dots[i].x[j];
+       if(dots[i].x[j]>in[j+  dim]) in[j+  dim]=dots[i].x[j];
+       if(dots[i].x[j]<in[j+2*dim]) in[j+2*dim]=dots[i].x[j];
        }
-   err = MPI_Allreduce(in,out,3*d->ndimension,MPI_DOUBLE,mpi_op,zz->Communicator);
+   err = MPI_Allreduce(in,out,3*dim,MPI_DOUBLE,mpi_op,zz->Communicator);
    if (err != MPI_SUCCESS)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Bounding box MPI_Allreduce error");
 
    /* Enlarge bounding box to make points on faces become interior (Andy) */
-   for (i = 0; i < d->ndimension; i++) {
-      temp = (out[i+d->ndimension] - out[i+2*d->ndimension]) * HSFC_EPSILON;
-      d->bbox_hi[i] = out[i+  d->ndimension] + temp;
-      d->bbox_lo[i] = out[i+2*d->ndimension] - temp;
+   for (i = 0; i < dim; i++) {
+      temp = (out[i+dim] - out[i+2*dim]) * HSFC_EPSILON;
+      d->bbox_hi[i] = out[i+  dim] + temp;
+      d->bbox_lo[i] = out[i+2*dim] - temp;
       d->bbox_extent[i] = d->bbox_hi[i] - d->bbox_lo[i];
       if (d->bbox_extent[i] == 0.0)
           d->bbox_extent[i]  = 1.0; /* degenerate axis, avoid divide by zero */
@@ -221,13 +229,13 @@ int Zoltan_HSFC(
    ZOLTAN_TRACE_DETAIL (zz, yo, "Determined problem bounding box");
 
    /* Save appropriate HSFC function for later use below and in point_assign() */
-   if      (d->ndimension == 1)  d->fhsfc = Zoltan_HSFC_InvHilbert1d;
-   else if (d->ndimension == 2)  d->fhsfc = Zoltan_HSFC_InvHilbert2d;
-   else if (d->ndimension == 3)  d->fhsfc = Zoltan_HSFC_InvHilbert3d;
+   if      (dim== 1)  d->fhsfc = Zoltan_HSFC_InvHilbert1d;
+   else if (dim== 2)  d->fhsfc = Zoltan_HSFC_InvHilbert2d;
+   else if (dim== 3)  d->fhsfc = Zoltan_HSFC_InvHilbert3d;
 
    /* Scale coordinates to bounding box, compute HSFC */
    for (i = 0; i < ndots; i++) {
-      for (j = 0; j < d->ndimension; j++)
+      for (j = 0; j < dim; j++)
          out[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j];
       dots[i].fsfc = d->fhsfc (zz, out);      /* Note, this is a function call */
       }
@@ -593,7 +601,7 @@ void Zoltan_HSFC_Free_Structure (ZZ *zz)
 int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 {
   char *yo = "Zoltan_HSFC_Copy_Structure";
-  int i, len;
+  int i, j, len;
   HSFC_Data *from, *to;
 
   Zoltan_HSFC_Free_Structure(toZZ);
@@ -617,10 +625,16 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
     to->bbox_hi[i] = from->bbox_hi[i];
     to->bbox_lo[i] = from->bbox_lo[i];
     to->bbox_extent[i] = from->bbox_extent[i];
+    to->trans_bbox_hi[i] = from->trans_bbox_hi[i];
+    to->trans_bbox_lo[i] = from->trans_bbox_lo[i];
+    for (j=0; j<3; j++){
+      to->Transformation[i][j] = from->Transformation[i][j];
+    }
   }
 
   to->ndimension = from->ndimension;
   to->fhsfc = from->fhsfc;
+  to->Skip_Dimensions = from->Skip_Dimensions;
 
   if (from->final_partition){
     len = sizeof(Partition) * fromZZ->LB.Num_Global_Parts;
@@ -667,10 +681,23 @@ Partition *p;
   printf("extent: %6.4lf %6.4lf %6.4lf, dim: %d, func: %p\n",
       data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
       data->ndimension, data->fhsfc);
+
+  if (data->Skip_Dimensions > 0){
+    printf("Degenerate geometry:\n");
+    printf("  skip number of dimensions: %d, transformation:\n",data->Skip_Dimensions);
+    for (i=0; i<3; i++){
+      printf("    %lf %lf %lf\n", data->Transformation[i][0], 
+             data->Transformation[i][1], data->Transformation[i][2]);
+    }
+    printf("  transformed bbox low: %6.4lf %6.4lf %6.4lf\n",
+       data->trans_bbox_lo[0], data->trans_bbox_lo[1], data->trans_bbox_lo[2]);
+    printf("  transformed bbox hi: %6.4lf %6.4lf %6.4lf\n",
+       data->trans_bbox_hi[0], data->trans_bbox_hi[1], data->trans_bbox_hi[2]);
+  }
+  else{
+    printf("Don't skip dimensions, no degenerate geometry.\n");
+  }
 }
-
-
-
 
 /* function to read  "KEEP_CUTS" parameter: */
 int Zoltan_HSFC_Set_Param (char *name, char *val)
