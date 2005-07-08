@@ -4,11 +4,11 @@
 \title{\EpetraTM{} User Guide}
 
 \author{Michael A. Heroux, Robert J. Hoekstra and Alan Williams \\
-	\\
-	    Sandia National Laboratories\\
-	    P.O. Box 5800\\
-	    Albuquerque, NM 87185-1110 
-	 }
+    \\
+        Sandia National Laboratories\\
+        P.O. Box 5800\\
+        Albuquerque, NM 87185-1110
+     }
 
     % There is a "Printed" date on the title page of a SAND report, so
     % the generic \date should generally be empty.
@@ -18,23 +18,23 @@
 \SANDnum{SAND2004-xxxx}
 \SANDprintDate{Printed July 2004}
 \SANDauthor{Michael A. Heroux \\
-	Computational Mathematics and Algorithms Department \\
-	\\
-	Robert J. Hoekstra \\
-	Computational Sciences Department \\
-	\\
-	Alan Williams \\
-	Alan's Group Name \\
-	\\
-	 Sandia National Laboratories \\
-	P.~O.~Box 5800 \\
-	Albuquerque, NM 87185-1110}
+    Computational Mathematics and Algorithms Department \\
+    \\
+    Robert J. Hoekstra \\
+    Computational Sciences Department \\
+    \\
+    Alan Williams \\
+    Alan's Group Name \\
+    \\
+     Sandia National Laboratories \\
+    P.~O.~Box 5800 \\
+    Albuquerque, NM 87185-1110}
 
 
 \SANDreleaseType{Unlimited Release}
 
 
-\SANDdistcategory{UC-999}    
+\SANDdistcategory{UC-999}
 % New commands
 
 \newcommand{\comm}{Epetra\_Comm}
@@ -77,24 +77,24 @@ and parallel computers.  It is designed to make construction, use and redistribu
 of these objects as efficient and easy as possible.  Epetra objects are compatible with all
 other Trilinos packages, including all linear, nonlinear and eigen solvers and all
 preconditioners packages.  It also implements all Trilinos abstract
-interfaces.  Finally, Epetra 
+interfaces.  Finally, Epetra
 provides C++ programmers easy access to the Zoltan~\cite{zoltan-ug}
 load balancing package, the BLAS~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}.
 
-This user guide is designed to address two types of users: 
+This user guide is designed to address two types of users:
 (i) those who, in addition to using Epetra
 objects, are also constructing Epetra vector, graphs and matrices.  This group
 includes application developers who are constructing these objects for the purpose
 of solving linear, nonlinear and eigensystems.
 (ii) those who
-are primarily interested in using already-constructed Epetra objects, such as 
-numerical algorithm developers who want to implement algorithms via 
-operations on Epetra vector, graph and matrix objects. 
+are primarily interested in using already-constructed Epetra objects, such as
+numerical algorithm developers who want to implement algorithms via
+operations on Epetra vector, graph and matrix objects.
 \end{abstract}
 
 
 \section*{Acknowledgement}
-The authors would like to acknowledge the support of the ASCI and LDRD 
+The authors would like to acknowledge the support of the ASCI and LDRD
 programs that funded development of Epetra.
 
 \clearpage
@@ -109,21 +109,21 @@ programs that funded development of Epetra.
 \begin{itemize}
 \item[Trilinos]
 The name of the project of which Epetra is one of the packages.  Also a Greek term which,
-loosely translated means ``a string of pearls,'' 
-meant to evoke an image that each Trilinos package is a pearl in its 
-own right, but is even more valuable when combined with other 
+loosely translated means ``a string of pearls,''
+meant to evoke an image that each Trilinos package is a pearl in its
+own right, but is even more valuable when combined with other
 packages.
 \item[Petra]
-A Greek term meaning ``foundation.''  Trilinos has three Petra 
-libraries: Epetra, Tpetra and Jpetra that provide basic classes 
+A Greek term meaning ``foundation.''  Trilinos has three Petra
+libraries: Epetra, Tpetra and Jpetra that provide basic classes
 for constructing and manipulating matrix, graph and vector
 objects.  Epetra is the current production version that is
 split into two packages, one core and one extensions.
 \item[Comm Object]
 An instance of one of the Epetra Comm classes.  Presently we support
 an MPI, Serial and SMP/MPI implementation of the base \comm{} interface.
-\item[Map Object] 
-Object-oriented algebraic preconditioner, compatible with 
+\item[Map Object]
+Object-oriented algebraic preconditioner, compatible with
 Epetra and AztecOO.
 \end{itemize}
 
@@ -156,7 +156,7 @@ short list of classes and features that are commonly used.  We discuss
 these here.
 
 \subsubsection{Communication Support}
-Epetra is written to run on parallel, distributed memory computers.  It accomplishes 
+Epetra is written to run on parallel, distributed memory computers.  It accomplishes
 this via its abstract \comm{} class.  \comm{} is a pure virtual class,
 specifying the methods that Epetra needs in order to execute on a
 distributed memory computer.  However, \comm{} provides no
@@ -181,7 +181,7 @@ intentional.
 \item {\bf \mpismpcomm{}:} An experimental implementation that
 incorporates information about shared memory threads.  This
 implementation of \comm{} is intended for situations where threads,
-e.g.~pthreads, are created and retained as part of the call to the 
+e.g.~pthreads, are created and retained as part of the call to the
 \mpismpcomm{} constructor.  These threads can then be used by any
 kernels in Epetra that have been instrumented to run with threads.  At
 this point, \mpismpcomm{} is purely for research purposes.
@@ -298,7 +298,7 @@ Epetra was built in MPI mode, the macro ``HAVE\_MPI'' will be defined
 and this example will be built with MPI support.  If not, then the
 example will be built in serial mode.  Note that these lines of code
  and lines 18--23 are the only difference between a serial and distributed memory
-version of the example. 
+version of the example.
 \paragraph{Lines 10--14}
 Include the other Epetra header files needed to use Epetra classes.
 It is a good practice to explicitly include header files for all
@@ -350,7 +350,7 @@ will have constructed a diagonal with each processor owning roughly
 the same number of rows and columns.  All diagonal values will be set
 to 2.0, except for the very first diagonal value, which will be set to
 4.0.  Since our matrix is diagonal, its eigenvalues are the diagonal
-values and the dominant eigenvalue is 4.0.  
+values and the dominant eigenvalue is 4.0.
 \paragraph{Line 37}
 Instantiates (creates) an \crsmatrix{}.  The first argument tells the
 constructor whether or not data passed in to this object should be
@@ -388,7 +388,7 @@ later replace the first diagonal value with a value of 4.0.
 These lines insert values and indices into the matrix we just
 instantiated.  Our matrix is very simple--a single diagonal entry per
 row--so these lines may seem too complicated, but we are illustrating
-a process that is effective for more realistic settings.  
+a process that is effective for more realistic settings.
 The \crsmatrix{} class is
 designed to accept matrix entries in a variety of ways.  However,
 there is a strong bias in the interface to accept multiple entries in
@@ -400,10 +400,10 @@ in detail.
 Line 42 loops over all elements
 owned by the calling processor.  Line 43 get the global ID associated
 with the current loop index.  This value will be passed in as the
-first argument to the 
+first argument to the
 InsertGlobalValues() method to indicate the global row into which the calling
 processor is inserting values.  Line 44 sets the column index to the
-same as the row index because we have only a diagonal value.  
+same as the row index because we have only a diagonal value.
 
 Lines 46--47 is a call the the InsertGlobalValues() method on our matrix
 object A.  The first argument is the ID of the global row that the
@@ -478,7 +478,7 @@ in the vector map.  This topic is discussed in greater detail in
 Section~\ref{Section:MapsAndMatrices}.  By constructing the vectors using
 the row map of our matrix, we are forcing these vectors to be
 distributed on the parallel machine conformally with the rows of the
-matrix.  In many common situations, this is often the best 
+matrix.  In many common situations, this is often the best
 distribution.
 \paragraph{Line 18}
 The Random() method fills the associated object with pseudo-random
@@ -538,7 +538,7 @@ specifies how most of Epetra's classes interact with a parallel
 machine.  The advantages of using an interface are:
 \begin{enumerate}
 \item We can have mulitple implementations of the interface, including future
-implementations that we did not anticipate.  
+implementations that we did not anticipate.
 \item Explicit dependencies on outside libraries, e.g., MPI, are
 restricted to \comm{} implementation classes.
 \item A trivial serial implementation of \comm{} allows Epetra to be
@@ -552,27 +552,27 @@ The \comm{} interface specifies the complete set of functions that Epetra need
 for parallel {\it single program multiple data} (SPMD) execution.
 Table~\ref{Table:CommMethods} lists the methods we need.
 \begin{table}
+\scriptsize
 \begin{center}
 \begin{tabular}{ | p{15cm} | }
-\hline
-{\bf Barrier Methods}
+\hline {\bf Barrier Methods}
 \verb!void  Barrier()!\\
   \comm{} Barrier function.\\
-\\ 
+\\
 {\bf Broadcast Methods }
 \verb!int  Broadcast (double *MyVals, int Count, int Root)!\\
   \comm{} Broadcast function. \\
 \\
 \verb!int  Broadcast (int *MyVals, int Count, int Root)!\\
   \comm{} Broadcast function. \\
-\\ 
+\\
 {\bf Gather Methods }
 \verb!int  GatherAll (double *MyVals, double *AllVals, int Count)!\\
   \comm{} All Gather function. \\
-\\ 
+\\
 \verb!int  GatherAll (int *MyVals, int *AllVals, int Count)!\\
   \comm{} All Gather function. \\
-\\ 
+\\
 {\bf Sum Methods }
 \verb!int  SumAll (double *PartialSums, double *GlobalSums, int Count)!\\
   \comm{} Global Sum function. \\
@@ -600,7 +600,7 @@ Table~\ref{Table:CommMethods} lists the methods we need.
 \verb!int  ScanSum (int *MyVals, int *ScanSums, int Count)!\\
   \comm{} Scan Sum function. \\
  \\
-{\bf Attribute Accessor Methods} 
+{\bf Attribute Accessor Methods}
 \verb!int  MyPID ()!\\
   Return my process ID. \\
  \\
@@ -620,36 +620,36 @@ Table~\ref{Table:CommMethods} lists the methods we need.
 \label{Table:CommMethods}
 \end{center}
 \end{table}
-Most of the methods are essentially equivalent to standard MPI functions.  
+Most of the methods are essentially equivalent to standard MPI functions.
 This is no accident, since MPI is the most commonly used implementation of
-\comm{}.  The most notable additions to common MPI functions are the two 
+\comm{}.  The most notable additions to common MPI functions are the two
 ''create'' methods which, when called must return a distributor or directory
 object that is compatible with the implementation of \comm{}.  We discuss this
 in more detail now.
 
 Although \comm{} is the primary abstract parallel machine class, there are two
-other very important classes that Epetra uses for SPMD computations: 
-\distributor{} and \directory{}.  
+other very important classes that Epetra uses for SPMD computations:
+\distributor{} and \directory{}.
 
 \distributor{} is used to support sparse all-to-all
 communications that are required for unstructured parallel sparse matrix calculations.
 For example, with a row-based distribution of a sparse matrix $A$,
 a standard sparse matrix vector multiplication kernel to compute $y=Ax$
 will typically require elements of $x$ from other processors be sent to a processor
-that has nonzeros in a corresponding column of $A$.  However, for most applications 
+that has nonzeros in a corresponding column of $A$.  However, for most applications
 only a handful of $x$ values needs to be sent to any one processor, so each processor
 only communicates with a subset of all processors.  For many applications, the
 communication pattern for these operations is used many times.  Therefore,
-the \distributor{} object pre-computes the communication pattern required for 
+the \distributor{} object pre-computes the communication pattern required for
 processor to communicate with its required neighbors, and then, as often as needed,
 the transfer operation is done later, using the pre-computed pattern.  Epetra provides
-user-level support for these operations via the \import{} and \export{} classes, discussed 
+user-level support for these operations via the \import{} and \export{} classes, discussed
 in Section~\ref{Section:ImportExport}.
 
 \directory{} is used to support the arbitrary index labeling features of Epetra.  Epetra
 distributed objects are partitioned across the parallel machine using arbitrary integer
 indices.  For example, a 100-element vector could be distributed across a 4-processor machine
-putting element 0 through 24 on PE 0, 25 through 49 on PE 1, 50 through 74 on PE 2 and 
+putting element 0 through 24 on PE 0, 25 through 49 on PE 1, 50 through 74 on PE 2 and
 75 through 99 on PE 3.  However, if the vector is associated with a grid that was automatically
 generated by a meshing tool, then the mesh node IDs might not be labeled contiguously or
 may not be assigned contiguously to a processor.  In this case, it is very convenient to use
@@ -658,17 +658,17 @@ role in parallel data repartitioning capabilities provided by the \import{} and 
 The \directory{} class provides the support needed for arbitrary index labeling as follows:
 \begin{enumerate}
 \item \directory{} Setup: At construction time, each processor registers each of the
-index labels (referred to as global IDs or GIDs in Section~\ref{Section:maps}) 
+index labels (referred to as global IDs or GIDs in Section~\ref{Section:maps})
 that it owns with the directory.  The directory
 itself is a distributed object with a known distribution.
 \item \directory{} Query: After construction, if a processor wants to know which other processor
 owns a particular GID, it queries the \directory{} object for the owner's processor ID.
 \end{enumerate}
 In Section~\ref{Section:maps} we discuss directories in relationship to \map{} objects, since
-\directory{} objects are generated by \map{} objects. 
+\directory{} objects are generated by \map{} objects.
 
 \begin{remark}
-To provide an alternative implementation of Epetra's parallel machine interface,  
+To provide an alternative implementation of Epetra's parallel machine interface,
 three abstract interfaces must be addressed: \comm{}, \distributor{} and \directory.
 \end{remark}
 
@@ -680,13 +680,20 @@ from \mpicomm{} and implements only the methods that you want to replace.
 
 \subsection{\comm{} Implementations}
 
-Presently the two most commonly used \comm{} implementations are \serialcomm{} 
-and \mpicomm{}.  \serialcomm{} is used on serial machines, for debugging and for
-creating and using serial object within a parallel task.  \mpicomm{} is the most
-commonly used implementation for production applications.  Experimental versions
-of \comm{} have been developed for using threads with MPI and using an optimized
-library LBCOMM from Zoltan.  Future work may include a UPC~\cite{UPC} version and
-a version to support fault-tolerant computations.
+Presently the two most commonly used \comm{} implementations are
+\serialcomm{} and \mpicomm{}.  \serialcomm{} is used on serial
+machines, for debugging and for creating and using serial object
+within a parallel task.  \mpicomm{} is the most commonly used
+implementation for production applications.  Experimental versions
+of \comm{} have been developed for using threads with MPI
+(\mpismpcomm) and using an optimized library LBCOMM from Zoltan.
+Future work may include a UPC~\cite{UPC} version and a version to
+support fault-tolerant computations.
+\begin{figure}
+  % Requires \usepackage{graphicx}
+  \includegraphics{class_Epetra_Comm_inherit_graph.pdf}\\
+  \caption{Epetra Comm Class Inheritance Graph}\label{class_Epetra_Comm_inherit_graph}
+\end{figure}
 
 \section{Epetra Maps and BlockMaps}
 \label{Section:maps}
@@ -702,7 +709,7 @@ An \map{} object contains all information needed to work with
 distributed objects.  Its primary data are a collection of {\it
 elements}.  Each element of a map has a global ID (GID) and a local ID
 (LID).  Elements are ordered on each processor by their LIDs.  On each
-processor, LID values range from 0 to the number of elements on the 
+processor, LID values range from 0 to the number of elements on the
 processor.  The GIDs
 of an \map{} are a set of signed integer values.  GIDs are used as
 labels and need not be contiguous, ordered or uniquely associated with
@@ -720,7 +727,7 @@ GIDs to each element in a contiguous, increasing order starting with
 processor 0.  Figure~\ref{Figure:MapExamples} shows the details for a
 map with 100 elements on 3 processors.
 \item {\bf Non-uniform linear map:}  This form of map is a small
-generalization of the previous case, 
+generalization of the previous case,
 where the calling processor specifies the number of
 elements it want assigned to itself.  The constructor will determine
 the total number of elements in the map and will assign GIDs in a
@@ -741,11 +748,11 @@ flexible data communication and redistribution capabilities.
 \caption{\label{Figure:MapExamples} Three \map{} constructor examples.}
 \end{figure}
 
-\map{} (or more precisely \blockmap{}) provides the foundation for Epetra 
+\map{} (or more precisely \blockmap{}) provides the foundation for Epetra
 distributed objects.  In particular, \map{} (or \blockmap{}) is a required
 input argument to the \distobject{} class, which is a base class for all Epetra
 distributed objects.  When an Epetra distributed object is constructed, each \map{}
-element is associated with a packet of data for the distributed object.  
+element is associated with a packet of data for the distributed object.
 Table~\ref{Table:PacketDefinitions} lists the packet definitions for the most
 common Epetra distributed objects.
 \begin{table}
@@ -775,7 +782,7 @@ element has three attributes:
 on the processor. Elements are order on the processor by LID in increasing order.
 \item Global identifier (GID): A signed integer value that is assigned by the user via
 one of several constructors.  GIDs need not be unique, ordered or contiguous.
-\item Size: A positive integer value that reflects the relative size of an element.  \map{} 
+\item Size: A positive integer value that reflects the relative size of an element.  \map{}
 objects are \blockmap{} objects where all elements have size 1.
 \end{enumerate}
 
@@ -789,7 +796,7 @@ objects are \blockmap{} objects where all elements have size 1.
 Most of our discussion so far has focused on \map{} objects for simplicity.  \blockmap{}
 provide another level of structure by allowing the association of a {\it size} with each
 element.  The interpretation of the size depends on the type of \distobject{} that is
-being considered.  Table~\ref{Table:SizeDefinitions} shows the interpretation for several 
+being considered.  Table~\ref{Table:SizeDefinitions} shows the interpretation for several
 common \distobject{} classes.
 \begin{table}
 \begin{center}
@@ -846,7 +853,7 @@ participate in the method call.  For example, to compute the update of
 an \vector{}, all processors that own a portion of the vector must
 call the Update() method.  When calling a Norm2() method or something
 similar, all processors, regardless of whether they own any portion of
-a vector, must participate in the Norm2() call.  
+a vector, must participate in the Norm2() call.
 Figure~\ref{Figure:HungCode} illustrates
 several versions of a code segment that computes the 2-norm of a residual
 and prints it from processor 0.  Only the final version is correct.
@@ -862,4 +869,3 @@ and prints it from processor 0.  Only the final version is correct.
 
 
 \end{document}
-
