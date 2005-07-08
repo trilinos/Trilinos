@@ -37,9 +37,9 @@ host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.ifpack.in $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure \
-	$(top_srcdir)/python/src/.deps/dummy.in ChangeLog \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing config/mkinstalldirs
+	$(top_srcdir)/python/src/.deps/dummy.in config/config.guess \
+	config/config.sub config/depcomp config/install-sh \
+	config/missing config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
