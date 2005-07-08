@@ -32,9 +32,11 @@ int Zoltan_HSFC_Point_Assign (
    int *part)
    {
    double     scaled[3];
+   double     pt[3];
    double     fsfc;
    Partition *p;
    int        i;
+   int        dim;
    HSFC_Data *d;
    int        err;
    char *yo = "Zoltan_HSFC_Point_Assign";
@@ -46,24 +48,28 @@ int Zoltan_HSFC_Point_Assign (
        "No Decomposition Data available; use KEEP_CUTS parameter.");
 
    if (d->Skip_Dimensions > 0){
-     scaled[0] = x[0];  
-     scaled[1] = x[1];
-     scaled[2] = x[2];
-     x[1] = x[2] = 0.0;
-     x[0] = d->Transformation[0][0]*scaled[0] +
-            d->Transformation[0][1]*scaled[1] +
-            d->Transformation[0][2]*scaled[2];
+     pt[1] = pt[2] = 0.0;
+     pt[0] = d->Transformation[0][0]*x[0] +
+             d->Transformation[0][1]*x[1] +
+             d->Transformation[0][2]*x[2];
      if (d->Skip_Dimensions == 1){
-       x[1] = d->Transformation[1][0]*scaled[0] +
-              d->Transformation[1][1]*scaled[1] +
-              d->Transformation[1][2]*scaled[2];
+       pt[1] = d->Transformation[1][0]*x[0] +
+               d->Transformation[1][1]*x[1] +
+               d->Transformation[1][2]*x[2];
      }
+     dim = d->ndimension - d->Skip_Dimensions;
+   }
+   else{
+     pt[0] = x[0];
+     pt[1] = x[1];
+     pt[2] = x[2];
+     dim = d->ndimension;
    }
 
    /* Calculate scaled coordinates, calculate HSFC coordinate */
-   for (i = 0; i < d->ndimension; i++)
+   for (i = 0; i < dim; i++)
       {
-      scaled[i] = (x[i] - d->bbox_lo[i]) / d->bbox_extent[i];
+      scaled[i] = (pt[i] - d->bbox_lo[i]) / d->bbox_extent[i];
       if (scaled[i] < HSFC_EPSILON)         scaled[i] = HSFC_EPSILON;
       if (scaled[i] > 1.0 - HSFC_EPSILON)   scaled[i] = 1.0 - HSFC_EPSILON;
       }
