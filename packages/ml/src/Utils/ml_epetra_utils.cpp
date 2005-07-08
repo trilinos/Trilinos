@@ -58,7 +58,7 @@ int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int
   *cols   = NULL;
   mat_in = (ML_Operator *) data;
 
-  if ( mat_in->matvec->func_ptr != Epetra_ML_matvec) return 0;
+  if ( mat_in->matvec->func_ptr != ML_Epetra_matvec) return 0;
 
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
 
