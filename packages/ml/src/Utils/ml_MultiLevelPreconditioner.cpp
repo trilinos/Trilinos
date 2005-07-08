@@ -2045,6 +2045,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
   else if( CoarseSolution == "block Gauss-Seidel" ) 
+    ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+                                        NumSmootherSteps, Omega, NumPDEEqns_);
+  else if( CoarseSolution == "symmetric block Gauss-Seidel" ) 
     ML_Gen_Smoother_SymBlockGaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
                                         NumSmootherSteps, Omega, NumPDEEqns_);
   else if( CoarseSolution == "do-nothing" ) {

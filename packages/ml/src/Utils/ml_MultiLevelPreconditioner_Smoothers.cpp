@@ -211,6 +211,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 			  << PreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				       num_smoother_steps, omega, NumPDEEqns_);
+    } else if( Smoother == "symmetric block Gauss-Seidel" ) {
+
+      // ================== //
+      // block Gauss-Seidel //
+      // ================== //
+      
+      if( verbose_ ) cout << msg << "symmetric block Gauss-Seidel (sweeps="
+			  << num_smoother_steps << ",omega=" << omega << ","
+			  << PreOrPostSmoother << ")" << endl;
+      ML_Gen_Smoother_SymBlockGaussSeidel(ml_, LevelID_[level], pre_or_post,
+				       num_smoother_steps, omega, NumPDEEqns_);
     } else if( Smoother == "MLS" ) {
 
       // === //
