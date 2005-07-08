@@ -8036,14 +8036,15 @@ else
 fi
 
 
-  # Ensure that we have python version 2.2 or greater (for distutils)
+  # Ensure that we have python version 2.3 or greater (for distutils)
+  # We need 2.3 and not 2.2 because of Boolean types (for parameter lists)
 
 
 
     if test -n "$PYTHON"
     then
-        echo "$as_me:$LINENO: checking whether $PYTHON version >= 2.2 " >&5
-echo $ECHO_N "checking whether $PYTHON version >= 2.2 ... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking whether $PYTHON version >= 2.3 " >&5
+echo $ECHO_N "checking whether $PYTHON version >= 2.3 ... $ECHO_C" >&6
 
 
     if test -z "$PYTHON"
@@ -8057,7 +8058,7 @@ echo "$as_me: error: Python Executable not found" >&2;}
 import sys, string
 # split strings by '.' and convert to numeric.  Append some zeros
 # because we need at least 4 digits for the hex conversion.
-minver = map(int, string.split('2.2 ', '.')) + [0, 0, 0]
+minver = map(int, string.split('2.3 ', '.')) + [0, 0, 0]
 minverhex = 0
 for i in xrange(0, 4): minverhex = (minverhex << 8) + minver[i]
 if sys.hexversion >= minverhex:
@@ -8701,7 +8702,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8704: \"$ac_link\") >&5
+(eval echo $as_me:8705: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8779,7 +8780,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8782: \"$ac_link\") >&5
+(eval echo $as_me:8783: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14357,7 +14358,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:14360: \"$ac_link\") >&5
+(eval echo $as_me:14361: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14435,7 +14436,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:14438: \"$ac_link\") >&5
+(eval echo $as_me:14439: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

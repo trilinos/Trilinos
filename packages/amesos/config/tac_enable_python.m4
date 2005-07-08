@@ -10,8 +10,9 @@ if test -n "$PYTHON"; then
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_PYTHON, true)
 
-  # Ensure that we have python version 2.2 or greater (for distutils)
-  AZ_PYTHON_VERSION_ENSURE( [2.2] )
+  # Ensure that we have python version 2.3 or greater (for distutils)
+  # We need 2.3 and not 2.2 because of Boolean types (for parameter lists)
+  AZ_PYTHON_VERSION_ENSURE( [2.3] )
 
   # Python compiler and linker flags
   AZ_PYTHON_CSPEC
