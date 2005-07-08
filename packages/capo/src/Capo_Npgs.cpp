@@ -58,27 +58,41 @@ Npgs::Npgs(const Teuchos::RefCountPtr<Parameter_List>& ParamList,
 	   const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x0, 
 	   double lambda0, double T0) 
 {
+  xprevious = createMember(x0->space());
   xcurrent = createMember(x0->space());
   xfinal = createMember(x0->space());
+  xinit = createMember(x0->space());
+  finit = createMember(x0->space());
   xstep = createMember(x0->space());
 
+  Thyra::assign(&*xprevious, *x0); 
   Thyra::assign(&*xcurrent, *x0); 
   Thyra::assign(&*xfinal, *x0);
   Thyra::assign(&*xstep, 0.0);
 
+  lambdaprevious = lambda0;
   lambdacurrent = lambda0;
   lambdafinal = lambda0;
-  lambdastep = ParamList->get_lambda_stepsize();
+  lambdastep = 0.0;
 
+  Tprevious = T0;
   Tcurrent = T0;
   Tfinal = T0;
   Tstep = 0.0;
 
+  App_Integrator = App_Int;
+  SolveParameters = ParamList;
+
+  Thyra::assign(&*xinit,*xcurrent);
+  App_Integrator->Integrate(xcurrent,finit,10e-8,lambdacurrent);
+  Thyra::Vp_StV(&*finit,-1.0,*xcurrent);
+  Thyra::Vt_S(&*finit,1.0/10e-8);
+
   iter = 0;
   Unstable_Basis_Size = 0;
 
-  App_Integrator = App_Int;
-  SolveParameters = ParamList;
+
+  First_Continuation_Step = true;
 
   // Use the VectorBase xcurrent to create a MultiVector Base.
   Ve = Thyra::createMembers(xcurrent->space(),30);
@@ -109,9 +123,17 @@ void Npgs::Initialize()
 
   for (int i=1;i<30+1;i++)
     {
+      /*
+      App_Integrator->Integrate(xcurrent,TempVector,(rand()%10)+20*Tfinal,lambdafinal);
+      Thyra::Vp_S(&*TempVector,.01);
+      Thyra::assign(&*Ve->col(i),*TempVector);
+      */
+
+      
       Thyra::assign(&*TempVector,*Ve->col(i));
       Thyra::randomize(0.1,1.1,&*TempVector);
       Thyra::assign(&*Ve->col(i),*TempVector);
+      
     }
 
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve_pe;
@@ -223,15 +245,44 @@ void Npgs::InnerFunctions()
 //------------------------------------------------------------------
 void Npgs::Predictor(double& StepSize,double& PrevStepSize)
 {
-  // Need to remember steps taken for use in psuedo arc-length continuation.
-  lambdastep = lambdafinal-lambdacurrent;
-  Tstep = Tfinal-Tcurrent;
-  Thyra::assign(&*xstep,*xfinal);
-  Thyra::Vp_StV(&*xstep,-1.0,*xcurrent);
 
-  lambdacurrent = lambdafinal+(*SolveParameters).get_lambda_stepsize();
-  Tcurrent = Tfinal;
-  Thyra::assign(&*xcurrent,*xfinal);
+  // Eventually put into parameter list...
+  double lambdamax = SolveParameters->get_lambda_max();
+  double lambdamin = SolveParameters->get_lambda_min();
+
+  Tstep = Tfinal-Tprevious;
+  lambdastep = lambdafinal-lambdaprevious;
+  Thyra::assign(&*xstep,*xfinal);
+  Thyra::Vp_StV(&*xstep,-1.0,*xprevious);
+
+  Tprevious = Tfinal;
+  lambdaprevious = lambdafinal;
+  Thyra::assign(&*xprevious,*xfinal);
+  if ( SolveParameters->Arc_Length() )
+    {
+      if ( iter < SolveParameters->get_lambda_extend_tol() )
+	lambdastep = 2*lambdastep;
+      if (lambdastep > lambdamax)
+	lambdastep = lambdamax;
+      if (lambdastep < lambdamin)
+	lambdastep = lambdamin;
+    }
+  if ( First_Continuation_Step )
+    {
+      First_Continuation_Step = false;
+      Tcurrent = Tprevious;
+      lambdacurrent = lambdaprevious+(*SolveParameters).get_lambda_stepsize();
+      Thyra::assign(&*xcurrent,*xprevious);
+    }
+  else
+    {
+      Tcurrent = Tprevious + Tstep;
+      lambdacurrent = lambdaprevious + lambdastep;
+
+      Thyra::assign(&*xcurrent,*xprevious);
+      Thyra::Vp_StV(&*xcurrent,1.0,*xstep);
+    }
+
 }
 //-----------------------------------------------------------------
 // Function      : Npgs::Get_Tfinal
@@ -342,8 +393,17 @@ Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Npgs::MatVecs(const Teucho
 void Npgs::IterationFailure()
 {
   cout << "Npgs::IterationFailure Failed to find a solution." << endl;
-  cout << "I should find a better way of doing this..." << endl;
-  abort();
+  lambdastep = .5*lambdastep;
+  Tstep = .5*Tstep;
+  Thyra::Vt_S(&*xstep,.5);
+
+  lambdacurrent = lambdaprevious + lambdastep;
+  Tcurrent = Tprevious + Tstep;
+  Thyra::assign(&*xcurrent,*xprevious);
+  Thyra::Vp_StV(&*xcurrent,1.0,*xstep);
+
+  cout << "Cutting the lambdastep in half." << endl;
+  //abort();
 }
 
 
@@ -367,12 +427,6 @@ bool Npgs::InnerIteration()
 
   int Subspace_Size = 0;
 
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > finit;
-  finit = createMember(xcurrent->space());
-
-  App_Integrator->Integrate(xcurrent,finit,eps,lambdacurrent);
-  Thyra::Vp_StV(&*finit,-1.0,*xcurrent);
-  Thyra::Vt_S(&*finit,1.0/eps);
 
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > v;
   v = createMember(xcurrent->space());
@@ -414,7 +468,6 @@ bool Npgs::InnerIteration()
       
 
       // Algorithm
-      //Orthonormalize(Ve,Subspace_Size);
       SubspaceIterations(Se,We,Re);
 
       if (Unstable_Basis_Size > 0) // Need to include a Newton-Step.
@@ -424,7 +477,6 @@ bool Npgs::InnerIteration()
 	  Vp = createMembers(xcurrent->space(),Unstable_Basis_Size);
 
 	  ComputeVp(Se,Vp);
-	  Calculatedq(Vp,dq,r);
 	  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dp;
 	  dp = createMember(Vp->domain());
 
@@ -439,7 +491,8 @@ bool Npgs::InnerIteration()
 
 	    }
 	  else
-	    {
+	    {	  
+	      Calculatedq(Vp,dq,r);
 	      Calculatedp(Vp,dq,dp,Re,v,finit,r,*deltaT);
 	      Thyra::Vp_StV(&*xfinal,1.0,*dq);
 	      Thyra::apply(*Vp,Thyra::NOTRANS,*dp,&*TempVector);
@@ -469,7 +522,23 @@ bool Npgs::InnerIteration()
 	  Thyra::Vp_StV(&*xfinal,1.0,*dq);
 	}
 
-
+      // If my subspace has shrunk at any step, I need to replace the vectors
+      // in Ve with new randomized vectors.
+      /*
+      for (int k = Unstable_Basis_Size+SolveParameters->get_NumberXtraVecsSubspace()+1;k<31;k++)
+	{
+	  
+	  App_Integrator->Integrate(xcurrent,TempVector,(rand()%10)+20*Tfinal,lambdafinal);
+	  Thyra::Vp_S(&*TempVector,.01);
+	  Thyra::assign(&*Ve->col(k),*TempVector);
+	  
+	  
+	  Thyra::randomize(0.1,1.1,&*Ve->col(k));
+	  App_Integrator->Integrate(Ve->col(k),TempVector,5*Tfinal,lambdafinal);
+	  Thyra::assign(&*Ve->col(k),*TempVector);
+	  
+	}
+      */
       Orthonormalize(Ve,Unstable_Basis_Size+SolveParameters->get_NumberXtraVecsSubspace());
       App_Integrator->Integrate(xfinal,v,Tfinal,lambdafinal);
       Thyra::assign(&*r,*v); 
@@ -722,12 +791,21 @@ void Npgs::Calculatedq(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
 
   TempVec2 = MatVec(q);
   Thyra::Vp_StV(&*TempVec2,1.0,*r);
-
   Thyra::apply(*Vp,Thyra::TRANS,*TempVec2,&*TempVec1);
   Thyra::apply(*Vp,Thyra::NOTRANS,*TempVec1,&*q);
 
   Thyra::assign(&*dq,*TempVec2);
   Thyra::Vp_StV(&*dq,-1.0,*q);
+
+  Thyra::assign(&*q,*dq);
+  TempVec2 = MatVec(q);
+  Thyra::Vp_StV(&*TempVec2,1.0,*r);
+  Thyra::apply(*Vp,Thyra::TRANS,*TempVec2,&*TempVec1);
+  Thyra::apply(*Vp,Thyra::NOTRANS,*TempVec1,&*q);
+
+  Thyra::assign(&*dq,*TempVec2);
+  Thyra::Vp_StV(&*dq,-1.0,*q);
+
 }
 
 
@@ -861,12 +939,7 @@ bool Npgs::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
 	}
 
       // and the corner
-      
-      App_Integrator->Integrate(xfinal,fphi,eps,lambdacurrent);
-      Thyra::Vp_StV(&*fphi,-1.0,*xfinal);
-      Thyra::Vt_S(&*fphi,1.0/eps);
-      
-      LHS[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)-1]=Thyra::dot(*finit,*fphi);
+      LHS[(Unstable_Basis_Size+1)*(Unstable_Basis_Size+1)-1]=0.0;
 
     }
 
@@ -887,7 +960,7 @@ bool Npgs::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
   if (SolveParameters->Periodic())
     {
       Thyra::assign(&*fphi,*xfinal);
-      Thyra::Vp_StV(&*fphi,-1.0,*xcurrent);
+      Thyra::Vp_StV(&*fphi,-1.0,*xinit);
       Thyra::Vp_StV(&*fphi,1.0,*dq);
       
       RHS[Unstable_Basis_Size]=-Thyra::dot(*finit,*fphi);
@@ -978,6 +1051,21 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
 {
   double eps = 10e-5;
 
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > fphi;
+  fphi = createMember(xcurrent->space());
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > templong;
+  templong = createMember(xcurrent->space());
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dq1;
+  dq1 = createMember(xcurrent->space());
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dq2;
+  dq2 = createMember(xcurrent->space());
+
+  // Need to caluclate the two different dq's for the two different
+  // linear systems.
+  dphi_dlambda(fphi);
+  Thyra::Vt_S(&*fphi,-1.0);
+  Calculatedq(Vp,dq1,fphi);
+  Calculatedq(Vp,dq2,r);
 
   // Dimension of the linear system depends on whether we are looking 
   // for a periodic solution and/or performing psuedo-arclength
@@ -995,8 +1083,6 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
   LHS = new double[(LS_size)*(LS_size)];
   RHS = new double[2*LS_size];
 
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > fphi;
-  fphi = createMember(xcurrent->space());
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > rightcol;
   rightcol = createMember(TempMV->domain());
 
@@ -1009,15 +1095,16 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
 	  LHS[i+j*(LS_size)]+=-1.0;
       }
 
-  /* and the first p elements of RHS1,RHS2 */
-  fphi = MatVec(dq);
+  /* and the first p elements of RHS */
+  fphi = MatVec(dq1);
   Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
   for (int i=0;i<Unstable_Basis_Size;i++)
     {
       RHS[i]=-Thyra::get_ele(*rightcol,i+1);
     }
-
-  Thyra::Vp_StV(&*fphi,1.0,*r);
+  Thyra::assign(&*templong,*dq2);
+  Thyra::Vp_StV(&*templong,1.0,*r);
+  fphi = MatVec(templong);
   Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
 
   for (int i=0;i<Unstable_Basis_Size;i++)
@@ -1046,12 +1133,7 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
 	}
 
       // and corner 1
-      
-      App_Integrator->Integrate(xfinal,fphi,eps,lambdacurrent);
-      Thyra::Vp_StV(&*fphi,-1.0,*xfinal);
-      Thyra::Vt_S(&*fphi,1.0/eps);
-      
-      LHS[(Unstable_Basis_Size+1)*(LS_size)-2]=Thyra::dot(*finit,*fphi);
+      LHS[(Unstable_Basis_Size+1)*(LS_size)-2]=0.0;
 
       // Add column 2
       dphi_dlambda(fphi);
@@ -1068,23 +1150,26 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
 	{
 	  LHS[Unstable_Basis_Size+1+i*(LS_size)]=Thyra::get_ele(*rightcol,i+1);
 	}
+      Thyra::assign(&*fphi,*xfinal);
+      Thyra::Vp_StV(&*fphi,-1.0,*xcurrent);
+
+      /*
+      RHS[2*LS_size-1]=-(Thyra::dot(*xstep,*fphi)+(Tfinal-Tcurrent)*(Tstep)+(lambdastep)*(lambdafinal-lambdacurrent))-Thyra::dot(*xstep,*dq2);
+      */
+      RHS[2*LS_size-1]=-Thyra::dot(*xstep,*dq2);
+      RHS[LS_size-1]=-Thyra::dot(*xstep,*dq1);
 
       // and corners 2 and 3
       LHS[(LS_size)*(Unstable_Basis_Size+1)-1]=Tstep;
-      LHS[(LS_size)*(LS_size)-1]=lambdastep;
+      LHS[(LS_size)*(LS_size)-1]=(lambdastep);
+      LHS[(LS_size)*(LS_size)-2]=0.0;
 
-      // Last two elements of the right hand sides...
       Thyra::assign(&*fphi,*xfinal);
-      Thyra::Vp_StV(&*fphi,-1.0,*xcurrent);
-      RHS[2*LS_size-2]=-Thyra::dot(*fphi,*xstep)-(Tfinal-Tcurrent)*Tstep-
-	(lambdafinal-lambdacurrent)*lambdastep-Thyra::dot(*xstep,*dq);
+      Thyra::Vp_StV(&*fphi,-1.0,*xinit);
+      Thyra::Vp_StV(&*fphi,1.0,*dq2);
+      RHS[2*LS_size-2]=-Thyra::dot(*finit,*fphi);
 
-      Thyra::Vp_StV(&*fphi,1.0,*dq);
-      RHS[2*LS_size-1]=-Thyra::dot(*finit,*fphi);
-      
-
-      RHS[LS_size-2]=-Thyra::dot(*finit,*dq);
-      RHS[LS_size-1]=-Thyra::dot(*xstep,*dq);
+      RHS[LS_size-2]=-Thyra::dot(*finit,*dq1);
 
     }
   else
@@ -1099,23 +1184,28 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
 
       //add row 1.
       // Assume psuedo arclength condition given by eqn. 4.6 in Lust et. al.
-      Thyra::apply(*Vp,Thyra::TRANS,*xstep,&*rightcol);
+      Thyra::assign(&*fphi,*xcurrent);
+      Thyra::Vp_StV(&*fphi,-1.0,*xprevious);
+      Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
       for (int i=0;i<Unstable_Basis_Size;i++)
 	{
 	  LHS[Unstable_Basis_Size+i*(LS_size)]=Thyra::get_ele(*rightcol,i+1);
 	}
+      RHS[LS_size-1]=-Thyra::dot(*fphi,*dq1);
 
       // and corner
       LHS[(LS_size)*(LS_size)-1]=lambdastep;
 
       // Last element of the right hand sides...
+      /*
       Thyra::assign(&*fphi,*xfinal);
       Thyra::Vp_StV(&*fphi,-1.0,*xcurrent);
       RHS[2*LS_size-1]=-Thyra::dot(*fphi,*xstep)-(Tfinal-Tcurrent)*Tstep-
 	(lambdafinal-lambdacurrent)*lambdastep-Thyra::dot(*xstep,*dq);
-      RHS[LS_size-1]=-Thyra::dot(*xstep,*dq);
-
+      */
+      RHS[2*LS_size-1]=-Thyra::dot(*fphi,*dq2);
     }
+
 
   Solve_Linear(LHS,RHS, false ,LS_size,2);
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > omega;
@@ -1134,7 +1224,8 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
     {
       deltaT = RHS[2*LS_size-2]-(deltalambda)*RHS[LS_size-2];
     }
-
+  Thyra::assign(&*dq,*dq2);
+  Thyra::Vp_StV(&*dq,-deltalambda,*dq1);
   delete [] LHS;
   delete [] RHS;
 
@@ -1163,3 +1254,4 @@ bool Npgs::dphi_dlambda(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& 
 
   return true;
 }
+

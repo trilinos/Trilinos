@@ -59,6 +59,9 @@ Parameter_List::Parameter_List()
   tol = 1.0e-5;
   printproc = 1;
   lambda_stepsize = .1;
+  lambda_extend_tol = 3;
+  lambda_max = .5;
+  lambda_min = .00001;
   EnablePeriodicity = false;
   EnableArclength = false;
 
@@ -133,6 +136,11 @@ void Parameter_List::set_param(string& name, int value)
       printproc = value;
       found = true;
     }
+  if (name=="lambda_extend_tol")
+    {
+      lambda_extend_tol = value;
+      found = true;
+    }
 
   if (!found)
     cout << "Parameter " << name << " not found!" << endl;
@@ -196,6 +204,16 @@ void Parameter_List::set_param(string& name, double value)
       lambda_stepsize = value;
       found = true;
     }
+  if (name=="lambda_max")
+    {
+      lambda_max = value;
+      found = true;
+    }
+  if (name=="lambda_min")
+    {
+      lambda_min = value;
+      found = true;
+    }
   if (!found)
     cout << "Parameter " << name << " not found!" << endl;
 }
@@ -219,6 +237,10 @@ int Parameter_List::get_printproc()
 {return printproc;}
 double Parameter_List::get_lambda_stepsize()
 {return lambda_stepsize;}
+double Parameter_List::get_lambda_max()
+{return lambda_max;}
+double Parameter_List::get_lambda_min()
+{return lambda_min;}
 
 int Parameter_List::get_SubspaceIterations()
 { return SubspaceIterations;}
@@ -226,6 +248,8 @@ double Parameter_List::get_FloquetTolerence()
 { return FloquetTolerence;}
 int Parameter_List::get_NumberXtraVecsSubspace()
 { return NumberXtraVecsSubspace;}
+int Parameter_List::get_lambda_extend_tol()
+{return lambda_extend_tol;}
 
 double Parameter_List::get_Mplus2tol()
 { return Mplus2tol;}

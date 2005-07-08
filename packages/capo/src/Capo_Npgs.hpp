@@ -83,6 +83,11 @@ namespace CAPO {
     
     virtual double& Get_Tfinal();
   private:
+
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > finit;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xinit;
+
+
     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve;
 
     int Unstable_Basis_Size;
@@ -132,7 +137,11 @@ namespace CAPO {
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& finit,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r,
 			 double& deltaT, double& deltalambda);
-   
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xstep;
+    double lambdastep;
+    double Tstep;
+
+ 
   };
 }
 

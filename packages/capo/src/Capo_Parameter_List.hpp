@@ -62,6 +62,9 @@ namespace CAPO {
     double get_tol();
     int get_printproc();
     double get_lambda_stepsize();
+    double get_lambda_max();
+    double get_lambda_min();
+    int get_lambda_extend_tol();
     bool Periodic();
     bool Arc_Length();
 
@@ -89,6 +92,11 @@ namespace CAPO {
     double tol;
     int printproc;
     double lambda_stepsize;
+    int lambda_extend_tol;
+    double lambda_max;
+    double lambda_min;
+
+
     bool EnablePeriodicity;
     bool EnableArclength;
 
