@@ -31,11 +31,14 @@
 #include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #include "Tpetra_MpiComm.hpp"
+#include "Tpetra_MpiTraits.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_SerialComm.hpp"
 #endif // TPETRA_MPI
 
+template <typename PacketType, typename OrdinalType>
+int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages);
 template <typename PacketType, typename OrdinalType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
 
@@ -73,6 +76,7 @@ int main(int argc, char* argv[]) {
 	int ierr = 0;
   
 	// call the actual test routines
+	//simpleTest<int, int>(verbose, debug, myImageID, numImages);
 	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
 	ierr += unitTests<double, int>(verbose, debug, myImageID, numImages);
 	ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
@@ -84,6 +88,66 @@ int main(int argc, char* argv[]) {
 #endif
 	if(verbose) outputEndMessage("Comm", (ierr == 0));
 	return(ierr);
+}
+
+//======================================================================
+template <typename PacketType, typename OrdinalType>
+int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages) {
+	// compute which image to send to/from
+	int destImageID = myImageID + 1;
+	int sourceImageID = myImageID -1;
+	bool receiving = (myImageID % 2 != 0);
+	bool sending = (!receiving && destImageID < numImages);
+
+	/*outputData(myImageID, numImages, "sourceImageID=" + Tpetra::toString(sourceImageID));
+	outputData(myImageID, numImages, "destImageID=" + Tpetra::toString(destImageID));
+	std::string sendReceive = "";
+	if(sending)
+		sendReceive += "S=yes ";
+	else
+		sendReceive += "S=no ";
+	if(receiving)
+		sendReceive += "R=yes";
+	else
+		sendReceive += "R=no";
+		outputData(myImageID, numImages, sendReceive);*/
+
+	OrdinalType const numValues = intToOrdinal<OrdinalType>(4); // magic number
+	int const tag = 26001; // another magic number
+#ifdef TPETRA_MPI
+	if(sending) {
+		// initialize values we'll send
+		std::vector<PacketType> myVals(numValues);
+		generateColumn(myVals, myImageID, numValues);
+
+		if(debug) 
+			cout << "[Image " << myImageID << "] sending to IID " << destImageID << ", values = "
+				 << Tpetra::toString(myVals) << endl;
+
+		int ierr = MPI_Send(&myVals[0], numValues, Tpetra::MpiTraits<PacketType>::datatype(), 
+							destImageID, tag, MPI_COMM_WORLD);
+		if(ierr != 0)
+			cerr << "[Image " << myImageID << "] Error in MPI_Send, returned " << ierr << "." << endl;
+	}
+
+	if(receiving) {
+		// initialize expected values, and buffer
+		// for receiving values
+		std::vector<PacketType> received(numValues);
+		std::vector<PacketType> expected(numValues);
+		generateColumn(expected, sourceImageID, numValues);
+
+		MPI_Status status;
+		int ierr = MPI_Recv(&received[0], numValues, Tpetra::MpiTraits<PacketType>::datatype(), 
+							sourceImageID, tag, MPI_COMM_WORLD, &status);
+		if(ierr != 0)
+			cerr << "[Image " << myImageID << "] Error in MPI_Recv, returned " << ierr << "." << endl;
+		if(received != expected || debug)
+			cout << "[Image " << myImageID << "] receiving from IID " << sourceImageID << ", expected = "
+				 << Tpetra::toString(expected) << ", received = " << Tpetra::toString(received) << endl;
+	}
+#endif
+	return(0);
 }
 
 //======================================================================
@@ -253,6 +317,55 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 		if(verbose) cout << "passed" << endl;
 	returnierr += ierr;
 	ierr = 0;
+
+	/*#ifdef TPETRA_MPI
+
+	// test send and receive
+	cout.flush();
+	comm.barrier();
+
+	if(verbose) cout << "Testing send and receive...";
+	// pair up images - image on right sends, image on left receives
+	// if there's an odd number of images, the last one doesn't participate
+	// we'll send the myVals array we've been using in the previous tests
+	int destImageID = myImageID + 1;
+	int sourceImageID = myImageID -1;
+	bool receiving = (myImageID % 2 != 0);
+	bool sending = (!receiving && destImageID < numImages);
+
+
+	if(sending) {
+		if(verbose) cout << endl;
+		if(debug) 
+			cout << "[Image " << myImageID << "] sending to IID " << destImageID << ", myVals = "
+				 << Tpetra::toString(myVals) << endl;
+		comm.send(&myVals.front(), length, destImageID);
+	}
+
+	if(receiving) {
+		generateColumn(expected, sourceImageID, length);
+		if(debug)
+
+		comm.receive(&allVals.front(), length, sourceImageID);
+
+		if(debug) {
+			if(verbose) cout << endl;
+			outputData(myImageID, numImages, "allVals: " + Tpetra::toString(allVals));
+			outputData(myImageID, numImages, "Expected: " + Tpetra::toString(expected));
+			if(verbose) cout << "Send and Receive test ";
+		}
+		if(allVals != expected) {
+			if(verbose) cout << "failed" << endl;
+			ierr++;
+		}
+		else
+			if(verbose) cout << "passed" << endl;
+		returnierr += ierr;
+		ierr = 0;
+	}
+	// Note that only receivers do any checking. Senders & nonparticipants will always pass.
+
+	#endif */
   
 	// ======================================================================
 	// finish up

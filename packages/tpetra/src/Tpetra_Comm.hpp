@@ -37,12 +37,12 @@ namespace Tpetra {
 	/*! The Tpetra Comm class is an interface that encapsulates the general
 	    information and services needed for other Tpetra classes to run on a parallel computer.
 		
-		Comm currently has two default implementations, via SerialComm, for serial execution.
-		(A second default implementation is planned. MpiComm will be for MPI
-		distributed memory execution.)  It is meant to insulate the user from
-		the specifics of communication that are not required for normal
-		manipulation of linear algebra objects.  Most Comm interfaces are similar to MPI
-		interfaces, except that the type of data is not required as an argument since C++ can bind
+		Comm currently has two default implementations, via SerialComm and MpiComm,
+		for both serial execution and MPI distributed memory execution.
+		It is meant to insulate the user from the specifics of communication 
+		that are not required for normal manipulation of linear algebra objects.  
+		Most Comm interfaces are similar to MPI interfaces, except that 
+		the type of data is not required as an argument since C++ can bind
 		to the appropriate interface based on argument typing.
 	*/
 
