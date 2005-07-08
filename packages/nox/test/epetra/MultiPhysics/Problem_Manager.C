@@ -43,6 +43,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "AztecOO_ConditionNumber.h"
 
 #include "Problem_Manager.H"
 #include "GenericEpetraProblem.H"
@@ -757,7 +758,161 @@ void Problem_Manager::copyProblemJacobiansToComposite()
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
   int problemMaxNodes = compositeSoln->GlobalLength();
+  // Loop over each problem being managed and copy its Jacobian into 
+  // the composite diagonal blocks
+  for( ; problemIter != problemLast; problemIter++) {
 
+    int probId = (*problemIter).first;
+
+    // Get the problem, its Jacobian graph and its linear system
+    GenericEpetraProblem & problem = *((*problemIter).second);
+    Epetra_CrsGraph & problemGraph = problem.getGraph();
+    NOX::EpetraNew::LinearSystemAztecOO & problemLinearSystem = 
+      *(*(LinearSystems.find(probId))).second;
+
+    // Get the indices map for copying data from this problem into 
+    // the composite problem
+    Epetra_IntVector & indices = 
+      *(*(ProblemToCompositeIndices.find(probId))).second;
+
+
+    // Each problem's Jacobian will be determined by type 
+    Epetra_CrsMatrix * p_problemMatrix(0);
+
+    // Use each group's operator test to determine the type of Jacobian
+    // operator being used.
+    const Epetra_Operator& jacOp = problemLinearSystem.getJacobianOperator();
+
+    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOp) )
+      p_problemMatrix = const_cast<Epetra_CrsMatrix*>(
+        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
+          (jacOp).getUnderlyingMatrix());
+    else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOp) )
+      // NOTE: We are getting the matrix from the problem.  This SHOULD be
+      // the same matrix wrapped in the group.  A safer alternative would be
+      // to get this matrix from the group as above for a more general 
+      // operator.
+      p_problemMatrix = &(problem.getJacobian());
+    else
+    {
+      if (MyPID==0)
+        cout << "Jacobian operator for Problem not supported for "
+             << "preconditioning Matrix-Free coupling solver." << endl;
+      throw "Problem_Manager ERROR";
+    }
+
+    // Create convenient reference for each Jacobian matrix
+    Epetra_CrsMatrix &problemMatrix = *p_problemMatrix;
+
+
+    // ROGER Block Norm
+    if (1) {
+      cout << "Block=" << probId << "  Inf Norm=" << problemMatrix.NormInf() 
+	   << "  One Norm=" << problemMatrix.NormOne() << endl;
+    }
+
+
+
+    // Temporary storage arrays for extracting/inserting matrix row data
+    int* columnIndices = new int[problemMaxNodes];
+    double* values = new double[problemMaxNodes];
+
+    int problemRow, compositeRow, numCols, numValues;
+    for (int i = 0; i<problemMatrix.NumMyRows(); i++)
+    { 
+      problemRow = problemMatrix.Map().GID(i);
+      problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
+                           numCols, columnIndices);
+      problemMatrix.ExtractGlobalRowCopy(problemRow, problemMaxNodes,
+                           numValues, values);
+      if( numCols != numValues ) {
+        if (MyPID==0)
+          cout << "ERROR: Num Columns != Num Values from problem Matrix !!"
+               << endl;
+        throw "Problem_Manager ERROR";
+      }
+      // Convert row/column indices to composite problem
+      compositeRow = indices[problemRow];
+      for (int j = 0; j<numCols; j++)
+        columnIndices[j] = indices[columnIndices[j]];
+      int ierr = compositeMatrix.ReplaceGlobalValues(compositeRow, 
+                       numValues, values, columnIndices);
+      if( ierr )
+      {
+        if (MyPID==0)
+          cout << "ERROR: compositeMatrix.ReplaceGlobalValues(...)" << endl;
+        throw "Problem_Manager ERROR";
+      }
+    }
+    delete [] values; values = 0;
+    delete [] columnIndices; columnIndices = 0;
+
+    // Sync up processors to be safe
+    Comm->Barrier();
+
+    // Add off-diagonal FD block contributions if waranted
+    if(false) {
+#ifdef HAVE_NOX_EPETRAEXT
+      // Loop over each problem on which this one depends
+      for( unsigned int k = 0; k < problem.depProblems.size(); ++k) {
+        
+        GenericEpetraProblem * p_depProblem = (*(Problems.find(problem.depProblems[k]))).second;
+
+        // Copy the off-block jacobian matrices for this 
+        // problem-problem coupling
+        //  !!! --------  THESE COMMENTS ARE NO LONGER VALID --------------!!!
+        //  *******************************************************************
+        //  *** NOTE: the map used for the off-block graph is the composite Map
+        //  *** to allow valid global indexing.  This also allows us to
+        //  *** simply copy values directly from the off-block matrices to the
+        //  *** composite Jacobian matrix
+        //  *******************************************************************
+        OffBlock_Manager * p_offBlockMgr = ((*(OffBlock_Managers.find(probId))).second)[k];
+	if( !p_offBlockMgr ) {
+          cout << "ERROR: Unable to get OffBlock_Manager for dependence of problem " 
+               << problem.getName() << " on problem " << p_depProblem->getName() 
+               << " !!" << endl;
+          throw "Problem_Manager ERROR";
+        }
+	Epetra_CrsMatrix & offMatrix = p_offBlockMgr->getMatrix();
+
+        int *        blockColIndices; //  = new int[problemMaxNodes];
+        int          numCols = -1;
+        double *     values; //  = new double[problemMaxNodes];
+        int *        compositeColIndices;
+        int          compositeRow;
+
+        // Loop over each row and copy into composite matrix
+        for (int i = 0; i < offMatrix.NumMyRows(); ++i) {
+
+          offMatrix.ExtractMyRowView(i, numCols, values, blockColIndices);
+
+          compositeColIndices = new int[numCols];
+
+          p_offBlockMgr->convertBlockRowIndicesToComposite(1, &i, &compositeRow);
+          p_offBlockMgr->convertBlockColIndicesToComposite(numCols, blockColIndices, compositeColIndices);
+          compositeMatrix.ReplaceMyValues(compositeRow, numCols, values, compositeColIndices);
+        }
+
+        // Sync up processors to be safe
+        Comm->Barrier();
+      }
+#endif
+    }
+  }
+
+  if (0) { // ROGER KEEP
+    //cout << "****** ROGER" << endl;
+    AztecOOConditionNumber acn;
+    acn.initialize(compositeMatrix, AztecOOConditionNumber::GMRES_, 
+		   100, true);
+    acn.computeConditionNumber(100, 1.0e-12);
+    cout << "Composite Condition Number of Diagonal Blocks = " << 
+      acn.getConditionNumber() << endl;
+    //compositeMatrix.Print(cout);
+  }
+
+  problemIter = Problems.begin();
   // Loop over each problem being managed and copy its Jacobian into 
   // the composite diagonal blocks
   for( ; problemIter != problemLast; problemIter++) {
@@ -805,10 +960,12 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     Epetra_CrsMatrix &problemMatrix = *p_problemMatrix;
 
     // Temporary storage arrays for extracting/inserting matrix row data
+    /*
     int* columnIndices = new int[problemMaxNodes];
     double* values = new double[problemMaxNodes];
 
     int problemRow, compositeRow, numCols, numValues;
+    
     for (int i = 0; i<problemMatrix.NumMyRows(); i++)
     { 
       problemRow = problemMatrix.Map().GID(i);
@@ -835,11 +992,14 @@ void Problem_Manager::copyProblemJacobiansToComposite()
         throw "Problem_Manager ERROR";
       }
     }
+    
     delete [] values; values = 0;
     delete [] columnIndices; columnIndices = 0;
-
+    */
     // Sync up processors to be safe
     Comm->Barrier();
+
+    cout << "****ROGER*****" << endl;
 
     // Add off-diagonal FD block contributions if waranted
     if( doOffBlocks ) {
@@ -867,6 +1027,17 @@ void Problem_Manager::copyProblemJacobiansToComposite()
         }
 	Epetra_CrsMatrix & offMatrix = p_offBlockMgr->getMatrix();
 
+
+
+	// ROGER Block Norm
+	if (1) {
+	  cout << "Block=" << probId << "  col=" << k << "  Inf Norm=" 
+	       << offMatrix.NormInf() 
+	       << "  One Norm=" << offMatrix.NormOne() << endl;
+	}
+
+
+
         int *        blockColIndices; //  = new int[problemMaxNodes];
         int          numCols = -1;
         double *     values; //  = new double[problemMaxNodes];
@@ -892,6 +1063,16 @@ void Problem_Manager::copyProblemJacobiansToComposite()
       }
 #endif
     }
+  }
+  if (0) {  // ROGER KEEP
+    //cout << "****** ROGER" << endl;
+    AztecOOConditionNumber acn;
+    acn.initialize(compositeMatrix, AztecOOConditionNumber::GMRES_, 
+		   100, true);
+    acn.computeConditionNumber(100, 1.0e-12);
+    cout << "Composite Condition Number of All Blocks = " << 
+      acn.getConditionNumber() << endl;
+    //compositeMatrix.Print(cout);
   }
 #ifdef DEBUG_PROBLEM_MANAGER
     compositeMatrix.Print(cout);
@@ -957,9 +1138,22 @@ bool Problem_Manager::solve()
   int iter = 0;
   NOX::StatusTest::StatusType status;
 
+  // RPP: Inner status test
+  NOX::StatusTest::NormF absresid(1.0e-10);
+  NOX::StatusTest::NormUpdate update(1.0e-5);
+  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
+  converged.addStatusTest(absresid);
+  converged.addStatusTest(update);
+  NOX::StatusTest::MaxIters maxiters(100);
+  NOX::StatusTest::FiniteValue finiteValue;
+  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
+  combo.addStatusTest(converged);
+  combo.addStatusTest(maxiters);
+  combo.addStatusTest(finiteValue);
+
 //  while( normSum > 2.e-0 ) // Hard-coded convergence criterion for now.
   int nlIter = 0; 
-  while( nlIter < 5 ) // Hard-coded convergence criterion for now.
+  while( nlIter < 2000 && normSum > 1.0e-8 ) // Hard-coded convergence criterion for now.
   {
     iter++;
 
@@ -975,11 +1169,12 @@ bool Problem_Manager::solve()
       NOX::Solver::Manager &problemSolver = *(*(Solvers.find(probId))).second;
     
       // Sync all dependent data with this problem 
-      problem.doTransfer();
+      //problem.doTransfer();
       // Sync the problem solution with its solver group
       setGroupX(probId);
       // Reset the solver for this problem and solve
-      problemSolver.reset(problemGroup, *statusTest, *nlParams);
+      //problemSolver.reset(problemGroup, *statusTest, *nlParams);
+      problemSolver.reset(problemGroup, combo, *nlParams);
       status = problemSolver.solve();
       if( status != NOX::StatusTest::Converged )
       { 
@@ -1001,6 +1196,11 @@ bool Problem_Manager::solve()
          << normSum << endl;
 
     nlIter++;
+  }
+
+  if (normSum > 1.0e-8) {
+    cout << "Error: composite problem failed to converge! Terminating run." << endl;
+    exit(0);
   }
   
   cout << "\nDecoupled solution required --> " << iter << " iterations.\n" 
@@ -1076,13 +1276,14 @@ bool Problem_Manager::solveMF()
   A = new Epetra_CrsMatrix(Copy, *AA); 
   A->FillComplete();
 
-  //NOX::EpetraNew::Interface::Required& reqInt = 
-  //  dynamic_cast<NOX::EpetraNew::Interface::Required&>(interface);
+  NOX::EpetraNew::Interface::Required& reqInt = 
+    dynamic_cast<NOX::EpetraNew::Interface::Required&>(interface);
   NOX::Epetra::Vector nox_soln(*compositeSoln);
 
   // Create the Matrix-Free Jacobian Operator
-  NOX::EpetraNew::MatrixFree Jac(interface, *compositeSoln);
-  NOX::EpetraNew::Interface::Jacobian& jacInt = Jac;
+  //NOX::EpetraNew::MatrixFree Jac(interface, *compositeSoln);
+  //NOX::EpetraNew::Interface::Jacobian& jacInt = Jac;
+  NOX::EpetraNew::Interface::Jacobian& jacInt = interface;
 
   NOX::EpetraNew::Interface::Preconditioner& precInt = 
     dynamic_cast<NOX::EpetraNew::Interface::Preconditioner&>(interface);
@@ -1093,8 +1294,9 @@ bool Problem_Manager::solveMF()
   NOX::EpetraNew::LinearSystemAztecOO composite_linearSystem(
     nlParams->sublist("Printing"),
     lsParams,
-    jacInt, Jac,
-    precInt, *A,
+    //jacInt, Jac,
+    reqInt, jacInt, *A,
+    //precInt, *A,
     *compositeSoln);
 
   //lsParams.setParameter("Preconditioning", "None");

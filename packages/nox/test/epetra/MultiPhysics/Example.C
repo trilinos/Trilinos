@@ -83,6 +83,10 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
+#ifdef HAVE_NOX_ML_EPETRA
+#include "Teuchos_ParameterList.hpp"
+#endif
+
 // Headers needed for FD coloring 
 #include <vector> 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
@@ -205,8 +209,9 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 50);    
   //lsParams.setParameter("Preconditioning", "None");   
-//  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
-  lsParams.setParameter("Preconditioner", "AztecOO");
+  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
+  //lsParams.setParameter("Preconditioner", "AztecOO");   
+  //lsParams.setParameter("Preconditioner", "Ifpack");
   //lsParams.setParameter("Graph Fill", 2);
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
@@ -219,6 +224,37 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
   //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
   //lsParams.setParameter("Polynomial Order", 6); 
+#ifdef HAVE_NOX_ML_EPETRA
+  
+  lsParams.setParameter("Preconditioner", "ML");
+  Teuchos::ParameterList MLList;
+  if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
+    // This Teuchos parameter list is needed for ML
+  
+    // These specifications come straight from the example in 
+    // Trilinos/packages/ml/example/ml_example_epetra_preconditioner.cpp
+  
+    // set defaults for classic smoothed aggregation
+    ML_Epetra::SetDefaults("SA",MLList);
+    // maximum number of levels
+    MLList.set("max levels",5);
+    MLList.set("increasing or decreasing","decreasing");
+    // use Uncoupled scheme to create the aggregate,
+    // from level 3 use the better but more expensive MIS
+    MLList.set("aggregation: type", "Uncoupled");
+    MLList.set("aggregation: type (level 3)", "MIS");
+    // smoother is Gauss-Seidel. Example file
+    // ml_example_epetra_preconditioner_2level.cpp shows how to use
+    // AZTEC's preconditioners as smoothers
+    MLList.set("smoother: type","Gauss-Seidel");
+    // use both pre and post smoothing
+    MLList.set("smoother: pre or post", "both");
+    // solve with serial direct solver KLU
+    MLList.set("coarse: type","Jacobi");
+  
+    lsParams.setParameter("ML Teuchos Parameter List", &MLList);
+  }
+#endif
 
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 
@@ -228,13 +264,16 @@ int main(int argc, char *argv[])
   NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
   converged.addStatusTest(absresid);
   converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(25);
+  NOX::StatusTest::MaxIters maxiters(100);
+  NOX::StatusTest::FiniteValue finiteValue;
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);
+  combo.addStatusTest(finiteValue);
 
   // Make this explicit
   bool doOffBlocks = true;
+  //bool doOffBlocks = false;
 
   // Create the Problem Manager
   Problem_Manager problemManager(Comm, doOffBlocks);
@@ -244,7 +283,7 @@ int main(int argc, char *argv[])
   problemManager.registerParameters(nlParams);
   problemManager.registerStatusTest(combo);
 
-  bool doBrusselator = true; // Hard-coded for now
+  bool doBrusselator = false; // Hard-coded for now
 
   // Allow one of two supported tests
   if( doBrusselator ) {
@@ -326,7 +365,7 @@ int main(int argc, char *argv[])
       cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
     
       // Solve decoupled
-  //    problemManager.solve(); // Need a status test check here ....
+      //problemManager.solve(); // Need a status test check here ....
       // .... OR solve using matrix-free
       problemManager.solveMF(); // Need a status test check here ....
     
@@ -372,7 +411,7 @@ int main(int argc, char *argv[])
 		    ActEnergy_T, // Dummy for Temp Eq.
 		    SrcTermExponent_T,
 		    SrcTermWeight_T,
-		    5*NumGlobalNodes, nameT);
+		    1*NumGlobalNodes, nameT);
 
     HMX_TempEq.setTempFieldName(HMX_TempEq.getName());
 
@@ -384,7 +423,9 @@ int main(int argc, char *argv[])
 
     string nameA 		= "SpeciesA";
     double diffCoef_A 		= 0.0 ;
-    double stericCoef_A		= 0.0 ;
+    //double stericCoef_A		= 0.0 ;
+    double stericCoef_A		= 2.0 ; // ROGER: high coupling
+    //double stericCoef_A		= 2.0 ; // ROGER: high coupling
     double preExp_A 		= exp(48.7) ;
     double actEnergy_A 		= 52700.0 ;
     map<string, double> SrcTermExponent_A; 
@@ -400,7 +441,7 @@ int main(int argc, char *argv[])
                   actEnergy_A,
                   SrcTermExponent_A,
                   SrcTermWeight_A,
-                  3*NumGlobalNodes, nameA);
+                  1*NumGlobalNodes, nameA);
 
     HMX_RxnA.setTempFieldName(HMX_TempEq.getName());
 
@@ -412,7 +453,8 @@ int main(int argc, char *argv[])
 
     string nameB 		= "SpeciesB";
     double diffCoef_B 		= 0.0 ;
-    double stericCoef_B		= 0.0 ;
+    double stericCoef_B		= 1.0 ;
+    //double stericCoef_B		= -1.0 ;
     double preExp_B 		= exp(37.5) ;
     double actEnergy_B 		= 44100.0 ;
     map<string, double> SrcTermExponent_B; 
@@ -458,7 +500,7 @@ int main(int argc, char *argv[])
                   actEnergy_C,
                   SrcTermExponent_C,
                   SrcTermWeight_C,
-                  2*NumGlobalNodes, nameC);
+                  1*NumGlobalNodes, nameC);
 
     HMX_RxnC.setTempFieldName(HMX_TempEq.getName());
 
@@ -487,7 +529,8 @@ int main(int argc, char *argv[])
     int maxTimeSteps = 5;
     int timeStep = 0;
     double time = 0.;
-    double dt = HMX_TempEq.getdt();
+    //double dt = HMX_TempEq.getdt();
+    double dt = 10.0 * HMX_TempEq.getdt();
     
     // Print initial solution
     char file_name[25];
@@ -511,7 +554,7 @@ int main(int argc, char *argv[])
       cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
     
       // Solve decoupled
-//      problemManager.solve(); // Need a status test check here ....
+      //problemManager.solve(); // Need a status test check here ....
       // .... OR solve using matrix-free
       problemManager.solveMF(); // Need a status test check here ....
     

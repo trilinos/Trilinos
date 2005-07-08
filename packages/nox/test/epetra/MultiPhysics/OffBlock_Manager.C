@@ -413,13 +413,14 @@ Epetra_CrsGraph & OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGrap
     if( numCols > 0 )
     {
       int blockLocalRow = rowCompositeToBlock[ globalGraph.GRID( lRow ) ];
-      int newIndices[numCols];
+      vector<int> newIndices;
+      newIndices.resize(numCols);
       for( int col = 0; col < numCols; ++col )
       {
         newIndices[col] = colCompositeToBlock[ globalGraph.GCID( indices[col]  ) ];
       }
 
-      blockGraph->InsertMyIndices( blockLocalRow, numCols, newIndices );
+      blockGraph->InsertMyIndices( blockLocalRow, numCols, &(newIndices[0]) );
 
     }
     DEBUG_BLOCKGRAPH( cout << endl;)
