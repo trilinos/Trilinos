@@ -276,38 +276,38 @@ MAINTAINERCLEANFILES = Makefile.in
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
 if HAVE_IFPACK_AZTECOO
-HAVE_IFPACK_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; make all-libs
+HAVE_IFPACK_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
 else
 HAVE_IFPACK_AZTECOO_LIBS =
 endif
 
 if HAVE_IFPACK_TRIUTILS
-HAVE_IFPACK_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; make all-libs
+HAVE_IFPACK_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs
 else
 HAVE_IFPACK_TRIUTILS_LIBS =
 endif
 
 if HAVE_IFPACK_TEUCHOS
-HAVE_IFPACK_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; make all-libs
+HAVE_IFPACK_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
 else
 HAVE_IFPACK_TEUCHOS_LIBS =
 endif
 
 if HAVE_IFPACK_AMESOS
-HAVE_IFPACK_AMESOS_LIBS = cd $(top_builddir)/../amesos ; make all-libs
+HAVE_IFPACK_AMESOS_LIBS = cd $(top_builddir)/../amesos ; $(MAKE) all-libs
 else
 HAVE_IFPACK_AMESOS_LIBS =
 endif
 
 if HAVE_IFPACK_EPETRAEXT
-HAVE_IFPACK_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; make all-libs
+HAVE_IFPACK_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; $(MAKE) all-libs
 else
 HAVE_IFPACK_EPETRAEXT_LIBS =
 endif
 
 all-libs:
 	$(MAKE) libifpack.a
-	cd $(top_builddir)/../epetra ; make all-libs
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
 	$(HAVE_IFPACK_AZTECOO_LIBS)
 	$(HAVE_IFPACK_TRIUTILS_LIBS)
 	$(HAVE_IFPACK_TEUCHOS_LIBS)
