@@ -41,12 +41,12 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 			  # this is an automated test or not
     # file2 is the log that is created and put into a results email if 
     # errors occur.
-    set file2 = ../../../../logMpiErrors.txt
+    set file2 = ../logMpiErrors.txt
     rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
     #'file' is a shorter log that is retained even if all tests pass.
-    set file = ../../../../log`eval uname`.txt
+    set file = ../log`eval uname`.txt
     rm -f $file
 ## IMPORTANT: Specify the script owner(s) on the following line
 ## For one owner type "owner@abc.com", for multiple owners
@@ -57,7 +57,6 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     echo "Package being tested: ML  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
 else
-    #cd ../../../
     set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
     rm -f $file
 endif
@@ -138,10 +137,20 @@ else
 endif
 /bin/rm -f fakefile.exe
 
+# copy Summary file and Error file to standard out
+if ( "$3" == "True" ) then
+    echo "@#@#@#@#  Summary file @#@#@#@#@"
+    cat $file
+    if( "$AnError" == "True" ) then
+	echo "@#@#@#@# Error file @#@#@#@#@"
+	cat $file2
+    endif
+endif
+
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
 if ( "$2" == "True" ) then
-    rm $file1
+    rm $file
     rm -f $file2
 endif
 
