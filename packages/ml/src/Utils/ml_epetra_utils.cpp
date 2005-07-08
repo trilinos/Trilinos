@@ -70,7 +70,10 @@ int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int
      CrsA->OptimizeStorage();
 /*   These are commented out for now until we get an epetra call to 
      return the data pointer arrays. If you want to use these, uncomment
-     this code and stick the following in Epetra_CrsMatrix.h:
+     this code line 
+        ExtractCrsDataPointers(*rowptr, *cols, *values);
+
+     and stick the following in Epetra_CrsMatrix.h:
 
   int ExtractCrsDataPointers(int *& IndexOffset, int *& Indices, double *& Values) const {
     if (StorageOptimized()) {
