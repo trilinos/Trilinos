@@ -232,6 +232,18 @@ void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany)
   }
 
   printf("Num_Geom: %d\n", rib->Num_Geom);
+
+  if (rib->Skip_Dimensions > 0){
+    printf("Degenerate geometry:\n");
+    printf("  skip number of dimensions: %d, transformation:\n",rib->Skip_Dimensions);
+    for (i=0; i<3; i++){
+      printf("    %lf %lf %lf\n", rib->Transformation[i][0],
+             rib->Transformation[i][1], rib->Transformation[i][2]);
+    }
+  }
+  else{
+    printf("Don't skip dimensions, no degenerate geometry.\n");
+  }
 }
 
 

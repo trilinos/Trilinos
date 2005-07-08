@@ -256,7 +256,18 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
   else{
     printf("Box: NULL\n");
   }
- 
+
+  if (rcb->Skip_Dimensions > 0){
+    printf("Degenerate geometry:\n");
+    printf("  skip number of dimensions: %d, transformation:\n",rcb->Skip_Dimensions);
+    for (i=0; i<3; i++){
+      printf("    %lf %lf %lf\n", rcb->Transformation[i][0],
+             rcb->Transformation[i][1], rcb->Transformation[i][2]);
+    }
+  }
+  else{
+    printf("Don't skip dimensions, no degenerate geometry.\n");
+  }
 }
 
 #ifdef __cplusplus
