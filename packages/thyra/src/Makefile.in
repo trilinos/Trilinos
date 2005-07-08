@@ -924,7 +924,7 @@ include $(top_builddir)/Makefile.export.thyra
 # ------------------------------------------------------------------------
 all-libs:
 	$(MAKE) libthyra.a
-	cd $(top_builddir)/../teuchos ; make all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

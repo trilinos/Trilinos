@@ -180,7 +180,7 @@ MAINTAINERCLEANFILES = Makefile.in
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
 if BUILD_IFPACK
-BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; make all-libs
+BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
 else
 BUILD_IFPACK_LIBS =
 endif
@@ -188,15 +188,15 @@ endif
 # RPP: Commenting out TSFCore support since it is depricated and the 
 # doesn't have the new export makefile system installed.
 ##if BUILD_TSFCORE_EPETRA
-##BUILD_TSFCORE_EPETRA_LIBS = cd $(top_builddir)/../tsfcore ; make all-libs
+##BUILD_TSFCORE_EPETRA_LIBS = cd $(top_builddir)/../tsfcore ; $(MAKE) all-libs
 ##else
 ##BUILD_TSFCORE_EPETRA_LIBS =
 ##endif
 
 all-libs:
 	$(MAKE) libbelos.a
-	cd $(top_builddir)/../epetra ; make all-libs
-	cd $(top_builddir)/../triutils ; make all-libs
-	cd $(top_builddir)/../teuchos ; make all-libs
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
 	$(BUILD_IFPACK_LIBS)
 #	$(BUILD_TSFCORE_EPETRA_LIBS)

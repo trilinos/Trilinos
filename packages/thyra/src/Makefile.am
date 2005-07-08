@@ -332,4 +332,4 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 all-libs:
 	$(MAKE) libthyra.a
-	cd $(top_builddir)/../teuchos ; make all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs

@@ -238,7 +238,7 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 all-libs:
 	$(MAKE) libtriutils.a
-	cd $(top_builddir)/../epetra ; make all-libs
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
 
 
 

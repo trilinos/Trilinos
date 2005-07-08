@@ -1341,7 +1341,7 @@ include $(top_builddir)/Makefile.export.triutils
 # ------------------------------------------------------------------------
 all-libs:
 	$(MAKE) libtriutils.a
-	cd $(top_builddir)/../epetra ; make all-libs
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

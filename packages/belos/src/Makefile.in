@@ -357,7 +357,7 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
-@BUILD_IFPACK_TRUE@BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; make all-libs
+@BUILD_IFPACK_TRUE@BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
 all: Belos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -699,9 +699,9 @@ include $(top_builddir)/Makefile.export.belos
 
 all-libs:
 	$(MAKE) libbelos.a
-	cd $(top_builddir)/../epetra ; make all-libs
-	cd $(top_builddir)/../triutils ; make all-libs
-	cd $(top_builddir)/../teuchos ; make all-libs
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
 	$(BUILD_IFPACK_LIBS)
 #	$(BUILD_TSFCORE_EPETRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

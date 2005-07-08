@@ -333,13 +333,13 @@ MAINTAINERCLEANFILES = Makefile.in
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
 if HAVE_AZTECOO_TEUCHOS
-HAVE_AZTECOO_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; make all-libs 
+HAVE_AZTECOO_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
 else
 HAVE_AZTECOO_TEUCHOS_LIBS = 
 endif
 
 all-libs:
 	$(MAKE) libaztecoo.a
-	cd $(top_builddir)/../epetra ; make all-libs
-	cd $(top_builddir)/../triutils ; make all-libs
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
 	$(HAVE_AZTECOO_TEUCHOS_LIBS)
