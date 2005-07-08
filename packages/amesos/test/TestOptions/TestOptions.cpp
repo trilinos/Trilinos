@@ -303,7 +303,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   for ( int iterTrans =0 ; iterTrans < 1; iterTrans++ ) {
     bool transpose = iterTrans == 1 ; 
     
-    for ( int iterDist =0 ; iterDist < iterDistMax; iterDist++ ) {
+    for ( int iterDist =1 ; iterDist < iterDistMax; iterDist++ ) {
       bool distribute = ( iterDist == 1 ); 
 	
       //
@@ -316,7 +316,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		//  On a serial matrix, eliminate a column from the map makes the matrix singular
 		//  If the row and column indices don't match, eliminating a column from the map is, typically, irrelevant
 		if ( ( iterColindex == 0 && distribute ) || iterDiagonalOpts == 0 ) { 
-		  for ( int EpetraMatrixType = 0 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
+		  for ( int EpetraMatrixType = 1 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
 		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
 				     " filename = " << filename <<
 				     " distribute = " << distribute <<
@@ -470,12 +470,15 @@ int NextMain( int argc, char *argv[] ) {
   Epetra_SerialComm Comm;
 #endif
 
+#ifdef HAVE_AMESOS_KLU
+  AmesosClasses.push_back( "Amesos_Klu" );
+#endif
 
+#if 0
 #ifdef HAVE_AMESOS_TAUCS
   AmesosClasses.push_back( "Amesos_Taucs" );
 #endif
 
-#if 1
 #ifdef HAVE_AMESOS_SUPERLU
   AmesosClasses.push_back( "Amesos_Superlu" );
 #endif
@@ -494,10 +497,6 @@ int NextMain( int argc, char *argv[] ) {
 
 #ifdef HAVE_AMESOS_SCALAPACK
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
-#endif
-
-#ifdef HAVE_AMESOS_KLU
-  AmesosClasses.push_back( "Amesos_Klu" );
 #endif
 
 #ifdef HAVE_AMESOS_PARDISO

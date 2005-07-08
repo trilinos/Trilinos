@@ -173,7 +173,7 @@ private:
   //@{ \name Utility methods
 
   /*
-  ConvertToSerial - Convert matrix to a serial Epetra_CrsMatrix
+  CreateLocalMatrixAndExporters - Prepare to convert matrix and vectors to serial 
     Preconditions:
       Problem_ must be set 
       SerialMap and SerialCrsMatrix must either be 0 or be pointers to 
@@ -181,15 +181,28 @@ private:
 	will be deleted (and possibly recreated).  
 	
     Postconditions:
-      IsLocal is set to 1 if the input matrix is entirely stored on process 0
-      SerialMap points to a serial map if IsLocal==1
-      SerialCrsMatrix contains a serial version of the matrix A if IsLocal==1
+      UseDataInPlace_ is set to 1 if the input matrix can be used in place, i.e.
+        1)  is entirely stored on process 0
+        2)  is storage optimized
+        3)  AddToDiag_ is not set
+      SerialMap points to a serial map if UseDataInPlace_==1
+      SerialCrsMatrix contains a serial version of the matrix A if UseDataInPlace_==1
       SerialMatrix points to a serial copy of the matrix
       NumGlobalElements_   is set to the number of rows in the matrix
       numentries_ is set to the number of non-zeroes in the matrix 
    */
-  int ConvertToSerial();
-
+  int CreateLocalMatrixAndExporters() ;
+  /*
+    ExportToSerial
+    Preconditions:
+       UseDataInPlace_ must be set
+       ImportToSerial and SerialCrsMatrixA_ must be set if UseDataInPlace_ != 1
+       AddToDiag_ 
+    Postconditions
+       SerialMatrix_ points to a serial version of the matrix
+         With AddToDiag_ added to the diagonal if AddToDiag_ is non-zero 
+   */
+  int ExportToSerial() ;
   /*
     ConvertToKluCRS - Convert matrix to form expected by Klu: Ai, Ap, Aval
     Preconditions:
@@ -203,7 +216,7 @@ private:
   /*
     PerformSymbolicFactorization - Call Klu to perform symbolic factorization
     Preconditions:
-      IsLocal must be set to 1 if the input matrix is entirely stored on process 0
+      UseDataInPlace_ must be set to 1 if the input matrix is entirely stored on process 0
       Ap, Ai and Aval are a compressed row storage version of the input matrix A.
     Postconditions:
       Symbolic points to an KLU internal opaque object containing the
@@ -217,7 +230,7 @@ private:
   /*
     PerformNumericFactorization - Call Klu to perform numeric factorization
     Preconditions:
-      IsLocal must be set 
+      UseDataInPlace_ must be set 
       Ap, Ai and Aval are a compressed row storage version of the input matrix A.
       Symbolic must be set
     Postconditions:
@@ -247,15 +260,17 @@ private:
   //! Number of processes in computation.
   int NumProcs_;
   //! 1 if Problem_->GetOperator() is stored entirely on process 0
-  int IsLocal_;
+  int UseDataInPlace_;
   //! Number of non-zero entries in Problem_->GetOperator()
   int numentries_;
   //! Number of rows and columns in the Problem_->GetOperator()
   int NumGlobalElements_;
 
-  //! Points to a Serial Map (unused if IsLocal == 1 )
+  //! Operator converted to a RowMatrix
+  Epetra_RowMatrix *RowMatrixA_;
+  //! Points to a Serial Map (unused if UseDataInPlace_ == 1 )
   Epetra_Map *SerialMap_;
-  //! Points to a Serial Copy of A (unused if IsLocal==1)
+  //! Points to a Serial Copy of A (unused if UseDataInPlace_==1)
   Epetra_CrsMatrix *SerialCrsMatrixA_;
   //! Points to a Serial Copy of A 
   Epetra_RowMatrix *SerialMatrix_ ; 

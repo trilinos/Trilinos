@@ -38,7 +38,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 2 );
+    else ParamList.set( "OutputLevel", 1 );
       
     double relerror;
     double relresidual;
@@ -88,7 +88,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 2 );
+    else ParamList.set( "OutputLevel", 1 );
       
     double relerror;
     double relresidual;
@@ -140,7 +140,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 2 );
+    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "Refactorize", true );
       
     double relerror;
@@ -190,7 +190,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 2 );
+    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "Refactorize", true );
     ParamList.set( "AddToDiag", 1e-2 );
       
@@ -244,7 +244,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 2 );
+    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "ScaleMethod", 1 );
       
     double relerror;
@@ -296,7 +296,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 2 );
+    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "ComputeTrueResidual", true );
     //    Teuchos::ParameterList& KluParams = ParamList.sublist("Klu") ;
     //    KluParams.set( "grid_mb", 3 );

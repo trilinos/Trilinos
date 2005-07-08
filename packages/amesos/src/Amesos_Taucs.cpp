@@ -256,7 +256,7 @@ bool Amesos_Taucs::MatrixShapeOK() const
 //=============================================================================
 int Amesos_Taucs::SymbolicFactorization() 
 {
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering SymbolicFactorization()" << endl ; 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering SymbolicFactorization()" << endl ; 
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
@@ -293,14 +293,14 @@ int Amesos_Taucs::SymbolicFactorization()
 
   IsSymbolicFactorizationOK_ = true;
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving SymbolicFactorization()" << endl ; 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " iam= " << iam  << " Leaving SymbolicFactorization()" << endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::NumericFactorization() 
 {
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
   IsNumericFactorizationOK_ = false;
 
   if (IsSymbolicFactorizationOK_ == false)
@@ -316,14 +316,14 @@ int Amesos_Taucs::NumericFactorization()
 
   IsNumericFactorizationOK_ = true;
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving NumericFactorization()" << endl ; 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " iam= " << iam  << " Leaving NumericFactorization()" << endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::Solve() 
 {
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering Solve()" << endl ; 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " iam= " << iam  << " Entering Solve()" << endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
 
@@ -402,7 +402,7 @@ int Amesos_Taucs::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*X, *B, "Amesos_Taucs");
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving Solve()" << endl ; 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " iam= " << iam  << " Leaving Solve()" << endl ; 
   return(0) ;
 }
 
