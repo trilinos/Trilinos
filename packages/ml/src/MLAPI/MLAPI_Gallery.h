@@ -9,7 +9,7 @@
 
 namespace Teuchos {
   class ParameterList;
-};
+}
 
 namespace MLAPI {
 
