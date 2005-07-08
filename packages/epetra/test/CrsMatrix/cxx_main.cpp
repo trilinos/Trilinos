@@ -172,13 +172,21 @@ int main(int argc, char *argv[])
   }
   EPETRA_TEST_ERR(forierr,ierr);
 
+  int * indexOffsetTmp;
+  int * indicesTmp;
+  double * valuesTmp;
   // Finish up
   EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
+  EPETRA_TEST_ERR(!(A.ExtractCrsDataPointers(indexOffsetTmp, indicesTmp, valuesTmp)==-1),ierr);  // Should fail
   EPETRA_TEST_ERR(!(A.FillComplete()==0),ierr);
+  EPETRA_TEST_ERR(!(A.ExtractCrsDataPointers(indexOffsetTmp, indicesTmp, valuesTmp)==-1),ierr);  // Should fail
   EPETRA_TEST_ERR(!(A.IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR(A.StorageOptimized(),ierr);
   A.OptimizeStorage();
   EPETRA_TEST_ERR(!(A.StorageOptimized()),ierr);
+  EPETRA_TEST_ERR(!(A.ExtractCrsDataPointers(indexOffsetTmp, indicesTmp, valuesTmp)==0),ierr);  // Should succeed
+  const Epetra_CrsGraph & GofA = A.Graph();
+  EPETRA_TEST_ERR((indicesTmp!=GofA[0] || valuesTmp!=A[0]),ierr); // Extra check to see if operator[] is consistent
   EPETRA_TEST_ERR(A.UpperTriangular(),ierr);
   EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
 	

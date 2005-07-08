@@ -995,6 +995,32 @@ or if the number of entries in this row exceed the Length parameter.
 	  else return Values_[Loc];}
   //@}
 	
+  //@{ \name Expert-only methods:  These methods are intended for experts only and have some risk of changing in the future, since they rely on underlying data structure assumptions.
+  //! Returns internal data pointers associated with Crs matrix format.
+  /*! Returns data pointers to facilitate optimized code within external packages.
+ 
+    \param IndexOffset - (Out) Extracted array of indices into Values[] and Indices[]. Local
+                          row k is stored in Values[IndexOffset[k]:IndexOffset[k+1]-1] and
+                          Indices[IndexOffset[k]:IndexOffset[k+1]-1].
+    \param Values - (Out) Extracted values for all local rows.
+    \param Indices - (Out) Extracted local column indices for the corresponding values.
+
+    \return Integer error code, set to 0 if successful. Returns -1 if FillComplete has not been
+                performed or Storage has not been Optimized.
+
+    \warning This method is intended for expert only, its use may require user code modifications in future versions of Epetra.
+  */ 
+	int ExtractCrsDataPointers(int *& IndexOffset, int *& Indices, double *& Values) const {
+	  if (StorageOptimized()) { 
+	    IndexOffset = Graph().IndexOffset();
+	    Indices = Graph().All_Indices();
+	    Values  = All_Values(); 
+	    return (0);
+	  } 
+	  else { IndexOffset = 0; Indices = 0; Values  = 0; return (-1);} }
+	
+  //@}
+	
   //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
 	
 	//! Use ColMap() instead. 
