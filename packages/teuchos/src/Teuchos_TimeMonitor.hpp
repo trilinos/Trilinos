@@ -40,6 +40,7 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Array.hpp"
+#include <iostream>
 
 #define TEUCHOS_TIMER(funcName, strName) \
 static Teuchos::Time& funcName()       \
@@ -76,7 +77,7 @@ namespace Teuchos
 
       /** \brief Print summary statistics for a group of timers. Timings are gathered from all processors */
       /** \note This method <b>must</b> be called by all processors */
-      static void summarize();
+      static void summarize(ostream &out=std::cout);
 
       /** \brief Create a new timer with the given name, and append it to the list of
        * timers to be used */
