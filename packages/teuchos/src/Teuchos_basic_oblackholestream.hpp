@@ -38,7 +38,7 @@ namespace Teuchos {
  * Use the class anytime you must pass an <tt>basic_ostream<></tt> object
  * but don't want the output for any reason.
  *
- * This subclass just sets the stream buffer to 
+ * This subclass just sets the stream buffer to NULL and that is all you need to do!
  */
 //@{
 template<typename _CharT, typename _Traits>
