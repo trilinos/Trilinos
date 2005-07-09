@@ -58,13 +58,13 @@ namespace Tpetra {
 		//! Constructor (MPI)
 		OmniPlatform(MPI_Comm Comm)
 			: Object("Tpetra::OmniPlatform(MPI)")
-			, myImageID_(-99)
-			, numImages_(-99)
+			, myImageID_(-99) // dummy value, real initialization in ctr body
+			, numImages_(-99) // dummy value, real initialization in ctr body
 			, MpiData_()
 		{
 			MpiData_ = Teuchos::rcp(new MpiData(Comm));
-			MPI_Comm_size(MPI_COMM_WORLD, &numImages_);
-			MPI_Comm_rank(MPI_COMM_WORLD, &myImageID_);
+			myImageID_ = MpiData_->getMyImageID();
+			numImages_ = MpiData_->getNumImages();
 		}
 #endif
 
