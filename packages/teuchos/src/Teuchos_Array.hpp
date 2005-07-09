@@ -147,7 +147,7 @@ namespace Teuchos
   // print in form (), (1), or (1,2)
   template<class T> inline ostream& operator<<(ostream& os, const Array<T>& array)
   {
-    return os << toString(array);
+    return os << Teuchos::toString(array);
   }
 
   template<class T> inline int hashCode(const Array<T>& array)
@@ -162,16 +162,17 @@ namespace Teuchos
 
   template<class T> inline std::string Array<T>::toString() const
   {
-    std::string rtn = "{";
+    ostringstream ss;
+    ss << "{";
 
     for (int i=0; i<length(); i++)
       {
-        rtn += Teuchos::toString(operator[](i));
-        if (i<length()-1) rtn += ", ";
+        ss << operator[](i);
+        if (i<length()-1) ss << ", ";
       }
-    rtn += "}";
+    ss << "}";
 
-    return rtn;
+    return ss.str();
   }
 
   template<class T> inline std::string toString(const Array<T>& array)
