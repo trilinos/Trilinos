@@ -66,10 +66,10 @@ namespace Tpetra {
 		MpiComm(MPI_Comm Comm) 
 			: Object("Tpetra::MpiComm") 
 			, MpiData_()
-			, tag_(-1)
+			, tag_(26050)
 		{
 			MpiData_ = Teuchos::rcp(new MpiData(Comm));
-			tag_ = data().getMpiTag();
+			//tag_ = data().getMpiTag();
 		};
 
 		//! platform constructor
@@ -81,18 +81,18 @@ namespace Tpetra {
 		MpiComm(Teuchos::RefCountPtr<MpiData> const& mpidata)
 			: Object("Tpetra::MpiComm")
 			, MpiData_(mpidata)
-			, tag_(-1)
+			, tag_(26050)
 		{
-			tag_ = data().getMpiTag();
+			//tag_ = data().getMpiTag();
 		};
 
 		//! copy constructor
 		MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
 			: Object(comm.label())
 			, MpiData_(comm.MpiData_)
-			, tag_(-1)
+			, tag_(26050)
 		{
-			tag_ = data().getMpiTag();
+			//tag_ = data().getMpiTag();
 		};
 
 		~MpiComm() {};
@@ -207,6 +207,18 @@ namespace Tpetra {
 					 MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
 		};
 		//@}
+
+		//@{ \name Reduce and Scatter Methods
+		//! MpiComm sumAllAndScatter function.
+		/*! Takes a list of input values from all images in the communicator, computes a global sum,
+		    and then distributes the sum array across all images. If count == numImages, Image i will  
+			receive the global sum of myVals[i]. 
+			\param sendBuf In
+		*/
+		/*void sumAllAndScatter(PacketType* myVals, PacketType* globalSums, OrdinalType const count) const {
+			MPI_Reduce_scatter(myVals, globalSums, count, MpiTraits<PacketType>::datatype(), 
+							   MpiTraits<PacketType>::sumOp(), getMpiComm());
+							   };*/
 
 		//@{ \name Point-to-Point Methods
 
