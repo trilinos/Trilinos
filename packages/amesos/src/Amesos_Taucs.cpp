@@ -293,6 +293,7 @@ int Amesos_Taucs::SymbolicFactorization()
 
   IsSymbolicFactorizationOK_ = true;
 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__  << " Leaving SymbolicFactorization()" << endl ; 
   return(0);
 }
 
@@ -315,12 +316,16 @@ int Amesos_Taucs::NumericFactorization()
 
   IsNumericFactorizationOK_ = true;
 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__
+			   << " Leaving NumericFactorization()" << endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::Solve() 
 {
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__
+			   << " Entering Solve()" << endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
 
@@ -399,6 +404,8 @@ int Amesos_Taucs::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*X, *B, "Amesos_Taucs");
 
+  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__
+			   << " Leaving Solve()" << endl ; 
   return(0) ;
 }
 
