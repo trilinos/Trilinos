@@ -28,6 +28,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Version.hpp"
 
 #ifdef HAVE_MPI
@@ -211,8 +212,11 @@ int main( int argc, char* argv[] ) {
 			return parse_return;
 		}
 
+    Teuchos::oblackholestream blackhole;
+    blackhole << "\nThis should not print anywhere.\n";
+
     if (verbose)
-      std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
+      std::cout << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
 		// Create some smart pointers
 
