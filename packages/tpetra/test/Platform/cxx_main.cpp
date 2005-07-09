@@ -28,6 +28,7 @@
 
 #include "../tpetra_test_util.hpp"
 #include <Teuchos_RefCountPtr.hpp>
+#include "Tpetra_OmniPlatform.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
@@ -37,6 +38,8 @@
 #include "Tpetra_SerialComm.hpp"
 #endif // TPETRA_MPI
 
+template <typename PacketType, typename OrdinalType>
+int omniTest(bool verbose, bool debug, int myImageID, int numImages);
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 template <typename OrdinalType, typename ScalarType>
@@ -74,6 +77,8 @@ int main(int argc, char* argv[]) {
 	// start the testing
 	if(verbose) outputStartMessage("Platform");
 	int ierr = 0;
+
+	//omniTest<int, int>(verbose, debug, myImageID, numImages);
   
 	// call the actual test routines
 	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
@@ -86,6 +91,78 @@ int main(int argc, char* argv[]) {
 #endif
 	if(verbose) outputEndMessage("Platform", (ierr == 0));
 	return(ierr);
+}
+
+//======================================================================
+template <typename PacketType, typename OrdinalType>
+int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
+
+#ifndef TPETRA_MPI
+	// create Serial OmniPlatform if MPI is not enabled
+	if(verbose) 
+		cout << "Creating Serial OmniPlatform..." << endl;
+	Tpetra::OmniPlatform op1;
+	if(debug) 
+		cout << op1 << endl;
+
+	// assert that size and rank are correct
+	int op1_mIID = op1.getMyImageID();
+	int op1_nI = op1.getNumImages();
+	if(op1_mIID != myImageID)
+		cout << "** myImageID = " << myImageID << ", op1_mIID = " << op1_mIID << endl;
+	if(op1_nI != numImages)
+	cout << "** numImages = " << numImages << ", op1_nI = " << op1_nI << endl;
+
+	// create the Comms
+	if(verbose) 
+		cout << "Creating op1's Comm..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Comm<PacketType, OrdinalType> > op1_comm;
+	op1_comm = op1.createComm<PacketType, OrdinalType>();
+	if(debug)
+		op1_comm->printInfo(cout);
+	if(verbose) 
+		cout << "Creating op1's SerialComm..." << endl;
+	op1_comm = op1.createSerialComm<PacketType, OrdinalType>();
+	if(debug)
+		op1_comm->printInfo(cout);
+
+#else
+//#ifdef TPETRA_MPI
+	// create MPI OmniPlatform if MPI is enabled
+	if(verbose) 
+		cout << "Creating MPI OmniPlatform..." << endl;
+	Tpetra::OmniPlatform op2(MPI_COMM_WORLD);
+	if(debug) {
+		cout << op2 << endl;
+		cout.flush();
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+
+	// assert that size and rank are correct
+	int op2_mIID = op2.getMyImageID();
+	int op2_nI = op2.getNumImages();
+	if(op2_mIID != myImageID)
+		cout << "** myImageID = " << myImageID << ", op2_mIID = " << op2_mIID << endl;
+	if(op2_nI != numImages)
+		cout << "** numImages = " << numImages << ", op2_nI = " << op2_nI << endl;
+
+	// create the Comms
+	if(verbose) 
+		cout << "Creating op2's Comm..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Comm<PacketType, OrdinalType> > op2_comm;
+	op2_comm = op2.createComm<PacketType, OrdinalType>();
+	if(debug)
+		op2_comm->printInfo(cout);
+	if(verbose) 
+		cout << "Creating op2's SerialComm..." << endl;
+	op2_comm = op2.createSerialComm<PacketType, OrdinalType>();
+	if(debug)
+		op2_comm->printInfo(cout);
+#endif
+
+	if(verbose) cout << "Finished OmniPlatform testing." << endl;
+
+	return(0);
 }
 
 //======================================================================
