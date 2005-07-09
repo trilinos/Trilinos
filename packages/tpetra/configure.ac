@@ -315,12 +315,12 @@ AC_CONFIG_FILES([
 		example/verySimple/Makefile
 		example/EpetraTpetraProfile/Makefile
 		test/Makefile
-	        test/Platform/Makefile
+        test/Platform/Makefile
 		test/Comm/Makefile
 		test/Distributor/Makefile
 		test/ElementSpace/Makefile
-    		test/Directory/Makefile
-    		test/ImportExport/Makefile
+   		test/Directory/Makefile
+   		test/ImportExport/Makefile
 		test/BlockElementSpace/Makefile
 		test/VectorSpace/Makefile
 		test/Vector/Makefile
