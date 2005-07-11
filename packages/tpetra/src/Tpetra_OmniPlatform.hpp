@@ -108,17 +108,13 @@ namespace Tpetra {
 		    system was passed to this Platform at construction (Serial, MPI, etc.)
 		*/
 		template <typename PacketType, typename OrdinalType>
-		Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> > createComm() const {
+		void createComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
 #ifdef TPETRA_MPI
 			// We are running in MPI, create a Tpetra::MpiComm.
-			Teuchos::RefCountPtr< MpiComm<PacketType, OrdinalType> > comm;
 			comm = Teuchos::rcp(new MpiComm<PacketType, OrdinalType>(MpiData_));
-			return(comm);
 #else
 			// We are running in serial, create a Tpetra::SerialComm.
-			Teuchos::RefCountPtr< SerialComm<PacketType, OrdinalType> > comm;
 			comm = Teuchos::rcp(new SerialComm<PacketType, OrdinalType>());
-			return(comm);
 #endif
 		}
 		
@@ -129,10 +125,8 @@ namespace Tpetra {
 			will still return a Tpetra::SerialComm object.
 		*/
 		template <typename PacketType, typename OrdinalType>
-		Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> > createSerialComm() const {
-			Teuchos::RefCountPtr< SerialComm<PacketType, OrdinalType> > comm;
+		void createSerialComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
 			comm = Teuchos::rcp(new SerialComm<PacketType, OrdinalType>());
-			return(comm);
 		}
 
 		//@}
