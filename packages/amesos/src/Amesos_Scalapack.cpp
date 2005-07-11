@@ -52,6 +52,7 @@ Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob ):
   ScaLAPACK1DMap_(0), 
   ScaLAPACK1DMatrix_(0), 
   VectorMap_(0),
+  verbose_(0),
   UseTranspose_(false),   // Overwritten by call to SetParameters below
   Problem_(&prob), 
   PrintTiming_(false),   // Overwritten by call to SetParameters below
@@ -680,7 +681,7 @@ int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   PrintStatus_ = false ; 
   ComputeVectorNorms_ = false ; 
   ComputeTrueResidual_ = false ; 
-  verbose_ = 1; 
+  verbose_ = 0; 
   //  debug_ = 0;    // This is set below because debug is used in this routine
   TwoD_distribution_ = true; 
   grid_nb_ = 32; 

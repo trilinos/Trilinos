@@ -67,6 +67,7 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   SerialCrsMatrixA_(0),
   SerialMatrix_(0),
   Matrix_(0),
+  verbose_(0),
   UseTranspose_(false),
   Problem_(&prob),
   refactorize_(false),
@@ -102,21 +103,21 @@ Amesos_Klu::~Amesos_Klu(void) {
 //=============================================================================
 int Amesos_Klu::ExportToSerial() 
 {
-  cout << __FILE__ << "::" << __LINE__ 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ 
        << " UseDataInPlace_ = " << UseDataInPlace_ 
        << " iam = " << iam 
        << endl ; 
   if (UseDataInPlace_ != 1) {
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     assert ( RowMatrixA_ != 0 ) ; 
     assert ( ImportToSerial_ != 0 ) ; 
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*RowMatrixA_, 
 					     *ImportToSerial_, Add));
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   }
   
 }
@@ -473,8 +474,8 @@ int Amesos_Klu::SymbolicFactorization()
   iam = Comm().MyPID();
   if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering SymbolicFactorization()" << endl ; 
   if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam 
        << " verbose_ = " << verbose_ 
        << " Entering SymbolicFactorization()" << endl ; 
 
@@ -485,17 +486,17 @@ int Amesos_Klu::SymbolicFactorization()
 
   NumSymbolicFact_++;
 
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   AMESOS_CHK_ERR( ExportToSerial() );
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
   AMESOS_CHK_ERR( ConvertToKluCRS(true) );
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
   AMESOS_CHK_ERR( PerformSymbolicFactorization() );
-  cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
   IsSymbolicFactorizationOK_ = true;
   

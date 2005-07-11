@@ -38,6 +38,7 @@
 //=============================================================================
 Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
   DscNumProcs(-1), // will be set later
+  verbose_(0),
   MaxProcs_(-1)
 {  
   Problem_ = &prob ; 

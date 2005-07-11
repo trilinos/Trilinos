@@ -38,6 +38,7 @@ using namespace Teuchos;
 //=============================================================================
 Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
   Matrix_(0),
+  verbose_(0),
   Problem_(&prob),
   A_(0),
   L_(0)

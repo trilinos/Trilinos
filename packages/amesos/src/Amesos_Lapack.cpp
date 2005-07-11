@@ -39,6 +39,7 @@ using namespace Teuchos;
 Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
   UseTranspose_(false),
   Problem_(&Problem),
+  verbose_(0),
   NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0)

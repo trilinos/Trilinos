@@ -303,7 +303,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   for ( int iterTrans =0 ; iterTrans < 1; iterTrans++ ) {
     bool transpose = iterTrans == 1 ; 
     
-    for ( int iterDist =1 ; iterDist < iterDistMax; iterDist++ ) {
+    for ( int iterDist =0 ; iterDist < iterDistMax; iterDist++ ) {
       bool distribute = ( iterDist == 1 ); 
 	
       //
@@ -474,7 +474,7 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Klu" );
 #endif
 
-#if 0
+#if 1
 #ifdef HAVE_AMESOS_TAUCS
   AmesosClasses.push_back( "Amesos_Taucs" );
 #endif

@@ -81,15 +81,16 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
   FactorizationDone_(0), 
   NumGlobalRows_(0), 
   RowMatrixA_(0), 
-  nprow_(0),               // Overwritten by call to SetParameters below
-  npcol_(0),               // Overwritten by call to SetParameters below
+  verbose_(0),     
+  nprow_(0),       
+  npcol_(0),       
   PrintNonzeros_(false),
-  ColPerm_("NOT SET"),     // Overwritten by call to SetParameters below
-  RowPerm_("NOT SET"),     // Overwritten by call to SetParameters below
-  perm_c_(0),              // Overwritten by call to SetParameters below
-  perm_r_(0),              // Overwritten by call to SetParameters below
-  IterRefine_("NOT SET"),  // Overwritten by call to SetParameters below
-  ReplaceTinyPivot_(true), // Overwritten by call to SetParameters below - WAS false
+  ColPerm_("NOT SET"),
+  RowPerm_("NOT SET"),
+  perm_c_(0),         
+  perm_r_(0),         
+  IterRefine_("NOT SET"),
+  ReplaceTinyPivot_(true),
   FactorizationOK_(false),    
   NumNumericFact_(0),
   NumSolve_(0)
@@ -100,8 +101,6 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
   ReuseSymbolic_ = false ; 
 
   MaxProcesses_ = - 1; 
-  nprow_ = 0;
-  npcol_ = 0;
   Equil_ = true;
   ColPerm_ = "MMD_AT_PLUS_A";
   perm_c_ = 0;
@@ -169,6 +168,13 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
 
   if (ParameterList.isParameter("ComputeVectorNorms") )
     ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
+
+  // some verbose output:
+  // 0 - no output at all
+  // 1 - output as specified by other parameters
+  // 2 - all possible output
+  if( ParameterList.isParameter("OutputLevel") )
+    verbose_ = ParameterList.get("OutputLevel",1);
 
   // parameters for Superludist only
 

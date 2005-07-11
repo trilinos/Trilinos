@@ -53,6 +53,7 @@ using namespace Teuchos;
 Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   UseTranspose_(false),
   Problem_(&prob),
+  verbose_(0),
   maxfct_(1),
   mnum_(1),
   msglvl_(0),

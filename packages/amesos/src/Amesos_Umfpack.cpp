@@ -42,6 +42,7 @@ extern "C" {
 Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   Symbolic(0),
   Numeric(0),
+  verbose_(0),
   SerialMatrix_(0), 
   UseTranspose_(false),
   Problem_(&prob), 

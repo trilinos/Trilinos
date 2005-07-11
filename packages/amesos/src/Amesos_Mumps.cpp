@@ -61,6 +61,7 @@ const double DEF_VALUE_DOUBLE = -123456.789;
 Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   Problem_(&prob),
   NoDestroy_(false),
+  verbose_(0),
   MaxProcs_(-1),
   RedistrMap_(0),
   RedistrMatrix_(0),

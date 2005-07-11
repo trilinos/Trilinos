@@ -61,6 +61,7 @@ using namespace Teuchos;
 Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
   NumGlobalRows_(-1),
   NumGlobalNonzeros_(-1),
+  verbose_(0),
   UseTranspose_(false),
   FactorizationOK_(false),
   FactorizationDone_(false),
@@ -396,7 +397,7 @@ int Amesos_Superlu::ReFactor()
 			    NumGlobalNonzeros_, &Aval_[0],
 			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
   }
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving ReFactor()" << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving ReFactor()" << endl ; 
   return 0;
 }
 //
@@ -411,7 +412,7 @@ int Amesos_Superlu::SymbolicFactorization()
 // ======================================================================
 int Amesos_Superlu::NumericFactorization() 
 {
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
   InitTime(Comm());
   ResetTime();
 
@@ -489,14 +490,14 @@ int Amesos_Superlu::NumericFactorization()
 
   ++NumNumericFact_;
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving NumericFactorization()" << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving NumericFactorization()" << endl ; 
   return(0);
 }
 
 // ====================================================================== 
 int Amesos_Superlu::Solve() 
 { 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering Solve()" << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Entering Solve()" << endl ; 
 
   if (!FactorizationDone_) {
     FactorizationOK_ = false;
@@ -676,7 +677,7 @@ int Amesos_Superlu::Solve()
 #endif
   ++NumSolve_;
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving Solve()" << endl ; 
+  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving Solve()" << endl ; 
 
   return(Ierr);
 }
