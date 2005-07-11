@@ -108,10 +108,10 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	// assert that size and rank are correct
 	int op1_mIID = op1.getMyImageID();
 	int op1_nI = op1.getNumImages();
-	if(op1_mIID != myImageID)
-		cout << "** myImageID = " << myImageID << ", op1_mIID = " << op1_mIID << endl;
-	if(op1_nI != numImages)
-	cout << "** numImages = " << numImages << ", op1_nI = " << op1_nI << endl;
+	if(op1_mIID != 0)
+		cout << "** expected myImageID = 0, op1_mIID = " << op1_mIID << endl;
+	if(op1_nI != 1)
+	cout << "** expected numImages = 1, op1_nI = " << op1_nI << endl;
 
 	// create the Comms
 	if(verbose) 
