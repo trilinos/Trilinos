@@ -112,4 +112,4 @@ bool RpmtestIntegrator::Integrate(double *ynew, const double *y, const double t,
   }
    return true;
 
-};
+}
