@@ -54,7 +54,7 @@
 
 	This method is a block version of the method presented by G.W. Stewart 
 	in "A Krylov-Schur Algorithm for Large Eigenproblems", 
-	SIAM J. Matrix Anal. Appl., Vol 28, No. 8, pp. 601-614.
+	SIAM J. Matrix Anal. Appl., Vol 23(2001), No. 3, pp. 601-614.
 
 	\author Rich Lehoucq, Heidi Thornquist
 */
