@@ -78,12 +78,12 @@ int main(int argc, char* argv[]) {
 	if(verbose) outputStartMessage("Platform");
 	int ierr = 0;
 
-	omniTest<int, int>(verbose, debug, myImageID, numImages);
+	//omniTest<int, int>(verbose, debug, myImageID, numImages);
   
 	// call the actual test routines
-	//ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
