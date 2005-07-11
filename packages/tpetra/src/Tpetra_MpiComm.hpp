@@ -143,6 +143,7 @@ namespace Tpetra {
 		//@}
     
 		//@{ \name Sum Methods
+
 		//! MpiComm Global Sum function.
 		/*! Takes list of input values from all images in the communicator, computes the sum and returns the
 		    sum to all images.
@@ -158,6 +159,28 @@ namespace Tpetra {
 			MPI_Allreduce(partialSums, globalSums, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
 		};
+
+		//! Scattered Global Sum function
+		/*! Take a list of input values from each image, compute the global sums, and distribute 
+		    the list of sums across all images.
+		  \param sendVals In
+		         On entry, contains the list of values to sum from this image.
+		  \param recvVals Out
+		         On exit, contains the list of sums distributed to this image.
+		  \param recvCounts In
+		         On entry, contains a list of sizes. On exit, recvVals on image i will contain
+				 recvCounts[i] entries.
+		*/
+		void sumAllAndScatter(PacketType* sendVals, PacketType* recvVals, OrdinalType* recvCounts) const {
+			int const numImages = getNumImages();
+			std::vector<int> mpiRecvCounts(numImages, 0);
+			for(int i = 0; i < numImages; i++)
+				mpiRecvCounts[i] = MpiTraits<PacketType>::count(recvCounts[i]);
+
+			MPI_Reduce_scatter(sendVals, recvVals, &mpiRecvCounts.front(), MpiTraits<PacketType>::datatype(),
+							   MpiTraits<PacketType>::sumOp(), getMpiComm());
+		}
+
 		//@}
     
 		//@{ \name Max/Min Methods

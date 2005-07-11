@@ -284,7 +284,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 		if(verbose) cout << "passed" << endl;
 	returnierr += ierr;
 	ierr = 0;
-  
+	
 	// test sumAll
 	if(verbose) cout << "Testing sumAll... ";
 	allVals.resize(length); // resize allVals back down
@@ -305,9 +305,36 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 		if(verbose) cout << "passed" << endl;
 	returnierr += ierr;
 	ierr = 0;
+
+	// test sumAllAndScatter
+	if(verbose) cout << "Testing sumAllAndScatter... ";
+	generateColumn(myVals, myImageID, numImages);
+	std::vector<int> recvCounts(numImages, 1);
+	PacketType receivedSum = Teuchos::ScalarTraits<OrdinalType>::zero();
+	comm.sumAllAndScatter(&myVals.front(), &receivedSum, &recvCounts.front());
+	generateRowSums(expected, 0, numImages-1, numImages);
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "localSums:  " + Tpetra::toString(myVals));
+		outputData(myImageID, numImages, "globalSum: " + Tpetra::toString(receivedSum));
+		outputData(myImageID, numImages, "Expected: " + Tpetra::toString(receivedSum));
+		if(verbose) cout << "SumAllAndScatter test ";
+	}
+	if(receivedSum != expected[myImageID]) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+	generateColumn(myVals, myImageID, length); // reset myVals
+	allVals.resize(length); // reset size of allVals
+
   
 	// test maxAll
 	if(verbose) cout << "Testing maxAll... ";
+	
 	comm.maxAll(&myVals.front(), &allVals.front(), length);
 	generateRowMaxs(expected, 0, numImages-1, length);
 	if(debug) {

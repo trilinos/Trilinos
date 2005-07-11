@@ -103,6 +103,7 @@ namespace Tpetra {
 		//@}
 
 		//@{ \name Sum Methods
+
 		//! SerialComm Global Sum function.
 		/*! A copy for a serial communicator.
 		  \param partialSums In
@@ -116,6 +117,23 @@ namespace Tpetra {
 		void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
 			copy(partialSums, globalSums, count);
 		};
+
+		//! Scattered Global Sum function
+		/*! Take a list of input values from each image, compute the global sums, and distribute 
+		    the list of sums across all images.
+		  \param sendVals In
+		         On entry, contains the list of values to sum from this image.
+		  \param recvVals Out
+		         On exit, contains the list of sums distributed to this image.
+		  \param recvCounts In
+		         On entry, contains a list of sizes. On exit, recvVals on image i will contain
+				 recvCounts[i] entries.
+		*/
+		void sumAllAndScatter(PacketType* sendVals, PacketType* recvVals, OrdinalType* recvCounts) const {
+			// In serial, we're on Image 0, so we should copy recvCounts[0] elements.
+			copy(sendVals, recvVals, recvCounts[0]);
+		}
+
 		//@}
 	
 		//@{ \name Max/Min Methods

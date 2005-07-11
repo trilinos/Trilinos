@@ -92,6 +92,7 @@ namespace Tpetra {
 		//@}
 
 		//@{ \name Sum Methods
+
 		//! Global Sum function.
 		/*!Take list of input values from all images in the communicator, computes the sum and returns the
 		   sum to all images.
@@ -104,6 +105,20 @@ namespace Tpetra {
 		         On entry, contains the length of partialSums.
 		*/
 		virtual void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const = 0;
+
+		//! Scattered Global Sum function
+		/*! Take a list of input values from each image, compute the global sums, and distribute 
+		    the list of sums across all images.
+		  \param sendVals In
+		         On entry, contains the list of values to sum from this image.
+		  \param recvVals Out
+		         On exit, contains the list of sums distributed to this image.
+		  \param recvCounts In
+		         On entry, contains a list of sizes. On exit, recvVals on image i will contain
+				 recvCounts[i] entries.
+		*/
+		virtual void sumAllAndScatter(PacketType* sendVals, PacketType* recvVals, OrdinalType* recvCounts) const = 0;
+
 		//@}
 	
 		//@{ \name Max/Min Methods
@@ -176,19 +191,6 @@ namespace Tpetra {
 		          If not successful, aminteger return code (< 0).
 		*/
 		virtual int receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const = 0;
-
-		//! Reduce & Scatter function
-		/*! Take a list of input values from each image, compute the global sums, and distribute 
-		    the list of sums across all images.
-		  \param sendVals In
-		         On entry, contains the list of values to sum from this image.
-		  \param recvVals Out
-		         On exit, contains the list of sums distributed to this image.
-		  \param count In
-		         On entry, contains the size (capacity) of the recvVals buffer. This is how many
-				 global sums will be given to this image.
-		*/
-		//virtual void sumAllAndScatter(PacketType* sendVals, PacketType* recvVals, OrdinalType const count) const = 0;
 
 		//@}
 
