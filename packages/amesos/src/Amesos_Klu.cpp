@@ -79,6 +79,7 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   // MS // set up before calling Comm()
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ;
+  verbose_ = 0;
 
 }
 

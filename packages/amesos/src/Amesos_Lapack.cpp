@@ -46,6 +46,7 @@ Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
 {
   Teuchos::ParameterList ParamList;
   SetParameters(ParamList);
+  verbose_ = 0;
 }
 
 //=============================================================================
