@@ -1386,7 +1386,7 @@ int get_hg_edge_info(
     if (num_lid_entries) edge_lids[i*num_lid_entries+lid] = i;
     edge_sizes[i] = hindex[i+1] - hindex[i];
     for (j = 0; j < ewgt_dim; j++) {
-      if (mesh->hewgt_dim >= j)
+      if (mesh->hewgt_dim > j)
         edge_weights[j + i*ewgt_dim] = mesh->hewgts[j + i*mesh->hewgt_dim];
       else
         edge_weights[j + i*ewgt_dim] = 1.0;
