@@ -562,6 +562,8 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
     // Insert nonzero column entries into the jacobian
     for (int j = myMin; j < myMax+1; j++) {
+      if (!map.MyGID(j))
+        continue;
       if (Jc[map.LID(j)] != 0.0) {
 	jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&k);
       }
