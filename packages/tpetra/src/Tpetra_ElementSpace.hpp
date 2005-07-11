@@ -84,8 +84,8 @@ namespace Tpetra {
       
 			// platform & comm setup
 			Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > comm = Platform.createOrdinalComm();
-			OrdinalType numImages = Platform.getNumImages();
-			OrdinalType myImageID = Platform.getMyImageID();
+			OrdinalType numImages = comm->getNumImages();
+			OrdinalType myImageID = comm->getMyImageID();
       
 			// compute numMyElements
 			OrdinalType numMyElements = numGlobalElements / numImages;
@@ -441,8 +441,8 @@ namespace Tpetra {
 			OrdinalType const nME = getNumMyElements();
       
 			getMyGlobalElements(); // throw away output, we call this to make sure list is generated
-			int myImageID = platform().getMyImageID();
-			int numImages = platform().getNumImages();
+			int myImageID = comm().getMyImageID();
+			int numImages = comm().getNumImages();
       
 			for(int imageCtr = 0; imageCtr < numImages; imageCtr++) {
 				if(myImageID == imageCtr) {

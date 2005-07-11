@@ -65,7 +65,7 @@ namespace Tpetra {
 				// directory from the minMyGID value from each image.
 				if(ElementSpace.isContiguous()) {
 					OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
-					allMinGIDs_.resize(ElementSpace.platform().getNumImages() + one);
+					allMinGIDs_.resize(ElementSpace.comm().getNumImages() + one);
 					OrdinalType minMyGID = ElementSpace.getMinMyGID();
 					ElementSpace.comm().gatherAll(&minMyGID, &allMinGIDs_.front(), one);
 					allMinGIDs_.back() = ElementSpace.getMaxAllGID() + one; // Set max cap
@@ -156,8 +156,8 @@ namespace Tpetra {
 				localEntries.assign(globalEntries.size(), negOne);
 
 			bool ierr = false;
-			OrdinalType const myImageID = es().platform().getMyImageID();
-			OrdinalType const numImages = es().platform().getNumImages();
+			OrdinalType const myImageID = es().comm().getMyImageID();
+			OrdinalType const numImages = es().comm().getNumImages();
 			OrdinalType const numEntries = globalEntries.size();
 			OrdinalType const nOverP = es().getNumGlobalElements() / numImages;
 
@@ -317,7 +317,7 @@ namespace Tpetra {
       
 
 			// Get list of images owning the directory entries for the ElementSpace GIDs
-			OrdinalType myImageID = es().platform().getMyImageID();
+			OrdinalType myImageID = es().comm().getMyImageID();
 			OrdinalType numMyElements = es().getNumMyElements();
 			std::vector<OrdinalType> sendImageIDs(numMyElements);
 			std::vector<OrdinalType> myGlobalElements = es().getMyGlobalElements();

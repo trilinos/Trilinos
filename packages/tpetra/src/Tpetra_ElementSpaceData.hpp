@@ -98,7 +98,7 @@ namespace Tpetra {
 	private:
 		bool checkGlobalness() {
 			bool global = false;
-			if(Platform_->getNumImages() > 1) {
+			if(Comm_->getNumImages() > 1) {
 				int localRep = 0;
 				int allLocalRep;
 				if(numGlobalElements_ == numMyElements_)

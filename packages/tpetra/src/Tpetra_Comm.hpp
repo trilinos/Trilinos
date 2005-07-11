@@ -190,6 +190,20 @@ namespace Tpetra {
 
 		//@}
 
+		//@{ \name Image Info Methods
+
+		//! getMyImageID - returns my rank on this machine
+		/*! ImageIDs are always in the range [0, numImages), and are returned as an int.
+		 */
+		virtual int getMyImageID() const = 0;
+
+		//! getNumImages - returns the number of images on this machine
+		/*! The number of images on this machine is returned as an int, and should always be greater than zero.
+		 */
+		virtual int getNumImages() const = 0;
+
+		//@}
+
 		//@{ \name I/O Methods
 		//! printInfo
 		virtual void printInfo(ostream& os) const = 0;

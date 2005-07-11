@@ -96,6 +96,8 @@ int main(int argc, char* argv[]) {
 //======================================================================
 template <typename PacketType, typename OrdinalType>
 int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
+	int mIID = -1; // dummy value
+	int nI = -1; // dummy value
 
 //#ifndef TPETRA_MPI
 	// create Serial OmniPlatform if MPI is not enabled
@@ -104,14 +106,6 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	Tpetra::OmniPlatform op1;
 	if(debug) 
 		cout << op1 << endl;
-
-	// assert that size and rank are correct
-	int op1_mIID = op1.getMyImageID();
-	int op1_nI = op1.getNumImages();
-	if(op1_mIID != 0)
-		cout << "** expected myImageID = 0, op1_mIID = " << op1_mIID << endl;
-	if(op1_nI != 1)
-	cout << "** expected numImages = 1, op1_nI = " << op1_nI << endl;
 
 	// create the Comms
 	if(verbose) 
@@ -127,6 +121,20 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	if(debug)
 		op1_serialcomm->printInfo(cout);
 
+	// assert that size and rank are correct
+	mIID = op1_comm->getMyImageID();
+	nI = op1_comm->getNumImages();
+	if(mIID != 0)
+		cout << "** op1_comm.getMyImageID() = " << mIID << ", expected 0" << endl;
+	if(nI != 1)
+		cout << "** op1_comm.getNumImages() = " << nI << ", expected 1" << endl;
+	mIID = op1_serialcomm->getMyImageID();
+	nI = op1_serialcomm->getNumImages();
+	if(mIID != 0)
+		cout << "** op1_serialcomm.getMyImageID() = " << mIID << ", expected 0" << endl;
+	if(nI != 1)
+		cout << "** op1_serialcomm.getNumImages() = " << nI << ", expected 1" << endl;
+
 //#else
 #ifdef TPETRA_MPI
 	// create MPI OmniPlatform if MPI is enabled
@@ -138,14 +146,6 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 		cout.flush();
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
-
-	// assert that size and rank are correct
-	int op2_mIID = op2.getMyImageID();
-	int op2_nI = op2.getNumImages();
-	if(op2_mIID != myImageID)
-		cout << "** myImageID = " << myImageID << ", op2_mIID = " << op2_mIID << endl;
-	if(op2_nI != numImages)
-		cout << "** numImages = " << numImages << ", op2_nI = " << op2_nI << endl;
 
 	// create the Comms
 	if(verbose) 
@@ -160,6 +160,20 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	op2.createSerialComm(op2_serialcomm);
 	if(debug)
 		op2_serialcomm->printInfo(cout);
+
+	// assert that size and rank are correct
+	mIID = op2_comm->getMyImageID();
+	nI = op2_comm->getNumImages();
+	if(mIID != 0)
+		cout << "** op2_comm.getMyImageID() = " << mIID << ", expected 0" << endl;
+	if(nI != 1)
+		cout << "** op2_comm.getNumImages() = " << nI << ", expected 1" << endl;
+	mIID = op2_serialcomm->getMyImageID();
+	nI = op2_serialcomm->getNumImages();
+	if(mIID != 0)
+		cout << "** op2_serialcomm.getMyImageID() = " << mIID << ", expected 0" << endl;
+	if(nI != 1)
+		cout << "** op2_serialcomm.getNumImages() = " << nI << ", expected 1" << endl;
 #endif
 
 	if(verbose) cout << "Finished OmniPlatform testing." << endl;
@@ -194,46 +208,6 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
 	Tpetra::SerialComm<ScalarType, OrdinalType> comm;
 #endif
-
-	// test getMyImageID
-	if(verbose) cout << "Testing getMyImageID... ";
-	int platform_myImageID = platform.getMyImageID();
-	if(debug) {
-		if(verbose) cout << endl;
-		comm.barrier();
-		cout << "[Image " << myImageID << "] getMyImageID: " << platform_myImageID << endl;
-		cout << "[Image " << myImageID << "] Expected: " << myImageID << endl;
-		comm.barrier();
-		if(verbose) cout << "getMyImageID test ";
-	}
-	if(platform_myImageID != myImageID) {
-		if(verbose) cout << "failed" << endl;
-		ierr++;
-	}
-	else
-		if(verbose) cout << "passed" << endl;
-	returnierr += ierr;
-	ierr = 0;
-
-	// test getNumImages
-	if(verbose) cout << "Testing getNumImages... ";
-	int platform_numImages = platform.getNumImages();
-	if(debug) {
-		if(verbose) cout << endl;
-		comm.barrier();
-		cout << "[Image " << myImageID << "] getNumImages: " << platform_numImages << endl;
-		cout << "[Image " << myImageID << "] Expected: " << numImages << endl;
-		comm.barrier();
-		if(verbose) cout << "getNumImages test ";
-	}
-	if(platform_numImages != numImages) {
-		if(verbose) cout << "failed" << endl;
-		ierr++;
-	}
-	else
-		if(verbose) cout << "passed" << endl;
-	returnierr += ierr;
-	ierr = 0;
 
 	// ======================================================================
 	// finish up

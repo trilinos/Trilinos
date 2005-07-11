@@ -365,8 +365,8 @@ namespace Tpetra {
 			OrdinalType const* firstPointList1 = getFirstPointInElementList(); 
 			OrdinalType const* pointToElementList1 = getPointToElementList(); 
 			
-			int myImageID = elementSpace().platform().getMyImageID();
-			int numImages = elementSpace().platform().getNumImages();
+			int myImageID = elementSpace().comm().getMyImageID();
+			int numImages = elementSpace().comm().getNumImages();
 			
 			for(int imageCtr = 0; imageCtr < numImages; imageCtr++) {
 				if(myImageID == imageCtr) {

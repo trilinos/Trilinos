@@ -205,6 +205,40 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	std::vector<PacketType> myVals(length);
 	std::vector<PacketType> allVals(length);
 	std::vector<PacketType> expected(length);
+
+	// test getMyImageID
+	if(verbose) cout << "Testing getMyImageID... ";
+	int platform_myImageID = comm.getMyImageID();
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "getMyImageID: " + Tpetra::toString(platform_myImageID));
+		if(verbose) cout << "getMyImageID test ";
+	}
+	if(platform_myImageID != myImageID) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+
+	// test getNumImages
+	if(verbose) cout << "Testing getNumImages... ";
+	int platform_numImages = comm.getNumImages();
+	if(debug) {
+		if(verbose) cout << endl;
+		outputData(myImageID, numImages, "getNumImages: " + Tpetra::toString(platform_numImages));
+		if(verbose) cout << "getNumImages test ";
+	}
+	if(platform_numImages != numImages) {
+		if(verbose) cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
 	
 	// test broadcast
 	if(verbose) cout << "Testing broadcast... ";

@@ -195,6 +195,16 @@ namespace Tpetra {
 
 		//@}
 
+		//@{ \name Image Info Methods
+
+		//! getMyImageID - In serial mode, always returns 0.
+		int getMyImageID() const {return(0);};
+
+		//! getNumImages - In serial mode, always returns 1.
+		int getNumImages() const {return(1);};
+
+		//@}
+
 		//@{ \name I/O Methods
 		//! Print methods
 		void print(ostream& os) const {};

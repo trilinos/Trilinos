@@ -187,8 +187,8 @@ namespace Tpetra {
 		//! Prints the VectorSpace object to the output stream.
 		/*! An << operator is inherited from Tpetra::Object, which uses the print method.*/
 		void print(ostream& os) const {
-			OrdinalType myImageID = platform().getMyImageID();
-			OrdinalType numImages = platform().getNumImages();
+			OrdinalType myImageID = comm().getMyImageID();
+			OrdinalType numImages = comm().getNumImages();
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		
 			for (int imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
