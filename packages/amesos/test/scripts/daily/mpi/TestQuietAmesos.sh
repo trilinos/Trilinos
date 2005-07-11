@@ -174,7 +174,7 @@ if ( "$2" == "True" ) then
     cat $file
     rm $file
     if( "$AnError" == "True" ) then
-	echo "@#@#@#@# Error file @#@#@#@#@"
+	echo "@#@#@#@# Error file - output from same tests run with verbose enabled @#@#@#@#@"
 	cat $file2
 	rm -f $file2
     endif

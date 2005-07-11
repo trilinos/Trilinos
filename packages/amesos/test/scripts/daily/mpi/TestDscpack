@@ -110,7 +110,7 @@ if ( "$3" == "True" ) then
     echo "@#@#@#@#  Summary file @#@#@#@#@"
     cat $file
     if( "$AnError" == "True" ) then
-	echo "@#@#@#@# Error file @#@#@#@#@"
+	echo "@#@#@#@# Error file - output from same tests run with verbose enabled @#@#@#@#@"
 	cat $file2
     endif
 endif
