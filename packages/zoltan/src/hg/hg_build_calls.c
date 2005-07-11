@@ -27,7 +27,7 @@ extern "C" {
   goto End; \
 }
 
-static int remove_dense_edges(ZZ *, ZHG *, int, float, int, int *,
+static int ignore_some_edges(ZZ *, ZHG *, int, float, int, int *,
   ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, float *, int);
 
 /*****************************************************************************/
@@ -93,11 +93,11 @@ int num_lid_entries = zz->Num_LID;
     }
                      
     /* Remove dense edges from input list */
-    ierr = remove_dense_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
-                              nedges, *egids, *elids, *esizes, *ewgts, 0);
+    ierr = ignore_some_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
+                             nedges, *egids, *elids, *esizes, *ewgts, 0);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                         "Error returned from remove_dense_edges.");
+                         "Error returned from ignore_some_edges.");
       goto End;
     }
 
@@ -214,11 +214,11 @@ float *gewgts = NULL;     /* Graph-edge weights */
 
     /* Remove dense edges from input list */
 
-    ierr = remove_dense_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
+    ierr = ignore_some_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
                               nedges, *egids, *elids, *esizes, *ewgts, 1);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                         "Error returned from remove_dense_edges.");
+                         "Error returned from ignore_some_edges.");
       goto End;
     }
 
@@ -292,7 +292,7 @@ End:
 }
 
 /*****************************************************************************/
-static int remove_dense_edges (
+static int ignore_some_edges (
   ZZ *zz,
   ZHG *zhg,                /* Input:   Pointer to Zoltan's structure with
                                        GIDs, LIDs.
@@ -319,7 +319,10 @@ static int remove_dense_edges (
                       
 )
 {
-char *yo = "remove_dense_edges";
+/* Function to remove dense edges (> esize_threshold vertices)
+ * and zero-sized edges (zero vertices) from input data.
+ */
+char *yo = "ignore_some_edges";
 int ierr = ZOLTAN_OK;
 int i, j;
 int ewgtdim = zz->Edge_Weight_Dim;
@@ -335,12 +338,13 @@ float *remove_ewgts = NULL;         /* Edge weights for removed edges */
 float gesize_threshold;   /* Edges with more vertices than gesize_threshold
                              are considered to be dense. */
 
-  /* Remove dense edges from input list */
+  /* Remove dense edges and zero-sized edges from input list */
   gesize_threshold = esize_threshold * gnVtx;
   nremove = 0;
   for (i = 0; i < *nedges; i++) 
     /* Compute esizes[i]+graph_input; graph_input will add one GID to hedge */
-    if ((esizes[i]+graph_input) > gesize_threshold) 
+    if (((esizes[i]+graph_input) > gesize_threshold) || 
+        ((esizes[i]+graph_input) == 0))
       nremove++;
 
   if (nremove) {
@@ -364,7 +368,8 @@ float gesize_threshold;   /* Edges with more vertices than gesize_threshold
     nremove = nkeep = 0;
     for (i = 0; i < *nedges; i++)
       /* Compare esizes[i]+graph_input; graph_input adds one GID to hedge */
-      if ((esizes[i]+graph_input) <= gesize_threshold) {
+      if (((esizes[i]+graph_input) <= gesize_threshold) &&
+          ((esizes[i]+graph_input) > 0)) {
         /* Keep the edge in egids/elids to obtain its pins. */
         if (nkeep != i) {
           ZOLTAN_SET_GID(zz, &(egids[nkeep*num_gid_entries]),
