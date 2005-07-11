@@ -258,8 +258,10 @@ namespace Tpetra {
 		  \param sourceImageID In
 		         On entry, contains the ImageID of the image to receive the values from.
 				 (A sourceImageID of -1 means receive values from any image.)
+		  \return If successful, the ImageID of the sender (>= 0).
+		          If not successful, aminteger return code (< 0).
 		*/
-		void receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const {
+		int receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const {
 			// Throw an exception if myVals is null.
 			if(myVals == 0)
 				throw reportError("myVals is null.", 1);
@@ -275,12 +277,15 @@ namespace Tpetra {
 
 			MPI_Status status; // A dummy MPI_Status object, needed for the MPI_Recv call.
 
-			int err = MPI_Recv(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(),
+			MPI_Recv(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(),
 							   sourceImageID, tag_, data().getMpiComm(), &status);
 
-			if(err != 0)
-				cerr << "MpiComm error on image " << data().getMyImageID() << ", code = " << err << endl;
-			
+			if(status.MPI_ERROR != 0) {
+				cerr << "MpiComm error on image " << data().getMyImageID() << ", code = " << status.MPI_ERROR << endl;
+				return(-1);
+			}
+
+			return(status.MPI_SOURCE); // if still here, successful. return sender's ImageID.
 		}
 
 		//@}

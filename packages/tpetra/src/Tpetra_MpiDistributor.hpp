@@ -52,9 +52,11 @@ namespace Tpetra {
 		//@{ \name Constructor/Destructor
     
 		//! Platform Constuctor (default ctr)
-		MpiDistributor(Teuchos::RefCountPtr<MpiData> const& data) 
+		MpiDistributor(Teuchos::RefCountPtr<MpiData> const& data,
+					   Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > const& comm) 
 			: Object("Tpetra::MpiDistributor")
 			, MpiData_(data)
+			, Comm_(comm)
 			, numExports_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, selfMessage_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, numSends_(Teuchos::OrdinalTraits<OrdinalType>::zero())
@@ -72,6 +74,7 @@ namespace Tpetra {
 		MpiDistributor(Distributor<OrdinalType> const& distributor) 
 			: Object(distributor.label())
 			, MpiData_(distributor.MpiData_)
+			, Comm_(distributor.Comm_)
 			, numExports_(distributor.numExports_)
 			, selfMessage_(distributor.selfMessage_)
 			, numSends_(distributor.numSends_)
@@ -124,8 +127,8 @@ namespace Tpetra {
 
 			numExports_ = numExportIDs;
       
-			OrdinalType myImageID = data().getMyImageID();
-			OrdinalType numImages = data().getNumImages();
+			OrdinalType myImageID = comm().getMyImageID();
+			OrdinalType numImages = comm().getNumImages();
       
 			// Check to see if items are grouped by images without gaps
 			// If so, indices_to -> 0
@@ -233,8 +236,8 @@ namespace Tpetra {
 			computeReceives(myImageID, numImages);
       
 			if(numReceives_ > zero) {
-				request_ = new MPI_Request[numReceives_];
-				status_ = new MPI_Status[numReceives_];
+				request_ = new MPI_Request[numReceives_]; // MPI
+				status_ = new MPI_Status[numReceives_]; // MPI
 			}
       
 			numRemoteIDs = totalReceiveLength_;
@@ -412,10 +415,10 @@ namespace Tpetra {
 
 		//! print method inherited from Object
 		void print(ostream& os) const {
-			int const myImageID = data().getMyImageID();
-			int const numImages = data().getNumImages();
+			int const myImageID = comm().getMyImageID();
+			int const numImages = comm().getNumImages();
 			for(int i = 0; i < numImages; i++) {
-				MPI_Barrier(data().getMpiComm());
+				comm().barrier();
 				if(i == myImageID) {
 					cout << "[Image " << myImageID << " of " << numImages << "]" << endl;
 					cout << " numExports: " << numExports_ << endl;
@@ -449,8 +452,13 @@ namespace Tpetra {
 		MpiData& data() {return(*MpiData_);};
 		MpiData const& data() const {return(*MpiData_);};
 
+		// convenience functions for returning inner data class, both const and nonconst versions.
+		Comm<OrdinalType, OrdinalType>& comm() {return(*Comm_);};
+		Comm<OrdinalType, OrdinalType> const& comm() const {return(*Comm_);};
+
 		// private data members
 		Teuchos::RefCountPtr<MpiData> MpiData_;
+		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > Comm_;
 
 		OrdinalType numExports_;
 		OrdinalType selfMessage_;
@@ -490,19 +498,18 @@ namespace Tpetra {
       
 			for(OrdinalType i = zero; i < (numSends_ + selfMessage_); i++)
 				if(imagesTo_[i] != myImageID )
-					MPI_Send(&lengthsTo_[i], 1, MpiTraits<OrdinalType>::datatype(), 
-							 imagesTo_[i], tag_, data().getMpiComm()); // MPI
+					comm().send(&lengthsTo_[i], 1, imagesTo_[i]);
 				else {
 					// set selfMessage_ to end block of recv arrays
 					lengthsFrom_[numReceives_-one] = lengthsTo_[i];
 					imagesFrom_[numReceives_-one] = myImageID;
 				}
 			for(OrdinalType i = zero; i < (numReceives_ - selfMessage_); i++) {
-				MPI_Recv(&lengthsFrom_[i], 1, MpiTraits<OrdinalType>::datatype(), 
-						 MPI_ANY_SOURCE, tag_, data().getMpiComm(), &status); // MPI
-				imagesFrom_[i] = status.MPI_SOURCE; // MPI
+				// receive 1 OrdinalType variable from any sender.
+				// store the value in lengthsFrom_[i], and store the sender's ImageID in imagesFrom_[i]
+				imagesFrom_[i] = comm().receive(&lengthsFrom_[i], 1, -1);
 			}
-			MPI_Barrier(data().getMpiComm()); // MPI
+			comm().barrier();
       
 			sortArrays(imagesFrom_, lengthsFrom_);
       
@@ -522,7 +529,7 @@ namespace Tpetra {
       
 			numReceives_ -= selfMessage_;
       
-			MPI_Barrier(data().getMpiComm()); // MPI
+			comm().barrier();
 		};
 
 		void computeSends(OrdinalType const numImports, 
@@ -537,7 +544,7 @@ namespace Tpetra {
 			OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
 			OrdinalType const two = one + one;
 
-			MpiDistributor<OrdinalType> tempPlan(MpiData_);
+			MpiDistributor<OrdinalType> tempPlan(MpiData_, Comm_);
 			std::vector<OrdinalType> imageIDList;
 			std::vector<OrdinalType> importObjs;
 

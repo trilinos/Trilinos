@@ -188,8 +188,10 @@ namespace Tpetra {
 		  \param sourceImageID In
 		         On entry, contains the ImageID of the image to receive the values from.
 				 (A sourceImageID of -1 means receive values from any image.)
+		  \return If successful, the ImageID of the sender (>= 0).
+		          If not successful, aminteger return code (< 0).
 		*/
-		void receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const {
+		int receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const {
 			throw reportError("This method should never be called.", -1);
 		}
 

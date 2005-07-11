@@ -172,8 +172,10 @@ namespace Tpetra {
 		  \param sourceImageID In
 		         On entry, contains the ImageID of the image to receive the values from.
 				 (A sourceImageID of -1 means receive values from any image.)
+		  \return If successful, the ImageID of the sender (>= 0).
+		          If not successful, aminteger return code (< 0).
 		*/
-		virtual void receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const = 0;
+		virtual int receive(PacketType* myVals, OrdinalType const count, int sourceImageID) const = 0;
 
 		//! Reduce & Scatter function
 		/*! Take a list of input values from each image, compute the global sums, and distribute 

@@ -187,7 +187,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	std::string className = "Platform<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
 	if(verbose) outputHeading("Stating unit tests for " + className);
 
-	int ierr = 0;
+	//int ierr = 0; // unused now that there's no actual tests
 	int returnierr = 0;
 
 	// ======================================================================

@@ -92,7 +92,7 @@ namespace Tpetra {
 		//! Distributor Instance
 		Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const {
 			Teuchos::RefCountPtr< MpiDistributor<OrdinalType> > distributor;
-			distributor = Teuchos::rcp(new MpiDistributor<OrdinalType>(MpiData_)); 
+			distributor = Teuchos::rcp(new MpiDistributor<OrdinalType>(MpiData_, createOrdinalComm())); 
 			return(distributor);
 		};
     
