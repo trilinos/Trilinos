@@ -982,9 +982,21 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
      cout << "matrixfreeML (level 0): Entering Coloring on level 0\n";
      fflush(stdout);
   }
+#if 0  
+
   Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_collapsedcoloring(graph,bsize,false);
   if (!colorMap)      colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
 
+#else
+
+  //Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
+  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
+                                  EpetraExt::CrsGraph_MapColoring::GREEDY;
+  EpetraExt::CrsGraph_MapColoring* MapColoring = 
+                   new EpetraExt::CrsGraph_MapColoring(algType,0,false,0);
+  Epetra_MapColoring* colorMap = &(*MapColoring)(*graph);
+
+#endif
   EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex = 
                       new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
   vector<Epetra_IntVector>* colorcolumns = &(*colorMapIndex)(*graph);
@@ -1006,12 +1018,21 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   t0 = GetClock();
   int ncalls = interface_.getnumcallscomputeF();
   interface_.setnumcallscomputeF(0);
-  
+
+#if 1
   NOX::EpetraNew::FiniteDifferenceColoring* FD = 
            new NOX::EpetraNew::FiniteDifferenceColoring(interface_,x,*graph,
                                                         *colorMap,*colorcolumns,
                                                         true,false,
                                                         fd_beta_,fd_alpha_);
+#else
+  NOX::EpetraNew::FiniteDifference* FD =  
+         new NOX::EpetraNew::FiniteDifference(interface_,
+                                              x,
+                                              *graph,
+                                              fd_beta_,fd_alpha_);
+#endif
+
   if (fd_centered_)
     FD->setDifferenceMethod(NOX::EpetraNew::FiniteDifferenceColoring::Centered);
 
