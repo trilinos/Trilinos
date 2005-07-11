@@ -67,7 +67,7 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   SerialCrsMatrixA_(0),
   SerialMatrix_(0),
   Matrix_(0),
-  verbose_(0),
+//  verbose_(0),
   UseTranspose_(false),
   Problem_(&prob),
   refactorize_(false),
