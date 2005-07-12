@@ -571,7 +571,7 @@ int NextMain( int argc, char *argv[] ) {
 
 
   Teuchos::ParameterList ParamList ;
-    ParamList.set( "DebugLevel", 1 );
+  //    ParamList.set( "DebugLevel", 1 );
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
   Amesos Afactory;

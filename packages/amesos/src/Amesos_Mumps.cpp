@@ -61,7 +61,6 @@ const double DEF_VALUE_DOUBLE = -123456.789;
 Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   Problem_(&prob),
   NoDestroy_(false),
-  verbose_(0),
   MaxProcs_(-1),
   RedistrMap_(0),
   RedistrMatrix_(0),
@@ -73,17 +72,14 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   CrsSchurComplement_(0),
   DenseSchurComplement_(0),
   IsComputeSchurComplementOK_(false),
-  MatrixProperty_(0),
   RowSca_(0),
   ColSca_(0),
   PermIn_(0),
   Maxis_(DEF_VALUE_INT),
   Maxs_(DEF_VALUE_INT),
-  AddDiagElement_(false),
-  Threshold_(0.0),
+  //  Threshold_(0.0),
   MUMPSComm_(0),
-  UseTranspose_(false),
-  MatrixType_(0)
+  UseTranspose_(false)
 
 {
   // -777 is for me. It means : never called MUMPS, so
@@ -319,78 +315,23 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   
   // retrive general parameters
 
+  SetStatusParameters( ParameterList );
+
+  SetControlParameters( ParameterList );
+
   // solve problem with transpose
   if( ParameterList.isParameter("UseTranspose") )
     SetUseTranspose(ParameterList.get("UseTranspose",false));
   
-  // ignore all elements below given tolerance
-  if( ParameterList.isParameter("Threshold") )
-    Threshold_ = ParameterList.get("Threshold", 0.0);
+  //  Tthreshold_ is unused at the moment
+  //  // ignore all elements below given tolerance
+  //  if( ParameterList.isParameter("Threshold") )
+  //    Threshold_ = ParameterList.get("Threshold", 0.0);
 
-  // add zero to diagonal if diagonal element is not present
-  if( ParameterList.isParameter("AddZeroToDiag") )
-    AddDiagElement_ = ParameterList.get("AddZeroToDiag", false);
-
-  // add this value to diagonal
-  if( ParameterList.isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
-
-  // print some timing information (on process 0)
-
-  if( ParameterList.isParameter("PrintTiming") )
-    PrintTiming_ = ParameterList.get("PrintTiming", false);
-  
   if( ParameterList.isParameter("NoDestroy") )
     NoDestroy_ = ParameterList.get("NoDestroy", false);
   
-  // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
-    PrintStatus_ = ParameterList.get("PrintStatus", false);
-
-  // compute norms of some vectors
-  if( ParameterList.isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
-
-  // compute the true residual Ax-b after solution
-  if( ParameterList.isParameter("ComputeTrueResidual") )
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
-
-  // define on how many processes matrix should be converted into MUMPS
-  // format. (this value must be less than available procs)
-  if( ParameterList.isParameter("MaxProcs") )
-    MaxProcs_ = ParameterList.get("MaxProcs",-1);
-
-  // Matrix property, defined internally in Amesos_Mumps as an integer,
-  // whose value can be:
-  // - 0 : general unsymmetric matrix;
-  // - 1 : SPD;
-  // - 2 : general symmetric matrix.
-  if( ParameterList.isParameter("MatrixType") ) {
-    string MatrixType;
-    MatrixType = ParameterList.get("MatrixType",MatrixType);
-    if( MatrixType == "SPD" )
-      MatrixType_ = 1;
-    else if( MatrixType == "symmetric" ) 
-      MatrixType_ = 2;
-    else if( MatrixType == "general" )   
-      MatrixType_ = 0;
-    else {
-      if( Comm().MyPID() == 0 ) {
-	cerr << "Amesos_Mumps : ERROR" << endl 
-	     << "Amesos_Mumps : MatrixType value not recognized ("
-	     << MatrixType << ")" << endl;
-      }
-    }
-  }
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",1);
-
-  if ( verbose_ >= 1 ) 
+  if ( debug_ ) 
     MDS.ICNTL(2)=6; // Turn on Mumps verbose output 
 
 

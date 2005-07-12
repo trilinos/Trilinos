@@ -62,26 +62,8 @@ SUPERLUDIST_H =
 SUPERLUDIST =
 endif
 
-
-#
-#  If the parameter list cannot be made portable to all 
-#  platforms, we will have to add a NEED_PARAMETER_LIST
-#  flag to configure.ac 
-#
-if NEED_PARAMETER_LIST
-# PARAM_H = \
-# 	$(srcdir)/Amesos_Parameter_List.h \
-# 	$(srcdir)/Amesos_Parameter_Arbitrary.h \
-# 	$(srcdir)/Amesos_Parameter_Entry.h
-# PARAM = \
-# 	$(srcdir)/Amesos_Parameter_List.cpp \
-# 	$(srcdir)/Amesos_Parameter_Entry.cpp
 PARAM_H = 
-PARAM = 
-else
-PARAM_H = 
-PARAM = 
-endif
+PARAM = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp
 
 
 if HAVE_AMESOS_DSCPACK
@@ -299,6 +281,7 @@ COMP_H = \
         $(srcdir)/Amesos_NoCopiable.h \
         $(srcdir)/Amesos_Utils.h \
         $(srcdir)/Amesos_Time.h \
+        $(srcdir)/Amesos_Control.h \
         $(srcdir)/Amesos_Status.h
 
 COMP = \

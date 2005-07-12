@@ -1,3 +1,5 @@
+This file is out of date.  It has not been refactored to use Amesos_Status.
+
 /* 
 Task list:
     Amesos_Merikos.h

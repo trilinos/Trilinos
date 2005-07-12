@@ -42,10 +42,11 @@
 #include <vector>
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
-#include "Amesos_NoCopiable.h"
+#include "Amesos_6NoCopiable.h"
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -70,6 +71,7 @@ class Amesos_Taucs: public Amesos_BaseSolver,
                     private Amesos_Time, 
                     private Amesos_NoCopiable, 
                     private Amesos_Utils, 
+                    private Amesos_Control, 
                     private Amesos_Status { 
 
 public: 

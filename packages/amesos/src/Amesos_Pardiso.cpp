@@ -53,7 +53,6 @@ using namespace Teuchos;
 Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   UseTranspose_(false),
   Problem_(&prob),
-  verbose_(0),
   maxfct_(1),
   mnum_(1),
   msglvl_(0),
@@ -186,32 +185,11 @@ int Amesos_Pardiso::ConvertToPardiso()
 //=============================================================================
 int Amesos_Pardiso::SetParameters(Teuchos::ParameterList &ParameterList) 
 {
-  // print some timing information (on process 0)
-  if (ParameterList.isParameter("PrintTiming"))
-    PrintTiming_ = ParameterList.get("PrintTiming", PrintTiming_);
+  // retrive general parameters
 
-  // print some statistics (on process 0). Do not include timing
-  if (ParameterList.isParameter("PrintStatus"))
-    PrintStatus_ = ParameterList.get("PrintStatus", PrintStatus_);
+  SetStatusParameters( ParameterList );
 
-  // add this value to diagonal
-  if (ParameterList.isParameter("AddToDiag"))
-    AddToDiag_ = ParameterList.get("AddToDiag", AddToDiag_);
-
-  // compute norms of some vectors
-  if (ParameterList.isParameter("ComputeVectorNorms"))
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
-
-  // compute the true residual Ax-b after solution
-  if (ParameterList.isParameter("ComputeTrueResidual"))
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if (ParameterList.isParameter("OutputLevel"))
-    verbose_ = ParameterList.get("OutputLevel", verbose_);
+  SetControlParameters( ParameterList );
 
   // retrive PARDISO's specific parameters
 
@@ -221,6 +199,9 @@ int Amesos_Pardiso::SetParameters(Teuchos::ParameterList &ParameterList)
 
     if (PardisoList.isParameter("MSGLVL"))
       msglvl_ = PardisoList.get("MSGLVL", msglvl_);
+    else
+      if ( debug_ ) msglvl_ = 1 ; //  msglvl prints statistical information, but is the closest 
+    //  thing I found to debug print statements - KSS
 
     if (PardisoList.isParameter("IPARM(1)"))
       IPARM(1) = PardisoList.get("IPARM(1)",  IPARM(1));

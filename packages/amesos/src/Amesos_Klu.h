@@ -45,6 +45,7 @@
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "Epetra_Import.h"
@@ -109,6 +110,7 @@ class Amesos_Klu: public Amesos_BaseSolver,
                   private Amesos_Time, 
                   private Amesos_NoCopiable, 
                   private Amesos_Utils, 
+                  private Amesos_Control, 
                   private Amesos_Status { 
 
 public: 
@@ -286,29 +288,6 @@ private:
   vector<int>ColIndicesV_;
   //! Only used for RowMatrices to extract copies.
   vector<double>RowValuesV_;
-
-  bool refactorize_;	    // if true, and if the Symbolic and Numeric
-			    // objects have already been created, then
-			    // attempt to "refactorize" (factor the matrix
-			    // with no changes to the pivot order since the
-			    // last call the klu_btf_factor).
-
-  double rcond_threshold_;  // if we refactorize, the factorization may suffer
-			    // in numeric quality.  We compute rcond =
-			    // min (abs (diag (U))) / max (abs (diag (U))).
-			    // If this ratio is <= rcond_threshold_, then
-			    // the "refactorization" is scrapped, and we factor
-			    // with full partial pivoting instead.
-
-  int ScaleMethod_;	    // most methods (KLU, UMFPACK, Mumps, ...) can scale
-			    // the input matrix prior to factorization.  This can
-			    // improve pivoting, reduce fill-in, and lead to a
-			    // better quality factorization.  The options are:
-			    // 0: no scaling
-			    // 1: use the default method for the specific package
-			    // 2: use the method's 1st alternative (if it has one)
-			    // 3: use the method's 2nd alternative, and so on.
-
   //! Importer to process 0.
   Epetra_Import * ImportToSerial_;
   

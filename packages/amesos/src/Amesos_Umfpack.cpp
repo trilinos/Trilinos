@@ -42,7 +42,6 @@ extern "C" {
 Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   Symbolic(0),
   Numeric(0),
-  verbose_(0),
   SerialMatrix_(0), 
   UseTranspose_(false),
   Problem_(&prob), 
@@ -194,38 +193,14 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList )
   // default values defined in the constructor //
   // ========================================= //
   
+
   // retrive general parameters
+  SetStatusParameters( ParameterList ) ;
+  SetControlParameters( ParameterList ) ;
 
   // solve problem with transpose
   if (ParameterList.isParameter("UseTranspose"))
     SetUseTranspose(ParameterList.get("UseTranspose",false));
-
-  // print some timing information (on process 0)
-  if (ParameterList.isParameter("PrintTiming"))
-    PrintTiming_ = ParameterList.get("PrintTiming", false);
-
-  // print some statistics (on process 0). Do not include timing
-  if (ParameterList.isParameter("PrintStatus"))
-    PrintStatus_ = ParameterList.get("PrintStatus", false);
-
-  // add this value to diagonal
-  if (ParameterList.isParameter("AddToDiag"))
-    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
-
-  // compute norms of some vectors
-  if (ParameterList.isParameter("ComputeVectorNorms"))
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
-
-  // compute the true residual Ax-b after solution
-  if (ParameterList.isParameter("ComputeTrueResidual"))
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if (ParameterList.isParameter("OutputLevel"))
-    verbose_ = ParameterList.get("OutputLevel",1);
 
   return 0;
 }

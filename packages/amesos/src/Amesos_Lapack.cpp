@@ -39,7 +39,6 @@ using namespace Teuchos;
 Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
   UseTranspose_(false),
   Problem_(&Problem),
-//  verbose_(0),
   NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0)
@@ -64,38 +63,10 @@ Amesos_Lapack::~Amesos_Lapack(void)
 int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
   // retrive general parameters
+  SetStatusParameters( ParameterList );
 
-  // print some timing information (on process 0)
-  if( ParameterList.isParameter("PrintTiming") )
-    PrintTiming_ = ParameterList.get("PrintTiming", PrintTiming_);
+  SetControlParameters( ParameterList );
 
-  // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
-    PrintStatus_ = ParameterList.get("PrintStatus", PrintStatus_);
-
-  // compute norms of solution and right-hand side vectors
-  if( ParameterList.isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
-
-  // compute the true residual ||b - Ax|| after solution
-  if( ParameterList.isParameter("ComputeTrueResidual") )
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",verbose_);
-
-  // Drop all elements whose abolute value is below Threshold
-  if( ParameterList.isParameter("Threshold") )
-    Threshold_ = ParameterList.get("Threshold", Threshold_);
-
-  // add this value to diagonal
-  if( ParameterList.isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList.get("AddToDiag", AddToDiag_);
- 
   bool Equilibrate = true;
   if (ParameterList.isSublist("Lapack") ) {
     Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
@@ -172,7 +143,7 @@ int Amesos_Lapack::NumericFactorization()
   IsNumericFactorizationOK_ = false;
 
   // perform the symbolic (that is, build map and importer) if not done yet.
-  if (IsSymbolicFactorizationOK() == false)
+  if (IsSymbolicFactorizationOK_ == false)
     AMESOS_CHK_ERR(SymbolicFactorization());
 
   // Only on processor 0 define the dense matrix.
@@ -192,7 +163,7 @@ int Amesos_Lapack::NumericFactorization()
 //=============================================================================
 int Amesos_Lapack::Solve() 
 {
-  if (IsNumericFactorizationOK() == false)
+  if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
 
   Epetra_MultiVector*       X = Problem_->GetLHS();
@@ -310,7 +281,9 @@ int Amesos_Lapack::SerialToDense()
     AMESOS_CHK_ERR(ierr);
 
     for (int k = 0 ; k < NumEntries ; ++k) {
-      if (fabs(Values[k]) >= Threshold_)
+      //      if (fabs(Values[k]) >= Threshold_)       Threshold not used yet - no consistent definition 
+      //      Lapack would not be the first routine to use a threshold, as it confers no performance
+      //      advantage
 	if (UseTranspose())
 	  DenseMatrix_(Indices[k],j) = Values[k];
 	else
@@ -347,7 +320,7 @@ int Amesos_Lapack::DistributedToSerial()
 // ====================================================================== 
 int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
 {
-  if (IsSymbolicFactorizationOK() == false)
+  if (IsSymbolicFactorizationOK_ == false)
     AMESOS_CHK_ERR(SymbolicFactorization());
 
   if (Comm().MyPID() == 0)

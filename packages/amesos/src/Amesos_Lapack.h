@@ -35,6 +35,7 @@
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_SerialDenseMatrix.h"
@@ -64,6 +65,7 @@ class Amesos_Lapack: public Amesos_BaseSolver,
                      private Amesos_Time,
                      private Amesos_NoCopiable,
                      private Amesos_Utils,
+ 		     private Amesos_Control, 
                      private Amesos_Status 
 {
 public: 
@@ -136,18 +138,6 @@ public:
 
 protected:
 
-  //! Returns true if SymbolicFactorization() has been successfully called.
-  bool IsSymbolicFactorizationOK()
-  {
-    return(IsSymbolicFactorizationOK_);
-  }
-
-  //! Returns true if SymbolicFactorization() has been successfully called.
-  bool IsNumericFactorizationOK()
-  {
-    return(IsNumericFactorizationOK_);
-  }
-  
   //! Returns a pointer to the linear system matrix.
   const Epetra_RowMatrix* Matrix() const
   {

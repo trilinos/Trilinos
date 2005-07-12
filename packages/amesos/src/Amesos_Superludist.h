@@ -58,6 +58,7 @@ class Amesos_Superludist: public Amesos_BaseSolver,
                           private Amesos_Time,
                           private Amesos_NoCopiable,
                           private Amesos_Utils,
+                          private Amesos_Control,
                           private Amesos_Status 
 {
 
@@ -157,12 +158,9 @@ private:
 
   //! Allows FactOption to be used on subsequent calls to pdgssvx from NumericFactorization
   bool ReuseSymbolic_; 
-  //! Adds zero to diagonal of redistributed matrix (in case Superludist chokes on a matrix with a partly empty diag)
-  bool AddZeroToDiag_; 
   fact_t FactOption_; 
   //! redistribute the input matrix prior to calling Superludist
   bool Redistribute_ ; 
-  int MaxProcesses_;
 
   //! \c true if the SuperLU_DIST's grid has been created (and has to be free'd)
   int GridCreated_ ; 

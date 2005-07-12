@@ -72,6 +72,7 @@
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Teuchos_RefCountPtr.hpp"
 
 class SLUData;
@@ -92,6 +93,7 @@ class Amesos_Superlu: public Amesos_BaseSolver,
                       private Amesos_Time, 
                       private Amesos_NoCopiable, 
                       private Amesos_Utils, 
+                      private Amesos_Control, 
                       private Amesos_Status { 
 
 public: 

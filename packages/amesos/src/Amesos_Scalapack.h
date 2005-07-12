@@ -44,6 +44,11 @@
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_NoCopiable.h"
+#include "Amesos_Utils.h"
+#include "Amesos_Time.h"
+#include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #ifdef EPETRA_MPI
@@ -138,7 +143,13 @@ separate routines to  take advantages of such matrices.
 
 */
 
-class Amesos_Scalapack: public Amesos_BaseSolver { 
+class Amesos_Scalapack: public Amesos_BaseSolver,
+  private Amesos_Time,
+  private Amesos_NoCopiable,
+  private Amesos_Utils,
+  private Amesos_Control, 
+  private Amesos_Status 
+ { 
 
 public: 
 
@@ -329,9 +340,6 @@ revert to their default values.
 
  protected:
 
-  int MaxProcesses_;                     // default is -1 ; If positive, distribute 
-                                         // problem over MaxProcesses
-
   int iam_;                              //  Process number (i.e. Comm().MyPID() 
   
   int NumGlobalElements_;                //  Number of rows and columns in the Problem_->GetOperator()
@@ -360,14 +368,7 @@ revert to their default values.
   bool UseTranspose_;     
   const Epetra_LinearProblem * Problem_;
   
-  bool PrintTiming_;
-  bool PrintStatus_;
-  bool ComputeVectorNorms_;
-  bool ComputeTrueResidual_;
   
-  int verbose_;
-  int debug_;
-
   // some timing internal to MUMPS
   double ConTime_;                        // time to convert to MUMPS format
   double SymTime_;                        // time for symbolic factorization

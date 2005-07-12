@@ -1,3 +1,5 @@
+This file is out of date.  Is has not been refactored to use Amesos_Status. 
+
 // @HEADER
 // ***********************************************************************
 // 

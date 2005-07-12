@@ -81,7 +81,6 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
   FactorizationDone_(0), 
   NumGlobalRows_(0), 
   RowMatrixA_(0), 
-  verbose_(0),     
   nprow_(0),       
   npcol_(0),       
   PrintNonzeros_(false),
@@ -143,38 +142,14 @@ Amesos_Superludist::~Amesos_Superludist(void)
 // ====================================================================== 
 int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
+  // retrive general parameters
+
+  SetStatusParameters( ParameterList );
+
+  SetControlParameters( ParameterList );
+
   if (ParameterList.isParameter("Redistribute"))
     Redistribute_ = ParameterList.get("Redistribute",Redistribute_);  
-
-  if (ParameterList.isParameter("AddZeroToDiag"))
-    AddZeroToDiag_ = ParameterList.get("AddZeroToDiag",AddZeroToDiag_); 
-
-  if (ParameterList.isParameter("AddToDiag"))
-    AddToDiag_ = ParameterList.get("AddToDiag", AddToDiag_);
-
-  // print some statistics (on process 0). Do not include timing
-  if (ParameterList.isParameter("PrintStatus"))
-    PrintStatus_ = ParameterList.get("PrintStatus", PrintStatus_);
-
-  // print some statistics (on process 0). Do not include timing
-  if (ParameterList.isParameter("PrintTiming"))
-    PrintTiming_ = ParameterList.get("PrintTiming", PrintTiming_);
-
-  if (ParameterList.isParameter("MaxProcs")) 
-    MaxProcesses_ = ParameterList.get("MaxProcs",MaxProcesses_);
-
-  if (ParameterList.isParameter("ComputeTrueResidual"))
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
-
-  if (ParameterList.isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",1);
 
   // parameters for Superludist only
 

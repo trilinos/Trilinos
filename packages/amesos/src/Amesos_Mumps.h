@@ -46,6 +46,7 @@ class Amesos_EpetraInterface;
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -121,6 +122,7 @@ class Amesos_Mumps: public Amesos_BaseSolver,
                     private Amesos_Time, 
                     private Amesos_NoCopiable, 
                     private Amesos_Utils,  
+                    private Amesos_Control,  
                     private Amesos_Status { 
 
 public: 
@@ -339,12 +341,6 @@ public:
 
 protected:
   
-  //! Gets the matrix type (SPD, symmetric, or general).
-  inline int MatrixType() const
-  {
-    return MatrixType_;
-  }
-
   //! Returns a reference to the linear system matrix.
   Epetra_RowMatrix& Matrix();
 
@@ -409,16 +405,7 @@ protected:
   
   //! If \c true, solve the problem with AT.
   bool UseTranspose_;
-  //! If \c true, add a the value AddToDiag_ on the diagonal
-  bool AddDiagElement_;
   
-  //! Set the matrix property.
-  /*! Matrix property can be 
-    - 0 : general unsymmetric matrix;
-    - 1 : SPD;
-    - 2 : general symmetric matrix.
-    */
-  int MatrixProperty_;        
   //! Discard all elements whose absolute value is below this value
   double Threshold_;
   
@@ -459,8 +446,6 @@ protected:
   //! Importer from Matrix.OperatorDomainMap() to SerialMap_.
   Epetra_Import* SerialImporter_;
 
-  //! Contains the matrix type.
-  int MatrixType_;
 #ifdef EPETRA_MPI
   //! MPI communicator used by MUMPS
   MPI_Comm MUMPSComm_;

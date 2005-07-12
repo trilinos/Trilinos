@@ -38,7 +38,6 @@
 //=============================================================================
 Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
   DscNumProcs(-1), // will be set later
-  verbose_(0),
   MaxProcs_(-1)
 {  
   Problem_ = &prob ; 
@@ -74,32 +73,9 @@ int Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList)
 
   // retrive general parameters
 
-  // print some timing information (on process 0)
-  if( ParameterList.isParameter("PrintTiming") )
-    PrintTiming_ = ParameterList.get("PrintTiming", false);
+  SetStatusParameters( ParameterList );
 
-  // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
-    PrintStatus_ = ParameterList.get("PrintStatus", false);
-
-  // compute norms of some vectors
-  if( ParameterList.isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
-
-  // compute the true residual Ax-b after solution
-  if( ParameterList.isParameter("ComputeTrueResidual") )
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",1);
-
-  // define on how many processes should be used
-  if( ParameterList.isParameter("MaxProcs") )
-    MaxProcs_ = ParameterList.get("MaxProcs",-1);
+  SetControlParameters( ParameterList );
   
   // MS // NO DSCPACK-specify parameters at this point, uncomment
   // MS // as necessary

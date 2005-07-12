@@ -1,6 +1,8 @@
 #ifndef AMESOS_STATUS_H
 #define AMESOS_STATUS_H
 
+#include "Teuchos_ParameterList.hpp"
+using namespace Teuchos;
 /*!
  \class Amesos_Status
  
@@ -21,10 +23,10 @@ public:
     IsNumericFactorizationOK_ = false;
     PrintTiming_ = false;
     PrintStatus_ = false;
-    AddToDiag_ = 0.0;
     ComputeVectorNorms_ = false;
     ComputeTrueResidual_ = false;
     verbose_ = 1;
+    debug_ = 0;
     NumSymbolicFact_ = 0;
     NumNumericFact_ = 0;
     NumSolve_ = 0;  
@@ -34,6 +36,8 @@ public:
   //! Default destructor.
   ~Amesos_Status() {};
 
+  void SetStatusParameters( Teuchos::ParameterList &ParameterList )  ;
+
   //! If \c true, SymbolicFactorization() has been successfully called.
   bool IsSymbolicFactorizationOK_;
   //! If \c true, NumericFactorization() has been successfully called.
@@ -42,8 +46,6 @@ public:
   bool PrintTiming_;
   //! If \c true, print additional information in the destructor.
   bool PrintStatus_;
-  //! Add \c this value to the diagonal.
-  double AddToDiag_;
   //! If \c true, prints the norms of X and B in Solve().
   bool ComputeVectorNorms_;
   //! If \c true, computes the true residual in Solve().
@@ -51,6 +53,9 @@ public:
   
   //! Toggles the output level.
   int verbose_;
+
+  //! Sets the level of debug_ output
+  int debug_;
 
   //! Number of symbolic factorization phases.
   int NumSymbolicFact_;

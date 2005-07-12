@@ -38,7 +38,6 @@ using namespace Teuchos;
 //=============================================================================
 Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
   Matrix_(0),
-  verbose_(0),
   Problem_(&prob),
   A_(0),
   L_(0)
@@ -166,32 +165,11 @@ int Amesos_Taucs::ConvertToTaucs()
 //=============================================================================
 int Amesos_Taucs::SetParameters(Teuchos::ParameterList &ParameterList) 
 {
-  // print some timing information (on process 0)
-  if( ParameterList.isParameter("PrintTiming") )
-    PrintTiming_ = ParameterList.get("PrintTiming", false);
+  // retrive general parameters
 
-  // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
-    PrintStatus_ = ParameterList.get("PrintStatus", false);
+  SetStatusParameters( ParameterList );
 
-  // add this value to diagonal
-  if( ParameterList.isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
-
-  // compute norms of some vectors
-  if( ParameterList.isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
-
-  // compute the true residual Ax-b after solution
-  if( ParameterList.isParameter("ComputeTrueResidual") )
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",1);
+  SetControlParameters( ParameterList );
 
   return 0;
 }
@@ -257,7 +235,7 @@ bool Amesos_Taucs::MatrixShapeOK() const
 //=============================================================================
 int Amesos_Taucs::SymbolicFactorization() 
 {
-  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering SymbolicFactorization()" << endl ; 
+  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering SymbolicFactorization()" << endl ; 
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
@@ -294,14 +272,14 @@ int Amesos_Taucs::SymbolicFactorization()
 
   IsSymbolicFactorizationOK_ = true;
 
-  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__  << " Leaving SymbolicFactorization()" << endl ; 
+  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__  << " Leaving SymbolicFactorization()" << endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::NumericFactorization() 
 {
-  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
+  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
   IsNumericFactorizationOK_ = false;
 
   if (IsSymbolicFactorizationOK_ == false)
@@ -317,7 +295,7 @@ int Amesos_Taucs::NumericFactorization()
 
   IsNumericFactorizationOK_ = true;
 
-  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__
+  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__
 			   << " Leaving NumericFactorization()" << endl ; 
   return(0);
 }
@@ -325,7 +303,7 @@ int Amesos_Taucs::NumericFactorization()
 //=============================================================================
 int Amesos_Taucs::Solve() 
 {
-  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__
+  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__
 			   << " Entering Solve()" << endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
@@ -405,7 +383,7 @@ int Amesos_Taucs::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*X, *B, "Amesos_Taucs");
 
-  if ( verbose_ > 0 ) cout << __FILE__ << "::" << __LINE__
+  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__
 			   << " Leaving Solve()" << endl ; 
   return(0) ;
 }

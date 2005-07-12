@@ -67,12 +67,8 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   SerialCrsMatrixA_(0),
   SerialMatrix_(0),
   Matrix_(0),
-//  verbose_(0),
   UseTranspose_(false),
   Problem_(&prob),
-  refactorize_(false),
-  rcond_threshold_(1e-12),
-  ScaleMethod_(1),
   ImportToSerial_(0)
 {
   // MS // move declaration of Problem_ above because I need it
@@ -104,21 +100,21 @@ Amesos_Klu::~Amesos_Klu(void) {
 //=============================================================================
 int Amesos_Klu::ExportToSerial() 
 {
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ 
        << " UseDataInPlace_ = " << UseDataInPlace_ 
        << " iam = " << iam 
        << endl ; 
   if (UseDataInPlace_ != 1) {
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     assert ( RowMatrixA_ != 0 ) ; 
     assert ( ImportToSerial_ != 0 ) ; 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*RowMatrixA_, 
 					     *ImportToSerial_, Add));
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   }
   
 }
@@ -308,45 +304,13 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   // retrive general parameters
 
+  SetStatusParameters( ParameterList );
+
+  SetControlParameters( ParameterList );
+
   // solve problem with transpose
   if( ParameterList.isParameter("UseTranspose") )
     SetUseTranspose(ParameterList.get("UseTranspose",false));
-
-  // print some timing information (on process 0)
-  if( ParameterList.isParameter("PrintTiming") )
-    PrintTiming_ = ParameterList.get("PrintTiming", false);
-
-  // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatus") )
-    PrintStatus_ = ParameterList.get("PrintStatus", false);
-
-  // add this value to diagonal
-  if( ParameterList.isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
-
-  // compute norms of some vectors
-  if( ParameterList.isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
-
-  // compute the true residual Ax-b after solution
-  if( ParameterList.isParameter("ComputeTrueResidual") )
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
-
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",1);
-
-  // refactorize
-  if( ParameterList.isParameter("Refactorize") )
-    refactorize_ = ParameterList.get("Refactorize", false);
-
-  // threshold for determining if refactorize worked OK
-  // UNUSED at present - KSS June 2004
-  if( ParameterList.isParameter("RcondThreshold") )
-    rcond_threshold_ = ParameterList.get("RcondThreshold", 1e-12);
 
   // scaling method: 0: none, 1: use method's default, 2: use
   // the method's 1st alternative, 3: etc.
@@ -473,11 +437,11 @@ int Amesos_Klu::SymbolicFactorization()
 {
 
   iam = Comm().MyPID();
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering SymbolicFactorization()" << endl ; 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam 
-       << " verbose_ = " << verbose_ 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering SymbolicFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam 
+       << " debug_ = " << debug_ 
        << " Entering SymbolicFactorization()" << endl ; 
 
   IsSymbolicFactorizationOK_ = false;
@@ -487,21 +451,21 @@ int Amesos_Klu::SymbolicFactorization()
 
   NumSymbolicFact_++;
 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   AMESOS_CHK_ERR( ExportToSerial() );
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
   AMESOS_CHK_ERR( ConvertToKluCRS(true) );
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
   AMESOS_CHK_ERR( PerformSymbolicFactorization() );
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
   IsSymbolicFactorizationOK_ = true;
   
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving SymbolicFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving SymbolicFactorization()" << endl ; 
   return 0;
 }
 
@@ -509,7 +473,7 @@ int Amesos_Klu::SymbolicFactorization()
 int Amesos_Klu::NumericFactorization() 
 {
  
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering NumericFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering NumericFactorization()" << endl ; 
   IsNumericFactorizationOK_ = false;
   if (IsSymbolicFactorizationOK_ == false)
     AMESOS_CHK_ERR(SymbolicFactorization());
@@ -525,7 +489,7 @@ int Amesos_Klu::NumericFactorization()
 
   IsNumericFactorizationOK_ = true;
   
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving NumericFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving NumericFactorization()" << endl ; 
   return 0;
 }
 
@@ -533,7 +497,7 @@ int Amesos_Klu::NumericFactorization()
 int Amesos_Klu::Solve() 
 {
 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering Solve()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering Solve()" << endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
   
@@ -647,7 +611,7 @@ int Amesos_Klu::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Klu");
 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving Solve()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving Solve()" << endl ; 
   return(0) ;
 }
 

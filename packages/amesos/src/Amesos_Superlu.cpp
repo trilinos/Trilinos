@@ -61,7 +61,6 @@ using namespace Teuchos;
 Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
   NumGlobalRows_(-1),
   NumGlobalNonzeros_(-1),
-  verbose_(0),
   UseTranspose_(false),
   FactorizationOK_(false),
   FactorizationDone_(false),
@@ -116,26 +115,12 @@ Amesos_Superlu::~Amesos_Superlu(void)
 // ====================================================================== 
 int Amesos_Superlu::SetParameters(Teuchos::ParameterList &ParameterList) 
 {
-  // print some statistics (on process 0). Do not include timing
-  if (ParameterList.isParameter("PrintStatus"))
-    PrintStatus_ = ParameterList.get("PrintStatus", PrintStatus_);
 
-  // print some statistics (on process 0). Do not include timing
-  if (ParameterList.isParameter("PrintTiming"))
-    PrintTiming_ = ParameterList.get("PrintTiming", PrintTiming_);
+  // retrive general parameters
 
-  if (ParameterList.isParameter("ComputeTrueResidual"))
-    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
+  SetStatusParameters( ParameterList );
 
-  // some verbose output:
-  // 0 - no output at all
-  // 1 - output as specified by other parameters
-  // 2 - all possible output
-  if( ParameterList.isParameter("OutputLevel") )
-    verbose_ = ParameterList.get("OutputLevel",1);
-
-  if (ParameterList.isParameter("ComputeVectorNorms"))
-    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
+  SetControlParameters( ParameterList );
 
   /* the list is empty now
   if (ParameterList.isSublist("Superlu") ) {
@@ -159,7 +144,7 @@ bool Amesos_Superlu::MatrixShapeOK() const
 int Amesos_Superlu::ConvertToSerial() 
 { 
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering ConvertToSerial()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering ConvertToSerial()" << endl ; 
 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   if (RowMatrixA_ == 0)
@@ -224,7 +209,7 @@ int Amesos_Superlu::ConvertToSerial()
     SerialMatrix_ = SerialCrsMatrixA_.get();
   }
   
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving ConvertToSerial()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving ConvertToSerial()" << endl ; 
 
   return(0);
 }
@@ -251,7 +236,7 @@ int Amesos_Superlu::Factor()
   // I suppose that the matrix has already been formed on processor 0
   // as SerialMatrix_.
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering Factor()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering Factor()" << endl ; 
 
   if (iam_ == 0) 
   {
@@ -318,7 +303,7 @@ int Amesos_Superlu::Factor()
 			    NumGlobalNonzeros_, &Aval_[0],
 			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
   }
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Leaving Factor()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving Factor()" << endl ; 
   return 0;
 }   
 
@@ -330,7 +315,7 @@ int Amesos_Superlu::ReFactor()
   // there I have SerialMatrix_ stored at it should. 
   // Only processor 0 does something useful here.
 
-  if ( verbose_ > 1 ) cout << __FILE__ << "::" << __LINE__ << " Entering ReFactor()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering ReFactor()" << endl ; 
   if (iam_ == 0) 
   {
     if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
@@ -391,13 +376,12 @@ int Amesos_Superlu::ReFactor()
     Destroy_SuperMatrix_Store(&data_->A);
     Destroy_SuperNode_Matrix(&data_->L);
     Destroy_CompCol_Matrix(&data_->U);
-
     /* Create matrix A in the format expected by SuperLU. */
     dCreate_CompCol_Matrix( &(data_->A), NumGlobalRows_, NumGlobalRows_,
 			    NumGlobalNonzeros_, &Aval_[0],
 			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
   }
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving ReFactor()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving ReFactor()" << endl ; 
   return 0;
 }
 //
@@ -412,7 +396,7 @@ int Amesos_Superlu::SymbolicFactorization()
 // ======================================================================
 int Amesos_Superlu::NumericFactorization() 
 {
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
   InitTime(Comm());
   ResetTime();
 
@@ -490,14 +474,14 @@ int Amesos_Superlu::NumericFactorization()
 
   ++NumNumericFact_;
 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving NumericFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving NumericFactorization()" << endl ; 
   return(0);
 }
 
 // ====================================================================== 
 int Amesos_Superlu::Solve() 
 { 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Entering Solve()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering Solve()" << endl ; 
 
   if (!FactorizationDone_) {
     FactorizationOK_ = false;
@@ -677,7 +661,7 @@ int Amesos_Superlu::Solve()
 #endif
   ++NumSolve_;
 
-  if ( verbose_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving Solve()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving Solve()" << endl ; 
 
   return(Ierr);
 }

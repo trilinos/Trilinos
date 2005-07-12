@@ -36,6 +36,7 @@
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
@@ -58,6 +59,7 @@ class Amesos_Pardiso: public Amesos_BaseSolver,
                       private Amesos_Time, 
                       private Amesos_NoCopiable, 
                       private Amesos_Utils, 
+                      private Amesos_Control, 
                       private Amesos_Status { 
 
 public: 
