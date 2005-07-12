@@ -1,4 +1,4 @@
-#!/ bin/sh
+#! /bin/sh
 # -------------------------------------------------------------------------- #
 # Simple script to create shared libraries on LINUX/GCC and LAM/MPI.
 #
