@@ -80,8 +80,6 @@ typedef struct HSFC_Data {
    double    (*fhsfc)(ZZ*, double*);  /* space filling curve function */
    int Skip_Dimensions;           /* if degenerate geometry, skip 1 or 2 dims */  
    double Transformation[3][3];   /* to align deg. geom along XY plane */
-   double     trans_bbox_hi[3];   /* bounds in new coordinates, ...     */
-   double     trans_bbox_lo[3];   /* ...  before projection to 2D or 1D */
    } HSFC_Data;                  /* data preserved for point & box drop later */
 
 
