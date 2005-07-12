@@ -30,19 +30,19 @@
 
 # Shows how to build an Epetra_CrsMatrix in python
 
-# Imports.  Users importing an installed version of PyTrilinos should use the
-# "from PyTrilinos import ..." syntax.  Here, the setpath module adds the build
-# directory, including "PyTrilinos", to the front of the search path.  We thus
-# use "import ..." for Trilinos modules.  This prevents us from accidentally
-# picking up a system-installed version and ensures that we are testing the
-# build module.
-import setpath
-import Epetra
+try:
+  import setpath
+  import Epetra
+except:
+  try:
+    from PyTrilinos import Epetra
+  except ImportError:
+    raise ImportError, "error w/ Epetra"
 
 def main():
     Comm  = Epetra.SerialComm()
     NumGlobalRows = 5
-    Map   = Epetra.Map(NumGlobalRows, 0, comm)
+    Map   = Epetra.Map(NumGlobalRows, 0, Comm)
     A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
     for i in range(0, NumGlobalRows):
       if i != NumGlobalRows - 1:
@@ -51,11 +51,11 @@ def main():
       else:
         Indices = [i]
         Values = [2.0];
-    Matrix.InsertGlobalValues(i, Values, Indices);
-    ierr = Matrix.FillComplete();
+    A.InsertGlobalValues(i, Values, Indices);
+    ierr = A.FillComplete();
 
-    print Matrix
-    print "inf norm of A =", Matrix.NormInf()
+    print A
+    print "inf norm of A =", A.NormInf()
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

@@ -36,8 +36,14 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
-import setpath
-import Epetra
+try:
+  import setpath
+  import Epetra
+except:
+  try:
+    from PyTrilinos import Epetra
+  except ImportError:
+    raise ImportError, "error w/ Epetra"
 
 def main():
     print Epetra.Version()
