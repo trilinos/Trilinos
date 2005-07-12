@@ -32,6 +32,7 @@
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_Object.hpp"
+#include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 
@@ -43,7 +44,9 @@ namespace Tpetra {
 	template<typename PacketType, typename OrdinalType>
 	class SerialComm : public Object, public virtual Comm<PacketType, OrdinalType> {
 	public:
+
 		//@{ \name Constructor/Destructor Methods
+
 		//! Constructor
 		/*! Builds an instance of a serial communicator.  Even
 		    if the application is running in parallel via MPI, this communicator
@@ -63,16 +66,20 @@ namespace Tpetra {
 		           should be destroyed prior to calling this function.
 		*/
 		~SerialComm() {};
+
 		//@}
 
 		//@{ \name Barrier Methods
+
 		//! Barrier function. 
 		/*! A no-op for a serial communicator.
 		 */
 		void barrier() const {};
+
 		//@}
 
 		//@{ \name Broadcast Methods
+
 		//! SerialComm Broadcast function.
 		/*! A no-op for a serial communicator.
 		  \param myVals InOut
@@ -85,9 +92,11 @@ namespace Tpetra {
 		         On entry, contains the imageID from which all images will receive a copy of myVals.
 		*/
 		void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {};
+
 		//@}
 
 		//@{ \name Gather Methods
+
 		//! SerialComm All Gather function.
 		/*! A copy for a serial communicator.
 		  \param myVals In
@@ -100,6 +109,7 @@ namespace Tpetra {
 		void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
 			copy(myVals, allVals, count);
 		};
+
 		//@}
 
 		//@{ \name Sum Methods
@@ -137,6 +147,7 @@ namespace Tpetra {
 		//@}
 	
 		//@{ \name Max/Min Methods
+
 		//! SerialComm Global Max function.
 		/*! A copy for a serial communicator.
 		  \param partialMaxs In
@@ -150,6 +161,7 @@ namespace Tpetra {
 		void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
 			copy(partialMaxs, globalMaxs, count);
 		};
+
 		//! SerialComm Global Min function.
 		/*! A copy for a serial communicator.
 		  \param partialMins In
@@ -163,9 +175,11 @@ namespace Tpetra {
 		void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
 			copy(partialMins, globalMins, count);
 		};
+
 		//@}
 
 		//@{ \name Parallel Prefix Methods
+
 		//! SerialComm Scan Sum function.
 		/*! A copy for a serial communicator.
 		  \param myVals In
@@ -178,6 +192,7 @@ namespace Tpetra {
 		void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
 			copy(myVals, scanSums, count);
 		};
+
 		//@}
 
 		//@{ \name Point-to-Point Methods
@@ -215,6 +230,42 @@ namespace Tpetra {
 
 		//@}
 
+		//@{ \name Execute Distributor Plan Methods
+
+		//! doPostsAndWaits
+		/*! Execute a plan specified by the distributor object passed in. 
+		  \param distributor In
+			     Contains the specifications of the plan we're executing.
+		  \param exports In
+		         On entry, contains the values we're exporting.
+		  \param packetSize In
+		         On entry, the number of PacketType variables that make up an element.
+		  \param imports Out
+		         On exit, contains the values exported to us. (imports will be resized
+				 if necessary, and any existing values will be overwritten.)
+		*/
+		void doPostsAndWaits(Distributor<OrdinalType>& distributor,
+							 std::vector<PacketType>& exports,
+							 OrdinalType packetSize,
+							 std::vector<PacketType>& imports) {
+			throw reportError("This method should never be called.", -1);
+		}
+
+		//! doPosts
+		void doPosts(Distributor<OrdinalType>& distributor,
+					 std::vector<PacketType>& exports,
+					 OrdinalType packetSize,
+					 std::vector<PacketType>& imports) {
+			throw reportError("This method should never be called.", -1);
+		}
+
+		//! doWaits
+		void doWaits(Distributor<OrdinalType>& distributor) {
+			throw reportError("This method should never be called.", -1);
+		}
+
+		//@}
+
 		//@{ \name Image Info Methods
 
 		//! getMyImageID - In serial mode, always returns 0.
@@ -226,9 +277,11 @@ namespace Tpetra {
 		//@}
 
 		//@{ \name I/O Methods
+
 		//! Print methods
 		void print(ostream& os) const {};
 		void printInfo(ostream& os) const {os << *this;};
+
 		//@}
 
 	private:

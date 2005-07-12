@@ -36,6 +36,7 @@
 #include "Tpetra_MpiTraits.hpp"
 #include "Tpetra_PacketTraits.hpp"
 #include "Tpetra_MpiData.hpp"
+#include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 
@@ -58,6 +59,7 @@ namespace Tpetra {
 	public:
     
 		//@{ \name Constructor/Destructor Methods
+
 		//! default constuctor
 		/*! This is used when the user wants to create an MpiComm instance directly.
 		  \param Comm In
@@ -96,17 +98,21 @@ namespace Tpetra {
 		};
 
 		~MpiComm() {};
+
 		//@}
     
 		//@{ \name Barrier Methods
+
 		//! MpiComm barrier function.
 		/*! Causes each image in the communicator to wait until all images have arrived. */
 		void barrier() const {
 			MPI_Barrier(getMpiComm());
 		};
+
 		//@}
     
 		//@{ \name Broadcast Methods
+
 		//! MpiComm Broadcast function.
 		/*!Takes list of input values from the root image and sends to all other images.
 		  \param myVals InOut
@@ -121,9 +127,11 @@ namespace Tpetra {
 		void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {
 			MPI_Bcast(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), root, getMpiComm());
 		};
+
 		//@}
     
 		//@{ \name Gather Methods
+
 		//! MpiComm All Gather function.
 		/*! Takes list of values from all images in the communicator and creates an ordered contiguous list of 
 		    those values on each image.
@@ -140,6 +148,7 @@ namespace Tpetra {
 						  allVals, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), getMpiComm());
 		};
+
 		//@}
     
 		//@{ \name Sum Methods
@@ -184,6 +193,7 @@ namespace Tpetra {
 		//@}
     
 		//@{ \name Max/Min Methods
+
 		//! MpiComm Global Max function.
 		/*! Takes list of input values from all images in the communicator, computes the max and returns the 
 		    max to all images.
@@ -198,6 +208,7 @@ namespace Tpetra {
 			MPI_Allreduce(partialMaxs, globalMaxs, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::maxOp(), getMpiComm());
 		};
+
 		//! MpiComm Global Min function.
 		/*! Takes list of input values from all images in the communicator, computes the min and returns the 
 		    min to all images.
@@ -212,9 +223,11 @@ namespace Tpetra {
 			MPI_Allreduce(partialMins, globalMins, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::minOp(), getMpiComm());
 		};
+
 		//@}
     
 		//@{ \name Parallel Prefix Methods
+
 		//! MpiComm Scan Sum function.
 		/*! Takes list of input values from all images in the communicator, computes the scan sum and returns it
 		    to all images such that image i receives the sum of values from image 0 up to and including image i.
@@ -229,19 +242,8 @@ namespace Tpetra {
 			MPI_Scan(myVals, scanSums, MpiTraits<PacketType>::count(count), 
 					 MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
 		};
-		//@}
 
-		//@{ \name Reduce and Scatter Methods
-		//! MpiComm sumAllAndScatter function.
-		/*! Takes a list of input values from all images in the communicator, computes a global sum,
-		    and then distributes the sum array across all images. If count == numImages, Image i will  
-			receive the global sum of myVals[i]. 
-			\param sendBuf In
-		*/
-		/*void sumAllAndScatter(PacketType* myVals, PacketType* globalSums, OrdinalType const count) const {
-			MPI_Reduce_scatter(myVals, globalSums, count, MpiTraits<PacketType>::datatype(), 
-							   MpiTraits<PacketType>::sumOp(), getMpiComm());
-							   };*/
+		//@}
 
 		//@{ \name Point-to-Point Methods
 
@@ -313,6 +315,43 @@ namespace Tpetra {
 
 		//@}
 
+		//@{ \name Execute Distributor Plan Methods
+
+		//! doPostsAndWaits
+		/*! Execute a plan specified by the distributor object passed in. 
+		  \param distributor In
+			     Contains the specifications of the plan we're executing.
+		  \param exports In
+		         On entry, contains the values we're exporting.
+		  \param packetSize In
+		         On entry, the number of PacketType variables that make up an element.
+		  \param imports Out
+		         On exit, contains the values exported to us. (imports will be resized
+				 if necessary, and any existing values will be overwritten.)
+		*/
+		void doPostsAndWaits(Distributor<OrdinalType>& distributor,
+							 std::vector<PacketType>& exports,
+							 OrdinalType packetSize,
+							 std::vector<PacketType>& imports) {
+			doPosts(distributor, exports, packetSize, imports);
+			doWaits(distributor);
+		}
+
+		//! doPosts
+		void doPosts(Distributor<OrdinalType>& distributor,
+					 std::vector<PacketType>& exports,
+					 OrdinalType packetSize,
+					 std::vector<PacketType>& imports) {
+
+		}
+
+		//! doWaits
+		void doWaits(Distributor<OrdinalType>& distributor) {
+
+		}
+
+		//@}
+
 		//@{ \name Image Info Methods
 
 		//! getMyImageID
@@ -330,12 +369,15 @@ namespace Tpetra {
 		//@}
     
 		//@{ \name I/O Methods
+
 		//! Print methods
 		void print(ostream& os) const {};
 		void printInfo(ostream& os) const {os << *this;};
+
 		//@}
     
 		//@{ \name MPI-specific methods, not inherited from Tpetra::Comm
+
 		//! Access method to the MPI Communicator we're using.
 		MPI_Comm getMpiComm() const {
 			return(data().getMpiComm());
@@ -352,6 +394,30 @@ namespace Tpetra {
 		// private data members
 		Teuchos::RefCountPtr<MpiData> MpiData_;
 		int tag_;
+
+		// templated MPI_Rsend functions
+		int rsend(PacketType& myVal, int destinationImageID) const {
+			MPI_Rsend(&myVal, MpiTraits<PacketType>::count(1), MpiTraits<PacketType>::datatype(), 
+					  destinationImageID, tag_, data().getMpiComm());
+		}
+
+		int rsend(std::vector<PacketType>& myVals, int destinationImageID) const {
+			MPI_Rsend(&myVals.front(), MpiTraits<PacketType>::count(myVals.size()), MpiTraits<PacketType>::datatype(), 
+					  destinationImageID, tag_, data().getMpiComm());
+		}
+
+		// templated MPI_Irecv functions
+		int irecv(PacketType& myVal, int sourceImageID) const {
+			MPI_Request request;
+			MPI_Irecv(&myVal, MpiTraits<PacketType>::count(1), MpiTraits<PacketType>::datatype(), 
+					  sourceImageID, tag_, data().getMpiComm(), &request);
+		}
+
+		int irecv(std::vector<PacketType>& myVals, int sourceImageID) const {
+			MPI_Request request;
+			MPI_Irecv(&myVals.front(), MpiTraits<PacketType>::count(myVals.size()), MpiTraits<PacketType>::datatype(), 
+					  sourceImageID, tag_, data().getMpiComm(), &request);
+		}
     
 	}; // MpiComm class
   
