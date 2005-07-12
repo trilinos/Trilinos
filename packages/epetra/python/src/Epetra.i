@@ -143,7 +143,7 @@ MPI_Comm CommWorld()
   return(MPI_COMM_WORLD);
 }
 #else
-PyObject* Init_Args(PyObject *args) 
+PyObject* Init_Argv(PyObject *args) 
 {
   return Py_BuildValue("");
 }
@@ -779,8 +779,8 @@ def PyComm():
 %}
 #endif
 
-#ifdef HAVE_MPI
 PyObject* Init_Argv(PyObject *args);
 PyObject* Finalize();
+#ifdef HAVE_MPI
 MPI_Comm CommWorld();
 #endif
