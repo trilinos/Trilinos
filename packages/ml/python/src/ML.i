@@ -45,9 +45,9 @@ Example of usage:
 
    Prec = ML.MultiLevelPreconditioner(Matrix, False)
    MLList = {
-     "max levels"        : 3,
-     "smoother: type"    : "symmetric Gauss-Seidel",
-     "aggregation: type" : "Uncoupled"
+     \"max levels\"        : 3,
+     \"smoother: type\"    : \"symmetric Gauss-Seidel\",
+     \"aggregation: type\" : \"Uncoupled\"
    }
    Prec.SetParameterList(MLList)
    Prec.ComputePreconditioner()
