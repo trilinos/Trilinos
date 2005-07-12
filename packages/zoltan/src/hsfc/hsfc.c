@@ -102,6 +102,7 @@ int Zoltan_HSFC(
    double     temp, in[9], out[9];
    int        err;
    int        param;
+   int        dummy;
    int        dim;
    char      *yo = "Zoltan_HSFC";
 
@@ -165,8 +166,9 @@ int Zoltan_HSFC(
 
    for (i = 0; i < ndots; i++) {
       tmp = i*d->ndimension;
-      for (j = 0; j < dim; j++)
+      for (j = 0; j < dim; j++){
          dots[i].x[j] = geom_vec[tmp + j];
+      }
    }
 
    ZOLTAN_FREE(&geom_vec);
@@ -544,7 +546,8 @@ int Zoltan_HSFC(
 
    /* done, do we keep data structure for box drop and point drop? */
    Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void*) &param);
-   param = 0;
+   Zoltan_Bind_Param (HSFC_params, "SKIP_DIMENSIONS", (void*) &dummy);
+   param = dummy = 0;
    Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
     zz->Debug_Proc);
    if (param == 0)
@@ -625,8 +628,6 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
     to->bbox_hi[i] = from->bbox_hi[i];
     to->bbox_lo[i] = from->bbox_lo[i];
     to->bbox_extent[i] = from->bbox_extent[i];
-    to->trans_bbox_hi[i] = from->trans_bbox_hi[i];
-    to->trans_bbox_lo[i] = from->trans_bbox_lo[i];
     for (j=0; j<3; j++){
       to->Transformation[i][j] = from->Transformation[i][j];
     }
@@ -689,10 +690,6 @@ Partition *p;
       printf("    %lf %lf %lf\n", data->Transformation[i][0], 
              data->Transformation[i][1], data->Transformation[i][2]);
     }
-    printf("  transformed bbox low: %6.4lf %6.4lf %6.4lf\n",
-       data->trans_bbox_lo[0], data->trans_bbox_lo[1], data->trans_bbox_lo[2]);
-    printf("  transformed bbox hi: %6.4lf %6.4lf %6.4lf\n",
-       data->trans_bbox_hi[0], data->trans_bbox_hi[1], data->trans_bbox_hi[2]);
   }
   else{
     printf("Don't skip dimensions, no degenerate geometry.\n");
