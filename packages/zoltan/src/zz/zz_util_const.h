@@ -28,7 +28,11 @@ extern "C" {
 
 extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
 extern int Zoltan_Clean_String(char *, char **);
-
+void Zoltan_Transform_Box(double *lo, double *hi, double (*m)[3], int ndims);
+void Zoltan_Transform_Box_Points(
+  double *lo, double *hi, double (*m)[3], int ndims, double (*v)[3]);
+void Zoltan_Box_Box_Intersection( double *lo1, double *hi1,
+  double *lo2, double *hi2);
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
