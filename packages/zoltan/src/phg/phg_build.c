@@ -797,13 +797,14 @@ double ewgt;
 
   for (i = 0; i < zhg->nRemove; i++) npins += zhg->Remove_Esize[i];
 
-  if (zhg->nRemove) {
+  if (zhg->nRemove && npins != 0) {
     if (zz->Get_HG_Edge_List) {
       /* Hypergraph callbacks used to build hypergraph */
+      
       pins = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
       pin_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
       if (!pins || !pin_procs) MEMORY_ERROR;
-    
+
       ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data,
                                   num_gid_entries, num_lid_entries, 
                                   zhg->nRemove,
