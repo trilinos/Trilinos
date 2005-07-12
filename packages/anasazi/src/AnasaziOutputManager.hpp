@@ -35,16 +35,16 @@
 
 #include "AnasaziConfigDefs.hpp"
 
-/*!	\class Anasazi::OutputManager
+/*!  \class Anasazi::OutputManager
 
-	\brief Anasazi's basic output manager for sending information of select verbosity levels
-	to the appropriate output stream.
+  \brief Anasazi's basic output manager for sending information of select verbosity levels
+  to the appropriate output stream.
 
-	This output manager will remove the need for the eigensolver to know any information
-	about the required output.  Calling <tt>isVerbosity( MsgType type )</tt> will inform the solver if
-	it is supposed to output the information corresponding to the message type (\c type ).
+  This output manager will remove the need for the eigensolver to know any information
+  about the required output.  Calling <tt>isVerbosity( MsgType type )</tt> will inform the solver if
+  it is supposed to output the information corresponding to the message type (\c type ).
 
-	\author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
+  \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
 namespace Anasazi {
@@ -52,104 +52,105 @@ namespace Anasazi {
   /*! \enum MsgType
     \brief Enumerated list of available message types recognized by the eigensolvers.
   */
-	enum MsgType 
-	  {	
-	    Error = 0,                  /*!< Errors [ always printed ] */
-	    Warning = 0x1,              /*!< Internal warnings */
-	    IterationDetails = 0x2, 	/*!< Approximate eigenvalues, errors */
-	    OrthoDetails = 0x4,	        /*!< Orthogonalization/orthonormalization details */
-	    FinalSummary = 0x8, 	/*!< Final computational summary */
-	    Debug = 0x10                /*!< Debugging information */
-	  };
+  enum MsgType 
+    {
+      Error = 0,                  /*!< Errors [ always printed ] */
+      Warning = 0x1,              /*!< Internal warnings */
+      IterationDetails = 0x2,     /*!< Approximate eigenvalues, errors */
+      OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
+      FinalSummary = 0x8,         /*!< Final computational summary */
+      TimingDetails = 0x10,       /*!< Timing details */
+      Debug = 0x20                /*!< Debugging information */
+    };
   
 template <class ScalarType>
 class OutputManager {
 
-	public:
+  public:
 
-	//@{ \name Constructors/Destructor.
+  //@{ \name Constructors/Destructor.
 
-	//! Default constructor
-	OutputManager();
+  //! Default constructor
+  OutputManager();
 
-	//! Basic constructor.
-	OutputManager( int myID, int vb = Anasazi::Error, int printID = 0, ostream& os = std::cout );
+  //! Basic constructor.
+  OutputManager( int myID, int vb = Anasazi::Error, int printID = 0, ostream& os = std::cout );
 
-	//! Destructor.
-	virtual ~OutputManager() {};
-	//@}
-	
-	//@{ \name Set methods.
+  //! Destructor.
+  virtual ~OutputManager() {};
+  //@}
+  
+  //@{ \name Set methods.
 
-	//! Set the output stream for this manager.
-	void SetOStream( ostream& os ) { myOS_ = os; };
+  //! Set the output stream for this manager.
+  void SetOStream( ostream& os ) { myOS_ = os; };
 
-	//! Set the message output types for this manager.
-	void SetVerbosity( int vb ) { vb_ = vb; }; 
+  //! Set the message output types for this manager.
+  void SetVerbosity( int vb ) { vb_ = vb; }; 
 
-	//@}
+  //@}
 
-	//@{ \name Get methods.
+  //@{ \name Get methods.
 
-	//! Get the output stream for this manager.
-	ostream& GetOStream() { return myOS_; };
+  //! Get the output stream for this manager.
+  ostream& GetOStream() { return myOS_; };
 
-	//@}
+  //@}
 
-	//@{ \name Query methods.
+  //@{ \name Query methods.
 
-	//! Find out whether we need to print out information for this message type.
-	/*! This method is used by the solver to determine whether computations are
-		necessary for this message type.
-	*/
-	bool isVerbosity( MsgType type ) { return (( type == Anasazi::Error ) || ( vb_ & type )); }; 
+  //! Find out whether we need to print out information for this message type.
+  /*! This method is used by the solver to determine whether computations are
+      necessary for this message type.
+  */
+  bool isVerbosity( MsgType type ) { return (( type == Anasazi::Error ) || ( vb_ & type )); }; 
 
-	//! Find out whether this processor needs to print out information for this message type.
-	/*! This method is used by the solver to determine whether this output stream has been
-		selected to output the information for this message type.
-	*/		
-	bool isVerbosityAndPrint( MsgType type ) { return ( iPrint_ && isVerbosity( type )); }; 
+  //! Find out whether this processor needs to print out information for this message type.
+  /*! This method is used by the solver to determine whether this output stream has been
+      selected to output the information for this message type.
+  */
+  bool isVerbosityAndPrint( MsgType type ) { return ( iPrint_ && isVerbosity( type )); }; 
 
-	//! Find out whether information can be outputted through this output stream.
-	bool doPrint( void ) { return (iPrint_); };	
+  //! Find out whether information can be outputted through this output stream.
+  bool doPrint( void ) { return (iPrint_); };
 
-	//@}
+  //@}
 
-	private:
+  private:
 
-	//@{ \name Undefined methods.
+  //@{ \name Undefined methods.
 
-	//! Copy constructor.
-	OutputManager( const OutputManager<ScalarType>& OM );
+  //! Copy constructor.
+  OutputManager( const OutputManager<ScalarType>& OM );
 
-	//! Assignment operator.
-	OutputManager<ScalarType>& operator=( const OutputManager<ScalarType>& OM );
+  //! Assignment operator.
+  OutputManager<ScalarType>& operator=( const OutputManager<ScalarType>& OM );
 
-	//@}
+  //@}
 
-	int myID_, printID_;
-	int vb_;
-	bool iPrint_;
-	ostream& myOS_;	
+  int myID_, printID_;
+  int vb_;
+  bool iPrint_;
+  ostream& myOS_;
 };
 
 template<class ScalarType>
 OutputManager<ScalarType>::OutputManager() :
-	myID_(0),
-	printID_(0),
-	vb_(Anasazi::Error),
-	iPrint_(true),
-	myOS_(std::cout)
+  myID_(0),
+  printID_(0),
+  vb_(Anasazi::Error),
+  iPrint_(true),
+  myOS_(std::cout)
 {
 }
 
 template<class ScalarType>
 OutputManager<ScalarType>::OutputManager( int myID, int vb, int printID, ostream& os ) :
-	myID_(myID),
-	printID_(printID),
-	vb_(vb),
-	iPrint_(myID == printID),
-	myOS_(os)
+  myID_(myID),
+  printID_(printID),
+  vb_(vb),
+  iPrint_(myID == printID),
+  myOS_(os)
 {
 }
 
