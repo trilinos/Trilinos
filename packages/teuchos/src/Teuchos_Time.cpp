@@ -37,21 +37,23 @@ using namespace Teuchos;
 Time::Time(const string& name, bool start) 
   : startTime_(0), totalTime_(0), isRunning_(false), name_(name)
 {
-	if(start) this->start();
+  if(start) this->start();
 }
 
 void Time::start(bool reset)
 {
   isRunning_ = true;
+  if (reset) totalTime_ = 0;
   startTime_ = wallTime();
-  if(reset) totalTime_ = 0;
 }
 
 double Time::stop()
 {
-  totalTime_ += ( wallTime() - startTime_ );
-  isRunning_ = false;
-  startTime_ = 0;
+  if (isRunning_) {
+    totalTime_ += ( wallTime() - startTime_ );
+    isRunning_ = false;
+    startTime_ = 0;
+  }
   return totalTime_;
 }
 

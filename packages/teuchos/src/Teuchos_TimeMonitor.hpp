@@ -63,10 +63,10 @@ namespace Teuchos
     public:
  
       /** \brief Constructor starts timer */
-      TimeMonitor(Time& timer)
+      TimeMonitor(Time& timer, bool reset=false)
         : timer_(timer), isRoot_(!timer.isRunning())
         {
-          if (isRoot_) timer_.start();
+          if (isRoot_) timer_.start(reset);
         }
 
       /** \brief Destructor causes timer to stop */
