@@ -94,6 +94,11 @@ namespace Teuchos
      * only when the clock is stopped.</b> */
     double totalElapsedTime() const {return totalTime_;}
 
+    /** \brief Resets the cummulative time associated with this timer. 
+
+        Does not affect any other state. */
+    void reset() {totalTime_ = 0;}
+
     /** \brief Indicates if this timer is currently running, i.e., if it has been started but
      * not yet stopped. 
      *
