@@ -38,6 +38,7 @@ my @testListAoH;        # test list array of hash
                         #   'package'       =>  package
                         #   'definitionDir' =>  package/test/
                         #   'directory'     =>  vector/
+                        #   'descendDirs'   =>  YES
                         #   'type'          =>  MPI/
                         #   'name'          =>  test.exe
                         #   'command'       =>  mpi-go -np16 ./vector/test.exe myVector
@@ -386,6 +387,9 @@ cleanUp();
             chdir $buildDir or die "cannot chdir to $buildDir, died";
             chdir "packages/" or die "cannot chdir to packages/, died";
             chdir $testListAoH[$i]{'definitionDir'} or next; # Potentially revist... 
+            if ($testListAoH[$i]{'descendDirs'} eq "YES") {                
+                chdir $testListAoH[$i]{'directory'} or die "cannot chdir to ".$testListAoH[$i]{'directory'}.", died";
+            }
                 
             # Print progress message.
             $message = $testListAoH[$i]{'package'}." - ".$testListAoH[$i]{'name'}."...";
@@ -600,7 +604,7 @@ cleanUp();
             $package = $1;
             
             # If the user supplies a list of packages to test (to the exclusion
-            # of all others, return if this package isn't on that list.
+            # of all others), return if this package isn't on that list.
             if ($#packages >= 0) {
                 my $found = 0;
                 foreach my $testPackage (@packages) {
@@ -773,6 +777,15 @@ cleanUp();
                                 $testEntry{'definitionDir'} = $File::Find::dir;
                                 $testEntry{'directory'} = $testDir;
                                 $testEntry{'name'} = $testName;
+                                
+                                # Should we descend to the level of the test
+                                # before invoking it?  (default is no)
+                                my $descendDirs = ${ @{ $definitionAoHoA[$i]{'DESCEND_DIRS'} } }[0];
+                                if (defined $descendDirs && $descendDirs =~ m/YES/i) {
+                                    $testEntry{'descendDirs'} = "YES";
+                                } else {
+                                    $testEntry{'descendDirs'} = "NO";
+                                }
                         
                                 # Add values for compareTestOutput.
                                 if (@{ $definitionAoHoA[$i]{'EXIT-STATUS'} }[0] && 
@@ -829,18 +842,30 @@ cleanUp();
                                 if ($comm eq "serial") {
                                     if ($isCustom) {
                                         $testEntry{'type'} = "CUSTOM-SERIAL";
-                                        $testEntry{'command'} = "./$test ".$arg;
+                                        if ($testEntry{'descendDirs'} eq "YES") {
+                                            $testEntry{'command'} = "./".$testEntry{'name'}." ".$arg;
+                                        } else { 
+                                            $testEntry{'command'} = "./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                        }
                                         push(@testListAoH, { %testEntry });
                                     } else {
                                         $testEntry{'type'} = "SERIAL";
-                                        $testEntry{'command'} = "./$test ".$arg;
+                                        if ($testEntry{'descendDirs'} eq "YES") {
+                                            $testEntry{'command'} = "./".$testEntry{'name'}." ".$arg;
+                                        } else { 
+                                            $testEntry{'command'} = "./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                        }
                                         push(@testListAoH, { %testEntry });
                                     }
                                     
                                 } elsif ($comm eq "mpi") {
                                     if ($isCustom) {
                                         $testEntry{'type'} = "CUSTOM-MPI";
-                                        $testEntry{'command'} = "./$test ".$arg;
+                                        if ($testEntry{'descendDirs'} eq "YES") {
+                                            $testEntry{'command'} = "./".$testEntry{'name'}." ".$arg;
+                                        } else { 
+                                            $testEntry{'command'} = "./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                        }
                                         push(@testListAoH, { %testEntry });
                                     } else {
                                         $testEntry{'type'} = "MPI";
@@ -876,10 +901,18 @@ cleanUp();
                                                         } elsif ($rangeMax > $maxProc) {
                                                             $numProc = $maxProc;
                                                         }
-                                                        if ($host =~ m/atlantis/) {
-                                                            $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/$test ".$arg;
+                                                        if ($host =~ m/atlantis/) {                                                            
+                                                            if ($testEntry{'descendDirs'} eq "YES") {
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                            } else { 
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                            }
                                                         } else {
-                                                            $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                                            if ($testEntry{'descendDirs'} eq "YES") {
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'name'}." ".$arg;
+                                                            } else { 
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                            }
                                                         }
                                                         push(@testListAoH, { %testEntry });
                                                     }
@@ -888,9 +921,17 @@ cleanUp();
                                                     $numProc = $range;
                                                     if ($numProc <= $maxProc) { 
                                                         if ($host =~ m/atlantis/) {
-                                                            $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/$test ".$arg;
+                                                            if ($testEntry{'descendDirs'} eq "YES") {
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                            } else { 
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                            }
                                                         } else {
-                                                            $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                                            if ($testEntry{'descendDirs'} eq "YES") {
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'name'}." ".$arg;
+                                                            } else { 
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                            }
                                                         }
                                                         push(@testListAoH, { %testEntry });
                                                     }
@@ -902,9 +943,17 @@ cleanUp();
                                             
                                             my $numProc = $maxProc;
                                             if ($host =~ m/atlantis/) {
-                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/$test ".$arg;
+                                                if ($testEntry{'descendDirs'} eq "YES") {
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                } else { 
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                }
                                             } else {
-                                                $testEntry{'command'} = "$mpiGo"."$numProc ./$test ".$arg;
+                                                if ($testEntry{'descendDirs'} eq "YES") {
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'name'}." ".$arg;
+                                                } else { 
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                }
                                             }
                                             push(@testListAoH, { %testEntry });
                                         
