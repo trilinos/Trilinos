@@ -426,7 +426,7 @@ def read_open_file(file, filelist):
             cleaned_line = line.strip()
             if (cleaned_line):
                 filelist.append(cleaned_line)
-            file.close()
+        file.close()
         return True
     except IOError, error:
         print("Could not read the file to be tested:\n" + error)
