@@ -132,9 +132,9 @@ namespace Anasazi {
     //
     // Internal methods
     //
-  void accuracyCheck(const MV *X, const MV *MX,
-		     const MV *R, const MV *Q,
-		     const MV *H, const MV *P) const;
+    void accuracyCheck(const MV *X, const MV *MX,
+		       const MV *R, const MV *Q,
+		       const MV *H, const MV *P) const;
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
@@ -288,7 +288,7 @@ namespace Anasazi {
       return Failed;
     }
     //
-    // Reinitialize internal data and pointers, preparse for solve
+    // Reinitialize internal data and pointers, prepare for solve
     //
     _numRestarts = 0; 
     _iter = 0; 
@@ -391,8 +391,8 @@ namespace Anasazi {
     //
     // Miscellaneous definitions
     int localSize;
-    int twoBlocks = 2*_blockSize;
-    int threeBlocks = 3*_blockSize;
+    const int twoBlocks = 2*_blockSize;
+    const int threeBlocks = 3*_blockSize;
     int _nFound = _blockSize;
     //    
     for ( _iter=0; _iter <= _maxIter; _iter++ ) {
@@ -439,7 +439,7 @@ namespace Anasazi {
 	  } // if (knownEV > 0) 
 	  
 	  // Apply the stiffness matrix to X
-	  //        timeStifOp -= MyWatch.WallTime();
+	  // timeStifOp -= MyWatch.WallTime();
 	  OPT::Apply( *_Op, *X2, *KX2 );
 	  //timeStifOp += MyWatch.WallTime();
 	  //stifOp += _nFound;
@@ -553,6 +553,8 @@ namespace Anasazi {
       // Perform a spectral decomposition
       //timeLocalSolve -= MyWatch.WallTime();
       _nevLocal = localSize;
+      //cout << "KK" << endl << KK << endl;
+      //cout << "MM" << endl << MM << endl;
       info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, &_nevLocal, 
 				   (_blockSize == 1) ? 1 : 0);
       //timeLocalSolve += MyWatch.WallTime();
@@ -588,15 +590,11 @@ namespace Anasazi {
     
 
       if ((localSize == twoBlocks) && (_nevLocal == _blockSize)) {
-	//for (j = 0; j < _nevLocal; ++j) 
-	//memcpy(S + j*_blockSize, S + j*twoBlocks, _blockSize*sizeof(double)); 
 	_os << "localSize == twoBlocks && _nevLocal == _blockSize"<<endl;
 	localSize = _blockSize;
       }
       
       if ((localSize == threeBlocks) && (_nevLocal <= twoBlocks)) {
-	//for (j = 0; j < _nevLocal; ++j) 
-	// memcpy(S + j*twoBlocks, S + j*threeBlocks, twoBlocks*sizeof(double)); 
 	_os << "localSize == threeBlocks && _nevLocal <= twoBlocks"<<endl;
 	localSize = twoBlocks;
       }
