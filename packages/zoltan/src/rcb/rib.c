@@ -141,6 +141,7 @@ int Zoltan_RIB(
   gen_tree = 0;
   average_cuts = 0;
   wgtflag = zz->Obj_Weight_Dim;
+  dummy = 0;
 
   Zoltan_Assign_Param_Vals(zz->Params, RIB_params, zz->Debug_Level, zz->Proc,
                     zz->Debug_Proc);
