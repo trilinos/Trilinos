@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include "hsfc.h"
+#include "zz_util_const.h"
 #include <math.h>
 
 
@@ -41,9 +42,10 @@ int Zoltan_HSFC_Box_Assign (
    int       *proc_array = NULL;
    HSFC_Data *d;                    /* HFSC's portion of Zoltan data structure */
    int        n, i, loop;                 /* loop counters */
-   int        tmp;
+   int        tmp, dim;
    int        first_proc, last_proc;
    double     fsfc, starting;
+   double lo[3], hi[3];
    Partition *p;
    const double FUZZY = 1.0e-9; /* to build region about a query point or line */
                                 /* Erik suggested that this value be tied to */
@@ -76,6 +78,28 @@ int Zoltan_HSFC_Box_Assign (
       goto fini;
       }
 
+
+   if (d->Skip_Dimensions > 0){
+     /* 
+      * Transform query box into coordinates that were used for partitioning. 
+      * This axis aligned box in the new coordinates actually encompasses more
+      * "dots" than did the original box, but the important point is that it
+      * doesn't miss any.
+      */
+     dim = d->ndimension - d->Skip_Dimensions;
+
+     lo[0] = xlo; lo[1] = ylo; lo[2] = zlo;
+     hi[0] = xhi; hi[1] = yhi; hi[2] = zhi;
+
+     Zoltan_Transform_Box(lo, hi, d->Transformation, dim);
+
+     xlo = lo[0]; ylo = lo[1]; zlo = lo[2];
+     xhi = hi[0]; yhi = hi[1]; zhi = hi[2];
+   }
+   else{
+     dim = d->ndimension;
+   }
+
    /* determine intersection of bounding box and query box */
    xintl[0] = (xlo - d->bbox_lo[0]) / d->bbox_extent[0];
    if      (xintl[0] < FUZZY)       xintl[0] = FUZZY;
@@ -105,7 +129,7 @@ int Zoltan_HSFC_Box_Assign (
        xinth[1] += (FUZZY/2.0);
        }
 
-   if (d->ndimension == 2)
+   if (dim == 2)
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)  {
          if (d->final_partition[i].l == d->final_partition[i].r)
             continue;            /* ignore empty partitions */
@@ -127,7 +151,7 @@ int Zoltan_HSFC_Box_Assign (
          i = p->index;
          }
 
-   if (d->ndimension == 3)  {
+   if (dim == 3)  {
       /* complete the z axis information, as above */
       xintl[2] = (zlo - d->bbox_lo[2]) / d->bbox_extent[2];
       if      (xintl[2] < 0.0)   xintl[2] = FUZZY;
