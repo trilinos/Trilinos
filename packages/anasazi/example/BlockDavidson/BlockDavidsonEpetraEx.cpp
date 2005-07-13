@@ -258,13 +258,14 @@ int main(int argc, char *argv[]) {
 	
 	// Inform the eigenproblem that you are finishing passing it information
 	info = MyProblem->SetProblem();
-	if (info)
-          cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+	if (info) {
+    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  }
 	
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-	MyOM->SetVerbosity( Anasazi::FinalSummary );	
+	MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );	
 
   // Create a sort manager
   std::string which("SM");
@@ -291,8 +292,11 @@ int main(int argc, char *argv[]) {
 	Teuchos::SerialDenseMatrix<int,double> T(nev, nev);
 	Epetra_MultiVector tempAevec( Map, nev );
 	std::vector<double> normA(nev);
-	cout<<"Actual Residuals"<<endl;
-	cout<<"------------------------------------------------------"<<endl;
+  if (MyOM->doPrint()) {
+    cout << endl;
+	  cout << "Actual Residuals" << endl;
+	  cout << "------------------------------------------------------" << endl;
+  }
 	T.putScalar(0.0); 
 	for (i=0; i<nev; i++)
 	  T(i,i) = (*evals)[i]; 
@@ -303,12 +307,12 @@ int main(int argc, char *argv[]) {
 	  normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
 	
 	if (MyOM->doPrint()) {
-	  cout<<"Eigenvalue"<<"\t\t"<<"Direct Residual"<<endl;
-	  cout<<"------------------------------------------------------"<<endl;
+	  cout << "Eigenvalue" << "\t\t" << "Direct Residual" << endl;
+	  cout << "------------------------------------------------------" << endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
+	    cout << (*evals)[i] << "\t\t"<< normA[i] << endl;
 	  }  
-	  cout<<"------------------------------------------------------"<<endl;
+	  cout << "------------------------------------------------------" << endl;
 	}
 
 #ifdef EPETRA_MPI
