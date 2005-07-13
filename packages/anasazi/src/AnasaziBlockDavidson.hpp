@@ -47,6 +47,7 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 /*!        \class Anasazi::BlockDavidson
 
@@ -129,6 +130,13 @@ namespace Anasazi {
     Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm; 
     Teuchos::ParameterList _pl;
     //
+    // Internal timers
+    //
+    bool _restartTimers;
+    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerMOp, _timerPrec,
+                                        _timerSortEval, _timerDS,
+                                        _timerOrtho, _timerTotal;
+    //
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
@@ -178,12 +186,20 @@ namespace Anasazi {
     _blockSize(_pl.get("Block Size", 1)),
     _residual_tolerance(_pl.get("Tol", 1.0e-6)),
     _numBlocks(_pl.get("Max Blocks", 25)), 
+    _restartTimers(_pl.get("Restart Timers", false)),
     _numRestarts(0), 
     _iter(0), 
     _dimSearch(_blockSize*_numBlocks),    
     _knownEV(0),
     _MSUtils(om),
-    _os(_om->GetOStream())
+    _os(_om->GetOStream()),
+    _timerOp(Teuchos::TimeMonitor::getNewTimer("Op operator time")),
+    _timerMOp(Teuchos::TimeMonitor::getNewTimer("M operator time")),
+    _timerPrec(Teuchos::TimeMonitor::getNewTimer("Preconditioner time")),
+    _timerSortEval(Teuchos::TimeMonitor::getNewTimer("Sort evals")),
+    _timerDS(Teuchos::TimeMonitor::getNewTimer("Direct solve time")),
+    _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization time")),
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
   {     
     //
     // Define dense local matrices and arrays
@@ -233,6 +249,17 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   ReturnType BlockDavidson<ScalarType,MV,OP>::solve () 
   {
+    Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
+
+    if ( _restartTimers ) {
+      _timerOp->reset();
+      _timerMOp->reset();
+      _timerPrec->reset();
+      _timerSortEval->reset();
+      _timerDS->reset();
+      _timerOrtho->reset();
+    }
+
     //
     // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
     //
@@ -411,24 +438,33 @@ namespace Anasazi {
         //
         // Apply the mass matrix.
         //        
-        if (_MOp.get())
+        if (_MOp.get()) {
+          _timerMOp->start();
           OPT::Apply( *_MOp, *Xcurrent, *MX );
+          _timerMOp->stop();
+        }
         //
         // Orthonormalize Xcurrent against the known eigenvectors and previous vectors.
         //
         if (nb == bStart) {
           if (nFound > 0) {
             if (_knownEV == 0) {
+              _timerOrtho->start();
               info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xcurrent, nFound, 2 );
+              _timerOrtho->stop();
             }
             else {
+              _timerOrtho->start();
               info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev,    nFound, 0 );
+              _timerOrtho->stop();
             }
           }
           nFound = 0;
         } 
         else {
+          _timerOrtho->start();
           info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev, _blockSize, 0 );
+          _timerOrtho->stop();
         }
         //
         // Exit the code if there has been a problem.
@@ -447,7 +483,9 @@ namespace Anasazi {
         //
         // Apply the stiffness matrix.
         //
+        _timerOp->start();
         OPT::Apply( *_Op, *Xcurrent, *KX );
+        _timerOp->stop();
         //
         // Update the local stiffness matrix ( Xtotal^T * K * Xcurrent where Xtotal = [Xprev Xcurrent] )
         // Note:  Only the upper half of the matrix is stored in KK
@@ -462,8 +500,10 @@ namespace Anasazi {
         //
         // Perform spectral decomposition
         //
-	int nevLocal = localSize+_blockSize;
+        int nevLocal = localSize+_blockSize;
+        _timerDS->start();
         info = _MSUtils.directSolver(localSize+_blockSize, KK, 0, &S, &_theta, &nevLocal, 10);
+        _timerDS->stop();
         //
         // Exit the code if there has been a problem.
         //
@@ -495,7 +535,9 @@ namespace Anasazi {
         // Sort the ritz values using the sort manager
         //---------------------------------------------------
         _order.resize(localSize+_blockSize);
+        _timerSortEval->start();
         _sm->sort( this, localSize+_blockSize, &(_theta[0]), &_order );
+        _timerSortEval->stop();
         // Sort the primitive ritz vectors
         // We need the first _blockSize vectors ordered to generate the next
         // columns immediately below, as well as when/if we restart.
@@ -515,19 +557,25 @@ namespace Anasazi {
         //
         // Apply the mass matrix for the next block
         // 
-        if (_MOp.get())
+        if (_MOp.get()) {
+          _timerMOp->start();
           OPT::Apply( *_MOp, *KX, *MX );
+          _timerMOp->stop();
+        }
         //
         // Apply the stiffness matrix for the next block
         //
+        _timerOp->start();
         OPT::Apply( *_Op, *KX, *R );
+        _timerOp->stop();
         //
         // Compute the residual :
         // R = KX - MX*diag(theta)
         // 
         Teuchos::SerialDenseMatrix<int,ScalarType> D(_blockSize, _blockSize);
-        for (i=0; i<_blockSize; i++ )
+        for (i=0; i<_blockSize; i++ ) {
           D(i,i) = -_theta[i];
+        }
         //
         if (_MOp.get()) {
           MVT::MvTimesMatAddMv( one, *MX, D, one, *R );
@@ -542,11 +590,13 @@ namespace Anasazi {
         nFound = 0;
         for (j=0; j<_blockSize; j++) {
           // Scale eigenvalues if _theta is non-zero.
-          if ( _theta[j] != zero )
+          if ( _theta[j] != zero ) {
             _normR[j] /= _theta[j];
+          }
           // Check for convergence
-          if (_normR[j] < _residual_tolerance)
+          if (_normR[j] < _residual_tolerance) {
             nFound ++;          
+          }
         }
         // Print information on current iteration
         if (_om->isVerbosityAndPrint( IterationDetails )) {
@@ -584,7 +634,9 @@ namespace Anasazi {
         //
         if (maxBlock == 1) {
           if (_Prec.get()) {
+            _timerPrec->start();
             OPT::Apply( *_Prec, *R, *Xcurrent );
+            _timerPrec->stop();
           }
           else
             MVT::MvAddMv( one, *R, zero, *R, *Xcurrent );
@@ -603,11 +655,14 @@ namespace Anasazi {
         // Prepare next block in factorization
         //
         index.resize( _blockSize );
-        for( i=0; i<_blockSize; i++) 
+        for( i=0; i<_blockSize; i++) {
           index[i] = _knownEV + localSize + _blockSize + i;
+        }
         Xnext = MVT::CloneView( *X, index );
         if (_Prec.get()) {
+          _timerPrec->start();
           OPT::Apply( *_Prec, *R, *Xnext );
+          _timerPrec->stop();
         }
         else {
           MVT::MvAddMv( one, *R, zero, *R, *Xnext );
@@ -617,16 +672,18 @@ namespace Anasazi {
       //
       // Check if there is any reason we need to skip the rest of the while loop.
       //
-      if (_iter > _maxIter)
+      if (_iter > _maxIter) {
         break;
+      }
 
       if (reStart == true) {
         reStart = false;
         continue;
       }
 
-      if (criticalExit == true)
+      if (criticalExit == true) {
         break;
+      }
 
       //
       // Store the final converged eigenvectors
@@ -643,8 +700,9 @@ namespace Anasazi {
               _resids[_knownEV] = _normR[j];
               _knownEV++;
             }
-            if (_knownEV == _nev)
+            if (_knownEV == _nev) {
               break;
+            }
         }
         break;
       } // if (_knownEV + nFound >= _nev)      
@@ -679,8 +737,9 @@ namespace Anasazi {
           } // for (j=0; j<_blockSize; j++)
           //
           index.resize( nFound );
-          for (i=0; i<nFound; i++) 
+          for (i=0; i<nFound; i++) {
             index[i] = _knownEV + _blockSize - nFound + i;
+          }
           Xnext = MVT::CloneView( *X, index );
           MVT::MvRandom( *Xnext );
         }
@@ -707,8 +766,9 @@ namespace Anasazi {
           }
         }
         Teuchos::RefCountPtr<MV> tmpKX = MVT::CloneView( *KX, index );
-        for (j=0; j<nFound; j++)
+        for (j=0; j<nFound; j++) {
           index[j] = _knownEV + j;
+        }
         MVT::SetBlock( *tmpKX, index, *_evecs );
 
         int firstIndex = _blockSize;
@@ -790,8 +850,9 @@ namespace Anasazi {
       MVT::MvTimesMatAddMv( one, *oldX, _Sview, zero, *temp_newX );
       MVT::MvAddMv( one, *temp_newX, zero, *temp_newX, *newX ); 
       
-      if (nFound == 0)
+      if (nFound == 0) {
         offSet++;
+      }
       
       _knownEV += nFound;
       maxBlock = (_dimSearch/_blockSize) - (_knownEV/_blockSize);
@@ -801,8 +862,9 @@ namespace Anasazi {
       newCol = nFound + (bStart+1)*_blockSize;
       if (newCol > oldCol) {
         index.resize( nFound );
-        for (i=0; i<nFound; i++)
+        for (i=0; i<nFound; i++) {
           index[i] = _knownEV + _blockSize - nFound + i;
+        }
         Xnext = MVT::CloneView( *X, index );
         MVT::MvRandom( *Xnext );
         continue;
@@ -819,20 +881,36 @@ namespace Anasazi {
     if ((info==0) && (_knownEV > 0)) {
       // Sort the eigenvalues
       _order.resize(_knownEV);
+      _timerSortEval->start();
       _sm->sort( this, _knownEV, &(*_evals)[0], &_order );
+      _timerSortEval->stop();
       // use _order to permute _evecs and _resids
       _MSUtils.permuteVectors(_knownEV,_order,*_evecs,&_resids);
     }
+
     //
     // Print out a final summary if necessary
     //
-    if (_om->isVerbosity( FinalSummary ))
+    if (_om->isVerbosity( FinalSummary )) {
       currentStatus();
+    }
 
-    if (_knownEV == _nev)
+    // Print timing details 
+    _timerTotal->stop();
+    if (_om->isVerbosity( Anasazi::TimingDetails )) {
+      if (_om->doPrint())
+        _os <<"**********************TIME DETAILS********************"<<endl;
+      Teuchos::TimeMonitor::summarize( _os );
+      if (_om->doPrint())
+        _os <<"******************************************************"<<endl;
+    }
+
+    if (_knownEV == _nev) {
       return Ok;
-    else
+    }
+    else {
       return Unconverged;
+    }
 
   } // end solve()
 
