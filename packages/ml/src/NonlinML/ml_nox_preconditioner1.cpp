@@ -982,21 +982,14 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
      cout << "matrixfreeML (level 0): Entering Coloring on level 0\n";
      fflush(stdout);
   }
-#if 0  
 
+#if 1  
   Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_collapsedcoloring(graph,bsize,false);
   if (!colorMap)      colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
-
 #else
-
-  //Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
-  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-                                  EpetraExt::CrsGraph_MapColoring::GREEDY;
-  EpetraExt::CrsGraph_MapColoring* MapColoring = 
-                   new EpetraExt::CrsGraph_MapColoring(algType,0,false,0);
-  Epetra_MapColoring* colorMap = &(*MapColoring)(*graph);
-
+  Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
 #endif
+
   EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex = 
                       new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
   vector<Epetra_IntVector>* colorcolumns = &(*colorMapIndex)(*graph);
@@ -1058,7 +1051,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   Epetra_CrsMatrix* B = dynamic_cast<Epetra_CrsMatrix*>(&(FD->getUnderlyingMatrix()));                       
   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(*B);
   A->FillComplete();
-  
+
   // tidy up
   delete FD;               FD = 0;
   delete colorMap;         colorMap = 0;

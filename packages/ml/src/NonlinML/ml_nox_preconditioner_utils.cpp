@@ -51,6 +51,8 @@
 #include <string>
 #include <vector>
 
+#include "Epetra_Comm.h"
+
 #ifdef ML_MPI // FIXME: do we need this here?
 #include <mpi.h>
 #endif
@@ -219,35 +221,45 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
   if (old_gindices) delete [] old_gindices; old_gindices=NULL;  
 
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-                                  EpetraExt::CrsGraph_MapColoring::GREEDY;
+                                  EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
 
   EpetraExt::CrsGraph_MapColoring* node_MapColoring = 
                    new EpetraExt::CrsGraph_MapColoring(algType,0,diagonalonly,0);
 
   Epetra_MapColoring* node_colorMap = &(*node_MapColoring)(nodegraph);
-  
+
   // now get the colors out of the node_colorMap and create a colorMap for the original system
   int  node_ncolors = node_colorMap->NumColors();
   int* node_colors  = node_colorMap->ElementColors();
-  int* row_colors   = new int[graph->RowMap().NumMyElements()];
+  int* node_loc     = node_colorMap->ListOfColors();
+  int* col_colors   = new int[graph->ColMap().NumMyElements()];
   int j=0;
-  for (int i=0; i<nodegraph.RowMap().NumMyElements(); ++i)
+
+  // node_ncolors is a local value, we need the global highest color number here
+  int lmax = 0;
+  int gmax = 0;
+  for (int i=0; i<node_ncolors; ++i)
+    if (lmax<node_loc[i]) lmax = node_loc[i];
+  graph->Comm().MaxAll(&lmax,&gmax,1);
+
+  // expand the colors to point wise columns
+  for (int i=0; i<nodegraph.ColMap().NumMyElements(); ++i)
     for (int k=0; k<bsize; ++k)
     {
-       row_colors[j] = node_colors[i]+k*node_ncolors;
+       col_colors[j] = node_colors[i]+k*gmax;
        ++j;
     }
-  if (j!=graph->RowMap().NumMyElements())
+  if (j!=graph->ColMap().NumMyElements())
   {
     cout << "**ERR**: ML_NOX::ML_Nox_collapsedcoloring:\n"
-         << "**ERR**: error expanding node colors to row colors\n"
+         << "**ERR**: error expanding node colors to column colors\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
   
-  Epetra_MapColoring* colorMap = new Epetra_MapColoring(graph->RowMap(),row_colors);
+  Epetra_MapColoring* colorMap = new Epetra_MapColoring(graph->ColMap(),col_colors);
   
   if (node_MapColoring) delete node_MapColoring;
-  if (row_colors) delete [] row_colors;
+  if (col_colors) delete [] col_colors;
     
   return colorMap;
 }                                                     
@@ -259,7 +271,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_standardcoloring(Epetra_CrsGraph* graph,
                                                     bool diagonalonly)
 {
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-                                  EpetraExt::CrsGraph_MapColoring::GREEDY;
+                                  EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
 
   EpetraExt::CrsGraph_MapColoring* MapColoring = 
                    new EpetraExt::CrsGraph_MapColoring(algType,0,diagonalonly,0);
