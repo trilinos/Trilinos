@@ -598,7 +598,7 @@ namespace Tpetra {
 			exportIDs.resize(numExports);
 			exportImageIDs.resize(numExports);
       
-			char* c_export_objs = 0;
+			/*char* c_export_objs = 0;
 			OrdinalType len_c_export_objs = zero;
 			tempPlan.doPostsAndWaits(reinterpret_cast<char*>(&importObjs.front()), 
 									 (two * sizeof(OrdinalType)),
@@ -611,7 +611,15 @@ namespace Tpetra {
 				exportImageIDs[i] = exportObjs[two*i+one];
 			}
 
-			delete[] c_export_objs;
+			delete[] c_export_objs;*/
+
+			std::vector<OrdinalType> exportObjs;
+			Comm_->doPostsAndWaits(tempPlan, importObjs, two, exportObjs);
+
+			for(OrdinalType i = zero; i < numExports; i++) {
+				exportIDs[i] = exportObjs[two*i];
+				exportImageIDs[i] = exportObjs[two*i+one];
+			}
 		};
     
 	}; // class MpiDistributor

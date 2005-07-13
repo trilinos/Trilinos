@@ -375,7 +375,7 @@ namespace Tpetra {
 					irecv(imports, j, (lengthsFrom[i] * elementSize), imagesFrom[i], request_[k]);
 					k++;
 				}
-				else
+				else // receiving this one from ourself
 					selfReceiveAddress = j;
 				j += (lengthsFrom[i] * elementSize);
 			}
@@ -407,9 +407,11 @@ namespace Tpetra {
 				}
 				
 				if(selfMessage > zero)
-					std::copy((exports.begin() + (startsTo[selfNum] * elementSize)), // start iterator
-							  (exports.begin() + (startsTo[selfNum] * elementSize + lengthsTo[selfNum] * elementSize)), // end iterator
-							  (imports.begin() + selfReceiveAddress)); // destination start iterator
+					memcopy(exports, (startsTo[selfNum] * elementSize), (lengthsTo[selfNum] * elementSize),
+							imports, selfReceiveAddress);
+					///std::copy((exports.begin() + (startsTo[selfNum] * elementSize)), // start iterator
+					///		  (exports.begin() + (startsTo[selfNum] * elementSize + lengthsTo[selfNum] * elementSize)), // end iterator
+					///		  (imports.begin() + selfReceiveAddress)); // destination start iterator
 			}
 			else { // data is not blocked by image, use send buffer
 				std::vector<PacketType> sendArray(maxSendLength * elementSize); // allocate sendArray buffer
@@ -423,9 +425,10 @@ namespace Tpetra {
 						OrdinalType offset = zero;
 						j = startsTo[p];
 						for(OrdinalType k = zero; k < lengthsTo[p]; k++) {
-							std::copy((exports.begin() + (indicesTo[j] * elementSize)), // start iterator
-									  (exports.begin() + (indicesTo[j] * elementSize) + elementSize), // end iterator
-									  (sendArray.begin() + offset)); // destination start iterator
+							memcopy(exports, (indicesTo[j] * elementSize), elementSize, sendArray, offset);
+							///std::copy((exports.begin() + (indicesTo[j] * elementSize)), // start iterator
+							///		  (exports.begin() + (indicesTo[j] * elementSize) + elementSize), // end iterator
+							///		  (sendArray.begin() + offset)); // destination start iterator
 							j++;
 							offset += elementSize;
 						}
@@ -439,9 +442,10 @@ namespace Tpetra {
 
 				if(selfMessage > zero)
 					for(OrdinalType k = zero; k < lengthsTo[selfNum]; k++) {
-						std::copy((exports.begin() + (indicesTo[selfIndex] * elementSize)), // start iterator
-								  (exports.begin() + (indicesTo[selfIndex] * elementSize) + elementSize), // end iterator
-								  (imports.begin() + selfReceiveAddress)); // destination start iterator
+						memcopy(exports, (indicesTo[selfIndex] * elementSize), elementSize, imports, selfReceiveAddress);
+						///std::copy((exports.begin() + (indicesTo[selfIndex] * elementSize)), // start iterator
+						///		  (exports.begin() + (indicesTo[selfIndex] * elementSize) + elementSize), // end iterator
+						///		  (imports.begin() + selfReceiveAddress)); // destination start iterator
 						selfIndex++;
 						selfReceiveAddress += elementSize;
 					}
@@ -526,6 +530,20 @@ namespace Tpetra {
 				   int sourceImageID, MPI_Request& request) const {
 			MPI_Irecv(&myVals[startIndex], MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), 
 					  sourceImageID, tag_, data().getMpiComm(), &request);
+		}
+
+		// replacement for previously used memcpy
+		// same functionality as std::copy, but takes array offsets instead of iterators
+		// source = STL vector to copy from. dest = STL vector to copy into.
+		void memcopy(std::vector<PacketType>& source, OrdinalType sourceStartPos, OrdinalType const length,
+					 std::vector<PacketType>& dest, OrdinalType destStartPos) {
+			OrdinalType sPos = sourceStartPos;
+			OrdinalType dPos = destStartPos;
+			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < length; i++) {
+				dest[dPos] = source[sPos];
+				sPos++;
+				dPos++;
+			}
 		}
 		
     
