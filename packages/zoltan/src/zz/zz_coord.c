@@ -32,7 +32,12 @@ extern "C" {
 /* 
  * This function gets a list of coordinates one way or the other,
  * i.e., by calling either Get_Geom_Multi or Get_Geom for each object.
- * Degenerate geometry detection and transformations may be added here later.
+ *
+ * Note that for 3D RCB, RIB and HSFC with the SKIP_DIMENSIONS
+ * option on, Zoltan_Get_Coordinates is a global operation.  (A
+ * global decision to transform coordinates may be made here.)  So
+ * it must be called by all processes in the application or it will
+ * hang.
  */
 
 static PARAM_VARS Skip_Dim_Params[] = {
