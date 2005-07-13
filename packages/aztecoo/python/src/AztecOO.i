@@ -28,7 +28,20 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") AztecOO
+%define AZTECOO_DOCSTRING
+"The AztecOO module allows access to The Trilinos package AztecOO.  Note
+that the 'AztecOO_' prefix has been stripped from all AztecOO objects,
+but that if imported with 'from PyTrilinos import AztecOO', these
+objects exist in the 'AztecOO' python namespace.  Use the python help()
+facility for local documentation on classes and methods, or see the
+on-line documentation for more in-depth information.
+
+The most important classes of the AztecOO module are:
+- AztecOO
+"
+%enddef
+
+%module(package="PyTrilinos", docstring=AZTECOO_DOCSTRING) AztecOO
 
 %{
 // System includes
