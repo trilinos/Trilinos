@@ -73,7 +73,13 @@ int main(int argc, char *argv[])
   // PID info
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-  bool verbose = (MyPID==0);
+  bool verbose = 0;
+
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+  }
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
@@ -152,17 +158,20 @@ int main(int argc, char *argv[])
   // Create an output manager to handle the I/O from the solver
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
     Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  if (verbose) {
+    MyOM->SetVerbosity( Anasazi::FinalSummary );
+  }
 
   // test the multivector class
   ierr = Anasazi::TestMultiVecTraits<double,MV>(MyOM,ivec);
   switch (ierr) {
   case Anasazi::Ok:
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
       cout << "*** PASSED TestMultiVecTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
       cout << "*** FAILED TestMultiVecTraits() ***" << endl;
     }
     break;
@@ -173,12 +182,12 @@ int main(int argc, char *argv[])
   ierr = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,A);
   switch (ierr) {
   case Anasazi::Ok:
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
       cout << "*** PASSED TestOperatorTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
       cout << "*** FAILED TestOperatorTraits() ***" << endl;
     }
     break;
