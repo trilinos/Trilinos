@@ -213,7 +213,7 @@ $mpigo  1 amesos_test.exe KLU Khead.triS 0 1 1 0   1e-13 1e-8   >>SST.stdout
 #
 #  A couple more matrices
 #
-$mpigo  1 amesos_test.exe KLU 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+$mpigo  1 amesos_test.exe KLU 662_bus_out.rsa 0 1 3 0 2e-11 1e-12 >>SST.stdout 
 # COMMENT $mpigo  1 amesos_test.exe KLU meg1_out.rua 0 1 3 0 1e-04 1e-03 >>SST.stdout 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosKlu.exe" >> SST.summary 
