@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(MVOPTester_SOURCES)
+SOURCES = $(MVOPTester_test_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = MVOPTester$(EXEEXT)
+noinst_PROGRAMS = MVOPTester_test$(EXEEXT)
 subdir = test/MVOPTester
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -96,8 +96,8 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_MVOPTester_OBJECTS = MVOPTester-cxx_main.$(OBJEXT)
-MVOPTester_OBJECTS = $(am_MVOPTester_OBJECTS)
+am_MVOPTester_test_OBJECTS = MVOPTester_test-cxx_main.$(OBJEXT)
+MVOPTester_test_OBJECTS = $(am_MVOPTester_test_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
@@ -105,14 +105,14 @@ am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MVOPTester-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MVOPTester_test-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(MVOPTester_SOURCES)
-DIST_SOURCES = $(MVOPTester_SOURCES)
+SOURCES = $(MVOPTester_test_SOURCES)
+DIST_SOURCES = $(MVOPTester_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -257,11 +257,11 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-MVOPTester_SOURCES = $(srcdir)/cxx_main.cpp
+MVOPTester_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-MVOPTester_DEPENDENCIES = \
+MVOPTester_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
@@ -269,11 +269,11 @@ MVOPTester_DEPENDENCIES = \
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-MVOPTester_CXXFLAGS = -I$(top_srcdir)/src
+MVOPTester_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-MVOPTester_LDADD = $(EXPORT_LIBS) 
+MVOPTester_test_LDADD = $(EXPORT_LIBS) 
 all: all-am
 
 .SUFFIXES:
@@ -310,9 +310,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-MVOPTester$(EXEEXT): $(MVOPTester_OBJECTS) $(MVOPTester_DEPENDENCIES) 
-	@rm -f MVOPTester$(EXEEXT)
-	$(CXXLINK) $(MVOPTester_LDFLAGS) $(MVOPTester_OBJECTS) $(MVOPTester_LDADD) $(LIBS)
+MVOPTester_test$(EXEEXT): $(MVOPTester_test_OBJECTS) $(MVOPTester_test_DEPENDENCIES) 
+	@rm -f MVOPTester_test$(EXEEXT)
+	$(CXXLINK) $(MVOPTester_test_LDFLAGS) $(MVOPTester_test_OBJECTS) $(MVOPTester_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -320,7 +320,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPTester-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPTester_test-cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -338,21 +338,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-MVOPTester-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester-cxx_main.o -MD -MP -MF "$(DEPDIR)/MVOPTester-cxx_main.Tpo" -c -o MVOPTester-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTester-cxx_main.Tpo" "$(DEPDIR)/MVOPTester-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTester-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTester-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTester-cxx_main.TPo' @AMDEPBACKSLASH@
+MVOPTester_test-cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" "$(DEPDIR)/MVOPTester_test-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTester_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTester_test-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-MVOPTester-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester-cxx_main.obj -MD -MP -MF "$(DEPDIR)/MVOPTester-cxx_main.Tpo" -c -o MVOPTester-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTester-cxx_main.Tpo" "$(DEPDIR)/MVOPTester-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTester-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTester-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTester-cxx_main.TPo' @AMDEPBACKSLASH@
+MVOPTester_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.obj -MD -MP -MF "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" "$(DEPDIR)/MVOPTester_test-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTester_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTester_test-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
