@@ -79,8 +79,9 @@ void TimeMonitor::summarize(ostream &out)
             {
               out << std::left << std::setw(30) << names[i]
                   << ": " << std::left << std::setw(12) << minTime[i]
-                  << std::left << std::setw(12) << avgTime[i]
-                  << std::left << std::setw(12) << maxTime[i] << endl;
+                  << " "  << std::left << std::setw(12) << avgTime[i]
+                  << " "  << std::left << std::setw(12) << maxTime[i] 
+                  << endl;
             }
         }
     }
