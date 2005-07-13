@@ -149,6 +149,29 @@ int gen_geom, int gen_graph, int gen_hg)
   /* Write to files, serialized.                            */
   /* Note: This will be slow (not scalable) for many procs. */
   /**********************************************************/
+
+  /*
+   * Must get coordinates before entering serialized section of 
+   * code.  For 3D geometric partitionings with SKIP_DIMENSIONS ON, 
+   * Zoltan_Get_Coordinates is a global operation.  It will
+   * hang if not all processes are participating.
+   */
+  if (gen_geom){
+    if (zz->Get_Num_Geom == NULL ||
+     (zz->Get_Geom == NULL && zz->Get_Geom_Multi == NULL)) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+     "Geometry output requested, but no corresponding query function was found.\n");
+      error = ZOLTAN_FATAL;
+      goto End;
+    }
+    error = Zoltan_Get_Coordinates(zz, num_obj, global_ids, local_ids,
+                                   &num_geom, &xyz);
+
+    if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
+      goto End;
+    }
+   }
+
   Zoltan_Print_Sync_Start(zz->Communicator, 0); 
 
   /* Write object assignments to file. */
@@ -172,15 +195,6 @@ int gen_geom, int gen_graph, int gen_hg)
 
   /* Write geometry to file, if applicable. */
   if (gen_geom){
-    if (zz->Get_Num_Geom == NULL ||
-     (zz->Get_Geom == NULL && zz->Get_Geom_Multi == NULL)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Geometry output requested, but no corresponding query function was found.\n");
-      error = ZOLTAN_FATAL;
-      goto End;
-    }
-    error = Zoltan_Get_Coordinates(zz, num_obj, global_ids, local_ids,
-                                   &num_geom, &xyz);
-
     sprintf(full_fname, "%s.coords", fname);
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
