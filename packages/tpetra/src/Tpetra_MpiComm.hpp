@@ -340,14 +340,121 @@ namespace Tpetra {
 		//! doPosts
 		void doPosts(Distributor<OrdinalType>& distributor,
 					 std::vector<PacketType>& exports,
-					 OrdinalType packetSize,
+					 OrdinalType elementSize,
 					 std::vector<PacketType>& imports) {
+			// setup references to Distributor's data
+			OrdinalType const& totalReceiveLength = distributor.getTotalReceiveLength();
+			OrdinalType const& numReceives = distributor.getNumReceives();
+			OrdinalType const& selfMessage = distributor.getSelfMessage();
+			OrdinalType const& numSends = distributor.getNumSends();
+			OrdinalType const& maxSendLength = distributor.getNumReceives();
+			std::vector<OrdinalType> const& imagesFrom = distributor.getImagesFrom();
+			std::vector<OrdinalType> const& lengthsFrom = distributor.getLengthsFrom();
+			std::vector<OrdinalType> const& imagesTo = distributor.getImagesTo();
+			std::vector<OrdinalType> const& indicesTo = distributor.getIndicesTo();
+			std::vector<OrdinalType> const& startsTo = distributor.getStartsTo();
+			std::vector<OrdinalType> const& lengthsTo = distributor.getLengthsTo();
 
+			// start of actual doPosts function
+			OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+			OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
+			OrdinalType const myImageID = getMyImageID();
+			OrdinalType selfReceiveAddress = zero;
+
+			// allocate space in imports if needed
+			if(imports.size() < (totalReceiveLength * elementSize))
+				imports.resize(totalReceiveLength * elementSize);
+
+			// allocate space in requests array if needed
+			if(request_.size() < numReceives)
+				request_.resize(numReceives);
+
+			// start up the Irecv's
+			for(OrdinalType i = zero, j = zero, k = zero; i < (numReceives + selfMessage); i++) {
+				if(imagesFrom[i] != myImageID) { // receiving this one from another image
+					irecv(imports, j, (lengthsFrom[i] * elementSize), imagesFrom[i], request_[k]);
+					k++;
+				}
+				else
+					selfReceiveAddress = j;
+				j += (lengthsFrom[i] * elementSize);
+			}
+			barrier();
+
+			// setup scan through imagesTo list starting with higher numbered images
+			// (should help balance message traffic)
+			OrdinalType numBlocks = numSends+ selfMessage;
+			OrdinalType imageIndex = zero;
+			while((imageIndex < numBlocks) && (imagesTo[imageIndex] < myImageID))
+				imageIndex++;
+			if(imageIndex == numBlocks)
+				imageIndex = zero;
+
+			OrdinalType selfNum = zero;
+			OrdinalType selfIndex = zero;
+
+			if(indicesTo.empty()) { // data is already blocked by processor
+				for(OrdinalType i = zero; i < numBlocks; i++) {
+					OrdinalType p = i + imageIndex;
+					if(p > (numBlocks - one))
+						p -= numBlocks;
+
+					if(imagesTo[p] != myImageID) // sending it to another image
+						rsend(exports, (startsTo[p] * elementSize), (lengthsTo[p] * elementSize),
+							  imagesTo[p]);
+					else // sending it to ourself
+						selfNum = p;
+				}
+				
+				if(selfMessage > zero)
+					std::copy((exports.begin() + (startsTo[selfNum] * elementSize)), // start iterator
+							  (exports.begin() + (startsTo[selfNum] * elementSize + lengthsTo[selfNum] * elementSize)), // end iterator
+							  (imports.begin() + selfReceiveAddress)); // destination start iterator
+			}
+			else { // data is not blocked by image, use send buffer
+				std::vector<PacketType> sendArray(maxSendLength * elementSize); // allocate sendArray buffer
+
+				for(OrdinalType i = zero, j = zero; i < numBlocks; i++) {
+					OrdinalType p = i + imageIndex;
+					if(p > (numBlocks - one)) 
+						p -= numBlocks;
+
+					if(imagesTo[p] != myImageID) { // sending it to another image
+						OrdinalType offset = zero;
+						j = startsTo[p];
+						for(OrdinalType k = zero; k < lengthsTo[p]; k++) {
+							std::copy((exports.begin() + (indicesTo[j] * elementSize)), // start iterator
+									  (exports.begin() + (indicesTo[j] * elementSize) + elementSize), // end iterator
+									  (sendArray.begin() + offset)); // destination start iterator
+							j++;
+							offset += elementSize;
+						}
+						rsend(sendArray, zero, (lengthsTo[p] * elementSize), imagesTo[p]);
+					}
+					else { // sending it to ourself
+						selfNum = p;
+						selfIndex = startsTo[p];
+					}
+				}
+
+				if(selfMessage > zero)
+					for(OrdinalType k = zero; k < lengthsTo[selfNum]; k++) {
+						std::copy((exports.begin() + (indicesTo[selfIndex] * elementSize)), // start iterator
+								  (exports.begin() + (indicesTo[selfIndex] * elementSize) + elementSize), // end iterator
+								  (imports.begin() + selfReceiveAddress)); // destination start iterator
+						selfIndex++;
+						selfReceiveAddress += elementSize;
+					}
+			
+			}
 		}
 
 		//! doWaits
 		void doWaits(Distributor<OrdinalType>& distributor) {
-
+			OrdinalType const& numReceives = distributor.getNumReceives();
+			std::vector<MPI_Status> status(numReceives);
+			if(numReceives > Teuchos::OrdinalTraits<OrdinalType>::zero())
+				MPI_Waitall(numReceives, &request_.front(), &status.front());
 		}
 
 		//@}
@@ -394,30 +501,33 @@ namespace Tpetra {
 		// private data members
 		Teuchos::RefCountPtr<MpiData> MpiData_;
 		int tag_;
+		std::vector<MPI_Request> request_;
 
 		// templated MPI_Rsend functions
-		int rsend(PacketType& myVal, int destinationImageID) const {
+		void rsend(PacketType& myVal, int destinationImageID) const {
+			// this one's for a single value
 			MPI_Rsend(&myVal, MpiTraits<PacketType>::count(1), MpiTraits<PacketType>::datatype(), 
 					  destinationImageID, tag_, data().getMpiComm());
 		}
 
-		int rsend(std::vector<PacketType>& myVals, int destinationImageID) const {
-			MPI_Rsend(&myVals.front(), MpiTraits<PacketType>::count(myVals.size()), MpiTraits<PacketType>::datatype(), 
+		void rsend(std::vector<PacketType>& myVals, OrdinalType startIndex, OrdinalType count, int destinationImageID) const {
+			// this one's for a vector or partial vector
+			MPI_Rsend(&myVals[startIndex], MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), 
 					  destinationImageID, tag_, data().getMpiComm());
 		}
 
 		// templated MPI_Irecv functions
-		int irecv(PacketType& myVal, int sourceImageID) const {
-			MPI_Request request;
+		void irecv(PacketType& myVal, int sourceImageID, MPI_Request& request) const {
 			MPI_Irecv(&myVal, MpiTraits<PacketType>::count(1), MpiTraits<PacketType>::datatype(), 
 					  sourceImageID, tag_, data().getMpiComm(), &request);
 		}
 
-		int irecv(std::vector<PacketType>& myVals, int sourceImageID) const {
-			MPI_Request request;
-			MPI_Irecv(&myVals.front(), MpiTraits<PacketType>::count(myVals.size()), MpiTraits<PacketType>::datatype(), 
+		void irecv(std::vector<PacketType>& myVals, OrdinalType startIndex, OrdinalType count, 
+				   int sourceImageID, MPI_Request& request) const {
+			MPI_Irecv(&myVals[startIndex], MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), 
 					  sourceImageID, tag_, data().getMpiComm(), &request);
 		}
+		
     
 	}; // MpiComm class
   

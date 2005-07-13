@@ -137,6 +137,22 @@ namespace Tpetra {
 		virtual void doReverseWaits() = 0;
 
 		//@}
+
+		//@{ \name Attribute Accessor Methods
+
+		virtual OrdinalType const& getTotalReceiveLength() const = 0;
+		virtual OrdinalType const& getNumReceives() const = 0;
+		virtual OrdinalType const& getSelfMessage() const = 0;
+		virtual OrdinalType const& getNumSends() const = 0;
+		virtual OrdinalType const& getMaxSendLength() const = 0;
+		virtual std::vector<OrdinalType> const& getImagesFrom() const = 0;
+		virtual std::vector<OrdinalType> const& getLengthsFrom() const = 0;
+		virtual std::vector<OrdinalType> const& getImagesTo() const = 0;
+		virtual std::vector<OrdinalType> const& getIndicesTo() const = 0;
+		virtual std::vector<OrdinalType> const& getStartsTo() const = 0;
+		virtual std::vector<OrdinalType> const& getLengthsTo() const = 0;
+
+		//@}
     
 		//@{ \name I/O Methods
 

@@ -135,6 +135,44 @@ namespace Tpetra {
 		};
 
 		//@}
+
+		//@{ \name Attribute Accessor Methods
+
+		OrdinalType const& getTotalReceiveLength() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		OrdinalType const& getNumReceives() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		OrdinalType const& getSelfMessage() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		OrdinalType const& getNumSends() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		OrdinalType const& getMaxSendLength() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		std::vector<OrdinalType> const& getImagesFrom() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		std::vector<OrdinalType> const& getLengthsFrom() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		std::vector<OrdinalType> const& getImagesTo() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		std::vector<OrdinalType> const& getIndicesTo() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		std::vector<OrdinalType> const& getStartsTo() const {
+			throw reportError("This method should never be called.", -1);
+		};
+		std::vector<OrdinalType> const& getLengthsTo() const {
+			throw reportError("This method should never be called.", -1);
+		};
+
+		//@}
     
 		//@{ \name I/O Methods
 
