@@ -1013,6 +1013,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
     }
   }
 
+  matrix_->OptimizeStorage();
+
   return;    
 }
 
