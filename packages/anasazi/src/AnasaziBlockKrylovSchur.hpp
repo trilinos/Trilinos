@@ -240,9 +240,9 @@ namespace Anasazi {
     _def_tol(1.0),
     _os(_om->GetOStream()),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Op operator time")),
+    _timerSortEval(Teuchos::TimeMonitor::getNewTimer("Sort evals")),
     _timerCompSF(Teuchos::TimeMonitor::getNewTimer("Compute Schur form time")),
     _timerSortSF(Teuchos::TimeMonitor::getNewTimer("Sort Schur form time")),
-    _timerSortEval(Teuchos::TimeMonitor::getNewTimer("Sort evals")),
     _timerCompEvec(Teuchos::TimeMonitor::getNewTimer("Compute Evecs")),
     _timerQRFact(Teuchos::TimeMonitor::getNewTimer("QR factorization time")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization time")),
@@ -343,7 +343,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   ReturnType BlockKrylovSchur<ScalarType,MV,OP>::solve () 
   {
-    Teuchos::TimeMonitor LocalTimer(*_timerTotal);
+    Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
 
     if ( _restartTimers ) {
       _timerOp->reset();
@@ -353,7 +353,6 @@ namespace Anasazi {
       _timerCompEvec->reset();
       _timerQRFact ->reset();
       _timerOrtho->reset();
-      _timerTotal->reset();
     }
 
     //
@@ -510,10 +509,12 @@ namespace Anasazi {
 
     // Print timing details 
     _timerTotal->stop();
-    if (_om->isVerbosityAndPrint( Anasazi::TimingDetails )) {
-      _os <<"**********************TIME DETAILS********************"<<endl;
+    if (_om->isVerbosity( Anasazi::TimingDetails )) {
+      if (_om->doPrint())
+        _os <<"**********************TIME DETAILS********************"<<endl;
       Teuchos::TimeMonitor::summarize( _os );
-      _os <<"******************************************************"<<endl;
+      if (_om->doPrint())
+        _os <<"******************************************************"<<endl;
     }
 
     // Return Failed if we did not meet the specified tolerance
