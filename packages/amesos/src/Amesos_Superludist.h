@@ -35,6 +35,7 @@
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
 #include "Teuchos_RefCountPtr.hpp"
 #ifdef EPETRA_MPI

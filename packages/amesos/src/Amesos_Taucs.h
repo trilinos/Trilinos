@@ -42,7 +42,7 @@
 #include <vector>
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
-#include "Amesos_6NoCopiable.h"
+#include "Amesos_NoCopiable.h"
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
