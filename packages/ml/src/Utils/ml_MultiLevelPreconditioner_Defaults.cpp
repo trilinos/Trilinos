@@ -482,7 +482,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List,
   List.set("increasing or decreasing","increasing");
 
   // aggregation: Uncoupled for all levels
-  List.set("aggregation: type","Uncoupled");
+  List.set("aggregation: type","Uncoupled-MIS");
   
   // optimal value for smoothed aggregation
   List.set("aggregation: damping factor",1.3333);
