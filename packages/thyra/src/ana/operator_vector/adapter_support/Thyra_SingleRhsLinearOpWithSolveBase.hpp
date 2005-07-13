@@ -46,15 +46,33 @@ void SingleRhsLinearOpWithSolveBase<Scalar>::solve(
   ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
-  TEST_FOR_EXCEPT( numBlocks > 0 ); // ToDo: Handle the more general case!
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT( numBlocks < 0 );
+  TEST_FOR_EXCEPT( numBlocks > 0 && blockSolveCriteria==NULL );
+#endif
   const VectorSpaceBase<Scalar> &space_mv_rows = *B.domain();
   const Index num_mv_cols = space_mv_rows.dim();
-  SolveStatus<Scalar> dummySolveStatus;
-  for( Index j = 1; j <= num_mv_cols; ++j )
-    this->solve(
-      M_trans,*B.col(j),&*X->col(j)
-      ,NULL
-      );
+  if(numBlocks) {
+    // There is client-requested solve criteria so we need to keep track of this
+    Index j = 1;
+    for( int block_i = 0; block_i < numBlocks; ++block_i ) {
+      const BlockSolveCriteria<Scalar> &solveCriteria = blockSolveCriteria[block_i];
+      SolveStatus<Scalar> overallSolveStatus;
+      overallSolveStatus.solveStatus = SOLVE_STATUS_CONVERGED; // Initialized for accumulateSolveStatus()
+      for( Index block_col_i = 0; block_col_i < solveCriteria.numRhs; ++block_col_i, ++j ) {
+        SolveStatus<Scalar>
+          solveStatus = this->solve(M_trans,*B.col(j),&*X->col(j),&solveCriteria.solveCriteria);
+        accumulateSolveStatus( solveCriteria.solveCriteria, solveStatus, &overallSolveStatus );
+      }
+      if(blockSolveStatus) blockSolveStatus[block_i] = overallSolveStatus;
+    }
+  }
+  else {
+    // There is not client-requested solve criteria so just solve the systems
+    // with the default tolerenaces.
+    for( Index j = 1; j <= num_mv_cols; ++j )
+      this->solve(M_trans,*B.col(j),&*X->col(j),NULL);
+  }
 }
 
 } // namespace Thyra

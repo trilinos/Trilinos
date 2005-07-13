@@ -33,6 +33,7 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_AssertOp.hpp"
+#include "Thyra_describeLinearOp.hpp"
 
 namespace Thyra {
 
@@ -85,39 +86,7 @@ std::ostream& LinearOpBase<RangeScalar,DomainScalar>::describe(
     ,const std::string                   indentSpacer
     ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  const Index dimDomain = this->domain()->dim(), dimRange = this->range()->dim();
-  out << leadingIndent << indentSpacer << "type = \'" << this->description()
-      << "\', rangeDim = " << dimRange
-      << ", domainDim = " << dimDomain << "\n";
-  if(verbLevel >= Teuchos::VERB_EXTREME) {
-    // Copy into dense matrix by column
-    Teuchos::RefCountPtr<VectorBase<Scalar> >
-      e_j = createMember(this->domain()),
-      t   = createMember(this->range()); // temp column
-    RTOpPack::SubVectorT<Scalar> sv;
-    std::vector<Scalar>  Md( dimRange * dimDomain ); // Column major
-    const Index
-      cs = 1,         // stride for columns or rows 
-      rs = dimRange;  // stride for rows or columns
-    Index i, j;
-    for( j = 1; j <= dimDomain; ++j ) {
-      Thyra::assign( e_j.get(), ST::zero() );
-      Thyra::set_ele( j, ST::one(), e_j.get() );
-      this->apply(NONCONJ_ELE,*e_j,t.get());  // extract the ith column or row
-      t->getSubVector(Range1D(),&sv);
-      for( i = 1; i <= dimRange; ++i ) Md[ (i-1)*cs + (j-1)*rs ] = sv(i);
-      t->freeSubVector(&sv);
-    }
-    // Print the matrix
-    for( i = 1; i <= dimRange; ++i ) {
-      out << leadingIndent << indentSpacer << indentSpacer;
-      for( j = 1; j <= dimDomain; ++j )
-        out << " " << i << ":" << j << ":" << Md[ (i-1) + (j-1)*dimRange ];
-      out << std::endl;
-    }
-  }
-  return out;
+  return describeLinearOp(*this,out,verbLevel,leadingIndent,indentSpacer);
 }
 
 }	// end namespace Thyra

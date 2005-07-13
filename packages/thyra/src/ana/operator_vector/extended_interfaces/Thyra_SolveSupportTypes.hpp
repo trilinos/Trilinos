@@ -47,6 +47,18 @@ enum ESolveTolType {
   ,SOLVE_TOL_REL_SOLUTION_ERR_NORM      ///< Enforce the tolerance on the relative natural norm in the error in the solution vector
 };
 
+/** \brief . */
+inline
+const char* toString(const ESolveTolType solveTolType)
+{
+  switch(solveTolType) {
+    case SOLVE_TOL_REL_RESIDUAL_NORM: return "SOLVE_TOL_REL_RESIDUAL_NORM";
+    case SOLVE_TOL_REL_SOLUTION_ERR_NORM: return "SOLVE_TOL_REL_SOLUTION_ERR_NORM";
+    default: TEST_FOR_EXCEPT(true);
+  }
+  return ""; // Never be called!
+}
+
 /** \brief Simple struct that defines the requested solution criteria for a solve.
  *
  * \ingroup Equation_solve_foundation_code_grp
@@ -95,6 +107,13 @@ struct BlockSolveCriteria {
     {}
 };
 
+/** \brief Exception type thrown on an catastrophic solve failure.
+ *
+ * \ingroup Equation_solve_foundation_code_grp
+ */
+class CatastrophicSolveFailure : public std::runtime_error
+{public: CatastrophicSolveFailure(const std::string& what_arg) : std::runtime_error(what_arg) {}};
+
 /** \brief Solution status
  *
  * \ingroup Equation_solve_foundation_code_grp
@@ -104,6 +123,19 @@ enum ESolveStatus {
   ,SOLVE_STATUS_UNCONVERGED     ///< The requested solution criteria has likely not been achieved
   ,SOLVE_STATUS_UNKNOWN         ///< The final solution status is unknown but he solve did not totally fail
 };
+
+/** \brief . */
+inline
+const char* toString(const ESolveStatus solveStatus)
+{
+  switch(solveStatus) {
+    case SOLVE_STATUS_CONVERGED:    return "SOLVE_STATUS_CONVERGED";
+    case SOLVE_STATUS_UNCONVERGED:  return "SOLVE_STATUS_UNCONVERGED";
+    case SOLVE_STATUS_UNKNOWN:      return "SOLVE_STATUS_UNKNOWN";
+    default: TEST_FOR_EXCEPT(true);
+  }
+  return ""; // Never be called!
+}
 
 /** \brief Simple struct for the return status from a solve.
  *
@@ -136,16 +168,89 @@ struct SolveStatus {
   /** \brief . */
   SolveStatus()
     :solveStatus(SOLVE_STATUS_UNKNOWN), achievedTol(unknownTolerance())
-     ,numIterations(0)
+     ,numIterations(1)
     {}
+
+  /** \brief Output the achieveTol field.
+   */
+  static std::string achievedTolToString( const ScalarMag &achievedTol )
+    {
+      if(achievedTol==unknownTolerance()) return "unknownTolerance()";
+      std::ostringstream oss; oss << achievedTol; return oss.str();
+    }
 };
 
-/** \brief Exception type thrown on an catastrophic solve failure.
+/** \brief Accumulate solve status objects for solving a block of RHSs is
+ * smaller sub-blocks..
  *
- * \ingroup Equation_solve_foundation_code_grp
+ *
+ * \param  overallSolveCriteria  [in] The overall solve criteria for the overall blocks.
+ * \param  solveStatus           [in] The solve status for a sub-block (or a single RHS) 
+ * \param  overallSolveStatus    [in/out] The accumulated solve status for all the
+ *                               sub-blocks of RHS.
+ *
+ * On the first call, set <tt>overallSolveStatus->solveStatus =
+ * SOLVE_STATUS_CONVERGED</tt>!
  */
-class CatastrophicSolveFailure : public std::runtime_error
-{public: CatastrophicSolveFailure(const std::string& what_arg) : std::runtime_error(what_arg) {}};
+template <class Scalar>
+void accumulateSolveStatus(
+  const SolveCriteria<Scalar>    &overallSolveCriteria
+  ,const SolveStatus<Scalar>     &solveStatus
+  ,SolveStatus<Scalar>           *overallSolveStatus
+  )
+{
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT(overallSolveStatus==NULL);
+#endif
+  if( overallSolveCriteria.requestedTol == SolveCriteria<Scalar>::defaultTolerance() ) {
+    // There is nothing to accumulate, only a default return is given
+    overallSolveStatus->solveStatus = SOLVE_STATUS_UNKNOWN;
+    overallSolveStatus->achievedTol = SolveStatus<Scalar>::unknownTolerance();
+  }
+  else {
+    // Update the solve status
+    switch(solveStatus.solveStatus) {
+      case SOLVE_STATUS_UNCONVERGED:
+      {
+        // First, if we see any unconverged solve status, then the entire block is
+        // unconverged!
+        overallSolveStatus->solveStatus = SOLVE_STATUS_UNCONVERGED;
+        break;
+      }
+      case SOLVE_STATUS_UNKNOWN:
+      {
+        // Next, if any solve status is unknown, then if the overall solve status
+        // says converged, then we have to mark it as unknown.  Note than unknown
+        // could mean that the system is actually converged!
+        switch(overallSolveStatus->solveStatus) {
+          case SOLVE_STATUS_CONVERGED:
+            overallSolveStatus->solveStatus = SOLVE_STATUS_UNKNOWN;
+            break;
+          case SOLVE_STATUS_UNCONVERGED:
+          case SOLVE_STATUS_UNKNOWN:
+            // If we get here then the overall solve status is either unknown
+            // already or says unconverged and this will not change here!
+            break;
+          default:
+            TEST_FOR_EXCEPT(true); // Corrupted enum?
+        }
+        break;
+      }
+      case SOLVE_STATUS_CONVERGED:
+      {
+        // If we get here then the overall solve status is either unknown,
+        // unconverged, or converged and this will not change here!
+        break;
+      }
+      default:
+        TEST_FOR_EXCEPT(true); // Corrupted enum?
+    }
+    // Update the achieved tolerence to the maximum returned
+    if( solveStatus.achievedTol > overallSolveStatus->achievedTol ) {
+      overallSolveStatus->achievedTol = solveStatus.achievedTol;
+    }
+  }
+}
 
 } // namespace Thyra
 

@@ -58,6 +58,28 @@ public:
   /** \brief Local typedef for scalar magnitude */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
+  /** \brief Default constructor which sets default parameter values.
+   *
+   * Note: It is not recommended that the client pass in values in this
+   * constructor since the argument list may change in the near future but
+   * instead use the below set functions to change an option after
+   * construction.
+   */
+  LinearOpTester(
+    const bool          check_linear_properties         = true
+    ,const ScalarMag    linear_properties_warning_tol   = 1e-13
+    ,const ScalarMag    linear_properties_error_tol     = 1e-10
+    ,const bool         check_adjoint                   = true
+    ,const ScalarMag    adjoint_warning_tol             = 1e-13
+    ,const ScalarMag    adjoint_error_tol               = 1e-10
+    ,const bool         check_for_symmetry              = false
+    ,const ScalarMag    symmetry_warning_tol            = 1e-13
+    ,const ScalarMag    symmetry_error_tol              = 1e-10
+    ,const int          num_random_vectors              = 1
+    ,const bool         show_all_tests                  = false
+    ,const bool         dump_all                        = false
+    );
+
   /** \brief Set if to check for linear properties <tt>alpha*op*(x + y) ==
    * op(alpha*x) + op(alpha*y)</tt>
    */
@@ -116,28 +138,6 @@ public:
    * <tt>show_all_tests()==true</tt>).
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all )
-
-  /** \brief Default constructor which sets default parameter values.
-   *
-   * Note: It is not recommended that the client pass in values in this
-   * constructor since the argument list may change in the near future but
-   * instead use the above set functions to change an option after
-   * construction.
-   */
-  LinearOpTester(
-    const bool          check_linear_properties         = true
-    ,const ScalarMag    linear_properties_warning_tol   = 1e-13
-    ,const ScalarMag    linear_properties_error_tol     = 1e-10
-    ,const bool         check_adjoint                   = true
-    ,const ScalarMag    adjoint_warning_tol             = 1e-13
-    ,const ScalarMag    adjoint_error_tol               = 1e-10
-    ,const bool         check_for_symmetry              = false
-    ,const ScalarMag    symmetry_warning_tol            = 1e-13
-    ,const ScalarMag    symmetry_error_tol              = 1e-10
-    ,const int          num_random_vectors              = 1
-    ,const bool         show_all_tests                  = false
-    ,const bool         dump_all                        = false
-    );
 
   /** \brief Set all the warning tolerances to the same value.
    *

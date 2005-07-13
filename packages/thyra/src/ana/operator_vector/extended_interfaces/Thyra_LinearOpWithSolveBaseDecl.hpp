@@ -254,9 +254,10 @@ namespace Thyra {
  * 
  *   <li><b>Unknown tolerance</b> [
  *   <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> ] : The
- *   linear solver does not know the tolerance that was achieved.  This would
- *   be the most likely return status for a direct linear solver or for any
- *   linear solver where
+ *   linear solver does not know the tolerance that was achieved but the
+ *   achieved tolerance should be very close to the requested tolerance.  This
+ *   would be the most likely return status for a direct linear solver or for
+ *   any linear solver where
  *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_SOLUTION_ERR_NORM</tt>.
  * 
  *   </ul>
@@ -275,7 +276,9 @@ namespace Thyra {
  * 
  *   <li><b>Unknown tolerance</b> [
  *   <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> ] : The
- *   linear solver does not know the tolerance that was achieved.
+ *   linear solver does not know the tolerance that was achieved but the
+ *   achieved tolerance is most likely significantly greater than the
+ *   requested tolerance.
  * 
  *   </ul>
  * 
@@ -292,6 +295,11 @@ namespace Thyra {
  * since the client would have no way to interpret this tolerance.
  * 
  * </ul>
+ *
+ * The implementation of the function <tt>accumulateSolveStatus()</tt> defines
+ * how to accumulate the individual solve status for each RHS in a block into
+ * the overall solve status for a block returned by
+ * <tt>blockSolveStatus[]</tt>.
  * 
  * <b>Notes to subclass developers</b>
  * 

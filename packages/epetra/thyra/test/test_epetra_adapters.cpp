@@ -30,6 +30,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_LocalMap.h"
@@ -390,24 +391,30 @@ int main( int argc, char* argv[] )
     linearOpTester.set_all_error_tol(max_rel_err);
     linearOpTester.dump_all(dumpAll);
 
+    Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
+    linearOpWithSolveTester.set_all_solve_tol(max_rel_err);
+    linearOpWithSolveTester.set_all_slack_error_tol(max_rel_err);
+    linearOpWithSolveTester.set_all_slack_warning_tol(max_rel_warn);
+    linearOpWithSolveTester.dump_all(dumpAll);
+
 		if(verbose) out << "\n*** (B.3) Test Vector linear operator interface\n";
 
 		if(verbose) out << "\nChecking out linear operator interface of ev1 ...\n";
-		result = linearOpTester.check(*ev1,verbose?&out:NULL);
+		result = linearOpTester.check(*ev1,verbose?&out:NULL,"  ","  ");
 		if(!result) success = false;
 
 		if(verbose) out << "\nChecking out linear operator interface of nev1 ...\n";
-		result = linearOpTester.check(*nev1,verbose?&out:NULL);
+		result = linearOpTester.check(*nev1,verbose?&out:NULL,"  ","  ");
 		if(!result) success = false;
 
 		if(verbose) out << "\n*** (B.4) Test MultiVector linear operator interface\n";
 
 		if(verbose) out << "\nChecking out linear operator interface of eV1 ...\n";
-		result = linearOpTester.check(*eV1,verbose?&out:NULL);
+		result = linearOpTester.check(*eV1,verbose?&out:NULL,"  ","  ");
 		if(!result) success = false;
 
 		if(verbose) out << "\nChecking out linear operator interface of neV1 ...\n";
-		result = linearOpTester.check(*neV1,verbose?&out:NULL);
+		result = linearOpTester.check(*neV1,verbose?&out:NULL,"  ","  ");
 		if(!result) success = false;
 
 		const std::string s2_n = "scalar^2*global_dim*num_mv_cols";
@@ -480,7 +487,7 @@ int main( int argc, char* argv[] )
 		if(verbose) out << "\n*** (B.7) Test EpetraLinearOp linear operator interface\n";
 
 		if(verbose) out << "\nChecking out linear operator interface of Op ...\n";
-		result = linearOpTester.check(*Op,verbose?&out:NULL);
+		result = linearOpTester.check(*Op,verbose?&out:NULL,"  ","  ");
 		if(!result) success = false;
 
 		RefCountPtr<Thyra::VectorBase<Scalar> >
@@ -788,64 +795,22 @@ int main( int argc, char* argv[] )
 
     if(1) {
 
+      if(verbose) out << "\nUsing DiagonalEpetraLinearOpWithSolveFactory to create diagLOWS from Op ...\n";
+      
       Thyra::DiagonalEpetraLinearOpWithSolveFactory diagLOWSFactory;
 
       Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
         diagLOWS = Thyra::createAndInitializeLinearOpWithSolve(diagLOWSFactory,Op);
 
-      RefCountPtr<Thyra::VectorBase<Scalar> >
-        v1  = createMember(epetra_vs);
-      Thyra::randomize( -ST::one(), ST::one(), &*v1 );
+      if(verbose) out << "\nTesting LinearOpBase interface of diagLOWS ...\n";
 
-      if(verbose) out << "\nsum(v1) = " << sum(*v1) << std::endl;
+      result = linearOpTester.check(*diagLOWS,verbose?&out:0,"  ","  ");
+      if(!result) success = false;
 
-      if(verbose && dumpAll) out << "\nv1 =\n" << *v1;
+      if(verbose) out << "\nTesting LinearOpWithSolveBase interface of diagLOWS ...\n";
 
-      RefCountPtr<Thyra::VectorBase<Scalar> >
-        v2  = createMember(epetra_vs);
-
-      apply( *diagLOWS, NOTRANS, *v1, &*v2 );
-    
-      if(verbose) out << "\nsum(v2) = " << sum(*v2) << std::endl;
-
-      if(verbose && dumpAll) out << "\nv2 =\n" << *v2;
-
-      RefCountPtr<Thyra::VectorBase<Scalar> >
-        v1_again  = createMember(epetra_vs);
-
-      Thyra::SolveCriteria<Scalar>
-        solveCriteria( Thyra::SOLVE_TOL_REL_RESIDUAL_NORM, SMT::eps() );
-
-      Thyra::SolveStatus<Scalar>
-        solveStatus = solve( *diagLOWS, NOTRANS, *v2, &*v1_again, &solveCriteria );
-
-      if(verbose) out << "\nsum(v1_again) = " << sum(*v1_again) << std::endl;
-
-      if(verbose && dumpAll) out << "\nv1_again =\n" << *v1_again;
-
-      TEST_FOR_EXCEPT( solveStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED );
-
-      RefCountPtr<Thyra::VectorBase<Scalar> >
-        diff = createMember(epetra_vs);
-
-      Thyra::linear_combination(
-        2
-        ,Teuchos::arrayArg<Scalar>( ST::one(), Scalar(-ST::one()) )()
-        ,Teuchos::arrayArg<const Thyra::VectorBase<Scalar>*>( &*v1, &*v1_again )()
-        ,ST::zero()
-        ,&*diff
-        );
-
-      if(verbose) out << "\nnorm(diff) = " << norm(*diff) << std::endl;
-
-      if(verbose && dumpAll) out << "\ndiff =\n" << *diff;
-
-      if(!testRelErr(
-           "sum(v1)",sum(*v1)
-           ,"sum(v1_again)",sum(*v1_again)
-           ,"achievedTol",solveStatus.achievedTol
-           ,"10*achievedTol",Scalar(10)*solveStatus.achievedTol
-           ,verbose?&out:NULL)) success=false;
+      result = linearOpWithSolveTester.check(*diagLOWS,verbose?&out:0,"  ","  ");
+      if(!result) success = false;
     
     }
 

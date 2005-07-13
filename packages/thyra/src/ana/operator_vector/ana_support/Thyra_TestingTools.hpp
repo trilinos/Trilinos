@@ -80,6 +80,35 @@ Thyra::relErr( const Scalar &s1, const Scalar &s2 )
 }
 
 template<class Scalar>
+bool Thyra::testMaxErr(
+  const std::string                                             &error_name
+  ,const Scalar                                                 &error
+  ,const std::string                                            &max_error_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_error
+  ,const std::string                                            &max_warning_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_warning
+  ,std::ostream                                                 *out
+  ,const std::string                                            &li
+  )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  const bool success = ( error <= max_error );
+  if(out) {
+    *out
+      << std::endl
+      << li << "Check: " << error_name << " = " << error
+      << " <= " << max_error_name << " = " << max_error << " : " << passfail(success) << std::endl;
+    if( success && error >= max_warning ) {
+      *out
+        << li << "Warning! " << error_name << " = " << error
+        << " >= " << max_warning_name << " = " << max_warning << "!\n";
+    }
+  }
+  return success;
+}
+
+template<class Scalar>
 bool Thyra::testRelErr(
   const std::string                                             &v1_name
   ,const Scalar                                                 &v1

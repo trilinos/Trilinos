@@ -124,17 +124,22 @@ void Vt_S( VectorBase<Scalar>* y, const Scalar& alpha );
 template<class Scalar>
 void V_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x );
 
-/** \brief AXPY update: <tt>y(i) = alpha * x(i) + y(i), i = 1...y->space()->dim()</tt>.
+/** \brief AXPY: <tt>y(i) = alpha * x(i) + y(i), i = 1...y->space()->dim()</tt>.
  */
 template<class Scalar>
 void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar>& x );
 
-/** \brief Scale and update: <tt>y(i) = x(i) + beta*y(i), i = 1...y->space()->dim()</tt>.
+/** \brief <tt>y(i) = x(i) + beta*y(i), i = 1...y->space()->dim()</tt>.
  */
 template<class Scalar>
 void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta );
 
-/** \brief Scale and update: <tt>z(i) = alpha*x(i) + y(i), i = 1...z->space()->dim()</tt>.
+/** \brief <tt>z(i) = x(i) - y(i), i = 1...z->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
+/** \brief <tt>z(i) = alpha*x(i) + y(i), i = 1...z->space()->dim()</tt>.
  */
 template<class Scalar>
 void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );

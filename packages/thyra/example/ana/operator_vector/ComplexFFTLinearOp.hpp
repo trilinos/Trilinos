@@ -36,6 +36,9 @@
 #include "serial_1D_FFT.hpp"
 
 /** \brief Simple concrete subclass for a serial complex-to-complex FFT.
+ *
+ * This implementation uses orthonormal columns and rows and therefore the
+ * adjoint is the same as the inverse.
  */
 template<class RealScalar>
 class ComplexFFTLinearOp
@@ -149,6 +152,9 @@ void ComplexFFTLinearOp<RealScalar>::apply(
   ) const
 {
   typedef Teuchos::ScalarTraits< std::complex<RealScalar> > ST;
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT( !( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS ) );
+#endif
   // Update y first
   Thyra::Vt_S( y, beta );
   // Translate from input x into one long array with data[] that will be
@@ -167,8 +173,9 @@ void ComplexFFTLinearOp<RealScalar>::apply(
     );
   // Add the scaled result into y
   const Thyra::ExplicitMutableVectorView<Scalar>  y_ev(*y);
+  const Scalar scalar = alpha * Scalar(1)/Scalar(std::sqrt(x_ev.subDim())); // needed to make adjoint == inverse!
   for( int k = 0; k < y_ev.subDim(); ++k ) {
-    y_ev[k] += ( alpha * std::complex<RealScalar>(data[2*k],data[2*k+1]) );
+    y_ev[k] += ( scalar * Scalar(data[2*k],data[2*k+1]) );
   }
 }
 
@@ -197,8 +204,22 @@ ComplexFFTLinearOp<RealScalar>::solve(
   ,const Thyra::SolveCriteria< std::complex<RealScalar> >          *solveCriteria
   ) const
 {
-  TEST_FOR_EXCEPT(true); // ToDo: Implement in terms of apply()!
-  return Thyra::SolveStatus< std::complex<RealScalar> >(); // Default return
+  typedef Teuchos::ScalarTraits< std::complex<RealScalar> > ST;
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT( !( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS ) );
+#endif
+  Thyra::apply( *this, M_trans==Thyra::NOTRANS?Thyra::CONJTRANS:Thyra::NOTRANS, b, x );
+  typedef Thyra::SolveStatus< std::complex<RealScalar> >  SS;
+  SS solveStatus;
+  if(solveCriteria) {
+    solveStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
+    solveStatus.achievedTol = SS::unknownTolerance();
+  }
+  else {
+    solveStatus.solveStatus = Thyra::SOLVE_STATUS_UNKNOWN;
+    solveStatus.achievedTol = SS::unknownTolerance();
+  }
+  return solveStatus;
 }
 
 #endif	// THYRA_COMPLEX_FFT_LINEAR_OP_HPP

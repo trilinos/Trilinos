@@ -79,6 +79,24 @@ bool testRelErr(
   ,const std::string                                            &leadingIndent = std::string("")
   );
 
+/** \brief Check that an error is less than some error tolerence.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ */
+template<class Scalar>
+bool testMaxErr(
+  const std::string                                             &error_name
+  ,const Scalar                                                 &error
+  ,const std::string                                            &max_error_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_error
+  ,const std::string                                            &max_warning_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_warning
+  ,std::ostream                                                 *out
+  ,const std::string                                            &leadingIndent = std::string("")
+  );
+
 /** \brief Print summary outputting for a test or just <tt>passed</tt> or
  * <tt>failed</tt>.
  *
