@@ -117,6 +117,7 @@ int Amesos_Klu::ExportToSerial()
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   }
   
+  return 0;
 }
 //=============================================================================
 int Amesos_Klu::CreateLocalMatrixAndExporters() 
