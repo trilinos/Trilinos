@@ -92,8 +92,10 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   // Set verbosity level
-  if (verbose)
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::IterationDetails + Anasazi::OrthoDetails );
+  if (verbose) {
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::IterationDetails 
+                        + Anasazi::OrthoDetails + Anasazi::TimingDetails);
+  }
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
