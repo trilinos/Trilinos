@@ -35,6 +35,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Directory.hpp"
 #include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 
@@ -233,7 +234,7 @@ namespace Tpetra {
 				if(computeLIDs)
 					packetSize++;
         
-				Teuchos::RefCountPtr< Distributor<OrdinalType> > distor = es().platform().createDistributor();
+				Distributor<OrdinalType> distor(Comm_);
 
 				// Get directory locations for the requested list of entries
 				std::vector<OrdinalType> dirImages(numEntries);
@@ -253,7 +254,7 @@ namespace Tpetra {
 				OrdinalType numSends;
 				std::vector<OrdinalType> sendGIDs;
 				std::vector<OrdinalType> sendImages;
-				distor->createFromRecvs(numEntries, globalEntries, dirImages, true, numSends, sendGIDs, sendImages);
+				distor.createFromRecvs(numEntries, globalEntries, dirImages, true, numSends, sendGIDs, sendImages);
         
 				OrdinalType currLID;
 				std::vector<OrdinalType> exports;
@@ -269,7 +270,7 @@ namespace Tpetra {
 				}
 
 				std::vector<OrdinalType> imports;
-				Comm_->doPostsAndWaits(*distor, exports, packetSize, imports);
+				Comm_->doPostsAndWaits(distor, exports, packetSize, imports);
 
 				typename std::vector<OrdinalType>::iterator ptr = imports.begin();
 				OrdinalType const numRecv = numEntries - numMissing;
@@ -322,8 +323,8 @@ namespace Tpetra {
       
 			// Create distributor & call createFromSends
 			OrdinalType numReceives = Teuchos::OrdinalTraits<OrdinalType>::zero();
-			Teuchos::RefCountPtr< Distributor<OrdinalType> > distor = es().platform().createDistributor();      
-			distor->createFromSends(es().getNumMyElements(), sendImageIDs, true, numReceives);
+			Distributor<OrdinalType> distor(Comm_);      
+			distor.createFromSends(es().getNumMyElements(), sendImageIDs, true, numReceives);
 
 			// Execute distributor plan
 			// Transfer GIDs, ImageIDs, and LIDs that we own to all images
@@ -339,7 +340,7 @@ namespace Tpetra {
 			}
 
 			std::vector<OrdinalType> importElements;
-			Comm_->doPostsAndWaits(*distor, exportElements, packetSize, importElements);
+			Comm_->doPostsAndWaits(distor, exportElements, packetSize, importElements);
 
 			typename std::vector<OrdinalType>::iterator ptr = importElements.begin();
 			for(OrdinalType i = zero; i < numReceives; i++) {

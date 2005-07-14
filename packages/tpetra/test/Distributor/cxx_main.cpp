@@ -108,10 +108,10 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 #endif // TPETRA_MPI
 
 	// platform constructor
-	if(verbose) cout << "Calling Platform.createDistributor()..." << endl;
+	if(verbose) cout << "Calling constructor..." << endl;
 	comm.barrier();
-	Teuchos::RefCountPtr< Tpetra::Distributor<OrdinalType> > distributorS = platform.createDistributor(); // distributor for createFromSends
-	Teuchos::RefCountPtr< Tpetra::Distributor<OrdinalType> > distributorR = platform.createDistributor(); // distributor for createFromReceives
+	Tpetra::Distributor<OrdinalType> distributorS(platform.createOrdinalComm()); // distributor for createFromSends
+	Tpetra::Distributor<OrdinalType> distributorR(platform.createOrdinalComm()); // distributor for createFromReceives
 
 	// ======================================================================
 	// actual testing section - affects return code
@@ -138,7 +138,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	for(OrdinalType i = zero; i < length; i++) 
 		exportImageIDs.push_back(i);
 
-	distributorS->createFromSends(numExportIDs, exportImageIDs, true, numRemoteIDs);
+	distributorS.createFromSends(numExportIDs, exportImageIDs, true, numRemoteIDs);
 	if(debug) {
 		if(verbose) cout << endl;
 		outputData(myImageID, numImages, "exportImageIDs: " + Tpetra::toString(exportImageIDs));
@@ -175,7 +175,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	std::vector<OrdinalType> exportGIDs(length, invalid);
 	exportImageIDs = exportGIDs; // fill with same thing
 
-	distributorR->createFromRecvs(numRemoteIDs, remoteGIDs, remoteImageIDs, true, numExportIDs, exportGIDs, exportImageIDs);
+	distributorR.createFromRecvs(numRemoteIDs, remoteGIDs, remoteImageIDs, true, numExportIDs, exportGIDs, exportImageIDs);
 	std::vector<OrdinalType> expectedGIDs;
 	generateColumn(expectedGIDs, myImageID, numImages);
 	if(debug) {
@@ -217,7 +217,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 		outputData(myImageID, numImages, "exports: " + Tpetra::toString(exports));
 		outputData(myImageID, numImages, "objectSize: " + Tpetra::toString(objectSize));
 	}
-	comm.doPostsAndWaits(*distributorS, exports, objectSize, imports);
+	comm.doPostsAndWaits(distributorS, exports, objectSize, imports);
 	if(debug) {
 		outputData(myImageID, numImages, "imports: " + Tpetra::toString(imports));
 		if(verbose) cout << "doPostsAndWaits test: ";

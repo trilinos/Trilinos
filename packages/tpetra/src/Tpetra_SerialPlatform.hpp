@@ -34,7 +34,6 @@
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_SerialComm.hpp"
 #include "Tpetra_BasicDirectory.hpp"
-#include "Tpetra_SerialDistributor.hpp"
 
 namespace Tpetra {
 
@@ -48,20 +47,25 @@ namespace Tpetra {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
+
 		//! Constructor
 		SerialPlatform() : Object("Tpetra::SerialPlatform") {};
+
 		//! Copy constructor
 		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) 
 			: Object(platform.label()) 
 		{};
+
 		//! Destructor
 		~SerialPlatform() {};
+
 		//! Clone constructor
 		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
 			Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > platform;
 			platform = Teuchos::rcp(new SerialPlatform<OrdinalType, ScalarType>(*this));
 			return(platform);
 		};
+
 		//@}
 
 		//@{ \name Class Creation and Accessor Methods
@@ -78,13 +82,6 @@ namespace Tpetra {
 			return(comm);
 		};
 
-		//! Distributor Instance
-		Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const {
-			Teuchos::RefCountPtr< SerialDistributor<OrdinalType> > distributor;
-			distributor = Teuchos::rcp(new SerialDistributor<OrdinalType>());
-			return(distributor);
-		};
-
 		//! Directory Instance
 		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
 			Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
@@ -95,11 +92,13 @@ namespace Tpetra {
 		//@}
 
 		//@{ \name I/O Methods
+
 		//! print - implements Tpetra::Object virtual print method.
 		void print(ostream& os) const {};
 
 		//! printInfo - implements Tpetra::Platform virtual printInfo method.
 		void printInfo(ostream& os) const {os << *this;};
+
 		//@}
 
 	}; // SerialPlatform class

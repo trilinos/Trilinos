@@ -35,7 +35,6 @@
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_MpiComm.hpp"
 #include "Tpetra_BasicDirectory.hpp"
-#include "Tpetra_MpiDistributor.hpp"
 #include "Tpetra_MpiData.hpp"
 #include "Tpetra_ElementSpace.hpp"
 
@@ -87,13 +86,6 @@ namespace Tpetra {
 			Teuchos::RefCountPtr< MpiComm<OrdinalType, OrdinalType> > comm;
 			comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiData_));
 			return(comm);
-		};
-    
-		//! Distributor Instance
-		Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const {
-			Teuchos::RefCountPtr< MpiDistributor<OrdinalType> > distributor;
-			distributor = Teuchos::rcp(new MpiDistributor<OrdinalType>(createOrdinalComm())); 
-			return(distributor);
 		};
     
 		//! Directory Instance

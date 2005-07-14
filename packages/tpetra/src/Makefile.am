@@ -65,15 +65,13 @@ UNIPROC =
 
 SERIAL_H = \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
-	$(srcdir)/Tpetra_SerialComm.hpp \
-	$(srcdir)/Tpetra_SerialDistributor.hpp 
+	$(srcdir)/Tpetra_SerialComm.hpp
 
 SERIAL = 
 
 EXTRA_MPI_H = \
 	$(srcdir)/Tpetra_MpiPlatform.hpp \
 	$(srcdir)/Tpetra_MpiComm.hpp \
-	$(srcdir)/Tpetra_MpiDistributor.hpp \
 	$(srcdir)/Tpetra_MpiData.hpp \
 	$(srcdir)/Tpetra_MpiTraits.hpp 
 

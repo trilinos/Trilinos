@@ -223,15 +223,12 @@ namespace Tpetra {
 			// apply same permutation to remoteGIDs_
 			sortArrays(remoteImageIDs, data().remoteGIDs_);
 
-			// create Distributor instance
-			data().distributor_ = data().platform_->createDistributor();
-
 			// call Distributor.createFromRecvs()
 			// takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
 			// returns numExportIDs_, exportLIDs_, and exportImageIDs_
-			data().distributor_->createFromRecvs(data().numRemoteIDs_, data().remoteGIDs_, 
-												 remoteImageIDs, true, data().numExportIDs_, 
-												 data().exportLIDs_, data().exportImageIDs_);
+			data().distributor_.createFromRecvs(data().numRemoteIDs_, data().remoteGIDs_, 
+												remoteImageIDs, true, data().numExportIDs_, 
+												data().exportLIDs_, data().exportImageIDs_);
 
 			// convert exportLIDs_ from GIDs to their LIDs in target
 			for(typename std::vector<OrdinalType>::iterator i = data().exportLIDs_.begin(); i != data().exportLIDs_.end(); i++)

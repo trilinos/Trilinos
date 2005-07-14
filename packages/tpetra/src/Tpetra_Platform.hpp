@@ -33,7 +33,6 @@
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_Directory.hpp"
-#include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 
@@ -60,28 +59,34 @@ namespace Tpetra {
 	public:
 	
 		//@{ \name Constructor/Destructor Methods
+
 		//! Destructor
 		virtual ~Platform() {};
+
 		//! Clone method
 		/*! Returns a copy of this Platform instance. It is allocated on the heap and
 		    encapsulated in a Teuchos RefCountPtr.
 		*/
 		virtual Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const = 0;
+
 		//@}
 	
 		//@{ \name Class Creation and Accessor Methods
+
 		//! Comm Instances
 		virtual Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const = 0;
 		virtual Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
-		//! Distributor Instances
-		virtual Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const = 0;
+
 		//! Directory Instance
 		virtual Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
+
 		//@}
 	
 		//@{ \name I/O Methods
+
 		//! printInfo
 		virtual void printInfo(ostream& os) const = 0;
+
 		//@}
 	
 	}; // Platform class
