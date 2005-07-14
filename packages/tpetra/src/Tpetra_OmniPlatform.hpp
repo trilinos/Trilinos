@@ -44,35 +44,29 @@ namespace Tpetra {
 
 	class OmniPlatform : public Object {
 	public:
+
+		enum CommType { GENERIC, SERIAL, MPI };
 	
 		//@{ \name Constructor/Destructor Methods
 		
 		//! Constructor (serial)
 		OmniPlatform() 
 			: Object("Tpetra::OmniPlatform(Serial)")
-			, myImageID_(0)
-			, numImages_(1)
 		{}
 
 #ifdef TPETRA_MPI
 		//! Constructor (MPI)
 		OmniPlatform(MPI_Comm Comm)
 			: Object("Tpetra::OmniPlatform(MPI)")
-			, myImageID_(-99) // dummy value, real initialization in ctr body
-			, numImages_(-99) // dummy value, real initialization in ctr body
 			, MpiData_()
 		{
 			MpiData_ = Teuchos::rcp(new MpiData(Comm));
-			myImageID_ = MpiData_->getMyImageID();
-			numImages_ = MpiData_->getNumImages();
 		}
 #endif
 
 		//! Copy constructor
 		OmniPlatform(OmniPlatform const& rhs)
 			: Object(rhs.label())
-			, myImageID_(rhs.getMyImageID())
-			, numImages_(rhs.getNumImages())
 #ifdef TPETRA_MPI
 			, MpiData_(rhs.MpiData_)
 #endif
@@ -82,51 +76,41 @@ namespace Tpetra {
 		~OmniPlatform() {}
 
 		//@}
-
-		//@{ \name Image Info Methods
-
-		//! getMyImageID - returns my rank on this machine
-		/*! ImageIDs are always in the range [0, numImages), and are returned as an int.
-		 */
-		int getMyImageID() const { 
-			return(myImageID_); 
-		}
-
-		//! getNumImages - returns the number of images on this machine
-		/*! The number of images on this machine is returned as an int, and should always be greater than zero.
-		 */
-		int getNumImages() const { 
-			return(numImages_); 
-		}
-
-		//@}
 	
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm instances
-		/*! Returns a Tpetra::Comm object that will communicate over whatever
+		/*! Creates a Tpetra::Comm object that will communicate over whatever
 		    system was passed to this Platform at construction (Serial, MPI, etc.)
+			If you would like a specific type of Comm object, specify a CommType
+			argument (i.e. "SERIAL", "MPI", etc.)
+
+			The new Comm instance will be pointed to by the RefCountPtr passed in.
 		*/
 		template <typename PacketType, typename OrdinalType>
-		void createComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
+		void createComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm, CommType ct = GENERIC) const {
+			switch(ct) {
+
+			case SERIAL:
+				createSerialComm(comm);
+				break;
+
+			case MPI:
+				createMpiComm(comm);
+				break;
+
+			case GENERIC:
 #ifdef TPETRA_MPI
-			// We are running in MPI, create a Tpetra::MpiComm.
-			comm = Teuchos::rcp(new MpiComm<PacketType, OrdinalType>(MpiData_));
+				createMpiComm(comm);
 #else
-			// We are running in serial, create a Tpetra::SerialComm.
-			comm = Teuchos::rcp(new SerialComm<PacketType, OrdinalType>());
+				createSerialComm(comm);
 #endif
-		}
-		
-		//! SerialComm instances
-		/*! This will always return a Tpetra::Comm object that will communicate serially,
-		    regardless of what communication system we are using. (In other words, even
-			if createComm() returns a Tpetra::MpiComm object, createSerialComm() 
-			will still return a Tpetra::SerialComm object.
-		*/
-		template <typename PacketType, typename OrdinalType>
-		void createSerialComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
-			comm = Teuchos::rcp(new SerialComm<PacketType, OrdinalType>());
+				break;
+
+			default:
+				throw reportError("Unknown CommType", -99);
+				break;
+			}
 		}
 
 		//@}
@@ -134,15 +118,32 @@ namespace Tpetra {
 		//@{ \name I/O Methods
 
 		//! print - implements Tpetra::Object virtual print method.
-		void print(ostream& os) const {
-			os << label() << ",Image " << getMyImageID() << " of " << getNumImages();
-		}
+		//void print(ostream& os) const {
+		//	os << label();
+		//}
 
 		//@}
 
 	private:
-		int myImageID_;
-		int numImages_;
+		// private member functions - used by createComm
+
+		template <typename PacketType, typename OrdinalType>
+		void createSerialComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
+			// serial is always enabled - no need for an #ifdef
+			comm = Teuchos::rcp(new SerialComm<PacketType, OrdinalType>());
+		}
+
+		template <typename PacketType, typename OrdinalType>
+		void createMpiComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
+#ifdef TPETRA_MPI
+			comm = Teuchos::rcp(new MpiComm<PacketType, OrdinalType>(MpiData_));
+#else
+			throw reportError("Mpi is not enabled.", -1);
+#endif
+		}
+
+		// private data members
+
 #ifdef TPETRA_MPI
 		Teuchos::RefCountPtr<MpiData> MpiData_;
 #endif

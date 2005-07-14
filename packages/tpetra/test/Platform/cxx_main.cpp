@@ -99,7 +99,7 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	int mIID = -1; // dummy value
 	int nI = -1; // dummy value
 
-//#ifndef TPETRA_MPI
+#ifndef TPETRA_MPI
 	// create Serial OmniPlatform if MPI is not enabled
 	if(verbose) 
 		cout << "Creating Serial OmniPlatform..." << endl;
@@ -117,7 +117,7 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	if(verbose) 
 		cout << "Creating op1's SerialComm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<PacketType, OrdinalType> > op1_serialcomm;
-	op1.createSerialComm(op1_serialcomm);
+	op1.createComm(op1_serialcomm, Tpetra::OmniPlatform::SERIAL);
 	if(debug)
 		op1_serialcomm->printInfo(cout);
 
@@ -135,8 +135,7 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	if(nI != 1)
 		cout << "** op1_serialcomm.getNumImages() = " << nI << ", expected 1" << endl;
 
-//#else
-#ifdef TPETRA_MPI
+#else
 	// create MPI OmniPlatform if MPI is enabled
 	if(verbose) 
 		cout << "Creating MPI OmniPlatform..." << endl;
@@ -157,16 +156,16 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	if(verbose) 
 		cout << "Creating op2's SerialComm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<PacketType, OrdinalType> > op2_serialcomm;
-	op2.createSerialComm(op2_serialcomm);
+	op2.createComm(op2_serialcomm, Tpetra::OmniPlatform::SERIAL);
 	if(debug)
 		op2_serialcomm->printInfo(cout);
 
 	// assert that size and rank are correct
 	mIID = op2_comm->getMyImageID();
 	nI = op2_comm->getNumImages();
-	if(mIID != 0)
+	if(mIID != myImageID)
 		cout << "** op2_comm.getMyImageID() = " << mIID << ", expected 0" << endl;
-	if(nI != 1)
+	if(nI != numImages)
 		cout << "** op2_comm.getNumImages() = " << nI << ", expected 1" << endl;
 	mIID = op2_serialcomm->getMyImageID();
 	nI = op2_serialcomm->getNumImages();
