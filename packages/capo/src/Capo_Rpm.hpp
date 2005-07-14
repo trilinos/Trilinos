@@ -83,6 +83,10 @@ namespace CAPO {
     virtual double& Get_Tfinal();
 
   private:
+
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > finit;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xinit;
+
     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve;
 
     int Unstable_Basis_Size;
@@ -118,11 +122,23 @@ namespace CAPO {
 		     double& deltaT);
     bool dphi_dt(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
 
-    bool Solve_Linear(double *Mat,double *rhs, bool resolve, int m);
+    bool Solve_Linear(double *Mat,double *rhs, bool resolve, int m, int nrhs);
     void SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, 
 		     const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
 
     void Print(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Printme);
+    bool dphi_dlambda(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
+    bool ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
+			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
+			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
+			 const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re,
+			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& v,
+			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& finit,
+			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r,
+			 double& deltaT, double& deltalambda);
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xstep;
+    double lambdastep;
+    double Tstep;
     
   };
 }

@@ -503,6 +503,47 @@ bool Npgs::InnerIteration()
 	}
       else
 	{
+	  if ( SolveParameters->Periodic() )
+	    {
+	      cout << "Error: If the Problem is periodic, there should" << endl;
+	      cout << "       always be at least one floquet multiplier " << endl;
+	      cout << "       of value 1>rho!" << endl;
+	      cout << "The code will assume deltaT=0, deltalambda=0 and continue. " << endl;
+	      
+	      TempVector = MatVec(r);
+	      Thyra::Vp_StV(&*TempVector,1.0,*r);
+	      dq = MatVec(TempVector);
+	      Thyra::Vp_StV(&*dq,1.0,*r);
+	      Thyra::Vp_StV(&*xfinal,1.0,*dq);
+
+	    }
+	  else // Not a periodic problem.
+	    {
+	      if ( SolveParameters->Arc_Length() )
+		{
+		  TempVector = MatVec(r);
+		  Thyra::Vp_StV(&*TempVector,1.0,*r);
+		  dq = MatVec(TempVector);
+		  Thyra::Vp_StV(&*dq,1.0,*r);
+
+		  //essentially set deltaT = 0 by not changing Tfinal.
+		  dphi_dlambda(TempVector);
+		  *deltalambda = ( Thyra::dot(*TempVector,*dq) )/lambdastep;
+		  lambdafinal+=*deltalambda;
+		  Thyra::Vp_StV(&*xfinal,1.0,*dq);
+		}
+	      else
+		{
+		  // Just set deltaT = 0, or really leave Tfinal alone.
+		  // Still update x(0), here assume l=2 (still hardcoded...)
+		  TempVector = MatVec(r);
+		  Thyra::Vp_StV(&*TempVector,1.0,*r);
+		  dq = MatVec(TempVector);
+		  Thyra::Vp_StV(&*dq,1.0,*r);
+		  Thyra::Vp_StV(&*xfinal,1.0,*dq);
+		}
+	    }
+	  /*
 	  dq = MatVec(r);
 	  Thyra::Vp_StV(&*dq,1.0,*r);
 
@@ -520,6 +561,7 @@ bool Npgs::InnerIteration()
 
 	  Tfinal +=(*deltaT);
 	  Thyra::Vp_StV(&*xfinal,1.0,*dq);
+	  */
 	}
 
       // If my subspace has shrunk at any step, I need to replace the vectors
@@ -888,8 +930,7 @@ bool Npgs::Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
 
 
   // Dimension of the linear system depends on whether we are looking 
-  // for a periodic solution and/or performing psuedo-arclength
-  // continuation.
+  // for a periodic solution.
   int LS_size = Unstable_Basis_Size;
 
   if (SolveParameters->Periodic())
@@ -1103,8 +1144,10 @@ bool Npgs::ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Sca
       RHS[i]=-Thyra::get_ele(*rightcol,i+1);
     }
   Thyra::assign(&*templong,*dq2);
-  Thyra::Vp_StV(&*templong,1.0,*r);
   fphi = MatVec(templong);
+  Thyra::Vp_StV(&*fphi,1.0,*r);
+
+
   Thyra::apply(*Vp,Thyra::TRANS,*fphi,&*rightcol);
 
   for (int i=0;i<Unstable_Basis_Size;i++)
