@@ -79,7 +79,7 @@ namespace CAPO {
 
     virtual void Finish() = 0;
 
-    virtual void Predictor(double& StepSize, double& PrevStepSize) = 0;
+    virtual void Predictor() = 0;
 
     virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& Get_xfinal() = 0;
 

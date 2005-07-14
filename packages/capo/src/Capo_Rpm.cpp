@@ -235,7 +235,7 @@ void Rpm::InnerFunctions()
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/20/05
 //------------------------------------------------------------------
-void Rpm::Predictor(double& StepSize,double& PrevStepSize)
+void Rpm::Predictor()
 {
   // Eventually put into parameter list...
   double lambdamax = SolveParameters->get_lambda_max();

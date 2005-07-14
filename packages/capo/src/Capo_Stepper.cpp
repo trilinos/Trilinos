@@ -55,13 +55,10 @@ using namespace CAPO;
 Stepper::Stepper(Teuchos::RefCountPtr<Parameter_List> PL, \
 		 Teuchos::RefCountPtr<Solver> App_Solver)
 {
-  StepSize = PL->get_lambda_stepsize();
-  PrevStepSize = StepSize;
   StepNumber = 0;
   PrintProc = PL->get_printproc();
   MaxSteps = PL->get_MaxOuterIts();
 
-  //Problem_Integrator = App_Int; included in solver...
   Problem_Parameters = PL;
   iteration_method = App_Solver;
 }
@@ -95,7 +92,6 @@ void Stepper::PrintStart() const
   if (PrintProc>0)
     {
       cout << endl <<"---------- Start of Continuation step " << StepNumber << "----------" << endl;
-      //cout << "Param = " << iteration_method->Get_lambdafinal() << ", StepSize = " << StepSize << " ~~~~~~" << endl;
     }
 }
 //-----------------------------------------------------------------
@@ -137,12 +133,7 @@ void Stepper::PrintIter(const bool converged) const
 void Stepper::StepParamAndPredict()
 {
   StepNumber++;
-  
-  // Adjust Step Size Here
-  StepSize *= 1.0;
-  
-  iteration_method->Predictor(StepSize, PrevStepSize);
-  PrevStepSize = StepSize;
+    iteration_method->Predictor();
 }
 
 //-----------------------------------------------------------------
@@ -172,34 +163,24 @@ void Stepper::Run()
     if (converged) {
 
       // Save converged solution
-
-      //! J.Simonis June10 Must do something with this output function!!
+      // J.Simonis June10 Must do something with this output function!!
       //(*Solver).get_xfinal().Output(Step, (*Solver).get_lambdafinal());
-      cout << "Period for parameter " << iteration_method->Get_lambdafinal() << " is " << iteration_method->Get_Tfinal() << endl;
+      cout << "Period for parameter " << iteration_method->Get_lambdafinal() 
+	   << " is " << iteration_method->Get_Tfinal() << endl;
 
 
-      // Some Solvers require work in between inner solves...
+      // Some Solvers may require work between inner solves...
       iteration_method->InnerFunctions();
-
-      // Check for basis decrease and maintain accuracy with subspace iter
-      //if ((Step+1) % updateBasisFreq == 0)  rpm->UpdateBasis();
 
       // Step in parameter call predictor 
       StepParamAndPredict();
     }
     else {
       // The inner iterations have failed.  Each Algorithm should
-      // have a function too deal with an inner iteration failure.
-      cout << "Failed to solve for parameter value "  << iteration_method->Get_lambdafinal() << endl;
+      // have a function to deal with an inner iteration failure.
+      cout << "Failed to solve for parameter value "  << 
+	iteration_method->Get_lambdafinal() << endl;
       iteration_method->IterationFailure();
-
-
-      //Increase m this is for Rpm method
-      //rpm->Increase_m();
-      // If Newton-Picard fails, for now, just output that it failed and stop.
-      //cout << "Failure of Newton-Picard Algorithm. " << endl;
-      //Step = maxStep+2; // Hopefully this will throw us out when a failure
-      // is encountered.
     }
 
   } while (!Done());

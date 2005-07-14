@@ -60,25 +60,55 @@ namespace CAPO {
     //! Destructor
     ~Stepper() {};
 
+    /*!
+      This function executes the continuation solve.  It fixes the parameter,
+      calls the solver, increments the parameter and repeats until the maximum
+      number of steps has been achieved.
+    */
     void Run();
     
+    /*!
+      Increment the continuation parameter and predict solution values of
+      the state (and period if periodic problem) at the new parameter.
+
+      \note The predicted values are obtained via the Solver algorithms
+      Predictor function.
+    */
     void StepParamAndPredict();
     
+    /*!
+      Check to see if the maximum number of continuation steps has been
+      reached.
+    */
     bool Done() const;
     
+    /*!
+      Indicate the beginning of each continuation step.
+    */
     void PrintStart() const;
     
+    /*!
+      Print the results of the solve at a particular continuation
+      step.
+    */
     void PrintIter(const bool converged) const;
     
 
   private:
-    double StepSize;
-    double PrevStepSize;
+    //! Counter to keep track of what continuation step we are on.
     int StepNumber;
+
+    //! The number of continuation steps to take.
     int MaxSteps;
+
+    //! If the PrintProc flag is set >0, then additional information 
+    //! will be printed throughout the run.
     int PrintProc;
 
+    //! A list of parameter values.
     Teuchos::RefCountPtr<Parameter_List> Problem_Parameters;
+
+    //! The solver to be used at each continuation step.
     Teuchos::RefCountPtr<Solver> iteration_method;
 
   };

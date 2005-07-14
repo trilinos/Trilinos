@@ -243,7 +243,7 @@ void Npgs::InnerFunctions()
 // Creator       : J. Simonis, SNL
 // Creation Date : 06/20/05
 //------------------------------------------------------------------
-void Npgs::Predictor(double& StepSize,double& PrevStepSize)
+void Npgs::Predictor()
 {
 
   // Eventually put into parameter list...
