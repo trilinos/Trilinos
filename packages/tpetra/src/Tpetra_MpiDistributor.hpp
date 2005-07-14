@@ -29,14 +29,10 @@
 #ifndef TPETRA_MPIDISTRIBUTOR_HPP
 #define TPETRA_MPIDISTRIBUTOR_HPP
 
-#include "../test/tpetra_test_util.hpp"
-#include <mpi.h>
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Distributor.hpp"
-#include "Tpetra_MpiTraits.hpp"
 #include "Tpetra_Util.hpp"
-#include "Tpetra_MpiData.hpp"
 
 namespace Tpetra {
   
@@ -52,40 +48,27 @@ namespace Tpetra {
 		//@{ \name Constructor/Destructor
     
 		//! Platform Constuctor (default ctr)
-		MpiDistributor(Teuchos::RefCountPtr<MpiData> const& data,
-					   Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > const& comm) 
+		MpiDistributor(Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > const& comm) 
 			: Object("Tpetra::MpiDistributor")
-			, MpiData_(data)
 			, Comm_(comm)
 			, numExports_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, selfMessage_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, numSends_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, maxSendLength_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, numReceives_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, request_(0)
-			, status_(0)
 			, totalReceiveLength_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, tag_(data->getMpiTag())
-			, sendArraySize_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, sendArray_(0)
 		{};
     
 		//! Copy Constructor
 		MpiDistributor(Distributor<OrdinalType> const& distributor) 
 			: Object(distributor.label())
-			, MpiData_(distributor.MpiData_)
 			, Comm_(distributor.Comm_)
 			, numExports_(distributor.numExports_)
 			, selfMessage_(distributor.selfMessage_)
 			, numSends_(distributor.numSends_)
 			, maxSendLength_(distributor.maxSendLength_)
 			, numReceives_(distributor.numReceives_)
-			, request_(distributor.request_) // Is this correct?
-			, status_(distributor.status_) // Is this correct?
 			, totalReceiveLength_(distributor.totalReceiveLength_)
-			, tag_(distributor.tag_) // Is this correct?
-			, sendArraySize_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, sendArray_(0)
 		{};
 
 		//! Clone constructor
@@ -95,10 +78,7 @@ namespace Tpetra {
 		};
     
 		//! Destructor.
-		~MpiDistributor() {
-			delete[] request_; // C++ guarantees that deleting a null pointer will have no effect.
-			delete[] status_;  // So we don't need to check to see that they're != 0.
-		};
+		~MpiDistributor() {};
 
 		//@}
     
@@ -235,11 +215,6 @@ namespace Tpetra {
 			// Invert map to see what msgs are received and what length
 			computeReceives(myImageID, numImages);
       
-			if(numReceives_ > zero) {
-				request_ = new MPI_Request[numReceives_]; // MPI
-				status_ = new MPI_Status[numReceives_]; // MPI
-			}
-      
 			numRemoteIDs = totalReceiveLength_;
 		};
     
@@ -270,7 +245,7 @@ namespace Tpetra {
 							 std::vector<OrdinalType>& exportImageIDs)
 		{
 			computeSends(numRemoteIDs, remoteGIDs, remoteImageIDs, 
-						 numExportIDs, exportGIDs, exportImageIDs, data().getMyImageID());
+						 numExportIDs, exportGIDs, exportImageIDs, comm().getMyImageID());
 			OrdinalType testNumRemoteIDs; // dummy-ish variable
 			createFromSends(numExportIDs, exportImageIDs, deterministic, testNumRemoteIDs);
 		};
@@ -336,12 +311,10 @@ namespace Tpetra {
 					cout << " indicesTo_: " << toString(indicesTo_) << endl;
 					cout << " numReceives_: " << numReceives_ << endl;
 					cout << " totalReceiveLength_: " << totalReceiveLength_ << endl;
-					cout << " tag_: " << tag_ << endl;
 					cout << " lengthsFrom_: " << toString(lengthsFrom_) << endl;
 					cout << " imagesFrom_: " << toString(imagesFrom_) << endl;
 					cout << " indicesFrom_: " << toString(indicesFrom_) << endl;
 					cout << " startsFrom_: " << toString(startsFrom_) << endl;
-					cout << " sendArraySize_: " << sendArraySize_ << endl;
 				}
 			}
 		};
@@ -352,17 +325,12 @@ namespace Tpetra {
 		//@}
     
 	private:
-    
-		// convenience functions for returning inner data class, both const and nonconst versions.
-		MpiData& data() {return(*MpiData_);};
-		MpiData const& data() const {return(*MpiData_);};
 
 		// convenience functions for returning inner data class, both const and nonconst versions.
 		Comm<OrdinalType, OrdinalType>& comm() {return(*Comm_);};
 		Comm<OrdinalType, OrdinalType> const& comm() const {return(*Comm_);};
 
 		// private data members
-		Teuchos::RefCountPtr<MpiData> MpiData_;
 		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > Comm_;
 
 		OrdinalType numExports_;
@@ -374,16 +342,11 @@ namespace Tpetra {
 		OrdinalType maxSendLength_;
 		std::vector<OrdinalType> indicesTo_;
 		OrdinalType numReceives_;
-		MPI_Request* request_;
-		MPI_Status* status_;
 		OrdinalType totalReceiveLength_;
-		int tag_;
 		std::vector<OrdinalType> lengthsFrom_;
 		std::vector<OrdinalType> imagesFrom_;
 		std::vector<OrdinalType> indicesFrom_;
 		std::vector<OrdinalType> startsFrom_;
-		OrdinalType sendArraySize_;
-		char* sendArray_;
 
 		void computeReceives(OrdinalType myImageID, OrdinalType numImages) {
 			OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
@@ -446,7 +409,7 @@ namespace Tpetra {
 			OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
 			OrdinalType const two = one + one;
 
-			MpiDistributor<OrdinalType> tempPlan(MpiData_, Comm_);
+			MpiDistributor<OrdinalType> tempPlan(Comm_);
 			std::vector<OrdinalType> imageIDList;
 			std::vector<OrdinalType> importObjs;
 
