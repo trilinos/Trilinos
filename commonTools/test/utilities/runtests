@@ -31,6 +31,8 @@ my @packages;           # array of packages to test
 
 my $outputDir;          # output directory          (default: .)
 my $simpleDirName;      # leave off timestamp for sake of database reporting
+my $coverage;           # compute coverage data
+
 my $verbosity;          # verbosity level           (default: 1)
 my $logVerbosity;       # log file verbosity level  (default: 0)
 
@@ -98,6 +100,7 @@ cleanUp();
                     "packages=s" => \$packageList,
                     "output-dir=s" => \$outputDir,
                     "simple-dir-name" => \$simpleDirName,
+		    "coverage" => \$coverage,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
