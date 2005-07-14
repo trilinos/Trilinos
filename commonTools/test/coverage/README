@@ -35,6 +35,11 @@ At minimum, gcovmerge takes one argument: the path to search for .gcda files (wh
     gcovmerge will not look at files whose names and paths include word.  This can be used to prevent the test and example files from being analyzed.  Since the file will be excluded if word is located anywhere in the path, to exclude directories you should do --exclude=directoryname/.
     --source-dir=path
     gcovmerge will look for the original source files in path.  This must be used if your build and source directories are distinct.  However, note that the build and source directories must have the same structure, or gcovmerge will not be able to match data files to source files.
+    --with-percentages
+    gcovmerge will produce output in the form of percentage of lines covered.
+    --with-line-counts
+    gcovmerge will produce output in the form of <Lines Covered> / <Total Lines>.
+    Note that one of these two options should be specified.  If not, then no coverage information will be produced.  If both are specified, then the output will be of the form <Lines Covered> / <Total Lines> : <Percentage Covered>.
 
 Running gcovmerge with the default options from the Trilinos level will most likely generate too much information to really use.  Specifying the search path and the options will tone this down to something more useful.  For example, to check the coverage percentages on all members of the EPetra package (but not tests, documentation, or examples), one would do this:
 

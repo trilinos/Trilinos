@@ -15,6 +15,8 @@
 #                  [--with-total]                   \
 #                  [--exclude=word]                 \
 #                  [--source-dir=path]              \
+#                  [--with-line-counts]             \
+#                  [--with-percentages]             \
 #                  build-dir
 #
 # Arguments:
@@ -59,6 +61,12 @@
 #            If not specified, the script will assume that the source files
 #            are in build-dir.
 #
+#        --with-line-counts
+#            Produces output in the form of Lines Tested / Lines Counted.
+#
+#        --with-percentages
+#            Produces output in the form of percentage of lines tested.
+#
 # Written by Joe Outzen, for the Trilinos project.
 #
 #==========================================================================
@@ -71,6 +79,8 @@ $minimum_per_file = 0;
 $directories = 0;
 $total = 0;
 @exclude_list = ();
+$line_counts = 0;
+$percentages = 0;
 @file_types = ("cpp", "c++", "c", "hpp", "h++", "h");
 %source_files = ();
 %path_exec = ();
@@ -105,6 +115,12 @@ foreach (@ARGV){
     }
     elsif(/^--source-dir=(.*)$/){
 	$source_directory = $1;
+    }
+    elsif(/^--with-line-counts$/){
+	$line_counts = 1;
+    }
+    elsif(/^--with-percentages$/){
+	$percentages = 1;
     }
     else{ 
 	die "96: Invalid paramater: $_"; 
@@ -212,7 +228,17 @@ foreach(keys(%source_files)){
 	# record the results for this source file
 	$cov = $comp ? 100 * $exec / $comp : 0;
 	if($cov >= $minimum_per_file && $cov <= $maximum_per_file){
-	    $file_cov{$source_files{$_}.$_} = $comp ? 100 * $exec / $comp : 0;
+	    $cov_output = "";
+	    if($line_counts){
+		$cov_output .= "$exec / $comp";
+		if($percentages){
+		    $cov_output .= " : ";
+		}
+	    }
+	    if($percentages){
+		$cov_output .= "$cov"."%";
+	    }
+	    $file_cov{$source_files{$_}.$_} = $cov_output;
 	}
 	$path = $source_files{$_};
 	if($directories){
@@ -235,7 +261,7 @@ foreach(keys(%source_files)){
 # output the results for files
 foreach(sort(keys(%file_cov))){
     $s = " " x (60 - length);
-    print "$_$s$file_cov{$_}%\n";
+    print "$_$s$file_cov{$_}\n";
 }
 
 print "\n";
@@ -243,14 +269,35 @@ print "\n";
 # output the results for directories
 foreach(sort(keys(%path_exec))){
     $s = " " x (60 - length);
-    $cov = $path_comp{$_} ? 100 * $path_exec{$_} / $path_comp{$_} : 0;
-    print "$_$s$cov%\n";
+    $cov_output = "";
+    if($line_counts){
+	$cov_output .= "$path_exec{$_} / $path_comp{$_}";
+	if($percentages){
+	    $cov_output .= " : ";
+	}
+    }
+    if($percentages){
+	$cov_percent = $path_comp{$_} ? $path_exec{$_} / $path_comp{$_} : 0;
+	$cov_output .= "".$cov_percent."%";
+    }
+    print "$_$s$cov_output%\n";
 }
 
 print "\n";
 
 # output the total results
 if($total){
-    $cov = $total_comp ? 100 * $total_exec / $total_comp : 0;
-    print "Total: $cov%\n";
+    $s = " " x (60 - length);
+    $cov_output = "";
+    if($line_counts){
+	$cov_output .= "$total_exec / $total_comp";
+	if($percentages){
+	    $cov_output .= " : ";
+	}
+    }
+    if($percentages){
+	$cov_percent = $total_comp ? $total_exec / $total_comp : 0;
+	$cov_output .= "$cov_percent"."%";
+    }
+    print "Total: $cov_output\n";
 }
