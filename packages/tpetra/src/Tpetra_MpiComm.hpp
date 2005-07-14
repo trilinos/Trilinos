@@ -347,7 +347,7 @@ namespace Tpetra {
 			OrdinalType const& numReceives = distributor.getNumReceives();
 			OrdinalType const& selfMessage = distributor.getSelfMessage();
 			OrdinalType const& numSends = distributor.getNumSends();
-			OrdinalType const& maxSendLength = distributor.getNumReceives();
+			OrdinalType const& maxSendLength = distributor.getMaxSendLength();
 			std::vector<OrdinalType> const& imagesFrom = distributor.getImagesFrom();
 			std::vector<OrdinalType> const& lengthsFrom = distributor.getLengthsFrom();
 			std::vector<OrdinalType> const& imagesTo = distributor.getImagesTo();
@@ -362,11 +362,11 @@ namespace Tpetra {
 			OrdinalType selfReceiveAddress = zero;
 
 			// allocate space in imports if needed
-			if(imports.size() < (totalReceiveLength * elementSize))
+			if(static_cast<OrdinalType>(imports.size()) < (totalReceiveLength * elementSize))
 				imports.resize(totalReceiveLength * elementSize);
 
 			// allocate space in requests array if needed
-			if(request_.size() < numReceives)
+			if(static_cast<OrdinalType>(request_.size()) < numReceives)
 				request_.resize(numReceives);
 
 			// start up the Irecv's
@@ -409,9 +409,6 @@ namespace Tpetra {
 				if(selfMessage > zero)
 					memcopy(exports, (startsTo[selfNum] * elementSize), (lengthsTo[selfNum] * elementSize),
 							imports, selfReceiveAddress);
-					///std::copy((exports.begin() + (startsTo[selfNum] * elementSize)), // start iterator
-					///		  (exports.begin() + (startsTo[selfNum] * elementSize + lengthsTo[selfNum] * elementSize)), // end iterator
-					///		  (imports.begin() + selfReceiveAddress)); // destination start iterator
 			}
 			else { // data is not blocked by image, use send buffer
 				std::vector<PacketType> sendArray(maxSendLength * elementSize); // allocate sendArray buffer
@@ -426,9 +423,6 @@ namespace Tpetra {
 						j = startsTo[p];
 						for(OrdinalType k = zero; k < lengthsTo[p]; k++) {
 							memcopy(exports, (indicesTo[j] * elementSize), elementSize, sendArray, offset);
-							///std::copy((exports.begin() + (indicesTo[j] * elementSize)), // start iterator
-							///		  (exports.begin() + (indicesTo[j] * elementSize) + elementSize), // end iterator
-							///		  (sendArray.begin() + offset)); // destination start iterator
 							j++;
 							offset += elementSize;
 						}
@@ -443,9 +437,6 @@ namespace Tpetra {
 				if(selfMessage > zero)
 					for(OrdinalType k = zero; k < lengthsTo[selfNum]; k++) {
 						memcopy(exports, (indicesTo[selfIndex] * elementSize), elementSize, imports, selfReceiveAddress);
-						///std::copy((exports.begin() + (indicesTo[selfIndex] * elementSize)), // start iterator
-						///		  (exports.begin() + (indicesTo[selfIndex] * elementSize) + elementSize), // end iterator
-						///		  (imports.begin() + selfReceiveAddress)); // destination start iterator
 						selfIndex++;
 						selfReceiveAddress += elementSize;
 					}
