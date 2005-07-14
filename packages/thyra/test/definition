@@ -19,7 +19,8 @@
 	    ana/operator_vector/test_scalar_product.exe,
 	    ana/operator_vector/test_std_ops.exe,
 	    ../example/ana/operator_vector/sillyCgSolve_serial.exe,
-	    ../example/ana/operator_vector/sillyPowerMethod_serial.exe;
+	    ../example/ana/operator_vector/sillyPowerMethod_serial.exe,
+	    ../example/ana/operator_vector/silly1DFFT_serial.exe;
     ARGS = --verbose;
     COMM = SERIAL;
 }
