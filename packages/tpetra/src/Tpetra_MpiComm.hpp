@@ -72,7 +72,7 @@ namespace Tpetra {
 		{
 			MpiData_ = Teuchos::rcp(new MpiData(Comm));
 			//tag_ = data().getMpiTag();
-		};
+		}
 
 		//! platform constructor
 		/*! This is used by MpiPlatform to create an MpiComm instance. It should
@@ -86,7 +86,7 @@ namespace Tpetra {
 			, tag_(26050)
 		{
 			//tag_ = data().getMpiTag();
-		};
+		}
 
 		//! copy constructor
 		MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
@@ -95,7 +95,7 @@ namespace Tpetra {
 			, tag_(26050)
 		{
 			//tag_ = data().getMpiTag();
-		};
+		}
 
 		~MpiComm() {};
 
@@ -107,7 +107,7 @@ namespace Tpetra {
 		/*! Causes each image in the communicator to wait until all images have arrived. */
 		void barrier() const {
 			MPI_Barrier(getMpiComm());
-		};
+		}
 
 		//@}
     
@@ -126,7 +126,7 @@ namespace Tpetra {
 		*/
 		void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {
 			MPI_Bcast(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), root, getMpiComm());
-		};
+		}
 
 		//@}
     
@@ -147,7 +147,7 @@ namespace Tpetra {
 						  MpiTraits<PacketType>::datatype(), 
 						  allVals, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), getMpiComm());
-		};
+		}
 
 		//@}
     
@@ -167,7 +167,7 @@ namespace Tpetra {
 		void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
 			MPI_Allreduce(partialSums, globalSums, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
-		};
+		}
 
 		//! Scattered Global Sum function
 		/*! Take a list of input values from each image, compute the global sums, and distribute 
@@ -207,7 +207,7 @@ namespace Tpetra {
 		void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
 			MPI_Allreduce(partialMaxs, globalMaxs, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::maxOp(), getMpiComm());
-		};
+		}
 
 		//! MpiComm Global Min function.
 		/*! Takes list of input values from all images in the communicator, computes the min and returns the 
@@ -222,7 +222,7 @@ namespace Tpetra {
 		void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
 			MPI_Allreduce(partialMins, globalMins, MpiTraits<PacketType>::count(count), 
 						  MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::minOp(), getMpiComm());
-		};
+		}
 
 		//@}
     
@@ -241,7 +241,7 @@ namespace Tpetra {
 		void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
 			MPI_Scan(myVals, scanSums, MpiTraits<PacketType>::count(count), 
 					 MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
-		};
+		}
 
 		//@}
 
@@ -452,6 +452,41 @@ namespace Tpetra {
 				MPI_Waitall(numReceives, &request_.front(), &status.front());
 		}
 
+		//! doReversePostsAndWaits
+		/*! Execute a reverse plan specified by the distributor object passed in. 
+		  \param distributor In
+			     Contains the specifications of the plan we're reverse-executing.
+		  \param exports In
+		         On entry, contains the values we're exporting.
+		  \param packetSize In
+		         On entry, the number of PacketType variables that make up an element.
+		  \param imports Out
+		         On exit, contains the values exported to us. (imports will be resized
+				 if necessary, and any existing values will be overwritten.)
+		*/
+		void doReversePostsAndWaits(Distributor<OrdinalType>& distributor,
+									std::vector<PacketType>& exports,
+									OrdinalType packetSize,
+									std::vector<PacketType>& imports) 
+		{
+			// ...
+		}
+
+		//! doReversePosts
+		void doReversePosts(Distributor<OrdinalType>& distributor,
+							std::vector<PacketType>& exports,
+							OrdinalType packetSize,
+							std::vector<PacketType>& imports)
+		{
+			// ...
+		}
+
+		//! doReverseWaits
+		void doReverseWaits(Distributor<OrdinalType>& distributor)
+		{
+			// ...
+		}
+
 		//@}
 
 		//@{ \name Image Info Methods
@@ -460,21 +495,21 @@ namespace Tpetra {
 		/*! returns the rank of the calling image in the MPI communicator we are using. 
 		    (Obtained by calling MPI_Comm_rank.)
 		 */
-		int getMyImageID() const {return(data().getMyImageID());};
+		int getMyImageID() const {return(data().getMyImageID());}
 
 		//! getNumImages - returns the MPI size
 		/*! returns the size of the MPI communicator we are using. 
 		    (Obtained by calling MPI_Comm_size.)
 		 */
-		int getNumImages() const {return(data().getNumImages());};
+		int getNumImages() const {return(data().getNumImages());}
 
 		//@}
     
 		//@{ \name I/O Methods
 
 		//! Print methods
-		void print(ostream& os) const {};
-		void printInfo(ostream& os) const {os << *this;};
+		void print(ostream& os) const {}
+		void printInfo(ostream& os) const {os << *this;}
 
 		//@}
     
@@ -483,15 +518,15 @@ namespace Tpetra {
 		//! Access method to the MPI Communicator we're using.
 		MPI_Comm getMpiComm() const {
 			return(data().getMpiComm());
-		};
+		}
     
 		//@}
     
 	private:
     
 		// convenience functions for returning inner data class, both const and nonconst versions.
-		MpiData& data() {return(*MpiData_);};
-		MpiData const& data() const {return(*MpiData_);};
+		MpiData& data() {return(*MpiData_);}
+		MpiData const& data() const {return(*MpiData_);}
 
 		// private data members
 		Teuchos::RefCountPtr<MpiData> MpiData_;

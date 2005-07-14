@@ -53,19 +53,19 @@ namespace Tpetra {
 			will execute in serial.  The access functions return the number of
 			memory images to be 1 and the image ID to be 0.
 		*/
-		SerialComm() : Object("Tpetra::SerialComm") {};
+		SerialComm() : Object("Tpetra::SerialComm") {}
   
 		//! Copy constructor
 		/*! Makes an exact copy of an existing SerialComm instance.
 		 */
-		SerialComm(SerialComm<PacketType, OrdinalType> const& comm) : Object(comm.label()) {};
+		SerialComm(SerialComm<PacketType, OrdinalType> const& comm) : Object(comm.label()) {}
   
 		//! Destructor.
 		/*! Completely deletes a SerialComm object.  
 		  \warning Note:  All objects that depend on a SerialComm instance 
 		           should be destroyed prior to calling this function.
 		*/
-		~SerialComm() {};
+		~SerialComm() {}
 
 		//@}
 
@@ -74,7 +74,7 @@ namespace Tpetra {
 		//! Barrier function. 
 		/*! A no-op for a serial communicator.
 		 */
-		void barrier() const {};
+		void barrier() const {}
 
 		//@}
 
@@ -91,7 +91,7 @@ namespace Tpetra {
 		  \param root In
 		         On entry, contains the imageID from which all images will receive a copy of myVals.
 		*/
-		void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {};
+		void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {}
 
 		//@}
 
@@ -108,7 +108,7 @@ namespace Tpetra {
 		*/
 		void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
 			copy(myVals, allVals, count);
-		};
+		}
 
 		//@}
 
@@ -126,7 +126,7 @@ namespace Tpetra {
 		*/
 		void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
 			copy(partialSums, globalSums, count);
-		};
+		}
 
 		//! Scattered Global Sum function
 		/*! Take a list of input values from each image, compute the global sums, and distribute 
@@ -160,7 +160,7 @@ namespace Tpetra {
 		*/
 		void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
 			copy(partialMaxs, globalMaxs, count);
-		};
+		}
 
 		//! SerialComm Global Min function.
 		/*! A copy for a serial communicator.
@@ -174,7 +174,7 @@ namespace Tpetra {
 		*/
 		void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
 			copy(partialMins, globalMins, count);
-		};
+		}
 
 		//@}
 
@@ -191,7 +191,7 @@ namespace Tpetra {
 		*/
 		void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
 			copy(myVals, scanSums, count);
-		};
+		}
 
 		//@}
 
@@ -264,23 +264,58 @@ namespace Tpetra {
 			throw reportError("This method should never be called.", -1);
 		}
 
+		//! doReversePostsAndWaits
+		/*! Execute a reverse plan specified by the distributor object passed in. 
+		  \param distributor In
+			     Contains the specifications of the plan we're reverse-executing.
+		  \param exports In
+		         On entry, contains the values we're exporting.
+		  \param packetSize In
+		         On entry, the number of PacketType variables that make up an element.
+		  \param imports Out
+		         On exit, contains the values exported to us. (imports will be resized
+				 if necessary, and any existing values will be overwritten.)
+		*/
+		void doReversePostsAndWaits(Distributor<OrdinalType>& distributor,
+									std::vector<PacketType>& exports,
+									OrdinalType packetSize,
+									std::vector<PacketType>& imports) 
+		{
+			throw reportError("This method should never be called.", -1);
+		}
+
+		//! doReversePosts
+		void doReversePosts(Distributor<OrdinalType>& distributor,
+							std::vector<PacketType>& exports,
+							OrdinalType packetSize,
+							std::vector<PacketType>& imports)
+		{
+			throw reportError("This method should never be called.", -1);
+		}
+
+		//! doReverseWaits
+		void doReverseWaits(Distributor<OrdinalType>& distributor)
+		{
+			throw reportError("This method should never be called.", -1);
+		}
+
 		//@}
 
 		//@{ \name Image Info Methods
 
 		//! getMyImageID - In serial mode, always returns 0.
-		int getMyImageID() const {return(0);};
+		int getMyImageID() const {return(0);}
 
 		//! getNumImages - In serial mode, always returns 1.
-		int getNumImages() const {return(1);};
+		int getNumImages() const {return(1);}
 
 		//@}
 
 		//@{ \name I/O Methods
 
 		//! Print methods
-		void print(ostream& os) const {};
-		void printInfo(ostream& os) const {os << *this;};
+		void print(ostream& os) const {}
+		void printInfo(ostream& os) const {os << *this;}
 
 		//@}
 

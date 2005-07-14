@@ -236,6 +236,32 @@ namespace Tpetra {
 		//! doWaits
 		virtual void doWaits(Distributor<OrdinalType>& distributor) = 0;
 
+		//! doReversePostsAndWaits
+		/*! Execute a reverse plan specified by the distributor object passed in. 
+		  \param distributor In
+			     Contains the specifications of the plan we're reverse-executing.
+		  \param exports In
+		         On entry, contains the values we're exporting.
+		  \param packetSize In
+		         On entry, the number of PacketType variables that make up an element.
+		  \param imports Out
+		         On exit, contains the values exported to us. (imports will be resized
+				 if necessary, and any existing values will be overwritten.)
+		*/
+		virtual void doReversePostsAndWaits(Distributor<OrdinalType>& distributor,
+											std::vector<PacketType>& exports,
+											OrdinalType packetSize,
+											std::vector<PacketType>& imports) = 0;
+
+		//! doReversePosts
+		virtual void doReversePosts(Distributor<OrdinalType>& distributor,
+									std::vector<PacketType>& exports,
+									OrdinalType packetSize,
+									std::vector<PacketType>& imports) = 0;
+		
+		//! doReverseWaits
+		virtual void doReverseWaits(Distributor<OrdinalType>& distributor) = 0;
+		
 		//@}
 
 		//@{ \name Image Info Methods
