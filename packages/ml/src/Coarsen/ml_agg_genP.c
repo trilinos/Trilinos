@@ -27,6 +27,7 @@ extern int mls_or_gs, mls_order;
 #include "ml_memory.h"
 #include "ml_lapack.h"
 #include "ml_viz_stats.h"
+#include "ml_agg_min_energy.h"
 
 
 #ifndef ML_CPP
@@ -907,7 +908,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 #endif
    return 0;
 }
-  
+
 /* ************************************************************************* */
 /* function for advancing to the next coarser level with coarse level        */
 /* number larger than the fine levels                                        */
@@ -2979,7 +2980,10 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      
    }
    
-   ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
+   if (ag->minimizing_energy == ML_TRUE)
+     ML_AGG_Gen_Prolongator_MinEnergy(ml,level,clevel,data);   
+   else
+     ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
    
    return 0;
            
@@ -3255,4 +3259,3 @@ int  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
 
    return 0;
 }
-
