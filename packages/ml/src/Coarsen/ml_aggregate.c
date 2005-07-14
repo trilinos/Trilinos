@@ -97,7 +97,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
 /*mgee*/
    (*ag)->vblock_data                = NULL;
 /*MS*/
-   (*ag)->minimizing_energy          = ML_FALSE;
+   (*ag)->minimizing_energy          = 0;
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
