@@ -89,52 +89,6 @@ namespace Tpetra {
 		};
 
 		//@}
-    
-		//@{ \name Execute Gather/Scatter Operations (Constant size objects)
-
-		//! doPostsAndWaits
-		void doPostsAndWaits(char* export_objs, 
-							 OrdinalType const& obj_size, 
-							 OrdinalType& len_import_objs, 
-							 char*& import_objs) {
-			throw reportError("This method should never be called.", -1);
-		};
-    
-		//! doPosts
-		void doPosts(char* export_objs, 
-					 OrdinalType const& obj_size, 
-					 OrdinalType& len_import_objs, 
-					 char*& import_objs) {
-			throw reportError("This method should never be called.", -1);
-		};
-
-		//! doWaits
-		void doWaits() {
-			throw reportError("This method should never be called.", -1);
-		};
-
-		//! doReversePostsAndWaits
-		void doReversePostsAndWaits(char* export_objs, 
-									OrdinalType const& obj_size, 
-									OrdinalType& len_import_objs, 
-									char*& import_objs) {
-			throw reportError("This method should never be called.", -1);
-		};
-    
-		//! doReversePosts
-		void doReversePosts(char* export_objs, 
-							OrdinalType const& obj_size, 
-							OrdinalType& len_import_objs, 
-							char*& import_objs) {
-			throw reportError("This method should never be called.", -1);
-		};
-
-		//! doReverseWaits
-		void doReverseWaits() {
-			throw reportError("This method should never be called.", -1);
-		};
-
-		//@}
 
 		//@{ \name Attribute Accessor Methods
 
