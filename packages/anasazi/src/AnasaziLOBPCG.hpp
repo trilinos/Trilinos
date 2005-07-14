@@ -387,7 +387,7 @@ namespace Anasazi {
       std::vector<int> index( _blockSize );
       for (int i=0; i<_blockSize; i++)
         index[i] = i;
-      MH = MVT::CloneView( *X, index );
+      MH = MVT::CloneView( *H, index );
     }
     //
     // Search direction working vectors.
@@ -403,7 +403,7 @@ namespace Anasazi {
       std::vector<int> index( _blockSize );
       for (int i=0; i<_blockSize; i++)
         index[i] = i;
-      MP = MVT::CloneView( *X, index );
+      MP = MVT::CloneView( *P, index );
     }
     //
     // theta = Storage for local eigenvalues     (size: 3*_blockSize)

@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-	MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );	
+	MyOM->SetVerbosity( Anasazi::FinalSummary );	
 
 	// Create a sort manager
 	std::string which("SM");

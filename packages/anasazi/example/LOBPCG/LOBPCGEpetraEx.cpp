@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
 
 	// Create the eigenproblem.
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, M, ivec) );
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
 	
 	// Inform the eigenproblem that the operator A is symmetric
 	MyProblem->SetSymmetric(true); 
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-	MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );	
+	MyOM->SetVerbosity( Anasazi::FinalSummary );	
 	
 	// Initialize the Block Davidson solver
 	Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);

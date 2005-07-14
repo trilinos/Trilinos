@@ -277,11 +277,7 @@ int main(int argc, char *argv[]) {
   // Create an output manager to handle the I/O from the solver
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
     Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );  
-  // Full list:
-  // MyOM->SetVerbosity( Anasazi::Warning + Anasazi::OrthoDetails 
-  //                   + Anasazi::IterationDetails + Anasazi::Debug 
-  //                   + Anasazi::FinalSummary + Anasazi::TimingDetails );  
+  MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary );  
 
   // Initialize the Block Arnoldi solver
   Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
