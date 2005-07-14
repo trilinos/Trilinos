@@ -281,6 +281,13 @@ extern ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat,
                                                  double* scale,
                                                  int OnDestroy_FreeChild);
 extern void ML_implicitvscale_Destroy(void *data);
+extern int ML_implicitvcscale_Getrow(ML_Operator *data, int N_requested_rows, 
+				   int requested_rows[], int allocated_space, 
+				   int columns[], double values[], 
+				   int row_lengths[]);
+extern ML_Operator *ML_Operator_ImplicitlyVCScale(ML_Operator *Amat, 
+                                                 double* scale,
+                                                 int OnDestroy_FreeChild);
 /* amalagamation routines */
 extern int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size, 
                double drop_tolerance);
