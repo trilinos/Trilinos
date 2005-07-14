@@ -208,30 +208,19 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	if(verbose) cout << "Testing doPostsAndWaits... ";
 	comm.barrier();
 
-	char* exportObjs = 0;
-	OrdinalType const objectSize = Tpetra::PacketTraits<PacketType>::packetSize();
-	OrdinalType lenImportObjs = invalid;
-	char* importObjs = 0;
+	OrdinalType const objectSize = Teuchos::OrdinalTraits<OrdinalType>::one();
+	std::vector<PacketType> imports;
 	std::vector<PacketType> exports;
 	generateColumn(exports, myImageID, numImages);
-	exportObjs = reinterpret_cast<char*>(&exports.front());
 	if(debug) {
 		if(verbose) cout << endl;
 		outputData(myImageID, numImages, "exports: " + Tpetra::toString(exports));
 		outputData(myImageID, numImages, "objectSize: " + Tpetra::toString(objectSize));
 	}
-	distributorS->doPostsAndWaits(exportObjs, objectSize, lenImportObjs, importObjs);
+	comm.doPostsAndWaits(*distributorS, exports, objectSize, imports);
 	if(debug) {
-		outputData(myImageID, numImages, "lenImportObjs: " + Tpetra::toString(lenImportObjs));
-		PacketType* imports = reinterpret_cast<PacketType*>(importObjs);
-		std::string importString = "{";
-		for(OrdinalType i = 0; i < (lenImportObjs / Tpetra::PacketTraits<PacketType>::packetSize()); i++) {
-			importString += Tpetra::toString(*imports++);
-			importString += " ";
-		}
-		importString += "}";
-		outputData(myImageID, numImages, "importObjs: " + importString);
-		if(verbose) cout << "doPostsAndWaits test ";
+		outputData(myImageID, numImages, "imports: " + Tpetra::toString(imports));
+		if(verbose) cout << "doPostsAndWaits test: ";
 	}
 
 	if(ierr != 0) {
