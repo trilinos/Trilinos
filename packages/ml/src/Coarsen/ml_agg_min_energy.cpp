@@ -231,9 +231,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     }
   }
 
-  ML_free(bindx);
-  ML_free(val);
-
   ML_Operator* DinvA = 0;
   DinvA = ML_Operator_ImplicitlyVScale(Amat, &Dinv[0], 0);
 
@@ -356,33 +353,40 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     cout << endl;
   }
 
-#if 0
-  ML_Operator* P_0_scaled = 0;
-  P_0_scaled = ML_Operator_ExplicitlyScale(P_0, 1.0);
+  // convert the omega's from column-based to row-based
+  // FIXME: not working in parallel!
 
-  P_0_data = (struct ML_CSR_MSRdata *)ML_Get_MyGetrowData(P_0_scaled);
-  for (int row = 0 ; row < P_0->getrow->Nrows ; ++row)
+  vector<double> RowOmega(n);
+  for (int i = 0 ; i < n ; i++) 
+    RowOmega[i] = DBL_MAX;
+
+  int* aggr_info = ag->aggr_info[level];
+
+  for (int row = 0 ; row < n ; row++) 
   {
-    int*    rowptr = P_0_data->rowptr;
-    int     len    = rowptr[row + 1] - rowptr[row];
-    int*    bindx  = &(P_0_data->columns[rowptr[row]]);
-    double* val    = &(P_0_data->values[rowptr[row]]);
-    for (int i = 0 ; i < len ; ++i)
-      val[i] *= ColOmega[bindx[i]];
+    ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx, &val,
+                      &row_length, 0);
+
+    for  (int j = 0; j < row_length; j++) 
+    {
+      int col = bindx[j];
+      int aggr = aggr_info[bindx[j]];
+      double omega = ColOmega[aggr];
+      if (omega < RowOmega[row]) RowOmega[row] = omega;
+    }
   }
-#endif
-  ML_Operator* P_0_scaled = 0;
-  P_0_scaled = ML_Operator_ImplicitlyVCScale(P_0, &ColOmega[0], 0);
 
-  ML_Operator* AP = ML_Operator_Create(P_0->comm);
-  ML_2matmult(DinvA, P_0_scaled, AP, ML_CSR_MATRIX);
+  ML_Operator* Scaled_P_prime = 0;
+  Scaled_P_prime = ML_Operator_ImplicitlyVScale(P_prime, &RowOmega[0], 0);
 
-  ML_Operator_Destroy(&P_0_scaled);
+  ML_Operator_Add(P_0, Scaled_P_prime, &(ml->Pmat[clevel]), 
+                  ML_CSR_MATRIX, -1.0);
 
-  ML_Operator_Add(P_0, AP, &(ml->Pmat[clevel]), ML_CSR_MATRIX, -1.0);
-     
   ML_Operator_Set_1Levels(&(ml->Pmat[clevel]), &(ml->SingleLevel[clevel]),
                           &(ml->SingleLevel[level]));
+
+  ML_free(bindx);
+  ML_free(val);
 
   if (P_prime)        ML_Operator_Destroy(&P_prime);
   if (P_second)       ML_Operator_Destroy(&P_second);
@@ -391,7 +395,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (P_0_trans)      ML_Operator_Destroy(&P_0_trans);
   if (P_prime_trans)  ML_Operator_Destroy(&P_prime_trans);
   if (P_second_trans) ML_Operator_Destroy(&P_second_trans);
-  if (AP)             ML_Operator_Destroy(&AP);
+  if (Scaled_P_prime) ML_Operator_Destroy(&Scaled_P_prime);
 
 #ifdef ML_TIMING
   ml->Pmat[clevel].build_time =  GetClock() - t0;
@@ -453,11 +457,9 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     }
   }
 
-  ML_free(bindx);
-  ML_free(val);
-
   ML_Operator* DinvA = 0;
-  DinvA = ML_Operator_ImplicitlyVScale(Amat, &Dinv[0], 0);
+  // FIXME: scale by rows or scale by columns??
+  DinvA = ML_Operator_ImplicitlyVCScale(Amat, &Dinv[0], 0);
 
   ML_Operator* DinvA_trans = ML_Operator_Create(P_0->comm);
   ML_Operator_Transpose_byrow(DinvA, DinvA_trans);
@@ -468,8 +470,6 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_Operator* Z = 0;
   ML_Operator* P_second = 0;
   ML_Operator* P_0_trans = 0;
-  ML_Operator* P_prime_trans = 0;
-  ML_Operator* P_second_trans = 0;
 
   int n_0 = P_0->invec_leng;
   vector<double> num(n_0);
@@ -482,6 +482,26 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     // This is simple, no need for P_second because == P_prime
     multiply_all(P_0, P_prime, &num[0]);
     multiply_self_all(P_prime, &den[0]);
+    break;
+
+  case 2:
+    cerr << "NOT YET DONE, sorry" << endl;
+    exit(-1);
+
+    // Z_2 = A^T * A. Need to be smart here to avoid the construction of Z_2
+    
+    DinvA_trans = ML_Operator_Create(P_0->comm);
+    ML_Operator_Transpose_byrow(DinvA, DinvA_trans);
+
+    Z = ML_Operator_Create(P_0->comm);
+    ML_Operator_Add(DinvA, DinvA_trans, Z, ML_CSR_MATRIX, 1.0);
+
+    P_second = ML_Operator_Create(P_0->comm);
+    ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
+
+    multiply_all(P_prime, P_second, &num[0]);
+    multiply_all(P_second, P_second, &den[0]);
+
     break;
 
   case 3:
@@ -505,21 +525,25 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     exit(EXIT_FAILURE);
   }
 
+  int zero_local = 0;
+
   for (int i = 0 ; i < n_0 ; ++i) 
   {
     ColOmega[i] = num[i] / den[i];
-    if (ColOmega[i] < 0.) ColOmega[i] = 0;
+    if (ColOmega[i] < 0.) 
+    {
+      ColOmega[i] = 0;
+      ++zero_local;
+    }
   }
 
-  // FIXME: use blas here!
-  double min_local = 10000000.0;
-  double max_local = 0.0;
-  int zero_local = 0;
+  double min_local = DBL_MAX;
+  double max_local = DBL_MIN;
+
   for (int i = 0 ; i < n_0 ; ++i)
   {
     if (ColOmega[i] < min_local) min_local = ColOmega[i];
     if (ColOmega[i] > max_local) max_local = ColOmega[i];
-    if (ColOmega[i] == 0.) ++zero_local;
   }
 
   double min_all = ML_gmin_double(min_local, P_0->comm);
@@ -536,22 +560,43 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     cout << endl;
   }
 
-  ML_Operator* R_0 = 0;
-  R_0 = ML_Operator_Create(P_0->comm);
-  ML_Operator_Transpose_byrow(P_0, R_0);
 
-  ML_Operator* R_0_scaled = 0;
-  R_0_scaled = ML_Operator_ImplicitlyVScale(R_0, &ColOmega[0], 0);
+  // convert the omega's from column-based to row-based
+  // FIXME: not working in parallel!
 
-  ML_Operator* RA = ML_Operator_Create(P_0->comm);
-  ML_2matmult(R_0_scaled, DinvA, RA, ML_CSR_MATRIX);
+  vector<double> RowOmega(n);
+  for (int i = 0 ; i < n ; i++) 
+    RowOmega[i] = DBL_MAX;
 
-  ML_Operator_Destroy(&R_0_scaled);
+  int* aggr_info = ag->aggr_info[level];
 
-  ML_Operator_Add(R_0, RA, &(ml->Rmat[level]), ML_CSR_MATRIX, -1.0);
-     
+  for (int row = 0 ; row < n ; row++) 
+  {
+    ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx, &val,
+                      &row_length, 0);
+
+    for  (int j = 0; j < row_length; j++) 
+    {
+      int col = bindx[j];
+      int aggr = aggr_info[bindx[j]];
+      double omega = ColOmega[aggr];
+      if (omega < RowOmega[row]) RowOmega[row] = omega;
+    }
+  }
+
+  ML_Operator* Scaled_P_prime = 0;
+  Scaled_P_prime = ML_Operator_ImplicitlyVScale(P_prime, &RowOmega[0], 0);
+
+  ML_Operator* temp = ML_Operator_Create(P_0->comm);
+  ML_Operator_Add(P_0, Scaled_P_prime, temp, ML_CSR_MATRIX, -1.0);
+
+  ML_Operator_Transpose_byrow(temp, &(ml->Rmat[level]));
+
   ML_Operator_Set_1Levels(&(ml->Rmat[level]), &(ml->SingleLevel[level]), 
                           &(ml->SingleLevel[clevel]));
+
+  ML_free(bindx);
+  ML_free(val);
 
 #if 0
   if (P_prime)        ML_Operator_Destroy(&P_prime);
