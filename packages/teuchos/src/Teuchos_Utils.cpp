@@ -45,6 +45,13 @@ string Utils::toString(const int& x)
 	return string(s);
 }
 
+string Utils::toString(const unsigned int& x)
+{
+	char s[100];
+	sprintf(s, "%d", x);
+	return string(s);
+}
+
 string Utils::toString(const double& x)
 {
 	char s[100];

@@ -67,6 +67,11 @@ namespace Teuchos
       static string toString(const int& x);
 
       /**
+       * write an unsigned int as a string
+       */
+      static string toString(const unsigned int& x);
+
+      /**
        * IEEE positive infinity
        */
       static double infinity() {return HUGE_VAL;}
@@ -99,6 +104,9 @@ namespace Teuchos
 
   /** \relates Utils */
   inline string toString(const int& x) {return Utils::toString(x);}
+
+  /** \relates Utils */
+  inline string toString(const unsigned int& x) {return Utils::toString(x);}
 
   /** \relates Utils */
   inline string toString(const double& x) {return Utils::toString(x);}
