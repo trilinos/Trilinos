@@ -25,6 +25,7 @@ $(srcdir)/Include/ml_common.h \
 $(srcdir)/Coarsen/ml_amg_genP.h \
 $(srcdir)/Coarsen/ml_amg.h \
 $(srcdir)/Coarsen/ml_agg_genP.h \
+$(srcdir)/Coarsen/ml_agg_min_energy.h \
 $(srcdir)/Coarsen/ml_check.h \
 $(srcdir)/Coarsen/ml_aggregate.h \
 $(srcdir)/Coarsen/ml_ggraph.h \
@@ -73,6 +74,7 @@ $(srcdir)/Coarsen/ml_agg_coupled.c     $(srcdir)/Coarsen/ml_amg_genP.c \
 $(srcdir)/Coarsen/ml_check.c \
 $(srcdir)/Coarsen/ml_agg_dd.c \
 $(srcdir)/Coarsen/ml_agg_genP.c \
+$(srcdir)/Coarsen/ml_agg_min_energy.cpp \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_METIS.c \

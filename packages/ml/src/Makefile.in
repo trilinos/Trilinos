@@ -95,17 +95,18 @@ am__DEPENDENCIES_1 =
 am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_coupled.$(OBJEXT) ml_amg_genP.$(OBJEXT) \
 	ml_check.$(OBJEXT) ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) \
-	ml_amg_MIS.$(OBJEXT) ml_agg_MIS.$(OBJEXT) \
-	ml_agg_METIS.$(OBJEXT) ml_agg_user.$(OBJEXT) \
-	ml_agg_VBMETIS.$(OBJEXT) ml_agg_Zoltan.$(OBJEXT) \
-	ml_agg_ParMETIS.$(OBJEXT) ml_aggregate.$(OBJEXT) \
-	ml_ggraph.$(OBJEXT) ml_agg_reitzinger.$(OBJEXT) \
-	ml_qr_fix.$(OBJEXT) ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) \
-	ml_bdrypts.$(OBJEXT) ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) \
-	ml_setup.$(OBJEXT) ml_elementagx.$(OBJEXT) \
-	ml_get_basis.$(OBJEXT) ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) \
-	driver.$(OBJEXT) mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) \
-	ml_ggb.$(OBJEXT) ml_comm.$(OBJEXT) ml_comminfoagx.$(OBJEXT) \
+	ml_agg_min_energy.$(OBJEXT) ml_amg_MIS.$(OBJEXT) \
+	ml_agg_MIS.$(OBJEXT) ml_agg_METIS.$(OBJEXT) \
+	ml_agg_user.$(OBJEXT) ml_agg_VBMETIS.$(OBJEXT) \
+	ml_agg_Zoltan.$(OBJEXT) ml_agg_ParMETIS.$(OBJEXT) \
+	ml_aggregate.$(OBJEXT) ml_ggraph.$(OBJEXT) \
+	ml_agg_reitzinger.$(OBJEXT) ml_qr_fix.$(OBJEXT) \
+	ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) \
+	ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
+	ml_elementagx.$(OBJEXT) ml_get_basis.$(OBJEXT) \
+	ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) driver.$(OBJEXT) \
+	mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) ml_ggb.$(OBJEXT) \
+	ml_comm.$(OBJEXT) ml_comminfoagx.$(OBJEXT) \
 	ml_comminfoop.$(OBJEXT) ml_exch_row.$(OBJEXT) \
 	ml_csolve.$(OBJEXT) ml_smoother.$(OBJEXT) ml_solver.$(OBJEXT) \
 	ml_superlu.$(OBJEXT) ml_xxt.$(OBJEXT) ml_xyt.$(OBJEXT) \
@@ -191,6 +192,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_dd.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_genP.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_info.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_agg_min_energy.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_reitzinger.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_uncoupled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_user.Po \
@@ -436,6 +438,7 @@ $(srcdir)/Include/ml_common.h \
 $(srcdir)/Coarsen/ml_amg_genP.h \
 $(srcdir)/Coarsen/ml_amg.h \
 $(srcdir)/Coarsen/ml_agg_genP.h \
+$(srcdir)/Coarsen/ml_agg_min_energy.h \
 $(srcdir)/Coarsen/ml_check.h \
 $(srcdir)/Coarsen/ml_aggregate.h \
 $(srcdir)/Coarsen/ml_ggraph.h \
@@ -484,6 +487,7 @@ $(srcdir)/Coarsen/ml_agg_coupled.c     $(srcdir)/Coarsen/ml_amg_genP.c \
 $(srcdir)/Coarsen/ml_check.c \
 $(srcdir)/Coarsen/ml_agg_dd.c \
 $(srcdir)/Coarsen/ml_agg_genP.c \
+$(srcdir)/Coarsen/ml_agg_min_energy.cpp \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_METIS.c \
@@ -967,6 +971,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_dd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_genP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_info.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_min_energy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_reitzinger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_uncoupled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_user.Po@am__quote@
@@ -2191,6 +2196,22 @@ ml_self.obj: $(srcdir)/Utils/ml_self.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+ml_agg_min_energy.o: $(srcdir)/Coarsen/ml_agg_min_energy.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_agg_min_energy.o -MD -MP -MF "$(DEPDIR)/ml_agg_min_energy.Tpo" -c -o ml_agg_min_energy.o `test -f '$(srcdir)/Coarsen/ml_agg_min_energy.cpp' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_min_energy.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_agg_min_energy.Tpo" "$(DEPDIR)/ml_agg_min_energy.Po"; else rm -f "$(DEPDIR)/ml_agg_min_energy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Coarsen/ml_agg_min_energy.cpp' object='ml_agg_min_energy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_agg_min_energy.Po' tmpdepfile='$(DEPDIR)/ml_agg_min_energy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_agg_min_energy.o `test -f '$(srcdir)/Coarsen/ml_agg_min_energy.cpp' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_min_energy.cpp
+
+ml_agg_min_energy.obj: $(srcdir)/Coarsen/ml_agg_min_energy.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_agg_min_energy.obj -MD -MP -MF "$(DEPDIR)/ml_agg_min_energy.Tpo" -c -o ml_agg_min_energy.obj `if test -f '$(srcdir)/Coarsen/ml_agg_min_energy.cpp'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_min_energy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_min_energy.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_agg_min_energy.Tpo" "$(DEPDIR)/ml_agg_min_energy.Po"; else rm -f "$(DEPDIR)/ml_agg_min_energy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Coarsen/ml_agg_min_energy.cpp' object='ml_agg_min_energy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_agg_min_energy.Po' tmpdepfile='$(DEPDIR)/ml_agg_min_energy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_agg_min_energy.obj `if test -f '$(srcdir)/Coarsen/ml_agg_min_energy.cpp'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_min_energy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_min_energy.cpp'; fi`
 
 ml_epetra_utils.o: $(srcdir)/Utils/ml_epetra_utils.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_epetra_utils.o -MD -MP -MF "$(DEPDIR)/ml_epetra_utils.Tpo" -c -o ml_epetra_utils.o `test -f '$(srcdir)/Utils/ml_epetra_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_epetra_utils.cpp; \
