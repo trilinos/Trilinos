@@ -10783,7 +10783,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile"
+                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11442,6 +11442,7 @@ do
   "example/BlockDavidson/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/BlockDavidson/Makefile" ;;
   "example/BlockKrylovSchur/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/BlockKrylovSchur/Makefile" ;;
   "example/LOBPCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/LOBPCG/Makefile" ;;
+  "example/MVOPTester/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/MVOPTester/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/ModalSolverUtils/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ModalSolverUtils/Makefile" ;;
   "test/BlockDavidson/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockDavidson/Makefile" ;;

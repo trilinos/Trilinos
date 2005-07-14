@@ -26,5 +26,5 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG
+SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester
 

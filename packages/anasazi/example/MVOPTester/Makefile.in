@@ -15,39 +15,20 @@
 @SET_MAKE@
 
 #@HEADER
-# ************************************************************************
-# 
-#         	Anasazi: Block Eigensolvers Package
-#	        Copyright (2001) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
 #@HEADER
+
+#np# Specify locations of include files within Trilinos, but outside np
+#np# Add packages that np is dependent on; remove epetra if np does not need it
+
+SOURCES = $(MVOPTesterEx_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ..
+top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -62,7 +43,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = example
+noinst_PROGRAMS = MVOPTesterEx$(EXEEXT)
+subdir = example/MVOPTester
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -91,8 +73,24 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
+PROGRAMS = $(noinst_PROGRAMS)
+am_MVOPTesterEx_OBJECTS = MVOPTesterEx-MVOPTesterEx.$(OBJEXT)
+MVOPTesterEx_OBJECTS = $(am_MVOPTesterEx_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(MVOPTesterEx_SOURCES)
+DIST_SOURCES = $(MVOPTesterEx_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -140,7 +138,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -154,7 +152,9 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# Dummy for new export makefiles
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -233,10 +233,44 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ANASAZI_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+MVOPTesterEx_SOURCES = $(srcdir)/MVOPTesterEx.cpp
+
+#np# Specify locations of include files within Trilinos, but outside np
+#np# Add packages that np is dependent on; remove epetra if np does not need it
+
+#np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
+#np# optional.
+MVOPTesterEx_DEPENDENCIES = \
+        $(top_builddir)/src/libanasazi.a \
+        $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+        $(top_builddir)/../epetra/src/libepetra.a \
+        $(top_builddir)/../teuchos/src/libteuchos.a 
+
+MVOPTesterEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+MVOPTesterEx_LDADD = \
+        $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+        $(EXPORT_LIBS)
+
+
+#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
+#np# For packages whose examples are located in this directory, rather than
+#np# in a subdirectory of this directory, use the Makefile.am located in
+#np# example1/ rather than this file.
+# SUBDIRS = example1
+SUBDIRS = 
 all: all-recursive
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -246,9 +280,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/MVOPTester/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/Makefile
+	  $(AUTOMAKE) --foreign  example/MVOPTester/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -266,6 +300,52 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+MVOPTesterEx$(EXEEXT): $(MVOPTesterEx_OBJECTS) $(MVOPTesterEx_DEPENDENCIES) 
+	@rm -f MVOPTesterEx$(EXEEXT)
+	$(CXXLINK) $(MVOPTesterEx_LDFLAGS) $(MVOPTesterEx_OBJECTS) $(MVOPTesterEx_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+MVOPTesterEx-MVOPTesterEx.o: $(srcdir)/MVOPTesterEx.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterEx_CXXFLAGS) $(CXXFLAGS) -MT MVOPTesterEx-MVOPTesterEx.o -MD -MP -MF "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Tpo" -c -o MVOPTesterEx-MVOPTesterEx.o `test -f '$(srcdir)/MVOPTesterEx.cpp' || echo '$(srcdir)/'`$(srcdir)/MVOPTesterEx.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Tpo" "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Po"; else rm -f "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MVOPTesterEx.cpp' object='MVOPTesterEx-MVOPTesterEx.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Po' tmpdepfile='$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterEx_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTesterEx-MVOPTesterEx.o `test -f '$(srcdir)/MVOPTesterEx.cpp' || echo '$(srcdir)/'`$(srcdir)/MVOPTesterEx.cpp
+
+MVOPTesterEx-MVOPTesterEx.obj: $(srcdir)/MVOPTesterEx.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterEx_CXXFLAGS) $(CXXFLAGS) -MT MVOPTesterEx-MVOPTesterEx.obj -MD -MP -MF "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Tpo" -c -o MVOPTesterEx-MVOPTesterEx.obj `if test -f '$(srcdir)/MVOPTesterEx.cpp'; then $(CYGPATH_W) '$(srcdir)/MVOPTesterEx.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MVOPTesterEx.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Tpo" "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Po"; else rm -f "$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MVOPTesterEx.cpp' object='MVOPTesterEx-MVOPTesterEx.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.Po' tmpdepfile='$(DEPDIR)/MVOPTesterEx-MVOPTesterEx.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterEx_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTesterEx-MVOPTesterEx.obj `if test -f '$(srcdir)/MVOPTesterEx.cpp'; then $(CYGPATH_W) '$(srcdir)/MVOPTesterEx.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MVOPTesterEx.cpp'; fi`
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -426,7 +506,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile
+all-am: Makefile $(PROGRAMS)
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
@@ -455,11 +535,13 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-recursive
 
@@ -482,12 +564,13 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-recursive
 
@@ -502,17 +585,20 @@ uninstall-am: uninstall-info-am
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-recursive ctags ctags-recursive \
-	distclean distclean-generic distclean-recursive distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
+	clean clean-generic clean-noinstPROGRAMS clean-recursive ctags \
+	ctags-recursive distclean distclean-compile distclean-generic \
+	distclean-recursive distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.anasazi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
