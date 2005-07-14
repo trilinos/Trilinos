@@ -12,6 +12,7 @@ extern "C"
 #endif
 
 int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data);
+int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data);
 
 #ifndef ML_CPP
 #ifdef __cplusplus
