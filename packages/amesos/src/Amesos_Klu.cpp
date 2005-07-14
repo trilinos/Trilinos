@@ -62,35 +62,22 @@ public:
 //=============================================================================
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( new Amesos_Klu_Pimpl() ),
-  SerialMap_(0),
   RowMatrixA_(0),
-  SerialCrsMatrixA_(0),
   SerialMatrix_(0),
-  Matrix_(0),
   UseTranspose_(false),
-  Problem_(&prob),
-  ImportToSerial_(0)
+  Problem_(&prob)
 {
   // MS // move declaration of Problem_ above because I need it
   // MS // set up before calling Comm()
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ;
-  verbose_ = 0;
 
 }
 
 //=============================================================================
 Amesos_Klu::~Amesos_Klu(void) {
 
-  if (SerialMap_) 
-    delete SerialMap_;
-  if (SerialCrsMatrixA_) 
-    delete SerialCrsMatrixA_;
-
   delete PrivateKluData_;
-
-  if (ImportToSerial_) 
-    delete ImportToSerial_;
 
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
@@ -104,14 +91,17 @@ int Amesos_Klu::ExportToSerial()
        << " UseDataInPlace_ = " << UseDataInPlace_ 
        << " iam = " << iam 
        << endl ; 
+
   if (UseDataInPlace_ != 1) {
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     assert ( RowMatrixA_ != 0 ) ; 
-    assert ( ImportToSerial_ != 0 ) ; 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    assert ( ImportToSerial_.get() != 0 ) ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*RowMatrixA_, 
-					     *ImportToSerial_, Add));
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+					     *ImportToSerial_, Insert ));
+    
+    Comm().Barrier();
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
@@ -126,12 +116,22 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   ResetTime();
 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  if (RowMatrixA_ == 0)
-    AMESOS_CHK_ERR(-1);
-
+  if (RowMatrixA_ == 0) AMESOS_CHK_ERR(-1);
   iam = Comm().MyPID() ;
 
-  const Epetra_Map &OriginalMap = RowMatrixA_->RowMatrixRowMap() ;
+  const Epetra_Map &OriginalMatrixMap = RowMatrixA_->RowMatrixRowMap() ;
+  const Epetra_Map &OriginalDomainMap = GetProblem()->GetOperator()->OperatorDomainMap();
+  const Epetra_Map &OriginalRangeMap = GetProblem()->GetOperator()->OperatorRangeMap();
+
+
+#if 0
+  cout<< __FILE__ << "::" << __LINE__  << " OriginalDomainMap = " ;
+  OriginalDomainMap.Print ( cout ) ; 
+  cout<< __FILE__ << "::" << __LINE__  << " OriginalRangeMap = " ;
+  OriginalRangeMap.Print ( cout ) ; 
+  cout<< __FILE__ << "::" << __LINE__  << " OriginalMatrixMap = " ;
+  OriginalMatrixMap.Print ( cout ) ; 
+#endif
 
   NumGlobalElements_ = RowMatrixA_->NumGlobalRows();
   numentries_ = RowMatrixA_->NumGlobalNonzeros();
@@ -140,60 +140,62 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   //
   //  Create a serial matrix
   //
-  assert( NumGlobalElements_ == OriginalMap.NumGlobalElements() ) ;
+  assert( NumGlobalElements_ == OriginalMatrixMap.NumGlobalElements() ) ;
   int NumMyElements_ = 0 ;
   if (iam==0) NumMyElements_ = NumGlobalElements_;
-
-  UseDataInPlace_ = ( OriginalMap.NumMyElements() ==
-	       OriginalMap.NumGlobalElements() )?1:0;
+  //
+  //  UseDataInPlace_ is set to 1 (true) only if everything is perfectly
+  //  normal.  Anything out of the ordinary reverts to the more expensive
+  //  path. 
+  //
+  UseDataInPlace_ = ( OriginalMatrixMap.NumMyElements() ==
+	       OriginalMatrixMap.NumGlobalElements() )?1:0;
+  if ( ! OriginalRangeMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
+  if ( ! OriginalDomainMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   Comm().Broadcast( &UseDataInPlace_, 1, 0 ) ;
 
   //
   //  Convert Original Matrix to Serial (if it is not already)
   //
-  if (SerialMap_) { 
-    delete SerialMap_ ; SerialMap_ = 0 ;
-  }
-  if (SerialCrsMatrixA_) { 
-    delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0;
-  }
   if (UseDataInPlace_ == 1) {
-     SerialMatrix_ = RowMatrixA_;
+    SerialMatrix_ = RowMatrixA_;
   } else {
-    if ( SerialMap_ ) delete SerialMap_;
-    SerialMap_ = new Epetra_Map(NumGlobalElements_, NumMyElements_, 0, Comm());
+    SerialMap_ = rcp(new Epetra_Map(NumGlobalElements_, NumMyElements_, 0, Comm()));
+    
+    ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_,OriginalMatrixMap) );
+    
+    if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-1);
+    
+    if ( OriginalRangeMap.SameAs( OriginalMatrixMap ) )
+      ImportRangeToSerial_ = ImportToSerial_ ;
+    else
+      ImportRangeToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalRangeMap) );
+    
+    if ( OriginalDomainMap.SameAs( OriginalMatrixMap ) )
+      ImportDomainToSerial_ = ImportToSerial_ ;
+    else
+      ImportDomainToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalDomainMap) );
 
-    // check whether the stored ImportToSerial_ (if allocated) 
-    // is still valid or not.
-    if (ImportToSerial_ != 0) {
-      if (!(OriginalMap.SameAs(ImportToSerial_->TargetMap()))) {
-	delete SerialMap_;
-	AMESOS_CHK_ERR(CreateSerialMap());
-	delete ImportToSerial_;
-	ImportToSerial_ = 0;
-      }
-    }
+#if 0    
+    assert ( OriginalRangeMap.SameAs( OriginalMatrixMap ) ) ;
+    assert ( OriginalDomainMap.SameAs( OriginalMatrixMap ) );
+#endif    
+   
+  SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) )
+;
+  SerialMatrix_ = &*SerialCrsMatrixA_ ;
+}
+AddTime("matrix redistribution");
 
-    if (ImportToSerial_ == 0) {
-      ImportToSerial_ = new Epetra_Import(*SerialMap_,OriginalMap);
-      assert (ImportToSerial_ != 0);
-    }
-
-    if (SerialCrsMatrixA_) 
-      delete SerialCrsMatrixA_ ;
-    SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-    SerialMatrix_ = SerialCrsMatrixA_ ;
-  }
-
-  AddTime("matrix redistribution");
-
-  return 0;
+return 0;
 }
 
 //=============================================================================
 int Amesos_Klu::CreateSerialMap()
 {
 
+assert( false ) ; 
+#if 0
   NumGlobalElements_ = RowMatrixA_->NumGlobalRows();
   numentries_ = RowMatrixA_->NumGlobalNonzeros();
   int NumMyElements = 0;
@@ -204,6 +206,7 @@ int Amesos_Klu::CreateSerialMap()
   if (SerialMap_ == 0)
     AMESOS_CHK_ERR(-1);
   
+#endif
   return(0);
 }
 
@@ -228,15 +231,14 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 
   ResetTime();
 
-  Matrix_ = SerialMatrix_ ;
   //
   //  Convert matrix to the form that Klu expects (Ap, Ai, Aval)
   //
 
   if (iam==0) {
-    assert( NumGlobalElements_ == Matrix_->NumGlobalRows());
-    assert( NumGlobalElements_ == Matrix_->NumGlobalCols());
-    assert( numentries_ == Matrix_->NumGlobalNonzeros());
+    assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
+    assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
+    assert( numentries_ == SerialMatrix_->NumGlobalNonzeros());
     if ( firsttime ) { 
       Ap.resize( NumGlobalElements_+1 );
       Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
@@ -246,10 +248,10 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
     int NumEntriesThisRow;
     int Ai_index = 0 ;
     int MyRow;
-    Epetra_CrsMatrix *CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(Matrix_);
+    Epetra_CrsMatrix *CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
     //    Epetra_CrsMatrix *CrsMatrix = 0 ;  //  Uncomment this and comment the above line to test how we do with Row Matrices
 
-    int MaxNumEntries_ = Matrix_->MaxNumEntries();
+    int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
     if ( firsttime && CrsMatrix == 0 ) {
       ColIndicesV_.resize(MaxNumEntries_);
       RowValuesV_.resize(MaxNumEntries_);
@@ -263,7 +265,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 			ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
 					  ColIndices ) != 0 ) ;
       } else {
-	EPETRA_CHK_ERR( Matrix_->
+	EPETRA_CHK_ERR( SerialMatrix_->
 			ExtractMyRowCopy( MyRow, MaxNumEntries_,
 					  NumEntriesThisRow, &RowValuesV_[0],
 					  &ColIndicesV_[0] ) != 0 ) ;
@@ -439,11 +441,6 @@ int Amesos_Klu::SymbolicFactorization()
 
   iam = Comm().MyPID();
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering SymbolicFactorization()" << endl ; 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam 
-       << " debug_ = " << debug_ 
-       << " Entering SymbolicFactorization()" << endl ; 
 
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
@@ -454,7 +451,9 @@ int Amesos_Klu::SymbolicFactorization()
 
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
+  assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+
   AMESOS_CHK_ERR( ExportToSerial() );
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
@@ -481,7 +480,9 @@ int Amesos_Klu::NumericFactorization()
 
   NumNumericFact_++;
 
-  AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
+  //  AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
+  assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
+  assert( numentries_ == RowMatrixA_->NumGlobalNonzeros() );
   AMESOS_CHK_ERR( ExportToSerial() );
 
   AMESOS_CHK_ERR( ConvertToKluCRS(false) );
@@ -507,23 +508,29 @@ int Amesos_Klu::Solve()
   Epetra_MultiVector* vecX = Problem_->GetLHS() ;
   Epetra_MultiVector* vecB = Problem_->GetRHS() ;
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   if ((vecX == 0) || (vecB == 0))
     AMESOS_CHK_ERR(-1); // something wrong in input
   
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   int NumVectors = vecX->NumVectors();
   if (NumVectors != vecB->NumVectors())
     AMESOS_CHK_ERR(-1); // something wrong in input
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   // vectors with SerialMap_
   Epetra_MultiVector* SerialB = 0;
   Epetra_MultiVector* SerialX = 0;
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   //  Extract Serial versions of X and B
   double *SerialXvalues ;
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   Epetra_MultiVector* SerialXextract = 0;
   Epetra_MultiVector* SerialBextract = 0;
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   ResetTime();
 
   //  Copy B to the serial version of B
@@ -533,12 +540,13 @@ int Amesos_Klu::Solve()
     SerialX = vecX;
   } else {
     assert (UseDataInPlace_ == 0);
-    const Epetra_Map &OriginalMap = RowMatrixA_->RowMatrixRowMap();
+#if 0
+    const Epetra_Map &OriginalMatrixMap = RowMatrixA_->RowMatrixRowMap();
 
     // check whether the stored ImportToSerial_ (if allocated) 
     // is still valid or not.
     if (ImportToSerial_ != 0) {
-      if (!(OriginalMap.SameAs(ImportToSerial_->TargetMap()))) {
+      if (!(OriginalMatrixMap.SameAs(ImportToSerial_->TargetMap()))) {
 	delete SerialMap_;
 	AMESOS_CHK_ERR(CreateSerialMap());
 	delete ImportToSerial_;
@@ -547,29 +555,47 @@ int Amesos_Klu::Solve()
     }
 
     if (ImportToSerial_ == 0) {
-      ImportToSerial_ = new Epetra_Import(*SerialMap_,OriginalMap);
+      ImportToSerial_ = new Epetra_Import(*SerialMap_,OriginalMatrixMap);
       assert (ImportToSerial_ != 0);
     }
+#endif
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
 
     assert ( SerialBextract == 0 ) ; 
     assert ( SerialXextract == 0 ) ; 
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
     SerialXextract = new Epetra_MultiVector(*SerialMap_,NumVectors);
     SerialBextract = new Epetra_MultiVector(*SerialMap_,NumVectors);
     
-    SerialBextract->Import(*vecB,*ImportToSerial_,Insert);
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    SerialBextract->Import(*vecB,*ImportRangeToSerial_,Insert);
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
     SerialB = SerialBextract ;
     SerialX = SerialXextract ;
   }
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   AddTime("vector redistribution");
 
   //  Call KLU to perform the solve
 
-  SerialX->Scale(1.0, *SerialB) ;
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
 
+#if 0
+  cout << " usedata in place = " << UseDataInPlace_ << endl ; 
+
+  cout << " SerialB = " ; 
+  SerialB->Print( cout ) ; 
+  cout << " SerialX = " ; 
+  SerialX->Print( cout ) ; 
+
+  cout << __FILE__ << "::" << __LINE__ << endl ; 
+#endif
+  SerialX->Scale(1.0, *SerialB) ;
   ResetTime();
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   int SerialXlda ;
   if (iam == 0) {
     AMESOS_CHK_ERR(SerialX->ExtractView(&SerialXvalues,&SerialXlda ));
@@ -585,6 +611,7 @@ int Amesos_Klu::Solve()
 		      SerialXlda, NumVectors, &SerialXvalues[0] );
     }
   }
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
 
   AddTime("solve");
 
@@ -592,13 +619,15 @@ int Amesos_Klu::Solve()
 
   ResetTime();
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   if (UseDataInPlace_ == 0) {
-    vecX->Export( *SerialX, *ImportToSerial_, Insert ) ;
+    vecX->Export( *SerialX, *ImportDomainToSerial_, Insert ) ;
     delete SerialBextract ;
     delete SerialXextract ;
 
   } // otherwise we are already in place.
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   AddTime("vector redistribution");
 
 #if 0
@@ -606,7 +635,7 @@ int Amesos_Klu::Solve()
   //  ComputeTrueResidual causes TestOptions to fail on my linux box 
   //  Bug #1147
   if (ComputeTrueResidual_)
-    ComputeTrueResidual(*Matrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
+    ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
 #endif
 
   if (ComputeVectorNorms_)

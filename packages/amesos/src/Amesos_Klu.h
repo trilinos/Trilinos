@@ -269,15 +269,13 @@ private:
   int NumGlobalElements_;
 
   //! Operator converted to a RowMatrix
-  Epetra_RowMatrix *RowMatrixA_;
+  Epetra_RowMatrix* RowMatrixA_;
   //! Points to a Serial Map (unused if UseDataInPlace_ == 1 )
-  Epetra_Map *SerialMap_;
+  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
   //! Points to a Serial Copy of A (unused if UseDataInPlace_==1)
-  Epetra_CrsMatrix *SerialCrsMatrixA_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
   //! Points to a Serial Copy of A 
-  Epetra_RowMatrix *SerialMatrix_ ; 
-  //! Points to the matrix that is used to compute
-  Epetra_RowMatrix *Matrix_;
+  Epetra_RowMatrix* SerialMatrix_ ; 
 
   //! If \c true, the transpose of A is used.
   bool UseTranspose_;
@@ -289,7 +287,9 @@ private:
   //! Only used for RowMatrices to extract copies.
   vector<double>RowValuesV_;
   //! Importer to process 0.
-  Epetra_Import * ImportToSerial_;
+  Teuchos::RefCountPtr<Epetra_Import> ImportToSerial_;
+  Teuchos::RefCountPtr<Epetra_Import> ImportRangeToSerial_;
+  Teuchos::RefCountPtr<Epetra_Import> ImportDomainToSerial_;
   
 };  // class Amesos_Klu  
 

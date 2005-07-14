@@ -80,7 +80,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
   PartialFactorization( AmesosClass, Comm, transpose, verbose, ParamList, InMat, Rcond );
 
-
   MyMat = rcp( new Epetra_CrsMatrix( *InMat ) ); 
 
   Amesos_TestRowMatrix ATRW( &*MyMat ) ; 
@@ -136,22 +135,25 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   int errors = 0 ; 
 
   const Epetra_Map *Map = &MyMat->RowMap() ; 
+  const Epetra_Map *RangeMap = &MyMat->OperatorRangeMap() ; 
+  const Epetra_Map *DomainMap = &MyMat->OperatorDomainMap() ; 
 
-  Epetra_Vector xexact(*Map);
-  Epetra_Vector x(*Map);
+  Epetra_Vector xexact(*DomainMap);
+  Epetra_Vector x(*DomainMap);
 
-  Epetra_Vector cAx(*Map);
-  Epetra_Vector sAx(*Map);
-  Epetra_Vector kAx(*Map);
+  Epetra_Vector cAx(*DomainMap);
+  Epetra_Vector sAx(*DomainMap);
+  Epetra_Vector kAx(*DomainMap);
 
-  Epetra_Vector cAAx(*Map);
-  Epetra_Vector sAAx(*Map);
-  Epetra_Vector kAAx(*Map);
+  Epetra_Vector cAAx(*DomainMap);
+  Epetra_Vector sAAx(*DomainMap);
+  Epetra_Vector kAAx(*DomainMap);
 
-  Epetra_Vector b(*Map);
-  Epetra_Vector bcheck(*Map);
+  Epetra_Vector b(*RangeMap);
+  Epetra_Vector bcheck(*RangeMap);
 
-  Epetra_Vector difference(*Map);
+  Epetra_Vector DomainDiff(*DomainMap);
+  Epetra_Vector RangeDiff(*RangeMap);
 
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
@@ -183,8 +185,10 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     if (verbose) ParamList.set( "DebugLevel", 1 );
     if (verbose) ParamList.set( "OutputLevel", 1 );
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
+#if 0 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
+#endif 
 
     int ind[1];
     double val[1];
@@ -236,7 +240,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
     MyMatWithDiag->Multiply( transpose, cAAx, b ) ;  //  b = A x2 = A A' A'' xexact
  
-    //
+
     //  Phase 2:  Solve A' A' A x = b 
     //
     //
@@ -330,51 +334,50 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
     MyMatWithDiag->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
 
-
     if ( verbose ) cout << " Levels =  " << Levels << endl ; 
     if ( verbose ) cout << " Rcond =  " << Rcond << endl ; 
 
     double norm_diff ;
     double norm_one ;
 
-    difference.Update( 1.0, sAAx, -1.0, cAAx, 0.0 ) ;
-    difference.Norm2( &norm_diff ) ; 
+    DomainDiff.Update( 1.0, sAAx, -1.0, cAAx, 0.0 ) ;
+    DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
     if (verbose) cout << " norm( sAAx - cAAx ) / norm(sAAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
-    difference.Update( 1.0, sAx, -1.0, cAx, 0.0 ) ;
-    difference.Norm2( &norm_diff ) ; 
+    DomainDiff.Update( 1.0, sAx, -1.0, cAx, 0.0 ) ;
+    DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
     if (verbose) cout << " norm( sAx - cAx ) / norm(sAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
-    difference.Update( 1.0, x, -1.0, xexact, 0.0 ) ;
-    difference.Norm2( &norm_diff ) ; 
+    DomainDiff.Update( 1.0, x, -1.0, xexact, 0.0 ) ;
+    DomainDiff.Norm2( &norm_diff ) ; 
     x.Norm2( &norm_one ) ; 
     if (verbose) cout << " norm( x - xexact ) / norm(x) = " 
 		      << norm_diff /norm_one << endl ; 
 
     relerror = norm_diff / norm_one ; 
 
-    difference.Update( 1.0, sAx, -1.0, kAx, 0.0 ) ;
-    difference.Norm2( &norm_diff ) ; 
+    DomainDiff.Update( 1.0, sAx, -1.0, kAx, 0.0 ) ;
+    DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
     if (verbose) cout << " norm( sAx - kAx ) / norm(sAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
-    difference.Update( 1.0, sAAx, -1.0, kAAx, 0.0 ) ;
-    difference.Norm2( &norm_diff ) ; 
+    DomainDiff.Update( 1.0, sAAx, -1.0, kAAx, 0.0 ) ;
+    DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
     if (verbose) cout << " norm( sAAx - kAAx ) / norm(sAAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
-    difference.Update( 1.0, bcheck, -1.0, b, 0.0 ) ;
-    difference.Norm2( &norm_diff ) ; 
+    RangeDiff.Update( 1.0, bcheck, -1.0, b, 0.0 ) ;
+    RangeDiff.Norm2( &norm_diff ) ; 
     bcheck.Norm2( &norm_one ) ; 
     if (verbose) cout << " norm( bcheck - b ) / norm(bcheck ) = " 
 		      << norm_diff /norm_one << endl ; 

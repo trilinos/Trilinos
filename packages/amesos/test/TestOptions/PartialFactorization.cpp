@@ -40,14 +40,16 @@ int PartialFactorizationOneStep( const char* AmesosClass,
   int errors = 0 ; 
 
   const Epetra_Map *Map = &Amat->RowMap() ; 
+  const Epetra_Map *RangeMap = &Amat->OperatorRangeMap() ; 
+  const Epetra_Map *DomainMap = &Amat->OperatorDomainMap() ; 
 
-  Epetra_Vector xexact(*Map);
-  Epetra_Vector x(*Map);
+  Epetra_Vector xexact(*DomainMap);
+  Epetra_Vector x(*DomainMap);
 
-  Epetra_Vector b(*Map);
-  Epetra_Vector bcheck(*Map);
+  Epetra_Vector b(*RangeMap);
+  Epetra_Vector bcheck(*RangeMap);
 
-  Epetra_Vector difference(*Map);
+  Epetra_Vector difference(*DomainMap);
 
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 

@@ -142,16 +142,18 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Klu" ) {
 	bool RunKluTest = true;
-	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && distribute )  //  Bug #969
+	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) )  //  Bug #969
 	  RunKluTest = false ;   //  Bug #969
-	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunKluTest = false ;   //  Bug #1403
+
+	//	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunKluTest = false ;   //  Bug #1403
 	if ( RunKluTest && verbose) cout << " Testing KLU " << endl ; 
+
 
 	if ( RunKluTest ) errors += TestKlu( Amat, 
 							 EpetraMatrixType,
 					     transpose, 
 					     verbose, 
-					     Levels, 
+					     Levels,
 					     Rcond, 
 					     RowMapEqualsColMap, 
 					     maxrelerror, 

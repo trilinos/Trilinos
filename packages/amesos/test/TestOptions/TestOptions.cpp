@@ -275,7 +275,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   //  These tests are all disabled in TestAllClasses.cpp
   //
   int RangemapMax = 3; // should be three:  ( no change, serial, bizarre dist )
-  int DomainmapMax = 1; // should be three:  ( no change, serial, bizarre dist )
+  int DomainmapMax = 2; // should be three:  ( no change, serial, bizarre dist )
 
   //
   //  DiagonalOpts controls whether diagonal elements are left alone,
@@ -316,7 +316,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		//  On a serial matrix, eliminate a column from the map makes the matrix singular
 		//  If the row and column indices don't match, eliminating a column from the map is, typically, irrelevant
 		if ( ( iterColindex == 0 && distribute ) || iterDiagonalOpts == 0 ) { 
-		  for ( int EpetraMatrixType = 1 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
+		  for ( int EpetraMatrixType = 0 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
 		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
 				     " filename = " << filename <<
 				     " distribute = " << distribute <<
@@ -327,6 +327,15 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 				     " EpetraMatrixType = " << EpetraMatrixType <<
 				     " iterDiagonalOpts = " << iterDiagonalOpts <<
 				     " transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
+
+		    //
+		    //  We test only one level for different indexing or different Range and Domain maps
+		    //
+		    int MaxLevel = 3 ; 
+		    if ( iterRowindex > 0 ) MaxLevel = 1 ; 
+		    if ( iterColindex > 0 ) MaxLevel = 1 ; 
+		    if ( iterRangemap > 0 ) MaxLevel = 1 ; 
+		    if ( iterDomainmap > 0 ) MaxLevel = 1 ; 
 
 		    bool symmetric = true;
 		    
@@ -348,70 +357,37 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    Epetra_CrsMatrix* Cmat = &*Bmat;
 		    //  Epetra_CrsMatrix* Cmat = Amat ;
 		 
-   
-		    if ( Rcond*Rcond1*Rcond2 > 1e-16 ) 
-		      { 
-			NumErrors += TestAllClasses( AmesosClasses, EpetraMatrixType, 
-						     AmesosClassesInstalled, 
-						     Cmat, 
-						     transpose, 
-						     verbose, 
-						     symmetric, 
-						     3, 
-						     Rcond*Rcond1*Rcond2, 
-						     iterDiagonalOpts, 
-						     iterRowindex,
-						     iterColindex,
-						     iterRangemap,
-						     iterDomainmap,
-						     distribute,
-						     filename,
-						     error, 
-						     residual, 
-						     NumTests ) ;
-		      }
-		    else if ( Rcond*Rcond1 > 1e-16 ) 
-		      {
-			NumErrors += TestAllClasses( AmesosClasses, EpetraMatrixType, 
-						     AmesosClassesInstalled, 
-						     Cmat, 
-						     transpose, 
-						     verbose, 
-						     symmetric, 
-						     2, 
-						     Rcond*Rcond1, 
-						     iterDiagonalOpts, 
-						     iterRowindex,
-						     iterColindex,
-						     iterRangemap,
-						     iterDomainmap,
-						     distribute,
-						     filename,
-						     error, 
-						     residual, 
-						     NumTests ) ;
-		      }
-		    else
-		      {
-			NumErrors += TestAllClasses( AmesosClasses, EpetraMatrixType, 
-						     AmesosClassesInstalled, 
-						     Cmat, 
-						     transpose, 
-						     verbose, 
-						     symmetric, 
-						     1, 
-						     Rcond, 
-						     iterDiagonalOpts, 
-						     iterRowindex,
-						     iterColindex,
-						     iterRangemap,
-						     iterDomainmap,
-						     distribute,
-						     filename,
-						     error, 
-						     residual, 
-						     NumTests ) ;
-		      }
+
+		    int Level ; 
+		    double MaxError ;
+		    if ( Rcond*Rcond1*Rcond2 > 1e-16 ) { 
+		      Level = EPETRA_MIN( 3, MaxLevel );
+		      MaxError = Rcond*Rcond1*Rcond2;
+		    } else if  ( Rcond*Rcond1 > 1e-16 ) {
+		      Level = EPETRA_MIN( 2, MaxLevel );
+		      MaxError = Rcond*Rcond1*Rcond2;
+		    } else {
+		      Level = EPETRA_MIN( 1, MaxLevel );
+		      MaxError = Rcond*Rcond1*Rcond2;
+		    }
+		    NumErrors += TestAllClasses( AmesosClasses, EpetraMatrixType, 
+						 AmesosClassesInstalled, 
+						 Cmat, 
+						 transpose, 
+						 verbose, 
+						 symmetric, 
+						 Level,
+						 MaxError, 
+						 iterDiagonalOpts, 
+						 iterRowindex,
+						 iterColindex,
+						 iterRangemap,
+						 iterDomainmap,
+						 distribute,
+						 filename,
+						 error, 
+						 residual, 
+						 NumTests ) ;
 		    if ( verbose ) {
 		      cout << " Testing  " << filename 
 			   << (transpose?" transpose":"" ) 
