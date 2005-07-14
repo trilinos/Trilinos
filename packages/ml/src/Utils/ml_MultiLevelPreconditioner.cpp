@@ -1257,6 +1257,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     Time.ResetStartTime();
 
+    // energy minimization
+    if (List_.get("energy minimization: enable", false))
+      agg_->minimizing_energy = List_.get("energy minimization: type", 1);
+
     NumLevels_ = 
       ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 
