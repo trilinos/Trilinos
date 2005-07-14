@@ -9,6 +9,13 @@
 
 using namespace std;
 
+// ============ //
+// private data //
+// ============ //
+
+static int     Dinv_size = -1;
+static double* Dinv      = 0;
+
 // ====================================================================== 
 inline static double multiply(int row, struct ML_CSR_MSRdata* left, 
                               struct ML_CSR_MSRdata* right)
@@ -142,6 +149,10 @@ inline static double multiply_all(ML_Operator* left, ML_Operator* right,
 
 // ====================================================================== 
 // generate smooth prolongator by minimizing energy                      
+//
+// \author Marzio Sala and Ray Tuminaro, 9214
+//
+// \date 14-Jul-05
 // ====================================================================== 
 int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 {
@@ -200,18 +211,27 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     return -1;
   }
 
-  /* ============================================================ */
-  /* Start construction Pmatrix to minimize the energy of         */
-  /* each basis function. This requires two additional operators, */
-  /* here called P_prime and P_second.                            */
-  /* ============================================================ */
-
+  // ============================== //
+  // Start the construction of Pmat //
+  // ============================== //
+  
   int row_length;
   int allocated = 128;
   int*    bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
   double* val   = (double *)  ML_allocate(allocated*sizeof(double));
   int n = Amat->getrow->Nrows;
-  vector<double> Dinv(n);
+
+  if (Dinv != 0 || Dinv_size != -1) 
+  {
+    cerr << "Error: Static data Dinv is not null or Dinv_size is wrong!" << endl;
+    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // this vector is free'd in the generation of the restriction
+  // so that I don't have to query for the diagonal.
+  Dinv = (double*)ML_allocate(sizeof(double) * n);
+  Dinv_size = n;
 
   for (int i = 0 ; i < n ; i++) 
   {
@@ -231,21 +251,15 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     }
   }
 
-  ML_Operator* DinvA = 0;
-  DinvA = ML_Operator_ImplicitlyVScale(Amat, &Dinv[0], 0);
+  ML_Operator* Scaled_A = 0;
+  Scaled_A = ML_Operator_ImplicitlyVScale(Amat, Dinv, 0);
 
   ML_Operator* P_prime = ML_Operator_Create(P_0->comm);
-  ML_2matmult(DinvA, P_0, P_prime, ML_CSR_MATRIX);
+  ML_2matmult(Scaled_A, P_0, P_prime, ML_CSR_MATRIX);
 
   ML_Operator* Z = 0;
-  ML_Operator* DinvA_trans = 0;
+  ML_Operator* Scaled_A_trans = 0;
   ML_Operator* P_second = 0;
-  ML_Operator* P_0_trans = 0;
-  ML_Operator* P_prime_trans = 0;
-  ML_Operator* P_second_trans = 0;
-  struct ML_CSR_MSRdata* P_0_data = 0;
-  struct ML_CSR_MSRdata* P_prime_data = 0;
-  struct ML_CSR_MSRdata* P_second_data = 0;
 
   int n_0 = P_0->invec_leng;
   vector<double> num(n_0);
@@ -257,42 +271,18 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     // Z_1 = I                          
     // This is simple, no need for P_second because == P_prime
 
-#if 0
-    // This is the local way, where I compute the transposes, then
-    // work on each row of the transpose (that is, on the columns of the
-    // original operator). Easy to read, but expensive.
-    
-    P_0_trans = ML_Operator_Create(P_0->comm);
-    ML_Operator_Transpose_byrow(P_0, P_0_trans);
-
-    P_prime_trans = ML_Operator_Create(P_0->comm);
-    ML_Operator_Transpose_byrow(P_prime, P_prime_trans);
-
-    P_0_data = (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(P_0_trans);
-    P_prime_data = (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(P_prime_trans);
-
-    for (int i = 0 ; i < n_0 ; ++i)
-    {
-      num[i] = multiply(i, P_0_data, P_prime_data);
-      den[i] = multiply_self(i, P_prime_data);
-    }
-#else
     multiply_all(P_0, P_prime, &num[0]);
     multiply_self_all(P_prime, &den[0]);
-#endif
     break;
 
   case 2:
     // Z_2 = A^T * A. Need to be smart here to avoid the construction of Z_2
     
-    DinvA_trans = ML_Operator_Create(P_0->comm);
-    ML_Operator_Transpose_byrow(DinvA, DinvA_trans);
-
-    Z = ML_Operator_Create(P_0->comm);
-    ML_Operator_Add(DinvA, DinvA_trans, Z, ML_CSR_MATRIX, 1.0);
+    Scaled_A_trans = ML_Operator_Create(P_0->comm);
+    ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
 
     P_second = ML_Operator_Create(P_0->comm);
-    ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
+    ML_2matmult(Scaled_A, P_prime, P_second, ML_CSR_MATRIX);
 
     multiply_all(P_prime, P_second, &num[0]);
     multiply_all(P_second, P_second, &den[0]);
@@ -302,11 +292,11 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     // Z_3 = A^T + A
     // Need P_second, and to form A^T, then Z_3
     
-    DinvA_trans = ML_Operator_Create(P_0->comm);
-    ML_Operator_Transpose_byrow(DinvA, DinvA_trans);
+    Scaled_A_trans = ML_Operator_Create(P_0->comm);
+    ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
 
     Z = ML_Operator_Create(P_0->comm);
-    ML_Operator_Add(DinvA, DinvA_trans, Z, ML_CSR_MATRIX, 1.0);
+    ML_Operator_Add(Scaled_A, Scaled_A_trans, Z, ML_CSR_MATRIX, 1.0);
 
     P_second = ML_Operator_Create(P_0->comm);
     ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
@@ -346,10 +336,10 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (ML_Get_PrintLevel() > 5 && P_0->comm->ML_mypid == 0)
   { 
     cout << endl;
-    cout << "Prolongator Smoothing: Using energy minimization (" 
+    cout << "Prolongator Smoothing: Using energy minimization (scheme = " 
          << ag->minimizing_energy << ")" << endl;
     cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
-         << " (" << zero_all << " zeros)" << endl;
+         << " (" << zero_all << " zeros out of " << n_0 << ")" << endl;
     cout << endl;
   }
 
@@ -357,8 +347,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   // FIXME: not working in parallel!
 
   vector<double> RowOmega(n);
-  for (int i = 0 ; i < n ; i++) 
-    RowOmega[i] = DBL_MAX;
+  for (int i = 0 ; i < n ; i++) RowOmega[i] = DBL_MAX;
 
   int* aggr_info = ag->aggr_info[level];
 
@@ -388,13 +377,11 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_free(bindx);
   ML_free(val);
 
+  if (Z)              ML_Operator_Destroy(&Z);
   if (P_prime)        ML_Operator_Destroy(&P_prime);
   if (P_second)       ML_Operator_Destroy(&P_second);
-  if (DinvA)          ML_Operator_Destroy(&DinvA);
-  if (DinvA_trans)    ML_Operator_Destroy(&DinvA_trans);
-  if (P_0_trans)      ML_Operator_Destroy(&P_0_trans);
-  if (P_prime_trans)  ML_Operator_Destroy(&P_prime_trans);
-  if (P_second_trans) ML_Operator_Destroy(&P_second_trans);
+  if (Scaled_A)       ML_Operator_Destroy(&Scaled_A);
+  if (Scaled_A_trans) ML_Operator_Destroy(&Scaled_A_trans);
   if (Scaled_P_prime) ML_Operator_Destroy(&Scaled_P_prime);
 
 #ifdef ML_TIMING
@@ -409,6 +396,10 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 // generate smoothed restriction by minimizing energy                      
 // Note: in the symmetric case we don't really need this, a transpose
 // of P suffices.
+//
+// \author Marzio Sala and Ray Tuminaro, 9214
+//
+// \date 14-Jul-05
 // ====================================================================== 
 int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 {
@@ -437,39 +428,26 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   int*    bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
   double* val   = (double *)  ML_allocate(allocated*sizeof(double));
   int n = Amat->getrow->Nrows;
-  vector<double> Dinv(n);
 
-  for (int i = 0 ; i < n ; i++) 
+  if (Dinv == 0 || Dinv_size != n) 
   {
-    ML_get_matrix_row(Amat, 1, &i, &allocated, &bindx, &val,
-                      &row_length, 0);
-    for  (int j = 0; j < row_length; j++) {
-      Dinv[i] = 0.0;
-      if (i == bindx[j]) {
-        if (val[j] == 0.0)
-        {
-          cerr << "*ML*ERR* zero diagonal element on row " << i << endl;
-          exit(EXIT_FAILURE);
-        }
-        Dinv[i] = 1.0 / val[j];
-        break;
-      }
-    }
+    cerr << "Error: Static data Dinv is null or Dinv_size is wrong!" << endl;
+    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+    exit(EXIT_FAILURE);
   }
 
-  ML_Operator* DinvA = 0;
+  ML_Operator* Scaled_A = 0;
   // FIXME: scale by rows or scale by columns??
-  DinvA = ML_Operator_ImplicitlyVCScale(Amat, &Dinv[0], 0);
+  Scaled_A = ML_Operator_ImplicitlyVCScale(Amat, Dinv, 0);
 
-  ML_Operator* DinvA_trans = ML_Operator_Create(P_0->comm);
-  ML_Operator_Transpose_byrow(DinvA, DinvA_trans);
+  ML_Operator* Scaled_A_trans = ML_Operator_Create(P_0->comm);
+  ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
 
   ML_Operator* P_prime = ML_Operator_Create(P_0->comm);
-  ML_2matmult(DinvA_trans, P_0, P_prime, ML_CSR_MATRIX);
+  ML_2matmult(Scaled_A_trans, P_0, P_prime, ML_CSR_MATRIX);
 
   ML_Operator* Z = 0;
   ML_Operator* P_second = 0;
-  ML_Operator* P_0_trans = 0;
 
   int n_0 = P_0->invec_leng;
   vector<double> num(n_0);
@@ -485,23 +463,13 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     break;
 
   case 2:
-    cerr << "NOT YET DONE, sorry" << endl;
-    exit(-1);
-
     // Z_2 = A^T * A. Need to be smart here to avoid the construction of Z_2
     
-    DinvA_trans = ML_Operator_Create(P_0->comm);
-    ML_Operator_Transpose_byrow(DinvA, DinvA_trans);
-
-    Z = ML_Operator_Create(P_0->comm);
-    ML_Operator_Add(DinvA, DinvA_trans, Z, ML_CSR_MATRIX, 1.0);
-
     P_second = ML_Operator_Create(P_0->comm);
-    ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
+    ML_2matmult(Scaled_A_trans, P_prime, P_second, ML_CSR_MATRIX);
 
     multiply_all(P_prime, P_second, &num[0]);
     multiply_all(P_second, P_second, &den[0]);
-
     break;
 
   case 3:
@@ -509,7 +477,7 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     // Need P_second, and to form A^T, then Z_3
     
     Z = ML_Operator_Create(P_0->comm);
-    ML_Operator_Add(DinvA, DinvA_trans, Z, ML_CSR_MATRIX, 1.0);
+    ML_Operator_Add(Scaled_A, Scaled_A_trans, Z, ML_CSR_MATRIX, 1.0);
 
     P_second = ML_Operator_Create(P_0->comm);
     ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
@@ -553,10 +521,10 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (ML_Get_PrintLevel() > 5 && P_0->comm->ML_mypid == 0)
   { 
     cout << endl;
-    cout << "Restriction Smoothing: Using energy minimization (" 
+    cout << "Restriction Smoothing: Using energy minimization (scheme = " 
          << ag->minimizing_energy << ")" << endl;
     cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
-         << " (" << zero_all << " zeros)" << endl;
+         << " (" << zero_all << " zeros out of " << n_0 << ")" << endl;
     cout << endl;
   }
 
@@ -598,17 +566,16 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_free(bindx);
   ML_free(val);
 
-#if 0
+  if (Scaled_A)       ML_Operator_Destroy(&Scaled_A);
+  if (Scaled_A_trans) ML_Operator_Destroy(&Scaled_A_trans);
   if (P_prime)        ML_Operator_Destroy(&P_prime);
+  if (Scaled_P_prime) ML_Operator_Destroy(&Scaled_P_prime);
+  if (Z)              ML_Operator_Destroy(&Z);
   if (P_second)       ML_Operator_Destroy(&P_second);
-  if (DinvA)          ML_Operator_Destroy(&DinvA);
-  if (DinvA_trans)    ML_Operator_Destroy(&DinvA_trans);
-  if (P_0_trans)      ML_Operator_Destroy(&P_0_trans);
-  if (P_prime_trans)  ML_Operator_Destroy(&P_prime_trans);
-  if (P_second_trans) ML_Operator_Destroy(&P_second_trans);
-  if (AGGsmoother)    ML_Operator_Destroy(&AGGsmoother);
-  if (R_0)            ML_Operator_Destroy(&R_0);
-#endif
+  if (temp)           ML_Operator_Destroy(&temp);
+
+  ML_free(Dinv); Dinv = 0;
+  Dinv_size = -1;
 
 #ifdef ML_TIMING
   ml->Rmat[level].build_time =  GetClock() - t0;
