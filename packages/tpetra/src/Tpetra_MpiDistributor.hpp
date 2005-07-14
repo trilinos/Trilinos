@@ -597,21 +597,6 @@ namespace Tpetra {
 			tempPlan.createFromSends(numImports, imageIDList, true, numExports);
 			exportIDs.resize(numExports);
 			exportImageIDs.resize(numExports);
-      
-			/*char* c_export_objs = 0;
-			OrdinalType len_c_export_objs = zero;
-			tempPlan.doPostsAndWaits(reinterpret_cast<char*>(&importObjs.front()), 
-									 (two * sizeof(OrdinalType)),
-									 len_c_export_objs,
-									 c_export_objs);
-			OrdinalType* exportObjs = reinterpret_cast<OrdinalType*>(c_export_objs);
-
-			for(OrdinalType i = zero; i < numExports; i++) {
-				exportIDs[i] = exportObjs[two*i];
-				exportImageIDs[i] = exportObjs[two*i+one];
-			}
-
-			delete[] c_export_objs;*/
 
 			std::vector<OrdinalType> exportObjs;
 			Comm_->doPostsAndWaits(tempPlan, importObjs, two, exportObjs);

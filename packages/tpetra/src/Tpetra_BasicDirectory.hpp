@@ -59,6 +59,9 @@ namespace Tpetra {
 			: Object("Tpetra::BasicDirectory") 
 			, ElementSpace_(ElementSpace) 
 		{
+			// initialize Comm instance
+			Comm_ = ElementSpace.platform().createOrdinalComm();
+
 			// A directory is not necessary for a non-global ES.
 			if(ElementSpace.isGlobal()) {
 				// If ElementSpace is contiguously allocated, we can construct the 
@@ -81,6 +84,7 @@ namespace Tpetra {
 		BasicDirectory(BasicDirectory<OrdinalType> const& Directory)
 			: Object(Directory.label()) 
 			, ElementSpace_(Directory.ElementSpace_) 
+			, Comm_(Directory.Comm_)
 			, allMinGIDs_(Directory.allMinGIDs_)
 			, imageIDs_(Directory.imageIDs_)
 			, LIDs_(Directory.LIDs_)
@@ -129,6 +133,7 @@ namespace Tpetra {
     
 	private:
 		ElementSpace<OrdinalType> const ElementSpace_;
+		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > Comm_;
 		std::vector<OrdinalType> allMinGIDs_;
 		std::vector<OrdinalType> imageIDs_;
 		std::vector<OrdinalType> LIDs_;
@@ -262,19 +267,12 @@ namespace Tpetra {
 					if(computeLIDs)
 						exports.push_back(LIDs_[currLID]);
 				}
-        
-				OrdinalType* exportPtr = &exports.front();
-				char* export_objs = reinterpret_cast<char*>(exportPtr);
-				OrdinalType const lenExportObjs = packetSize * sizeof(OrdinalType);
 
-				char* cImports = 0;
-				OrdinalType* imports = 0;
-				OrdinalType lenImports = zero;
-				OrdinalType numRecv = numEntries - numMissing;
-				distor->doPostsAndWaits(export_objs, lenExportObjs, lenImports, cImports);
-				imports = reinterpret_cast<OrdinalType*>(cImports);
+				std::vector<OrdinalType> imports;
+				Comm_->doPostsAndWaits(*distor, exports, packetSize, imports);
 
-				OrdinalType* ptr = imports;
+				typename std::vector<OrdinalType>::iterator ptr = imports.begin();
+				OrdinalType const numRecv = numEntries - numMissing;
 				for(OrdinalType i = zero; i < numRecv; i++) {
 					currLID = *ptr++;
 					for(OrdinalType j = zero; j < numEntries; j++) {
@@ -286,7 +284,6 @@ namespace Tpetra {
 						}
 					}
 				}
-				delete[] cImports;
 			}
 		};
     
@@ -341,27 +338,16 @@ namespace Tpetra {
 				exportElements.push_back(i);
 			}
 
-			OrdinalType* exportPtr = &exportElements.front();
+			std::vector<OrdinalType> importElements;
+			Comm_->doPostsAndWaits(*distor, exportElements, packetSize, importElements);
 
-			char* export_objs = reinterpret_cast<char*>(exportPtr);
-			OrdinalType const obj_size = packetSize * sizeof(OrdinalType);
-			OrdinalType len_import_objs = 0;
-			char* import_objs = 0;
-
-			distor->doPostsAndWaits(export_objs, obj_size, len_import_objs, import_objs);
-
-			OrdinalType* importElements = reinterpret_cast<OrdinalType*>(import_objs);
-
-			OrdinalType currLID;
-			OrdinalType* ptr = importElements;
+			typename std::vector<OrdinalType>::iterator ptr = importElements.begin();
 			for(OrdinalType i = zero; i < numReceives; i++) {
-				currLID = directoryES_->getLID(*ptr++); // Convert incoming GID to Directory LID
+				OrdinalType currLID = directoryES_->getLID(*ptr++); // Convert incoming GID to Directory LID
 				assert(currLID != negOne); // Internal error
 				imageIDs_[currLID] = *ptr++;
 				LIDs_[currLID] = *ptr++;
 			}
-        
-			delete[] importElements;
 		};
     
 	}; // class MpiDirectory
