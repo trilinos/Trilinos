@@ -119,7 +119,7 @@ UMFPACK_TEST =
 endif
 
 if HAVE_AMESOS_SUPERLU
-SUPERLU_TEST = Test_Superlu
+SUPERLU_TEST = TestSuperlu
 else
 SUPERLU_TEST = 
 endif
@@ -226,6 +226,14 @@ endif
 if HAVE_AMESOS_KLU
 endif
 
+if HAVE_AMESOS_SUPERLU
+TestSuperlu_SOURCES = $(srcdir)/TestSuperlu
+
+TestSuperlu$(EXEEXT): $(srcdir)/TestSuperlu
+	cp $(srcdir)/TestSuperlu TestSuperlu$(EXEEXT) 
+endif
+
+
 if HAVE_AMESOS_SUPERLUDIST
 TestSuperludist_SOURCES = $(srcdir)/TestSuperludist
 
@@ -246,6 +254,7 @@ endif
 noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) \
 	$(SCALAPACK_TEST) $(LAPACK_TEST) $(UMFPACK_TEST) \
 	$(TAUCS_TEST) $(PARDISO_TEST) $(PASTIX_TEST) \
-	$(MUMPS_TEST) $(PARAKLETE_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) \
+	$(MUMPS_TEST) $(PARAKLETE_TEST) $(KLU_TEST)  $(SUPERLU_TEST) \
+	$(SUPERLUDIST_TEST) \
 	$(VALGRIND_TEST)  $(COVERAGE_TEST)
 

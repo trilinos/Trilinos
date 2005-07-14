@@ -78,7 +78,7 @@
 #
 #
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) $(TestParaklete_SOURCES) $(TestPardiso_SOURCES) $(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) $(TestParaklete_SOURCES) $(TestPardiso_SOURCES) $(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperlu_SOURCES) $(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -106,7 +106,8 @@ noinst_PROGRAMS = TestAmesos$(EXEEXT) TestQuietAmesos$(EXEEXT) \
 	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4) \
 	$(am__EXEEXT_5) $(am__EXEEXT_6) $(am__EXEEXT_7) \
 	$(am__EXEEXT_8) $(am__EXEEXT_9) $(am__EXEEXT_10) \
-	$(am__EXEEXT_11) $(am__EXEEXT_12) $(am__EXEEXT_13)
+	$(am__EXEEXT_11) $(am__EXEEXT_12) $(am__EXEEXT_13) \
+	$(am__EXEEXT_14)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -154,10 +155,11 @@ CONFIG_CLEAN_FILES =
 @HAVE_AMESOS_MUMPS_TRUE@am__EXEEXT_8 = TestMumps$(EXEEXT)
 @HAVE_AMESOS_PARAKLETE_TRUE@am__EXEEXT_9 = TestParaklete$(EXEEXT)
 @HAVE_AMESOS_KLU_TRUE@am__EXEEXT_10 = TestKlu$(EXEEXT)
-@HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_11 =  \
+@HAVE_AMESOS_SUPERLU_TRUE@am__EXEEXT_11 = TestSuperlu$(EXEEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_12 =  \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	TestSuperludist$(EXEEXT)
-@HAVE_VALGRIND_TRUE@am__EXEEXT_12 = TestValgrind$(EXEEXT)
-@HAVE_COVERAGE_TRUE@am__EXEEXT_13 = TestCoverage$(EXEEXT)
+@HAVE_VALGRIND_TRUE@am__EXEEXT_13 = TestValgrind$(EXEEXT)
+@HAVE_COVERAGE_TRUE@am__EXEEXT_14 = TestCoverage$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestAmesos_SOURCES_DIST = $(srcdir)/TestAmesos.sh
 am_TestAmesos_OBJECTS =
@@ -211,6 +213,10 @@ am__TestScalapack_SOURCES_DIST = $(srcdir)/TestScalapack
 am_TestScalapack_OBJECTS =
 TestScalapack_OBJECTS = $(am_TestScalapack_OBJECTS)
 TestScalapack_LDADD = $(LDADD)
+am__TestSuperlu_SOURCES_DIST = $(srcdir)/TestSuperlu
+am_TestSuperlu_OBJECTS =
+TestSuperlu_OBJECTS = $(am_TestSuperlu_OBJECTS)
+TestSuperlu_LDADD = $(LDADD)
 am__TestSuperludist_SOURCES_DIST = $(srcdir)/TestSuperludist
 am_TestSuperludist_OBJECTS =
 TestSuperludist_OBJECTS = $(am_TestSuperludist_OBJECTS)
@@ -238,9 +244,9 @@ SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
 	$(TestLapack_SOURCES) $(TestMumps_SOURCES) \
 	$(TestParaklete_SOURCES) $(TestPardiso_SOURCES) \
 	$(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) \
-	$(TestScalapack_SOURCES) $(TestSuperludist_SOURCES) \
-	$(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) \
-	$(TestValgrind_SOURCES)
+	$(TestScalapack_SOURCES) $(TestSuperlu_SOURCES) \
+	$(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) \
+	$(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
 	$(am__TestBasic_SOURCES_DIST) $(am__TestCoverage_SOURCES_DIST) \
 	$(am__TestDscpack_SOURCES_DIST) \
@@ -250,6 +256,7 @@ DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
 	$(am__TestPardiso_SOURCES_DIST) $(am__TestPastix_SOURCES_DIST) \
 	$(am__TestQuietAmesos_SOURCES_DIST) \
 	$(am__TestScalapack_SOURCES_DIST) \
+	$(am__TestSuperlu_SOURCES_DIST) \
 	$(am__TestSuperludist_SOURCES_DIST) \
 	$(am__TestTaucs_SOURCES_DIST) $(am__TestUmfpack_SOURCES_DIST) \
 	$(am__TestValgrind_SOURCES_DIST)
@@ -454,7 +461,7 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_UMFPACK_FALSE@UMFPACK_TEST = 
 @HAVE_AMESOS_UMFPACK_TRUE@UMFPACK_TEST = TestUmfpack
 @HAVE_AMESOS_SUPERLU_FALSE@SUPERLU_TEST = 
-@HAVE_AMESOS_SUPERLU_TRUE@SUPERLU_TEST = Test_Superlu
+@HAVE_AMESOS_SUPERLU_TRUE@SUPERLU_TEST = TestSuperlu
 @HAVE_AMESOS_KLU_FALSE@KLU_TEST = 
 @HAVE_AMESOS_KLU_TRUE@KLU_TEST = TestKlu
 @HAVE_AMESOS_KLU_TRUE@TestKlu_SOURCES = $(srcdir)/TestKlu
@@ -482,6 +489,7 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_TAUCS_FALSE@TAUCS_TEST = 
 @HAVE_AMESOS_TAUCS_TRUE@TAUCS_TEST = TestTaucs
 @HAVE_AMESOS_TAUCS_TRUE@TestTaucs_SOURCES = $(srcdir)/TestTaucs
+@HAVE_AMESOS_SUPERLU_TRUE@TestSuperlu_SOURCES = $(srcdir)/TestSuperlu
 @HAVE_AMESOS_SUPERLUDIST_TRUE@TestSuperludist_SOURCES = $(srcdir)/TestSuperludist
 @HAVE_AMESOS_MUMPS_TRUE@TestMumps_SOURCES = $(srcdir)/TestMumps
 all: all-am
@@ -558,6 +566,9 @@ clean-noinstPROGRAMS:
 @HAVE_AMESOS_SCALAPACK_FALSE@TestScalapack$(EXEEXT): $(TestScalapack_OBJECTS) $(TestScalapack_DEPENDENCIES) 
 @HAVE_AMESOS_SCALAPACK_FALSE@	@rm -f TestScalapack$(EXEEXT)
 @HAVE_AMESOS_SCALAPACK_FALSE@	$(LINK) $(TestScalapack_LDFLAGS) $(TestScalapack_OBJECTS) $(TestScalapack_LDADD) $(LIBS)
+@HAVE_AMESOS_SUPERLU_FALSE@TestSuperlu$(EXEEXT): $(TestSuperlu_OBJECTS) $(TestSuperlu_DEPENDENCIES) 
+@HAVE_AMESOS_SUPERLU_FALSE@	@rm -f TestSuperlu$(EXEEXT)
+@HAVE_AMESOS_SUPERLU_FALSE@	$(LINK) $(TestSuperlu_LDFLAGS) $(TestSuperlu_OBJECTS) $(TestSuperlu_LDADD) $(LIBS)
 @HAVE_AMESOS_SUPERLUDIST_FALSE@TestSuperludist$(EXEEXT): $(TestSuperludist_OBJECTS) $(TestSuperludist_DEPENDENCIES) 
 @HAVE_AMESOS_SUPERLUDIST_FALSE@	@rm -f TestSuperludist$(EXEEXT)
 @HAVE_AMESOS_SUPERLUDIST_FALSE@	$(LINK) $(TestSuperludist_LDFLAGS) $(TestSuperludist_OBJECTS) $(TestSuperludist_LDADD) $(LIBS)
@@ -736,6 +747,9 @@ uninstall-am: uninstall-info-am
 
 @HAVE_AMESOS_TAUCS_TRUE@TestTaucs$(EXEEXT): $(srcdir)/TestTaucs
 @HAVE_AMESOS_TAUCS_TRUE@	cp $(srcdir)/TestTaucs TestTaucs$(EXEEXT) 
+
+@HAVE_AMESOS_SUPERLU_TRUE@TestSuperlu$(EXEEXT): $(srcdir)/TestSuperlu
+@HAVE_AMESOS_SUPERLU_TRUE@	cp $(srcdir)/TestSuperlu TestSuperlu$(EXEEXT) 
 
 @HAVE_AMESOS_SUPERLUDIST_TRUE@TestSuperludist$(EXEEXT): $(srcdir)/TestSuperludist
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	cp $(srcdir)/TestSuperludist TestSuperludist$(EXEEXT) 
