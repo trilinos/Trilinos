@@ -37,8 +37,10 @@ my $configFile;         # Config file to use            (default: ./config)
 my $verbosity;          # verbosity level               (default: 1)
 my $logVerbosity;       # log file verbosity level      (default: 0)
 
-my $noUpdate;		    # don't update
+my $noUpdate;i          # don't update
 my $updated;            # have we been updated yet?
+
+my $coverage;           # pass --coverage flag to runtests 
 
 my $runStartTime;
 my $runStartTimeForFilename;
@@ -91,6 +93,7 @@ exit $exitStatus;
                     "log-verbosity=i" => \$logVerbosity,
                     "no-update" => \$noUpdate,
                     "updated" => \$updated,
+		    "coverage" => \$coverage,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -349,6 +352,9 @@ exit $exitStatus;
             }
             if ($buildOptions{'MPI-GO'}) {   
                 $cmd .= "--mpi-go=\"".$buildOptions{'MPI-GO'}."\" ";       
+            }
+            if ($coverage) {
+                $cmd .= "--coverage ";       
             }
             $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results/";
             $cmd .= "$runStartTimeForFilename-build ";
