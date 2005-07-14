@@ -5,7 +5,8 @@
 (FRAMEWORK) {
     DIRS = BlockDavidson,
            BlockKrylovSchur,
-           ModalSolverUtils;
+           ModalSolverUtils,
+           MVOPTester;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
