@@ -18,6 +18,7 @@ extern "C" {
 
 #include "zz_const.h"
 #include "parmetis_jostle.h"
+#include "params_const.h"
 
 #define ZOLTAN_PRINT_VTX_NUM  0  /* print vertex number at beginning of line? */
 
@@ -29,6 +30,7 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
            float **p_edge_wgts, int *glob_hedges, int *glob_pins);
 static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, 
            int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts);
+static int turn_off_skip_dimensions(ZZ *zz);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -73,7 +75,7 @@ int gen_geom, int gen_graph, int gen_hg)
   ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts;
   double *xyz;
-  int i, j, k, num_obj, num_geom, num_edges;
+  int i, j, k, num_obj, num_geom, num_edges, skip;
   int glob_nvtxs, glob_edges, glob_hedges, glob_pins;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   char *yo = "Zoltan_Generate_Files";
@@ -150,12 +152,6 @@ int gen_geom, int gen_graph, int gen_hg)
   /* Note: This will be slow (not scalable) for many procs. */
   /**********************************************************/
 
-  /*
-   * Must get coordinates before entering serialized section of 
-   * code.  For 3D geometric partitionings with SKIP_DIMENSIONS ON, 
-   * Zoltan_Get_Coordinates is a global operation.  It will
-   * hang if not all processes are participating.
-   */
   if (gen_geom){
     if (zz->Get_Num_Geom == NULL ||
      (zz->Get_Geom == NULL && zz->Get_Geom_Multi == NULL)) {
@@ -164,8 +160,14 @@ int gen_geom, int gen_graph, int gen_hg)
       error = ZOLTAN_FATAL;
       goto End;
     }
+    skip = turn_off_skip_dimensions(zz);  /* don't transform coordinates */
+
     error = Zoltan_Get_Coordinates(zz, num_obj, global_ids, local_ids,
                                    &num_geom, &xyz);
+
+    if (skip){
+      Zoltan_Set_Param(zz, "SKIP_DIMENSIONS", "1");
+    }
 
     if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
       goto End;
@@ -477,6 +479,23 @@ static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp,
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
+}
+static int turn_off_skip_dimensions(ZZ *zz)
+{
+  int skip=0;
+  PARAM_VARS param[2] = {
+     {"SKIP_DIMENSIONS", NULL, "INT", 0},
+     {NULL, NULL, NULL, 0}};
+
+  Zoltan_Bind_Param(param, "SKIP_DIMENSIONS", (void *)&skip);
+  Zoltan_Assign_Param_Vals(zz->Params, param, zz->Debug_Level, zz->Proc,
+    zz->Debug_Proc);
+
+  if (skip){
+    Zoltan_Set_Param(zz, "SKIP_DIMENSIONS", "0");
+  }
+
+  return skip;
 }
 
 
