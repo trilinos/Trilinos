@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 
   // Set verbosity level
   if (verbose && MyPID == 0)
-    MyOM->SetVerbosity( Anasazi::FinalSummary );
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
 
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 

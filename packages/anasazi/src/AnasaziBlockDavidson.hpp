@@ -240,6 +240,17 @@ namespace Anasazi {
       } else {
         _os <<"[none computed]"<<endl;
       }
+      _os <<"------------------------------------------------------"<<endl;
+      _os <<"Current Eigenvalue Estimates (Ritz Values): "<<endl;
+      _os <<"------------------------------------------------------"<<endl;
+      _os <<"Ritz Value\tResidual"<<endl;
+      _os <<"------------------------------------------------------"<<endl;
+      if ( _iter > 0 ) {
+        for (i=0; i<_blockSize; i++)
+          _os <<_theta[i]<<"\t"<<_normR[i]<<endl;
+      } else {
+        _os <<"[none computed]"<<endl;
+      }
       _os <<endl<<"------------------------------------------------------"<<endl;
       _os <<"******************************************************"<<endl;  
       _os <<" "<<endl; 
@@ -899,7 +910,7 @@ namespace Anasazi {
     _timerTotal->stop();
     if (_om->isVerbosity( Anasazi::TimingDetails )) {
       if (_om->doPrint())
-        _os <<"**********************TIME DETAILS********************"<<endl;
+        _os <<"********************TIMING DETAILS********************"<<endl;
       Teuchos::TimeMonitor::summarize( _os );
       if (_om->doPrint())
         _os <<"******************************************************"<<endl;
@@ -939,9 +950,11 @@ namespace Anasazi {
         }
       }
       
-      if (Q == 0)
+      if (Q == 0) {
+	_os << endl;     
         return;
-      
+      }      
+
       if (_MOp.get()) {
         tmp = _MSUtils.errorOrthonormality(Q, _MOp.get());
         if (_om->doPrint())
@@ -961,7 +974,8 @@ namespace Anasazi {
           if (_om->doPrint())
             _os << " >> Orthogonality Q^T X up to " << tmp << endl;
         }
-      }      
+      } 
+      _os << endl;     
     }
   
   } // End of namespace Anasazi

@@ -511,7 +511,7 @@ namespace Anasazi {
     _timerTotal->stop();
     if (_om->isVerbosity( Anasazi::TimingDetails )) {
       if (_om->doPrint())
-        _os <<"**********************TIME DETAILS********************"<<endl;
+        _os <<"********************TIMING DETAILS********************"<<endl;
       Teuchos::TimeMonitor::summarize( _os );
       if (_om->doPrint())
         _os <<"******************************************************"<<endl;

@@ -257,6 +257,8 @@ namespace Anasazi {
       } else {
         _os <<"[none computed]"<<endl;
       }
+      _os <<endl<<"------------------------------------------------------"<<endl;
+      _os <<"******************************************************"<<endl;  
       _os << endl;
     }
   }
@@ -593,8 +595,6 @@ namespace Anasazi {
           
       // Perform a spectral decomposition
       _nevLocal = localSize;
-      //cout << "KK" << endl << KK << endl;
-      //cout << "MM" << endl << MM << endl;
       _timerDS->start();
       info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, &_nevLocal, 
                                    (_blockSize == 1) ? 1 : 0);
@@ -630,32 +630,32 @@ namespace Anasazi {
       } // if ((theta[0] < 0.0) || (_nevLocal < _blockSize))
     
 
+      // We can reduce the size of the local problem if the directSolver detects rank deficiency 
       if ((localSize == twoBlocks) && (_nevLocal == _blockSize)) {
-        _os << "localSize == twoBlocks && _nevLocal == _blockSize"<<endl;
         localSize = _blockSize;
       }
       
+      // We can reduce the size of the local problem if the directSolver detects rank deficiency
       if ((localSize == threeBlocks) && (_nevLocal <= twoBlocks)) {
-        _os << "localSize == threeBlocks && _nevLocal <= twoBlocks"<<endl;
         localSize = twoBlocks;
       }
       
       // Compute the residuals
       _timerCompRes->start();
       Teuchos::SerialDenseMatrix<int,ScalarType> S11( Teuchos::View, S, _blockSize, _blockSize );
-      MVT::MvTimesMatAddMv( 1.0, *KX, S11, 0.0, *R );
+      MVT::MvTimesMatAddMv( one, *KX, S11, zero, *R );
       
       if (localSize >= twoBlocks) {
         Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );
-        MVT::MvTimesMatAddMv( 1.0, *KH, S21, 1.0, *R );
+        MVT::MvTimesMatAddMv( one, *KH, S21, one, *R );
         
         if (localSize == threeBlocks) {
           Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
-          MVT::MvTimesMatAddMv( 1.0, *KP, S31, 1.0, *R );
+          MVT::MvTimesMatAddMv( one, *KP, S31, one, *R );
 
         } // if (localSize == threeBlocks)
       } // if (localSize >= twoBlocks )
-      
+
       for (j = 0; j < _blockSize; ++j) {
         blas.SCAL(localSize, _theta[j], S[j], 1);
       }
@@ -678,7 +678,7 @@ namespace Anasazi {
       _timerCompRes->stop();
 
       // Compute the norms of the residuals
-      _problem->MvNorm( *R, &_normR );
+      MVT::MvNorm( *R, &_normR );
       
       // Scale the norms of residuals with the eigenvalues
       // Count the converged eigenvectors
@@ -798,6 +798,7 @@ namespace Anasazi {
       // to move the converged eigenvectors to the front of the spectral
       // transformation.
       //
+      
       ScalarType tmp_swap;
       std::vector<ScalarType> tmp_swap_vec(localSize);
       while (firstIndex < _nFound) {
@@ -856,15 +857,15 @@ namespace Anasazi {
         MVT::MvTimesMatAddMv( one, *X, S11conv, zero, *EVconv );
         
         if (localSize >= twoBlocks) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _nFound-leftOver, _blockSize );          
+          Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _nFound-leftOver, _blockSize );
           MVT::MvTimesMatAddMv( one, *H, S21, one, *EVconv );
           
           if (localSize == threeBlocks) {
             Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _nFound-leftOver, twoBlocks  );
             MVT::MvTimesMatAddMv( one, *P, S31, one, *EVconv );
           }
-        }
-      
+        }	
+
         // Sort the eigenpairs
         _timerSortEval->start();
         if ((info==0) && (_knownEV > 0)) {
@@ -927,8 +928,6 @@ namespace Anasazi {
       
     } // for (_iter = 0; _iter < _maxIter; ++_iter)
 
-    //highMem = (highMem > currentSize()) ? highMem : currentSize();
-
     //
     // Print out a final summary if necessary
     //
@@ -940,7 +939,7 @@ namespace Anasazi {
     _timerTotal->stop();
     if (_om->isVerbosity( Anasazi::TimingDetails )) {
       if (_om->doPrint())
-        _os <<"**********************TIME DETAILS********************"<<endl;
+        _os <<"********************TIMING DETAILS********************"<<endl;
       Teuchos::TimeMonitor::summarize( _os );
       if (_om->doPrint())
         _os <<"******************************************************"<<endl;
@@ -987,9 +986,11 @@ namespace Anasazi {
         _os << " >> Orthogonality X^T R up to " << tmp << endl;
     }
     
-    if (Q == 0)
+    if (Q == 0) {
+      _os << endl;
       return;
-    
+    }    
+
     if (haveMass) {
       tmp = _MSUtils.errorOrthonormality(Q, _MOp.get());
       if (_om->doPrint())

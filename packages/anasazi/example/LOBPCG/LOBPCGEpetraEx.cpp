@@ -220,6 +220,21 @@ int main(int argc, char *argv[]) {
 	assert( info==0 );
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
+	// Create a identity matrix for the temporary mass matrix
+	Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, 1) );
+	for (i=0; i<NumMyElements; i++)
+	  {
+	    Values[0] = one;
+	    Indices[0] = i;
+	    NumEntries = 1;
+	    info = M->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+	    assert( info==0 );
+	  }
+	// Finish up
+	info = M->FillComplete();
+	assert( info==0 );
+	M->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+	
 	//************************************
 	// Start the LOBPCG iteration
 	//***********************************
@@ -247,17 +262,9 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
 	ivec->Random();
 
-	// Create preconditioner
-	int maxIterCG = 100;
-	double tolCG = 1e-6;
-	
-	Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = 
-	  Teuchos::rcp( new BlockPCGSolver(Comm, A.get(), tolCG, maxIterCG, 3) );
-	opStiffness->setPreconditioner( 0 );
-									 
 	// Create the eigenproblem.
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(opStiffness, ivec) );
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, M, ivec) );
 	
 	// Inform the eigenproblem that the operator A is symmetric
 	MyProblem->SetSymmetric(true); 
@@ -273,7 +280,7 @@ int main(int argc, char *argv[]) {
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-	MyOM->SetVerbosity( Anasazi::FinalSummary );	
+	MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );	
 	
 	// Initialize the Block Davidson solver
 	Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
@@ -299,14 +306,13 @@ int main(int argc, char *argv[]) {
 	A->Apply( *evecs, tempAevec );
 	MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
 	MVT::MvNorm( tempAevec, &normA );
-	for (i=0; i<nev; i++)
-	  normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
+
 	
 	if (MyOM->doPrint()) {
 	  cout<<"Eigenvalue"<<"\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
+	    cout<< (*evals)[i] << "\t\t"<< normA[i]/(*evals)[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	}

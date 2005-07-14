@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 
   // Set verbosity level
   if (verbose)
-    MyOM->SetVerbosity( Anasazi::FinalSummary );
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );

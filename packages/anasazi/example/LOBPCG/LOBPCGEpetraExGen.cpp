@@ -147,9 +147,6 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
   
-  //  if (verbose)
-  //info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
-  
   // Compute the direct residual
   std::vector<double> normV( evecs->NumVectors() );
   Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());

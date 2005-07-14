@@ -93,8 +93,7 @@ int main(int argc, char *argv[])
 
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::IterationDetails 
-                        + Anasazi::OrthoDetails + Anasazi::TimingDetails);
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
   // Create problem
