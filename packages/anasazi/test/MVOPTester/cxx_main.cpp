@@ -159,21 +159,22 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
     Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary );
+    MyOM->SetVerbosity( Anasazi::Warning );
   }
 
   // test the multivector class
   ierr = Anasazi::TestMultiVecTraits<double,MV>(MyOM,ivec);
   switch (ierr) {
   case Anasazi::Ok:
-    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
+    if ( verbose && MyPID==0 ) {
       cout << "*** PASSED TestMultiVecTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
-    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
+    if ( verbose && MyPID==0 ) {
       cout << "*** FAILED TestMultiVecTraits() ***" << endl;
     }
+    return ierr;
     break;
   }
 
@@ -182,14 +183,15 @@ int main(int argc, char *argv[])
   ierr = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,A);
   switch (ierr) {
   case Anasazi::Ok:
-    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
+    if ( verbose && MyPID==0 ) {
       cout << "*** PASSED TestOperatorTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
-    if (MyOM->isVerbosityAndPrint(Anasazi::FinalSummary)) {
+    if ( verbose && MyPID==0 ) {
       cout << "*** FAILED TestOperatorTraits() ***" << endl;
     }
+    return ierr;
     break;
   }
 
@@ -203,5 +205,5 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  return ierr ;
+  return ierr;
 }
