@@ -18,6 +18,10 @@
 #include "zoltan_util.h"
 #include "zoltan_mem.h"
 
+#ifdef VAMPIR
+#include <VT.h>
+#endif
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -88,6 +92,10 @@ typedef struct TimeStruct {
                                 > 0  -->  In Use
                                 > 2  -->  Running */
   char Name[MAXNAMELEN+1];/* String associated (and printed) with timer info */
+
+#ifdef VAMPIR
+  int vt_handle;          /* state handle for vampir traces */
+#endif
 } ZTIMER_TS;
 
 /* Timer object consisting of many related timers. 
@@ -187,6 +195,11 @@ static char *yo = "Zoltan_Timer_Init";
 
   Zoltan_Timer_Reset(zt, ret, use_barrier, name);
 
+#ifdef VAMPIR
+  if (VT_funcdef(name, VT_NOCLASS, &((zt->Times[ret]).vt_handle)) != VT_OK)
+      FATALERROR(yo, "VT_funcdef failed.");
+#endif
+
   return ret;
 }
 
@@ -271,6 +284,12 @@ static char *yo = "Zoltan_Timer_Start";
   ts->Start_Time = Zoltan_Time(zt->Timer_Flag);
   strncpy(ts->Start_File, filename, MAXNAMELEN);
   ts->Start_Line = lineno;
+
+#ifdef VAMPIR
+  if (VT_begin(ts->vt_handle) != VT_OK)
+      FATALERROR(yo, "VT_begin failed.");
+#endif
+
   return ZOLTAN_OK;
 }
 
@@ -304,6 +323,11 @@ double my_time;
       FATALERROR(yo, msg)
     }
   }
+
+#ifdef VAMPIR
+  if (VT_end(ts->vt_handle) != VT_OK)
+      FATALERROR(yo, "VT_end failed.");
+#endif
 
   ts->Status -= RUNNING;
   ts->Stop_Time = Zoltan_Time(zt->Timer_Flag);

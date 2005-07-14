@@ -60,6 +60,9 @@ static void initialize_mesh(MESH_INFO_PTR);
 
 #include <unistd.h>
 
+#ifdef VAMPIR
+#include <VT.h>
+#endif
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
@@ -87,6 +90,10 @@ int main(int argc, char *argv[])
 
   /* initialize MPI */
   MPI_Init(&argc, &argv);
+
+#ifdef VAMPIR
+  VT_initialize(&argc, &argv);
+#endif
 
   /* get some machine information */
   MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
@@ -325,6 +332,10 @@ End:
   free_mesh_arrays(&mesh);
   if (prob.params != NULL) free(prob.params);
   MPI_Finalize();
+  
+#ifdef VAMPIR
+  VT_finalize();
+#endif
 
   return 0;
 }
