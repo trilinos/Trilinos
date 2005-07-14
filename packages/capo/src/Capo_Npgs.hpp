@@ -64,45 +64,138 @@ namespace CAPO {
     virtual ~Npgs() {}
 
     //! Member Functions
-    
+
+    /*!
+      Setup the solver.
+    */    
     virtual void Initialize();
     
+    /*!
+      Find a fixed point of the system using the current
+      values of x, T, and lambda as initial guesses.
+    */    
     virtual bool InnerIteration();
     
+    /*!
+      If any computations must be done between solves
+      along the continuation branch (e.g. updating
+      subspace basis) this function should perform
+      them.  Currently this is an empty function.
+    */    
     virtual void InnerFunctions();
     
+    /*!
+      In the case where an InnerIteration call fails
+      to find a fixed point, the problem must be reset
+      or the code must exit cleanly.
+
+      \note The function resets the problem to start
+      the current continuation step again, but halves
+      the parameter step and calculates a different 
+      starting guess based on the new parameter.  The 
+      hope is that if the previous continuation step
+      succeeded, we should be able to converge if 
+      our step in lambda isn't too large.
+    */    
     virtual void IterationFailure();
     
+    /*!
+      Prints out that the continuation has ended
+      successfully.
+    */    
     virtual void Finish();
     
+    /*!
+      The predictor increments the parameter and determines
+      a suitable initial guess of x and T for the next
+      solve.
+    */    
     virtual void Predictor();
 
+    /*!
+      Returns the value of xfinal.  
+    */    
     virtual Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& Get_xfinal();
     
+    /*!
+      Returns the value of lambdafinal.  
+    */    
     virtual double& Get_lambdafinal();
     
+    /*!
+      Returns the value of Tfinal.  
+    */    
     virtual double& Get_Tfinal();
   private:
 
+    /*!
+      The current (hard coded) phase condition is given by:
+      f(x(0)^{(0)},lambda^{(0)})^T(x(0)-x(0)^{(0)})=0
+      which requires that the initial f be stored throughout
+      the algorithm.
+    */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > finit;
+
+    /*!
+      The current (hard coded) phase condition is given by:
+      f(x(0)^{(0)},lambda^{(0)})^T(x(0)-x(0)^{(0)})=0
+      which requires that the initial x(0)^{(0)} be stored 
+      throughout the algorithm.
+    */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xinit;
 
-
+    /*!
+      Ve stores the schur vectors associated with eigenvalues
+      of phi(x,T,lambda) with magnitude greater than a 
+      specified value rho.  It also keeps a few additional
+      vectors.  This basis can be of size up to 30.  
+    */
     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Ve;
 
+    /*!
+      The number of eigenvalues with magnitude greater 
+      than rho.
+    */
     int Unstable_Basis_Size;
 
-    void Orthonormalize(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Basis, int Number_of_Columns);
+    /*!
+      Orthonormalize the first Number_of_Columns of
+      the multivector Basis.
+    */
+    void Orthonormalize(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Basis, 
+			int Number_of_Columns);
 
+    /*!
+      Calculate a Matrix Vector product using finite differences:
+      Mv=(1/eps)*(phi(x+eps*y,T,lambda)-phi(x,T,lambda))
+    */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > MatVec(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y);
 
+    /*!
+      Perform Matrix Vector products on multiple vectors.
+      This function just calls MatVec on each column of the matrix Y.
+    */
     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > MatVecs(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Y);
 
-
+    /*!
+      Returns true if (||x-y||_2)/n<tol
+    */
     bool Converged(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x,
 		   const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& y);
 
-    void SubspaceIterations(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
+    /*!
+      Algorithm 5.3 Subspace Iteration with Projection from 
+      "Numerical Methods for Large Eigenvalue Problems" by
+      Youcef Saad.  The algorithm finds approximations to
+      the dominant Schur vectors of a matrix.
+
+      \note Se returns holding the dominant Schur vectors, Re
+      contains the multiplication factors from the QR
+      decomposition.
+    */
+    void SubspaceIterations(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, 
+			    Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, 
+			    const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
 
     void Calculatedq(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq, 
