@@ -68,7 +68,7 @@ inline static double multiply_self(int row, struct ML_CSR_MSRdata* self)
 // ====================================================================== 
 // Note: Op must be an CSR matrix but it is easy to make it for
 // a generic getrow()
-// FIXME: wrong in parallel!
+// Note: off-processor connections are simply discarded
 static void multiply_self_all(ML_Operator* Op, double* result)
 {
   int n = Op->invec_leng;
@@ -89,16 +89,17 @@ static void multiply_self_all(ML_Operator* Op, double* result)
     double* val    = &(values[rowptr[row]]);
 
     for (int i = 0 ; i < len ; ++i)
-      result[bindx[i]] += val[i] * val[i];
+      if (bindx[i] < n)
+        result[bindx[i]] += val[i] * val[i];
   }
 }
 
 // ====================================================================== 
 // Note: Op must be an CSR matrix but it is easy to make it for
 // a generic getrow()
-// FIXME: wrong in parallel!
-inline static double multiply_all(ML_Operator* left, ML_Operator* right,
-                                  double* result)
+// Note: off-processor connections are simply discarded
+inline static void multiply_all(ML_Operator* left, ML_Operator* right,
+                                double* result)
 {
   int n = left->invec_leng;
   int n_rows = left->getrow->Nrows;
@@ -140,9 +141,13 @@ inline static double multiply_all(ML_Operator* left, ML_Operator* right,
 
     for (int i = 0 ; i < rlen ; ++i)
     {
-      cur = lmap.find(rbindx[i]);
-      if (cur != lmap.end())
-        result[rbindx[i]] += rval[i] * (cur->second);
+      int pos = rbindx[i];
+      if (pos < n) 
+      {
+        cur = lmap.find(pos);
+        if (cur != lmap.end())
+          result[pos] += rval[i] * (cur->second);
+      }
     }
   }
 }
@@ -156,7 +161,7 @@ inline static double multiply_all(ML_Operator* left, ML_Operator* right,
 // ====================================================================== 
 int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 {
-  int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
+  int         Ncoarse, Nfine, gNfine, gNcoarse;
   ML_Operator **prev_P_tentatives;
   ML_Aggregate * ag = (ML_Aggregate *) data;
 
@@ -166,7 +171,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 #endif
 
   ML_Operator* Amat = &(ml->Amat[level]); //already created and filled
-  ML_Operator* Pmat = &(ml->Pmat[clevel]); // empty at this point
   prev_P_tentatives = ag->P_tentative; // for keep_P_tentative
 
   if (Amat->num_PDEs < ag->num_PDE_eqns) Amat->num_PDEs = ag->num_PDE_eqns;
@@ -253,6 +257,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   ML_Operator* Scaled_A = 0;
   Scaled_A = ML_Operator_ImplicitlyVScale(Amat, Dinv, 0);
+  ML_CommInfoOP_Clone(&(Scaled_A->getrow->pre_comm), Amat->getrow->pre_comm);
 
   ML_Operator* P_prime = ML_Operator_Create(P_0->comm);
   ML_2matmult(Scaled_A, P_0, P_prime, ML_CSR_MATRIX);
@@ -262,6 +267,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_Operator* P_second = 0;
 
   int n_0 = P_0->invec_leng;
+  int n_0_tot = ML_gsum_int(n_0, P_0->comm);
+
   vector<double> num(n_0);
   vector<double> den(n_0);
   vector<double> ColOmega(n_0);
@@ -339,12 +346,10 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     cout << "Prolongator Smoothing: Using energy minimization (scheme = " 
          << ag->minimizing_energy << ")" << endl;
     cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
-         << " (" << zero_all << " zeros out of " << n_0 << ")" << endl;
-    cout << endl;
+         << " (" << zero_all << " zeros out of " << n_0_tot << ")" << endl;
   }
 
   // convert the omega's from column-based to row-based
-  // FIXME: not working in parallel!
 
   vector<double> RowOmega(n);
   for (int i = 0 ; i < n ; i++) RowOmega[i] = DBL_MAX;
@@ -358,15 +363,18 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
     for  (int j = 0; j < row_length; j++) 
     {
-      int col = bindx[j];
-      int aggr = aggr_info[bindx[j]];
-      double omega = ColOmega[aggr];
-      if (omega < RowOmega[row]) RowOmega[row] = omega;
+      if (bindx[j] < n) // this is white magic
+      {
+        int aggr = aggr_info[bindx[j]];
+        double omega = ColOmega[aggr];
+        if (omega < RowOmega[row]) RowOmega[row] = omega;
+      }
     }
   }
 
   ML_Operator* Scaled_P_prime = 0;
   Scaled_P_prime = ML_Operator_ImplicitlyVScale(P_prime, &RowOmega[0], 0);
+  ML_CommInfoOP_Clone(&(Scaled_P_prime->getrow->pre_comm), P_prime->getrow->pre_comm);
 
   ML_Operator_Add(P_0, Scaled_P_prime, &(ml->Pmat[clevel]), 
                   ML_CSR_MATRIX, -1.0);
@@ -403,7 +411,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 // ====================================================================== 
 int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 {
-  int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
   ML_Operator **prev_P_tentatives;
   ML_Aggregate * ag = (ML_Aggregate *) data;
 
@@ -413,7 +420,6 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 #endif
 
   ML_Operator* Amat = &(ml->Amat[level]); //already created and filled
-  ML_Operator* Rmat = &(ml->Rmat[level]); // empty at this point
   prev_P_tentatives = ag->P_tentative; // for keep_P_tentative
   ML_Operator* P_0 = prev_P_tentatives[clevel]; // already created and filled
 
@@ -438,7 +444,8 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   ML_Operator* Scaled_A = 0;
   // FIXME: scale by rows or scale by columns??
-  Scaled_A = ML_Operator_ImplicitlyVCScale(Amat, Dinv, 0);
+  Scaled_A = ML_Operator_ImplicitlyVScale(Amat, Dinv, 0);
+  ML_CommInfoOP_Clone(&(Scaled_A->getrow->pre_comm), Amat->getrow->pre_comm);
 
   ML_Operator* Scaled_A_trans = ML_Operator_Create(P_0->comm);
   ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
@@ -450,6 +457,7 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_Operator* P_second = 0;
 
   int n_0 = P_0->invec_leng;
+  int n_0_tot = ML_gsum_int(n_0, P_0->comm);
   vector<double> num(n_0);
   vector<double> den(n_0);
   vector<double> ColOmega(n_0);
@@ -524,17 +532,15 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     cout << "Restriction Smoothing: Using energy minimization (scheme = " 
          << ag->minimizing_energy << ")" << endl;
     cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
-         << " (" << zero_all << " zeros out of " << n_0 << ")" << endl;
+         << " (" << zero_all << " zeros out of " << n_0_tot << ")" << endl;
     cout << endl;
   }
 
 
   // convert the omega's from column-based to row-based
-  // FIXME: not working in parallel!
 
   vector<double> RowOmega(n);
-  for (int i = 0 ; i < n ; i++) 
-    RowOmega[i] = DBL_MAX;
+  for (int i = 0 ; i < n ; i++) RowOmega[i] = DBL_MAX;
 
   int* aggr_info = ag->aggr_info[level];
 
@@ -545,15 +551,20 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 
     for  (int j = 0; j < row_length; j++) 
     {
-      int col = bindx[j];
-      int aggr = aggr_info[bindx[j]];
-      double omega = ColOmega[aggr];
-      if (omega < RowOmega[row]) RowOmega[row] = omega;
+      int pos = bindx[j];
+      if (pos < n) // another big of magic
+      {
+        int aggr = aggr_info[pos];
+        double omega = ColOmega[aggr];
+        if (omega < RowOmega[row]) RowOmega[row] = omega;
+      }
     }
   }
 
   ML_Operator* Scaled_P_prime = 0;
   Scaled_P_prime = ML_Operator_ImplicitlyVScale(P_prime, &RowOmega[0], 0);
+  ML_CommInfoOP_Clone(&(Scaled_P_prime->getrow->pre_comm), 
+                      P_prime->getrow->pre_comm);
 
   ML_Operator* temp = ML_Operator_Create(P_0->comm);
   ML_Operator_Add(P_0, Scaled_P_prime, temp, ML_CSR_MATRIX, -1.0);
