@@ -2976,17 +2976,29 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      ml->symmetrize_matrix = ML_FALSE;
      ag->keep_P_tentative = ML_YES;
      ag->use_transpose = ML_TRUE;
-
      
    }
    
-   if (ag->minimizing_energy == ML_TRUE)
-     ML_AGG_Gen_Prolongator_MinEnergy(ml,level,clevel,data);   
-   else
+   /* Added on Jul-05 */
+   switch (ag->minimizing_energy) {
+   case 0:
      ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
+     break;
+   case 1: /* Z_1 */
+   case 2: /* Z_2 */
+   case 3: /* Z_1 */
+     ML_AGG_Gen_Prolongator_MinEnergy(ml,level,clevel,data);   
+     break;
+   default:
+     printf("Value of ag->minimizing_energy not correct (%d)\n"
+            "(file %s, line %d)\n",
+            ag->minimizing_energy,
+            __FILE__,
+            __LINE__);
+     exit(EXIT_FAILURE);
+   }
    
    return 0;
-           
 }
 
 /* ************************************************************************* */
@@ -2996,7 +3008,6 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
 int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 {
-
   ML_Operator *Amat;
   ML_Aggregate *ag = (ML_Aggregate *) data;
 
@@ -3064,15 +3075,31 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
     
     ML_AGG_Gen_Prolongator(ml,level,next,data);
 
-  }  else {
+  } else {
     
-    ML_Gen_Restrictor_TransP(ml, level, next);
-    
+    /* Added on Jul-05 */
+    switch (ag->minimizing_energy) {
+    case 0:
+      ML_Gen_Restrictor_TransP(ml, level, next);   
+      break;
+    case 1: /* Z_1 */
+    case 2: /* Z_2 */
+    case 3: /* Z_3 */
+      ML_AGG_Gen_Restriction_MinEnergy(ml, level, next, data);   
+      break;
+    default:
+      printf("Value of ag->minimizing_energy not correct (%d)\n"
+             "(file %s, line %d)\n",
+             ag->minimizing_energy,
+             __FILE__,
+             __LINE__);
+      exit(EXIT_FAILURE);
+    }
   }
 
   return 0;
-  
 }
+
 /*
  * This routine is used for block diagonal scaling in the prolongator
  * Smoother. Essentially, it takes the matrix Ptemp and multiplies

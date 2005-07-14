@@ -78,6 +78,7 @@ extern int ML_Gen_MGHierarchy(ML *, int fine_level,
                void *data, ML_Aggregate *);
 extern int  ML_AGG_Gen_Prolongator(ML*,int ,int,void *data);
 extern int  ML_AGG_Gen_Prolongator_MinEnergy(ML*,int ,int,void *data);
+extern int  ML_AGG_Gen_Restriction_MinEnergy(ML*,int ,int,void *data);
 extern int  ML_AGG_Increment_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Decrement_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Increment_Two_Level(ML *, int current_level, void *);
