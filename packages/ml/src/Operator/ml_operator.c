@@ -973,6 +973,52 @@ int ML_implicitscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
   return(status);
 }
 
+/* ******************************************************************** */
+/* Getrow function that is used to scale matrix elements by a vector.   */
+/* ML_Operator_ImplicitlyVScaleMatrix() was previously called to        */
+/* properly set up the data structure (data).                           */
+/* ******************************************************************** */
+
+
+int ML_implicitvscale_Getrow(ML_Operator *data, int N_requested_rows, 
+			       int requested_rows[], int allocated_space, 
+			       int columns[], double values[], 
+			       int row_lengths[])
+{
+   struct ml_matvscale *temp;
+   double* scale;
+   int    i, status = 1, size = 0;
+ 
+   if (N_requested_rows > 1) {
+      printf("ML_implicitvscale_getrow: Not implemented for > 1 row at a time\n");
+      exit(1);
+   }
+   temp = (struct ml_matvscale *) ML_Get_MyGetrowData(data);
+   scale = temp->scale;
+   status = ML_Operator_Getrow(temp->Amat, N_requested_rows, requested_rows,
+			       allocated_space, columns,
+			       values, &size );
+   if (status) {
+     for (i = 0; i < size; i++) values[i]*= scale[i];
+     row_lengths[0] = size;
+   }
+   return(status);
+}
+
+int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
+			    int olen, double ap[])
+{
+  struct ml_matscale *temp;
+  double scalar;
+  int    status = 1, i;
+
+  printf("ML_implicitvscale_Matvec is not implemented yet\n"
+         "(file %s, line %d)\n",
+         __FILE__, __LINE__);
+  exit(EXIT_FAILURE);
+
+  return(status);
+}
 
 
 /* ******************************************************************** */
@@ -1250,6 +1296,52 @@ void ML_implicitscale_Destroy(void *data)
    }
 }
 
+/* ******************************************************************** */
+/* Modify matrix so that it uses a getrow wrapper that will effectively */
+/* scale the matrix. Scaling is a VECTOR.                               */
+/* NOTE: I suppose that the scale array is made available by the user   */
+/* during the whole life of the created operator. This is fragile!      */
+/* ******************************************************************** */
+
+ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, double* scale,
+                                          int OnDestroy_FreeChild)
+{
+  ML_Operator *matrix;
+  struct ml_matvscale *new_data;
+
+  matrix = ML_Operator_Create(Amat->comm);
+
+  new_data = (struct ml_matvscale *) ML_allocate( sizeof(struct ml_matscale));
+  if (new_data == NULL) {
+    printf("ML_Operator_ImplicitlyVScale: out of space\n");
+    return NULL;
+    exit(1);
+  }
+  new_data->Amat          = Amat;
+  new_data->scale         = scale;
+  new_data->destroy_child = 0;
+  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng, 
+				Amat->outvec_leng,new_data,
+				Amat->matvec->Nrows, ML_implicitvscale_Matvec,
+				Amat->from_an_ml_operator);
+
+
+  ML_Operator_Set_Getrow(matrix,Amat->getrow->Nrows,ML_implicitvscale_Getrow);
+  matrix->data_destroy   = ML_implicitvscale_Destroy;
+  if (OnDestroy_FreeChild) new_data->destroy_child = 1;
+
+  return matrix;
+}
+void ML_implicitvscale_Destroy(void *data)
+{
+   struct ml_matvscale *temp;
+
+   temp = (struct ml_matvscale *) data;
+   if (temp != NULL) {
+     if (temp->destroy_child) ML_Operator_Destroy( &(temp->Amat));
+      ML_free(temp);
+   }
+}
 
 /* ******************************************************************** */
 /* ******************************************************************** */

@@ -168,6 +168,17 @@ struct ml_matscale {
   int         destroy_child;
 };
 
+/* -------------------------------------------------------------------- */
+/*  This structure is used to implicitly scale a matrix with a vector.  *
+ *  It extends ml_matscale.                                             */
+/* -------------------------------------------------------------------- */
+
+struct ml_matvscale {
+  ML_Operator *Amat;
+  double*     scale;
+  int         destroy_child;
+};
+
 /* ******************************************************************** */
 /* ******************************************************************** */
 /*      User Interface Proto-types                                      */
@@ -248,6 +259,7 @@ extern int ML_Operator_Check_Getrow(ML_Operator *, int, char*);
 extern double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag);
 extern int ML_Operator_Print(ML_Operator *matrix, const char label[]);
 extern int ML_Operator_ComputeNumNzs(ML_Operator *matrix);
+/* Operator Scaling */
 extern int ML_implicitscale_Getrow(ML_Operator *data, int N_requested_rows, 
 				   int requested_rows[], int allocated_space, 
 				   int columns[], double values[], 
@@ -258,8 +270,18 @@ extern ML_Operator *ML_Operator_ImplicitlyScale(ML_Operator *Amat,
 						double scalar,
 						int OnDestroy_FreeChild);
 extern void ML_implicitscale_Destroy(void *data);
-
-
+/* Operator Scaling with a vector */
+extern int ML_implicitvscale_Getrow(ML_Operator *data, int N_requested_rows, 
+				   int requested_rows[], int allocated_space, 
+				   int columns[], double values[], 
+				   int row_lengths[]);
+extern int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
+				   int olen, double ap[]);
+extern ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, 
+                                                 double* scale,
+                                                 int OnDestroy_FreeChild);
+extern void ML_implicitvscale_Destroy(void *data);
+/* amalagamation routines */
 extern int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size, 
                double drop_tolerance);
 
