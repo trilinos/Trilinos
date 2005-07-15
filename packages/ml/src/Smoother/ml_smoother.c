@@ -55,12 +55,15 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_op_utils.h"
-#include "ml_epetra_utils.h"
 
 /* A special version of dgetrs which is supposed to be optimized. */
 /* NOTE: it is assumed that ML_permute_for_dgetrs_special() has   */
 /* been called before to shuffle around the LU factors produced by*/
 /* LAPACK.                                                        */
+
+#ifdef ML_WITH_EPETRA
+extern int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int **rowptr);
+#endif
 
 int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv, double *correc  )
 {
