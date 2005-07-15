@@ -32,10 +32,14 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
+#include "Tpetra_OmniPlatformData.hpp"
 #include "Tpetra_SerialComm.hpp"
 #ifdef TPETRA_MPI
+#include <mpi.h>
 #include "Tpetra_MpiComm.hpp"
-#include "Tpetra_MpiData.hpp"
+#endif
+#ifdef TPETRA_THREADED_MPI
+// -- includes for a threaded MPI would go here --
 #endif
 
 namespace Tpetra {
@@ -45,35 +49,80 @@ namespace Tpetra {
 	class OmniPlatform : public Object {
 	public:
 
-		enum CommType { GENERIC, SERIAL, MPI };
+		enum CommType { GENERIC, SERIAL, MPI, THREADED_MPI };
 	
 		//@{ \name Constructor/Destructor Methods
 		
 		//! Constructor (serial)
 		OmniPlatform() 
 			: Object("Tpetra::OmniPlatform(Serial)")
-		{}
+			, OmniPlatformData_()
+		{
+			OmniPlatformData_ = Teuchos::rcp(new OmniPlatformData());
+		}
 
 #ifdef TPETRA_MPI
 		//! Constructor (MPI)
 		OmniPlatform(MPI_Comm Comm)
 			: Object("Tpetra::OmniPlatform(MPI)")
-			, MpiData_()
+		    , OmniPlatformData_()
 		{
-			MpiData_ = Teuchos::rcp(new MpiData(Comm));
+			OmniPlatformData_ = Teuchos::rcp(new OmniPlatformData(Comm));
 		}
+#endif
+
+#ifdef TPETRA_THREADED_MPI
+		// -- A constructor for a threaded MPI would go here --
 #endif
 
 		//! Copy constructor
 		OmniPlatform(OmniPlatform const& rhs)
 			: Object(rhs.label())
-#ifdef TPETRA_MPI
-			, MpiData_(rhs.MpiData_)
-#endif
+			, OmniPlatformData_(rhs.OmniPlatformData_)
 		{}
 
 		//! Destructor
 		~OmniPlatform() {}
+
+		//@}
+
+		//@{ \name Attribute Accessor Methods
+
+		//! isEnabled - Returns true if the specified CommType is enabled in the Platform.
+		bool isEnabled(CommType const& ct) const {
+			bool enabled = false;
+
+			switch (ct) {
+			case GENERIC:
+				enabled = isEnabled(getGeneric());
+				break;		
+			case SERIAL:
+				enabled = data().serialEnabled_;
+				break;
+			case MPI:
+				enabled = data().mpiEnabled_;
+				break;
+			case THREADED_MPI:
+				enabled = data().threadedMpiEnabled_;
+				break;
+			default:
+				throw reportError("Unknown CommType", -99);
+				break;
+			}
+
+			return(enabled);
+		}
+
+		//! getGeneric - Returns the CommType of the generic communications library we're using.
+		/*! This is how we decide which type of Comm to create if more than one is enabled. */
+		CommType getGeneric() const {
+			if(isEnabled(THREADED_MPI))
+				return(THREADED_MPI);
+			else if(isEnabled(MPI))
+				return(MPI);
+			else
+				return(SERIAL);
+		}
 
 		//@}
 	
@@ -89,6 +138,9 @@ namespace Tpetra {
 		*/
 		template <typename PacketType, typename OrdinalType>
 		void createComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm, CommType ct = GENERIC) const {
+			if(!isEnabled(ct))
+				throw reportError("That CommType is not enabled", -1);
+
 			switch(ct) {
 
 			case SERIAL:
@@ -99,12 +151,12 @@ namespace Tpetra {
 				createMpiComm(comm);
 				break;
 
+			case THREADED_MPI:
+				createThreadedMpiComm(comm);
+				break;
+
 			case GENERIC:
-#ifdef TPETRA_MPI
-				createMpiComm(comm);
-#else
-				createSerialComm(comm);
-#endif
+				createComm(comm, getGeneric());
 				break;
 
 			default:
@@ -118,9 +170,9 @@ namespace Tpetra {
 		//@{ \name I/O Methods
 
 		//! print - implements Tpetra::Object virtual print method.
-		//void print(ostream& os) const {
-		//	os << label();
-		//}
+		void print(ostream& os) const {
+			// ..
+		}
 
 		//@}
 
@@ -136,17 +188,28 @@ namespace Tpetra {
 		template <typename PacketType, typename OrdinalType>
 		void createMpiComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
 #ifdef TPETRA_MPI
-			comm = Teuchos::rcp(new MpiComm<PacketType, OrdinalType>(MpiData_));
+			comm = Teuchos::rcp(new MpiComm<PacketType, OrdinalType>(data().MpiComm_));
 #else
-			throw reportError("Mpi is not enabled.", -1);
+			throw reportError("MPI is not enabled.", -1);
 #endif
 		}
 
+		template <typename PacketType, typename OrdinalType>
+		void createThreadedMpiComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
+#ifdef TPETRA_THREADED_MPI
+			// -- creation of a Tpetra::ThreadedMpiComm would go here --
+#else
+			throw reportError("Threaded MPI is not enabled.", -1);
+#endif
+		}
+
+		// convenience functions for returning inner data class, both const and nonconst versions.
+		OmniPlatformData& data() {return(*OmniPlatformData_);};
+		OmniPlatformData const& data() const {return(*OmniPlatformData_);};
+
 		// private data members
 
-#ifdef TPETRA_MPI
-		Teuchos::RefCountPtr<MpiData> MpiData_;
-#endif
+		Teuchos::RefCountPtr<OmniPlatformData> OmniPlatformData_;
 	
 	}; // OmniPlatform class
 	

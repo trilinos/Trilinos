@@ -151,28 +151,49 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 		cout << "Creating op2's Comm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<PacketType, OrdinalType> > op2_comm;
 	op2.createComm(op2_comm);
-	if(debug)
+	if(debug) {
 		op2_comm->printInfo(cout);
+		cout.flush();
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
 	if(verbose) 
 		cout << "Creating op2's SerialComm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<PacketType, OrdinalType> > op2_serialcomm;
 	op2.createComm(op2_serialcomm, Tpetra::OmniPlatform::SERIAL);
-	if(debug)
+	if(debug) {
 		op2_serialcomm->printInfo(cout);
+		cout.flush();
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+	if(verbose) 
+		cout << "Creating op2's MpiComm..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Comm<PacketType, OrdinalType> > op2_mpicomm;
+	op2.createComm(op2_mpicomm, Tpetra::OmniPlatform::MPI);
+	if(debug) {
+		op2_mpicomm->printInfo(cout);
+		cout.flush();
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
 
 	// assert that size and rank are correct
 	mIID = op2_comm->getMyImageID();
 	nI = op2_comm->getNumImages();
 	if(mIID != myImageID)
-		cout << "** op2_comm.getMyImageID() = " << mIID << ", expected 0" << endl;
+		cout << "** op2_comm.getMyImageID() = " << mIID << ", expected " << myImageID << endl;
 	if(nI != numImages)
-		cout << "** op2_comm.getNumImages() = " << nI << ", expected 1" << endl;
+		cout << "** op2_comm.getNumImages() = " << nI << ", expected " << numImages << endl;
 	mIID = op2_serialcomm->getMyImageID();
 	nI = op2_serialcomm->getNumImages();
 	if(mIID != 0)
 		cout << "** op2_serialcomm.getMyImageID() = " << mIID << ", expected 0" << endl;
 	if(nI != 1)
 		cout << "** op2_serialcomm.getNumImages() = " << nI << ", expected 1" << endl;
+	mIID = op2_mpicomm->getMyImageID();
+	nI = op2_mpicomm->getNumImages();
+	if(mIID != myImageID)
+		cout << "** op2_mpicomm.getMyImageID() = " << mIID << ", expected " << myImageID << endl;
+	if(nI != numImages)
+		cout << "** op2_mpicomm.getNumImages() = " << nI << ", expected " << numImages << endl;
 #endif
 
 	if(verbose) cout << "Finished OmniPlatform testing." << endl;

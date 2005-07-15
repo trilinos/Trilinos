@@ -30,10 +30,13 @@
 #define TPETRA_DISTOBJECT_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Comm.hpp"
 
 namespace Tpetra {
 
@@ -56,52 +59,83 @@ namespace Tpetra {
 		functions produce small dense matrices that are required by all images.  
 		Replicated local objects handle these types of situation.
 		</ul>
+
+		DistObject error codes (positive for non-fatal, negative for fatal):
+		<ol>
+		<li> -1  importer's target ElementSpace does not match my ElementSpace
+		<li> -2  importer's source ElementSpace does not match sourceObj's ElementSpace
+		<li> -99 Internal DistObject error. Contact developer.
+		</ol>
 		
 	*/
 
 	template<typename OrdinalType, typename ScalarType>
-	class DistObject: public virtual Object {
+	class DistObject: public Object {
 
 	public:
+
+		//@{ \name Constructor/Destructor Methods
 
 		//! constructor
 		DistObject(ElementSpace<OrdinalType> const elementspace)
 			: Object("Tpetra::DistObject")
 			, ElementSpace_(elementspace)
+			, ordinalImports_()
+			, scalarImports_()
+			, ordinalExports_()
+			, scalarExports_()
 		{}
 
 		//! constructor, taking label
 		DistObject(ElementSpace<OrdinalType> const elementspace, std::string const& label)
 			: Object(label)
 			, ElementSpace_(elementspace)
+			, ordinalImports_()
+			, scalarImports_()
+			, ordinalExports_()
+			, scalarExports_()
+			, sizes_()
 		{}
 
 		//! copy constructor
 		DistObject(DistObject<OrdinalType, ScalarType> const& DistObject)
 			: Object(DistObject.label())
 			, ElementSpace_(DistObject.ElementSpace_)
+			, ordinalImports_(DistObject.ordinalImports_)
+			, scalarImports_(DistObject.scalarImports_)
+			, ordinalExports_(DistObject.ordinalExports_)
+			, scalarExports_(DistObject.scalarExports_)
+			, sizes_(DistObject.sizes_)
 		{}
 
 		//! destructor
 		virtual ~DistObject() {}
+
+		//@}
+
+		//@{ \name Import/Export Methods
 
 		//! Import
 		int doImport(DistObject<OrdinalType, ScalarType> const& sourceObj, 
 					 Import<OrdinalType> const& importer, 
 					 CombineMode CM) 
 		{
-			// throw exception if my ElementSpace != importer.getTargetSpace()
-			// throw exception if sourceObj's ElementSpace != importer.getSourceSpace()
+			// throw exception -1 if my ElementSpace != importer.getTargetSpace()
+			if(elementspace() != importer.getTargetSpace())
+				throw reportError("Target ElementSpaces don't match", -1);
+			// throw exception -2 if sourceObj's ElementSpace != importer.getSourceSpace()
+			if(sourceObj.elementspace() != importer.getSourceSpace())
+				throw reportError("Source ElementSpaces don't match", -2);
 
 			// copy variables from importer
 			OrdinalType numSameIDs = importer.getNumSameIDs();
 			OrdinalType numPermuteIDs = importer.getNumPermuteIDs();
 			OrdinalType numRemoteIDs = importer.getNumRemoteIDs();
 			OrdinalType numExportIDs = importer.getNumExportIDs();
-			std::vector<OrdinalType> exportLIDs = importer.getExportLIDs();
-			std::vector<OrdinalType> remoteLIDs = importer.getRemoteLIDs();
-			std::vector<OrdinalType> permuteToLIDs = importer.getPermuteToLIDs();
-			std::vector<OrdinalType> permuteFromLIDs = importer.getPermuteFromLIDs();
+			std::vector<OrdinalType> const& exportLIDs = importer.getExportLIDs();
+			std::vector<OrdinalType> const& remoteLIDs = importer.getRemoteLIDs();
+			std::vector<OrdinalType> const& permuteToLIDs = importer.getPermuteToLIDs();
+			std::vector<OrdinalType> const& permuteFromLIDs = importer.getPermuteFromLIDs();
 
 			// call doTransfer
 			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
@@ -114,10 +148,18 @@ namespace Tpetra {
 
 		// ** TO DO: Add the three other forms of doImport/doExport **
 
+		//@}
+
+		//@{ \name I/O methods
+
 		//! print method
 		virtual void print(ostream& os) const {
 			// ...
 		}
+
+		//@}
+
+		//@{ \name Attribute Accessor Methods
 
 		//! Accessor for whether or not this is a global object
 		bool isGlobal() const {
@@ -128,6 +170,8 @@ namespace Tpetra {
 		ElementSpace<OrdinalType> const& elementspace() const {
 			return(ElementSpace_);
 		}
+
+		//@}
 
 	protected:
  
@@ -147,8 +191,39 @@ namespace Tpetra {
 							   std::vector<OrdinalType> ordinalImports,
 							   std::vector<ScalarType> scalarImports,
 							   Distributor<OrdinalType> const& distor,
-							   bool doReverse) {
-			// ...
+							   bool doReverse) 
+		{
+			OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+
+			checkSizes(sourceObj);
+
+			if(numSameIDs + numPermuteIDs > zero)
+				copyAndPermute(sourceObj, numSameIDs, numPermuteIDs, permuteToLIDs, permuteFromLIDs);
+
+			// we don't have a "Zero" CombineMode like Epetra does, so we don't have to check for that
+
+			OrdinalType sizeOfPacket;
+			bool varSizes = false;
+			if((!sizes_.empty()) && (numExportIDs > zero))
+				sizes_.resize(numExportIDs);
+			packAndPrepare(sourceObj, numExportIDs, exportLIDs, ordinalExports, scalarExports, distor);
+
+			if((isGlobal() && doReverse) || (sourceObj.elementspace().isGlobal() && !doReverse)) {
+				if(doReverse) {
+					if(varSizes)
+						; // call var-sized doReversePostsAndWaits
+					else
+						; // call doReversePostsAndWaits
+				}
+				else {
+					if(varSizes)
+						; // call var-sized doPostsAndWaits
+					else
+						; // call doPostsAndWaits
+				}
+				unpackAndCombine(sourceObj, numRemoteIDs, remoteLIDs, ordinalImports, scalarImports, distor, CM);
+			}
+
 			return(0);
 		}
 
@@ -188,6 +263,7 @@ namespace Tpetra {
 		std::vector<ScalarType> scalarImports_;
 		std::vector<OrdinalType> ordinalExports_;
 		std::vector<ScalarType> scalarExports_;
+		std::vector<OrdinalType> sizes_;
 
 	}; // class DistObject
 

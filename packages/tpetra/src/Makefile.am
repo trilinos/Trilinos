@@ -41,6 +41,7 @@ CORE_H = \
 	$(srcdir)/Tpetra_MsgType.hpp \
 	$(srcdir)/Tpetra_Platform.hpp \
 	$(srcdir)/Tpetra_OmniPlatform.hpp \
+	$(srcdir)/Tpetra_OmniPlatformData.hpp \
 	$(srcdir)/Tpetra_Comm.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \
 	$(srcdir)/Tpetra_Directory.hpp
