@@ -35,6 +35,7 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziLOBPCG.hpp"
+#include "AnasaziBasicSort.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
@@ -92,13 +93,25 @@ int main(int argc, char *argv[])
   // Set verbosity level
   MyOM->SetVerbosity( Anasazi::FinalSummary );
 
+  // Create the sort manager
+  std::string which;
+  if (argc > 1) {
+    which = argv[1];
+  }
+  else {
+    which = "SM";
+  }
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
+     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
+
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
+  Teuchos::RefCountPtr<ModalProblem> testCase = 
+    Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
   
   // Get the stiffness and mass matrices
   Teuchos::RefCountPtr<Epetra_Operator> K = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
   Teuchos::RefCountPtr<Epetra_Operator> M = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
-  
+
   // Eigensolver parameters
   int nev = 10;
   int blockSize = 5;
@@ -111,37 +124,38 @@ int main(int argc, char *argv[])
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Max Iters", maxIters );
   MyPL.set( "Tol", tol );
-  
+
   // Create eigenproblem
 
   Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
-  
+
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
-  
+
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(true);
-  
+
   // Set the number of eigenvalues requested and the blocksize the solver should use
   MyProblem->SetNEV( nev );
-  
+
   // Inform the eigenproblem that you are finishing passing it information
   info = MyProblem->SetProblem();
   if (info)
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-  
+
   // Create the eigensolver
-  
-  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
-  
+
+  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+
   // Solve the problem to the specified tolerances or length
 
   returnCode = MySolver.solve();
 
   // Check that the solver returned Ok, if not exit example
-  if (returnCode != Anasazi::Ok)
+  if (returnCode != Anasazi::Ok) {
     return -1;
+  }
   
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
@@ -150,8 +164,9 @@ int main(int argc, char *argv[])
   // Compute the direct residual
   std::vector<double> normV( evecs->NumVectors() );
   Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
-  for (int i=0; i<evecs->NumVectors(); i++)
+  for (int i=0; i<evecs->NumVectors(); i++) {
     T(i,i) = (*evals)[i];
+  }
   Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
   K->Apply( *evecs, Kvec );  
   Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );

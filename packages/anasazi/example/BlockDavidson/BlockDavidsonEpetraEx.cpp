@@ -268,7 +268,13 @@ int main(int argc, char *argv[]) {
 	MyOM->SetVerbosity( Anasazi::FinalSummary );	
 
 	// Create a sort manager
-	std::string which("SM");
+  std::string which;
+  if (argc > 1) {
+    which = argv[1];
+  }
+  else {
+    which = "SM";
+  }
 	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
 	  Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 	
