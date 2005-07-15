@@ -63,9 +63,11 @@ typedef struct RCB_Struct {
   struct Dot_Struct *Dots;     
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
-  int Num_Dim;               /* Number of dimensions in the input geometry. */
-  int Skip_Dimensions;           /* if degenerate geometry, skip 1 or 2 dims */
-  double Transformation[3][3];   /* to align deg. geom along XY plane */
+  int Num_Dim;    /* Number of dimensions in the input geometry. */
+  int Target_Dim;              /* 1 or 2 - geometry is degenerate, and will 
+                                  treated as 1D or 2D.
+                                  0 - geometry is not degenerate */
+  double Transformation[3][3]; /* transforms degenerate geometry to 2D or 1D */
 } RCB_STRUCT;
 
 extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, int);
