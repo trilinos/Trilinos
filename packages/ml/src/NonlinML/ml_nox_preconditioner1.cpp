@@ -984,8 +984,10 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   }
 
 #if 1  
-  Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_collapsedcoloring(graph,bsize,false);
-  if (!colorMap)      colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
+  Epetra_MapColoring* colorMap 
+            = ML_NOX::ML_Nox_collapsedcoloring(graph,bsize,false,ml_printlevel_);
+  if (!colorMap) 
+    colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
 #else
   Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
 #endif

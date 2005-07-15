@@ -18,7 +18,8 @@ namespace ML_NOX
   Epetra_CrsGraph* ML_NOX::deepcopy_graph(const Epetra_CrsGraph* oldgraph);
   Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph, 
                                                      const int bsize,
-                                                     bool diagonalonly);
+                                                     bool diagonalonly,
+						     int printlevel);
   Epetra_MapColoring* ML_NOX::ML_Nox_standardcoloring(Epetra_CrsGraph* graph,
                                                       bool diagonalonly);
 }
