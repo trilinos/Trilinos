@@ -19,6 +19,7 @@ extern "C" {
 
 
 #include "hsfc.h"
+#include "zz/zz_util_const.h"
 
 /* For a detailed explaination of this module, please see the Developers
    Guide.  For instructions on its use, please see the Users Guide.   */
@@ -47,22 +48,15 @@ int Zoltan_HSFC_Point_Assign (
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,
        "No Decomposition Data available; use KEEP_CUTS parameter.");
 
-   if (d->Skip_Dimensions > 0){
-     pt[1] = pt[2] = 0.0;
-     pt[0] = d->Transformation[0][0]*x[0] +
-             d->Transformation[0][1]*x[1] +
-             d->Transformation[0][2]*x[2];
-     if (d->Skip_Dimensions == 1){
-       pt[1] = d->Transformation[1][0]*x[0] +
-               d->Transformation[1][1]*x[1] +
-               d->Transformation[1][2]*x[2];
-     }
-     dim = d->ndimension - d->Skip_Dimensions;
+   for (i=0; i<d->ndimension; i++){
+     pt[i] = x[i];  /* we don't want to change caller's "x" */
+   }
+
+   if (d->Target_Dim > 0){   /* degenerate geometry */
+     dim = d->Target_Dim;
+     Zoltan_Transform_Point(pt, d->Transformation, d->ndimension, dim, pt);
    }
    else{
-     pt[0] = x[0];
-     pt[1] = x[1];
-     pt[2] = x[2];
      dim = d->ndimension;
    }
 
@@ -78,6 +72,7 @@ int Zoltan_HSFC_Point_Assign (
    /* Find partition containing point and return its number */
    p = (Partition *) bsearch (&fsfc, d->final_partition, zz->LB.Num_Global_Parts,
     sizeof (Partition), Zoltan_HSFC_compare);
+
    if (p == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen");
    if (part != NULL) {
