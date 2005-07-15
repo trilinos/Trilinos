@@ -31,7 +31,6 @@ extern "C" {
 #include "hsfc.h"
 #include <float.h>
 
-
 /****************************************************************************/
 
 /* This structure is the Zoltan convention for user settable parameters */
@@ -157,16 +156,15 @@ int Zoltan_HSFC(
    if (err != 0) 
       ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Error in Zoltan_Get_Coordinates.");
 
-   if (d->Skip_Dimensions > 0){  /* calculated in Zoltan_Get_Coordinates */
-     dim = d->ndimension - d->Skip_Dimensions;
+   if (d->Target_Dim > 0){  /* degenerate geometry */
+     dim = d->Target_Dim;
    }
    else{
      dim = d->ndimension;
    }
 
-   for (i = 0; i < ndots; i++) {
-      tmp = i*d->ndimension;
-      for (j = 0; j < dim; j++){
+   for (i = 0, tmp=0; i < ndots; i++, tmp += d->ndimension) {
+      for (j = 0; j < d->ndimension; j++){
          dots[i].x[j] = geom_vec[tmp + j];
       }
    }
@@ -352,7 +350,6 @@ int Zoltan_HSFC(
       grand_partition[0].l        = 0.0;
       grand_partition[pcount-1].r = 1.0 + (2.0 * FLT_EPSILON) ;
       } /* end of loop */
-
 
    ZOLTAN_TRACE_DETAIL (zz, yo, "Exited main loop");
    Zoltan_Multifree (__FILE__, __LINE__, 3, &grand_weight, &partition, &delta);
@@ -560,6 +557,7 @@ int Zoltan_HSFC(
 
 End:
    MPI_Op_free (&mpi_op);
+
    Zoltan_Multifree (__FILE__, __LINE__, 12, &dots, &gids, &lids, &partition,
     &grand_partition, &grand_weight, &temp_weight, &weights, &target, &delta,
     &parts, &tsum);
@@ -635,7 +633,7 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   to->ndimension = from->ndimension;
   to->fhsfc = from->fhsfc;
-  to->Skip_Dimensions = from->Skip_Dimensions;
+  to->Target_Dim = from->Target_Dim;
 
   if (from->final_partition){
     len = sizeof(Partition) * fromZZ->LB.Num_Global_Parts;
@@ -683,9 +681,9 @@ Partition *p;
       data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
       data->ndimension, data->fhsfc);
 
-  if (data->Skip_Dimensions > 0){
+  if (data->Target_Dim > 0){
     printf("Degenerate geometry:\n");
-    printf("  skip number of dimensions: %d, transformation:\n",data->Skip_Dimensions);
+    printf("  Transform coordinates to %d dimensions, transformation:\n",data->Target_Dim);
     for (i=0; i<3; i++){
       printf("    %lf %lf %lf\n", data->Transformation[i][0], 
              data->Transformation[i][1], data->Transformation[i][2]);
