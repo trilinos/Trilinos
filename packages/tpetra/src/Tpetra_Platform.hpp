@@ -32,7 +32,6 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Comm.hpp"
-#include "Tpetra_Directory.hpp"
 
 namespace Tpetra {
 
@@ -42,12 +41,12 @@ namespace Tpetra {
 	//! Tpetra::Platform: The Tpetra Platform Abstract Base Class
 	/*! Platform is an abstract base class. It should never be called directly.
 	    Rather, an implementation of Platform, such as SerialPlatform, should be used instead.
-		Platform is used to generate Comm, Distributor, and Directory instances. It also manages 
-		platform-specific information, such as how inter-image communication is implemented.
+		Platform is used to generate Comm instances. It also manages platform-specific information, 
+		such as how inter-image communication is implemented.
 		An implementation of Platform, such as SerialPlatform, will create corresponding classes,
-		such as SerialComm and SerialDistributor. These will then be cast to their base class,
-		and passed back to other Tpetra modules. As a result, other Tpetra modules don't need to know
-		anything about the platform they're running on, or any implementation-specific details.
+		such as SerialComm. These will then be cast to their base class, and passed back to 
+		other Tpetra modules. As a result, other Tpetra modules don't need to know anything about 
+		the platform they're running on, or any implementation-specific details.
 
 		NOTE: Methods that return a new object (such as clone, createComm, etc.) return them 
 		encapsulated in a Teuchos RefCountPtr object. This is done whenever the new object is
@@ -76,9 +75,6 @@ namespace Tpetra {
 		//! Comm Instances
 		virtual Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const = 0;
 		virtual Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
-
-		//! Directory Instance
-		virtual Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
 
 		//@}
 	

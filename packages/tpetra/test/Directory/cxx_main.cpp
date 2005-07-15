@@ -28,7 +28,7 @@
 
 #include "../tpetra_test_util.hpp"
 #include "Tpetra_ElementSpace.hpp"
-#include "Tpetra_BasicDirectory.hpp"
+#include "Tpetra_Directory.hpp"
 #include "Tpetra_Util.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
@@ -125,7 +125,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	if(verbose) cout << "Testing Directory using a uniform contiguous ElementSpace (ES ctr 1)... " << endl;
 	numGlobalElements = intToOrdinal<OrdinalType>(10); // 10 elements, distributed uniformly by ES
 	Tpetra::ElementSpace<OrdinalType> es1(numGlobalElements, indexBase, platform);
-	Tpetra::BasicDirectory<OrdinalType> directory1(es1);
+	Tpetra::Directory<OrdinalType> directory1(es1);
 
 	// fill allGIDs with {0, 1, 2... 9}
 	for(OrdinalType i = zero; i < numGlobalElements; i++)
@@ -214,7 +214,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	numGlobalElements = (numImages * numImages + numImages) / 2;
 	
 	Tpetra::ElementSpace<OrdinalType> es2(numGlobalElements, numMyElements, indexBase, platform);
-	Tpetra::BasicDirectory<OrdinalType> directory2(es2);
+	Tpetra::Directory<OrdinalType> directory2(es2);
 	
 	// fill allGIDs with {0, 1, 2... nGE}
 	allGIDs.resize(numGlobalElements);
@@ -303,7 +303,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	generateColumn(myGIDs, myImageID, numMyElements);
 
 	Tpetra::ElementSpace<OrdinalType> es3(numGlobalElements, numMyElements, myGIDs, indexBase, platform);
-	Tpetra::BasicDirectory<OrdinalType> directory3(es3);
+	Tpetra::Directory<OrdinalType> directory3(es3);
 
 	// fill allGIDs with values from generator
 	generateMultipleColumns(allGIDs, 0, numImages-1, numMyElements);

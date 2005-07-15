@@ -33,7 +33,6 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_SerialComm.hpp"
-#include "Tpetra_BasicDirectory.hpp"
 
 namespace Tpetra {
 
@@ -80,13 +79,6 @@ namespace Tpetra {
 			Teuchos::RefCountPtr< SerialComm<OrdinalType, OrdinalType> > comm;
 			comm = Teuchos::rcp(new SerialComm<OrdinalType, OrdinalType>());
 			return(comm);
-		};
-
-		//! Directory Instance
-		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-			Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
-			directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
-			return(directory);
 		};
 
 		//@}

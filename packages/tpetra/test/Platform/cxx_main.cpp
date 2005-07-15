@@ -275,14 +275,4 @@ void codeCoverage(bool verbose, bool debug, int myImageID, int numImages) {
 	// createOrdinalComm
 	if(verbose) cout << "createOrdinalComm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, OrdinalType> > comm2 = platform.createOrdinalComm();
-
-	// create Directory
-	if(verbose) cout << "createDirectory..." << endl;
-#ifdef TPETRA_MPI
-	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformO(MPI_COMM_WORLD);
-#else
-	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
-#endif
-	Tpetra::ElementSpace<OrdinalType> elementspace(10, 0, platformO);
-	Teuchos::RefCountPtr< Tpetra::Directory<OrdinalType> > directory = platform.createDirectory(elementspace);
 }

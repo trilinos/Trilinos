@@ -34,7 +34,6 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_MpiComm.hpp"
-#include "Tpetra_BasicDirectory.hpp"
 #include "Tpetra_MpiData.hpp"
 #include "Tpetra_ElementSpace.hpp"
 
@@ -86,13 +85,6 @@ namespace Tpetra {
 			Teuchos::RefCountPtr< MpiComm<OrdinalType, OrdinalType> > comm;
 			comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiData_));
 			return(comm);
-		};
-    
-		//! Directory Instance
-		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-			Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
-			directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
-			return(directory);
 		};
 
 		//@}

@@ -507,7 +507,7 @@ namespace Tpetra {
 		void directorySetup() {
 			if(getNumGlobalElements() != Teuchos::OrdinalTraits<OrdinalType>::zero())
 				if(data().haveDirectory_ == false) {
-					data().Directory_ = platform().createDirectory(*this); // Make directory
+					data().Directory_ = Teuchos::rcp(new Directory<OrdinalType>(*this)); // Make directory
 					data().haveDirectory_ = true;
 				}
 		};
