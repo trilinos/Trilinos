@@ -33,7 +33,7 @@ extern "C" {
  * This function gets a list of coordinates one way or the other,
  * i.e., by calling either Get_Geom_Multi or Get_Geom for each object.
  *
- * Note that for 3D RCB, RIB and HSFC with the SKIP_DIMENSIONS
+ * Note that for 2D or 3D RCB, RIB and HSFC with the SKIP_DIMENSIONS
  * option on, Zoltan_Get_Coordinates is a global operation.  (A
  * global decision to transform coordinates may be made here.)  So
  * it must be called by all processes in the application or it will
@@ -45,13 +45,15 @@ static PARAM_VARS Skip_Dim_Params[] = {
                   { "SKIP_DIMENSIONS", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
 
-static void inertial_matrix(ZZ *zz, double *X, int num_obj, 
+static void inertial_matrix2D(ZZ *zz, double *X, int num_obj, 
   double *cm, double (*im)[3]) ;
-static int eigenvectors(double (*m)[3], double (*evecs)[3]);
-static int tqli(double *d, double *e, double(*z)[3]);
-static void tred2(double (*a)[3], double *d, double *e);
+static void inertial_matrix3D(ZZ *zz, double *X, int num_obj, 
+  double *cm, double (*im)[3]) ;
+static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim);
+static int tqli(double *d, int n, double *e, double(*z)[3]);
+static void tred2(double (*a)[3], int n, double *d, double *e);
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
-        double *cm, double (*evecs)[3], double *d);
+        double *cm, double (*evecs)[3], double *d, int dim);
 static void order_decreasing(double *d, int *order);
 
 int Zoltan_Get_Coordinates(
@@ -78,8 +80,8 @@ int Zoltan_Get_Coordinates(
   double max_ratio = 10.0;
   double x, y, *cold;
   int order[3];
-  int keep_cuts, skip_dimensions;
-  int num_skip_dimensions = 0;
+  int keep_cuts, skip_dimensions, d;
+  int target_dim;
   RCB_STRUCT *rcb;
   RIB_STRUCT *rib;
   HSFC_Data *hsfc;
@@ -105,6 +107,7 @@ int Zoltan_Get_Coordinates(
                        "Error returned from ZOLTAN_GET_NUM_GEOM_FN");
     goto End;
   }
+
   if (*num_dim < 0 || *num_dim > 3) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Invalid dimension returned from ZOLTAN_NUM_GEOM_FN");
@@ -149,17 +152,24 @@ int Zoltan_Get_Coordinates(
   }
 
   /*
-   * For 3D RCB, RIB, and HSFC: if SKIP_DIMENSIONS was selected, compute the
-   * center of mass and inertial matrix of the coordinates.  If the
-   * geometry is "flat", transform the points so the primary directions
-   * lie along the X and Y coordinate axes and project to the Z=0 plane.
-   * If in addition the geometry is "skinny", project to the X axis.
+   * For RCB, RIB, and HSFC: if SKIP_DIMENSIONS was selected, compute the
+   * center of mass and inertial matrix of the coordinates.  
+   *
+   * For 3D problems: If the geometry is "flat", transform the points so the
+   * two primary directions lie along the X and Y coordinate axes and project 
+   * to the Z=0 plane.  If in addition the geometry is "skinny", project to 
+   * the X axis.  (This creates a 2D or 1D problem respectively.)
+   *
+   * For 2D problems: If the geometry is essentially a line, transform it's
+   * primary direction to the X axis and project to the X axis, yielding a
+   * 1D problem.
+   *
    * Return these points to the partitioning algorithm, in effect partitioning
    * in only the 2 (or 1) significant dimensions.  Save the transformation 
    * matrix if KEEP_CUTS is true.
    */
 
-  if ((*num_dim == 3) && 
+  if (((*num_dim == 3) || (*num_dim == 2)) && 
       ((zz->LB.Method==RCB) || (zz->LB.Method==RIB) || (zz->LB.Method==HSFC))){
 
     Zoltan_Bind_Param(Skip_Dim_Params, "KEEP_CUTS", (void *)&keep_cuts);
@@ -172,19 +182,26 @@ int Zoltan_Get_Coordinates(
 
     if (skip_dimensions){
 
+      d = *num_dim;
+
       /*
        * Get the center of mass and inertial matrix of coordinates.  Ignore
        * vertex weights, we are only interested in geometry.  Global operation.
        */
-      inertial_matrix(zz, *coords, num_obj, cm, im); 
+      if (d == 2){
+        inertial_matrix2D(zz, *coords, num_obj, cm, im);
+      }
+      else{
+        inertial_matrix3D(zz, *coords, num_obj, cm, im);
+      }
 
       /*
-       * The inertial matrix is a 3x3 real symmetric matrix.  Get its
-       * three orthonormal eigenvectors.  These usually indicate the 
+       * The inertial matrix is a 3x3 or 2x2 real symmetric matrix.  Get its
+       * three or two orthonormal eigenvectors.  These usually indicate the 
        * orientation of the geometry.
        */
 
-      rc = eigenvectors(im, evecs);
+      rc = eigenvectors(im, evecs, d);
 
       if (rc){
         /* eigenvector calculation failed */
@@ -195,41 +212,61 @@ int Zoltan_Get_Coordinates(
       /*
        * Calculate the extent of the geometry along the three lines defined
        * by the direction of the eigenvectors through the center of mass.
-       * (Are the eigenvector magnitudes enough here?)
        */
 
-      projected_distances(zz, *coords, num_obj, cm, evecs, dist); 
+      projected_distances(zz, *coords, num_obj, cm, evecs, dist, d); 
 
       /*
        * Decide whether these distances indicate the geometry is
        * very flat in one or two directions.
        */
-  
-      order_decreasing(dist, order);
-  
-      if ((dist[order[0]] / dist[order[2]]) > max_ratio){
-        /*
-         * We'll rotate geometry so it's aligned with the X/Y plane
-         * and project to Z=0.
-         */
-        num_skip_dimensions = 1;
 
+      target_dim = 0;
+  
+      if (d == 2){
+        if (dist[0] < dist[1]){
+          order[0] = 0; order[1] = 1;
+        }
+        else{
+          order[0] = 1; order[1] = 0;
+        }
         if ((dist[order[0]] / dist[order[1]]) > max_ratio){
+          target_dim = 1;
+        }
+      }
+      else{
+        order_decreasing(dist, order);
+  
+        if ((dist[order[0]] / dist[order[2]]) > max_ratio){
           /*
-           * We'll rotate geometry so it's aligned with the X-axis
-           * and project to the X-axis.
+           * We'll rotate geometry so it's aligned with the X/Y plane
+           * and project to Z=0.
            */
-          num_skip_dimensions = 2;
+          target_dim = 2;
+  
+          if ((dist[order[0]] / dist[order[1]]) > max_ratio){
+            /*
+             * We'll rotate geometry so it's aligned with the X-axis
+             * and project to the X-axis.
+             */
+            target_dim = 1;
+          }
         }
       }
 
-      if (num_skip_dimensions > 0){
+      if ((target_dim == 1) || (target_dim ==2)){
  
         if ((zz->Debug_Level > 0) && (zz->Proc == 0)){
-          sprintf(msg,
-           "Geometry approx. %lf x %lf x %lf, we'll treat it as %d dimensional",
-           dist[0], dist[1], dist[2],
-           ((num_skip_dimensions == 1) ? 2 : 1));
+          if (d == 2){
+            sprintf(msg,
+             "Geometry is approx. %lf x %lf, we'll treat it as 1 dimensional",
+              dist[0], dist[1]);
+          }
+          else{
+            sprintf(msg,
+             "Geometry approx. %lf x %lf x %lf, we'll treat it as %d dimensional",
+              dist[0], dist[1], dist[2], target_dim);
+          }
 
           ZOLTAN_PRINT_INFO(zz->Proc, yo, msg);
         }
@@ -238,22 +275,33 @@ int Zoltan_Get_Coordinates(
          * Reorder the eigenvectors (they're the columns of evecs) from 
          * longest projected distance to shorted projected distance.  Compute
          * the transpose (the inverse) of the matrix.  This will transform
-         * the geometry to align along the X-Y plane.  
+         * the geometry to align along the X-Y plane, or along the X axis. 
          */
-        for (i=0; i<2; i++){
-          for (j=0; j<3; j++){
+
+        for (i=0; i< target_dim; i++){
+          M[i][2] = 0.0;
+          for (j=0; j<d; j++){
             M[i][j] = evecs[j][order[i]];
           }
         }
+        for (i=target_dim; i< 3; i++){
+          for (j=0; j<3; j++){
+            M[i][j] = 0.0;
+          }
+        }
 
-        for (i=0, cold = *coords; i<num_obj; i++, cold += 3){
-          x = M[0][0]*cold[0] + M[0][1]*cold[1] + M[0][2]*cold[2];
-          if (num_skip_dimensions == 1){
+        for (i=0, cold = *coords; i<num_obj; i++, cold += d){
+
+          x = M[0][0]*cold[0] + M[0][1]*cold[1];
+          if (d == 3) x +=  M[0][2]*cold[2];
+
+          if (target_dim == 2){
             /*
              * Orient points to lie along XY plane, major direction along X,
              * secondary along Y.  So it's mostly flat along Z.
              */
-            y = M[1][0]*cold[0] + M[1][1]*cold[1] + M[1][2]*cold[2];
+            y = M[1][0]*cold[0] + M[1][1]*cold[1]; 
+            if (d == 3) y +=  M[1][2]*cold[2];
           } 
           else{
             /*
@@ -264,24 +312,23 @@ int Zoltan_Get_Coordinates(
 
           cold[0] = x;
           cold[1] = y;
-          cold[2] = 0;
+          if (d == 3) cold[2] = 0;
         }
-         
+
         if (keep_cuts){
           if (zz->LB.Method == RCB){
             rcb = (RCB_STRUCT *)zz->LB.Data_Structure;
-            rcb->Skip_Dimensions = num_skip_dimensions;
+            rcb->Target_Dim = target_dim;
             sav = rcb->Transformation;
           }
           else if (zz->LB.Method == RIB){
             rib = (RIB_STRUCT *)zz->LB.Data_Structure;
-            rib->Skip_Dimensions = num_skip_dimensions;
-  
+            rib->Target_Dim = target_dim;
             sav = rib->Transformation;
           }
           else if (zz->LB.Method == HSFC){
             hsfc = (HSFC_Data *)zz->LB.Data_Structure;
-            hsfc->Skip_Dimensions = num_skip_dimensions;
+            hsfc->Target_Dim = target_dim;
             sav = hsfc->Transformation;
           }
 
@@ -305,7 +352,71 @@ End:
   return ierr;
 }
 
-static void inertial_matrix(ZZ *zstruct, double *X, int num_obj, double *cm, double (*im)[3]) 
+static void inertial_matrix2D(ZZ *zstruct, double *X, 
+                            int num_obj, double *cm, double (*im)[3])
+{
+  double    tmp1[3], tmp2[3];
+  double    xx, yy, xy;
+  double    xdif, ydif;
+  int       j, rank;
+  double    cmt[2];
+  double    xxt, yyt, xyt;
+  double *c, num_coords, total_coords;
+
+  int comm = zstruct->Communicator;
+  int proc = zstruct->Proc;
+  int nproc = zstruct->Num_Proc;
+  int proclower = 0;
+  num_coords = (double)num_obj;
+
+  cm[0] = cm[1] = 0.0; 
+  for (j = 0, c = X; j < num_obj; j++, c += 2) {
+    cm[0] += c[0];
+    cm[1] += c[1];
+  }
+
+  if (zstruct->Tflops_Special) {
+     rank = proc - proclower;
+     Zoltan_RIB_reduce_double(cm, cmt, 2, comm, nproc, rank, proc, 1);
+     Zoltan_RIB_reduce_double(&num_coords, &total_coords, 1, comm, nproc, rank, proc, 1);
+  }
+  else {
+     MPI_Allreduce(cm,cmt,2,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&num_coords,&total_coords,1,MPI_DOUBLE,MPI_SUM,comm);
+  }
+
+  /* Global center of mass */
+  cm[0] = cmt[0]/total_coords;
+  cm[1] = cmt[1]/total_coords;
+
+  xx = yy = xy = 0.0;
+  for (j = 0, c = X; j < num_obj; j++, c += 2) {
+     xdif = c[0] - cm[0];
+     ydif = c[1] - cm[1];
+     xx += xdif*xdif;
+     yy += ydif*ydif;
+     xy += xdif*ydif;
+  }
+
+  if (zstruct->Tflops_Special) {
+     tmp1[0] = xx; tmp1[1] = yy; tmp1[2] = xy; 
+     Zoltan_RIB_reduce_double(tmp1, tmp2, 3, comm, nproc, rank, proc, 1);
+     xxt = tmp2[0]; yyt = tmp2[1]; xyt = tmp2[2]; 
+  }
+  else {
+     tmp1[0] = xx; tmp1[1] = yy; tmp1[2] = xy; 
+     MPI_Allreduce(tmp1, tmp2, 3, MPI_DOUBLE, MPI_SUM, comm);
+     xxt = tmp2[0]; yyt = tmp2[1]; xyt = tmp2[2];
+  }
+
+  /* Global inertial tensor matrix */
+
+  im[0][0] = xxt;
+  im[1][1] = yyt;
+  im[0][1] = im[1][0] = xyt;
+}
+static void inertial_matrix3D(ZZ *zstruct, double *X, 
+                            int num_obj, double *cm, double (*im)[3])
 {
   double    tmp1[6], tmp2[6];
   double    xx, yy, zz, xy, xz, yz;
@@ -383,7 +494,7 @@ static void inertial_matrix(ZZ *zstruct, double *X, int num_obj, double *cm, dou
   im[1][2] = im[2][1] = yzt;
 }
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
-        double *cm, double (*evecs)[3], double *d)
+        double *cm, double (*evecs)[3], double *d, int dim)
 {
 int i, j;
 double val, min[3], max[3], *c, tmp;
@@ -396,11 +507,14 @@ MPI_Comm local_comm;
   proclower = 0;
   local_comm = zz->Communicator;
 
-  for (i=0; i<3; i++){
-    for (j=0, c=coords; j<num_obj; j++, c+=3){
-      val = (((c[0] - cm[0]) * evecs[0][i]) +
-             ((c[1] - cm[1]) * evecs[1][i]) +
-             ((c[2] - cm[2]) * evecs[2][i]));
+  for (i=0; i<dim; i++){
+    for (j=0, c=coords; j<num_obj; j++, c+=dim){
+
+      val = (((c[0] - cm[0]) * evecs[0][i]) + ((c[1] - cm[1]) * evecs[1][i]));
+
+      if (dim == 3){
+        val += ((c[2] - cm[2]) * evecs[2][i]);
+      }
 
       if (j){
         if (val < min[i]) min[i] = val;
@@ -413,14 +527,14 @@ MPI_Comm local_comm;
   }
 
   if (Tflops_Special){
-    for (i=0; i<3; i++){
+    for (i=0; i<dim; i++){
       Zoltan_RIB_min_max(min+i, max+i, proclower, proc, nprocs,
                        local_comm);
       d[i] = max[i] - min[i];
     }
   }
   else {
-    for (i=0; i<3; i++){
+    for (i=0; i<dim; i++){
       tmp = max[i];
       MPI_Allreduce(&tmp, max + i, 1, MPI_DOUBLE, MPI_MAX, local_comm);
       tmp = min[i];
@@ -464,7 +578,7 @@ static void order_decreasing(double *d, int *order)
   }
 }
 #define SIGN(a,b) ((b) < 0 ? -fabs(a) : fabs(a))
-static int eigenvectors(double (*m)[3], double (*evecs)[3])
+static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
 {
   /* 
    * Given a real symmetric 3x3 matrix "m", find its eigenvectors.  Put
@@ -480,14 +594,15 @@ static int eigenvectors(double (*m)[3], double (*evecs)[3])
     }
   }
 
-  tred2(evecs, d, e); 
+  tred2(evecs, dim, d, e); 
 
-  rc = tqli(d, e, evecs);
+  rc = tqli(d, dim, e, evecs);
 
   return rc;
 }
 
 static void tred2(double (*a)[3],  /* Q on output */
+                  int n,           /* dimension of problem (2 or 3) */
                   double *d,       /* on output, the diagonal of T */
                   double *e) /* on output, the off-diagonal (ignore e[0])*/
 {
@@ -500,7 +615,7 @@ static void tred2(double (*a)[3],  /* Q on output */
    * an orthogonal Q and a tridiagonal matrix T.
    */
 
-  for (i=2; i>=1; i--){
+  for (i=n-1; i>=1; i--){
     l = i - 1;
     h = scale = 0.0;
     if (l > 0){
@@ -552,7 +667,7 @@ static void tred2(double (*a)[3],  /* Q on output */
   d[0] = 0.0;
   e[0] = 0.0;
 
-  for (i=0; i<3; i++){
+  for (i=0; i<n; i++){
     l = i-1;
     if (d[i]){
       for (j=0; j<=l; j++){  /* skip when i == 0 */
@@ -574,6 +689,7 @@ static void tred2(double (*a)[3],  /* Q on output */
 }
 
 static int tqli(double *d,     /* input from tred2, output is eigenvalues */
+                 int n,        /* dimensions of problem (2 or 3) */
                  double *e,     /* input from tred2, output is garbage */
                  double(*z)[3]) /* input from tred2, output columns are e-vectors */
 {
@@ -587,7 +703,7 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
   e[1] = e[2];
   e[2] = 0.0;
 
-  for (l=0; l<=2; l++){
+  for (l=0; l<=n-1; l++){
     iter = 0;
     do {
       for (m=l; m <= 1; m++){
@@ -625,7 +741,7 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
           d[i+1] = g + p;
           g = c * r - b;
 
-          for (k=0; k<=2; k++){
+          for (k=0; k<=n-1; k++){
             f = z[k][i+1];
             z[k][i+1] = (s * z[k][i]) + (c * f);
             z[k][i] = (c * z[k][i]) - (s * f);
