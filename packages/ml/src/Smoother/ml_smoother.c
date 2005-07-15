@@ -55,6 +55,7 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_op_utils.h"
+#include "ml_epetra_utils.h"
 
 /* A special version of dgetrs which is supposed to be optimized. */
 /* NOTE: it is assumed that ML_permute_for_dgetrs_special() has   */
