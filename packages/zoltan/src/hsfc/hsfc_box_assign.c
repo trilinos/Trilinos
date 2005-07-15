@@ -52,6 +52,7 @@ int Zoltan_HSFC_Box_Assign (
                                 /* the actual precision available (dimension */
                                 /* specific - 2^18 in 3d, 2^27 in 2d. */
    int        err = ZOLTAN_OK;
+   int        *remap;
    char      *yo = "Zoltan_HSFC_Box_Assign";
 
    ZOLTAN_TRACE_ENTER (zz, yo);
@@ -71,30 +72,56 @@ int Zoltan_HSFC_Box_Assign (
 
    /* One dimensional case is trival, do it and exit */
    if (d->ndimension == 1) {
+      remap = zz->LB.Remap;            /* Don't let Point_Assign remap IDs.*/
+      zz->LB.Remap = NULL;             /* We will do this at "fini".       */
       Zoltan_HSFC_Point_Assign (zz, &xlo, NULL, &n);
       Zoltan_HSFC_Point_Assign (zz, &xhi, NULL, &loop);
       for (i = n; i <= loop; i++)
          part_array[i] = 1;
+      zz->LB.Remap = remap;
       goto fini;
       }
 
-
-   if (d->Skip_Dimensions > 0){
+   if (d->Target_Dim > 0){   /* It must be 1 or 2 */
      /* 
-      * Transform query box into coordinates that were used for partitioning. 
-      * This axis aligned box in the new coordinates actually encompasses more
-      * "dots" than did the original box, but the important point is that it
-      * doesn't miss any.
+      * Degenerate geometry:
+      * Transform query box into coordinates that were used for partitioning,
+      * and place an axis aligned bounding box around it.  This box in the new 
+      * coordinates may encompass more "dots" than did the original box, but 
+      * it won't miss any dots.
       */
-     dim = d->ndimension - d->Skip_Dimensions;
-
      lo[0] = xlo; lo[1] = ylo; lo[2] = zlo;
      hi[0] = xhi; hi[1] = yhi; hi[2] = zhi;
 
-     Zoltan_Transform_Box(lo, hi, d->Transformation, dim);
+     Zoltan_Transform_Box(lo, hi, d->Transformation, d->ndimension, d->Target_Dim);
 
-     xlo = lo[0]; ylo = lo[1]; zlo = lo[2];
-     xhi = hi[0]; yhi = hi[1]; zhi = hi[2];
+     xlo = lo[0]; xhi = hi[0];
+     ylo = 0.0; yhi = 0.0;
+     zlo = 0.0; zhi = 0.0;
+
+     if (d->Target_Dim == 2){
+       ylo = lo[1]; yhi = hi[1];
+       dim = d->Target_Dim;
+     }
+     else if (d->Target_Dim == 1){
+       /* 
+        * Don't let Point_Assign transform coordinates (we already
+        * did that) or remap partition numbers (we'll do that at "fini").
+        */
+       dim = d->ndimension;
+       remap = zz->LB.Remap;
+       d->Target_Dim = 0;   /* don't transform coordinates */
+       d->ndimension = 1;   /* partitions were calculated as 1D */
+       zz->LB.Remap = NULL; /* don't remap partition numbers */
+       Zoltan_HSFC_Point_Assign (zz, &xlo, NULL, &n);
+       Zoltan_HSFC_Point_Assign (zz, &xhi, NULL, &loop);
+       for (i = n; i <= loop; i++)  /* loop < n */
+          part_array[i] = 1;
+       d->Target_Dim = 1;
+       d->ndimension = dim;       
+       zz->LB.Remap = remap;
+       goto fini;
+     }
    }
    else{
      dim = d->ndimension;
