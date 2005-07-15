@@ -13,7 +13,7 @@ FFLAGS=-O3 \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
---disable-amesos-pardiso \
+--enable-amesos-pardiso \
 --enable-amesos-taucs \
 --enable-anasazi \
 --enable-aztecoo \
