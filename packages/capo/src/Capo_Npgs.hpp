@@ -197,14 +197,28 @@ namespace CAPO {
 			    Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We, 
 			    const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
 
+    /*!
+      Calculate dq using a fixed point iteration.
+    */
     void Calculatedq(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq, 
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r);
 
+    /*!
+      Compute Vp by multiplying the first "Unstable_Basis_Size" columns of Ve
+      by the upper left corner of Se.  See Algorithm 3.2 NPGS(2) in 
+      "An Adaptive Newton Picard Algorithm with Subspace Iteration for 
+      Computing Periodic Solutions" by Lust, Roose, Spence, Champneys.
+    */
     bool ComputeVp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se,
 		   const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp);
+
+    /*!
+      Ve = We*Se
+    */
     bool UpdateVe(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We,
 		  const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se);
+
 
     bool Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
@@ -214,14 +228,39 @@ namespace CAPO {
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& finit,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r,
 		     double& deltaT);
+
+    /*!
+      Use finite differences to calculate \partial \phi / \partial t.
+      (1/eps)*(\phi(x,T+eps,lambda)-\phi(x,T,lambda))
+    */
     bool dphi_dt(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
 
+    /*!
+      Solve the linear system:
+      Ax=b.
+      Mat is the matrix A, rhs is b upon entrence, x upon exit.
+      resolve = false upon entering, m is the length of rhs.
+      nrhs is the number of right hand sides to be solved.
+    */
     bool Solve_Linear(double *Mat,double *rhs, bool resolve, int m, int nrhs);
+
+    /*!
+      Perform a Schur Decomposition.  This uses the lapack routine dgees.
+    */
     void SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, 
 		     const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);
 
+    /*!
+      Print a MultiVector.
+    */
     void Print(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Printme);
+
+    /*!
+      Use finite differences to calculate \partial \phi / \partial lambda.
+      (1/eps)*(\phi(x,T,lambda+eps)-\phi(x,T,lambda))
+    */
     bool dphi_dlambda(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
+
     bool ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
@@ -230,8 +269,17 @@ namespace CAPO {
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& finit,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r,
 			 double& deltaT, double& deltalambda);
+
+    //! The step taken from the previous solution to the guess at this
+    //! continuation step.
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xstep;
+
+    //! The increment in lambda from the previous lambda to the guess
+    //! at this continuation step.
     double lambdastep;
+
+    //! The increment in T from the previous T to the guess
+    //! at this continuation step.
     double Tstep;
 
  
