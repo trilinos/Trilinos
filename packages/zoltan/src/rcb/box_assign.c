@@ -29,7 +29,7 @@ static void Box_Assign(ZZ *, struct rcb_tree *, struct rcb_box *,
   int, int, int *, int *, int *, int);
 static void Box_Assign3(ZZ *, struct rib_tree *,struct rcb_box *,
   int, int, int *, int *, int *, int);
-static void Transformed_Box_Assign3(ZZ *, struct rib_tree *, double (*p)[3],
+static void Transformed_Box_Assign(ZZ *, struct rib_tree *, double (*p)[3],
   int, int, int, int *, int *, int *, int);
 static void Box_Assign2(ZZ *, struct rib_tree *,struct rcb_box *,
   int, int, int *, int *, int *, int);
@@ -106,9 +106,14 @@ int            *numparts)       /* number of partitions in part list */
         box.hi[1] = ymax;
         box.hi[2] = zmax;
 
-        if (rcb->Skip_Dimensions > 0){
-          Zoltan_Transform_Box(box.lo, box.hi, 
-              rcb->Transformation, 3 - rcb->Skip_Dimensions);
+        if (rcb->Target_Dim > 0){
+          /* 
+           * Degenerate geometry, transform box to the lower dimensional
+           * space that the partitioning occured in.  Our new box may
+           * encompass more partitions, but it won't miss any.
+           */
+          Zoltan_Transform_Box(box.lo, box.hi, rcb->Transformation, 
+                               rcb->Num_Dim, rcb->Target_Dim);
         }
 
         Box_Assign(zz, treept, &box, include_procs, include_parts, 
@@ -134,17 +139,31 @@ int            *numparts)       /* number of partitions in part list */
               box.hi[1] = ymax;
               box.hi[2] = zmax;
 
-              if (rib->Skip_Dimensions == 0){
+              if (rib->Target_Dim == 0){
                 Box_Assign3(zz, itree, &box, include_procs, include_parts, 
                           proc_array, parts, numparts, itree[0].right_leaf);
               }
-              else{
-                Zoltan_Transform_Box_Points(box.lo, box.hi,
-                  rib->Transformation, 3 - rib->Skip_Dimensions, p);
+              else{ /* degenerate geometry, Target_Dim is 2 or 1 */
 
-                Transformed_Box_Assign3(zz, itree, p, 3 - rib->Skip_Dimensions,
-                  include_procs, include_parts, proc_array, parts, numparts, 
-                  itree[0].right_leaf);
+                Zoltan_Transform_Box_Points(box.lo, box.hi,
+                  rib->Transformation, 3, rib->Target_Dim, p);
+
+                if (rib->Target_Dim == 1){  /* box -> line */
+
+                  box.lo[0] = box.hi[0] = p[0][0];
+                  for (i=1; i<8; i++){
+                    if (p[i][0] < box.lo[0]) box.lo[0] = p[i][0]; 
+                    else if (p[i][0] > box.hi[0]) box.hi[0] = p[i][0]; 
+                  }
+                  Box_Assign1(zz, itree, &box, include_procs, include_parts,
+                          proc_array, parts, numparts, itree[0].right_leaf);
+                }
+                else{     /* box -> plane, no longer axis-aligned */
+
+                  Transformed_Box_Assign(zz, itree, p, rib->Target_Dim,
+                    include_procs, include_parts, proc_array, parts, numparts, 
+                    itree[0].right_leaf);
+                }
               }
 
               break;
@@ -154,8 +173,26 @@ int            *numparts)       /* number of partitions in part list */
               box.hi[0] = xmax;
               box.hi[1] = ymax;
 
-              Box_Assign2(zz, itree, &box, include_procs, include_parts,
+              if (rib->Target_Dim == 0){
+                Box_Assign2(zz, itree, &box, include_procs, include_parts,
+                            proc_array, parts, numparts, itree[0].right_leaf);
+              }
+              else{
+
+                /* degenerate geometry, Target_Dim is 1 */
+
+                Zoltan_Transform_Box_Points(box.lo, box.hi,
+                  rib->Transformation, 2, 1, p);
+
+                box.lo[0] = box.hi[0] = p[0][0];
+                for (i=1; i<4; i++){
+                  if (p[i][0] < box.lo[0]) box.lo[0] = p[i][0]; 
+                  else if (p[i][0] > box.hi[0]) box.hi[0] = p[i][0]; 
+                }
+
+                Box_Assign1(zz, itree, &box, include_procs, include_parts,
                           proc_array, parts, numparts, itree[0].right_leaf);
+              }
 
               break;
            case 1:
@@ -316,7 +353,13 @@ int              partmid)       /* 1st partition in upper half */
         Box_Assign3(zz, itree, box, include_procs, include_parts, proc_array,
                     parts, numparts, itree[partmid].right_leaf);
 }
-static void Transformed_Box_Assign3(
+
+/****************************************************************************/
+/* 8 box vertices were subjected to a linear transformation and then projected
+ * to a plane.  It is no longer an axis-aligned box.  We need to compare
+ * all points to the cut.
+ */
+static void Transformed_Box_Assign(
 ZZ              *zz,
 struct rib_tree *itree,         /* RIB tree */
 double          (*p)[3],        /* 8 transformed vertices of the box */
@@ -341,13 +384,8 @@ int              partmid)       /* 1st partition in upper half */
      }
 
      for (i=0; i<8; i++){
-       if (ndims == 2){
-         proj = ((p[i][0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
-                ((p[i][1] - itree[partmid].cm[1])*itree[partmid].ev[1]);
-       }
-       else{
-         proj = p[i][0];
-       }
+       proj = ((p[i][0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
+              ((p[i][1] - itree[partmid].cm[1])*itree[partmid].ev[1]);
 
        if (i){
          if (proj < min) min = proj;
@@ -368,10 +406,10 @@ int              partmid)       /* 1st partition in upper half */
      cut = itree[partmid].cut;
 
      if (min <= cut)
-        Transformed_Box_Assign3(zz, itree, p, ndims, include_procs, include_parts, 
+        Transformed_Box_Assign(zz, itree, p, ndims, include_procs, include_parts, 
              proc_array, parts, numparts, itree[partmid].left_leaf);
      if (max >= cut)
-        Transformed_Box_Assign3(zz, itree, p, ndims, include_procs, include_parts, 
+        Transformed_Box_Assign(zz, itree, p, ndims, include_procs, include_parts, 
              proc_array, parts, numparts, itree[partmid].right_leaf);
 }
 

@@ -20,18 +20,9 @@ extern "C" {
 
 #include <stdio.h>
 #include "zz_const.h"
+#include "zz_util_const.h"
 #include "rcb.h"
 #include "rib.h"
-
-static void transform_coord(double *p, double *v, double (*M)[3], int ncoords)
-{
-  v[1] = v[2] = 0.0;
-
-  v[0] = M[0][0]*p[0] + M[0][1]*p[1] + M[0][2]*p[2];
-  if (ncoords == 2){
-    v[1] = M[1][0]*p[0] + M[1][1]*p[1] + M[1][2]*p[2];
-  }
-}
 
 int Zoltan_RB_Point_Assign(
 ZZ       *zz,                   /* The Zoltan structure */
@@ -76,8 +67,9 @@ int      *part                  /* partition that point lands in;
            goto End;
         }
 
-        if (rcb->Skip_Dimensions > 0){
-          transform_coord(coords, cnew, rcb->Transformation, 3 - rcb->Skip_Dimensions);
+        if (rcb->Target_Dim > 0){  /* degenerate geometry */
+          Zoltan_Transform_Point(coords, rcb->Transformation, rcb->Num_Dim,
+                  rcb->Target_Dim, cnew);
           c = cnew;
         }
 
@@ -99,10 +91,11 @@ int      *part                  /* partition that point lands in;
            goto End;
         }
 
-        if (rib->Skip_Dimensions > 0){
-          num_geom = 3 - rib->Skip_Dimensions;
-          transform_coord(coords, cnew, rib->Transformation, num_geom);
+        if (rib->Target_Dim > 0){ /* degenerate geometry */
+          Zoltan_Transform_Point(coords, rib->Transformation, rib->Num_Geom,
+                  rib->Target_Dim, cnew);
           c = cnew;
+          num_geom = rib->Target_Dim;
         }
         else{
           num_geom = rib->Num_Geom;
