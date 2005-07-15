@@ -32,6 +32,8 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziLOBPCG.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicSort.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
@@ -41,7 +43,6 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Map.h"
 
 #include "ModeLaplace1DQ1.h"
 
@@ -96,6 +97,11 @@ int main(int argc, char *argv[])
     MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
+  // Create the sort manager
+  std::string which("SM");
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
+     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
+
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
 
@@ -136,7 +142,7 @@ int main(int argc, char *argv[])
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
   
   // Create the eigensolver 
-  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
+  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
   
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();

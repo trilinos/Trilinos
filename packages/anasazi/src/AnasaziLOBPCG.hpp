@@ -38,6 +38,7 @@
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziOutputManager.hpp"
+#include "AnasaziSortManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
 
 #include "Teuchos_LAPACK.hpp"
@@ -70,6 +71,7 @@ namespace Anasazi {
 
     //! %Anasazi::LOBPCG constructor.
     LOBPCG( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+            const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
             const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
             Teuchos::ParameterList &pl 
             );
@@ -140,6 +142,7 @@ namespace Anasazi {
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
     const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
+    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm; 
     const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
     Teuchos::ParameterList _pl;
     //
@@ -184,10 +187,12 @@ namespace Anasazi {
   //
   template <class ScalarType, class MV, class OP>
   LOBPCG<ScalarType,MV,OP>::LOBPCG(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+                                   const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
                                    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
                                    Teuchos::ParameterList &pl
                                    ):
     _problem(problem), 
+    _sm(sm),
     _om(om),
     _pl(pl),
     _Op(_problem->GetOperator()),
@@ -346,6 +351,7 @@ namespace Anasazi {
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::BLAS<int,ScalarType> blas;
     Teuchos::LAPACK<int,ScalarType> lapack;
+    std::vector<int> _order;
     //
     // Internal storage for eigensolver
     //
@@ -606,7 +612,7 @@ namespace Anasazi {
       } // if (info < 0)
       
       // Check for restarting
-      if ((_theta[0] < 0.0) || (_nevLocal < _blockSize)) {
+      if (_nevLocal < _blockSize) {
         if (_om->isVerbosityAndPrint( IterationDetails ) ) {
           _os << " Iteration " << _iter;
           _os << "- Failure for spectral decomposition - RESTART with new random search\n";
@@ -627,7 +633,7 @@ namespace Anasazi {
         _numRestarts += 1;
         info = 0;
         continue;
-      } // if ((theta[0] < 0.0) || (_nevLocal < _blockSize))
+      } // if (_nevLocal < _blockSize)
     
 
       // We can reduce the size of the local problem if the directSolver detects rank deficiency 
@@ -638,6 +644,22 @@ namespace Anasazi {
       // We can reduce the size of the local problem if the directSolver detects rank deficiency
       if ((localSize == threeBlocks) && (_nevLocal <= twoBlocks)) {
         localSize = twoBlocks;
+      }
+
+      //
+      //---------------------------------------------------
+      // Sort the ritz values using the sort manager
+      //---------------------------------------------------
+      _order.resize(_nevLocal);
+      _timerSortEval->start();
+      _sm->sort( this, _nevLocal, &(_theta[0]), &_order );
+      _timerSortEval->stop();
+      // Sort the primitive ritz vectors
+      // We need the first _blockSize vectors ordered to generate the next
+      // columns immediately below, as well as when/if we restart.
+      Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
+      for (i=0; i<_nevLocal; i++) {
+        blas.COPY(_nevLocal, copyS[_order[i]], 1, S[i], 1);
       }
       
       // Compute the residuals
@@ -697,9 +719,9 @@ namespace Anasazi {
       */      
       
       // Print information on current iteration
-      if (_om->isVerbosityAndPrint( IterationDetails )) 
+      if (_om->isVerbosityAndPrint( IterationDetails )) {
         currentStatus();
-
+      }
       
       if (_nFound == 0) {
         // Update the spaces
@@ -732,8 +754,7 @@ namespace Anasazi {
             MVT::MvAddMv( one, *MP, one, *MX, *MX );
           }
         } // if (localSize == twoBlocks)
-        
-        if (localSize == threeBlocks) {          
+        else if (localSize == threeBlocks) {          
           Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );          
           Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
           MVT::MvAddMv( one, *P, zero, *P, *R );
@@ -836,8 +857,9 @@ namespace Anasazi {
       //
       leftOver = 0;
       if (_nFound > 0) {
-        if ( _knownEV + _nFound  > _nev ) 
+        if ( _knownEV + _nFound  > _nev ) {
           leftOver = _knownEV + _nFound -_nev;
+        }
         blas.COPY( _nFound-leftOver, &_theta[0], 1, &(*_evals)[_knownEV], 1 ); 
         blas.COPY( _nFound-leftOver, &_normR[0], 1, &_resids[_knownEV], 1 );
       }
@@ -866,12 +888,17 @@ namespace Anasazi {
           }
         }	
 
-        // Sort the eigenpairs
-        _timerSortEval->start();
+        //
+        // Sort the computed eigenvalues, eigenvectors, and residuals
+        //
         if ((info==0) && (_knownEV > 0)) {
-          _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get(), &_resids);     
+          _order.resize(_knownEV);
+          _timerSortEval->start();
+          _sm->sort( this, _knownEV, &(*_evals)[0], &_order);
+          _timerSortEval->start();
+          // use _order to permute _evecs and _resids
+          _MSUtils.permuteVectors(_knownEV,_order,*_evecs,&_resids);
         }
-        _timerSortEval->stop();
         
         // Increment number of known eigenpairs.
         _knownEV += (_nFound-leftOver);
@@ -908,8 +935,9 @@ namespace Anasazi {
           Teuchos::SerialDenseMatrix<int,ScalarType> S31new( Teuchos::View, S, _blockSize, leftOver, twoBlocks, _nFound );
           MVT::MvTimesMatAddMv( one, *P, S31new, one, *X );
           MVT::MvTimesMatAddMv( one, *KP, S31new, one, *KX );
-          if (haveMass)
+          if (haveMass) {
             MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MX );
+          }
         }
       }
       if (_nevLocal < _blockSize + _nFound) {
