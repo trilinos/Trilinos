@@ -55,7 +55,7 @@ int i, ierr = 0;
     rcb->Global_IDs = NULL;
     rcb->Local_IDs = NULL;
     rcb->Dots = NULL;
-    rcb->Skip_Dimensions = 0;
+    rcb->Target_Dim = 0;
 
     rcb->Tree_Ptr = (struct rcb_tree *)
       ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(struct rcb_tree));
@@ -193,7 +193,7 @@ int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   to->Num_Dim = from->Num_Dim;
 
-  to->Skip_Dimensions = from->Skip_Dimensions;
+  to->Target_Dim = from->Target_Dim;
 
   for (i=0; i<3; i++){
     for (j=0; j<3; j++){
@@ -257,9 +257,10 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
     printf("Box: NULL\n");
   }
 
-  if (rcb->Skip_Dimensions > 0){
+  if (rcb->Target_Dim > 0){
     printf("Degenerate geometry:\n");
-    printf("  skip number of dimensions: %d, transformation:\n",rcb->Skip_Dimensions);
+    printf("  Transform coordinates to %d dimensions, transformation:\n",
+      rcb->Target_Dim);
     for (i=0; i<3; i++){
       printf("    %lf %lf %lf\n", rcb->Transformation[i][0],
              rcb->Transformation[i][1], rcb->Transformation[i][2]);

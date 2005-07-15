@@ -885,9 +885,8 @@ RIB_STRUCT *rib;
 
   rib = (RIB_STRUCT *)zz->LB.Data_Structure;
 
-  if (rib->Skip_Dimensions > 0){
-    /* All z-coordinates, or all y- and z-coordinates, are zero. */
-    num_geom = 3 - rib->Skip_Dimensions;
+  if (rib->Target_Dim > 0){ 
+    num_geom = rib->Target_Dim; /* degenerate geometry */
   }
 
   switch (num_geom) {

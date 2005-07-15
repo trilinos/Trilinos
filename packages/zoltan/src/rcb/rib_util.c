@@ -49,7 +49,7 @@ int            i, ierr = 0;
     rib->Global_IDs = NULL;
     rib->Local_IDs = NULL;
     rib->Dots = NULL;
-    rib->Skip_Dimensions = 0;
+    rib->Target_Dim = 0;
 
     rib->Tree_Ptr = (struct rib_tree *)
               ZOLTAN_MALLOC(zz->LB.Num_Global_Parts* sizeof(struct rib_tree));
@@ -181,7 +181,7 @@ int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   to->Num_Geom = from->Num_Geom;
 
-  to->Skip_Dimensions = from->Skip_Dimensions;
+  to->Target_Dim = from->Target_Dim;
  
   for (i=0; i<3; i++){
     for (j=0; j<3; j++){
@@ -233,9 +233,9 @@ void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany)
 
   printf("Num_Geom: %d\n", rib->Num_Geom);
 
-  if (rib->Skip_Dimensions > 0){
+  if (rib->Target_Dim > 0){
     printf("Degenerate geometry:\n");
-    printf("  skip number of dimensions: %d, transformation:\n",rib->Skip_Dimensions);
+    printf("  Transform coordinates to %d dimensions, transformation:\n",rib->Target_Dim);
     for (i=0; i<3; i++){
       printf("    %lf %lf %lf\n", rib->Transformation[i][0],
              rib->Transformation[i][1], rib->Transformation[i][2]);
