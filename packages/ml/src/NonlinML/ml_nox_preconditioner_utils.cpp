@@ -102,14 +102,22 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
   // create a new rangemap for the amalgamated graph
   int new_nummyrows     = graph->NumMyRows();
   int new_numglobalrows = graph->NumGlobalRows();
+  int lok=1;
+  int gok=1;
   if (new_nummyrows % bsize != 0 || new_numglobalrows % bsize != 0)
   {
+    lok = 0;
     cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
          << "**WRN**: cannot amalgamate graph\n";
     cout << "numlocalrows%bsize= " << (new_nummyrows % bsize) << " numglobalrows%bsize= " << (new_numglobalrows % bsize) << endl;
     return NULL; 
   }
-  
+  graph->Comm().MinAll(&lok,&gok,1);
+  if (!gok)
+    return NULL;
+
+  lok=1;
+  gok=1;
   // number of local and global rows
   new_nummyrows /= bsize;
   new_numglobalrows /= bsize;
@@ -133,11 +141,16 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
   }
   if (counter != new_nummyrows)
   {
-    cout << "**ERR**: ML_NOX::ML_Nox_collapsedcoloring:\n"
-         << "**ERR**: counter != new_nummyrows\n"
-         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    lok=0;
+    cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
+         << "**WRN**: collapsed coloring weried, switching to standard coloring\n"
+         << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
   }
-
+  graph->Comm().MinAll(&lok,&gok,1);
+  if (!gok)
+    return NULL;
+  
+  
   // create the BlockMap
   Epetra_BlockMap newrowmap(new_numglobalrows,new_nummyrows,myRows,1,0,graph->Comm());
   delete [] myRows; myRows = NULL;
