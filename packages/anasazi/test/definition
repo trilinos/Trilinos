@@ -6,7 +6,7 @@
 
 (FRAMEWORK) {
     DIRS = BlockDavidson,
-           #BlockKrylovSchur,
+           BlockKrylovSchur,
            ModalSolverUtils,
            MVOPTester;
     ARGS = -v;
