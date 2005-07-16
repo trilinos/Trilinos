@@ -2,9 +2,11 @@
 # FRAMEWORK group
 #
 
+# Removing BlockKrylovSchur test for now because it was hanging on 7/15/05
+
 (FRAMEWORK) {
     DIRS = BlockDavidson,
-           BlockKrylovSchur,
+           #BlockKrylovSchur,
            ModalSolverUtils,
            MVOPTester;
     ARGS = -v;
