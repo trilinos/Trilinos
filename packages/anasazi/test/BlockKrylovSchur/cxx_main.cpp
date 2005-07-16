@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   // Set verbosity level
-  if (verbose && MyPID == 0)
+  if (verbose) 
     MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
 
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
