@@ -103,6 +103,7 @@ wrapIFPACK          = "IFPACK_wrap.cpp"
 sysconfig.get_config_vars()
 config_vars = sysconfig._config_vars;
 config_vars['CC'] = CXX
+config_vars['CXX'] = CXX
 
 # _IFPACK  extension module
 _IFPACK = Extension("PyTrilinos._IFPACK",
