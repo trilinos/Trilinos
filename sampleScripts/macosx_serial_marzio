@@ -1,0 +1,33 @@
+# =========================================================================== #
+# Installing configure line for MAC OS 10.4, G4 processor, Xcode 2.1
+# for all the linear algebra packages with a Python interface.
+#
+# vecLib is used for LAPACK and BLAS, f2c is the FORTRAN library,
+# /usr/local/bin/fc is the FORTRAN77 compiler.
+#
+# Configure time: 3m 28s
+# Marzio Sala, SNL 9214
+# Last updated on 17-Jul-05
+# =========================================================================== #
+#
+/Users/marzio/Trilinos/$1/configure \
+  -C \
+  CC=gcc CXX=g++ F77=/usr/local/bin/fc \
+  --prefix=/Users/marzio/Trilinos/G4_SERIAL \
+  --with-install="/usr/bin/install -p" \
+  --disable-default-packages \
+  --disable-examples \
+  --disable-tests \
+  --enable-python \
+  --enable-teuchos \
+  --enable-epetra \
+  --enable-epetraext \
+  --enable-triutils \
+  --enable-ifpack \
+  --enable-aztecoo \
+  --enable-amesos \
+  --enable-amesos-klu \
+  --enable-ml \
+  --with-ldflags="-Wl,-multiply_defined -Wl,suppress" \
+  --with-libs="-framework vecLib" \
+  --with-flibs=-lf2c

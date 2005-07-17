@@ -1,0 +1,36 @@
+# =========================================================================== #
+# Installing configure line for MAC OS 10.4, G4 processor, Xcode 2.1
+# for all the linear algebra packages with a Python interface and 
+# LAM/MPI support.
+#
+# vecLib is used for LAPACK and BLAS, f2c is the FORTRAN library,
+# /usr/local/bin/fc is the FORTRAN77 compiler.
+#
+# Marzio Sala, SNL 9214
+# Last updated on 17-Jul-05
+# =========================================================================== #
+#
+/Users/marzio/Trilinos/$1/configure \
+  --enable-mpi \
+  --with-mpi-compilers \
+  --prefix=/Users/marzio/Trilinos/G4_MPI \
+  --with-install="/usr/bin/install -p" \
+  --disable-default-packages \
+  --disable-examples \
+  --disable-tests \
+  --enable-python \
+  --enable-teuchos \
+  --enable-epetra \
+  --enable-epetraext \
+  --enable-triutils \
+  --enable-ifpack \
+  --enable-aztecoo \
+  --enable-amesos \
+  --enable-amesos-klu \
+  --enable-ml \
+  --with-ldflags="-Wl,-multiply_defined -Wl,suppress" \
+  --with-libs="-framework vecLib" \
+  --with-flibs="-lf2c" \
+  --with-cppflags="-DLAM_BUILDING" \
+  --with-cxxflags="-DLAM_BUILDING" \
+  --with-cflags="-DLAM_BUILDING"
