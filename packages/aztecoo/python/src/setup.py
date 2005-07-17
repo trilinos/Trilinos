@@ -101,6 +101,7 @@ wrapAztecOO          = "AztecOO_wrap.cpp"
 sysconfig.get_config_vars()
 config_vars = sysconfig._config_vars;
 config_vars['CC'] = CXX
+config_vars['CXX'] = CXX
 
 # _AztecOO  extension module
 _AztecOO = Extension("PyTrilinos._AztecOO",
