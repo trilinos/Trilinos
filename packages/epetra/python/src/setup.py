@@ -112,6 +112,7 @@ numPyWrapper       = os.path.join(srcDir,"NumPyWrapper.cpp"       )
 sysconfig.get_config_vars()
 config_vars = sysconfig._config_vars;
 config_vars['CC'] = CXX
+config_vars['CXX'] = CXX
 
 # _Epetra extension module
 _Epetra = Extension("PyTrilinos._Epetra",
