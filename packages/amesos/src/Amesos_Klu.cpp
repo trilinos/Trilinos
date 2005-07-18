@@ -480,7 +480,9 @@ int Amesos_Klu::NumericFactorization()
 
   NumNumericFact_++;
 
-  //  AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
+  Epetra_CrsMatrix *CrsMatrixA = dynamic_cast<Epetra_CrsMatrix *>(RowMatrixA_);
+  if ( CrsMatrixA == 0 )   // hack to get around Bug #1502 
+    AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
   assert( numentries_ == RowMatrixA_->NumGlobalNonzeros() );
   AMESOS_CHK_ERR( ExportToSerial() );
