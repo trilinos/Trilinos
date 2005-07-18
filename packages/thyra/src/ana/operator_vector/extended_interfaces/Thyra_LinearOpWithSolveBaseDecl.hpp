@@ -315,7 +315,7 @@ class LinearOpWithSolveBase : virtual public LinearOpBase<RangeScalar,DomainScal
 public:
 
   /** \brief .*/
-  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote  Scalar;
   
   /** @name Pure virtual functions that must be overridden in subclasses */
   //@{

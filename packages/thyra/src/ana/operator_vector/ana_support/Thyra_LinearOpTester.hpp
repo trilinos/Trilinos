@@ -35,12 +35,128 @@
 #include "Thyra_describeLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
-#include "Teuchos_arrayArg.hpp"
+#include "Thyra_UniversalMultiVectorRandomizer.hpp"
 
 namespace Thyra {
 
+// SymmetricLinearOpTester (using partial specialization only test symmetry on operators where RangeScalar and DomainScalar are the same)
+
+template<class RangeScalar, class DomainScalar>
+class SymmetricLinearOpTester {
+public:
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote Scalar;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  static void checkSymmetry(
+    const LinearOpBase<RangeScalar,DomainScalar>  &op
+    ,MultiVectorRandomizerBase<DomainScalar>      *dRand
+    ,std::ostream                                 &oss
+    ,const std::string                            &li
+    ,const std::string                            &is
+    ,const int                                    num_random_vectors
+    ,const Teuchos::EVerbosityLevel               verbLevel
+    ,const bool                                   dump_all
+    ,const ScalarMag                              &symmetry_error_tol
+    ,const ScalarMag                              &symmetry_warning_tol
+    ,bool                                         *these_results
+    )
+    {
+      using std::endl;
+      typedef Teuchos::ScalarTraits<RangeScalar>  RST;
+      typedef Teuchos::ScalarTraits<DomainScalar> DST;
+      oss <<endl<<li<<li<< "RangeScalar = "<<RST::name()<<" == DomainScalar = "<<DST::name()<<": failed, the opeator can not be symmetric!\n";
+      *these_results = false;
+    }
+};
+
 template<class Scalar>
-LinearOpTester<Scalar>::LinearOpTester(
+class SymmetricLinearOpTester<Scalar,Scalar> {
+public:
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  static void checkSymmetry(
+    const LinearOpBase<Scalar>                    &op
+    ,MultiVectorRandomizerBase<Scalar>            *dRand
+    ,std::ostream                                 &oss
+    ,const std::string                            &li
+    ,const std::string                            &is
+    ,const int                                    num_random_vectors
+    ,const Teuchos::EVerbosityLevel               verbLevel
+    ,const bool                                   dump_all
+    ,const ScalarMag                              &symmetry_error_tol
+    ,const ScalarMag                              &symmetry_warning_tol
+    ,bool                                         *these_results
+    )
+    {
+
+      bool result;
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      const Scalar half = Scalar(0.4)*ST::one();
+      Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > domain = op.domain();
+      
+      oss <<endl<<li<<is<< "op.domain()->isCompatible(*op.range()) == true : ";
+      result = op.domain()->isCompatible(*op.range());
+      if(!result) *these_results = false;
+      oss << passfail(result) << endl;
+      
+      if(result) {
+        
+        oss
+          <<endl<<li<<is<< "Checking that the operator is symmetric as:\n"
+          <<endl<<li<<is<< "  <0.5*op*v2,v1> == <v2,0.5*op*v1>"
+          <<endl<<li<<is<< "   \\_______/            \\_______/"
+          <<endl<<li<<is<< "      v4                    v3"
+          <<endl<<li<<is<< ""
+          <<endl<<li<<is<< "         <v4,v1> == <v2,v3>"
+          << endl;
+        
+        for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors; ++rand_vec_i ) {
+          
+          oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
+          
+          if(dump_all) oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
+          Teuchos::RefCountPtr<VectorBase<Scalar> > v1 = createMember(domain);
+          dRand->randomize(&*v1);
+          if(dump_all) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
+          
+          if(dump_all) oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
+          Teuchos::RefCountPtr<VectorBase<Scalar> > v2 = createMember(domain);
+          dRand->randomize(&*v2);
+          if(dump_all) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
+          
+          if(dump_all) oss <<endl<<li<<is<< "v3 = 0.5*op*v1 ...\n" ;
+          Teuchos::RefCountPtr<VectorBase<Scalar> > v3 = createMember(domain);
+          apply( op, NONCONJ_ELE, *v1, &*v3, half );
+         if(dump_all) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
+          
+          if(dump_all) oss <<endl<<li<<is<< "v4 = 0.5*op*v2 ...\n" ;
+          Teuchos::RefCountPtr<VectorBase<Scalar> > v4 = createMember(domain);
+          apply( op, NONCONJ_ELE, *v2, &*v4, half );
+          if(dump_all) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
+          
+          const Scalar
+            prod1 = domain->scalarProd(*v4,*v1),
+            prod2 = domain->scalarProd(*v2,*v3);
+          
+          result = testRelErr(
+            "<v4,v1>", prod1
+            ,"<v2,v3>", prod2
+            ,"symmetry_error_tol()", symmetry_error_tol
+            ,"symmetry_warning_tol()", symmetry_warning_tol
+            ,&oss,li+is
+            );
+          if(!result) *these_results = false;
+        
+        }
+      }
+      else {
+        oss <<endl<<li<<is<< "Range and domain spaces are different, skipping check!\n";
+      }
+    }
+};
+
+// LinearOpTester
+
+template<class RangeScalar, class DomainScalar>
+LinearOpTester<RangeScalar,DomainScalar>::LinearOpTester(
   const bool          check_linear_properties
   ,const ScalarMag    linear_properties_warning_tol
   ,const ScalarMag    linear_properties_error_tol
@@ -68,38 +184,42 @@ LinearOpTester<Scalar>::LinearOpTester(
   ,dump_all_(dump_all)
 {}
 
-template<class Scalar>
-void LinearOpTester<Scalar>::set_all_warning_tol( const ScalarMag warning_tol )
+template<class RangeScalar, class DomainScalar>
+void LinearOpTester<RangeScalar,DomainScalar>::set_all_warning_tol( const ScalarMag warning_tol )
 {
   linear_properties_warning_tol_  = warning_tol;
   adjoint_warning_tol_            = warning_tol;
   symmetry_warning_tol_           = warning_tol;
 }
 
-template<class Scalar>
-void LinearOpTester<Scalar>::set_all_error_tol( const ScalarMag error_tol )
+template<class RangeScalar, class DomainScalar>
+void LinearOpTester<RangeScalar,DomainScalar>::set_all_error_tol( const ScalarMag error_tol )
 {
   linear_properties_error_tol_  = error_tol;
   adjoint_error_tol_            = error_tol;
   symmetry_error_tol_           = error_tol;
 }
 
-template<class Scalar>
-bool LinearOpTester<Scalar>::check(
-  const LinearOpBase<Scalar>  &op
-  ,std::ostream               *out
-  ,const std::string          &leadingIndent
-  ,const std::string          &indentSpacer
+template<class RangeScalar, class DomainScalar>
+bool LinearOpTester<RangeScalar,DomainScalar>::check(
+  const LinearOpBase<RangeScalar,DomainScalar>  &op
+  ,MultiVectorRandomizerBase<RangeScalar>       *rangeRandomizer
+  ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
+  ,std::ostream                                 *out
+  ,const std::string                            &leadingIndent
+  ,const std::string                            &indentSpacer
   ) const
 {
 
   using std::endl;
-  using Teuchos::arrayArg;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
+  typedef Teuchos::ScalarTraits<RangeScalar>  RST;
+  typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
-  const Scalar zero = ST::zero();
-  const Scalar one = ST::one();
-  const Scalar half = Scalar(0.5)*one;
+  const RangeScalar  r_one  = RST::one();
+  const DomainScalar d_one  = DST::one();
+  const RangeScalar  r_half = RangeScalar(0.5)*r_one;
+  const DomainScalar d_half = DomainScalar(0.5)*d_one;
   const std::string &li = leadingIndent, &is = indentSpacer;
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
@@ -107,25 +227,33 @@ bool LinearOpTester<Scalar>::check(
   // * Test the MultiVectorBase apply() function and output to the VectorBase apply() function!
 
   if(out) {
-    *out <<endl<<li<< "*** Entering LinearOpTester<"<<ST::name()<<">::check(op,...) ...\n";
+    *out <<endl<<li<< "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(op,...) ...\n";
     if(show_all_tests()) {
       *out <<endl<<li<< "describe op:\n" << Teuchos::describe(op,verbLevel,li,is);
+/*
       if(op.applyTransposeSupports(CONJ_ELE) && verbLevel==Teuchos::VERB_EXTREME) {
         *out <<endl<<li<< "describe adjoint op:\n";
         describeLinearOp(*adjoint(Teuchos::rcp(&op,false)),*out,verbLevel,li,is);
       }
+*/
     }
     else {
       *out <<endl<<li<< "describe op: " << op.description() << endl;
     }
   }
 
+  Teuchos::RefCountPtr< MultiVectorRandomizerBase<RangeScalar> >  rRand;
+  if(rangeRandomizer)   rRand = Teuchos::rcp(rangeRandomizer,false);
+  else                  rRand = Teuchos::rcp(new UniversalMultiVectorRandomizer<RangeScalar>());
+  Teuchos::RefCountPtr< MultiVectorRandomizerBase<DomainScalar> > dRand;
+  if(domainRandomizer)  dRand = Teuchos::rcp(domainRandomizer,false);
+  else                  dRand = Teuchos::rcp(new UniversalMultiVectorRandomizer<DomainScalar>());
+  
   if(out)
     *out <<endl<<li << "Checking the domain and range spaces ... ";
 
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-    domain = op.domain(),
-    range  = op.range();
+  Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >  range  = op.range();
+  Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> > domain = op.domain();
   
   if(1) {
 
@@ -155,8 +283,8 @@ bool LinearOpTester<Scalar>::check(
     if(out) oss.copyfmt(*out);
     bool these_results = true;
 
-    oss <<endl<<li<<is<< "opSupported(op,NOTRANS) == true ? ";
-    result = opSupported(op,NOTRANS);
+    oss <<endl<<li<<is<< "op.applySupports(NONCONJ_ELE) == true ? ";
+    result = op.applySupports(NONCONJ_ELE);
     if(!result) these_results = false;
     oss << passfail(result) << endl;
 
@@ -178,32 +306,32 @@ bool LinearOpTester<Scalar>::check(
         oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
         
         oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v1 = createMember(domain);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v1 );
+        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+        dRand->randomize(&*v1);
         if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v2 = createMember(domain);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v2 );
+        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v2 = createMember(domain);
+        dRand->randomize(&*v2);
         if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v3 = v1 + v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v3 = createMember(domain);
-        linear_combination( 2, arrayArg<Scalar>(one,one)(), arrayArg<const VectorBase<Scalar>*>(&*v1,&*v2)(), zero, &*v3 );
+        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v3 = createMember(domain);
+        V_VpV(&*v3,*v1,*v2);
         if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v4 = 0.5*op*v3 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v4 = createMember(range);
-        apply( op, NOTRANS, *v3, &*v4, half );
+        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v4 = createMember(range);
+        apply( op, NONCONJ_ELE, *v3, &*v4, r_half );
         if(dump_all()) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v5 = op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v5 = createMember(range);
-        apply( op, NOTRANS, *v1, &*v5 );
+        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v5 = createMember(range);
+        apply( op, NONCONJ_ELE, *v1, &*v5 );
         if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v5 = 0.5*op*v2 + 0.5*v5 ...\n" ;
-        apply( op, NOTRANS, *v2, &*v5, half, half );
+        apply( op, NONCONJ_ELE, *v2, &*v5, r_half, r_half );
         if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
         
         const Scalar
@@ -222,7 +350,7 @@ bool LinearOpTester<Scalar>::check(
       }
     }
     else {
-      oss <<endl<<li<<is<< "Forward operator not supported, skipping check!";
+      oss <<endl<<li<<is<< "Forward operator not supported, skipping check!\n";
     }
       
     printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
@@ -240,8 +368,8 @@ bool LinearOpTester<Scalar>::check(
     if(out) oss.copyfmt(*out);
     bool these_results = true;
 
-    oss <<endl<<li<<is<< "opSupported(op,CONJTRANS) == true ? ";
-    result = opSupported(op,CONJTRANS);
+    oss <<endl<<li<<is<< "op.applyTransposeSupports(CONJ_ELE) == true ? ";
+    result = op.applyTransposeSupports(CONJ_ELE);
     if(!result) these_results = false;
     oss << passfail(result) << endl;
 
@@ -263,32 +391,32 @@ bool LinearOpTester<Scalar>::check(
         oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
         
         oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v1 = createMember(range);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v1 );
+        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v1 = createMember(range);
+        rRand->randomize(&*v1);
         if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v2 = createMember(range);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v2 );
+        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+        rRand->randomize(&*v2);
         if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v3 = v1 + v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v3 = createMember(range);
-        linear_combination( 2, arrayArg<Scalar>(one,one)(), arrayArg<const VectorBase<Scalar>*>(&*v1,&*v2)(), zero, &*v3 );
+        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
+        V_VpV(&*v3,*v1,*v2);
         if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v4 = 0.5*op'*v3 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v4 = createMember(domain);
-        apply( op, CONJTRANS, *v3, &*v4, half );
+        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(domain);
+        applyTranspose( op, CONJ_ELE, *v3, &*v4, d_half );
         if(dump_all()) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v5 = op'*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v5 = createMember(domain);
-        apply( op, CONJTRANS, *v1, &*v5 );
+        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v5 = createMember(domain);
+        applyTranspose( op, CONJ_ELE, *v1, &*v5 );
         if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
         
         oss <<endl<<li<<is<< "v5 = 0.5*op'*v2 + 0.5*v5 ...\n" ;
-        apply( op, CONJTRANS, *v2, &*v5, half, half );
+        applyTranspose( op, CONJ_ELE, *v2, &*v5, d_half, d_half );
         if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
         
         const Scalar
@@ -307,7 +435,7 @@ bool LinearOpTester<Scalar>::check(
       }
     }
     else {
-      oss <<endl<<li<<is<< "Adjoint operator not supported, skipping check!";
+      oss <<endl<<li<<is<< "Adjoint operator not supported, skipping check!\n";
     }
 
     printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
@@ -325,8 +453,8 @@ bool LinearOpTester<Scalar>::check(
     if(out) oss.copyfmt(*out);
     bool these_results = true;
     
-    oss <<endl<<li<<is<< "opSupported(op,CONJTRANS) == true ? ";
-    result = opSupported(op,CONJTRANS);
+    oss <<endl<<li<<is<< "op.applyTransposeSupports(CONJ_ELE) == true ? ";
+    result = op.applyTransposeSupports(CONJ_ELE);
     if(!result) these_results = false;
     oss << passfail(result) << endl;
 
@@ -346,23 +474,23 @@ bool LinearOpTester<Scalar>::check(
         oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
       
         oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v1 = createMember(domain);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v1 );
+        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+        dRand->randomize(&*v1);
         if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
       
         oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v2 = createMember(range);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v2 );
+        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+        rRand->randomize(&*v2);
         if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
       
         oss <<endl<<li<<is<< "v3 = 0.5*op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v3 = createMember(range);
-        apply( op, NOTRANS, *v1, &*v3, half );
+        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
+        apply( op, NONCONJ_ELE, *v1, &*v3, r_half );
         if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
       
         oss <<endl<<li<<is<< "v4 = 0.5*op'*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v4 = createMember(domain);
-        apply( op, CONJTRANS, *v2, &*v4, half );
+        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(domain);
+        applyTranspose( op, CONJ_ELE, *v2, &*v4, d_half );
         if(dump_all()) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
       
         const Scalar
@@ -381,7 +509,7 @@ bool LinearOpTester<Scalar>::check(
       }
     }
     else {
-      oss <<endl<<li<<is<< "Adjoint operator not supported, skipping check!";
+      oss <<endl<<li<<is<< "Adjoint operator not supported, skipping check!\n";
     }
 
     printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
@@ -399,100 +527,60 @@ bool LinearOpTester<Scalar>::check(
     if(out) oss.copyfmt(*out);
     bool these_results = true;
 
-    oss <<endl<<li<<is<< "op.domain()->isCompatible(*op.range()) == true : ";
-    result = op.domain()->isCompatible(*op.range());
-    if(!result) success = false;
-    oss << passfail(result) << endl;
-
-    if(result) {
-
-      oss
-        <<endl<<li<<is<< "Checking that the operator is symmetric as:\n"
-        <<endl<<li<<is<< "  <0.5*op*v2,v1> == <v2,0.5*op*v1>"
-        <<endl<<li<<is<< "   \\_______/            \\_______/"
-        <<endl<<li<<is<< "      v4                    v3"
-        <<endl<<li<<is<< ""
-        <<endl<<li<<is<< "         <v4,v1> == <v2,v3>"
-        << endl;
-
-      for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
-      
-        oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
-      
-        if(dump_all()) oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v1 = createMember(domain);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v1 );
-        if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
-      
-        if(dump_all()) oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v2 = createMember(range);
-        Thyra::randomize( Scalar(-one), Scalar(+one), &*v2 );
-        if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
-      
-        if(dump_all()) oss <<endl<<li<<is<< "v3 = 0.5*op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v3 = createMember(range);
-        apply( op, NOTRANS, *v1, &*v3, half );
-        if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
-      
-        if(dump_all()) oss <<endl<<li<<is<< "v4 = 0.5*op*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<Scalar> >	v4 = createMember(domain);
-        apply( op, NOTRANS, *v2, &*v4, half );
-        if(dump_all()) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
-      
-        const Scalar
-          prod1 = domain->scalarProd(*v4,*v1),
-          prod2 = range->scalarProd(*v2,*v3);
-
-        result = testRelErr(
-          "<v4,v1>", prod1
-          ,"<v2,v3>", prod2
-          ,"symmetry_error_tol()", symmetry_error_tol()
-          ,"symmetry_warning_tol()", symmetry_warning_tol()
-          ,&oss,li+is
-          );
-        if(!result) success = false;
-
-      }
-    }
-    else {
-      oss <<endl<<li<<is<< "Range and domain spaces are different, skipping check!";
-    }
-
+    SymmetricLinearOpTester<RangeScalar,DomainScalar>::checkSymmetry(
+      op,&*dRand,oss,li,is,num_random_vectors(),verbLevel,dump_all(),symmetry_error_tol(),symmetry_warning_tol(),&these_results
+      );
+    
     printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
-
+    
   }
   else {
-    if(out) *out <<endl<<li<< "this->check_for_symmetry()==false: Skipping check of symmetry ... ";
+    if(out) *out <<endl<<li<< "this->check_for_symmetry()==false: Skipping check of symmetry ...\n";
   }
   
   if(out)
-    *out <<endl<<li<< "*** Leaving LinearOpTester<"<<ST::name()<<">::check(...)\n";
+    *out <<endl<<li<< "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(...)\n";
 
   return success;
 }
 
-template<class Scalar>
-bool LinearOpTester<Scalar>::compare(
-  const LinearOpBase<Scalar>  &op1
-  ,const LinearOpBase<Scalar> &op2
-  ,std::ostream               *out
-  ,const std::string          &leadingIndent
-  ,const std::string          &indentSpacer
+
+template<class RangeScalar, class DomainScalar>
+bool LinearOpTester<RangeScalar,DomainScalar>::check(
+  const LinearOpBase<RangeScalar,DomainScalar>  &op
+  ,std::ostream                                 *out
+  ,const std::string                            &leadingIndent
+  ,const std::string                            &indentSpacer
+  ) const
+{
+  return check(op,NULL,NULL,out,leadingIndent,indentSpacer);
+}
+
+template<class RangeScalar, class DomainScalar>
+bool LinearOpTester<RangeScalar,DomainScalar>::compare(
+  const LinearOpBase<RangeScalar,DomainScalar>  &op1
+  ,const LinearOpBase<RangeScalar,DomainScalar> &op2
+  ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
+  ,std::ostream                                 *out
+  ,const std::string                            &leadingIndent
+  ,const std::string                            &indentSpacer
   ) const
 {
 
   using std::endl;
   using Teuchos::arrayArg;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
+  typedef Teuchos::ScalarTraits<RangeScalar>  RST;
+  typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
-  const Scalar one = ST::one();
-  const Scalar half = Scalar(0.5)*one;
+  const RangeScalar  r_half = RangeScalar(0.5)*RST::one();
+  const DomainScalar d_one  = DST::one();
   const std::string &li = leadingIndent, &is = indentSpacer;
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   if(out) {
     *out
-      <<endl<<li<< "*** Entering LinearOpTester<"<<ST::name()<<">::compare(op1,op2,...) ...\n";
+      <<endl<<li<< "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(op1,op2,...) ...\n";
     if(show_all_tests())
       *out <<endl<<li<< "describe op1:\n" << Teuchos::describe(op1,verbLevel,li,is);
     else
@@ -503,9 +591,12 @@ bool LinearOpTester<Scalar>::compare(
       *out <<endl<<li<< "describe op2: " << op2.description() << endl;
   }
 
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-    domain = op1.domain(),
-    range  = op1.range();
+  Teuchos::RefCountPtr< MultiVectorRandomizerBase<DomainScalar> > dRand;
+  if(domainRandomizer)  dRand = Teuchos::rcp(domainRandomizer,false);
+  else                  dRand = Teuchos::rcp(new UniversalMultiVectorRandomizer<DomainScalar>());
+
+  Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >  range  = op1.range();
+  Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> > domain = op1.domain();
 
   if(out) *out <<endl<<li<< "Checking that range and domain spaces are compatible ... ";
 
@@ -556,18 +647,18 @@ bool LinearOpTester<Scalar>::compare(
       oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
       
       if(dump_all()) oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
-      Teuchos::RefCountPtr<VectorBase<Scalar> >	v1 = createMember(domain);
-      Thyra::randomize( Scalar(-one), Scalar(+one), &*v1 );
+      Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+      dRand->randomize(&*v1);
       if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << *v1;
       
       if(dump_all()) oss <<endl<<li<<is<< "v2 = 0.5*op1*v1 ...\n" ;
-      Teuchos::RefCountPtr<VectorBase<Scalar> >	v2 = createMember(range);
-      apply( op1, NOTRANS, *v1, &*v2, half );
+      Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+      apply( op1, NONCONJ_ELE, *v1, &*v2, r_half );
       if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << *v2;
       
       if(dump_all()) oss <<endl<<li<<is<< "v3 = 0.5*op2*v1 ...\n" ;
-      Teuchos::RefCountPtr<VectorBase<Scalar> >	v3 = createMember(range);
-      apply( op2, NOTRANS, *v1, &*v3, half );
+      Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
+      apply( op2, NONCONJ_ELE, *v1, &*v3, r_half );
       if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << *v3;
       
       const Scalar
@@ -590,10 +681,22 @@ bool LinearOpTester<Scalar>::compare(
   }
 
   if(out)
-    *out <<endl<<li<< "*** Leaving LinearOpTester<"<<ST::name()<<">::compare(...)\n";
+    *out <<endl<<li<< "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(...)\n";
 
   return success;
 
+}
+
+template<class RangeScalar, class DomainScalar>
+bool LinearOpTester<RangeScalar,DomainScalar>::compare(
+  const LinearOpBase<RangeScalar,DomainScalar>  &op1
+  ,const LinearOpBase<RangeScalar,DomainScalar> &op2
+  ,std::ostream                                 *out
+  ,const std::string                            &leadingIndent
+  ,const std::string                            &indentSpacer
+  ) const
+{
+  return compare(op1,op2,NULL,out,leadingIndent,indentSpacer);
 }
 
 } // namespace Thyra

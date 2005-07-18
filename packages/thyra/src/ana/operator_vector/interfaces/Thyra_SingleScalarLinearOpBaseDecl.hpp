@@ -55,10 +55,8 @@ public:
 
   /** \brief . */
   bool applySupports( const EConj conj ) const;
-
   /** \brief . */
   bool applyTransposeSupports( const EConj conj ) const;
-
   /** \brief . */
   void apply(
     const EConj                       conj
@@ -67,7 +65,6 @@ public:
     ,const Scalar                     alpha
     ,const Scalar                     beta
     ) const;
-
   /** \brief . */
   void applyTranspose(
     const EConj                       conj

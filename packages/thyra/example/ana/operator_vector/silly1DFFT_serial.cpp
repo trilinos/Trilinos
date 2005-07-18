@@ -27,11 +27,47 @@
 // @HEADER
 
 #include "ComplexFFTLinearOp.hpp"
+#include "RealComplexFFTLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+
+//
+// Creates random complex multi-vectors for FFT with symmetic entries
+//
+
+template<class RealScalar>
+class SymmetricComplexMultiVectorRandomizer : public Thyra::MultiVectorRandomizerBase< std::complex<RealScalar> > {
+public:
+
+  typedef std::complex<RealScalar> Scalar;
+
+  bool isCompatible( const Thyra::VectorSpaceBase<Scalar> &space ) const
+    {
+      return space.isInCore();
+    }
+
+  void randomize( Thyra::MultiVectorBase<Scalar> *mv )
+    {
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+#     ifdef _DEBUG
+      TEST_FOR_EXCEPT( mv == NULL );
+      TEST_FOR_EXCEPT( mv->range()->dim() % 2 != 0 );
+#     endif
+      Thyra::ExplicitMutableMultiVectorView<Scalar> ev_mv(*mv);
+      const Thyra::Index n = ev_mv.subDim();
+      for( Thyra::Index j = 1; j <= ev_mv.numSubCols(); ++j ) {
+        for( Thyra::Index i = 1; i <= n/2; ++i ) {
+          const Scalar val = ST::random();
+          ev_mv(i,j)     = val;
+          ev_mv(n-i+1,j) = ST::conjugate(val);
+        }
+      }
+    }
+  
+};
 
 //
 // This example program does some stuff with FFT.
@@ -46,6 +82,7 @@ bool run1DFFTExample(
   )
 {
   using Teuchos::RefCountPtr; using Teuchos::rcp;
+  typedef std::complex<RealScalar> ComplexScalar;
   typedef Teuchos::ScalarTraits<RealScalar> ST;
   const std::string indentSpacer = "  ";
   bool success = true;
@@ -59,28 +96,42 @@ bool run1DFFTExample(
   Teuchos::Time timer("");
   timer.start(true);
 
-  if(verbose) std::cout << "\nConstructing a 1D FFT linear operator A ...\n";
+  if(verbose) std::cout << "\nConstructing a 1D complex-to-complex FFT linear operator C ...\n";
 
-  Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase< std::complex<RealScalar> > >
-    A = Teuchos::rcp( new ComplexFFTLinearOp<RealScalar>(N) );
-  if(verbose) std::cout << "\nTesting the LinearOpBase interface of the constructed linear operator A ...\n";
-  Thyra::LinearOpTester< std::complex<RealScalar> > linearOpTester;
+  Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase<ComplexScalar> >
+    C = Teuchos::rcp( new ComplexFFTLinearOp<RealScalar>(N) );
+  if(verbose) std::cout << "\nTesting the LinearOpBase interface of the constructed linear operator C ...\n";
+  Thyra::LinearOpTester<ComplexScalar> linearOpTester;
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(RealScalar(RealScalar(1e-2)*tolerance));
   linearOpTester.show_all_tests(true);
   linearOpTester.dump_all(dumpAll);
-  result = linearOpTester.check(*A,verbose?&std::cout:0,indentSpacer,indentSpacer);
+  result = linearOpTester.check(*C,verbose?&std::cout:0,indentSpacer,indentSpacer);
   if(!result) success = false;
 
-  if(verbose) std::cout << "\nTesting the LinearOpWithSolveBase interface of the constructed linear operator A ...\n";
+  if(verbose) std::cout << "\nTesting the LinearOpWithSolveBase interface of the constructed linear operator C ...\n";
 
-  Thyra::LinearOpWithSolveTester< std::complex<RealScalar> > linearOpWithSolveTester;
+  Thyra::LinearOpWithSolveTester<ComplexScalar> linearOpWithSolveTester;
   linearOpWithSolveTester.set_all_solve_tol(tolerance);
   linearOpWithSolveTester.set_all_slack_error_tol(RealScalar(RealScalar(1e+1)*tolerance));
   linearOpWithSolveTester.set_all_slack_warning_tol(tolerance);
   linearOpWithSolveTester.show_all_tests(true);
   linearOpWithSolveTester.dump_all(dumpAll);
-  result = linearOpWithSolveTester.check(*A,verbose?&std::cout:0,indentSpacer,indentSpacer);
+  result = linearOpWithSolveTester.check(*C,verbose?&std::cout:0,indentSpacer,indentSpacer);
+  if(!result) success = false;
+
+  if(verbose) std::cout << "\nConstructing a 1D real-to-complex FFT linear operator R ...\n";
+
+  Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase< ComplexScalar, RealScalar > >
+    R = Teuchos::rcp( new RealComplexFFTLinearOp<RealScalar>(N) );
+  if(verbose) std::cout << "\nTesting the LinearOpBase interface of the constructed linear operator R ...\n";
+  SymmetricComplexMultiVectorRandomizer<RealScalar> symmetricComplexMultiVectorRandomizer;
+  Thyra::LinearOpTester<ComplexScalar,RealScalar> RlinearOpTester;
+  RlinearOpTester.set_all_error_tol(tolerance);
+  RlinearOpTester.set_all_warning_tol(RealScalar(RealScalar(1e-2)*tolerance));
+  RlinearOpTester.show_all_tests(true);
+  RlinearOpTester.dump_all(dumpAll);
+  result = RlinearOpTester.check(*R,&symmetricComplexMultiVectorRandomizer,NULL,verbose?&std::cout:0,indentSpacer,indentSpacer);
   if(!result) success = false;
 
   timer.stop();

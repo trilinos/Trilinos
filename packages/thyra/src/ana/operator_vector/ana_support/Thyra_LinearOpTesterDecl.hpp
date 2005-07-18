@@ -30,6 +30,7 @@
 #define THYRA_LINEAR_OP_TESTER_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
+#include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 
@@ -51,12 +52,12 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template<class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpTester {
 public:
 
   /** \brief Local typedef for scalar magnitude */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  typedef typename Teuchos::ScalarTraits<typename LinearOpBase<RangeScalar,DomainScalar>::Scalar>::magnitudeType ScalarMag;
 
   /** \brief Default constructor which sets default parameter values.
    *
@@ -164,10 +165,23 @@ public:
    * @param  op    [in] The linear operator to check.
    * @param  out   [in/out] If <tt>out!=NULL</tt> then trace output
    *               about the tests performed will be sent to <tt>*out</tt>.
+   * @param  rangeRandomizer
+   *               [in] Randomizer strategy object for creating random vectors in the
+   *               range of the operator <tt>op</tt>.  If <tt>NULL</tt> then
+   *               <tt>UniveralMultiVectorRandomizer</tt> is used intead.
+   * @param  domainRandomizer
+   *               [in] Randomizer strategy object for creating random vectors in the
+   *               domain of the operator <tt>op</tt>.  If <tt>NULL</tt> then
+   *               <tt>UniveralMultiVectorRandomizer</tt> is used intead.
    * @param  leadingIndent [in] All output to <tt>*out</tt> will insert this spacer
    *                      before each new line is printed.  Default value <tt>""</tt>.
    * @param  indentSpacer [in] All output to <tt>*out</tt> that is further indented
-   8                      will use this indentation.  Default value <tt>"  "</tt>.
+   *                      will use this indentation.  Default value <tt>"  "</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li>[<tt>rangeRandomizer!=NULL</tt>] <tt>rangeRandomizer->isCompatible(*op.range())==true</tt>
+   * <li>[<tt>domainRandomizer!=NULL</tt>] <tt>domainRandomizer->isCompatible(*op.domain())==true</tt>
+   * </ul>
    *
    * This function performs a number of tests on <tt>op</tt>:<ul>
    *
@@ -219,10 +233,20 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool check(
-    const LinearOpBase<Scalar>  &op
-    ,std::ostream               *out
-    ,const std::string          &leadingIndent  = ""
-    ,const std::string          &indentSpacer   = "  "
+    const LinearOpBase<RangeScalar,DomainScalar>  &op
+    ,MultiVectorRandomizerBase<RangeScalar>       *rangeRandomizer
+    ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
+    ,std::ostream                                 *out
+    ,const std::string                            &leadingIndent  = ""
+    ,const std::string                            &indentSpacer   = "  "
+    ) const;
+
+  /** \brief Calls <tt>this->check(op,NULL,NULL,out,leadingIndent,indentSpacer)</tt> */
+  bool check(
+    const LinearOpBase<RangeScalar,DomainScalar>  &op
+    ,std::ostream                                 *out
+    ,const std::string                            &leadingIndent  = ""
+    ,const std::string                            &indentSpacer   = "  "
     ) const;
 
 
@@ -230,12 +254,16 @@ public:
    *
    * @param  op1    [in] The first linear operator
    * @param  op2    [in] The second linear operator
+   * @param  domainRandomizer
+   *               [in] Randomizer strategy object for creating random vectors in the
+   *               domain of the operator <tt>op</tt>.  If <tt>NULL</tt> then
+   *               <tt>UniveralMultiVectorRandomizer</tt> is used intead.
    * @param  out    [in/out] If <tt>out!=NULL</tt> then trace output
    *                about the tests performed will be sent to <tt>*out</tt>.
    * @param  leadingIndent [in] All output to <tt>*out</tt> will insert this spacer
    *                      before each new line is printed.  Default value <tt>""</tt>.
    * @param  indentSpacer [in] All output to <tt>*out</tt> that is further indented
-   8                      will use this indentation.  Default value <tt>"  "</tt>.
+   *                      will use this indentation.  Default value <tt>"  "</tt>.
    *
    * This function checks if <tt>op1</tt> and <tt>op2</tt> are the same by
    * checking that the range and domain spaces are compatible and then
@@ -257,11 +285,21 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool compare(
-    const LinearOpBase<Scalar>  &op1
-    ,const LinearOpBase<Scalar> &op2
-    ,std::ostream               *out
-    ,const std::string          &leadingIndent  = ""
-    ,const std::string          &indentSpacer   = "  "
+    const LinearOpBase<RangeScalar,DomainScalar>  &op1
+    ,const LinearOpBase<RangeScalar,DomainScalar> &op2
+    ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
+    ,std::ostream                                 *out
+    ,const std::string                            &leadingIndent  = ""
+    ,const std::string                            &indentSpacer   = "  "
+    ) const;
+  
+  /** \brief Calls <tt>this->compare(op1,op2,NULL,out,leadingIndent,indentSpacer)</tt>. */
+  bool compare(
+    const LinearOpBase<RangeScalar,DomainScalar>  &op1
+    ,const LinearOpBase<RangeScalar,DomainScalar> &op2
+    ,std::ostream                                 *out
+    ,const std::string                            &leadingIndent  = ""
+    ,const std::string                            &indentSpacer   = "  "
     ) const;
 
 }; // class LinearOpTester

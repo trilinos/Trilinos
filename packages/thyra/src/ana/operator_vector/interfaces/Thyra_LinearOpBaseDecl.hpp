@@ -120,13 +120,8 @@ template<class RangeScalar, class DomainScalar>
 class LinearOpBase : virtual public Teuchos::Describable {
 public:
 
-  /** @name Public types */
-  //@{
-
-  /** \brief . */
-  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote Scalar;
-
-  //@}
+  /** \brief .*/
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote  Scalar;
 
   /** @name Pure virtual functions (must be overridden by subclass) */
   //@{
@@ -202,8 +197,8 @@ public:
     const EConj                             conj
     ,const MultiVectorBase<DomainScalar>    &X
     ,MultiVectorBase<RangeScalar>           *Y
-    ,const Scalar                           alpha = Teuchos::ScalarTraits<Scalar>::one()
-    ,const Scalar                           beta  = Teuchos::ScalarTraits<Scalar>::zero()
+    ,const RangeScalar                      alpha = Teuchos::ScalarTraits<RangeScalar>::one()
+    ,const RangeScalar                      beta  = Teuchos::ScalarTraits<RangeScalar>::zero()
     ) const = 0;
 
   //@}
@@ -263,8 +258,8 @@ public:
     const EConj                            conj
     ,const MultiVectorBase<RangeScalar>    &X
     ,MultiVectorBase<DomainScalar>         *Y
-    ,const Scalar                          alpha = Teuchos::ScalarTraits<Scalar>::one()
-    ,const Scalar                          beta  = Teuchos::ScalarTraits<Scalar>::zero()
+    ,const DomainScalar                     alpha = Teuchos::ScalarTraits<DomainScalar>::one()
+    ,const DomainScalar                     beta  = Teuchos::ScalarTraits<DomainScalar>::zero()
     ) const;
 
   /** \brief Clone the linear operator object (if supported).
@@ -340,8 +335,47 @@ inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
   return M.applyTransposeSupports(transToConj(M_trans));
 }
 
-/** \brief Call <tt>LinearOpBase<Scalar>::apply()</tt> as a global function
- *    call (for a single scalar type).
+/** \brief Call <tt>LinearOpBase::apply()</tt> as a global function call.
+ *
+ * Calls <tt>M.apply(conj,X,Y,alpha,beta)</tt>.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+template<class RangeScalar, class DomainScalar>
+inline void apply(
+  const LinearOpBase<RangeScalar,DomainScalar>     &M
+  ,const EConj                                     conj
+  ,const MultiVectorBase<DomainScalar>             &X
+  ,MultiVectorBase<RangeScalar>                    *Y
+  ,const RangeScalar                               alpha = Teuchos::ScalarTraits<RangeScalar>::one()
+  ,const RangeScalar                               beta  = Teuchos::ScalarTraits<RangeScalar>::zero()
+  )
+{
+  M.apply(conj,X,Y,alpha,beta);
+}
+
+/** \brief Call <tt>LinearOpBase::applyTranspose()</tt> as a global function call.
+ *
+ * Calls <tt>M.applyTranspose(conj,X,Y,alpha,beta)</tt>.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+template<class RangeScalar, class DomainScalar>
+inline void applyTranspose(
+  const LinearOpBase<RangeScalar,DomainScalar>      &M
+  ,const EConj                                      conj
+  ,const MultiVectorBase<RangeScalar>               &X
+  ,MultiVectorBase<DomainScalar>                    *Y
+  ,const DomainScalar                               alpha = Teuchos::ScalarTraits<DomainScalar>::one()
+  ,const DomainScalar                               beta  = Teuchos::ScalarTraits<DomainScalar>::zero()
+  )
+{
+  M.applyTranspose(conj,X,Y,alpha,beta);
+}
+
+/** \brief Call <tt>LinearOpBase::apply()</tt> or
+ *    <tt>LinearOpBase::applyTranspose()</tt> as a global function call (for a
+ *    single scalar type).
  *
  * Calls <tt>M.apply(...,X,Y,alpha,beta)</tt> or
  * <tt>M.applyTranspose(...,X,Y,alpha,beta)</tt>.

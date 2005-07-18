@@ -44,27 +44,25 @@ std::ostream& Thyra::describeLinearOp(
   ,const std::string                             indentSpacer
   )
 {
-  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Teuchos::ScalarTraits<DomainScalar> DST;
   const Index dimDomain = A.domain()->dim(), dimRange = A.range()->dim();
   out << leadingIndent << indentSpacer << "type = \'" << A.description()
       << "\', rangeDim = " << dimRange
       << ", domainDim = " << dimDomain << "\n";
   if(verbLevel >= Teuchos::VERB_EXTREME) {
     // Copy into dense matrix by column
-    Teuchos::RefCountPtr<VectorBase<Scalar> >
-      e_j = createMember(A.domain()),
-      t   = createMember(A.range()); // temp column
-    RTOpPack::SubVectorT<Scalar> sv;
-    std::vector<Scalar>  Md( dimRange * dimDomain ); // Column major
+    Teuchos::RefCountPtr<VectorBase<DomainScalar> > e_j = createMember(A.domain());
+    Teuchos::RefCountPtr<VectorBase<RangeScalar> >  t   = createMember(A.range()); // temp column
+    RTOpPack::SubVectorT<RangeScalar> sv;
+    std::vector<RangeScalar>  Md( dimRange * dimDomain ); // Column major
     const Index
       cs = 1,         // stride for columns or rows 
       rs = dimRange;  // stride for rows or columns
     Index i, j;
     for( j = 1; j <= dimDomain; ++j ) {
-      Thyra::assign( e_j.get(), ST::zero() );
-      Thyra::set_ele( j, ST::one(), e_j.get() );
-      A.apply(NONCONJ_ELE,*e_j,t.get());  // extract the ith column or row
+      Thyra::assign( e_j.get(), DST::zero() );
+      Thyra::set_ele( j, DST::one(), e_j.get() );
+      apply(A,NONCONJ_ELE,*e_j,t.get());  // extract the ith column or row
       t->getSubVector(Range1D(),&sv);
       for( i = 1; i <= dimRange; ++i ) Md[ (i-1)*cs + (j-1)*rs ] = sv(i);
       t->freeSubVector(&sv);

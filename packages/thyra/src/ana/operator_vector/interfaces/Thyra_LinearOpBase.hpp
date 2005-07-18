@@ -56,13 +56,13 @@ void LinearOpBase<RangeScalar,DomainScalar>::applyTranspose(
   const EConj                            conj
   ,const MultiVectorBase<RangeScalar>    &X
   ,MultiVectorBase<DomainScalar>         *Y
-  ,const Scalar                          alpha
-  ,const Scalar                          beta
+  ,const DomainScalar                    alpha
+  ,const DomainScalar                    beta
   ) const
 {
   TEST_FOR_EXCEPTION(
     true,std::logic_error
-    ,"LinearOpBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::applyTranspose(...): "
+    ,"LinearOpBase<"<<Teuchos::ScalarTraits<RangeScalar>::name()<<","<<Teuchos::ScalarTraits<DomainScalar>::name()<<">::applyTranspose(...): "
     "Error, the concrete subclass described as { " << this->description() << " } "
     " with this->applyTransposeSupports("<<toString(conj)<<")="<<this->applyTransposeSupports(conj)
     << " did not override this function and does not support transposes."
