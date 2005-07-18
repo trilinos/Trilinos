@@ -62,6 +62,8 @@
 // All scalar types
 //
 
+// Standard test names
+
 // Reduction operations
 
 template<class Scalar>
@@ -152,10 +154,10 @@ void Thyra::set_ele( Index i, Scalar alpha, VectorBase<Scalar>* v )
 }
 
 template<class Scalar>
-void Thyra::assign( VectorBase<Scalar>* v_lhs, const Scalar& alpha )
+void Thyra::put_scalar( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 {
 #ifdef _DEBUG
-  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"assign(...), Error!");
+  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"put_scalar(...), Error!");
 #endif
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
   VectorBase<Scalar>* targ_vecs[] = { v_lhs };
@@ -163,10 +165,10 @@ void Thyra::assign( VectorBase<Scalar>* v_lhs, const Scalar& alpha )
 }
 
 template<class Scalar>
-void Thyra::assign( VectorBase<Scalar>* v_lhs, const VectorBase<Scalar>& v_rhs )
+void Thyra::copy( const VectorBase<Scalar>& v_rhs, VectorBase<Scalar>* v_lhs )
 {
 #ifdef _DEBUG
-  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"assign(...), Error!");
+  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"copy(...), Error!");
 #endif
   RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
   const VectorBase<Scalar>* vecs[]      = { &v_rhs };
@@ -175,10 +177,10 @@ void Thyra::assign( VectorBase<Scalar>* v_lhs, const VectorBase<Scalar>& v_rhs )
 }
 
 template<class Scalar>
-void Thyra::Vp_S( VectorBase<Scalar>* v_lhs, const Scalar& alpha )
+void Thyra::add_scalar( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 {
 #ifdef _DEBUG
-  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"Vt_S(...), Error!");
+  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"add_scalar(...), Error!");
 #endif
   RTOpPack::TOpAddScalar<Scalar> add_scalar_op(alpha);
   VectorBase<Scalar>* targ_vecs[] = { v_lhs };
@@ -186,11 +188,10 @@ void Thyra::Vp_S( VectorBase<Scalar>* v_lhs, const Scalar& alpha )
 }
 
 template<class Scalar>
-void Thyra::Vt_S(
-  VectorBase<Scalar>* v_lhs, const Scalar& alpha )
+void Thyra::scale( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 {
 #ifdef _DEBUG
-  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"Vt_S(...), Error!");
+  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"scale(...), Error!");
 #endif
   if( alpha == Teuchos::ScalarTraits<Scalar>::zero() ) {
     assign(v_lhs,Teuchos::ScalarTraits<Scalar>::zero());
@@ -200,58 +201,6 @@ void Thyra::Vt_S(
     VectorBase<Scalar>* targ_vecs[] = { v_lhs };
     applyOp<Scalar>(scale_vector_op,0,(const VectorBase<Scalar>**)NULL,1,targ_vecs,(RTOpPack::ReductTarget*)NULL);
   }
-}
-
-template<class Scalar>
-void Thyra::V_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x )
-{
-  linear_combination(
-    1,Teuchos::arrayArg<Scalar>(alpha)(),Teuchos::arrayArg<const VectorBase<Scalar>*>(&x)()
-    ,Teuchos::ScalarTraits<Scalar>::zero(),y
-    );
-}
-
-template<class Scalar>
-void Thyra::Vp_StV( VectorBase<Scalar>* v_lhs, const Scalar& alpha, const VectorBase<Scalar>& v_rhs )
-{
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"Vp_StV(...), Error!");
-#endif
-  RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
-  const VectorBase<Scalar>* vecs[]      = { &v_rhs };
-  VectorBase<Scalar>*       targ_vecs[] = { v_lhs  };
-  applyOp<Scalar>(axpy_op,1,vecs,1,targ_vecs,(RTOpPack::ReductTarget*)NULL);
-}
-
-template<class Scalar>
-void Thyra::Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta )
-{
-  linear_combination(
-    1,Teuchos::arrayArg<Scalar>(Teuchos::ScalarTraits<Scalar>::one())()
-    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x)()
-    ,beta,y
-    );
-}
-
-template<class Scalar>
-void Thyra::V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  linear_combination(
-    2,Teuchos::arrayArg<Scalar>(ST::one(),Scalar(-ST::one()))()
-    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
-    ,ST::zero(),z
-    );
-}
-
-template<class Scalar>
-void Thyra::V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
-{
-  linear_combination(
-    2,Teuchos::arrayArg<Scalar>(alpha,Teuchos::ScalarTraits<Scalar>::one())()
-    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
-    ,Teuchos::ScalarTraits<Scalar>::one(),z
-    );
 }
 
 template<class Scalar>
@@ -348,6 +297,96 @@ void Thyra::randomize( Scalar l, Scalar u, VectorBase<Scalar>* v )
   RTOpPack::TOpRandomize<Scalar> random_vector_op(l,u);
   VectorBase<Scalar>* targ_vecs[] = { v };
   applyOp<Scalar>(random_vector_op,0,(const VectorBase<Scalar>**)NULL,1,targ_vecs,(RTOpPack::ReductTarget*)NULL);
+}
+
+// Linear algebra names
+
+template<class Scalar>
+void Thyra::assign( VectorBase<Scalar>* v_lhs, const Scalar& alpha )
+{
+  put_scalar(alpha,v_lhs);
+}
+
+template<class Scalar>
+void Thyra::assign( VectorBase<Scalar>* v_lhs, const VectorBase<Scalar>& v_rhs )
+{
+  copy(v_rhs,v_lhs);
+}
+
+template<class Scalar>
+void Thyra::Vp_S( VectorBase<Scalar>* v_lhs, const Scalar& alpha )
+{
+  add_scalar(alpha,v_lhs);
+}
+
+template<class Scalar>
+void Thyra::Vt_S(
+  VectorBase<Scalar>* v_lhs, const Scalar& alpha )
+{
+  scale(alpha,v_lhs);
+}
+
+template<class Scalar>
+void Thyra::V_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x )
+{
+  linear_combination(
+    1,Teuchos::arrayArg<Scalar>(alpha)(),Teuchos::arrayArg<const VectorBase<Scalar>*>(&x)()
+    ,Teuchos::ScalarTraits<Scalar>::zero(),y
+    );
+}
+
+template<class Scalar>
+void Thyra::Vp_StV( VectorBase<Scalar>* v_lhs, const Scalar& alpha, const VectorBase<Scalar>& v_rhs )
+{
+#ifdef _DEBUG
+  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"Vp_StV(...), Error!");
+#endif
+  RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
+  const VectorBase<Scalar>* vecs[]      = { &v_rhs };
+  VectorBase<Scalar>*       targ_vecs[] = { v_lhs  };
+  applyOp<Scalar>(axpy_op,1,vecs,1,targ_vecs,(RTOpPack::ReductTarget*)NULL);
+}
+
+template<class Scalar>
+void Thyra::Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta )
+{
+  linear_combination(
+    1,Teuchos::arrayArg<Scalar>(Teuchos::ScalarTraits<Scalar>::one())()
+    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x)()
+    ,beta,y
+    );
+}
+
+template<class Scalar>
+void Thyra::V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  linear_combination(
+    2,Teuchos::arrayArg<Scalar>(ST::one(),ST::one())()
+    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
+    ,ST::zero(),z
+    );
+}
+
+template<class Scalar>
+void Thyra::V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  linear_combination(
+    2,Teuchos::arrayArg<Scalar>(ST::one(),Scalar(-ST::one()))()
+    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
+    ,ST::zero(),z
+    );
+}
+
+template<class Scalar>
+void Thyra::V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
+{
+  linear_combination(
+    2,Teuchos::arrayArg<Scalar>(alpha,Teuchos::ScalarTraits<Scalar>::one())()
+    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
+    ,Teuchos::ScalarTraits<Scalar>::one(),z
+    );
 }
 
 //

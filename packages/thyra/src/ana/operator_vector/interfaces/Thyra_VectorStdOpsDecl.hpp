@@ -41,6 +41,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_VectorStdOps_grp
  */
+
+/** \defgroup Thyra_Op_Vec_VectorStdOpsAll_names_grp Vector operations with standard test names.
+ *
+ * \ingroup Thyra_Op_Vec_VectorStdOpsAll_grp
+ */
 //@{
 
 /** \brief Sum of vector elements: <tt>result = sum( v(i), i = 1...v.space()->dim() )</tt>.
@@ -98,17 +103,17 @@ void set_ele( Index i, Scalar alpha, VectorBase<Scalar>* v );
 /** \brief Assign all elements to a scalar: <tt>y(i) = alpha, i = 1...y->space()->dim()</tt>.
  */
 template<class Scalar>
-void assign( VectorBase<Scalar>* y, const Scalar& alpha );
+void put_scalar( const Scalar& alpha, VectorBase<Scalar>* y );
 
 /** \brief VectorBase assignment: <tt>y(i) = x(i), i = 1...y->space()->dim()</tt>.
  */
 template<class Scalar>
-void assign( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
+void copy( const VectorBase<Scalar>& x, VectorBase<Scalar>* y );
 
 /** \brief Add a scalar to all elements: <tt>y(i) += alpha, i = 1...y->space()->dim()</tt>.
  */
 template<class Scalar>
-void Vp_S( VectorBase<Scalar>* y, const Scalar& alpha );
+void add_scalar( const Scalar& alpha, VectorBase<Scalar>* y );
 
 /** \brief Scale all elements by a scalar: <tt>y(i) *= alpha, i = 1...y->space()->dim()</tt>.
  *
@@ -117,32 +122,7 @@ void Vp_S( VectorBase<Scalar>* y, const Scalar& alpha );
  * do anything).
  */
 template<class Scalar>
-void Vt_S( VectorBase<Scalar>* y, const Scalar& alpha );
-
-/** \brief Assign scaled vector: <tt>y(i) = alpha * x(i), i = 1...y->space()->dim()</tt>.
- */
-template<class Scalar>
-void V_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x );
-
-/** \brief AXPY: <tt>y(i) = alpha * x(i) + y(i), i = 1...y->space()->dim()</tt>.
- */
-template<class Scalar>
-void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar>& x );
-
-/** \brief <tt>y(i) = x(i) + beta*y(i), i = 1...y->space()->dim()</tt>.
- */
-template<class Scalar>
-void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta );
-
-/** \brief <tt>z(i) = x(i) - y(i), i = 1...z->space()->dim()</tt>.
- */
-template<class Scalar>
-void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
-
-/** \brief <tt>z(i) = alpha*x(i) + y(i), i = 1...z->space()->dim()</tt>.
- */
-template<class Scalar>
-void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+void scale( const Scalar& alpha, VectorBase<Scalar>* y );
 
 /** \brief Element-wise absolute value<tt>y(i) = abs(x(i)), i = 1...y->space()->dim()</tt>.
  */
@@ -204,6 +184,71 @@ void seed_randomize( unsigned int s );
  */
 template<class Scalar>
 void randomize( Scalar l, Scalar u, VectorBase<Scalar>* v );
+
+//@}
+
+/** \defgroup Thyra_Op_Vec_VectorStdOpsAll_LA_names_grp Vector with linear algebra naming convention.
+ *
+ * These functions a just simpler ways to call the functions defined
+ * \ref Thyra_Op_Vec_VectorStdOpsAll_names_grp "here".
+ *
+ * \ingroup Thyra_Op_Vec_VectorStdOpsAll_grp
+ */
+//@{
+
+/** \brief Assign all elements to a scalar: <tt>y(i) = alpha, i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void assign( VectorBase<Scalar>* y, const Scalar& alpha );
+
+/** \brief VectorBase assignment: <tt>y(i) = x(i), i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void assign( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
+
+/** \brief Add a scalar to all elements: <tt>y(i) += alpha, i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void Vp_S( VectorBase<Scalar>* y, const Scalar& alpha );
+
+/** \brief Scale all elements by a scalar: <tt>y(i) *= alpha, i = 1...y->space()->dim()</tt>.
+ *
+ * This takes care of the special cases of <tt>alpha == 0.0</tt>
+ * (set <tt>y = 0.0</tt>) and <tt>alpha == 1.0</tt> (don't
+ * do anything).
+ */
+template<class Scalar>
+void Vt_S( VectorBase<Scalar>* y, const Scalar& alpha );
+
+/** \brief Assign scaled vector: <tt>y(i) = alpha * x(i), i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x );
+
+/** \brief AXPY: <tt>y(i) = alpha * x(i) + y(i), i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar>& x );
+
+/** \brief <tt>y(i) = x(i) + beta*y(i), i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta );
+
+/** \brief <tt>z(i) = x(i) + y(i), i = 1...z->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
+/** \brief <tt>z(i) = x(i) - y(i), i = 1...z->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
+/** \brief <tt>z(i) = alpha*x(i) + y(i), i = 1...z->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 
 //@}
 
