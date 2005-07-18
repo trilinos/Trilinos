@@ -563,7 +563,7 @@ namespace Anasazi {
        1) Verify that the specified vectors were copied
        2) Verify that the other vectors were not modified
        3) Verify that C was not modified
-       3) Change C and then check B to make sure it was not modified
+       4) Change C and then check B to make sure it was not modified
       
        Use a different index set than has been used so far (distinct entries).
        This is because duplicate entries will cause the vector to be
@@ -603,6 +603,95 @@ namespace Anasazi {
       // check that the correct vectors of B were modified
       // and the others were not
       for (i=0; i<numvecs; i++) {
+        if (i % 2 == 0) {
+          // should be a vector from C
+          if ( normsB2[i] != normsC1[i/2] ) {
+            if ( om->isVerbosityAndPrint(Warning) ) {
+              out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+                  << "Copied vectors do not agree." << endl;
+            }
+            return Failed;
+          }
+        }
+        else {
+          // should be an original vector
+          if ( normsB1[i] != normsB2[i] ) {
+            if ( om->isVerbosityAndPrint(Warning) ) {
+              out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+                  << "Incorrect vectors were modified." << endl;
+            }
+            return Failed;
+          }
+        }
+      }
+      MVT::MvInit(*C,zero);
+      MVT::MvNorm(*B,&normsB1);
+      // verify that we copied and didn't reference
+      for (i=0; i<numvecs; i++) {
+        if ( normsB1[i] != normsB2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+                << "Copied vectors were not independent." << endl;
+          }
+          return Failed;
+        }
+      }
+    }
+
+
+    /*********** SetBlock() and MvNorm() *********************************
+       SetBlock() will copy the vectors from C into B 
+       1) Verify that the specified vectors were copied
+       2) Verify that the other vectors were not modified
+       3) Verify that C was not modified
+       4) Change C and then check B to make sure it was not modified
+
+       Use a different index set than has been used so far (distinct entries).
+       This is because duplicate entries will cause the vector to be
+       overwritten, making it more difficult to test.
+
+       These tests are the same as the ones above, except that the
+       number of indices (to be copied into B) is less than the number
+       of vectors in C, so that not all of C is put into B.
+    *********************************************************************/
+    {
+      Teuchos::RefCountPtr<MV> B, C;
+      // set these: we assume below that setSize*2=BSize
+      const int BSize   = 10, 
+                CSize   = 6,
+                setSize = 5;
+      std::vector<ScalarType> normsB1(BSize), normsB2(BSize),
+                              normsC1(CSize), normsC2(CSize);
+
+      B = MVT::Clone(*A,BSize);
+      C = MVT::Clone(*A,CSize);
+      // Just do every other one, interleaving the vectors of C into B
+      ind.resize(setSize);
+      for (i=0; i<setSize; i++) {
+        ind[i] = 2*i;
+      }
+      MVT::MvRandom(*B);
+      MVT::MvRandom(*C);
+
+      MVT::MvNorm(*B,&normsB1);
+      MVT::MvNorm(*C,&normsC1);
+      MVT::SetBlock(*C,ind,*B);
+      MVT::MvNorm(*B,&normsB2);
+      MVT::MvNorm(*C,&normsC2);
+
+      // check that C was not changed by SetBlock
+      for (i=0; i<CSize; i++) {
+        if ( normsC1[i] != normsC2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+                << "Operation modified source vectors." << endl;
+          }
+          return Failed;
+        }
+      }
+      // check that the correct vectors of B were modified
+      // and the others were not
+      for (i=0; i<BSize; i++) {
         if (i % 2 == 0) {
           // should be a vector from C
           if ( normsB2[i] != normsC1[i/2] ) {
