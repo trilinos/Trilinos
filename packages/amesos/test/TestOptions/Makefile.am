@@ -54,3 +54,6 @@ endif
 
 TestOptions_DEPENDENCIES = all-libs
 TestOptions_LDADD = $(EXAMPLE_LIBS)
+
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs 
