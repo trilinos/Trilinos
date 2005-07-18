@@ -52,12 +52,5 @@ else
 TestOptions_SOURCES = $(srcdir)/DoNothing.cpp
 endif
 
-TestOptions_DEPENDENCIES = \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a 
-
+TestOptions_DEPENDENCIES = all-libs
 TestOptions_LDADD = $(EXAMPLE_LIBS)
