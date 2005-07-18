@@ -62,8 +62,8 @@ SUPERLUDIST_H =
 SUPERLUDIST =
 endif
 
-PARAM_H = 
-PARAM = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp
+SUPPORT_H = 
+SUPPORT = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp $(srcdir)/Amesos_Support.cpp
 
 
 if HAVE_AMESOS_DSCPACK
@@ -282,6 +282,7 @@ COMP_H = \
         $(srcdir)/Amesos_Utils.h \
         $(srcdir)/Amesos_Time.h \
         $(srcdir)/Amesos_Control.h \
+        $(srcdir)/Amesos_Support.h \
         $(srcdir)/Amesos_Status.h
 
 COMP = \
@@ -329,13 +330,19 @@ endif
 
 include $(top_builddir)/Makefile.export.amesos
 
+if HAVE_AMESOS_EPETRAEXT
+   EPETRA_EXT_INCLUDE =	-I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
+else
+   EPETRA_EXT_INCLUDE = 
+endif 
+
 if USING_GNUMAKE
 EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES))
 else
 EXPORT_INCLUDES = $(AMESOS_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) \
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_EXT_INCLUDE) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) \
 	      -I$(top_srcdir)/src/AMD/Include \
 	      -I$(top_srcdir)/src/AMD/Source \
 	      -I$(top_srcdir)/src/colamd \
@@ -351,7 +358,7 @@ AMESOS_LIB = libamesos.a
 
 
 AMESOS_H = \
-	$(PARAM_H) \
+	$(SUPPORT_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
 	$(KLU_H) \
@@ -373,7 +380,7 @@ AMESOS_H = \
 
 
 libamesos_a_SOURCES = \
-	$(PARAM) \
+	$(SUPPORT) \
 	$(DSCPACK) \
 	$(KLU) \
 	$(UMFPACK) \
@@ -459,7 +466,12 @@ all-libs:
 	$(MAKE) libamesos.a
 	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
 	cd $(top_builddir)/../epetra ; $(MAKE) all-libs 
-
+if HAVE_AMESOS_TRIUTILS
+	cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
+endif
+if HAVE_AMESOS_EPETRAEXT
+	cd $(top_builddir)/../epetraext ; $(MAKE) all-libs 
+endif
 
 
 

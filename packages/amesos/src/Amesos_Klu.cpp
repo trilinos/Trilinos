@@ -32,6 +32,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
+#include "Amesos_Support.h"
 extern "C" {
   // #include "amd.h"
 #include "klu_btf.h"
@@ -59,11 +60,12 @@ public:
 } ;
 
 
+
+
 //=============================================================================
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( new Amesos_Klu_Pimpl() ),
-  RowMatrixA_(0),
-  SerialMatrix_(0),
+  CrsMatrixA_(0),
   UseTranspose_(false),
   Problem_(&prob)
 {
@@ -93,18 +95,18 @@ int Amesos_Klu::ExportToSerial()
        << endl ; 
 
   if (UseDataInPlace_ != 1) {
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     assert ( RowMatrixA_ != 0 ) ; 
     assert ( ImportToSerial_.get() != 0 ) ; 
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-    AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*RowMatrixA_, 
+    AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
     
     Comm().Barrier();
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   }
   
   return 0;
@@ -123,16 +125,6 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   const Epetra_Map &OriginalDomainMap = GetProblem()->GetOperator()->OperatorDomainMap();
   const Epetra_Map &OriginalRangeMap = GetProblem()->GetOperator()->OperatorRangeMap();
 
-
-#if 0
-  cout<< __FILE__ << "::" << __LINE__  << " OriginalDomainMap = " ;
-  OriginalDomainMap.Print ( cout ) ; 
-  cout<< __FILE__ << "::" << __LINE__  << " OriginalRangeMap = " ;
-  OriginalRangeMap.Print ( cout ) ; 
-  cout<< __FILE__ << "::" << __LINE__  << " OriginalMatrixMap = " ;
-  OriginalMatrixMap.Print ( cout ) ; 
-#endif
-
   NumGlobalElements_ = RowMatrixA_->NumGlobalRows();
   numentries_ = RowMatrixA_->NumGlobalNonzeros();
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
@@ -140,6 +132,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   //
   //  Create a serial matrix
   //
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   assert( NumGlobalElements_ == OriginalMatrixMap.NumGlobalElements() ) ;
   int NumMyElements_ = 0 ;
   if (iam==0) NumMyElements_ = NumGlobalElements_;
@@ -148,30 +141,65 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   //  normal.  Anything out of the ordinary reverts to the more expensive
   //  path. 
   //
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   UseDataInPlace_ = ( OriginalMatrixMap.NumMyElements() ==
 	       OriginalMatrixMap.NumGlobalElements() )?1:0;
   if ( ! OriginalRangeMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   if ( ! OriginalDomainMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   Comm().Broadcast( &UseDataInPlace_, 1, 0 ) ;
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  //
+  //  Reindex matrix if necessary (and possible - i.e. CrsMatrix for now)
+  //
+  //  For now, since I don't know how to determine if we need to reindex the matrix, 
+  //  I will reindex them all - and then either allow the user to choose or figure it out. 
+  //
+  CrsMatrixA_ = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
+  Reindex_ =  ( CrsMatrixA_ != 0 ) ;
+  if ( Reindex_ ) {
+    //    Need to figure out when we don't need to reindex - bug #1501  not really this bug # 
+    //    Reindex_ = false ; 
+  }
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if  ( Reindex_ ) {
+#ifdef HAVE_AMESOS_EPETRAEXT
+    StdIndex_ = rcp( new Amesos_StandardIndex( *CrsMatrixA_  ) );
+
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    //    StdIndexMatrix_ = &((*MatTrans_)( *CrsMatrixA_ ));
+    StdIndexMatrix_ = StdIndex_->StandardizeIndex( CrsMatrixA_ );
+#else
+    cerr << "Amesos_Klu requires EpetraExt to reindex matrices." << endl 
+	 <<  " Please rebuild with the EpetraExt library by adding --enable-epetraext to your configure invocation" << endl ;
+    return 13 ; 
+#endif
+  } else { 
+    StdIndexMatrix_ = RowMatrixA_ ;
+  }
+
   //
   //  Convert Original Matrix to Serial (if it is not already)
   //
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   if (UseDataInPlace_ == 1) {
-    SerialMatrix_ = RowMatrixA_;
+    SerialMatrix_ = StdIndexMatrix_;
   } else {
     SerialMap_ = rcp(new Epetra_Map(NumGlobalElements_, NumMyElements_, 0, Comm()));
     
-    ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_,OriginalMatrixMap) );
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->RowMatrixRowMap() ) );
     
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-1);
     
-    if ( OriginalRangeMap.SameAs( OriginalMatrixMap ) )
+    if ( false && OriginalRangeMap.SameAs( OriginalMatrixMap ) )
       ImportRangeToSerial_ = ImportToSerial_ ;
     else
       ImportRangeToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalRangeMap) );
     
-    if ( OriginalDomainMap.SameAs( OriginalMatrixMap ) )
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( false && OriginalDomainMap.SameAs( OriginalMatrixMap ) )
       ImportDomainToSerial_ = ImportToSerial_ ;
     else
       ImportDomainToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalDomainMap) );
@@ -181,12 +209,14 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     assert ( OriginalDomainMap.SameAs( OriginalMatrixMap ) );
 #endif    
    
-  SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) )
-;
-  SerialMatrix_ = &*SerialCrsMatrixA_ ;
-}
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) )
+      ;
+    SerialMatrix_ = &*SerialCrsMatrixA_ ;
+  }
 AddTime("matrix redistribution");
 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 return 0;
 }
 
@@ -238,6 +268,14 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
   if (iam==0) {
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
+
+#if 0    
+    cout << __FILE__ << "::" << __LINE__ 
+	 << " numentries_ = " <<  numentries_ 
+	 << " SerialMatrix_->NumGlobalNonzeros() = " <<  SerialMatrix_->NumGlobalNonzeros() 
+	 << endl ; 
+#endif
+
     assert( numentries_ == SerialMatrix_->NumGlobalNonzeros());
     if ( firsttime ) { 
       Ap.resize( NumGlobalElements_+1 );
@@ -507,8 +545,33 @@ int Amesos_Klu::Solve()
   
   ++NumSolve_;
 
-  Epetra_MultiVector* vecX = Problem_->GetLHS() ;
-  Epetra_MultiVector* vecB = Problem_->GetRHS() ;
+  //
+  //  Reindex the LHS and RHS 
+  //
+  Epetra_MultiVector* OrigVecX = Problem_->GetLHS() ;
+  Epetra_MultiVector* OrigVecB = Problem_->GetRHS() ;
+  Epetra_MultiVector* vecX ;
+  Epetra_MultiVector* vecB ;
+
+  if ( Reindex_ ) { 
+#if 0
+    if ( FirstSolve_ ) { 
+      VecTrans_ = rcp( new EpetraExt::MultiVector_Reindex( *ContiguousMap_ ) );
+      FirstSolve_ = false ; 
+    }
+    vecX = &((*VecTrans_)( *OrigVecX ));
+    vecB = &((*VecTrans_)( *OrigVecB ));
+#endif
+#ifdef HAVE_AMESOS_EPETRAEXT
+    vecX = StdIndex_->StandardizeIndex( OrigVecX ) ;
+    vecB = StdIndex_->StandardizeIndex( OrigVecB ) ;
+#else
+    AMESOS_CHK_ERR( -13 ) ; // Amesos_Klu can't handle non-standard indexing without EpetraExt 
+#endif
+  } else {
+    vecX = OrigVecX ;
+    vecB = OrigVecB ;
+  } 
 
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   if ((vecX == 0) || (vecB == 0))

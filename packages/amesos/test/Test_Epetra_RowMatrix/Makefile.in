@@ -291,7 +291,7 @@ target_vendor = @target_vendor@
 AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 TEST = Test_Epetra_RowMatrix
 Test_Epetra_RowMatrix_SOURCES = $(srcdir)/cxx_main.cpp
-Test_Epetra_RowMatrix_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+Test_Epetra_RowMatrix_DEPENDENCIES = all-libs
 Test_Epetra_RowMatrix_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
@@ -537,6 +537,9 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.amesos
+
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

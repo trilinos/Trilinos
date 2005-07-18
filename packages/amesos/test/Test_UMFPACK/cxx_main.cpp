@@ -1,5 +1,5 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_UMFPACK
+#if defined(HAVE_AMESOS_UMFPACK) && defined(HAVE_AMESOS_TRIUTILS)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -194,7 +194,12 @@ int main(int argc, char *argv[])
 #endif
 
   puts("Please configure AMESOS with:");
+#ifndef HAVE_AMESOS_UMFPACK
   puts("--enable-amesos-umfpack");
+#endif
+#ifndef HAVE_AMESOS_TRIUTILS
+  puts("--enable-amesos-triutils");
+#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize();

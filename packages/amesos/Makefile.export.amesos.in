@@ -15,10 +15,14 @@ AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lamesos $(EPETRA_LIBS) $(TEUCH
 
 @HAVE_AMESOS_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
+@HAVE_AMESOS_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
 # These variables define the include path and libraries that can be used in
 # the Amesos' examples and tests, but that are not required to compile or link
 # Amesos itself.
 AMESOS_EXTRA_INCLUDES = $(AMESOS_INCLUDES) \
+		        $(EPETRAEXT_INCLUDES) \
 		        $(TRIUTILS_INCLUDES)
 AMESOS_EXTRA_LIBS = $(AMESOS_LIBS) \
+		    $(EPETRAEXT_LIBS) \
 		    $(TRIUTILS_LIBS)

@@ -19,5 +19,8 @@ TEST = Test_Epetra_RowMatrix
 noinst_PROGRAMS = $(TEST)
 
 Test_Epetra_RowMatrix_SOURCES = $(srcdir)/cxx_main.cpp
-Test_Epetra_RowMatrix_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+Test_Epetra_RowMatrix_DEPENDENCIES =  all-libs
 Test_Epetra_RowMatrix_LDADD = $(EXAMPLE_LIBS)
+
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs 

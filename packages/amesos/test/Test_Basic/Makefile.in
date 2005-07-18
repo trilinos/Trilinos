@@ -14,34 +14,6 @@
 
 @SET_MAKE@
 
-#@HEADER
-# ************************************************************************
-# 
-#                 Amesos: Direct Sparse Solver Package
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
-#@HEADER
-
 SOURCES = $(TestBasic_SOURCES) $(amesos_test_SOURCES)
 
 srcdir = @srcdir@
@@ -106,25 +78,32 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_TestBasic_OBJECTS =
 TestBasic_OBJECTS = $(am_TestBasic_OBJECTS)
-TestBasic_LDADD = $(LDADD)
-am__objects_1 = amesos_test-SparseDirectTimingVars.$(OBJEXT) \
-	amesos_test-SparseSolverResult.$(OBJEXT)
-am_amesos_test_OBJECTS = amesos_test-Amesos_TestDriver.$(OBJEXT) \
-	amesos_test-Amesos_TestSolver.$(OBJEXT) \
-	amesos_test-Amesos_TestMultiSolver.$(OBJEXT) \
-	amesos_test-Amesos_TestMrhsSolver.$(OBJEXT) $(am__objects_1)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(AMESOS_EXTRA_LIBS))
+am__amesos_test_SOURCES_DIST = $(srcdir)/DoNothing.cpp
+am__objects_1 = SparseDirectTimingVars.$(OBJEXT) \
+	SparseSolverResult.$(OBJEXT)
+@HAVE_AMESOS_TRIUTILS_FALSE@am_amesos_test_OBJECTS =  \
+@HAVE_AMESOS_TRIUTILS_FALSE@	DoNothing.$(OBJEXT)
+@HAVE_AMESOS_TRIUTILS_TRUE@am_amesos_test_OBJECTS =  \
+@HAVE_AMESOS_TRIUTILS_TRUE@	Amesos_TestDriver.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	Amesos_TestSolver.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	Amesos_TestMultiSolver.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	Amesos_TestMrhsSolver.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(am__objects_1)
 amesos_test_OBJECTS = $(am_amesos_test_OBJECTS)
-@HAVE_AMESOS_EPETRAEXT_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../epetraext/src/libepetraext.a
-am__DEPENDENCIES_2 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestSolver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-SparseSolverResult.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos_TestDriver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_TestMrhsSolver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_TestMultiSolver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_TestSolver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/DoNothing.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/SparseDirectTimingVars.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/SparseSolverResult.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -135,7 +114,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestBasic_SOURCES) $(amesos_test_SOURCES)
-DIST_SOURCES = $(TestBasic_SOURCES) $(amesos_test_SOURCES)
+DIST_SOURCES = $(TestBasic_SOURCES) $(am__amesos_test_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -323,50 +302,27 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 TestBasic_SOURCES = $(srcdir)/In_TestBasic.csh
 SRC_CXX = $(srcdir)/SparseDirectTimingVars.cpp \
            $(srcdir)/SparseDirectTimingVars.h \
            $(srcdir)/SparseSolverResult.cpp \
            SparseSolverResult.h 
 
-amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp \
-	 $(srcdir)/Amesos_TestSolver.cpp $(srcdir)/Amesos_TestSolver.h \
-	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
-	 $(SRC_CXX)
+@HAVE_AMESOS_TRIUTILS_FALSE@amesos_test_SOURCES = $(srcdir)/DoNothing.cpp
+@HAVE_AMESOS_TRIUTILS_TRUE@amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	 $(srcdir)/Amesos_TestSolver.cpp $(srcdir)/Amesos_TestSolver.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	 $(SRC_CXX)
 
-@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_INCLUDE = 
-@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_INCLUDE = -I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
-
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	${EPETRA_EXT_INCLUDE} \
-	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
-
-@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_LIB = 
-@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_LIB = $(top_builddir)/../epetraext/src/libepetraext.a 
-amesos_test_DEPENDENCIES = \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a 
-
-amesos_test_CXXFLAGS = -I$(top_srcdir)/src
-
-#
-#  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
-#
-amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(AMESOS_LIBS)  $(top_builddir)/src/libamesos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS) $(FLIBS)
-
+TestBasic_DEPENDENCIES = all-libs
+amesos_test_DEPENDENCIES = all-libs
+TestBasic_LDADD = ${EXAMPLE_LIBS}
+amesos_test_LDADD = ${EXAMPLE_LIBS}
 EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_ImpcolA.rua \
         $(srcdir)/In_ImpcolB.rua \
@@ -448,12 +404,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-SparseSolverResult.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_TestDriver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_TestMrhsSolver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_TestMultiSolver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_TestSolver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DoNothing.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SparseDirectTimingVars.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SparseSolverResult.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -471,101 +428,117 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-amesos_test-Amesos_TestDriver.o: $(srcdir)/Amesos_TestDriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestDriver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" -c -o amesos_test-Amesos_TestDriver.o `test -f '$(srcdir)/Amesos_TestDriver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestDriver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestDriver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='amesos_test-Amesos_TestDriver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
+DoNothing.o: $(srcdir)/DoNothing.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DoNothing.o -MD -MP -MF "$(DEPDIR)/DoNothing.Tpo" -c -o DoNothing.o `test -f '$(srcdir)/DoNothing.cpp' || echo '$(srcdir)/'`$(srcdir)/DoNothing.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DoNothing.Tpo" "$(DEPDIR)/DoNothing.Po"; else rm -f "$(DEPDIR)/DoNothing.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/DoNothing.cpp' object='DoNothing.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/DoNothing.Po' tmpdepfile='$(DEPDIR)/DoNothing.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestDriver.o `test -f '$(srcdir)/Amesos_TestDriver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestDriver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DoNothing.o `test -f '$(srcdir)/DoNothing.cpp' || echo '$(srcdir)/'`$(srcdir)/DoNothing.cpp
 
-amesos_test-Amesos_TestDriver.obj: $(srcdir)/Amesos_TestDriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestDriver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" -c -o amesos_test-Amesos_TestDriver.obj `if test -f '$(srcdir)/Amesos_TestDriver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestDriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestDriver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestDriver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='amesos_test-Amesos_TestDriver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
+DoNothing.obj: $(srcdir)/DoNothing.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DoNothing.obj -MD -MP -MF "$(DEPDIR)/DoNothing.Tpo" -c -o DoNothing.obj `if test -f '$(srcdir)/DoNothing.cpp'; then $(CYGPATH_W) '$(srcdir)/DoNothing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/DoNothing.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DoNothing.Tpo" "$(DEPDIR)/DoNothing.Po"; else rm -f "$(DEPDIR)/DoNothing.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/DoNothing.cpp' object='DoNothing.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/DoNothing.Po' tmpdepfile='$(DEPDIR)/DoNothing.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestDriver.obj `if test -f '$(srcdir)/Amesos_TestDriver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestDriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestDriver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DoNothing.obj `if test -f '$(srcdir)/DoNothing.cpp'; then $(CYGPATH_W) '$(srcdir)/DoNothing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/DoNothing.cpp'; fi`
 
-amesos_test-Amesos_TestSolver.o: $(srcdir)/Amesos_TestSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestSolver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" -c -o amesos_test-Amesos_TestSolver.o `test -f '$(srcdir)/Amesos_TestSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestSolver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='amesos_test-Amesos_TestSolver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
+Amesos_TestDriver.o: $(srcdir)/Amesos_TestDriver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestDriver.o -MD -MP -MF "$(DEPDIR)/Amesos_TestDriver.Tpo" -c -o Amesos_TestDriver.o `test -f '$(srcdir)/Amesos_TestDriver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestDriver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestDriver.Tpo" "$(DEPDIR)/Amesos_TestDriver.Po"; else rm -f "$(DEPDIR)/Amesos_TestDriver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='Amesos_TestDriver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestSolver.o `test -f '$(srcdir)/Amesos_TestSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestSolver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestDriver.o `test -f '$(srcdir)/Amesos_TestDriver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestDriver.cpp
 
-amesos_test-Amesos_TestSolver.obj: $(srcdir)/Amesos_TestSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestSolver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" -c -o amesos_test-Amesos_TestSolver.obj `if test -f '$(srcdir)/Amesos_TestSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestSolver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='amesos_test-Amesos_TestSolver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
+Amesos_TestDriver.obj: $(srcdir)/Amesos_TestDriver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestDriver.obj -MD -MP -MF "$(DEPDIR)/Amesos_TestDriver.Tpo" -c -o Amesos_TestDriver.obj `if test -f '$(srcdir)/Amesos_TestDriver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestDriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestDriver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestDriver.Tpo" "$(DEPDIR)/Amesos_TestDriver.Po"; else rm -f "$(DEPDIR)/Amesos_TestDriver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='Amesos_TestDriver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestSolver.obj `if test -f '$(srcdir)/Amesos_TestSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestSolver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestDriver.obj `if test -f '$(srcdir)/Amesos_TestDriver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestDriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestDriver.cpp'; fi`
 
-amesos_test-Amesos_TestMultiSolver.o: $(srcdir)/Amesos_TestMultiSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMultiSolver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" -c -o amesos_test-Amesos_TestMultiSolver.o `test -f '$(srcdir)/Amesos_TestMultiSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMultiSolver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='amesos_test-Amesos_TestMultiSolver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
+Amesos_TestSolver.o: $(srcdir)/Amesos_TestSolver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestSolver.o -MD -MP -MF "$(DEPDIR)/Amesos_TestSolver.Tpo" -c -o Amesos_TestSolver.o `test -f '$(srcdir)/Amesos_TestSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestSolver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestSolver.Tpo" "$(DEPDIR)/Amesos_TestSolver.Po"; else rm -f "$(DEPDIR)/Amesos_TestSolver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='Amesos_TestSolver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMultiSolver.o `test -f '$(srcdir)/Amesos_TestMultiSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMultiSolver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestSolver.o `test -f '$(srcdir)/Amesos_TestSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestSolver.cpp
 
-amesos_test-Amesos_TestMultiSolver.obj: $(srcdir)/Amesos_TestMultiSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMultiSolver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" -c -o amesos_test-Amesos_TestMultiSolver.obj `if test -f '$(srcdir)/Amesos_TestMultiSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMultiSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMultiSolver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='amesos_test-Amesos_TestMultiSolver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
+Amesos_TestSolver.obj: $(srcdir)/Amesos_TestSolver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestSolver.obj -MD -MP -MF "$(DEPDIR)/Amesos_TestSolver.Tpo" -c -o Amesos_TestSolver.obj `if test -f '$(srcdir)/Amesos_TestSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestSolver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestSolver.Tpo" "$(DEPDIR)/Amesos_TestSolver.Po"; else rm -f "$(DEPDIR)/Amesos_TestSolver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='Amesos_TestSolver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMultiSolver.obj `if test -f '$(srcdir)/Amesos_TestMultiSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMultiSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMultiSolver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestSolver.obj `if test -f '$(srcdir)/Amesos_TestSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestSolver.cpp'; fi`
 
-amesos_test-Amesos_TestMrhsSolver.o: $(srcdir)/Amesos_TestMrhsSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMrhsSolver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" -c -o amesos_test-Amesos_TestMrhsSolver.o `test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMrhsSolver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='amesos_test-Amesos_TestMrhsSolver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
+Amesos_TestMultiSolver.o: $(srcdir)/Amesos_TestMultiSolver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestMultiSolver.o -MD -MP -MF "$(DEPDIR)/Amesos_TestMultiSolver.Tpo" -c -o Amesos_TestMultiSolver.o `test -f '$(srcdir)/Amesos_TestMultiSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMultiSolver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestMultiSolver.Tpo" "$(DEPDIR)/Amesos_TestMultiSolver.Po"; else rm -f "$(DEPDIR)/Amesos_TestMultiSolver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='Amesos_TestMultiSolver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMrhsSolver.o `test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMrhsSolver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestMultiSolver.o `test -f '$(srcdir)/Amesos_TestMultiSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMultiSolver.cpp
 
-amesos_test-Amesos_TestMrhsSolver.obj: $(srcdir)/Amesos_TestMrhsSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMrhsSolver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" -c -o amesos_test-Amesos_TestMrhsSolver.obj `if test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMrhsSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMrhsSolver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='amesos_test-Amesos_TestMrhsSolver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
+Amesos_TestMultiSolver.obj: $(srcdir)/Amesos_TestMultiSolver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestMultiSolver.obj -MD -MP -MF "$(DEPDIR)/Amesos_TestMultiSolver.Tpo" -c -o Amesos_TestMultiSolver.obj `if test -f '$(srcdir)/Amesos_TestMultiSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMultiSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMultiSolver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestMultiSolver.Tpo" "$(DEPDIR)/Amesos_TestMultiSolver.Po"; else rm -f "$(DEPDIR)/Amesos_TestMultiSolver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='Amesos_TestMultiSolver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMrhsSolver.obj `if test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMrhsSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMrhsSolver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestMultiSolver.obj `if test -f '$(srcdir)/Amesos_TestMultiSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMultiSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMultiSolver.cpp'; fi`
 
-amesos_test-SparseDirectTimingVars.o: $(srcdir)/SparseDirectTimingVars.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseDirectTimingVars.o -MD -MP -MF "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" -c -o amesos_test-SparseDirectTimingVars.o `test -f '$(srcdir)/SparseDirectTimingVars.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseDirectTimingVars.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='amesos_test-SparseDirectTimingVars.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
+Amesos_TestMrhsSolver.o: $(srcdir)/Amesos_TestMrhsSolver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestMrhsSolver.o -MD -MP -MF "$(DEPDIR)/Amesos_TestMrhsSolver.Tpo" -c -o Amesos_TestMrhsSolver.o `test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMrhsSolver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestMrhsSolver.Tpo" "$(DEPDIR)/Amesos_TestMrhsSolver.Po"; else rm -f "$(DEPDIR)/Amesos_TestMrhsSolver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='Amesos_TestMrhsSolver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseDirectTimingVars.o `test -f '$(srcdir)/SparseDirectTimingVars.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseDirectTimingVars.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestMrhsSolver.o `test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMrhsSolver.cpp
 
-amesos_test-SparseDirectTimingVars.obj: $(srcdir)/SparseDirectTimingVars.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseDirectTimingVars.obj -MD -MP -MF "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" -c -o amesos_test-SparseDirectTimingVars.obj `if test -f '$(srcdir)/SparseDirectTimingVars.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseDirectTimingVars.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseDirectTimingVars.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='amesos_test-SparseDirectTimingVars.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
+Amesos_TestMrhsSolver.obj: $(srcdir)/Amesos_TestMrhsSolver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_TestMrhsSolver.obj -MD -MP -MF "$(DEPDIR)/Amesos_TestMrhsSolver.Tpo" -c -o Amesos_TestMrhsSolver.obj `if test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMrhsSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMrhsSolver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_TestMrhsSolver.Tpo" "$(DEPDIR)/Amesos_TestMrhsSolver.Po"; else rm -f "$(DEPDIR)/Amesos_TestMrhsSolver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='Amesos_TestMrhsSolver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseDirectTimingVars.obj `if test -f '$(srcdir)/SparseDirectTimingVars.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseDirectTimingVars.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseDirectTimingVars.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_TestMrhsSolver.obj `if test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMrhsSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMrhsSolver.cpp'; fi`
 
-amesos_test-SparseSolverResult.o: $(srcdir)/SparseSolverResult.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseSolverResult.o -MD -MP -MF "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" -c -o amesos_test-SparseSolverResult.o `test -f '$(srcdir)/SparseSolverResult.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseSolverResult.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" "$(DEPDIR)/amesos_test-SparseSolverResult.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseSolverResult.cpp' object='amesos_test-SparseSolverResult.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseSolverResult.TPo' @AMDEPBACKSLASH@
+SparseDirectTimingVars.o: $(srcdir)/SparseDirectTimingVars.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SparseDirectTimingVars.o -MD -MP -MF "$(DEPDIR)/SparseDirectTimingVars.Tpo" -c -o SparseDirectTimingVars.o `test -f '$(srcdir)/SparseDirectTimingVars.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseDirectTimingVars.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SparseDirectTimingVars.Tpo" "$(DEPDIR)/SparseDirectTimingVars.Po"; else rm -f "$(DEPDIR)/SparseDirectTimingVars.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='SparseDirectTimingVars.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseSolverResult.o `test -f '$(srcdir)/SparseSolverResult.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseSolverResult.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SparseDirectTimingVars.o `test -f '$(srcdir)/SparseDirectTimingVars.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseDirectTimingVars.cpp
 
-amesos_test-SparseSolverResult.obj: $(srcdir)/SparseSolverResult.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseSolverResult.obj -MD -MP -MF "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" -c -o amesos_test-SparseSolverResult.obj `if test -f '$(srcdir)/SparseSolverResult.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseSolverResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseSolverResult.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" "$(DEPDIR)/amesos_test-SparseSolverResult.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseSolverResult.cpp' object='amesos_test-SparseSolverResult.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseSolverResult.TPo' @AMDEPBACKSLASH@
+SparseDirectTimingVars.obj: $(srcdir)/SparseDirectTimingVars.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SparseDirectTimingVars.obj -MD -MP -MF "$(DEPDIR)/SparseDirectTimingVars.Tpo" -c -o SparseDirectTimingVars.obj `if test -f '$(srcdir)/SparseDirectTimingVars.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseDirectTimingVars.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseDirectTimingVars.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SparseDirectTimingVars.Tpo" "$(DEPDIR)/SparseDirectTimingVars.Po"; else rm -f "$(DEPDIR)/SparseDirectTimingVars.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='SparseDirectTimingVars.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseSolverResult.obj `if test -f '$(srcdir)/SparseSolverResult.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseSolverResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseSolverResult.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SparseDirectTimingVars.obj `if test -f '$(srcdir)/SparseDirectTimingVars.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseDirectTimingVars.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseDirectTimingVars.cpp'; fi`
+
+SparseSolverResult.o: $(srcdir)/SparseSolverResult.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SparseSolverResult.o -MD -MP -MF "$(DEPDIR)/SparseSolverResult.Tpo" -c -o SparseSolverResult.o `test -f '$(srcdir)/SparseSolverResult.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseSolverResult.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SparseSolverResult.Tpo" "$(DEPDIR)/SparseSolverResult.Po"; else rm -f "$(DEPDIR)/SparseSolverResult.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseSolverResult.cpp' object='SparseSolverResult.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/SparseSolverResult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SparseSolverResult.o `test -f '$(srcdir)/SparseSolverResult.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseSolverResult.cpp
+
+SparseSolverResult.obj: $(srcdir)/SparseSolverResult.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SparseSolverResult.obj -MD -MP -MF "$(DEPDIR)/SparseSolverResult.Tpo" -c -o SparseSolverResult.obj `if test -f '$(srcdir)/SparseSolverResult.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseSolverResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseSolverResult.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SparseSolverResult.Tpo" "$(DEPDIR)/SparseSolverResult.Po"; else rm -f "$(DEPDIR)/SparseSolverResult.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseSolverResult.cpp' object='SparseSolverResult.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/SparseSolverResult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SparseSolverResult.obj `if test -f '$(srcdir)/SparseSolverResult.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseSolverResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseSolverResult.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -729,6 +702,35 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
+#@HEADER
+# ************************************************************************
+# 
+#                 Amesos: Direct Sparse Solver Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+#@HEADER
+include $(top_builddir)/Makefile.export.amesos
+
 TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.csh  \
 	$(srcdir)/In_AmesosDscpack.csh Matrices $(srcdir)/In_AmesosUmfpack.csh \
 	$(srcdir)/In_AmesosKlu.csh $(srcdir)/In_AmesosSuperlu.csh \
@@ -821,6 +823,9 @@ clean:  clean-am
 	Suppressions \
 	SST.* \
 	AME.* 
+
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

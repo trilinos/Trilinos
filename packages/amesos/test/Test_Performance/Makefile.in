@@ -15,34 +15,9 @@
 @SET_MAKE@
 
 #@HEADER
-# ************************************************************************
-# 
-#                 Amesos: Direct Sparse Solver Package
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
 #@HEADER
 
-SOURCES = $(PerfTest_SOURCES) $(Test_UmfpackPerformance_SOURCES)
+SOURCES = $(Test_Performance_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +40,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = PerfTest$(EXEEXT) Test_UmfpackPerformance$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = test/Test_Performance
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -103,32 +78,25 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
+am__EXEEXT_1 = Test_Performance$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 =
-am_PerfTest_OBJECTS = PerfTest-Amesos_Performance.$(OBJEXT) \
-	$(am__objects_1)
-PerfTest_OBJECTS = $(am_PerfTest_OBJECTS)
-@HAVE_AMESOS_EPETRAEXT_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../epetraext/src/libepetraext.a
-am__DEPENDENCIES_2 =
-am_Test_UmfpackPerformance_OBJECTS =
-Test_UmfpackPerformance_OBJECTS =  \
-	$(am_Test_UmfpackPerformance_OBJECTS)
-Test_UmfpackPerformance_LDADD = $(LDADD)
+am_Test_Performance_OBJECTS = cxx_main.$(OBJEXT)
+Test_Performance_OBJECTS = $(am_Test_Performance_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(AMESOS_EXTRA_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/PerfTest-Amesos_Performance.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(PerfTest_SOURCES) $(Test_UmfpackPerformance_SOURCES)
-DIST_SOURCES = $(PerfTest_SOURCES) $(Test_UmfpackPerformance_SOURCES)
+SOURCES = $(Test_Performance_SOURCES)
+DIST_SOURCES = $(Test_Performance_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -316,45 +284,15 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-Test_UmfpackPerformance_SOURCES = $(srcdir)/In_Test_UmfpackPerformance.csh
-SRC_CXX = 
-PerfTest_SOURCES = $(srcdir)/Amesos_Performance.cpp \
-	 $(SRC_CXX)
-
-@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_INCLUDE = 
-@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_INCLUDE = -I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
-
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	${EPETRA_EXT_INCLUDE} \
-	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
-
-@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_LIB = 
-@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_LIB = $(top_builddir)/../epetraext/src/libepetraext.a 
-PerfTest_DEPENDENCIES = \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a 
-
-PerfTest_CXXFLAGS = -I$(top_srcdir)/src
-
-#
-#  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
-#
-PerfTest_LDADD = $(top_builddir)/src/libamesos.a \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(AMESOS_LIBS)  $(top_builddir)/src/libamesos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS) $(FLIBS)
-
-EXTRA_DIST = $(srcdir)/662_bus.rsa 
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+TEST = Test_Performance
+Test_Performance_SOURCES = $(srcdir)/cxx_main.cpp
+Test_Performance_DEPENDENCIES = all-libs
+Test_Performance_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -391,9 +329,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-PerfTest$(EXEEXT): $(PerfTest_OBJECTS) $(PerfTest_DEPENDENCIES) 
-	@rm -f PerfTest$(EXEEXT)
-	$(CXXLINK) $(PerfTest_LDFLAGS) $(PerfTest_OBJECTS) $(PerfTest_LDADD) $(LIBS)
+Test_Performance$(EXEEXT): $(Test_Performance_OBJECTS) $(Test_Performance_DEPENDENCIES) 
+	@rm -f Test_Performance$(EXEEXT)
+	$(CXXLINK) $(Test_Performance_LDFLAGS) $(Test_Performance_OBJECTS) $(Test_Performance_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -401,7 +339,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PerfTest-Amesos_Performance.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -419,21 +357,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-PerfTest-Amesos_Performance.o: $(srcdir)/Amesos_Performance.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PerfTest_CXXFLAGS) $(CXXFLAGS) -MT PerfTest-Amesos_Performance.o -MD -MP -MF "$(DEPDIR)/PerfTest-Amesos_Performance.Tpo" -c -o PerfTest-Amesos_Performance.o `test -f '$(srcdir)/Amesos_Performance.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Performance.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PerfTest-Amesos_Performance.Tpo" "$(DEPDIR)/PerfTest-Amesos_Performance.Po"; else rm -f "$(DEPDIR)/PerfTest-Amesos_Performance.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Performance.cpp' object='PerfTest-Amesos_Performance.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PerfTest-Amesos_Performance.Po' tmpdepfile='$(DEPDIR)/PerfTest-Amesos_Performance.TPo' @AMDEPBACKSLASH@
+cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cxx_main.o -MD -MP -MF "$(DEPDIR)/cxx_main.Tpo" -c -o cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/cxx_main.Tpo" "$(DEPDIR)/cxx_main.Po"; else rm -f "$(DEPDIR)/cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/cxx_main.Po' tmpdepfile='$(DEPDIR)/cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PerfTest_CXXFLAGS) $(CXXFLAGS) -c -o PerfTest-Amesos_Performance.o `test -f '$(srcdir)/Amesos_Performance.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Performance.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-PerfTest-Amesos_Performance.obj: $(srcdir)/Amesos_Performance.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PerfTest_CXXFLAGS) $(CXXFLAGS) -MT PerfTest-Amesos_Performance.obj -MD -MP -MF "$(DEPDIR)/PerfTest-Amesos_Performance.Tpo" -c -o PerfTest-Amesos_Performance.obj `if test -f '$(srcdir)/Amesos_Performance.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Performance.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Performance.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PerfTest-Amesos_Performance.Tpo" "$(DEPDIR)/PerfTest-Amesos_Performance.Po"; else rm -f "$(DEPDIR)/PerfTest-Amesos_Performance.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Performance.cpp' object='PerfTest-Amesos_Performance.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PerfTest-Amesos_Performance.Po' tmpdepfile='$(DEPDIR)/PerfTest-Amesos_Performance.TPo' @AMDEPBACKSLASH@
+cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cxx_main.obj -MD -MP -MF "$(DEPDIR)/cxx_main.Tpo" -c -o cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/cxx_main.Tpo" "$(DEPDIR)/cxx_main.Po"; else rm -f "$(DEPDIR)/cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/cxx_main.Po' tmpdepfile='$(DEPDIR)/cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PerfTest_CXXFLAGS) $(CXXFLAGS) -c -o PerfTest-Amesos_Performance.obj `if test -f '$(srcdir)/Amesos_Performance.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Performance.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Performance.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -483,7 +421,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -538,6 +475,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+clean: clean-am
+
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
@@ -597,14 +536,10 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-Test_UmfpackPerformance$(EXEEXT): $(srcdir)/In_Test_UmfpackPerformance.csh 
-	cp  $(srcdir)/In_Test_UmfpackPerformance.csh Test_UmfpackPerformance.csh
+include $(top_builddir)/Makefile.export.amesos
 
-Matrices:  ${tac_with_trilinosdatadir}/amesos/662_bus.rsa.gz 
-	gunzip -c ${tac_with_trilinosdatadir}/amesos/662_bus.rsa.gz > 662_bus.rsa
-
-clean:  clean-am
-	rm -f  662_bus_out.rsa 
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

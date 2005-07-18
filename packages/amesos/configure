@@ -7576,7 +7576,8 @@ fi
 
 
 # ------------------------------------------------------------------------
-# Epetraext and Triutils are only required for tests and examples,
+# Triutils is only required for tests and examples,
+# Epetraext is only required for matrix re-indexing
 # so they will NOT to added as part of the Makefile.export.amesos file.
 # ------------------------------------------------------------------------
 
@@ -7602,6 +7603,9 @@ _ACEOF
 else
  echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
+# if test "X$ac_cv_use_amesos_tests" != "Xno"; then
+#    AC_MSG_ERROR([[Amesos tests cannot be run without triutils]])
+# fi
 fi
 
 
@@ -8702,7 +8706,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8705: \"$ac_link\") >&5
+(eval echo $as_me:8709: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8780,7 +8784,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8783: \"$ac_link\") >&5
+(eval echo $as_me:8787: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14358,7 +14362,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:14361: \"$ac_link\") >&5
+(eval echo $as_me:14365: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14436,7 +14440,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:14439: \"$ac_link\") >&5
+(eval echo $as_me:14443: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

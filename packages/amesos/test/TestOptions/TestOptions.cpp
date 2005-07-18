@@ -307,11 +307,19 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
       bool distribute = ( iterDist == 1 ); 
 	
       //
+#if 1
       for ( int iterRowindex = 0 ; iterRowindex < RowindexMax; iterRowindex++ ) {
 	for ( int iterColindex = 0 ; iterColindex < ColindexMax; iterColindex++ ) {
 	  for ( int iterRangemap = 0 ; iterRangemap < RangemapMax; iterRangemap++ ) {
 	    for ( int iterDomainmap = 0 ; iterDomainmap < DomainmapMax; iterDomainmap++ ) {
 	      for ( int iterDiagonalOpts = 0 ; iterDiagonalOpts < DiagonalOptsMax; iterDiagonalOpts++ ) {
+#else
+		int iterRowindex = 0; { 
+		  int iterColindex = 0 ; { 
+		    int iterRangemap = 2; { 
+		      int iterDomainmap = 0 ; {
+			int iterDiagonalOpts = 0 ; { 
+#endif
 		//  diagonal opts testing only works on distributed matrices whose row and column indices match 
 		//  On a serial matrix, eliminate a column from the map makes the matrix singular
 		//  If the row and column indices don't match, eliminating a column from the map is, typically, irrelevant
@@ -330,6 +338,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 
 		    //
 		    //  We test only one level for different indexing or different Range and Domain maps
+		    //  to avoid hassles of moving data from the domain space to the range space and back
 		    //
 		    int MaxLevel = 3 ; 
 		    if ( iterRowindex > 0 ) MaxLevel = 1 ; 

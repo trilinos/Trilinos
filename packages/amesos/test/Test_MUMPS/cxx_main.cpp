@@ -1,5 +1,5 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_MUMPS
+#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_AMESOS_TRIUTILS)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
 
 #else
 
-// Triutils is not available. Sorry, we have to give up.
+// Triutils or mumps is not available. Sorry, we have to give up.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -205,7 +205,13 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  puts("Please configure AMESOS with --enable-amesos-mumps");
+  puts("Please configure AMESOS with");
+#ifndef HAVE_AMESOS_MUMPS
+  puts("--enable-amesos-mumps");
+#endif
+#ifndef HAVE_AMESOS_TRIUTILS
+  puts("--enable-amesos-triutils");
+#endif
   puts("to run this example");
 
 #ifdef HAVE_MPI

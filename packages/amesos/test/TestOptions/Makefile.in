@@ -80,32 +80,38 @@ CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = TestOptions$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_TestOptions_OBJECTS = TestOptions-TestOptions.$(OBJEXT) \
-	TestOptions-CreateTridi.$(OBJEXT) \
-	TestOptions-TestSuperludist.$(OBJEXT) \
-	TestOptions-TestScalapack.$(OBJEXT) \
-	TestOptions-TestKlu.$(OBJEXT) \
-	TestOptions-NewMatNewMap.$(OBJEXT) \
-	TestOptions-TestAllClasses.$(OBJEXT) \
-	TestOptions-PartialFactorization.$(OBJEXT) \
-	TestOptions-PerformOneSolveAndTest.$(OBJEXT) \
-	TestOptions-TestOtherClasses.$(OBJEXT)
+am__TestOptions_SOURCES_DIST = $(srcdir)/DoNothing.cpp
+@HAVE_AMESOS_TRIUTILS_FALSE@am_TestOptions_OBJECTS =  \
+@HAVE_AMESOS_TRIUTILS_FALSE@	DoNothing.$(OBJEXT)
+@HAVE_AMESOS_TRIUTILS_TRUE@am_TestOptions_OBJECTS =  \
+@HAVE_AMESOS_TRIUTILS_TRUE@	TestOptions.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	CreateTridi.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	TestSuperludist.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	TestScalapack.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	TestKlu.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	NewMatNewMap.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	TestAllClasses.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	PartialFactorization.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	PerformOneSolveAndTest.$(OBJEXT) \
+@HAVE_AMESOS_TRIUTILS_TRUE@	TestOtherClasses.$(OBJEXT)
 TestOptions_OBJECTS = $(am_TestOptions_OBJECTS)
-@HAVE_AMESOS_EPETRAEXT_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../epetraext/src/libepetraext.a
-am__DEPENDENCIES_2 =
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(AMESOS_EXTRA_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/TestOptions-CreateTridi.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-NewMatNewMap.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-PartialFactorization.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestAllClasses.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestKlu.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOptions.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOtherClasses.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestScalapack.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestSuperludist.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/CreateTridi.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/DoNothing.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NewMatNewMap.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/PartialFactorization.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/PerformOneSolveAndTest.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestAllClasses.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestKlu.Po ./$(DEPDIR)/TestOptions.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestOtherClasses.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestScalapack.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestSuperludist.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -116,7 +122,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestOptions_SOURCES)
-DIST_SOURCES = $(TestOptions_SOURCES)
+DIST_SOURCES = $(am__TestOptions_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -304,40 +310,40 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 TEST = TestOptions 
-@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_LIB = 
-@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_LIB = $(top_builddir)/../epetraext/src/libepetraext.a 
-@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_INCLUDE = 
-@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_INCLUDE = -I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
+@HAVE_AMESOS_TRIUTILS_FALSE@TestOptions_SOURCES = $(srcdir)/DoNothing.cpp
 
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src \
--I$(top_srcdir)/../epetra/src  -I$(top_builddir)/../epetra/src \
-	${EPETRA_EXT_INCLUDE} \
--I$(top_builddir)/../triutils/src \
-   -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
-
-
-# Suppressions_SOURCES =  $(srcdir)/Suppressions
-TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
-	$(srcdir)/CreateTridi.cpp \
-	$(srcdir)/CreateTridi.h \
-	$(srcdir)/TestSuperludist.cpp \
-	$(srcdir)/TestScalapack.cpp \
-	$(srcdir)/TestScalapack.h \
-	$(srcdir)/TestKlu.cpp \
-	$(srcdir)/TestKlu.h \
-	$(srcdir)/TestSuperludist.h \
-	$(srcdir)/NewMatNewMap.cpp \
-	$(srcdir)/NewMatNewMap.h \
-	$(srcdir)/TestAllClasses.cpp \
-	$(srcdir)/TestAllClasses.h \
-	$(srcdir)/PartialFactorization.cpp \
-	$(srcdir)/PartialFactorization.h \
-	$(srcdir)/PerformOneSolveAndTest.cpp \
-	$(srcdir)/PerformOneSolveAndTest.h \
-	$(srcdir)/TestOtherClasses.cpp \
-	$(srcdir)/TestOtherClasses.h
+# if HAVE_AMESOS_EPETRAEXT
+#    EPETRA_EXT_LIB = 	$(top_builddir)/../epetraext/src/libepetraext.a 
+#    EPETRA_EXT_INCLUDE =	-I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
+# else
+#    EPETRA_EXT_LIB = 
+#    EPETRA_EXT_INCLUDE = 
+# endif 
+@HAVE_AMESOS_TRIUTILS_TRUE@TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/CreateTridi.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/CreateTridi.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestSuperludist.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestScalapack.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestScalapack.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestKlu.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestKlu.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestSuperludist.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/NewMatNewMap.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/NewMatNewMap.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestAllClasses.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestAllClasses.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PartialFactorization.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PartialFactorization.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PerformOneSolveAndTest.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PerformOneSolveAndTest.h \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestOtherClasses.cpp \
+@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestOtherClasses.h
 
 TestOptions_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
@@ -347,21 +353,7 @@ TestOptions_DEPENDENCIES = \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a 
 
-TestOptions_CXXFLAGS = -I$(top_srcdir)/src
-
-#
-#  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
-#
-TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(AMESOS_LIBS) \
-        $(top_builddir)/src/libamesos.a \
-        $(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
+TestOptions_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -408,16 +400,17 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-CreateTridi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-NewMatNewMap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-PartialFactorization.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestAllClasses.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestKlu.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOptions.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOtherClasses.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestScalapack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestSuperludist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CreateTridi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DoNothing.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMatNewMap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PartialFactorization.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PerformOneSolveAndTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestAllClasses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestKlu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOtherClasses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestScalapack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuperludist.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -435,165 +428,181 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-TestOptions-TestOptions.o: $(srcdir)/TestOptions.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestOptions.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestOptions.Tpo" -c -o TestOptions-TestOptions.o `test -f '$(srcdir)/TestOptions.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOptions.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestOptions.Tpo" "$(DEPDIR)/TestOptions-TestOptions.Po"; else rm -f "$(DEPDIR)/TestOptions-TestOptions.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOptions.cpp' object='TestOptions-TestOptions.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestOptions.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestOptions.TPo' @AMDEPBACKSLASH@
+DoNothing.o: $(srcdir)/DoNothing.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DoNothing.o -MD -MP -MF "$(DEPDIR)/DoNothing.Tpo" -c -o DoNothing.o `test -f '$(srcdir)/DoNothing.cpp' || echo '$(srcdir)/'`$(srcdir)/DoNothing.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DoNothing.Tpo" "$(DEPDIR)/DoNothing.Po"; else rm -f "$(DEPDIR)/DoNothing.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/DoNothing.cpp' object='DoNothing.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/DoNothing.Po' tmpdepfile='$(DEPDIR)/DoNothing.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestOptions.o `test -f '$(srcdir)/TestOptions.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOptions.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DoNothing.o `test -f '$(srcdir)/DoNothing.cpp' || echo '$(srcdir)/'`$(srcdir)/DoNothing.cpp
 
-TestOptions-TestOptions.obj: $(srcdir)/TestOptions.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestOptions.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestOptions.Tpo" -c -o TestOptions-TestOptions.obj `if test -f '$(srcdir)/TestOptions.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOptions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOptions.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestOptions.Tpo" "$(DEPDIR)/TestOptions-TestOptions.Po"; else rm -f "$(DEPDIR)/TestOptions-TestOptions.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOptions.cpp' object='TestOptions-TestOptions.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestOptions.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestOptions.TPo' @AMDEPBACKSLASH@
+DoNothing.obj: $(srcdir)/DoNothing.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DoNothing.obj -MD -MP -MF "$(DEPDIR)/DoNothing.Tpo" -c -o DoNothing.obj `if test -f '$(srcdir)/DoNothing.cpp'; then $(CYGPATH_W) '$(srcdir)/DoNothing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/DoNothing.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DoNothing.Tpo" "$(DEPDIR)/DoNothing.Po"; else rm -f "$(DEPDIR)/DoNothing.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/DoNothing.cpp' object='DoNothing.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/DoNothing.Po' tmpdepfile='$(DEPDIR)/DoNothing.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestOptions.obj `if test -f '$(srcdir)/TestOptions.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOptions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOptions.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DoNothing.obj `if test -f '$(srcdir)/DoNothing.cpp'; then $(CYGPATH_W) '$(srcdir)/DoNothing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/DoNothing.cpp'; fi`
 
-TestOptions-CreateTridi.o: $(srcdir)/CreateTridi.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-CreateTridi.o -MD -MP -MF "$(DEPDIR)/TestOptions-CreateTridi.Tpo" -c -o TestOptions-CreateTridi.o `test -f '$(srcdir)/CreateTridi.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTridi.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo" "$(DEPDIR)/TestOptions-CreateTridi.Po"; else rm -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTridi.cpp' object='TestOptions-CreateTridi.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-CreateTridi.Po' tmpdepfile='$(DEPDIR)/TestOptions-CreateTridi.TPo' @AMDEPBACKSLASH@
+TestOptions.o: $(srcdir)/TestOptions.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestOptions.o -MD -MP -MF "$(DEPDIR)/TestOptions.Tpo" -c -o TestOptions.o `test -f '$(srcdir)/TestOptions.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOptions.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions.Tpo" "$(DEPDIR)/TestOptions.Po"; else rm -f "$(DEPDIR)/TestOptions.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOptions.cpp' object='TestOptions.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions.Po' tmpdepfile='$(DEPDIR)/TestOptions.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-CreateTridi.o `test -f '$(srcdir)/CreateTridi.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTridi.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions.o `test -f '$(srcdir)/TestOptions.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOptions.cpp
 
-TestOptions-CreateTridi.obj: $(srcdir)/CreateTridi.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-CreateTridi.obj -MD -MP -MF "$(DEPDIR)/TestOptions-CreateTridi.Tpo" -c -o TestOptions-CreateTridi.obj `if test -f '$(srcdir)/CreateTridi.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTridi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTridi.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo" "$(DEPDIR)/TestOptions-CreateTridi.Po"; else rm -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTridi.cpp' object='TestOptions-CreateTridi.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-CreateTridi.Po' tmpdepfile='$(DEPDIR)/TestOptions-CreateTridi.TPo' @AMDEPBACKSLASH@
+TestOptions.obj: $(srcdir)/TestOptions.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestOptions.obj -MD -MP -MF "$(DEPDIR)/TestOptions.Tpo" -c -o TestOptions.obj `if test -f '$(srcdir)/TestOptions.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOptions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOptions.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions.Tpo" "$(DEPDIR)/TestOptions.Po"; else rm -f "$(DEPDIR)/TestOptions.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOptions.cpp' object='TestOptions.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions.Po' tmpdepfile='$(DEPDIR)/TestOptions.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-CreateTridi.obj `if test -f '$(srcdir)/CreateTridi.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTridi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTridi.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions.obj `if test -f '$(srcdir)/TestOptions.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOptions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOptions.cpp'; fi`
 
-TestOptions-TestSuperludist.o: $(srcdir)/TestSuperludist.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestSuperludist.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestSuperludist.Tpo" -c -o TestOptions-TestSuperludist.o `test -f '$(srcdir)/TestSuperludist.cpp' || echo '$(srcdir)/'`$(srcdir)/TestSuperludist.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestSuperludist.Tpo" "$(DEPDIR)/TestOptions-TestSuperludist.Po"; else rm -f "$(DEPDIR)/TestOptions-TestSuperludist.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestSuperludist.cpp' object='TestOptions-TestSuperludist.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestSuperludist.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestSuperludist.TPo' @AMDEPBACKSLASH@
+CreateTridi.o: $(srcdir)/CreateTridi.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CreateTridi.o -MD -MP -MF "$(DEPDIR)/CreateTridi.Tpo" -c -o CreateTridi.o `test -f '$(srcdir)/CreateTridi.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTridi.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CreateTridi.Tpo" "$(DEPDIR)/CreateTridi.Po"; else rm -f "$(DEPDIR)/CreateTridi.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTridi.cpp' object='CreateTridi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CreateTridi.Po' tmpdepfile='$(DEPDIR)/CreateTridi.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestSuperludist.o `test -f '$(srcdir)/TestSuperludist.cpp' || echo '$(srcdir)/'`$(srcdir)/TestSuperludist.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CreateTridi.o `test -f '$(srcdir)/CreateTridi.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTridi.cpp
 
-TestOptions-TestSuperludist.obj: $(srcdir)/TestSuperludist.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestSuperludist.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestSuperludist.Tpo" -c -o TestOptions-TestSuperludist.obj `if test -f '$(srcdir)/TestSuperludist.cpp'; then $(CYGPATH_W) '$(srcdir)/TestSuperludist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestSuperludist.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestSuperludist.Tpo" "$(DEPDIR)/TestOptions-TestSuperludist.Po"; else rm -f "$(DEPDIR)/TestOptions-TestSuperludist.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestSuperludist.cpp' object='TestOptions-TestSuperludist.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestSuperludist.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestSuperludist.TPo' @AMDEPBACKSLASH@
+CreateTridi.obj: $(srcdir)/CreateTridi.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CreateTridi.obj -MD -MP -MF "$(DEPDIR)/CreateTridi.Tpo" -c -o CreateTridi.obj `if test -f '$(srcdir)/CreateTridi.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTridi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTridi.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CreateTridi.Tpo" "$(DEPDIR)/CreateTridi.Po"; else rm -f "$(DEPDIR)/CreateTridi.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTridi.cpp' object='CreateTridi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CreateTridi.Po' tmpdepfile='$(DEPDIR)/CreateTridi.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestSuperludist.obj `if test -f '$(srcdir)/TestSuperludist.cpp'; then $(CYGPATH_W) '$(srcdir)/TestSuperludist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestSuperludist.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CreateTridi.obj `if test -f '$(srcdir)/CreateTridi.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTridi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTridi.cpp'; fi`
 
-TestOptions-TestScalapack.o: $(srcdir)/TestScalapack.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestScalapack.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestScalapack.Tpo" -c -o TestOptions-TestScalapack.o `test -f '$(srcdir)/TestScalapack.cpp' || echo '$(srcdir)/'`$(srcdir)/TestScalapack.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestScalapack.Tpo" "$(DEPDIR)/TestOptions-TestScalapack.Po"; else rm -f "$(DEPDIR)/TestOptions-TestScalapack.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestScalapack.cpp' object='TestOptions-TestScalapack.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestScalapack.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestScalapack.TPo' @AMDEPBACKSLASH@
+TestSuperludist.o: $(srcdir)/TestSuperludist.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestSuperludist.o -MD -MP -MF "$(DEPDIR)/TestSuperludist.Tpo" -c -o TestSuperludist.o `test -f '$(srcdir)/TestSuperludist.cpp' || echo '$(srcdir)/'`$(srcdir)/TestSuperludist.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestSuperludist.Tpo" "$(DEPDIR)/TestSuperludist.Po"; else rm -f "$(DEPDIR)/TestSuperludist.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestSuperludist.cpp' object='TestSuperludist.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestSuperludist.Po' tmpdepfile='$(DEPDIR)/TestSuperludist.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestScalapack.o `test -f '$(srcdir)/TestScalapack.cpp' || echo '$(srcdir)/'`$(srcdir)/TestScalapack.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestSuperludist.o `test -f '$(srcdir)/TestSuperludist.cpp' || echo '$(srcdir)/'`$(srcdir)/TestSuperludist.cpp
 
-TestOptions-TestScalapack.obj: $(srcdir)/TestScalapack.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestScalapack.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestScalapack.Tpo" -c -o TestOptions-TestScalapack.obj `if test -f '$(srcdir)/TestScalapack.cpp'; then $(CYGPATH_W) '$(srcdir)/TestScalapack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestScalapack.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestScalapack.Tpo" "$(DEPDIR)/TestOptions-TestScalapack.Po"; else rm -f "$(DEPDIR)/TestOptions-TestScalapack.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestScalapack.cpp' object='TestOptions-TestScalapack.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestScalapack.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestScalapack.TPo' @AMDEPBACKSLASH@
+TestSuperludist.obj: $(srcdir)/TestSuperludist.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestSuperludist.obj -MD -MP -MF "$(DEPDIR)/TestSuperludist.Tpo" -c -o TestSuperludist.obj `if test -f '$(srcdir)/TestSuperludist.cpp'; then $(CYGPATH_W) '$(srcdir)/TestSuperludist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestSuperludist.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestSuperludist.Tpo" "$(DEPDIR)/TestSuperludist.Po"; else rm -f "$(DEPDIR)/TestSuperludist.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestSuperludist.cpp' object='TestSuperludist.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestSuperludist.Po' tmpdepfile='$(DEPDIR)/TestSuperludist.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestScalapack.obj `if test -f '$(srcdir)/TestScalapack.cpp'; then $(CYGPATH_W) '$(srcdir)/TestScalapack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestScalapack.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestSuperludist.obj `if test -f '$(srcdir)/TestSuperludist.cpp'; then $(CYGPATH_W) '$(srcdir)/TestSuperludist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestSuperludist.cpp'; fi`
 
-TestOptions-TestKlu.o: $(srcdir)/TestKlu.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestKlu.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestKlu.Tpo" -c -o TestOptions-TestKlu.o `test -f '$(srcdir)/TestKlu.cpp' || echo '$(srcdir)/'`$(srcdir)/TestKlu.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestKlu.Tpo" "$(DEPDIR)/TestOptions-TestKlu.Po"; else rm -f "$(DEPDIR)/TestOptions-TestKlu.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestKlu.cpp' object='TestOptions-TestKlu.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestKlu.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestKlu.TPo' @AMDEPBACKSLASH@
+TestScalapack.o: $(srcdir)/TestScalapack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestScalapack.o -MD -MP -MF "$(DEPDIR)/TestScalapack.Tpo" -c -o TestScalapack.o `test -f '$(srcdir)/TestScalapack.cpp' || echo '$(srcdir)/'`$(srcdir)/TestScalapack.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestScalapack.Tpo" "$(DEPDIR)/TestScalapack.Po"; else rm -f "$(DEPDIR)/TestScalapack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestScalapack.cpp' object='TestScalapack.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestScalapack.Po' tmpdepfile='$(DEPDIR)/TestScalapack.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestKlu.o `test -f '$(srcdir)/TestKlu.cpp' || echo '$(srcdir)/'`$(srcdir)/TestKlu.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestScalapack.o `test -f '$(srcdir)/TestScalapack.cpp' || echo '$(srcdir)/'`$(srcdir)/TestScalapack.cpp
 
-TestOptions-TestKlu.obj: $(srcdir)/TestKlu.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestKlu.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestKlu.Tpo" -c -o TestOptions-TestKlu.obj `if test -f '$(srcdir)/TestKlu.cpp'; then $(CYGPATH_W) '$(srcdir)/TestKlu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestKlu.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestKlu.Tpo" "$(DEPDIR)/TestOptions-TestKlu.Po"; else rm -f "$(DEPDIR)/TestOptions-TestKlu.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestKlu.cpp' object='TestOptions-TestKlu.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestKlu.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestKlu.TPo' @AMDEPBACKSLASH@
+TestScalapack.obj: $(srcdir)/TestScalapack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestScalapack.obj -MD -MP -MF "$(DEPDIR)/TestScalapack.Tpo" -c -o TestScalapack.obj `if test -f '$(srcdir)/TestScalapack.cpp'; then $(CYGPATH_W) '$(srcdir)/TestScalapack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestScalapack.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestScalapack.Tpo" "$(DEPDIR)/TestScalapack.Po"; else rm -f "$(DEPDIR)/TestScalapack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestScalapack.cpp' object='TestScalapack.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestScalapack.Po' tmpdepfile='$(DEPDIR)/TestScalapack.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestKlu.obj `if test -f '$(srcdir)/TestKlu.cpp'; then $(CYGPATH_W) '$(srcdir)/TestKlu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestKlu.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestScalapack.obj `if test -f '$(srcdir)/TestScalapack.cpp'; then $(CYGPATH_W) '$(srcdir)/TestScalapack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestScalapack.cpp'; fi`
 
-TestOptions-NewMatNewMap.o: $(srcdir)/NewMatNewMap.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-NewMatNewMap.o -MD -MP -MF "$(DEPDIR)/TestOptions-NewMatNewMap.Tpo" -c -o TestOptions-NewMatNewMap.o `test -f '$(srcdir)/NewMatNewMap.cpp' || echo '$(srcdir)/'`$(srcdir)/NewMatNewMap.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-NewMatNewMap.Tpo" "$(DEPDIR)/TestOptions-NewMatNewMap.Po"; else rm -f "$(DEPDIR)/TestOptions-NewMatNewMap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NewMatNewMap.cpp' object='TestOptions-NewMatNewMap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-NewMatNewMap.Po' tmpdepfile='$(DEPDIR)/TestOptions-NewMatNewMap.TPo' @AMDEPBACKSLASH@
+TestKlu.o: $(srcdir)/TestKlu.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestKlu.o -MD -MP -MF "$(DEPDIR)/TestKlu.Tpo" -c -o TestKlu.o `test -f '$(srcdir)/TestKlu.cpp' || echo '$(srcdir)/'`$(srcdir)/TestKlu.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestKlu.Tpo" "$(DEPDIR)/TestKlu.Po"; else rm -f "$(DEPDIR)/TestKlu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestKlu.cpp' object='TestKlu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestKlu.Po' tmpdepfile='$(DEPDIR)/TestKlu.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-NewMatNewMap.o `test -f '$(srcdir)/NewMatNewMap.cpp' || echo '$(srcdir)/'`$(srcdir)/NewMatNewMap.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestKlu.o `test -f '$(srcdir)/TestKlu.cpp' || echo '$(srcdir)/'`$(srcdir)/TestKlu.cpp
 
-TestOptions-NewMatNewMap.obj: $(srcdir)/NewMatNewMap.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-NewMatNewMap.obj -MD -MP -MF "$(DEPDIR)/TestOptions-NewMatNewMap.Tpo" -c -o TestOptions-NewMatNewMap.obj `if test -f '$(srcdir)/NewMatNewMap.cpp'; then $(CYGPATH_W) '$(srcdir)/NewMatNewMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NewMatNewMap.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-NewMatNewMap.Tpo" "$(DEPDIR)/TestOptions-NewMatNewMap.Po"; else rm -f "$(DEPDIR)/TestOptions-NewMatNewMap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NewMatNewMap.cpp' object='TestOptions-NewMatNewMap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-NewMatNewMap.Po' tmpdepfile='$(DEPDIR)/TestOptions-NewMatNewMap.TPo' @AMDEPBACKSLASH@
+TestKlu.obj: $(srcdir)/TestKlu.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestKlu.obj -MD -MP -MF "$(DEPDIR)/TestKlu.Tpo" -c -o TestKlu.obj `if test -f '$(srcdir)/TestKlu.cpp'; then $(CYGPATH_W) '$(srcdir)/TestKlu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestKlu.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestKlu.Tpo" "$(DEPDIR)/TestKlu.Po"; else rm -f "$(DEPDIR)/TestKlu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestKlu.cpp' object='TestKlu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestKlu.Po' tmpdepfile='$(DEPDIR)/TestKlu.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-NewMatNewMap.obj `if test -f '$(srcdir)/NewMatNewMap.cpp'; then $(CYGPATH_W) '$(srcdir)/NewMatNewMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NewMatNewMap.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestKlu.obj `if test -f '$(srcdir)/TestKlu.cpp'; then $(CYGPATH_W) '$(srcdir)/TestKlu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestKlu.cpp'; fi`
 
-TestOptions-TestAllClasses.o: $(srcdir)/TestAllClasses.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestAllClasses.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" -c -o TestOptions-TestAllClasses.o `test -f '$(srcdir)/TestAllClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllClasses.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" "$(DEPDIR)/TestOptions-TestAllClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllClasses.cpp' object='TestOptions-TestAllClasses.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestAllClasses.TPo' @AMDEPBACKSLASH@
+NewMatNewMap.o: $(srcdir)/NewMatNewMap.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NewMatNewMap.o -MD -MP -MF "$(DEPDIR)/NewMatNewMap.Tpo" -c -o NewMatNewMap.o `test -f '$(srcdir)/NewMatNewMap.cpp' || echo '$(srcdir)/'`$(srcdir)/NewMatNewMap.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NewMatNewMap.Tpo" "$(DEPDIR)/NewMatNewMap.Po"; else rm -f "$(DEPDIR)/NewMatNewMap.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NewMatNewMap.cpp' object='NewMatNewMap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NewMatNewMap.Po' tmpdepfile='$(DEPDIR)/NewMatNewMap.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestAllClasses.o `test -f '$(srcdir)/TestAllClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllClasses.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NewMatNewMap.o `test -f '$(srcdir)/NewMatNewMap.cpp' || echo '$(srcdir)/'`$(srcdir)/NewMatNewMap.cpp
 
-TestOptions-TestAllClasses.obj: $(srcdir)/TestAllClasses.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestAllClasses.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" -c -o TestOptions-TestAllClasses.obj `if test -f '$(srcdir)/TestAllClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllClasses.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" "$(DEPDIR)/TestOptions-TestAllClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllClasses.cpp' object='TestOptions-TestAllClasses.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestAllClasses.TPo' @AMDEPBACKSLASH@
+NewMatNewMap.obj: $(srcdir)/NewMatNewMap.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NewMatNewMap.obj -MD -MP -MF "$(DEPDIR)/NewMatNewMap.Tpo" -c -o NewMatNewMap.obj `if test -f '$(srcdir)/NewMatNewMap.cpp'; then $(CYGPATH_W) '$(srcdir)/NewMatNewMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NewMatNewMap.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NewMatNewMap.Tpo" "$(DEPDIR)/NewMatNewMap.Po"; else rm -f "$(DEPDIR)/NewMatNewMap.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NewMatNewMap.cpp' object='NewMatNewMap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NewMatNewMap.Po' tmpdepfile='$(DEPDIR)/NewMatNewMap.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestAllClasses.obj `if test -f '$(srcdir)/TestAllClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllClasses.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NewMatNewMap.obj `if test -f '$(srcdir)/NewMatNewMap.cpp'; then $(CYGPATH_W) '$(srcdir)/NewMatNewMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NewMatNewMap.cpp'; fi`
 
-TestOptions-PartialFactorization.o: $(srcdir)/PartialFactorization.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-PartialFactorization.o -MD -MP -MF "$(DEPDIR)/TestOptions-PartialFactorization.Tpo" -c -o TestOptions-PartialFactorization.o `test -f '$(srcdir)/PartialFactorization.cpp' || echo '$(srcdir)/'`$(srcdir)/PartialFactorization.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-PartialFactorization.Tpo" "$(DEPDIR)/TestOptions-PartialFactorization.Po"; else rm -f "$(DEPDIR)/TestOptions-PartialFactorization.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PartialFactorization.cpp' object='TestOptions-PartialFactorization.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-PartialFactorization.Po' tmpdepfile='$(DEPDIR)/TestOptions-PartialFactorization.TPo' @AMDEPBACKSLASH@
+TestAllClasses.o: $(srcdir)/TestAllClasses.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestAllClasses.o -MD -MP -MF "$(DEPDIR)/TestAllClasses.Tpo" -c -o TestAllClasses.o `test -f '$(srcdir)/TestAllClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllClasses.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAllClasses.Tpo" "$(DEPDIR)/TestAllClasses.Po"; else rm -f "$(DEPDIR)/TestAllClasses.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllClasses.cpp' object='TestAllClasses.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAllClasses.Po' tmpdepfile='$(DEPDIR)/TestAllClasses.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-PartialFactorization.o `test -f '$(srcdir)/PartialFactorization.cpp' || echo '$(srcdir)/'`$(srcdir)/PartialFactorization.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestAllClasses.o `test -f '$(srcdir)/TestAllClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllClasses.cpp
 
-TestOptions-PartialFactorization.obj: $(srcdir)/PartialFactorization.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-PartialFactorization.obj -MD -MP -MF "$(DEPDIR)/TestOptions-PartialFactorization.Tpo" -c -o TestOptions-PartialFactorization.obj `if test -f '$(srcdir)/PartialFactorization.cpp'; then $(CYGPATH_W) '$(srcdir)/PartialFactorization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PartialFactorization.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-PartialFactorization.Tpo" "$(DEPDIR)/TestOptions-PartialFactorization.Po"; else rm -f "$(DEPDIR)/TestOptions-PartialFactorization.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PartialFactorization.cpp' object='TestOptions-PartialFactorization.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-PartialFactorization.Po' tmpdepfile='$(DEPDIR)/TestOptions-PartialFactorization.TPo' @AMDEPBACKSLASH@
+TestAllClasses.obj: $(srcdir)/TestAllClasses.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestAllClasses.obj -MD -MP -MF "$(DEPDIR)/TestAllClasses.Tpo" -c -o TestAllClasses.obj `if test -f '$(srcdir)/TestAllClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllClasses.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAllClasses.Tpo" "$(DEPDIR)/TestAllClasses.Po"; else rm -f "$(DEPDIR)/TestAllClasses.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllClasses.cpp' object='TestAllClasses.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAllClasses.Po' tmpdepfile='$(DEPDIR)/TestAllClasses.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-PartialFactorization.obj `if test -f '$(srcdir)/PartialFactorization.cpp'; then $(CYGPATH_W) '$(srcdir)/PartialFactorization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PartialFactorization.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestAllClasses.obj `if test -f '$(srcdir)/TestAllClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllClasses.cpp'; fi`
 
-TestOptions-PerformOneSolveAndTest.o: $(srcdir)/PerformOneSolveAndTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-PerformOneSolveAndTest.o -MD -MP -MF "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" -c -o TestOptions-PerformOneSolveAndTest.o `test -f '$(srcdir)/PerformOneSolveAndTest.cpp' || echo '$(srcdir)/'`$(srcdir)/PerformOneSolveAndTest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po"; else rm -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PerformOneSolveAndTest.cpp' object='TestOptions-PerformOneSolveAndTest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po' tmpdepfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.TPo' @AMDEPBACKSLASH@
+PartialFactorization.o: $(srcdir)/PartialFactorization.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PartialFactorization.o -MD -MP -MF "$(DEPDIR)/PartialFactorization.Tpo" -c -o PartialFactorization.o `test -f '$(srcdir)/PartialFactorization.cpp' || echo '$(srcdir)/'`$(srcdir)/PartialFactorization.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PartialFactorization.Tpo" "$(DEPDIR)/PartialFactorization.Po"; else rm -f "$(DEPDIR)/PartialFactorization.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PartialFactorization.cpp' object='PartialFactorization.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PartialFactorization.Po' tmpdepfile='$(DEPDIR)/PartialFactorization.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-PerformOneSolveAndTest.o `test -f '$(srcdir)/PerformOneSolveAndTest.cpp' || echo '$(srcdir)/'`$(srcdir)/PerformOneSolveAndTest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PartialFactorization.o `test -f '$(srcdir)/PartialFactorization.cpp' || echo '$(srcdir)/'`$(srcdir)/PartialFactorization.cpp
 
-TestOptions-PerformOneSolveAndTest.obj: $(srcdir)/PerformOneSolveAndTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-PerformOneSolveAndTest.obj -MD -MP -MF "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" -c -o TestOptions-PerformOneSolveAndTest.obj `if test -f '$(srcdir)/PerformOneSolveAndTest.cpp'; then $(CYGPATH_W) '$(srcdir)/PerformOneSolveAndTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PerformOneSolveAndTest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po"; else rm -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PerformOneSolveAndTest.cpp' object='TestOptions-PerformOneSolveAndTest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po' tmpdepfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.TPo' @AMDEPBACKSLASH@
+PartialFactorization.obj: $(srcdir)/PartialFactorization.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PartialFactorization.obj -MD -MP -MF "$(DEPDIR)/PartialFactorization.Tpo" -c -o PartialFactorization.obj `if test -f '$(srcdir)/PartialFactorization.cpp'; then $(CYGPATH_W) '$(srcdir)/PartialFactorization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PartialFactorization.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PartialFactorization.Tpo" "$(DEPDIR)/PartialFactorization.Po"; else rm -f "$(DEPDIR)/PartialFactorization.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PartialFactorization.cpp' object='PartialFactorization.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PartialFactorization.Po' tmpdepfile='$(DEPDIR)/PartialFactorization.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-PerformOneSolveAndTest.obj `if test -f '$(srcdir)/PerformOneSolveAndTest.cpp'; then $(CYGPATH_W) '$(srcdir)/PerformOneSolveAndTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PerformOneSolveAndTest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PartialFactorization.obj `if test -f '$(srcdir)/PartialFactorization.cpp'; then $(CYGPATH_W) '$(srcdir)/PartialFactorization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PartialFactorization.cpp'; fi`
 
-TestOptions-TestOtherClasses.o: $(srcdir)/TestOtherClasses.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestOtherClasses.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestOtherClasses.Tpo" -c -o TestOptions-TestOtherClasses.o `test -f '$(srcdir)/TestOtherClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOtherClasses.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestOtherClasses.Tpo" "$(DEPDIR)/TestOptions-TestOtherClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestOtherClasses.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOtherClasses.cpp' object='TestOptions-TestOtherClasses.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestOtherClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestOtherClasses.TPo' @AMDEPBACKSLASH@
+PerformOneSolveAndTest.o: $(srcdir)/PerformOneSolveAndTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PerformOneSolveAndTest.o -MD -MP -MF "$(DEPDIR)/PerformOneSolveAndTest.Tpo" -c -o PerformOneSolveAndTest.o `test -f '$(srcdir)/PerformOneSolveAndTest.cpp' || echo '$(srcdir)/'`$(srcdir)/PerformOneSolveAndTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PerformOneSolveAndTest.Tpo" "$(DEPDIR)/PerformOneSolveAndTest.Po"; else rm -f "$(DEPDIR)/PerformOneSolveAndTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PerformOneSolveAndTest.cpp' object='PerformOneSolveAndTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PerformOneSolveAndTest.Po' tmpdepfile='$(DEPDIR)/PerformOneSolveAndTest.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestOtherClasses.o `test -f '$(srcdir)/TestOtherClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOtherClasses.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PerformOneSolveAndTest.o `test -f '$(srcdir)/PerformOneSolveAndTest.cpp' || echo '$(srcdir)/'`$(srcdir)/PerformOneSolveAndTest.cpp
 
-TestOptions-TestOtherClasses.obj: $(srcdir)/TestOtherClasses.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestOtherClasses.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestOtherClasses.Tpo" -c -o TestOptions-TestOtherClasses.obj `if test -f '$(srcdir)/TestOtherClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOtherClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOtherClasses.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestOtherClasses.Tpo" "$(DEPDIR)/TestOptions-TestOtherClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestOtherClasses.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOtherClasses.cpp' object='TestOptions-TestOtherClasses.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestOtherClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestOtherClasses.TPo' @AMDEPBACKSLASH@
+PerformOneSolveAndTest.obj: $(srcdir)/PerformOneSolveAndTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PerformOneSolveAndTest.obj -MD -MP -MF "$(DEPDIR)/PerformOneSolveAndTest.Tpo" -c -o PerformOneSolveAndTest.obj `if test -f '$(srcdir)/PerformOneSolveAndTest.cpp'; then $(CYGPATH_W) '$(srcdir)/PerformOneSolveAndTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PerformOneSolveAndTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PerformOneSolveAndTest.Tpo" "$(DEPDIR)/PerformOneSolveAndTest.Po"; else rm -f "$(DEPDIR)/PerformOneSolveAndTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PerformOneSolveAndTest.cpp' object='PerformOneSolveAndTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PerformOneSolveAndTest.Po' tmpdepfile='$(DEPDIR)/PerformOneSolveAndTest.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestOtherClasses.obj `if test -f '$(srcdir)/TestOtherClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOtherClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOtherClasses.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PerformOneSolveAndTest.obj `if test -f '$(srcdir)/PerformOneSolveAndTest.cpp'; then $(CYGPATH_W) '$(srcdir)/PerformOneSolveAndTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PerformOneSolveAndTest.cpp'; fi`
+
+TestOtherClasses.o: $(srcdir)/TestOtherClasses.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestOtherClasses.o -MD -MP -MF "$(DEPDIR)/TestOtherClasses.Tpo" -c -o TestOtherClasses.o `test -f '$(srcdir)/TestOtherClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOtherClasses.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOtherClasses.Tpo" "$(DEPDIR)/TestOtherClasses.Po"; else rm -f "$(DEPDIR)/TestOtherClasses.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOtherClasses.cpp' object='TestOtherClasses.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOtherClasses.Po' tmpdepfile='$(DEPDIR)/TestOtherClasses.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestOtherClasses.o `test -f '$(srcdir)/TestOtherClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestOtherClasses.cpp
+
+TestOtherClasses.obj: $(srcdir)/TestOtherClasses.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestOtherClasses.obj -MD -MP -MF "$(DEPDIR)/TestOtherClasses.Tpo" -c -o TestOtherClasses.obj `if test -f '$(srcdir)/TestOtherClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOtherClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOtherClasses.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOtherClasses.Tpo" "$(DEPDIR)/TestOtherClasses.Po"; else rm -f "$(DEPDIR)/TestOtherClasses.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestOtherClasses.cpp' object='TestOtherClasses.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOtherClasses.Po' tmpdepfile='$(DEPDIR)/TestOtherClasses.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestOtherClasses.obj `if test -f '$(srcdir)/TestOtherClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOtherClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOtherClasses.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -758,9 +767,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# Suppressions$(EXEEXT):  $(srcdir)/Suppressions
-# 	cp $(srcdir)/Suppressions Suppressions$(EXEEXT)
-# 	cp $(srcdir)/In_ValgrindTest.csh ValgrindTest.csh
+include $(top_builddir)/Makefile.export.amesos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

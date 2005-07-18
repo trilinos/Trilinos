@@ -57,7 +57,8 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 
-
+// class EpetraExt::MultiVector_Reindex ;
+// class EpetraExt::CrsMatrix_Reindex ;
 //! Amesos_Klu:  A serial, unblocked code ideal for getting started and for very sparse matrices, such as circuit matrces.
 
 /*! 
@@ -104,6 +105,7 @@ is to small.
 //  Doxygen does not handle forward class references well.
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 class Amesos_Klu_Pimpl ; 
+class Amesos_StandardIndex ; 
 #endif
 
 class Amesos_Klu: public Amesos_BaseSolver,  
@@ -250,7 +252,11 @@ private:
 
   int *Lp, *Li, *Up, *Ui, *P ;	
   double *Lx, *Ux ;
+  //
+  //  KSS - I hope to convert both of these to teuchos RefCountPtrs  bug #1501
+  //
   Amesos_Klu_Pimpl *PrivateKluData_; 
+  Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndex_; 
 
   //! Ap, Ai, Aval form the compressed row storage used by Klu
   vector <int> Ap;
@@ -270,10 +276,24 @@ private:
 
   //! Operator converted to a RowMatrix
   Epetra_RowMatrix* RowMatrixA_;
+  //! Operator converted to a CrsMatrix
+  Epetra_CrsMatrix* CrsMatrixA_;
+  //! Specifies whether the matrix was reindexed
+  bool Reindex_ ; 
+#if 0
+  //! Points to an object which reindexes a MultiVector to a contiguous map
+  Teuchos::RefCountPtr<EpetraExt::MultiVector_Reindex> VecTrans_;
+  //! Points to an object which reindexes a CrsMatrix to a contiguous map
+  Teuchos::RefCountPtr<EpetraExt::CrsMatrix_Reindex> MatTrans_;
+  //! Points to a Contiguous Map 
+  Teuchos::RefCountPtr<Epetra_Map> ContiguousMap_;
+#endif
   //! Points to a Serial Map (unused if UseDataInPlace_ == 1 )
   Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
   //! Points to a Serial Copy of A (unused if UseDataInPlace_==1)
   Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
+  //! Points to a Contiguous Copy of A 
+  Epetra_RowMatrix* StdIndexMatrix_ ; 
   //! Points to a Serial Copy of A 
   Epetra_RowMatrix* SerialMatrix_ ; 
 

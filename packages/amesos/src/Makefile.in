@@ -119,9 +119,10 @@ LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libamesos_a_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
-	$(srcdir)/Amesos_Control.cpp $(srcdir)/Amesos_Dscpack.cpp \
-	$(srcdir)/Amesos_Klu.cpp $(srcdir)/AMD/Source/amd_1.c \
-	$(srcdir)/AMD/Source/amd_2.c $(srcdir)/AMD/Source/amd_aat.c \
+	$(srcdir)/Amesos_Control.cpp $(srcdir)/Amesos_Support.cpp \
+	$(srcdir)/Amesos_Dscpack.cpp $(srcdir)/Amesos_Klu.cpp \
+	$(srcdir)/AMD/Source/amd_1.c $(srcdir)/AMD/Source/amd_2.c \
+	$(srcdir)/AMD/Source/amd_aat.c \
 	$(srcdir)/AMD/Source/amd_control.c \
 	$(srcdir)/AMD/Source/amd_defaults.c \
 	$(srcdir)/AMD/Source/amd_dump.c \
@@ -168,7 +169,8 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
 	$(srcdir)/ksparse/sppars.h $(srcdir)/ksparse/spmat.h \
 	$(srcdir)/ksparse/complex.h $(srcdir)/ksparse/sputils.c \
 	$(srcdir)/CrsMatrixTranspose.cpp
-am__objects_1 = Amesos_Status.$(OBJEXT) Amesos_Control.$(OBJEXT)
+am__objects_1 = Amesos_Status.$(OBJEXT) Amesos_Control.$(OBJEXT) \
+	Amesos_Support.$(OBJEXT)
 @HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = Amesos_Dscpack.$(OBJEXT)
 @HAVE_AMESOS_KLU_TRUE@am__objects_3 = Amesos_Klu.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amd_1.$(OBJEXT) amd_2.$(OBJEXT) \
@@ -240,6 +242,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Status.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Superlu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Superludist.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Support.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Taucs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Umfpack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CrsMatrixTranspose.Po \
@@ -301,7 +304,8 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_ConfigDefs.h $(srcdir)/CrsMatrixTranspose.h \
 	$(srcdir)/Amesos_NoCopiable.h $(srcdir)/Amesos_Utils.h \
 	$(srcdir)/Amesos_Time.h $(srcdir)/Amesos_Control.h \
-	$(srcdir)/Amesos_Status.h $(srcdir)/Amesos_TestRowMatrix.h
+	$(srcdir)/Amesos_Support.h $(srcdir)/Amesos_Status.h \
+	$(srcdir)/Amesos_TestRowMatrix.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -512,8 +516,8 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_SUPERLUDIST_TRUE@SUPERLUDIST = \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	$(srcdir)/Amesos_Superludist.cpp
 
-PARAM_H = 
-PARAM = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp
+SUPPORT_H = 
+SUPPORT = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp $(srcdir)/Amesos_Support.cpp
 @HAVE_AMESOS_DSCPACK_FALSE@DSCPACK_H = 
 @HAVE_AMESOS_DSCPACK_TRUE@DSCPACK_H = \
 @HAVE_AMESOS_DSCPACK_TRUE@	$(srcdir)/Amesos_Dscpack.h
@@ -707,6 +711,7 @@ COMP_H = \
         $(srcdir)/Amesos_Utils.h \
         $(srcdir)/Amesos_Time.h \
         $(srcdir)/Amesos_Control.h \
+        $(srcdir)/Amesos_Support.h \
         $(srcdir)/Amesos_Status.h
 
 COMP = \
@@ -735,9 +740,11 @@ FACTORY = \
 # SLUSERIAL_CPPFLAGS = 
 # endif
 @HAVE_AMESOS_KUNDERT_TRUE@KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
+@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_INCLUDE = 
+@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_INCLUDE = -I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(AMESOS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES))
-AM_CPPFLAGS = $(EXPORT_INCLUDES) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) \
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_EXT_INCLUDE) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) \
 	      -I$(top_srcdir)/src/AMD/Include \
 	      -I$(top_srcdir)/src/AMD/Source \
 	      -I$(top_srcdir)/src/colamd \
@@ -751,7 +758,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) \
 # ------------------------------------------------------------------------
 AMESOS_LIB = libamesos.a
 AMESOS_H = \
-	$(PARAM_H) \
+	$(SUPPORT_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
 	$(KLU_H) \
@@ -772,7 +779,7 @@ AMESOS_H = \
 	$(srcdir)/Amesos_TestRowMatrix.h
 
 libamesos_a_SOURCES = \
-	$(PARAM) \
+	$(SUPPORT) \
 	$(DSCPACK) \
 	$(KLU) \
 	$(UMFPACK) \
@@ -943,6 +950,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Status.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Superlu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Superludist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Support.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Taucs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Umfpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CrsMatrixTranspose.Po@am__quote@
@@ -1658,6 +1666,22 @@ Amesos_Control.obj: $(srcdir)/Amesos_Control.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Control.obj `if test -f '$(srcdir)/Amesos_Control.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Control.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Control.cpp'; fi`
 
+Amesos_Support.o: $(srcdir)/Amesos_Support.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Support.o -MD -MP -MF "$(DEPDIR)/Amesos_Support.Tpo" -c -o Amesos_Support.o `test -f '$(srcdir)/Amesos_Support.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Support.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Support.Tpo" "$(DEPDIR)/Amesos_Support.Po"; else rm -f "$(DEPDIR)/Amesos_Support.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Support.cpp' object='Amesos_Support.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Support.Po' tmpdepfile='$(DEPDIR)/Amesos_Support.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Support.o `test -f '$(srcdir)/Amesos_Support.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Support.cpp
+
+Amesos_Support.obj: $(srcdir)/Amesos_Support.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Support.obj -MD -MP -MF "$(DEPDIR)/Amesos_Support.Tpo" -c -o Amesos_Support.obj `if test -f '$(srcdir)/Amesos_Support.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Support.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Support.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Support.Tpo" "$(DEPDIR)/Amesos_Support.Po"; else rm -f "$(DEPDIR)/Amesos_Support.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Support.cpp' object='Amesos_Support.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Support.Po' tmpdepfile='$(DEPDIR)/Amesos_Support.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Support.obj `if test -f '$(srcdir)/Amesos_Support.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Support.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Support.cpp'; fi`
+
 Amesos_Dscpack.o: $(srcdir)/Amesos_Dscpack.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Dscpack.o -MD -MP -MF "$(DEPDIR)/Amesos_Dscpack.Tpo" -c -o Amesos_Dscpack.o `test -f '$(srcdir)/Amesos_Dscpack.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Dscpack.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Dscpack.Tpo" "$(DEPDIR)/Amesos_Dscpack.Po"; else rm -f "$(DEPDIR)/Amesos_Dscpack.Tpo"; exit 1; fi
@@ -2126,6 +2150,8 @@ all-libs:
 	$(MAKE) libamesos.a
 	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
 	cd $(top_builddir)/../epetra ; $(MAKE) all-libs 
+@HAVE_AMESOS_TRIUTILS_TRUE@	cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
+@HAVE_AMESOS_EPETRAEXT_TRUE@	cd $(top_builddir)/../epetraext ; $(MAKE) all-libs 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -25,6 +25,17 @@
 # 
 # ************************************************************************
 #@HEADER
+include $(top_builddir)/Makefile.export.amesos
+
+if USING_GNUMAKE
+EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+else
+EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -105,50 +116,19 @@ SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp \
            $(srcdir)/SparseSolverResult.cpp \
            SparseSolverResult.h 
 
+if HAVE_AMESOS_TRIUTILS
 amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp \
 	 $(srcdir)/Amesos_TestSolver.cpp $(srcdir)/Amesos_TestSolver.h \
 	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
 	 $(SRC_CXX)
-
-if HAVE_AMESOS_EPETRAEXT
-   EPETRA_EXT_INCLUDE =	-I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
 else
-   EPETRA_EXT_INCLUDE = 
-endif 
+amesos_test_SOURCES = $(srcdir)/DoNothing.cpp
+endif
 
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	${EPETRA_EXT_INCLUDE} \
-	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
-
-if HAVE_AMESOS_EPETRAEXT
-   EPETRA_EXT_LIB = 	$(top_builddir)/../epetraext/src/libepetraext.a 
-else
-   EPETRA_EXT_LIB = 
-endif 
-
-amesos_test_DEPENDENCIES = \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a 
-
-amesos_test_CXXFLAGS = -I$(top_srcdir)/src
-
-#
-#  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
-#
-amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
-	${EPETRA_EXT_LIB} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(AMESOS_LIBS)  $(top_builddir)/src/libamesos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS) $(FLIBS)
+TestBasic_DEPENDENCIES = all-libs
+amesos_test_DEPENDENCIES = all-libs
+TestBasic_LDADD = ${EXAMPLE_LIBS}
+amesos_test_LDADD = ${EXAMPLE_LIBS}
 
 EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_ImpcolA.rua \
@@ -224,4 +204,6 @@ clean:  clean-am
 	SST.* \
 	AME.* 
 
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs 
 

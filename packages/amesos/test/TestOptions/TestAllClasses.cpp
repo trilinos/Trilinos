@@ -38,6 +38,9 @@ int TestAllClasses( const vector<string> AmesosClasses,
   const int NumAmesosClasses = AmesosClasses.size();
   int errors = 0 ;
 
+  if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && EpetraMatrixType == 1 ) 
+    return 0 ;   //  Can't reindex a RowMatrix because we don't know the indices up front 
+
   for (int i=0; i < NumAmesosClasses; i++ ) {
     if ( AmesosClassesInstalled[i] ) { 
       if ( AmesosClasses[i] == "Amesos_Scalapack") { 
@@ -142,7 +145,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Klu" ) {
 	bool RunKluTest = true;
-	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) )  //  Bug #969
+	if ( (   ReindexColMap != 0  ) )  //  Bug #969
 	  RunKluTest = false ;   //  Bug #969
 
 	//	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunKluTest = false ;   //  Bug #1403

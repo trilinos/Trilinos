@@ -282,7 +282,8 @@ AM_CONDITIONAL(HAVE_COVERAGE, test "X$ac_cv_use_coverage" != "Xno")
 
 
 # ------------------------------------------------------------------------
-# Epetraext and Triutils are only required for tests and examples,
+# Triutils is only required for tests and examples,
+# Epetraext is only required for matrix re-indexing
 # so they will NOT to added as part of the Makefile.export.amesos file.
 # ------------------------------------------------------------------------
 
@@ -294,9 +295,12 @@ AC_MSG_CHECKING(whether to use epetraext)
 
 if test "X$ac_cv_use_epetraext" != "Xno"; then
   AC_MSG_RESULT(yes)
-  AC_DEFINE([HAVE_AMESOS_EPETRAEXT],,[Define if you want to allow Amesos tests and examples to use Epetraext to build matrices])
+  AC_DEFINE([HAVE_AMESOS_EPETRAEXT],,[Define if you want to allow Amesos to use Epetraext to reindex matrices])
 else
  AC_MSG_RESULT(no)
+# if test "X$ac_cv_use_amesos_tests" != "Xno"; then
+#    AC_MSG_ERROR([[Amesos tests cannot be run without triutils]])
+# fi
 fi
 
 AM_CONDITIONAL(HAVE_AMESOS_EPETRAEXT, [test "X$ac_cv_use_epetraext" != "Xno"])
