@@ -80,20 +80,17 @@ namespace Tpetra {
 		DistObject(ElementSpace<OrdinalType> const elementspace)
 			: Object("Tpetra::DistObject")
 			, ElementSpace_(elementspace)
-			, ordinalImports_()
-			, scalarImports_()
-			, ordinalExports_()
-			, scalarExports_()
+			, imports_()
+			, exports_()
+			, sizes_()
 		{}
 
 		//! constructor, taking label
 		DistObject(ElementSpace<OrdinalType> const elementspace, std::string const& label)
 			: Object(label)
 			, ElementSpace_(elementspace)
-			, ordinalImports_()
-			, scalarImports_()
-			, ordinalExports_()
-			, scalarExports_()
+			, imports_()
+			, exports_()
 			, sizes_()
 		{}
 
@@ -101,10 +98,8 @@ namespace Tpetra {
 		DistObject(DistObject<OrdinalType, ScalarType> const& DistObject)
 			: Object(DistObject.label())
 			, ElementSpace_(DistObject.ElementSpace_)
-			, ordinalImports_(DistObject.ordinalImports_)
-			, scalarImports_(DistObject.scalarImports_)
-			, ordinalExports_(DistObject.ordinalExports_)
-			, scalarExports_(DistObject.scalarExports_)
+			, imports_(DistObject.imports_)
+			, exports_(DistObject.exports_)
 			, sizes_(DistObject.sizes_)
 		{}
 
@@ -140,8 +135,7 @@ namespace Tpetra {
 			// call doTransfer
 			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
 					   permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-					   ordinalExports_, scalarExports_, ordinalImports_, scalarImports_, 
-					   importer.getDistributor(), false);
+					   exports_, imports_, importer.getDistributor(), false);
 
 			return(0);
 		}
@@ -186,10 +180,8 @@ namespace Tpetra {
 							   std::vector<OrdinalType> permuteFromLIDs,
 							   std::vector<OrdinalType> remoteLIDs,
 							   std::vector<OrdinalType> exportLIDs,
-							   std::vector<OrdinalType> ordinalExports,
-							   std::vector<ScalarType> scalarExports,
-							   std::vector<OrdinalType> ordinalImports,
-							   std::vector<ScalarType> scalarImports,
+							   std::vector<ScalarType> exports,
+							   std::vector<ScalarType> imports,
 							   Distributor<OrdinalType> const& distor,
 							   bool doReverse) 
 		{
@@ -206,7 +198,7 @@ namespace Tpetra {
 			bool varSizes = false;
 			if((!sizes_.empty()) && (numExportIDs > zero))
 				sizes_.resize(numExportIDs);
-			packAndPrepare(sourceObj, numExportIDs, exportLIDs, ordinalExports, scalarExports, distor);
+			packAndPrepare(sourceObj, numExportIDs, exportLIDs, exports, distor);
 
 			if((isGlobal() && doReverse) || (sourceObj.elementspace().isGlobal() && !doReverse)) {
 				if(doReverse) {
@@ -221,7 +213,7 @@ namespace Tpetra {
 					else
 						; // call doPostsAndWaits
 				}
-				unpackAndCombine(sourceObj, numRemoteIDs, remoteLIDs, ordinalImports, scalarImports, distor, CM);
+				unpackAndCombine(sourceObj, numRemoteIDs, remoteLIDs, imports, distor, CM);
 			}
 
 			return(0);
@@ -229,40 +221,82 @@ namespace Tpetra {
 
 		// The following four methods must be implemented by the derived class
 
-		//! Allows the source and target (\e this) objects to be compared for compatibility, return false if not.
+		//! Allows the source and target (\e this) objects to be compared for compatibility.
+		/*! Return true if they are compatible, return false if they aren't. */ 
 		virtual bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) = 0;
 
 		//! Perform copies and permutations that are local to this image.
+		/*!
+		  \param sourceObj In
+		         On entry, the DistObject that we are importing from.
+		  \param numImportIDs In
+		         On entry, the number of elements that are the same on the source and dest objects.
+				 (i.e. The element is owned by the same image in both source and dest, 
+				 and no permutation occurs.)
+		  \param numPermuteIDs In
+		         On entry, the number of elements that are locally permuted between source and dest objects.
+		  \param permuteToLIDs In
+		         On entry, contains a list of the elements that are permuted. (Listed by their LID in the
+				 destination DistObject.)
+		  \param permuteFromLIDs In
+		         On entry, contains a list of the elements that are permuted. (Listed by their LID in the
+				 source DistObject.)
+		*/
 		virtual int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
 								   OrdinalType numImportIDs,
 								   OrdinalType numPermuteIDs,
 								   std::vector<OrdinalType> permuteToLIDs,
 								   std::vector<OrdinalType> permuteFromLIDs) = 0;
 
-		//! Perform any packing or preparation required for call to doTransfer().
+		//! Perform any packing or preparation required for communication.
+		/*!
+		  \param sourceObj In
+		         On entry, the DistObject that we are importing from.
+		  \param numExportIDs In
+		         On entry, the number of elements we will be sending to other images.
+		  \param exportLIDs In
+		         On entry, a list of the elements we will be sending to other images.
+				 (Listed by their LID in the source DistObject.)
+		  \param exports Out
+		         On exit, buffer for data we will be sending out.
+		  \param distor In
+		         On entry, contains the Distributor object we are using.				 
+		*/
 		virtual int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
 								   OrdinalType numExportIDs,
 								   std::vector<OrdinalType> exportLIDs,
-								   std::vector<OrdinalType> ordinalExports,
-								   std::vector<ScalarType> scalarExports,
+								   std::vector<ScalarType> exports,
 								   Distributor<OrdinalType> const& distor) = 0;
   
-		//! Perform any unpacking and combining after call to doTransfer().
+		//! Perform any unpacking and combining after communication.
+		/*!
+		  \param sourceObj In
+		         The DistObject that are we importing from.
+		  \param numImportIDs In
+		         The number of elements we received from other images.
+		  \param importLIDs In
+		         On entry, a list of the elements we received from other images.
+				 (Listed by their LID in the target DistObject.)
+		  \param imports In
+		         Buffer for data we received.
+		  \param distor In
+		         The Distributor object we are using.
+		  \param CM In
+		         The Tpetra::CombineMode to use when combining the imported
+				 entries with existing entries.
+		*/
 		virtual int unpackAndCombine(DistObject<OrdinalType, ScalarType> const& sourceObj,
 									 OrdinalType numImportIDs,
 									 std::vector<OrdinalType> importLIDs,
-									 std::vector<OrdinalType> ordinalImports,
-									 std::vector<ScalarType> scalarImports,
+									 std::vector<ScalarType> imports,
 									 Distributor<OrdinalType> const& distor,
 									 CombineMode CM) = 0;
 
 	private:
 		
 		ElementSpace<OrdinalType> const ElementSpace_;
-		std::vector<OrdinalType> ordinalImports_;
-		std::vector<ScalarType> scalarImports_;
-		std::vector<OrdinalType> ordinalExports_;
-		std::vector<ScalarType> scalarExports_;
+		std::vector<ScalarType> imports_;
+		std::vector<ScalarType> exports_;
 		std::vector<OrdinalType> sizes_;
 
 	}; // class DistObject

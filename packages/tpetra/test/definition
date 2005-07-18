@@ -4,6 +4,7 @@
 
 (FRAMEWORK) {
     DIRS = Platform,
+           Comm,
            Distributor,
            Directory,
            ElementSpace,

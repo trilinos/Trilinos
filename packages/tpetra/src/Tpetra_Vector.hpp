@@ -558,7 +558,17 @@ namespace Tpetra {
 
 		// four functions needed for DistObject derivation
 		bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) {
-			return(false);
+			// first check that sourceObj is actually a Vector, and not some other kind of DistObject
+			/*try {
+				Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+			}
+			catch(std::bad_cast bc) {
+				return(false);
+			}*/
+
+			// ???
+			
+			return(true);
 		}
 
 		int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
@@ -566,25 +576,50 @@ namespace Tpetra {
 						   OrdinalType numPermuteIDs,
 						   std::vector<OrdinalType> permuteToLIDs,
 						   std::vector<OrdinalType> permuteFromLIDs) {
-			return(0);
+			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
+			Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+
+			// the first numImportIDs GIDs are the same between source and target,
+			// we can just copy them
+			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
+				(*this)[i] = sourceVector[i];
+
+			// next, do permutations
+			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numPermuteIDs; i++)
+				(*this)[permuteToLIDs[i]] = sourceVector[permuteFromLIDs[i]];
+			
+			
 		}
 
 		int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
 						   OrdinalType numExportIDs,
 						   std::vector<OrdinalType> exportLIDs,
-						   std::vector<OrdinalType> ordinalExports,
-						   std::vector<ScalarType> scalarExports,
+						   std::vector<ScalarType> exports,
 						   Distributor<OrdinalType> const& distor) {
+			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
+			Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+
+			// For a vector, we only need to send the value
+			exports.clear();
+			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numExportIDs; i++)
+				exports.push_back(sourceVector[exportLIDs[i]]);
+			
 			return(0);
 		}
   
 		int unpackAndCombine(DistObject<OrdinalType, ScalarType> const& sourceObj,
 							 OrdinalType numImportIDs,
 							 std::vector<OrdinalType> importLIDs,
-							 std::vector<OrdinalType> ordinalImports,
-							 std::vector<ScalarType> scalarImports,
+							 std::vector<ScalarType> imports,
 							 Distributor<OrdinalType> const& distor,
 							 CombineMode CM) {
+			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
+			Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+
+			// copy values from scalarExports
+			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
+				scalarArray().at(importLIDs[i]) = imports[i];
+
 			return(0);
 		}
 
