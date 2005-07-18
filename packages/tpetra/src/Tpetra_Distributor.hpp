@@ -253,36 +253,65 @@ namespace Tpetra {
 
 		//@{ \name Attribute Accessor Methods
 
+		//! getTotalReceiveLength
 		OrdinalType const& getTotalReceiveLength() const {
 			return(totalReceiveLength_);
 		};
+
+		//! getNumReceives
 		OrdinalType const& getNumReceives() const {
 			return(numReceives_);
 		};
+
+		//! getSelfMessage - flag for if we're sending to ourself
+		/*! If we are sending any elements to ourself, returns 1. If we aren't, returns 0. */
 		OrdinalType const& getSelfMessage() const {
 			return(selfMessage_);
 		};
+
+		//! getNumSends
 		OrdinalType const& getNumSends() const {
 			return(numSends_);
 		};
+
+		//! getMaxSendLength - maximum number of elements we're sending to a remote image
 		OrdinalType const& getMaxSendLength() const {
 			return(maxSendLength_);
 		};
+
+		//! getImagesFrom - list of images sending elements to us
 		std::vector<OrdinalType> const& getImagesFrom() const {
 			return(imagesFrom_);
 		};
+
+		//! getLengthsFrom - number of elements we're receiving from each image
+		/*! We will receive lengthsFrom[i] elements from image imagesFrom[i] */
 		std::vector<OrdinalType> const& getLengthsFrom() const {
 			return(lengthsFrom_);
 		};
+
+		// getImagesTo - list of images we're sending elements to
 		std::vector<OrdinalType> const& getImagesTo() const {
 			return(imagesTo_);
 		};
+
+		// getIndicesTo
+		/*! (Used only if exportImageIDs was not blocked by image.)
+		    Gives the order to ** the export buffer, in order to get
+			a version that is sorted by imageID. */
 		std::vector<OrdinalType> const& getIndicesTo() const {
 			return(indicesTo_);
 		};
+
+		// getStartsTo - list of offsets into export buffer
+		/*! Given an export buffer that contains all of the elements we're sending out, 
+		    image i's block of elements will start at position startsTo[i] */
 		std::vector<OrdinalType> const& getStartsTo() const {
 			return(startsTo_);
 		};
+
+		// getLengthsTo - number of elements we're sending to each image
+		/*! We will send lengthsTo[i] elements to image imagesTo[i] */
 		std::vector<OrdinalType> const& getLengthsTo() const {
 			return(lengthsTo_);
 		};

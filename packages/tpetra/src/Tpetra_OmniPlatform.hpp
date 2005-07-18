@@ -45,6 +45,26 @@
 namespace Tpetra {
 
 	//! Tpetra::OmniPlatform - Experimental new implementation of the Tpetra Platform class.
+	/*! Platform is a sort of Factory that generates Tpetra::Comm instances. It is meant
+	    to insulate Tpetra classes from the specifics of how communication is being done.
+
+		For example, having been passed a Platform instance at construction, a Tpetra class
+		can call Platform.createComm, and receive a Tpetra::Comm object that it can use to do
+		global communications with. This may actually be a Tpetra::SerialComm, a Tpetra::MpiComm,
+		or some other implementation of the Tpetra::Comm interface.
+		
+		If they desire, a caller can also create a Comm instance of a specific type. For instance,
+		they may want a SerialComm object. This can be done by calling Platform::createComm with an
+		additional argument specifying the type of Comm they want. This is an enumerable type (CommType),
+		with options "SERIAL", "MPI", "THREADED_MPI".
+
+		To determine if a specific type of Comm is available, the user can call Platform::isEnabled.
+		Given a CommType as an argument, it will return a boolean specifying if that CommType is enabled
+		in this Platform.
+
+		It is also possible to find out what the "generic" CommType is, by calling the 
+		Platform::getGeneric method.
+	*/
 
 	class OmniPlatform : public Object {
 	public:
