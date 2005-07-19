@@ -574,7 +574,6 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
   const RangeScalar  r_half = RangeScalar(0.5)*RST::one();
-  const DomainScalar d_one  = DST::one();
   const std::string &li = leadingIndent, &is = indentSpacer;
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
