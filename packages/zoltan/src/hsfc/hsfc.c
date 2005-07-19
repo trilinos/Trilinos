@@ -37,6 +37,7 @@ extern "C" {
 static PARAM_VARS HSFC_params[] =
    {{"KEEP_CUTS", NULL, "INT", 0},
     { "SKIP_DIMENSIONS", NULL, "INT", 0 },
+    { "SKIP_RATIO", NULL, "DOUBLE", 0 },
     {NULL,        NULL,  NULL, 0}};
 
 
@@ -101,7 +102,8 @@ int Zoltan_HSFC(
    double     temp, in[9], out[9];
    int        err;
    int        param;
-   int        dummy;
+   int        idummy;
+   double     ddummy;
    int        dim;
    char      *yo = "Zoltan_HSFC";
 
@@ -543,8 +545,10 @@ int Zoltan_HSFC(
 
    /* done, do we keep data structure for box drop and point drop? */
    Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void*) &param);
-   Zoltan_Bind_Param (HSFC_params, "SKIP_DIMENSIONS", (void*) &dummy);
-   param = dummy = 0;
+   Zoltan_Bind_Param (HSFC_params, "SKIP_DIMENSIONS", (void*) &idummy);
+   Zoltan_Bind_Param (HSFC_params, "SKIP_RATIO", (void*) &ddummy);
+   param = idummy = 0;
+   ddummy = 0.0;
    Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
     zz->Debug_Proc);
    if (param == 0)
