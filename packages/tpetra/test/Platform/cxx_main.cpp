@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 	if(verbose) outputStartMessage("Platform");
 	int ierr = 0;
 
-	//omniTest<int, int>(verbose, debug, myImageID, numImages);
+	omniTest<int, int>(verbose, debug, myImageID, numImages);
   
 	// call the actual test routines
 	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);

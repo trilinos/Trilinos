@@ -32,13 +32,10 @@
 #include "Tpetra_MpiPlatform.hpp"
 #include "Tpetra_MpiComm.hpp"
 #include "Tpetra_MpiTraits.hpp"
-#else
+#endif // TPETRA_MPI
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_SerialComm.hpp"
-#endif // TPETRA_MPI
 
-template <typename PacketType, typename OrdinalType>
-int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages);
 template <typename PacketType, typename OrdinalType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
 
@@ -76,13 +73,19 @@ int main(int argc, char* argv[]) {
 	int ierr = 0;
 
 	//mpiBreakpoint(myImageID);
-  
+
+	Tpetra::SerialPlatform<int, int> serialplatform;
+	Teuchos::RefCountPtr<Tpetra::Comm<int, int> > scomm1 = serialplatform.createScalarComm();
+#ifdef TPETRA_MPI
+	Tpetra::MpiPlatform<int, int> mpiplatform(MPI_COMM_WORLD);
+	Teuchos::RefCountPtr<Tpetra::Comm<int, int> > mcomm1 = mpiplatform.createScalarComm();
+#endif
+
 	// call the actual test routines
-	//simpleTest<int, int>(verbose, debug, myImageID, numImages);
-	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
-	ierr += unitTests<double, int>(verbose, debug, myImageID, numImages);
-	ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
-	ierr += unitTests<complex<float>, int>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<double, int>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<complex<float>, int>(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
@@ -90,80 +93,6 @@ int main(int argc, char* argv[]) {
 #endif
 	if(verbose) outputEndMessage("Comm", (ierr == 0));
 	return(ierr);
-}
-
-//======================================================================
-template <typename PacketType, typename OrdinalType>
-int simpleTest(bool const verbose, bool const debug, int const myImageID, int const numImages) {
-	// compute which image to send to/from
-	int destImageID = myImageID - 1;
-	int sourceImageID = myImageID + 1;
-	bool sending = (myImageID % 2 != 0);
-	bool receiving = (!sending && sourceImageID < numImages);
-
-	OrdinalType const numValues = intToOrdinal<OrdinalType>(4); // magic number
-	int const tag = 26001; // another magic number
-#ifdef TPETRA_MPI
-	if(sending) {
-		// initialize values we'll send
-		std::vector<PacketType> myVals(numValues);
-		generateColumn(myVals, myImageID, numValues);
-
-		if(debug) 
-			cout << "[Image " << myImageID << "] sending to IID " << destImageID << ", values = "
-				 << Tpetra::toString(myVals) << endl;
-
-		int ierr = MPI_Send(&myVals[0], numValues, Tpetra::MpiTraits<PacketType>::datatype(), 
-							destImageID, tag, MPI_COMM_WORLD);
-		if(ierr != 0)
-			cerr << "[Image " << myImageID << "] Error in MPI_Send, returned " << ierr << "." << endl;
-	}
-
-	if(receiving) {
-		// initialize expected values, and buffer
-		// for receiving values
-		std::vector<PacketType> received(numValues);
-		std::vector<PacketType> expected(numValues);
-		generateColumn(expected, sourceImageID, numValues);
-
-		MPI_Status status;
-		int ierr = MPI_Recv(&received[0], numValues, Tpetra::MpiTraits<PacketType>::datatype(), 
-							sourceImageID, tag, MPI_COMM_WORLD, &status);
-		if(ierr != 0)
-			cerr << "[Image " << myImageID << "] Error in MPI_Recv, returned " << ierr << "." << endl;
-		if(received != expected || debug)
-			cout << "[Image " << myImageID << "] receiving from IID " << sourceImageID << ", expected = "
-				 << Tpetra::toString(expected) << ", received = " << Tpetra::toString(received) << endl;
-	}
-
-	if(!receiving && !sending) {
-		if(debug)
-			cout << "[Image " << myImageID << "] Not participating." << endl;
-	}
-
-	// now try it through MpiComm
-
-	Tpetra::MpiComm<PacketType, OrdinalType> comm(MPI_COMM_WORLD);
-	std::vector<PacketType> sendVals(numValues);
-	std::vector<PacketType> recvVals(numValues);
-	
-	if(myImageID == 0) { // send
-		cout << "Image 0, about to send" << endl;
-		comm.send(&sendVals[0], numValues, 1);
-		cout << "Image 0, done" << endl;
-	}
-	else if(myImageID == 1) { // receive
-		cout << "Image 1, about to receive" << endl;
-		comm.receive(&recvVals[0], numValues, 0);
-		cout << "Image 1, done" << endl;
-	}
-	else { // do nothing
-		cout << "Image " << myImageID << ", doing nothing" << endl;
-	}
-	
-
-#endif
-	return(0);
 }
 
 //======================================================================

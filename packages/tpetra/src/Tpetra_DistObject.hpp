@@ -194,7 +194,7 @@ namespace Tpetra {
 
 			// we don't have a "Zero" CombineMode like Epetra does, so we don't have to check for that
 
-			OrdinalType sizeOfPacket;
+			///OrdinalType sizeOfPacket;
 			bool varSizes = false;
 			if((!sizes_.empty()) && (numExportIDs > zero))
 				sizes_.resize(numExportIDs);

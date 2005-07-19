@@ -68,10 +68,10 @@ namespace Tpetra {
 		MpiComm(MPI_Comm Comm) 
 			: Object("Tpetra::MpiComm") 
 			, MpiData_()
-			, tag_(26050)
+			, tag_(-1)
 		{
 			MpiData_ = Teuchos::rcp(new MpiData(Comm));
-			//tag_ = data().getMpiTag();
+			tag_ = data().getMpiTag();
 		}
 
 		//! platform constructor
@@ -83,7 +83,8 @@ namespace Tpetra {
 		MpiComm(Teuchos::RefCountPtr<MpiData> const& mpidata)
 			: Object("Tpetra::MpiComm")
 			, MpiData_(mpidata)
-			, tag_(26050)
+			   //, tag_(-1)
+			, tag_(data().getMpiTag())
 		{
 			//tag_ = data().getMpiTag();
 		}
@@ -92,9 +93,10 @@ namespace Tpetra {
 		MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
 			: Object(comm.label())
 			, MpiData_(comm.MpiData_)
-			, tag_(26050)
+			   //, tag_(-1)
+			, tag_(data().getMpiTag())
 		{
-			//tag_ = data().getMpiTag();
+			tag_ = data().getMpiTag();
 		}
 
 		~MpiComm() {};

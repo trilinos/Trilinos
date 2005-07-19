@@ -588,7 +588,7 @@ namespace Tpetra {
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numPermuteIDs; i++)
 				(*this)[permuteToLIDs[i]] = sourceVector[permuteFromLIDs[i]];
 			
-			
+			return(0);
 		}
 
 		int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
@@ -613,9 +613,6 @@ namespace Tpetra {
 							 std::vector<ScalarType> imports,
 							 Distributor<OrdinalType> const& distor,
 							 CombineMode CM) {
-			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
-			Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
-
 			// copy values from scalarExports
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
 				scalarArray().at(importLIDs[i]) = imports[i];
