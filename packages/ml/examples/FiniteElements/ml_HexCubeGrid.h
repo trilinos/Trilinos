@@ -774,12 +774,12 @@ private:
   int nx_;
   int ny_;
   int nz_;
-  int mx_;
-  int my_;
-  int mz_;
   double lx_;
   double ly_;
   double lz_;
+  int mx_;
+  int my_;
+  int mz_;
   double deltax_;
   double deltay_;
   double deltaz_;

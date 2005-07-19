@@ -29,7 +29,7 @@ public:
   void Write(const AbstractGrid& data, const string& BaseName,
              const Epetra_MultiVector& Field)
   {
-    int zzz = data.NumMyVertices();
+    ///int zzz = data.NumMyVertices();
     vector<double> coord(3);
     vector<int>    vertices(data.NumVerticesPerElement());
 

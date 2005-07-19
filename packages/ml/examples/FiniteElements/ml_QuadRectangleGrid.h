@@ -644,10 +644,10 @@ private:
 
   int nx_;
   int ny_;
-  int mx_;
-  int my_;
   double lx_;
   double ly_;
+  int mx_;
+  int my_;
   double deltax_;
   double deltay_;
 

@@ -165,8 +165,6 @@ public:
     double g = 0.0, h = 0.0, l = 0.0;
     double divide_by;
 
-    int i;
-
     /* jacobian^{-1} is the matrix
 
                    [ a b c ]

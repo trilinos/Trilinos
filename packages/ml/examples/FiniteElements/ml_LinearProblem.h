@@ -200,7 +200,7 @@ public:
   {
 
     const Epetra_Map& VertexMap = Grid().VertexMap(); 
-    const Epetra_Map& RowMap = Grid().RowMap(); 
+    //const Epetra_Map& RowMap = Grid().RowMap(); 
     Epetra_MultiVector VertexField(VertexMap, RowMatrixField.NumVectors());
 
     Grid().ExportToVertexMap(RowMatrixField, VertexField);
@@ -230,7 +230,7 @@ public:
       z[i] = 0.0;
     }
 
-    double xq, yq, zq;
+    ///double xq, yq, zq;
 
     // =========================== //
     // roll over all grid elements //
@@ -327,11 +327,11 @@ public:
 
 public:
 
+  const AbstractGrid& Grid_;
+  const AbstractVariational& Variational_;
   Epetra_CrsMatrix& A_;
   Epetra_MultiVector& LHS_;
   Epetra_MultiVector& RHS_;
-  const AbstractGrid& Grid_;
-  const AbstractVariational& Variational_;
 };
 
 } // namespace ML_FiniteElements

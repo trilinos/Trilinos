@@ -421,7 +421,7 @@ private:
   inline void IL_ElementVertices(const int LocalID, int* elements,
                                  const bool ReturnGlobal = false) const
   {
-    int ix, iy, iz;
+    int ix, iy;
     GetLocalElementXY(LocalID / 2, ix, iy);
 
     if (LocalID % 2 == 0)
@@ -610,10 +610,10 @@ private:
 
   int nx_;
   int ny_;
-  int mx_;
-  int my_;
   double lx_;
   double ly_;
+  int mx_;
+  int my_;
   double deltax_;
   double deltay_;
 

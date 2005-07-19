@@ -734,7 +734,7 @@ private:
     GetLocalElementXYZ(LocalID, ix, iy, iz);
     int nx = NumMyVerticesX();
     int ny = NumMyVerticesY();
-    int nz = NumMyVerticesZ();
+    //int nz = NumMyVerticesZ();
     elements[0] = (ix + iy * nx          ) + nx * ny * iz;
     elements[1] = (ix + iy * nx + 1      ) + nx * ny * iz;
     elements[2] = (ix + (iy + 1) * nx + 1) + nx * ny * iz;
@@ -1003,12 +1003,12 @@ private:
   int nx_;
   int ny_;
   int nz_;
-  int mx_;
-  int my_;
-  int mz_;
   double lx_;
   double ly_;
   double lz_;
+  int mx_;
+  int my_;
+  int mz_;
   double deltax_;
   double deltay_;
   double deltaz_;

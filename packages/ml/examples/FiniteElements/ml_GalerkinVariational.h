@@ -74,7 +74,7 @@ public:
   {
     double xq, yq, zq;
     int size = NumPhiFunctions();
-    double h = data[0];
+    //double h = data[0];
     
     // zero out local matrix and rhs
     
@@ -113,7 +113,7 @@ public:
                           const double* y, const double* z, double* Norm) const
   {
     double xq, yq, zq;
-    double exact[4];
+    //double exact[4];
 
     for (int ii = 0 ; ii < NumQuadrNodes() ; ii++) 
     {

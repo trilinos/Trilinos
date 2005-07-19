@@ -154,7 +154,6 @@ public:
                        const double* y,
                        const double* z) const
   {
-    int i;
     double divide_by;
     double ijacobian[2][2];
 

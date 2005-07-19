@@ -108,7 +108,6 @@ public:
   {
     double a, b, c, d, e, f, g, h, l;
     double divide_by;
-    int i;
 
     /* jacobian^{-1} is the matrix
 

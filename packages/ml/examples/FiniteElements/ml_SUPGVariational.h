@@ -42,10 +42,10 @@ public:
   T(NumQuadratureNodes),
   diff_(diff),
   source_(source),
-  force_(force),
   conv_x_(bx),
   conv_y_(by),
   conv_z_(bz),
+  force_(force),
   bc_(bc)
   {}
 
@@ -142,7 +142,6 @@ public:
                           const double* y, const double* z, double* Norm) const
   {
     double xq, yq, zq;
-    double exact[4];
 
     for (int ii = 0 ; ii < NumQuadrNodes() ; ii++) 
     {
