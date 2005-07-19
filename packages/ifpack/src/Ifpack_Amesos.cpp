@@ -136,9 +136,24 @@ int Ifpack_Amesos::Initialize()
   Amesos Factory;
   Solver_ = Factory.Create((char*)Label_.c_str(),*Problem_);
   
-  if (Solver_ == 0) {
+  if (Solver_ == 0) 
+  {
     // try to create KLU, it is generally enabled
     Solver_ = Factory.Create("Amesos_Klu",*Problem_);
+  }
+  if (Solver_ == 0)
+  {
+    // finally try to create LAPACK, it is generally enabled
+    // NOTE: the matrix is dense, so this should only be for
+    // small problems...
+    cerr << "IFPACK WARNING: In class Ifpack_Amesos:" << endl;
+    cerr << "IFPACK WARNING: Using LAPACK because other Amesos" << endl;
+    cerr << "IFPACK WARNING: solvers are not available. LAPACK" << endl;
+    cerr << "IFPACK WARNING: allocates memory to store the matrix as" << endl;
+    cerr << "IFPACK WARNING: dense, I hope you have enough memory..." << endl;
+    cerr << "IFPACK WARNING: (file " << __FILE__ << ", line " << __LINE__ 
+         << ")" << endl;
+    Solver_ = Factory.Create("Amesos_Lapack",*Problem_);
   }
   if (Solver_ == 0)
     IFPACK_CHK_ERR(-1);
