@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "ml_struct.h"
 
+#define ML_AMESOS_LAPACK        -1
 #define ML_AMESOS_KLU            0
 #define ML_AMESOS_UMFPACK        1
 #define ML_AMESOS_SUPERLUDIST    2

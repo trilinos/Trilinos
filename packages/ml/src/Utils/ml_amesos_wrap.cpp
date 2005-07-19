@@ -31,6 +31,16 @@ static int NumSolves__ = 0;
 static double MaxError__ = 0.0;
 #endif
 
+static void print_out(const Epetra_Comm& Comm, const int level, const char* what)
+{
+  if (Comm.MyPID() == 0 && ML_Get_PrintLevel() > 2)
+#ifdef TFLOP
+    printf("Amesos (level %d) : Building %s\n", level, what);
+#else
+    cout << "Amesos (level " << level << ") : Building " << what << "\n";
+#endif
+}
+
 // ================================================ ====== ==== ==== == =
 
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs, 
@@ -97,95 +107,77 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
   Amesos_BaseSolver* A_Base;
   Amesos A_Factory;
+  const Epetra_Comm& Comm = Amesos_Matrix->Comm();
 
-  switch( choice ) {
+  switch (choice) {
+
+  case ML_AMESOS_LAPACK:
+    print_out(Comm, curr_level, "LAPACK");
+    A_Base = A_Factory.Create("Amesos_Lapack", *Amesos_LinearProblem);
+    break;
 
   case ML_AMESOS_UMFPACK:
-#ifdef TFLOP
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : Building UMFPACK\n",curr_level);
-#else
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "Amesos (level " << curr_level
-	   << ") : Building UMFPACK\n";
-#endif
+    print_out(Comm, curr_level, "UMFPACK");
     A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
     break;
 
   case ML_AMESOS_SUPERLUDIST:
-#ifdef TFLOP
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : Building SUPERLUDIST\n",curr_level);
-#else
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "Amesos (level " << curr_level
-	   << ") : Building SUPERLUDIST\n";
-#endif
+    print_out(Comm, curr_level, "SuperLU_DIST");
     A_Base = A_Factory.Create("Amesos_Superludist", *Amesos_LinearProblem);
     
     break;
 
   case ML_AMESOS_SCALAPACK:
-#ifdef TFLOP
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : Building SCALAPACK\n",curr_level);
-#else
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "Amesos (level " << curr_level
-	   << ") : Building SCALAPACK\n";
-#endif
+    print_out(Comm, curr_level, "ScaLAPACK");
     A_Base = A_Factory.Create("Amesos_Scalapack", *Amesos_LinearProblem);
     
     break;
 
   case ML_AMESOS_MUMPS:
-#ifdef TFLOP
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : Building MUMPS\n",curr_level);
-#else
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "Amesos (level " << curr_level
-	   << ") : Building MUMPS\n";
-#endif
+    print_out(Comm, curr_level, "MUMPS");
     A_Base = A_Factory.Create("Amesos_Mumps", *Amesos_LinearProblem);
     break;
 
   case ML_AMESOS_KLU:
   default:
-#ifdef TFLOP
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : Building KLU\n",curr_level);
-#else
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "Amesos (level " << curr_level
-	   << ") : Building KLU\n";
-#endif
+    print_out(Comm, curr_level, "KLU");
     A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
     break;
   }
 
   // may happen the desired solver is not available. KLU is almost
-  // always compiled, so try this...
-  if( A_Base == 0 ) {
-#ifdef TFLOP
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : Now re-building with KLU\n",curr_level);
-#else
-    if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
-      cout << "Amesos (level " << curr_level
-	   << ") : This coarse solver is not available." << endl;
-      cout << "Amesos (level " << curr_level
-	   << ") : Now re-building with KLU\n";
-    }
-#endif
-    A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
-    if( A_Base == 0 ) {
-      if( Amesos_Matrix->Comm().MyPID() == 0 ) {
-	cerr << "*ML*ERR* no Amesos solver is available!" << endl;
+  // always compiled, so try this first. If not, then LAPACK is
+  // the last choice before quitting
+  if (A_Base == 0) 
+  {
+    if (choice != ML_AMESOS_KLU)
+    {
+      if (Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2)
+      {
+        cout << "Amesos (level " << curr_level
+          << ") : This coarse solver is not available." << endl;
+        cout << "Amesos (level " << curr_level
+          << ") : Now re-building with KLU" << endl;
       }
-      exit( EXIT_FAILURE );
+      A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
     }
- }
+    if (A_Base == 0) 
+    {
+        cout << "Amesos (level " << curr_level
+          << ") : This coarse solver is not available." << endl;
+        cout << "Amesos (level " << curr_level
+          << ") : Now re-building with LAPACK" << endl;
+      A_Base = A_Factory.Create("Amesos_Lapack", *Amesos_LinearProblem);
+      if (A_Base == 0) 
+      {
+        if (Amesos_Matrix->Comm().MyPID() == 0) 
+        {
+          cerr << "*ML*ERR* no Amesos solver is available!" << endl;
+        }
+        exit( EXIT_FAILURE );
+      }
+    }
+  }
 
   A_Base->SetParameters(AmesosList);
 
