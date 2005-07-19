@@ -12,6 +12,8 @@
 #include "Epetra_Time.h"
 #include "Teuchos_ParameterList.hpp"
 
+static bool FirstTime = true;
+
 //==============================================================================
 Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   Matrix_(Matrix),
@@ -146,13 +148,17 @@ int Ifpack_Amesos::Initialize()
     // finally try to create LAPACK, it is generally enabled
     // NOTE: the matrix is dense, so this should only be for
     // small problems...
-    cerr << "IFPACK WARNING: In class Ifpack_Amesos:" << endl;
-    cerr << "IFPACK WARNING: Using LAPACK because other Amesos" << endl;
-    cerr << "IFPACK WARNING: solvers are not available. LAPACK" << endl;
-    cerr << "IFPACK WARNING: allocates memory to store the matrix as" << endl;
-    cerr << "IFPACK WARNING: dense, I hope you have enough memory..." << endl;
-    cerr << "IFPACK WARNING: (file " << __FILE__ << ", line " << __LINE__ 
-         << ")" << endl;
+    if (FirstTime)
+    {
+      cerr << "IFPACK WARNING: In class Ifpack_Amesos:" << endl;
+      cerr << "IFPACK WARNING: Using LAPACK because other Amesos" << endl;
+      cerr << "IFPACK WARNING: solvers are not available. LAPACK" << endl;
+      cerr << "IFPACK WARNING: allocates memory to store the matrix as" << endl;
+      cerr << "IFPACK WARNING: dense, I hope you have enough memory..." << endl;
+      cerr << "IFPACK WARNING: (file " << __FILE__ << ", line " << __LINE__ 
+           << ")" << endl;
+      FirstTime = true;
+    }
     Solver_ = Factory.Create("Amesos_Lapack",*Problem_);
   }
   if (Solver_ == 0)
