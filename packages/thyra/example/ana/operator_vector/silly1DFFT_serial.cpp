@@ -30,6 +30,10 @@
 #include "RealComplexFFTLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
+#include "Thyra_LinearOpTester.hpp"
+#include "Thyra_ListedMultiVectorRandomizer.hpp"
+#include "Thyra_SerialVectorSpaceConverterStd.hpp"
+#include "Teuchos_arrayArg.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -100,13 +104,32 @@ bool run1DFFTExample(
 
   Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase<ComplexScalar> >
     C = Teuchos::rcp( new ComplexFFTLinearOp<RealScalar>(N) );
+
+  if(verbose) std::cout << "\nConstructing as set of simple known vectors to be used as random domain and range vectors ...\n";
+  Thyra::SerialVectorSpaceConverterStd<RealScalar,ComplexScalar>
+    realToComplexConverter;
+  RefCountPtr<const Thyra::VectorSpaceBase<RealScalar> >
+    realDomainVecSpc = realToComplexConverter.createVectorSpaceFrom(*C->domain());
+  RefCountPtr<Thyra::MultiVectorBase<RealScalar> >
+    realDomainVec = Thyra::createMember(realDomainVecSpc);
+  RefCountPtr<Thyra::MultiVectorBase<ComplexScalar> >
+    complexDomainVec = Thyra::createMember(C->domain()),
+    complexRangeVec = Thyra::createMember(C->range());
+  realToComplexConverter.convert(*realDomainVec,&*complexDomainVec);
+  Thyra::apply( *C, Thyra::NOTRANS, *complexDomainVec, &*complexRangeVec );
+  Thyra::ListedMultiVectorRandomizer<RealScalar>
+    realDomainRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<RealScalar> > >(realDomainVec)(), 1 );
+  Thyra::ListedMultiVectorRandomizer<ComplexScalar>
+    complexDomainRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<ComplexScalar> > >(complexDomainVec)(), 1 ),
+    complexRangeRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<ComplexScalar> > >(complexRangeVec)(), 1 );
+
   if(verbose) std::cout << "\nTesting the LinearOpBase interface of the constructed linear operator C ...\n";
   Thyra::LinearOpTester<ComplexScalar> linearOpTester;
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(RealScalar(RealScalar(1e-2)*tolerance));
   linearOpTester.show_all_tests(true);
   linearOpTester.dump_all(dumpAll);
-  result = linearOpTester.check(*C,verbose?&std::cout:0,indentSpacer,indentSpacer);
+  result = linearOpTester.check(*C,&complexRangeRand,&complexDomainRand,verbose?&std::cout:0,indentSpacer,indentSpacer);
   if(!result) success = false;
 
   if(verbose) std::cout << "\nTesting the LinearOpWithSolveBase interface of the constructed linear operator C ...\n";
@@ -124,6 +147,7 @@ bool run1DFFTExample(
 
   Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase< ComplexScalar, RealScalar > >
     R = Teuchos::rcp( new RealComplexFFTLinearOp<RealScalar>(N) );
+
   if(verbose) std::cout << "\nTesting the LinearOpBase interface of the constructed linear operator R ...\n";
   SymmetricComplexMultiVectorRandomizer<RealScalar> symmetricComplexMultiVectorRandomizer;
   Thyra::LinearOpTester<ComplexScalar,RealScalar> RlinearOpTester;
@@ -131,7 +155,7 @@ bool run1DFFTExample(
   RlinearOpTester.set_all_warning_tol(RealScalar(RealScalar(1e-2)*tolerance));
   RlinearOpTester.show_all_tests(true);
   RlinearOpTester.dump_all(dumpAll);
-  result = RlinearOpTester.check(*R,&symmetricComplexMultiVectorRandomizer,NULL,verbose?&std::cout:0,indentSpacer,indentSpacer);
+  result = RlinearOpTester.check(*R,&complexRangeRand,&realDomainRand,verbose?&std::cout:0,indentSpacer,indentSpacer);
   if(!result) success = false;
 
   timer.stop();
