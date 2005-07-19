@@ -73,7 +73,7 @@ public:
 				   double* ElementMatrix, double* ElementRHS) const
   {
     double xq, yq, zq;
-    int size = NumPhiFunctions();
+    int size = T::NumPhiFunctions();
     //double h = data[0];
     
     // zero out local matrix and rhs
@@ -83,24 +83,24 @@ public:
 
     // cycle over all quadrature nodes
 
-    for (int ii = 0 ; ii < NumQuadrNodes() ; ii++) 
+    for (int ii = 0 ; ii < T::NumQuadrNodes() ; ii++) 
     {
-      ComputeQuadrNodes(ii,x, y, z, xq, yq, zq);
-      ComputeJacobian(ii,x, y, z);
-      ComputeDerivatives(ii);
+      T::ComputeQuadrNodes(ii,x, y, z, xq, yq, zq);
+      T::ComputeJacobian(ii,x, y, z);
+      T::ComputeDerivatives(ii);
 
-      for (int i = 0 ; i < NumPhiFunctions() ; ++i) 
+      for (int i = 0 ; i < T::NumPhiFunctions() ; ++i) 
       {
-        for (int j = 0 ; j < NumPsiFunctions() ; ++j) 
+        for (int j = 0 ; j < T::NumPsiFunctions() ; ++j) 
         {
           ElementMatrix[j + size * i] +=
-            QuadrWeight(ii) * DetJacobian(ii) * 
-            Variational.LHS(Phi(i), Psi(j), PhiX(i), PsiX(j),
-                            PhiY(i), PsiY(j), PhiZ(i), PsiZ(j),
+            T::QuadrWeight(ii) * T::DetJacobian(ii) * 
+            Variational.LHS(T::Phi(i), T::Psi(j), T::PhiX(i), T::PsiX(j),
+                            T::PhiY(i), T::PsiY(j), T::PhiZ(i), T::PsiZ(j),
                             xq, yq, zq);
         }
-        ElementRHS[i] += QuadrWeight(ii) * DetJacobian(ii) *
-          Variational.RHS(Psi(i), PsiX(i), PsiY(i), PsiZ(i), 
+        ElementRHS[i] += T::QuadrWeight(ii) * T::DetJacobian(ii) *
+          Variational.RHS(T::Psi(i), T::PsiX(i), T::PsiY(i), T::PsiZ(i), 
                           xq, yq, zq);
       }
     }
@@ -115,23 +115,23 @@ public:
     double xq, yq, zq;
     //double exact[4];
 
-    for (int ii = 0 ; ii < NumQuadrNodes() ; ii++) 
+    for (int ii = 0 ; ii < T::NumQuadrNodes() ; ii++) 
     {
-      ComputeQuadrNodes(ii,x, y, z, xq, yq, zq );
-      ComputeJacobian(ii,x, y, z);
-      ComputeDerivatives(ii);
+      T::ComputeQuadrNodes(ii,x, y, z, xq, yq, zq );
+      T::ComputeJacobian(ii,x, y, z);
+      T::ComputeDerivatives(ii);
 
-      double GlobalWeight = QuadrWeight(ii) * DetJacobian(ii);
+      double GlobalWeight = T::QuadrWeight(ii) * T::DetJacobian(ii);
 
       double sol      = 0.0, sol_derx = 0.0;
       double sol_dery = 0.0, sol_derz = 0.0;
 
-      for (int k = 0 ; k < NumPhiFunctions() ; ++k)
+      for (int k = 0 ; k < T::NumPhiFunctions() ; ++k)
       {
-        sol      += Phi(k)  * LocalSol[k];
-        sol_derx += PhiX(k) * LocalSol[k];
-        sol_dery += PhiY(k) * LocalSol[k];
-        sol_derz += PhiZ(k) * LocalSol[k];
+        sol      += T::Phi(k)  * LocalSol[k];
+        sol_derx += T::PhiX(k) * LocalSol[k];
+        sol_dery += T::PhiY(k) * LocalSol[k];
+        sol_derz += T::PhiZ(k) * LocalSol[k];
       }
 
       Norm[0] += GlobalWeight*sol*sol;
@@ -151,13 +151,13 @@ public:
     double xq, yq, zq;
     double exact[4];
 
-    for (int ii = 0 ; ii < NumQuadrNodes() ; ii++) 
+    for (int ii = 0 ; ii < T::NumQuadrNodes() ; ii++) 
     {
-      ComputeQuadrNodes(ii, x, y, z, xq, yq, zq );
-      ComputeJacobian(ii, x, y, z);
-      ComputeDerivatives(ii);
+      T::ComputeQuadrNodes(ii, x, y, z, xq, yq, zq );
+      T::ComputeJacobian(ii, x, y, z);
+      T::ComputeDerivatives(ii);
 
-      double GlobalWeight = QuadrWeight(ii) * DetJacobian(ii);
+      double GlobalWeight = T::QuadrWeight(ii) * T::DetJacobian(ii);
 
       (*ExactSolution)(xq, yq, zq, exact);
 
@@ -178,23 +178,23 @@ public:
     double xq, yq, zq;
     double exact[4];
 
-    for (int ii = 0 ; ii < NumQuadrNodes() ; ii++) 
+    for (int ii = 0 ; ii < T::NumQuadrNodes() ; ii++) 
     {
-      ComputeQuadrNodes(ii, x, y, z, xq, yq, zq );
-      ComputeJacobian(ii, x, y, z);
-      ComputeDerivatives(ii);
+      T::ComputeQuadrNodes(ii, x, y, z, xq, yq, zq );
+      T::ComputeJacobian(ii, x, y, z);
+      T::ComputeDerivatives(ii);
 
-      double GlobalWeight = QuadrWeight(ii) * DetJacobian(ii);
+      double GlobalWeight = T::QuadrWeight(ii) * T::DetJacobian(ii);
 
       double diff      = 0.0, diff_derx = 0.0;
       double diff_dery = 0.0, diff_derz = 0.0;
 
-      for (int k = 0 ; k < NumPhiFunctions() ; ++k) 
+      for (int k = 0 ; k < T::NumPhiFunctions() ; ++k) 
       {
-        diff      += Phi(k)  * LocalSol[k];
-        diff_derx += PhiX(k) * LocalSol[k];
-        diff_dery += PhiY(k) * LocalSol[k];
-        diff_derz += PhiZ(k) * LocalSol[k];
+        diff      += T::Phi(k)  * LocalSol[k];
+        diff_derx += T::PhiX(k) * LocalSol[k];
+        diff_dery += T::PhiY(k) * LocalSol[k];
+        diff_derz += T::PhiZ(k) * LocalSol[k];
       }
 
       (*ExactSolution)(xq, yq, zq,exact);
