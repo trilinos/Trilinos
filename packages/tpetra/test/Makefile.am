@@ -27,7 +27,7 @@
 #@HEADER
 
 #if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Comm Distributor ElementSpace Directory ImportExport BlockElementSpace VectorSpace Vector CisMatrix BasicPerfTest
+STANDARD_SUBDIRS = Platform Comm Distributor ElementSpace Directory ImportExport BlockElementSpace VectorSpace Vector CisMatrix DistObject BasicPerfTest
 #endif
 
 SUBDIRS = $(STANDARD_SUBDIRS)

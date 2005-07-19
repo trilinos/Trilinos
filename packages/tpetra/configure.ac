@@ -325,6 +325,7 @@ AC_CONFIG_FILES([
 		test/VectorSpace/Makefile
 		test/Vector/Makefile
 		test/CisMatrix/Makefile
+		test/DistObject/Makefile
 		test/BasicPerfTest/Makefile
 		])
 
