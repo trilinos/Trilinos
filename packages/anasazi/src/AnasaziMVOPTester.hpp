@@ -512,7 +512,7 @@ namespace Anasazi {
     }
 
 
-    /*********** const CloneView(MV) and MvNorm() ************************
+    /*********** const CloneView(MV,vector<int>) and MvNorm() ************
        Check that we have a view of the selected vectors.
        1) Check quantity
        2) Check value of norms for agreement
@@ -520,15 +520,21 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B;
-      Teuchos::RefCountPtr<const MV> constC;
-      std::vector<ScalarType> norms(numvecs), norms2(numvecs);
+      Teuchos::RefCountPtr<const MV> constB, C;
+      std::vector<ScalarType> normsB(numvecs), normsC(numvecs_2);
+      std::vector<int> allind(numvecs);
+      for (i=0; i<numvecs; i++) {
+        allind[i] = i;
+      }
 
       B = MVT::Clone(*A,numvecs);
-      MVT::MvRandom(*B);
-      MVT::MvNorm(*B, &norms);
-      constC = MVT::CloneView(*B,ind);
-      MVT::MvNorm(*constC, &norms2);
-      if ( MVT::GetNumberVecs(*constC) != numvecs_2 ) {
+      MVT::MvRandom( *B );
+      // need a const MV to test const CloneView
+      constB = MVT::CloneView(*B,allind);
+      MVT::MvNorm(*constB, &normsB);
+      C = MVT::CloneView(*constB,ind);
+      MVT::MvNorm(*C, &normsC);
+      if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         if ( om->isVerbosityAndPrint(Warning) ) {
           out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
               << "Wrong number of vectors." << endl;
@@ -536,7 +542,7 @@ namespace Anasazi {
         return Failed;
       }
       for (i=0; i<numvecs_2; i++) {
-        if ( norms2[i] != norms[ind[i]] ) {
+        if ( normsC[i] != normsB[ind[i]] ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
                 << "Viewed vectors do not agree." << endl;
@@ -544,10 +550,10 @@ namespace Anasazi {
           return Failed;
         }
       }
-      MVT::MvInit(*B,zero);
-      MVT::MvNorm(*constC, &norms2); 
+      MVT::MvInit(const_cast<MV&>(*C),zero);
+      MVT::MvNorm(*constB, &normsB); 
       for (i=0; i<numvecs_2; i++) {
-        if ( norms2[i] != zero ) {
+        if ( normsB[ind[i]] != SCT::zero() ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
                 << "Copied vectors were not dependent." << endl;
