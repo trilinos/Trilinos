@@ -293,9 +293,9 @@ int main(int argc, char *argv[])
 	    NumEntries1 = 2;
 	  }
         int ierr;
-	A1.InsertGlobalValues(MyGlobalElements1[i], NumEntries1, Values1, Indices1);
+	ierr = A1.InsertGlobalValues(MyGlobalElements1[i], NumEntries1, Values1, Indices1);
         IFPACK_CHK_ERR(ierr);
-	A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i); // Put in the diagonal entry
+	ierr = A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i); // Put in the diagonal entry
         IFPACK_CHK_ERR(ierr);
       }
     
