@@ -140,6 +140,36 @@ void MPI_apply_op(
   ,ReductTarget*                           reduct_objs[]
   );
 
+/** \brief Perform global reduction of reduction target objects.
+ *
+ * \param  comm   [in] MPI communicator
+ * \param  op     [in] Reduction operator object associated with reduction objects.
+ *                This operator defines how the global reductions are performed.
+ * \param  root_rank
+ *                [in] The rank of the root processor
+ * \param  num_cols
+ *                [in] The number of vector sets (i.e. multi-vector columns) that these
+ *                reduction objects where collected over.
+ * \param  i_reduct_objs
+ *                [in] Array (length <tt>num_cols</tt>) of local intermediate reduction objects.
+ * \param  reduct_objs
+ *                [in/out] Array (length <tt>num_cols</tt>) of global reduction objects
+ *                that each <tt>i_reduct_objs[i]<tt> from each processor will be reduced into.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup RTOpPack_parallel_helpers_grp
+ */
+template<class Scalar>
+void MPI_all_reduce(
+  MPI_Comm                            comm
+  ,const RTOpT<Scalar>                &op
+  ,const int                          root_rank
+  ,const int                          num_cols
+  ,const ReductTarget*                i_reduct_objs[]
+  ,ReductTarget*                      reduct_objs[]
+  );
+
 /** \brief Apply an RTOp in SMPD mode with MPI to a set of columns to a set of
  * multi-vectors with contiguous storage per processor.
  *

@@ -335,43 +335,18 @@ void RTOpPack::MPI_apply_op(
 }
 
 template<class Scalar>
-void RTOpPack::MPI_apply_op(
-  MPI_Comm                                  comm
-  ,const RTOpT<Scalar>                      &op
-  ,const int                                root_rank
-  ,const int                                num_cols
-  ,const int                                num_vecs
-  ,const SubVectorT<Scalar>                 sub_vecs[]
-  ,const int                                num_targ_vecs
-  ,const MutableSubVectorT<Scalar>          sub_targ_vecs[]
-  ,ReductTarget*                            reduct_objs[]
+void RTOpPack::MPI_all_reduce(
+  MPI_Comm                            comm
+  ,const RTOpT<Scalar>                &op
+  ,const int                          root_rank
+  ,const int                          num_cols
+  ,const ReductTarget*                i_reduct_objs[]
+  ,ReductTarget*                      reduct_objs[]
   )
 {
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
-  // See if we need to do any global communication at all?
-  if( comm == MPI_COMM_NULL || reduct_objs == NULL ) {
-    if( sub_vecs || sub_targ_vecs ) {
-      for( int kc = 0; kc < num_cols; ++kc ) {
-        op.apply_op(
-          num_vecs,sub_vecs+kc*num_vecs,num_targ_vecs,sub_targ_vecs+kc*num_targ_vecs
-          ,reduct_objs ? reduct_objs[kc] : NULL
-          );
-      }
-    }
-    return;
-  }
-  // Check the preconditions for excluding empty target vectors.
-  TEST_FOR_EXCEPTION(
-    ( ( num_vecs && !sub_vecs) || ( num_targ_vecs && !sub_targ_vecs) ) && !( !sub_vecs && !sub_targ_vecs )
-    ,std::logic_error
-    ,"MPI_apply_op(...): Error, invalid arguments num_vecs = " << num_vecs
-    << ", sub_vecs = " << sub_vecs << ", num_targ_vecs = " << num_targ_vecs
-    << ", sub_targ_vecs = " << sub_targ_vecs );
-  //
-  // There is a non-null reduction target object and we are using
-  // MPI so we need to reduce it across processors
   //
   // Get the description of the datatype of the target object.  We
   // need this in order to map it to an MPI user-defined data type so
@@ -390,20 +365,8 @@ void RTOpPack::MPI_apply_op(
     + (num_reduct_type_indexes ? 1 : 0)
     + (num_reduct_type_chars ? 1 : 0);
   //
-  // Allocate the intermediate target object and perform the
-  // reduction for the vector elements on this processor.
-  //
-  Workspace<Teuchos::RefCountPtr<ReductTarget> >
-    i_reduct_objs( wss, num_cols );
-  for( int kc = 0; kc < num_cols; ++kc ) {
-    i_reduct_objs[kc] = op.reduct_obj_create();
-    if( sub_vecs || sub_targ_vecs )
-      op.apply_op(
-        num_vecs, sub_vecs+kc*num_vecs, num_targ_vecs, sub_targ_vecs+kc*num_targ_vecs
-        ,&*i_reduct_objs[kc]
-          );
-  }
   // Get the arrays that describe the reduction target type datatypes
+  //
   if( num_reduct_type_values == 0 ) ++num_reduct_type_entries; // Add the block for the sizes
   int
     target_type_block_lengths[3];
@@ -508,11 +471,77 @@ void RTOpPack::MPI_apply_op(
       );
 #endif
     // Load the updated state of the reduction target object and reduce.
-    for( int kc = 0; kc < num_cols; ++kc ) {
-      load_reduct_obj_ext_state( op, &i_reduct_objs_tmp[0]+kc*reduct_obj_ext_size, &*i_reduct_objs[kc] );
-      op.reduce_reduct_objs( *i_reduct_objs[kc], reduct_objs[kc] );
+    if(1) {
+      Teuchos::RefCountPtr<ReductTarget> tmp_reduct_obj = op.reduct_obj_create();
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        load_reduct_obj_ext_state( op, &i_reduct_objs_tmp[0]+kc*reduct_obj_ext_size, &*tmp_reduct_obj );
+        op.reduce_reduct_objs( *tmp_reduct_obj, reduct_objs[kc] );
+      }
     }
   }
+}
+
+template<class Scalar>
+void RTOpPack::MPI_apply_op(
+  MPI_Comm                                  comm
+  ,const RTOpT<Scalar>                      &op
+  ,const int                                root_rank
+  ,const int                                num_cols
+  ,const int                                num_vecs
+  ,const SubVectorT<Scalar>                 sub_vecs[]
+  ,const int                                num_targ_vecs
+  ,const MutableSubVectorT<Scalar>          sub_targ_vecs[]
+  ,ReductTarget*                            reduct_objs[]
+  )
+{
+  using Teuchos::Workspace;
+  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
+  typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
+  // See if we need to do any global communication at all?
+  if( comm == MPI_COMM_NULL || reduct_objs == NULL ) {
+    if( sub_vecs || sub_targ_vecs ) {
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        op.apply_op(
+          num_vecs,sub_vecs+kc*num_vecs,num_targ_vecs,sub_targ_vecs+kc*num_targ_vecs
+          ,reduct_objs ? reduct_objs[kc] : NULL
+          );
+      }
+    }
+    return;
+  }
+  // Check the preconditions for excluding empty target vectors.
+  TEST_FOR_EXCEPTION(
+    ( ( num_vecs && !sub_vecs) || ( num_targ_vecs && !sub_targ_vecs) ) && !( !sub_vecs && !sub_targ_vecs )
+    ,std::logic_error
+    ,"MPI_apply_op(...): Error, invalid arguments num_vecs = " << num_vecs
+    << ", sub_vecs = " << sub_vecs << ", num_targ_vecs = " << num_targ_vecs
+    << ", sub_targ_vecs = " << sub_targ_vecs );
+  //
+  // There is a non-null reduction target object and we are using
+  // MPI so we need to reduce it across processors
+  //
+  // Allocate the intermediate target object and perform the
+  // reduction for the vector elements on this processor.
+  //
+  Workspace<Teuchos::RefCountPtr<ReductTarget> >
+    i_reduct_objs( wss, num_cols );
+  for( int kc = 0; kc < num_cols; ++kc ) {
+    i_reduct_objs[kc] = op.reduct_obj_create();
+    if( sub_vecs || sub_targ_vecs )
+      op.apply_op(
+        num_vecs, sub_vecs+kc*num_vecs, num_targ_vecs, sub_targ_vecs+kc*num_targ_vecs
+        ,&*i_reduct_objs[kc]
+          );
+  }
+  //
+  // Reduce the local intermediate reduction objects into the global reduction objects
+  //
+  Workspace<const ReductTarget*>
+    _i_reduct_objs( wss, num_cols );
+  for( int kc = 0; kc < num_cols; ++kc )
+    _i_reduct_objs[kc] = &*i_reduct_objs[kc];
+  MPI_all_reduce(comm,op,root_rank,num_cols,&_i_reduct_objs[0],reduct_objs);
+
 }
 
 #endif // RTOPPACK_MPI_APPLY_OP_HPP
