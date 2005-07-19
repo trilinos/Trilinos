@@ -30,6 +30,7 @@
 #define THYRA_SCALED_ADJOINT_LINEAR_OP_HPP
 
 #include "Thyra_ScaledAdjointLinearOpDecl.hpp"
+#include "Thyra_ScaledAdjointLinearOpBase.hpp"
 
 namespace Thyra {
 
@@ -213,36 +214,27 @@ void ScaledAdjointLinearOp<Scalar>::apply(
   Thyra::apply(*this->getOrigOp(),trans_trans(M_trans,this->overallTransp()),X,Y,Scalar(this->overallScalar()*alpha),beta);
 }
 
-} // namespace Thyra
-
-// Helper functions for creating scaled/adjoined linear operators.
+// Overridden from ScaledAdointLinearOpBase
 
 template<class Scalar>
-void Thyra::unwrap(
-  const LinearOpBase<Scalar>      &Op
-  ,Scalar                         *scalar
-  ,ETransp                        *transp
-  ,const LinearOpBase<Scalar>*    *origOp
-  )
+Scalar ScaledAdjointLinearOp<Scalar>::overallScalar() const
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT( scalar==NULL );
-  TEST_FOR_EXCEPT( transp==NULL );
-  TEST_FOR_EXCEPT( origOp==NULL );
-#endif
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
-  const ScaledAdjointLinearOp<Scalar>
-    *saOp = dynamic_cast<const ScaledAdjointLinearOp<Scalar>*>(&Op);
-  if(saOp) {
-    *scalar = saOp->overallScalar();
-    *transp = saOp->overallTransp();
-    *origOp = &*saOp->getOrigOp();
-  }
-  else {
-    *scalar = ST::one();
-    *transp = NOTRANS;
-    *origOp = &Op;
-  }
+  return overallScalar_;
 }
+
+template<class Scalar>
+ETransp ScaledAdjointLinearOp<Scalar>::overallTransp() const
+{
+  return overallTransp_;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+ScaledAdjointLinearOp<Scalar>::getOrigOp() const
+{
+  return origOp_;
+}
+
+} // namespace Thyra
 
 #endif	// THYRA_SCALED_ADJOINT_LINEAR_OP_HPP

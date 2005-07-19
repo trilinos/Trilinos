@@ -29,15 +29,16 @@
 #ifndef THYRA_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
 #define THYRA_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
 
-#include "Thyra_SingleScalarLinearOpBase.hpp"
+#include "Thyra_ScaledAdjointLinearOpBaseDecl.hpp"
 
 namespace Thyra {
 
 /** \brief Concrete decorator <tt>LinearOpBase</tt> subclass that wraps a
-<tt>LinearOpBase</tt> objects and adds on an extra scaling factor and/or a
- new transpose enum.
+<tt>LinearOpBase</tt> object and adds on an extra scaling factor and/or a
+transpose enum.
 
-This class represents a scaled, adjointed (transposed) linear operator <tt>M</tt> of the form:
+This class represents a scaled, adjointed (transposed) linear operator
+<tt>M</tt> of the form:
 
 \verbatim
  
@@ -105,7 +106,7 @@ changes that are made.
 
 */
 template<class Scalar>
-class ScaledAdjointLinearOp : virtual public SingleScalarLinearOpBase<Scalar> {
+class ScaledAdjointLinearOp : virtual public ScaledAdjointLinearOpBase<Scalar> {
 public:
 
   /** \brief . */
@@ -154,23 +155,6 @@ public:
     ,const ETransp                                             &transp
     ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &Op
     );
-
-  /** \brief Return the overall scale factor.
-   */
-  Scalar overallScalar() const;
-
-  /** \brief Return the overall transpose (adjoint) enum.
-   */
-  ETransp overallTransp() const;
-
-  /** \brief Return the original linear operator <tt>origOp</tt>.
-   */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOrigOp() const;
-
-  /** \brief Return the linear operator <tt>Op</tt> that
-   * was passed into <tt>initialize()</tt>.
-   */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOp() const;
 
   /** \brief Set to uninitialized and (optionally) extract the objects passed into <tt>initialize()</tt>.
    *
@@ -266,6 +250,23 @@ public:
     ,const Scalar                     alpha
     ,const Scalar                     beta
     ) const;
+
+  //@}
+
+  /** \name Overridden from ScaledAdointLinearOpBase */
+  //@{
+
+  /** \brief . */
+  Scalar overallScalar() const;
+
+  /** \brief . */
+  ETransp overallTransp() const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOrigOp() const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOp() const;
 
   //@}
 
@@ -460,44 +461,6 @@ template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 scaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
 
-/** \brief Extract the <tt>overallScalar</tt>, <tt>overallTransp</tt> and
- * <tt>const</tt> <tt>origOp</tt> from a <tt>const</tt>
- * <tt>LinearOpBase</tt> object.
- *
- * \param  Op      [in] The input, possibly scaled and/or adjoined, linear operator
- * \param  scalar  [out] The overall scaling factor.
- * \param  transp  [out] The overall adjoint (transposition) enum.
- * \param  origOp  [out] The underlying, non-scaled and non-adjoined linear operator.
- *                 This pointer returns a non-persisting relationship that is to be
- *                 used and then immediately forgotten.
- *
- * Preconditions:<ul>
- * <li><tt>scalar!==NULL</tt>
- * <li><tt>transp!==NULL</tt>
- * <li><tt>origOp!==NULL</tt>
- * </ul>
- *
- * Postconditions:<ul>
- * <li><tt>*origOp!==NULL</tt>
- * </ul>
- *
- * The purpose of this function is to strip off the
- * <tt>ScaledAdjointLinearOp</tt> wrapper and get at the underlying linear
- * operator for the purpose of further dynamic casting to some more derived
- * interface.
- *
- * ToDo: Finish documentation.
- *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
- */
-template<class Scalar>
-void unwrap(
-  const LinearOpBase<Scalar>      &Op
-  ,Scalar                         *scalar
-  ,ETransp                        *transp
-  ,const LinearOpBase<Scalar>*    *origOp
-  );
-
 // /////////////////////////////////
 // Inline members
 
@@ -519,28 +482,6 @@ ScaledAdjointLinearOp<Scalar>::ScaledAdjointLinearOp(
   ,overallTransp_(NOTRANS)
 {
   this->initialize(scalar,transp,Op);
-}
-
-template<class Scalar>
-inline
-Scalar ScaledAdjointLinearOp<Scalar>::overallScalar() const
-{
-  return overallScalar_;
-}
-
-template<class Scalar>
-inline
-ETransp ScaledAdjointLinearOp<Scalar>::overallTransp() const
-{
-  return overallTransp_;
-}
-
-template<class Scalar>
-inline
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-ScaledAdjointLinearOp<Scalar>::getOrigOp() const
-{
-  return origOp_;
 }
 
 template<class Scalar>
