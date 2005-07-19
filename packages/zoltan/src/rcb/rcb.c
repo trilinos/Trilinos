@@ -96,6 +96,7 @@ static PARAM_VARS RCB_params[] = {
                   { "AVERAGE_CUTS", NULL, "INT", 0 },
                   { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
                   { "SKIP_DIMENSIONS", NULL, "INT", 0 },
+                  { "SKIP_RATIO", NULL, "DOUBLE", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -173,7 +174,8 @@ int Zoltan_RCB(
                                   partition sets at each level of recursion */
     int average_cuts;         /* Flag forcing median line to be drawn halfway
                                  between two closest objects. */
-    int dummy;
+    int idummy;
+    double ddummy;
     int ierr;
 
 
@@ -195,7 +197,9 @@ int Zoltan_RCB(
     Zoltan_Bind_Param(RCB_params, "RCB_RECOMPUTE_BOX",
                               (void *) &recompute_box);
     Zoltan_Bind_Param(RCB_params, "SKIP_DIMENSIONS",
-                              (void *) &dummy);
+                              (void *) &idummy);
+    Zoltan_Bind_Param(RCB_params, "SKIP_RATIO",
+                              (void *) &ddummy);
     Zoltan_Bind_Param(RCB_params, "AVERAGE_CUTS",
                               (void *) &average_cuts);
 
@@ -213,7 +217,8 @@ int Zoltan_RCB(
     mcnorm = 1; 
     max_aspect_ratio = 10.;
     recompute_box = 0;
-    dummy = 0;
+    idummy = 0;
+    ddummy = 0.0;
     average_cuts = 0;
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,

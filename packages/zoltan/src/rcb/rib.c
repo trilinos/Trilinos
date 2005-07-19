@@ -67,6 +67,7 @@ static PARAM_VARS RIB_params[] = {
                { "AVERAGE_CUTS", NULL, "INT", 0 },
                { "KEEP_CUTS", NULL, "INT", 0 },
                { "SKIP_DIMENSIONS", NULL, "INT", 0 },
+               { "SKIP_RATIO", NULL, "DOUBLE", 0 },
                { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
@@ -125,7 +126,8 @@ int Zoltan_RIB(
                               later for point and box drop. */
   int average_cuts;           /* (0) don't (1) compute the cut to be the
                               average of the closest dots. */
-  int dummy;
+  int idummy;
+  double ddummy;
   int ierr;
 
   Zoltan_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
@@ -133,7 +135,8 @@ int Zoltan_RIB(
   Zoltan_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
   Zoltan_Bind_Param(RIB_params, "AVERAGE_CUTS", (void *) &average_cuts);
   Zoltan_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
-  Zoltan_Bind_Param(RIB_params, "SKIP_DIMENSIONS", (void *) &dummy);
+  Zoltan_Bind_Param(RIB_params, "SKIP_DIMENSIONS", (void *) &idummy);
+  Zoltan_Bind_Param(RIB_params, "SKIP_RATIO", (void *) &ddummy);
 
   overalloc = RIB_DEFAULT_OVERALLOC;
   check_geom = DEFAULT_CHECK_GEOM;
@@ -141,7 +144,8 @@ int Zoltan_RIB(
   gen_tree = 0;
   average_cuts = 0;
   wgtflag = zz->Obj_Weight_Dim;
-  dummy = 0;
+  idummy = 0;
+  ddummy = 0.0;
 
   Zoltan_Assign_Param_Vals(zz->Params, RIB_params, zz->Debug_Level, zz->Proc,
                     zz->Debug_Proc);
