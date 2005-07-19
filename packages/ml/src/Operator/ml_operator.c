@@ -1361,6 +1361,7 @@ ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, double* scale,
 
   return matrix;
 }
+
 void ML_implicitvscale_Destroy(void *data)
 {
    struct ml_matvscale *temp;
@@ -1681,10 +1682,11 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     pr_error("ML_Operator_Add: Unknown matrix type\n");
   }
 
-
+/* MS commented out on 18-Jul-05
   columns= (int    *) ML_allocate(sizeof(int)*nz_ptr);
   values = (double *) ML_allocate(sizeof(double)*nz_ptr);
   if (values == NULL) pr_error("ML_Operator_Add: out of space\n");
+  */
 
 
   nz_ptr = 0;
