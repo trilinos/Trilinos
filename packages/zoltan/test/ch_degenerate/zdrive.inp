@@ -1,10 +1,11 @@
-Decomposition Method 	= rib
+Decomposition Method 	= hsfc
 Zoltan Parameters       = skip_dimensions=1
 Zoltan Parameters       = keep_cuts=1
 Zoltan Parameters       = debug_level=1
 File Type		= Chaco
-File Name		= rotated_slab
+File Name		= bug
 Parallel Disk Info	= number=0
 Test Drops		= 1
-gnuplot output = 0
+Test Generate Files = 1
+gnuplot output = 1
 

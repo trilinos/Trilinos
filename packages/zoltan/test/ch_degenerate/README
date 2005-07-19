@@ -14,7 +14,8 @@
 
 -------------------------------------------------------------------------------
 ch_degenerate
-  Simple 3D geometries with degeneracies.
+  Simple 3D geometries with degeneracies.  These can be used to test
+  the SKIP_DIMENSIONS option of RCB, RIB and HSFC.
 
   Graph and coordinates included.  The graph files for the box, slab
     and shaft are identical.
@@ -26,7 +27,7 @@ ch_degenerate
 
   "rotated_slab" - This is the slab rotated off of the coordinate axes.
 
-  "shaft" - 1000 vertices equally spaced in [0,9]x[0,900]x[0,900].  When
+  "shaft" - 1000 vertices equally spaced in [0,9]x[0,9]x[0,450].  When
     SKIP_DIMENSIONS is ON, this should be treated as a 1D object.
 
   "rotated_shaft" - This is the shaft rotated off of the coordinate axes.
@@ -43,4 +44,14 @@ X-axis, with 100 points in the original shaft projecting to each of the
 10 points on the X-axis.  A 1-dimensional HSFC is then performed.  HSFC
 will not split up the points that project to the same point, so if the 
 number of processes does not evenly divide 10, there will be a large imbalance.
+
+  Simple 2D geometry with degeneracies.
+
+  "bug" - This is a 2D data set with 60 points ranging along the y axis
+    from 0 to 58.  It should be treated as 1D if SKIP_DIMENSIONS is ON.
+    It is from the ch_bug test directory.
+
+  "line" - This is a line through the origin with y = x.  It should be
+    handled as 1D if SKIP_DIMENSIONS is ON.
+
 -------------------------------------------------------------------------------
