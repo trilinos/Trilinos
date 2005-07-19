@@ -43,6 +43,7 @@ extern "C" {
 static PARAM_VARS Skip_Dim_Params[] = {
                   { "KEEP_CUTS", NULL, "INT", 0 },
                   { "SKIP_DIMENSIONS", NULL, "INT", 0 },
+                  { "SKIP_RATIO", NULL, "DOUBLE", 0 },
                   { NULL, NULL, NULL, 0 } };
 
 static void inertial_matrix2D(ZZ *zz, double *X, int num_obj, 
@@ -77,7 +78,7 @@ int Zoltan_Get_Coordinates(
   double evecs[3][3];
   double M[3][3], im[3][3];
   double (*sav)[3];
-  double max_ratio = 10.0;
+  double skip_ratio;
   double x, y, *cold, flat;
   int order[3];
   int keep_cuts, skip_dimensions, d;
@@ -174,9 +175,11 @@ int Zoltan_Get_Coordinates(
 
     Zoltan_Bind_Param(Skip_Dim_Params, "KEEP_CUTS", (void *)&keep_cuts);
     Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_DIMENSIONS", (void *)&skip_dimensions);
+    Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_RATIO", (void *)&skip_ratio);
 
     keep_cuts = 0;
     skip_dimensions = 0;
+    skip_ratio = 10.0;
     Zoltan_Assign_Param_Vals(zz->Params, Skip_Dim_Params, zz->Debug_Level,
       zz->Proc, zz->Debug_Proc);
 
@@ -230,14 +233,14 @@ int Zoltan_Get_Coordinates(
         else{
           order[0] = 0; order[1] = 1;
         }
-        if (dist[order[1]] < (dist[order[0]] / max_ratio)){
+        if (dist[order[1]] < (dist[order[0]] / skip_ratio)){
           target_dim = 1;
         }
       }
       else{
         order_decreasing(dist, order);
 
-        flat = dist[order[0]] / max_ratio;
+        flat = dist[order[0]] / skip_ratio;
   
         if (dist[order[2]] < flat){
           /*
@@ -261,15 +264,17 @@ int Zoltan_Get_Coordinates(
         if ((zz->Debug_Level > 0) && (zz->Proc == 0)){
           if (d == 2){
             sprintf(msg,
-             "Geometry is approx. %lf x %lf, we'll treat it as 1 dimensional",
-              dist[0], dist[1]);
+             "Geometry (~%lf x %lf), exceeds %lf to 1.0 ratio",
+              dist[order[0]], dist[order[1]], skip_ratio);
           }
           else{
             sprintf(msg,
-             "Geometry approx. %lf x %lf x %lf, we'll treat it as %d dimensional",
-              dist[0], dist[1], dist[2], target_dim);
+             "Geometry (~%lf x %lf x %lf), exceeds %lf to 1.0 ratio",
+              dist[order[0]], dist[order[1]], dist[order[2]], skip_ratio);
           }
 
+          ZOLTAN_PRINT_INFO(zz->Proc, yo, msg);
+          sprintf(msg, "We'll treat it as %d dimensional",target_dim);
           ZOLTAN_PRINT_INFO(zz->Proc, yo, msg);
         }
 
