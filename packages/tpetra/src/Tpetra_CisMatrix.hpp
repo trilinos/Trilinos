@@ -38,6 +38,9 @@
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
+#include "../test/tpetra_test_util.hpp"
 
 namespace Tpetra {
 
@@ -340,6 +343,24 @@ namespace Tpetra {
 			if(errorcode) 
 				throw reportError("axy.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
+			// setup Import and Export objects if we need to
+			if(!getColumnDist().isCompatible(getDomainDist())) {
+				// Column and Domain Distributions don't match, need Importer
+				if(!data().haveImporter_) {
+					data().importer_ = Teuchos::rcp(new Import<OrdinalType>(getDomainDist().elementSpace(), 
+																			getColumnDist().elementSpace()));
+					data().haveImporter_ = true;
+				}
+			}
+			if(!getRowDist().isCompatible(getRangeDist())) {
+				// Row and Range Distributions don't match, need Exporter
+				if(!data().haveExporter_) {
+					data().exporter_ = Teuchos::rcp(new Export<OrdinalType>(getRangeDist().elementSpace(),
+																			getRowDist().elementSpace()));
+					data().haveExporter_ = true;
+				}
+			}
+
 			data().fillCompleted_ = true;
 		}
   
@@ -351,34 +372,55 @@ namespace Tpetra {
 		void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) {
 			if(!isFillCompleted())
 				throw reportError("Cannot apply until after fillComplete.", 4);
-    
+
+			// temp vectors in case we need to import or export
+			Vector<OrdinalType, ScalarType> x2(getColumnDist());
+			Vector<OrdinalType, ScalarType> y2(getRowDist());
+
+			// declare variables kokkos needs
+			OrdinalType kx_length = Teuchos::OrdinalTraits<OrdinalType>::zero();
+			OrdinalType ky_length = Teuchos::OrdinalTraits<OrdinalType>::zero();
+			ScalarType* kx_values = 0;
+			ScalarType* ky_values = 0;
+			if(data().haveImporter_) {
+				kx_length = x2.getNumMyEntries();
+				kx_values = x2.scalarPointer();
+			}
+			else {
+				kx_length = x.getNumMyEntries();
+				kx_values = const_cast<ScalarType*>(x.scalarPointer());
+			}
+			if(data().haveExporter_) {
+				ky_length = y2.getNumMyEntries();
+				ky_values = y2.scalarPointer();
+			}
+			else {
+				ky_length = y.getNumMyEntries();
+				ky_values = y.scalarPointer();
+			}
+			
 			// setup kokkos x vector
-			ScalarType* scalarArray = const_cast<ScalarType*>(x.scalarPointer()); // x is logically const but not bitwise const
-			int errorcode = data().kx_.initializeValues(x.getNumMyEntries(), scalarArray);// we will not be modifying it, 
-			// but initializeValues is not a const function.
+			int errorcode = data().kx_.initializeValues(kx_length, kx_values); 		
 			if(errorcode) 
 				throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 		
-
 			// setup kokkos y vector
-			errorcode = data().ky_.initializeValues(y.getNumMyEntries(), y.scalarPointer());
+			errorcode = data().ky_.initializeValues(ky_length, ky_values);
 			if(errorcode) 
 				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
-			/*cout << "=BEFORE APPLY================================================" << endl;
-			  cout << "x:" << endl << x << endl;
-			  cout << "y:" << endl << y << endl;
-			  cout << "=============================================================" << endl;*/
+			// do import on x if needed
+			if(data().haveImporter_)
+				x2.doImport(x, *(data().importer_), Insert);
 
 			// do Kokkos apply operation
 			errorcode = data().axy_.apply(data().kx_, data().ky_);
 			if(errorcode) 
 				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
 
-			/*cout << "=AFTER APPLY=================================================" << endl;
-			  cout << "x:" << endl << x << endl;
-			  cout << "y:" << endl << y << endl;
-			  cout << "=============================================================" << endl;*/
+			// do export on y if needed
+			if(data().haveExporter_)
+				y.doExport(y2, *(data().exporter_), Insert);
 
 			// update flops counter: 2 * nnz
 			updateFlops(data().numMyNonzeros_ + data().numMyNonzeros_);
@@ -575,42 +617,60 @@ namespace Tpetra {
   
 		// Print method, used by the overloaded << operator
 		void print(ostream& os) const {
-			os << "Orientation: " << (data().rowOriented_ ? "Row" : "Column") << "-oriented" << endl;
-			os << "State: " << (isFillCompleted() ? "Post-fillComplete" : "Pre-fillComplete") << endl;
-			os << "Secondary distribution defined? " << (data().haveSecondary_ ? "yes" : "no") << endl;
-			os << "Domain distribution defined? " << (data().haveDomain_ ? "yes" : "no") << endl;
-			os << "Range distribution defined? " << (data().haveRange_ ? "yes" : "no") << endl;
+			int const myImageID = comm().getMyImageID();
+			int const numImages = comm().getNumImages();
+			for(int i = 0; i < numImages; i++) {
+				if(i == myImageID) {
+					os << Object::label() << " [Image " << i << "]" << endl;
+					os << "Orientation: " << (data().rowOriented_ ? "Row" : "Column") << "-oriented" << endl;
+					os << "State: " << (isFillCompleted() ? "Post-fillComplete" : "Pre-fillComplete") << endl;
+					os << "Secondary distribution defined? " << (data().haveSecondary_ ? "yes" : "no") << endl;
+					os << "Domain distribution defined? " << (data().haveDomain_ ? "yes" : "no") << endl;
+					os << "Range distribution defined? " << (data().haveRange_ ? "yes" : "no") << endl;
 
-			os << "Contents:" << endl;
-			typedef std::map<OrdinalType, ScalarType> OrdScalMap;
-			typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
-			MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
-			cout << setw(20) << "Primary Index" << setw(20) << "Secondary Index" << setw(10) << "Value" << endl;
-			for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
-				OrdScalMap& innermap = (*i).second;
-				for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
-					cout << setw(15) << (*i).first << setw(18) << (*j).first << setw(15) << (*j).second << endl;
+					os << "Contents:" << endl;
+					typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+					typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+					MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+					cout << setw(20) << "Primary Index" << setw(20) << "Secondary Index" << setw(10) << "Value" << endl;
+					for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+						OrdScalMap& innermap = (*i).second;
+						for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
+							cout << setw(15) << (*i).first << setw(18) << (*j).first << setw(15) << (*j).second << endl;
+					}
+
+					if(isFillCompleted()) {
+						os << "---HB data---" << endl;
+						os << "pntr_: ";
+						for(typename std::vector<OrdinalType>::const_iterator i = data().pntr_.begin(); i != data().pntr_.end(); i++)
+							os << *i << " ";
+						os << endl << "indx_: ";
+						for(typename std::vector<OrdinalType>::const_iterator i = data().indx_.begin(); i != data().indx_.end(); i++)
+							os << *i << " ";
+						os << endl << "values_: ";
+						for(typename std::vector<ScalarType>::const_iterator i = data().values_.begin(); i != data().values_.end(); i++)
+							os << *i << " ";
+						os << endl;
+					}
+				}
+				comm().barrier();
 			}
 
-			if(isFillCompleted()) {
-				os << "---HB data---" << endl;
-				os << "pntr_: ";
-				for(typename std::vector<OrdinalType>::const_iterator i = data().pntr_.begin(); i != data().pntr_.end(); i++)
-					os << *i << " ";
-				os << endl << "indx_: ";
-				for(typename std::vector<OrdinalType>::const_iterator i = data().indx_.begin(); i != data().indx_.end(); i++)
-					os << *i << " ";
-				os << endl << "values_: ";
-				for(typename std::vector<ScalarType>::const_iterator i = data().values_.begin(); i != data().values_.end(); i++)
-					os << *i << " ";
-				os << endl;
+			if(myImageID == 0) os << "---Defined Distributions---" << endl;
+			if(myImageID == 0) os << "Primary:" << endl;
+			os << getPrimaryDist();
+			if(data().haveSecondary_) {
+				if(myImageID == 0) os << "Secondary:" << endl;
+				os << getSecondaryDist();
 			}
-
-			os << "---Defined Distributions---" << endl;
-			os << "Primary:" << endl << getPrimaryDist();
-			if(data().haveSecondary_) os << "Secondary:" << endl << getSecondaryDist();
-			if(data().haveDomain_) os << "Domain:" << endl << getDomainDist();
-			if(data().haveRange_) os << "Range:" << endl << getRangeDist();
+			if(data().haveDomain_) {
+				if(myImageID == 0) os << "Domain:" << endl;
+				os << getDomainDist();
+			}
+			if(data().haveRange_) {
+				if(myImageID == 0) os << "Range:" << endl;
+				os << getRangeDist();
+			}
 		}
   
 		//@}

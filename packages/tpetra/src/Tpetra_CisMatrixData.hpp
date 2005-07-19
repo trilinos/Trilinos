@@ -50,6 +50,10 @@ namespace Tpetra {
 			, rowOriented_(rowOriented)
 			, fillCompleted_(false)
 			, numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+			, haveImporter_(false)
+			, haveExporter_(false)
+			, importer_()
+			, exporter_()
 			, platform_(primaryDist.platform().clone())
 			, comm_(primaryDist.platform().createScalarComm())
 			, ordinalComm_(primaryDist.platform().createOrdinalComm())
@@ -71,6 +75,10 @@ namespace Tpetra {
 			, rowOriented_(rowOriented)
 			, fillCompleted_(false)
 			, numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+			, haveImporter_(false)
+			, haveExporter_(false)
+			, importer_()
+			, exporter_()
 			, platform_(primaryDist.platform().clone())
 			, comm_(primaryDist.platform().createScalarComm())
 			, ordinalComm_(primaryDist.platform().createOrdinalComm())
@@ -109,6 +117,12 @@ namespace Tpetra {
 
 		// other variables used prior to fillComplete
 		OrdinalType numMyNonzeros_;
+
+		// Import and Export
+		bool haveImporter_;
+		bool haveExporter_;
+		Teuchos::RefCountPtr< Import<OrdinalType> > importer_;
+		Teuchos::RefCountPtr< Export<OrdinalType> > exporter_;
 
 		// Platform & Comm
 		Teuchos::RefCountPtr<Platform<OrdinalType, ScalarType> const> platform_;

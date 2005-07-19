@@ -71,7 +71,7 @@ namespace Tpetra {
 	*/
 	
 	template<typename OrdinalType, typename ScalarType>
-	class Vector : public Teuchos::CompObject, public virtual DistObject<OrdinalType, ScalarType>, public virtual OutputObject {
+	class Vector : public Teuchos::CompObject, public DistObject<OrdinalType, ScalarType>, public virtual OutputObject {
 
 	public:
   
@@ -79,7 +79,9 @@ namespace Tpetra {
 
 		//! Sets all vector entries to zero.
 		Vector(VectorSpace<OrdinalType, ScalarType> const& VectorSpace) 
-			: DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), "Tpetra::Vector")
+			: DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), 
+												  VectorSpace.platform().createScalarComm(),
+												  "Tpetra::Vector")
 			, VectorData_()
 		{
 			ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -91,7 +93,9 @@ namespace Tpetra {
   
 		//! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
 		Vector(ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
-			: DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), "Tpetra::Vector")
+			: DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), 
+												  VectorSpace.platform().createScalarComm(),
+												  "Tpetra::Vector")
 			, VectorData_()
 		{
 			ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -108,7 +112,7 @@ namespace Tpetra {
 
 		//! Copy constructor.
 		Vector(Vector<OrdinalType, ScalarType> const& Source)
-			: DistObject<OrdinalType, ScalarType>(Source.vectorSpace().elementSpace(), Source.label())
+			: DistObject<OrdinalType, ScalarType>(Source)
 			, VectorData_(Source.VectorData_)
 		{};
 
@@ -494,6 +498,7 @@ namespace Tpetra {
 			for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
 				if (myImageID == imageCtr) {
 					if (myImageID == ordinalZero) {
+						os << Object::label() << endl;
 						os << "Number of Global Entries  = " << getNumGlobalEntries() << endl;
 					}
 					os <<   "ImageID = " << myImageID << endl;
@@ -595,6 +600,7 @@ namespace Tpetra {
 						   OrdinalType numExportIDs,
 						   std::vector<OrdinalType> exportLIDs,
 						   std::vector<ScalarType> exports,
+						   OrdinalType& packetSize,
 						   Distributor<OrdinalType> const& distor) {
 			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
 			Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
@@ -603,12 +609,14 @@ namespace Tpetra {
 			exports.clear();
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numExportIDs; i++)
 				exports.push_back(sourceVector[exportLIDs[i]]);
+
+			// packetSize = 1
+			packetSize = Teuchos::OrdinalTraits<OrdinalType>::one();
 			
 			return(0);
 		}
   
-		int unpackAndCombine(DistObject<OrdinalType, ScalarType> const& sourceObj,
-							 OrdinalType numImportIDs,
+		int unpackAndCombine(OrdinalType numImportIDs,
 							 std::vector<OrdinalType> importLIDs,
 							 std::vector<ScalarType> imports,
 							 Distributor<OrdinalType> const& distor,
@@ -616,6 +624,8 @@ namespace Tpetra {
 			// copy values from scalarExports
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
 				scalarArray().at(importLIDs[i]) = imports[i];
+
+			// ** QUESTION: What to do about CombineMode??
 
 			return(0);
 		}

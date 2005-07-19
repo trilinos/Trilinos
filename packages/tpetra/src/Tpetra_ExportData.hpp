@@ -52,7 +52,7 @@ namespace Tpetra {
 			, source_(source)
 			, target_(target)
 			, platform_(source.platform().clone())
-			, distributor_()
+			, distributor_(source.platform().createOrdinalComm())
 		{};
     
 		// destructor. no heap-data, so no need to override
@@ -79,7 +79,7 @@ namespace Tpetra {
     
 		// Platform, Comm, Distributor, etc.
 		Teuchos::RefCountPtr< Platform<OrdinalType, OrdinalType> const > platform_;
-		Teuchos::RefCountPtr< Distributor<OrdinalType> > distributor_;
+		Distributor<OrdinalType> distributor_;
     
 	private:
 		//! Copy constructor (declared but not defined, do not use)

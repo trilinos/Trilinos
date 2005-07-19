@@ -107,7 +107,9 @@ DIST_H = \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
 	$(srcdir)/Tpetra_VectorSpaceData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
-	$(srcdir)/Tpetra_ImportData.hpp
+	$(srcdir)/Tpetra_ImportData.hpp \
+	$(srcdir)/Tpetra_Export.hpp \
+	$(srcdir)/Tpetra_ExportData.hpp
 
 DIST = 
 

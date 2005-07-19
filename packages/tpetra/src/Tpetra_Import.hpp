@@ -43,8 +43,8 @@ namespace Tpetra {
 	//! Tpetra::Import: This class builds an import object for efficient importing of off-processor elements.
   
 	/*! Import is used to construct a communication plan that can be called repeatedly by computational
-        classes such the Tpetra CisMatrix and Vector classes to efficiently obtain off-processor
-        elements.
+        classes such the Tpetra CisMatrix and Vector classes to efficiently import elements from other
+		images.
     
 		This class currently has one constructor, taking two ElementSpace objects.
 		The first ElementSpace specifies the distribution we have now. The second 

@@ -125,7 +125,7 @@ namespace Tpetra
 		//! Print object to an output stream
 		//! Print method
 		virtual void print(ostream& os) const {
-			// os << label_; // No need to print label, since ostream does it already
+			os << label();
 		};
   
 		//! Error reporting method.
@@ -158,7 +158,6 @@ namespace Tpetra
 	int Object::tracebackMode(-1);
 
 	inline ostream& operator<<(ostream& os, Tpetra::Object const& Obj) {
-		os << Obj.label() << endl;
 		Obj.print(os); 
 		return(os);
 	}

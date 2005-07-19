@@ -36,6 +36,7 @@
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
 #include "Tpetra_Comm.hpp"
 
 namespace Tpetra {
@@ -77,18 +78,23 @@ namespace Tpetra {
 		//@{ \name Constructor/Destructor Methods
 
 		//! constructor
-		DistObject(ElementSpace<OrdinalType> const elementspace)
+		DistObject(ElementSpace<OrdinalType> const elementspace, 
+				   Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > comm)
 			: Object("Tpetra::DistObject")
 			, ElementSpace_(elementspace)
+			, Comm_(comm)
 			, imports_()
 			, exports_()
 			, sizes_()
 		{}
 
 		//! constructor, taking label
-		DistObject(ElementSpace<OrdinalType> const elementspace, std::string const& label)
+		DistObject(ElementSpace<OrdinalType> const elementspace, 
+				   Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > comm,
+				   std::string const& label)
 			: Object(label)
 			, ElementSpace_(elementspace)
+			, Comm_(comm)
 			, imports_()
 			, exports_()
 			, sizes_()
@@ -98,6 +104,7 @@ namespace Tpetra {
 		DistObject(DistObject<OrdinalType, ScalarType> const& DistObject)
 			: Object(DistObject.label())
 			, ElementSpace_(DistObject.ElementSpace_)
+			, Comm_(DistObject.Comm_)
 			, imports_(DistObject.imports_)
 			, exports_(DistObject.exports_)
 			, sizes_(DistObject.sizes_)
@@ -112,8 +119,7 @@ namespace Tpetra {
 
 		//! Import
 		int doImport(DistObject<OrdinalType, ScalarType> const& sourceObj, 
-					 Import<OrdinalType> const& importer, 
-					 CombineMode CM) 
+					 Import<OrdinalType> const& importer, CombineMode CM) 
 		{
 			// throw exception -1 if my ElementSpace != importer.getTargetSpace()
 			if(elementspace() != importer.getTargetSpace())
@@ -140,7 +146,36 @@ namespace Tpetra {
 			return(0);
 		}
 
-		// ** TO DO: Add the three other forms of doImport/doExport **
+		//! Export
+		int doExport(DistObject<OrdinalType, ScalarType> const& sourceObj, 
+					 Export<OrdinalType> const& exporter, CombineMode CM) 
+		{
+			// throw exception -1 if my ElementSpace != exporter.getTargetSpace()
+			if(elementspace() != exporter.getTargetSpace())
+				throw reportError("Target ElementSpaces don't match", -1);
+			// throw exception -2 if sourceObj's ElementSpace != exporter.getSourceSpace()
+			if(sourceObj.elementspace() != exporter.getSourceSpace())
+				throw reportError("Source ElementSpaces don't match", -2);
+
+			// copy variables from importer
+			OrdinalType numSameIDs = exporter.getNumSameIDs();
+			OrdinalType numPermuteIDs = exporter.getNumPermuteIDs();
+			OrdinalType numRemoteIDs = exporter.getNumRemoteIDs();
+			OrdinalType numExportIDs = exporter.getNumExportIDs();
+			std::vector<OrdinalType> const& exportLIDs = exporter.getExportLIDs();
+			std::vector<OrdinalType> const& remoteLIDs = exporter.getRemoteLIDs();
+			std::vector<OrdinalType> const& permuteToLIDs = exporter.getPermuteToLIDs();
+			std::vector<OrdinalType> const& permuteFromLIDs = exporter.getPermuteFromLIDs();
+
+			// call doTransfer
+			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+					   permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+					   exports_, imports_, exporter.getDistributor(), false);
+
+			return(0);
+		}
+
+		// ** TO DO: Add the two other forms of doImport/doExport **
 
 		//@}
 
@@ -194,26 +229,27 @@ namespace Tpetra {
 
 			// we don't have a "Zero" CombineMode like Epetra does, so we don't have to check for that
 
-			///OrdinalType sizeOfPacket;
+			OrdinalType packetSize = zero; // dummy value
 			bool varSizes = false;
 			if((!sizes_.empty()) && (numExportIDs > zero))
 				sizes_.resize(numExportIDs);
-			packAndPrepare(sourceObj, numExportIDs, exportLIDs, exports, distor);
+			packAndPrepare(sourceObj, numExportIDs, exportLIDs, exports, packetSize, distor);
 
 			if((isGlobal() && doReverse) || (sourceObj.elementspace().isGlobal() && !doReverse)) {
+				// call one of the doPostsAndWaits functions
 				if(doReverse) {
 					if(varSizes)
-						; // call var-sized doReversePostsAndWaits
+						throw reportError("var-sized doReversePostsAndWaits not implemented yet", -99);
 					else
-						; // call doReversePostsAndWaits
+						throw reportError("doReversePostsAndWaits not implemented yet", -99);
 				}
 				else {
 					if(varSizes)
-						; // call var-sized doPostsAndWaits
+						throw reportError("var-sized doPostsAndWaits not implemented yet", -99);
 					else
-						; // call doPostsAndWaits
+						Comm_->doPostsAndWaits(distor, exports, packetSize, imports);
 				}
-				unpackAndCombine(sourceObj, numRemoteIDs, remoteLIDs, imports, distor, CM);
+				unpackAndCombine(numRemoteIDs, remoteLIDs, imports, distor, CM);
 			}
 
 			return(0);
@@ -259,6 +295,9 @@ namespace Tpetra {
 				 (Listed by their LID in the source DistObject.)
 		  \param exports Out
 		         On exit, buffer for data we will be sending out.
+		  \param packetSize Out
+		         On exit, will contain the number of ScalarType variables used to pack
+				 a single element.
 		  \param distor In
 		         On entry, contains the Distributor object we are using.				 
 		*/
@@ -266,12 +305,11 @@ namespace Tpetra {
 								   OrdinalType numExportIDs,
 								   std::vector<OrdinalType> exportLIDs,
 								   std::vector<ScalarType> exports,
+								   OrdinalType& packetSize,
 								   Distributor<OrdinalType> const& distor) = 0;
   
 		//! Perform any unpacking and combining after communication.
 		/*!
-		  \param sourceObj In
-		         The DistObject that are we importing from.
 		  \param numImportIDs In
 		         The number of elements we received from other images.
 		  \param importLIDs In
@@ -285,8 +323,7 @@ namespace Tpetra {
 		         The Tpetra::CombineMode to use when combining the imported
 				 entries with existing entries.
 		*/
-		virtual int unpackAndCombine(DistObject<OrdinalType, ScalarType> const& sourceObj,
-									 OrdinalType numImportIDs,
+		virtual int unpackAndCombine(OrdinalType numImportIDs,
 									 std::vector<OrdinalType> importLIDs,
 									 std::vector<ScalarType> imports,
 									 Distributor<OrdinalType> const& distor,
@@ -295,6 +332,7 @@ namespace Tpetra {
 	private:
 		
 		ElementSpace<OrdinalType> const ElementSpace_;
+		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > Comm_;
 		std::vector<ScalarType> imports_;
 		std::vector<ScalarType> exports_;
 		std::vector<OrdinalType> sizes_;

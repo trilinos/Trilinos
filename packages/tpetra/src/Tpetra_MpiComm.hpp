@@ -331,7 +331,7 @@ namespace Tpetra {
 		         On exit, contains the values exported to us. (imports will be resized
 				 if necessary, and any existing values will be overwritten.)
 		*/
-		void doPostsAndWaits(Distributor<OrdinalType>& distributor,
+		void doPostsAndWaits(Distributor<OrdinalType> const& distributor,
 							 std::vector<PacketType>& exports,
 							 OrdinalType packetSize,
 							 std::vector<PacketType>& imports) {
@@ -340,7 +340,7 @@ namespace Tpetra {
 		}
 
 		//! doPosts
-		void doPosts(Distributor<OrdinalType>& distributor,
+		void doPosts(Distributor<OrdinalType> const& distributor,
 					 std::vector<PacketType>& exports,
 					 OrdinalType elementSize,
 					 std::vector<PacketType>& imports) {
@@ -447,7 +447,7 @@ namespace Tpetra {
 		}
 
 		//! doWaits
-		void doWaits(Distributor<OrdinalType>& distributor) {
+		void doWaits(Distributor<OrdinalType> const& distributor) {
 			OrdinalType const& numReceives = distributor.getNumReceives();
 			std::vector<MPI_Status> status(numReceives);
 			if(numReceives > Teuchos::OrdinalTraits<OrdinalType>::zero())

@@ -222,19 +222,19 @@ namespace Tpetra {
 		         On exit, contains the values exported to us. (imports will be resized
 				 if necessary, and any existing values will be overwritten.)
 		*/
-		virtual void doPostsAndWaits(Distributor<OrdinalType>& distributor,
+		virtual void doPostsAndWaits(Distributor<OrdinalType> const& distributor,
 									 std::vector<PacketType>& exports,
 									 OrdinalType packetSize,
 									 std::vector<PacketType>& imports) = 0;
 
 		//! doPosts
-		virtual void doPosts(Distributor<OrdinalType>& distributor,
+		virtual void doPosts(Distributor<OrdinalType> const& distributor,
 							 std::vector<PacketType>& exports,
 							 OrdinalType packetSize,
 							 std::vector<PacketType>& imports) = 0;
 
 		//! doWaits
-		virtual void doWaits(Distributor<OrdinalType>& distributor) = 0;
+		virtual void doWaits(Distributor<OrdinalType> const& distributor) = 0;
 
 		//! doReversePostsAndWaits
 		/*! Execute a reverse plan specified by the distributor object passed in. 

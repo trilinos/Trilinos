@@ -43,7 +43,8 @@ namespace Tpetra {
 	//! Tpetra::Export: This class builds an export object for efficient exporting of off-processor elements.
   
 	/*! Export is used to construct a communication plan that can be called repeatedly by computational
-        classes such the Tpetra CisMatrix and Vector classes to efficiently export elements.
+        classes such the Tpetra CisMatrix and Vector classes to efficiently export elements to other
+		images.
     
 		This class currently has one constructor, taking two ElementSpace objects.
 		The first ElementSpace specifies the distribution we have now. The second 
@@ -69,9 +70,9 @@ namespace Tpetra {
 		}
     
 		//! copy constructor. 
-		Export(Export<OrdinalType> const& export)
-			: Object(export.label())
-			, ExportData_(export.ExportData_)
+		Export(Export<OrdinalType> const& rhs)
+			: Object(rhs.label())
+			, ExportData_(rhs.ExportData_)
 		{}
     
 		//! destructor.
@@ -110,7 +111,7 @@ namespace Tpetra {
 		//! Returns the Target ElementSpace used to construct this exporter.
 		ElementSpace<OrdinalType> const& getTargetSpace() const {return(data().target_);};
     
-		//Distributor<ScalarType, OrdinalType>const& getDistributor() const {return(data().distributor_);}; // ST is PT
+		Distributor<OrdinalType>const& getDistributor() const {return(data().distributor_);};
   	
 		//! Assignment operator
 		Export<OrdinalType>& operator = (Export<OrdinalType> const& Source) {
@@ -222,13 +223,10 @@ namespace Tpetra {
 			// apply same permutation to remoteGIDs_
 			sortArrays(remoteImageIDs, data().remoteGIDs_);
 
-			// create Distributor instance
-			data().distributor_ = data().platform_->createDistributor();
-
 			// call Distributor.createFromRecvs()
 			// takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
 			// returns numExportIDs_, exportLIDs_, and exportImageIDs_
-			data().distributor_->createFromRecvs(data().numRemoteIDs_, data().remoteGIDs_, 
+			data().distributor_.createFromRecvs(data().numRemoteIDs_, data().remoteGIDs_, 
 												 remoteImageIDs, true, data().numExportIDs_, 
 												 data().exportLIDs_, data().exportImageIDs_);
 

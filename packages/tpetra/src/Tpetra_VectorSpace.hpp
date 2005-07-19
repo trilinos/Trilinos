@@ -158,7 +158,7 @@ namespace Tpetra {
 	
 		//! Returns true if the VectorSpace passed in is compatible with this VectorSpace.
 		bool isCompatible(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {
-			// first check global length and local lenght on this image
+			// first check global length and local length on this image
 			if(vectorSpace.getNumGlobalEntries() != getNumGlobalEntries() ||
 			   vectorSpace.getNumMyEntries() != getNumMyEntries())
 				return(false);
@@ -201,16 +201,23 @@ namespace Tpetra {
 					os <<           "Number of Local Entries   = " << getNumMyEntries() << endl;
 					os << endl;
 				}
+				comm().barrier();
 			}
 			if(isBlockSpace()) {
-				os << "Built on a BlockElementSpace" << endl;
+				if(myImageID == 0)
+					os << "Built on a BlockElementSpace" << endl;
 				blockElementSpace().print(os);
-				os << "Compatible ElementSpace:" << endl;
+				comm().barrier();
+				if(myImageID == 0)
+					os << "Compatible ElementSpace:" << endl;
 				elementSpace().print(os);
+				comm().barrier();
 			}
 			else {
-				os << "Built on an ElementSpace" << endl;
+				if(myImageID == 0)
+					os << "Built on an ElementSpace" << endl;
 				elementSpace().print(os);
+				comm().barrier();
 			}
 		};
 	
