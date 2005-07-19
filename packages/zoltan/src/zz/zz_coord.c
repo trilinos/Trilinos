@@ -78,7 +78,7 @@ int Zoltan_Get_Coordinates(
   double M[3][3], im[3][3];
   double (*sav)[3];
   double max_ratio = 10.0;
-  double x, y, *cold;
+  double x, y, *cold, flat;
   int order[3];
   int keep_cuts, skip_dimensions, d;
   int target_dim;
@@ -225,26 +225,28 @@ int Zoltan_Get_Coordinates(
   
       if (d == 2){
         if (dist[0] < dist[1]){
-          order[0] = 0; order[1] = 1;
-        }
-        else{
           order[0] = 1; order[1] = 0;
         }
-        if ((dist[order[0]] / dist[order[1]]) > max_ratio){
+        else{
+          order[0] = 0; order[1] = 1;
+        }
+        if (dist[order[1]] < (dist[order[0]] / max_ratio)){
           target_dim = 1;
         }
       }
       else{
         order_decreasing(dist, order);
+
+        flat = dist[order[0]] / max_ratio;
   
-        if ((dist[order[0]] / dist[order[2]]) > max_ratio){
+        if (dist[order[2]] < flat){
           /*
            * We'll rotate geometry so it's aligned with the X/Y plane
            * and project to Z=0.
            */
           target_dim = 2;
   
-          if ((dist[order[0]] / dist[order[1]]) > max_ratio){
+          if (dist[order[1]] < flat){
             /*
              * We'll rotate geometry so it's aligned with the X-axis
              * and project to the X-axis.
@@ -581,8 +583,9 @@ static void order_decreasing(double *d, int *order)
 static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
 {
   /* 
-   * Given a real symmetric 3x3 matrix "m", find its eigenvectors.  Put
-   * the 3 orthonormal eigenvectors in the columns of the matrix "evecs".
+   * Given a real symmetric matrix "m", find its eigenvectors.  Put
+   * the orthonormal eigenvectors in the columns of the matrix "evecs".
+   * Assume dim is 2 or 3.
    */
 
   double d[3], e[3];
@@ -611,7 +614,7 @@ static void tred2(double (*a)[3],  /* Q on output */
 
   /*
    * Householder reduction from "Numerical Recipes in C". 
-   * Take a real symmetric 3x3 matrix "a" and decompose it into
+   * Take a real symmetric nxn matrix "a" and decompose it into
    * an orthogonal Q and a tridiagonal matrix T.
    */
 
@@ -703,10 +706,10 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
   e[1] = e[2];
   e[2] = 0.0;
 
-  for (l=0; l<=n-1; l++){
+  for (l=0; l<n; l++){
     iter = 0;
     do {
-      for (m=l; m <= 1; m++){
+      for (m=l; m < n-1; m++){
         dd = fabs(d[m]) + fabs(d[m+1]);
         if ((double)(fabs(e[m]) + dd) == dd) break;
       }
@@ -741,7 +744,7 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
           d[i+1] = g + p;
           g = c * r - b;
 
-          for (k=0; k<=n-1; k++){
+          for (k=0; k<n; k++){
             f = z[k][i+1];
             z[k][i+1] = (s * z[k][i]) + (c * f);
             z[k][i] = (c * z[k][i]) - (s * f);
@@ -755,6 +758,7 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
   }
   return 0;
 }
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
