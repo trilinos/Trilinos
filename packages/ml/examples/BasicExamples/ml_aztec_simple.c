@@ -139,11 +139,13 @@ int main(int argc, char *argv[])
   ML_Aggregate_Set_MaxCoarseSize(ag, 30);
   ML_Aggregate_Set_Threshold(ag, 0.0);
 
+  ag->minimizing_energy = 1;
+
   /********************************************************************/
   /* Build hierarchy using smoothed aggregation.                      */
   /*------------------------------------------------------------------*/
 
-  Nlevels = ML_Gen_MGHierarchy_UsingAggregation(ml, MaxMgLevels-1,
+  Nlevels = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml, MaxMgLevels-1,
 						ML_DECREASING, ag);
   coarsest_level = MaxMgLevels - Nlevels;
 
@@ -168,8 +170,7 @@ int main(int argc, char *argv[])
   for (level = MaxMgLevels-1; level > coarsest_level; level--)
     ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., 3);
 
-  ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-
+  ML_Gen_Smoother_Amesos(ml, coarsest_level, ML_AMESOS_KLU, 1, 0.0);
 
   /* Must be called before invoking the preconditioner */
   ML_Gen_Solver(ml, ML_MGV, MaxMgLevels-1, coarsest_level); 

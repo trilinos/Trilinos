@@ -215,7 +215,6 @@ int main(int argc, char *argv[])
   double * z_coord = 0; // the problem is 2D, here z_coord will be NULL
   
   Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
-  int NumMyRows = A->NumMyRows();
 
   // As we wish to use AztecOO, we need to construct a solver object for this problem
   AztecOO solver(*Problem);

@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   // matrix is `recirc_2d' (advection-diffusion in a box, with
   // recirculating flow). In both cases, the global number of nodes 
   // must be a square number
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  CrsMatrixGallery Gallery("recirc_2d", Comm);
   Gallery.Set("problem_size", i);
   
   // The following methods of CrsMatrixGallery are used to get pointers
@@ -147,8 +147,6 @@ int main(int argc, char *argv[])
 
   // use Uncoupled scheme to create the aggregate
   MLList.set("aggregation: type", "Uncoupled");
-  // from level 3 use the higher quality but more expensive MIS
-  MLList.set("aggregation: type (level 3)", "MIS");
 
   // smoother is symmetric Gauss-Seidel. Example file 
   // `ml/examples/TwoLevelDD/ml_2level_DD.cpp' shows how to use
@@ -169,6 +167,10 @@ int main(int argc, char *argv[])
   MLList.set("smoother: type","Jacobi");
   MLList.set("coarse: type","Jacobi");
 #endif
+
+  MLList.set("energy minimization: enable", true);
+  MLList.set("energy minimization: type", 3);
+  MLList.set("aggregation: damping factor", 0.0);
 
   // Creates the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
@@ -200,7 +202,7 @@ int main(int argc, char *argv[])
   // of tolerance (see AztecOO's user guide for more details)
   
   solver.SetPrecOperator(MLPrec);
-  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(500, 1e-12);
 

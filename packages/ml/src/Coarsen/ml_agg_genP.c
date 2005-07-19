@@ -2225,8 +2225,8 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   int size_old, size_new;
   double* tmp_old,* tmp_new;
   double* aggr_sizes;
-  int (*getrow)(ML_Operator*, int, int [], int, int [], double [], int []);
-  int (*matvec)(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]);
+  int (*getrow)(ML_Operator*, int, int [], int, int [], double [], int []) = NULL;
+  int (*matvec)(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]) = NULL;
   ML_Aggregate_Viz_Stats *Agrid_info;
   ML_Aggregate_Viz_Stats *Cgrid_info;
 

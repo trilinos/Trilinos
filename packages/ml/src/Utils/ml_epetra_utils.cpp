@@ -326,7 +326,7 @@ int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
 {
   int nz_ptr = 0;
   int NumEntries;
-  int MaxPerRow = 0;
+  //int MaxPerRow = 0;
   ML_Operator *mat_in;
 
   mat_in = (ML_Operator *) data;

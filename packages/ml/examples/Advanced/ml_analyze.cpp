@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
   // The following methods of CrsMatrixGallery are used to get pointers
   // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
   Epetra_RowMatrix*     A       = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
   // create a parameter list for ML options
   ParameterList MLList;

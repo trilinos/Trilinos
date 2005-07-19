@@ -1007,9 +1007,7 @@ int ML_implicitvscale_Getrow(ML_Operator *data, int N_requested_rows,
 int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
 			    int olen, double ap[])
 {
-  struct ml_matscale *temp;
-  double scalar;
-  int    status = 1, i;
+  int    status = 1;
 
   printf("ML_implicitvscale_Matvec is not implemented yet\n"
          "(file %s, line %d)\n",
@@ -1579,8 +1577,8 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   int i, A_length, B_length, *hashed_inds;
   int max_nz_per_row = 0, j;
   int hash_val, index_length;
-  int *columns, *rowptr, nz_ptr, hash_used, global_col;
-  double *values;
+  int *columns = NULL, *rowptr, nz_ptr, hash_used, global_col;
+  double *values = NULL;
   struct ML_CSR_MSRdata *temp;
   int *A_gids, *B_gids;
   int max_per_proc;
