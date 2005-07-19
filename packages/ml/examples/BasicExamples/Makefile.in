@@ -60,6 +60,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_enable_option.m4 \
@@ -71,6 +72,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_package.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -79,27 +81,25 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_ml_aztec_simple_OBJECTS =  \
-	ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
+am_ml_aztec_simple_OBJECTS = ml_aztec_simple.$(OBJEXT)
 ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_ml_operator_OBJECTS = ml_operator-ml_operator.$(OBJEXT)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ML_TEST_LIBS))
+am_ml_operator_OBJECTS = ml_operator.$(OBJEXT)
 ml_operator_OBJECTS = $(am_ml_operator_OBJECTS)
-am_ml_preconditioner_OBJECTS =  \
-	ml_preconditioner-ml_preconditioner.$(OBJEXT)
+am_ml_preconditioner_OBJECTS = ml_preconditioner.$(OBJEXT)
 ml_preconditioner_OBJECTS = $(am_ml_preconditioner_OBJECTS)
-am_ml_readex_OBJECTS = ml_readex-ml_readex.$(OBJEXT)
+am_ml_readex_OBJECTS = ml_readex.$(OBJEXT)
 ml_readex_OBJECTS = $(am_ml_readex_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_operator-ml_operator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_readex-ml_readex.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_aztec_simple.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_operator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_preconditioner.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_readex.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -152,6 +152,7 @@ FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -207,6 +208,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PYTHON = @PYTHON@
 PYTHON_CSPEC = @PYTHON_CSPEC@
 PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
@@ -225,6 +227,12 @@ SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_SWIG = @WITH_SWIG@
 ac_aux_dir = @ac_aux_dir@
@@ -292,28 +300,27 @@ ml_libs = $(ML_EXPORT_LIBS)     \
 # common link line
 ##################
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_TEST_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
-ml_aztec_simple_CFLAGS = ${ml_common_include_locations}
-ml_aztec_simple_LDADD = ${ml_libs} 
-ml_aztec_simple_LINK = ${mllink}
 ml_aztec_simple_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_aztec_simple_LDADD = $(EXAMPLE_LIBS)
+ml_aztec_simple_LINK = $(ML_TEST_LINK)
 ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
-ml_operator_CPPFLAGS = ${ml_common_include_locations}
-ml_operator_CXXFLAGS = ${ml_common_include_locations}
-ml_operator_LDADD = ${ml_libs} 
-ml_operator_LINK = ${mllink}
 ml_operator_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_operator_LDADD = $(EXAMPLE_LIBS)
+ml_operator_LINK = $(ML_TEST_LINK)
 ml_preconditioner_SOURCES = $(srcdir)/ml_preconditioner.cpp
-ml_preconditioner_CPPFLAGS = ${ml_common_include_locations}
-ml_preconditioner_CXXFLAGS = ${ml_common_include_locations}
-ml_preconditioner_LDADD = ${ml_libs} 
-ml_preconditioner_LINK = ${mllink}
 ml_preconditioner_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_preconditioner_LDADD = $(EXAMPLE_LIBS)
+ml_preconditioner_LINK = $(ML_TEST_LINK)
 ml_readex_SOURCES = $(srcdir)/ml_readex.c
-ml_readex_CFLAGS = ${ml_common_include_locations}
-ml_readex_LDADD = ${ml_libs} 
-ml_readex_LINK = ${mllink}
 ml_readex_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_readex_LDADD = $(EXAMPLE_LIBS)
+ml_readex_LINK = $(ML_TEST_LINK)
 all: all-am
 
 .SUFFIXES:
@@ -369,10 +376,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operator-ml_operator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readex-ml_readex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_preconditioner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readex.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -390,37 +397,37 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-ml_aztec_simple-ml_aztec_simple.o: $(srcdir)/ml_aztec_simple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -MT ml_aztec_simple-ml_aztec_simple.o -MD -MP -MF "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" -c -o ml_aztec_simple-ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple-ml_aztec_simple.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.TPo' @AMDEPBACKSLASH@
+ml_aztec_simple.o: $(srcdir)/ml_aztec_simple.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_aztec_simple.o -MD -MP -MF "$(DEPDIR)/ml_aztec_simple.Tpo" -c -o ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple-ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c
 
-ml_aztec_simple-ml_aztec_simple.obj: $(srcdir)/ml_aztec_simple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -MT ml_aztec_simple-ml_aztec_simple.obj -MD -MP -MF "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" -c -o ml_aztec_simple-ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple-ml_aztec_simple.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.TPo' @AMDEPBACKSLASH@
+ml_aztec_simple.obj: $(srcdir)/ml_aztec_simple.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_aztec_simple.obj -MD -MP -MF "$(DEPDIR)/ml_aztec_simple.Tpo" -c -o ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple-ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`
 
-ml_readex-ml_readex.o: $(srcdir)/ml_readex.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -MT ml_readex-ml_readex.o -MD -MP -MF "$(DEPDIR)/ml_readex-ml_readex.Tpo" -c -o ml_readex-ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex-ml_readex.Tpo" "$(DEPDIR)/ml_readex-ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex-ml_readex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex-ml_readex.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex-ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex-ml_readex.TPo' @AMDEPBACKSLASH@
+ml_readex.o: $(srcdir)/ml_readex.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_readex.o -MD -MP -MF "$(DEPDIR)/ml_readex.Tpo" -c -o ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex.Tpo" "$(DEPDIR)/ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -c -o ml_readex-ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c
 
-ml_readex-ml_readex.obj: $(srcdir)/ml_readex.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -MT ml_readex-ml_readex.obj -MD -MP -MF "$(DEPDIR)/ml_readex-ml_readex.Tpo" -c -o ml_readex-ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex-ml_readex.Tpo" "$(DEPDIR)/ml_readex-ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex-ml_readex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex-ml_readex.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex-ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex-ml_readex.TPo' @AMDEPBACKSLASH@
+ml_readex.obj: $(srcdir)/ml_readex.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_readex.obj -MD -MP -MF "$(DEPDIR)/ml_readex.Tpo" -c -o ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex.Tpo" "$(DEPDIR)/ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -c -o ml_readex-ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -438,37 +445,37 @@ ml_readex-ml_readex.obj: $(srcdir)/ml_readex.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ml_operator-ml_operator.o: $(srcdir)/ml_operator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -MT ml_operator-ml_operator.o -MD -MP -MF "$(DEPDIR)/ml_operator-ml_operator.Tpo" -c -o ml_operator-ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator-ml_operator.Tpo" "$(DEPDIR)/ml_operator-ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator-ml_operator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator-ml_operator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator-ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator-ml_operator.TPo' @AMDEPBACKSLASH@
+ml_operator.o: $(srcdir)/ml_operator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_operator.o -MD -MP -MF "$(DEPDIR)/ml_operator.Tpo" -c -o ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator.Tpo" "$(DEPDIR)/ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator-ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp
 
-ml_operator-ml_operator.obj: $(srcdir)/ml_operator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -MT ml_operator-ml_operator.obj -MD -MP -MF "$(DEPDIR)/ml_operator-ml_operator.Tpo" -c -o ml_operator-ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator-ml_operator.Tpo" "$(DEPDIR)/ml_operator-ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator-ml_operator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator-ml_operator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator-ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator-ml_operator.TPo' @AMDEPBACKSLASH@
+ml_operator.obj: $(srcdir)/ml_operator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_operator.obj -MD -MP -MF "$(DEPDIR)/ml_operator.Tpo" -c -o ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator.Tpo" "$(DEPDIR)/ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator-ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`
 
-ml_preconditioner-ml_preconditioner.o: $(srcdir)/ml_preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner-ml_preconditioner.o -MD -MP -MF "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" -c -o ml_preconditioner-ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner-ml_preconditioner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.TPo' @AMDEPBACKSLASH@
+ml_preconditioner.o: $(srcdir)/ml_preconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner.o -MD -MP -MF "$(DEPDIR)/ml_preconditioner.Tpo" -c -o ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner-ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp
 
-ml_preconditioner-ml_preconditioner.obj: $(srcdir)/ml_preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner-ml_preconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" -c -o ml_preconditioner-ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner-ml_preconditioner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.TPo' @AMDEPBACKSLASH@
+ml_preconditioner.obj: $(srcdir)/ml_preconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_preconditioner.Tpo" -c -o ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner-ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -635,7 +642,7 @@ uninstall-am: uninstall-info-am
 
 
 # include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

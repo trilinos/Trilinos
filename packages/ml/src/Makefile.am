@@ -330,75 +330,42 @@ COMP =
 #np# package
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
-#
-if ML_USING_AZTECOO
-aztecoo_incdir = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
-else
-aztecoo_incdir =
-endif
-if ML_USING_AMESOS
-amesos_incdir = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
-else
-amesos_incdir =
-endif
-if ML_USING_IFPACK
-ifpack_incdir = -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src
-else
-ifpack_incdir =
-endif
-if ML_USING_TEUCHOS
-teuchos_incdir = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
-else
-teucho_incdir =
-endif
-if ML_USING_ANASAZI
-anasazi_incdir = -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
-else
-anasazi_incdir =
-endif
-if ML_USING_TRIUTILS
-triutils_incdir = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
-else
-triutils_incdir =
-endif
-if ML_USING_EPETRA
-epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-else
-epetra_incdir =
-endif
-if ML_USING_EPETRAEXT
-epetraext_incdir = -I$(top_srcdir)/../epetraext/src/inout \
-                   -I$(top_srcdir)/../epetraext/src/coloring \
-                   -I$(top_srcdir)/../epetraext/src/transform \
-                   -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src
-else
-epetraext_incdir =
-endif
+
 if ML_USING_NOX
 nox_incdir = -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
 else
 nox_incdir =
 endif
-  
-AM_CPPFLAGS = -I$(srcdir)/Comm \
-	-I$(srcdir)/Operator   \
-	-I$(srcdir)/Smoother   \
-	-I$(srcdir)/Coarsen \
-	-I$(srcdir)/Krylov  \
-	-I$(srcdir)/Main    \
-	-I$(srcdir)/FEGrid  \
-	-I$(srcdir)/Utils   \
-	-I$(srcdir)/MLAPI   \
-	-I$(srcdir)/Include \
-	$(aztecoo_incdir)   \
-	$(ifpack_incdir)    \
-	$(amesos_incdir)    \
-	$(teuchos_incdir)   \
-	$(anasazi_incdir)   \
-	$(triutils_incdir)  \
-	$(epetra_incdir)    \
-        $(epetraext_incdir) \
-        $(nox_incdir)
+
+include $(top_builddir)/Makefile.export.ml
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+else
+EXPORT_INCLUDES = $(ML_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(nox_incdir)
+
+#AM_CPPFLAGS = -I$(srcdir)/Comm \
+#	-I$(srcdir)/Operator   \
+#	-I$(srcdir)/Smoother   \
+#	-I$(srcdir)/Coarsen \
+#	-I$(srcdir)/Krylov  \
+#	-I$(srcdir)/Main    \
+#	-I$(srcdir)/FEGrid  \
+#	-I$(srcdir)/Utils   \
+#	-I$(srcdir)/MLAPI   \
+#	-I$(srcdir)/Include \
+#	$(aztecoo_incdir)   \
+#	$(ifpack_incdir)    \
+#	$(amesos_incdir)    \
+#	$(teuchos_incdir)   \
+#	$(anasazi_incdir)   \
+#	$(triutils_incdir)  \
+#	$(epetra_incdir)    \
+#        $(epetraext_incdir) \
+#        $(nox_incdir)
 
 
 
@@ -500,7 +467,64 @@ nodist_execinclude_HEADERS = ml_config.h
 MAINTAINERCLEANFILES = Makefile.in 
 
 
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+if ML_USING_EPETRA
+ML_USING_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs 
+else
+ML_USING_EPETRA_LIBS = 
+endif
 
+if ML_USING_AMESOS
+ML_USING_AMESOS_LIBS = cd $(top_builddir)/../amesos ; $(MAKE) all-libs 
+else
+ML_USING_AMESOS_LIBS = 
+endif
 
+if ML_USING_IFPACK
+ML_USING_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs 
+else
+ML_USING_IFPACK_LIBS = 
+endif
 
+if ML_USING_TEUCHOS
+ML_USING_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
+else
+ML_USING_TEUCHOS_LIBS = 
+endif
 
+if ML_USING_ANASAZI
+ML_USING_ANASAZI_LIBS = cd $(top_builddir)/../anasazi ; $(MAKE) all-libs 
+else
+ML_USING_ANASAZI_LIBS = 
+endif
+
+if ML_USING_AZTECOO
+ML_USING_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs 
+else
+ML_USING_AZTECOO_LIBS = 
+endif
+
+if ML_USING_EPETRAEXT
+ML_USING_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; $(MAKE) all-libs 
+else
+ML_USING_EPETRAEXT_LIBS = 
+endif
+
+if ML_USING_TRIUTILS
+ML_USING_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
+else
+ML_USING_TRIUTILS_LIBS = 
+endif
+
+all-libs:
+	$(MAKE) libml.a
+	$(ML_USING_EPETRA_LIBS)
+	$(ML_USING_AMESOS_LIBS)
+	$(ML_USING_IFPACK_LIBS)
+	$(ML_USING_TEUCHOS_LIBS)
+	$(ML_USING_ANASAZI_LIBS)
+	$(ML_USING_AZTECOO_LIBS)
+	$(ML_USING_EPETRAEXT_LIBS)
+	$(ML_USING_TRIUTILS_LIBS)

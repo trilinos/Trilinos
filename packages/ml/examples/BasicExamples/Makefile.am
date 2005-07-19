@@ -2,8 +2,18 @@
 #@HEADER
 
 # include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 include ../Makefile-common.include
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_TEST_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_TEST_INCLUDES))
+else
+EXAMPLE_LIBS     = $(ML_TEST_LIBS)
+EXAMPLE_INCLUDES = $(ML_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -15,28 +25,21 @@ noinst_PROGRAMS = ml_aztec_simple          \
                   ml_readex
 
 ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
-ml_aztec_simple_CFLAGS = ${ml_common_include_locations}
-ml_aztec_simple_LDADD = ${ml_libs} 
-ml_aztec_simple_LINK = ${mllink}
 ml_aztec_simple_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_aztec_simple_LDADD = $(EXAMPLE_LIBS)
+ml_aztec_simple_LINK = $(ML_TEST_LINK)
 
 ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
-ml_operator_CPPFLAGS = ${ml_common_include_locations}
-ml_operator_CXXFLAGS = ${ml_common_include_locations}
-ml_operator_LDADD = ${ml_libs} 
-ml_operator_LINK = ${mllink}
 ml_operator_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_operator_LDADD = $(EXAMPLE_LIBS)
+ml_operator_LINK = $(ML_TEST_LINK)
 
 ml_preconditioner_SOURCES = $(srcdir)/ml_preconditioner.cpp
-ml_preconditioner_CPPFLAGS = ${ml_common_include_locations}
-ml_preconditioner_CXXFLAGS = ${ml_common_include_locations}
-ml_preconditioner_LDADD = ${ml_libs} 
-ml_preconditioner_LINK = ${mllink}
 ml_preconditioner_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_preconditioner_LDADD = $(EXAMPLE_LIBS)
+ml_preconditioner_LINK = $(ML_TEST_LINK)
 
 ml_readex_SOURCES = $(srcdir)/ml_readex.c
-ml_readex_CFLAGS = ${ml_common_include_locations}
-ml_readex_LDADD = ${ml_libs} 
-ml_readex_LINK = ${mllink}
 ml_readex_DEPENDENCIES = $(top_builddir)/src/libml.a
-
+ml_readex_LDADD = $(EXAMPLE_LIBS)
+ml_readex_LINK = $(ML_TEST_LINK)

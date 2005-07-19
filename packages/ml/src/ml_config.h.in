@@ -38,6 +38,12 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -72,10 +78,10 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define if want to build with amesos enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_AMESOS
 
-/* Define if want to build with anasazi enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_ANASAZI
 
 /* Define if want to build with ml_arpack enabled */
@@ -84,7 +90,7 @@
 /* Define if want to build with ml_aztec2_1 enabled */
 #undef HAVE_ML_AZTEC2_1
 
-/* Define if want to build with aztecoo enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_AZTECOO
 
 /* Define if want to build with ml_benchmarking enabled */
@@ -96,10 +102,10 @@
 /* Define if want to build with ml_enrich enabled */
 #undef HAVE_ML_ENRICH
 
-/* Define if want to build with epetra enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_EPETRA
 
-/* Define if want to build with epetraext enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_EPETRAEXT
 
 /* Define if want to build ml-examples */
@@ -111,7 +117,7 @@
 /* Define if want to build with ml_flops enabled */
 #undef HAVE_ML_FLOPS
 
-/* Define if want to build with ifpack enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_IFPACK
 
 /* Define if want to build with ml_memory_checking enabled */
@@ -150,13 +156,13 @@
 /* Define if want to build ml-tests */
 #undef HAVE_ML_TESTS
 
-/* Define if want to build with teuchos enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_TEUCHOS
 
 /* Define if want to build with ml_timing enabled */
 #undef HAVE_ML_TIMING
 
-/* Define if want to build with triutils enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_TRIUTILS
 
 /* Define if want to build with ml_zoltan enabled */

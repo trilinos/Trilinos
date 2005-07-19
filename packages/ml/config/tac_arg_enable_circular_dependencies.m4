@@ -1,8 +1,4 @@
-# @synopsis TAC_ARG_ENABLE_CAN_USE_PACKAGE(PACKAGE_NAME, OPTIONAL_DEPENDENCY_NAME, AC_DEFINE, AM_CONDITIONAL, DEFAULT_BUILD, ALLOW_IMPLICIT_ENABLE, HELP_STRING, IMPLICIT_HELP_STRING)
-# 
-
-# Use this macro to facilitate definition of options related to other
-# Trilinos packages that a package "can use" but does not depend on.
+# Use this macro to facilitate circular dependencies.
 
 # This macro supports both explicit and implicit configure options.
 # For example to build epetra support into nox (so that nox can call
@@ -20,6 +16,7 @@
 #                                 OPTIONAL_PACKAGE_DEPENDENCY_NAME, 
 #                                 AC_DEFINE, 
 #                                 AM_CONDITIONAL, 
+#                                 DEFAULT_BUILD, 
 #                                 ALLOW_IMPLICIT_ENABLE, 
 #                                 HELP_STRING, 
 #                                 IMPLICIT_HELP_STRING)
@@ -33,6 +30,8 @@
 #             will be automatically prepended to the name.
 # AM_CONDITIONAL - Variable that will be set in the makefiles by an 
 #                  AM_CONDITIONAL call.
+# DEFAULT_BUILD - Default for this support package.  Takes a "yes/no" 
+#                 argument.
 # ALLOW_IMPLICIT_ENABLE - This can be used to turn off implicit enable 
 #                         support.  Takes a "yes/no" argument.
 # HELP_STRING - Help string for configure option:
@@ -43,7 +42,7 @@
 # For example, to force explicit configuration of epetra support in nox:
 # 
 #  TAC_ARG_ENABLE_EXPLICIT_CAN_USE_PACKAGE(nox, epetra, NOX_EPETRA, 
-#                                          NOX_USING_EPETRA, no, 
+#                                          NOX_USING_EPETRA, no, no, 
 #                                          [Builds epetra support into nox.], 
 #                                          [DOES NOTHING!])
 # 
@@ -63,36 +62,25 @@
 # @author Roger Pawlowski <rppawlo@sandia.gov>
 # Based on original verison by Jim Willenbring.
 #
-AC_DEFUN([TAC_ARG_ENABLE_CAN_USE_PACKAGE],
+# TAC_ARG_ENABLE_CIRCULAR_DEPENDENCIES(ml, nox, AC_DEFINE, AM_CONDITIONAL, default, help_string)
+#
+AC_DEFUN([TAC_ARG_ENABLE_CIRCULAR_DEPENDENCIES],
 [
 
-dnl Check for implicit enabling of optional package  
-AC_ARG_ENABLE([$2],
-AC_HELP_STRING([--enable-$2],[$7]),
-ac_cv_implicit_use_$2=$enableval, 
-ac_cv_implicit_use_$2=no)
+AC_ARG_ENABLE([$1-circular-dependency-$2],
+AC_HELP_STRING([--enable-$1-circular-dependency-$2],[$6]),
+ac_cv_circular_dependency_$2=$enableval, 
+ac_cv_circular_dependency_$2=$5)
 
-dnl If implicit enabling is used, set that as teh default
-if test "X$5" != "Xno"; then
-  ac_cv_$1_using_$2_default=$ac_cv_implicit_use_$2
-else
-  ac_cv_$1_using_$2_default=no
-fi
+AC_MSG_CHECKING(whether circular dependencies are enabled between [$2] and [$1])
 
-AC_ARG_ENABLE([$1-$2],
-AC_HELP_STRING([--enable-$1-$2],[$6]),
-ac_cv_use_$2=$enableval, 
-ac_cv_use_$2=$ac_cv_$1_using_$2_default)
-
-AC_MSG_CHECKING(whether to build optional [$2] dependent code in [$1])
-
-if test "X$ac_cv_use_$2" != "Xno"; then
+if test "X$ac_cv_circular_dependency_$2" != "Xno"; then
   AC_MSG_RESULT(yes)
-  AC_DEFINE([HAVE_$3],1,[Define if want to build with $1 enabled])
+  AC_DEFINE([HAVE_CIRCULAR_DEPENDENCY_$3],1,[Define for building circular dependencies into code.])
 else
   AC_MSG_RESULT(no)
 fi
 
-AM_CONDITIONAL($4, test "X$ac_cv_use_$2" = "Xyes")
+AM_CONDITIONAL($4, test "X$ac_cv_circular_dependency_$2" = "Xyes")
 
 ])
