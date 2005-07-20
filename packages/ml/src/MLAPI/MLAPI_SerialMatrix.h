@@ -11,6 +11,7 @@
 #include "MLAPI_BaseObject.h"
 #include "MLAPI_Space.h"
 #include "Epetra_RowMatrix.h"
+#include "Teuchos_RefCountPtr.hpp"
 #include <iomanip>
 
 namespace MLAPI {
@@ -33,8 +34,8 @@ public:
     if (GetNumProcs() != 1)
       ML_THROW("Class SerialMatrix can only be used for serial computations.", -1);
 
-    RowMap_ = new Epetra_Map(NumMyRows_,0,GetEpetra_Comm());
-    ColMap_ = new Epetra_Map(NumMyCols_,0,GetEpetra_Comm());
+    RowMap_ = Teuchos::rcp(new Epetra_Map(NumMyRows_,0,GetEpetra_Comm()));
+    ColMap_ = Teuchos::rcp(new Epetra_Map(NumMyCols_,0,GetEpetra_Comm()));
 
     ptr_.resize(NumMyRows_);
   }
@@ -221,12 +222,12 @@ public:
 
   virtual const Epetra_Map & RowMatrixRowMap() const
   {
-    return(*RowMap_);
+    return(*(RowMap_.get()));
   }
 
   virtual const Epetra_Map & RowMatrixColMap() const
   {
-    return(*ColMap_);
+    return(*(ColMap_.get()));
   }
 
   virtual const Epetra_Import * RowMatrixImporter() const
@@ -236,17 +237,17 @@ public:
 
   virtual const Epetra_Map& OperatorDomainMap() const
   {
-    return(*ColMap_);
+    return(*(ColMap_.get()));
   }
 
   virtual const Epetra_Map& OperatorRangeMap() const
   {
-    return(*RowMap_);
+    return(*(RowMap_.get()));
   }
 
   virtual const Epetra_Map& Map() const
   {
-    return(*ColMap_);
+    return(*(ColMap_.get()));
   }
     
   //@}
@@ -377,8 +378,8 @@ private:
   Space ColSpace_;
   Space RowSpace_;
 
-  Epetra_Map* RowMap_;
-  Epetra_Map* ColMap_;
+  Teuchos::RefCountPtr<Epetra_Map> RowMap_;
+  Teuchos::RefCountPtr<Epetra_Map> ColMap_;
 
 }; // class SerialMatrix
 
