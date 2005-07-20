@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, IFPACKTests) {
     DIRS = CompareWithAztecOO,
            Container,
            CrsRiluk,
@@ -14,12 +14,4 @@
 	   SetParameters;
     ARGS = -v;
     COMM = SERIAL, MPI;
-}
-
-# Removing PreconditionerFactory from MPI for now because it seems to hang.
-
-(FRAMEWORK) {
-    DIRS = PreconditionerFactory;
-    ARGS = -v;
-    COMM = SERIAL;
 }
