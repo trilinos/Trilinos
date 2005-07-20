@@ -958,8 +958,10 @@ double ewgt;
       cnt++;
     }
     ewgt = (zhg->Remove_Ewgt ? zhg->Remove_Ewgt[i*zz->Edge_Weight_Dim] : 1.);
-    loccuts[0] += (nparts-1) * ewgt;
-    if (nparts > 1) loccuts[1] += ewgt;
+    if (nparts > 1) {
+      loccuts[0] += (nparts-1) * ewgt;
+      loccuts[1] += ewgt;
+    }
   }
   
   MPI_Allreduce(loccuts, globcuts, 2, MPI_DOUBLE, MPI_SUM, zz->Communicator);
