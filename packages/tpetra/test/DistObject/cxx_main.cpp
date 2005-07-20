@@ -32,6 +32,8 @@
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Util.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
@@ -98,29 +100,65 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	int returnierr = 0;
 
 	// fixtures
+#ifdef TPETRA_MPI
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
+	Tpetra::MpiPlatform<OrdinalType, OrdinalType> esPlatform(MPI_COMM_WORLD);
+#else
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
+	Tpetra::SerialPlatform<OrdinalType, OrdinalType> esPlatform;
+#endif
 	OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	OrdinalType const negOne = zero - Teuchos::OrdinalTraits<OrdinalType>::one();
 	OrdinalType const indexBase = zero;
 
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================
-  
-	// create platform needed for directory construction
-#ifdef TPETRA_MPI
-	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
-#else
-	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
-#endif
+
+	// ...
   
 	// ======================================================================
 	// actual testing section - affects return code
 	// ======================================================================
 
 	// ========================================
-	// locally replicate a distributed Vector
+	// distributed -> locally replicated
 	// ========================================
 
-	
+	// first create the ElementSpace and VectorSpace objects we need
+	// 10 elements, uniform distribution
+	OrdinalType const numGlobalElements = intToOrdinal<OrdinalType>(10); // magic number
+	Tpetra::ElementSpace<OrdinalType> elementspace(numGlobalElements, indexBase, esPlatform);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platform);
+
+	// now create the vector and fill with data
+	Tpetra::Vector<OrdinalType, ScalarType> v1(vectorspace);
+	// we will use column 1 from the generator
+	for(OrdinalType i = zero; i < numGlobalElements; i++)
+		if(vectorspace.isMyGlobalIndex(i))
+			v1[vectorspace.getLocalIndex(i)] = generateValue(zero, i);
+	if(debug)
+		cout << v1;
+
+	// create the locally-replicated ElementSpace and VectorSpace
+	std::vector<OrdinalType> allGIDs(numGlobalElements);
+	for(OrdinalType i = zero; i < numGlobalElements; i++)
+		allGIDs.at(i) = i;
+	Tpetra::ElementSpace<OrdinalType> es2(negOne, numGlobalElements, allGIDs, indexBase, esPlatform);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> vs2(es2, platform);
+
+	// create the locally-replicated Vector we'll import into
+	Tpetra::Vector<OrdinalType, ScalarType> v2(vs2);
+	if(debug)
+		cout << v2;
+
+	// create the Importer and do the import
+	Tpetra::Import<OrdinalType> importer(elementspace, es2);
+	v2.doImport(v1, importer, Tpetra::Insert);
+	if(debug) {
+		cout << v1;
+		cout << v2;
+	}
 
 	// ======================================================================
 	// finish up

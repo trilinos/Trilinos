@@ -506,6 +506,7 @@ namespace Tpetra {
 					os <<           "Contents: ";
 					printValues(os);
 				}
+				vectorSpace().comm().barrier();
 			}
 		}
 	
