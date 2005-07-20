@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(Ifpack_ex_Amesos_SOURCES) $(Ifpack_ex_BlockRelaxation_SOURCES) $(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) $(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) $(Ifpack_ex_Reordering_SOURCES) $(Ifpack_ex_SingletonFilter_SOURCES) $(test_SOURCES)
+SOURCES = $(Ifpack_ex_Amesos_SOURCES) $(Ifpack_ex_BlockRelaxation_SOURCES) $(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) $(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) $(Ifpack_ex_Reordering_SOURCES) $(Ifpack_ex_SingletonFilter_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) test$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = example
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -132,9 +132,6 @@ am_Ifpack_ex_SingletonFilter_OBJECTS =  \
 	Ifpack_ex_SingletonFilter.$(OBJEXT)
 Ifpack_ex_SingletonFilter_OBJECTS =  \
 	$(am_Ifpack_ex_SingletonFilter_OBJECTS)
-am_test_OBJECTS =
-test_OBJECTS = $(am_test_OBJECTS)
-test_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -151,22 +148,18 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(Ifpack_ex_Amesos_SOURCES) \
 	$(Ifpack_ex_BlockRelaxation_SOURCES) \
 	$(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) \
 	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) \
 	$(Ifpack_ex_Reordering_SOURCES) \
-	$(Ifpack_ex_SingletonFilter_SOURCES) $(test_SOURCES)
+	$(Ifpack_ex_SingletonFilter_SOURCES)
 DIST_SOURCES = $(Ifpack_ex_Amesos_SOURCES) \
 	$(Ifpack_ex_BlockRelaxation_SOURCES) \
 	$(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) \
 	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) \
 	$(Ifpack_ex_Reordering_SOURCES) \
-	$(Ifpack_ex_SingletonFilter_SOURCES) $(test_SOURCES)
+	$(Ifpack_ex_SingletonFilter_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -359,7 +352,6 @@ Ifpack_ex_Filtering_LDADD = $(EXAMPLE_LIBS)
 Ifpack_ex_SingletonFilter_SOURCES = $(srcdir)/Ifpack_ex_SingletonFilter.cpp
 Ifpack_ex_SingletonFilter_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
 Ifpack_ex_SingletonFilter_LDADD = $(EXAMPLE_LIBS) 
-test_SOURCES = $(srcdir)/test.sh
 all: all-am
 
 .SUFFIXES:
@@ -744,8 +736,6 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.ifpack
-test$(EXEEXT): $(srcdir)/test.sh
-	cp $(srcdir)/test.sh test$(EXEEXT)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

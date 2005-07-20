@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 #endif
 
   // size of the global matrix (must be a square number)
-  const int NumPoints = 10000;
+  const int NumPoints = 900;
 
   // build the matrix corresponding to a 2D Laplacian on a
   // structured grid.

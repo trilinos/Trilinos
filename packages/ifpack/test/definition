@@ -11,7 +11,16 @@
 	   IlukGraph,
 	   OverlappingRowMatrix,
 	   Relaxation,
+           PreconditionerFactory,
 	   SetParameters;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+# Removing PreconditionerFactory from MPI for now because it seems to hang.
+
+(FRAMEWORK, IFPACKExamples) {
+    DIRS = ../example;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }

@@ -49,7 +49,7 @@ EXAMPLE = Ifpack_ex_Factory              \
           Ifpack_ex_Filtering            \
           Ifpack_ex_SingletonFilter     
           
-noinst_PROGRAMS = $(EXAMPLE) test
+noinst_PROGRAMS = $(EXAMPLE)
 
 Ifpack_ex_Factory_SOURCES      = $(srcdir)/Ifpack_ex_Factory.cpp
 Ifpack_ex_Factory_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
@@ -82,7 +82,3 @@ Ifpack_ex_Filtering_LDADD        = $(EXAMPLE_LIBS)
 Ifpack_ex_SingletonFilter_SOURCES      = $(srcdir)/Ifpack_ex_SingletonFilter.cpp
 Ifpack_ex_SingletonFilter_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
 Ifpack_ex_SingletonFilter_LDADD        = $(EXAMPLE_LIBS) 
-
-test_SOURCES = $(srcdir)/test.sh
-test$(EXEEXT): $(srcdir)/test.sh
-	cp $(srcdir)/test.sh test$(EXEEXT)
