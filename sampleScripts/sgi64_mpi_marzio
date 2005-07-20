@@ -34,8 +34,7 @@
   --with-ml_parmetis3x \
   --enable-amesos \
   --enable-amesos-lapack \
-  --disable-amesos-klu \
-  --disable-amesos-umfpack \
+  --enable-amesos-klu \
   --enable-amesos-scalapack \
   --enable-amesos-mumps \
   --disable-didasko

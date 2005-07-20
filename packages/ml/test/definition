@@ -10,7 +10,7 @@
 	  #../examples/MatrixReading,
 	   ../examples/Maxwell,
 	   ../examples/MultipleRHS,
-	   ../examples/Other,
+	  #../examples/Other,
 	  # ../examples/StandAlone,
 	   ../examples/TwoLevelDD,
 	   ../examples/Visualization,
