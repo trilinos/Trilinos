@@ -66,6 +66,7 @@ public:
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( new Amesos_Klu_Pimpl() ),
   CrsMatrixA_(0),
+  Reindex_(false),
   UseTranspose_(false),
   Problem_(&prob)
 {
@@ -159,9 +160,11 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   //  I will reindex them all - and then either allow the user to choose or figure it out. 
   //
   CrsMatrixA_ = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
-  Reindex_ =  ( CrsMatrixA_ != 0 ) ;
-  if ( Reindex_ ) {
-    //    Reindex_ = false ; 
+
+  if (Reindex_) 
+  {
+    if (CrsMatrixA_ == 0)
+      AMESOS_CHK_ERR(-1);
   }
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   if  ( Reindex_ ) {
@@ -347,12 +350,15 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   // solve problem with transpose
   if( ParameterList.isParameter("UseTranspose") )
-    SetUseTranspose(ParameterList.get("UseTranspose",false));
+    SetUseTranspose(ParameterList.get("UseTranspose",UseTranspose()));
 
   // scaling method: 0: none, 1: use method's default, 2: use
   // the method's 1st alternative, 3: etc.
   if( ParameterList.isParameter("ScaleMethod") )
-    ScaleMethod_ = ParameterList.get("ScaleMethod", 1);
+    ScaleMethod_ = ParameterList.get("ScaleMethod", ScaleMethod_);
+
+  if( ParameterList.isParameter("Reindex") )
+    ScaleMethod_ = ParameterList.get("Reindex", Reindex_);
 
   // MS // now comment it out, if we have parameters for KLU sublist
   // MS // uncomment it
