@@ -157,7 +157,7 @@ int Ifpack_Amesos::Initialize()
       cerr << "IFPACK WARNING: dense, I hope you have enough memory..." << endl;
       cerr << "IFPACK WARNING: (file " << __FILE__ << ", line " << __LINE__ 
            << ")" << endl;
-      FirstTime = true;
+      FirstTime = false;
     }
     Solver_ = Factory.Create("Amesos_Lapack",*Problem_);
   }
