@@ -31,6 +31,15 @@ static int NumSolves__ = 0;
 static double MaxError__ = 0.0;
 #endif
 
+int ML_isKLUAvailable()
+{
+  Amesos Factory;
+  if (Factory.Query("Amesos_Klu"))
+    return(1); // this is true
+  else
+    return(0); // this is false
+}
+  
 static void print_out(const Epetra_Comm& Comm, const int level, const char* what)
 {
   if (Comm.MyPID() == 0 && ML_Get_PrintLevel() > 2)
@@ -319,6 +328,11 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
 #include "ml_include.h"
 #include "ml_amesos_wrap.h"
 #include <stdio.h>
+
+int ML_isKLUAvailable()
+{
+  return(0); // this is false
+}
 
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, void **Amesos_Handle)

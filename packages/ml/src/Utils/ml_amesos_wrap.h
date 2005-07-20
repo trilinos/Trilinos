@@ -86,6 +86,7 @@ extern "C" {
   /** Destroy the Amesos object. Prints out some timing. */
   void ML_Amesos_Destroy(void *Amesos_Handle);
 
+  int ML_isKLUAvailable();
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

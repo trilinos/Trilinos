@@ -22,6 +22,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "ml_epetra.h"
+#include "ml_amesos_wrap.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "AztecOO.h"
 
@@ -75,6 +76,9 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
   if (RowMatrix_ == 0) 
     ML_CHK_ERR(-1); // Matrix not yet set
+
+  if (ML_isKLUAvailable() == 0)
+    ML_CHK_ERR(-1); // need Amesos/KLU installed to do this
 
   // execution begins
 
