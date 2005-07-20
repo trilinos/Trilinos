@@ -42,11 +42,11 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag compare_solvers
 
-EXTRA_DIST = 662_bus.rsa
+EXTRA_DIST = In_662_bus.rsa
 
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
-	        cp -f $(srcdir)/662_bus.rsa 662_bus_out.rsa
+	        cp -f $(srcdir)/In_662_bus.rsa 662_bus_out.rsa
 
 example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
