@@ -2,24 +2,14 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK, AmesosExamples) {
-    DIRS = ../example;
-    COMM = SERIAL, MPI;
+(FRAMEWORK, AmesosTests) {   
+    DIRS = scripts/daily/mpi;
+    COMM = CUSTOM-MPI; 
+    ARGS = NightlyTest True True;      
+    EXIT-STATUS = STRING-COMPARISON ; 
 }
 
-(FRAMEWORK, AmesosTests) {
-    DIRS = Test_Epetra_RowMatrix,
-           Test_SuperLU,
-           Test_KLU,              
-           Test_SuperLU_DIST,
-           Test_LAPACK,           
-           Test_UMFPACK,
-           Test_DSCPACK,          
-           Test_MUMPS,
-           Test_Detailed,         
-           Test_MultipleSolves,
-           Test_Epetra_CrsMatrix, 
-           Test_Performance,
-        #  Test_Basic;
-    COMM = SERIAL, MPI;
+(FRAMEWORK, AmesosExamples) {
+    DIRS = ../example;
+    COMM = SERIAL, MPI(1-4);
 }
