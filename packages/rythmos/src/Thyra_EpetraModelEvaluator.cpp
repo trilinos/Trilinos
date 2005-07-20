@@ -111,10 +111,10 @@ EpetraModelEvaluator::create_W() const
 
 EpetraModelEvaluator::InArgs<double> EpetraModelEvaluator::createInArgs() const
 {
+  const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
   InArgsSetup<double> inArgs;
   typedef EpetraExt::ModelEvaluator EME;
-  EME::InArgs
-    epetraInArgs = epetraModel_->createInArgs();
+  EME::InArgs epetraInArgs = epetraModel.createInArgs();
   inArgs.setSupports(IN_ARG_x_dot,epetraInArgs.supports(EME::IN_ARG_x_dot));
   inArgs.setSupports(IN_ARG_x,epetraInArgs.supports(EME::IN_ARG_x));
   inArgs.setSupports(IN_ARG_t,epetraInArgs.supports(EME::IN_ARG_t));
@@ -125,9 +125,10 @@ EpetraModelEvaluator::InArgs<double> EpetraModelEvaluator::createInArgs() const
 
 EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
 {
+  const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
   OutArgsSetup<double> outArgs;
   typedef EpetraExt::ModelEvaluator EME;
-  EME::OutArgs epetraOutArgs = epetraModel_->createOutArgs();
+  EME::OutArgs epetraOutArgs = epetraModel.createOutArgs();
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W));
   return outArgs;
