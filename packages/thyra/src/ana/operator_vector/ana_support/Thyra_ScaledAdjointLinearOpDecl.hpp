@@ -110,7 +110,7 @@ class ScaledAdjointLinearOp : virtual public ScaledAdjointLinearOpBase<Scalar> {
 public:
 
   /** \brief . */
-  using SingleScalarLinearOpBase<Scalar>::apply;
+  using ScaledAdjointLinearOpBase<Scalar>::apply;
 
   /** @name Constructors/initializers/accessors */
   //@{

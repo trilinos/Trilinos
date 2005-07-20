@@ -44,6 +44,15 @@ class MultiVectorDefaultBase : virtual public MultiVectorBase<Scalar>
 {
 public:
 
+  /** \brief . */
+  using MultiVectorBase<Scalar>::describe;
+  /** \brief . */
+  using MultiVectorBase<Scalar>::applyOp;
+  /** \brief . */
+  using MultiVectorBase<Scalar>::col; // Inject *all* functions!
+  /** \brief . */
+  using MultiVectorBase<Scalar>::subView; // Inject *all* functions!
+
   /** Overridden from MultiVectorBase */
   //@{
   /** \brief . */

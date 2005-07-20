@@ -103,7 +103,7 @@ class MPIVectorBase : virtual public VectorDefaultBase<Scalar> {
 public:
 
   /** \brief . */
-  using VectorBase<Scalar>::applyOp;
+  using VectorDefaultBase<Scalar>::applyOp;
 
   /** \brief . */
   MPIVectorBase();

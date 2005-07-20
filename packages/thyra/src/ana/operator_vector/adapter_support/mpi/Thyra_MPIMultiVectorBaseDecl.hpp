@@ -114,11 +114,10 @@ public:
 
   /** \brief . */
   using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
-
   /** \brief . */
-  using EuclideanLinearOpBase<Scalar>::apply;
+  using SingleScalarEuclideanLinearOpBase<Scalar>::apply;
   /** \brief . */
-  using MultiVectorBase<Scalar>::applyOp;
+  using MultiVectorDefaultBase<Scalar>::applyOp;
 
   /** @name  Constructors / initializers / accessors */
   //@{

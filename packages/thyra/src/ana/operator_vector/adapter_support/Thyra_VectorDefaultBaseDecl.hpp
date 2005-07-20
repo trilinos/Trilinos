@@ -54,11 +54,11 @@ public:
   /** \brief . */
   using SingleRhsLinearOpBase<Scalar>::apply;
   /** \brief . */
-  using MultiVectorBase<Scalar>::describe;
+  using MultiVectorDefaultBase<Scalar>::describe;
   /** \brief . */
-  using MultiVectorBase<Scalar>::applyOp;
+  using MultiVectorDefaultBase<Scalar>::applyOp;
   /** \brief . */
-  using MultiVectorBase<Scalar>::col;
+  using MultiVectorDefaultBase<Scalar>::col;
 
   /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
   //@{

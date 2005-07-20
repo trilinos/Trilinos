@@ -56,9 +56,9 @@ class SerialVectorBase : virtual public VectorDefaultBase<Scalar> {
 public:
 
   /** \brief . */
-  using VectorBase<Scalar>::describe;
+  using VectorDefaultBase<Scalar>::describe;
   /** \brief . */
-  using VectorBase<Scalar>::applyOp;
+  using VectorDefaultBase<Scalar>::applyOp;
 
   /** @name Constructors */
   //@{

@@ -50,8 +50,6 @@ public:
   /** \brief . */
   typedef std::complex<RealScalar> Scalar;
   /** \brief . */
-  Thyra::SingleRhsLinearOpBase< std::complex<RealScalar> >::apply;
-  /** \brief . */
   ComplexFFTLinearOp( const int N );
 
   /** @name Overridden from LinearOpBase */

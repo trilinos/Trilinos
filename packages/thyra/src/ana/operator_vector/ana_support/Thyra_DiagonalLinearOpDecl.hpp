@@ -83,9 +83,6 @@ class DiagonalLinearOp
 {
 public:
 
-  /** \brief . */
-  SingleRhsLinearOpBase<Scalar>::apply;
-
   /** @name Constructors/initializers/accessors */
   //@{
 

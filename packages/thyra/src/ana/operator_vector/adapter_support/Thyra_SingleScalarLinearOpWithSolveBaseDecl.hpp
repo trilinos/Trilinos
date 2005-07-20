@@ -41,6 +41,9 @@ class SingleScalarLinearOpWithSolveBase
   , virtual protected SingleScalarLinearOpBase<Scalar>
 {
 public:
+
+  /** \brief . */
+  SingleScalarLinearOpBase<Scalar>::apply;
   
   /** @name Overridden from LinearOpWithSolveBase */
   //@{

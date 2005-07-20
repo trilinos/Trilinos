@@ -57,12 +57,10 @@ public:
 
   /** \brief . */
   using SingleRhsLinearOpBase<Scalar>::apply;
-
   /** \brief . */
-  using MultiVectorBase<Scalar>::col; // Inject *all* functions!
-
+  using MultiVectorDefaultBase<Scalar>::col; // Inject *all* functions!
   /** \brief . */
-  using MultiVectorBase<Scalar>::subView; // Inject *all* functions!
+  using MultiVectorDefaultBase<Scalar>::subView; // Inject *all* functions!
 
   /** @name Constructors/Initializers */
   //@{
