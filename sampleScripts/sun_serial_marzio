@@ -1,0 +1,14 @@
+$HOME/Trilinos/$1/configure \
+  --prefix=$HOME/Trilinos/SUN_MPI \
+  --with-cxxflags="-pto" \
+  --with-ldflags="-xlic_lib=sunperf" \
+  --disable-default-packages \
+  --disable-examples \
+  --disable-tests \
+  --enable-teuchos \
+  --enable-epetra \
+  --enable-aztecoo \
+  --enable-ifpack \
+  --enable-amesos \
+  --enable-triutils \
+  --enable-ml
