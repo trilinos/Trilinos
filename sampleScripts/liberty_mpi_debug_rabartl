@@ -1,32 +1,18 @@
 #!/bin/sh
-../configure \
+rm config.cache
+../../Trilinos/configure \
+--cache-file=config.cache \
 --with-mpi-compilers \
-CXXFLAGS="-O2" \
-CFLAGS="-O2" \
-FFLAGS="-O2" \
-FLIBS="" \
---with-mpi-libs="-lmpich" \
---with-blas="-L/opt/intel/mkl61/lib/32 -lmkl_ia32 -lguide" \
---with-lapack="-L/opt/intel/mkl61/lib/32 -lmkl_lapack -lmkl_ia32 -lguide" \
---with-ldflags="-ldwarf" \
+--with-mpi-libs=-lmpich \
+CPPFLAGS="-D_DEBUG -DCODE_MP" \
+CFLAGS="-g -O0" \
+CXXFLAGS="-g -O0" \
+FFLAGS="-g -O0" \
+--with-gnumake \
+--with-blas="-L/opt/intel/mkl/lib/32 -lmkl_ia32 -lguide" \
+--with-lapack="-L/opt/intel/mkl/lib/32 -lmkl_lapack -L/opt/intel/mkl/lib/32 -lmkl_ia32" \
 --disable-default-packages \
---enable-triutils \
---enable-epetra \
---enable-teuchos --enable-teuchos-complex \
---enable-tsfcore --enable-tsfcore-epetra \
+--enable-teuchos --enable-teuchos-extended --enable-teuchos-complex \
+--enable-thyra \
+--enable-epetra
 
-
-#--with-blas=/home/rabartl/MoochoSalsa/Salsa_arch_fast/linux-mpich-x86/lib/libblas.a \
-#--with-lapack=/home/rabartl/MoochoSalsa/Salsa_arch_fast/linux-mpich-x86/lib/liblapack.a \
-#--prefix=/home/rabartl/MoochoSalsa/Salsa_arch_fast/linux-mpich-x86
-#CXX=mpiCC \
-#CC=mpicc \
-#F77=mpif77 \
-
-# May need this???
-#--enable-mpi-compilers \
-#--with-mpi-libs=/usr/local/mpich/lib/libmpich.a \
-#--with-mpi-compilers \
-#--disable-tests \
-#--with-ldflags='-static' \
-#--enable-mpi --with-mpi-compilers --with-mpi-libs=-lmpich \
