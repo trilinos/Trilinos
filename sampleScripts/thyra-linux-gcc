@@ -2,6 +2,7 @@
 ../configure \
 --with-install="/usr/bin/install -p" \
 CXX=g++ \
+CXXFLAGS="-ansi -pedantic -Wall -g -O0" \
 CC=gcc \
 F77=g77 \
 --disable-default-packages \
