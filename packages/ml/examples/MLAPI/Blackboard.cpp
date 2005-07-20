@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     // EI will contain the imaginary part of the eigenvalues;
     
     MultiVector ER, EI;
-    Eig(A, ER, EI);
+    /// FIXME // Eig(A, ER, EI);
 
     for (int i = 0 ; i < ER.GetMyLength() ; ++i)
       cout << "ER(" << MySpace(i) << ") = " << ER(i) << endl;
