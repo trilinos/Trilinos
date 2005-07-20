@@ -174,10 +174,6 @@ void Eigs(const Operator& A, int NumEigenvalues,
   ML_THROW("Configure ML with --enable-anasazi to use Eigs()", -1);
 #endif
 
-  cout << EI;
-  cout << ER;
-  exit(0);
-
   return;
 }
 
