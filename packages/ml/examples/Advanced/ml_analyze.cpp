@@ -39,7 +39,7 @@
 // configured with --enable-epetra --enable-teuchos. This example
 // required --enable-triutils (for the definition of the linear systems)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(FIXME)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -64,7 +64,7 @@ using namespace Trilinos_Util;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
   delete MLPrec;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

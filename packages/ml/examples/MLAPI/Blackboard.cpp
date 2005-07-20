@@ -28,7 +28,7 @@
 
 #include "ml_config.h"
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
+#ifdef HAVE_ML_MLAPI_FIXME
 
 #include "MLAPI.h"
 

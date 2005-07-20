@@ -73,6 +73,9 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Usage: `%s InputFile'\n", argv[0]);
     fprintf(stderr, "An example of input file is reported\n");
     fprintf(stderr, "in the source of this example\n");
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     exit(EXIT_SUCCESS);
   }
 

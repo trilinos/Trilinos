@@ -2,7 +2,23 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, MLExamples) {
+    DIRS = ../examples/BasicExamples,
+	  #../examples/Advanced,
+          #../examples/Elasticity,
+	   ../examples/MatrixFormats,
+	  #../examples/MatrixReading,
+	   ../examples/Maxwell,
+	   ../examples/MultipleRHS,
+	   ../examples/Other,
+	  # ../examples/StandAlone,
+	   ../examples/TwoLevelDD,
+	   ../examples/Visualization,
+	   ../examples/MLAPI;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, MLTests) {
     DIRS = AztecSimple,
            Communicator,
            IFPACKSmoothers,
@@ -15,19 +31,7 @@
            Scalability,
            SelfSmoother,
            VerySimple,
-           Zoltan,
-	   ../examples/Advanced,
-	  #../examples/BasicExamples,
-	  #../examples/Elasticity,
-	   ../examples/MatrixFormats,
-	  #../examples/MatrixReading,
-	   ../examples/Maxwell,
-	   ../examples/MultipleRHS,
-	  #../examples/Other,
-	  #../examples/StandAlone,
-	   ../examples/TwoLevelDD,
-	   ../examples/Visualization,
-	   ../examples/MLAPI;
+           Zoltan;
     COMM = SERIAL, MPI;
 }
 
