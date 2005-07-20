@@ -274,13 +274,13 @@ template<typename T>
 class InPlaceTransform : public SameTypeTransform<T>
 {
  public:
-  //typename Transform<T,T>::NewTypeRef
-  //operator()
-  //( typename Transform<T,T>::OriginalTypeRef orig )
-  //{ origObj_ = &orig;
-  //  newObj_ = &orig;
-  //  return orig;
-  //}
+  typename Transform<T,T>::NewTypeRef
+  operator()
+  ( typename Transform<T,T>::OriginalTypeRef orig )
+  { origObj_ = &orig;
+    newObj_ = &orig;
+    return orig;
+  }
 
   virtual ~InPlaceTransform() {}
 };
