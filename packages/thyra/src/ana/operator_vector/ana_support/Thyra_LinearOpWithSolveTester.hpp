@@ -147,9 +147,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   using Teuchos::arrayArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   bool success = true, result;
-  const Scalar zero = ST::zero();
   const Scalar one = ST::one();
-  const Scalar half = Scalar(0.5)*one;
   const std::string &li = leadingIndent, &is = indentSpacer;
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
   
