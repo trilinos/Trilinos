@@ -275,7 +275,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   //  These tests are all disabled in TestAllClasses.cpp
   //
   int RangemapMax = 3; // should be three:  ( no change, serial, bizarre dist )
-  int DomainmapMax = 2; // should be three:  ( no change, serial, bizarre dist )
+  int DomainmapMax = 3; // should be three:  ( no change, serial, bizarre dist )
 
   //
   //  DiagonalOpts controls whether diagonal elements are left alone,
@@ -300,7 +300,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 
   if (! PerformDiagonalTest ) DiagonalOptsMax = 1 ; 
 
-  for ( int iterTrans =0 ; iterTrans < 1; iterTrans++ ) {
+  for ( int iterTrans =0 ; iterTrans < 2; iterTrans++ ) {
     bool transpose = iterTrans == 1 ; 
     
     for ( int iterDist =0 ; iterDist < iterDistMax; iterDist++ ) {
@@ -316,7 +316,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 #else
 		int iterRowindex = 0; { 
 		  int iterColindex = 0 ; { 
-		    int iterRangemap = 2; { 
+		    int iterRangemap = 1 ; { 
 		      int iterDomainmap = 0 ; {
 			int iterDiagonalOpts = 0 ; { 
 #endif
@@ -617,13 +617,13 @@ int NextMain( int argc, char *argv[] ) {
 
 
 #endif
-  if ( verbose) cout << result << " Tests failed " ; 
+  if ( ! quiet && Comm.MyPID() == 0 ) cout << result << " Tests failed " ; 
 
-  if (verbose ) cout << numtests << " Tests performed " << endl ; 
+  if (! quiet && Comm.MyPID() == 0 ) cout << numtests << " Tests performed " << endl ; 
 
 
   if ( result == 0 && numtests > 0 ) {
-    if (verbose && Comm.MyPID() == 0)
+    if (! quiet && Comm.MyPID() == 0)
       cout << endl << "TEST PASSED" << endl << endl;
   }
   else {

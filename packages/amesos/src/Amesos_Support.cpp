@@ -29,11 +29,10 @@
 #include "Amesos_Klu.h"
 #include "Amesos_Support.h"
 
-Amesos_StandardIndex::Amesos_StandardIndex( const Epetra_CrsMatrix& OriginalMatrix ) 
+Amesos_StandardIndex::Amesos_StandardIndex( const Epetra_Map& OriginalMap ) 
 {
 
 #ifdef HAVE_AMESOS_EPETRAEXT
-  const Epetra_Map& OriginalMap = OriginalMatrix.RowMap();
   int NumGlobalElements = OriginalMap.NumGlobalElements();
   int NumMyElements = OriginalMap.NumMyElements();
   StdIndexMap_ = rcp( new Epetra_Map( NumGlobalElements, NumMyElements, 0, OriginalMap.Comm() ) );

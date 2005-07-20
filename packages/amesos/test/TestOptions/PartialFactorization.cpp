@@ -40,8 +40,10 @@ int PartialFactorizationOneStep( const char* AmesosClass,
   int errors = 0 ; 
 
   const Epetra_Map *Map = &Amat->RowMap() ; 
-  const Epetra_Map *RangeMap = &Amat->OperatorRangeMap() ; 
-  const Epetra_Map *DomainMap = &Amat->OperatorDomainMap() ; 
+  const Epetra_Map *RangeMap = 
+    transpose?&Amat->OperatorDomainMap():&Amat->OperatorRangeMap() ; 
+  const Epetra_Map *DomainMap = 
+    transpose?&Amat->OperatorRangeMap():&Amat->OperatorDomainMap() ; 
 
   Epetra_Vector xexact(*DomainMap);
   Epetra_Vector x(*DomainMap);

@@ -135,8 +135,10 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   int errors = 0 ; 
 
   const Epetra_Map *Map = &MyMat->RowMap() ; 
-  const Epetra_Map *RangeMap = &MyMat->OperatorRangeMap() ; 
-  const Epetra_Map *DomainMap = &MyMat->OperatorDomainMap() ; 
+  const Epetra_Map *RangeMap = 
+    transpose?&MyMat->OperatorDomainMap():&MyMat->OperatorRangeMap() ; 
+  const Epetra_Map *DomainMap = 
+    transpose?&MyMat->OperatorRangeMap():&MyMat->OperatorDomainMap() ; 
 
   Epetra_Vector xexact(*DomainMap);
   Epetra_Vector x(*DomainMap);
@@ -185,7 +187,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     if (verbose) ParamList.set( "DebugLevel", 1 );
     if (verbose) ParamList.set( "OutputLevel", 1 );
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
-#if 0 
+#if 1 //  bug - this should be removed - I have no idea why it was commented out 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 #endif 
@@ -254,6 +256,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) );     // This should be irrelevant, but should nonetheless be legal 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
     OUR_CHK_ERR( Abase->Solve(  ) ); 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
     if ( Levels >= 2 ) 
       {
@@ -269,6 +272,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	//      We do not presently handle null lists.
 	//	OUR_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 	
       }
     else
@@ -281,6 +285,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	Problem.SetLHS( &x );
 	Problem.SetRHS( &sAx );
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
       }
     else
       {
@@ -332,7 +337,9 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	kAAx = kAx ; 
       }
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     MyMatWithDiag->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
     if ( verbose ) cout << " Levels =  " << Levels << endl ; 
     if ( verbose ) cout << " Rcond =  " << Rcond << endl ; 
@@ -455,6 +462,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Problem.SetRHS( &Bb );
     OUR_CHK_ERR( Abase->Solve(  ) ); 
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
     ind[0] = 0;
     val[0] = 1 ; 
@@ -463,6 +471,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
     //  if (verbose) cout << " B' = " << B << endl ; 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
     //
     //  Solve B' x1 = x 
@@ -471,6 +480,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Problem.SetRHS( &Bx );
     OUR_CHK_ERR( Abase->Solve(  ) ); 
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     //  if (verbose) cout << " x1 = " << x1 << endl ; 
 
     if ( B.MyGRID( 0 ) )
@@ -479,6 +489,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     //  if (verbose) cout << " B'' = " << B << endl ; 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     //
     //  Solve B" x2 = x1
     //
@@ -486,12 +497,14 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Problem.SetRHS( &Bx1 );
     OUR_CHK_ERR( Abase->Solve(  ) ); 
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     //  if (verbose) cout << " x2 = " << x2 << endl ; 
 
     //
     //  Compute the residual: B B' B" x2 - b
     //
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     B.Multiply( transpose, Bx2, Btemp ) ; //  temp = B x2
 
     //  if (verbose) cout << " temp = " << temp << endl ; 
@@ -503,6 +516,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
 
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     //  if (verbose) cout << " x2 = " << x2 << endl ; 
 
 
@@ -513,6 +527,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
     //  if (verbose) cout << " temp = " << temp << endl ; 
     //  if (verbose) cout << " b = " << b << endl ; 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
 
 
@@ -523,6 +538,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     double norm_residual;
     Bresidual.Norm2( &norm_residual ) ; 
 
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     if (iam == 0 ) {
       if (verbose) cout << " norm2(B B' B'' x-b) = " << norm_residual << endl ; 
       //
@@ -536,6 +552,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	errors += 1 ; 
       }
     }
+    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     if ( AllowDiffProbSize ) {
       delete BMap;
     }

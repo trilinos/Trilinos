@@ -41,7 +41,7 @@ class Amesos_StandardIndex
 {
  public:
   //! Default constructor.
-  Amesos_StandardIndex( const Epetra_CrsMatrix& OriginalCrsMatrix ) ;
+  Amesos_StandardIndex( const Epetra_Map& OriginalMap ) ;
   
   //! Default destructor.
   ~Amesos_StandardIndex() {}

@@ -122,8 +122,11 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   iam = Comm().MyPID() ;
 
   const Epetra_Map &OriginalMatrixMap = RowMatrixA_->RowMatrixRowMap() ;
-  const Epetra_Map &OriginalDomainMap = GetProblem()->GetOperator()->OperatorDomainMap();
-  const Epetra_Map &OriginalRangeMap = GetProblem()->GetOperator()->OperatorRangeMap();
+  const Epetra_Map &OriginalDomainMap = 
+    (UseTranspose())?GetProblem()->GetOperator()->OperatorRangeMap():GetProblem()->GetOperator()->OperatorDomainMap();
+  const Epetra_Map &OriginalRangeMap = 
+    UseTranspose()?GetProblem()->GetOperator()->OperatorDomainMap():
+    GetProblem()->GetOperator()->OperatorRangeMap();
 
   NumGlobalElements_ = RowMatrixA_->NumGlobalRows();
   numentries_ = RowMatrixA_->NumGlobalNonzeros();
@@ -158,19 +161,22 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   CrsMatrixA_ = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
   Reindex_ =  ( CrsMatrixA_ != 0 ) ;
   if ( Reindex_ ) {
-    //    Need to figure out when we don't need to reindex - bug #1501  not really this bug # 
     //    Reindex_ = false ; 
   }
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   if  ( Reindex_ ) {
 #ifdef HAVE_AMESOS_EPETRAEXT
-    StdIndex_ = rcp( new Amesos_StandardIndex( *CrsMatrixA_  ) );
+    const Epetra_Map& OriginalMap = CrsMatrixA_->RowMap();
+    StdIndex_ = rcp( new Amesos_StandardIndex( OriginalMap  ) );
+    const Epetra_Map& OriginalColMap = CrsMatrixA_->RowMap();
+    StdIndexDomain_ = rcp( new Amesos_StandardIndex( OriginalDomainMap  ) );
+    StdIndexRange_ = rcp( new Amesos_StandardIndex( OriginalRangeMap  ) );
 
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     //    StdIndexMatrix_ = &((*MatTrans_)( *CrsMatrixA_ ));
     StdIndexMatrix_ = StdIndex_->StandardizeIndex( CrsMatrixA_ );
 #else
-    cerr << "Amesos_Klu requires EpetraExt to reindex matrices." << endl 
+    cout << "Amesos_Klu requires EpetraExt to reindex matrices." << endl 
 	 <<  " Please rebuild with the EpetraExt library by adding --enable-epetraext to your configure invocation" << endl ;
     return 13 ; 
 #endif
@@ -192,18 +198,20 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-1);
-    
-    if ( false && OriginalRangeMap.SameAs( OriginalMatrixMap ) )
+
+#if 0    
+    if ( true || OriginalRangeMap.SameAs( OriginalMatrixMap ) )
       ImportRangeToSerial_ = ImportToSerial_ ;
     else
       ImportRangeToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalRangeMap) );
     
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-    if ( false && OriginalDomainMap.SameAs( OriginalMatrixMap ) )
+    if ( true || OriginalDomainMap.SameAs( OriginalMatrixMap ) )
       ImportDomainToSerial_ = ImportToSerial_ ;
-    else
-      ImportDomainToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalDomainMap) );
-
+    else {
+    }
+    //      ImportDomainToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalDomainMap) );
+#endif
 #if 0    
     assert ( OriginalRangeMap.SameAs( OriginalMatrixMap ) ) ;
     assert ( OriginalDomainMap.SameAs( OriginalMatrixMap ) );
@@ -225,18 +233,6 @@ int Amesos_Klu::CreateSerialMap()
 {
 
 assert( false ) ; 
-#if 0
-  NumGlobalElements_ = RowMatrixA_->NumGlobalRows();
-  numentries_ = RowMatrixA_->NumGlobalNonzeros();
-  int NumMyElements = 0;
-  if (iam == 0) 
-    NumMyElements = NumGlobalElements_;
-
-  SerialMap_ = new Epetra_Map(NumGlobalElements_,NumMyElements,0,Comm());
-  if (SerialMap_ == 0)
-    AMESOS_CHK_ERR(-1);
-  
-#endif
   return(0);
 }
 
@@ -539,7 +535,7 @@ int Amesos_Klu::NumericFactorization()
 int Amesos_Klu::Solve() 
 {
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering Solve()" << endl ; 
+ if ( debug_ )     cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering Solve()" << endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
   
@@ -554,17 +550,9 @@ int Amesos_Klu::Solve()
   Epetra_MultiVector* vecB ;
 
   if ( Reindex_ ) { 
-#if 0
-    if ( FirstSolve_ ) { 
-      VecTrans_ = rcp( new EpetraExt::MultiVector_Reindex( *ContiguousMap_ ) );
-      FirstSolve_ = false ; 
-    }
-    vecX = &((*VecTrans_)( *OrigVecX ));
-    vecB = &((*VecTrans_)( *OrigVecB ));
-#endif
 #ifdef HAVE_AMESOS_EPETRAEXT
-    vecX = StdIndex_->StandardizeIndex( OrigVecX ) ;
-    vecB = StdIndex_->StandardizeIndex( OrigVecB ) ;
+    vecX = StdIndexDomain_->StandardizeIndex( OrigVecX ) ;
+    vecB = StdIndexRange_->StandardizeIndex( OrigVecB ) ;
 #else
     AMESOS_CHK_ERR( -13 ) ; // Amesos_Klu can't handle non-standard indexing without EpetraExt 
 #endif
@@ -587,15 +575,12 @@ int Amesos_Klu::Solve()
   Epetra_MultiVector* SerialB = 0;
   Epetra_MultiVector* SerialX = 0;
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   //  Extract Serial versions of X and B
   double *SerialXvalues ;
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   Epetra_MultiVector* SerialXextract = 0;
   Epetra_MultiVector* SerialBextract = 0;
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   ResetTime();
 
   //  Copy B to the serial version of B
@@ -605,37 +590,18 @@ int Amesos_Klu::Solve()
     SerialX = vecX;
   } else {
     assert (UseDataInPlace_ == 0);
-#if 0
-    const Epetra_Map &OriginalMatrixMap = RowMatrixA_->RowMatrixRowMap();
-
-    // check whether the stored ImportToSerial_ (if allocated) 
-    // is still valid or not.
-    if (ImportToSerial_ != 0) {
-      if (!(OriginalMatrixMap.SameAs(ImportToSerial_->TargetMap()))) {
-	delete SerialMap_;
-	AMESOS_CHK_ERR(CreateSerialMap());
-	delete ImportToSerial_;
-	ImportToSerial_ = 0;
-      }
-    }
-
-    if (ImportToSerial_ == 0) {
-      ImportToSerial_ = new Epetra_Import(*SerialMap_,OriginalMatrixMap);
-      assert (ImportToSerial_ != 0);
-    }
-#endif
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
-
     assert ( SerialBextract == 0 ) ; 
     assert ( SerialXextract == 0 ) ; 
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
     SerialXextract = new Epetra_MultiVector(*SerialMap_,NumVectors);
     SerialBextract = new Epetra_MultiVector(*SerialMap_,NumVectors);
     
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecB->Map() ) );
     SerialBextract->Import(*vecB,*ImportRangeToSerial_,Insert);
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+
     SerialB = SerialBextract ;
     SerialX = SerialXextract ;
   }
@@ -646,18 +612,7 @@ int Amesos_Klu::Solve()
   //  Call KLU to perform the solve
 
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
-
-#if 0
-  cout << " usedata in place = " << UseDataInPlace_ << endl ; 
-
-  cout << " SerialB = " ; 
-  SerialB->Print( cout ) ; 
-  cout << " SerialX = " ; 
-  SerialX->Print( cout ) ; 
-
-  cout << __FILE__ << "::" << __LINE__ << endl ; 
-#endif
-  SerialX->Scale(1.0, *SerialB) ;
+  SerialX->Scale(1.0, *SerialB) ;    // X = B (Klu overwrites B with X)
   ResetTime();
 
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
@@ -686,6 +641,7 @@ int Amesos_Klu::Solve()
 
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   if (UseDataInPlace_ == 0) {
+    ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
     vecX->Export( *SerialX, *ImportDomainToSerial_, Insert ) ;
     delete SerialBextract ;
     delete SerialXextract ;

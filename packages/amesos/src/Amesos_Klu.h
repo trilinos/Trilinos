@@ -257,6 +257,8 @@ private:
   //
   Amesos_Klu_Pimpl *PrivateKluData_; 
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndex_; 
+  Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexRange_; 
+  Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexDomain_; 
 
   //! Ap, Ai, Aval form the compressed row storage used by Klu
   vector <int> Ap;
@@ -294,6 +296,8 @@ private:
   Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
   //! Points to a Contiguous Copy of A 
   Epetra_RowMatrix* StdIndexMatrix_ ; 
+  Epetra_MultiVector* StdIndexDomainVector_ ; 
+  Epetra_MultiVector* StdIndexRangeVector_ ; 
   //! Points to a Serial Copy of A 
   Epetra_RowMatrix* SerialMatrix_ ; 
 
