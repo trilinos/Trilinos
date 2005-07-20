@@ -93,6 +93,18 @@ int main(int argc, char *argv[])
   Epetra_Vector* readb;
   Epetra_Vector* readxexact;
   
+  std::ifstream data_file;
+  data_file.open((char*)matrix_file.c_str());
+  if (!data_file.good()) 
+  {
+    std::cerr << "Error opening file\n";
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    exit(EXIT_SUCCESS);
+  }
+  data_file.close();
+
   // Call routine to read in HB problem
   Trilinos_Util_ReadHb2Epetra((char*)matrix_file.c_str(), Comm, readMap, 
                               readA, readx, readb, readxexact);
@@ -101,7 +113,7 @@ int main(int argc, char *argv[])
   // Note that linear map are used for simplicity only!
   // Amesos (through Epetra) can support *any* map.
   Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
-  
+
   // Create the distributed matrix, based on Map.
   Epetra_CrsMatrix A(Copy, map, 0);
 

@@ -27,7 +27,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Epetra_config.h"
+#include "Amesos_ConfigDefs.h"
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
