@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#-------------------------------------------------------------------------
+# We'll install into the build directory. The result of `pwd` will be used
+# as the argument to the --prefix flag in configure.
+#-------------------------------------------------------------------------
+BUILD_DIR=`pwd`
+
+#-------------------------------------------------------------------------
+# Search for the intel compiler. I've installed my Intel stuff in 
+# /usr/local/intel, so we'll try looking there first. If we don't find
+# the C++ compiler there, we'll search for icc. 
+#------------------------------------------------------------------------
+
+if [ -x /usr/local/intel/bin/icc ]; then 
+INTEL_DIR=/usr/local/intel/bin;
+else
+INTEL_DIR=`find / -name icc -printf '%h'`;
+fi
+
+#-------------------------------------------------------------------------
+# Now that we've found the path to the Intel distribution, define the
+# compilers and library search path. 
+#-------------------------------------------------------------------------
+INTEL_CXX=${INTEL_DIR}/icc
+INTEL_CC=${INTEL_DIR}/icc
+INTEL_LIB=${INTEL_DIR}/../lib
+
+../configure --enable-mpi --with-mpi-libs="-lmpich -lpmpich" \
+--with-mpi-incdir="/usr/local/include" \
+CXX=${INTEL_CXX} \
+CC=${INTEL_CC} \
+CXXFLAGS="-O3 -finline-functions -cxxlib-gcc -I/usr/local/include" \
+--with-ldflags=-L${INTEL_LIB} \
+FLIBS="-lfrtbegin -lg2c -lm -lgcc_s -lstdc++ -lgcc" \
+--with-blas="-L/usr/local/intel/mkl70/lib/32 -lmkl_lapack -lmkl_ia32" \
+--with-libs="-lexpat" \
+--disable-default-packages \
+--enable-teuchos --enable-teuchos-extended --enable-teuchos-complex --enable-teuchos-expat \
+--enable-thyra \
+--enable-epetra --enable-epetra-thyra
+
