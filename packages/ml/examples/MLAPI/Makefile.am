@@ -15,10 +15,7 @@ noinst_PROGRAMS = Blackboard            \
                   MultiLevel            \
                   Richardson            \
                   AdaptiveSA            \
-                  AdaptiveSA_Elasticity \
-                  AdaptiveSA_Tire       \
-                  AdaptiveSA_SAMIS      \
-                  NonSymmetricSA
+                  AdaptiveSA_Elasticity 
 
 Blackboard_SOURCES  = $(srcdir)/Blackboard.cpp
 Blackboard_CPPFLAGS = ${ml_common_include_locations}
@@ -56,11 +53,11 @@ AdaptiveSA_Elasticity_CXXFLAGS = ${ml_common_include_locations}
 AdaptiveSA_Elasticity_LDADD    = ${ml_libs} 
 AdaptiveSA_Elasticity_LINK     = ${mllink}
 
-AdaptiveSA_Tire_SOURCES  = $(srcdir)/AdaptiveSA_Tire.cpp
-AdaptiveSA_Tire_CPPFLAGS = ${ml_common_include_locations}
-AdaptiveSA_Tire_CXXFLAGS = ${ml_common_include_locations}
-AdaptiveSA_Tire_LDADD    = ${ml_libs} 
-AdaptiveSA_Tire_LINK     = ${mllink}
+#AdaptiveSA_Tire_SOURCES  = $(srcdir)/AdaptiveSA_Tire.cpp
+#AdaptiveSA_Tire_CPPFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_Tire_CXXFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_Tire_LDADD    = ${ml_libs} 
+#AdaptiveSA_Tire_LINK     = ${mllink}
 
 Richardson_SOURCES  = $(srcdir)/Richardson.cpp
 Richardson_CPPFLAGS = ${ml_common_include_locations}
@@ -68,14 +65,14 @@ Richardson_CXXFLAGS = ${ml_common_include_locations}
 Richardson_LDADD    = ${ml_libs} 
 Richardson_LINK     = ${mllink}
 
-NonSymmetricSA_SOURCES  = $(srcdir)/NonSymmetricSA.cpp
-NonSymmetricSA_CPPFLAGS = ${ml_common_include_locations}
-NonSymmetricSA_CXXFLAGS = ${ml_common_include_locations}
-NonSymmetricSA_LDADD    = ${ml_libs} 
-NonSymmetricSA_LINK     = ${mllink}
+#NonSymmetricSA_SOURCES  = $(srcdir)/NonSymmetricSA.cpp
+#NonSymmetricSA_CPPFLAGS = ${ml_common_include_locations}
+#NonSymmetricSA_CXXFLAGS = ${ml_common_include_locations}
+#NonSymmetricSA_LDADD    = ${ml_libs} 
+#NonSymmetricSA_LINK     = ${mllink}
 
-AdaptiveSA_SAMIS_SOURCES  = $(srcdir)/AdaptiveSA_SAMIS.cpp
-AdaptiveSA_SAMIS_CPPFLAGS = ${ml_common_include_locations}
-AdaptiveSA_SAMIS_CXXFLAGS = ${ml_common_include_locations}
-AdaptiveSA_SAMIS_LDADD    = ${ml_libs} 
-AdaptiveSA_SAMIS_LINK     = ${mllink}
+#AdaptiveSA_SAMIS_SOURCES  = $(srcdir)/AdaptiveSA_SAMIS.cpp
+#AdaptiveSA_SAMIS_CPPFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_SAMIS_CXXFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_SAMIS_LDADD    = ${ml_libs} 
+#AdaptiveSA_SAMIS_LINK     = ${mllink}
