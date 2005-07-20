@@ -1216,23 +1216,26 @@ preconditioner computational work while maintaining symmetry by doing edge-node
 relaxation on the first leg of the V-cycle, and node-edge relaxation on the
 second leg. Default: {\tt true}.}
 
-\choicebox{\tt smoother: Hiptmair subsmoother type $\star$}{[{\tt string}] Smoother to be used
+\choicebox{\tt subsmoother: type $\star$}{[{\tt string}] Smoother to be used
 as a subsmoother at each step of Hiptmair smoothing.  It can assume on the
   following values: {\tt MLS}, {\tt symmetric Gauss-Seidel}. Default: {\tt
     MLS}.}
 
-\choicebox{\tt smoother: Hiptmair MLS polynomial order $\star$}{[{\tt int}] Polynomial
-order for {\tt MLS} sub-smoother.  Default: 3.}
+\choicebox{\tt subsmoother: MLS polynomial order $\star$}{[{\tt int}] Polynomial
+order for Hiptmair {\tt MLS} sub-smoother.  Default: 3.}
 
-\choicebox{\tt smoother: Hiptmair SGS damping factor $\star$}{[{\tt double}]
-Damping factor for {\tt symmetric Gauss-Seidel}. Automatically calculated in
+\choicebox{\tt subsmoother: MLS alpha $\star$}{[{\tt int}] Polynomial
+coefficient for Hiptmair {\tt MLS} sub-smoother.  Default: 3.}
+
+\choicebox{\tt subsmoother: SGS damping factor $\star$}{[{\tt double}]
+Damping factor for Hiptmair subsmoother {\tt symmetric Gauss-Seidel}. Automatically calculated in
 the range $(0,2)$.}
 
-\choicebox{\tt smoother: Hiptmair SGS edge sweeps $\star$}{[{\tt int}] Number of iterations
- of SGS sub-smoothing to perform on edge problem. Default: 1.}
+\choicebox{\tt subsmoother: SGS edge sweeps $\star$}{[{\tt int}] Number of iterations
+ of Hiptmair subsmoother SGS to perform on edge problem. Default: 1.}
 
-\choicebox{\tt smoother: Hiptmair SGS node sweeps $\star$}{[{\tt int}] Number of iterations
- of SGS sub-smoothing to perform on nodal projection problem.
+\choicebox{\tt subsmoother: SGS node sweeps $\star$}{[{\tt int}] Number of iterations
+ of Hiptmair subsmoother SGS to perform on nodal projection problem.
 Default: 1.}
 
 %--------------------------------------%
@@ -1246,8 +1249,10 @@ value. Default: 128.}
 \choicebox{\tt coarse: type}{[{\tt string}] Coarse solver. 
 See Table~\ref{tab:ml:coarse}. Default: {\tt Amesos\_KLU}.}
 
-\choicebox{\tt coarse: sweeps}{[{\tt int}] (Only for {\tt Jacobi} and {\tt
-                                            Gauss-Seidel}.) Number of
+\choicebox{\tt coarse: sweeps}{[{\tt int}] (Only for {\tt Jacobi}, {\tt
+                                            Gauss-Seidel}, {\tt symmetric
+Gauss-Seidel}, and {\tt Hiptmair}.)
+ Number of
 sweeps in the coarse solver. Default: 1.}
 
 \choicebox{\tt coarse: damping factor}{[{\tt double}] (Only for {\tt Jacobi}
@@ -1260,11 +1265,11 @@ Damping factor in the coarse solver. Default: 0.67.}
     optimal number of processors to be used. Default: -1.}
 
 %------------------------------------%
-\subsubsection{Load-balancing Options (for Maxwell Equations Only)}
+\subsubsection{Load-balancing Options}
 %------------------------------------%
 
 \choicebox{\tt repartition: enable}{[{\tt bool}] Enable/disable repartitioning.
-Default: {\tt falsfalse}.}
+Default: {\tt false}.}
 
 \choicebox{\tt repartition: partitioner}{[{\tt string}] Partitioning package
 to use. Can assume the following values: {\tt Zoltan, ParMETIS}. Default: {\tt
@@ -1292,14 +1297,41 @@ edges that should be on a processor once repartitioning is done. Default: 20.}
 \choicebox{\tt repartition: Zoltan dimensions}{[{\tt int}] Dimension of the
   problem. Can assume the following values: $\{2,3\}$.}
 
-\choicebox{\tt repartition: Zoltan node coordinates}{[{\tt double*}] Pointer to array of
-double node coordinates.  The array is one-dimensional, containing $x$-,$y$-, and
-$z$- coordinates, in that order.}
+%------------------------------------%
+\subsubsection{Visualization}
+%------------------------------------%
 
-\choicebox{\tt repartition: Zoltan edge coordinates}{[{\tt double*}] Maxwell-specific option.
-Pointer to array of
-double edge coordinates.  The array is one-dimensional, containing $x$-,$y$-, and
-$z$- coordinates, in that order.}
+\choicebox{\tt viz: output format}{[{\tt string}]  The format of the
+visualization files.  Can assume the following values: {\tt vtk}, {\tt xyz},
+{\tt openx}.  Default: {\tt vtk}.}
+
+\choicebox{\tt viz: print starting solution}{[{\tt bool}]  Enable/disable
+printing of initial starting solution.}
+
+\choicebox{\tt viz: equation to plot}{[{\tt bool}] In the case of systems of
+PDEs, the equation number to print.  Default: all equations.}
+
+%------------------------------------%
+\subsubsection{Miscellaneous}
+%------------------------------------%
+
+\choicebox{\tt x-coordinates}{[{\tt double*}] Pointer to array of
+$x$-coordinates of mesh nodes.}
+
+\choicebox{\tt y-coordinates}{[{\tt double*}] Pointer to array of
+$y$-coordinates of mesh nodes.}
+
+\choicebox{\tt z-coordinates}{[{\tt double*}] Pointer to array of
+$z$-coordinates of mesh nodes.}
+
+\choicebox{\tt edge: x-coordinates}{[{\tt double*}] Pointer to array of
+$x$-coordinates of mesh edges. (Maxwell only)}
+
+\choicebox{\tt edge: y-coordinates}{[{\tt double*}] Pointer to array of
+$y$-coordinates of mesh edges. (Maxwell only)}
+
+\choicebox{\tt edge: z-coordinates}{[{\tt double*}] Pointer to array of
+$z$-coordinates of mesh edges. (Maxwell only)}
 
 %%% ======================= %%%
 %%% Detection of null space %%%
@@ -1427,15 +1459,15 @@ Anorm \\
 \hline
 \hline
 \tt smoother: sweeps & \tt int & 2 & 2 & 2 & 1 \\
-\tt smoother: damping factor & \tt double & 0.67  & -- & --  & 0.67 \\
+\tt smoother: damping factor & \tt double & 0.67  & -- & --  & 1.0 \\
 \tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
 & \tt both \\
 \tt smoother: type & \tt string & \tt Gauss-Seidel & \tt Aztec & \tt
-Aztec & Hiptmair \\
+Aztec & Hiptmair/MLS \\
 \tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
-false & -- \\
+false & false \\
 \tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 3 \\
-\tt smoother: MLS alpha & \tt double & -- & -- & -- & 30.0 \\
+\tt smoother: MLS alpha & \tt double & -- & -- & -- & 27.0 \\
 \hline
 \hline
 \tt coarse: type & \tt string & \tt Amesos\_KLU & \tt Amesos\_KLU  & \tt
