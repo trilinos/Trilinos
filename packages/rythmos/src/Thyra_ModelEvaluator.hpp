@@ -109,7 +109,9 @@ public:
 
   //@}
 
+#ifdef SUPPORTS_PROTECTED_NESTED_CLASS_ACCESS // Added since gcc 3.3.4 does not do the right thing here!
 protected:
+#endif
 
   /** \name Protected types */
   //@{
