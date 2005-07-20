@@ -14,7 +14,7 @@
            PreconditionerFactory,
 	   SetParameters;
     ARGS = -v;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-4);
 }
 
 # Removing PreconditionerFactory from MPI for now because it seems to hang.
@@ -22,5 +22,5 @@
 (FRAMEWORK, IFPACKExamples) {
     DIRS = ../example;
     ARGS = -v;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-4);
 }
