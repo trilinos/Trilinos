@@ -29,7 +29,7 @@
 #ifndef THYRA_SERIAL_MULTI_VECTOR_BASE_DECL_HPP
 #define THYRA_SERIAL_MULTI_VECTOR_BASE_DECL_HPP
 
-#include "Thyra_MultiVectorBaseDecl.hpp"
+#include "Thyra_MultiVectorDefaultBaseDecl.hpp"
 #include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 #include "Teuchos_BLAS.hpp"
 
@@ -64,7 +64,7 @@ namespace Thyra {
  */
 template<class Scalar>
 class SerialMultiVectorBase
-  : virtual public MultiVectorBase<Scalar>
+  : virtual public MultiVectorDefaultBase<Scalar>
   , virtual protected SingleScalarEuclideanLinearOpBase<Scalar>
 {
 public:

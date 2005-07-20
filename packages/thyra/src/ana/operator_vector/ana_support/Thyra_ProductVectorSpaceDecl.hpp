@@ -30,6 +30,7 @@
 #define THYRA_PRODUCT_VECTOR_SPACE_DECL_HPP
 
 #include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_VectorSpaceDefaultBase.hpp"
 
 namespace Thyra {
 
@@ -119,7 +120,10 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class ProductVectorSpace : virtual public ProductVectorSpaceBase<Scalar> {
+class ProductVectorSpace
+  : virtual public ProductVectorSpaceBase<Scalar>
+  , virtual protected VectorSpaceDefaultBase<Scalar>
+{
 public:
 
   /** @name Constructors/initializers/accessors */

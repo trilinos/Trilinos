@@ -32,7 +32,8 @@
 #include "Thyra_describeLinearOpDecl.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
-#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_AssertOp.hpp"
 #include "Thyra_AssertOp.hpp"
 
 template<class RangeScalar, class DomainScalar>

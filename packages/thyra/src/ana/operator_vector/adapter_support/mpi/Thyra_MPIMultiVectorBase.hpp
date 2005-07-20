@@ -30,7 +30,7 @@
 #define THYRA_MPI_MULTI_VECTOR_BASE_HPP
 
 #include "Thyra_MPIMultiVectorBaseDecl.hpp"
-#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_EuclideanLinearOpBase.hpp"
 #include "Thyra_MPIVectorSpaceBase.hpp"
 #include "Thyra_ExplicitMultiVectorView.hpp"

@@ -29,7 +29,7 @@
 #ifndef THYRA_VECTOR_MULTI_VECTOR_DECL_HPP
 #define THYRA_VECTOR_MULTI_VECTOR_DECL_HPP
 
-#include "Thyra_VectorBaseDecl.hpp"
+#include "Thyra_VectorDefaultBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -67,7 +67,7 @@ namespace Thyra {
  * case is not finished yet but can be put together when needed.
  */
 template<class Scalar>
-class VectorMultiVector : virtual public VectorBase<Scalar> {
+class VectorMultiVector : virtual public VectorDefaultBase<Scalar> {
 public:
 
   /** \brief . */

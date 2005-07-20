@@ -26,17 +26,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTI_VECTOR_HPP
-#define THYRA_MULTI_VECTOR_HPP
+#ifndef THYRA_MULTI_VECTOR_BASE_HPP
+#define THYRA_MULTI_VECTOR_BASE_HPP
 
 #include "Thyra_MultiVectorBaseDecl.hpp"
 #include "Thyra_LinearOpBase.hpp"
-#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Thyra_MultiVectorCols.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TestForException.hpp"
 
@@ -64,108 +62,6 @@ MultiVectorBase<Scalar>::clone_mv() const
     copy = createMembers(range,domain.dim());
   assign( &*copy, *this );
   return copy;
-}
-
-// Sub-view methods
-
-template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-MultiVectorBase<Scalar>::subView( const Range1D& colRng_in ) const
-{
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore        *wss      = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar>  &domain   = *this->domain();
-  const VectorSpaceBase<Scalar>  &range    = *this->range();
-  const Index                    dimDomain = domain.dim();
-  const Range1D                  colRng    = RangePack::full_range(colRng_in,1,dimDomain);
-  if( colRng.lbound() == 1 && static_cast<Index>(colRng.ubound()) == dimDomain )
-    return Teuchos::rcp(this,false); // Takes all of the columns!
-  if( colRng.size() ) {
-    // We have to create a view of a subset of the columns
-    Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
-    for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
-      col_vecs[j-colRng.lbound()] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(j));
-    return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
-  }
-  return Teuchos::null; // There was an empty set in colRng_in!
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-MultiVectorBase<Scalar>::subView( const Range1D& colRng_in )
-{
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore        *wss      = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar>  &domain   = *this->domain();
-  const VectorSpaceBase<Scalar>  &range    = *this->range();
-  const Index                    dimDomain = domain.dim();
-  const Range1D                  colRng    = RangePack::full_range(colRng_in,1,dimDomain);
-  if( colRng.lbound() == 1 && static_cast<Index>(colRng.ubound()) == dimDomain )
-    return Teuchos::rcp(this,false); // Takes all of the columns!
-  if( colRng.size() ) {
-    // We have to create a view of a subset of the columns
-    Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
-    for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
-      col_vecs[j-colRng.lbound()] = this->col(j);
-    return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
-  }
-  return Teuchos::null; // There was an empty set in colRng_in!
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-MultiVectorBase<Scalar>::subView( const int numCols, const int cols[] ) const
-{
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore        *wss      = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar>  &range    = *this->range();
-#ifdef _DEBUG
-  const VectorSpaceBase<Scalar>  &domain   = *this->domain();
-  const Index                    dimDomain = domain.dim();
-  const char msg_err[] = "MultiVectorBase<Scalar>::subView(numCols,cols[]): Error!";
-   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
-#endif
-  // We have to create a view of a subset of the columns
-  Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > > col_vecs(wss,numCols);
-  for( int k = 0; k < numCols; ++k ) {
-    const int col_k = cols[k];
-#ifdef _DEBUG
-    TEST_FOR_EXCEPTION(
-      col_k < 1 || dimDomain < col_k, std::invalid_argument
-      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"
-      );
-#endif
-    col_vecs[k] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(col_k));
-  }
-  return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(numCols),&col_vecs[0]));
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-MultiVectorBase<Scalar>::subView( const int numCols, const int cols[] )
-{
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore        *wss      = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar>  &range    = *this->range();
-#ifdef _DEBUG
-  const VectorSpaceBase<Scalar>  &domain   = *this->domain();
-  const Index                    dimDomain = domain.dim();
-  const char msg_err[] = "MultiVectorBase<Scalar>::subView(numCols,cols[]): Error!";
-   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
-#endif
-  // We have to create a view of a subset of the columns
-  Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > > col_vecs(wss,numCols);
-  for( int k = 0; k < numCols; ++k ) {
-    const int col_k = cols[k];
-#ifdef _DEBUG
-    TEST_FOR_EXCEPTION(
-      col_k < 1 || dimDomain < col_k, std::invalid_argument
-      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"
-      );
-#endif
-    col_vecs[k] = this->col(col_k);
-  }
-  return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(numCols),&col_vecs[0]));
 }
 
 // Collective applyOp() methods
@@ -423,4 +319,4 @@ MultiVectorBase<Scalar>::clone() const
 
 } // end namespace Thyra
 
-#endif // THYRA_MULTI_VECTOR_HPP
+#endif // THYRA_MULTI_VECTOR_BASE_HPP

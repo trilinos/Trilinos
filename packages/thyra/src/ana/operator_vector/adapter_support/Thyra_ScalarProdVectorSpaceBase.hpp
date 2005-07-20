@@ -30,7 +30,7 @@
 #define THYRA_VECTOR_SPACE_STD_BASE_HPP
 
 #include "Thyra_ScalarProdVectorSpaceBaseDecl.hpp"
-#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_VectorSpaceDefaultBase.hpp"
 #include "Thyra_EuclideanScalarProd.hpp"
 #include "Thyra_AssertOp.hpp"
 

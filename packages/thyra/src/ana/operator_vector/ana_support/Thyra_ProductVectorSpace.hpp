@@ -233,7 +233,7 @@ template<class Scalar>
 Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
 ProductVectorSpace<Scalar>::createMembers(int numMembers) const
 {
-  return VectorSpaceBase<Scalar>::createMembers(numMembers); // ToDo: Specialize for ProductMultiVector when needed!
+  return VectorSpaceDefaultBase<Scalar>::createMembers(numMembers); // ToDo: Specialize for ProductMultiVector when needed!
 }
 
 template<class Scalar>

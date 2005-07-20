@@ -29,7 +29,7 @@
 #ifndef THYRA_SCALAR_PROD_VECTOR_SPACE_BASE_DECL_HPP
 #define THYRA_SCALAR_PROD_VECTOR_SPACE_BASE_DECL_HPP
 
-#include "Thyra_VectorSpaceBaseDecl.hpp"
+#include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -65,7 +65,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
 template<class Scalar>
-class ScalarProdVectorSpaceBase : virtual public VectorSpaceBase<Scalar> {
+class ScalarProdVectorSpaceBase : virtual public VectorSpaceDefaultBase<Scalar> {
 public:
 
   /** @name Constructors / initializers */

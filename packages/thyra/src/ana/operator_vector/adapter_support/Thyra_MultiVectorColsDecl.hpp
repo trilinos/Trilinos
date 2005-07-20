@@ -29,7 +29,7 @@
 #ifndef TSF_MULTI_VECTOR_COlS_DECL_HPP
 #define TSF_MULTI_VECTOR_COlS_DECL_HPP
 
-#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_SingleRhsLinearOpBase.hpp"
@@ -50,7 +50,7 @@ namespace Thyra {
  */
 template<class Scalar>
 class MultiVectorCols
-  : virtual public MultiVectorBase<Scalar>
+  : virtual public MultiVectorDefaultBase<Scalar>
   , virtual protected SingleRhsLinearOpBase<Scalar>
 {
 public:

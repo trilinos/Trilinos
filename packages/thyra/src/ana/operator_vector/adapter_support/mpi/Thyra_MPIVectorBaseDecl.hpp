@@ -29,7 +29,7 @@
 #ifndef THYRA_MPI_VECTOR_BASE_DECL_HPP
 #define THYRA_MPI_VECTOR_BASE_DECL_HPP
 
-#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_MPIVectorSpaceBaseDecl.hpp"
 
 namespace Thyra {
@@ -99,7 +99,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_adapters_MPI_support_grp
  */
 template<class Scalar>
-class MPIVectorBase : virtual public VectorBase<Scalar> {
+class MPIVectorBase : virtual public VectorDefaultBase<Scalar> {
 public:
 
   /** \brief . */

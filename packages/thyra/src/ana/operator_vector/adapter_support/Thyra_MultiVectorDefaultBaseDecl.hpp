@@ -21,35 +21,43 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 // 
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_VECTOR_SPACE_BASE_HPP
-#define THYRA_VECTOR_SPACE_BASE_HPP
+#ifndef THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP
+#define THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP
 
-#include "Thyra_VectorSpaceBaseDecl.hpp"
-#include "Thyra_VectorBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_MultiVectorBaseDecl.hpp"
+#include "RTOpPack_RTOpT.hpp"
 
 namespace Thyra {
 
-// Virtual functions with default implementations
-
+/** \brief Node subclass that provides default implementations for as many
+ * other functions as is reasonable.
+ *
+ * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
+ */
 template<class Scalar>
-bool VectorSpaceBase<Scalar>::isInCore() const
+class MultiVectorDefaultBase : virtual public MultiVectorBase<Scalar>
 {
-  return false;
-}
+public:
 
-template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
-VectorSpaceBase<Scalar>::clone() const
-{
-  return Teuchos::null;
-}
+  /** Overridden from MultiVectorBase */
+  //@{
+  /** \brief . */
+  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const;
+  /** \brief . */
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& colRng );
+  /** \brief . */
+  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
+  /** \brief . */
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
+  //@}
 
-} // end namespace Thyra
+};
 
-#endif // THYRA_VECTOR_SPACE_BASE_HPP
+} // namespace Thyra
+
+#endif // THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP

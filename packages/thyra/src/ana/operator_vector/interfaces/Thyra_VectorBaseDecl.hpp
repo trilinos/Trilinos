@@ -26,12 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_VECTOR_DECL_HPP
-#define THYRA_VECTOR_DECL_HPP
+#ifndef THYRA_VECTOR_BASE_DECL_HPP
+#define THYRA_VECTOR_BASE_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorBaseDecl.hpp"
-#include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
 namespace Thyra {
@@ -118,12 +117,10 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class Scalar>
-class VectorBase : virtual public MultiVectorBase<Scalar>, virtual protected SingleRhsLinearOpBase<Scalar>
+class VectorBase : virtual public MultiVectorBase<Scalar>
 {
 public:
 
-  /** \brief . */
-  using SingleRhsLinearOpBase<Scalar>::apply;
   /** \brief . */
   using MultiVectorBase<Scalar>::describe;
   /** \brief . */
@@ -459,81 +456,6 @@ public:
 
   //@}
 
-  /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
-  //@{
-  /// Returns <tt>this->space()</tt>
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
-  /// Returns a <tt>SerialVectorSpace</tt> object with dimension 1.
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
-  //@}
-
-  /** @name Overridden from MultiVectorBase (should never need to be overridden in subclasses) */
-  //@{
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<VectorBase<Scalar> > col(Index j);
-  /// Returns <tt>this->clone_v()</tt>
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > clone_mv() const;
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& col_rng ) const;
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
-  /// Implemented in terms of <tt>this->getSubVector()</tt>
-  void getSubMultiVector(
-    const Range1D                       &rowRng
-    ,const Range1D                      &colRng
-    ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
-    ) const;
-  /// Implemented in terms of <tt>this->freeSubVector()</tt>
-  void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const;
-  /// Implemented in terms of <tt>this->getSubVector()</tt>
-  void getSubMultiVector(
-    const Range1D                                &rowRng
-    ,const Range1D                               &colRng
-    ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
-    );
-  /// Implemented in terms of <tt>this->commitSubVector()</tt>
-  void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
-  //@}
-
-protected:
-
-  /** @name Overridden from SingleRhsLinearOpBase (should never need to be overridden in subclasses) */
-  //@{
-
-  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
-   * <tt>NOTRANS</tt> and <tt>CONJTRANS</tt> and for real types returns true
-   * for all values of <tt>M_trans</tt>.
-   */
-  bool opSupported(ETransp M_trans) const;
-
-  /** \brief. Applies vector and its adjoint (transpose) as a linear operator. */
-  void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
-    ) const;
-
-  //@}
-
-private:
-
-  // /////////////////////////////////////
-  // Private data members
-
-  Teuchos::RefCountPtr<VectorSpaceBase<Scalar> >  domain_; // Only initialized if *this is used as a MultiVectorBase
-
-  // /////////////////////////////////////
-  // Private member functions
-
-  void validateColRng( const Range1D &rowRng ) const;
-  void validateColIndexes(  const int numCols, const int cols[] ) const;
-
 }; // end class VectorBase
 
 /** \brief Apply a reduction/transformation,operation over a set of vectors:
@@ -657,7 +579,6 @@ void applyOp(
 }
 #endif
 
-
 } // end namespace Thyra
 
-#endif  // THYRA_VECTOR_DECL_HPP
+#endif  // THYRA_VECTOR_BASE_DECL_HPP

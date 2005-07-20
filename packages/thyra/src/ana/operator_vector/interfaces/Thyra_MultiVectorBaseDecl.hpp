@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTI_VECTOR_DECL_HPP
-#define THYRA_MULTI_VECTOR_DECL_HPP
+#ifndef THYRA_MULTI_VECTOR_BASE_DECL_HPP
+#define THYRA_MULTI_VECTOR_BASE_DECL_HPP
 
 #include "Thyra_LinearOpBaseDecl.hpp"
 #include "RTOpPack_RTOpT.hpp"
@@ -192,12 +192,8 @@ public:
    * <li> <tt>*return->col(1+k)</tt> represents the same column vector as <tt>this->col(colRng.lbound()+k)</tt>,
    *      for <tt>k=0...RangePack::full_range(colRng,1,this->domain()->dim()).ubound()</tt>
    * </ul>
-   *
-   * The default implementation (which is the only implementation
-   * needed by most subclasses) is to return object from the non-const
-   * version <tt>subView()</tt>.
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const;
+  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const = 0;
   
   /** \brief Return a non-const sub-view of a contiguous set of columns of the this multi-vector.
    *
@@ -217,13 +213,10 @@ public:
    *      for <tt>k=0...RangePack::full_range(colRng,1,this->domain()->dim()).ubound()</tt>
    * </ul>
    *
-   * The default implementation of this function uses <tt>MultiVectorCols</tt> but this is not
-   * a good default implementation in general.
-   *
    * Note that <tt>*this</tt> is not guaranteed to be modified until
    * the smart pointer returned by this function goes out of scope.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& colRng );
+  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& colRng ) = 0;
 
   /** \brief Return a const sub-view of a non-contiguous set of columns of this multi-vector.
    *
@@ -244,12 +237,8 @@ public:
    * <li> <tt>*return->col(k+1)</tt> represents the same column vector as <tt>this->col(cols[k])</tt>,
    *      for <tt>k=0...numCols</tt>
    * </ul>
-   *
-   * The default implementation (which is the only implementation
-   * needed by most subclasses) is to return object from the non-const
-   * version <tt>subView()</tt>.
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
+  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const = 0;
 
   /** \brief Return a non-const sub-view of a non-contiguous set of columns of this multi-vector.
    *
@@ -271,14 +260,10 @@ public:
    *      for <tt>k=0...numCols</tt>
    * </ul>
    *
-   * The default implementation of this function uses
-   * <tt>MultiVectorCols</tt> but this is not a good default
-   * implementation in general.
-   *
    * Note that <tt>*this</tt> is not guaranteed to be modified until
    * the smart pointer returned by this function goes out of scope.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
+  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) = 0;
   
   //@}
 
@@ -717,7 +702,6 @@ void applyOp(
 
 #endif
 
-
 } // namespace Thyra
 
-#endif // THYRA_MULTI_VECTOR_DECL_HPP
+#endif // THYRA_MULTI_VECTOR_BASE_DECL_HPP

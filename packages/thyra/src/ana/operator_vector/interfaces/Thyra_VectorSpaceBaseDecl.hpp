@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_VECTOR_SPACE_DECL_HPP
-#define THYRA_VECTOR_SPACE_DECL_HPP
+#ifndef THYRA_VECTOR_SPACE_BASE_DECL_HPP
+#define THYRA_VECTOR_SPACE_BASE_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_Describable.hpp"
@@ -264,6 +264,11 @@ public:
    */
   virtual bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const = 0;
 
+  /** \brief Return a <tt>VectorSpaceFactoryBase</tt> object for the creation
+   * of (serial) vector spaces with a small dimension.
+   */
+  virtual Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const = 0;
+
   /** \brief Return the scalar product of two vectors in the vector space.
    *
    * Preconditions:<ul>
@@ -308,16 +313,6 @@ public:
    * The default implementation returns <tt>false</tt>.
    */
   virtual bool isInCore() const;
-
-  /** \brief Return a <tt>VectorSpaceFactoryBase</tt> object for the creation
-   * of (serial) vector spaces with a small dimension.
-   *
-   * The default implementation returns
-   * <tt>dynamic_cast<SerialVectorSpaceFactory>(return.get())!=NULL</tt>.
-   * Note that if a subclass overrides <tt>createMembers()</tt> then
-   * it may also need to override this method as well.
-   */
-  virtual Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
 
   /** \brief Clone this object (if supported).
    *
@@ -384,11 +379,6 @@ protected:
    */
   virtual Teuchos::RefCountPtr< VectorBase<Scalar> > createMember() const = 0;
 
-  //@}
-
-  /** @name Protected virtual functions with default implementations */
-  //@{
-
   /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
    *
    * Preconditions:<ul>
@@ -410,11 +400,8 @@ protected:
    * (uninitialized).  This allows for faster execution times.  Note
    * that <tt>return->range().get()==this</tt> does not have to be true
    * but will be in may cases.
-   *
-   * The default implementation returns
-   * <tt>dynamic_cast<MultiVectorCols>(return.get())!=NULL</tt>.
    */
-  virtual Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
+  virtual Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const = 0;
 
   /** \brief Create a vector member that is a non-<tt>const</tt> view of raw data.
    *
@@ -440,15 +427,8 @@ protected:
    * the smart pointer returned goes out of scope.  This is to allow a
    * default implementation that temporarily copies data into and out
    * of a <tt>VectorBase</tt> object using explicit vector access.
-   *
-   * The default implementation of this function simply calls
-   * <tt>createMember()</tt> to create a vector then uses the explicit
-   * element access functions to set the elements and then only when
-   * the vector is destroyed is the data copied out of the vector and
-   * back into the elements pointed to by
-   * <tt>raw_v.values()</tt>.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > createMemberView( const RTOpPack::MutableSubVectorT<Scalar> &raw_v ) const;
+  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > createMemberView( const RTOpPack::MutableSubVectorT<Scalar> &raw_v ) const = 0;
 
   /** \brief Create a vector member that is a <tt>const</tt> view of raw data.
    *
@@ -469,12 +449,8 @@ protected:
    * Postconditions:<ul>
    * <li>See <tt>createMember()</tt>
    * </ul>
-   *
-   * The default implementation of this function simply calls
-   * <tt>createMember()</tt> to create a vector then uses the explicit
-   * element access functions to set the elements.
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > createMemberView( const RTOpPack::SubVectorT<Scalar> &raw_v ) const;
+  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > createMemberView( const RTOpPack::SubVectorT<Scalar> &raw_v ) const = 0;
 
   /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw data.
    *
@@ -498,15 +474,8 @@ protected:
    * the smart pointer returned goes out of scope.  This is to allow a
    * default implementation that temporarily copies data into and out
    * of a <tt>MultiVectorBase</tt> object using explicit vector access.
-   *
-   * The default implementation of this function simply calls
-   * <tt>createMembers(raw_mv.numSubCols())</tt> to create a
-   * multi-vector then uses the explicit element access functions to
-   * set the elements and then only when the multi-vector is destroyed
-   * is the data copied out of the multi-vector and back into the
-   * elements pointed to by <tt>raw_mv.values()</tt>.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembersView( const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv ) const;
+  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembersView( const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv ) const = 0;
 
   /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw data.
    *
@@ -527,12 +496,8 @@ protected:
    * Postconditions:<ul>
    * <li>See <tt>createMember()</tt>
    * </ul>
-   *
-   * The default implementation of this function simply calls
-   * <tt>createMembers()</tt> to create a multi-vector then uses the explicit
-   * element access functions to set the elements.
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > createMembersView( const RTOpPack::SubMultiVectorT<Scalar> &raw_mv ) const;
+  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > createMembersView( const RTOpPack::SubMultiVectorT<Scalar> &raw_mv ) const = 0;
 
   //@}
 
@@ -652,4 +617,4 @@ Thyra::createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::Sub
   return createMembersView(Teuchos::rcp(&vs,false),raw_mv);
 }
 
-#endif  // THYRA_VECTOR_SPACE_DECL_HPP
+#endif  // THYRA_VECTOR_SPACE_BASE_DECL_HPP

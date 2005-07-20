@@ -29,7 +29,7 @@
 #ifndef THYRA_MPI_MULTI_VECTOR_BASE_DECL_HPP
 #define THYRA_MPI_MULTI_VECTOR_BASE_DECL_HPP
 
-#include "Thyra_MultiVectorBaseDecl.hpp"
+#include "Thyra_MultiVectorDefaultBaseDecl.hpp"
 #include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 #include "Teuchos_BLAS.hpp"
 
@@ -107,7 +107,7 @@ template<class Scalar> class MPIVectorSpaceBase;
  */
 template<class Scalar>
 class MPIMultiVectorBase
-  : virtual public MultiVectorBase<Scalar>
+  : virtual public MultiVectorDefaultBase<Scalar>
   , virtual public SingleScalarEuclideanLinearOpBase<Scalar>
 {
 public:

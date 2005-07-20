@@ -29,7 +29,7 @@
 #ifndef THYRA_VECTOR_SERIAL_BASE_DECL_HPP
 #define THYRA_VECTOR_SERIAL_BASE_DECL_HPP
 
-#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorDefaultBase.hpp"
 
 namespace Thyra {
 
@@ -52,7 +52,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_adapters_serial_support_grp
  */
 template<class Scalar>
-class SerialVectorBase : virtual public VectorBase<Scalar> {
+class SerialVectorBase : virtual public VectorDefaultBase<Scalar> {
 public:
 
   /** \brief . */

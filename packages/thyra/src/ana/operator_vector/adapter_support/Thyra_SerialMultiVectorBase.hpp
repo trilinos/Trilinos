@@ -30,8 +30,8 @@
 #define THYRA_SERIAL_MULTI_VECTOR_BASE_HPP
 
 #include "Thyra_SerialMultiVectorBaseDecl.hpp"
+#include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
-#include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_SerialVectorSpaceBase.hpp"
 #include "Thyra_ExplicitMultiVectorView.hpp"
 #include "Thyra_apply_op_helper.hpp"
