@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   bool verbose = (Comm.MyPID() == 0);
 
   // size of the global matrix. 
-  const int NumPoints = 14400;
+  const int NumPoints = 900;
 
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", NumPoints);
