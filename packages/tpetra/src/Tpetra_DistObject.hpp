@@ -206,17 +206,17 @@ namespace Tpetra {
  
 		//! Perform actual transfer (redistribution) of data across memory images.
 		virtual int doTransfer(DistObject<OrdinalType, ScalarType> const& sourceObj,
-							   CombineMode CM,
-							   OrdinalType numSameIDs,
-							   OrdinalType numPermuteIDs,
-							   OrdinalType numRemoteIDs,
-							   OrdinalType numExportIDs,
-							   std::vector<OrdinalType> permuteToLIDs,
-							   std::vector<OrdinalType> permuteFromLIDs,
-							   std::vector<OrdinalType> remoteLIDs,
-							   std::vector<OrdinalType> exportLIDs,
-							   std::vector<ScalarType> exports,
-							   std::vector<ScalarType> imports,
+							   CombineMode const CM,
+							   OrdinalType const numSameIDs,
+							   OrdinalType const numPermuteIDs,
+							   OrdinalType const numRemoteIDs,
+							   OrdinalType const numExportIDs,
+							   std::vector<OrdinalType> const& permuteToLIDs,
+							   std::vector<OrdinalType> const& permuteFromLIDs,
+							   std::vector<OrdinalType> const& remoteLIDs,
+							   std::vector<OrdinalType> const& exportLIDs,
+							   std::vector<ScalarType>& exports,
+							   std::vector<ScalarType>& imports,
 							   Distributor<OrdinalType> const& distor,
 							   bool doReverse) 
 		{
@@ -265,7 +265,7 @@ namespace Tpetra {
 		/*!
 		  \param sourceObj In
 		         On entry, the DistObject that we are importing from.
-		  \param numImportIDs In
+		  \param numSameIDs In
 		         On entry, the number of elements that are the same on the source and dest objects.
 				 (i.e. The element is owned by the same image in both source and dest, 
 				 and no permutation occurs.)
@@ -279,10 +279,10 @@ namespace Tpetra {
 				 source DistObject.)
 		*/
 		virtual int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
-								   OrdinalType numImportIDs,
-								   OrdinalType numPermuteIDs,
-								   std::vector<OrdinalType> permuteToLIDs,
-								   std::vector<OrdinalType> permuteFromLIDs) = 0;
+								   OrdinalType const numSameIDs,
+								   OrdinalType const numPermuteIDs,
+								   std::vector<OrdinalType> const& permuteToLIDs,
+								   std::vector<OrdinalType> const& permuteFromLIDs) = 0;
 
 		//! Perform any packing or preparation required for communication.
 		/*!
@@ -302,9 +302,9 @@ namespace Tpetra {
 		         On entry, contains the Distributor object we are using.				 
 		*/
 		virtual int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
-								   OrdinalType numExportIDs,
-								   std::vector<OrdinalType> exportLIDs,
-								   std::vector<ScalarType> exports,
+								   OrdinalType const numExportIDs,
+								   std::vector<OrdinalType> const& exportLIDs,
+								   std::vector<ScalarType>& exports,
 								   OrdinalType& packetSize,
 								   Distributor<OrdinalType> const& distor) = 0;
   
@@ -323,11 +323,11 @@ namespace Tpetra {
 		         The Tpetra::CombineMode to use when combining the imported
 				 entries with existing entries.
 		*/
-		virtual int unpackAndCombine(OrdinalType numImportIDs,
-									 std::vector<OrdinalType> importLIDs,
-									 std::vector<ScalarType> imports,
+		virtual int unpackAndCombine(OrdinalType const numImportIDs,
+									 std::vector<OrdinalType> const& importLIDs,
+									 std::vector<ScalarType> const& imports,
 									 Distributor<OrdinalType> const& distor,
-									 CombineMode CM) = 0;
+									 CombineMode const CM) = 0;
 
 	private:
 		

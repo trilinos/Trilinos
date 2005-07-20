@@ -578,16 +578,16 @@ namespace Tpetra {
 		}
 
 		int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
-						   OrdinalType numImportIDs,
-						   OrdinalType numPermuteIDs,
-						   std::vector<OrdinalType> permuteToLIDs,
-						   std::vector<OrdinalType> permuteFromLIDs) {
+						   OrdinalType const numSameIDs,
+						   OrdinalType const numPermuteIDs,
+						   std::vector<OrdinalType> const& permuteToLIDs,
+						   std::vector<OrdinalType> const& permuteFromLIDs) {
 			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
 			Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
 
 			// the first numImportIDs GIDs are the same between source and target,
 			// we can just copy them
-			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
+			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numSameIDs; i++)
 				(*this)[i] = sourceVector[i];
 
 			// next, do permutations
@@ -598,9 +598,9 @@ namespace Tpetra {
 		}
 
 		int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
-						   OrdinalType numExportIDs,
-						   std::vector<OrdinalType> exportLIDs,
-						   std::vector<ScalarType> exports,
+						   OrdinalType const numExportIDs,
+						   std::vector<OrdinalType> const& exportLIDs,
+						   std::vector<ScalarType>& exports,
 						   OrdinalType& packetSize,
 						   Distributor<OrdinalType> const& distor) {
 			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
@@ -617,11 +617,11 @@ namespace Tpetra {
 			return(0);
 		}
   
-		int unpackAndCombine(OrdinalType numImportIDs,
-							 std::vector<OrdinalType> importLIDs,
-							 std::vector<ScalarType> imports,
+		int unpackAndCombine(OrdinalType const numImportIDs,
+							 std::vector<OrdinalType> const& importLIDs,
+							 std::vector<ScalarType> const& imports,
 							 Distributor<OrdinalType> const& distor,
-							 CombineMode CM) {
+							 CombineMode const CM) {
 			// copy values from scalarExports
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
 				scalarArray().at(importLIDs[i]) = imports[i];
