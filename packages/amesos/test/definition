@@ -2,10 +2,24 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
-    DIRS = scripts/daily/mpi;
-    COMM = CUSTOM-MPI;
-    ARGS = NightlyTest True True;
-    EXIT-STATUS = STRING-COMPARISON ;
+(FRAMEWORK, AmesosExamples) {
+    DIRS = ../example;
+    COMM = SERIAL, MPI;
 }
 
+(FRAMEWORK, AmesosTests) {
+    DIRS = Test_Epetra_RowMatrix,
+           Test_SuperLU,
+           Test_KLU,              
+           Test_SuperLU_DIST,
+           Test_LAPACK,           
+           Test_UMFPACK,
+           Test_DSCPACK,          
+           Test_MUMPS,
+           Test_Detailed,         
+           Test_MultipleSolves,
+           Test_Epetra_CrsMatrix, 
+           Test_Performance,
+        #  Test_Basic;
+    COMM = SERIAL, MPI;
+}
