@@ -173,7 +173,7 @@ void ComplexFFTLinearOp<RealScalar>::apply(
     );
   // Add the scaled result into y
   const Thyra::ExplicitMutableVectorView<Scalar>  y_ev(*y);
-  const Scalar scalar = alpha * Scalar(1)/Scalar(std::sqrt(x_ev.subDim())); // needed to make adjoint == inverse!
+  const Scalar scalar = alpha * Scalar(1)/ST::squareroot(x_ev.subDim()); // needed to make adjoint == inverse!
   for( int k = 0; k < y_ev.subDim(); ++k ) {
     y_ev[k] += ( scalar * Scalar(data[2*k],data[2*k+1]) );
   }
