@@ -40,5 +40,4 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
           2d_Poisson                         \
           3d_Poisson                         \
           Communicator                       \
-          SelfSmoother                       \
-	  scripts
+          SelfSmoother                       

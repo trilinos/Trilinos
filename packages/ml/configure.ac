@@ -682,10 +682,6 @@ AC_CONFIG_FILES([
                 test/MLAPICompare/Makefile
                 test/Communicator/Makefile
                 test/SelfSmoother/Makefile
-                test/scripts/Makefile
-                test/scripts/daily/Makefile
-                test/scripts/daily/mpi/Makefile
-                test/scripts/daily/serial/Makefile
                 python/Makefile
                 python/src/Makefile
                 python/src/__init__.py
