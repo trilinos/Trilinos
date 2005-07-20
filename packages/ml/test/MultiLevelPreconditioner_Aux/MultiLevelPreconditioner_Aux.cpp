@@ -88,28 +88,16 @@ int main(int argc, char *argv[])
 
   int MaxLevels = 10;
 
-  if (0)
-  {
-    // this is the old stuff
-    MLList.set("x-coordinates", x_coord);
-    MLList.set("y-coordinates", y_coord);
-    MLList.set("z-coordinates", z_coord);
-    MLList.set("aggregation: use auxiliary matrix", true);
-    MLList.set("aggregation: threshold", 0.05);
-  }
-  
-  if (1)
-  {
-    // this is the new stuff
-    MLList.set("aggregation: threshold", 0.05);
-    MLList.set("aggregation: aux: enable", true);
-    MLList.set("aggregation: aux: threshold", 0.05);
-    MLList.set("x-coordinates", x_coord);
-    MLList.set("y-coordinates", y_coord);
-    MLList.set("z-coordinates", z_coord);
-    MLList.set("aggregation: aux: max levels", MaxLevels);
-  }
+  // this is the new stuff
+  MLList.set("aggregation: threshold", 0.05);
+  MLList.set("aggregation: aux: enable", true);
+  MLList.set("aggregation: aux: threshold", 0.05);
+  MLList.set("x-coordinates", x_coord);
+  MLList.set("y-coordinates", y_coord);
+  MLList.set("z-coordinates", z_coord);
+  MLList.set("aggregation: aux: max levels", MaxLevels);
 
+  MLList.set("coarse: max size", 1024);
   MLList.set("aggregation: damping factor", 0.0);
 
   MLList.set("output", 10);
@@ -173,7 +161,7 @@ int main(int argc, char *argv[])
   solver.Iterate(500, 1e-12);
 
   delete MLPrec;
-  
+
   double norm;
   solver.GetLHS()->Norm2(&norm);
 
@@ -213,7 +201,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   exit(EXIT_SUCCESS);
 }
 

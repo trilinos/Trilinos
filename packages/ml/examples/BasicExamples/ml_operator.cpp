@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(&MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 16);
-  solver.Iterate(500, 1e-5);
+  solver.Iterate(500, 1e-8);
 
   // The following is a check to verify that the real residual is small,
   // using methods of the Gallery.

@@ -18,7 +18,8 @@
 /* date:         10/21/99                                                    */
 /*****************************************************************************/
 
-#if (defined(HAVE_ML_AZTEC) || defined(HAVE_ML_AZTECOO))
+#include "ml_include.h"
+#if (defined(HAVE_ML_AZTEC2_1) || defined(HAVE_ML_AZTECOO))
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,7 +65,7 @@ ML_Aggregate *ag;
 int  nblocks, *blocks;
 
 
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 
   /* get number of processors and the name of this processor */
@@ -82,7 +83,10 @@ int  nblocks, *blocks;
 	if (fp==NULL)
 		{
 			printf("couldn't open file .data\n");
-			exit(1);
+#ifdef HAVE_ML_MPI
+                        MPI_Finalize();
+#endif
+			exit(EXIT_SUCCESS);
 		}
 #ifdef binary
         fread(&leng, sizeof(int), 1, fp);
@@ -279,7 +283,7 @@ start_time = AZ_second();
    free(rhs);
 
 
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 	
@@ -291,7 +295,7 @@ start_time = AZ_second();
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef ML_MPI
+#ifdef HAVE_MPI
 #include "mpi.h"
 #endif
 
@@ -300,13 +304,13 @@ int main(int argc, char *argv[])
 
   /* still need to deal with MPI, some architecture don't like
      an exit(0) without MPI_Finalize() */
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
 
   puts("This test requires Aztec.");
 
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 

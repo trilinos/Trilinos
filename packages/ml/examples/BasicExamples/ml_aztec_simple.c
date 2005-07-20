@@ -139,8 +139,6 @@ int main(int argc, char *argv[])
   ML_Aggregate_Set_MaxCoarseSize(ag, 30);
   ML_Aggregate_Set_Threshold(ag, 0.0);
 
-  ag->minimizing_energy = 1;
-
   /********************************************************************/
   /* Build hierarchy using smoothed aggregation.                      */
   /*------------------------------------------------------------------*/

@@ -154,19 +154,22 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     {
       if (Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2)
       {
-        cout << "Amesos (level " << curr_level
-          << ") : This coarse solver is not available." << endl;
-        cout << "Amesos (level " << curr_level
-          << ") : Now re-building with KLU" << endl;
+        cerr << "Amesos (level " << curr_level
+             << ") : This coarse solver is not available." << endl;
+        cerr << "Amesos (level " << curr_level
+             << ") : Now re-building with KLU" << endl;
       }
       A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
     }
     if (A_Base == 0) 
     {
-        cout << "Amesos (level " << curr_level
-          << ") : This coarse solver is not available." << endl;
-        cout << "Amesos (level " << curr_level
-          << ") : Now re-building with LAPACK" << endl;
+      if (Amesos_Matrix->Comm().MyPID() == 0) 
+      {
+        cerr << "Amesos (level " << curr_level
+             << ") : This coarse solver is not available." << endl;
+        cerr << "Amesos (level " << curr_level
+             << ") : Now re-building with LAPACK" << endl;
+      }
       A_Base = A_Factory.Create("Amesos_Lapack", *Amesos_LinearProblem);
       if (A_Base == 0) 
       {
