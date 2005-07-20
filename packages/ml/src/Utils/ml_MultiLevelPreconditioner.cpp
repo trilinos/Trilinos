@@ -425,8 +425,10 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   double CPUTime;
   Epetra_CrsMatrix *NodeMatrix, *TMatrix;
 
+  //next-to-last argument must be false because T may have zero rows due
+  //to Dirichlet b.c.'s.
   ML_Operator2EpetraCrsMatrix(ML_TMatrix,TMatrix,MaxNumNonzeros,
-                  true,CPUTime);
+                  false,CPUTime);
 
   ML_Comm_Create(&ml_comm);
   loc_ML_Kn = ML_Operator_Create(ml_comm);
@@ -1153,6 +1155,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_CHK_ERR(SetSmoothingDamping());
   }
   else 
+    // FIXME check this!!!!! 4/29/05
     ML_Aggregate_Set_DampingFactor( agg_, 0.0);
 
   // ====================================================================== //
@@ -1336,12 +1339,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     TMatrixTransposeML_ = ML_Operator_Create(ml_->comm);
     ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
+
+    int smooth_flag = ML_YES;
+    string DampingType = List_.get("R and P smoothing: damping", "default");
+    if (DampingType == "non-smoothed") smooth_flag = ML_NO;
     
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
                             LevelID_[0], Direction,agg_,agg_edge_,
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
-                            ML_YES, 1.5); 
+                            smooth_flag, ML_DDEFAULT); 
 
   }
 
@@ -1378,7 +1385,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
       edge_args_ = ML_Smoother_Arglist_Create(2);
   }
 
-  ML_CHK_ERR(SetSmoothers());
+  if ( NumLevels_ > 1 )
+    ML_CHK_ERR(SetSmoothers());
   /* FIXME: moved in DestroyPreconditioner()
   // this below *must* to be here and not before the construction of the smoothers
   if ((agg_)->aggr_info != NULL) {
@@ -1409,9 +1417,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // solution of the coarse problem                                         //
   // ====================================================================== //
 
-  if( NumLevels_ > 1 ) {
-    ML_CHK_ERR(SetCoarse());
-  }
+  ML_CHK_ERR(SetCoarse());
 
   ownership_ = false;
 
@@ -1525,7 +1531,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // print unused parameters
   if (List_.isParameter("print unused")) {
     int ProcID = List_.get("print unused",-2);
-    if (Comm().MyPID() == ProcID || ProcID == -1) PrintUnused();
+    if (Comm().MyPID() == ProcID || ProcID == -1 && verbose_) PrintUnused();
   }
 
   // ===================================================================== //
@@ -2005,6 +2011,9 @@ ApplyInverse(const Epetra_MultiVector& X,
 /*! Values for \c "coarse: type"
  * - \c Jacobi
  * - \c Gauss-Seidel
+ * - \c symmetric Gauss-Seidel
+ * - \c MLS
+ * - \c Hiptmair (Maxwell only)
  * - \c SuperLU (deprecated)
  * - \c Amesos-KLU
  * - \c Amesos-UMFPACK
@@ -2020,6 +2029,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   int NumSmootherSteps = List_.get("coarse: sweeps", 1);
   double Omega = List_.get("coarse: damping factor", 0.67);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
+  double MLSalpha = List_.get("coarse: MLS alpha",27.0);
+  int MLSPolynomialOrder = List_.get("coarse: MLS polynomial order",3);
     
   int MaxProcs = List_.get("coarse: max processes", -1);
 
@@ -2029,7 +2040,72 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if( CoarseSolution == "Gauss-Seidel" ) 
     ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
 				NumSmootherSteps, Omega);
-  else if( CoarseSolution == "SuperLU" ) 
+  else if( CoarseSolution == "symmetric Gauss-Seidel" )
+      ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[NumLevels_-1],
+                     ML_BOTH, NumSmootherSteps, Omega);
+  else if( CoarseSolution == "MLS" ) {
+      ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], ML_BOTH,
+                          MLSalpha, MLSPolynomialOrder);
+  } else if( CoarseSolution == "Hiptmair" ) {
+                                                                                
+      if (SolvingMaxwell_ == false) {
+        if (Comm().MyPID() == 0) {
+          cerr << ErrorMsg_ << "Hiptmair smoothing is only supported" << endl;
+          cerr << ErrorMsg_ << "for solving eddy current equations." << endl;
+          cerr << ErrorMsg_ << "Choose another smoother." << endl;
+        }
+        ML_EXIT(EXIT_FAILURE);
+      }
+                                                                                
+      string SubSmootherType = List_.get("coarse: subsmoother type","MLS");
+      int nodal_its = List_.get("coarse: node sweeps", 1);
+      int edge_its = List_.get("coarse: edge sweeps", 1);
+                                                                                
+      int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
+      int logical_level = LevelID_[SmootherLevels-1];
+      void *edge_smoother = 0, *nodal_smoother = 0;
+                                                                                
+      double omega;
+                                                                                
+      // only MLS and SGS are currently supported
+      if (SubSmootherType == "MLS")
+      {
+        cout << "\n\n\n***** order = " << MLSPolynomialOrder << "\n****\n\n";
+        nodal_smoother=(void *) ML_Gen_Smoother_MLS;
+        // set polynomial degree
+        ML_Smoother_Arglist_Set(nodal_args_, 0, &MLSPolynomialOrder);
+        edge_smoother=(void *) ML_Gen_Smoother_MLS;
+        ML_Smoother_Arglist_Set(edge_args_, 0, &MLSPolynomialOrder);
+                                                                                
+        // set alpha (lower bound of smoothing interval (alpha,beta) )
+                                                                                
+        ML_Smoother_Arglist_Set(edge_args_, 1, &MLSalpha);
+        ML_Smoother_Arglist_Set(nodal_args_, 1, &MLSalpha);
+
+      }
+      else if (SubSmootherType == "symmetric Gauss-Seidel") {
+        omega = List_.get("coarse: damping factor",1.0);
+        nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
+        ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
+        ML_Smoother_Arglist_Set(nodal_args_, 1, &omega);
+        edge_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
+        ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
+        ML_Smoother_Arglist_Set(edge_args_, 1, &omega);
+      }
+      else if (Comm().MyPID() == 0)
+        cerr << ErrorMsg_ << "Only MLS and SGS are supported as "
+             << "Hiptmair subsmoothers." << endl;
+
+      int hiptmair_type = (int)
+             List_.get("smoother: Hiptmair efficient symmetric", true);
+                                                                                
+      ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
+                 NumSmootherSteps, Tmat_array, Tmat_trans_array, NULL,
+                 edge_smoother, edge_args_, nodal_smoother, nodal_args_,
+                 hiptmair_type);
+
+
+  } else if( CoarseSolution == "SuperLU" ) 
     ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
   else if( CoarseSolution == "Amesos-KLU" ) {
     // commented out, Amesos output is already printed on screen
@@ -2279,6 +2355,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
 
   } else if( str == "full-MGV" ) {
     ml_->ML_scheme = ML_MGFULLV;
+
+  } else if( str == "MGW" ) {
+    ml_->ML_scheme = ML_MGW;
 
   } else if( str == "MGV" ) {
     // it is the default

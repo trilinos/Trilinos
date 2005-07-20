@@ -65,7 +65,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
   int num_smoother_steps = List_.get("smoother: sweeps", 1);
 
-  double omega = List_.get("smoother: damping factor",0.67);
+  double omega = List_.get("smoother: damping factor",1.0);
+  if (omega == ML_DDEFAULT) omega = 1.0;
 
   int pre_or_post = 0;
   string PreOrPostSmoother = List_.get("smoother: pre or post","both");
@@ -106,11 +107,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   string SubSmootherType;
   int nodal_its, edge_its;
   if (SolvingMaxwell_ == true) {
-    sprintf(parameter,"smoother: Hiptmair subsmoother type");
+    sprintf(parameter,"subsmoother: type");
     SubSmootherType = List_.get(parameter,"MLS");
-    sprintf(parameter,"smoother: Hiptmair node sweeps");
+    sprintf(parameter,"subsmoother: node sweeps");
     nodal_its = List_.get(parameter, 1);
-    sprintf(parameter,"smoother: Hiptmair edge sweeps");
+    sprintf(parameter,"subsmoother: edge sweeps");
     edge_its = List_.get(parameter, 1);
   }
 
@@ -228,13 +229,46 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // MLS //
       // === //
 
-      sprintf(parameter,"smoother: MLS polynomial order (level %d)", LevelID_[level]);
-      if( verbose_ ) cout << msg << "MLS,"
-			 << PreOrPostSmoother << endl;
-      
-      ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post, MLSalpha,
-			  MLSPolynomialOrder);
-      
+      int logical_level = LevelID_[level];
+      sprintf(parameter,"smoother: MLS polynomial order (level %d)",
+              logical_level);
+      MLSPolynomialOrder = List_.get(parameter,MLSPolynomialOrder);
+      if( verbose_ ) cout << msg << "MLS," << PreOrPostSmoother << endl;
+
+      sprintf(parameter,"smoother: MLS alpha (level %d)",logical_level);
+      MLSalpha = List_.get(parameter,MLSalpha);
+
+      if (SolvingMaxwell_) {
+        int Nfine_edge = Tmat_array[logical_level]->outvec_leng;
+        int itmp, Ncoarse_edge;
+        int coarsest_level = ml_->ML_coarsest_level;
+        double edge_coarsening_rate=0.0;
+        ML_gsum_scalar_int(&Nfine_edge, &itmp, ml_->comm);
+        if (logical_level != coarsest_level) {
+          Ncoarse_edge = Tmat_array[logical_level-1]->outvec_leng;
+          ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_->comm);
+          if (Ncoarse_edge != 0.0)
+            edge_coarsening_rate =  2.*((double) Nfine_edge)/
+                                    ((double) Ncoarse_edge);
+        }
+        printf("level %d, before, edge_coarsening_rate = %e\n",
+                logical_level, edge_coarsening_rate);
+        if (edge_coarsening_rate < MLSalpha)
+          edge_coarsening_rate =  MLSalpha;
+
+/*
+        printf("\n\nlevel %d, MLSalpha = %e, edge_coarsening_rate = %e,
+  Nfine_edge = %d, Ncoarse_edge = %d\n\n",
+               logical_level, MLSalpha, edge_coarsening_rate, Nfine_edge,
+               Ncoarse_edge);
+*/
+
+        MLSalpha = edge_coarsening_rate;
+      } //if (SolvingMaxwell_)
+
+      ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post,
+                          MLSalpha, MLSPolynomialOrder);
+
     } else if( Smoother == "Aztec" ) {
       
 #ifdef HAVE_ML_AZTECOO
@@ -428,22 +462,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         ML_EXIT(EXIT_FAILURE);
       }
 
-      sprintf(parameter,"smoother: Hiptmair subsmoother type (level %d)", level);
+      sprintf(parameter,"subsmoother: type (level %d)", level);
       SubSmootherType = List_.get(parameter,SubSmootherType);
 
       int logical_level = LevelID_[level];
       void *edge_smoother = 0, *nodal_smoother = 0;
+      double node_coarsening_rate=0.0;
+      double edge_coarsening_rate=0.0;
 
-      sprintf(parameter,"smoother: Hiptmair node sweeps");
+      sprintf(parameter,"subsmoother: node sweeps");
       nodal_its = List_.get(parameter, nodal_its);
-      sprintf(parameter,"smoother: Hiptmair edge sweeps");
+      sprintf(parameter,"subsmoother: edge sweeps");
       edge_its = List_.get(parameter, edge_its);
 
       // only MLS and SGS are currently supported
       if (SubSmootherType == "MLS")
       {
-        sprintf(parameter,"smoother: Hiptmair MLS polynomial order (level %d)", level);
-        MLSPolynomialOrder = List_.get(parameter,3);
+        int subMLSPolynomialOrder =
+            List_.get("subsmoother: MLS polynomial order",3);
+        MLSalpha = List_.get("subsmoother: MLS alpha",27.0);
+        sprintf(parameter,"subsmoother: MLS polynomial order (level %d)",level);
+        MLSPolynomialOrder = List_.get(parameter,subMLSPolynomialOrder);
 
         nodal_smoother=(void *) ML_Gen_Smoother_MLS;
         ML_Smoother_Arglist_Set(nodal_args_, 0, &MLSPolynomialOrder);
@@ -454,31 +493,36 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         int Nfine_edge = Tmat_array[logical_level]->outvec_leng;
         int itmp, Ncoarse_edge;
         int coarsest_level = ml_->ML_coarsest_level;
-        double node_coarsening_rate, edge_coarsening_rate;
         ML_gsum_scalar_int(&Nfine_edge, &itmp, ml_->comm);
         if (logical_level != coarsest_level) {
           Ncoarse_edge = Tmat_array[logical_level-1]->outvec_leng;
           ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_->comm);
-          edge_coarsening_rate =  2.*((double) Nfine_edge)/
-                                  ((double) Ncoarse_edge);
+          if (Ncoarse_edge != 0.0)
+            edge_coarsening_rate =  2.*((double) Nfine_edge)/
+                                    ((double) Ncoarse_edge);
         }
-        else edge_coarsening_rate =  (double) Nfine_edge;
-                                                                                
+        else edge_coarsening_rate =  0.0;
+        if (edge_coarsening_rate < MLSalpha)
+          edge_coarsening_rate =  MLSalpha;
+
         int Nfine_node = Tmat_array[logical_level]->invec_leng;
         int Ncoarse_node;
         ML_Smoother_Arglist_Set(edge_args_, 1, &edge_coarsening_rate);
         if (logical_level != coarsest_level) {
           Ncoarse_node = Tmat_array[logical_level-1]->invec_leng;
           ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_->comm);
-          node_coarsening_rate =  2.*((double) Nfine_node)/
-                                     ((double) Ncoarse_node);
+          if (Ncoarse_node != 0.0)
+            node_coarsening_rate =  2.*((double) Nfine_node)/
+                                       ((double) Ncoarse_node);
         }
-        else node_coarsening_rate = (double) Nfine_node;
+        else node_coarsening_rate = 0.0;
+        if (node_coarsening_rate < MLSalpha)
+          node_coarsening_rate =  MLSalpha;
                                                                                 
         ML_Smoother_Arglist_Set(nodal_args_, 1, &node_coarsening_rate);
       }
       else if (SubSmootherType == "symmetric Gauss-Seidel") {
-        sprintf(parameter,"smoother: Hiptmair SGS damping factor (level %d)",
+        sprintf(parameter,"subsmoother: damping factor (level %d)",
                 level);
         omega = List_.get(parameter,1.0);
         nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
@@ -493,11 +537,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     
       sprintf(parameter,"smoother: Hiptmair efficient symmetric");
       int hiptmair_type = (int) List_.get(parameter, true);
-      sprintf(parameter,"smoother: Hiptmair sweeps");
-      int num_smoother_sweeps = List_.get(parameter, 1);
         
       ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
-                 num_smoother_sweeps, Tmat_array, Tmat_trans_array, NULL, 
+                 num_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 
                  edge_smoother, edge_args_, nodal_smoother, nodal_args_,
                  hiptmair_type);
 
@@ -516,12 +558,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ======================================= //
 
       if (Comm().MyPID() == 0)
-	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
-	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
-	     << ErrorMsg_ << "Now is: " << Smoother << ". It should be: " << endl
-	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel>" << endl
-	     << ErrorMsg_ << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl
-	     << ErrorMsg_ << "<MLS> / <ParaSails>" << endl;
+         cerr << ErrorMsg_
+              << "Smoother '" << Smoother << "' not recognized!" << endl
+              << ErrorMsg_
+              << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
+              << ErrorMsg_
+              << "Now is: " << Smoother << ". It should be: " << endl
+	          << ErrorMsg_
+              << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel>" << endl
+	          << ErrorMsg_
+              << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl
+	          << ErrorMsg_ << "<MLS> / <ParaSails>" << endl;
       ML_EXIT(-99);
     }
     
@@ -531,117 +578,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   } /* for */
 
   if(  verbose_ ) cout << endl;
-
-  return(0);
-}
-
-// ============================================================================
-
-/*! Options for Maxwell smoothing:
- *  - \c "smoother: sweeps" (int)
- *  - \c "smoother: type" (string). Possible values:
- *    - \c MLS
- *    - \c Gauss-Seidel
- *  - \c "smoother: node: sweeps" (int): sweeps for nodal hierarchy
- *  - \c "smoother: node: damping factor" (double)
- *  - \c "smoother: edge: sweeps" (int): sweeps for edge hierarchy
- *  - \c "smoother:  edge: damping factor" (double)
- *  
- * This function is still under development. The following options are
- * hardwired:
- * - HALF_HIPTMAIR
- *   
- */
-
-int ML_Epetra::MultiLevelPreconditioner::SetSmoothersMaxwell()
-{
-
-  char parameter[80];
-  
-  int num_smoother_sweeps = List_.get("smoother: sweeps", 1);
-  string SmootherType = List_.get("smoother: type","Hiptmair");
-
-  // get user's defined parameters for nodal smoothing
-  int nodal_its = List_.get("smoother: node: sweeps", 1);
-  double nodal_omega = List_.get("smoother: node: damping factor",1.0);
-
-
-  // get user's defined parameters for edge smoothing
-  int edge_its = List_.get("smoother: edge: sweeps", 1);
-  double edge_omega = List_.get("smoother: edge: damping factor",1.0);
-
-  // arguments for nodal smoother
-  nodal_args_ = ML_Smoother_Arglist_Create(2);
-  int hiptmair_type = (int) List_.get("smoother: half Hiptmair", true);
-  num_smoother_sweeps = List_.get(parameter, 1);
-  int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
-    
-  // set the smoother (only two choices at this time)
-
-  SmootherType = "Gauss-Seidel";
-
-  if( SmootherType == "MLS" ) {
-#ifdef LATER    
-    int coarsest_level = -1;
-    cout << "FIX COARSEST_LEVEL!!!" << endl;
-    int Ncoarse_edge, Ncoarse_node;
-    double edge_coarsening_rate, node_coarsening_rate;
-    int Nfine_edge, itmp;
-
-    for( int level=0 ; level<SmootherLevels ; ++level ) {
-
-      if (level != coarsest_level) {
-	Ncoarse_edge = Tmat_array[level-1]->outvec_leng;
-	ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_->comm);
-	edge_coarsening_rate =  2.*((double) Nfine_edge)/
-                                   ((double) Ncoarse_edge);
-      }
-      else edge_coarsening_rate =  (double) Nfine_edge;
-
-      ML_Smoother_Arglist_Set(edge_args_, 1, &edge_coarsening_rate);
-      Nfine_edge = Ncoarse_edge;
-
-      if (level != coarsest_level) {
-	Ncoarse_node = Tmat_array[level-1]->invec_leng;
-	ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_->comm);
-	node_coarsening_rate =  2.*((double) Nfine_node)/ 
-                                   ((double) Ncoarse_node);
-      }
-      else node_coarsening_rate = (double) Nfine_node;
-
-      ML_Smoother_Arglist_Set(nodal_args_, 1, &node_coarsening_rate);
-      Nfine_node = Ncoarse_node;
-    }
-
-    ML_Gen_Smoother_Hiptmair(ml_, LevelID_[level], ML_BOTH, num_smoother_sweeps,
-			     Tmat_array, Tmat_trans_array, NULL, 
-			     (void *)ML_Gen_Smoother_MLS, edge_args, 
-			     (void *)ML_Gen_Smoother_MLS, nodal_args, hiptmair_type);
-#endif
-  } else if( SmootherType == "Gauss-Seidel") {
-
-    ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
-    ML_Smoother_Arglist_Set(nodal_args_, 1, &nodal_omega);
-
-    // arguments for edge smoother
-    edge_args_ = ML_Smoother_Arglist_Create(2);
-
-    ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
-    ML_Smoother_Arglist_Set(edge_args_, 1, &edge_omega);
-
-    for( int level=0 ; level<SmootherLevels ; ++level ) {
-
-      ML_Gen_Smoother_Hiptmair(ml_, LevelID_[level], ML_BOTH, num_smoother_sweeps,
-			       Tmat_array, Tmat_trans_array, NULL, 
-			       (void *)ML_Gen_Smoother_SymGaussSeidel, edge_args_, 
-			       (void *)ML_Gen_Smoother_SymGaussSeidel, nodal_args_, hiptmair_type);
-    }
-  } else {
-    cerr << ErrorMsg_ << "`smoother: type' has an incorrect value (" << SmootherType << ")" << endl
-         << ErrorMsg_ << "For Maxwell, it should be" << endl
-	 << ErrorMsg_ << "<MLS> / <Gauss-Seidel>" << endl;
-    exit( EXIT_FAILURE );
-  }
 
   return(0);
 }
