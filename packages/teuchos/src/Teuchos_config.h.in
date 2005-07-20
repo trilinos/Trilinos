@@ -119,6 +119,10 @@
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
 
+/* define if the compiler supports access of protected templated nested
+   classes in derived classes */
+#undef HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
+
 /* Define to 1 if you have the `sqrt' function. */
 #undef HAVE_SQRT
 

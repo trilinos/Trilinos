@@ -109,7 +109,7 @@ public:
 
   //@}
 
-#ifdef SUPPORTS_PROTECTED_NESTED_CLASS_ACCESS // Added since gcc 3.3.4 does not do the right thing here!
+#ifdef HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS // Added since at least gcc 3.3.4 does not do the right thing here!
 protected:
 #endif
 

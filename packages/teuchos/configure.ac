@@ -281,6 +281,7 @@ AC_CXX_NEW_FOR_SCOPING
 AC_CXX_TEMPLATE_QUALIFIER
 AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
+AC_CXX_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built

@@ -241,7 +241,6 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
   ,const ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
   ) const
 {
-  typedef ModelEvaluatorBase MEB;
   const VectorBase<Scalar> &x_bar = *inArgs_bar.get_x(); 
   // x_dot = coeff_x_dot * x_bar + x_dot_base
   if (x_dot_base_.get())
