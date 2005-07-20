@@ -315,9 +315,9 @@ int main(int argc, char *argv[])
     new ML_Epetra::MultiLevelPreconditioner(*Epetra_Ke, *Epetra_T, *Epetra_Kn,
                         MLList);
 
-  // Visualize
-  MLPrec->VisualizeSmoothers(5,0);
-  MLPrec->VisualizeCycle(10);
+  // To visualize uncomment the following
+  // MLPrec->VisualizeSmoothers(5,0);
+  // MLPrec->VisualizeCycle(10);
 
   // Have process 0 print out unused parameters.
   MLPrec->PrintUnused(0);
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 32);
 
   // solve with 500 iterations and 1e-12 tolerance  
-  solver.Iterate(500, 1e-8);
+  solver.Iterate(500, 1e-6);
 
   // =============== //
   // C L E A N   U P //
