@@ -32,6 +32,17 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
+Jul 2005
+
+        * Improved the organization of the MLAPI source files and examples.
+          Now the compilation of the MLAPI sources is about 20% faster,
+          and the compilation of the MLAPI examples up to 3 times faster.
+          Some never-used examples and classes have been deleted.
+        * Drop the support for command line parameters. A similar
+          capability is supported by the Python interface.
+
+------------------------------------------------------------------------------
+	
 Jun 2005
 
         * Completed the ML wrapper for Python, using SWIG. The ML module
