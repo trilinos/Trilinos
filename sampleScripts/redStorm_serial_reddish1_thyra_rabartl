@@ -1,7 +1,7 @@
 #!/bin/sh
 module load compilers/pgi-6.0
 rm config.cache
-../../Trilinos/configure \
+$HOME/PROJECTS/Trilinos.base/Trilinos/configure \
 --cache-file=config.cache \
 CXX=pgCC CC=pgcc F77=pgf77 \
 CPPFLAGS="-tp k8-64 -lacml -lpgmp -lpgthread" \
@@ -10,4 +10,5 @@ CPPFLAGS="-tp k8-64 -lacml -lpgmp -lpgthread" \
 --disable-default-packages \
 --enable-teuchos --enable-teuchos-complex \
 --enable-thyra \
---enable-epetra --enable-epetra-thyra
+--enable-epetra \
+--enable-rythmos
