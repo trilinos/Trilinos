@@ -271,8 +271,7 @@ SUBDIRS = CrsRiluk                \
           Relaxation              \
           ILU                     \
           IC                      \
-	  TestAll		  \
-          scripts            
+	  TestAll
 
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@IFPACK_COMPARE_WITH_AZTECOO_TEST = CompareWithAztecOO/TestCompareWithAztecOO.exe
 @HAVE_IFPACK_AMESOS_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@IFPACK_CONTAINER_TEST = Container/TestContainer.exe

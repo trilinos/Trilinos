@@ -36,8 +36,7 @@ SUBDIRS = CrsRiluk                \
           Relaxation              \
           ILU                     \
           IC                      \
-	  TestAll		  \
-          scripts            
+	  TestAll
 
 if HAVE_IFPACK_AZTECOO
 if HAVE_IFPACK_TEUCHOS
