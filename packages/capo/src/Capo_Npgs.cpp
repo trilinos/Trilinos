@@ -469,7 +469,6 @@ bool Npgs::InnerIteration()
 
       // Algorithm
       SubspaceIterations(Se,We,Re);
-
       if (Unstable_Basis_Size > 0) // Need to include a Newton-Step.
 	{
 	  // Declarations (these change size with every go-around)

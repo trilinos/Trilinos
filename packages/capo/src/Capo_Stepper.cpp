@@ -165,10 +165,18 @@ void Stepper::Run()
       // Save converged solution
       // J.Simonis June10 Must do something with this output function!!
       //(*Solver).get_xfinal().Output(Step, (*Solver).get_lambdafinal());
-      cout << "Period for parameter " << iteration_method->Get_lambdafinal() 
-	   << " is " << iteration_method->Get_Tfinal() << endl;
-
-
+      
+      if ( Problem_Parameters->Periodic() )
+	{
+	  cout << "Period for parameter " << iteration_method->Get_lambdafinal() 
+	       << " is " << iteration_method->Get_Tfinal() << endl;
+	}
+      else
+	{
+	  double solnorm = Thyra::norm( *(iteration_method->Get_xfinal()) );
+	  cout << "The norm of the solution at parameter " 
+	       << iteration_method->Get_lambdafinal()  << " is " << solnorm << endl;
+	}
       // Some Solvers may require work between inner solves...
       iteration_method->InnerFunctions();
 
