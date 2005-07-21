@@ -294,17 +294,6 @@ namespace Tpetra {
 				OrdinalType numGlobalElements = ordinalZero - ordinalOne; // set to -1
 				OrdinalType numMyElements = secondaryIndices.size();
 
-				/*cout << "********** create secondary dist. diag info **********" << endl;
-				  cout << "indx_: "; 
-				  for(typename std::vector<OrdinalType>::const_iterator i = data().indx_.begin(); i != data().indx_.end(); i++) 
-				  cout << *i << " "; 
-				  cout << endl;
-				  cout << "secondaryIndices: "; 
-				  for(typename std::vector<OrdinalType>::iterator i = secondaryIndices.begin(); i != secondaryIndices.end(); i++) 
-				  cout << *i << " ";
-				  cout << endl;
-				  cout << "********** end of secondary dist. diag info **********" << endl;*/
-
 				OrdinalType indexBase = getPrimaryDist().getIndexBase();
 				Platform<OrdinalType, OrdinalType> const& platformO = getPrimaryDist().elementSpace().platform();
 				ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, secondaryIndices, indexBase, platformO);
@@ -409,14 +398,52 @@ namespace Tpetra {
 			if(errorcode) 
 				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
+			/*comm().barrier();
+			comm().barrier();
+			if(comm().getMyImageID() == 0)
+				cout << "^^ Before Import" << endl;
+			comm().barrier();
+			comm().barrier();
+			cout << x << endl;
+			comm().barrier();
+			comm().barrier();
+			cout << x2 << endl;*/
+
 			// do import on x if needed
 			if(data().haveImporter_)
 				x2.doImport(x, *(data().importer_), Insert);
+	
+			/*comm().barrier();
+			comm().barrier();
+			if(comm().getMyImageID() == 0)
+				cout << "^^ After Import" << endl;
+			comm().barrier();
+			comm().barrier();
+			cout << x << endl;
+			comm().barrier();
+			comm().barrier();
+			cout << x2 << endl;
+
+			comm().barrier();
+			comm().barrier();
+			if(comm().getMyImageID() == 0)
+				cout << "^^ Before Apply" << endl;
+			comm().barrier();
+			comm().barrier();
+			cout << y << endl;*/
 
 			// do Kokkos apply operation
 			errorcode = data().axy_.apply(data().kx_, data().ky_);
 			if(errorcode) 
 				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
+
+			/*comm().barrier();
+			comm().barrier();
+			if(comm().getMyImageID() == 0)
+				cout << "^^ After Apply" << endl;
+			comm().barrier();
+			comm().barrier();
+			cout << y << endl;*/
 
 			// do export on y if needed
 			if(data().haveExporter_)
