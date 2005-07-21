@@ -68,7 +68,9 @@ namespace Teuchos {
 class AztecOO {
 
  public:
-  //@{ \name Constructors/destructors.
+
+  /** \name Constructors/destructors. */ //@{
+
   //!  AztecOO Constructor.
   /*! Creates a AztecOO instance, passing in already-defined objects for the linear operator
     (as an Epetra_Operator),
@@ -95,7 +97,6 @@ class AztecOO {
     also possible to provide a user-supplied preconditioner by call SetPrecOperator().
   */
   AztecOO(Epetra_RowMatrix * A, Epetra_MultiVector * X, Epetra_MultiVector * B);
-
   //! AztecOO Constructor.
   /*! Creates a AztecOO instance, using a Epetra_LinearProblem,
     passing in an already-defined Epetra_LinearProblem object. The Epetra_LinearProblem class
@@ -135,7 +136,7 @@ class AztecOO {
   virtual ~AztecOO(void);
   //@}
 
-  //@{ \name Post-construction setup methods.
+  /** \name Post-construction setup methods. */ //@{
 
   //! AztecOO Epetra_LinearProblem Set
   /*! Associates an already defined Epetra_LinearProblem as the problem that will be solved during
@@ -215,7 +216,8 @@ class AztecOO {
   int SetStatusTest(AztecOO_StatusTest * StatusTest);
   //@}
 
-  //@{ \name Post-construction setup methods (classic approach: ONLY EXPERTS SHOULD USE THESE METHODS).
+  //** \name Post-construction setup methods (classic approach: ONLY EXPERTS SHOULD USE THESE METHODS). */ //@{
+
   //! AztecOO External Preconditioner Set (object)
   /*! Associates an already defined Aztec preconditioner with this solve.
    */
@@ -242,7 +244,7 @@ class AztecOO {
   int  SetMatrixName(int label);
   //@}
 
-  //@{ \name Explicit preconditioner construction/assessment/destruction methods.
+  /** \name Explicit preconditioner construction/assessment/destruction methods. */ //@{
   //! Forces explicit construction and retention of an AztecOO native preconditioner.
   /*! AztecOO typically constructs the preconditioner on the first call to the solve function.
     However, there are situations where we would like to compute the preconditioner ahead
@@ -271,7 +273,7 @@ class AztecOO {
   double Condest() const {return(condest_);};
   //@}
 
-  //@{ \name Check/Attribute Access Methods.
+  /** \name Check/Attribute Access Methods. */ //@{
 
   //! Prints a summary of solver parameters, performs simple sanity checks.
   int CheckInput() const {
@@ -293,7 +295,7 @@ class AztecOO {
   Epetra_MultiVector * GetRHS() const {return(B_);};
   //@}
 
-  //@{ \name Standard AztecOO option and parameter setting methods.
+  /** \name Standard AztecOO option and parameter setting methods. */ //@{
 
 #ifdef HAVE_AZTECOO_TEUCHOS
   //! Method to set options/parameters using a ParameterList object.
@@ -394,7 +396,7 @@ class AztecOO {
     {for (int i=0; i<AZ_PARAMS_SIZE; i++) params_[i] = params[i]; return(0);};
   //@}
 
-  //@{ \name Standard AztecOO solve methods.
+  /** \name Standard AztecOO solve methods. */ //@{
   //! AztecOO iteration function.
   /*! Iterates on the current problem until MaxIters or Tolerance is reached.
    */
@@ -412,7 +414,7 @@ class AztecOO {
 
   //@}
 
-  //@{ \name Specialist AztecOO solve method.
+  /** \name Specialist AztecOO solve method. */ //@{
   //! AztecOO iteration functions.
   /*! Iterates on the current problem until MaxIters or Tolerance is reached..
     This one should be suitable for recursive invocations of Aztec.
@@ -427,7 +429,7 @@ class AztecOO {
 
   //@}
 
-  //@{ \name Adaptive Solve methods.
+  /** \name Adaptive Solve methods. */ //@{
 
   //! Force the AdaptiveIterate() method to use default adaptive strategy.
   int SetUseAdaptiveDefaultsTrue(){useAdaptiveDefaults_ = true;return(0);};
@@ -469,7 +471,7 @@ class AztecOO {
   int AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Tolerance);
   //@}
 
-  //@{ \name Post-solve access functions
+  /** \name Post-solve access functions */ //@{
 
   //! Returns the total number of iterations performed on this problem.
   int NumIters() const {return((int) status_[AZ_its]);};
