@@ -233,9 +233,12 @@ int main(int argc, char *argv[])
   temp_string ="lambda_stepsize";
   PL->set_param(temp_string,-.001);
   temp_string ="MaxOuterIts";
-  PL->set_param(temp_string,48);
+  PL->set_param(temp_string,40);
   temp_string ="EnablePeriodicity";
   PL->set_param(temp_string, false);
+  temp_string ="EnableArclength";
+  PL->set_param(temp_string, true);
+
 
   cout << "Successfully Created a Parameter List" << endl;
 

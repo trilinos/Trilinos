@@ -193,9 +193,7 @@ int main(int argc, char *argv[])
   cout << "functionality." << endl;
 
   MySolver->Initialize();
-  double dummy1=1.0;
-  double dummy2=1.5;
-  MySolver->Predictor(dummy1,dummy2);
+  MySolver->Predictor();
   cout << MySolver->Get_Tfinal() << endl;
   cout << MySolver->Get_lambdafinal() << endl;
 
