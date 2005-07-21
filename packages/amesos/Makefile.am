@@ -67,7 +67,26 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
-	@echo "Trilinos package amesos built successfully"
+	@echo 
+	@echo "        +----------------------------------------------------+"
+	@echo "        | Trilinos package amesos built successfully         |"
+	@echo "        |                                                    |"
+	@echo "        | You might want to type \"make check\" to verify that |"
+	@echo "        | all the Amesos examples run successfully, or type  |"
+	@echo "        | \"make check-all\" to run the test suite of Amesos   |"
+	@echo "        | (this may take some time).                         |"
+	@echo "        |                                                    |"
+	@echo "        | The Amesos Users' Guide is located in              |"
+	@echo "        | Trilinos/packages/amesos/doc/AmesosReferenceGuide. |"
+	@echo "        | Also you can consult the Amesos web page.          |"
+	@echo "        |                                                    |"
+	@echo "        | You can send questions/comments to:                |"
+	@echo "        | - amesos-users@software.sandia.gov                 |"
+	@echo "        | - amesos-developers@software.sandia.gov            |"
+	@echo "        |                                                    |"
+	@echo "        | Have fun!                                          |"
+	@echo "        +----------------------------------------------------+"
+	@echo 
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -122,3 +141,71 @@ uninstall-hook:
 
 endif
 
+
+## #######################################################################
+## The below targets allow you to use the new
+## testharness to run the test suite as make targets
+## #######################################################################
+
+TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
+
+if HAVE_MPI
+ML_CHECK_COMM=mpi
+else
+ML_CHECK_COMM=serial
+endif
+
+check-local:
+	@cd example; make
+	@echo
+	@echo "============================="
+	@echo "Testing the Amesos package..."
+	@echo "============================="
+	@echo
+	@echo "You are now running (most of) the executables in the"
+	@echo "example subdirectory."
+	@echo
+if HAVE_MPI
+	@echo "By default, the MPI command is set to \"mpirun -np \"."
+	@echo "You can change it by setting the environmental variable"
+	@echo "TRILINOS_MPI_GO, for example in bash you might need"
+	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
+	@echo
+endif
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(ML_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=AmesosExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=amesos
+
+check-all:
+	@cd test; make
+	@echo
+	@echo "============================="
+	@echo "Testing the Amesos package..."
+	@echo "============================="
+	@echo
+	@echo "You are now running the complete Amesos test suite (this may"
+	@echo "test the executables in the example subdirectory)."
+	@echo
+if HAVE_MPI
+	@echo "By default, the MPI command is set to \"mpirun -np \"."
+	@echo "You can change it by setting the environmental variable"
+	@echo "TRILINOS_MPI_GO, for example in bash you might need"
+	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
+	@echo
+endif
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(ML_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=amesos

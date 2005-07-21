@@ -46,7 +46,8 @@ EXTRA_DIST = In_662_bus.rsa
 
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
-	        cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
+	cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
+	chmod -x 662_bus.rsa
 
 example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
@@ -56,7 +57,7 @@ example_AmesosFactory_Tridiag_SOURCES = $(srcdir)/example_AmesosFactory_Tridiag.
 example_AmesosFactory_Tridiag_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 example_AmesosFactory_Tridiag_LDADD = $(EXAMPLE_LIBS)
 
-example_AmesosFactory_HB_SOURCES = $(srcdir)/example_AmesosFactory_HB.cpp
+example_AmesosFactory_HB_SOURCES = $(srcdir)/example_AmesosFactory_HB.cpp 
 example_AmesosFactory_HB_DEPENDENCIES = $(top_builddir)/src/libamesos.a GetNecessaryFiles
 example_AmesosFactory_HB_LDADD = $(EXAMPLE_LIBS)
 
@@ -65,4 +66,4 @@ compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 compare_solvers_LDADD = $(EXAMPLE_LIBS)
 
 clean:  clean-am
-	rm -f  662_bus_out.rsa
+	rm -f  662_bus.rsa
