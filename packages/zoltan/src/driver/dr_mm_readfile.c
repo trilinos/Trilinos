@@ -29,7 +29,6 @@ extern "C" {
 struct ijv
 {
   int i, j;
-  double val;
 };
 
 /* comparison functions. */
@@ -115,9 +114,10 @@ struct ijv *mat;
     /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
     /*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
 
-    for (k=0; k<nz; k++)
-    {
-        fscanf(f, "%d %d %lg\n", &mat[k].i, &mat[k].j, &mat[k].val);
+    for (k=0; k<nz; k++) {
+        char line[1000];
+        fgets(line, 1000, f);
+        sscanf(line, "%d %d", &mat[k].i, &mat[k].j);
         if (matrix_obj==ROWS){
           /* swap (i,j) to transpose matrix and switch vertices/hyperedges */
           tmp = mat[k].i;
@@ -144,7 +144,7 @@ struct ijv *mat;
       mm_write_banner(stdout, matcode);
       mm_write_mtx_crd_size(stdout, M, N, nz);
       for (k=0; k<nz; k++)
-          printf("%d %d %20.19g\n", mat[k].i+1, mat[k].j+1, mat[k].val);
+          printf("%d %d\n", mat[k].i+1, mat[k].j);
     }
 
     /************************/
