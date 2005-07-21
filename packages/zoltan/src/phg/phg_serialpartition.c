@@ -125,7 +125,7 @@ int *new_part = NULL;          /* Ptr to new partition vector. */
 float *bestvals = NULL;        /* Best cut values found so far */
 int worst, new_cand;
 float worst_cut;
-static int timer_cpart=-1, timer_gather=-1;
+static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; /*AKBAKBAKB*/
 
   if (hgp->use_timers > 1) {
     if (timer_cpart < 0)
@@ -262,8 +262,22 @@ static int timer_cpart=-1, timer_gather=-1;
         goto End;
       }
 
+      /* AKBAKBAKB time refinement step in coarse partitioner */
+      if (hgp->use_timers > 3) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart);
+        if (timer_refine < 0)
+          timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Refine");
+        ZOLTAN_TIMER_START(zz->ZTime, timer_refine, phg->comm->Communicator);
+      }
+
       /* Refine new candidate. */
       Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
+
+      /* AKBAKBAKB stop refinement timer */
+      if (hgp->use_timers > 3) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine);
+        ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
+      }
 
       /* Decide if candidate is in the top tier or not. */
       /* Selection criteria should be the same as in pick_best()! */
