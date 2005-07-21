@@ -13,7 +13,7 @@
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_MultiVector.h"
-#include "MLAPI_MultiLevelNonSymmetricSA.h"
+#include "MLAPI_MultiLevelSA.h"
 #include "MLAPI_Krylov.h"
 
 // ==========================================================
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
     MultiVector LHS_MLAPI(FineSpace, LHS_Epetra.Pointers(), 1);
     MultiVector RHS_MLAPI(FineSpace, RHS_Epetra.Pointers(), 1);
 
-    MultiLevelNonSymmetricSA Prec(A_MLAPI, MLList);
+    MultiLevelSA Prec(A_MLAPI, MLList);
 
     MLList.set("krylov: type", "gmres");
     Krylov(A_MLAPI, LHS_MLAPI, RHS_MLAPI, Prec, MLList);
