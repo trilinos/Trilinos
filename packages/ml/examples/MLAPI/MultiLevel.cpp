@@ -31,7 +31,13 @@
 #include "ml_common.h"
 
 #if defined(HAVE_ML_MLAPI)
-#include "MLAPI.h"
+#include "MLAPI_Space.h"
+#include "MLAPI_Operator.h"
+#include "MLAPI_MultiVector.h"
+#include "MLAPI_Gallery.h"
+#include "MLAPI_Expressions.h"
+#include "MLAPI_MultiLevelSA.h"
+#include "MLAPI_Krylov.h"
 
 using namespace Teuchos;
 using namespace MLAPI;

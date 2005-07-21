@@ -15,7 +15,7 @@ noinst_PROGRAMS = Blackboard            \
                   MultiLevel            \
                   Richardson            \
                   AdaptiveSA            \
-                  AdaptiveSA_Elasticity 
+                  EpetraInterface
 
 Blackboard_SOURCES  = $(srcdir)/Blackboard.cpp
 Blackboard_CPPFLAGS = ${ml_common_include_locations}
@@ -47,11 +47,17 @@ AdaptiveSA_CXXFLAGS = ${ml_common_include_locations}
 AdaptiveSA_LDADD    = ${ml_libs} 
 AdaptiveSA_LINK     = ${mllink}
 
-AdaptiveSA_Elasticity_SOURCES  = $(srcdir)/AdaptiveSA_Elasticity.cpp
-AdaptiveSA_Elasticity_CPPFLAGS = ${ml_common_include_locations}
-AdaptiveSA_Elasticity_CXXFLAGS = ${ml_common_include_locations}
-AdaptiveSA_Elasticity_LDADD    = ${ml_libs} 
-AdaptiveSA_Elasticity_LINK     = ${mllink}
+EpetraInterface_SOURCES  = $(srcdir)/EpetraInterface.cpp
+EpetraInterface_CPPFLAGS = ${ml_common_include_locations}
+EpetraInterface_CXXFLAGS = ${ml_common_include_locations}
+EpetraInterface_LDADD    = ${ml_libs} 
+EpetraInterface_LINK     = ${mllink}
+
+#AdaptiveSA_Elasticity_SOURCES  = $(srcdir)/AdaptiveSA_Elasticity.cpp
+#AdaptiveSA_Elasticity_CPPFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_Elasticity_CXXFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_Elasticity_LDADD    = ${ml_libs} 
+#AdaptiveSA_Elasticity_LINK     = ${mllink}
 
 #AdaptiveSA_Tire_SOURCES  = $(srcdir)/AdaptiveSA_Tire.cpp
 #AdaptiveSA_Tire_CPPFLAGS = ${ml_common_include_locations}

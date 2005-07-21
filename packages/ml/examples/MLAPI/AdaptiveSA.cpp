@@ -30,37 +30,22 @@
 #include "ml_config.h"
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
-#include "MLAPI.h"
-#include "MLAPI_SAMIS.h"
+#include "MLAPI_Space.h"
+#include "MLAPI_Operator.h"
+#include "MLAPI_MultiVector.h"
+#include "MLAPI_Gallery.h"
+#include "MLAPI_Expressions.h"
+#include "MLAPI_MultiLevelAdaptiveSA.h"
+#include "MLAPI_DistributedMatrix.h"
+#include "MLAPI_Krylov.h"
+
 
 using namespace Teuchos;
 using namespace MLAPI;
 
-/* ====================================================================== 
-
-To use this example, create a file, called for instance ml-input, 
-which will contain the values used to built the hierarchy. An example
-of this file is as follows:
------(begin)--
-i additional candidates = 1
-s krylov: type = cg_condnum
-i krylov: max iterations = 350
-f krylov: tolerance = 1.e-10
-f aggregation: damping = 0.0
-s aggregation: type = Uncoupled
-s coarse: type = Amesos-KLU
-s smoother: type = symmetric Gauss-Seidel
-s smoother: pre or post = both
-b use default null space = true
-----(end)--
-
-then execute the file as:
-$ AdaptiveSA.exe ml-input
-
-NOTE: The file reader is very rudimental, no trailing or leading white
-spaces are admitted, and words must be separed by exactly one white space.
-
-  ====================================================================== */
+// =========== //
+// main driver //
+// =========== //
 
 int main(int argc, char *argv[])
 {
@@ -68,18 +53,6 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
-
-  if (argc != 2) {
-    fprintf(stderr, "Usage: `%s InputFile'\n", argv[0]);
-    fprintf(stderr, "An example of input file is reported\n");
-    fprintf(stderr, "in the source of this example\n");
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    exit(EXIT_SUCCESS);
-  }
-
-  string InputFile = argv[1];
 
   try {
 
@@ -115,11 +88,12 @@ int main(int argc, char *argv[])
     Operator A(FineSpace, FineSpace, &MatA, false);
 
     int NumPDEEqns = 2;
+    int MaxLevels = 10;
 
-    Teuchos::ParameterList List = ReadParameterList(InputFile.c_str());
-    int MaxLevels = List.get("max levels", 10);
-    int AdditionalCandidates = List.get("additional candidates", 2);
-    bool UseDefaultNullSpace = List.get("use default null space", true);
+    Teuchos::ParameterList List;
+    List.set("additional candidates", 2);
+    List.set("use default null space", true);
+    List.set("krylov: type", "cg");
 
     MultiLevelAdaptiveSA Prec(A, List, NumPDEEqns, MaxLevels);
 
@@ -130,6 +104,8 @@ int main(int argc, char *argv[])
     // - the final null space dimension is 3.                          //
     // =============================================================== //
     
+    bool UseDefaultNullSpace = true;
+    int AdditionalCandidates = 1;
     Prec.AdaptCompute(UseDefaultNullSpace, AdditionalCandidates);
 
     MultiVector LHS(A.GetDomainSpace());
@@ -138,7 +114,6 @@ int main(int argc, char *argv[])
     LHS.Random();
     RHS = 0.0;
 
-    List.set("krylov: type", "cg");
     Krylov(A, LHS, RHS, Prec, List);
 
     Finalize(); 

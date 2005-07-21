@@ -34,7 +34,15 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
 #include "ml_include.h"
-#include "MLAPI.h"
+#include "MLAPI_Space.h"
+#include "MLAPI_Operator.h"
+#include "MLAPI_MultiVector.h"
+#include "MLAPI_Gallery.h"
+#include "MLAPI_Expressions.h"
+#include "MLAPI_InverseOperator.h"
+#include "MLAPI_Aggregation.h"
+#include "MLAPI_Operator_Utils.h"
+#include "MLAPI_Krylov.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;

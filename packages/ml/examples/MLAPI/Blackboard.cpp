@@ -30,6 +30,10 @@
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 
+// This is the easiest way, since all MLAPI include files will 
+// automatically be included. However, this also makes the compilation
+// longer, so you might want to specify the exact list of include files
+// as long as you code gets finalized.
 #include "MLAPI.h"
 
 using namespace Teuchos;
@@ -205,7 +209,7 @@ int main(int argc, char *argv[])
     // EI will contain the imaginary part of the eigenvalues;
     
     MultiVector ER, EI;
-    /// FIXME // Eig(A, ER, EI);
+    Eig(A, ER, EI);
 
     for (int i = 0 ; i < ER.GetMyLength() ; ++i)
       cout << "ER(" << MySpace(i) << ") = " << ER(i) << endl;

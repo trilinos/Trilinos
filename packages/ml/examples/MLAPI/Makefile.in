@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) $(Blackboard_SOURCES) $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) $(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
+SOURCES = $(AdaptiveSA_SOURCES) $(Blackboard_SOURCES) $(EpetraInterface_SOURCES) $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) $(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -45,7 +45,7 @@ DIST_COMMON = README $(srcdir)/../Makefile-common.include \
 noinst_PROGRAMS = Blackboard$(EXEEXT) PowerMethod$(EXEEXT) \
 	TwoLevelDDAdditive$(EXEEXT) MultiLevel$(EXEEXT) \
 	Richardson$(EXEEXT) AdaptiveSA$(EXEEXT) \
-	AdaptiveSA_Elasticity$(EXEEXT)
+	EpetraInterface$(EXEEXT)
 subdir = examples/MLAPI
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -89,13 +89,13 @@ am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 AdaptiveSA_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_AdaptiveSA_Elasticity_OBJECTS =  \
-	AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.$(OBJEXT)
-AdaptiveSA_Elasticity_OBJECTS = $(am_AdaptiveSA_Elasticity_OBJECTS)
-AdaptiveSA_Elasticity_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_Blackboard_OBJECTS = Blackboard-Blackboard.$(OBJEXT)
 Blackboard_OBJECTS = $(am_Blackboard_OBJECTS)
 Blackboard_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_EpetraInterface_OBJECTS =  \
+	EpetraInterface-EpetraInterface.$(OBJEXT)
+EpetraInterface_OBJECTS = $(am_EpetraInterface_OBJECTS)
+EpetraInterface_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_MultiLevel_OBJECTS = MultiLevel-MultiLevel.$(OBJEXT)
 MultiLevel_OBJECTS = $(am_MultiLevel_OBJECTS)
 MultiLevel_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -113,8 +113,8 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Blackboard-Blackboard.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraInterface-EpetraInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MultiLevel-MultiLevel.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/PowerMethod-PowerMethod.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Richardson-Richardson.Po \
@@ -124,12 +124,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) \
-	$(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
+SOURCES = $(AdaptiveSA_SOURCES) $(Blackboard_SOURCES) \
+	$(EpetraInterface_SOURCES) $(MultiLevel_SOURCES) \
 	$(PowerMethod_SOURCES) $(Richardson_SOURCES) \
 	$(TwoLevelDDAdditive_SOURCES)
-DIST_SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) \
-	$(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
+DIST_SOURCES = $(AdaptiveSA_SOURCES) $(Blackboard_SOURCES) \
+	$(EpetraInterface_SOURCES) $(MultiLevel_SOURCES) \
 	$(PowerMethod_SOURCES) $(Richardson_SOURCES) \
 	$(TwoLevelDDAdditive_SOURCES)
 ETAGS = etags
@@ -344,11 +344,17 @@ AdaptiveSA_CPPFLAGS = ${ml_common_include_locations}
 AdaptiveSA_CXXFLAGS = ${ml_common_include_locations}
 AdaptiveSA_LDADD = ${ml_libs} 
 AdaptiveSA_LINK = ${mllink}
-AdaptiveSA_Elasticity_SOURCES = $(srcdir)/AdaptiveSA_Elasticity.cpp
-AdaptiveSA_Elasticity_CPPFLAGS = ${ml_common_include_locations}
-AdaptiveSA_Elasticity_CXXFLAGS = ${ml_common_include_locations}
-AdaptiveSA_Elasticity_LDADD = ${ml_libs} 
-AdaptiveSA_Elasticity_LINK = ${mllink}
+EpetraInterface_SOURCES = $(srcdir)/EpetraInterface.cpp
+EpetraInterface_CPPFLAGS = ${ml_common_include_locations}
+EpetraInterface_CXXFLAGS = ${ml_common_include_locations}
+EpetraInterface_LDADD = ${ml_libs} 
+EpetraInterface_LINK = ${mllink}
+
+#AdaptiveSA_Elasticity_SOURCES  = $(srcdir)/AdaptiveSA_Elasticity.cpp
+#AdaptiveSA_Elasticity_CPPFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_Elasticity_CXXFLAGS = ${ml_common_include_locations}
+#AdaptiveSA_Elasticity_LDADD    = ${ml_libs} 
+#AdaptiveSA_Elasticity_LINK     = ${mllink}
 
 #AdaptiveSA_Tire_SOURCES  = $(srcdir)/AdaptiveSA_Tire.cpp
 #AdaptiveSA_Tire_CPPFLAGS = ${ml_common_include_locations}
@@ -399,12 +405,12 @@ clean-noinstPROGRAMS:
 AdaptiveSA$(EXEEXT): $(AdaptiveSA_OBJECTS) $(AdaptiveSA_DEPENDENCIES) 
 	@rm -f AdaptiveSA$(EXEEXT)
 	$(AdaptiveSA_LINK) $(AdaptiveSA_LDFLAGS) $(AdaptiveSA_OBJECTS) $(AdaptiveSA_LDADD) $(LIBS)
-AdaptiveSA_Elasticity$(EXEEXT): $(AdaptiveSA_Elasticity_OBJECTS) $(AdaptiveSA_Elasticity_DEPENDENCIES) 
-	@rm -f AdaptiveSA_Elasticity$(EXEEXT)
-	$(AdaptiveSA_Elasticity_LINK) $(AdaptiveSA_Elasticity_LDFLAGS) $(AdaptiveSA_Elasticity_OBJECTS) $(AdaptiveSA_Elasticity_LDADD) $(LIBS)
 Blackboard$(EXEEXT): $(Blackboard_OBJECTS) $(Blackboard_DEPENDENCIES) 
 	@rm -f Blackboard$(EXEEXT)
 	$(Blackboard_LINK) $(Blackboard_LDFLAGS) $(Blackboard_OBJECTS) $(Blackboard_LDADD) $(LIBS)
+EpetraInterface$(EXEEXT): $(EpetraInterface_OBJECTS) $(EpetraInterface_DEPENDENCIES) 
+	@rm -f EpetraInterface$(EXEEXT)
+	$(EpetraInterface_LINK) $(EpetraInterface_LDFLAGS) $(EpetraInterface_OBJECTS) $(EpetraInterface_LDADD) $(LIBS)
 MultiLevel$(EXEEXT): $(MultiLevel_OBJECTS) $(MultiLevel_DEPENDENCIES) 
 	@rm -f MultiLevel$(EXEEXT)
 	$(MultiLevel_LINK) $(MultiLevel_LDFLAGS) $(MultiLevel_OBJECTS) $(MultiLevel_LDADD) $(LIBS)
@@ -425,8 +431,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Blackboard-Blackboard.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraInterface-EpetraInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevel-MultiLevel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PowerMethod-PowerMethod.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Richardson-Richardson.Po@am__quote@
@@ -464,22 +470,6 @@ AdaptiveSA-AdaptiveSA.obj: $(srcdir)/AdaptiveSA.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA-AdaptiveSA.obj `if test -f '$(srcdir)/AdaptiveSA.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA.cpp'; fi`
 
-AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.o: $(srcdir)/AdaptiveSA_Elasticity.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_Elasticity_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_Elasticity_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.o -MD -MP -MF "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Tpo" -c -o AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.o `test -f '$(srcdir)/AdaptiveSA_Elasticity.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA_Elasticity.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Tpo" "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po"; else rm -f "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA_Elasticity.cpp' object='AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_Elasticity_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_Elasticity_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.o `test -f '$(srcdir)/AdaptiveSA_Elasticity.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA_Elasticity.cpp
-
-AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.obj: $(srcdir)/AdaptiveSA_Elasticity.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_Elasticity_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_Elasticity_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.obj -MD -MP -MF "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Tpo" -c -o AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.obj `if test -f '$(srcdir)/AdaptiveSA_Elasticity.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA_Elasticity.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA_Elasticity.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Tpo" "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po"; else rm -f "$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA_Elasticity.cpp' object='AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_Elasticity_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_Elasticity_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.obj `if test -f '$(srcdir)/AdaptiveSA_Elasticity.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA_Elasticity.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA_Elasticity.cpp'; fi`
-
 Blackboard-Blackboard.o: $(srcdir)/Blackboard.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Blackboard_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -MT Blackboard-Blackboard.o -MD -MP -MF "$(DEPDIR)/Blackboard-Blackboard.Tpo" -c -o Blackboard-Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Blackboard-Blackboard.Tpo" "$(DEPDIR)/Blackboard-Blackboard.Po"; else rm -f "$(DEPDIR)/Blackboard-Blackboard.Tpo"; exit 1; fi
@@ -495,6 +485,22 @@ Blackboard-Blackboard.obj: $(srcdir)/Blackboard.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Blackboard-Blackboard.Po' tmpdepfile='$(DEPDIR)/Blackboard-Blackboard.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Blackboard_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -c -o Blackboard-Blackboard.obj `if test -f '$(srcdir)/Blackboard.cpp'; then $(CYGPATH_W) '$(srcdir)/Blackboard.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Blackboard.cpp'; fi`
+
+EpetraInterface-EpetraInterface.o: $(srcdir)/EpetraInterface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(EpetraInterface_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -MT EpetraInterface-EpetraInterface.o -MD -MP -MF "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" -c -o EpetraInterface-EpetraInterface.o `test -f '$(srcdir)/EpetraInterface.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraInterface.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" "$(DEPDIR)/EpetraInterface-EpetraInterface.Po"; else rm -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraInterface.cpp' object='EpetraInterface-EpetraInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraInterface-EpetraInterface.Po' tmpdepfile='$(DEPDIR)/EpetraInterface-EpetraInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(EpetraInterface_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -c -o EpetraInterface-EpetraInterface.o `test -f '$(srcdir)/EpetraInterface.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraInterface.cpp
+
+EpetraInterface-EpetraInterface.obj: $(srcdir)/EpetraInterface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(EpetraInterface_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -MT EpetraInterface-EpetraInterface.obj -MD -MP -MF "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" -c -o EpetraInterface-EpetraInterface.obj `if test -f '$(srcdir)/EpetraInterface.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraInterface.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" "$(DEPDIR)/EpetraInterface-EpetraInterface.Po"; else rm -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraInterface.cpp' object='EpetraInterface-EpetraInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraInterface-EpetraInterface.Po' tmpdepfile='$(DEPDIR)/EpetraInterface-EpetraInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(EpetraInterface_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -c -o EpetraInterface-EpetraInterface.obj `if test -f '$(srcdir)/EpetraInterface.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraInterface.cpp'; fi`
 
 MultiLevel-MultiLevel.o: $(srcdir)/MultiLevel.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevel_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel-MultiLevel.o -MD -MP -MF "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" -c -o MultiLevel-MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp; \

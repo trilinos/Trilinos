@@ -39,7 +39,11 @@
 #include "AztecOO.h"
 
 #if defined(HAVE_ML_MLAPI)
-#include "MLAPI.h"
+#include "MLAPI_Space.h"
+#include "MLAPI_Operator.h"
+#include "MLAPI_MultiLevelSA.h"
+#include "MLAPI_EpetraBaseOperator.h"
+#include "MLAPI_Workspace.h"
 
 using namespace Teuchos;
 using namespace MLAPI;
