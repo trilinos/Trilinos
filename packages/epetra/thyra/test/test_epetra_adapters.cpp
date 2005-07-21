@@ -791,7 +791,9 @@ int main( int argc, char* argv[] )
 
     }
 
-		if(verbose) out << "\n*** (B.12) Test DiagonalEpetraLinearOpWithSolveFactory \n";
+#ifndef __sun
+
+    if(verbose) out << "\n*** (B.12) Test DiagonalEpetraLinearOpWithSolveFactory \n";
 
     if(1) {
 
@@ -813,6 +815,8 @@ int main( int argc, char* argv[] )
       if(!result) success = false;
     
     }
+
+#endif // __sun
 
 		if(verbose)
 			out

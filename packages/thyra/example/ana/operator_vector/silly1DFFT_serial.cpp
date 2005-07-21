@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef __sun
+
 #include "ComplexFFTLinearOp.hpp"
 #include "RealComplexFFTLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -166,15 +168,20 @@ bool run1DFFTExample(
 
 } // end run1DFFTExample()
 
+#endif // __sun
+
 //
 // Actual main driver program
 //
 int main(int argc, char *argv[])
 {
 
+  bool success = true;
+
+#ifndef __sun
+
   using Teuchos::CommandLineProcessor;
 
-  bool success = true;
   bool verbose = true;
   bool result;
 
@@ -230,6 +237,8 @@ int main(int argc, char *argv[])
     if(success)   std::cout << "\nCongratulations! All of the tests checked out!\n";
     else          std::cout << "\nOh no! At least one of the tests failed!\n";
   }
+
+#endif // __sun
   
   return success ? 0 : 1;
 

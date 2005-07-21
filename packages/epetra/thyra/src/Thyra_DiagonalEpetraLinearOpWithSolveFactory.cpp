@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef __sun
+
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_DiagonalLinearOp.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
@@ -96,3 +98,15 @@ DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
 }
 
 } // namespace Thyra
+
+#endif // __sun
+
+
+
+
+
+
+
+
+
+

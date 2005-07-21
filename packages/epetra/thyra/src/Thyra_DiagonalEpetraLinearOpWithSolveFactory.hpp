@@ -29,6 +29,8 @@
 #ifndef THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
+#ifndef __sun
+
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
 namespace Thyra {
@@ -65,5 +67,7 @@ public:
 //@}
 
 } // namespace Thyra
+
+#endif // __sun
 
 #endif // THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
