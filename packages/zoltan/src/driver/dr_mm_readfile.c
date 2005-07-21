@@ -203,6 +203,7 @@ struct ijv *mat;
       else
         tmp = (*index)[j];
     }
+    (*index)[0] = 0;
 
 End:
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
