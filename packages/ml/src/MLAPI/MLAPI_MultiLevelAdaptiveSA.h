@@ -1,7 +1,7 @@
 #ifndef MLAPI_MULTILEVELADAPTIVESA_H
 #define MLAPI_MULTILEVELADAPTIVESA_H
 
-#include "ml_include.h"
+#include "ml_common.h"
 #include "ml_agg_genP.h"
 #include "MLAPI_Error.h"
 #include "MLAPI_CompObject.h"
@@ -9,6 +9,7 @@
 #include "MLAPI_Operator.h"
 #include "MLAPI_Operator_Utils.h"
 #include "MLAPI_MultiVector.h"
+#include "MLAPI_MultiVector_Utils.h"
 #include "MLAPI_InverseOperator.h"
 #include "MLAPI_Expressions.h"
 #include "MLAPI_BaseOperator.h"

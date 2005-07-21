@@ -4,16 +4,15 @@
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 
-#include "MLAPI_Error.h"
-#include "MLAPI_MultiVector.h"
-#include "MLAPI_BaseOperator.h"
-#include "MLAPI_EpetraBaseOperator.h"
-#include "ml_RowMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
+namespace Teuchos {
+  class List;
+}
 
 namespace MLAPI {
+
+class Operator;
+class BaseOperator;
+class MultiVector;
 
 /*!
 \file MLAPI_Krylov

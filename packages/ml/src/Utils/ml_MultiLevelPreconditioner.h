@@ -147,10 +147,6 @@ namespace ML_Epetra
   int SetDefaultsSA(Teuchos::ParameterList & List, 
 		    int * options = 0, double * params = 0);
 
-  //! Sets parameters in the given list from the command line.
-  int SetParameters(int argc, char* argv[],
-                    Teuchos::ParameterList& List);
-
 /*!
  
    \brief MultiLevelPreconditioner: a class to define black-box multilevel preconditioners using aggregation methods.

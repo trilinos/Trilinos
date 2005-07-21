@@ -4,6 +4,7 @@
 #include "MLAPI_Workspace.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_MultiVector.h"
+#include "MLAPI_MultiVector_Utils.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_InverseOperator.h"
 #include "MLAPI_Operator_Utils.h"

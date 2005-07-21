@@ -1,7 +1,7 @@
 #ifndef ML_SPACE_H
 #define ML_SPACE_H
 
-#include "ml_include.h"
+#include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 #include "ml_comm.h"
 #include "MLAPI_Error.h"

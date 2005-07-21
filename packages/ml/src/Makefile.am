@@ -185,7 +185,6 @@ $(srcdir)/MLAPI/MLAPI_SerialMatrix.h         \
 $(srcdir)/MLAPI/MLAPI_DistributedMatrix.h    \
 $(srcdir)/MLAPI/MLAPI_MultiLevelSA.h         \
 $(srcdir)/MLAPI/MLAPI_MultiLevelAdaptiveSA.h \
-$(srcdir)/MLAPI/MLAPI_MultiLevelNonSymmetricSA.h \
 $(srcdir)/MLAPI/MLAPI_MultiVector.h          \
 $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.h    \
 $(srcdir)/MLAPI/MLAPI_Operator_Box.h         \
@@ -227,7 +226,6 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_Viz.cpp         \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Adapt.cpp       \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp     \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp        \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp         \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Aux.cpp         \
 $(srcdir)/Utils/ml_anasazi.cpp                              \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp                   \
@@ -235,6 +233,7 @@ $(srcdir)/Utils/ml_RowMatrix.cpp                            \
 $(srcdir)/Utils/ml_DD_prec.cpp                              \
 $(srcdir)/MLAPI/MLAPI_Defaults.cpp                          \
 $(srcdir)/MLAPI/MLAPI_Gallery.cpp                           \
+$(srcdir)/MLAPI/MLAPI_InverseOperator.cpp                   \
 $(srcdir)/MLAPI/MLAPI_Operator_Utils.cpp                    \
 $(srcdir)/MLAPI/MLAPI_Eig.cpp                               \
 $(srcdir)/MLAPI/MLAPI_Krylov.cpp                            \
@@ -244,6 +243,7 @@ $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.cpp                 \
 $(srcdir)/MLAPI/MLAPI_BaseObject.cpp                        \
 $(srcdir)/MLAPI/MLAPI_Aggregation.cpp                       \
 $(srcdir)/MLAPI/MLAPI_Error.cpp                             \
+$(srcdir)/MLAPI/MLAPI_DistributedMatrix.cpp                 \
 $(srcdir)/MLAPI/MLAPI_SAMIS.cpp                             \
 $(srcdir)/NonlinML/ml_nox_coarseinterface.cpp               \
 $(srcdir)/NonlinML/ml_nox_linearsystem.cpp                  \

@@ -1,14 +1,10 @@
 #ifndef ML_EXPRESSIONS_H
 #define ML_EXPRESSIONS_H
 
-#include "MLAPI_Error.h"
-#include "MLAPI_Workspace.h"
-#include "MLAPI_Space.h"
-#include "MLAPI_MultiVector.h"
-#include "MLAPI_Operator.h"
-#include "MLAPI_InverseOperator.h"
-
 namespace MLAPI {
+
+class MultiVector;
+class Operator;
 
 /*!
 \file MLAPI_Expressions.h

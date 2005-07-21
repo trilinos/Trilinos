@@ -1,3 +1,5 @@
+#ifdef COMPILE_ME
+
 #include "ml_config.h"
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -749,3 +751,4 @@ void ReadSAMISKernel(const char *myKerFileName, MultiVector& A,
 } // namespace MLAPI
 
 #endif // HAVE_ML_MLAPI
+#endif

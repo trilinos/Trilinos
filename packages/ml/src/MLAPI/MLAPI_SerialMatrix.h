@@ -10,6 +10,7 @@
 #include "MLAPI_Error.h"
 #include "MLAPI_BaseObject.h"
 #include "MLAPI_Space.h"
+#include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include <iomanip>
@@ -302,15 +303,14 @@ public:
       // return a reference to this guy
       return(where_->second);
     else {
-      double& val = ptr_[row][col];
-      val = 0.0;
+      ptr_[row][col] = 0.0;
       // track number of stored elements
       ++NumMyNonzeros_;
       // track number of diagonals 
       if (row == col)
         ++NumMyDiagonals_;
       // return a reference to this guy
-      return(val);
+      return(ptr_[row][col]);
     }
   }
            

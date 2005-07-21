@@ -1,8 +1,7 @@
 #ifndef MLAPI_OPERATOR_BOX_H
 #define MLAPI_OPERATOR_BOX_H
 
-#include "ml_include.h"
-#include "MLAPI_Error.h"
+#include "ml_operator.h"
 
 namespace MLAPI {
 

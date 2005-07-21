@@ -1,7 +1,7 @@
 #ifndef ML_OPERATOR_H
 #define ML_OPERATOR_H
 
-#include "ml_include.h"
+#include "ml_common.h"
 #include <iostream>
 #include "ml_operator.h"
 #include "ml_epetra_utils.h"

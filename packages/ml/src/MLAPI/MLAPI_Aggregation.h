@@ -4,15 +4,6 @@
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 
-#include "ml_include.h"
-#include <iostream>
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "MLAPI_Error.h"
-#include "MLAPI_Space.h"
-#include "MLAPI_Operator.h"
-#include "MLAPI_Workspace.h"
-
 /*!
 \file MLAPI_Aggregation.h
 
@@ -30,6 +21,9 @@ namespace Teuchos {
 }
 
 namespace MLAPI {
+
+class Operator;
+class MultiVector;
 
 //! Builds the tentative prolongator using aggregation.
 void GetPtent(const Operator& A, Teuchos::ParameterList& List,
