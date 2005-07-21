@@ -81,6 +81,26 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
                                                                                 
 all-local:
 	@echo "Trilinos package ml built successfully"
+	@echo 
+	@echo "        +----------------------------------------------------+"
+	@echo "        | Trilinos package ML built successfully             |"
+	@echo "        |                                                    |"
+	@echo "        | You might want to type \"make check\" to verify that |"
+	@echo "        | all the ML examples run successfully, or type      |"
+	@echo "        | \"make check-all\" to run the test suite of ML       |"
+	@echo "        | (this may take some time).                         |"
+	@echo "        |                                                    |"
+	@echo "        | The ML Users' Guide is located in                  |"
+	@echo "        | Trilinos/packages/ml/doc/mlguide.pdf. You can also |"
+	@echo "        | consult the ML web site for more details.          |"
+	@echo "        |                                                    |"
+	@echo "        | You can send questions/comments to:                |"
+	@echo "        | - ml-users@software.sandia.gov                     |"
+	@echo "        | - ml-developers@software.sandia.gov                |"
+	@echo "        |                                                    |"
+	@echo "        | Have fun!                                          |"
+	@echo "        +----------------------------------------------------+"
+	@echo 
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -134,3 +154,71 @@ install-exec-hook:
 uninstall-hook:
 
 endif
+
+## #######################################################################
+## The below targets allow you to use the new
+## testharness to run the test suite as make targets
+## #######################################################################
+
+TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
+
+if HAVE_MPI
+ML_CHECK_COMM=mpi
+else
+ML_CHECK_COMM=serial
+endif
+
+check-local:
+	@cd examples; make
+	@echo
+	@echo "========================="
+	@echo "Testing the ML package..."
+	@echo "========================="
+	@echo
+	@echo "You are now running (most of) the executables in the"
+	@echo "examples subdirectory."
+	@echo
+if HAVE_MPI
+	@echo "By default, the MPI command is set to \"mpirun -np \"."
+	@echo "You can change it by setting the environmental variable"
+	@echo "TRILINOS_MPI_GO, for example in bash you might need"
+	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
+	@echo
+endif
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(ML_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=MLExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=ml
+
+check-all:
+	@cd test; make
+	@echo
+	@echo "========================="
+	@echo "Testing the ML package..."
+	@echo "========================="
+	@echo
+	@echo "You are now running the complete ML test suite (this may"
+	@echo "test the executables in the examples subdirectory)."
+	@echo
+if HAVE_MPI
+	@echo "By default, the MPI command is set to \"mpirun -np \"."
+	@echo "You can change it by setting the environmental variable"
+	@echo "TRILINOS_MPI_GO, for example in bash you might need"
+	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
+	@echo
+endif
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(ML_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=ml

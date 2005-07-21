@@ -331,6 +331,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @ML_BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = examples
 @PYTHON_USE_TRUE@PYTHON_SUBDIR = python
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+@HAVE_MPI_FALSE@ML_CHECK_COMM = serial
+@HAVE_MPI_TRUE@ML_CHECK_COMM = mpi
 all: all-recursive
 
 .SUFFIXES:
@@ -632,6 +636,7 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
+	$(MAKE) $(AM_MAKEFLAGS) check-local
 check: check-recursive
 all-am: Makefile all-local
 installdirs: installdirs-recursive
@@ -717,9 +722,9 @@ uninstall-am: uninstall-info-am
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am all-local \
-	am--refresh check check-am clean clean-generic clean-recursive \
-	ctags ctags-recursive dist dist-all dist-bzip2 dist-gzip \
-	dist-shar dist-tarZ dist-zip distcheck distclean \
+	am--refresh check check-am check-local clean clean-generic \
+	clean-recursive ctags ctags-recursive dist dist-all dist-bzip2 \
+	dist-gzip dist-shar dist-tarZ dist-zip distcheck distclean \
 	distclean-generic distclean-recursive distclean-tags \
 	distcleancheck distdir distuninstallcheck dvi dvi-am html \
 	html-am info info-am install install-am install-data \
@@ -736,6 +741,26 @@ uninstall-info: uninstall-info-recursive
 
 all-local:
 	@echo "Trilinos package ml built successfully"
+	@echo 
+	@echo "        +----------------------------------------------------+"
+	@echo "        | Trilinos package ML built successfully             |"
+	@echo "        |                                                    |"
+	@echo "        | You might want to type \"make check\" to verify that |"
+	@echo "        | all the ML examples run successfully, or type      |"
+	@echo "        | \"make check-all\" to run the test suite of ML       |"
+	@echo "        | (this may take some time).                         |"
+	@echo "        |                                                    |"
+	@echo "        | The ML Users' Guide is located in                  |"
+	@echo "        | Trilinos/packages/ml/doc/mlguide.pdf, or consult   |"
+	@echo "        | or consult the ML web site for more details.       |"
+	@echo "        |                                                    |"
+	@echo "        | You can send questions/comments to:                |"
+	@echo "        | - ml-users@software.sandia.gov                     |"
+	@echo "        | - ml-developers@software.sandia.gov                |"
+	@echo "        |                                                    |"
+	@echo "        | Have fun!                                          |"
+	@echo "        +----------------------------------------------------+"
+	@echo 
 
 all-libs:
 	cd src ; make all-libs
@@ -758,6 +783,56 @@ all-libs:
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
+
+check-local:
+	@cd examples; make
+	@echo
+	@echo "========================="
+	@echo "Testing the ML package..."
+	@echo "========================="
+	@echo
+	@echo "You are now running (most of) the executables in the"
+	@echo "examples subdirectory."
+	@echo
+@HAVE_MPI_TRUE@	@echo "By default, the MPI command is set to \"mpirun -np \"."
+@HAVE_MPI_TRUE@	@echo "You can change it by setting the environmental variable"
+@HAVE_MPI_TRUE@	@echo "TRILINOS_MPI_GO, for example in bash you might need"
+@HAVE_MPI_TRUE@	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
+@HAVE_MPI_TRUE@	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(ML_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=MLExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=ml
+
+check-all:
+	@cd test; make
+	@echo
+	@echo "========================="
+	@echo "Testing the ML package..."
+	@echo "========================="
+	@echo
+	@echo "You are now running the complete ML test suite (this may"
+	@echo "test the executables in the examples subdirectory)."
+	@echo
+@HAVE_MPI_TRUE@	@echo "By default, the MPI command is set to \"mpirun -np \"."
+@HAVE_MPI_TRUE@	@echo "You can change it by setting the environmental variable"
+@HAVE_MPI_TRUE@	@echo "TRILINOS_MPI_GO, for example in bash you might need"
+@HAVE_MPI_TRUE@	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
+@HAVE_MPI_TRUE@	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(ML_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
