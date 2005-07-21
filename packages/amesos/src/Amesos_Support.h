@@ -54,7 +54,7 @@ class Amesos_StandardIndex
   Epetra_CrsMatrix* StandardizeIndex( Epetra_CrsMatrix* OriginalCrsMatrix );
 
   //! Convert CrsMatrix to a CrsMatrix indexed from 0 to n-1 
-  Epetra_Map*  Amesos_StandardIndex::StdIndexMap() {
+  Epetra_Map*  StdIndexMap() {
     return &*StdIndexMap_ ; 
   }
 #endif
