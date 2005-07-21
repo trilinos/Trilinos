@@ -423,13 +423,6 @@ AC_CONFIG_FILES([
 		test/CompareWithAztecOO/Makefile
 		test/ILU/Makefile
 		test/IC/Makefile
-                test/scripts/Makefile
-                test/scripts/daily/Makefile
-                test/scripts/daily/mpi/Makefile
-                test/scripts/daily/serial/Makefile
-                test/scripts/weekly/Makefile
-                test/scripts/weekly/mpi/Makefile
-                test/scripts/weekly/serial/Makefile
                 python/Makefile
                 python/src/Makefile
                 python/src/__init__.py
