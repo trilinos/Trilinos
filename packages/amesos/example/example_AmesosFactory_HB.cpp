@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  string matrix_file = "662_bus_out.rsa"; // file containing the HB matrix.
+  string matrix_file = "662_bus.rsa"; // file containing the HB matrix.
   if (Comm.MyPID() == 0)
     cout << "Reading matrix `" << matrix_file << "'";
   

@@ -334,13 +334,7 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
 AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
-
-#Marzio removed this file from the repository
-#EXTRA_DIST = In_662_bus.rsa
-
-#copy these files over to the build area
-#GetNecessaryFiles: $(EXTRA_DIST)
-#	        cp -f $(srcdir)/In_662_bus.rsa 662_bus_out.rsa
+EXTRA_DIST = In_662_bus.rsa
 example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 example_AmesosFactory_LDADD = $(EXAMPLE_LIBS)
@@ -655,6 +649,10 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.amesos
+
+#copy these files over to the build area
+GetNecessaryFiles: $(EXTRA_DIST)
+	        cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
 
 clean:  clean-am
 	rm -f  662_bus_out.rsa
