@@ -561,7 +561,7 @@ static int pmatching_ipm(
   char *yo = "pmatching_ipm";
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   int cFLAG, edge;                 /* column match only if user requested */
-  static int development_timers[2] = {-1, -1};
+  static int development_timers[3] = {-1, -1, -1};
 
   
   /* this restriction will be removed later, but for now NOTE this test */
@@ -654,7 +654,12 @@ static int pmatching_ipm(
 
     
     /************************ PHASE 1: ***************************************/
-    
+    if (hgp->use_timers > 3)  {
+      if (development_timers[2] < 0)
+        development_timers[2] = Zoltan_Timer_Init(zz->ZTime, 0, 
+                                                      "candidates communication");
+    ZOLTAN_TIMER_START(zz->ZTime, development_timers[2], hg->comm->Communicator);
+    }  
     
     mp = master_data;
     nmaster = 0;                   /* count of data accumulted in master row */    
@@ -721,6 +726,9 @@ static int pmatching_ipm(
       i += count;                   /* skip over count edges */
     }
 
+    if (hgp->use_timers > 3)
+       ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[2]);
+    
 skip_phase1:
     /* Communication grouped candidates by processor, scramble them! */
     /* Otherwise all candidates from proc column 0 will be matched first. */
@@ -885,8 +893,7 @@ skip_phase1:
 
       if (hgp->use_timers > 3)  {
         if (development_timers[1] < 0)
-          development_timers[1] = Zoltan_Timer_Init(zz->ZTime, 0, 
-                                                   "build totals");
+          development_timers[1] =Zoltan_Timer_Init(zz->ZTime, 0, "total innerproducts");                               
         ZOLTAN_TIMER_START(zz->ZTime, development_timers[1], 
                            hg->comm->Communicator);
       }      
@@ -1197,6 +1204,8 @@ if (count)
                        hg->comm->Communicator, stdout);
     Zoltan_Timer_Print(zz->ZTime, development_timers[1], zz->Proc, 
                        hg->comm->Communicator, stdout);
+    Zoltan_Timer_Print(zz->ZTime, development_timers[2], zz->Proc, 
+                       hg->comm->Communicator, stdout);                       
   }
      
 fini:
