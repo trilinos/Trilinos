@@ -561,9 +561,15 @@ static int pmatching_ipm(
   char *yo = "pmatching_ipm";
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   int cFLAG, edge;                 /* column match only if user requested */
-  static int development_timers[3] = {-1, -1, -1};
+  static int development_timers[4] = {-1, -1, -1, -1};
 
-  
+    if (hgp->use_timers > 3)  {
+      if (development_timers[3] < 0)
+        development_timers[3] = Zoltan_Timer_Init(zz->ZTime, 0, 
+                                                      "matching setup");
+    ZOLTAN_TIMER_START(zz->ZTime, development_timers[3], hg->comm->Communicator);
+    }   
+   
   /* this restriction will be removed later, but for now NOTE this test */
   if (sizeof(int) < sizeof (float))  {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Code must be modified before using");
@@ -642,7 +648,11 @@ static int pmatching_ipm(
    * Phase 4: return actual match selections        - horizontal communication
    *
    * No conflict resolution required because temp locking prevents conflicts. */
-  
+
+    if (hgp->use_timers > 3)
+       ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[3]);
+       
+     
   pvisit = 0;                                    /* marks position in visit[] */
   for (round = 0; round < nRounds; round++)  {
     if (cFLAG)  {
@@ -688,9 +698,13 @@ static int pmatching_ipm(
     
     /* determine actual global number of candidates this round */
     MPI_Allreduce (&sendcnt, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);     
-    if (nTotal == 0)   
+    if (nTotal == 0)   {
+      if (hgp->use_timers > 3)
+       ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[2]);
       break;                            /* globally all work is done, so quit */
-
+      }
+      
+      
     /* communication to determine global size and displacements of rec buffer */
     MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm); 
      
@@ -1205,6 +1219,8 @@ if (count)
     Zoltan_Timer_Print(zz->ZTime, development_timers[1], zz->Proc, 
                        hg->comm->Communicator, stdout);
     Zoltan_Timer_Print(zz->ZTime, development_timers[2], zz->Proc, 
+                       hg->comm->Communicator, stdout);
+    Zoltan_Timer_Print(zz->ZTime, development_timers[3], zz->Proc, 
                        hg->comm->Communicator, stdout);                       
   }
      
