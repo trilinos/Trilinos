@@ -100,6 +100,14 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	int returnierr = 0;
 
 	// fixtures
+	
+	OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
+	OrdinalType const negOne = zero - one;
+	OrdinalType const indexBase = zero;
+	OrdinalType const numGlobalElements = intToOrdinal<OrdinalType>(10); // magic number
+
+	// Tpetra::Platform objects
 #ifdef TPETRA_MPI
 	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
 	Tpetra::MpiPlatform<OrdinalType, OrdinalType> esPlatform(MPI_COMM_WORLD);
@@ -107,9 +115,19 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
 	Tpetra::SerialPlatform<OrdinalType, OrdinalType> esPlatform;
 #endif
-	OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-	OrdinalType const negOne = zero - Teuchos::OrdinalTraits<OrdinalType>::one();
-	OrdinalType const indexBase = zero;
+
+	// ElementSpace and VectorSpace objects
+	if(verbose) cout << "Creating source Distribution..." << endl;
+	// source ES: nGE elements, uniform distribution
+	Tpetra::ElementSpace<OrdinalType> elementspace(numGlobalElements, indexBase, esPlatform);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platform);
+	if(verbose) cout << "Creating target Distribution..." << endl;
+	// dest ES: locally-replicated versions of source ES/VS
+	std::vector<OrdinalType> allGIDs(numGlobalElements);
+	for(OrdinalType i = zero; i < numGlobalElements; i++)
+		allGIDs.at(i) = i;
+	Tpetra::ElementSpace<OrdinalType> es2(negOne, numGlobalElements, allGIDs, indexBase, esPlatform);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> vs2(es2, platform);
 
 	// ======================================================================
 	// code coverage section - just call functions, no testing
@@ -125,33 +143,24 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	// distributed -> locally replicated
 	// ========================================
 
-	// first create the ElementSpace and VectorSpace objects we need
-	// 10 elements, uniform distribution
-	OrdinalType const numGlobalElements = intToOrdinal<OrdinalType>(10); // magic number
-	Tpetra::ElementSpace<OrdinalType> elementspace(numGlobalElements, indexBase, esPlatform);
-	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platform);
-
-	// now create the vector and fill with data
+	if(verbose) cout << "Creating and initializing source DistObject..." << endl;
+	// create the vector we'll import from
 	Tpetra::Vector<OrdinalType, ScalarType> v1(vectorspace);
 	// we will use column 1 from the generator
 	for(OrdinalType i = zero; i < numGlobalElements; i++)
 		if(vectorspace.isMyGlobalIndex(i))
-			v1[vectorspace.getLocalIndex(i)] = generateValue(zero, i);
+			v1[vectorspace.getLocalIndex(i)] = generateValue(one, i);
 	if(debug)
 		cout << v1;
 
-	// create the locally-replicated ElementSpace and VectorSpace
-	std::vector<OrdinalType> allGIDs(numGlobalElements);
-	for(OrdinalType i = zero; i < numGlobalElements; i++)
-		allGIDs.at(i) = i;
-	Tpetra::ElementSpace<OrdinalType> es2(negOne, numGlobalElements, allGIDs, indexBase, esPlatform);
-	Tpetra::VectorSpace<OrdinalType, ScalarType> vs2(es2, platform);
-
+	if(verbose) cout << "Creating and initializing target DistObject..." << endl;
 	// create the locally-replicated Vector we'll import into
 	Tpetra::Vector<OrdinalType, ScalarType> v2(vs2);
 	if(debug)
 		cout << v2;
 
+	if(verbose) cout << "Testing doImport... ";
+	if(debug) cout << endl;
 	// create the Importer and do the import
 	Tpetra::Import<OrdinalType> importer(elementspace, es2);
 	v2.doImport(v1, importer, Tpetra::Insert);
@@ -159,6 +168,28 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 		cout << v1;
 		cout << v2;
 	}
+
+	// extract values and check them
+	std::vector<ScalarType> actualValues(v2.getNumMyEntries());
+	v2.extractCopy(&actualValues.front());
+	std::vector<ScalarType> expectedValues;
+	generateColumn(expectedValues, one, numGlobalElements);
+	/*if(debug) {
+		outputData(myImageID, numImages, "Expected: " + Tpetra::toString(expectedValues));
+		outputData(myImageID, numImages, "Actual: " + Tpetra::toString(actualValues));
+	}*/
+	if(debug && verbose)
+		cout << "doImport test ";
+	if(actualValues != expectedValues) {
+		if(verbose)
+			cout << "failed" << endl;
+		ierr++;
+	}
+	else
+		if(verbose)
+			cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
 
 	// ======================================================================
 	// finish up
