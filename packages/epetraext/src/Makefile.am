@@ -81,12 +81,10 @@ EXTRA_TRANSFORM = \
 
 EXTRA_TRANSFORM_EXPERIMENTAL_H = \
      $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.h \
-     $(srcdir)/transform/EpetraExt_StaticCondensation_LinearProblem.h \
      $(srcdir)/transform/EpetraExt_AMD_CrsGraph.h
 
 EXTRA_TRANSFORM_EXPERIMENTAL = \
      $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp \
-     $(srcdir)/transform/EpetraExt_StaticCondensation_LinearProblem.cpp \
      $(srcdir)/transform/EpetraExt_AMD_CrsGraph.cpp
 
 if BUILD_TRANSFORM

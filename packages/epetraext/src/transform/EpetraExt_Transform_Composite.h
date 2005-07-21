@@ -123,15 +123,15 @@ Transform_Composite<T>::
 operator()
 ( typename Transform<T,T>::OriginalTypeRef orig )
 {
-  origObj_ = &orig;
-  newObj_ = &orig;
+  this->origObj_ = &orig;
+  this->newObj_ = &orig;
 
   TransListIter iter = transList_.begin();
   TransListIter end = transList_.end();
   for( ; iter != end; ++iter )
-    newObj_ = &((**iter)( *newObj_ ));
+    this->newObj_ = &((**iter)( *(this->newObj_) ));
 
-  return *newObj_;
+  return *(this->newObj_);
 }
 
 template<typename T>

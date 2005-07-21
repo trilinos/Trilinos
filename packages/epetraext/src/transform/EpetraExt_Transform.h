@@ -277,8 +277,8 @@ class InPlaceTransform : public SameTypeTransform<T>
   typename Transform<T,T>::NewTypeRef
   operator()
   ( typename Transform<T,T>::OriginalTypeRef orig )
-  { origObj_ = &orig;
-    newObj_ = &orig;
+  { this->origObj_ = &orig;
+    this->newObj_ = &orig;
     return orig;
   }
 
