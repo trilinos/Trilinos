@@ -341,7 +341,7 @@ example_AmesosFactory_LDADD = $(EXAMPLE_LIBS)
 example_AmesosFactory_Tridiag_SOURCES = $(srcdir)/example_AmesosFactory_Tridiag.cpp
 example_AmesosFactory_Tridiag_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 example_AmesosFactory_Tridiag_LDADD = $(EXAMPLE_LIBS)
-example_AmesosFactory_HB_SOURCES = $(srcdir)/example_AmesosFactory_HB.cpp
+example_AmesosFactory_HB_SOURCES = $(srcdir)/example_AmesosFactory_HB.cpp 
 example_AmesosFactory_HB_DEPENDENCIES = $(top_builddir)/src/libamesos.a GetNecessaryFiles
 example_AmesosFactory_HB_LDADD = $(EXAMPLE_LIBS)
 compare_solvers_SOURCES = $(srcdir)/compare_solvers.cpp
@@ -652,10 +652,11 @@ include $(top_builddir)/Makefile.export.amesos
 
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
-	        cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
+	cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
+	chmod -x 662_bus.rsa
 
 clean:  clean-am
-	rm -f  662_bus_out.rsa
+	rm -f  662_bus.rsa
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
