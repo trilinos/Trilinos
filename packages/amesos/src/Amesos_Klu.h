@@ -280,8 +280,6 @@ private:
   Epetra_RowMatrix* RowMatrixA_;
   //! Operator converted to a CrsMatrix
   Epetra_CrsMatrix* CrsMatrixA_;
-  //! Specifies whether the matrix was reindexed
-  bool Reindex_ ; 
 #if 0
   //! Points to an object which reindexes a MultiVector to a contiguous map
   Teuchos::RefCountPtr<EpetraExt::MultiVector_Reindex> VecTrans_;

@@ -1,4 +1,5 @@
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
@@ -25,10 +26,10 @@ int SmallColPermute( int in ) { return in + 4 ; }
 //    0=same as RowMap, 1=add 4 - Different From RowMap, but contiguous) 
 //
 //  RangeMap:
-//    0=no change, 1=serial map, 2=bizarre distribution
+//    0=no change, 1=serial map, 2=bizarre distribution, 3=replicated map
 //
 //  DomainMap:
-//    0=no change, 1=serial map, 2=bizarre distribution
+//    0=no change, 1=serial map, 2=bizarre distribution, 3=replicated map
 //
 RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In, 
 					   int Diagonal, 
@@ -71,8 +72,8 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   assert( Diagonal >= 0  && Diagonal <= 2 ); 
   assert( ReindexRowMap>=0 && ReindexRowMap<=2 );
   assert( ReindexColMap>=0 && ReindexColMap<=1 );
-  assert( RangeMapType>=0 && RangeMapType<=2 );
-  assert( DomainMapType>=0 && DomainMapType<=2 );
+  assert( RangeMapType>=0 && RangeMapType<=3 );
+  assert( DomainMapType>=0 && DomainMapType<=3 );
 
   Epetra_Map DomainMap = In.DomainMap();
   Epetra_Map RangeMap = In.RangeMap();
@@ -295,6 +296,8 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 
   //
 
+  Epetra_LocalMap ReplicatedMap( NumGlobalRangeElements, 0, In.Comm() );
+
   RefCountPtr<Epetra_Map> OutRangeMap ;
   RefCountPtr<Epetra_Map> OutDomainMap ;
   
@@ -308,6 +311,9 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   case 2:
     OutRangeMap = rcp(&BizarreRangeMap, false); 
     break;
+  case 3:
+    OutRangeMap = rcp(&ReplicatedMap, false); 
+    break;
   }
   //  switch( DomainMapType ) {
   switch( DomainMapType ) {
@@ -319,6 +325,9 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
     break;
   case 2:
     OutDomainMap = rcp(&BizarreDomainMap, false); 
+    break;
+  case 3:
+    OutDomainMap = rcp(&ReplicatedMap, false); 
     break;
   }
 #if 0

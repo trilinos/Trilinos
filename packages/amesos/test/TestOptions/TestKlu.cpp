@@ -21,6 +21,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	     const bool verbose, 
 	     const int Levels,
 	     const double Rcond,
+	     Teuchos::ParameterList ParamList,
 	     bool RowMapEqualsColMap, 
 	     double &maxrelerror, 
 	     double &maxrelresidual,
@@ -35,7 +36,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //     1)  no parameters
 
   {
-    Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     else ParamList.set( "OutputLevel", 1 );
@@ -85,7 +85,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   }
 
   {
-    Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     else ParamList.set( "OutputLevel", 1 );
@@ -137,7 +136,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //
   //     2)  Refactorize = true 
   {
-    Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     else ParamList.set( "OutputLevel", 1 );
@@ -187,7 +185,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //
   //     2A)  AddToDiag 
   if (RowMapEqualsColMap ) {
-    Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     else ParamList.set( "OutputLevel", 1 );
@@ -241,7 +238,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //
   //     3)  ScaleMethod = 1 - argh I don't see how ScaleMEthod can work
   {
-    Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     else ParamList.set( "OutputLevel", 1 );
@@ -293,7 +289,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //
   //     4)  ComputeTrueResidual==true
   {
-    Teuchos::ParameterList ParamList ;
     if ( verbose ) ParamList.set( "DebugLevel", 1 );
     if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
     else ParamList.set( "OutputLevel", 1 );

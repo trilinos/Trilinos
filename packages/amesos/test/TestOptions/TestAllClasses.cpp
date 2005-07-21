@@ -151,13 +151,16 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	//	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunKluTest = false ;   //  Bug #1403
 	if ( RunKluTest && verbose) cout << " Testing KLU " << endl ; 
 
+	Teuchos::ParameterList ParamList;
+	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
 
 	if ( RunKluTest ) errors += TestKlu( Amat, 
-							 EpetraMatrixType,
+					     EpetraMatrixType,
 					     transpose, 
 					     verbose, 
 					     Levels,
 					     Rcond, 
+					     ParamList, 
 					     RowMapEqualsColMap, 
 					     maxrelerror, 
 					     maxrelresidual, 

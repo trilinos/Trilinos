@@ -25,6 +25,7 @@ public:
     refactorize_ = false;
     MaxProcesses_ = -1;
     ScaleMethod_ = 0;
+    Reindex_ = 0;
   }
 
   //! Default destructor.
@@ -59,6 +60,8 @@ public:
 			    // 1: use the default method for the specific package
 			    // 2: use the method's 1st alternative (if it has one)
 			    // 3: use the method's 2nd alternative, and so on.
+                            //
+                            // Amesos_Klu is, at present, the only code which implements this
 
   //! Adds zero to diagonal of redistributed matrix (some solvers choke on a matrix with a partly empty diag)
   bool AddZeroToDiag_; 
@@ -73,6 +76,9 @@ public:
 
   int MaxProcesses_;                     // default is -1 ; If positive, distribute 
                                          // problem over MaxProcesses
+  //! If true, the Amesos class should reindex the matrix to standard indexing (i.e. 0-n-1)
+  //! at present, only Amesos_Klu supports this option.
+  bool Reindex_ ; 
 
 
 };

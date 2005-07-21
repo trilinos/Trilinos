@@ -66,7 +66,6 @@ public:
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( new Amesos_Klu_Pimpl() ),
   CrsMatrixA_(0),
-  Reindex_(false),
   UseTranspose_(false),
   Problem_(&prob)
 {
@@ -95,6 +94,10 @@ int Amesos_Klu::ExportToSerial()
        << " iam = " << iam 
        << endl ; 
 
+  if ( numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
+    cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
+    AMESOS_CHK_ERR( -2 );
+  }
   if (UseDataInPlace_ != 1) {
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     assert ( RowMatrixA_ != 0 ) ; 
@@ -102,12 +105,24 @@ int Amesos_Klu::ExportToSerial()
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
-    
+
     Comm().Barrier();
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+
+    if( numentries_ != SerialMatrix_->NumGlobalNonzeros()) {
+      cerr << " Amesos_Klu cannot handle this matrix.  " ;
+      if ( Reindex_ ) {
+	cerr << "Unknown error" << endl ; 
+	AMESOS_CHK_ERR( -5 );
+      } else {
+	cerr << " Try setting the Reindex parameter to true. " << endl ; 
+	AMESOS_CHK_ERR( -3 );
+      }
+    }
+
   }
   
   return 0;
@@ -203,19 +218,6 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-1);
 
 #if 0    
-    if ( true || OriginalRangeMap.SameAs( OriginalMatrixMap ) )
-      ImportRangeToSerial_ = ImportToSerial_ ;
-    else
-      ImportRangeToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalRangeMap) );
-    
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-    if ( true || OriginalDomainMap.SameAs( OriginalMatrixMap ) )
-      ImportDomainToSerial_ = ImportToSerial_ ;
-    else {
-    }
-    //      ImportDomainToSerial_ = rcp(new Epetra_Import (*SerialMap_,OriginalDomainMap) );
-#endif
-#if 0    
     assert ( OriginalRangeMap.SameAs( OriginalMatrixMap ) ) ;
     assert ( OriginalDomainMap.SameAs( OriginalMatrixMap ) );
 #endif    
@@ -275,7 +277,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 	 << endl ; 
 #endif
 
-    assert( numentries_ == SerialMatrix_->NumGlobalNonzeros());
+    assert( numentries_ == SerialMatrix_->NumGlobalNonzeros()) ;
     if ( firsttime ) { 
       Ap.resize( NumGlobalElements_+1 );
       Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
@@ -351,14 +353,6 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // solve problem with transpose
   if( ParameterList.isParameter("UseTranspose") )
     SetUseTranspose(ParameterList.get("UseTranspose",UseTranspose()));
-
-  // scaling method: 0: none, 1: use method's default, 2: use
-  // the method's 1st alternative, 3: etc.
-  if( ParameterList.isParameter("ScaleMethod") )
-    ScaleMethod_ = ParameterList.get("ScaleMethod", ScaleMethod_);
-
-  if( ParameterList.isParameter("Reindex") )
-    ScaleMethod_ = ParameterList.get("Reindex", Reindex_);
 
   // MS // now comment it out, if we have parameters for KLU sublist
   // MS // uncomment it

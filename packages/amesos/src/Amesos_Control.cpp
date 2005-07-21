@@ -70,4 +70,13 @@ void Amesos_Control::SetControlParameters(Teuchos::ParameterList &ParameterList)
     }
   }
 
+  // scaling method: 0: none, 1: use method's default, 2: use
+  // the method's 1st alternative, 3: etc.
+  if( ParameterList.isParameter("ScaleMethod") )
+    ScaleMethod_ = ParameterList.get("ScaleMethod", ScaleMethod_);
+
+
+  if( ParameterList.isParameter("Reindex") )
+    Reindex_ = ParameterList.get("Reindex", Reindex_);
+
 }

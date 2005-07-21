@@ -75,6 +75,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 			    double& relresidual )
 {
 
+
   RefCountPtr<Epetra_CrsMatrix> MyMat ; 
   RefCountPtr<Epetra_CrsMatrix> MyMatWithDiag ; 
 
@@ -187,10 +188,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     if (verbose) ParamList.set( "DebugLevel", 1 );
     if (verbose) ParamList.set( "OutputLevel", 1 );
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
-#if 1 //  bug - this should be removed - I have no idea why it was commented out 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
-#endif 
 
     int ind[1];
     double val[1];

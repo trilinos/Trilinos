@@ -274,8 +274,8 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   //
   //  These tests are all disabled in TestAllClasses.cpp
   //
-  int RangemapMax = 3; // should be three:  ( no change, serial, bizarre dist )
-  int DomainmapMax = 3; // should be three:  ( no change, serial, bizarre dist )
+  int RangemapMax = 4; // should be four:  ( no change, serial, bizarre dist, replicated )
+  int DomainmapMax = 4; // should be four:  ( no change, serial, bizarre dist, replicated )
 
   //
   //  DiagonalOpts controls whether diagonal elements are left alone,
@@ -310,13 +310,21 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 #if 1
       for ( int iterRowindex = 0 ; iterRowindex < RowindexMax; iterRowindex++ ) {
 	for ( int iterColindex = 0 ; iterColindex < ColindexMax; iterColindex++ ) {
-	  for ( int iterRangemap = 0 ; iterRangemap < RangemapMax; iterRangemap++ ) {
-	    for ( int iterDomainmap = 0 ; iterDomainmap < DomainmapMax; iterDomainmap++ ) {
+	  //
+	  //  The current version of NewMatNewMap.cpp supports only trivial 
+	  //  replicated maps, hence we do not allow any fancy indexing
+	  //
+	  int ThisRangemapMax = RangemapMax ;
+	  if ( iterRowindex > 0 || iterColindex > 0 ) 
+	    ThisRangemapMax = EPETRA_MIN( 3, ThisRangemapMax );
+	  int ThisDomainmapMax = ThisRangemapMax ;
+	  for ( int iterRangemap = 0 ; iterRangemap < ThisRangemapMax; iterRangemap++ ) {
+	    for ( int iterDomainmap = 0 ; iterDomainmap < ThisDomainmapMax; iterDomainmap++ ) {
 	      for ( int iterDiagonalOpts = 0 ; iterDiagonalOpts < DiagonalOptsMax; iterDiagonalOpts++ ) {
 #else
-		int iterRowindex = 0; { 
+		int iterRowindex = 1; { 
 		  int iterColindex = 0 ; { 
-		    int iterRangemap = 1 ; { 
+		    int iterRangemap = 0 ; { 
 		      int iterDomainmap = 0 ; {
 			int iterDiagonalOpts = 0 ; { 
 #endif

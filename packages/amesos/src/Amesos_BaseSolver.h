@@ -274,8 +274,13 @@ class Amesos_BaseSolver {
       <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       <li>The non-zero structure of the matrix should not have changed
           since the last call to SymbolicFactorization().  
+          (return -2 if the number of non-zeros changes) 
+          Other changes can have arbitrary consequences.
       <li>The distribution of the matrix should not have changed 
           since the last call to SymbolicFactorization()
+      <li>The matrix should be indexed from 0 to n-1, unless the Parameter "Reindex" 
+          was set to "true" prior to the call to SymbolicFactorization().  
+          (return -3 - if caught)
       </ul>
 
       <br \>Postconditions:<ul> 
