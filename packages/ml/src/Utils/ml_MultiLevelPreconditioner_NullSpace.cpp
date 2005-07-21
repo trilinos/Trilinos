@@ -26,8 +26,6 @@ using namespace Teuchos;
 
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 {
-
-  // to be fixed??
   return(0);
 }
 
@@ -35,14 +33,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
 {
-
   int NullSpaceDim = NumPDEEqns_;
-  double * NullSpacePtr = NULL;
+  double* NullSpacePtr = 0;
 
   string option = List_.get("null space: type", "default vectors");
 
   // to save time, the 1-level case will always use "default vectors"
-  if( NumLevels_ == 1 ) option = "default vectors";
+  if (NumLevels_ == 1) option = "default vectors";
   
   // Null space can be obtained in 3 ways:
   // 1. default vectors, one constant vector for each physical unknown
@@ -52,15 +49,16 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   //    lowest of A, or the largest of I-A). Default space can be added
   //    if required.
   
-  if (option == "default vectors") {
-
+  if (option == "default vectors") 
+  {
     // sanity check for default null-space
     if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,NULL,
                                RowMatrix_->NumMyRows());
 
-  } else if (option == "pre-computed") {
-
+  } 
+  else if (option == "pre-computed") 
+  {
     NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
     NullSpacePtr = List_.get("null space: vectors", NullSpacePtr);
 
@@ -77,8 +75,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr,
 			       RowMatrix_->NumMyRows());
   
-  } else if (option == "enriched") {
-
+  } 
+#if FIXME
+  else if (option == "enriched") 
+  {
     NullSpaceDim = List_.get("null space: vectors to compute", 1);
 
     // by default, 0 means to compute one eigenvector per equation.
@@ -241,22 +241,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
      exit( EXIT_FAILURE );
 #endif
 
-  } else {
-
+  } 
+#endif
+  else 
+  {
     cerr << ErrorMsg_ << "Option `null space: type' not recognized ("
 	 << option << ")" << endl
 	 << ErrorMsg_ << "It should be:" << endl
 	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <enriched>" << endl;
-    exit( EXIT_FAILURE );
+    exit(EXIT_FAILURE);
   }
   
   // May need to scale the null space ??
 
   double * NullSpaceScaling = List_.get("null space: scaling", (double *)0);
 
-  if( NullSpaceScaling != 0 ) {
-    if( verbose_ ) cout << PrintMsg_ << "Scaling Null Space..." << endl;
-    ML_Aggregate_Scale_NullSpace(agg_,NullSpaceScaling,RowMatrix_->RowMatrixRowMap().NumMyElements());
+  if (NullSpaceScaling != 0) 
+  {
+    if (verbose_) 
+      cout << PrintMsg_ << "Scaling Null Space..." << endl;
+    ML_Aggregate_Scale_NullSpace(agg_,NullSpaceScaling,
+                                 RowMatrix_->RowMatrixRowMap().NumMyElements());
   } 
 
   return(0);
