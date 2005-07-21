@@ -72,6 +72,8 @@ int main(int argc, char *argv[])
 
   AztecOO solver(*Problem);
 
+  Init();
+
   try {
 
     Space S(-1, A->NumMyRows(), A->RowMatrixRowMap().MyGlobalElements());
