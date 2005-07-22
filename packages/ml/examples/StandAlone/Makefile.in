@@ -15,7 +15,6 @@
 @SET_MAKE@
 
 #@HEADER
-#@HEADER
 
 SOURCES = $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
@@ -40,11 +39,10 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-DIST_COMMON = $(srcdir)/../Makefile-common.include \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 noinst_PROGRAMS = ml_example1d$(EXEEXT) ml_example1dGS$(EXEEXT) \
 	mlguide$(EXEEXT) mlguide_par$(EXEEXT)
 subdir = examples/StandAlone
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -84,8 +82,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_ml_example1d_OBJECTS = ml_example1d-ml_example1d.$(OBJEXT)
 ml_example1d_OBJECTS = $(am_ml_example1d_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ML_LIBS))
 am_ml_example1dGS_OBJECTS = ml_example1dGS-ml_example1dGS.$(OBJEXT)
 ml_example1dGS_OBJECTS = $(am_ml_example1dGS_OBJECTS)
 am_mlguide_OBJECTS = mlguide-mlguide.$(OBJEXT)
@@ -274,55 +273,36 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-####################
-# include locations
-####################
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-
-####################
-# libraries
-####################
-ml_libs = $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
-
-
-##################
-# common link line
-##################
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-###############
-# sources
-###############
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 mlguide_SOURCES = $(srcdir)/mlguide.c
-mlguide_CFLAGS = ${ml_common_include_locations}
-mlguide_LDADD = ${ml_libs}
-mlguide_LINK = ${mllink}
 mlguide_DEPENDENCIES = $(top_builddir)/src/libml.a
+mlguide_LDADD = ${EXAMPLE_LIBS}
+mlguide_CFLAGS = ${EXAMPLE_INCLUDES}
+mlguide_LINK = ${ML_LINK}
 mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
-mlguide_par_CFLAGS = ${ml_common_include_locations}
-mlguide_par_LDADD = ${ml_libs}
-mlguide_par_LINK = ${mllink}
 mlguide_par_DEPENDENCIES = $(top_builddir)/src/libml.a
+mlguide_par_LDADD = ${EXAMPLE_LIBS}
+mlguide_par_CFLAGS = ${EXAMPLE_INCLUDES}
+mlguide_par_LINK = ${ML_LINK}
 ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
-ml_example1d_CFLAGS = ${ml_common_include_locations}
-ml_example1d_LDADD = ${ml_libs}
-ml_example1d_LINK = ${mllink}
 ml_example1d_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_example1d_LDADD = ${EXAMPLE_LIBS}
+ml_example1d_CFLAGS = ${EXAMPLE_INCLUDES}
+ml_example1d_LINK = ${ML_LINK}
 ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
-ml_example1dGS_CFLAGS = ${ml_common_include_locations}
-ml_example1dGS_LDADD = ${ml_libs}
-ml_example1dGS_LINK = ${mllink}
 ml_example1dGS_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_example1dGS_LDADD = ${EXAMPLE_LIBS}
+ml_example1dGS_CFLAGS = ${EXAMPLE_INCLUDES}
+ml_example1dGS_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/../Makefile-common.include $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -506,7 +486,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/..
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -622,8 +601,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

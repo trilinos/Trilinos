@@ -1,9 +1,19 @@
 #@HEADER
-#@HEADER
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-include ../Makefile-common.include
+# include definitions of ML_INCLUDES and ML_LIBS
+# ML_EXTRA_LIBS and ML_EXTRA_INCLUDES contain additional libraries and
+# header files required to compile and link some of the ML examples.
+include $(top_builddir)/Makefile.export.ml
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+else
+EXAMPLE_LIBS     = $(ML_LIBS)     $(ML_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -13,23 +23,14 @@ noinst_PROGRAMS = ml_user_aggr \
                   ml_filtering \
                   ml_analyze 
 
-ml_user_aggr_SOURCES = $(srcdir)/ml_user_aggr.cpp
-ml_user_aggr_CPPFLAGS = ${ml_common_include_locations}
-ml_user_aggr_CXXFLAGS = ${ml_common_include_locations}
-ml_user_aggr_LDADD = ${ml_libs} 
-ml_user_aggr_LINK = ${mllink}
+ml_user_aggr_SOURCES      = $(srcdir)/ml_user_aggr.cpp
 ml_user_aggr_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_user_aggr_LDADD        = $(EXAMPLE_LIBS)
 
-ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
-ml_filtering_CPPFLAGS = ${ml_common_include_locations}
-ml_filtering_CXXFLAGS = ${ml_common_include_locations}
-ml_filtering_LDADD = ${ml_libs} 
-ml_filtering_LINK = ${mllink}
+ml_filtering_SOURCES      = $(srcdir)/ml_filtering.cpp
 ml_filtering_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_filtering_LDADD        = $(EXAMPLE_LIBS)
 
-ml_analyze_SOURCES = $(srcdir)/ml_analyze.cpp
-ml_analyze_CPPFLAGS = ${ml_common_include_locations}
-ml_analyze_CXXFLAGS = ${ml_common_include_locations}
-ml_analyze_LDADD = ${ml_libs} 
-ml_analyze_LINK = ${mllink}
+ml_analyze_SOURCES      = $(srcdir)/ml_analyze.cpp
 ml_analyze_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_analyze_LDADD        = $(EXAMPLE_LIBS)

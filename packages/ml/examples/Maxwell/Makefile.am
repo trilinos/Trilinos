@@ -1,9 +1,16 @@
 #@HEADER
-#@HEADER
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-include ../Makefile-common.include
+include $(top_builddir)/Makefile.export.ml
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+else
+EXAMPLE_LIBS     = $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -12,15 +19,13 @@ EXEEXT = .exe
 noinst_PROGRAMS = ml_maxwell \
                   ml_simple_max
 
-ml_maxwell_SOURCES = $(srcdir)/ml_maxwell.cpp
-ml_maxwell_CPPFLAGS = ${ml_common_include_locations}
-ml_maxwell_CXXFLAGS = ${ml_common_include_locations}
-ml_maxwell_LDADD = ${ml_libs}
-ml_maxwell_LINK = ${mllink}
+ml_maxwell_SOURCES      = $(srcdir)/ml_maxwell.cpp
 ml_maxwell_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_maxwell_CFLAGS       = ${EXAMPLE_INCLUDES}
+ml_maxwell_LDADD        = ${EXAMPLE_LIBS}
 
-ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
-ml_simple_max_CFLAGS = ${ml_common_include_locations}
-ml_simple_max_LDADD = ${ml_libs}
-ml_simple_max_LINK = ${mllink}
+ml_simple_max_SOURCES      = $(srcdir)/ml_simple_max.c
 ml_simple_max_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_simple_max_CFLAGS       = ${EXAMPLE_INCLUDES}
+ml_simple_max_LDADD        = ${EXAMPLE_LIBS}
+ml_maxwell_LINK            = ${ML_LINK}

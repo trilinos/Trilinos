@@ -104,16 +104,19 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_MultiLevelPreconditioner_Maxwell_OBJECTS = MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.$(OBJEXT)
+am_MultiLevelPreconditioner_Maxwell_OBJECTS =  \
+	MultiLevelPreconditioner_Maxwell.$(OBJEXT)
 MultiLevelPreconditioner_Maxwell_OBJECTS =  \
 	$(am_MultiLevelPreconditioner_Maxwell_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Po
+@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@	./$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -288,22 +291,14 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs = $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
-
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+AM_CXXFLAGS = $(TEST_INCLUDES)
 MultiLevelPreconditioner_Maxwell_SOURCES = $(srcdir)/MultiLevelPreconditioner_Maxwell.cpp
-MultiLevelPreconditioner_Maxwell_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-MultiLevelPreconditioner_Maxwell_CPPFLAGS = ${ml_common_include_locations}
-MultiLevelPreconditioner_Maxwell_CXXFLAGS = ${ml_common_include_locations}
-MultiLevelPreconditioner_Maxwell_LDADD = ${ml_libs}
-MultiLevelPreconditioner_Maxwell_LINK = ${mllink}
+MultiLevelPreconditioner_Maxwell_DEPENDENCIES = $(top_builddir)/src/libml.a
+MultiLevelPreconditioner_Maxwell_LDADD = ${TEST_LIBS}
 all: all-am
 
 .SUFFIXES:
@@ -342,7 +337,7 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 MultiLevelPreconditioner_Maxwell$(EXEEXT): $(MultiLevelPreconditioner_Maxwell_OBJECTS) $(MultiLevelPreconditioner_Maxwell_DEPENDENCIES) 
 	@rm -f MultiLevelPreconditioner_Maxwell$(EXEEXT)
-	$(MultiLevelPreconditioner_Maxwell_LINK) $(MultiLevelPreconditioner_Maxwell_LDFLAGS) $(MultiLevelPreconditioner_Maxwell_OBJECTS) $(MultiLevelPreconditioner_Maxwell_LDADD) $(LIBS)
+	$(CXXLINK) $(MultiLevelPreconditioner_Maxwell_LDFLAGS) $(MultiLevelPreconditioner_Maxwell_OBJECTS) $(MultiLevelPreconditioner_Maxwell_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -350,7 +345,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -368,21 +363,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.o: $(srcdir)/MultiLevelPreconditioner_Maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Maxwell_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Maxwell_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.o -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Tpo" -c -o MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.o `test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' object='MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.TPo' @AMDEPBACKSLASH@
+MultiLevelPreconditioner_Maxwell.o: $(srcdir)/MultiLevelPreconditioner_Maxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_Maxwell.o -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Tpo" -c -o MultiLevelPreconditioner_Maxwell.o `test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' object='MultiLevelPreconditioner_Maxwell.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Maxwell_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Maxwell_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.o `test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_Maxwell.o `test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp
 
-MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.obj: $(srcdir)/MultiLevelPreconditioner_Maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Maxwell_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Maxwell_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.obj -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Tpo" -c -o MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.obj `if test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' object='MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.TPo' @AMDEPBACKSLASH@
+MultiLevelPreconditioner_Maxwell.obj: $(srcdir)/MultiLevelPreconditioner_Maxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_Maxwell.obj -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Tpo" -c -o MultiLevelPreconditioner_Maxwell.obj `if test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp' object='MultiLevelPreconditioner_Maxwell.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_Maxwell.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Maxwell_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Maxwell_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_Maxwell-MultiLevelPreconditioner_Maxwell.obj `if test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_Maxwell.obj `if test -f '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevelPreconditioner_Maxwell.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -547,8 +542,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

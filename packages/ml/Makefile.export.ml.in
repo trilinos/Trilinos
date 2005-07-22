@@ -44,10 +44,9 @@ ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lml $(EPETRA_LIBS) $(AMESOS_LIBS) 
 
 @ML_USING_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
-ML_TEST_INCLUDES = $(ML_INCLUDES) \
-		   $(TRIUTILS_INCLUDES)
+ML_EXTRA_INCLUDES = $(TRIUTILS_INCLUDES)
 
-ML_TEST_LIBS = $(ML_LIBS) \
-	       $(TRIUTILS_LIBS)
+ML_EXTRA_LIBS = $(TRIUTILS_LIBS)
 
-ML_TEST_LINK = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+#ML_LINK = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+ML_LINK = $(CXX) $(AM_LDFLAGS) $(LDFLAGS) -o $@

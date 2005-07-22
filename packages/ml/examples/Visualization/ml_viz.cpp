@@ -133,12 +133,10 @@ int main(int argc, char *argv[])
   MLList.set("increasing or decreasing","increasing");
   MLList.set("smoother: type", "symmetric Gauss-Seidel");
 
-  // aggregation scheme set to METIS. Note that MIS can be
-  // visualized only for serial runs, while Uncoupled, METIS and
-  // ParMETIS for serial and parallel runs.
-  MLList.set("aggregation: type", "METIS");
-  MLList.set("aggregation: local aggregates (level 0)", 16);
-  MLList.set("aggregation: local aggregates (level 1)", 2);
+  // aggregation scheme set to Uncoupled. Note that the aggregates
+  // created by MIS can be visualized for serial runs only, while 
+  // Uncoupled, METIS for both serial and parallel runs.
+  MLList.set("aggregation: type", "Uncoupled");
 
   // ======================== //
   // visualization parameters //

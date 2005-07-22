@@ -15,7 +15,6 @@
 @SET_MAKE@
 
 #@HEADER
-#@HEADER
 
 SOURCES = $(ml_aztec_simple_SOURCES) $(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) $(ml_readex_SOURCES)
 
@@ -40,11 +39,10 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-DIST_COMMON = $(srcdir)/../Makefile-common.include \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 noinst_PROGRAMS = ml_aztec_simple$(EXEEXT) ml_operator$(EXEEXT) \
 	ml_preconditioner$(EXEEXT) ml_readex$(EXEEXT)
 subdir = examples/BasicExamples
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -81,25 +79,27 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_ml_aztec_simple_OBJECTS = ml_aztec_simple.$(OBJEXT)
+am_ml_aztec_simple_OBJECTS =  \
+	ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
 ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_TEST_LIBS))
+@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
 am_ml_operator_OBJECTS = ml_operator.$(OBJEXT)
 ml_operator_OBJECTS = $(am_ml_operator_OBJECTS)
 am_ml_preconditioner_OBJECTS = ml_preconditioner.$(OBJEXT)
 ml_preconditioner_OBJECTS = $(am_ml_preconditioner_OBJECTS)
-am_ml_readex_OBJECTS = ml_readex.$(OBJEXT)
+am_ml_readex_OBJECTS = ml_readex-ml_readex.$(OBJEXT)
 ml_readex_OBJECTS = $(am_ml_readex_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_aztec_simple.Po \
+@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_operator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_preconditioner.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_readex.Po
+@AMDEP_TRUE@	./$(DEPDIR)/ml_readex-ml_readex.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -280,52 +280,32 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-####################
-# include locations
-####################
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-
-####################
-# libraries
-####################
-ml_libs = $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
-
-
-##################
-# common link line
-##################
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_TEST_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_TEST_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_TEST_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_TEST_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+AM_CXXFLAGS = $(EXAMPLE_INCLUDES)
 ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
 ml_aztec_simple_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_aztec_simple_CFLAGS = $(EXAMPLE_INCLUDES)
 ml_aztec_simple_LDADD = $(EXAMPLE_LIBS)
-ml_aztec_simple_LINK = $(ML_TEST_LINK)
+ml_aztec_simple_LINK = $(ML_LINK)
 ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
 ml_operator_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_operator_LDADD = $(EXAMPLE_LIBS)
-ml_operator_LINK = $(ML_TEST_LINK)
 ml_preconditioner_SOURCES = $(srcdir)/ml_preconditioner.cpp
 ml_preconditioner_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_preconditioner_LDADD = $(EXAMPLE_LIBS)
-ml_preconditioner_LINK = $(ML_TEST_LINK)
 ml_readex_SOURCES = $(srcdir)/ml_readex.c
 ml_readex_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_readex_CFLAGS = $(EXAMPLE_INCLUDES)
 ml_readex_LDADD = $(EXAMPLE_LIBS)
-ml_readex_LINK = $(ML_TEST_LINK)
+ml_readex_LINK = $(ML_LINK)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .cpp .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/../Makefile-common.include $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -362,10 +342,10 @@ ml_aztec_simple$(EXEEXT): $(ml_aztec_simple_OBJECTS) $(ml_aztec_simple_DEPENDENC
 	$(ml_aztec_simple_LINK) $(ml_aztec_simple_LDFLAGS) $(ml_aztec_simple_OBJECTS) $(ml_aztec_simple_LDADD) $(LIBS)
 ml_operator$(EXEEXT): $(ml_operator_OBJECTS) $(ml_operator_DEPENDENCIES) 
 	@rm -f ml_operator$(EXEEXT)
-	$(ml_operator_LINK) $(ml_operator_LDFLAGS) $(ml_operator_OBJECTS) $(ml_operator_LDADD) $(LIBS)
+	$(CXXLINK) $(ml_operator_LDFLAGS) $(ml_operator_OBJECTS) $(ml_operator_LDADD) $(LIBS)
 ml_preconditioner$(EXEEXT): $(ml_preconditioner_OBJECTS) $(ml_preconditioner_DEPENDENCIES) 
 	@rm -f ml_preconditioner$(EXEEXT)
-	$(ml_preconditioner_LINK) $(ml_preconditioner_LDFLAGS) $(ml_preconditioner_OBJECTS) $(ml_preconditioner_LDADD) $(LIBS)
+	$(CXXLINK) $(ml_preconditioner_LDFLAGS) $(ml_preconditioner_OBJECTS) $(ml_preconditioner_LDADD) $(LIBS)
 ml_readex$(EXEEXT): $(ml_readex_OBJECTS) $(ml_readex_DEPENDENCIES) 
 	@rm -f ml_readex$(EXEEXT)
 	$(ml_readex_LINK) $(ml_readex_LDFLAGS) $(ml_readex_OBJECTS) $(ml_readex_LDADD) $(LIBS)
@@ -376,10 +356,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_preconditioner.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readex-ml_readex.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -397,37 +377,37 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-ml_aztec_simple.o: $(srcdir)/ml_aztec_simple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_aztec_simple.o -MD -MP -MF "$(DEPDIR)/ml_aztec_simple.Tpo" -c -o ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple.TPo' @AMDEPBACKSLASH@
+ml_aztec_simple-ml_aztec_simple.o: $(srcdir)/ml_aztec_simple.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -MT ml_aztec_simple-ml_aztec_simple.o -MD -MP -MF "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" -c -o ml_aztec_simple-ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple-ml_aztec_simple.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple-ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c
 
-ml_aztec_simple.obj: $(srcdir)/ml_aztec_simple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_aztec_simple.obj -MD -MP -MF "$(DEPDIR)/ml_aztec_simple.Tpo" -c -o ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple.TPo' @AMDEPBACKSLASH@
+ml_aztec_simple-ml_aztec_simple.obj: $(srcdir)/ml_aztec_simple.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -MT ml_aztec_simple-ml_aztec_simple.obj -MD -MP -MF "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" -c -o ml_aztec_simple-ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple-ml_aztec_simple.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple-ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`
 
-ml_readex.o: $(srcdir)/ml_readex.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_readex.o -MD -MP -MF "$(DEPDIR)/ml_readex.Tpo" -c -o ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex.Tpo" "$(DEPDIR)/ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex.TPo' @AMDEPBACKSLASH@
+ml_readex-ml_readex.o: $(srcdir)/ml_readex.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -MT ml_readex-ml_readex.o -MD -MP -MF "$(DEPDIR)/ml_readex-ml_readex.Tpo" -c -o ml_readex-ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex-ml_readex.Tpo" "$(DEPDIR)/ml_readex-ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex-ml_readex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex-ml_readex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex-ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex-ml_readex.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -c -o ml_readex-ml_readex.o `test -f '$(srcdir)/ml_readex.c' || echo '$(srcdir)/'`$(srcdir)/ml_readex.c
 
-ml_readex.obj: $(srcdir)/ml_readex.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_readex.obj -MD -MP -MF "$(DEPDIR)/ml_readex.Tpo" -c -o ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex.Tpo" "$(DEPDIR)/ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex.TPo' @AMDEPBACKSLASH@
+ml_readex-ml_readex.obj: $(srcdir)/ml_readex.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -MT ml_readex-ml_readex.obj -MD -MP -MF "$(DEPDIR)/ml_readex-ml_readex.Tpo" -c -o ml_readex-ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readex-ml_readex.Tpo" "$(DEPDIR)/ml_readex-ml_readex.Po"; else rm -f "$(DEPDIR)/ml_readex-ml_readex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readex.c' object='ml_readex-ml_readex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readex-ml_readex.Po' tmpdepfile='$(DEPDIR)/ml_readex-ml_readex.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readex_CFLAGS) $(CFLAGS) -c -o ml_readex-ml_readex.obj `if test -f '$(srcdir)/ml_readex.c'; then $(CYGPATH_W) '$(srcdir)/ml_readex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readex.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -525,7 +505,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/..
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -641,7 +620,6 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
 include $(top_builddir)/Makefile.export.ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

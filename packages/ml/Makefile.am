@@ -52,10 +52,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = bootstrap \
-	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
-	config/depcomp ChangeLog-ML README-ML COPYRIGHT
+EXTRA_DIST = ChangeLog-ML README-ML COPYRIGHT
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -170,7 +167,6 @@ ML_CHECK_COMM=serial
 endif
 
 check-local:
-	@cd examples; make
 	@echo
 	@echo "========================="
 	@echo "Testing the ML package..."

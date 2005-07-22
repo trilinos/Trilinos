@@ -26,27 +26,22 @@
 # ************************************************************************
 #@HEADER
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs =       $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
+include $(top_builddir)/Makefile.export.ml
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+else
+TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
+TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+endif
+
+AM_CXXFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
 noinst_PROGRAMS = MultiLevelPreconditioner_Sym 
 
 MultiLevelPreconditioner_Sym_SOURCES = $(srcdir)/MultiLevelPreconditioner_Sym.cpp
-
-MultiLevelPreconditioner_Sym_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-MultiLevelPreconditioner_Sym_CPPFLAGS = ${ml_common_include_locations}
-MultiLevelPreconditioner_Sym_CXXFLAGS = ${ml_common_include_locations}
-MultiLevelPreconditioner_Sym_LDADD = ${ml_libs}
-MultiLevelPreconditioner_Sym_LINK = ${mllink}
+MultiLevelPreconditioner_Sym_DEPENDENCIES = $(top_builddir)/src/libml.a
+MultiLevelPreconditioner_Sym_LDADD = ${TEST_LIBS}

@@ -107,8 +107,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_VerySimple_OBJECTS = VerySimple-VerySimple.$(OBJEXT)
 VerySimple_OBJECTS = $(am_VerySimple_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -286,22 +287,15 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs = $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
-
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
 VerySimple_SOURCES = $(srcdir)/VerySimple.c
-VerySimple_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a 
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-VerySimple_CPPFLAGS = ${ml_common_include_locations}
-VerySimple_CXXFLAGS = ${ml_common_include_locations}
-VerySimple_LDADD = ${ml_libs}
-VerySimple_LINK = ${mllink}
+VerySimple_DEPENDENCIES = $(top_builddir)/src/libml.a 
+VerySimple_CFLAGS = ${TEST_INCLUDES}
+VerySimple_LDADD = ${TEST_LIBS}
+VerySimple_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
@@ -367,20 +361,20 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 VerySimple-VerySimple.o: $(srcdir)/VerySimple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(VerySimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT VerySimple-VerySimple.o -MD -MP -MF "$(DEPDIR)/VerySimple-VerySimple.Tpo" -c -o VerySimple-VerySimple.o `test -f '$(srcdir)/VerySimple.c' || echo '$(srcdir)/'`$(srcdir)/VerySimple.c; \
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(VerySimple_CFLAGS) $(CFLAGS) -MT VerySimple-VerySimple.o -MD -MP -MF "$(DEPDIR)/VerySimple-VerySimple.Tpo" -c -o VerySimple-VerySimple.o `test -f '$(srcdir)/VerySimple.c' || echo '$(srcdir)/'`$(srcdir)/VerySimple.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/VerySimple-VerySimple.Tpo" "$(DEPDIR)/VerySimple-VerySimple.Po"; else rm -f "$(DEPDIR)/VerySimple-VerySimple.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/VerySimple.c' object='VerySimple-VerySimple.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/VerySimple-VerySimple.Po' tmpdepfile='$(DEPDIR)/VerySimple-VerySimple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(VerySimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o VerySimple-VerySimple.o `test -f '$(srcdir)/VerySimple.c' || echo '$(srcdir)/'`$(srcdir)/VerySimple.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(VerySimple_CFLAGS) $(CFLAGS) -c -o VerySimple-VerySimple.o `test -f '$(srcdir)/VerySimple.c' || echo '$(srcdir)/'`$(srcdir)/VerySimple.c
 
 VerySimple-VerySimple.obj: $(srcdir)/VerySimple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(VerySimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT VerySimple-VerySimple.obj -MD -MP -MF "$(DEPDIR)/VerySimple-VerySimple.Tpo" -c -o VerySimple-VerySimple.obj `if test -f '$(srcdir)/VerySimple.c'; then $(CYGPATH_W) '$(srcdir)/VerySimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/VerySimple.c'; fi`; \
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(VerySimple_CFLAGS) $(CFLAGS) -MT VerySimple-VerySimple.obj -MD -MP -MF "$(DEPDIR)/VerySimple-VerySimple.Tpo" -c -o VerySimple-VerySimple.obj `if test -f '$(srcdir)/VerySimple.c'; then $(CYGPATH_W) '$(srcdir)/VerySimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/VerySimple.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/VerySimple-VerySimple.Tpo" "$(DEPDIR)/VerySimple-VerySimple.Po"; else rm -f "$(DEPDIR)/VerySimple-VerySimple.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/VerySimple.c' object='VerySimple-VerySimple.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/VerySimple-VerySimple.Po' tmpdepfile='$(DEPDIR)/VerySimple-VerySimple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(VerySimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o VerySimple-VerySimple.obj `if test -f '$(srcdir)/VerySimple.c'; then $(CYGPATH_W) '$(srcdir)/VerySimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/VerySimple.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(VerySimple_CFLAGS) $(CFLAGS) -c -o VerySimple-VerySimple.obj `if test -f '$(srcdir)/VerySimple.c'; then $(CYGPATH_W) '$(srcdir)/VerySimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/VerySimple.c'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -545,8 +539,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

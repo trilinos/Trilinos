@@ -26,33 +26,22 @@
 # ************************************************************************
 #@HEADER
 
-EXEEXT = .exe
+include $(top_builddir)/Makefile.export.ml
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs =       $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+else
+TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
+TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+endif
+
+AM_CXXFLAGS = $(TEST_INCLUDES)
+
+EXEEXT = .exe
 
 noinst_PROGRAMS = Scalability
 
-Scalability_SOURCES = $(srcdir)/Scalability.cpp
-
-Scalability_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a \
-	$(aztecoo_lib) \
-	$(epetra_lib) \
-	$(triutils_lib) \
-	$(amesos_lib) \
-	$(anasazi_lib) \
-	$(teuchos_lib) 
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-Scalability_CPPFLAGS = ${ml_common_include_locations}
-Scalability_CXXFLAGS = ${ml_common_include_locations}
-Scalability_LDADD = ${ml_libs}
-Scalability_LINK = ${mllink}
+Scalability_SOURCES      = $(srcdir)/Scalability.cpp
+Scalability_DEPENDENCIES = $(top_builddir)/src/libml.a
+Scalability_LDADD        = ${TEST_LIBS}

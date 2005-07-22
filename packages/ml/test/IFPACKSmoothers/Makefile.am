@@ -26,28 +26,22 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.ml
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+else
+TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
+TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+endif
+
+AM_CXXFLAGS = $(TEST_INCLUDES)
+
 EXEEXT = .exe
-
-
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs =       $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
 
 noinst_PROGRAMS = IFPACKSmoothers
 
-IFPACKSmoothers_SOURCES = $(srcdir)/cxx_main.cpp
-
-IFPACKSmoothers_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-IFPACKSmoothers_CPPFLAGS = ${ml_common_include_locations}
-IFPACKSmoothers_CXXFLAGS = ${ml_common_include_locations}
-IFPACKSmoothers_LDADD = ${ml_libs}
-IFPACKSmoothers__LINK = ${mllink}
+IFPACKSmoothers_SOURCES      = $(srcdir)/cxx_main.cpp
+IFPACKSmoothers_DEPENDENCIES = $(top_builddir)/src/libml.a
+IFPACKSmoothers_LDADD        = ${TEST_LIBS}

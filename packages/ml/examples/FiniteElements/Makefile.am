@@ -1,9 +1,18 @@
 #@HEADER
 #@HEADER
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-include ../Makefile-common.include
+# include definitions of ML_INCLUDES and ML_LIBS
+include $(top_builddir)/Makefile.export.ml
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+else
+EXAMPLE_LIBS     = $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -23,30 +32,18 @@ ml_MEDITInterface.h             ml_Workspace.h
 
 noinst_PROGRAMS = Laplacian3D AdvDiff2D MLAPI TestAll
 
-Laplacian3D_SOURCES = $(srcdir)/Laplacian3D.cpp $(FEHEADERS)
-Laplacian3D_CPPFLAGS = ${ml_common_include_locations}
-Laplacian3D_CXXFLAGS = ${ml_common_include_locations}
-Laplacian3D_LDADD = ${ml_libs} 
-Laplacian3D_LINK = ${mllink}
+Laplacian3D_SOURCES      = $(srcdir)/Laplacian3D.cpp $(FEHEADERS)
 Laplacian3D_DEPENDENCIES = $(top_builddir)/src/libml.a
+Laplacian3D_LDADD        = ${EXAMPLE_LIBS} 
 
-AdvDiff2D_SOURCES = $(srcdir)/AdvDiff2D.cpp $(FEHEADERS)
-AdvDiff2D_CPPFLAGS = ${ml_common_include_locations}
-AdvDiff2D_CXXFLAGS = ${ml_common_include_locations}
-AdvDiff2D_LDADD = ${ml_libs} 
-AdvDiff2D_LINK = ${mllink}
+AdvDiff2D_SOURCES      = $(srcdir)/AdvDiff2D.cpp $(FEHEADERS)
 AdvDiff2D_DEPENDENCIES = $(top_builddir)/src/libml.a
+AdvDiff2D_LDADD        = ${EXAMPLE_LIBS} 
 
-MLAPI_SOURCES = $(srcdir)/MLAPI.cpp $(FEHEADERS)
-MLAPI_CPPFLAGS = ${ml_common_include_locations}
-MLAPI_CXXFLAGS = ${ml_common_include_locations}
-MLAPI_LDADD = ${ml_libs} 
-MLAPI_LINK = ${mllink}
+MLAPI_SOURCES      = $(srcdir)/MLAPI.cpp $(FEHEADERS)
 MLAPI_DEPENDENCIES = $(top_builddir)/src/libml.a
+MLAPI_LDADD        = ${EXAMPLE_LIBS} 
 
-TestAll_SOURCES = $(srcdir)/TestAll.cpp $(FEHEADERS)
-TestAll_CPPFLAGS = ${ml_common_include_locations}
-TestAll_CXXFLAGS = ${ml_common_include_locations}
-TestAll_LDADD = ${ml_libs} 
-TestAll_LINK = ${mllink}
+TestAll_SOURCES      = $(srcdir)/TestAll.cpp $(FEHEADERS)
 TestAll_DEPENDENCIES = $(top_builddir)/src/libml.a
+TestAll_LDADD        = ${EXAMPLE_LIBS} 

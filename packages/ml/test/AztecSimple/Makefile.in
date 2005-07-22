@@ -107,8 +107,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_AztecSimple_OBJECTS = AztecSimple-AztecSimple.$(OBJEXT)
 AztecSimple_OBJECTS = $(am_AztecSimple_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ML_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -286,22 +287,15 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs = $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
-
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(ML_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(ML_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
 AztecSimple_SOURCES = $(srcdir)/AztecSimple.c
-AztecSimple_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-AztecSimple_CPPFLAGS = ${ml_common_include_locations}
-AztecSimple_CXXFLAGS = ${ml_common_include_locations}
-AztecSimple_LDADD = ${ml_libs}
-AztecSimple_LINK = ${mllink}
+AztecSimple_DEPENDENCIES = $(top_builddir)/src/libml.a
+AztecSimple_CFLAGS = ${TEST_INCLUDES}
+AztecSimple_LDADD = ${TEST_LIBS}
+AztecSimple_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
@@ -367,20 +361,20 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 AztecSimple-AztecSimple.o: $(srcdir)/AztecSimple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AztecSimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT AztecSimple-AztecSimple.o -MD -MP -MF "$(DEPDIR)/AztecSimple-AztecSimple.Tpo" -c -o AztecSimple-AztecSimple.o `test -f '$(srcdir)/AztecSimple.c' || echo '$(srcdir)/'`$(srcdir)/AztecSimple.c; \
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecSimple_CFLAGS) $(CFLAGS) -MT AztecSimple-AztecSimple.o -MD -MP -MF "$(DEPDIR)/AztecSimple-AztecSimple.Tpo" -c -o AztecSimple-AztecSimple.o `test -f '$(srcdir)/AztecSimple.c' || echo '$(srcdir)/'`$(srcdir)/AztecSimple.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/AztecSimple-AztecSimple.Tpo" "$(DEPDIR)/AztecSimple-AztecSimple.Po"; else rm -f "$(DEPDIR)/AztecSimple-AztecSimple.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AztecSimple.c' object='AztecSimple-AztecSimple.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/AztecSimple-AztecSimple.Po' tmpdepfile='$(DEPDIR)/AztecSimple-AztecSimple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AztecSimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o AztecSimple-AztecSimple.o `test -f '$(srcdir)/AztecSimple.c' || echo '$(srcdir)/'`$(srcdir)/AztecSimple.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecSimple_CFLAGS) $(CFLAGS) -c -o AztecSimple-AztecSimple.o `test -f '$(srcdir)/AztecSimple.c' || echo '$(srcdir)/'`$(srcdir)/AztecSimple.c
 
 AztecSimple-AztecSimple.obj: $(srcdir)/AztecSimple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AztecSimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT AztecSimple-AztecSimple.obj -MD -MP -MF "$(DEPDIR)/AztecSimple-AztecSimple.Tpo" -c -o AztecSimple-AztecSimple.obj `if test -f '$(srcdir)/AztecSimple.c'; then $(CYGPATH_W) '$(srcdir)/AztecSimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecSimple.c'; fi`; \
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecSimple_CFLAGS) $(CFLAGS) -MT AztecSimple-AztecSimple.obj -MD -MP -MF "$(DEPDIR)/AztecSimple-AztecSimple.Tpo" -c -o AztecSimple-AztecSimple.obj `if test -f '$(srcdir)/AztecSimple.c'; then $(CYGPATH_W) '$(srcdir)/AztecSimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecSimple.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/AztecSimple-AztecSimple.Tpo" "$(DEPDIR)/AztecSimple-AztecSimple.Po"; else rm -f "$(DEPDIR)/AztecSimple-AztecSimple.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AztecSimple.c' object='AztecSimple-AztecSimple.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/AztecSimple-AztecSimple.Po' tmpdepfile='$(DEPDIR)/AztecSimple-AztecSimple.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AztecSimple_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o AztecSimple-AztecSimple.obj `if test -f '$(srcdir)/AztecSimple.c'; then $(CYGPATH_W) '$(srcdir)/AztecSimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecSimple.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecSimple_CFLAGS) $(CFLAGS) -c -o AztecSimple-AztecSimple.obj `if test -f '$(srcdir)/AztecSimple.c'; then $(CYGPATH_W) '$(srcdir)/AztecSimple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecSimple.c'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -545,8 +539,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

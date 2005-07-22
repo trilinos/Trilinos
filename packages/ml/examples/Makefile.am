@@ -27,3 +27,5 @@
 #@HEADER
 
 SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other MLAPI Visualization NonlinML FiniteElements
+
+EXTRA_DIST = ExampleMatrices/simple_matrix.aij README

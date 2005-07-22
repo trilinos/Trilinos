@@ -308,11 +308,7 @@ AUTOMAKE_OPTIONS = foreign
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
 #
-EXTRA_DIST = bootstrap \
-	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
-	config/depcomp ChangeLog-ML README-ML COPYRIGHT
-
+EXTRA_DIST = ChangeLog-ML README-ML COPYRIGHT
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -751,8 +747,8 @@ all-local:
 	@echo "        | (this may take some time).                         |"
 	@echo "        |                                                    |"
 	@echo "        | The ML Users' Guide is located in                  |"
-	@echo "        | Trilinos/packages/ml/doc/mlguide.pdf, or consult   |"
-	@echo "        | or consult the ML web site for more details.       |"
+	@echo "        | Trilinos/packages/ml/doc/mlguide.pdf. You can also |"
+	@echo "        | consult the ML web site for more details.          |"
 	@echo "        |                                                    |"
 	@echo "        | You can send questions/comments to:                |"
 	@echo "        | - ml-users@software.sandia.gov                     |"
@@ -785,7 +781,6 @@ all-libs:
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
 
 check-local:
-	@cd examples; make
 	@echo
 	@echo "========================="
 	@echo "Testing the ML package..."

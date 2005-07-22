@@ -15,7 +15,6 @@
 @SET_MAKE@
 
 #@HEADER
-#@HEADER
 
 SOURCES = $(ml_viz_SOURCES)
 
@@ -40,10 +39,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-DIST_COMMON = $(srcdir)/../Makefile-common.include \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 noinst_PROGRAMS = ml_viz$(EXEEXT)
 subdir = examples/Visualization
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -80,15 +78,16 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_ml_viz_OBJECTS = ml_viz-ml_viz.$(OBJEXT)
+am_ml_viz_OBJECTS = ml_viz.$(OBJEXT)
 ml_viz_OBJECTS = $(am_ml_viz_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_viz-ml_viz.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_viz.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -263,37 +262,19 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-####################
-# include locations
-####################
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-
-####################
-# libraries
-####################
-ml_libs = $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
-
-
-##################
-# common link line
-##################
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 ml_viz_SOURCES = $(srcdir)/ml_viz.cpp
-ml_viz_CPPFLAGS = ${ml_common_include_locations}
-ml_viz_CXXFLAGS = ${ml_common_include_locations}
-ml_viz_LDADD = ${ml_libs} 
-ml_viz_LINK = ${mllink}
 ml_viz_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_viz_LDADD = ${EXAMPLE_LIBS} 
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .cpp .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/../Makefile-common.include $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -327,7 +308,7 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 ml_viz$(EXEEXT): $(ml_viz_OBJECTS) $(ml_viz_DEPENDENCIES) 
 	@rm -f ml_viz$(EXEEXT)
-	$(ml_viz_LINK) $(ml_viz_LDFLAGS) $(ml_viz_OBJECTS) $(ml_viz_LDADD) $(LIBS)
+	$(CXXLINK) $(ml_viz_LDFLAGS) $(ml_viz_OBJECTS) $(ml_viz_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -335,7 +316,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz-ml_viz.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -353,21 +334,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ml_viz-ml_viz.o: $(srcdir)/ml_viz.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_viz-ml_viz.o -MD -MP -MF "$(DEPDIR)/ml_viz-ml_viz.Tpo" -c -o ml_viz-ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz-ml_viz.Tpo" "$(DEPDIR)/ml_viz-ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz-ml_viz.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz-ml_viz.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz-ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz-ml_viz.TPo' @AMDEPBACKSLASH@
+ml_viz.o: $(srcdir)/ml_viz.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_viz.o -MD -MP -MF "$(DEPDIR)/ml_viz.Tpo" -c -o ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz.Tpo" "$(DEPDIR)/ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz-ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp
 
-ml_viz-ml_viz.obj: $(srcdir)/ml_viz.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_viz-ml_viz.obj -MD -MP -MF "$(DEPDIR)/ml_viz-ml_viz.Tpo" -c -o ml_viz-ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz-ml_viz.Tpo" "$(DEPDIR)/ml_viz-ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz-ml_viz.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz-ml_viz.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz-ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz-ml_viz.TPo' @AMDEPBACKSLASH@
+ml_viz.obj: $(srcdir)/ml_viz.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_viz.obj -MD -MP -MF "$(DEPDIR)/ml_viz.Tpo" -c -o ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz.Tpo" "$(DEPDIR)/ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz-ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -417,7 +398,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/..
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -533,11 +513,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

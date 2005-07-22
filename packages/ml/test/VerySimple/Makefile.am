@@ -26,27 +26,22 @@
 # ************************************************************************
 #@HEADER
 
-EXEEXT = .exe
+include $(top_builddir)/Makefile.export.ml
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs =       $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+else
+TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
+TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+endif
+
+EXEEXT = .exe
 
 noinst_PROGRAMS = VerySimple
 
-VerySimple_SOURCES = $(srcdir)/VerySimple.c
-
-VerySimple_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a 
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-VerySimple_CPPFLAGS = ${ml_common_include_locations}
-VerySimple_CXXFLAGS = ${ml_common_include_locations}
-VerySimple_LDADD = ${ml_libs}
-VerySimple_LINK = ${mllink}
+VerySimple_SOURCES      = $(srcdir)/VerySimple.c
+VerySimple_DEPENDENCIES = $(top_builddir)/src/libml.a 
+VerySimple_CFLAGS       = ${TEST_INCLUDES}
+VerySimple_LDADD        = ${TEST_LIBS}
+VerySimple_LINK         = ${ML_LINK}

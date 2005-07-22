@@ -1,9 +1,16 @@
 #@HEADER
-#@HEADER
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
-include $(top_builddir)/Makefile.export
-include ../Makefile-common.include
+include $(top_builddir)/Makefile.export.ml
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+else
+EXAMPLE_LIBS     = $(ML_LIBS) 
+EXAMPLE_INCLUDES = $(ML_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -11,9 +18,6 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = ml_multiple_rhs
 
-ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
-ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
-ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
-ml_multiple_rhs_LDADD = ${ml_libs}
-ml_multiple_rhs_LINK = ${mllink}
+ml_multiple_rhs_SOURCES      = $(srcdir)/ml_multiple_rhs.cpp
 ml_multiple_rhs_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_multiple_rhs_LDADD        = $(EXAMPLE_LIBS)
