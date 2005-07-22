@@ -370,7 +370,7 @@ static void inertial_matrix2D(ZZ *zstruct, double *X,
   double    xxt, yyt, xyt;
   double *c, num_coords, total_coords;
 
-  int comm = zstruct->Communicator;
+  MPI_Comm comm = zstruct->Communicator;
   int proc = zstruct->Proc;
   int nproc = zstruct->Num_Proc;
   int proclower = 0;
@@ -433,7 +433,7 @@ static void inertial_matrix3D(ZZ *zstruct, double *X,
   double    xxt, yyt, zzt, xyt, xzt, yzt;
   double *c, num_coords, total_coords;
 
-  int comm = zstruct->Communicator;
+  MPI_Comm comm = zstruct->Communicator;
   int proc = zstruct->Proc;
   int nproc = zstruct->Num_Proc;
   int proclower = 0;
