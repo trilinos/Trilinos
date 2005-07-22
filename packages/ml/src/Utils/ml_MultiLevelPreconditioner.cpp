@@ -28,7 +28,7 @@
  *
  *  \author Marzio Sala, SNL, 9214
  *
- *  \date Last update do Doxygen: 22-Jul-04
+ *  \date Last update to Doxygen: 22-Jul-04
  *
  */
 
@@ -130,7 +130,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   // destroy main objects
   if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
   if (ml_comm_ != 0) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }
-  if (agg_edge_ != 0) { ML_Aggregate_Destroy(&agg_edge_); agg_edge_ = 0; }
   if (ml_ != 0) { ML_Destroy(&ml_); ml_ = 0; }
   if (ml_nodes_ != 0) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
 
@@ -544,7 +543,6 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   EdgeMatrix_ = 0;
   TMatrix_ = 0;
   ml_nodes_ = 0;
-  agg_edge_ = 0;
   TMatrixML_ = 0;
   CreatedTMatrix_ = false;
   TMatrixTransposeML_ = 0;
@@ -1044,9 +1042,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_Repartition_Set_MinPerProc(ml_,minperproc);
 
       if (Repartitioner == "Zoltan") {
-        // create aggregate structure necessary for repartitioning via Zoltan
-        // (which requires coordinates)
-        ML_Aggregate_Create(&agg_edge_);
 
         int NumDimensions = List_.get("repartition: Zoltan dimensions", 0);
         ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
@@ -1054,10 +1049,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
         ML_Repartition_Set_Partitioner(ml_nodes_,ML_USEZOLTAN);
 
         //FIXME JJH this would be a bug if increasing is ever supported
-        agg_edge_->begin_level = MaxCreationLevels-1; 
-        ML_Aggregate_Set_Dimensions(agg_edge_, NumDimensions);
         ML_Repartition_Set_Partitioner(ml_,ML_USEZOLTAN);
-        ML_Aggregate_Set_MaxLevels(agg_edge_, ml_->ML_num_levels);
       }
       else if (Repartitioner == "ParMETIS")
         ML_Repartition_Set_Partitioner(ml_,ML_USEPARMETIS);
@@ -1080,7 +1072,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // ====================================================================== //
   
   if (SolvingMaxwell_) {
-    if (agg_edge_ == 0) ML_Aggregate_Create(&agg_edge_);
     ML_Aggregate_VizAndStats_Setup(ml_nodes_);
   }
   ML_Aggregate_VizAndStats_Setup(ml_);
@@ -1345,7 +1336,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     if (DampingType == "non-smoothed") smooth_flag = ML_NO;
     
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
-                            LevelID_[0], Direction,agg_,agg_edge_,
+                            //LevelID_[0], Direction,agg_,agg_edge_,
+                            LevelID_[0], Direction,agg_,
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
                             smooth_flag, ML_DDEFAULT); 
