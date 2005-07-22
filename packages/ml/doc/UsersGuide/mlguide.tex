@@ -1106,22 +1106,16 @@ with the symbol $\star$ (this symbol is not part of the parameter name).
 \subsubsection{General Options}
 %-----------------------------%
 
-\choicebox{\tt output}{[{\tt int}] Output level, from 0 to 10 (10 being verbose). 
-  Default: 10.}
+\choicebox{\tt output}{[{\tt int}] Controls the amount of information printed
+to the screen. Ranges from 0 to 10 (0 is no output, and 10 is incredibly
+detailed output).  Default: 10.}
 
 \choicebox{\tt print unused}{[{\tt int}] If non-negative, will print all the
-  unused parameter on the specified processor. If -1, the unused parameters
+  unused parameters on the specified processor. If -1, the unused parameters
     will be printed on all processes. If -2, nothing will be printed. 
     Default: -2.}
 
-\choicebox{\tt max levels}{[{\tt int}] Maximum number of levels. Default: 10.}
-
-\smallskip
-
-\choicebox{\tt increasing or decreasing}{[{\tt string}] If set to {\tt
-    increasing}, level 0 will correspond to the finest level. If set to
-  {\tt decreasing}, {\tt max levels} - 1 will correspond to the finest
-  level. Default: {\tt increasing}.}
+%\smallskip
 
 \choicebox{\tt PDE equations}{[{\tt int}] Number of PDE equations for each grid node. This
 value is not considered for {\tt Epetra\_VbrMatrix} objects, as in this
@@ -1129,8 +1123,34 @@ case is obtained from the block map used to construct the object. Note
 that only block maps with constant element size can be
 considered. Default: 1.}
 
+%-------------------------------------%
+\subsubsection{Multigrid Cycle Options}
+%-------------------------------------%
+
 \choicebox{\tt cycle applications}{[{\tt int}] Number of applications of the
   multilevel V-cycle. Default: 1.}
+
+\choicebox{\tt max levels}{[{\tt int}] Maximum number of levels. Default: 10.}
+
+\choicebox{\tt increasing or decreasing}{[{\tt string}] If set to {\tt
+    increasing}, level 0 will correspond to the finest level. If set to
+  {\tt decreasing}, {\tt max levels} - 1 will correspond to the finest
+  level. Default: {\tt increasing}.}
+
+\choicebox{\tt prec type}{[{\tt string}] Multigrid cycle type.  Possible
+values: {\tt MGV}, {\tt MGW}, {\tt full-MGV}, {\tt one-level-postsmoothing},
+{\tt two-level-additive}, {\tt two-level-hybrid}, {\tt two-level-hybrid2},
+{\tt projected MGV}.
+Default: {\tt MGV}.}
+
+\choicebox{\tt projected modes}{[{\tt double**}] Array of double vectors
+containing modes that should be projected out before and after the AMG V-cycle
+is applied.  For use with the {\tt projected MGV} option.  Default: {\tt
+NULL}.}
+
+\choicebox{\tt number of projected modes}{[{\tt int}] Number of modes that are
+to be projected out before and after the AMG V-cycle is applied.  For use with
+the {\tt projected MGV} option.  Possible values: 1,2, or 3.  Default: 0.}
 
 %------------------------------------%
 \subsubsection{Aggregation Parameters}
