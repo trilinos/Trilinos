@@ -1337,7 +1337,7 @@ static int Zoltan_ParMetis_Jostle(
 End:
 
   if (use_timers) 
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_pj);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_pj, zz->Communicator);
 
   if (final_output) {
 #define FOMAXDIM 10

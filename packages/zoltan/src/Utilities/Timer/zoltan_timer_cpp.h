@@ -58,8 +58,8 @@ public:
     return Zoltan_Timer_Start(this->ZTStruct, ts_idx, comm);
   }
 
-  int Stop(const int &ts_idx) {
-    return Zoltan_Timer_Stop(this->ZTStruct, ts_idx);
+  int Stop(const int &ts_idx, const MPI_Comm &comm) {
+    return Zoltan_Timer_Stop(this->ZTStruct, ts_idx, comm);
   }
 
   int Print(const int &ts_idx, const int &proc, 

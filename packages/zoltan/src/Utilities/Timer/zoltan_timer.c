@@ -278,12 +278,12 @@ static char *yo = "Zoltan_Timer_Start";
   }
 
   ts->Status += RUNNING;
+  strncpy(ts->Start_File, filename, MAXNAMELEN);
+  ts->Start_Line = lineno;
   if (ts->Use_Barrier)
     MPI_Barrier(comm);
 
   ts->Start_Time = Zoltan_Time(zt->Timer_Flag);
-  strncpy(ts->Start_File, filename, MAXNAMELEN);
-  ts->Start_Line = lineno;
 
 #ifdef VAMPIR
   if (VT_begin(ts->vt_handle) != VT_OK)
@@ -298,6 +298,8 @@ static char *yo = "Zoltan_Timer_Start";
 int Zoltan_Timer_Stop(
   ZTIMER *zt,            /* Ptr to Timer object */
   int ts_idx,            /* Index of the timer to use */
+  MPI_Comm comm,         /* Communicator to use for synchronization, 
+                            if requested */
   char *filename,        /* Filename of file calling the Stop */
   int lineno             /* Line number where Stop was called */
 )
@@ -329,8 +331,10 @@ double my_time;
       FATALERROR(yo, "VT_end failed.");
 #endif
 
-  ts->Status -= RUNNING;
+  if (ts->Use_Barrier)
+    MPI_Barrier(comm);
   ts->Stop_Time = Zoltan_Time(zt->Timer_Flag);
+  ts->Status -= RUNNING;
   ts->Stop_Line = lineno;
   strncpy(ts->Stop_File, filename, MAXNAMELEN);
   my_time = ts->Stop_Time - ts->Start_Time;

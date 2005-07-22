@@ -136,7 +136,7 @@ static int timer_retlist=-1;
   }
 
   if (hgp.use_timers > 1)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
 
   if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) 
   {
@@ -187,7 +187,7 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
     if (ierr != ZOLTAN_OK) 
       goto End;
     if (hgp.use_timers > 1)
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_patoh);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_patoh, zz->Communicator);
   }
   else if (hgp.kway) {
     ierr = Zoltan_HG_HPart_Lib(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, 
@@ -238,10 +238,10 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
                          exp_lids, exp_procs, exp_to_part);
 
   if (hgp.use_timers > 1)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist, zz->Communicator);
 
   if (hgp.use_timers)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
 
   if (hgp.final_output) {
     HGraph *hg = &(zoltan_hg->HG);

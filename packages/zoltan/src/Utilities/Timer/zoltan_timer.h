@@ -33,8 +33,8 @@ extern "C" {
 
 #define ZOLTAN_TIMER_START(a, b, c) \
   Zoltan_Timer_Start(a, b, c, __FILE__, __LINE__)
-#define ZOLTAN_TIMER_STOP(a, b) \
-  Zoltan_Timer_Stop(a, b, __FILE__, __LINE__)
+#define ZOLTAN_TIMER_STOP(a, b, c) \
+  Zoltan_Timer_Stop(a, b, c, __FILE__, __LINE__)
 
 /* Function prototypes */
 
@@ -47,7 +47,7 @@ int Zoltan_Timer_Copy_To(struct Zoltan_Timer **to, struct Zoltan_Timer *from);
 int Zoltan_Timer_Reset(struct Zoltan_Timer *, int, int, char*);
 int Zoltan_Timer_ChangeFlag(struct Zoltan_Timer *, int);
 int Zoltan_Timer_Start(struct Zoltan_Timer *, int, MPI_Comm, char *, int);
-int Zoltan_Timer_Stop(struct Zoltan_Timer *, int, char *, int);
+int Zoltan_Timer_Stop(struct Zoltan_Timer *, int, MPI_Comm, char *, int);
 int Zoltan_Timer_Print(struct Zoltan_Timer *, int, int, MPI_Comm, FILE *);
 int Zoltan_Timer_PrintAll(struct Zoltan_Timer *, int, MPI_Comm, FILE *);
 void Zoltan_Timer_Destroy(struct Zoltan_Timer **);
