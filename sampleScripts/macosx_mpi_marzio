@@ -15,6 +15,7 @@
   --with-mpi-compilers \
   --prefix=/Users/marzio/Trilinos/G4_MPI \
   --with-install="/usr/bin/install -p" \
+  --with-gnumake \
   --disable-default-packages \
   --disable-examples \
   --disable-tests \
@@ -27,10 +28,12 @@
   --enable-aztecoo \
   --enable-amesos \
   --enable-amesos-klu \
+  --enable-amesos-dscpack \
   --enable-ml \
-  --with-ldflags="-Wl,-multiply_defined -Wl,suppress" \
-  --with-libs="-framework vecLib" \
-  --with-flibs="-lf2c" \
+  --enable-didasko \
+  --with-incdirs="-I$HOME/include" \
+  --with-ldflags="-Wl,-multiply_defined -Wl,suppress -L$HOME/lib" \
+  --with-libs="-framework vecLib -ldscpack-1.0 -lf2c" \
   --with-cppflags="-DLAM_BUILDING" \
   --with-cxxflags="-DLAM_BUILDING" \
   --with-cflags="-DLAM_BUILDING"

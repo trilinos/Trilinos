@@ -15,6 +15,7 @@
   CC=gcc CXX=g++ F77=/usr/local/bin/fc \
   --prefix=/Users/marzio/Trilinos/G4_SERIAL \
   --with-install="/usr/bin/install -p" \
+  --with-gnumake \
   --disable-default-packages \
   --disable-examples \
   --disable-tests \
@@ -26,8 +27,6 @@
   --enable-ifpack \
   --enable-aztecoo \
   --enable-amesos \
-  --enable-amesos-klu \
   --enable-ml \
   --with-ldflags="-Wl,-multiply_defined -Wl,suppress" \
-  --with-libs="-framework vecLib" \
-  --with-flibs=-lf2c
+  --with-libs="-framework vecLib -lf2c"
