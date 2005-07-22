@@ -424,20 +424,26 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List,
   // don't forget any element
   List.set("aggregation: threshold",0.0);
 
-  // gauss-seidel for all levels
+  // Hiptmair for all levels but coarsest
   List.set("smoother: sweeps",1);
 
   List.set("smoother: damping factor",1.0);
 
   List.set("smoother: type","Hiptmair");
+  List.set("smoother: Hiptmair efficient symmetric",true);
+
+  //Hiptmair subsmoother options
+  List.set("subsmoother: type", "MLS");
+  List.set("subsmoother: MLS polynomial order",3);
+  List.set("subsmoother: MLS alpha",27.0);
 
   List.set("smoother: pre or post","both");
   
-  // simplest solver on coarse problem
-  List.set("coarse: type","SuperLU");
+  // direct solver on coarse problem
+//  List.set("coarse: type","SuperLU");
 //  Tim Davis' simple serial LU package.  It's part of Amesos
 //  itself.
-//  List.set("Amesos-KLU");
+  List.set("coarse: type","Amesos-KLU");
 
   List.set("prec type","MGV");
 
