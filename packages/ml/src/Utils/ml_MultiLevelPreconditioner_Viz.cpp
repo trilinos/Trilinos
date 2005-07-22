@@ -25,10 +25,10 @@ extern int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag, int MaxMg
                                      double *x, double *y, double *z, int Ndimensions,
                                      char *base_filename );
 extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
-						 double *x, double *y, double *z);
+                         double *x, double *y, double *z);
 extern int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag);
 extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
-			    double * vector, char * base_filename, int level);
+                double * vector, char * base_filename, int level);
 extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 
 #ifndef ML_CPP
@@ -66,11 +66,14 @@ RandomAndZero(double * tmp_rhs, double * tmp_sol, int size)
 int ML_Epetra::MultiLevelPreconditioner::
 VisualizeAggregates()
 {
-  if (IsPreconditionerComputed() == false)
-    ML_CHK_ERR(-1); // need an already computed preconditioner
+  bool viz = List_.get("viz: enable",false);
+  if (viz) {
+    if (IsPreconditionerComputed() == false)
+      ML_CHK_ERR(-1); // need an already computed preconditioner
 
-  ML_CHK_ERR(Visualize(true, false, false, false, -1, -1, -1));
+    ML_CHK_ERR(Visualize(true, false, false, false, -1, -1, -1));
 
+  }
   return(0);
 }
 
@@ -79,22 +82,24 @@ int ML_Epetra::MultiLevelPreconditioner::
 VisualizeSmoothers(int NumPreCycles, int NumPostCycles)
 {
 
-  if (IsPreconditionerComputed() == false)
-    ML_CHK_ERR(-1); // need an already computed preconditioner
+  bool viz = List_.get("viz: enable",false);
+  if (viz) {
+    if (IsPreconditionerComputed() == false)
+      ML_CHK_ERR(-1); // need an already computed preconditioner
 
-  bool VizPreSmoother = false;
-  bool VizPostSmoother = false;
+    bool VizPreSmoother = false;
+    bool VizPostSmoother = false;
 
-  if (NumPreCycles != 0) 
-    VizPreSmoother = true;
-  if (NumPostCycles != 0) 
-    VizPostSmoother = true;
+    if (NumPreCycles != 0) 
+      VizPreSmoother = true;
+    if (NumPostCycles != 0) 
+      VizPostSmoother = true;
 
-  int ierr = Visualize(false, VizPreSmoother, VizPostSmoother,
-		       false, NumPreCycles, NumPostCycles, -1);
+    int ierr = Visualize(false, VizPreSmoother, VizPostSmoother,
+                 false, NumPreCycles, NumPostCycles, -1);
 
-  ML_CHK_ERR(ierr);
-
+    ML_CHK_ERR(ierr);
+  }
   return(0);
 }
 
@@ -109,7 +114,7 @@ VisualizeCycle(int NumCycles)
       ML_CHK_ERR(-1); // need an already computed preconditioner
 
     int ierr = Visualize(false, false, false, true,
-		       -1, -1, NumCycles);
+               -1, -1, NumCycles);
 
     ML_CHK_ERR(ierr);
   }
@@ -122,16 +127,11 @@ VisualizeCycle(int NumCycles)
 // date: Aug-04
 int ML_Epetra::MultiLevelPreconditioner::
 Visualize(bool VizAggre, bool VizPreSmoother,
-	  bool VizPostSmoother, bool VizCycle,
-	  int NumApplPreSmoother, int NumApplPostSmoother,
-	  int NumCycleSmoother)
+      bool VizPostSmoother, bool VizCycle,
+      int NumApplPreSmoother, int NumApplPostSmoother,
+      int NumCycleSmoother)
 {
-  ML_Aggregate *aggregates;
-
-  if (agg_edge_ != 0)
-    aggregates = agg_edge_;
-  else
-    aggregates = agg_;
+  ML_Aggregate *aggregates = agg_;
 
   char filename[80];
   int NumDimensions = 0;
