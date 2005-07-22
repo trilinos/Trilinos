@@ -130,7 +130,7 @@ static int timer_total=-1, timer_cpart=-1, timer_gather=-1, timer_refine=-1;
   if (hgp->use_timers > 1) {
     if (timer_total < 0)
       timer_total = Zoltan_Timer_Init(zz->ZTime, 1,
-                                      "Total Coarse Partitioning");
+                                      "Total Coarse Partition);
     if (timer_gather < 0)
       timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Gather");
     if (timer_refine < 0)
@@ -270,7 +270,7 @@ static int timer_total=-1, timer_cpart=-1, timer_gather=-1, timer_refine=-1;
       }
 
       /* AKBAKBAKB time refinement step in coarse partitioner */
-      if (hgp->use_timers > 3) {
+      if (hgp->use_timers > 1) {
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
         ZOLTAN_TIMER_START(zz->ZTime, timer_refine, phg->comm->Communicator);
       }
@@ -279,7 +279,7 @@ static int timer_total=-1, timer_cpart=-1, timer_gather=-1, timer_refine=-1;
       Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
 
       /* AKBAKBAKB stop refinement timer */
-      if (hgp->use_timers > 3) {
+      if (hgp->use_timers > 1) {
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, phg->comm->Communicator);
         ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
       }
