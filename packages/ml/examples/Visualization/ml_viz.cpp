@@ -117,9 +117,11 @@ int main(int argc, char *argv[])
   
   // create a parameter list for ML options
   ParameterList MLList;
+  int *options    = new int[AZ_OPTIONS_SIZE];
+  double *params  = new double[AZ_PARAMS_SIZE];
 
   // set defaults
-  ML_Epetra::SetDefaults("SA",MLList);
+  ML_Epetra::SetDefaults("SA",MLList, options, params);
   
   // overwrite some parameters. Please refer to the user's guide
   // for more information
@@ -144,7 +146,7 @@ int main(int argc, char *argv[])
   // 
   // - set "viz: enable" to `false' to disable visualization and
   //   statistics.
-  // - set "viz: x-coordinates" to the pointer of x-coor
+  // - set "x-coordinates" to the pointer of x-coor
   // - set "viz: equation to plot" to the number of equation to 
   //   be plotted (for vector problems only). Default is -1 (that is,
   //   plot all the equations)
@@ -165,11 +167,11 @@ int main(int argc, char *argv[])
   // If "viz: output format" == "dx", the user
   // can only plot the aggregates. 
 
-  MLList.set("viz: output format", "xyz");
+  MLList.set("viz: output format", "vtk");
   MLList.set("viz: enable", true);
-  MLList.set("viz: x-coordinates", x_coord);
-  MLList.set("viz: y-coordinates", y_coord);
-  MLList.set("viz: z-coordinates", z_coord);
+  MLList.set("x-coordinates", x_coord);
+  MLList.set("y-coordinates", y_coord);
+  MLList.set("z-coordinates", z_coord);
   MLList.set("viz: print starting solution", true);
 
   // =============================== //
@@ -213,6 +215,9 @@ int main(int argc, char *argv[])
   if( x_coord ) delete [] x_coord;
   if( y_coord ) delete [] y_coord;
   if( z_coord ) delete [] z_coord;
+
+  delete [] options;
+  delete [] params;
   
 #ifdef HAVE_MPI
   MPI_Finalize();
