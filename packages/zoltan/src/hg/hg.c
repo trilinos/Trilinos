@@ -477,7 +477,7 @@ static int Zoltan_HG_Initialize_Params(
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = zz->LB.Num_Global_Parts;
   hgp->output_level = HG_DEBUG_LIST;
-  hgp->EdgeSizeThreshold = 1.0;   /* Default (for now) -- keep all edges. */
+  hgp->EdgeSizeThreshold = 0.5;  /* Matches PHG code */
   hgp->final_output = 1;
   hgp->use_timers = 0;
   hgp->patoh_alloc_pool0 = 0;
