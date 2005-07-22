@@ -230,8 +230,8 @@ int Zoltan_PHG_Partition (
           }
       }
       if (hgp->output_level >= PHG_DEBUG_PLOT)
-       Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
-        "coarsening plot");
+        Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
+         "coarsening plot");
 
       if (hgp->use_timers > 1) {
         if (timer_match < 0) 
@@ -263,9 +263,10 @@ int Zoltan_PHG_Partition (
         goto End;
       }
       if (hgp->use_timers > 1)
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_match);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_match, hg->comm->Communicator);
       if (hgp->use_timers > 2)
-        ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_match);
+        ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_match,
+                          hg->comm->Communicator);
 
       if (hgp->use_timers > 1) {
         if (timer_coarse < 0) 
@@ -296,9 +297,10 @@ int Zoltan_PHG_Partition (
         goto End;
         
       if (hgp->use_timers > 1)
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarse);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarse, hg->comm->Communicator);
       if (hgp->use_timers > 2)
-        ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_coarse);
+        ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_coarse,
+                          hg->comm->Communicator);
 
       ZOLTAN_FREE ((void**) &match);
 
@@ -354,9 +356,10 @@ int Zoltan_PHG_Partition (
     err = Zoltan_PHG_Refinement (zz, hg, p, part_sizes, vcycle->Part, hgp);
         
     if (hgp->use_timers > 1)
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hg->comm->Communicator);
     if (hgp->use_timers > 2)
-      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine);
+      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine,
+                        hg->comm->Communicator);
 
     if (hgp->output_level >= PHG_DEBUG_LIST)     
       uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
@@ -426,9 +429,10 @@ int Zoltan_PHG_Partition (
       Zoltan_Comm_Destroy (&finer->comm_plan);                   
     }
     if (hgp->use_timers > 1) 
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_project);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hg->comm->Communicator);
     if (hgp->use_timers > 2)
-      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project);
+      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project,
+                        hg->comm->Communicator);
 
     vcycle = finer;
   }       /* while (vcycle) */

@@ -139,7 +139,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   }
 
   if (hgp.use_timers > 1)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
    
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->HG.nVtx;
@@ -163,7 +163,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     if (err != ZOLTAN_OK) 
         goto End;
     if (hgp.use_timers > 1)
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
   } else { /* it must be PHG */
       /* UVC: if it is bisection anyways; no need to create vmap etc; 
          rdivide is going to call Zoltan_PHG_Partition anyways... */
@@ -231,7 +231,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
    exp_lids, exp_procs, exp_to_part);
     
   if (hgp.use_timers > 1) 
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist, zz->Communicator);
 
 End:
   if (err == ZOLTAN_MEMERR)
@@ -240,7 +240,7 @@ End:
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error partitioning hypergraph.")
     
   if (hgp.use_timers)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
 
   /* KDDKDD The following code prints a final quality result even when
    * KDDKDD phg_output_level is zero.  It is useful for our tests and

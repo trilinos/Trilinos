@@ -563,12 +563,13 @@ static int pmatching_ipm(
   int cFLAG, edge;                 /* column match only if user requested */
   static int development_timers[4] = {-1, -1, -1, -1};
 
-    if (hgp->use_timers > 3)  {
-      if (development_timers[3] < 0)
-        development_timers[3] = Zoltan_Timer_Init(zz->ZTime, 0, 
-                                                      "matching setup");
-    ZOLTAN_TIMER_START(zz->ZTime, development_timers[3], hg->comm->Communicator);
-    }   
+  if (hgp->use_timers > 3)  {
+    if (development_timers[3] < 0)
+      development_timers[3] = Zoltan_Timer_Init(zz->ZTime, 0, 
+                                                "matching setup");
+    ZOLTAN_TIMER_START(zz->ZTime, development_timers[3],
+                       hg->comm->Communicator);
+  }   
    
   /* this restriction will be removed later, but for now NOTE this test */
   if (sizeof(int) < sizeof (float))  {
@@ -604,6 +605,7 @@ static int pmatching_ipm(
   nDest = nSize = 1 + MAX (hgc->nProc_x, MAX(nTotal, gmax_nVtx));
   nSend = nRec = nEdgebuf = MAX (1000, MAX(gmax_nPins, gmax_nVtx+2));
   
+
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
      || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
@@ -649,8 +651,8 @@ static int pmatching_ipm(
    *
    * No conflict resolution required because temp locking prevents conflicts. */
 
-    if (hgp->use_timers > 3)
-       ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[3]);
+  if (hgp->use_timers > 3)
+    ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[3], hg->comm->Communicator);
        
      
   pvisit = 0;                                    /* marks position in visit[] */
@@ -667,8 +669,9 @@ static int pmatching_ipm(
     if (hgp->use_timers > 3)  {
       if (development_timers[2] < 0)
         development_timers[2] = Zoltan_Timer_Init(zz->ZTime, 0, 
-                                                      "candidates communication");
-    ZOLTAN_TIMER_START(zz->ZTime, development_timers[2], hg->comm->Communicator);
+                                                  "candidates communication");
+      ZOLTAN_TIMER_START(zz->ZTime, development_timers[2],
+                         hg->comm->Communicator);
     }  
     
     mp = master_data;
@@ -698,11 +701,12 @@ static int pmatching_ipm(
     
     /* determine actual global number of candidates this round */
     MPI_Allreduce (&sendcnt, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);     
-    if (nTotal == 0)   {
+    if (nTotal == 0) {
       if (hgp->use_timers > 3)
-       ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[2]);
+        ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[2],
+                          hg->comm->Communicator);
       break;                            /* globally all work is done, so quit */
-      }
+    }
       
       
     /* communication to determine global size and displacements of rec buffer */
@@ -741,7 +745,8 @@ static int pmatching_ipm(
     }
 
     if (hgp->use_timers > 3)
-       ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[2]);
+       ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[2], 
+                         hg->comm->Communicator);
     
 skip_phase1:
     /* Communication grouped candidates by processor, scramble them! */
@@ -764,7 +769,6 @@ skip_phase1:
         r     = &edgebuf[permute[k]];     
         gno   = *r++;                        /* gno of candidate vertex */
         count = *r++;                        /* count of following hyperedges */
-        
         if (cFLAG)
           gno = permute[k];                  /* need to use next local vertex */
  
@@ -846,7 +850,8 @@ skip_phase1:
           }
 
         if (hgp->use_timers > 3)
-          ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[0]);
+          ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[0],
+                            hg->comm->Communicator);
           
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
@@ -905,9 +910,10 @@ skip_phase1:
         }  
       }                  /* DONE: loop over k */                    
 
-      if (hgp->use_timers > 3)  {
+      if (hgp->use_timers > 3) {
         if (development_timers[1] < 0)
-          development_timers[1] =Zoltan_Timer_Init(zz->ZTime, 0, "total innerproducts");                               
+          development_timers[1] = Zoltan_Timer_Init(zz->ZTime, 0, 
+                                                    "total innerproducts"); 
         ZOLTAN_TIMER_START(zz->ZTime, development_timers[1], 
                            hg->comm->Communicator);
       }      
@@ -954,6 +960,7 @@ skip_phase1:
         /* Not sure if this test makes any speedup ???, works without! */
         if (gno % hgc->nProc_y != hgc->myProc_y)
           continue;                           /* this gno is not on this proc */
+        
 #endif
 
         /* merge step: look for target gno from each row's data */
@@ -1047,11 +1054,10 @@ skip_phase1:
             }
           }
 
-          if (cFLAG  && match[gno] == gno && (bestsum > TSUM_THRESHOLD))
-            {
+          if (cFLAG  && match[gno] == gno && (bestsum > TSUM_THRESHOLD)) {
             match[bestlno] = gno;
             match[gno]     = bestlno;
-            }
+          }
                         
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
@@ -1068,7 +1074,8 @@ skip_phase1:
       }
       
       if (hgp->use_timers > 3)
-        ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1]);
+        ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1],
+                          hg->comm->Communicator);
           
     }                                       /* DONE: kstart < nTotal loop */
     if (cFLAG)  {

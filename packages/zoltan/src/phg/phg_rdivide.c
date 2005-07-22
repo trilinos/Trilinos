@@ -89,7 +89,7 @@ int Zoltan_PHG_rdivide(
   bisec_part_sizes[1] = 1. - bisec_part_sizes[0];
 
   if (hgp->use_timers > 1)  /* Don't include partitioning time in rdivide */
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
 
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
   if (ierr != ZOLTAN_OK)
@@ -199,7 +199,8 @@ int Zoltan_PHG_rdivide(
               
           /* I'm on the left part so I should partition newleft */
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
-              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide);
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
+                                hg->comm->Communicator);
 
           hgp->bal_tol = (leftw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[0]) / leftw;
 /*          uprintf(hgc, "LEFT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
@@ -218,7 +219,8 @@ int Zoltan_PHG_rdivide(
           
           /* I'm on the right part so I should partition newright */
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
-              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide);
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
+                                hg->comm->Communicator);
           
           hgp->bal_tol = (rightw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[1]) / rightw;
 /*          uprintf(hgc, "RIGHT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
@@ -275,7 +277,8 @@ int Zoltan_PHG_rdivide(
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Left: H(%d, %d, %d)\n", left->nVtx, left->nEdge, left->nPins);
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
-              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide);
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
+                                hg->comm->Communicator);
           
           hgp->bal_tol = (leftw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[0]) / leftw;
 /*          uprintf(hgc, "LEFT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);          */
@@ -293,7 +296,8 @@ int Zoltan_PHG_rdivide(
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Right: H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins);
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
-              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide);
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
+                                hg->comm->Communicator);
           
           hgp->bal_tol = (rightw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[1]) / rightw;
 /*          uprintf(hgc, "RIGHT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
@@ -309,7 +313,7 @@ int Zoltan_PHG_rdivide(
 
 End:
   if (hgp->use_timers > 1)  /* Stop timer before recursion */
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
   Zoltan_Multifree (__FILE__, __LINE__, 8, &pins[0], &lpins[0], &part, 
                     &left, &right, &proclist, &sendbuf, &recvbuf);
 
