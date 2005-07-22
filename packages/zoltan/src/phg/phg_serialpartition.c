@@ -130,7 +130,7 @@ static int timer_total=-1, timer_cpart=-1, timer_gather=-1, timer_refine=-1;
   if (hgp->use_timers > 1) {
     if (timer_total < 0)
       timer_total = Zoltan_Timer_Init(zz->ZTime, 1,
-                                      "Total Coarse Partition);
+                                      "Total Coarse Partition");
     if (timer_gather < 0)
       timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Gather");
     if (timer_refine < 0)
