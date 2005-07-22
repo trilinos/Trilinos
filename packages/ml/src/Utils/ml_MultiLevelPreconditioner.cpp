@@ -1929,6 +1929,9 @@ ApplyInverse(const Epetra_MultiVector& X,
       case(ML_SAAMG): //Marian Brezina's solver
         ML_Solve_AMGV(ml_, xvectors[i], yvectors[i]); 
         break;
+      case(ML_PAMGV): //V-cycle, where modes are projected out before & after
+        ML_Solve_ProjectedAMGV(ml_, xvectors[i], yvectors[i]); 
+        break;
       case(ML_ONE_LEVEL_DD): 
         ML_DD_OneLevel(&(ml_->SingleLevel[ml_->ML_finest_level]),
                        yvectors[i], xvectors[i],
@@ -2350,6 +2353,40 @@ int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
 
   } else if( str == "MGW" ) {
     ml_->ML_scheme = ML_MGW;
+
+  } else if( str == "projected MGV" ) {
+    sprintf(Label_, "projected MGV");
+    ml_->ML_scheme = ML_PAMGV;
+
+    int numModes = List_.get("number of projected modes",0);
+    double **periodicModes = List_.get("projected modes", (double **) 0);
+
+    // Check that the number of modes is 1-3, and that the modes are there. 
+    if (numModes < 1 || numModes > 3) {
+      cerr << ErrorMsg_ <<
+        "You have chosen `projected MGV', but `number of projected modes'"
+        << endl << ErrorMsg_ <<
+        " has an incorrect value.  It should be 1, 2 or 3." << endl;
+      exit( EXIT_FAILURE );
+    }
+    if (periodicModes == 0) {
+      cerr << ErrorMsg_ <<
+        "You have chosen `projected MGV', but `projected modes' is NULL."
+        << endl; 
+      exit( EXIT_FAILURE );
+    }
+    for (int i=0; i<numModes; i++) {
+      if (periodicModes[i] == 0) {
+        cerr << ErrorMsg_ <<
+          "You have chosen `projected MGV', but mode " << i+1 << " is NULL."
+          << endl; 
+        exit( EXIT_FAILURE );
+      }
+    }
+
+    //JJH 7-22-05  I think NumMyRows is the right value...
+    ML_Operator_SetSubspace(ml_, periodicModes, numModes,
+                            RowMatrix_->NumMyRows());
 
   } else if( str == "MGV" ) {
     // it is the default
