@@ -30,7 +30,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   ML     *ml_nodes;
   char   str[80];
-  int max_nzs, min_nzs;
 /*
   char filename[80];
   FILE *fid2;
@@ -69,7 +68,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_CommInfoOP *getrow_comm; 
   int  N_input_vector;
   int  bail_flag;
-  int  maxproc, minproc, maxrows, minrows, NumActiveProc, active_proc=0;
 
   ML_Operator **perm; /*necessary if repartitioning matrices */
   ML_Operator *Tnew;   /*necessary if repartitioning matrices */

@@ -767,7 +767,7 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
 {
 #if defined(SUPERLU)
    int            i, j, *mat_ia, *mat_ja, nrows, nnz, offset, N_local;
-   int            reuse, coarsest_level, flag, space, *cols, nz_ptr;
+   int            reuse, coarsest_level, flag, space, *cols=NULL, nz_ptr;
    int            getrow_flag, osize, *row_ptr, length, zero_flag;
    double         *mat_val, *vals, dsize, di;
    void           *data;

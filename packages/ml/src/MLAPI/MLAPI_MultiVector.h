@@ -13,9 +13,7 @@
 #include <iomanip>
 #include <vector>
 #include <algorithm>
-extern "C" {
-  void   ML_random_vec(double u[], int N, ML_Comm *comm);
-}
+#include "ml_utils.h"
 
 namespace MLAPI {
 

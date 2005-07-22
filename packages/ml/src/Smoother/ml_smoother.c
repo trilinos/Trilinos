@@ -124,6 +124,7 @@ int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize)
      for (i = 0; i < blocksize*blocksize; i++) Z[k][i] = newZ[i];
    }
    ML_free(newZ);
+   return 0;
 }
 
 #ifdef out

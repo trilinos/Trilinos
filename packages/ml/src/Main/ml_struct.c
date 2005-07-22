@@ -1345,6 +1345,7 @@ int ML_Gen_Smoother_SymBlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 	ml->post_smoother[i].symmetric_sweep=1;
      }
    }
+   return 0;
 }
 
 int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
