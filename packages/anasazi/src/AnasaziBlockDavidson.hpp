@@ -137,6 +137,10 @@ namespace Anasazi {
                                         _timerSortEval, _timerDS,
                                         _timerOrtho, _timerTotal;
     //
+    // Counters
+    //
+    int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
+    //
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
@@ -229,6 +233,10 @@ namespace Anasazi {
       _os <<"Requested Eigenvalues : "<<_nev<<endl;
       _os <<"Computed Eigenvalues : "<<_knownEV<<endl;
       _os <<"Residual Tolerance : "<<_residual_tolerance<<endl;
+      _os <<"Operator applications:" << endl
+          <<"    Op: " << _count_ApplyOp << endl
+          <<"     M: " << _count_ApplyM << endl
+          <<"  Prec: " << _count_ApplyPrec << endl;
       _os <<"------------------------------------------------------"<<endl;
       _os <<"Computed Eigenvalues: "<<endl;
       _os <<"------------------------------------------------------"<<endl;
@@ -364,6 +372,7 @@ namespace Anasazi {
     int nFound = _blockSize;
     bool reStart = false;
     bool criticalExit = false;
+    ReturnType ret;
     Teuchos::RefCountPtr<MV> Xcurrent, Xprev, Xtotal, Xnext;
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -451,8 +460,16 @@ namespace Anasazi {
         //        
         if (_MOp.get()) {
           _timerMOp->start();
-          OPT::Apply( *_MOp, *Xcurrent, *MX );
+          ret = OPT::Apply( *_MOp, *Xcurrent, *MX );
           _timerMOp->stop();
+          _count_ApplyM += MVT::GetNumberVecs( *Xcurrent );
+          if (ret != Ok) {
+            if (_om->isVerbosityAndPrint(Error)) {
+              _os << "ERROR : Applying M operator in BlockReduction" << endl;
+            }
+            criticalExit = true;
+            break; // break out of for(nb) loop
+          }
         }
         //
         // Orthonormalize Xcurrent against the known eigenvectors and previous vectors.
@@ -495,8 +512,16 @@ namespace Anasazi {
         // Apply the stiffness matrix.
         //
         _timerOp->start();
-        OPT::Apply( *_Op, *Xcurrent, *KX );
+        ret = OPT::Apply( *_Op, *Xcurrent, *KX );
         _timerOp->stop();
+        _count_ApplyOp += MVT::GetNumberVecs( *Xcurrent );
+        if (ret != Ok) {
+          if (_om->isVerbosityAndPrint(Error)) {
+            _os << "ERROR : Applying Op operator in BlockReduction" << endl;
+          }
+          criticalExit = true;
+          break; // break out of for(nb) loop
+        }
         //
         // Update the local stiffness matrix ( Xtotal^T * K * Xcurrent where Xtotal = [Xprev Xcurrent] )
         // Note:  Only the upper half of the matrix is stored in KK
@@ -547,8 +572,15 @@ namespace Anasazi {
         //---------------------------------------------------
         _order.resize(localSize+_blockSize);
         _timerSortEval->start();
-        _sm->sort( this, localSize+_blockSize, &(_theta[0]), &_order );
+        ret = _sm->sort( this, localSize+_blockSize, &(_theta[0]), &_order );
         _timerSortEval->stop();
+        if (ret != Ok) {
+          if (_om->isVerbosityAndPrint(Error)) {
+            _os << "ERROR : Sorting in solve()" << endl;
+          }
+          criticalExit = true;
+          break; // break out of for(nb) loop
+        }
         // Sort the primitive ritz vectors
         // We need the first _blockSize vectors ordered to generate the next
         // columns immediately below, as well as when/if we restart.
@@ -570,15 +602,31 @@ namespace Anasazi {
         // 
         if (_MOp.get()) {
           _timerMOp->start();
-          OPT::Apply( *_MOp, *KX, *MX );
+          ret = OPT::Apply( *_MOp, *KX, *MX );
           _timerMOp->stop();
+          _count_ApplyM += MVT::GetNumberVecs( *KX );
+          if (ret != Ok) {
+            if (_om->isVerbosityAndPrint(Error)) {
+              _os << "ERROR : Applying M operator in BlockReduction" << endl;
+            }
+            criticalExit = true;
+            break; // break out of for(nb) loop
+          }
         }
         //
         // Apply the stiffness matrix for the next block
         //
         _timerOp->start();
-        OPT::Apply( *_Op, *KX, *R );
+        ret = OPT::Apply( *_Op, *KX, *R );
         _timerOp->stop();
+        _count_ApplyOp += MVT::GetNumberVecs( *KX );
+        if (ret != Ok) {
+          if (_om->isVerbosityAndPrint(Error)) {
+            _os << "ERROR : Applying Op operator in BlockReduction" << endl;
+          }
+          criticalExit = true;
+          break; // break out of for(nb) loop
+        }
         //
         // Compute the residual :
         // R = KX - MX*diag(theta)
@@ -646,8 +694,16 @@ namespace Anasazi {
         if (maxBlock == 1) {
           if (_Prec.get()) {
             _timerPrec->start();
-            OPT::Apply( *_Prec, *R, *Xcurrent );
+            ret = OPT::Apply( *_Prec, *R, *Xcurrent );
             _timerPrec->stop();
+            _count_ApplyPrec += MVT::GetNumberVecs( *R );
+            if (ret != Ok) {
+              if (_om->isVerbosityAndPrint(Error)) {
+                _os << "ERROR : Applying Prec operator in BlockReduction" << endl;
+              }
+              criticalExit = true;
+              break; // break out of for(nb) loop
+            }
           }
           else
             MVT::MvAddMv( one, *R, zero, *R, *Xcurrent );
@@ -672,8 +728,16 @@ namespace Anasazi {
         Xnext = MVT::CloneView( *X, index );
         if (_Prec.get()) {
           _timerPrec->start();
-          OPT::Apply( *_Prec, *R, *Xnext );
+          ret = OPT::Apply( *_Prec, *R, *Xnext );
           _timerPrec->stop();
+          _count_ApplyPrec += MVT::GetNumberVecs( *R );
+          if (ret != Ok) {
+            if (_om->isVerbosityAndPrint(Error)) {
+              _os << "ERROR : Applying Prec operator in BlockReduction" << endl;
+            }
+            criticalExit = true;
+            break; // break out of for(nb) loop
+          }
         }
         else {
           MVT::MvAddMv( one, *R, zero, *R, *Xnext );
@@ -687,13 +751,14 @@ namespace Anasazi {
         break;
       }
 
+      // Experienced unrecoverable error
+      if ( criticalExit ) {
+        break;
+      }
+
       if (reStart == true) {
         reStart = false;
         continue;
-      }
-
-      if (criticalExit == true) {
-        break;
       }
 
       //
@@ -893,10 +958,19 @@ namespace Anasazi {
       // Sort the eigenvalues
       _order.resize(_knownEV);
       _timerSortEval->start();
-      _sm->sort( this, _knownEV, &(*_evals)[0], &_order );
+      ret = _sm->sort( this, _knownEV, &(*_evals)[0], &_order );
       _timerSortEval->stop();
-      // use _order to permute _evecs and _resids
-      _MSUtils.permuteVectors(_knownEV,_order,*_evecs,&_resids);
+      if (ret != Ok) {
+        if (_om->isVerbosityAndPrint(Error)) {
+          _os << "ERROR : Sorting in solve()"
+              << endl;
+        }
+        criticalExit = true;
+      }
+      else {
+        // use _order to permute _evecs and _resids
+        _MSUtils.permuteVectors(_knownEV,_order,*_evecs,&_resids);
+      }
     }
 
     //

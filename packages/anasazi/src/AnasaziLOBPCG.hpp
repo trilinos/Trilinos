@@ -156,6 +156,10 @@ namespace Anasazi {
                                         _timerOrtho, 
                                         _timerRestart, _timerTotal;
     //
+    // Counters
+    //
+    int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
+    //
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
@@ -171,6 +175,7 @@ namespace Anasazi {
     const ScalarType _residual_tolerance;
     int _numRestarts, _iter, _knownEV, _nevLocal;
     std::vector<ScalarType> _theta, _normR, _resids;
+    bool _error_flg;
     //
     // Internal utilities class required by eigensolver.
     //
@@ -206,6 +211,7 @@ namespace Anasazi {
     _residual_tolerance(_pl.get("Tol", 1.0e-6)),
     _restartTimers(_pl.get("Restart Timers",false)),
     _numRestarts(0), 
+    _error_flg(false),
     _iter(0), 
     _knownEV(0),
     _nevLocal(0),
@@ -221,7 +227,10 @@ namespace Anasazi {
     _timerCompRes(Teuchos::TimeMonitor::getNewTimer("Compute residual time")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization time")),
     _timerRestart(Teuchos::TimeMonitor::getNewTimer("Restart time")),
-    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time")),
+    _count_ApplyOp(0),
+    _count_ApplyM(0),
+    _count_ApplyPrec(0)
   {     
   }
 
@@ -240,6 +249,10 @@ namespace Anasazi {
       _os <<"Requested Eigenvalues : "<<_nev<<endl;
       _os <<"Computed Eigenvalues : "<<_knownEV<<endl;
       _os <<"Residual Tolerance : "<<_residual_tolerance<<endl;
+      _os <<"Operator applications:" << endl
+          <<"    Op: " << _count_ApplyOp << endl
+          <<"     M: " << _count_ApplyM << endl
+          <<"  Prec: " << _count_ApplyPrec << endl;
       _os <<"------------------------------------------------------"<<endl;
       _os <<"Computed Eigenvalues: "<<endl;
       _os <<"------------------------------------------------------"<<endl;
@@ -285,6 +298,10 @@ namespace Anasazi {
       _timerRestart->reset();
       _timerOrtho->reset();
     }
+
+    _count_ApplyOp = 0;
+    _count_ApplyM = 0;
+    _count_ApplyPrec = 0;
 
     //
     // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
@@ -338,6 +355,7 @@ namespace Anasazi {
     _numRestarts = 0; 
     _iter = 0; 
     _knownEV = 0;
+    _error_flg = false;
     //
     // Necessary variables
     //
@@ -347,6 +365,7 @@ namespace Anasazi {
     bool reStart = false;
     bool criticalExit = false;
     bool haveMass = (_MOp.get()!=0);
+    ReturnType ret;
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::BLAS<int,ScalarType> blas;
@@ -464,8 +483,16 @@ namespace Anasazi {
           // Apply the mass matrix to X
           if (haveMass) {
             _timerMOp->start();
-            OPT::Apply( *_MOp, *X2, *MX2 );
+            ret = OPT::Apply( *_MOp, *X2, *MX2 );
             _timerMOp->stop();
+            _count_ApplyM += MVT::GetNumberVecs( *X2 );
+            if (ret != Ok) {
+              if (_om->isVerbosityAndPrint(Error)) {
+                _os << "ERROR : Applying M operator in BlockReduction" << endl;
+              }
+              _error_flg = true;
+              break; // break out of for(_iter) loop
+            }
           }
           
           if (_knownEV > 0) {
@@ -491,8 +518,16 @@ namespace Anasazi {
           
           // Apply the stiffness matrix to X
           _timerOp->start();
-          OPT::Apply( *_Op, *X2, *KX2 );
+          ret = OPT::Apply( *_Op, *X2, *KX2 );
           _timerOp->stop();
+          _count_ApplyOp += MVT::GetNumberVecs( *X2 );
+          if (ret != Ok) {
+            if (_om->isVerbosityAndPrint(Error)) {
+              _os << "ERROR : Applying Op operator in BlockReduction" << endl;
+            }
+            _error_flg = true;
+            break; // break out of for(_iter) loop
+          }
           
         } // if (_nFound > 0)
         
@@ -503,8 +538,16 @@ namespace Anasazi {
         // Apply the preconditioner on the residuals
         if (_Prec.get()) {
           _timerPrec->start();
-          OPT::Apply( *_Prec, *R, *H );
+          ret = OPT::Apply( *_Prec, *R, *H );
           _timerPrec->stop();
+          _count_ApplyPrec += MVT::GetNumberVecs( *R );
+          if (ret != Ok) {
+            if (_om->isVerbosityAndPrint(Error)) {
+              _os << "ERROR : Applying Prec operator in BlockReduction" << endl;
+            }
+            _error_flg = true;
+            break; // break out of for(_iter) loop
+          }
         }
         else {
           MVT::MvAddMv( one, *R, zero, *R, *H );
@@ -513,8 +556,16 @@ namespace Anasazi {
         // Apply the mass matrix on H
         if (haveMass) {
           _timerMOp->start();
-          OPT::Apply( *_MOp, *H, *MH);
+          ret = OPT::Apply( *_MOp, *H, *MH);
           _timerMOp->stop();
+          _count_ApplyM += MVT::GetNumberVecs( *H );
+          if (ret != Ok) {
+            if (_om->isVerbosityAndPrint(Error)) {
+              _os << "ERROR : Applying M operator in BlockReduction" << endl;
+            }
+            _error_flg = true;
+            break; // break out of for(_iter) loop
+          }
         }
         
         if (_knownEV > 0) {
@@ -535,8 +586,16 @@ namespace Anasazi {
         
         // Apply the stiffness matrix to H
         _timerOp->start();
-        OPT::Apply( *_Op, *H, *KH);
+        ret = OPT::Apply( *_Op, *H, *KH);
         _timerOp->stop();
+        _count_ApplyOp += MVT::GetNumberVecs( *H );
+        if (ret != Ok) {
+          if (_om->isVerbosityAndPrint(Error)) {
+            _os << "ERROR : Applying Op operator in BlockReduction" << endl;
+          }
+          _error_flg = true;
+          break; // break out of for(_iter) loop
+        }
         
         if (localSize == _blockSize)
           localSize += _blockSize;
@@ -608,6 +667,7 @@ namespace Anasazi {
       
       if (info < 0) {
         // Stop when spectral decomposition has a critical failure
+        criticalExit = true;
         break;
       } // if (info < 0)
       
@@ -652,8 +712,15 @@ namespace Anasazi {
       //---------------------------------------------------
       _order.resize(_nevLocal);
       _timerSortEval->start();
-      _sm->sort( this, _nevLocal, &(_theta[0]), &_order );
+      ret = _sm->sort( this, _nevLocal, &(_theta[0]), &_order );
       _timerSortEval->stop();
+      if (ret != Ok) {
+        if (_om->isVerbosityAndPrint(Error)) {
+          _os << "ERROR : Sorting in solve()" << endl;
+        }
+        _error_flg = true;
+        break;
+      }
       // Sort the primitive ritz vectors
       // We need the first _blockSize vectors ordered to generate the next
       // columns immediately below, as well as when/if we restart.
@@ -894,8 +961,15 @@ namespace Anasazi {
         if ((info==0) && (_knownEV > 0)) {
           _order.resize(_knownEV);
           _timerSortEval->start();
-          _sm->sort( this, _knownEV, &(*_evals)[0], &_order);
-          _timerSortEval->start();
+          ret = _sm->sort( this, _knownEV, &(*_evals)[0], &_order);
+          _timerSortEval->stop();
+          if (ret != Ok) {
+            if (_om->isVerbosityAndPrint(Error)) {
+              _os << "ERROR : Sorting in solve()" << endl;
+            }
+            _error_flg = true;
+            break;
+          }
           // use _order to permute _evecs and _resids
           _MSUtils.permuteVectors(_knownEV,_order,*_evecs,&_resids);
         }

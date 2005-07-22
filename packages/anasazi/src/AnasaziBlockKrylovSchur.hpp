@@ -145,7 +145,8 @@ namespace Anasazi {
      */
     void QRFactorization( MV&, Teuchos::SerialDenseMatrix<int,ScalarType>& );
     void ComputeSchurForm( const bool apply );
-    void SortSchurForm( Teuchos::SerialDenseMatrix<int,ScalarType>& H, Teuchos::SerialDenseMatrix<int,ScalarType>& Q );
+    void SortSchurForm( Teuchos::SerialDenseMatrix<int,ScalarType>& H, 
+                        Teuchos::SerialDenseMatrix<int,ScalarType>& Q );
     int BlockReduction();
     void BlkOrth( MV& Vec_in, const int j );
     void BlkOrthSing( MV& Vec_in, const int j );
@@ -168,31 +169,35 @@ namespace Anasazi {
                                         _timerCompSF, _timerSortSF,
                                         _timerCompEvec, _timerQRFact, 
                                         _timerOrtho, _timerTotal;
+    //
+    // Counters
+    //
+    int _count_ApplyOp;
     // Information obtained from the eigenproblem
     Teuchos::RefCountPtr<OP> _Op;
     Teuchos::RefCountPtr<OP> _MOp;
     Teuchos::RefCountPtr<MV> _evecs;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
     const int _nev;  
-    
+
     int _maxBlocks;
     const int _restarts, _blockSize, _stepSize;
     const ScalarType _residual_tolerance;
     int _numRestarts, _iter, _jstart, _jend, _nevblock, _totallength;
     int _offset, _maxoffset;
-    bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
+    bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg, _error_flg;
     ScalarType _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
     std::vector<int> _order;
     Teuchos::RefCountPtr<MV> _basisvecs;
     Teuchos::SerialDenseMatrix<int,ScalarType> _hessmatrix;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _ritzresiduals, _ritzvalues;
-    
+
     // Pointer to dummy function required by lapack.GEES/TREVC call
     int (*dummyFunc)(ScalarType*, ScalarType*);
 
     // Output stream from the output manager
     std::ostream& _os;
-    
+
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
@@ -201,11 +206,12 @@ namespace Anasazi {
   // Implementation
   //----------------------------------------------------------------------------------------
   template <class ScalarType, class MV, class OP>
-  BlockKrylovSchur<ScalarType,MV,OP>::BlockKrylovSchur(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                                                       const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
-                                                       const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-                                                       Teuchos::ParameterList &pl
-                                                       ): 
+  BlockKrylovSchur<ScalarType,MV,OP>::BlockKrylovSchur(
+      const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+      const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
+      const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
+      Teuchos::ParameterList &pl
+      ): 
     _problem(problem), 
     _sm(sm),
     _om(om),
@@ -232,6 +238,7 @@ namespace Anasazi {
     _isdecompcurrent(false),
     _isevecscurrent(false),
     _exit_flg(false),
+    _error_flg(false),
     _dep_flg(false),
     _schurerror(1.0), 
     _dep_tol(1.0), 
@@ -246,7 +253,8 @@ namespace Anasazi {
     _timerCompEvec(Teuchos::TimeMonitor::getNewTimer("Compute Evecs")),
     _timerQRFact(Teuchos::TimeMonitor::getNewTimer("QR factorization time")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization time")),
-    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time")),
+    _count_ApplyOp(0)
   {     
   }
   
@@ -287,15 +295,21 @@ namespace Anasazi {
       _os <<"Requested Eigenvalues : "<<_nev<<endl;
       _os <<"Residual Tolerance : "<<_residual_tolerance<<endl;        
       _os <<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
+      _os <<"Operator applications:" << endl
+          <<"    Op: " << _count_ApplyOp << endl;
       //
       //  Determine status of solver and output information correctly.
       //
       if ( _schurerror < _residual_tolerance ) {
         _os <<"------------------------------------------------------"<<endl;
         _os <<"Computed Eigenvalues: "<<endl;
-      } else {
+      } 
+      else {
         if (_exit_flg && _iter != _maxBlocks+_restarts*(_maxBlocks-_nevblock)) {
           _os <<"ERROR: Complete orthogonal basis could not be computed"<<endl;
+        }
+        else if (_error_flg) {
+          _os << "ERROR: Encountered unrecoverable error" << endl;
         }
         _os <<"------------------------------------------------------"<<endl;
         _os <<"Current Eigenvalue Estimates: "<<endl;
@@ -354,6 +368,8 @@ namespace Anasazi {
       _timerQRFact ->reset();
       _timerOrtho->reset();
     }
+
+    _count_ApplyOp = 0;
 
     //
     // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
@@ -460,7 +476,8 @@ namespace Anasazi {
     // Reinitialize internal data and pointers, prepare for solve
     // 
     _numRestarts=0; _iter=0; _jstart=0; _jend=0; 
-    _isdecompcurrent=false; _isevecscurrent=false; _exit_flg=false; _dep_flg=false;
+    _isdecompcurrent=false; _isevecscurrent=false; 
+    _exit_flg=false; _dep_flg=false; _error_flg=false;
     _schurerror=1.0; 
     //
     // Make room for the Arnoldi vectors and F.
@@ -490,16 +507,18 @@ namespace Anasazi {
     // Right now the solver will just go the remaining iterations, but this design will allow
     // for checking of the residuals every so many iterations, independent of restarts.
     //
-    while (_schurerror > _residual_tolerance && _numRestarts <= _restarts && !_exit_flg) {
+    while (_schurerror > _residual_tolerance && _numRestarts <= _restarts 
+           && !_exit_flg && !_error_flg) {
       iterate( _stepSize );
     }
     //
     // Compute the current approximate eigenvectors before returning.
     //
-    _timerCompEvec->start();
-    ComputeEvecs();    
-    _timerCompEvec->stop();
-
+    if (!_error_flg) {
+      _timerCompEvec->start();
+      ComputeEvecs();    
+      _timerCompEvec->stop();
+    }
     //
     // Print out a final summary before returning.
     //
@@ -528,6 +547,10 @@ namespace Anasazi {
     if (_exit_flg) {
       if (_om->isVerbosityAndPrint( Anasazi::Warning )) 
         _os << "WARNING : Numerical breakdown detected in Anasazi::BlockKrylovSchur"<< endl;
+    }
+
+    if (_error_flg) {
+      return Failed;
     }
 
     return Ok;
@@ -586,12 +609,14 @@ namespace Anasazi {
     // Now we go the number of steps requested by the user.  This may cause
     // a restart or hit the number of maximum iterations (restarts).  
     //
-    while(tempsteps > 0 && _numRestarts <= _restarts && !_exit_flg) {
+    while(tempsteps > 0 && _numRestarts <= _restarts 
+          && !_exit_flg && !_error_flg) {
       _isevecscurrent = false;
       // If we don't need to restart, just get it over with and return.
       if (_jstart+tempsteps < _maxBlocks) {
         _jend = _jstart+tempsteps;
         blk_red_steps = BlockReduction();
+        if (_error_flg)  return;
         //
         // Move the pointer and update the iteration count.
         //
@@ -609,6 +634,7 @@ namespace Anasazi {
       else {
         _jend = _maxBlocks;
         blk_red_steps = BlockReduction();
+        if (_error_flg)  return;
         //
         // Move the pointer and update the iteration count.
         //
@@ -672,6 +698,15 @@ namespace Anasazi {
       _timerOp->start();
       ret = OPT::Apply( *_Op, *U_vec, *F_vec ); 
       _timerOp->stop();
+      _count_ApplyOp += MVT::GetNumberVecs(*U_vec);
+      if (ret != Ok) {
+        // Apply() failed. Return error code.
+        if (_om->isVerbosityAndPrint(Error)) {
+          _os << "ERROR : Applying Op operator in BlockReduction" << endl;
+        }
+        _error_flg = true;
+        return -1;
+      }
       //
       // Use previous dependency information to decide which orthogonalization
       // method to use for the new block.  The global variable _dep_flg tells us
@@ -697,6 +732,7 @@ namespace Anasazi {
       // this method.
       //
       if (_exit_flg) { break; }
+      if (_error_flg) { return -1; }
     }
     //
     // Return the number of steps in the block reduction that were accomplished.
@@ -802,7 +838,7 @@ namespace Anasazi {
       if (norm2[i] < norm1[i] * _blk_tol) {
         _dep_flg = true;
         if (_om->isVerbosityAndPrint( Warning )) {
-          _os << "Col " << num_prev+i << " is dependent on previous "
+          _os << "WARNING : Col " << num_prev+i << " is dependent on previous "
                << "Arnoldi vectors in V_prev" << endl;
           _os << endl;
         }
@@ -815,6 +851,11 @@ namespace Anasazi {
             << " Iteration: " << j << endl<<endl;
       }
       CheckBlkArnRed(j);
+      // This may have triggered an error flag, in which case we
+      // should quit.
+      if (_error_flg) {
+        return;
+      }
     }
     //
     // If dependencies have not already been detected, compute
@@ -959,7 +1000,7 @@ namespace Anasazi {
       //
       if (norm2[0] < norm1[0] * _sing_tol) {
         if (_om->isVerbosityAndPrint( Warning )) {
-          _os << "Column " << num_prev << " of _basisvecs is dependent" 
+          _os << "WARNING : Column " << num_prev << " of _basisvecs is dependent" 
               << endl<<endl;
         }
         //
@@ -1027,6 +1068,11 @@ namespace Anasazi {
             << " Iteration: " << j << endl<<endl;
       }
       CheckBlkArnRed(j);
+      // This may have triggered an error flag, in which case we
+      // should quit.
+      if (_error_flg) {
+        return;
+      }
     }
   } // end BlkOrthSing()
 
@@ -1244,10 +1290,14 @@ namespace Anasazi {
       // Take into account that deflated blocks need not be updated.
       //        
       SortSchurForm( Hj, Q );
+      if (_error_flg) {
+        return;
+      }
       basistemp = MVT::Clone( *_basisvecs, n );
       Teuchos::RefCountPtr<MV> basistemp2 = MVT::CloneView( *_basisvecs, index );
       MVT::MvTimesMatAddMv ( one, *basistemp2, Q, zero, *basistemp );
-    } else {
+    } 
+    else {
       //
       // We can aquire the Ritz vectors from the current decomposition.
       //
@@ -1396,6 +1446,9 @@ namespace Anasazi {
     }
     //
     SortSchurForm( *Hj, Q );
+    if (_error_flg) {
+      return;
+    }
     //
     if (_nevblock <= _jstart || apply ) {
       //
@@ -1486,6 +1539,7 @@ namespace Anasazi {
     // Local timer
     Teuchos::TimeMonitor LocalTimer(*_timerSortSF);
 
+    ReturnType ret;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     Teuchos::LAPACK<int,ScalarType> lapack; 
@@ -1640,9 +1694,18 @@ namespace Anasazi {
         _os <<endl;
       }
       //
+      
       _timerSortEval->start();
-      _sm->sort( this, n, &(*_ritzvalues)[0], &_order );
+      ret = _sm->sort( this, n, &(*_ritzvalues)[0], &_order );
       _timerSortEval->stop();
+      if (ret != Ok) {
+        if (_om->isVerbosityAndPrint(Error)) {
+          _os << "ERROR : Sorting in SortSchurForm"
+              << endl;
+        }
+        _error_flg = true;
+        return;
+      }
       //
       if (_om->isVerbosityAndPrint( Debug )) {
         _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values After Sorting (from SortManager) ]"<<endl;
@@ -1660,8 +1723,16 @@ namespace Anasazi {
       }
       //
       _timerSortEval->start();
-      _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], &_order );
+      ret = _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], &_order );
       _timerSortEval->stop();
+      if (ret != Ok) {
+        if (_om->isVerbosityAndPrint(Error)) {
+          _os << "Error sorting in SortSchurForm!"
+              << endl;
+        }
+        _error_flg = true;
+        return;
+      }
       //
       if (_om->isVerbosityAndPrint( Debug )) {
         _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values After Sorting (from SortManager) ]"<<endl;
@@ -1783,6 +1854,7 @@ namespace Anasazi {
     // Check the difference between the projection of A with the Schur vectors and the Schur matrix.
     // 
     int i, n = j*_blockSize;
+    ReturnType ret;
     std::vector<int> index( n );
     for( i=0; i<n; i++ ) { index[i] = i; } 
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -1791,8 +1863,17 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> Z = MVT::CloneView( *_basisvecs, index );
     Teuchos::RefCountPtr<MV> basistemp = MVT::Clone( *_basisvecs, n );
     _timerOp->start();
-    OPT::Apply( *_Op, *Z, *basistemp );
+    ret = OPT::Apply( *_Op, *Z, *basistemp );
     _timerOp->stop();
+    _count_ApplyOp += MVT::GetNumberVecs(*Z);
+    if (ret != Ok) {
+      if (_om->isVerbosityAndPrint(Error)) {
+        _os << "ERROR : Applying Op operator in CheckSchurVecs"
+            << endl;
+      }
+      _error_flg = true;
+      return;
+    }
     MVT::MvTransMv( one, *Z, *basistemp, SchurProj );
     SchurProj.scale( -one );
     SchurProj += Hj;
@@ -1889,6 +1970,16 @@ namespace Anasazi {
     _timerOp->start();
     ret = OPT::Apply( *_Op, *Vj, *AVj );
     _timerOp->stop();
+    _count_ApplyOp += MVT::GetNumberVecs( *Vj );
+    if (ret != Ok) {
+      // Apply() failed. Return error code.
+      if (_om->isVerbosityAndPrint(Error)) {
+        _os << "Error applying Op operator in CheckBlkArnRed!"
+            << endl;
+      }
+      _error_flg = true;
+      return;
+    }
     Teuchos::SerialDenseMatrix<int,ScalarType> Hj(Teuchos::View, _hessmatrix, m, m);
     MVT::MvTimesMatAddMv( -one, *Vj, Hj, one, *AVj );
     index.resize( _blockSize );
