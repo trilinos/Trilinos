@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 
 
   Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,MaxMgLevels-1,
-					     ML_DECREASING,ag,NULL,Tmat,Tmat_trans, 
+					     ML_DECREASING,ag,Tmat,Tmat_trans, 
 					     &Tmat_array,&Tmat_trans_array, 
 					     smoothPe_flag, 1.5);
 
