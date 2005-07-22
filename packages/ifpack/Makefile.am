@@ -38,10 +38,10 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-#EXTRA_DIST =
+EXTRA_DIST = README-IFPACK ChangeLog-IFPACK
 
 
-## #######################################################################
+# #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 

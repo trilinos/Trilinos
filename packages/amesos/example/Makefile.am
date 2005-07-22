@@ -32,7 +32,7 @@ if USING_GNUMAKE
 EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
 EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
 else
-EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
+EXAMPLE_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)
 EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 endif
 
@@ -49,21 +49,21 @@ GetNecessaryFiles: $(EXTRA_DIST)
 	cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
 	chmod -x 662_bus.rsa
 
-example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
+example_AmesosFactory_SOURCES      = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
-example_AmesosFactory_LDADD = $(EXAMPLE_LIBS)
+example_AmesosFactory_LDADD        = $(EXAMPLE_LIBS)
 
-example_AmesosFactory_Tridiag_SOURCES = $(srcdir)/example_AmesosFactory_Tridiag.cpp
+example_AmesosFactory_Tridiag_SOURCES      = $(srcdir)/example_AmesosFactory_Tridiag.cpp
 example_AmesosFactory_Tridiag_DEPENDENCIES = $(top_builddir)/src/libamesos.a
-example_AmesosFactory_Tridiag_LDADD = $(EXAMPLE_LIBS)
+example_AmesosFactory_Tridiag_LDADD        = $(EXAMPLE_LIBS)
 
-example_AmesosFactory_HB_SOURCES = $(srcdir)/example_AmesosFactory_HB.cpp 
+example_AmesosFactory_HB_SOURCES      = $(srcdir)/example_AmesosFactory_HB.cpp 
 example_AmesosFactory_HB_DEPENDENCIES = $(top_builddir)/src/libamesos.a GetNecessaryFiles
-example_AmesosFactory_HB_LDADD = $(EXAMPLE_LIBS)
+example_AmesosFactory_HB_LDADD        = $(EXAMPLE_LIBS)
 
-compare_solvers_SOURCES = $(srcdir)/compare_solvers.cpp
+compare_solvers_SOURCES      = $(srcdir)/compare_solvers.cpp
 compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
-compare_solvers_LDADD = $(EXAMPLE_LIBS)
+compare_solvers_LDADD        = $(EXAMPLE_LIBS)
 
 clean:  clean-am
 	rm -f  662_bus.rsa

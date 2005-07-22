@@ -313,11 +313,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 AUTOMAKE_OPTIONS = foreign
-EXTRA_DIST = bootstrap \
-	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
-	config/depcomp README-Amesos ChangeLog-Amesos
-
+EXTRA_DIST = README-Amesos ChangeLog-Amesos
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	configure config.status config.log \

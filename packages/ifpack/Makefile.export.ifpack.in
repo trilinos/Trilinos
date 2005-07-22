@@ -20,7 +20,7 @@ IFPACK_INCLUDES= -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 	         $(EPETRAEXT_INCLUDES) \
 	         $(TRIUTILS_INCLUDES) 
 
-IFPACK_LIBS= @abs_top_builddir@/src/libifpack.a \
+IFPACK_LIBS= -L@abs_top_builddir@/src/ -lifpack \
 	     $(AMESOS_LIBS) \
 	     $(AZTECOO_LIBS) \
 	     $(EPETRAEXT_LIBS) \

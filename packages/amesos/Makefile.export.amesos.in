@@ -20,9 +20,7 @@ AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lamesos $(EPETRA_LIBS) $(TEUCH
 # These variables define the include path and libraries that can be used in
 # the Amesos' examples and tests, but that are not required to compile or link
 # Amesos itself.
-AMESOS_EXTRA_INCLUDES = $(AMESOS_INCLUDES) \
-		        $(EPETRAEXT_INCLUDES) \
+AMESOS_EXTRA_INCLUDES = $(EPETRAEXT_INCLUDES) \
 		        $(TRIUTILS_INCLUDES)
-AMESOS_EXTRA_LIBS = $(AMESOS_LIBS) \
-		    $(EPETRAEXT_LIBS) \
+AMESOS_EXTRA_LIBS = $(EPETRAEXT_LIBS) \
 		    $(TRIUTILS_LIBS)

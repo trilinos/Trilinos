@@ -34,7 +34,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.ifpack.in $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure \
 	$(top_srcdir)/python/src/.deps/dummy.in config/config.guess \
@@ -279,8 +279,9 @@ target_vendor = @target_vendor@
 # ************************************************************************
 # @HEADER
 AUTOMAKE_OPTIONS = foreign
+EXTRA_DIST = README-IFPACK ChangeLog-IFPACK
 
-#EXTRA_DIST =
+# #######################################################################
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	configure config.status config.log \
@@ -711,7 +712,7 @@ all-local:
 	@echo "        |                                                    |"
 	@echo "        | The IFPACK Users' Guide is located in              |"
 	@echo "        | Trilinos/packages/ifpack/doc/UsersGuide, or        |"
-	@echo "        | consult the IFPACK web site for more details.     |"
+	@echo "        | consult the IFPACK web site for more details.      |"
 	@echo "        |                                                    |"
 	@echo "        | You can send questions/comments to:                |"
 	@echo "        | - ifpack-users@software.sandia.gov                 |"
