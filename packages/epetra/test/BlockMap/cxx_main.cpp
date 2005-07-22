@@ -271,20 +271,41 @@ int main(int argc, char *argv[]) {
     }
     delete SmallMap;
 
-  delete[] ElementSizeList;
-  delete[] MyGlobalElements;
   delete Map;
   delete Map1;
 	
+
+  //create a map where proc 1 has no local elements, then check to make sure that
+  //if NumMyElements == 0, then MaxMyGID < MinMyGID.
+
+  if (MyPID == 1) {
+    Map1 = new Epetra_BlockMap(-1, 0, (int*)0, (int*)0, IndexBase, Comm);
+  }
+  else {
+    Map1 = new Epetra_BlockMap(-1, NumMyElements, MyGlobalElements, ElementSizeList, IndexBase, Comm);
+  }
+
+  int numMyElems = Map1->NumMyElements();
+  if (MyPID == 1) {
+    EPETRA_TEST_ERR(!(numMyElems == 0), returnierr);
+    int maxgid = Map1->MaxMyGID();
+    int mingid = Map1->MinMyGID();
+    EPETRA_TEST_ERR( !(maxgid<mingid), returnierr);
+  }
+
+  delete[] ElementSizeList;
+  delete[] MyGlobalElements;
+  delete Map1;
+
 	// test reference counting
 	ierr = 0;
 
 	if (verbose) 
     cout << endl << endl
-				 << "*******************************************************************************************" << endl
-				 << "        Testing reference counting now....................................................." << endl
-				 << "*******************************************************************************************" << endl
-				 << endl;
+	 << "*******************************************************************************************" << endl
+	 << "        Testing reference counting now....................................................." << endl
+	 << "*******************************************************************************************" << endl << endl;
+
 	Epetra_BlockMap b1(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
 	int b1count = b1.ReferenceCount();
 	const Epetra_BlockMapData* b1addr = b1.DataPtr();
