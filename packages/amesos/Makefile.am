@@ -64,6 +64,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
+	@cp -f $(srcdir)/example/In_662_bus.rsa $(top_builddir)/example/662_bus.rsa
 	@echo 
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package amesos built successfully         |"

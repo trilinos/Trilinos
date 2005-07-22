@@ -44,10 +44,6 @@ noinst_PROGRAMS = example_AmesosFactory example_AmesosFactory_HB example_AmesosF
 
 EXTRA_DIST = In_662_bus.rsa
 
-#copy these files over to the build area
-GetNecessaryFiles: $(EXTRA_DIST)
-	cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
-
 example_AmesosFactory_SOURCES      = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 example_AmesosFactory_LDADD        = $(EXAMPLE_LIBS)
@@ -57,7 +53,7 @@ example_AmesosFactory_Tridiag_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 example_AmesosFactory_Tridiag_LDADD        = $(EXAMPLE_LIBS)
 
 example_AmesosFactory_HB_SOURCES      = $(srcdir)/example_AmesosFactory_HB.cpp 
-example_AmesosFactory_HB_DEPENDENCIES = $(top_builddir)/src/libamesos.a GetNecessaryFiles
+example_AmesosFactory_HB_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 example_AmesosFactory_HB_LDADD        = $(EXAMPLE_LIBS)
 
 compare_solvers_SOURCES      = $(srcdir)/compare_solvers.cpp
