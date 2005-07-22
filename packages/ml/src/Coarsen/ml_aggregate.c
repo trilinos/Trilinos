@@ -2117,6 +2117,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   int UseImplicitTranspose;
   ML_Partitioner which_partitioner;
   ML_Aggregate_Viz_Stats *grid_info;
+  int N_dimensions;
 
   if (ML_Repartition_Status(ml) == ML_FALSE)
     return NULL;
@@ -2177,6 +2178,9 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     xcoord = grid_info->x;
     ycoord = grid_info->y;
     zcoord = grid_info->z;
+    N_dimensions = grid_info->Ndim;
+    if (N_dimensions < 1 || N_dimensions > 3)
+      pr_error("ML_repartition_Acoarse: problem dimension is not set.\n");
 /*
     printf("(pid %d, level %d) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, fine,xcoord,ycoord,zcoord);
     printf("(pid %d, level 0) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, 
@@ -2203,35 +2207,6 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
       /* repartition the coordinates if they are present */
       if (ag->nullspace_dim != 1)
         pr_error("repartitioning of coordinates does not work with null space greater than one.\n");
-       /*
-       printf("repartitioning coords %u %u %u\n",xcoord,ycoord,zcoord);
-       */
-      if (xcoord != NULL) {
-        new_xcoord = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
-                                          (perm->outvec_leng +1));
-        ML_Operator_Apply(perm, perm->invec_leng, 
-              xcoord, perm->outvec_leng, new_xcoord);
-        ML_free(grid_info->x);
-        grid_info->x = new_xcoord;
-      }
-      if (ycoord != NULL) {
-        new_ycoord = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
-                                            (perm->outvec_leng +1));
-        ML_Operator_Apply(perm,
-                          perm->invec_leng, ycoord,
-                          perm->outvec_leng, new_ycoord);
-        ML_free(grid_info->y);
-        grid_info->y = new_ycoord;
-      }
-      if (zcoord != NULL) {
-        new_zcoord = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
-                                            (perm->outvec_leng +1));
-        ML_Operator_Apply(perm,
-                          perm->invec_leng, zcoord,
-                          perm->outvec_leng, new_zcoord);
-        ML_free(grid_info->z);
-        grid_info->z = new_zcoord;
-      }
 /*
        for (i = 0; i < perm->invec_leng; i++)
          printf("(pid %d, level %d): old coords(%d) =  %e %e\n",perm->comm->ML_mypid,j,i,
@@ -2261,20 +2236,52 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      } /* if (ag->nullspace_vect != NULL) */
     } /* if (ag !=NULL) */
 
+    /*
+    printf("repartitioning coords %u %u %u\n",xcoord,ycoord,zcoord);
+    */
+    if (xcoord != NULL) {
+      new_xcoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
+                                        (perm->outvec_leng +1));
+      ML_Operator_Apply(perm, perm->invec_leng, 
+            xcoord, perm->outvec_leng, new_xcoord);
+      ML_free(grid_info->x);
+      grid_info->x = new_xcoord;
+    }
+    if (ycoord != NULL) {
+      new_ycoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
+                                          (perm->outvec_leng +1));
+      ML_Operator_Apply(perm,
+                        perm->invec_leng, ycoord,
+                        perm->outvec_leng, new_ycoord);
+      ML_free(grid_info->y);
+      grid_info->y = new_ycoord;
+    }
+    if (zcoord != NULL) {
+      new_zcoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
+                                          (perm->outvec_leng +1));
+      ML_Operator_Apply(perm,
+                        perm->invec_leng, zcoord,
+                        perm->outvec_leng, new_zcoord);
+      ML_free(grid_info->z);
+      grid_info->z = new_zcoord;
+    }
+
     ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
 
     /* start of MS modif, 26-Mar-05                         */
     /* This lines are required by ML_Project_Coordinates(), */
     /* in ML_Gen_MultiLevelHierarchy(), since I use Ptent   */
     /* to project the coordinates down to the next level    */
-    if (ag->P_tentative != 0) {
-      if (ag->P_tentative[coarse] != 0)
-      {
-        newP = ML_Operator_Create(Pmat->comm);
-        ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
-        ML_Operator_Destroy(&(ag->P_tentative[coarse]));
-        ag->P_tentative[coarse] = newP;
-        newP = NULL;
+    if (ag != NULL) {
+      if (ag->P_tentative != 0) {
+        if (ag->P_tentative[coarse] != 0)
+        {
+          newP = ML_Operator_Create(Pmat->comm);
+          ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
+          ML_Operator_Destroy(&(ag->P_tentative[coarse]));
+          ag->P_tentative[coarse] = newP;
+          newP = NULL;
+        }
       }
     }
     /* end of MS modif */
