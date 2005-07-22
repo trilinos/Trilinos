@@ -653,7 +653,6 @@ include $(top_builddir)/Makefile.export.amesos
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
 	cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
-	chmod -x 662_bus.rsa
 
 clean:  clean-am
 	rm -f  662_bus.rsa

@@ -47,7 +47,6 @@ EXTRA_DIST = In_662_bus.rsa
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
 	cp -f $(srcdir)/In_662_bus.rsa 662_bus.rsa
-	chmod -x 662_bus.rsa
 
 example_AmesosFactory_SOURCES      = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
