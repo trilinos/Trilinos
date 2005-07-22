@@ -84,8 +84,6 @@ typedef struct TimeStruct {
   int Stop_Line;          /* Line # in Stop_File for most recent Stop */
   double My_Tot_Time;     /* Sum of stop_time-start_time over all invocations
                              of this timer */
-  double Global_Tot_Time; /* Max of My_Tot_Time over all procs in communicator;
-                             Computed when info is printed. */
   int Use_Barrier;        /* Flag indicating whether to perform a barrier
                              operation before starting the timer. */
   int Status;             /* Flag indicating status of TimeStruct:
@@ -227,7 +225,6 @@ ZTIMER_TS *ts;
   ts->Start_Time = 0.;
   ts->Stop_Time = 0.;
   ts->My_Tot_Time = 0.;
-  ts->Global_Tot_Time = 0.;
   ts->Use_Barrier = use_barrier;
   strncpy(ts->Name, name, MAXNAMELEN);
   ts->Name[MAXNAMELEN] = '\0';
@@ -360,20 +357,27 @@ int Zoltan_Timer_Print(
  */
 static char *yo = "Zoltan_Timer_Print";
 ZTIMER_TS *ts;
-int my_proc;
+int my_proc, nproc;
+double max_time;
+double min_time;
+double sum_time;
 
   TESTTIMER(zt, yo);
   TESTINDEX(zt, ts_idx, yo);
   ts = &(zt->Times[ts_idx]);
 
-  MPI_Allreduce(&(ts->My_Tot_Time), &(ts->Global_Tot_Time), 1, MPI_DOUBLE, 
-                MPI_MAX, comm);
+  MPI_Allreduce(&(ts->My_Tot_Time), &max_time, 1, MPI_DOUBLE, MPI_MAX, comm);
+  MPI_Allreduce(&(ts->My_Tot_Time), &min_time, 1, MPI_DOUBLE, MPI_MIN, comm);
+  MPI_Allreduce(&(ts->My_Tot_Time), &sum_time, 1, MPI_DOUBLE, MPI_SUM, comm);
 
   MPI_Comm_rank(comm, &my_proc);
+  MPI_Comm_size(comm, &nproc);
   if (proc == my_proc) 
     fprintf(fp,
-            "%3d ZOLTAN_TIMER %3d %23s:  MyTime %7.4lf  GlobalMaxTime %7.4lf\n",
-            proc, ts_idx, ts->Name, ts->My_Tot_Time, ts->Global_Tot_Time);
+            "%3d ZOLTAN_TIMER %3d %23s:  MyTime %7.4lf  "
+            "MaxTime %7.4lf  MinTime %7.4lf  AvgTime %7.4lf\n",
+            proc, ts_idx, ts->Name, ts->My_Tot_Time, 
+            max_time, min_time, sum_time/nproc);
   return ZOLTAN_OK;
 }
 
