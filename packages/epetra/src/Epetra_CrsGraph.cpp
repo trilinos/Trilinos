@@ -42,7 +42,7 @@
 #include "Epetra_OffsetIndex.h"
 
 //==============================================================================
-Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int* NumIndicesPerRow, bool StaticProfile) 
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const int* NumIndicesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, StaticProfile))
 {
@@ -61,7 +61,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
 Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, 
 				 const Epetra_BlockMap& RowMap, 
 				 const Epetra_BlockMap& ColMap, 
-				 int* NumIndicesPerRow, bool StaticProfile) 
+				 const int* NumIndicesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, ColMap, StaticProfile))
 {
@@ -88,7 +88,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph& Graph)
 }
 
 // private =====================================================================
-int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc, bool StaticProfile) {
+int Epetra_CrsGraph::Allocate(const int* NumIndicesPerRow, int Inc, bool StaticProfile) {
   int i;
   const int numMyBlockRows = CrsGraphData_->NumMyBlockRows_;
   

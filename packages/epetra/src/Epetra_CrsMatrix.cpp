@@ -49,7 +49,7 @@
 void Epetra_SetCacheBypassRange( void * address, int length, bool bypassCache); 
 #endif
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow, bool StaticProfile) 
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
@@ -99,7 +99,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
 }
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
-				   const Epetra_Map& ColMap, int* NumEntriesPerRow, bool StaticProfile) 
+				   const Epetra_Map& ColMap, const int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),

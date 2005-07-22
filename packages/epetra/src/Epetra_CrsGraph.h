@@ -215,7 +215,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
            dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
 	   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
-  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int* NumIndicesPerRow, bool StaticProfile = false);
+  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const int* NumIndicesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsGraph constuctor with fixed number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
@@ -249,7 +249,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
-		  const Epetra_BlockMap& ColMap, int* NumIndicesPerRow, bool StaticProfile = false);
+		  const Epetra_BlockMap& ColMap, const int* NumIndicesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsGraph constuctor with fixed number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
@@ -872,7 +872,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	void SetNoRedundancies(bool Flag) {CrsGraphData_->NoRedundancies_ = Flag;}
 	void ComputeIndexState();
 	int MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
-	int Allocate(int* NumIndicesPerRow, int Inc, bool StaticProfile);
+	int Allocate(const int* NumIndicesPerRow, int Inc, bool StaticProfile);
 	//int ReAllocate();
 	int ComputeGlobalConstants();
 	void SetFilled(bool Flag) {CrsGraphData_->Filled_ = Flag;}

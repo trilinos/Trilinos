@@ -158,7 +158,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
-  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow, bool StaticProfile = false);
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const int* NumEntriesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsMatrix constructor with fixed number of indices per row.
   /*! Creates a Epetra_CrsMatrix object and allocates storage.  
@@ -189,7 +189,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
   block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
-  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, int* NumEntriesPerRow, bool StaticProfile = false);
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, const int* NumEntriesPerRow, bool StaticProfile = false);
   
   //! Epetra_CrsMatrix constuctor with fixed number of indices per row.
   /*! Creates a Epetra_CrsMatrix object and allocates storage.  
