@@ -243,7 +243,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
   /* ********************************************************************** */
 
-  if (ml_ag->aggr_viz_and_stats != NULL) {
+  if (Amatrix->to->Grid->Grid != NULL) {
 
     graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows+1));
     if( graph_decomposition == NULL ) {
@@ -258,13 +258,13 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
     for( i=0 ; i<Nrows ; i++ ) graph_decomposition[i] = aggr_index[i];
 
-    aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (ml_ag->aggr_viz_and_stats);
-    aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
-    aggr_viz_and_stats[ml_ag->cur_level].Nlocal = Nrows;
-    aggr_viz_and_stats[ml_ag->cur_level].Naggregates = aggr_count;
-    aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
-    aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
-    aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
+    aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (Amatrix->to->Grid->Grid);
+    aggr_viz_and_stats->graph_decomposition = graph_decomposition;
+    aggr_viz_and_stats->Nlocal = Nrows;
+    aggr_viz_and_stats->Naggregates = aggr_count;
+    aggr_viz_and_stats->local_or_global = ML_LOCAL_INDICES;
+    aggr_viz_and_stats->is_filled = ML_YES;
+    aggr_viz_and_stats->Amatrix = Amatrix;
   }
 
   /* ********************************************************************** */

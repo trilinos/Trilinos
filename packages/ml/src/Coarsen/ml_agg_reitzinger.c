@@ -12,7 +12,6 @@ double checkit(ML_Operator *A, double *v);
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes, 
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, 
-                    ML_Aggregate *ag_edge, 
                     ML_Operator *Tmat,
                     ML_Operator *Tmat_trans,
                     ML_Operator ***Tmat_array,
@@ -1401,7 +1400,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      ML_memory_check("L%d EdgeRepartition",grid_level);
      perm = ML_repartition_Acoarse(ml_edges, grid_level+1, grid_level,
-                                   ag_edge, ML_TRUE, ML_TRUE);
+                                   NULL, ML_TRUE, ML_TRUE);
 
      if (perm != NULL) {
        /* permute T */

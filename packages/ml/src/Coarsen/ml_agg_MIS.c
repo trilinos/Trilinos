@@ -1746,7 +1746,7 @@ Here is how we do all this:
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
 
-   if( ml_ag->aggr_viz_and_stats != NULL ) {
+   if( Amatrix->to->Grid->Grid != NULL ) {
 
      if( comm->ML_nprocs > 1 ) {
        fprintf( stderr,
@@ -1770,13 +1770,13 @@ Here is how we do all this:
          graph_decomposition[i/num_PDE_eqns] = aggr_index[i];
        }
 
-       aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (ml_ag->aggr_viz_and_stats);
-       aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
-       aggr_viz_and_stats[ml_ag->cur_level].Nlocal = Nrows/num_PDE_eqns;
-       aggr_viz_and_stats[ml_ag->cur_level].Naggregates = aggr_count;
-       aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
-       aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
-       aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
+       aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (Amatrix->to->Grid->Grid);
+       aggr_viz_and_stats->graph_decomposition = graph_decomposition;
+       aggr_viz_and_stats->Nlocal = Nrows/num_PDE_eqns;
+       aggr_viz_and_stats->Naggregates = aggr_count;
+       aggr_viz_and_stats->local_or_global = ML_LOCAL_INDICES;
+       aggr_viz_and_stats->is_filled = ML_YES;
+       aggr_viz_and_stats->Amatrix = Amatrix;
      }
    }
 
