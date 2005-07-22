@@ -297,7 +297,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
   }
   else {
     BlockMapData_->MinMyGID_ = BlockMapData_->IndexBase_;
-    BlockMapData_->MaxMyGID_ = BlockMapData_->IndexBase_;
+    BlockMapData_->MaxMyGID_ = BlockMapData_->IndexBase_ - 1;
     BlockMapData_->MinMyElementSize_ = 1;
     BlockMapData_->MaxMyElementSize_ = 1;
     BlockMapData_->NumMyPoints_ = 0;
