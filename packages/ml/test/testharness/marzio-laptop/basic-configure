@@ -1,9 +1,0 @@
---disable-default-packages
---enable-epetra
---enable-aztecoo
---enable-triutils
---enable-input
---disable-tests
---disable-examples
---enable-ifpack-tests
---enable-ifpack-examples

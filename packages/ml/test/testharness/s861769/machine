@@ -1,5 +1,0 @@
---prefix=/Users/msala/Trilinos/G5_MPI
---with-ldflags="-framework vecLib"
---with-flibs=-lg2c
-LD=g++
-CXX=g++

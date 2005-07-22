@@ -1,7 +1,0 @@
---disable-default-packages
---enable-epetra
---enable-ml
---disable-tests
---disable-examples
---enable-ml-tests
---enable-ml-examples

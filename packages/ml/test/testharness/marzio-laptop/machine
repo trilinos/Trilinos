@@ -1,6 +1,0 @@
---with-cppflags="-ansi -pedantic -Wall -Wconversion"
---with-cxxflags="-ansi -pedantic -Wall -Wconversion"
---with-incdirs="-I/home/msala/include"
---with-ldflags="-L/home/msala/lib/LINUX_MPI"
---with-libs="-larpack -ldscpack -lumfpack -ldsuperlu -lsuperludist-2.0 -lamd -lzoltan -lparmetis-3.1 -lmetis-4.0 -ly12m"
-

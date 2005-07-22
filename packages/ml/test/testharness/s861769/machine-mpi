@@ -1,5 +1,0 @@
---enable-mpi
---with-mpi-compilers
---with-mpi-incdir=/usr/local/lam/include
---with-mpi-libdir=/usr/local/lam/lib
---with-mpi-libs="-llam -lmpi"
