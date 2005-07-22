@@ -125,11 +125,19 @@ int *new_part = NULL;          /* Ptr to new partition vector. */
 float *bestvals = NULL;        /* Best cut values found so far */
 int worst, new_cand;
 float worst_cut;
-static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; /*AKBAKBAKB*/
+static int timer_total=-1, timer_cpart=-1, timer_gather=-1, timer_refine=-1; 
 
   if (hgp->use_timers > 1) {
+    if (timer_total < 0)
+      timer_total = Zoltan_Timer_Init(zz->ZTime, 1,
+                                      "Total Coarse Partitioning");
+    if (timer_gather < 0)
+      timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Gather");
+    if (timer_refine < 0)
+      timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Refine");
     if (timer_cpart < 0)
-      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Partitioning");
+      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Part");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_total, phg->comm->Communicator);
     ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
   }
 
@@ -210,8 +218,6 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; /*AKBAKBAKB*/
        */
       if (hgp->use_timers > 1) {
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart);
-        if (timer_gather < 0)
-          timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Gather");
         ZOLTAN_TIMER_START(zz->ZTime, timer_gather, phg->comm->Communicator);
       }
 
@@ -265,8 +271,6 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; /*AKBAKBAKB*/
       /* AKBAKBAKB time refinement step in coarse partitioner */
       if (hgp->use_timers > 3) {
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart);
-        if (timer_refine < 0)
-          timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Refine");
         ZOLTAN_TIMER_START(zz->ZTime, timer_refine, phg->comm->Communicator);
       }
 
@@ -349,8 +353,10 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; /*AKBAKBAKB*/
   }
   
 End:
-  if (hgp->use_timers > 1) 
+  if (hgp->use_timers > 1) {
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_total);
+  }
 
   return ierr;
 }
