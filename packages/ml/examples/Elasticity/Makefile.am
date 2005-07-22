@@ -10,8 +10,6 @@ EXAMPLE_LIBS     = $(ML_LIBS)
 EXAMPLE_INCLUDES = $(ML_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
-
 EXEEXT = .exe
 
 # List the names of all exe's in this directory here

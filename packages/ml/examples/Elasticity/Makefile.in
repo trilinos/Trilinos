@@ -270,7 +270,6 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
 @USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES)
 @USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 ml_example_elasticity_SOURCES = $(srcdir)/ml_example_elasticity.c
 ml_example_elasticity_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example_elasticity_CFLAGS = $(EXAMPLE_INCLUDES)

@@ -273,16 +273,15 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
 @USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES)
 @USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+AM_CXXFLAGS = ${EXAMPLE_INCLUDES}
 ml_maxwell_SOURCES = $(srcdir)/ml_maxwell.cpp
 ml_maxwell_DEPENDENCIES = $(top_builddir)/src/libml.a
-ml_maxwell_CFLAGS = ${EXAMPLE_INCLUDES}
 ml_maxwell_LDADD = ${EXAMPLE_LIBS}
 ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
 ml_simple_max_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_simple_max_CFLAGS = ${EXAMPLE_INCLUDES}
 ml_simple_max_LDADD = ${EXAMPLE_LIBS}
-ml_maxwell_LINK = ${ML_LINK}
+ml_simple_max_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
@@ -321,10 +320,10 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 ml_maxwell$(EXEEXT): $(ml_maxwell_OBJECTS) $(ml_maxwell_DEPENDENCIES) 
 	@rm -f ml_maxwell$(EXEEXT)
-	$(ml_maxwell_LINK) $(ml_maxwell_LDFLAGS) $(ml_maxwell_OBJECTS) $(ml_maxwell_LDADD) $(LIBS)
+	$(CXXLINK) $(ml_maxwell_LDFLAGS) $(ml_maxwell_OBJECTS) $(ml_maxwell_LDADD) $(LIBS)
 ml_simple_max$(EXEEXT): $(ml_simple_max_OBJECTS) $(ml_simple_max_DEPENDENCIES) 
 	@rm -f ml_simple_max$(EXEEXT)
-	$(LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
+	$(ml_simple_max_LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

@@ -736,8 +736,8 @@ COMP =
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
 @ML_USING_NOX_TRUE@nox_incdir = -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ML_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ML_BUILD_LIB_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_BUILD_LIB_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES) $(nox_incdir)
 
 #AM_CPPFLAGS = -I$(srcdir)/Comm \

@@ -340,9 +340,9 @@ endif
 include $(top_builddir)/Makefile.export.ml
 
 if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_BUILD_LIB_INCLUDES))
 else
-EXPORT_INCLUDES = $(ML_INCLUDES)
+EXPORT_INCLUDES = $(ML_BUILD_LIB_INCLUDES)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES) $(nox_incdir)
