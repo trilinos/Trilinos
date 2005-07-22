@@ -1382,12 +1382,16 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
          printf("Projecting edge coordinates from level %d to level %d\n",
                 grid_level+1, grid_level);
-       ML_Project_Coordinates(ml_edges->Amat+grid_level+1,
-                              (ML_Operator *) ag->P_tentative[grid_level],
+       if (ag->P_tentative != NULL) /* If Pe was smoothed, Ptent is here */
+         Pe = (ML_Operator *) ag->P_tentative[grid_level];
+       else /* Otherwise, Ptent is part of the main ML structure */
+         Pe = &(ml_edges->Pmat[grid_level]);
+       ML_Project_Coordinates(ml_edges->Amat+grid_level+1, Pe,
                               ml_edges->Amat+grid_level);
        grid_info->local_or_global = ML_LOCAL_INDICES;
        grid_info->is_filled = ML_YES;
-       ML_Operator_Destroy(ag->P_tentative+grid_level);
+       if (ag->P_tentative != NULL)
+         ML_Operator_Destroy(ag->P_tentative+grid_level);
      }
 
      if (ML_Get_PrintLevel() > 7) {
