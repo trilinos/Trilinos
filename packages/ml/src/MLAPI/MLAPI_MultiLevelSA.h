@@ -17,6 +17,8 @@
 #include "MLAPI_Eig.h"
 #include <vector>
 
+extern "C" void ML_print_line (char *charstr, int ntimes);
+
 namespace MLAPI {
 
 /*!
