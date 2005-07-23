@@ -407,6 +407,7 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
+                Makefile.export
                 Makefile.export.ifpack
 		src/Makefile
 		example/Makefile

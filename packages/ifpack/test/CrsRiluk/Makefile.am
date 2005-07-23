@@ -26,22 +26,16 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ifpack
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES))
-else
-EXAMPLE_LIBS     = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS)
-EXAMPLE_INCLUDES = $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES)
-endif
-
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS     = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
 noinst_PROGRAMS = CrsRiluk_test
 
-CrsRiluk_test_SOURCES = $(srcdir)/cxx_main.cpp
+CrsRiluk_test_SOURCES      = $(srcdir)/cxx_main.cpp
 CrsRiluk_test_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a
-CrsRiluk_test_LDADD = $(EXAMPLE_LIBS)
+CrsRiluk_test_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+CrsRiluk_test_LDADD        = $(EXAMPLE_LIBS)

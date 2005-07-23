@@ -26,15 +26,10 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ifpack
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES))
-else
-EXAMPLE_LIBS     = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS)
-EXAMPLE_INCLUDES = $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES)
-endif
+EXAMPLE_LIBS     = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
@@ -44,4 +39,5 @@ noinst_PROGRAMS = TestRelaxation
 
 TestRelaxation_SOURCES      = $(srcdir)/cxx_main.cpp
 TestRelaxation_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestRelaxation_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestRelaxation_LDADD        = $(EXAMPLE_LIBS)

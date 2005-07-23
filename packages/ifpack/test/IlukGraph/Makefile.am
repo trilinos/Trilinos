@@ -26,22 +26,16 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ifpack
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES))
-else
-EXAMPLE_LIBS     = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS)
+EXAMPLE_LIBS     = $(IFPACK_LIBS)     $(IFPACK_EXTRA_LIBS)
 EXAMPLE_INCLUDES = $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES)
-endif
-
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
 noinst_PROGRAMS = IlukGraph_test
 
-IlukGraph_test_SOURCES = $(srcdir)/cxx_main.cpp
+IlukGraph_test_SOURCES      = $(srcdir)/cxx_main.cpp
 IlukGraph_test_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a
-IlukGraph_test_LDADD = $(EXAMPLE_LIBS)
+IlukGraph_test_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+IlukGraph_test_LDADD        = $(EXAMPLE_LIBS)

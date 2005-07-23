@@ -26,8 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = CrsRiluk                \
-          IlukGraph               \
+SUBDIRS = IlukGraph               \
           SetParameters           \
           CompareWithAztecOO      \
           Container               \
@@ -37,7 +36,7 @@ SUBDIRS = CrsRiluk                \
           ILU                     \
           IC                      \
 	  TestAll
-
+# CrsRiluk                \
 if HAVE_IFPACK_AZTECOO
 if HAVE_IFPACK_TEUCHOS
 IFPACK_COMPARE_WITH_AZTECOO_TEST = CompareWithAztecOO/TestCompareWithAztecOO.exe

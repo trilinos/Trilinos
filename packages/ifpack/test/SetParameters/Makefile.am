@@ -26,22 +26,16 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ifpack
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES))
-else
-EXAMPLE_LIBS     = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS)
-EXAMPLE_INCLUDES = $(IFPACK_INCLUDES) $(IFPACK_EXTRA_INCLUDES)
-endif
-
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS     = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
 noinst_PROGRAMS = SetParameters
 
-SetParameters_SOURCES = $(srcdir)/cxx_main.cpp
+SetParameters_SOURCES      = $(srcdir)/cxx_main.cpp
 SetParameters_DEPENDENCIES = $(IFPACK_LIBS)
-SetParameters_LDADD = $(EXAMPLE_LIBS)
+SetParameters_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+SetParameters_LDADD        = $(EXAMPLE_LIBS)
