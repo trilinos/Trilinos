@@ -38,7 +38,6 @@ bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
 
   // Both sentences should work
   Solver->SetUseTranspose(UseTranspose);
-  //AmesosList.set("UseTranspose",UseTranspose);
 
   Solver->SetParameters(AmesosList);
 
