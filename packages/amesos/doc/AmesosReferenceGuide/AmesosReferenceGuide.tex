@@ -378,10 +378,6 @@ We now list all the parameters that may affect all the \amesos\ solvers.
 To know whether a specific interface supports a given parameter, we
 refer to table~\ref{tab:options}.
 
-\vskip .1in \choicebox{\tt UseTranspose}{If {\tt false}, solve linear
-  system~(\ref{eq:linear_system}). Otherwise, solve the linear system
-  $A^T X = B$.}
-
 \vskip .1in \choicebox{\tt MatrixType}{Set it to {\tt SPD} if the matrix
   is symmetric positive definite, to {\tt symmetric} if symmetric, and
   to {\tt general} is the matrix is general unsymmetric.}
@@ -465,8 +461,6 @@ means to use its 2nd alternative method, and so on.}
     \rotatebox{90}{MUMPS} & \rotatebox{90}{LAPACK} &
     \rotatebox{90}{DSCPACK 1.0 } \\    
     \hline
-     \tt UseTranspose       & \tt bool   & \tt false  & $\bullet$ & $\bullet$
-     & -- & --   & -- & $\bullet$  & $\bullet$ & -- \\
     % -------------------------------------------------------------------
      \tt MatrixType         & \tt string & \tt general& --        & -- &  --
      &  --  & -- & $\bullet$ & -- & -- \\
