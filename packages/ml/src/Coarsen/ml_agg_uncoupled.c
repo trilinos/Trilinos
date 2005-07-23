@@ -544,7 +544,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
    
-   if( Amatrix->to->Grid->Grid != NULL ) {
+   if( Amatrix->to != NULL && Amatrix->to->Grid != NULL &&
+       Amatrix->to->Grid->Grid != NULL ) {
 
      graph_decomposition = (int *)ML_allocate(sizeof(int)*(NumBlockRows+1));
      if( graph_decomposition == NULL ) {

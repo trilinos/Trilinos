@@ -1487,7 +1487,8 @@ int agg_offset, vertex_offset;
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
 
-   if( Amatrix->to->Grid->Grid != NULL ) {
+   if( Amatrix->to != NULL && Amatrix->to->Grid != NULL &&
+       Amatrix->to->Grid->Grid != NULL ) {
 
      graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows+1));
      if( graph_decomposition == NULL ) {

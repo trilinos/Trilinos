@@ -1264,7 +1264,8 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
    
-   if( Amatrix->to->Grid->Grid != NULL ) {
+   if( Amatrix->to != NULL && Amatrix->to->Grid != NULL &&
+       Amatrix->to->Grid->Grid != NULL ) {
 
      graph_decomposition = (int *) ML_allocate(sizeof(int)*Nrows );
 
