@@ -36,8 +36,6 @@ EXAMPLE_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)
 EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
-
 EXEEXT = .exe
 
 noinst_PROGRAMS = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag compare_solvers
@@ -46,18 +44,22 @@ EXTRA_DIST = In_662_bus.rsa
 
 example_AmesosFactory_SOURCES      = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+example_AmesosFactory_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 example_AmesosFactory_LDADD        = $(EXAMPLE_LIBS)
 
 example_AmesosFactory_Tridiag_SOURCES      = $(srcdir)/example_AmesosFactory_Tridiag.cpp
 example_AmesosFactory_Tridiag_DEPENDENCIES = $(top_builddir)/src/libamesos.a
+example_AmesosFactory_Tridiag_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 example_AmesosFactory_Tridiag_LDADD        = $(EXAMPLE_LIBS)
 
 example_AmesosFactory_HB_SOURCES      = $(srcdir)/example_AmesosFactory_HB.cpp 
 example_AmesosFactory_HB_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+example_AmesosFactory_HB_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 example_AmesosFactory_HB_LDADD        = $(EXAMPLE_LIBS)
 
 compare_solvers_SOURCES      = $(srcdir)/compare_solvers.cpp
 compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+compare_solvers_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 compare_solvers_LDADD        = $(EXAMPLE_LIBS)
 
 clean:  clean-am

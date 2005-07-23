@@ -57,8 +57,8 @@ bool CheckError(const Epetra_RowMatrix& A,
 }
 
 //=============================================================================
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[]) 
+{
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return(0);
+  return(EXIT_SUCCESS);
 }
 
 #endif

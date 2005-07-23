@@ -11,16 +11,15 @@ EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
 EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
-
 EXEEXT = .exe
 TEST = Test_LAPACK
 
 noinst_PROGRAMS = $(TEST)
 
-Test_LAPACK_SOURCES = $(srcdir)/cxx_main.cpp
-Test_LAPACK_DEPENDENCIES =  all-libs
-Test_LAPACK_LDADD = $(EXAMPLE_LIBS)
+Test_LAPACK_SOURCES      = $(srcdir)/cxx_main.cpp
+Test_LAPACK_DEPENDENCIES = $(top_builddir)/src/libamesos.a
+Test_LAPACK_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+Test_LAPACK_LDADD        = $(EXAMPLE_LIBS)
 
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs 

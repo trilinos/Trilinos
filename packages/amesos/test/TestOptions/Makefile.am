@@ -52,7 +52,7 @@ else
 TestOptions_SOURCES = $(srcdir)/DoNothing.cpp
 endif
 
-TestOptions_DEPENDENCIES = all-libs
+TestOptions_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 TestOptions_LDADD = $(EXAMPLE_LIBS)
 
 all-libs:

@@ -125,10 +125,11 @@ else
 amesos_test_SOURCES = $(srcdir)/DoNothing.cpp
 endif
 
-TestBasic_DEPENDENCIES = all-libs
-amesos_test_DEPENDENCIES = all-libs
-TestBasic_LDADD = ${EXAMPLE_LIBS}
-amesos_test_LDADD = ${EXAMPLE_LIBS}
+TestBasic_DEPENDENCIES = $(top_builddir)/src/libamesos.a
+TestBasic_LDADD        = ${EXAMPLE_LIBS}
+
+amesos_test_DEPENDENCIES = $(top_builddir)/src/libamesos.a
+amesos_test_LDADD        = ${EXAMPLE_LIBS}
 
 EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_ImpcolA.rua \

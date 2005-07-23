@@ -190,6 +190,7 @@ check-all:
 	@echo
 	@echo "You are now running the complete Amesos test suite (this may"
 	@echo "test the executables in the example subdirectory)."
+	@echo "The test suite may take several minutes to complete..."
 	@echo
 if HAVE_MPI
 	@echo "By default, the MPI command is set to \"mpirun -np \"."

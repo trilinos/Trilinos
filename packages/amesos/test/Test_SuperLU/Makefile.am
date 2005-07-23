@@ -11,16 +11,15 @@ EXAMPLE_LIBS = $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS)
 EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
-
 EXEEXT = .exe
 TEST = Test_SuperLU
 
 noinst_PROGRAMS = $(TEST)
 
-Test_SuperLU_SOURCES = $(srcdir)/cxx_main.cpp
-Test_SuperLU_DEPENDENCIES =  all-libs
-Test_SuperLU_LDADD = $(EXAMPLE_LIBS)
+Test_SuperLU_SOURCES      = $(srcdir)/cxx_main.cpp
+Test_SuperLU_DEPENDENCIES = $(top_builddir)/src/libamesos.a
+Test_SuperLU_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+Test_SuperLU_LDADD        = $(EXAMPLE_LIBS)
 
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs 

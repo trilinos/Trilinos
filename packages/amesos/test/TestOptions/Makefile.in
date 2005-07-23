@@ -345,7 +345,7 @@ TEST = TestOptions
 @HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestOtherClasses.cpp \
 @HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestOtherClasses.h
 
-TestOptions_DEPENDENCIES = all-libs
+TestOptions_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 TestOptions_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
