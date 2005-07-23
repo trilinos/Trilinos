@@ -675,7 +675,7 @@ private:
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -706,6 +706,9 @@ int main(int argc, char *argv[])
       cout << "Number of processes must be a perfect cube." << endl;
       cout << "Please re-run with --help option for details." << endl;
     }
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     exit(EXIT_SUCCESS);
   }
     
@@ -765,7 +768,7 @@ int main(int argc, char *argv[])
   if (Comm.MyPID() == 0) 
     cout << "Norm of the error = " << norm << endl;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

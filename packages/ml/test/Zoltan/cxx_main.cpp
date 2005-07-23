@@ -66,7 +66,7 @@ using namespace ML_Epetra;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
@@ -189,14 +189,14 @@ int main(int argc, char *argv[])
 {
   /* still need to deal with MPI, some architecture don't like */
   /* an exit(0) without MPI_Finalize() */
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
 
   puts("Please configure ML with --enable-epetra --enable-teuchos");
   puts("--enable-aztecoo --enable-triutils --with-ml_zoltan");
   
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 

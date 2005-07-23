@@ -83,7 +83,7 @@ int  nblocks, *blocks;
 	if (fp==NULL)
 		{
 			printf("couldn't open file .data\n");
-#ifdef HAVE_ML_MPI
+#ifdef HAVE_MPI
                         MPI_Finalize();
 #endif
 			exit(EXIT_SUCCESS);
