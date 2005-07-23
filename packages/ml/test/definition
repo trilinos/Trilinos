@@ -6,14 +6,14 @@
     DIRS = ../examples/BasicExamples,
 	  #../examples/Advanced,
           #../examples/Elasticity,
-	   ../examples/MatrixFormats,
+          # ../examples/MatrixFormats,
 	  #../examples/MatrixReading,
 	   ../examples/Maxwell,
 	   ../examples/MultipleRHS,
 	  #../examples/Other,
 	  # ../examples/StandAlone,
 	   ../examples/TwoLevelDD,
-	   ../examples/Visualization,
+          #../examples/Visualization,
 	   ../examples/MLAPI;
     COMM = SERIAL, MPI;
 }

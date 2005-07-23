@@ -337,13 +337,9 @@ else
 nox_incdir =
 endif
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_BUILD_LIB_INCLUDES))
-else
-EXPORT_INCLUDES = $(ML_BUILD_LIB_INCLUDES)
-endif
+EXPORT_INCLUDES = $(ML_INCLUDES)
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES) $(nox_incdir)
 

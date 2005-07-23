@@ -2,8 +2,8 @@
 
 include $(top_builddir)/Makefile.export
 
-EXAMPLE_LIBS     = $(ML_LIBS)     $(ML_EXTRA_LIBS)
-EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+EXAMPLE_LIBS     = $(ML_EXTRA_LIBS)     $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
 
 EXEEXT = .exe
 

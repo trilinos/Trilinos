@@ -27,23 +27,19 @@ ML_INCLUDES = $(ML_BUILD_LIB_INCLUDES) \
 ML_SOURCE_DIRECTORY = @abs_srcdir@
 ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
 
-##########################################################################
-# ML's include directories
-##########################################################################
-
 ML_BUILD_LIB_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/src/Include  \
-              -I$(ML_SOURCE_DIRECTORY)/src/Coarsen            \
-              -I$(ML_SOURCE_DIRECTORY)/src/Comm               \
-              -I$(ML_SOURCE_DIRECTORY)/src/FEGrid             \
-              -I$(ML_SOURCE_DIRECTORY)/src/Include            \
-              -I$(ML_SOURCE_DIRECTORY)/src/Krylov             \
-              -I$(ML_SOURCE_DIRECTORY)/src/Main               \
-              -I$(ML_SOURCE_DIRECTORY)/src/Operator           \
-              -I$(ML_SOURCE_DIRECTORY)/src/Smoother           \
-              -I$(ML_SOURCE_DIRECTORY)/src/Utils              \
-              -I$(ML_SOURCE_DIRECTORY)/src/MLAPI              \
-              -I$(ML_SOURCE_DIRECTORY)/src/                   \
-	      -I$(ML_BUILD_DIRECTORY)/src
+			-I$(ML_SOURCE_DIRECTORY)/src/Coarsen  \
+			-I$(ML_SOURCE_DIRECTORY)/src/Comm     \
+			-I$(ML_SOURCE_DIRECTORY)/src/FEGrid   \
+			-I$(ML_SOURCE_DIRECTORY)/src/Include  \
+			-I$(ML_SOURCE_DIRECTORY)/src/Krylov   \
+			-I$(ML_SOURCE_DIRECTORY)/src/Main     \
+			-I$(ML_SOURCE_DIRECTORY)/src/Operator \
+			-I$(ML_SOURCE_DIRECTORY)/src/Smoother \
+			-I$(ML_SOURCE_DIRECTORY)/src/Utils    \
+			-I$(ML_SOURCE_DIRECTORY)/src/MLAPI    \
+			-I$(ML_SOURCE_DIRECTORY)/src/         \
+			-I$(ML_BUILD_DIRECTORY)/src
 
 ##########################################################################
 # Using the absolute location of ml's build directory as
@@ -102,7 +98,7 @@ NOX_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../nox
 @ML_USING_ANASAZI_TRUE@ANASAZI_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../anasazi/src -I$(ANASAZI_BUILD_DIRECTORY)/src
 @ML_USING_TRIUTILS_TRUE@TRIUTILS_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../triutils/src -I$(TRIUTILS_BUILD_DIRECTORY)/src
 @ML_USING_EPETRA_TRUE@EPETRA_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetra/src -I$(EPETRA_BUILD_DIRECTORY)/src
-@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetraext/src -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/coloring -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/transform  -I$(EPETRAEXT_BUILD_DIRECTORY)/src
+@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetraext/src -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/coloring -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/transform  -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/inout   -I$(EPETRAEXT_BUILD_DIRECTORY)/src
 @ML_USING_NOX_TRUE@NOX_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../nox/src -I$(ML_SOURCE_DIRECTORY)/../nox/src-epetra -I$(NOX_BUILD_DIRECTORY)/src
 
 ##########################################################################
@@ -119,6 +115,5 @@ NOX_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../nox
 #
 ##########################################################################
 
-ML_EXTRA_INCLUDES = -I$(TRILINOS_DIR)/include
-
-ML_EXTRA_LIBS = -L$(TRILINOS_DIR)/lib
+ML_EXTRA_INCLUDES = $(TRIUTILS_INCLUDES)
+ML_EXTRA_LIBS     = $(TRIUTILS_LIBS)
