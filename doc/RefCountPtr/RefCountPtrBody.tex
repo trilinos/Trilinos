@@ -760,7 +760,7 @@ class DeallocObjectADB
 public:
   DeallocObjectADB( ObjectjADB* db, int id ) : db_(db), id_(id) {}
   typedef A ptr_t;
-  void free( T* ptr ) { db_->release(id_); }
+  void free( A* ptr ) { db_->release(id_); }
 private:
   ObjectjADB* db_;
   int id_;
