@@ -26,22 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-else
 TEST_LIBS     = $(ML_LIBS)
 TEST_INCLUDES = $(ML_INCLUDES)
-endif
 
 EXEEXT = .exe
 
 noinst_PROGRAMS = AztecSimple
 
+CCLD = $(CXX)
+
 AztecSimple_SOURCES      = $(srcdir)/AztecSimple.c
 AztecSimple_DEPENDENCIES = $(top_builddir)/src/libml.a
 AztecSimple_CFLAGS       = ${TEST_INCLUDES}
 AztecSimple_LDADD        = ${TEST_LIBS}
-AztecSimple_LINK         = ${ML_LINK}

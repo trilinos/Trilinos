@@ -26,15 +26,10 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-else
-TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
+TEST_LIBS     = $(ML_LIBS)     $(ML_EXTRA_LIBS)
 TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-endif
 
 EXEEXT = .exe
 
@@ -42,5 +37,5 @@ noinst_PROGRAMS = Zoltan
 
 Zoltan_SOURCES      = $(srcdir)/cxx_main.cpp
 Zoltan_DEPENDENCIES = $(top_builddir)/src/libml.a
-Zoltan_CXXFLAGS     = ${TEST_INCLUDES}
-Zoltan_LDADD        = ${ML_LINK}
+Zoltan_CXXFLAGS     = $(TEST_INCLUDES)
+Zoltan_LDADD        = $(TEST_LIBS)

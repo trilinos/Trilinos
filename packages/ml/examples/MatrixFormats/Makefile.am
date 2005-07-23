@@ -1,17 +1,10 @@
 #@HEADER
 
 # include definitions of ML_INCLUDES and ML_LIBS
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-else
 EXAMPLE_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
 EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-endif
-
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -23,12 +16,15 @@ noinst_PROGRAMS = ml_AztecMsr   \
 
 ml_AztecMsr_SOURCES      = $(srcdir)/ml_AztecMsr.cpp
 ml_AztecMsr_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_AztecMsr_CXXFLAGS     = ${EXAMPLE_INCLUDES} 
 ml_AztecMsr_LDADD        = ${EXAMPLE_LIBS} 
 
 ml_EpetraVbr_SOURCES      = $(srcdir)/ml_EpetraVbr.cpp
 ml_EpetraVbr_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_EpetraVbr_CXXFLAGS     = ${EXAMPLE_INCLUDES}
 ml_EpetraVbr_LDADD        = ${EXAMPLE_LIBS}
 
 ml_MatrixFree_SOURCES      = $(srcdir)/ml_MatrixFree.cpp
 ml_MatrixFree_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_MatrixFree_CXXFLAGS     = ${EXAMPLE_INCLUDES}
 ml_MatrixFree_LDADD        = ${EXAMPLE_LIBS}

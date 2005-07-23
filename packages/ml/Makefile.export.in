@@ -1,39 +1,15 @@
-##########################################################################
-#
-# Modified from TSFExtended/Makefile.export.in
-#
-# Macro definitions to be exported from ML to clients.
-# 
-# To link with everything required by ml, simply add 
-# $(ML_EXPORT_LIBS) to the linker command line in your Makefile.
-#
-# To add a new ML dependency called XX, add or modify as appropriate
-# the following variables:
-#
-#       1) ML_EXPORT_LIBS
-#
-#       2) XX_BUILD_DIRECTORY
-#
-#       3) XX_LIBS.
-#
-# See anasazi as an example.
-#
-##########################################################################
+ML_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
+                    $(NOX_LIBS) \
+                    $(IFPACK_LIBS) \
+                    $(AMESOS_LIBS) \
+                    $(AZTECOO_LIBS) \
+                    $(ANASAZI_LIBS) \
+                    $(TEUCHOS_LIBS) \
+                    $(EPETRAEXT_LIBS) \
+                    $(TRIUTILS_LIBS) \
+                    $(EPETRA_LIBS)
 
-
-ML_EXPORT_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
-                  -L$(NOX_BUILD_DIRECTORY)/src-epetra \
-                  -L$(NOX_BUILD_DIRECTORY)/src  $(NOX_LIBS) \
-                  -L$(IFPACK_BUILD_DIRECTORY)/src  $(IFPACK_LIBS) \
-                  -L$(AMESOS_BUILD_DIRECTORY)/src  $(AMESOS_LIBS) \
-                  -L$(AZTECOO_BUILD_DIRECTORY)/src $(AZTECOO_LIBS) \
-                  -L$(ANASAZI_BUILD_DIRECTORY)/src $(ANASAZI_LIBS) \
-                  -L$(TEUCHOS_BUILD_DIRECTORY)/src  $(TEUCHOS_LIBS) \
-                  -L$(EPETRAEXT_BUILD_DIRECTORY)/src  $(EPETRAEXT_LIBS) \
-                  -L$(TRIUTILS_BUILD_DIRECTORY)/src $(TRIUTILS_LIBS) \
-                  -L$(EPETRA_BUILD_DIRECTORY)/src  $(EPETRA_LIBS)
-
-ML_EXPORT_INCLUDES = $(ML_INCLUDES) \
+ML_INCLUDES = $(ML_BUILD_LIB_INCLUDES) \
                   $(AZTECOO_INCLUDES)  \
                   $(IFPACK_INCLUDES)  \
                   $(AMESOS_INCLUDES)  \
@@ -55,7 +31,7 @@ ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
 # ML's include directories
 ##########################################################################
 
-ML_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/src/Include            \
+ML_BUILD_LIB_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/src/Include  \
               -I$(ML_SOURCE_DIRECTORY)/src/Coarsen            \
               -I$(ML_SOURCE_DIRECTORY)/src/Comm               \
               -I$(ML_SOURCE_DIRECTORY)/src/FEGrid             \
@@ -96,23 +72,24 @@ NOX_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../nox
 # Other Trilinos package libraries
 ##########################################################################
 
-@ML_USING_AZTECOO_TRUE@AZTECOO_LIBS = -laztecoo
+@ML_USING_AZTECOO_TRUE@AZTECOO_LIBS = -L$(AZTECOO_BUILD_DIRECTORY)/src -laztecoo
 
-@ML_USING_EPETRA_TRUE@EPETRA_LIBS = -lepetra
+@ML_USING_EPETRA_TRUE@EPETRA_LIBS = -L$(EPETRA_BUILD_DIRECTORY)/src  -lepetra
 
-@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_LIBS = -lepetraext
+@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_LIBS = -L$(EPETRAEXT_BUILD_DIRECTORY)/src -lepetraext
 
-@ML_USING_IFPACK_TRUE@IFPACK_LIBS = -lifpack
+@ML_USING_IFPACK_TRUE@IFPACK_LIBS = -L$(IFPACK_BUILD_DIRECTORY)/src -lifpack
 
-@ML_USING_TEUCHOS_TRUE@TEUCHOS_LIBS = -lteuchos
+@ML_USING_TEUCHOS_TRUE@TEUCHOS_LIBS = -L$(TEUCHOS_BUILD_DIRECTORY)/src -lteuchos
 
-@ML_USING_AMESOS_TRUE@AMESOS_LIBS = -lamesos
+@ML_USING_AMESOS_TRUE@AMESOS_LIBS = -L$(AMESOS_BUILD_DIRECTORY)/src -lamesos
 
-@ML_USING_TRIUTILS_TRUE@TRIUTILS_LIBS = -ltriutils
+@ML_USING_TRIUTILS_TRUE@TRIUTILS_LIBS = -L$(TRIUTILS_BUILD_DIRECTORY)/src -ltriutils
 
-@ML_USING_ANASAZI_TRUE@ANASAZI_LIBS = -lanasazi
+@ML_USING_ANASAZI_TRUE@ANASAZI_LIBS = -L$(ANASAZI_BUILD_DIRECTORY)/src -lanasazi
 
-@ML_USING_NOX_TRUE@NOX_LIBS = -lnoxepetra -lnox
+@ML_USING_NOX_TRUE@NOX_LIBS = -L$(NOX_BUILD_DIRECTORY)/src-epetra \
+                  -L$(NOX_BUILD_DIRECTORY)/src-lnoxepetra -lnox
 
 ##########################################################################
 # Other Trilinos package include directories
@@ -142,7 +119,6 @@ NOX_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../nox
 #
 ##########################################################################
 
-ML_TRILINOS_INCLUDES = -I$(TRILINOS_DIR)/include
+ML_EXTRA_INCLUDES = -I$(TRILINOS_DIR)/include
 
-ML_TRILINOS_LIBS = -L$(TRILINOS_DIR)/lib $(ML_EXPORT_LIBS)
-
+ML_EXTRA_LIBS = -L$(TRILINOS_DIR)/lib

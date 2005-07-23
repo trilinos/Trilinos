@@ -81,34 +81,33 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_AdaptiveSA_OBJECTS = AdaptiveSA.$(OBJEXT)
+am_AdaptiveSA_OBJECTS = AdaptiveSA-AdaptiveSA.$(OBJEXT)
 AdaptiveSA_OBJECTS = $(am_AdaptiveSA_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
-am_Blackboard_OBJECTS = Blackboard.$(OBJEXT)
+am_Blackboard_OBJECTS = Blackboard-Blackboard.$(OBJEXT)
 Blackboard_OBJECTS = $(am_Blackboard_OBJECTS)
-am_EpetraInterface_OBJECTS = EpetraInterface.$(OBJEXT)
+am_EpetraInterface_OBJECTS =  \
+	EpetraInterface-EpetraInterface.$(OBJEXT)
 EpetraInterface_OBJECTS = $(am_EpetraInterface_OBJECTS)
-am_MultiLevel_OBJECTS = MultiLevel.$(OBJEXT)
+am_MultiLevel_OBJECTS = MultiLevel-MultiLevel.$(OBJEXT)
 MultiLevel_OBJECTS = $(am_MultiLevel_OBJECTS)
-am_PowerMethod_OBJECTS = PowerMethod.$(OBJEXT)
+am_PowerMethod_OBJECTS = PowerMethod-PowerMethod.$(OBJEXT)
 PowerMethod_OBJECTS = $(am_PowerMethod_OBJECTS)
-am_Richardson_OBJECTS = Richardson.$(OBJEXT)
+am_Richardson_OBJECTS = Richardson-Richardson.$(OBJEXT)
 Richardson_OBJECTS = $(am_Richardson_OBJECTS)
-am_TwoLevelDDAdditive_OBJECTS = TwoLevelDDAdditive.$(OBJEXT)
+am_TwoLevelDDAdditive_OBJECTS =  \
+	TwoLevelDDAdditive-TwoLevelDDAdditive.$(OBJEXT)
 TwoLevelDDAdditive_OBJECTS = $(am_TwoLevelDDAdditive_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdaptiveSA.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Blackboard.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/EpetraInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/MultiLevel.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/PowerMethod.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Richardson.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TwoLevelDDAdditive.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Blackboard-Blackboard.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraInterface-EpetraInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/MultiLevel-MultiLevel.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/PowerMethod-PowerMethod.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Richardson-Richardson.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -289,32 +288,36 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
 EXTRA_DIST = README
 Blackboard_SOURCES = $(srcdir)/Blackboard.cpp
 Blackboard_DEPENDENCIES = $(top_builddir)/src/libml.a
+Blackboard_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 Blackboard_LDADD = ${EXAMPLE_LIBS} 
 PowerMethod_SOURCES = $(srcdir)/PowerMethod.cpp
 PowerMethod_DEPENDENCIES = $(top_builddir)/src/libml.a
+PowerMethod_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 PowerMethod_LDADD = ${EXAMPLE_LIBS} 
 TwoLevelDDAdditive_SOURCES = $(srcdir)/TwoLevelDDAdditive.cpp
 TwoLevelDDAdditive_DEPENDENCIES = $(top_builddir)/src/libml.a
+TwoLevelDDAdditive_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 TwoLevelDDAdditive_LDADD = ${EXAMPLE_LIBS} 
 MultiLevel_SOURCES = $(srcdir)/MultiLevel.cpp
 MultiLevel_DEPENDENCIES = $(top_builddir)/src/libml.a
+MultiLevel_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 MultiLevel_LDADD = ${EXAMPLE_LIBS} 
 AdaptiveSA_SOURCES = $(srcdir)/AdaptiveSA.cpp
 AdaptiveSA_DEPENDENCIES = $(top_builddir)/src/libml.a
+AdaptiveSA_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 AdaptiveSA_LDADD = ${EXAMPLE_LIBS} 
 EpetraInterface_SOURCES = $(srcdir)/EpetraInterface.cpp
 EpetraInterface_DEPENDENCIES = $(top_builddir)/src/libml.a
+EpetraInterface_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 EpetraInterface_LDADD = ${EXAMPLE_LIBS} 
 Richardson_SOURCES = $(srcdir)/Richardson.cpp
 Richardson_DEPENDENCIES = $(top_builddir)/src/libml.a
+Richardson_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 Richardson_LDADD = ${EXAMPLE_LIBS} 
 all: all-am
 
@@ -380,13 +383,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdaptiveSA.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Blackboard.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PowerMethod.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Richardson.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TwoLevelDDAdditive.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Blackboard-Blackboard.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraInterface-EpetraInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevel-MultiLevel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PowerMethod-PowerMethod.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Richardson-Richardson.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -404,117 +407,117 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-AdaptiveSA.o: $(srcdir)/AdaptiveSA.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA.o -MD -MP -MF "$(DEPDIR)/AdaptiveSA.Tpo" -c -o AdaptiveSA.o `test -f '$(srcdir)/AdaptiveSA.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA.Tpo" "$(DEPDIR)/AdaptiveSA.Po"; else rm -f "$(DEPDIR)/AdaptiveSA.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA.cpp' object='AdaptiveSA.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA.TPo' @AMDEPBACKSLASH@
+AdaptiveSA-AdaptiveSA.o: $(srcdir)/AdaptiveSA.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA-AdaptiveSA.o -MD -MP -MF "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Tpo" -c -o AdaptiveSA-AdaptiveSA.o `test -f '$(srcdir)/AdaptiveSA.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Tpo" "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po"; else rm -f "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA.cpp' object='AdaptiveSA-AdaptiveSA.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA-AdaptiveSA.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA.o `test -f '$(srcdir)/AdaptiveSA.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA-AdaptiveSA.o `test -f '$(srcdir)/AdaptiveSA.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA.cpp
 
-AdaptiveSA.obj: $(srcdir)/AdaptiveSA.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA.obj -MD -MP -MF "$(DEPDIR)/AdaptiveSA.Tpo" -c -o AdaptiveSA.obj `if test -f '$(srcdir)/AdaptiveSA.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA.Tpo" "$(DEPDIR)/AdaptiveSA.Po"; else rm -f "$(DEPDIR)/AdaptiveSA.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA.cpp' object='AdaptiveSA.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA.TPo' @AMDEPBACKSLASH@
+AdaptiveSA-AdaptiveSA.obj: $(srcdir)/AdaptiveSA.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA-AdaptiveSA.obj -MD -MP -MF "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Tpo" -c -o AdaptiveSA-AdaptiveSA.obj `if test -f '$(srcdir)/AdaptiveSA.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Tpo" "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po"; else rm -f "$(DEPDIR)/AdaptiveSA-AdaptiveSA.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA.cpp' object='AdaptiveSA-AdaptiveSA.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA-AdaptiveSA.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA.obj `if test -f '$(srcdir)/AdaptiveSA.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA-AdaptiveSA.obj `if test -f '$(srcdir)/AdaptiveSA.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA.cpp'; fi`
 
-Blackboard.o: $(srcdir)/Blackboard.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Blackboard.o -MD -MP -MF "$(DEPDIR)/Blackboard.Tpo" -c -o Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Blackboard.Tpo" "$(DEPDIR)/Blackboard.Po"; else rm -f "$(DEPDIR)/Blackboard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Blackboard.cpp' object='Blackboard.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Blackboard.Po' tmpdepfile='$(DEPDIR)/Blackboard.TPo' @AMDEPBACKSLASH@
+Blackboard-Blackboard.o: $(srcdir)/Blackboard.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -MT Blackboard-Blackboard.o -MD -MP -MF "$(DEPDIR)/Blackboard-Blackboard.Tpo" -c -o Blackboard-Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Blackboard-Blackboard.Tpo" "$(DEPDIR)/Blackboard-Blackboard.Po"; else rm -f "$(DEPDIR)/Blackboard-Blackboard.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Blackboard.cpp' object='Blackboard-Blackboard.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Blackboard-Blackboard.Po' tmpdepfile='$(DEPDIR)/Blackboard-Blackboard.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -c -o Blackboard-Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp
 
-Blackboard.obj: $(srcdir)/Blackboard.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Blackboard.obj -MD -MP -MF "$(DEPDIR)/Blackboard.Tpo" -c -o Blackboard.obj `if test -f '$(srcdir)/Blackboard.cpp'; then $(CYGPATH_W) '$(srcdir)/Blackboard.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Blackboard.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Blackboard.Tpo" "$(DEPDIR)/Blackboard.Po"; else rm -f "$(DEPDIR)/Blackboard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Blackboard.cpp' object='Blackboard.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Blackboard.Po' tmpdepfile='$(DEPDIR)/Blackboard.TPo' @AMDEPBACKSLASH@
+Blackboard-Blackboard.obj: $(srcdir)/Blackboard.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -MT Blackboard-Blackboard.obj -MD -MP -MF "$(DEPDIR)/Blackboard-Blackboard.Tpo" -c -o Blackboard-Blackboard.obj `if test -f '$(srcdir)/Blackboard.cpp'; then $(CYGPATH_W) '$(srcdir)/Blackboard.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Blackboard.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Blackboard-Blackboard.Tpo" "$(DEPDIR)/Blackboard-Blackboard.Po"; else rm -f "$(DEPDIR)/Blackboard-Blackboard.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Blackboard.cpp' object='Blackboard-Blackboard.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Blackboard-Blackboard.Po' tmpdepfile='$(DEPDIR)/Blackboard-Blackboard.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Blackboard.obj `if test -f '$(srcdir)/Blackboard.cpp'; then $(CYGPATH_W) '$(srcdir)/Blackboard.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Blackboard.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -c -o Blackboard-Blackboard.obj `if test -f '$(srcdir)/Blackboard.cpp'; then $(CYGPATH_W) '$(srcdir)/Blackboard.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Blackboard.cpp'; fi`
 
-EpetraInterface.o: $(srcdir)/EpetraInterface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraInterface.o -MD -MP -MF "$(DEPDIR)/EpetraInterface.Tpo" -c -o EpetraInterface.o `test -f '$(srcdir)/EpetraInterface.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraInterface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraInterface.Tpo" "$(DEPDIR)/EpetraInterface.Po"; else rm -f "$(DEPDIR)/EpetraInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraInterface.cpp' object='EpetraInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraInterface.Po' tmpdepfile='$(DEPDIR)/EpetraInterface.TPo' @AMDEPBACKSLASH@
+EpetraInterface-EpetraInterface.o: $(srcdir)/EpetraInterface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -MT EpetraInterface-EpetraInterface.o -MD -MP -MF "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" -c -o EpetraInterface-EpetraInterface.o `test -f '$(srcdir)/EpetraInterface.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraInterface.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" "$(DEPDIR)/EpetraInterface-EpetraInterface.Po"; else rm -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraInterface.cpp' object='EpetraInterface-EpetraInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraInterface-EpetraInterface.Po' tmpdepfile='$(DEPDIR)/EpetraInterface-EpetraInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraInterface.o `test -f '$(srcdir)/EpetraInterface.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraInterface.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -c -o EpetraInterface-EpetraInterface.o `test -f '$(srcdir)/EpetraInterface.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraInterface.cpp
 
-EpetraInterface.obj: $(srcdir)/EpetraInterface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraInterface.obj -MD -MP -MF "$(DEPDIR)/EpetraInterface.Tpo" -c -o EpetraInterface.obj `if test -f '$(srcdir)/EpetraInterface.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraInterface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraInterface.Tpo" "$(DEPDIR)/EpetraInterface.Po"; else rm -f "$(DEPDIR)/EpetraInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraInterface.cpp' object='EpetraInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraInterface.Po' tmpdepfile='$(DEPDIR)/EpetraInterface.TPo' @AMDEPBACKSLASH@
+EpetraInterface-EpetraInterface.obj: $(srcdir)/EpetraInterface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -MT EpetraInterface-EpetraInterface.obj -MD -MP -MF "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" -c -o EpetraInterface-EpetraInterface.obj `if test -f '$(srcdir)/EpetraInterface.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraInterface.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo" "$(DEPDIR)/EpetraInterface-EpetraInterface.Po"; else rm -f "$(DEPDIR)/EpetraInterface-EpetraInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraInterface.cpp' object='EpetraInterface-EpetraInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraInterface-EpetraInterface.Po' tmpdepfile='$(DEPDIR)/EpetraInterface-EpetraInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraInterface.obj `if test -f '$(srcdir)/EpetraInterface.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraInterface.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(EpetraInterface_CXXFLAGS) $(CXXFLAGS) -c -o EpetraInterface-EpetraInterface.obj `if test -f '$(srcdir)/EpetraInterface.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraInterface.cpp'; fi`
 
-MultiLevel.o: $(srcdir)/MultiLevel.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel.o -MD -MP -MF "$(DEPDIR)/MultiLevel.Tpo" -c -o MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevel.Tpo" "$(DEPDIR)/MultiLevel.Po"; else rm -f "$(DEPDIR)/MultiLevel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevel.cpp' object='MultiLevel.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevel.Po' tmpdepfile='$(DEPDIR)/MultiLevel.TPo' @AMDEPBACKSLASH@
+MultiLevel-MultiLevel.o: $(srcdir)/MultiLevel.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel-MultiLevel.o -MD -MP -MF "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" -c -o MultiLevel-MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" "$(DEPDIR)/MultiLevel-MultiLevel.Po"; else rm -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevel.cpp' object='MultiLevel-MultiLevel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevel-MultiLevel.Po' tmpdepfile='$(DEPDIR)/MultiLevel-MultiLevel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevel-MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp
 
-MultiLevel.obj: $(srcdir)/MultiLevel.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel.obj -MD -MP -MF "$(DEPDIR)/MultiLevel.Tpo" -c -o MultiLevel.obj `if test -f '$(srcdir)/MultiLevel.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevel.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevel.Tpo" "$(DEPDIR)/MultiLevel.Po"; else rm -f "$(DEPDIR)/MultiLevel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevel.cpp' object='MultiLevel.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevel.Po' tmpdepfile='$(DEPDIR)/MultiLevel.TPo' @AMDEPBACKSLASH@
+MultiLevel-MultiLevel.obj: $(srcdir)/MultiLevel.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel-MultiLevel.obj -MD -MP -MF "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" -c -o MultiLevel-MultiLevel.obj `if test -f '$(srcdir)/MultiLevel.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevel.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" "$(DEPDIR)/MultiLevel-MultiLevel.Po"; else rm -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevel.cpp' object='MultiLevel-MultiLevel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevel-MultiLevel.Po' tmpdepfile='$(DEPDIR)/MultiLevel-MultiLevel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevel.obj `if test -f '$(srcdir)/MultiLevel.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevel.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevel-MultiLevel.obj `if test -f '$(srcdir)/MultiLevel.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevel.cpp'; fi`
 
-PowerMethod.o: $(srcdir)/PowerMethod.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PowerMethod.o -MD -MP -MF "$(DEPDIR)/PowerMethod.Tpo" -c -o PowerMethod.o `test -f '$(srcdir)/PowerMethod.cpp' || echo '$(srcdir)/'`$(srcdir)/PowerMethod.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PowerMethod.Tpo" "$(DEPDIR)/PowerMethod.Po"; else rm -f "$(DEPDIR)/PowerMethod.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PowerMethod.cpp' object='PowerMethod.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PowerMethod.Po' tmpdepfile='$(DEPDIR)/PowerMethod.TPo' @AMDEPBACKSLASH@
+PowerMethod-PowerMethod.o: $(srcdir)/PowerMethod.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PowerMethod_CXXFLAGS) $(CXXFLAGS) -MT PowerMethod-PowerMethod.o -MD -MP -MF "$(DEPDIR)/PowerMethod-PowerMethod.Tpo" -c -o PowerMethod-PowerMethod.o `test -f '$(srcdir)/PowerMethod.cpp' || echo '$(srcdir)/'`$(srcdir)/PowerMethod.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PowerMethod-PowerMethod.Tpo" "$(DEPDIR)/PowerMethod-PowerMethod.Po"; else rm -f "$(DEPDIR)/PowerMethod-PowerMethod.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PowerMethod.cpp' object='PowerMethod-PowerMethod.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PowerMethod-PowerMethod.Po' tmpdepfile='$(DEPDIR)/PowerMethod-PowerMethod.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PowerMethod.o `test -f '$(srcdir)/PowerMethod.cpp' || echo '$(srcdir)/'`$(srcdir)/PowerMethod.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PowerMethod_CXXFLAGS) $(CXXFLAGS) -c -o PowerMethod-PowerMethod.o `test -f '$(srcdir)/PowerMethod.cpp' || echo '$(srcdir)/'`$(srcdir)/PowerMethod.cpp
 
-PowerMethod.obj: $(srcdir)/PowerMethod.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PowerMethod.obj -MD -MP -MF "$(DEPDIR)/PowerMethod.Tpo" -c -o PowerMethod.obj `if test -f '$(srcdir)/PowerMethod.cpp'; then $(CYGPATH_W) '$(srcdir)/PowerMethod.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PowerMethod.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PowerMethod.Tpo" "$(DEPDIR)/PowerMethod.Po"; else rm -f "$(DEPDIR)/PowerMethod.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PowerMethod.cpp' object='PowerMethod.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PowerMethod.Po' tmpdepfile='$(DEPDIR)/PowerMethod.TPo' @AMDEPBACKSLASH@
+PowerMethod-PowerMethod.obj: $(srcdir)/PowerMethod.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PowerMethod_CXXFLAGS) $(CXXFLAGS) -MT PowerMethod-PowerMethod.obj -MD -MP -MF "$(DEPDIR)/PowerMethod-PowerMethod.Tpo" -c -o PowerMethod-PowerMethod.obj `if test -f '$(srcdir)/PowerMethod.cpp'; then $(CYGPATH_W) '$(srcdir)/PowerMethod.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PowerMethod.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PowerMethod-PowerMethod.Tpo" "$(DEPDIR)/PowerMethod-PowerMethod.Po"; else rm -f "$(DEPDIR)/PowerMethod-PowerMethod.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PowerMethod.cpp' object='PowerMethod-PowerMethod.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PowerMethod-PowerMethod.Po' tmpdepfile='$(DEPDIR)/PowerMethod-PowerMethod.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PowerMethod.obj `if test -f '$(srcdir)/PowerMethod.cpp'; then $(CYGPATH_W) '$(srcdir)/PowerMethod.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PowerMethod.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PowerMethod_CXXFLAGS) $(CXXFLAGS) -c -o PowerMethod-PowerMethod.obj `if test -f '$(srcdir)/PowerMethod.cpp'; then $(CYGPATH_W) '$(srcdir)/PowerMethod.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PowerMethod.cpp'; fi`
 
-Richardson.o: $(srcdir)/Richardson.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Richardson.o -MD -MP -MF "$(DEPDIR)/Richardson.Tpo" -c -o Richardson.o `test -f '$(srcdir)/Richardson.cpp' || echo '$(srcdir)/'`$(srcdir)/Richardson.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Richardson.Tpo" "$(DEPDIR)/Richardson.Po"; else rm -f "$(DEPDIR)/Richardson.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Richardson.cpp' object='Richardson.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Richardson.Po' tmpdepfile='$(DEPDIR)/Richardson.TPo' @AMDEPBACKSLASH@
+Richardson-Richardson.o: $(srcdir)/Richardson.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Richardson_CXXFLAGS) $(CXXFLAGS) -MT Richardson-Richardson.o -MD -MP -MF "$(DEPDIR)/Richardson-Richardson.Tpo" -c -o Richardson-Richardson.o `test -f '$(srcdir)/Richardson.cpp' || echo '$(srcdir)/'`$(srcdir)/Richardson.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Richardson-Richardson.Tpo" "$(DEPDIR)/Richardson-Richardson.Po"; else rm -f "$(DEPDIR)/Richardson-Richardson.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Richardson.cpp' object='Richardson-Richardson.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Richardson-Richardson.Po' tmpdepfile='$(DEPDIR)/Richardson-Richardson.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Richardson.o `test -f '$(srcdir)/Richardson.cpp' || echo '$(srcdir)/'`$(srcdir)/Richardson.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Richardson_CXXFLAGS) $(CXXFLAGS) -c -o Richardson-Richardson.o `test -f '$(srcdir)/Richardson.cpp' || echo '$(srcdir)/'`$(srcdir)/Richardson.cpp
 
-Richardson.obj: $(srcdir)/Richardson.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Richardson.obj -MD -MP -MF "$(DEPDIR)/Richardson.Tpo" -c -o Richardson.obj `if test -f '$(srcdir)/Richardson.cpp'; then $(CYGPATH_W) '$(srcdir)/Richardson.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Richardson.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Richardson.Tpo" "$(DEPDIR)/Richardson.Po"; else rm -f "$(DEPDIR)/Richardson.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Richardson.cpp' object='Richardson.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Richardson.Po' tmpdepfile='$(DEPDIR)/Richardson.TPo' @AMDEPBACKSLASH@
+Richardson-Richardson.obj: $(srcdir)/Richardson.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Richardson_CXXFLAGS) $(CXXFLAGS) -MT Richardson-Richardson.obj -MD -MP -MF "$(DEPDIR)/Richardson-Richardson.Tpo" -c -o Richardson-Richardson.obj `if test -f '$(srcdir)/Richardson.cpp'; then $(CYGPATH_W) '$(srcdir)/Richardson.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Richardson.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Richardson-Richardson.Tpo" "$(DEPDIR)/Richardson-Richardson.Po"; else rm -f "$(DEPDIR)/Richardson-Richardson.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Richardson.cpp' object='Richardson-Richardson.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Richardson-Richardson.Po' tmpdepfile='$(DEPDIR)/Richardson-Richardson.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Richardson.obj `if test -f '$(srcdir)/Richardson.cpp'; then $(CYGPATH_W) '$(srcdir)/Richardson.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Richardson.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Richardson_CXXFLAGS) $(CXXFLAGS) -c -o Richardson-Richardson.obj `if test -f '$(srcdir)/Richardson.cpp'; then $(CYGPATH_W) '$(srcdir)/Richardson.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Richardson.cpp'; fi`
 
-TwoLevelDDAdditive.o: $(srcdir)/TwoLevelDDAdditive.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive.o -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive.Tpo" -c -o TwoLevelDDAdditive.o `test -f '$(srcdir)/TwoLevelDDAdditive.cpp' || echo '$(srcdir)/'`$(srcdir)/TwoLevelDDAdditive.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive.Tpo" "$(DEPDIR)/TwoLevelDDAdditive.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TwoLevelDDAdditive.cpp' object='TwoLevelDDAdditive.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive.TPo' @AMDEPBACKSLASH@
+TwoLevelDDAdditive-TwoLevelDDAdditive.o: $(srcdir)/TwoLevelDDAdditive.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-TwoLevelDDAdditive.o -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.o `test -f '$(srcdir)/TwoLevelDDAdditive.cpp' || echo '$(srcdir)/'`$(srcdir)/TwoLevelDDAdditive.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TwoLevelDDAdditive.cpp' object='TwoLevelDDAdditive-TwoLevelDDAdditive.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive.o `test -f '$(srcdir)/TwoLevelDDAdditive.cpp' || echo '$(srcdir)/'`$(srcdir)/TwoLevelDDAdditive.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.o `test -f '$(srcdir)/TwoLevelDDAdditive.cpp' || echo '$(srcdir)/'`$(srcdir)/TwoLevelDDAdditive.cpp
 
-TwoLevelDDAdditive.obj: $(srcdir)/TwoLevelDDAdditive.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive.obj -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive.Tpo" -c -o TwoLevelDDAdditive.obj `if test -f '$(srcdir)/TwoLevelDDAdditive.cpp'; then $(CYGPATH_W) '$(srcdir)/TwoLevelDDAdditive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TwoLevelDDAdditive.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive.Tpo" "$(DEPDIR)/TwoLevelDDAdditive.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TwoLevelDDAdditive.cpp' object='TwoLevelDDAdditive.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive.TPo' @AMDEPBACKSLASH@
+TwoLevelDDAdditive-TwoLevelDDAdditive.obj: $(srcdir)/TwoLevelDDAdditive.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-TwoLevelDDAdditive.obj -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.obj `if test -f '$(srcdir)/TwoLevelDDAdditive.cpp'; then $(CYGPATH_W) '$(srcdir)/TwoLevelDDAdditive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TwoLevelDDAdditive.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TwoLevelDDAdditive.cpp' object='TwoLevelDDAdditive-TwoLevelDDAdditive.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive.obj `if test -f '$(srcdir)/TwoLevelDDAdditive.cpp'; then $(CYGPATH_W) '$(srcdir)/TwoLevelDDAdditive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TwoLevelDDAdditive.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.obj `if test -f '$(srcdir)/TwoLevelDDAdditive.cpp'; then $(CYGPATH_W) '$(srcdir)/TwoLevelDDAdditive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TwoLevelDDAdditive.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -680,7 +683,7 @@ uninstall-am: uninstall-info-am
 
 
 # include definitions of ML_INCLUDES and ML_LIBS
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

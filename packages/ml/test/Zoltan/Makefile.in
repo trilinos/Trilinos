@@ -106,6 +106,7 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_Zoltan_OBJECTS = Zoltan-cxx_main.$(OBJEXT)
 Zoltan_OBJECTS = $(am_Zoltan_OBJECTS)
+am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -284,14 +285,12 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@TEST_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
-@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
+TEST_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
+TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
 Zoltan_SOURCES = $(srcdir)/cxx_main.cpp
 Zoltan_DEPENDENCIES = $(top_builddir)/src/libml.a
-Zoltan_CXXFLAGS = ${TEST_INCLUDES}
-Zoltan_LDADD = ${ML_LINK}
+Zoltan_CXXFLAGS = $(TEST_INCLUDES)
+Zoltan_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -535,7 +534,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

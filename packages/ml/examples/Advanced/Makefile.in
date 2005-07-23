@@ -79,22 +79,19 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_ml_analyze_OBJECTS = ml_analyze.$(OBJEXT)
+am_ml_analyze_OBJECTS = ml_analyze-ml_analyze.$(OBJEXT)
 ml_analyze_OBJECTS = $(am_ml_analyze_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
-am_ml_filtering_OBJECTS = ml_filtering.$(OBJEXT)
+am_ml_filtering_OBJECTS = ml_filtering-ml_filtering.$(OBJEXT)
 ml_filtering_OBJECTS = $(am_ml_filtering_OBJECTS)
-am_ml_user_aggr_OBJECTS = ml_user_aggr.$(OBJEXT)
+am_ml_user_aggr_OBJECTS = ml_user_aggr-ml_user_aggr.$(OBJEXT)
 ml_user_aggr_OBJECTS = $(am_ml_user_aggr_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_analyze.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_filtering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_user_aggr.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_analyze-ml_analyze.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_filtering-ml_filtering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -271,19 +268,19 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
 ml_user_aggr_SOURCES = $(srcdir)/ml_user_aggr.cpp
 ml_user_aggr_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_user_aggr_CXXFLAGS = $(EXAMPLE_INCLUDES)
 ml_user_aggr_LDADD = $(EXAMPLE_LIBS)
 ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
 ml_filtering_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_filtering_CXXFLAGS = $(EXAMPLE_INCLUDES)
 ml_filtering_LDADD = $(EXAMPLE_LIBS)
 ml_analyze_SOURCES = $(srcdir)/ml_analyze.cpp
 ml_analyze_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_analyze_CXXFLAGS = $(EXAMPLE_INCLUDES)
 ml_analyze_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
@@ -337,9 +334,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_analyze.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_filtering.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_user_aggr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_analyze-ml_analyze.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_filtering-ml_filtering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -357,53 +354,53 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ml_analyze.o: $(srcdir)/ml_analyze.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze.o -MD -MP -MF "$(DEPDIR)/ml_analyze.Tpo" -c -o ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze.Tpo" "$(DEPDIR)/ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze.TPo' @AMDEPBACKSLASH@
+ml_analyze-ml_analyze.o: $(srcdir)/ml_analyze.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze-ml_analyze.o -MD -MP -MF "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" -c -o ml_analyze-ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" "$(DEPDIR)/ml_analyze-ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze-ml_analyze.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze-ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze-ml_analyze.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze-ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp
 
-ml_analyze.obj: $(srcdir)/ml_analyze.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze.obj -MD -MP -MF "$(DEPDIR)/ml_analyze.Tpo" -c -o ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze.Tpo" "$(DEPDIR)/ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze.TPo' @AMDEPBACKSLASH@
+ml_analyze-ml_analyze.obj: $(srcdir)/ml_analyze.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze-ml_analyze.obj -MD -MP -MF "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" -c -o ml_analyze-ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" "$(DEPDIR)/ml_analyze-ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze-ml_analyze.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze-ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze-ml_analyze.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze-ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`
 
-ml_filtering.o: $(srcdir)/ml_filtering.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering.o -MD -MP -MF "$(DEPDIR)/ml_filtering.Tpo" -c -o ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering.Tpo" "$(DEPDIR)/ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering.TPo' @AMDEPBACKSLASH@
+ml_filtering-ml_filtering.o: $(srcdir)/ml_filtering.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering-ml_filtering.o -MD -MP -MF "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" -c -o ml_filtering-ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" "$(DEPDIR)/ml_filtering-ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering-ml_filtering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering-ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering-ml_filtering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering-ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp
 
-ml_filtering.obj: $(srcdir)/ml_filtering.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering.obj -MD -MP -MF "$(DEPDIR)/ml_filtering.Tpo" -c -o ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering.Tpo" "$(DEPDIR)/ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering.TPo' @AMDEPBACKSLASH@
+ml_filtering-ml_filtering.obj: $(srcdir)/ml_filtering.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering-ml_filtering.obj -MD -MP -MF "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" -c -o ml_filtering-ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" "$(DEPDIR)/ml_filtering-ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering-ml_filtering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering-ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering-ml_filtering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering-ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`
 
-ml_user_aggr.o: $(srcdir)/ml_user_aggr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr.o -MD -MP -MF "$(DEPDIR)/ml_user_aggr.Tpo" -c -o ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr.TPo' @AMDEPBACKSLASH@
+ml_user_aggr-ml_user_aggr.o: $(srcdir)/ml_user_aggr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr-ml_user_aggr.o -MD -MP -MF "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" -c -o ml_user_aggr-ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr-ml_user_aggr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr-ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp
 
-ml_user_aggr.obj: $(srcdir)/ml_user_aggr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr.obj -MD -MP -MF "$(DEPDIR)/ml_user_aggr.Tpo" -c -o ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr.TPo' @AMDEPBACKSLASH@
+ml_user_aggr-ml_user_aggr.obj: $(srcdir)/ml_user_aggr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr-ml_user_aggr.obj -MD -MP -MF "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" -c -o ml_user_aggr-ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr-ml_user_aggr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr-ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -571,7 +568,7 @@ uninstall-am: uninstall-info-am
 # include definitions of ML_INCLUDES and ML_LIBS
 # ML_EXTRA_LIBS and ML_EXTRA_INCLUDES contain additional libraries and
 # header files required to compile and link some of the ML examples.
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -78,22 +78,18 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_ml_maxwell_OBJECTS = ml_maxwell.$(OBJEXT)
+am_ml_maxwell_OBJECTS = ml_maxwell-ml_maxwell.$(OBJEXT)
 ml_maxwell_OBJECTS = $(am_ml_maxwell_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_LIBS))
 am_ml_simple_max_OBJECTS = ml_simple_max-ml_simple_max.$(OBJEXT)
 ml_simple_max_OBJECTS = $(am_ml_simple_max_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_maxwell.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_maxwell-ml_maxwell.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_simple_max-ml_simple_max.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -269,19 +265,17 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-AM_CXXFLAGS = ${EXAMPLE_INCLUDES}
+EXAMPLE_LIBS = $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES)
+CCLD = $(CXX)
 ml_maxwell_SOURCES = $(srcdir)/ml_maxwell.cpp
 ml_maxwell_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_maxwell_CXXFLAGS = ${EXAMPLE_INCLUDES}
 ml_maxwell_LDADD = ${EXAMPLE_LIBS}
 ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
 ml_simple_max_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_simple_max_CFLAGS = ${EXAMPLE_INCLUDES}
 ml_simple_max_LDADD = ${EXAMPLE_LIBS}
-ml_simple_max_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
@@ -323,7 +317,7 @@ ml_maxwell$(EXEEXT): $(ml_maxwell_OBJECTS) $(ml_maxwell_DEPENDENCIES)
 	$(CXXLINK) $(ml_maxwell_LDFLAGS) $(ml_maxwell_OBJECTS) $(ml_maxwell_LDADD) $(LIBS)
 ml_simple_max$(EXEEXT): $(ml_simple_max_OBJECTS) $(ml_simple_max_DEPENDENCIES) 
 	@rm -f ml_simple_max$(EXEEXT)
-	$(ml_simple_max_LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
+	$(LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -331,7 +325,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_maxwell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_maxwell-ml_maxwell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_simple_max-ml_simple_max.Po@am__quote@
 
 .c.o:
@@ -382,21 +376,21 @@ ml_simple_max-ml_simple_max.obj: $(srcdir)/ml_simple_max.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ml_maxwell.o: $(srcdir)/ml_maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell.o -MD -MP -MF "$(DEPDIR)/ml_maxwell.Tpo" -c -o ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell.TPo' @AMDEPBACKSLASH@
+ml_maxwell-ml_maxwell.o: $(srcdir)/ml_maxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell-ml_maxwell.o -MD -MP -MF "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" -c -o ml_maxwell-ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell-ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell-ml_maxwell.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell-ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell-ml_maxwell.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell-ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp
 
-ml_maxwell.obj: $(srcdir)/ml_maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell.obj -MD -MP -MF "$(DEPDIR)/ml_maxwell.Tpo" -c -o ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell.TPo' @AMDEPBACKSLASH@
+ml_maxwell-ml_maxwell.obj: $(srcdir)/ml_maxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell-ml_maxwell.obj -MD -MP -MF "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" -c -o ml_maxwell-ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell-ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell-ml_maxwell.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell-ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell-ml_maxwell.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell-ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -561,7 +555,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

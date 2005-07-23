@@ -1,7 +1,7 @@
 #@HEADER
 #@HEADER
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
+# include definitions of ML_INCLUDES and ML_LIBS
 include $(top_builddir)/Makefile.export
 include ../Makefile-common.include
 
@@ -18,12 +18,12 @@ ml_nox_1Delasticity_example_SOURCES = $(srcdir)/ml_nox_1Delasticity_example.cpp 
 ml_nox_1Delasticity_example_CPPFLAGS = ${ml_common_include_locations}
 ml_nox_1Delasticity_example_CXXFLAGS = ${ml_common_include_locations} \
                                        -I$(top_srcdir)/src/NonlinML \
-                                       $(ML_EXPORT_INCLUDES)
+                                       $(ML_INCLUDES)
 ml_nox_1Delasticity_example_LDADD = ${ml_libs} \
                                     $(top_builddir)/src/libml.a \
-                                    $(ML_EXPORT_LIBS) \
+                                    $(ML_LIBS) \
                                     $(top_builddir)/src/libml.a
 ml_nox_1Delasticity_example_LINK = ${mllink}
 ml_nox_1Delasticity_example_DEPENDENCIES = $(top_builddir)/src/libml.a \
-                                           $(ML_EXPORT_LIBS) \
+                                           $(ML_LIBS) \
                                            $(top_builddir)/src/libml.a

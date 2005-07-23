@@ -107,16 +107,12 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_AztecSimple_OBJECTS = AztecSimple-AztecSimple.$(OBJEXT)
 AztecSimple_OBJECTS = $(am_AztecSimple_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AztecSimple-AztecSimple.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(AztecSimple_SOURCES)
 DIST_SOURCES = $(AztecSimple_SOURCES)
@@ -287,15 +283,13 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@TEST_LIBS = $(ML_LIBS)
-@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(ML_INCLUDES)
-@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+TEST_LIBS = $(ML_LIBS)
+TEST_INCLUDES = $(ML_INCLUDES)
+CCLD = $(CXX)
 AztecSimple_SOURCES = $(srcdir)/AztecSimple.c
 AztecSimple_DEPENDENCIES = $(top_builddir)/src/libml.a
 AztecSimple_CFLAGS = ${TEST_INCLUDES}
 AztecSimple_LDADD = ${TEST_LIBS}
-AztecSimple_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
@@ -334,7 +328,7 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 AztecSimple$(EXEEXT): $(AztecSimple_OBJECTS) $(AztecSimple_DEPENDENCIES) 
 	@rm -f AztecSimple$(EXEEXT)
-	$(AztecSimple_LINK) $(AztecSimple_LDFLAGS) $(AztecSimple_OBJECTS) $(AztecSimple_LDADD) $(LIBS)
+	$(LINK) $(AztecSimple_LDFLAGS) $(AztecSimple_OBJECTS) $(AztecSimple_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -539,7 +533,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

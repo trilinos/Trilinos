@@ -2,17 +2,10 @@
 #@HEADER
 
 # include definitions of ML_INCLUDES and ML_LIBS
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-else
 EXAMPLE_LIBS     = $(ML_LIBS)
 EXAMPLE_INCLUDES = $(ML_INCLUDES)
-endif
-
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -34,16 +27,20 @@ noinst_PROGRAMS = Laplacian3D AdvDiff2D MLAPI TestAll
 
 Laplacian3D_SOURCES      = $(srcdir)/Laplacian3D.cpp $(FEHEADERS)
 Laplacian3D_DEPENDENCIES = $(top_builddir)/src/libml.a
+Laplacian3D_CXXFLAGS     = ${EXAMPLE_INCLUDES} 
 Laplacian3D_LDADD        = ${EXAMPLE_LIBS} 
 
 AdvDiff2D_SOURCES      = $(srcdir)/AdvDiff2D.cpp $(FEHEADERS)
 AdvDiff2D_DEPENDENCIES = $(top_builddir)/src/libml.a
+AdvDiff2D_CXXFLAGS     = ${EXAMPLE_INCLUDES} 
 AdvDiff2D_LDADD        = ${EXAMPLE_LIBS} 
 
 MLAPI_SOURCES      = $(srcdir)/MLAPI.cpp $(FEHEADERS)
 MLAPI_DEPENDENCIES = $(top_builddir)/src/libml.a
+MLAPI_CXXFLAGS     = ${EXAMPLE_INCLUDES} 
 MLAPI_LDADD        = ${EXAMPLE_LIBS} 
 
 TestAll_SOURCES      = $(srcdir)/TestAll.cpp $(FEHEADERS)
 TestAll_DEPENDENCIES = $(top_builddir)/src/libml.a
+TestAll_CXXFLAGS     = ${EXAMPLE_INCLUDES} 
 TestAll_LDADD        = ${EXAMPLE_LIBS} 

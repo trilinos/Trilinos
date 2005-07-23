@@ -82,9 +82,6 @@ am_ml_example_elasticity_OBJECTS =  \
 	ml_example_elasticity-ml_example_elasticity.$(OBJEXT)
 ml_example_elasticity_OBJECTS = $(am_ml_example_elasticity_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_LIBS))
 am_ml_read_elas_OBJECTS = ml_read_elas-ml_read_elas.$(OBJEXT)
 ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
@@ -94,7 +91,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(ml_example_elasticity_SOURCES) $(ml_read_elas_SOURCES)
 DIST_SOURCES = $(ml_example_elasticity_SOURCES) \
@@ -266,20 +262,17 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+EXAMPLE_LIBS = $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES)
+CCLD = $(CCX)
 ml_example_elasticity_SOURCES = $(srcdir)/ml_example_elasticity.c
 ml_example_elasticity_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example_elasticity_CFLAGS = $(EXAMPLE_INCLUDES)
 ml_example_elasticity_LDADD = $(EXAMPLE_LIBS)
-ml_example_elasticity_LINK = $(ML_LINK)
 ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 ml_read_elas_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_read_elas_CFLAGS = $(EXAMPLE_INCLUDES)
 ml_read_elas_LDADD = $(EXAMPLE_LIBS)
-ml_read_elas_LINK = $(ML_LINK)
 all: all-am
 
 .SUFFIXES:
@@ -318,10 +311,10 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 ml_example_elasticity$(EXEEXT): $(ml_example_elasticity_OBJECTS) $(ml_example_elasticity_DEPENDENCIES) 
 	@rm -f ml_example_elasticity$(EXEEXT)
-	$(ml_example_elasticity_LINK) $(ml_example_elasticity_LDFLAGS) $(ml_example_elasticity_OBJECTS) $(ml_example_elasticity_LDADD) $(LIBS)
+	$(LINK) $(ml_example_elasticity_LDFLAGS) $(ml_example_elasticity_OBJECTS) $(ml_example_elasticity_LDADD) $(LIBS)
 ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
 	@rm -f ml_read_elas$(EXEEXT)
-	$(ml_read_elas_LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
+	$(LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -543,7 +536,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -28,7 +28,7 @@
 
 EXEEXT = .exe
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
+# include definitions of ML_INCLUDES and ML_LIBS
 include $(top_builddir)/Makefile.export
 
 EXTRA_DIST= 2dPoissonEvaluateDefinitions baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
@@ -59,9 +59,9 @@ GetNecessaryFiles: $(EXTRA_DIST)
     $(top_builddir)/src/libml.a \
     GetNecessaryFiles
 
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
+ml_common_include_locations = $(ML_INCLUDES)
 
-ml_libs = $(ML_EXPORT_LIBS) \
+ml_libs = $(ML_LIBS) \
           $(LIBS)           \
           $(LAPACK_LIBS)    \
           $(BLAS_LIBS)      \

@@ -292,8 +292,8 @@ EXTRA_DIST = 3dPoissonEvaluateDefinitions baseline1 baseline2 baseline3 baseline
     $(top_builddir)/src/libml.a \
     GetNecessaryFiles
 
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs = $(ML_EXPORT_LIBS) \
+ml_common_include_locations = $(ML_INCLUDES)
+ml_libs = $(ML_LIBS) \
           $(LIBS)           \
           $(LAPACK_LIBS)    \
           $(BLAS_LIBS)      \
@@ -547,7 +547,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
+# include definitions of ML_INCLUDES and ML_LIBS
 include $(top_builddir)/Makefile.export
 
 3d_Poisson$(EXT): $(3d_Poisson_SOURCES)

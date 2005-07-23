@@ -26,23 +26,16 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-else
 TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
 TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-endif
-
-AM_CXXFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
 noinst_PROGRAMS = MultiLevelPreconditioner_NonSym
 
-MultiLevelPreconditioner_NonSym_SOURCES = $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
-
+MultiLevelPreconditioner_NonSym_SOURCES      = $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
 MultiLevelPreconditioner_NonSym_DEPENDENCIES = $(top_builddir)/src/libml.a
-MultiLevelPreconditioner_NonSym_LDADD = ${TEST_LIBS}
+MultiLevelPreconditioner_NonSym_CXXFLAGS     = ${TEST_INCLUDES}
+MultiLevelPreconditioner_NonSym_LDADD        = ${TEST_LIBS}

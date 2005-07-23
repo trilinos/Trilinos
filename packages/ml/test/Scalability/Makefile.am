@@ -26,17 +26,10 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-else
 TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
 TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-endif
-
-AM_CXXFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
@@ -44,4 +37,5 @@ noinst_PROGRAMS = Scalability
 
 Scalability_SOURCES      = $(srcdir)/Scalability.cpp
 Scalability_DEPENDENCIES = $(top_builddir)/src/libml.a
+Scalability_CXXFLAGS     = ${TEST_INCLUDES}
 Scalability_LDADD        = ${TEST_LIBS}

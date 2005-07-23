@@ -26,22 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-else
 TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
 TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-endif
 
 EXEEXT = .exe
 
 noinst_PROGRAMS = VerySimple
 
+CCLD = $(CXX)
+
 VerySimple_SOURCES      = $(srcdir)/VerySimple.c
 VerySimple_DEPENDENCIES = $(top_builddir)/src/libml.a 
 VerySimple_CFLAGS       = ${TEST_INCLUDES}
 VerySimple_LDADD        = ${TEST_LIBS}
-VerySimple_LINK         = ${ML_LINK}

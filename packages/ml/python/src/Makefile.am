@@ -32,7 +32,7 @@ include  $(top_builddir)/Makefile.export
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = -I$(srcdir) \
-                $(ML_EXPORT_INCLUDES) \
+                $(ML_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
 # Default make target
@@ -66,8 +66,8 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"    >> $@
 	@echo "  'FLIBS'        : '$(FLIBS)',"        >> $@
 	@echo "  'LIBS'         : '$(LIBS)',"         >> $@
-	@echo "  'ML_INCLUDES'  : '$(ML_EXPORT_INCLUDES)',"  >> $@
-	@echo "  'ML_LIBS'      : '$(ML_EXPORT_LIBS)',"      >> $@
+	@echo "  'ML_INCLUDES'  : '$(ML_INCLUDES)',"  >> $@
+	@echo "  'ML_LIBS'      : '$(ML_LIBS)',"      >> $@
 	@echo "  'PYTHON'       : '$(PYTHON)'"        >> $@
 	@echo "}"                                     >> $@
 

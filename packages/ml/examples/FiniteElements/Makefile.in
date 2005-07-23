@@ -81,24 +81,23 @@ CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 =
-am_AdvDiff2D_OBJECTS = AdvDiff2D.$(OBJEXT) $(am__objects_1)
+am_AdvDiff2D_OBJECTS = AdvDiff2D-AdvDiff2D.$(OBJEXT) $(am__objects_1)
 AdvDiff2D_OBJECTS = $(am_AdvDiff2D_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_LIBS))
-am_Laplacian3D_OBJECTS = Laplacian3D.$(OBJEXT) $(am__objects_1)
+am_Laplacian3D_OBJECTS = Laplacian3D-Laplacian3D.$(OBJEXT) \
+	$(am__objects_1)
 Laplacian3D_OBJECTS = $(am_Laplacian3D_OBJECTS)
-am_MLAPI_OBJECTS = MLAPI.$(OBJEXT) $(am__objects_1)
+am_MLAPI_OBJECTS = MLAPI-MLAPI.$(OBJEXT) $(am__objects_1)
 MLAPI_OBJECTS = $(am_MLAPI_OBJECTS)
-am_TestAll_OBJECTS = TestAll.$(OBJEXT) $(am__objects_1)
+am_TestAll_OBJECTS = TestAll-TestAll.$(OBJEXT) $(am__objects_1)
 TestAll_OBJECTS = $(am_TestAll_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdvDiff2D.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Laplacian3D.Po ./$(DEPDIR)/MLAPI.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TestAll.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Laplacian3D-Laplacian3D.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/MLAPI-MLAPI.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestAll-TestAll.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -279,11 +278,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS = $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES)
 
 # List the names of all exe's in this directory here
 FEHEADERS = \
@@ -300,15 +296,19 @@ ml_MEDITInterface.h             ml_Workspace.h
 
 Laplacian3D_SOURCES = $(srcdir)/Laplacian3D.cpp $(FEHEADERS)
 Laplacian3D_DEPENDENCIES = $(top_builddir)/src/libml.a
+Laplacian3D_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 Laplacian3D_LDADD = ${EXAMPLE_LIBS} 
 AdvDiff2D_SOURCES = $(srcdir)/AdvDiff2D.cpp $(FEHEADERS)
 AdvDiff2D_DEPENDENCIES = $(top_builddir)/src/libml.a
+AdvDiff2D_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 AdvDiff2D_LDADD = ${EXAMPLE_LIBS} 
 MLAPI_SOURCES = $(srcdir)/MLAPI.cpp $(FEHEADERS)
 MLAPI_DEPENDENCIES = $(top_builddir)/src/libml.a
+MLAPI_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 MLAPI_LDADD = ${EXAMPLE_LIBS} 
 TestAll_SOURCES = $(srcdir)/TestAll.cpp $(FEHEADERS)
 TestAll_DEPENDENCIES = $(top_builddir)/src/libml.a
+TestAll_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 TestAll_LDADD = ${EXAMPLE_LIBS} 
 all: all-am
 
@@ -365,10 +365,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdvDiff2D.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Laplacian3D.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MLAPI.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestAll.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Laplacian3D-Laplacian3D.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MLAPI-MLAPI.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestAll-TestAll.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -386,69 +386,69 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-AdvDiff2D.o: $(srcdir)/AdvDiff2D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AdvDiff2D.o -MD -MP -MF "$(DEPDIR)/AdvDiff2D.Tpo" -c -o AdvDiff2D.o `test -f '$(srcdir)/AdvDiff2D.cpp' || echo '$(srcdir)/'`$(srcdir)/AdvDiff2D.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdvDiff2D.Tpo" "$(DEPDIR)/AdvDiff2D.Po"; else rm -f "$(DEPDIR)/AdvDiff2D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdvDiff2D.cpp' object='AdvDiff2D.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdvDiff2D.Po' tmpdepfile='$(DEPDIR)/AdvDiff2D.TPo' @AMDEPBACKSLASH@
+AdvDiff2D-AdvDiff2D.o: $(srcdir)/AdvDiff2D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -MT AdvDiff2D-AdvDiff2D.o -MD -MP -MF "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" -c -o AdvDiff2D-AdvDiff2D.o `test -f '$(srcdir)/AdvDiff2D.cpp' || echo '$(srcdir)/'`$(srcdir)/AdvDiff2D.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po"; else rm -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdvDiff2D.cpp' object='AdvDiff2D-AdvDiff2D.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po' tmpdepfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AdvDiff2D.o `test -f '$(srcdir)/AdvDiff2D.cpp' || echo '$(srcdir)/'`$(srcdir)/AdvDiff2D.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -c -o AdvDiff2D-AdvDiff2D.o `test -f '$(srcdir)/AdvDiff2D.cpp' || echo '$(srcdir)/'`$(srcdir)/AdvDiff2D.cpp
 
-AdvDiff2D.obj: $(srcdir)/AdvDiff2D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AdvDiff2D.obj -MD -MP -MF "$(DEPDIR)/AdvDiff2D.Tpo" -c -o AdvDiff2D.obj `if test -f '$(srcdir)/AdvDiff2D.cpp'; then $(CYGPATH_W) '$(srcdir)/AdvDiff2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdvDiff2D.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdvDiff2D.Tpo" "$(DEPDIR)/AdvDiff2D.Po"; else rm -f "$(DEPDIR)/AdvDiff2D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdvDiff2D.cpp' object='AdvDiff2D.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdvDiff2D.Po' tmpdepfile='$(DEPDIR)/AdvDiff2D.TPo' @AMDEPBACKSLASH@
+AdvDiff2D-AdvDiff2D.obj: $(srcdir)/AdvDiff2D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -MT AdvDiff2D-AdvDiff2D.obj -MD -MP -MF "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" -c -o AdvDiff2D-AdvDiff2D.obj `if test -f '$(srcdir)/AdvDiff2D.cpp'; then $(CYGPATH_W) '$(srcdir)/AdvDiff2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdvDiff2D.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po"; else rm -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdvDiff2D.cpp' object='AdvDiff2D-AdvDiff2D.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po' tmpdepfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AdvDiff2D.obj `if test -f '$(srcdir)/AdvDiff2D.cpp'; then $(CYGPATH_W) '$(srcdir)/AdvDiff2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdvDiff2D.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -c -o AdvDiff2D-AdvDiff2D.obj `if test -f '$(srcdir)/AdvDiff2D.cpp'; then $(CYGPATH_W) '$(srcdir)/AdvDiff2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdvDiff2D.cpp'; fi`
 
-Laplacian3D.o: $(srcdir)/Laplacian3D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Laplacian3D.o -MD -MP -MF "$(DEPDIR)/Laplacian3D.Tpo" -c -o Laplacian3D.o `test -f '$(srcdir)/Laplacian3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Laplacian3D.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Laplacian3D.Tpo" "$(DEPDIR)/Laplacian3D.Po"; else rm -f "$(DEPDIR)/Laplacian3D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Laplacian3D.cpp' object='Laplacian3D.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Laplacian3D.Po' tmpdepfile='$(DEPDIR)/Laplacian3D.TPo' @AMDEPBACKSLASH@
+Laplacian3D-Laplacian3D.o: $(srcdir)/Laplacian3D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -MT Laplacian3D-Laplacian3D.o -MD -MP -MF "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" -c -o Laplacian3D-Laplacian3D.o `test -f '$(srcdir)/Laplacian3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Laplacian3D.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" "$(DEPDIR)/Laplacian3D-Laplacian3D.Po"; else rm -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Laplacian3D.cpp' object='Laplacian3D-Laplacian3D.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Laplacian3D-Laplacian3D.Po' tmpdepfile='$(DEPDIR)/Laplacian3D-Laplacian3D.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Laplacian3D.o `test -f '$(srcdir)/Laplacian3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Laplacian3D.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -c -o Laplacian3D-Laplacian3D.o `test -f '$(srcdir)/Laplacian3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Laplacian3D.cpp
 
-Laplacian3D.obj: $(srcdir)/Laplacian3D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Laplacian3D.obj -MD -MP -MF "$(DEPDIR)/Laplacian3D.Tpo" -c -o Laplacian3D.obj `if test -f '$(srcdir)/Laplacian3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Laplacian3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Laplacian3D.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Laplacian3D.Tpo" "$(DEPDIR)/Laplacian3D.Po"; else rm -f "$(DEPDIR)/Laplacian3D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Laplacian3D.cpp' object='Laplacian3D.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Laplacian3D.Po' tmpdepfile='$(DEPDIR)/Laplacian3D.TPo' @AMDEPBACKSLASH@
+Laplacian3D-Laplacian3D.obj: $(srcdir)/Laplacian3D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -MT Laplacian3D-Laplacian3D.obj -MD -MP -MF "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" -c -o Laplacian3D-Laplacian3D.obj `if test -f '$(srcdir)/Laplacian3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Laplacian3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Laplacian3D.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" "$(DEPDIR)/Laplacian3D-Laplacian3D.Po"; else rm -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Laplacian3D.cpp' object='Laplacian3D-Laplacian3D.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Laplacian3D-Laplacian3D.Po' tmpdepfile='$(DEPDIR)/Laplacian3D-Laplacian3D.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Laplacian3D.obj `if test -f '$(srcdir)/Laplacian3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Laplacian3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Laplacian3D.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -c -o Laplacian3D-Laplacian3D.obj `if test -f '$(srcdir)/Laplacian3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Laplacian3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Laplacian3D.cpp'; fi`
 
-MLAPI.o: $(srcdir)/MLAPI.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MLAPI.o -MD -MP -MF "$(DEPDIR)/MLAPI.Tpo" -c -o MLAPI.o `test -f '$(srcdir)/MLAPI.cpp' || echo '$(srcdir)/'`$(srcdir)/MLAPI.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MLAPI.Tpo" "$(DEPDIR)/MLAPI.Po"; else rm -f "$(DEPDIR)/MLAPI.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MLAPI.cpp' object='MLAPI.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MLAPI.Po' tmpdepfile='$(DEPDIR)/MLAPI.TPo' @AMDEPBACKSLASH@
+MLAPI-MLAPI.o: $(srcdir)/MLAPI.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MLAPI_CXXFLAGS) $(CXXFLAGS) -MT MLAPI-MLAPI.o -MD -MP -MF "$(DEPDIR)/MLAPI-MLAPI.Tpo" -c -o MLAPI-MLAPI.o `test -f '$(srcdir)/MLAPI.cpp' || echo '$(srcdir)/'`$(srcdir)/MLAPI.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MLAPI-MLAPI.Tpo" "$(DEPDIR)/MLAPI-MLAPI.Po"; else rm -f "$(DEPDIR)/MLAPI-MLAPI.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MLAPI.cpp' object='MLAPI-MLAPI.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MLAPI-MLAPI.Po' tmpdepfile='$(DEPDIR)/MLAPI-MLAPI.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MLAPI.o `test -f '$(srcdir)/MLAPI.cpp' || echo '$(srcdir)/'`$(srcdir)/MLAPI.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MLAPI_CXXFLAGS) $(CXXFLAGS) -c -o MLAPI-MLAPI.o `test -f '$(srcdir)/MLAPI.cpp' || echo '$(srcdir)/'`$(srcdir)/MLAPI.cpp
 
-MLAPI.obj: $(srcdir)/MLAPI.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MLAPI.obj -MD -MP -MF "$(DEPDIR)/MLAPI.Tpo" -c -o MLAPI.obj `if test -f '$(srcdir)/MLAPI.cpp'; then $(CYGPATH_W) '$(srcdir)/MLAPI.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MLAPI.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MLAPI.Tpo" "$(DEPDIR)/MLAPI.Po"; else rm -f "$(DEPDIR)/MLAPI.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MLAPI.cpp' object='MLAPI.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MLAPI.Po' tmpdepfile='$(DEPDIR)/MLAPI.TPo' @AMDEPBACKSLASH@
+MLAPI-MLAPI.obj: $(srcdir)/MLAPI.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MLAPI_CXXFLAGS) $(CXXFLAGS) -MT MLAPI-MLAPI.obj -MD -MP -MF "$(DEPDIR)/MLAPI-MLAPI.Tpo" -c -o MLAPI-MLAPI.obj `if test -f '$(srcdir)/MLAPI.cpp'; then $(CYGPATH_W) '$(srcdir)/MLAPI.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MLAPI.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MLAPI-MLAPI.Tpo" "$(DEPDIR)/MLAPI-MLAPI.Po"; else rm -f "$(DEPDIR)/MLAPI-MLAPI.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MLAPI.cpp' object='MLAPI-MLAPI.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MLAPI-MLAPI.Po' tmpdepfile='$(DEPDIR)/MLAPI-MLAPI.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MLAPI.obj `if test -f '$(srcdir)/MLAPI.cpp'; then $(CYGPATH_W) '$(srcdir)/MLAPI.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MLAPI.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MLAPI_CXXFLAGS) $(CXXFLAGS) -c -o MLAPI-MLAPI.obj `if test -f '$(srcdir)/MLAPI.cpp'; then $(CYGPATH_W) '$(srcdir)/MLAPI.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MLAPI.cpp'; fi`
 
-TestAll.o: $(srcdir)/TestAll.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestAll.o -MD -MP -MF "$(DEPDIR)/TestAll.Tpo" -c -o TestAll.o `test -f '$(srcdir)/TestAll.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAll.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAll.Tpo" "$(DEPDIR)/TestAll.Po"; else rm -f "$(DEPDIR)/TestAll.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAll.cpp' object='TestAll.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAll.Po' tmpdepfile='$(DEPDIR)/TestAll.TPo' @AMDEPBACKSLASH@
+TestAll-TestAll.o: $(srcdir)/TestAll.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAll_CXXFLAGS) $(CXXFLAGS) -MT TestAll-TestAll.o -MD -MP -MF "$(DEPDIR)/TestAll-TestAll.Tpo" -c -o TestAll-TestAll.o `test -f '$(srcdir)/TestAll.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAll.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAll-TestAll.Tpo" "$(DEPDIR)/TestAll-TestAll.Po"; else rm -f "$(DEPDIR)/TestAll-TestAll.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAll.cpp' object='TestAll-TestAll.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAll-TestAll.Po' tmpdepfile='$(DEPDIR)/TestAll-TestAll.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestAll.o `test -f '$(srcdir)/TestAll.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAll.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAll_CXXFLAGS) $(CXXFLAGS) -c -o TestAll-TestAll.o `test -f '$(srcdir)/TestAll.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAll.cpp
 
-TestAll.obj: $(srcdir)/TestAll.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestAll.obj -MD -MP -MF "$(DEPDIR)/TestAll.Tpo" -c -o TestAll.obj `if test -f '$(srcdir)/TestAll.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAll.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAll.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAll.Tpo" "$(DEPDIR)/TestAll.Po"; else rm -f "$(DEPDIR)/TestAll.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAll.cpp' object='TestAll.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAll.Po' tmpdepfile='$(DEPDIR)/TestAll.TPo' @AMDEPBACKSLASH@
+TestAll-TestAll.obj: $(srcdir)/TestAll.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAll_CXXFLAGS) $(CXXFLAGS) -MT TestAll-TestAll.obj -MD -MP -MF "$(DEPDIR)/TestAll-TestAll.Tpo" -c -o TestAll-TestAll.obj `if test -f '$(srcdir)/TestAll.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAll.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAll.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAll-TestAll.Tpo" "$(DEPDIR)/TestAll-TestAll.Po"; else rm -f "$(DEPDIR)/TestAll-TestAll.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAll.cpp' object='TestAll-TestAll.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAll-TestAll.Po' tmpdepfile='$(DEPDIR)/TestAll-TestAll.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestAll.obj `if test -f '$(srcdir)/TestAll.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAll.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAll.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAll_CXXFLAGS) $(CXXFLAGS) -c -o TestAll-TestAll.obj `if test -f '$(srcdir)/TestAll.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAll.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAll.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -614,7 +614,7 @@ uninstall-am: uninstall-info-am
 
 
 # include definitions of ML_INCLUDES and ML_LIBS
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

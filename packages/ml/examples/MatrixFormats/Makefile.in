@@ -79,22 +79,19 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_ml_AztecMsr_OBJECTS = ml_AztecMsr.$(OBJEXT)
+am_ml_AztecMsr_OBJECTS = ml_AztecMsr-ml_AztecMsr.$(OBJEXT)
 ml_AztecMsr_OBJECTS = $(am_ml_AztecMsr_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
-am_ml_EpetraVbr_OBJECTS = ml_EpetraVbr.$(OBJEXT)
+am_ml_EpetraVbr_OBJECTS = ml_EpetraVbr-ml_EpetraVbr.$(OBJEXT)
 ml_EpetraVbr_OBJECTS = $(am_ml_EpetraVbr_OBJECTS)
-am_ml_MatrixFree_OBJECTS = ml_MatrixFree.$(OBJEXT)
+am_ml_MatrixFree_OBJECTS = ml_MatrixFree-ml_MatrixFree.$(OBJEXT)
 ml_MatrixFree_OBJECTS = $(am_ml_MatrixFree_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_AztecMsr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_EpetraVbr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_MatrixFree.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -271,19 +268,19 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
 ml_AztecMsr_SOURCES = $(srcdir)/ml_AztecMsr.cpp
 ml_AztecMsr_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_AztecMsr_CXXFLAGS = ${EXAMPLE_INCLUDES} 
 ml_AztecMsr_LDADD = ${EXAMPLE_LIBS} 
 ml_EpetraVbr_SOURCES = $(srcdir)/ml_EpetraVbr.cpp
 ml_EpetraVbr_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_EpetraVbr_CXXFLAGS = ${EXAMPLE_INCLUDES}
 ml_EpetraVbr_LDADD = ${EXAMPLE_LIBS}
 ml_MatrixFree_SOURCES = $(srcdir)/ml_MatrixFree.cpp
 ml_MatrixFree_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_MatrixFree_CXXFLAGS = ${EXAMPLE_INCLUDES}
 ml_MatrixFree_LDADD = ${EXAMPLE_LIBS}
 all: all-am
 
@@ -337,9 +334,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_AztecMsr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_EpetraVbr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MatrixFree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -357,53 +354,53 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ml_AztecMsr.o: $(srcdir)/ml_AztecMsr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr.o -MD -MP -MF "$(DEPDIR)/ml_AztecMsr.Tpo" -c -o ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr.TPo' @AMDEPBACKSLASH@
+ml_AztecMsr-ml_AztecMsr.o: $(srcdir)/ml_AztecMsr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr-ml_AztecMsr.o -MD -MP -MF "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" -c -o ml_AztecMsr-ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr-ml_AztecMsr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr-ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp
 
-ml_AztecMsr.obj: $(srcdir)/ml_AztecMsr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr.obj -MD -MP -MF "$(DEPDIR)/ml_AztecMsr.Tpo" -c -o ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr.TPo' @AMDEPBACKSLASH@
+ml_AztecMsr-ml_AztecMsr.obj: $(srcdir)/ml_AztecMsr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr-ml_AztecMsr.obj -MD -MP -MF "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" -c -o ml_AztecMsr-ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr-ml_AztecMsr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr-ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`
 
-ml_EpetraVbr.o: $(srcdir)/ml_EpetraVbr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr.o -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
+ml_EpetraVbr-ml_EpetraVbr.o: $(srcdir)/ml_EpetraVbr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr-ml_EpetraVbr.o -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr-ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr-ml_EpetraVbr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr-ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp
 
-ml_EpetraVbr.obj: $(srcdir)/ml_EpetraVbr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr.obj -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
+ml_EpetraVbr-ml_EpetraVbr.obj: $(srcdir)/ml_EpetraVbr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr-ml_EpetraVbr.obj -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr-ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr-ml_EpetraVbr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr-ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`
 
-ml_MatrixFree.o: $(srcdir)/ml_MatrixFree.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MatrixFree.o -MD -MP -MF "$(DEPDIR)/ml_MatrixFree.Tpo" -c -o ml_MatrixFree.o `test -f '$(srcdir)/ml_MatrixFree.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_MatrixFree.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MatrixFree.Tpo" "$(DEPDIR)/ml_MatrixFree.Po"; else rm -f "$(DEPDIR)/ml_MatrixFree.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_MatrixFree.cpp' object='ml_MatrixFree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MatrixFree.Po' tmpdepfile='$(DEPDIR)/ml_MatrixFree.TPo' @AMDEPBACKSLASH@
+ml_MatrixFree-ml_MatrixFree.o: $(srcdir)/ml_MatrixFree.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_MatrixFree_CXXFLAGS) $(CXXFLAGS) -MT ml_MatrixFree-ml_MatrixFree.o -MD -MP -MF "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Tpo" -c -o ml_MatrixFree-ml_MatrixFree.o `test -f '$(srcdir)/ml_MatrixFree.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_MatrixFree.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Tpo" "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Po"; else rm -f "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_MatrixFree.cpp' object='ml_MatrixFree-ml_MatrixFree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Po' tmpdepfile='$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MatrixFree.o `test -f '$(srcdir)/ml_MatrixFree.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_MatrixFree.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_MatrixFree_CXXFLAGS) $(CXXFLAGS) -c -o ml_MatrixFree-ml_MatrixFree.o `test -f '$(srcdir)/ml_MatrixFree.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_MatrixFree.cpp
 
-ml_MatrixFree.obj: $(srcdir)/ml_MatrixFree.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MatrixFree.obj -MD -MP -MF "$(DEPDIR)/ml_MatrixFree.Tpo" -c -o ml_MatrixFree.obj `if test -f '$(srcdir)/ml_MatrixFree.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_MatrixFree.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_MatrixFree.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MatrixFree.Tpo" "$(DEPDIR)/ml_MatrixFree.Po"; else rm -f "$(DEPDIR)/ml_MatrixFree.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_MatrixFree.cpp' object='ml_MatrixFree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MatrixFree.Po' tmpdepfile='$(DEPDIR)/ml_MatrixFree.TPo' @AMDEPBACKSLASH@
+ml_MatrixFree-ml_MatrixFree.obj: $(srcdir)/ml_MatrixFree.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_MatrixFree_CXXFLAGS) $(CXXFLAGS) -MT ml_MatrixFree-ml_MatrixFree.obj -MD -MP -MF "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Tpo" -c -o ml_MatrixFree-ml_MatrixFree.obj `if test -f '$(srcdir)/ml_MatrixFree.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_MatrixFree.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_MatrixFree.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Tpo" "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Po"; else rm -f "$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_MatrixFree.cpp' object='ml_MatrixFree-ml_MatrixFree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.Po' tmpdepfile='$(DEPDIR)/ml_MatrixFree-ml_MatrixFree.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MatrixFree.obj `if test -f '$(srcdir)/ml_MatrixFree.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_MatrixFree.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_MatrixFree.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_MatrixFree_CXXFLAGS) $(CXXFLAGS) -c -o ml_MatrixFree-ml_MatrixFree.obj `if test -f '$(srcdir)/ml_MatrixFree.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_MatrixFree.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_MatrixFree.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -569,7 +566,7 @@ uninstall-am: uninstall-info-am
 
 
 # include definitions of ML_INCLUDES and ML_LIBS
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

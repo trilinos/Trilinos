@@ -82,9 +82,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_ml_example1d_OBJECTS = ml_example1d-ml_example1d.$(OBJEXT)
 ml_example1d_OBJECTS = $(am_ml_example1d_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_LIBS))
 am_ml_example1dGS_OBJECTS = ml_example1dGS-ml_example1dGS.$(OBJEXT)
 ml_example1dGS_OBJECTS = $(am_ml_example1dGS_OBJECTS)
 am_mlguide_OBJECTS = mlguide-mlguide.$(OBJEXT)
@@ -100,7 +97,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/mlguide_par-mlguide_par.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) \
 	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
@@ -273,31 +269,25 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS = $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES)
+CCLD = $(CXX)
 mlguide_SOURCES = $(srcdir)/mlguide.c
 mlguide_DEPENDENCIES = $(top_builddir)/src/libml.a
 mlguide_LDADD = ${EXAMPLE_LIBS}
 mlguide_CFLAGS = ${EXAMPLE_INCLUDES}
-mlguide_LINK = ${ML_LINK}
 mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 mlguide_par_DEPENDENCIES = $(top_builddir)/src/libml.a
 mlguide_par_LDADD = ${EXAMPLE_LIBS}
 mlguide_par_CFLAGS = ${EXAMPLE_INCLUDES}
-mlguide_par_LINK = ${ML_LINK}
 ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
 ml_example1d_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example1d_LDADD = ${EXAMPLE_LIBS}
 ml_example1d_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_example1d_LINK = ${ML_LINK}
 ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
 ml_example1dGS_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example1dGS_LDADD = ${EXAMPLE_LIBS}
 ml_example1dGS_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_example1dGS_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
@@ -336,16 +326,16 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 ml_example1d$(EXEEXT): $(ml_example1d_OBJECTS) $(ml_example1d_DEPENDENCIES) 
 	@rm -f ml_example1d$(EXEEXT)
-	$(ml_example1d_LINK) $(ml_example1d_LDFLAGS) $(ml_example1d_OBJECTS) $(ml_example1d_LDADD) $(LIBS)
+	$(LINK) $(ml_example1d_LDFLAGS) $(ml_example1d_OBJECTS) $(ml_example1d_LDADD) $(LIBS)
 ml_example1dGS$(EXEEXT): $(ml_example1dGS_OBJECTS) $(ml_example1dGS_DEPENDENCIES) 
 	@rm -f ml_example1dGS$(EXEEXT)
-	$(ml_example1dGS_LINK) $(ml_example1dGS_LDFLAGS) $(ml_example1dGS_OBJECTS) $(ml_example1dGS_LDADD) $(LIBS)
+	$(LINK) $(ml_example1dGS_LDFLAGS) $(ml_example1dGS_OBJECTS) $(ml_example1dGS_LDADD) $(LIBS)
 mlguide$(EXEEXT): $(mlguide_OBJECTS) $(mlguide_DEPENDENCIES) 
 	@rm -f mlguide$(EXEEXT)
-	$(mlguide_LINK) $(mlguide_LDFLAGS) $(mlguide_OBJECTS) $(mlguide_LDADD) $(LIBS)
+	$(LINK) $(mlguide_LDFLAGS) $(mlguide_OBJECTS) $(mlguide_LDADD) $(LIBS)
 mlguide_par$(EXEEXT): $(mlguide_par_OBJECTS) $(mlguide_par_DEPENDENCIES) 
 	@rm -f mlguide_par$(EXEEXT)
-	$(mlguide_par_LINK) $(mlguide_par_LDFLAGS) $(mlguide_par_OBJECTS) $(mlguide_par_LDADD) $(LIBS)
+	$(LINK) $(mlguide_par_LDFLAGS) $(mlguide_par_OBJECTS) $(mlguide_par_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -601,7 +591,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

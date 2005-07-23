@@ -83,12 +83,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_ml_example2d_OBJECTS = ml_example2d-ml_example2d.$(OBJEXT)
 ml_example2d_OBJECTS = $(am_ml_example2d_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ML_EXTRA_LIBS))
 am_ml_example3d_OBJECTS = ml_example3d-ml_example3d.$(OBJEXT)
 ml_example3d_OBJECTS = $(am_ml_example3d_OBJECTS)
-am_ml_read_elas_OBJECTS = ml_read_elas.$(OBJEXT)
+am_ml_read_elas_OBJECTS = ml_read_elas-ml_read_elas.$(OBJEXT)
 ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
 am_ml_read_salsa_OBJECTS = ml_read_salsa-ml_read_salsa.$(OBJEXT)
 ml_read_salsa_OBJECTS = $(am_ml_read_salsa_OBJECTS)
@@ -101,13 +98,12 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_example2d-ml_example2d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example3d-ml_example3d.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_recirc-ml_recirc.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) \
 	$(ml_read_elas_SOURCES) $(ml_read_salsa_SOURCES) \
@@ -282,41 +278,33 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS) $(ML_EXTRA_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES) $(ML_EXTRA_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+EXAMPLE_LIBS = $(ML_LIBS)     $(ML_EXTRA_LIBS)
+EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+CCLD = $(CXX)
 ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
 ml_example2d_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example2d_LDADD = ${EXAMPLE_LIBS}
 ml_example2d_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_example2d_LINK = ${ML_LINK}
 ml_example3d_SOURCES = $(srcdir)/ml_example3d.c
 ml_example3d_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example3d_LDADD = ${EXAMPLE_LIBS}
 ml_example3d_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_example3d_LINK = ${ML_LINK}
 ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 ml_read_elas_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_read_elas_LDADD = ${EXAMPLE_LIBS}
-ml_reas_elas_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_read_elas_LINK = ${ML_LINK}
+ml_read_elas_CFLAGS = ${EXAMPLE_INCLUDES}
 ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
 ml_readfile_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_readfile_LDADD = ${EXAMPLE_LIBS}
 ml_readfile_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_readfile_LINK = ${ML_LINK}
 ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
 ml_read_salsa_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_read_salsa_LDADD = ${EXAMPLE_LIBS}
 ml_read_salsa_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_read_salsa_LINK = ${ML_LINK}
 ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 ml_recirc_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_recirc_LDADD = ${EXAMPLE_LIBS}
 ml_recirc_CFLAGS = ${EXAMPLE_INCLUDES}
-ml_recirc_LINK = ${ML_LINK}
 all: all-am
 
 .SUFFIXES:
@@ -355,22 +343,22 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 ml_example2d$(EXEEXT): $(ml_example2d_OBJECTS) $(ml_example2d_DEPENDENCIES) 
 	@rm -f ml_example2d$(EXEEXT)
-	$(ml_example2d_LINK) $(ml_example2d_LDFLAGS) $(ml_example2d_OBJECTS) $(ml_example2d_LDADD) $(LIBS)
+	$(LINK) $(ml_example2d_LDFLAGS) $(ml_example2d_OBJECTS) $(ml_example2d_LDADD) $(LIBS)
 ml_example3d$(EXEEXT): $(ml_example3d_OBJECTS) $(ml_example3d_DEPENDENCIES) 
 	@rm -f ml_example3d$(EXEEXT)
-	$(ml_example3d_LINK) $(ml_example3d_LDFLAGS) $(ml_example3d_OBJECTS) $(ml_example3d_LDADD) $(LIBS)
+	$(LINK) $(ml_example3d_LDFLAGS) $(ml_example3d_OBJECTS) $(ml_example3d_LDADD) $(LIBS)
 ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
 	@rm -f ml_read_elas$(EXEEXT)
-	$(ml_read_elas_LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
+	$(LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
 ml_read_salsa$(EXEEXT): $(ml_read_salsa_OBJECTS) $(ml_read_salsa_DEPENDENCIES) 
 	@rm -f ml_read_salsa$(EXEEXT)
-	$(ml_read_salsa_LINK) $(ml_read_salsa_LDFLAGS) $(ml_read_salsa_OBJECTS) $(ml_read_salsa_LDADD) $(LIBS)
+	$(LINK) $(ml_read_salsa_LDFLAGS) $(ml_read_salsa_OBJECTS) $(ml_read_salsa_LDADD) $(LIBS)
 ml_readfile$(EXEEXT): $(ml_readfile_OBJECTS) $(ml_readfile_DEPENDENCIES) 
 	@rm -f ml_readfile$(EXEEXT)
-	$(ml_readfile_LINK) $(ml_readfile_LDFLAGS) $(ml_readfile_OBJECTS) $(ml_readfile_LDADD) $(LIBS)
+	$(LINK) $(ml_readfile_LDFLAGS) $(ml_readfile_OBJECTS) $(ml_readfile_LDADD) $(LIBS)
 ml_recirc$(EXEEXT): $(ml_recirc_OBJECTS) $(ml_recirc_DEPENDENCIES) 
 	@rm -f ml_recirc$(EXEEXT)
-	$(ml_recirc_LINK) $(ml_recirc_LDFLAGS) $(ml_recirc_OBJECTS) $(ml_recirc_LDADD) $(LIBS)
+	$(LINK) $(ml_recirc_LDFLAGS) $(ml_recirc_OBJECTS) $(ml_recirc_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -380,7 +368,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example3d-ml_example3d.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_recirc-ml_recirc.Po@am__quote@
@@ -433,21 +421,21 @@ ml_example3d-ml_example3d.obj: $(srcdir)/ml_example3d.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example3d_CFLAGS) $(CFLAGS) -c -o ml_example3d-ml_example3d.obj `if test -f '$(srcdir)/ml_example3d.c'; then $(CYGPATH_W) '$(srcdir)/ml_example3d.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example3d.c'; fi`
 
-ml_read_elas.o: $(srcdir)/ml_read_elas.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_read_elas.o -MD -MP -MF "$(DEPDIR)/ml_read_elas.Tpo" -c -o ml_read_elas.o `test -f '$(srcdir)/ml_read_elas.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_elas.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_elas.Tpo" "$(DEPDIR)/ml_read_elas.Po"; else rm -f "$(DEPDIR)/ml_read_elas.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_elas.c' object='ml_read_elas.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_elas.Po' tmpdepfile='$(DEPDIR)/ml_read_elas.TPo' @AMDEPBACKSLASH@
+ml_read_elas-ml_read_elas.o: $(srcdir)/ml_read_elas.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -MT ml_read_elas-ml_read_elas.o -MD -MP -MF "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" -c -o ml_read_elas-ml_read_elas.o `test -f '$(srcdir)/ml_read_elas.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_elas.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" "$(DEPDIR)/ml_read_elas-ml_read_elas.Po"; else rm -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_elas.c' object='ml_read_elas-ml_read_elas.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_elas-ml_read_elas.Po' tmpdepfile='$(DEPDIR)/ml_read_elas-ml_read_elas.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_read_elas.o `test -f '$(srcdir)/ml_read_elas.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_elas.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -c -o ml_read_elas-ml_read_elas.o `test -f '$(srcdir)/ml_read_elas.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_elas.c
 
-ml_read_elas.obj: $(srcdir)/ml_read_elas.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_read_elas.obj -MD -MP -MF "$(DEPDIR)/ml_read_elas.Tpo" -c -o ml_read_elas.obj `if test -f '$(srcdir)/ml_read_elas.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_elas.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_elas.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_elas.Tpo" "$(DEPDIR)/ml_read_elas.Po"; else rm -f "$(DEPDIR)/ml_read_elas.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_elas.c' object='ml_read_elas.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_elas.Po' tmpdepfile='$(DEPDIR)/ml_read_elas.TPo' @AMDEPBACKSLASH@
+ml_read_elas-ml_read_elas.obj: $(srcdir)/ml_read_elas.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -MT ml_read_elas-ml_read_elas.obj -MD -MP -MF "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" -c -o ml_read_elas-ml_read_elas.obj `if test -f '$(srcdir)/ml_read_elas.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_elas.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_elas.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" "$(DEPDIR)/ml_read_elas-ml_read_elas.Po"; else rm -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_elas.c' object='ml_read_elas-ml_read_elas.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_elas-ml_read_elas.Po' tmpdepfile='$(DEPDIR)/ml_read_elas-ml_read_elas.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_read_elas.obj `if test -f '$(srcdir)/ml_read_elas.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_elas.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_elas.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -c -o ml_read_elas-ml_read_elas.obj `if test -f '$(srcdir)/ml_read_elas.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_elas.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_elas.c'; fi`
 
 ml_read_salsa-ml_read_salsa.o: $(srcdir)/ml_read_salsa.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_salsa_CFLAGS) $(CFLAGS) -MT ml_read_salsa-ml_read_salsa.o -MD -MP -MF "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo" -c -o ml_read_salsa-ml_read_salsa.o `test -f '$(srcdir)/ml_read_salsa.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_salsa.c; \
@@ -660,7 +648,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

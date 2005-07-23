@@ -26,28 +26,17 @@
 # ************************************************************************
 #@HEADER
 
-EXEEXT = .exe
-
-
-# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
 include $(top_builddir)/Makefile.export
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs =       $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
+
+TEST_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
+TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)
+
+EXEEXT = .exe
 
 noinst_PROGRAMS = ML_Operator2Epetra_RowMatrix 
 
-ML_Operator2Epetra_RowMatrix_SOURCES = $(srcdir)/ML_Operator2Epetra_RowMatrix.cpp
+ML_Operator2Epetra_RowMatrix_SOURCES      = $(srcdir)/ML_Operator2Epetra_RowMatrix.cpp
 
-ML_Operator2Epetra_RowMatrix_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a
-
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-ML_Operator2Epetra_RowMatrix_CPPFLAGS = ${ml_common_include_locations}
-ML_Operator2Epetra_RowMatrix_CXXFLAGS = ${ml_common_include_locations}
-ML_Operator2Epetra_RowMatrix_LDADD = ${ml_libs}
-ML_Operator2Epetra_RowMatrix_LINK = ${mllink}
+ML_Operator2Epetra_RowMatrix_DEPENDENCIES = $(top_builddir)/src/libml.a
+ML_Operator2Epetra_RowMatrix_CXXFLAGS     = ${TEST_INCLUDES}
+ML_Operator2Epetra_RowMatrix_LDADD        = ${TEST_LIBS}

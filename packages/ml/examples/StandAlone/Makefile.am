@@ -1,16 +1,9 @@
 #@HEADER
 
-include $(top_builddir)/Makefile.export.ml
+include $(top_builddir)/Makefile.export
 
-if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ML_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
-else
 EXAMPLE_LIBS     = $(ML_LIBS)
 EXAMPLE_INCLUDES = $(ML_INCLUDES)
-endif
-
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -21,26 +14,24 @@ noinst_PROGRAMS = ml_example1d  \
                   mlguide   \
                   mlguide_par
 
+CCLD = $(CXX)
+
 mlguide_SOURCES      = $(srcdir)/mlguide.c
 mlguide_DEPENDENCIES = $(top_builddir)/src/libml.a
 mlguide_LDADD        = ${EXAMPLE_LIBS}
 mlguide_CFLAGS       = ${EXAMPLE_INCLUDES}
-mlguide_LINK         = ${ML_LINK}
 
 mlguide_par_SOURCES      = $(srcdir)/mlguide_par.c
 mlguide_par_DEPENDENCIES = $(top_builddir)/src/libml.a
 mlguide_par_LDADD        = ${EXAMPLE_LIBS}
 mlguide_par_CFLAGS       = ${EXAMPLE_INCLUDES}
-mlguide_par_LINK         = ${ML_LINK}
 
 ml_example1d_SOURCES      = $(srcdir)/ml_example1d.c
 ml_example1d_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example1d_LDADD        = ${EXAMPLE_LIBS}
 ml_example1d_CFLAGS       = ${EXAMPLE_INCLUDES}
-ml_example1d_LINK         = ${ML_LINK}
 
 ml_example1dGS_SOURCES      = $(srcdir)/ml_example1dGS.c
 ml_example1dGS_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_example1dGS_LDADD        = ${EXAMPLE_LIBS}
 ml_example1dGS_CFLAGS       = ${EXAMPLE_INCLUDES}
-ml_example1dGS_LINK         = ${ML_LINK}
