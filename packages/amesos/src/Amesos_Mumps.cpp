@@ -319,10 +319,6 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 
   SetControlParameters( ParameterList );
 
-  // solve problem with transpose
-  if( ParameterList.isParameter("UseTranspose") )
-    SetUseTranspose(ParameterList.get("UseTranspose",false));
-  
   //  Tthreshold_ is unused at the moment
   //  // ignore all elements below given tolerance
   //  if( ParameterList.isParameter("Threshold") )

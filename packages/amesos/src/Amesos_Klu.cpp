@@ -350,10 +350,6 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   SetControlParameters( ParameterList );
 
-  // solve problem with transpose
-  if( ParameterList.isParameter("UseTranspose") )
-    SetUseTranspose(ParameterList.get("UseTranspose",UseTranspose()));
-
   // MS // now comment it out, if we have parameters for KLU sublist
   // MS // uncomment it
   /*

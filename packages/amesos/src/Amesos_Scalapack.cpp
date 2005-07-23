@@ -686,13 +686,6 @@ int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   
   // retrive general parameters
 
-#if 0
-  // solve problem with transpose
-  if( ParameterList.isParameter("UseTranspose") )
-    UseTrans = ParameterList.get("UseTranspose",UseTrans);
-  SetUseTranspose(UseTrans);
-#endif
-
   if (ParameterList.isSublist("Scalapack") ) {
     Teuchos::ParameterList ScalapackParams = ParameterList.sublist("Scalapack") ;
     TwoD_distribution_ = ScalapackParams.get("2D distribution",TwoD_distribution_);

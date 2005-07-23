@@ -198,10 +198,6 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList )
   SetStatusParameters( ParameterList ) ;
   SetControlParameters( ParameterList ) ;
 
-  // solve problem with transpose
-  if (ParameterList.isParameter("UseTranspose"))
-    SetUseTranspose(ParameterList.get("UseTranspose",false));
-
   return 0;
 }
 
