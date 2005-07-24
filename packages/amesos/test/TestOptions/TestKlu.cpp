@@ -12,8 +12,11 @@
 //  Tests:
 //     1)  no parameters
 //     2)  Refactorize = true 
+//     2A)  AddToDiag = 1e-12
+#if 0
 //     3)  ScaleMethod = 1 - argh I don't see how ScaleMEthod can work
 //     4)  ComputeTrueResidual==true
+#endif
 //
 int TestKlu( Epetra_CrsMatrix *& Amat, 
 	     int EpetraMatrixType,
@@ -43,8 +46,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 1) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
 					Comm, 
@@ -58,12 +59,13 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					relresidual ) ;
 
       
+    if ( Amat->Comm().MyPID() == 0 && Errors ) {
+      cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      }
     if (Errors < 0 ) {
       NumErrors++;
       NumTests++ ; 
-      if ( verbose ) {
-	cout << "Amesos_Klu failed with error code " << Errors<< endl ; 
-      }
     } else { 
       NumErrors += Errors ; 
 	
@@ -78,8 +80,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	
     }
     if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
-    if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Klu" << " failed with transpose = " << 
+    if ( Amat->Comm().MyPID() == 0 && Errors > 0 ) {
+      cout << "Amesos_Klu" 
+	   << __FILE__ << "::"  << __LINE__ 
+	   << " Errors = " <<  Errors 
+	   << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
   }
@@ -92,8 +97,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 1) no fail second time through yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
 					Comm, 
@@ -107,12 +110,13 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
 
       
-    if (Errors < 0 ) {
+    if ( Amat->Comm().MyPID() == 0 && Errors ) {
+      cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      }
+    if ( Errors < 0 ) {
       NumErrors++;
       NumTests++ ; 
-      if ( verbose ) {
-	cout << "Amesos_Klu failed with error code " << Errors<< endl ; 
-      }
     } else { 
       NumErrors += Errors ; 
 	
@@ -127,8 +131,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	
     }
     if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
-    if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Klu" << " failed with transpose = " << 
+    if (  Amat->Comm().MyPID() == 0 && Errors > 0 ) {
+      cout 
+	<< __FILE__ << "::"  << __LINE__ 
+	   << " Errors = " <<  Errors 
+	<< "Amesos_Klu" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
   }
@@ -144,8 +151,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Klu Test 2) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
 					Comm, 
@@ -158,11 +163,13 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					relerror, 
 					relresidual ) ; 
       
-    if ( verbose ) cout << " Test 2) no fail here either " << endl ; 
-
-    if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
-      return 0 ; 
+    if (  Amat->Comm().MyPID() == 0 && Errors ) {
+      cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      }
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
     } else { 
       NumErrors += Errors ; 
 	
@@ -177,9 +184,12 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	
     }
     if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
-    if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Klu" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ; 
+    if (  Amat->Comm().MyPID() == 0 && Errors > 0 ) {
+      cout << "Amesos_Klu" 
+	   << __FILE__ << "::"  << __LINE__ 
+	   << " Errors = " <<  Errors 
+	   << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
     }
   }
   //
@@ -190,12 +200,10 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "Refactorize", true );
     ParamList.set( "AddToDiag", 1e-2 );
-      
+
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Klu Test 2) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
 					Comm, 
@@ -208,12 +216,14 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					relerror, 
 					relresidual ) ; 
       
-    if ( verbose ) cout << " Test 2) no fail here either " << endl ; 
-
-    if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
-      return 0 ; 
-    } else { 
+    if (  Amat->Comm().MyPID() == 0 && Errors ) {
+      cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      }
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
+    } else {
       NumErrors += Errors ; 
 	
       maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
@@ -227,10 +237,12 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	
     }
     if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
-    if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Klu" << " failed with transpose = " << 
+    if ( Comm.MyPID() == 0 && Errors > 0 ) {
+      cout << "Amesos_Klu" 
+	   << __FILE__ << "::"  << __LINE__ 
+	   << " Errors = " <<  Errors 
+	   << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
-      exit( -13 ) ; 
     }
   }
 
@@ -246,8 +258,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 3) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					Comm, 
 					transpose, 
@@ -299,8 +309,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 4) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
 					Comm, 

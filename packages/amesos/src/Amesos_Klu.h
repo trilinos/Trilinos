@@ -212,8 +212,7 @@ private:
     Preconditions:
       numentries_, NumGloalElements_ and SerialMatrix_ must be set.
     Postconditions:
-      Ai, Ap, and Aval are resized and populated with a compresses row storage 
-      version of the input matrix A.
+      Ai, Ap, and Aval piont to a compressed row storage version of the input matrix A.
   */
   int ConvertToKluCRS(bool firsttime);     
 
@@ -221,7 +220,7 @@ private:
     PerformSymbolicFactorization - Call Klu to perform symbolic factorization
     Preconditions:
       UseDataInPlace_ must be set to 1 if the input matrix is entirely stored on process 0
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
+      Ap, Ai and Aval point to a compressed row storage version of the input matrix A.
     Postconditions:
       Symbolic points to an KLU internal opaque object containing the
         symbolic factorization and accompanying information.  
@@ -235,7 +234,7 @@ private:
     PerformNumericFactorization - Call Klu to perform numeric factorization
     Preconditions:
       UseDataInPlace_ must be set 
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
+      Ap, Ai and Aval point to a compressed row storage version of the input matrix A.
       Symbolic must be set
     Postconditions:
       Numeric points to an KLU internal opaque object containing the
@@ -261,9 +260,14 @@ private:
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexDomain_; 
 
   //! Ap, Ai, Aval form the compressed row storage used by Klu
+  //! Ai and Aval can point directly into a matrix if it is StorageOptimized(), hence
+  //! they may either be in vector form or may be a pointer into Epetra_CrsMatrix 
+  //! internals.  Ap must always be constructed.  
   vector <int> Ap;
-  vector <int> Ai;
-  vector <double> Aval;
+  vector <int> VecAi;
+  vector <double> VecAval;
+  double* Aval;
+  int *Ai;
 
   //! Process number (i.e. Comm().MyPID()).
   int iam;

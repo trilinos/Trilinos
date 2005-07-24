@@ -303,7 +303,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   for ( int iterTrans =0 ; iterTrans < 2; iterTrans++ ) {
     bool transpose = iterTrans == 1 ; 
     
-    for ( int iterDist =0 ; iterDist < iterDistMax; iterDist++ ) {
+    for ( int iterDist =0; iterDist < iterDistMax; iterDist++ ) {  
       bool distribute = ( iterDist == 1 ); 
 	
       //
@@ -322,7 +322,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 	    for ( int iterDomainmap = 0 ; iterDomainmap < ThisDomainmapMax; iterDomainmap++ ) {
 	      for ( int iterDiagonalOpts = 0 ; iterDiagonalOpts < DiagonalOptsMax; iterDiagonalOpts++ ) {
 #else
-		int iterRowindex = 1; { 
+		int iterRowindex = 0; { 
 		  int iterColindex = 0 ; { 
 		    int iterRangemap = 0 ; { 
 		      int iterDomainmap = 0 ; {
@@ -387,7 +387,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		      Level = EPETRA_MIN( 1, MaxLevel );
 		      MaxError = Rcond*Rcond1*Rcond2;
 		    }
-		    NumErrors += TestAllClasses( AmesosClasses, EpetraMatrixType, 
+		    int Error = TestAllClasses( AmesosClasses, EpetraMatrixType, 
 						 AmesosClassesInstalled, 
 						 Cmat, 
 						 transpose, 
@@ -405,8 +405,11 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 						 error, 
 						 residual, 
 						 NumTests ) ;
-		    if ( verbose ) {
+		    NumErrors += Error ;
+		    if ( Comm.MyPID() == 0  && ( verbose || Error ) ) {
 		      cout << " Testing  " << filename 
+			   << __FILE__ << "::"  << __LINE__
+			   << " EpetraMatrixType = " <<  EpetraMatrixType 
 			   << (transpose?" transpose":"" ) 
 			   << (distribute?" distribute":"" ) << " error = " 
 			   << error 

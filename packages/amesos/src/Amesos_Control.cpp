@@ -38,6 +38,10 @@ void Amesos_Control::SetControlParameters(Teuchos::ParameterList &ParameterList)
   if( ParameterList.isParameter("AddToDiag") )
     AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
 
+  // add this value to diagonal
+  if( ParameterList.isParameter("Refactorize") )
+    refactorize_ = ParameterList.get("Refactorize", refactorize_);
+
   // threshold for determining if refactorize worked OK
   // UNUSED at present - KSS June 2004
   if( ParameterList.isParameter("RcondThreshold") )

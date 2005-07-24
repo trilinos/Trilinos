@@ -113,7 +113,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     //
     //  Now add AddToDiag to each diagonal element.  
     //
-    double AddToDiag = ParamList.get("AddToDiag", AddToDiag );
+    double AddToDiag = ParamList.get("AddToDiag", 0.0 );
     Epetra_Vector Diag( MyMatWithDiag->RowMap() );
     Epetra_Vector AddConstVecToDiag( MyMatWithDiag->RowMap() );
     AddConstVecToDiag.PutScalar( AddToDiag );
@@ -271,7 +271,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	//      We do not presently handle null lists.
 	//	OUR_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
+	if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 	
       }
     else
@@ -284,7 +284,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	Problem.SetLHS( &x );
 	Problem.SetRHS( &sAx );
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
+	if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
       }
     else
       {
@@ -395,7 +395,9 @@ int PerformOneSolveAndTest( const char* AmesosClass,
       if ( relresidual * Rcond < 1e-16 ) {
 	if (verbose) cout << " Test 1 Passed " << endl ;
       } else {
-	if (verbose) cout << " TEST 1 FAILED " << endl ;
+	cout <<  __FILE__ << "::"  << __LINE__ << 
+	  " relresidual = " << relresidual <<
+	  " TEST 1 FAILED " << endl ;
 	errors += 1 ; 
       }
     }
@@ -461,8 +463,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Problem.SetRHS( &Bb );
     OUR_CHK_ERR( Abase->Solve(  ) ); 
 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-
     ind[0] = 0;
     val[0] = 1 ; 
     if ( B.MyGRID( 0 ) )
@@ -479,9 +479,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Problem.SetRHS( &Bx );
     OUR_CHK_ERR( Abase->Solve(  ) ); 
 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-    //  if (verbose) cout << " x1 = " << x1 << endl ; 
-
     if ( B.MyGRID( 0 ) )
       B.SumIntoMyValues( 0, 1, val, ind ) ; 
 
@@ -495,9 +492,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Problem.SetLHS( &Bx2 );
     Problem.SetRHS( &Bx1 );
     OUR_CHK_ERR( Abase->Solve(  ) ); 
-
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-    //  if (verbose) cout << " x2 = " << x2 << endl ; 
 
     //
     //  Compute the residual: B B' B" x2 - b
@@ -547,7 +541,9 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 				    BNumPoints*BNumPoints*BNumPoints) ) {
 	if (verbose) cout << " Test 2 Passed " << endl ;
       } else {
-	if (verbose) cout << " TEST 2 FAILED " << endl ;
+	cout 
+	  << __FILE__ << "::"  << __LINE__ 
+	  << " TEST 2 FAILED " << endl ;
 	errors += 1 ; 
       }
     }

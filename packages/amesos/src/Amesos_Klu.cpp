@@ -81,6 +81,7 @@ Amesos_Klu::~Amesos_Klu(void) {
 
   delete PrivateKluData_;
 
+
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
@@ -106,10 +107,10 @@ int Amesos_Klu::ExportToSerial()
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
 
-    Comm().Barrier();
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
+    AMESOS_CHK_ERR(SerialCrsMatrixA_->OptimizeStorage());
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
 
     if( numentries_ != SerialMatrix_->NumGlobalNonzeros()) {
@@ -179,7 +180,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   if (Reindex_) 
   {
     if (CrsMatrixA_ == 0)
-      AMESOS_CHK_ERR(-1);
+      AMESOS_CHK_ERR(-4);
   }
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   if  ( Reindex_ ) {
@@ -191,41 +192,40 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     StdIndexRange_ = rcp( new Amesos_StandardIndex( OriginalRangeMap  ) );
 
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-    //    StdIndexMatrix_ = &((*MatTrans_)( *CrsMatrixA_ ));
     StdIndexMatrix_ = StdIndex_->StandardizeIndex( CrsMatrixA_ );
 #else
-    cout << "Amesos_Klu requires EpetraExt to reindex matrices." << endl 
+    cerr << "Amesos_Klu requires EpetraExt to reindex matrices." << endl 
 	 <<  " Please rebuild with the EpetraExt library by adding --enable-epetraext to your configure invocation" << endl ;
-    return 13 ; 
+    AMESOS_CHK_ERR(-4);
 #endif
   } else { 
     StdIndexMatrix_ = RowMatrixA_ ;
   }
 
+
   //
   //  Convert Original Matrix to Serial (if it is not already)
   //
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " UseDataInPlace_ = " << UseDataInPlace_ << endl ; 
   if (UseDataInPlace_ == 1) {
     SerialMatrix_ = StdIndexMatrix_;
   } else {
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ 
+		     << " NumGlobalElements_ = " << NumGlobalElements_
+		     << " NumMyElements_ = " << NumMyElements_
+		     << " iam = " << iam << endl ; 
     SerialMap_ = rcp(new Epetra_Map(NumGlobalElements_, NumMyElements_, 0, Comm()));
     
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->RowMatrixRowMap() ) );
-    
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-    if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-1);
+    if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-5);
 
-#if 0    
-    assert ( OriginalRangeMap.SameAs( OriginalMatrixMap ) ) ;
-    assert ( OriginalDomainMap.SameAs( OriginalMatrixMap ) );
-#endif    
-   
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
-    SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) )
-      ;
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) ) ;
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
   }
 AddTime("matrix redistribution");
 
@@ -254,7 +254,7 @@ assert( false ) ;
 //      (i.e. CreateLocalMatrixAndExporters() has been callded)
 //
 //  Postconditions:
-//    Ap, Ai, Aval contain the matrix as Klu needs it
+//    Ap, VecAi, VecAval contain the matrix as Klu needs it
 //
 //
 int Amesos_Klu::ConvertToKluCRS(bool firsttime)
@@ -263,75 +263,129 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
   ResetTime();
 
   //
-  //  Convert matrix to the form that Klu expects (Ap, Ai, Aval)
+  //  Convert matrix to the form that Klu expects (Ap, VecAi, VecAval)
   //
 
   if (iam==0) {
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
-
-#if 0    
-    cout << __FILE__ << "::" << __LINE__ 
-	 << " numentries_ = " <<  numentries_ 
-	 << " SerialMatrix_->NumGlobalNonzeros() = " <<  SerialMatrix_->NumGlobalNonzeros() 
-	 << endl ; 
-#endif
-
     assert( numentries_ == SerialMatrix_->NumGlobalNonzeros()) ;
+
+    Epetra_CrsMatrix *CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
+    bool StorageOptimized = ( CrsMatrix != 0 && CrsMatrix->StorageOptimized() );
+
+    if ( AddToDiag_ != 0.0 ) StorageOptimized = false ;
+
+    if ( debug_)      cout << __FILE__ << "::" << __LINE__
+        << " StorageOptimized = " << StorageOptimized
+        << " firsttime = " << firsttime
+        << endl ;
+
     if ( firsttime ) { 
       Ap.resize( NumGlobalElements_+1 );
-      Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
-      Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
+      if ( ! StorageOptimized ) { 
+	VecAi.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
+	VecAval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
+	Ai = &VecAi[0];
+	Aval = &VecAval[0];
+      }
     }
 
-    int NumEntriesThisRow;
-    int Ai_index = 0 ;
-    int MyRow;
-    Epetra_CrsMatrix *CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
-    //    Epetra_CrsMatrix *CrsMatrix = 0 ;  //  Uncomment this and comment the above line to test how we do with Row Matrices
-
-    int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
-    if ( firsttime && CrsMatrix == 0 ) {
-      ColIndicesV_.resize(MaxNumEntries_);
-      RowValuesV_.resize(MaxNumEntries_);
-    }
     double *RowValues;
     int *ColIndices;
+    int NumEntriesThisRow;
 
-    for ( MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
-      if ( CrsMatrix != 0 ) {
-	EPETRA_CHK_ERR( CrsMatrix->
-			ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
-					  ColIndices ) != 0 ) ;
-      } else {
-	EPETRA_CHK_ERR( SerialMatrix_->
-			ExtractMyRowCopy( MyRow, MaxNumEntries_,
-					  NumEntriesThisRow, &RowValuesV_[0],
-					  &ColIndicesV_[0] ) != 0 ) ;
-	RowValues =  &RowValuesV_[0];
-	ColIndices = &ColIndicesV_[0];
-      }
-
+    if( StorageOptimized ) {
       if ( firsttime ) {
-	Ap[MyRow] = Ai_index ;
-	for ( int j = 0; j < NumEntriesThisRow; j++ ) {
-	  Ai[Ai_index] = ColIndices[j] ;
-	  Ai_index++;
-	}
-      } else { 
-	for ( int j = 0; j < NumEntriesThisRow; j++ ) {
-	  Aval[Ai_index] = RowValues[j] ;     
-          if (ColIndices[j] == MyRow) {
-            Aval[Ai_index] += AddToDiag_;     // Bug #1405   - this fails if the matrix is missing diagonal entries 
+	Ap[0] = 0;
+	if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " thisworks" << endl ; 
+	for ( int MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
+	  EPETRA_CHK_ERR( CrsMatrix->
+			  ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
+					    ColIndices ) != 0 ) ;
+	  if ( MyRow == 0 ) {
+	    Ai = ColIndices ;
+	    Aval = RowValues ;
 	  }
-	  Ai_index++;
+	  Ap[MyRow+1] = Ap[MyRow] + NumEntriesThisRow ;
+	}
+#if 0 
+      } else {
+	//
+	//  pure debug - just make sure that everything is on the up and up
+	//
+	assert( Ap[0] == 0) ;
+	if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " thisworks also " << endl ; 
+	for ( int MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
+	  EPETRA_CHK_ERR( CrsMatrix->
+			  ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
+					    ColIndices ) != 0 ) ;
+	  if ( MyRow == 0 ) {
+	    AMESOS_CHK_ERR( ! (Ai == ColIndices ) );
+	    AMESOS_CHK_ERR( ! ( Aval == RowValues) );
+	  }
+	  assert( Ap[MyRow+1] == Ap[MyRow] + NumEntriesThisRow ) ;
+	}
+#endif
+      }
+    } else { 
+      
+      int Ai_index = 0 ;
+      int MyRow;
+      
+      int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
+      if ( firsttime && CrsMatrix == 0 ) {
+	ColIndicesV_.resize(MaxNumEntries_);
+	RowValuesV_.resize(MaxNumEntries_);
+      }
+      
+      if( debug_ ) cout << __FILE__ <<"::" << __LINE__ << endl ; 
+
+      for ( MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
+	if ( CrsMatrix != 0 ) {
+	  EPETRA_CHK_ERR( CrsMatrix->
+			  ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
+					    ColIndices ) != 0 ) ;
+	} else {
+	  EPETRA_CHK_ERR( SerialMatrix_->
+			  ExtractMyRowCopy( MyRow, MaxNumEntries_,
+					    NumEntriesThisRow, &RowValuesV_[0],
+					    &ColIndicesV_[0] ) != 0 ) ;
+	  RowValues =  &RowValuesV_[0];
+	  ColIndices = &ColIndicesV_[0];
+	}
+	
+      if( debug_ ) cout << __FILE__ <<"::" << __LINE__ << endl ; 
+	if ( firsttime ) {
+	  Ap[MyRow] = Ai_index ;
+	  for ( int j = 0; j < NumEntriesThisRow; j++ ) {
+	    VecAi[Ai_index] = ColIndices[j] ;
+	    //	  assert( VecAi[Ai_index] == Ai[Ai_index] ) ; 
+	    VecAval[Ai_index] = RowValues[j] ;      //  We have to do this because of the hacks to get aroun bug #1502 
+	    if (ColIndices[j] == MyRow) {
+	      VecAval[Ai_index] += AddToDiag_;     // Bug #1405   - this fails if the matrix is missing diagonal entries 
+	    }
+	    Ai_index++;
+	  }
+	} else { 
+	  for ( int j = 0; j < NumEntriesThisRow; j++ ) {
+	    VecAval[Ai_index] = RowValues[j] ;     
+	    if (ColIndices[j] == MyRow) {
+	      VecAval[Ai_index] += AddToDiag_;     // Bug #1405   - this fails if the matrix is missing diagonal entries 
+	    }
+	    Ai_index++;
+	  }
 	}
       }
+      if( debug_ ) cout << __FILE__ <<"::" << __LINE__ << endl ; 
+      Ap[MyRow] = Ai_index ;
     }
-    Ap[MyRow] = Ai_index ;
+      if( debug_ ) cout << __FILE__ <<"::" << __LINE__ << endl ; 
   }
 
   AddTime("matrix conversion");
+
+  if( debug_ ) cout << __FILE__ <<"::" << __LINE__ << " leaving ConvertToKluCRS " << endl ; 
 
   return 0;
 }
@@ -373,7 +427,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
     }
 
     PrivateKluData_->Symbolic_ =
-	klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0], (klu_control *) 0);
+	klu_btf_analyze (NumGlobalElements_, &Ap[0], Ai, (klu_control *) 0);
     if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ;
   }
 
@@ -402,7 +456,7 @@ int Amesos_Klu::PerformNumericFactorization( )
 	// refactorize using the existing Symbolic and Numeric objects, and
 	// using the identical pivot ordering as the prior klu_btf_factor.
 	// No partial pivoting is done.
-	int result = klu_btf_refactor (&Ap[0], &Ai[0], &Aval[0],
+	int result = klu_btf_refactor (&Ap[0], Ai, Aval,
 		    PrivateKluData_->Symbolic_, &control,
 		    PrivateKluData_->Numeric_) ;
 
@@ -439,7 +493,7 @@ int Amesos_Klu::PerformNumericFactorization( )
 
 	// factor the matrix using partial pivoting
 	PrivateKluData_->Numeric_ =
-	    klu_btf_factor (&Ap[0], &Ai[0], &Aval[0],
+	    klu_btf_factor (&Ap[0], Ai, Aval,
 		    PrivateKluData_->Symbolic_, &control) ;
 	if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ;
     }
@@ -502,7 +556,7 @@ int Amesos_Klu::SymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::NumericFactorization() 
 {
- 
+
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering NumericFactorization()" << endl ; 
   IsNumericFactorizationOK_ = false;
   if (IsSymbolicFactorizationOK_ == false)
@@ -517,7 +571,11 @@ int Amesos_Klu::NumericFactorization()
   assert( numentries_ == RowMatrixA_->NumGlobalNonzeros() );
   AMESOS_CHK_ERR( ExportToSerial() );
 
-  AMESOS_CHK_ERR( ConvertToKluCRS(false) );
+  if ( CrsMatrixA == 0 ) {  // continuation of hack to avoid bug #1502
+    AMESOS_CHK_ERR( ConvertToKluCRS(true) );
+  }  else {
+    AMESOS_CHK_ERR( ConvertToKluCRS(false) );
+  }
 
   AMESOS_CHK_ERR( PerformNumericFactorization() );
 

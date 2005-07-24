@@ -278,9 +278,15 @@ class Amesos_BaseSolver {
           Other changes can have arbitrary consequences.
       <li>The distribution of the matrix should not have changed 
           since the last call to SymbolicFactorization()
-      <li>The matrix should be indexed from 0 to n-1, unless the Parameter "Reindex" 
+      <li>The matrix should be indexed from 0 to n-1, unless the parameter "Reindex" 
           was set to "true" prior to the call to SymbolicFactorization().  
           (return -3 - if caught)
+      <li>The paremeter "Reindex" should not be set to "true" except on CrsMatrices.
+          (return -4) 
+      <li>The paremeter "Reindex" should not be set to "true" unless Amesos was built
+          with EpetraExt, i.e. with --enable-epetraext on the configure line.
+          (return -4) 
+      <li>Internal errors retur -5.
       </ul>
 
       <br \>Postconditions:<ul> 
