@@ -941,6 +941,25 @@ C *c_rptr = &*c_ptr;
 c_ptr->f();
 \end{verbatim}}
 %
+<li> {\bf Testing for null}
+%
+{\small\begin{verbatim}
+if( !a_ptr.get() ) std::cout << "a_ptr is null!\n";
+\end{verbatim}}
+%
+or
+%
+{\small\begin{verbatim}
+if( a_ptr == null ) std::cout << "a_ptr is null!\n";
+\end{verbatim}}
+%
+or
+%
+{\small\begin{verbatim}
+if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
+\end{verbatim}}
+
+%
 \end{enumerate}
 
 \item {\bf Casting}

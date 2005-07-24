@@ -328,6 +328,41 @@ Teuchos::rcp( T* p, Dealloc_T dealloc, bool owns_mem )
 	return RefCountPtr<T>(p,dealloc,owns_mem);
 }
 
+template<class T>
+REFCOUNTPTR_INLINE
+bool Teuchos::is_null( const RefCountPtr<T> &p )
+{
+  return p.get() == NULL;
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
+bool Teuchos::operator==( const RefCountPtr<T> &p, ENull )
+{
+  return p.get() == NULL;
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
+bool Teuchos::operator!=( const RefCountPtr<T> &p, ENull )
+{
+  return p.get() != NULL;
+}
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+bool Teuchos::operator==( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 )
+{
+  return p1.access_node() == p2.access_node();
+}
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+bool Teuchos::operator!=( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 )
+{
+  return p1.access_node() != p2.access_node();
+}
+
 template<class T2, class T1>
 REFCOUNTPTR_INLINE
 Teuchos::RefCountPtr<T2>

@@ -85,7 +85,7 @@ below.
 
 \code
 
-class A { public: virtual ~A(){} A& operator=(const A&){} virtual void f(){} };
+class A { public: virtual ~A(){} virtual void f(){} };
 class B1 : virtual public A {};
 class B2 : virtual public A {};
 class C : virtual public B1, virtual public B2 {};
@@ -232,6 +232,24 @@ C *c_rptr = &*c_ptr;
 
 \code
 c_ptr->f();
+\endcode
+
+<li> <b>Testing for null</b>
+
+\code
+if( !a_ptr.get() ) std::cout << "a_ptr is null!\n";
+\endcode
+
+or
+
+\code
+if( a_ptr == null ) std::cout << "a_ptr is null!\n";
+\endcode
+
+or
+
+\code
+if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
 \endcode
 
 </ol>
@@ -608,6 +626,33 @@ template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
  */
 template<class T, class Dealloc_T>
 RefCountPtr<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+
+/** \brief Returns true if <tt>p.get()==NULL</tt>.
+ */
+template<class T>
+bool is_null( const RefCountPtr<T> &p );
+
+/** \brief Returns true if <tt>p.get()==NULL</tt>.
+ */
+template<class T>
+bool operator==( const RefCountPtr<T> &p, ENull );
+
+/** \brief Returns true if <tt>p.get()!=NULL</tt>.
+ */
+template<class T>
+bool operator!=( const RefCountPtr<T> &p, ENull );
+
+/** \brief Return true if two <tt>RefCountPtr</tt> objects point to the same
+ * referenced-counted object.
+ */
+template<class T1, class T2>
+bool operator==( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 );
+
+/** \brief Return true if two <tt>RefCountPtr</tt> objects do not point to the
+ * same referenced-counted object.
+ */
+template<class T1, class T2>
+bool operator!=( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 );
 
 /** \brief Implicit cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *

@@ -186,7 +186,9 @@ int main( int argc, char* argv[] ) {
 
 	using Teuchos::RefCountPtr;
 	using Teuchos::DeallocDelete;
+	using Teuchos::null;
 	using Teuchos::rcp;
+	using Teuchos::is_null;
 	using Teuchos::rcp_implicit_cast;
 	using Teuchos::rcp_const_cast;
 	using Teuchos::rcp_static_cast;
@@ -235,6 +237,9 @@ int main( int argc, char* argv[] ) {
 		TEST_FOR_EXCEPT( a_ptr1.count()  != 1 );
 #endif
 		TEST_FOR_EXCEPT( a_ptr1.get() == NULL );
+		TEST_FOR_EXCEPT( a_ptr1 == null );
+		TEST_FOR_EXCEPT( !(a_ptr1 != null) );
+		TEST_FOR_EXCEPT( is_null(a_ptr1) );
 		RefCountPtr<D>       d_ptr1  = rcp(new E);
 #ifndef __sun
 		TEST_FOR_EXCEPT( d_ptr1.count()  != 1 );
@@ -246,6 +251,8 @@ int main( int argc, char* argv[] ) {
 			// Create some more smart points (no new memory!)
 
 			const RefCountPtr<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
+      TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
+      TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
 #ifndef __sun
 			TEST_FOR_EXCEPT( a_ptr1.count()  != 2 );
 #endif
