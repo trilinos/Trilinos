@@ -1095,14 +1095,6 @@ Thou shall never give a raw C++ pointer returned from operator
   RefCountPtr<A> a_ptr2 = rcp(ra_ptr); // no, No, NO !!!!
 \end{verbatim}}
 
-\begin{commandment}\label{rcp:cmd:rcp-new}
-Thou shall only create a {}\texttt{Ref\-Count\-Ptr<>} object using a
-raw C++ pointer created from {}\texttt{new[]} using {}\texttt{rcp(new
-C[n],DeallocArrayDelete<C)(),true)}.  See item
-({}\ref{rcpqs:apdx:qs:array-new}) in Appendix
-{}\ref{rcpqs:apdx:quickstart}.
-\end{commandment}
-
 \begin{anticommandment}
 Thou shall never give a raw C++ pointer to an array of objects
 returned from operator {}\texttt{new[]} to a
@@ -1112,9 +1104,6 @@ returned from operator {}\texttt{new[]} to a
 {}\noindent{}Example:
 {\small\begin{verbatim}
   RefCountPtr<std::vector<C> > c_array_ptr1 = rcp(new std::vector<C>(N)); // Okay
-  RefCountPtr<C>               c_array_ptr2 = rcp(new C[n]
-                                               ,DeallocArrayDelete<C>()
-                                               ,true);                    // Okay
   RefCountPtr<C>               c_array_ptr3 = rcp(new C[n]);              // no, No, NO!
 \end{verbatim}}
 
