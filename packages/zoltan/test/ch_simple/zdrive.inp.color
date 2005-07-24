@@ -1,0 +1,7 @@
+Decomposition Method    = color
+Zoltan Parameters       = num_global_partitions=2
+Zoltan Parameters       = distance=1
+Zoltan Parameters       = debug_level=3
+File Type               = Chaco
+File Name               = simple
+Parallel Disk Info      = number=0
