@@ -234,6 +234,20 @@ C *c_rptr = &*c_ptr;
 c_ptr->f();
 \endcode
 
+<li> <b>Testing for non-null</b>
+
+\code
+if( a_ptr.get() ) std::cout << "a_ptr is not null!\n";
+\endcode
+
+or
+
+\code
+if( a_ptr != null ) std::cout << "a_ptr is not null!\n";
+\endcode
+
+or
+
 <li> <b>Testing for null</b>
 
 \code
