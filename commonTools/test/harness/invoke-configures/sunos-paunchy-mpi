@@ -30,7 +30,7 @@ CPPFLAGS="-I/local/arch/sun/sunos/mpi/mpich/lib/sun4/ch_p4 \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
---enable-ifpack \
+--disable-ifpack \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
