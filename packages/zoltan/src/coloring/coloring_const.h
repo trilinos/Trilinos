@@ -5,31 +5,26 @@
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
- *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
+ *    $$
+ *    $$
+ *    $$
+ *    $$
  ****************************************************************************/
 
-#ifndef __COLORING_H
-#define __COLORING_H
+
+#ifndef __COLORING_CONST_H
+#define __COLORING_CONST_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include <ctype.h>
-#include "zz_const.h"
-#include "zz_util_const.h"
-#include "coloring_const.h"
 
-/* Macro for error handling */
-#define ZOLTAN_COLOR_ERROR(error,str) {ierr = error ; \
- ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
-    
-    
+extern int Zoltan_Color_Set_Param(char *, char *);
+
 #ifdef __cplusplus
-}
+} /* closing bracket for extern "C" */
 #endif
+
 #endif
