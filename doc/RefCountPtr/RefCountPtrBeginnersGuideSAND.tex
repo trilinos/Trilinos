@@ -755,6 +755,13 @@ template<class T>            RefCountPtr<T>   rcp( T* p );
 template<class T>            RefCountPtr<T>   rcp( T* p, bool owns_mem);
 template<class T
   ,class Dealloc_T>          RefCountPtr<T>   rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+template<class T>            bool             is_null(const RefCountPtr<T>& p);
+template<class T>            bool             operator==(const RefCountPtr<T>& p, ENull);
+template<class T>            bool             operator!=(const RefCountPtr<T>& p, ENull);
+template<class T2, class T1> bool             operator==(const RefCountPtr<T1>& p1
+                                                         ,const RefCountPtr<T2>& p2 );
+template<class T2, class T1> bool             operator!=(const RefCountPtr<T1>& p1
+                                                         ,const RefCountPtr<T2>& p2 );
 template<class T2, class T1> RefCountPtr<T2>  rcp_implicit_cast(const RefCountPtr<T1>& p1);
 template<class T2, class T1> RefCountPtr<T2>  rcp_static_cast(const RefCountPtr<T1>& p1);
 template<class T2, class T1> RefCountPtr<T2>  rcp_const_cast(const RefCountPtr<T1>& p1);
@@ -768,6 +775,8 @@ template<class T1, class T2> T1&              get_extra_data( RefCountPtr<T2>& p
                                                 ,const std::string& name );
 template<class T1, class T2> const T1&        get_extra_data( const RefCountPtr<T2>& p
                                                 ,const std::string& name );
+\end{verbatim}}
+{\scriptsize\begin{verbatim}
 template<class Dealloc_T
   , class T>                 Dealloc_T&       get_dealloc( RefCountPtr<T>& p );
 template<class Dealloc_T
