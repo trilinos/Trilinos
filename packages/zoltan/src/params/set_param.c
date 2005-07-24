@@ -36,8 +36,9 @@ extern "C" {
 #include "order_const.h"
 #ifdef ZOLTAN_HG
 #include "hg_const.h"
-#include "phg_const.h"
+#include "phg_const.h"    
 #endif
+#include "coloring_const.h"
 
 static int add_param(ZZ *, char **, char **, int);
 static int remove_param(ZZ *, char *, int);
@@ -60,6 +61,7 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_PHG_Set_Param,
 #endif
        /* Zoltan_Set_Machine_Param, */
+       Zoltan_Color_Set_Param,
        /*** Add your new parameter setting function here! ***/
        NULL /* Last entry _must_ be NULL! */
 };
