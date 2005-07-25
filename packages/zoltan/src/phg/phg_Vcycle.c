@@ -215,7 +215,8 @@ int Zoltan_PHG_Partition (
       int *match = NULL;
       VCycle *coarser=NULL;
         
-      prevVcnt=hg->dist_x[hgc->nProc_x];
+      prevVcnt     = hg->dist_x[hgc->nProc_x];
+      prevVedgecnt = hg->dist_y[hgc->nProc_y];
 
 #ifdef _DEBUG      
       /* UVC: load balance stats */
