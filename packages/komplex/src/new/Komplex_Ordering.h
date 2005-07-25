@@ -28,71 +28,160 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 //@HEADER
 
-//! Komplex_Ordering: The Komplex Ordering Class.
-/*! The Komplex_Ordering class defines the ordering for a Komplex_RowMatrix object.
+#ifndef KOMPLEX_ORDERING_H
+#define KOMPLEX_ORDERING_H
 
-The different K forms (K1, K2, K3, K4, K14, and K23) of an equivalent real formulation can 
-easily convert back and forth by going from one K form to the canonical form to another K 
-form.  The Komplex_Ordering that each Komplex_RowMatrix object has is what determines the 
-conversions.  Let Kanon stand for the canonical form of a complex matrix in equivalent real 
-formulation.  Then any K form is equivalent to:
-           P_l * Kanon * P_r * D_r,
-where P_l, P_r are specific permutation matrices and D_r is a specific right diagonal scaling matrix.
-This is helpful because certain forms are advantageous in certain conditions.  To be able to convert
-back and forth during preconditioning and solving should allow for faster, more accurate solutions.
+
+class Epetra_BlockMap;
+class Komplex_MultiVector;
+
+#include "Komplex_KForms.hpp"
+#include "Epetra_Vector.h"
+
+//! Komplex_Ordering: A class for manipulating the KForm of various Komplex objects.
+
+/*! The Komplex_Ordering class aids other Komplex classes in switching from one KForm to another with minimal amounts
+  of swapping.
 */
 
+//==========================================================================
 class Komplex_Ordering {
+  
+public:
+  
+  //@{ \name Constructor/destructor.
+  //! Basic Komplex_Ordering constuctor.
+  /*! Creates a Komplex_Ordering object.    
+    \param Map (In) A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+  
+    \warning Note that, because Epetra_LocalMap
+    derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
+    for all three types of Epetra map classes.
+  
+    \param KForm (In) The Komplex_KForms to use.
+    \param IsOneObject (In) If true, this ordering is for a single object, real and imaginary values interleaved.
 
-  public:
-  //@{ \name Constructors/Destructor.
-  //! Komplex_Ordering Default Constructor.
-  /*! Creates an empty Komplex_Ordering instance.
+    \return Pointer to a Komplex_Ordering object.  
   */
-  Komplex_Ordering();
-
-  //! Komplex_Ordering Constructor to create the ordering for a Komplex_RowMatrix object.
-  /*! Creates a Komplex_Ordering instance for a given Komplex_RowMatrix object.
+  Komplex_Ordering(const Epetra_BlockMap& Map, Komplex_KForms KForm, bool IsOneObject);
+  
+  //! Komplex_Ordering copy constructor.
+  /*! Creates a Komplex_Ordering object from a pre-existing one.    
+    \param Source (In) A fully constructed Komplex_Ordering object.
+  
+    \return Pointer to a Komplex_Ordering object.  
   */
-  Komplex_Ordering(Komplex_RowMatrix * A);
-
-  //! Komplex_Ordering Copy Constructor.
-  /*! Makes a copy of an existing Komplex_Ordering instance.
-  */
-  Komplex_Ordering(const Komplex_Ordering & Ordering);
-
-  //! Komplex_Ordering Destructor.
-  /*! Completely deletes a Komplex_Ordering object.
-  */
-  virtual ~Komplex_Ordering();
+  Komplex_Ordering(Komplex_Ordering& Source);
+  
+  //! Komplex_Ordering destructor.
+  virtual ~Komplex_Ordering(void);
   //@}
+  
+  //@{ \name Attribute access and modification functions.
+  
+  //! Returns the current K form.
+  Komplex_KForms KForm(void);
+  
+  //! Switches the current K form.
+  /*!
+    \param NewKForm (In) The new KForms to use.
 
-  //@{ \name Matrix converter methods
-
-  //! Convert a Komplex_RowMatrix to canonical form.
-  /*! Converts a given Komplex_RowMatrix into canonical form, returning the answer
-      in a user-provided RowMatrix object.
-      \param In 
-             KForm - RowMatrix to be converted to canonical form.
-      \param Out
-             Canonical - RowMatrix in canonical form.
-   	\return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful.
   */
-  int ToCanonical(Komplex_RowMatrix * KForm, Komplex_RowMatrix & Canonical);
+  int SwitchKForm(Komplex_KForms NewKForm);
+  //@}
+  
+  //@{ \name Vector and element access functions.
+  /*! P vector access function
+    \param Perms (Out) Pointer to memory space that will contain the values of P.
 
-  //! Convert a Komplex_RowMatrix in canonical form to K form.
-  /*! Converts a given Komplex_RowMatrix in canonical form to K form, returning the answer
-      in a user-provided RowMatrix object.
- 	\param In
-		 Canonical - RowMatrix to be converted to K form.
- 	\param Out
-		 KForm - RowMatrix in K form.
-	\return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful.
   */
-  int ToKForm(Komplex_RowMatrix * Canonical, Komplex_RowMatrix & KForm);
+  int PermutationVector(int* Perms);
+  
+  /*! D vector access function
+    \param Scales (Out) Pointer to memory space that will contain the values of D.
 
-  private:
-  Epetra_MultiVector * DiagRight_;
-  Epetra_MultiVector * PermLeft_;
-  Epetra_MultiVector * PermRight_;
+    \return Integer error code, set to 0 if successful.
+  */
+  int ScalingVector(double* Scales); 
+  
+  /*! Global element in P access function
+    \param GlobalRow (In) Array row to be returned.
+    \param Index (Out) Integer code, 1 meaning GlobalRow is the TrueRow for a one-object object 
+    or 1 meaning GlobalRow/2 in the Real object;
+    -1 meaning the preceding or following row for a one-object object 
+    or -1 meaning GlobalRow/2 in the Imag object.
+    
+    \return Integer error code
+  */
+  int GlobalIndex(int GlobalRow, int& Index);
+  
+  /*! Global element in D access function
+    \param GlobalRow (In) Array row to be returned.
+    \param Scalar (Out) Double address to return the value.
+    
+    \return Integer error code, set to 0 if successful.
+  */
+  int GlobalScaling(int GlobalRow, double& Scalar);
+  
+  /*! Local element in P access function
+    \param MyRow (In) Array row to be returned.
+    \param Index (Out) Integer code, 1 meaning MyRow is the TrueRow for a one-object object 
+    or 1 meaning MyRow/2 in the Real object;
+    -1 meaning the preceding or following row for a one-object object 
+    or -1 meaning MyRow/2 in the Imag object.
+    
+    \return Integer error code
+  */
+  int MyIndex(int MyRow, int& Index);
+  
+  /*! Local element in D access function
+    \param MyRow (In) Array row to be returned.
+    \param Scalar (Out) Double address to return the value.
+    
+    \return Integer error code, set to 0 if successful.
+  */
+  int MyScaling(int MyRow, double& Scalar);
+  //@}
+  
+  //@{ \name Expert-only unsupported modification routines. //is it really unsupported??
+ 
+/* 
+  //! Update the given Komplex_MultiVector, resetting P and D in the process. */
+  /*!
+    \param Source (In) Fully constructed Komplex_MultiVector that owns the \e this Komplex_Ordering.
+    
+    \return Integer error code, set to 0 if successful.
+  */
+  /*int Update(Komplex_MultiVector& Source);           
+*/
+
+  //! Reset the values of P_ and D_ to their original state and set KForm_ to NewKForm
+  void Reset(Komplex_KForms NewKForm); //should it return anything???
+
+  //@}
+  
+  //@{ \name Overloaded operators.
+  
+  //! = Operator.
+  /*!
+    \param Source (In) Komplex_Operator to copy.
+    
+    \return Komplex_Operator.
+  */
+  //########## Komplex_Ordering & operator = (const Komplex_Ordering& Source);
+  //@}
+  
+protected:
+  
+private:
+  Epetra_Vector P_;
+  Epetra_Vector D_;
+  Komplex_KForms KForm_;
+  Komplex_KForms StoredKForm_;
+  bool IsOneObject_;
+  
 };
+
+#endif /* KOMPLEX_ORDERING_H */
