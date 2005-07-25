@@ -190,7 +190,9 @@ int Zoltan_PHG_Partition (
 
   PHGComm *hgc = hg->comm;
   VCycle  *vcycle=NULL, *del=NULL;
-  int  i, err = ZOLTAN_OK, prevVcnt=2*hg->dist_x[hgc->nProc_x];
+  int  i, err = ZOLTAN_OK;
+  int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x];
+  int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y];
   char *yo = "Zoltan_PHG_Partition";
   static int timer_match = -1,    /* Timers for various stages */
              timer_coarse = -1,   /* Declared static so we can accumulate */
@@ -207,8 +209,9 @@ int Zoltan_PHG_Partition (
 
   /****** Coarsening ******/    
   while ((hg->dist_x[hgc->nProc_x] > hg->redl)
-      && (hg->dist_x[hgc->nProc_x] < 0.9 * prevVcnt)
-      && hg->dist_y[hgc->nProc_y] && hgp->matching ) {
+    && ((hg->dist_x[hgc->nProc_x] < 0.9 * prevVcnt)
+     || (hg->dist_y[hgc->nProc_y] < 0.9 * prevVedgecnt))
+    && hg->dist_y[hgc->nProc_y] && hgp->matching) {
       int *match = NULL;
       VCycle *coarser=NULL;
         
@@ -361,6 +364,10 @@ int Zoltan_PHG_Partition (
       ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine,
                         hg->comm->Communicator);
 
+if (hg->info == 9)
+  Zoltan_PHG_Plot (0, hg->nVtx, 1, hg->vindex, hg->vedge, NULL, "");
+
+                          
     if (hgp->output_level >= PHG_DEBUG_LIST)     
       uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
               hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
