@@ -9,5 +9,5 @@
            HbMatrix,
            Permutation;
     ARGS = -v;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
