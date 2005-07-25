@@ -274,7 +274,7 @@ target_vendor = @target_vendor@
 EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
 EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 CrsRiluk_test_SOURCES = $(srcdir)/cxx_main.cpp
-CrsRiluk_test_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a
+CrsRiluk_test_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 CrsRiluk_test_CXXFLAGS = $(EXAMPLE_INCLUDES)
 CrsRiluk_test_LDADD = $(EXAMPLE_LIBS)
 all: all-am

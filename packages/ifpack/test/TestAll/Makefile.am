@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestAll
 
 TestAll_SOURCES      = $(srcdir)/cxx_main.cpp
-TestAll_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestAll_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestAll_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestAll_LDADD        = $(EXAMPLE_LIBS)

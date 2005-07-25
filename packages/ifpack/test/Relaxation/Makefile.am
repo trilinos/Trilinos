@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestRelaxation
 
 TestRelaxation_SOURCES      = $(srcdir)/cxx_main.cpp
-TestRelaxation_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestRelaxation_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestRelaxation_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestRelaxation_LDADD        = $(EXAMPLE_LIBS)

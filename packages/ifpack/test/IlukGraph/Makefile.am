@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = IlukGraph_test
 
 IlukGraph_test_SOURCES      = $(srcdir)/cxx_main.cpp
-IlukGraph_test_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a
+IlukGraph_test_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 IlukGraph_test_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 IlukGraph_test_LDADD        = $(EXAMPLE_LIBS)

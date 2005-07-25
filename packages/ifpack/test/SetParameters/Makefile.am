@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = SetParameters
 
 SetParameters_SOURCES      = $(srcdir)/cxx_main.cpp
-SetParameters_DEPENDENCIES = $(IFPACK_LIBS)
+SetParameters_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 SetParameters_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 SetParameters_LDADD        = $(EXAMPLE_LIBS)

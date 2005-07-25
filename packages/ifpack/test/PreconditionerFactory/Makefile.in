@@ -277,7 +277,7 @@ target_vendor = @target_vendor@
 EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
 EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 TestPreconditionerFactory_SOURCES = $(srcdir)/cxx_main.cpp
-TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestPreconditionerFactory_CXXFLAGS = $(EXAMPLE_INCLUDES)
 TestPreconditionerFactory_LDADD = $(EXAMPLE_LIBS)
 all: all-am

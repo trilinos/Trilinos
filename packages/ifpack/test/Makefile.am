@@ -36,7 +36,7 @@ SUBDIRS = IlukGraph               \
           ILU                     \
           IC                      \
 	  TestAll
-# CrsRiluk                \
+# CrsRiluk             
 if HAVE_IFPACK_AZTECOO
 if HAVE_IFPACK_TEUCHOS
 IFPACK_COMPARE_WITH_AZTECOO_TEST = CompareWithAztecOO/TestCompareWithAztecOO.exe

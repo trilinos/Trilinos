@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestIC
 
 TestIC_SOURCES      = $(srcdir)/cxx_main.cpp
-TestIC_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestIC_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestIC_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestIC_LDADD        = $(EXAMPLE_LIBS)

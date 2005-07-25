@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestILU
 
 TestILU_SOURCES      = $(srcdir)/cxx_main.cpp
-TestILU_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestILU_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestILU_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestILU_LDADD        = $(EXAMPLE_LIBS)

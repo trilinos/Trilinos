@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestContainer
 
 TestContainer_SOURCES      = $(srcdir)/cxx_main.cpp
-TestContainer_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestContainer_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestContainer_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestContainer_LDADD        = $(EXAMPLE_LIBS)

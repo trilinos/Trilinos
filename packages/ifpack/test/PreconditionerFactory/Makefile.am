@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestPreconditionerFactory
 
 TestPreconditionerFactory_SOURCES      = $(srcdir)/cxx_main.cpp
-TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestPreconditionerFactory_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestPreconditionerFactory_LDADD        = $(EXAMPLE_LIBS)

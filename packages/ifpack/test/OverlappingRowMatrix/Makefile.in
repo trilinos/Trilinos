@@ -277,7 +277,7 @@ target_vendor = @target_vendor@
 EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
 EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 TestOverlappingRowMatrix_SOURCES = $(srcdir)/cxx_main.cpp
-TestOverlappingRowMatrix_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestOverlappingRowMatrix_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestOverlappingRowMatrix_CXXFLAGS = $(EXAMPLE_INCLUDES)
 TestOverlappingRowMatrix_LDADD = $(EXAMPLE_LIBS)
 all: all-am

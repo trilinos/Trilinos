@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = CrsRiluk_test
 
 CrsRiluk_test_SOURCES      = $(srcdir)/cxx_main.cpp
-CrsRiluk_test_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a
+CrsRiluk_test_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 CrsRiluk_test_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 CrsRiluk_test_LDADD        = $(EXAMPLE_LIBS)

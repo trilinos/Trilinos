@@ -274,7 +274,7 @@ target_vendor = @target_vendor@
 EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
 EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 TestAll_SOURCES = $(srcdir)/cxx_main.cpp
-TestAll_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestAll_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestAll_CXXFLAGS = $(EXAMPLE_INCLUDES)
 TestAll_LDADD = $(EXAMPLE_LIBS)
 all: all-am

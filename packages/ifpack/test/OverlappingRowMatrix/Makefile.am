@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestOverlappingRowMatrix
 
 TestOverlappingRowMatrix_SOURCES      = $(srcdir)/cxx_main.cpp
-TestOverlappingRowMatrix_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestOverlappingRowMatrix_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestOverlappingRowMatrix_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestOverlappingRowMatrix_LDADD        = $(EXAMPLE_LIBS)

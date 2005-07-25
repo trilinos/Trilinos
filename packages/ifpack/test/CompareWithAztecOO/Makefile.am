@@ -36,6 +36,6 @@ EXEEXT = .exe
 noinst_PROGRAMS = TestCompareWithAztecOO
 
 TestCompareWithAztecOO_SOURCES      = $(srcdir)/cxx_main.cpp
-TestCompareWithAztecOO_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestCompareWithAztecOO_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestCompareWithAztecOO_CXXFLAGS     = $(EXAMPLE_INCLUDES) 
 TestCompareWithAztecOO_LDADD        = $(EXAMPLE_LIBS) 
