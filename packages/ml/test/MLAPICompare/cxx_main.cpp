@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 #endif
   Epetra_Time Time(Comm);
 
-  int ProblemSize = 100;
+  int ProblemSize = 100 * Comm.NumProc();
   if (argc > 1) {
     ProblemSize = atoi(argv[1]);
   }
@@ -92,59 +92,6 @@ int main(int argc, char *argv[])
   Epetra_MultiVector* RHS = Gallery.GetVbrRHS();
 
   AztecOO solver(*Problem);
-
-  if (argc == 3) {
-
-    int rep = 100;
-    double res_ML, res_MLAPI;
-
-    // want to compute r = b - A * x
-    Epetra_Vector x_ML(A->OperatorDomainMap());
-    Epetra_Vector b_ML(A->OperatorRangeMap());
-    Epetra_Vector r_ML(A->OperatorRangeMap());
-
-    // test the Epetra normal way
-    Time.ResetStartTime();
-    for (int i = 0 ; i < rep ; ++i) {
-
-      x_ML.PutScalar(1.0);
-      b_ML.PutScalar(1.0);
-      A->Multiply(false,x_ML,r_ML);
-      r_ML.Update(1.0, b_ML, -1.0);
-
-    }
-    res_ML = Time.ElapsedTime();
-    cout << "time - ML    = " << res_ML / rep << endl;
-
-    // now the MAPI way
-    Init();
-    Space S(-1,A->NumMyRows());
-    Operator A_MLAPI(S,S,A,false);
-    MultiVector x_MLAPI(S), b_MLAPI(S), r_MLAPI(S);
-
-    Time.ResetStartTime();
-    for (int i = 0 ; i < rep ; ++i) {
-
-      x_MLAPI = 1.0;
-      b_MLAPI = 1.0;
-
-#if 1
-      A_MLAPI.Apply(x_MLAPI, r_MLAPI);
-      r_MLAPI.Update(1.0, b_MLAPI, -1.0);
-#else
-      r_MLAPI = b_MLAPI - A_MLAPI * x_MLAPI;
-#endif
-
-    }
-    res_MLAPI = Time.ElapsedTime();
-    cout << "time - MLAPI = " << res_MLAPI / rep << endl;
-
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-
-    exit(0);
-  }
 
   // =========================== parameters =================================
 
@@ -165,7 +112,7 @@ int main(int argc, char *argv[])
   MLList.set("increasing or decreasing","increasing");
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("aggregation: damping factor", DampingFactor); 
-  MLList.set("coarse: max size",32);
+  MLList.set("coarse: max size",32 * Comm.NumProc());
   MLList.set("smoother: pre or post", "both");
   MLList.set("coarse: type","Amesos-KLU");
   MLList.set("smoother: type","IFPACK");
